@@ -1,0 +1,4 @@
+- [ ] **M-struct-passing close — the offers** | M-separate-compilation step 4 (a check that is right in one scope and wrong in every other) | The four conversion errors that catch a wrong float or narrow-integer binding live in a `#pragma clang diagnostic` block around the probes, and can NEVER join `-Werror=shorten-64-to-32` in `flags()`. Why? (a) clang refuses them under gnu11 (b) enabled globally they fire on 19 of 146 blessed emissions of correct programs — `s[i]` landing in a `u8`, an `f32` literal — because generated code converts on purpose (c) they would slow every build
+
+    **Where to look:** selfhost/emit/extern_probe.hero::PROBE_ERRORS · the step-4 commit body
+    **Why it matters:** the probe's arguments are exactly the declared types, so inside the block ANY implicit conversion is a wrong binding — the same diagnostic is 100% signal in one scope and 13% noise in the other

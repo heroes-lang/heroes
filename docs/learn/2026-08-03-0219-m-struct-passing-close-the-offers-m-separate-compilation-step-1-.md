@@ -1,0 +1,4 @@
+- [ ] **M-struct-passing close — the offers** | M-separate-compilation step 1 (the order nobody promised) | A map in Heroes hands back its keys in NO order, and the compiler walks maps to decide what to write into the C. Once, unsorted, that produced 20.8 MB of C whose LINES matched the old compiler's exactly and whose SEQUENCE did not — 3,330 lines out of 724,197, and it was the last thing standing between the port and the fixpoint. Say why sorting the keys fixes it, and then the harder half: why the SAME missing sort is harmless in `emit.hero:153`, where the walk drains a worklist. What is different about what leaves that loop?
+
+    **Where to look:** selfhost/emit/ctype.hero:236 (the mark and its story) · selfhost/emit.hero:153 (`ORDER: none`) · design.md §4.9
+    **Why it matters:** the same construct is a defect in one place and correct in the other, and the only thing that tells them apart is what somebody can observe

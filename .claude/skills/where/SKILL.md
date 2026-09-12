@@ -87,7 +87,7 @@ when there is one, because a broken compiler outranks a pending decision, and
 saying so with force is CLAUDE.md § 11's *alive rather than flat*.
 
 **Two records this step must not read.** `docs/records/done/` is the record: it is
-all closed, so summarising it reports finished work as owed. `docs/learn/LEARN.md`
+all closed, so summarising it reports finished work as owed. `docs/learn/`
 is comprehension and is **never** offered here — it exists when the author asks
 for it (`/learn`'s own rule), and listing it turns an offer into a debt.
 

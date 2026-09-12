@@ -102,7 +102,7 @@ rule in full and `records/lists` is its executor.
 **The first field is what that file's instrument reads**, so it differs by file:
 the milestone in its own `docs/work/milestones/` file, the padded `panel NNN` in
 `docs/work/DECIDE.md`, the defect number in `docs/work/DEFECTS.md`, the origin in
-`docs/learn/LEARN.md`. Put a sitting's number in a body instead and every pending
+`docs/learn/`. Put a sitting's number in a body instead and every pending
 verdict reports as unqueued, silently.
 
 **A line that carries an archived or never-written path carries its date on that
@@ -166,6 +166,6 @@ A conversation whose work is questions, with no file of code, spec or design
 modified, **writes no note of its own** (CL-053). What it settled is an entry in
 `docs/records/done/`; what it left open is an item in `docs/work/DECIDE.md` or
 its milestone's file under `docs/work/milestones/`; a concept it explained is an entry in
-`docs/ref/glossary/`; a question worth re-asking is a line in `docs/learn/LEARN.md`;
+`docs/ref/glossary/`; a question worth re-asking is a line in `docs/learn/`;
 a change to the language is a panel; a decision taken is a `docs/records/log/` entry.
 The path between them is the git history.

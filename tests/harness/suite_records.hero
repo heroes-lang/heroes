@@ -2107,6 +2107,7 @@ test "a C file is claimed by an `extern` at column zero in a program beside it, 
 constant MOVED: [str]
     [
         "docs/work/learn -> docs/learn"
+        "docs/learn/LEARN.md -> docs/learn"
         "design.md -> docs/design/design.md"
         "DESIGN-LOG.md -> docs/design/DESIGN-LOG.md"
         "docs/ROADMAP.md § The names -> docs/roadmap/names.md"
@@ -2120,7 +2121,7 @@ constant MOVED: [str]
 # The floor. A table that has emptied out is a table nobody is maintaining, and
 # an empty loop passes.
 constant LEAST_MOVED: i64
-    9
+    10
 
 constant RETIRED_ROOTS: [str]
     [
@@ -3078,8 +3079,27 @@ constant OPEN_PREFIX: str
 # The comprehension list. It takes the same shape as the three above and one
 # rule fewer: a ticked question stays in it (`/learn`'s rule — the list is also
 # its own record), so `records/lists` reads it with `ticked_allowed`.
+# **The learning list is a DIRECTORY since 2026-09-12** (author instruction:
+# *can the contention be eliminated further?*), one file per question, the shape
+# the records took the same morning. The reason is measured rather than
+# aesthetic: it was 1939 lines with 364 items and ONE hand-written count on line
+# 42, so two lanes filing an offer both wrote that line and both appended at the
+# bottom — and it is the list that grows at every close, which made it the one
+# that conflicted at every close.
+#
+# **No map was left behind, and that is a measurement too**: zero citations
+# anywhere named `LEARN.md:NNN`, so nothing resolved by line and a map would
+# have kept a height no reader uses.
+#
+# **And the count line is gone rather than moved.** `LEARNING_FLOOR` below
+# replaces it: the number is now DERIVED by walking this directory, so it cannot
+# drift the way a written one can, and nothing has to be edited to keep it true.
+# What a derived count still needs is a floor, because an empty walk passes.
 constant LEARNING: str
-    "docs/learn/LEARN.md"
+    "docs/learn"
+
+constant LEARNING_FLOOR: i64
+    300
 
 # The record the three lists empty into. **The same string appears in `RECORD`,
 # `QUOTES_THE_OLD_SPELLING` and `APPENDED` above, and it is not the same fact**:
@@ -3497,13 +3517,29 @@ function lists(@r: report.Report, present: [str])
             for complaint in list_offences(text.must(), ticked_allowed: false)
                 offenders @ offenders.push("    " + path + ": " + complaint)
 
-    questions = read_file(LEARNING)
+    asked: i64 @ 0
 
-    if questions.is_err()
-        offenders @ offenders.push("    " + LEARNING + ": cannot be read")
-    else
-        for complaint in list_offences(questions.must(), ticked_allowed: true)
-            offenders @ offenders.push("    " + LEARNING + ": " + complaint)
+    for path in present
+        if !strings.starts_with(text: path, prefix: LEARNING + "/")
+            continue
+
+        if strings.ends_with(text: path, suffix: "/README.md")
+            continue
+        one = read_file(path)
+
+        if one.is_err()
+            offenders @ offenders.push("    " + path + ": cannot be read")
+            continue
+
+        for complaint in one_question(one.must())
+            offenders @ offenders.push("    " + path + ": " + complaint)
+
+        asked @ asked + 1
+
+    if asked < LEARNING_FLOOR
+        offenders @ offenders.push(
+            "    " + LEARNING + ": " + asked.to_str() + " questions and the floor is " + LEARNING_FLOOR.to_str() + " — a walk that reads almost nothing passes for the wrong reason, which is what the count line used to catch"
+        )
     kept = read_file(RECORD_LIST)
 
     if kept.is_err()
@@ -3553,13 +3589,31 @@ function record_offences(text: str) -> [str]
 # with a file — which is `homed`/`item_milestone`'s division, for the same
 # reason: a check nobody has watched fail is a check nobody has watched.
 #
-# **`ticked_allowed` is `docs/learn/LEARN.md`, and it is one line rather than a
+# **`ticked_allowed` is `docs/learn/`, and it is one line rather than a
 # second function.** A ticked question STAYS in that file by `/learn`'s own rule,
 # because the list is also its own record: a question the author has answered is
 # a different object from a decision the compiler acted on. So there the first
 # accusation is switched off and a `- [x]` is skipped rather than counted, which
 # is what keeps the banner's number the OPEN one — what is still unanswered,
 # which is the only number that says anything about that file.
+# One file, one question. The shape is the lists' own — a `- [ ]` or `- [x]`
+# line with an optional indented body — and what this adds over `list_offences`
+# is that a file holding two items, or none, is a file somebody split wrong.
+function one_question(text: str) -> [str]
+    out: [str] @ []
+    heads: i64 @ 0
+
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "- [ ]") || strings.starts_with(text: row, prefix: "- [x]")
+            heads @ heads + 1
+        else if strings.trimmed(row).len() > 0 && !strings.starts_with(text: row, prefix: "    ")
+            out @ out.push("a line outside the item and its body: " + head_of(row))
+
+    if heads != 1
+        out @ out.push("holds " + heads.to_str() + " items and a file here holds exactly one")
+
+    return out
+
 function list_offences(text: str, ticked_allowed: bool) -> [str]
     out: [str] @ []
     banners: i64 @ 0

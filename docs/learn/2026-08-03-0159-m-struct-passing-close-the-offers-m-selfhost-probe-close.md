@@ -1,0 +1,4 @@
+- [ ] **M-struct-passing close — the offers** | M-selfhost-probe close | **The milestone's /learn offers, all optional**: (a) walkthrough of `selfhost/` — eleven files that mirror the Rust lexer one idea per file, readable in one sitting; (b) golden ratification — the 5 cases marked `# UNVERIFIED — pending debrief` (4 in selfhost/lexer.hero, 1 in selfhost/number.hero) plus the two order-pinning goldens from panel 065; (c) mutation drill on the ported lexer (break one scanner, watch which of the 55 tests names it); (d) exit-quiz on measurement 009's twelve gaps — which three would you have predicted, and which one has a real cost
+
+    **Where to look:** selfhost/ · docs/measurements/009-selfhost-readiness.md · docs/records/journal/020-selfhost-probe.md
+    **Why it matters:** the author's call, never convened by the assistant
