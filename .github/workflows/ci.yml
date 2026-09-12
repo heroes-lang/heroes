@@ -168,7 +168,7 @@ jobs:
       #     it reads `hero_runtime_check_leaks()` (panel 021) against a second
       #     instrument; `INT64_MIN % -1` raises SIGFPE here while arm64 returns
       #     0 at exit 0. Same source, two behaviours. **The local instrument
-      #     for this leg is `docs/environment/linux/LINUX-MACHINE.md`**: the same
+      #     for this leg is `docs/ref/environment/linux/LINUX-MACHINE.md`**: the same
       #     architecture in a container on the author's Mac, so a Linux fact is
       #     measured before the commit rather than read here seven minutes
       #     after it. This leg stays the judge; that file is the hunt.
@@ -214,7 +214,7 @@ jobs:
       #     tag run after 2026-08-24 is the instrument for this whole paragraph.
       #     **That stopped being true on 2026-08-31 and the sentence is
       #     corrected rather than deleted**: there is a real Windows box now,
-      #     `docs/environment/windows/WINDOWS-MACHINE.md`, reachable in seconds, and it
+      #     `docs/ref/environment/windows/WINDOWS-MACHINE.md`, reachable in seconds, and it
       #     is where a Windows fact is measured before it reaches this leg. The
       #     leg is still the judge — a green run on that box is evidence, never
       #     the criterion.

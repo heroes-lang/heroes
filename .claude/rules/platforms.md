@@ -4,7 +4,7 @@ paths:
   - "seed/**"
   - "examples/**"
   - ".github/**"
-  - "docs/environment/**"
+  - "docs/ref/environment/**"
 ---
 
 # The three platforms
@@ -16,8 +16,8 @@ rule cost to learn is in `docs/contract/case-law.md`, cited as `CL-NNN`.
 
 **The three platforms are measured from this Mac, before the commit**, and CI
 stays the judge (CL-048). macOS is this machine. Windows is a real box,
-`docs/environment/windows/WINDOWS-MACHINE.md`. Linux is a container of the CI
-leg's own architecture, `docs/environment/linux/LINUX-MACHINE.md`, built from
+`docs/ref/environment/windows/WINDOWS-MACHINE.md`. Linux is a container of the CI
+leg's own architecture, `docs/ref/environment/linux/LINUX-MACHINE.md`, built from
 the `Dockerfile` beside it.
 
 These two files are **the hunt, not the judge**. A comment, a `#ifdef` or a

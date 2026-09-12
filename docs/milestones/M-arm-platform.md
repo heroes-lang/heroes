@@ -36,12 +36,12 @@ platform in M-online-compiler's sense. § The names carries why the id is neithe
 *******************************************************************************
 **OPEN: 1**
 
-- [ ] **M-arm-platform** | the fourth leg: an arm64 image, a matrix entry, and the `char` prediction scored | `docs/environment/linux/` · `.github/workflows/ci.yml` § matrix · `.claude/rules/platforms.md`
+- [ ] **M-arm-platform** | the fourth leg: an arm64 image, a matrix entry, and the `char` prediction scored | `docs/ref/environment/linux/` · `.github/workflows/ci.yml` § matrix · `.claude/rules/platforms.md`
 
     **Origin:** author decision 2026-09-10, § What production-ready means row 3.
 
     **What it delivers**, in the order the platforms rule asks: an arm64 Linux
-    image beside the x86-64 one under `docs/environment/linux/`, built from its own
+    image beside the x86-64 one under `docs/ref/environment/linux/`, built from its own
     `Dockerfile`; the seed built from C alone there; the compiler's **618** tests
     and the harness's own **126** passing there; and a fourth CI matrix entry, so
     the leg is a judge and not a hunting instrument (`.claude/rules/platforms.md`

@@ -10,7 +10,7 @@ the time it takes to compile the seed, so a platform fact is **measured before
 the commit** instead of read red after it.
 
 **What it is and what it is not.** It is the **hunting instrument**, exactly as
-`docs/environment/windows/WINDOWS-MACHINE.md` is for Windows: it finds where something
+`docs/ref/environment/windows/WINDOWS-MACHINE.md` is for Windows: it finds where something
 dies, it prices a hypothesis, it lets a fix be tried before it is committed. It
 is **not the judge**. The Linux leg of `.github/workflows/ci.yml` stays the
 acceptance criterion, and a green run here is evidence, never the criterion.
@@ -54,7 +54,7 @@ a copy that carries `.git` can now run all three suites on this machine. From
 the repository root:
 
 ```
-docker build -t heroes-linux docs/environment/linux
+docker build -t heroes-linux docs/ref/environment/linux
 ```
 
 **16.5 s the first time**, apt layer included; a rebuild with nothing changed

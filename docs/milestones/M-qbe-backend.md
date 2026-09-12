@@ -93,7 +93,7 @@ deliberately handed to clang (DESIGN-LOG 2026-08-03, panel 001).
     disagree about Windows; and the IL document (`doc/il.html`) does not describe
     the two directives yet. **So the sitting's first step is to install QBE 1.3
     and RUN it** — `arm64_apple` on this Mac, the Windows target on the box
-    (`docs/environment/windows/WINDOWS-MACHINE.md`) — before a line of emitter
+    (`docs/ref/environment/windows/WINDOWS-MACHINE.md`) — before a line of emitter
     is written or a sentence of §3.2 is amended: a platform fact that has not
     been run on that platform is an inference (CLAUDE.md §1).
 
