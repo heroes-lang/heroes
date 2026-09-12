@@ -49,6 +49,7 @@
 # proves it did not blank everything.
 
 use report
+use floors
 use shell
 use strings
 
@@ -96,11 +97,25 @@ constant ALLOCATORS: [str]
 # comment quoting `run.c`'s English *"the first check is free ("*. A grep
 # reports five; `code_lines` reports four. That line is this suite's own
 # reason living in the file it checks.
+# **AND IT HAPPENED AGAIN, TO ALL THREE, 2026-09-13.** The paragraph above tells
+# the story of a premise in this file expiring in six hours, inside the suite
+# written to stop premises expiring — and then the floors themselves did it, for
+# weeks, with nothing watching: 18 against 23 files, 3 against 7 allocation
+# sites, 24 against 39 objects surviving between calls. All three were re-based
+# by `floors.check` on the first run after they were converted to it.
+#
+# The estimate that carried them forward was wrong, and the record says so rather
+# than quietly correcting it: they were judged a low risk because they count
+# things that do not grow. Two of the three had more than doubled.
 constant LEAST_FILES: i64
-    18
+    23
 
+# **3 -> 7 on 2026-09-13.** Four allocation sites had been added to the single
+# point since the floor was written, which is the single point doing its job —
+# and the floor stayed at 3, so it would have passed a sweep that found less
+# than half of them.
 constant LEAST_AT_THE_POINT: i64
-    3
+    7
 
 constant LEAST_REFCOUNT: i64
     6
@@ -187,8 +202,13 @@ constant SHARED_BY_DECISION: [str]
 # A floor rather than an equality, on `LEAST_FILES`' reason: what would
 # make this check pass while the tree went wrong is a sweep that reads
 # nothing, and 28 is what it read on 2026-09-06.
+#
+# **24 against 39 on 2026-09-13**, re-based by `floors.check` on its first run
+# here. The sweep reads MORE objects than it did, which is the direction nobody
+# watches: the floor was written when 28 were found and set below them, and the
+# tree has since put fifteen more between calls.
 constant LEAST_SHARED_STATE: i64
-    24
+    39
 
 function run_all(scratch: str) -> report.Report?
     nothing: [str] = []
@@ -244,14 +264,19 @@ function keep_single_point(@r: report.Report, sources: [str])
     else
         report.keep_pass(@r)
 
-    if sources.len() < LEAST_FILES || at_the_point < LEAST_AT_THE_POINT
-        report.keep_failure(
-            @r,
-            label: "runtime/alloc",
-            detail: "  the sweep read " + sources.len().to_str() + " files and found " + at_the_point.to_str() + " allocation calls inside " + SINGLE_POINT + ", and had " + LEAST_FILES.to_str() + " and " + LEAST_AT_THE_POINT.to_str() + " — either it is not reaching the tree, or `code_lines` is blanking code and not only comments, and then the check above passes by seeing nothing"
-        )
-    else
-        report.keep_pass(@r)
+    # **TWO FLOORS IN ONE CONDITION UNTIL 2026-09-13**, which is why this file
+    # was the one M-declared-thresholds carried forward: `floors.check` weighs
+    # one count against one floor, and an `||` over two of them can say only
+    # that something is wrong, never which. Split, each says its own number and
+    # each is watched for decay as well as for an empty sweep.
+    floors.check(@r, label: "runtime/alloc", found: sources.len(), floor: LEAST_FILES, what: "runtime source files")
+    floors.check(
+        @r,
+        label: "runtime/alloc",
+        found: at_the_point,
+        floor: LEAST_AT_THE_POINT,
+        what: "allocation calls inside " + SINGLE_POINT
+    )
 
 # Rule 2: the refcount boundary is narrow and cannot be inlined.
 function keep_boundary(@r: report.Report)
@@ -288,14 +313,13 @@ function keep_boundary(@r: report.Report)
     else
         report.keep_pass(@r)
 
-    if declared < LEAST_REFCOUNT
-        report.keep_failure(
-            @r,
-            label: "runtime/refcount",
-            detail: "  the sweep found " + declared.to_str() + " refcount declarations in " + HEADER + " and had " + LEAST_REFCOUNT.to_str() + " (a str, an array and a map, increfed and decrefed) — it is not reading the header"
-        )
-    else
-        report.keep_pass(@r)
+    floors.check(
+        @r,
+        label: "runtime/refcount",
+        found: declared,
+        floor: LEAST_REFCOUNT,
+        what: "refcount declarations in " + HEADER + " (a str, an array and a map, increfed and decrefed)"
+    )
 
 # Rule 3: no object survives between calls in the runtime without
 # somebody having decided whether a second thread may see it.
@@ -361,14 +385,13 @@ function keep_shared_state(@r: report.Report, sources: [str])
     else
         report.keep_pass(@r)
 
-    if total < LEAST_SHARED_STATE
-        report.keep_failure(
-            @r,
-            label: "runtime/threads",
-            detail: "  the sweep found " + total.to_str() + " objects that survive between calls and had " + LEAST_SHARED_STATE.to_str() + " — it is not reaching the tree, and then the check above passes by seeing nothing"
-        )
-    else
-        report.keep_pass(@r)
+    floors.check(
+        @r,
+        label: "runtime/threads",
+        found: total,
+        floor: LEAST_SHARED_STATE,
+        what: "objects that survive between calls"
+    )
 
 # An object that survives between calls, at file scope OR inside a
 # function body — the second is the half every count in this project had
