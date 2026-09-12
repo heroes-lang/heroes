@@ -80,8 +80,14 @@ of 12288 with a +50 delta gate, and every counting floor checked from both sides
 with eight re-based. **Closed 2026-09-12**, journal
 [052](../../records/journal/052-declared-thresholds.md).
 
-Carried forward: `suite_runtime`'s three floors, which are read in composite
-conditions over one sweep.
+**Carried forward and then closed the next day**, 2026-09-13:
+`suite_runtime`'s three floors were converted, and all three were outgrown — 18
+against 23, 3 against 7, 24 against 39. The estimate that had carried them
+forward called the risk low because they count things that do not grow; two of
+the three had more than doubled. CLAUDE.md §5 and §6 stay where they are, the
+removal costed and unspent, for the day an amendment has to pay for itself. The
+record is
+`docs/records/done/2026-09-13-0010-decided-2026-09-13-author-the-runtime-floors-convert-and-sections-5-and-6-stay.md`.
 
 ## What is closed
 
