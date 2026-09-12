@@ -71,7 +71,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     out = said.must().out
     keywords(@r, out: out)
     powers(@r, out: out)
-    productions(@r)
+    productions(@r, out: out)
     return ok(r)
 
 ## The keywords
@@ -192,6 +192,13 @@ function printed_rows(out: str) -> [Row]
 
         if !seen
             continue
+
+        # **The table ends at its blank line**, and saying so is what keeps this
+        # check inside its own section: a production is indented too and several
+        # are three words wide, so without this the report's later sections are
+        # read as more rows. Measured the day the command started printing them.
+        if strings.trimmed(line).len() == 0
+            return rows
         parts = strings.words(line)
 
         if parts.len() == 3
@@ -319,13 +326,8 @@ record Production
     name: str
     uses: [str]
 
-function productions(@r: report.Report)
-    text = read_file(SPEC)
-
-    if text.is_err()
-        report.keep_failure(@r, label: "grammar/productions", detail: "  cannot read " + SPEC)
-        return
-    found = productions_of(text.must())
+function productions(@r: report.Report, out: str)
+    found = productions_of(out)
 
     if found.len() < LEAST_PRODUCTIONS
         report.keep_failure(
@@ -388,20 +390,29 @@ function mark(found: [Production], at: str, @seen: {str: bool})
 
 ## Reading the blocks
 
-# The four-space blocks outside a fence, which is where `.claude/rules/spec-shape.md`
-# puts the productions and why: a grammar in a fence is refused, because the
-# `rejected` check reads every fence as Heroes source.
+# The productions AS THE COMMAND PRINTS THEM, which is the whole point of
+# reading them from there rather than from the document a second time: the
+# command has the only extractor, and this check exercises it. Its first version
+# demanded a non-space in the fifth column and silently dropped every
+# continuation line, printing three productions truncated and complete-looking;
+# a check with an extractor of its own would have passed over exactly that.
 function productions_of(text: str) -> [Production]
     out: [Production] @ []
     buffer: str @ ""
-    in_fence: bool @ false
+
+    # **The productions SECTION and not every indented line**, because the
+    # precedence table is indented too and `3  ==  eq` reads as a production
+    # named `3`: `opens_production` finds a name, spaces, and the `=` of `==`.
+    # Measured the first time this check read the command's output instead of
+    # the document, which is the cost of one extractor and worth paying once.
+    seen: bool @ false
 
     for line in strings.lines(text)
-        if strings.starts_with(text: line, prefix: "```")
-            in_fence @ !in_fence
+        if strings.contains(text: line, needle: "Productions, collected from")
+            seen @ true
             continue
 
-        if in_fence || !strings.starts_with(text: line, prefix: "    ")
+        if !seen || !strings.starts_with(text: line, prefix: "    ")
             continue
         body = strings.trimmed(line)
 
