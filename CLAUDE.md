@@ -123,7 +123,7 @@ the recommended resolution as the default, say which way it went once (CL-002).
 
 **Five lists.** `docs/work/DECIDE.md` holds what should be true,
 `docs/work/milestones/` work inside the file of the milestone that will do it,
-`docs/work/DEFECTS.md` what is broken, `docs/learn/LEARN.md` what is true, and
+`docs/work/DEFECTS.md` what is broken, `docs/work/learn/LEARN.md` what is true, and
 `docs/done/` is the record. A list holds only OPEN items and a ticked one
 moves to the record at once. Notation is `- [ ]` and `- [x]` only, because a
 bare bullet is invisible to every count here (CL-032); the item shape and its
@@ -146,7 +146,7 @@ background monitor is never asked about: the answer is always yes (CL-056).
 session and every item verified against the repository first. `/learn` takes the
 comprehension **only when the author asks**, never convened by the assistant and
 never at a milestone close, which **writes** its offers into
-`docs/learn/LEARN.md` instead of proposing them. Learn-first only when asked
+`docs/work/learn/LEARN.md` instead of proposing them. Learn-first only when asked
 before a step. Comprehension questions never go through the question widget,
 which hides the code they are about: fenced snippet, lettered options, one
 message (CL-060). Lessons stay impersonal: shapes and rules, never scores. The
