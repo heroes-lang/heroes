@@ -17,9 +17,16 @@
  * is where the ROADMAP's own convention puts it.
  *
  * WHAT IT ASSERTS, because a parse that quietly reads nothing renders an empty
- * table and nobody notices: at least sixty rows, at least forty closed, exactly
- * one `**OPEN**` or none, and a row number sequence with no gap. A ROADMAP whose
- * shape changes fails the build rather than the page.
+ * table and nobody notices: at least sixty rows, at least forty closed, and a row
+ * number sequence with no gap. A ROADMAP whose shape changes fails the build
+ * rather than the page.
+ *
+ * IT NO LONGER ASSERTS ONE OPEN ROW. It did until the author's decision of
+ * 2026-09-12, and that rule was written before work happened in lanes: one
+ * milestone is one file is one worktree now, so two sessions can hold two
+ * milestones and the table is the only place a reader could see the second one.
+ * The two floors above stay, because they guard a parse that fell apart, which
+ * is a different failure and still a real one.
  */
 
 import { readText } from './repo.ts';
@@ -89,9 +96,6 @@ export function chain(): ChainRow[] {
   if (done < FLOOR_DONE) {
     throw new Error(`docs/ROADMAP.md § The chain: only ${done} rows read as closed, and the floor is ${FLOOR_DONE}.`);
   }
-  if (rows.filter((r) => r.state === 'open').length > 1) {
-    throw new Error('docs/ROADMAP.md § The chain: more than one row is **OPEN**, and the chain takes one at a time.');
-  }
   rows.forEach((r, i) => {
     if (r.number !== i + 1) {
       throw new Error(`docs/ROADMAP.md § The chain: row ${i + 1} is numbered ${r.number}, so the sequence has a gap.`);
@@ -120,12 +124,29 @@ export function chainSection(lang: 'en' | 'it'): string {
   const rows = chain();
   const done = rows.filter((r) => r.state === 'done');
   const ahead = rows.filter((r) => r.state !== 'done');
-  const open = rows.find((r) => r.state === 'open');
+  // More than one row may be open, since work happens in lanes: one milestone,
+  // one file, one worktree. The sentence has to carry all of them, because a
+  // page that names the first of two is a page that is wrong about the second.
+  const open = rows.filter((r) => r.state === 'open');
   const it = lang === 'it';
+  const names = open.map((r) => `<code>${esc(r.name)}</code>`);
+  const listed = (last: string) =>
+    names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} ${last} ${names[names.length - 1]}`;
+
+  const openIt = open.length === 0
+    ? ', e nessuno è aperto in questo momento'
+    : open.length === 1
+      ? `, e quello aperto è ${listed('e')}`
+      : `, e quelli aperti sono ${listed('e')}`;
+  const openEn = open.length === 0
+    ? ', and none is open right now'
+    : open.length === 1
+      ? `, and the open one is ${listed('and')}`
+      : `, and the open ones are ${listed('and')}`;
 
   const lead = it
-    ? `<p>La catena è una tabella nel repository, una riga per traguardo, chiusi prima e programmati dopo. Questa pagina la legge quando il sito viene generato: <b>${done.length}</b> traguardi chiusi di <b>${rows.length}</b>${open ? `, e quello aperto è <code>${esc(open.name)}</code>` : ', e nessuno è aperto in questo momento'}.</p>`
-    : `<p>The chain is one table in the repository, a row per milestone, closed first and scheduled after. This page reads it when the site is built: <b>${done.length}</b> milestones closed of <b>${rows.length}</b>${open ? `, and the open one is <code>${esc(open.name)}</code>` : ', and none is open right now'}.</p>`;
+    ? `<p>La catena è una tabella nel repository, una riga per traguardo, chiusi prima e programmati dopo. Questa pagina la legge quando il sito viene generato: <b>${done.length}</b> traguardi chiusi di <b>${rows.length}</b>${openIt}.</p>`
+    : `<p>The chain is one table in the repository, a row per milestone, closed first and scheduled after. This page reads it when the site is built: <b>${done.length}</b> milestones closed of <b>${rows.length}</b>${openEn}.</p>`;
 
   const aheadRows = ahead
     .map(

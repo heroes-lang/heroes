@@ -33,13 +33,13 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 
 | | |
 |---|---|
-| **Current milestone** | **none open.** Next in the chain is **M-reflection-verdict**, which a parallel session has been working since 2026-09-11 without opening its row. One decision waits on the author: whether § The chain may carry more than one `**OPEN**` row, which is what a second lane needs |
-| **Last closed** | **M-rotated-records**, 2026-09-12, **untagged** — the list is not clean, by its own filing ([049](journal/049-rotated-records.md)) — the records became directories and the files they were stay as maps · before it **M-named-callbacks** ([048](journal/048-named-callbacks.md)) and **M-labelled-types** ([047](journal/047-labelled-types.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| **Current milestone** | **none open.** Next in the chain is **M-reflection-verdict**, which a parallel session has been working since 2026-09-11 without opening its row — and from 2026-09-12 it could, because § The chain may now carry more than one `**OPEN**` row, which is what a second lane needs |
+| **Last closed** | **M-rotated-records**, 2026-09-12, `m-rotated-records` ([049](journal/049-rotated-records.md)) — the records became directories and the files they were stay as maps · before it **M-named-callbacks** ([048](journal/048-named-callbacks.md)) and **M-labelled-types** ([047](journal/047-labelled-types.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **50** of 74 · **49** milestone tags, the legacy `m0`-`m8` included |
 | The compiler | **58,665** lines of Heroes in **199** modules (`find selfhost -name '*.hero'`) · the seed **790,756** lines of C |
 | The spec | **4430** on the vendored ranks, unchanged by this milestone, which spent no spec token · the real count is `heroes measure --refresh`'s and was last taken 2026-09-11 |
 | Records | sittings **131** · journals **50** · milestone files **44** · entries: `docs/log/` **621**, `docs/done/` **491**, `docs/book/beats/` **115** · **open defects 0** |
-| Waiting on the author | **1** decision, and a push: 11 commits stand unpushed, 1 of them touching `site/` |
+| Waiting on the author | **0** decisions. The one this milestone filed was answered the same day: § The chain may carry more than one open row, and the site's page lists them all |
 
 **Re-measured 2026-09-12 at M-rotated-records' close, not carried.** `records` is
 **20** checks, the net's own tests **137**, and the suite reads 23 s against 17.7 s on 2026-09-06, over 1,227 files more.
@@ -236,7 +236,7 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 71 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
 | 72 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
 | 73 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
-| 74 | **M-rotated-records** | done 2026-09-12 | **untagged**, one open decision | [049](journal/049-rotated-records.md) | the records become directories, one entry per file and one milestone per file, and the file that held each stays behind as a map so every citation still resolves · CLAUDE.md §14 |
+| 74 | **M-rotated-records** | done 2026-09-12 | `m-rotated-records` | [049](journal/049-rotated-records.md) | the records become directories, one entry per file and one milestone per file, and the file that held each stays behind as a map so every citation still resolves · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
