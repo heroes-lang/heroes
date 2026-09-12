@@ -15,7 +15,7 @@ What each rule cost to learn is in `docs/contract/case-law.md`, cited as
 
 ## A record is never rewritten
 
-`docs/panel/`, `docs/journal/`, `docs/measurements/`, `docs/done/`,
+`docs/panel/`, `docs/records/journal/`, `docs/measurements/`, `docs/done/`,
 `docs/book/beats/`, `docs/contract/`, `tests/golden/`, `DESIGN-LOG.md`, every
 commit subject and the twelve legacy tags are append-only. Where a sentence in
 one has since been falsified, the correction is **added underneath**, with its

@@ -17,7 +17,7 @@ in an error message.
 *******************************************************************************
 **OPEN: 1**
 
-- [ ] **M-journey-book** | the journal index stops at 035 and eight journals stand outside it | `docs/journal/README.md` · `docs/journal/036-declared-freer.md` to `043-interpolated-strings.md`
+- [ ] **M-journey-book** | the journal index stops at 035 and eight journals stand outside it | `docs/records/journal/README.md` · `docs/records/journal/036-declared-freer.md` to `043-interpolated-strings.md`
 
     **Origin:** found 2026-09-11 at M-anchored-spec's close, when this session
     added its own row and counted: **45 journals, 36 rows.** The eight missing are

@@ -1328,7 +1328,7 @@ the page was written with.
 
 `log.html` is the one page exempt from the invariant that no living file names a
 numbered milestone, because its entries are records and keep the identifiers they
-were written with — the same footing as `docs/journal/` and `docs/panel/`. Every
+were written with — the same footing as `docs/records/journal/` and `docs/panel/`. Every
 other page is watched. The entries carry **no dates** (`CLAUDE.md` § No dates on
 the page): the order of the list is the chronology, so a new entry goes on top
 and nothing else moves.

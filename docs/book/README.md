@@ -30,7 +30,7 @@ for that book a first-class output of the process, not an afterthought.
 
 | Source | What it gives the book |
 |---|---|
-| `docs/journal/` | the narrative spine: one lesson per step, predictions vs reality, what broke and why |
+| `docs/records/journal/` | the narrative spine: one lesson per step, predictions vs reality, what broke and why |
 | `DESIGN-LOG.md` | every decision, dated, one line, with its reason |
 | `docs/panel/` | the arguments — objections, verdicts, and the author's answers |
 | `git log` + tags | the true chronology; `git checkout m2` re-opens any chapter's code |

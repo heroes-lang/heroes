@@ -251,7 +251,7 @@ closure list compiles itself.
 ## 14. Documentation duty + git
 A step is not done without a commit, `M-<name> step <k>: <what>`, staging only
 this conversation's files by name (§ Hard stops). Per decision, a
-`docs/log/` entry. Per milestone: a journal in `docs/journal/`, one story
+`docs/log/` entry. Per milestone: a journal in `docs/records/journal/`, one story
 beat as a file in `docs/book/beats/`, the ROADMAP status, and a local tag; **the push
 that would carry that tag is asked for** (CL-042). The close checklist lives in
 `/step`, its only copy.

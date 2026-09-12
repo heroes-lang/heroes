@@ -119,7 +119,7 @@ letting one through.
     **The question after:** exactly one of the four is caught by NO suite in
     the tree today. Say which, and what case would have to exist.
 
-- [ ] **M-cstr-lifetime, exit quiz** | Six questions with one answer each, and five of the six were got wrong by somebody during this milestone | `docs/journal/040-cstr-lifetime.md` · `docs/panel/122-the-lend-was-two-defects.md` | every question here is a place a measurement replaced a belief, and four of them replaced the coordinator's
+- [ ] **M-cstr-lifetime, exit quiz** | Six questions with one answer each, and five of the six were got wrong by somebody during this milestone | `docs/records/journal/040-cstr-lifetime.md` · `docs/panel/122-the-lend-was-two-defects.md` | every question here is a place a measurement replaced a belief, and four of them replaced the coordinator's
 
     **Origin:** M-cstr-lifetime close, 2026-09-09.
     **The six:** (a) how long does the slot holding a lent `str` live, exactly?
@@ -197,7 +197,7 @@ letting one through.
     `selfhost/emit/structural.hero`'s deliberate `hero_panic` are the answer's
     two halves.
 
-- [ ] **M-discard-refusal close** | The mutation table's second column, and what it measures that the first does not | `docs/journal/038-discard-refusal.md` · `heroes mutate --operator drop-question --survivors` | 236 killed is the headline and 193 is the number that says what the thesis buys
+- [ ] **M-discard-refusal close** | The mutation table's second column, and what it measures that the first does not | `docs/records/journal/038-discard-refusal.md` · `heroes mutate --operator drop-question --survivors` | 236 killed is the headline and 193 is the number that says what the thesis buys
 
     **Origin:** M-discard-refusal close, 2026-09-08. Run it. The `check` column
     says 236 of 236; the `--permissive` column says 193. Say in one sentence
@@ -242,7 +242,7 @@ letting one through.
 
 - [ ] **M-ir-lowering.2** | The verifier had 257 lines of checks and no test that any of them fired. Fifteen tests now break one invariant each. Pick two and say what the *wrong* IR would have done at M-scalars-run, in C
 
-    **Where to look:** ir/tests/verify.rs · docs/journal/005-lowering.md §3
+    **Where to look:** ir/tests/verify.rs · docs/records/journal/005-lowering.md §3
     **Why it matters:** LLVM keeps a directory for exactly this; a safety net nobody has fallen into is indistinguishable from no net
 
 - [ ] **before M-ir-lowering** | Hand-desugar `for x in xs`, `?`, and one UFCS chain from the appendix calculator — **against the IR text** (panel 019 re-specified this: there is no desugared tree to compare against, so the exercise's answer key is `heroes build --dump-ir`)
@@ -502,7 +502,7 @@ letting one through.
 
 - [ ] **M-value-aggregates close** | **Walkthrough offer** (optional, author's call): the path of one `g.rows[0].cells[0] @ 7` from source to C, through `sized.rs`'s order, `counted.rs`'s answer, `own.rs`'s incref, `aggregate.rs`'s lvalue walk, and the three runtime primitives
 
-    **Where to look:** docs/journal/008-aggregates.md · tests/golden/run/adversarial-cow-per-step.hero
+    **Where to look:** docs/records/journal/008-aggregates.md · tests/golden/run/adversarial-cow-per-step.hero
     **Why it matters:** it is the one path in the compiler where four passes each contribute one line to the same statement
 
 - [ ] **M-value-aggregates close** | **Golden ratification offer**: five adversarial cases marked UNVERIFIED — `no-size-best-friend`, `records-own-strings`, `adversarial-aggregate-overwrite`, `adversarial-recursive-tree`, `adversarial-cow-per-step`
@@ -517,7 +517,7 @@ letting one through.
 
 - [ ] **M-value-aggregates close** | **Exit-quiz offer**: six defects, all of them a missing row. For each, say which table was exhaustive (so the compiler caught it) and which walk had a catch-all (so it did not)
 
-    **Where to look:** docs/journal/008-aggregates.md § What broke and why
+    **Where to look:** docs/records/journal/008-aggregates.md § What broke and why
     **Why it matters:** the rule "list every arm" has an edge, and knowing the edge is knowing when to add an instrument instead
 
 - [ ] **M-optional-map** | **`int?` owns memory**, which is the least obvious consequence in the language: its error side is two `str`s, so every `T?` is reference-counted whatever `T` is. Question: how many heap blocks does `half(8)` allocate when it returns `ok(4)`, and how many does `half(7)` allocate returning `fail("odd", "not divisible")`? (The second answer depends on something about literals.)
@@ -727,7 +727,7 @@ letting one through.
 
 - [ ] **M-generics-library close** | **Walkthrough offer** (optional, author's call): one `map(xs, show)` from source to C — `types/calls.rs` recording the instantiation, `ir/mono.rs` cloning and substituting, `counted.rs` rebuilt, the mangled hash, and the library function it lands in
 
-    **Where to look:** docs/journal/010 · archive/bootstrap-rs/heroes/src/ir/mono.rs
+    **Where to look:** docs/records/journal/010 · archive/bootstrap-rs/heroes/src/ir/mono.rs
     **Why it matters:** it is the one path where four passes and a hash all have to agree on one name
 
 - [ ] **M-generics-library close** | **Golden ratification offer**: the milestone's adversarial cases — `run/generics.hero` (one generic at `str` and at `int`, the case that proves `counted` was rebuilt), `run/closure-list.hero`, `unsupported/polymorphic-recursion.hero`, `run/abort-slice-splits-a-character.hero`, `check/fixedbugs-builtin-as-value.hero`
@@ -742,7 +742,7 @@ letting one through.
 
 - [ ] **M-generics-library close** | **Exit-quiz offer**: six live defects, five reachable for milestones. For each, say which instrument *could* have caught it earlier and why none did — and which two were found by a judge sent to price something else
 
-    **Where to look:** docs/journal/010 § What broke and why
+    **Where to look:** docs/records/journal/010 § What broke and why
     **Why it matters:** the pattern is that they were all reachable and none had a program that met them
 
 - [ ] **panel 030** | The spec invites a hallucination class **today**: `extern function read_file(path: str) -> str` is well-formed Heroes, and its near-misses (`puts`, `system`, `getenv`, `atoi` taking a Heroes `str`) are real symbols that link, run, and are silently wrong. Question for M-ffi-ladder: does `str` become forbidden as an `extern` parameter type, and what does that cost?
@@ -907,7 +907,7 @@ letting one through.
 
 - [ ] **M-module-namespace close** | **Walkthrough offer** (optional, author's call): one `geom.dist2(a: p, b: q)` from source to C — the parser building a `Method` node, `resolve/qualified.rs` recording `Ref::Module` on the *receiver*, the checker refusing to prepend it, the IR lowering it as a plain call, and `h_geom_dist2` coming out of a component the file table owns
 
-    **Where to look:** docs/journal/011 · archive/bootstrap-rs/heroes/src/resolve/qualified.rs
+    **Where to look:** docs/records/journal/011 · archive/bootstrap-rs/heroes/src/resolve/qualified.rs
     **Why it matters:** it is the one path where the same three tokens have two meanings and four passes have to agree which
 
 - [ ] **M-module-namespace close** | **Golden ratification offer**: the milestone's adversarial cases — `check/use-is-quoted.hero`, `check/use-has-a-path.hero`, and the two `fixedbugs` cases (`modules::tests::fixedbugs_two_modules_whose_concatenations_collide…`, `surface::fixedbugs_every_module_names_itself_in_the_emitted_c`)
@@ -922,7 +922,7 @@ letting one through.
 
 - [ ] **M-module-namespace close** | **Exit-quiz offer**: five defects. For each, say which instrument *could* have caught it earlier and why none did — and which three were found by running rather than by testing
 
-    **Where to look:** docs/journal/011 § What broke and why
+    **Where to look:** docs/records/journal/011 § What broke and why
     **Why it matters:** the pattern this time is that the tests were right and were asking about one file
 
 - [ ] **panel 033** | The direction disagreement is unresolved **by design**: the historian has the whole ancestry for default-private (Wirth's Modula-2 → Oberon arc, Oberon/Nim/Go/Zig/Erlang, Rust RFC 0001 and Swift SE-0117 both reversing *towards* it, none reversing away), and three judges have the counts against it (256 `private` vs 355 `export`; a binding module is 100% public by construction — 20/20 libm lines, 287/287 SQLite). Question: which of those two is evidence about *Heroes*, and which is evidence about languages that had ecosystems?
@@ -1092,12 +1092,12 @@ letting one through.
 
 - [ ] **Moved from `DECIDE.md` 2026-08-12 — `/decide` step 1** | M-literal-bases step 1 | Count, then explain: run `heroes mutate` over a directory holding `constant MASK: int` / `0xff` and `constant WIDE: int` / `0b1010`. How many `typo-digit` mutants, and how many would the pre-milestone `neighbouring_digit` have produced? Then say which *character* decided the difference, and why nothing in the test suite would have gone red
 
-    **Where to look:** archive/bootstrap-rs/heroes/src/mutate/edits.rs (`neighbouring_digit`) · docs/journal/014-literal-bases.md § What surprised
+    **Where to look:** archive/bootstrap-rs/heroes/src/mutate/edits.rs (`neighbouring_digit`) · docs/records/journal/014-literal-bases.md § What surprised
     **Why it matters:** this is CLAUDE.md §11's expired premise caught one milestone before it expired, which is the only time the fix is cheap
 
 - [ ] **Moved from `DECIDE.md` 2026-08-12 — `/decide` step 1** | M-sized-integers step 2 | The shape of an enum decided whether a ruling was true. Open `archive/bootstrap-rs/heroes/src/emit/ops.rs` at the line `let integral = matches!(operands, Ty::Int(_));` and read the comment above it. Question: with one `Ty` variant per width instead, what does that line evaluate to for a `u8`, what C comes out, and what does the program print? Then: how many rustc errors did each shape produce, and why is the difference not a matter of taste
 
-    **Where to look:** archive/bootstrap-rs/heroes/src/emit/ops.rs · archive/bootstrap-rs/heroes/src/types/table.rs (`IntKind`) · docs/journal/015 § What surprised
+    **Where to look:** archive/bootstrap-rs/heroes/src/emit/ops.rs · archive/bootstrap-rs/heroes/src/types/table.rs (`IntKind`) · docs/records/journal/015 § What surprised
     **Why it matters:** a promise about runtime behaviour turned out to depend on a choice nobody would look at for it
 
 - [ ] **Moved from `DECIDE.md` 2026-08-12 — `/decide` step 1** | M-sized-integers step 8 | `fit_i8(-129)` was accepted, and the five adversarial cases found it. Read the repaired test construction in `emit/ops.rs` (the `from_low < low` / `from_high > high` pair). Question: state, in one sentence, what the ORIGINAL version tested and why it was right for `fit_u8` and wrong for `fit_i8`. Then: why is a bound *omitted* rather than emitted as a tautology — name the compiler flag that decides it
@@ -1107,12 +1107,12 @@ letting one through.
 
 - [ ] **Moved from `DECIDE.md` 2026-08-12 — `/decide` step 1** | M-sized-integers step 3 | Three blanket renames crossed a language boundary in one session: `: int` into English prose, `"int"` into a Rust table key, and Heroes' `int` into C's inside `_Generic`. Question: for each, name the test that caught it and say how long it would have survived without that test. Then the general one: this repository holds four languages in overlapping files — what property would a rename tool need to be safe here, and does `\bint\b` have it
 
-    **Where to look:** docs/journal/015 § What broke and why · git show 3280ffe · git show 04fc16a
+    **Where to look:** docs/records/journal/015 § What broke and why · git show 3280ffe · git show 04fc16a
     **Why it matters:** the method is sound and the tool was not, which is a distinction worth being able to make
 
 - [ ] **Moved from `DECIDE.md` 2026-08-12 — `/decide` step 1** | M-program-corpus | **Walkthrough**: the six defects the corpus found, in the order it found them, with the program that met each one on screen. Three of them are one class — a narrowing that asks the world instead of the value — and the exercise is to be shown the *comment* beside each and decide whether you would have agreed with it
 
-    **Where to look:** archive/bootstrap-rs/heroes/src/{syntax/members.rs, types/contextual.rs, resolve/exprs.rs, emit/inst.rs, printer/fmt_expr.rs, types/calls.rs} · docs/journal/016
+    **Where to look:** archive/bootstrap-rs/heroes/src/{syntax/members.rs, types/contextual.rs, resolve/exprs.rs, emit/inst.rs, printer/fmt_expr.rs, types/calls.rs} · docs/records/journal/016
     **Why it matters:** the class this project keeps writing rules about, caught three times in one milestone by programs rather than by reading
 
 - [ ] **Moved from `DECIDE.md` 2026-08-12 — `/decide` step 1** | M-program-corpus | **Golden ratification**: `tests/golden/check/fixedbugs-variant-case-name-refused.hero`, `fixedbugs-at-marker-on-a-builtin.hero` and `tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero` — three cases named after defects, each carrying symptom, cause and date. Read the control in each, which is the half that makes the fix safe to assert
@@ -1147,12 +1147,12 @@ letting one through.
 
 - [ ] **M-struct-passing close — the offers** | M-struct-passing, mutation drill | **Three catch-all arms broke on one day.** Given `emit/convert.rs` before the fix — an arm for `Ty::Float(FloatKind::F64)` and a `_ => return` — predict what `to_i64` on an `f32` produces, and at what exit code, *before* reading the answer. Then say which of the project's flags could have caught it and why none did
 
-    **Where to look:** archive/bootstrap-rs/heroes/src/emit/convert.rs · docs/journal/018 § What broke and why
+    **Where to look:** archive/bootstrap-rs/heroes/src/emit/convert.rs · docs/records/journal/018 § What broke and why
     **Why it matters:** the answer turns on panel 021's zero-initialiser being a defence, not an oversight
 
 - [ ] **M-struct-passing close — the offers** | M-struct-passing, exit quiz | Four questions with numbers as answers: how many rustc errors did `Ty::F64` → `Ty::Float(FloatKind)` produce, and what does that number *mean*; why does the field probe take the field's **address**; why does `HERO_RET_F32` accept one C type where `HERO_RET_F64` accepts three; and which of `{int32_t; float}` / `{float; float}` against `{int32_t; int32_t}` actually breaks on arm64
 
-    **Where to look:** docs/panel/060 · docs/journal/018
+    **Where to look:** docs/panel/060 · docs/records/journal/018
     **Why it matters:** the last one is the question the panel's own brief got wrong
 
 - [ ] **M-struct-passing close — the offers** | M-selfhost-probe step 1 (panel 065) | The double-emit determinism test emits the same program twice with one binary and diffs the two files. Which of these regressions does it catch? (a) the emitter starts ordering `_desc` definitions by insertion instead of TyId, deterministically; (b) the emitted C mentions the output path; (c) a map with a random seed enters the emitter. One of the three passes it silently
@@ -1167,7 +1167,7 @@ letting one through.
 
 - [ ] **M-struct-passing close — the offers** | M-selfhost-probe close | **The milestone's /learn offers, all optional**: (a) walkthrough of `selfhost/` — eleven files that mirror the Rust lexer one idea per file, readable in one sitting; (b) golden ratification — the 5 cases marked `# UNVERIFIED — pending debrief` (4 in selfhost/lexer.hero, 1 in selfhost/number.hero) plus the two order-pinning goldens from panel 065; (c) mutation drill on the ported lexer (break one scanner, watch which of the 55 tests names it); (d) exit-quiz on measurement 009's twelve gaps — which three would you have predicted, and which one has a real cost
 
-    **Where to look:** selfhost/ · docs/measurements/009-selfhost-readiness.md · docs/journal/020-selfhost-probe.md
+    **Where to look:** selfhost/ · docs/measurements/009-selfhost-readiness.md · docs/records/journal/020-selfhost-probe.md
     **Why it matters:** the author's call, never convened by the assistant
 
 - [ ] **M-struct-passing close — the offers** | M-selfhost-port, the declaration knot (parse_decl.hero) | **The group is flattened in the parser and nowhere else.** `extern "m.h" link "m"` with 3 signatures under it: how many `ast.Decl` values does `file` push, and what do all 3 carry that an ordinary declaration's `header` field answers with `fail`?
@@ -1447,7 +1447,7 @@ letting one through.
 
 - [ ] **M-struct-passing close — the offers** | M-harness-port | `heroes run tests/harness/main.hero -- ./build/heroes-seed` runs the net through the self-hosted compiler. Name the four configurations that were run, and say which one is "life after the archive"
 
-    **Where to look:** docs/journal/023-harness-port.md
+    **Where to look:** docs/records/journal/023-harness-port.md
     **Why it matters:** the milestone exists so that the archive is a move rather than an amputation, and only one of the four proves it
 
 - [ ] **M-struct-passing close — the offers** | M-harness-port | The `layout` check holds 17 files to the length they measure today rather than to §11's 300. Why is a ceiling-per-file the honest answer here, and what would a bare 300 have done on its first run?
@@ -1577,7 +1577,7 @@ letting one through.
 
 - [ ] **M-separate-compilation step 9 (the question that was the wrong question)** | `cursor.take_docs` decides whether a comment documents the declaration under it. It used to ask `line_col(text, offset)` for a LINE NUMBER, which counts newlines from byte 0. It now asks two other things and never learns a line number at all. The whole repair is that substitution, and it took `heroes check` on the compiler's own source from 88 s to 28. **The question**: what are the two things it asks instead, and why is neither of them expensive?
 
-    **Where to look:** selfhost/text_lines.hero (`newlines_between`, `column_of`, `lines_above`) · selfhost/cursor.hero (`take_docs`) · docs/journal/025
+    **Where to look:** selfhost/text_lines.hero (`newlines_between`, `column_of`, `lines_above`) · selfhost/cursor.hero (`take_docs`) · docs/records/journal/025
     **Why it matters:** it is the clearest case in the project of a cost that came from asking for more than you need, and the general rule is one sentence long
 
 - [ ] **M-separate-compilation step 9 (one shape, four places)** | `out.uses @ out.uses.push(v)` and `uses @ uses.push(v)` compile to different C: the first copies the whole array, the second grows it in place. The difference is that `out.uses` is a FIELD of a record and `uses` is a bare name. Four places in the compiler had the first form in a hot loop — the resolver's two arenas, the lexer's token array, and the scope table — and fixing all four took the check from 28 s to about 8. **The question**: why can the in-place store only fire on a bare name? What would it have to prove to fire on a field?
@@ -1607,7 +1607,7 @@ letting one through.
 
 - [ ] **M-argv-execution** | exit-quiz offer: which failure was POSIX-invisible and why — the stack, the CRLF, the depfile backslash, the pause utility
 
-    **Where to look:** docs/journal/026-argv-execution.md
+    **Where to look:** docs/records/journal/026-argv-execution.md
     **Why it matters:** four defects no Mac could ever show
 
 - [ ] **M-package-layout step 2** | Three vocabularies now describe one module: the PATH the machine opens (`geom/point.hero`), the MODULE that identifies it in a compilation (`geom/point`), the COMPONENT that reaches C (`geompoint`) and the BINDING a call writes (`point`). Given a file `syntax/decl.hero` used from the root, say which of the four each of these produces: `module_names.stem_of`, `module_names.component_of`, `module_names.binding_of`, and the `module` field of its `FileEntry`
@@ -1632,7 +1632,7 @@ letting one through.
 
 - [ ] **M-package-layout** | walkthrough offer: the three sittings of one day, in order — where a path starts (099), what happens when two paths end in the same word (100), and whether a path should bind its last part at all (101). The third refused a rule four seats approved
 
-    **Where to look:** docs/panel/099 · 100 · 101 · docs/journal/027-package-layout.md
+    **Where to look:** docs/panel/099 · 100 · 101 · docs/records/journal/027-package-layout.md
     **Why it matters:** the only day this project held three sittings on one clause, and the corpus priced the answer twice
 
 - [ ] **M-package-layout** | golden ratification offer: the milestone's adversarial cases — `use-has-a-path.hero` (four refusals, one of whose comments was measured false), `use-as-renames-it.hero`, and `fixedbugs-use-refusal-eats-the-next-line.hero`
@@ -1672,7 +1672,7 @@ letting one through.
 
 - [ ] **M-robustness-guards step 4** | `down(100000)` at `-O2` prints `100000`; `down(1000000)` at `-O2` panics. Which of these two sentences about clang follows from the pair — *it turned the recursion into a loop* or *it made each frame smaller* — and what single extra run would tell them apart?
 
-    **Where to look:** tests/golden/surface-fixtures/deep/main.hero (its comment) · docs/journal/031 § What surprised
+    **Where to look:** tests/golden/surface-fixtures/deep/main.hero (its comment) · docs/records/journal/031 § What surprised
     **Why it matters:** one measurement at one depth was written down as a property of the optimiser and was wrong
 
 - [ ] **M-robustness-guards step 4** | the handler runs on an ALTERNATE stack (`sigaltstack`) and Windows reserves one with `SetThreadStackGuarantee`. Say in one sentence why a handler for *the stack is full* cannot run on the stack, and where the name `main.down` in the message comes from when the stack it would walk is the one that overflowed
@@ -1747,7 +1747,7 @@ letting one through.
 
 - [ ] **M-c-callbacks** | walkthrough offer: the day in six steps, in order — the permission and the guard as one commit (because the guard protects exactly what the permission admits), the two `/decide` answers applied in the session that asked, a commit with **no code at all** that is only the record of what Windows and Linux answered, the spec sentence landing at the bound a seat had predicted before it was written, panel 112 refusing the word, and defect 013 repaired by changing the question
 
-    **Where to look:** docs/journal/033-c-callbacks.md · docs/panel/111, 112
+    **Where to look:** docs/records/journal/033-c-callbacks.md · docs/panel/111, 112
     **Why it matters:** the shape worth seeing is that the feature was 32 lines and the day was everything standing next to them
 
 - [ ] **M-c-callbacks** | golden ratification offer: the milestone's adversarial cases — `check/ffi-callback-position.hero` (the accepted form plus the three refused positions, each `#~` annotated), `run/ffi-callback-c-calls-back.hero` (the permission end to end, and the guard's QUIET direction), and the four `fixedbugs/` cases named after the defects that provoked them
@@ -1757,7 +1757,7 @@ letting one through.
 
 - [ ] **M-c-callbacks** | exit-quiz offer: the same program, `atexit` handed `nullptr`, does three different things on three machines. Name them, then say what that proves about where a compile-time refusal could ever have lived
 
-    **Where to look:** docs/journal/033-c-callbacks.md § What surprised · tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero
+    **Where to look:** docs/records/journal/033-c-callbacks.md § What surprised · tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero
     **Why it matters:** the answer is that NULL-tolerance is a property of the C library, not of the type and not even of the C function
 
 - [ ] **M-c-callbacks** | mutation drill offer: `heroes mutate` over the callback path, now that a function type may stand in an `extern` parameter and nowhere else — the interesting mutants are the ones that move a function type from a parameter into a result, an `@` out-parameter or an `extern constant`, which are the three refusals one argument covers

@@ -59,7 +59,7 @@ constant SITTINGS: str
 constant RECORD: [str]
     [
         "docs/panel"
-        "docs/journal"
+        "docs/records/journal"
         "docs/measurements"
         "docs/book"
         "tests/golden"
