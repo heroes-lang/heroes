@@ -222,7 +222,7 @@ constant REFUSED: [str]
 # direction: a new milestone reaches this number before it reaches a tag.
 #
 # **41 → 43 on 2026-09-02**, and it fired again exactly as designed: two
-# milestones were scheduled in `docs/work/SCHEDULED.md` (`M-corpus-coverage`
+# milestones were scheduled in `docs/work/SCHEDULED.md (retired 2026-09-12)` (`M-corpus-coverage`
 # and `M-selfhost-nesting`, both by author instruction) and this check named
 # them both as *a name with no row in the alias table* in the same run that
 # filed them. A milestone reaches this number before it reaches a tag, and
@@ -712,8 +712,8 @@ function run_all(scratch: str) -> report.Report?
     boundary(@r)
     verdicts(@r, present: walked)
     where_we_are(@r)
-    homed(@r)
-    lists(@r)
+    homed(@r, present: walked)
+    lists(@r, present: walked)
     tagged(@r, scratch: scratch)
     appended(@r, scratch: scratch)
     numbering(@r, present: walked)
@@ -2780,9 +2780,6 @@ constant DECISIONS: str
 
 # The list of work that already has a milestone. Read by `homed` below, which is
 # the executor of that file's own preamble rule.
-constant SCHEDULED: str
-    "docs/work/SCHEDULED.md"
-
 # The list of compiler defects that are still open. No instrument opened this
 # file at all until 2026-09-07, which is how it came to carry 2753 bytes of
 # prose about five defects that had already moved to the record.
@@ -3013,7 +3010,7 @@ function where_we_are(@r: report.Report)
     else
         report.keep_pass(@r)
 
-# **Every open item in `docs/work/SCHEDULED.md` names a milestone that has a row
+# **Every open item in `docs/work/SCHEDULED.md (retired 2026-09-12)` names a milestone that has a row
 # in `docs/ROADMAP.md` § The chain and is NOT closed** (author instruction
 # 2026-09-04; the rule is in that list's own preamble, this is what performs it).
 #
@@ -3033,16 +3030,22 @@ function where_we_are(@r: report.Report)
 # **The first field only.** Everything after the first `|` is prose and may name
 # any milestone it likes, closed ones included — that is how an item records the
 # home it used to have, which is what several of them now do.
-function homed(@r: report.Report)
+# **AND THE FILE IS NOW THE KEY**, since 2026-09-12. One milestone is one file
+# is one lane: the file named for a milestone carries that milestone's reasoning and its open
+# items, and two sessions working two milestones write two files with no line in
+# common. `docs/work/SCHEDULED.md (retired 2026-09-12)` held all 53 items of 22 milestones in one
+# ordered list until that day, so every filing touched the same file and, since
+# 2026-09-10, the same ORDER.
+#
+# What that buys this check is a second question it could not ask before: an
+# item's first field must equal the NAME OF THE FILE IT IS IN. In one list an
+# item could sit anywhere; here the file is its home, and a mis-filed item is
+# one a reader opening that milestone would never see.
+function homed(@r: report.Report, present: [str])
     chain = read_file("docs/ROADMAP.md")
-    list = read_file(SCHEDULED)
 
-    if chain.is_err() || list.is_err()
-        report.keep_failure(
-            @r,
-            label: "records/homes",
-            detail: "  docs/ROADMAP.md or " + SCHEDULED + " cannot be read"
-        )
+    if chain.is_err()
+        report.keep_failure(@r, label: "records/homes", detail: "  docs/ROADMAP.md cannot be read")
         return
     is_open: {str: bool} @ {}
 
@@ -3052,30 +3055,79 @@ function homed(@r: report.Report)
         if !found.is_err()
             is_open[found.must()] @ !strings.contains(text: row, needle: "| done ")
 
+    files = milestone_files(present)
+
+    if files.len() == 0
+        report.keep_failure(
+            @r,
+            label: "records/homes",
+            detail: "  `" + MILESTONES + "` holds nothing, so this check read zero items and\n  would pass whatever had been filed. Either the tree moved and this reader\n  did not follow it, or every milestone has been closed."
+        )
+        return
+
+    if is_among("docs/work/SCHEDULED.md", seen: present)
+        report.keep_failure(
+            @r,
+            label: "records/homes",
+            detail: "  `docs/work/SCHEDULED.md` is back, and two places now claim to hold the\n  scheduled work. It became `" + MILESTONES + "` on 2026-09-12, one file per\n  milestone; a list in two homes is the shape this repository's record is a\n  long account of."
+        )
+        return
     offenders: [str] @ []
 
-    for row in strings.lines(list.must())
-        if strings.starts_with(text: row, prefix: "- [ ] ")
+    for path in files
+        own = strings.without_suffix(text: strings.base_name(path), suffix: ".md")
+        text = read_file(path)
+
+        if text.is_err()
+            offenders @ offenders.push("    cannot read " + path)
+            continue
+        state = is_open[own]
+
+        if state.is_err()
+            offenders @ offenders.push("    " + own + ": no row in § The chain")
+
+        for row in strings.lines(text.must())
+            if !strings.starts_with(text: row, prefix: "- [ ] ")
+                continue
             home = item_milestone(row)
 
             if home.is_err()
-                offenders @ offenders.push("    names no milestone: " + head_of(row))
-            else
-                state = is_open[home.must()]
+                offenders @ offenders.push("    " + path + " names no milestone: " + head_of(row))
+                continue
 
-                if state.is_err()
-                    offenders @ offenders.push("    " + home.must() + ": no row in § The chain")
-                else if !state.must()
-                    offenders @ offenders.push("    " + home.must() + ": that milestone is CLOSED")
+            if home.must() != own
+                offenders @ offenders.push("    " + path + " holds an item filed at " + home.must())
+                continue
+            open_now = is_open[home.must()]
+
+            if open_now.is_err()
+                offenders @ offenders.push("    " + home.must() + ": no row in § The chain")
+            else if !open_now.must()
+                offenders @ offenders.push(
+                    "    " + home.must() + ": that milestone is CLOSED and still holds an open item"
+                )
 
     if offenders.len() > 0
         report.keep_failure(
             @r,
             label: "records/homes",
-            detail: "  an item scheduled at nothing a reader can open — the first field is a milestone with an open row (" + SCHEDULED + ", its preamble):\n" + offenders.join("\n")
+            detail: "  an item is filed where a reader would not find it — the first field is\n  the milestone whose FILE it lives in, and that milestone has an open row\n  in § The chain:\n" + offenders.join("\n")
         )
     else
         report.keep_pass(@r)
+
+# The one milestone list, and the tree that holds it.
+constant MILESTONES: str
+    "docs/milestones"
+
+function milestone_files(present: [str]) -> [str]
+    out: [str] @ []
+
+    for path in present
+        if strings.starts_with(text: path, prefix: MILESTONES + "/") && strings.ends_with(text: path, suffix: ".md")
+            out @ out.push(path)
+
+    return out
 
 # `| 35 | **M-declared-freer** | scheduled | …` — the milestone of a CHAIN row.
 #
@@ -3157,10 +3209,10 @@ function head_of(row: str) -> str
 # that describes items it does not hold reads exactly like a list that lost one.
 #
 # Four accusations, and each is a shape one of the three files has been in.
-function lists(@r: report.Report)
+function lists(@r: report.Report, present: [str])
     offenders: [str] @ []
 
-    for path in [DECISIONS, DEFECTS, SCHEDULED]
+    for path in shell.both(first: [DECISIONS, DEFECTS], second: milestone_files(present))
         text = read_file(path)
 
         if text.is_err()

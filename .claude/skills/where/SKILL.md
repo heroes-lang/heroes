@@ -38,7 +38,7 @@ cat docs/work/DEFECTS.md          # what is BROKEN right now
                                   #  after the author instituted the list: no skill read
                                   #  it, so an open defect was invisible in exactly the
                                   #  report the author asks for. CL-044.)
-cat docs/work/SCHEDULED.md        # open work, each item naming the milestone that does it
+cat docs/milestones/*.md          # open work, each item inside its own milestone's file
                                   # (this said `QUEUE.md` until 2026-08-26 — the RECORD,
                                   #  which holds only closed items and had held zero open
                                   #  ones since the 2026-08-12 split. The skill reported a
@@ -76,7 +76,7 @@ has never heard the word *compiler*. Rules:
 ### 4. Your turn — the author's pending items (never blocking)
 Summarize the **open** items of `docs/work/DECIDE.md` (what the compiler is
 waiting on), `docs/work/DEFECTS.md` (what is broken) and
-`docs/work/SCHEDULED.md` (work with a milestone), each with the file path and
+`docs/work/SCHEDULED.md (retired 2026-09-12)` (work with a milestone), each with the file path and
 why it is worth their time — the vocabulary file keeps the sentence for the
 commonest reason, that guessing a cause before reading the fix is where the
 value is. Make clear nothing is waiting on them to proceed.

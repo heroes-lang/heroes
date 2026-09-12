@@ -416,7 +416,7 @@ jobs:
       # than the thing holding the build up.
       #
       # This step ASSERTS rather than reports, and the choice was deliberate:
-      # `docs/work/SCHEDULED.md` recommended a reporting step, and a step that
+      # `docs/work/SCHEDULED.md (retired 2026-09-12)` recommended a reporting step, and a step that
       # only reports is a rule performed by nothing — CLAUDE.md §3's own story
       # about `DECIDE.md` growing to 391 KB, told again in a CI file.
       - name: The documented line, without the Windows flag, still compiles a module

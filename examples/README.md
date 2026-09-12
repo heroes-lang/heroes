@@ -25,7 +25,7 @@ which is where CLAUDE.md §9 says an invariant belongs — asserted over the cor
 rather than over cases somebody thought of. **Measured 2026-09-03: `heroes mutate`
 over this whole directory is refused today**, because it checks each file from its
 own directory and `shapes/`'s two nested modules are `unknown_module` from there;
-the fix is M-corpus-depth step 1 in `docs/work/SCHEDULED.md`, and until it lands
+the fix is M-corpus-depth step 1 in `docs/work/SCHEDULED.md (retired 2026-09-12)`, and until it lands
 the corpus score is the sum of one run per directory (measurement 014).
 
 A program must either test itself or bind C. A program that binds a C library is
@@ -148,7 +148,7 @@ What no suite asserts today: that a gallery file **builds** in the three
 configurations. `00-first.hero` is built by several surface rows and
 `09-holes.hero` is built to exit 1 on purpose; the other ten are checked and
 formatted and never lowered. That is filed at **M-publication-gate**
-(`docs/work/SCHEDULED.md`), where the site's claims about itself are made into
+(`docs/work/SCHEDULED.md (retired 2026-09-12)`), where the site's claims about itself are made into
 instruments — 148 of the site's 160 code slices come out of this directory,
 measured 2026-09-04. **It said M-corpus-depth until then**, and that milestone
 closed 2026-09-04 with this half unbuilt, which is the kind of citation that goes
