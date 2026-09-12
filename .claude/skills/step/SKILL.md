@@ -167,7 +167,10 @@ Milestone close — the checklist (this is its only copy):
   CLAUDE.md § 3);
 - append the closing block — the status paragraph and the milestone's chain entry —
   to `docs/records/journal/NNN-<slug>.md` § *What landed, and what carried forward*, and
-  leave `docs/ROADMAP.md` § Where we are at **≤15 lines**. The ROADMAP says what is
+  leave `docs/ROADMAP.md` § Where we are at **≤32 lines** (15 until 2026-09-12,
+  when the section stood at exactly 15 and the next legitimate line would have
+  gone red; `WHERE_CEILING` in `tests/harness/suite_records.hero` is the number
+  and carries the reason). The ROADMAP says what is
   *next*; a closed milestone's record is its journal. (It reached 935 lines before
   this rule existed, growing ~66 per close, and the reader met 512 lines about the
   past before the first line about the future.)

@@ -56,9 +56,18 @@ constant REGISTRY: str
 constant LEDGER: str
     "docs/measurements/010-spec-budget-ledger.md"
 
-# Measured 2026-08-24: 39 rows (the place store's row). Pinned for the reason the alias
-# table's is — it is the tripwire that makes a SILENTLY DROPPED row fail, which
-# comparing the newest row alone would not.
+# One row per spec amendment. Pinned for the reason the alias table's is — it is
+# the tripwire that makes a SILENTLY DROPPED row fail, which comparing the newest
+# row alone would not.
+#
+# **The count is not restated in this comment, since 2026-09-12.** It said
+# *"Measured 2026-08-24: 39 rows (the place store's row)"* while the constant
+# below read 69: the number moved thirty times and the sentence above it moved
+# never, so a reader met a date, a figure, and a witness that were all true of a
+# document thirty amendments ago. Nothing could catch it — design.md §1.6's own
+# rule is that a number may live in a second place only if it is CHECKED or
+# DATED, and prose beside the constant is neither, however dated it looks. The
+# constant is the count; `ledger` below is what holds it to the file.
 constant LEDGER_ROWS: i64
     69
 

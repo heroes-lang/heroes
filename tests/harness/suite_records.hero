@@ -224,6 +224,8 @@ constant REFUSED: [str]
         "M-grammar"
         "M-inline-grammar"
         "M-formal-syntax"
+        "M-ceiling-raise"
+        "M-numbers-that-move"
     ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
@@ -449,8 +451,14 @@ constant REFUSED: [str]
 # inside the spec. `REFUSED` gains its three runners-up: `M-grammar`, one word
 # where §14 asks for two; `M-inline-grammar`, which names where the productions
 # sit rather than what is delivered; and `M-formal-syntax`, which names the area.
+#
+# **79 -> 80 on 2026-09-12**, `M-declared-thresholds`, opened the same evening to
+# make every ceiling and floor say which way it may move. `REFUSED` gains two
+# runners-up: `M-ceiling-raise`, which names an act the milestone mostly refuses
+# — the spec's ceiling is left alone and no floor is raised — and
+# `M-numbers-that-move`, four words where §14 asks for two, naming the symptom.
 constant ROWS: i64
-    79
+    80
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
@@ -477,8 +485,34 @@ constant IGNORE_BATCH: i64
 
 # `/step`'s milestone-close number for § Where we are. A threshold with an
 # instrument behind it, which is the only kind that holds.
+#
+# **15 -> 32 by author instruction, 2026-09-12, and the number is ROUND on
+# purpose.** Measured that day: the section stood at exactly 15 of 15, so the
+# next line a close legitimately added would have gone red — the same shape
+# `CLAUDE.md` was in at 5491 of 5500. A threshold posted at the value measured
+# the day it was written has no room to be obeyed, and a check that cries wolf
+# is a check somebody turns off.
+#
+# **Round, because this one does not guard a budget.** `CONTRACT_CEILING` and
+# the spec's ceiling weigh a document a reader pays for, so their numbers are
+# measured. This one guards against a CLOSE THAT APPENDS a second block instead
+# of replacing the first, and for that an order of magnitude is the whole
+# requirement. The measured half of that job is done better by `mangled` above,
+# which sees the lost table head directly rather than inferring it from a line
+# count; this is the second net behind it, and a second net tensed to the
+# millimetre buys false reds and nothing else.
+#
+# **What the author should know, recorded rather than argued away**: the
+# section was **31 lines** when this check was written, and 31 is what the rule
+# was written to refuse (the case below still says so). 32 therefore re-admits
+# the length once judged pathological. The counter, and why the instruction
+# stands: what was 31 lines then was PROSE a close had appended, and what is 15
+# now is a TABLE — seven rows of state, three of structure, and a re-measured
+# paragraph. The shape changed under the number, so the old number is not
+# evidence about the new content. If the section ever reaches 32 as prose
+# again, the repair is the journal, not a bigger number.
 constant WHERE_CEILING: i64
-    15
+    32
 
 # **Italian function words, and the reason the list is ASCII only.** CLAUDE.md
 # §11's first line says the repository's working text is English. It said so
@@ -4272,15 +4306,27 @@ test "a citation that names a member is checked at its file, and that is the hol
     assert !is_claim(token: "commands/flags.rs::FLAGS", roots: roots)
     assert is_claim(token: without_member("selfhost/cli/flags.hero::flags()"), roots: roots)
 
+# **A SECOND ASSERT STOOD IN THE CASE BELOW UNTIL 2026-09-12.** It read
+# `assert WHERE_CEILING == 15`, under the words *"the ceiling is a number this
+# file states rather than one it remembers"* — and what it stated was the
+# constant against itself, declared in the same file. No defect could fail it:
+# not a wrong ceiling, which it would have agreed with, and not a broken count,
+# which the call in the case already catches. What it did do was demand a hand
+# edit at every raise, which is the cost `suite_layout.hero`'s ceiling table
+# paid twice in red CI legs before the same shape was retired there on this
+# same day.
+#
+# A number written twice earns its second copy by PROVING something about the
+# first — that a lookup reads it, say. This one proved that a constant equals
+# itself, so it is gone rather than raised.
 test "the ROADMAP's § Where we are is counted to its own ceiling"
     # The real file, which is the point: this check exists because the section
-    # was 31 lines against a 15-line rule nobody measured.
+    # was 31 lines against a rule nobody measured. The rule said 15 then and
+    # says 32 since 2026-09-12; the reason for both numbers is above
+    # `WHERE_CEILING`, which is the one place either is written.
     r: report.Report @ report.empty()
     where_we_are(@r)
     assert r.failed == 0
-
-    # And the ceiling is a number this file states rather than one it remembers.
-    assert WHERE_CEILING == 15
 
 # Whether git is deliberately not tracking this, or anything above it.
 # **`is_ignored` stood here until 2026-09-07**, walking a map of the ignored
