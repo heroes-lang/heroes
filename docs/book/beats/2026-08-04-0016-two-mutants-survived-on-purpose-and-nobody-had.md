@@ -1,0 +1,1 @@
+2026-08-04 | M3d | Two mutants survived on purpose and nobody had planned for it: turning a mutable cell into a plain binding is only a mistake if something later writes to it, so where nothing does, the mutation means exactly what the original meant. A panel had asked for a meaning-preserving counter-arm to keep the catch rate honest. It turned up inside an operator, uninvited.

@@ -716,6 +716,8 @@ function run_all(scratch: str) -> report.Report?
     appended(@r, scratch: scratch)
     numbering(@r)
     unmerged(@r, scratch: scratch)
+    rotated(@r, present: walked)
+    positions(@r, scratch: scratch, present: walked)
     return ok(r)
 
 # A MILESTONE IS TAGGED ONLY OVER A CLEAN LIST (author instruction
@@ -1028,7 +1030,6 @@ constant APPEND_ONLY: [str]
     [
         "DESIGN-LOG.md 5"
         "docs/work/DONE.md 34"
-        "docs/book/beats.md 6"
     ]
 
 function appended(@r: report.Report, scratch: str)
@@ -1301,6 +1302,223 @@ function unmerged(@r: report.Report, scratch: str)
         label: "records/unmerged",
         detail: "  a tracked file carries an unresolved merge conflict:\n" + files.join("\n") + "\n  Every other check here reads the marker as prose and passes. Resolve the\n  conflict in the file, then run this suite again."
     )
+
+# A ROTATED RECORD: the entries live one per file in a tree, and the file that
+# held them stays behind as a MAP with the line count it had.
+#
+# The map is what makes the rotation free of damage, and the damage it avoids is
+# the invisible kind. Measured 2026-09-12: this repository cites
+# `DESIGN-LOG.md:NNN` and `DESIGN-LOG:NNN` **133** times, `DONE.md:NNN` 28 times
+# and `ROADMAP.md:NNN` 19, and `.claude/rules/spec-shape.md` states the rule that
+# makes those dangerous — CL-037, *a line number is the one citation shape no
+# instrument can see*. Moving an entry out of a record would leave every one of
+# them pointing at whatever slid into its place, with the whole net green.
+#
+# So the entry moves and its LINE does not. A citation resolves to the line it
+# always named, and that line now says which file holds what it named. Better
+# than before, and this is the half worth having: the map can be CHECKED, which
+# is `positions` below, so 161 blind citations become 161 verified ones.
+#
+# Each row is `<map> <lines> <tree>`, the shape `DECIDED` uses in
+# `tests/harness/suite_layout.hero`. The line count is pinned rather than
+# derived: a map that grows is a map somebody appended to, and the entry they
+# appended is the one no citation can reach.
+constant ROTATED: [str]
+    [
+        "docs/book/beats.md 140 docs/book/beats"
+    ]
+
+function rotated(@r: report.Report, present: [str])
+    offences: [str] @ []
+
+    for entry in ROTATED
+        fields = strings.words(entry)
+
+        if fields.len() != 3
+            offences @ offences.push("    " + entry + " is not `<map> <lines> <tree>`")
+            continue
+        map_path = fields[0]
+        pinned = strings.to_number(fields[1]).default(0)
+        tree = fields[2]
+        text = read_file(map_path)
+
+        if text.is_err()
+            offences @ offences.push("    cannot read the map " + map_path)
+            continue
+        rows = strings.lines(text.must())
+
+        if rows.len() != pinned
+            offences @ offences.push(
+                "    " + map_path + " is " + rows.len().to_str() + " lines and was rotated at " + pinned.to_str() + ": a citation by line no longer lands where it did"
+            )
+
+        for row in rows
+            points_at = tree_path_in(row: row, tree: tree)
+
+            if points_at != "" && !is_among(points_at, seen: present)
+                offences @ offences.push("    " + map_path + " names " + points_at + ", which git does not track")
+
+        held: i64 @ 0
+
+        for path in present
+            if strings.starts_with(text: path, prefix: tree + "/")
+                held @ held + 1
+
+                if !is_entry_name(strings.base_name(path))
+                    offences @ offences.push(
+                        "    " + path + " is not named `YYYY-MM-DD-HHMM-<slug>.md`, and the directory is read in name order"
+                    )
+
+        if held == 0
+            offences @ offences.push(
+                "    " + tree + " holds nothing, so this check read zero entries and would pass whatever the record had lost"
+            )
+
+    if offences.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/rotated",
+            detail: "  a rotated record and its tree disagree:\n" + offences.join("\n") + "\n  The map keeps the line count the record had, so that every `<file>:NNN`\n  citation resolves to the entry it named (CL-037: a line number is the one\n  citation shape no instrument can see). A new entry is a NEW FILE in the\n  tree, never a line appended here."
+        )
+    else
+        report.keep_pass(@r)
+
+# The path a map row hands on, or the empty string. A row of a map is
+# `date | milestone | <tree>/<file>.md`, and the preamble above it names the
+# tree too — with a trailing slash and no file, which is why the `.md` is
+# required rather than the prefix alone.
+function tree_path_in(row: str, tree: str) -> str
+    at = strings.index_of(text: row, needle: tree + "/")
+
+    if at.is_err()
+        return ""
+    tail = row.slice(from: at.must(), to: row.len())
+    ends = strings.index_of(text: tail, needle: ".md")
+
+    if ends.is_err()
+        return ""
+
+    return tail.slice(from: 0, to: ends.must() + 3)
+
+# `YYYY-MM-DD-HHMM-<slug>.md`, and nothing else, because the directory is read
+# in NAME order and that order is what CLAUDE.md § RUN IT's *read forward* rests
+# on. The minute is a position rather than a clock reading for every entry
+# written before the rotation: a historical entry has no time, and two entries
+# of one day still have an order.
+function is_entry_name(name: str) -> bool
+    if !strings.ends_with(text: name, suffix: ".md")
+        return false
+
+    if name.len() < 20
+        return false
+    shape = "nnnn-nn-nn-nnnn-"
+    i: i64 @ 0
+
+    while i < shape.len()
+        want = shape[i]
+        byte = name[i]
+
+        if want == 'n' && (byte < '0' || byte > '9')
+            return false
+
+        if want == '-' && byte != '-'
+            return false
+        i @ i + 1
+
+    rest = name.slice(from: shape.len(), to: name.len() - 3)
+
+    if rest.len() == 0
+        return false
+    j: i64 @ 0
+
+    while j < rest.len()
+        byte = rest[j]
+        lower = byte >= 'a' && byte <= 'z'
+        digit = byte >= '0' && byte <= '9'
+
+        if !lower && !digit && byte != '-'
+            return false
+        j @ j + 1
+
+    return true
+
+# EVERY `<map>:NNN` CITATION IN THE TREE RESOLVES, AND WHAT IT RESOLVES TO
+# EXISTS.
+#
+# This is the check CL-037 says cannot exist, and it exists for one reason: the
+# map. A line number is unreadable while the thing it points into is prose, and
+# readable the moment that line is a path. So the 161 citations that no
+# instrument has ever looked at become the 161 this one does.
+#
+# It asks git for the citations rather than reading every file again:
+# `git grep -h -o` over the tracked paths is the same oracle `project_files`
+# uses, in one process.
+# One citation is written in many places — `beats.md:53` is cited from the
+# record and from the map's own neighbourhood — and the same broken line
+# reported four times reads as four defects. The offence is the LINE, not the
+# mention of it.
+function note_once(@offences: [str], text: str)
+    if !is_among(text, seen: offences)
+        offences @ offences.push(text)
+
+function positions(@r: report.Report, scratch: str, present: [str])
+    offences: [str] @ []
+
+    for entry in ROTATED
+        fields = strings.words(entry)
+
+        if fields.len() != 3
+            continue
+        map_path = fields[0]
+        stem = strings.without_suffix(text: strings.base_name(map_path), suffix: ".md")
+        text = read_file(map_path)
+
+        if text.is_err()
+            offences @ offences.push("    cannot read the map " + map_path)
+            continue
+        rows = strings.lines(text.must())
+        cited = shell.run(
+            scratch: scratch,
+            program: "git",
+            words: ["git", "grep", "-h", "-o", "-E", stem + "(\\.md)?:[0-9]+"]
+        )
+
+        if cited.is_err()
+            offences @ offences.push("    cannot ask git which lines of " + map_path + " are cited")
+            continue
+
+        for row in strings.lines(cited.must().out)
+            at = strings.index_of(text: row, needle: ":")
+
+            if at.is_err()
+                continue
+            number = strings.to_number(row.slice(from: at.must() + 1, to: row.len())).default(0)
+
+            if number == 0
+                continue
+
+            if number > rows.len()
+                note_once(
+                    @offences,
+                    text: "    " + strings.trimmed(row) + " is past the end of a " + rows.len().to_str() + "-line map"
+                )
+                continue
+            points_at = tree_path_in(row: rows[number - 1], tree: fields[2])
+
+            if points_at != "" && !is_among(points_at, seen: present)
+                note_once(
+                    @offences,
+                    text: "    " + strings.trimmed(row) + " lands on a line naming " + points_at + ", which git does not track"
+                )
+
+    if offences.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/positions",
+            detail: "  a citation by line number does not land where it claims:\n" + offences.join("\n") + "\n  A rotation keeps the map's line count so that these stay true. If one is\n  past the end, the map was appended to; if it lands on a missing file, an\n  entry was moved or deleted after the rotation."
+        )
+    else
+        report.keep_pass(@r)
 
 # No living file names a numbered milestone.
 #
@@ -3698,3 +3916,45 @@ test "the defect numbers this repository has issued carry no duplicate"
     r: report.Report @ report.empty()
     numbering(@r)
     assert r.failed == 0
+
+test "an entry file carries its day and its place in that day, and six names that do not"
+    assert is_entry_name("2026-08-03-0000-the-author-arrived.md")
+    assert is_entry_name("2026-09-12-2359-a.md")
+
+    # No minute: two entries of one day would then order by slug, and the order
+    # a directory is read in is what `read forward` rests on.
+    assert !is_entry_name("2026-08-03-the-author-arrived.md")
+
+    # No date at all, and a date that is not one.
+    assert !is_entry_name("the-author-arrived.md")
+    assert !is_entry_name("2026-8-3-0000-the-author-arrived.md")
+
+    # Upper case, which sorts before lower case and would put one entry of a
+    # day in front of the others.
+    assert !is_entry_name("2026-08-03-0000-The-Author.md")
+
+    # `README.md`, and this one is the rule rather than a shape: a directory
+    # index is a second place where truth lives, and the only tabulated index in
+    # this project drifted for nine closes in silence.
+    assert !is_entry_name("README.md")
+
+    # Not markdown at all.
+    assert !is_entry_name("2026-08-03-0000-the-author-arrived.txt")
+
+test "a map row hands on the path it names, and a row that names none says so"
+    row = "2026-08-03 | pre-M0 | docs/book/beats/2026-08-03-0000-the-author-arrived.md"
+    assert tree_path_in(row: row, tree: "docs/book/beats") == "docs/book/beats/2026-08-03-0000-the-author-arrived.md"
+
+    # The preamble names the tree with a trailing slash and no file, which is
+    # why the `.md` is required and the prefix alone is not enough.
+    preamble = "Every beat is one file in `docs/book/beats/`, and a new beat is a new file."
+    assert tree_path_in(row: preamble, tree: "docs/book/beats") == ""
+    assert tree_path_in(row: "", tree: "docs/book/beats") == ""
+
+# `rotated` and `positions` are not driven from a `test` block, and the reason
+# is worth writing down rather than leaving as an omission: both need the walk,
+# the walk needs a scratch directory, and a test that passes `"."` for one makes
+# the shell write `stdout`, `stderr` and `listing-project` into the repository
+# root. That is what happened here first. They are exercised where they belong,
+# by `run_all` over the real tree, and what a literal CAN drive — the name shape
+# and the row reader — is driven above.

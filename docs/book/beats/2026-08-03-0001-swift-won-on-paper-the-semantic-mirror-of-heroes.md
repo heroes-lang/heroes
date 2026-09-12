@@ -1,0 +1,1 @@
+2026-08-03 | pre-M0 | Swift won on paper (the semantic mirror of Heroes), lived for about an hour, and died to a one-line question from the author: "ma se devo usare QBE non è meglio scriverlo in C?" — which reopened the backend question instead.

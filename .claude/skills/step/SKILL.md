@@ -127,7 +127,12 @@ Milestone close — the checklist (this is its only copy):
 - journal `docs/journal/NNN-<slug>.md`, 3 sections: **goal** · **what
   surprised** (impersonal — shapes and rules, never scores) · **what broke
   and why**;
-- one story beat line in `docs/book/beats.md`;
+- one story beat, **a new file in `docs/book/beats/`** named
+  `YYYY-MM-DD-HHMM-<slug>.md` and holding the one line
+  `date | milestone | the beat`. Never a line appended to `docs/book/beats.md`,
+  which has been the MAP since 2026-09-12: it keeps the line count the record
+  had so that a `beats.md:NNN` citation still resolves, and `records/rotated`
+  goes red on a line added to it;
 - a DESIGN-LOG line per decision made;
 - **score every prediction whose milestone this is**, and lapse the ones you
   cannot: `grep -n "$(git describe --tags --abbrev=0)\|<this milestone>" docs/work/SCHEDULED.md

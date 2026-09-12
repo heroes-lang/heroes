@@ -1,0 +1,1 @@
+2026-08-03 | M0 | The uncued-essay prediction met the author's keyboard and lost. The protocol went low-typing: closed questions, clicks, dictation — retrieval kept, prose dropped. And the first prediction's divergence was the instructive kind: the predicted loop shape was the rotated form that real optimisers emit; the naive form won on purpose.

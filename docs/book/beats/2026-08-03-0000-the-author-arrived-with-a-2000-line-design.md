@@ -1,0 +1,1 @@
+2026-08-03 | pre-M0 | The author arrived with a 2000-line design document written with an AI in a long conversation, and asked for a plan "senza scrivere il compilatore". The first real decision was which language would write the language.
