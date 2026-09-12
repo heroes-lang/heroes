@@ -107,12 +107,19 @@ taking the suite from 15 checks to 20 and the net's own tests from 130 to 137.
 The ROADMAP falls from 2768 lines to 761 and from 58,318 tokens to 23,631; the
 three maps fall from 607,542 tokens to 162,206 between them.
 
-**The chain entry**: row 74, closed 2026-09-12, **untagged**. The list is not
-clean, by this milestone's own filing: `docs/work/DECIDE.md` carries one open
-decision that is not a sitting's ratification — whether § The chain may hold
-more than one `**OPEN**` row — so CLAUDE.md § Verification forbids the tag, and
-`records/tagged` would say so. The tag is the author's to place once that is
-settled, and it belongs on the commit that settles it.
+**The chain entry**: row 74, closed 2026-09-12, `m-rotated-records`. It stood
+untagged for one commit, which is the part worth keeping: the milestone filed the
+decision that blocked its own tag rather than taking it, because
+`site/src/lib/chain.ts` is outward-facing. The author answered the same day and
+took the recommendation, and the tag went on the commit that settled it, which is
+where CLAUDE.md § Verification puts it.
+
+**And settling it found the same assumption one level up.** Removing the throw
+was not the whole repair: `chainSection` wrote *"the open one is X"* from
+`rows.find`, so with two lanes the page would have named the first milestone and
+been silently wrong about the second. The page lists them all now, in both
+editions. A guard and the prose beside it had both been written when one open row
+was the only shape there was.
 
 **Carried forward**: the lane protocol is written (`.claude/rules/records.md`
 § Working in lanes) and is one decision short of usable. A second lane can hold
