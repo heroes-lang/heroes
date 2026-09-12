@@ -27,6 +27,17 @@ debt.
 per item, `- [ ] **<origin>** | <the question>`, then the body indented four
 spaces. Nothing lives outside the two banners.
 
+**A new item goes at the END, since 2026-09-12.** It went at the top until that
+day, which put every append on the same physical line — line 31, measured across
+the last eight commits that wrote here, seven of them with a hunk at `+31`. That
+is a fixed position as surely as an end-of-file is, and two sessions filing two
+questions collided there every time. Nothing above has moved: the items written
+before that date keep their order and their lines, so this file reads
+newest-first down to 2026-09-12 and oldest-first after it. **The count under the
+banner stays**, and it is the one line two sessions still share here; it is a
+line, not a file, and `records/lists` goes red on a wrong resolution rather than
+letting one through.
+
 *******************************************************************************
 **OPEN: 356**
 
