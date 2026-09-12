@@ -1,0 +1,1 @@
+2026-08-03 | Container representation + descriptor ABI fixed by spike 04 (header + inline elements, per-type descriptor struct) | decided by hand-written ASan-clean code before any compiler code | §4.10, §4.20 | 000

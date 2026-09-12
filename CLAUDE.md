@@ -65,7 +65,7 @@ question until somebody runs it (CL-061). Four shapes:
   *so*, *therefore*, *which means*. A negative claim rests on the searcher's
   vocabulary rather than the world, so *"X cannot be done"* goes out as a
   question naming what was searched for. A silence in the spec is often a
-  ruling: grep `DESIGN-LOG.md` and `docs/panel/` for what is not there.
+  ruling: grep `docs/log/` and `docs/panel/` for what is not there.
 - **The list is a measurement too** (CL-057). Enumerate from the world, and say
   where the enumeration came from wherever it is handed on. A recommendation is
   a claim about the option **set**: ask what would have to be true for a route
@@ -100,7 +100,7 @@ has exactly three exceptions, named in § 3.
 ## 1. Re-read protocol: what never to trust from memory
 - Read `spec/heroes-spec.md` in full at the start of every session; its budget
   is design.md §1.6's and `heroes measure` settles it. Then
-  `git log --oneline -10`, the `DESIGN-LOG.md` tail, `docs/ROADMAP.md` status.
+  `git log --oneline -10`, the newest entries of `docs/log/`, `docs/ROADMAP.md` status.
 - Re-read a shared record immediately before writing a scheduling fact into it,
   never from the session-start copy (CL-047).
 - Any asserted design rule cites its design.md section; an uncitable rule is a
@@ -168,7 +168,7 @@ Seats veto on soundness, and a veto is a refusal rather than a price. **Ask once
 per milestone, then convene without asking again**, choosing only the seats whose
 input differs (CL-023). Briefs keep every command short and grep design.md,
 `docs/panel/` and `DESIGN-LOG.md` first (CL-027). No design change lands without
-its `docs/panel/` file, a `DESIGN-LOG.md` line and its own commit.
+its `docs/panel/` file, a `docs/log/` entry and its own commit.
 
 ## 5. The Heroes subset of Rust, the Cyclone rule
 Spent at the fixpoint, kept as the record of what it bought (CL-021). The Rust
@@ -251,7 +251,7 @@ closure list compiles itself.
 ## 14. Documentation duty + git
 A step is not done without a commit, `M-<name> step <k>: <what>`, staging only
 this conversation's files by name (§ Hard stops). Per decision, a
-`DESIGN-LOG.md` line. Per milestone: a journal in `docs/journal/`, one story
+`docs/log/` entry. Per milestone: a journal in `docs/journal/`, one story
 beat as a file in `docs/book/beats/`, the ROADMAP status, and a local tag; **the push
 that would carry that tag is asked for** (CL-042). The close checklist lives in
 `/step`, its only copy.

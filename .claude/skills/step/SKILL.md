@@ -12,7 +12,7 @@ closed questions before implementing — only when the author explicitly asks
 for it before a step; no other ceremony attaches to it.)
 
 ## 1. Orient
-`git log --oneline -10` · DESIGN-LOG tail · `docs/ROADMAP.md` status · read
+`git log --oneline -10` · the newest files in `docs/log/` · `docs/ROADMAP.md` status · read
 `spec/heroes-spec.md` in full. If no step was named, take the next one from
 the ROADMAP.
 
@@ -133,7 +133,10 @@ Milestone close — the checklist (this is its only copy):
   which has been the MAP since 2026-09-12: it keeps the line count the record
   had so that a `beats.md:NNN` citation still resolves, and `records/rotated`
   goes red on a line added to it;
-- a DESIGN-LOG line per decision made;
+- one `docs/log/` entry per decision made, a new file named
+  `YYYY-MM-DD-HHMM-<slug>.md` and holding the line
+  `date | decision | reason | design.md § | panel`. `DESIGN-LOG.md` has been the
+  MAP since 2026-09-12 and is never appended to;
 - **score every prediction whose milestone this is**, and lapse the ones you
   cannot: `grep -n "$(git describe --tags --abbrev=0)\|<this milestone>" docs/work/SCHEDULED.md
   docs/measurements/010-spec-budget-ledger.md docs/panel/*.md`. (It named

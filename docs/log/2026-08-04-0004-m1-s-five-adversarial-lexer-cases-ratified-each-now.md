@@ -1,0 +1,1 @@
+2026-08-04 | M1's five adversarial lexer cases ratified; each now states what it guards against and the UNVERIFIED marker is dropped | author ratification, debrief 2026-08-04 — they defend one bet: whitespace carries meaning, so every "nearly right" margin is an error, never an interpretation | §4.15 | —

@@ -57,6 +57,7 @@ constant RECORD: [str]
         "tests/golden"
         "tests/emission"
         "DESIGN-LOG.md"
+        "docs/log"
         "docs/work/DONE.md"
         "docs/contract"
         "vendor"
@@ -1028,7 +1029,6 @@ function selects_suffix(entry: str, present: [str]) -> bool
 # right to. Below it is the record.
 constant APPEND_ONLY: [str]
     [
-        "DESIGN-LOG.md 5"
         "docs/work/DONE.md 34"
     ]
 
@@ -1326,6 +1326,7 @@ function unmerged(@r: report.Report, scratch: str)
 constant ROTATED: [str]
     [
         "docs/book/beats.md 140 docs/book/beats"
+        "DESIGN-LOG.md 1119 docs/log"
     ]
 
 function rotated(@r: report.Report, present: [str])
@@ -1383,22 +1384,37 @@ function rotated(@r: report.Report, present: [str])
     else
         report.keep_pass(@r)
 
-# The path a map row hands on, or the empty string. A row of a map is
-# `date | milestone | <tree>/<file>.md`, and the preamble above it names the
-# tree too — with a trailing slash and no file, which is why the `.md` is
-# required rather than the prefix alone.
+# The path a map row hands on, or the empty string.
+#
+# A PATH HAS NO SPACE IN IT, and that sentence is the whole function. The first
+# draft took everything from the tree's name to the first `.md`, and the map's
+# own preamble then read as a path: it names the tree, says `docs/log/`, and
+# mentions `design.md` nine words later, so the two were sewn into one name that
+# git does not track and the check reported the preamble as a missing entry. It
+# was right to fire and wrong about what it had found. So the name ends where a
+# name ends — at a space, a backtick or the end of the line — and only then is
+# it asked whether it is markdown.
 function tree_path_in(row: str, tree: str) -> str
     at = strings.index_of(text: row, needle: tree + "/")
 
     if at.is_err()
         return ""
     tail = row.slice(from: at.must(), to: row.len())
-    ends = strings.index_of(text: tail, needle: ".md")
+    end: i64 @ 0
 
-    if ends.is_err()
+    while end < tail.len()
+        byte = tail[end]
+
+        if byte == ' ' || byte == '`' || byte == '\t'
+            break
+        end @ end + 1
+
+    name = tail.slice(from: 0, to: end)
+
+    if !strings.ends_with(text: name, suffix: ".md")
         return ""
 
-    return tail.slice(from: 0, to: ends.must() + 3)
+    return name
 
 # `YYYY-MM-DD-HHMM-<slug>.md`, and nothing else, because the directory is read
 # in NAME order and that order is what CLAUDE.md § RUN IT's *read forward* rests
@@ -3950,6 +3966,15 @@ test "a map row hands on the path it names, and a row that names none says so"
     preamble = "Every beat is one file in `docs/book/beats/`, and a new beat is a new file."
     assert tree_path_in(row: preamble, tree: "docs/book/beats") == ""
     assert tree_path_in(row: "", tree: "docs/book/beats") == ""
+
+    # THE SHAPE THAT COST THIS FUNCTION ITS FIRST DRAFT. DESIGN-LOG.md's own
+    # preamble names its tree and then says `design.md` nine words later, and a
+    # reader that ran from the tree's name to the first `.md` sewed the two into
+    # one name git does not track — reporting the preamble as a missing entry.
+    # It fired correctly and described the wrong thing, which is the worst way
+    # for a check to be right.
+    sewn = "Every decision is one file in `docs/log/`, still `date | decision | reason | design.md § | panel`."
+    assert tree_path_in(row: sewn, tree: "docs/log") == ""
 
 # `rotated` and `positions` are not driven from a `test` block, and the reason
 # is worth writing down rather than leaving as an omission: both need the walk,
