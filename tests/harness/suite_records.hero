@@ -220,6 +220,9 @@ constant REFUSED: [str]
         "M-pinned-bytes"
         "M-fourth-platform"
         "M-arm-linux"
+        "M-grammar"
+        "M-inline-grammar"
+        "M-formal-syntax"
     ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
@@ -439,8 +442,14 @@ constant REFUSED: [str]
 # one commit. `REFUSED` gains `M-function-labels`, the runner-up, refused
 # because this milestone delivers the absence of labels at such a call rather
 # than their presence.
+#
+# **78 -> 79 on 2026-09-12**, `M-stated-grammar`, opened the day panel 133 sat
+# and the author raised §1.6's ceiling to 8192 to make room for the productions
+# inside the spec. `REFUSED` gains its three runners-up: `M-grammar`, one word
+# where §14 asks for two; `M-inline-grammar`, which names where the productions
+# sit rather than what is delivered; and `M-formal-syntax`, which names the area.
 constant ROWS: i64
-    78
+    79
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose

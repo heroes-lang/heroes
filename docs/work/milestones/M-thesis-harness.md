@@ -75,6 +75,12 @@ number. Corpus material is labelled and never enters the held-out set
     `+30` is in the same voided currency and needs the new instrument before the
     sitting reads it.
 
+    **Both figures moved again, 2026-09-12, and this line is the correction
+    rather than an edit to the one above**: the ceiling is **8192** by author
+    decision that day (design.md §1.6, panel 133), and `REAL_TOKENS` is **5716**,
+    so the free figure this item prices against is neither 40 nor 706. Re-measure
+    it when the sitting reads it; the currency has now been voided twice.
+
 - [ ] **M-thesis-harness** | what it depends on, and the author's decision on the seed tasks | `design.md` Part 11 · `docs/measurements/007` · `docs/panel/011`
 
     **Origin:** author instruction 2026-09-03, scheduled `DESIGN-LOG.md:539`.

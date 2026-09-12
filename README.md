@@ -10,7 +10,7 @@
 
 <p align="center">
   the whole language in <b>fewer than 300 lines</b> &nbsp;&middot;&nbsp;
-  measured against a hard ceiling of <b>6144</b> spec tokens<br>
+  measured against a hard ceiling of <b>8192</b> spec tokens<br>
   <b>more than 50,000</b> lines of Heroes that compile themselves &nbsp;&middot;&nbsp;
   <b>0</b> bytes of difference at the fixpoint
 </p>
@@ -186,7 +186,7 @@ expired the day the compiler could build itself.
 The design rule is a cost formula: a construct's cost is its token count times
 one plus the rate at which a model rewrites it wrongly. Two of its three
 instruments have run. The first is the spec's measured size, held **under a hard
-ceiling of 6144** tokens by a test that fails the day it is crossed, counted by
+ceiling of 8192** tokens by a test that fails the day it is crossed, counted by
 two vendored BPE tables so that neither can hide its own drift, with every
 amendment's cost in `docs/measurements/010-spec-budget-ledger.md` and the
 standing figure in `docs/ROADMAP.md`. The second is a mutation-based check over
@@ -200,7 +200,7 @@ included.
 | file | what it is |
 |---|---|
 | `design.md` | the source of truth for the language, and the reasoning behind it |
-| `spec/heroes-spec.md` | the contract, budgeted at 6144 tokens measured by the tokeniser that reads it, a control instrument and never a tutorial |
+| `spec/heroes-spec.md` | the contract, budgeted at 8192 tokens measured by the tokeniser that reads it, a control instrument and never a tutorial |
 | `docs/ROADMAP.md` | the milestone chain, in execution order |
 | `DESIGN-LOG.md` | every decision, dated, one line, with its reason |
 | `docs/panel/` | the design reviews: five judges with differentiated inputs, their vetoes, and what lifted them |

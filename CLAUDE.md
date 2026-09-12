@@ -16,11 +16,10 @@ was dropped when this file was cut from 1247 lines on 2026-09-07: that change
 and its measurements are CL-069.
 
 **This file's own cost is measured, not estimated.** `heroes measure CLAUDE.md`
-is the number, and `tests/harness/suite_records.hero` pins a ceiling for it, so
-a session that grows the contract past it finds out from a red check rather than
-from a tired reader. The ceiling is the measured size plus room to amend, not a
-round figure: the target was the language's own 4096 and the honest result was
-higher, which is written down here rather than argued away (CL-069).
+is the number, and `tests/harness/suite_spec.hero` pins one and reports it as
+the `contract` check, so a session that grows the contract past it finds out
+from a red check rather than from a tired reader. The ceiling is the measured
+size plus room to amend, never a round figure, and why is CL-069.
 
 ## Hard stops
 
@@ -92,10 +91,13 @@ written down rather than left to the reader.
 5. **Process** (§ 3) and § Verification.
 6. **Conventions** (§ 11).
 
-Two consequences this file used to leave to the reader. *Never slow the compiler
-down* sits at rank 5, so a guard that closes a corruption class lands, with its
-cost measured and reported rather than argued. And *never stop mid-step to ask*
-has exactly three exceptions, named in § 3.
+Three consequences this file used to leave to the reader. *Never slow the
+compiler down* sits at rank 5, so a guard that closes a corruption class lands,
+with its cost measured and reported rather than argued. *Never stop mid-step to
+ask* has exactly three exceptions, named in § 3. And, author instruction
+2026-09-12: **take the most robust and production-ready resolution, never the
+easiest, the compromise, or the cheapest in tokens.** § 4 said it of a panel's;
+it binds every choice.
 
 ## 1. Re-read protocol: what never to trust from memory
 - Read `spec/heroes-spec.md` in full at the start of every session; its budget
@@ -171,16 +173,16 @@ input differs (CL-023). Briefs keep every command short and grep design.md,
 its `docs/panel/` file, a `docs/records/log/` entry and its own commit.
 
 ## 5. The Heroes subset of Rust, the Cyclone rule
-Spent at the fixpoint, kept as the record of what it bought (CL-021). The Rust
-it governed is `archive/bootstrap-rs/`, which nothing builds or lints, so it
-constrains no new code. What replaces it is the language: `selfhost/` is Heroes,
-where value semantics and the absence of references need no remembering.
+Spent at the fixpoint, and what it bought is CL-021. The Rust it governed is
+`archive/bootstrap-rs/`, which nothing builds, so it constrains no new code.
+What replaces it is the language: `selfhost/` is Heroes, where value semantics
+and the absence of references need no remembering.
 
 ## 6. Nim: copy the surface, never the implementation
 `importc`-style FFI, per-module cache, `nim r` becoming `heroes run`: yes.
 Macros, templates, effect systems, style-insensitive identifiers: never. The
-package-binary clause was retired for a false premise, and what it reached for
-is § 10's **never a second binary** (CL-015).
+package-binary clause was retired for a false premise; what it reached for is
+§ 10's **never a second binary** (CL-015).
 
 ## 7. Generated-C rules
 Home: `.claude/rules/generated-c.md`. In one line: the emitted C is C11 that
@@ -242,9 +244,9 @@ where: a goal of the language, not a tie-break of convenience (CL-012). It
 reaches furthest at the C boundary, `.claude/rules/c-boundary.md`.
 
 ## 13. Where not to go
-Performance as a **justification**: a non-goal, and not a licence either, since
-slowness is no more acceptable as a ceiling, and a cost that stops a needed
-program from running at all is compiler-need and goes to the panel (CL-006). A
+Performance as a **justification**: a non-goal, and not a licence, since
+slowness is no more acceptable; a cost that stops a needed program from running
+at all is compiler-need and goes to the panel (CL-006). A
 standard library. Anything in design.md Part 6. Anything in Part 7 before the
 closure list compiles itself.
 
@@ -261,10 +263,10 @@ Naming, release tags, the record vocabulary and **whose idea it was** are in
 falsified sentence is corrected underneath, with its date, never deleted.
 
 ## 15. Working instructions that lived in the assistant's memory until 2026-09-03
-Kept as a heading because the records cite it. Its contents were never a
-category, only a place they had landed, so each now sits in the section it
-amends. Their words and dates are CL-002, CL-010, CL-024, CL-025, CL-027,
-CL-035, CL-038, CL-042, CL-046, CL-047, CL-049, CL-050, CL-056 and CL-060.
+Kept as a heading because the records cite it; each instruction now sits in the
+section it amends. Their words and dates are CL-002, CL-010, CL-024, CL-025,
+CL-027, CL-035, CL-038, CL-042, CL-046, CL-047, CL-049, CL-050, CL-056 and
+CL-060.
 
 ## Verification
 **The three suites** are in § Commands. Their counts live in `docs/ROADMAP.md`

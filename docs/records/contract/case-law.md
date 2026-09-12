@@ -1405,6 +1405,23 @@ subagent to report its own context after reading one file under `selfhost/emit/`
   answered for free: panel 117's ergonomist seat saved its experiment as `.txt`
   and said in its verdict that the formatting hook had told it to.
 
+**Why the ceiling is not a round figure, moved here from the contract's preamble
+on 2026-09-12** under the repair the ceiling itself prescribes, *"move a story
+into `docs/records/contract/case-law.md`, never a bigger number"*: the target was
+the language's own 4096, and the honest result was higher. That is written down
+rather than argued away, and it is why `CONTRACT_CEILING` is the measured size
+plus room to amend instead of a number somebody liked the look of.
+
+**And the correction three paragraphs above finally reached the contract, on
+2026-09-12.** This entry recorded on 2026-09-07 that the sentence naming
+`tests/harness/suite_records.hero` was wrong and that the ceiling landed as
+`spec/contract` in `tests/harness/suite_spec.hero`. `CLAUDE.md` went on carrying
+the wrong suite for five days, because a correction written underneath in the
+record is not an edit to the document it corrects. The contract now names the
+suite that holds the constant, verified by grep on the day: `CONTRACT_CEILING`
+occurs in `tests/harness/suite_spec.hero` and in `selfhost/cli/measure.hero`,
+and nowhere in `suite_records.hero`.
+
 
 
 
