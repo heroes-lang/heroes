@@ -264,4 +264,30 @@ whole value is its isolation is worth nothing if the breach goes unwritten.
 
 ## Author's verdict
 
-Pending.
+**Ratified as adopted, 2026-09-12, and the queued question answered the same
+day.** The author raised §1.6's ceiling from 6144 to **8192** so the productions
+could go inside the document, which is R2 taken and R3 answered in the direction
+the sitting could not take for itself. The conservative resolution recorded above
+was not taken.
+
+A standing instruction came with it, and it now sits in `CLAUDE.md § Precedence`
+as the third consequence: **take the most robust and production-ready
+resolution, never the easiest, the compromise, or the cheapest in tokens.** § 4
+had said it of a panel's resolution since 2026-09-07; it binds every choice now.
+
+**What the ratification cost, measured rather than predicted.** The productions
+took the spec from 5716 to **7531** real tokens, digest `0b96e29b3ca14666`, so
+661 are free and 601 net of the FFI floor. The real delta is **1.60** times the
+vendored one where the whole document sits at 1.26: a grammar is dense
+punctuation and the reader's tokeniser splits it finer than either vendored
+table. R3's own arithmetic, which reasoned from the vendored lower bound, would
+have been 384 tokens low.
+
+**Two of the seats' conditions were resolved against them, and both are named
+rather than quietly dropped.** The ffi-pragmatist asked that `[ Generics ]` be
+kept in `ExternFunction` with a sentence explaining that it is dead; it was
+dropped instead, because a production nothing can use is not part of the
+language and documenting one invites a model to write it. The engineer's
+condition on the production check's exception table was resolved by not building
+that check at all: `suite_grammar.hero` judges the terminals and the powers,
+which are data, and nothing judges a production against the parser.
