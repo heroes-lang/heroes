@@ -26,7 +26,7 @@ the spec was 871 tokens over budget, for thirty-four days. You are the one seat
 that cannot grep for the true number, because grepping is what you are forbidden
 to do, so a stale constant here is unfalsifiable from the inside. The budget is
 the `spec-warden`'s question and design.md §1.6 is its home
-(`docs/contract/case-law.md` CL-069). Judge the prose you are given, not its
+(`docs/records/contract/case-law.md` CL-069). Judge the prose you are given, not its
 size.
 
 Your method: **write the code, don't opine.** For each task, write the program

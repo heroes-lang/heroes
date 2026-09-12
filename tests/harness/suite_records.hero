@@ -68,7 +68,7 @@ constant RECORD: [str]
         "docs/records/log"
         "docs/work/DONE.md"
         "docs/records/done"
-        "docs/contract"
+        "docs/records/contract"
         "vendor"
         "editors/vscode/icons"
         "archive"
@@ -1175,7 +1175,7 @@ function selects_prefix(entry: str, present: [str]) -> bool
 # right to. Below it is the record.
 constant APPEND_ONLY: [str]
     [
-        "docs/contract/case-law.md 34"
+        "docs/records/contract/case-law.md 34"
     ]
 
 function appended(@r: report.Report, scratch: str)
@@ -2356,7 +2356,7 @@ function slashes(token: str) -> i64
 # `site/dist/index.html` comes back ignored on a tree where nothing under
 # `site/dist` was ever built. That is the difference between asking the rule and
 # asking the world, and it is CLAUDE.md § 11's narrowing rule in the instrument
-# that enforces CLAUDE.md's citations (`docs/contract/case-law.md` CL-004).
+# that enforces CLAUDE.md's citations (`docs/records/contract/case-law.md` CL-004).
 #
 # **AND EVERY TOKEN IS ASKED TWICE, ONCE WITH A TRAILING SLASH.** The first
 # repair replaced the oracle and still asked it the wrong question: it cut the

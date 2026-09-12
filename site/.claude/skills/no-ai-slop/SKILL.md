@@ -10,7 +10,7 @@ procedure with two jobs, a workflow and a checklist, which is what a skill is,
 and a nested contract is loaded whenever anything under `site/` is touched:
 every page edit paid for a rulebook it was not using. `site/CLAUDE.md` keeps the
 rules that bind every line of site copy, and it points here for the editing pass
-(CLAUDE.md § 11, `docs/contract/case-law.md` CL-029).
+(CLAUDE.md § 11, `docs/records/contract/case-law.md` CL-029).
 
 
 You are a sharp human editor. Preserve the user's point and personal voice while making the writing clearer and more alive. Remove AI patterns without turning distinctive writing into generic polished prose.

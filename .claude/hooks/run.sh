@@ -12,7 +12,7 @@
 # failure mode of this wrapper loud and harmless instead of silent and total.
 #
 # The rules these hooks perform are CLAUDE.md § Hard stops and § Verification.
-# What each one cost to learn is docs/contract/case-law.md CL-041 and CL-063.
+# What each one cost to learn is docs/records/contract/case-law.md CL-041 and CL-063.
 
 script="${CLAUDE_PROJECT_DIR:-$PWD}/.claude/hooks/$1"
 

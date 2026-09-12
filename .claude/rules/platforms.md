@@ -10,7 +10,7 @@ paths:
 # The three platforms
 
 Home of CLAUDE.md § Verification's platform rules since 2026-09-07. What each
-rule cost to learn is in `docs/contract/case-law.md`, cited as `CL-NNN`.
+rule cost to learn is in `docs/records/contract/case-law.md`, cited as `CL-NNN`.
 
 ## A platform fact is run on a platform, or it is an inference
 

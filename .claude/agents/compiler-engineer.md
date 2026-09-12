@@ -21,7 +21,7 @@ Your questions, in order:
    asked for *"the actual Rust tree"* until 2026-09-07, nineteen days after that
    tree was archived, while this line already said `selfhost/`. A seat sent to
    the archive measures a compiler that no longer ships, and four of panel 087's
-   five seats died on exactly that (`docs/contract/case-law.md` CL-026).
+   five seats died on exactly that (`docs/records/contract/case-law.md` CL-026).
 3. Does it still fit one person? (Pascal-P4 is ~4000 lines; that is the scale.)
 
 You hold a **veto**, exercised only if the proposal adds a core construct or

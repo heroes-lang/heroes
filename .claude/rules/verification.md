@@ -11,7 +11,7 @@ paths:
 # Which suites judge a change, and what may run beside them
 
 Home of CLAUDE.md § Verification's two additions of 2026-09-09 (author
-instruction). What each rule cost to learn is in `docs/contract/case-law.md`,
+instruction). What each rule cost to learn is in `docs/records/contract/case-law.md`,
 cited as `CL-NNN`. § Verification keeps the rules; this file keeps the map and
 the reasoning, because a map is long and a rule is short.
 

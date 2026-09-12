@@ -43,7 +43,7 @@ in this project can see. **`DEFECTS.md` was missing from this list until
 2026-09-07**, four days after the author instituted it, so no skill read or
 wrote the fourth list and an open defect was invisible in `/where`'s own status
 report: CLAUDE.md § 3's story about a rule with no executor, told about § 3's
-own list (`docs/contract/case-law.md` CL-044).
+own list (`docs/records/contract/case-law.md` CL-044).
 
 **The shape of a filed item, since 2026-09-07:** one line of three fields,
 `- [ ] **<first field>** | <what, in one line> | <where to look>`, then an
@@ -65,14 +65,14 @@ fails when any of it is not done.
   asynchronously: adopt **the provisional resolution CLAUDE.md § 4 requires**,
   the most robust and complete one and never the cheapest, then queue the
   ratification. This line said *the conservative default* until 2026-09-07
-  (`docs/contract/case-law.md` CL-040). **Ask once per milestone**, then convene
+  (`docs/records/contract/case-law.md` CL-040). **Ask once per milestone**, then convene
   without asking again.
 - Write the code and the golden cases. Mark the milestone's 5 adversarial
   cases `# UNVERIFIED — pending debrief`; label bulk regression cases.
 - **Format at the moment of writing**, `heroes fmt <file> --in-place`. Two of
   the four failures that stopped a full net on 2026-09-06 were a file written
   and not formatted, which costs nothing here and thirteen minutes there
-  (`docs/contract/case-law.md` CL-063). A `PostToolUse` hook notices it too.
+  (`docs/records/contract/case-law.md` CL-063). A `PostToolUse` hook notices it too.
 - Run the tests. **The gate for a SUB-STEP is the named suites, one at a time,
   plus the compiler's own tests and the net's own tests**; the full net runs
   once before a push and not at every commit (CLAUDE.md § Verification, CL-063).
@@ -163,7 +163,7 @@ Milestone close — the checklist (this is its only copy):
   put them to the author**. `/learn` is never convened by the assistant, not at
   a milestone close and not as a suggestion at the end of a step; this bullet
   and that rule used different verbs for the same act until 2026-09-07
-  (`docs/contract/case-law.md` CL-044 is the neighbouring shape, and the rule is
+  (`docs/records/contract/case-law.md` CL-044 is the neighbouring shape, and the rule is
   CLAUDE.md § 3);
 - append the closing block — the status paragraph and the milestone's chain entry —
   to `docs/records/journal/NNN-<slug>.md` § *What landed, and what carried forward*, and
@@ -183,5 +183,5 @@ Milestone close — the checklist (this is its only copy):
   `examples/`, `spec/heroes-spec.md` or `selfhost/keywords.hero`, so a close
   that followed this checklist to the letter published the site without asking. The push is asked for, with how many site
   commits would travel, and it carries the tag when the author says yes
-  (CLAUDE.md § Hard stops, `docs/contract/case-law.md` CL-042);
+  (CLAUDE.md § Hard stops, `docs/records/contract/case-law.md` CL-042);
 - site build log: only when the author asks (`site/README.md`).

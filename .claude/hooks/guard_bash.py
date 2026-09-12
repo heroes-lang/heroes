@@ -5,7 +5,7 @@ Why this exists. Those refusals were prose from 2026-09-03 to 2026-09-07, and
 measured on the day it was written, `.claude/settings.local.json` on this machine
 allow-listed `git add *`, `git commit *` and `git push *`, so all three of the
 categorical git refusals were pre-approved and nothing ever checked them
-(docs/contract/case-law.md CL-041). A rule performed by nothing is not a rule.
+(docs/records/contract/case-law.md CL-041). A rule performed by nothing is not a rule.
 
 Contract with the harness: read the tool call as JSON on stdin, look at
 `tool_input.command`, and exit 2 with the reason on stderr to block. Exit 0
@@ -199,7 +199,7 @@ def verdict(command):
         # commit that named fourteen paths carried sixteen, the two extra being
         # files a parallel session had staged in this shared checkout, and the
         # commit body said in so many words that they were not in it
-        # (docs/contract/case-law.md CL-070). The rule above it, CL-041, asks
+        # (docs/records/contract/case-law.md CL-070). The rule above it, CL-041, asks
         # for exactly what this prevents and its own procedure could not deliver
         # it. The pathspec is the only thing that limits a commit, so this guard
         # asks for the pathspec rather than for care.

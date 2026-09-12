@@ -256,7 +256,7 @@ function reported(path: str, here: str, readings: [Reading]) -> cli_table.Exit
 # not share.
 function room(path: str, highest: i64) -> str
     if path == CONTRACT
-        return "Headroom: " + (CONTRACT_CEILING - highest).to_str() + " against the contract's own " + CONTRACT_CEILING.to_str() + ", which is a ceiling and not a pin: the repair for crossing it is to move a story into docs/contract/case-law.md, never a bigger number."
+        return "Headroom: " + (CONTRACT_CEILING - highest).to_str() + " against the contract's own " + CONTRACT_CEILING.to_str() + ", which is a ceiling and not a pin: the repair for crossing it is to move a story into docs/records/contract/case-law.md, never a bigger number."
     left = CEILING - highest
 
     if path != SPEC

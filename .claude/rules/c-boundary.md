@@ -9,7 +9,7 @@ paths:
 # The C boundary
 
 Home of CLAUDE.md § 12's FFI half and § 7's clang-failure classes, since
-2026-09-07. What each rule cost to learn is in `docs/contract/case-law.md`,
+2026-09-07. What each rule cost to learn is in `docs/records/contract/case-law.md`,
 cited as `CL-NNN`.
 
 ## Why this boundary outranks the rest
