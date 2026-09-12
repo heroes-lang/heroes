@@ -28,7 +28,7 @@ file is write-only, which is the failure mode of every list nobody is obliged to
 open.
 
 **Every item that gets done in the step is ticked with what closed it and MOVED
-to a NEW FILE in `docs/done/` before the commit** (never a line appended to
+to a NEW FILE in `docs/records/done/` before the commit** (never a line appended to
 `docs/work/DONE.md`, which has been the map since 2026-09-12). A live list holds open items only;
 the record holds everything else. That rule existed in three documents and in no
 skill until 2026-08-26, and by then `docs/work/DECIDE.md` held 138 ticked items

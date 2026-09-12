@@ -67,7 +67,7 @@ constant RECORD: [str]
         "DESIGN-LOG.md"
         "docs/records/log"
         "docs/work/DONE.md"
-        "docs/done"
+        "docs/records/done"
         "docs/contract"
         "vendor"
         "editors/vscode/icons"
@@ -1283,7 +1283,7 @@ function hunk_start(row: str) -> i64
 constant DEFECT_NUMBERED: [str]
     [
         "docs/work/DEFECTS.md"
-        "docs/done"
+        "docs/records/done"
     ]
 
 # The one number this record carries twice, named and dated instead of letting
@@ -1505,7 +1505,7 @@ constant ROTATED: [str]
     [
         "docs/records/book/beats.md 140 docs/records/book/beats"
         "DESIGN-LOG.md 1119 docs/records/log"
-        "docs/work/DONE.md 4071 docs/done"
+        "docs/work/DONE.md 4071 docs/records/done"
     ]
 
 function rotated(@r: report.Report, present: [str])
