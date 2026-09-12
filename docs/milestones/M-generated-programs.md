@@ -250,7 +250,7 @@ milestone deliberately leaves to a later one.
     lives.
 
     **Where to look also:** `tests/harness/suite_run.hero` ·
-    `docs/environment/linux/LINUX-MACHINE.md` · `docs/panel/114` R6.
+    `docs/ref/environment/linux/LINUX-MACHINE.md` · `docs/panel/114` R6.
     **Why it matters:** the leg this project names as its judge for a C leak is
     the one leg whose optimisation level can delete the evidence.
 

@@ -34,7 +34,7 @@ owed since August was run against the upstreams rather than against this
 project's recollection, and it disagreed: `openai/tiktoken` is MIT as recorded,
 but `anthropics/anthropic-tokenizer-typescript` carries a **MIT** `LICENSE` and
 a `package.json` declaring **Apache-2.0** in the same archived commit, where
-`NOTICE` said MIT alone. And `docs/environment/windows/WINDOWS-MACHINE.md`
+`NOTICE` said MIT alone. And `docs/ref/environment/windows/WINDOWS-MACHINE.md`
 published a rented machine's tailnet address, login user, key path and OS build,
 which is a targeting profile rather than a credential and is redacted to its
 shape.
