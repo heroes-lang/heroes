@@ -4,7 +4,7 @@
 Why this exists. Measured over one session on 2026-09-06, the full net ran eight
 times and four runs found something; two of those four were a file written and
 not passed through `heroes fmt`, which costs nothing to prevent and thirteen
-minutes to discover (docs/contract/case-law.md CL-063). CLAUDE.md § Verification
+minutes to discover (docs/records/contract/case-law.md CL-063). CLAUDE.md § Verification
 says to format at the moment of writing, and this is what performs it.
 
 It NOTICES and does not rewrite. A suite reading the tree owns the tree until it

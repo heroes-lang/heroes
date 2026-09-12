@@ -135,7 +135,7 @@ constant SPEC_DIGEST: str
 # correct rule in the shape of a diary. Claude Code's own documentation asks for
 # under 200 lines and warns that a longer file reduces adherence, so the cost is
 # not academic. It is 322 lines now, with the stories moved to
-# `docs/contract/case-law.md` and the tree-local rules to `.claude/rules/`.
+# `docs/records/contract/case-law.md` and the tree-local rules to `.claude/rules/`.
 #
 # **A CEILING and not a pinned equality, which is the opposite of `SPEC_TOKENS`
 # above, deliberately.** The spec is budget-governed to the token, so any delta
@@ -290,7 +290,7 @@ function contract(@r: report.Report, scratch: str, compiler: str, ceiling: i64)
         report.keep_failure(
             @r,
             label: "spec/contract",
-            detail: "  " + CONTRACT + " measures " + measured.must().to_str() + " tokens against a ceiling of " + ceiling.to_str() + " — over by " + (measured.must() - ceiling).to_str() + ".\n  Every session loads all of it on every turn, the five panel seats included,\n  and a longer contract is one whose rules are followed less: that is what the\n  1247-line, 22689-token file of 2026-09-07 cost, against 3871 for the whole\n  language.\n  The repair is not a bigger number. Move the STORY of a rule into\n  docs/contract/case-law.md and leave the rule citing its entry, or move a rule\n  that binds one part of the tree into .claude/rules/, where it loads only when\n  that part is touched. Raising CONTRACT_CEILING is an author decision and goes\n  in the commit body with its reason."
+            detail: "  " + CONTRACT + " measures " + measured.must().to_str() + " tokens against a ceiling of " + ceiling.to_str() + " — over by " + (measured.must() - ceiling).to_str() + ".\n  Every session loads all of it on every turn, the five panel seats included,\n  and a longer contract is one whose rules are followed less: that is what the\n  1247-line, 22689-token file of 2026-09-07 cost, against 3871 for the whole\n  language.\n  The repair is not a bigger number. Move the STORY of a rule into\n  docs/records/contract/case-law.md and leave the rule citing its entry, or move a rule\n  that binds one part of the tree into .claude/rules/, where it loads only when\n  that part is touched. Raising CONTRACT_CEILING is an author decision and goes\n  in the commit body with its reason."
         )
     else
         report.keep_pass(@r)
@@ -1161,7 +1161,7 @@ test "the contract's ceiling fires, and a ceiling above it does not"
 
     # The message has to send the reader to the two places a rule can move to,
     # because "make the number bigger" is the wrong repair and the obvious one.
-    assert strings.contains(text: over.failures[0], needle: "docs/contract/case-law.md")
+    assert strings.contains(text: over.failures[0], needle: "docs/records/contract/case-law.md")
     assert strings.contains(text: over.failures[0], needle: ".claude/rules/")
 
     under: report.Report @ report.empty()

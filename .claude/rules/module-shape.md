@@ -9,7 +9,7 @@ paths:
 # The shape of a file, and what a narrowing may rest on
 
 Home of CLAUDE.md § 11's code conventions since 2026-09-07. What each rule cost
-to learn is in `docs/contract/case-law.md`, cited as `CL-NNN`.
+to learn is in `docs/records/contract/case-law.md`, cited as `CL-NNN`.
 
 ## Code is written to be read
 

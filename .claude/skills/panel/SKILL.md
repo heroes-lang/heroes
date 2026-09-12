@@ -100,7 +100,7 @@ is a full panel.
      have been, so the author can choose it. This line read *the most
      conservative resolution* until 2026-09-07, four days after the author
      struck that word mid-sitting, and the two are not the same thing
-     (`docs/contract/case-law.md` CL-040). It is marked `provisional — author
+     (`docs/records/contract/case-law.md` CL-040). It is marked `provisional — author
      ratification pending`, records what a veto would compel, and appends an
      **open** item to `docs/work/DECIDE.md` naming the sitting as `panel NNN`.
      Work proceeds on the provisional

@@ -11,7 +11,7 @@ paths:
 # Diagnostics and goldens
 
 Home of CLAUDE.md § 8 and § 9 since 2026-09-07. What each rule cost to learn is
-in `docs/contract/case-law.md`, cited as `CL-NNN`.
+in `docs/records/contract/case-law.md`, cited as `CL-NNN`.
 
 ## Errors are a deliverable
 

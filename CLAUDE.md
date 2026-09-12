@@ -9,7 +9,7 @@ the chain; the skills are the process. One person is learning compilers here:
 comprehension is the objective, on the author's clock, never as a gate.
 
 **Each rule is written in exactly one place and everything else cites it.** What
-a rule COST to learn is one entry per rule in `docs/contract/case-law.md`, cited
+a rule COST to learn is one entry per rule in `docs/records/contract/case-law.md`, cited
 below as `CL-NNN`. Rules that bind one part of the tree live in
 `.claude/rules/` and load when it is touched (§ Where the rest lives). Nothing
 was dropped when this file was cut from 1247 lines on 2026-09-07: that change

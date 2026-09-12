@@ -95,4 +95,4 @@ records as **measured false**: 24 subjects of 792, 3.0%, over the 463 commits
 before the rename. `/decide` and `/where` were repaired in that same batch and
 this file was missed. No instrument caught it for twelve days, because the
 dead-citation check requires a `/` in the token and a bare `QUEUE.md` has none
-(`docs/contract/case-law.md` CL-031).
+(`docs/records/contract/case-law.md` CL-031).

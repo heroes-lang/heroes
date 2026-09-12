@@ -10,7 +10,7 @@ paths:
 
 Home of the rule the author gave on 2026-09-10, at M-anchored-spec: *the
 specification has a written form, and the form is checked*. What each rule here
-cost to learn is in `docs/contract/case-law.md`, cited as `CL-NNN`; what the
+cost to learn is in `docs/records/contract/case-law.md`, cited as `CL-NNN`; what the
 document IS and how big it may be are design.md §1.6's, reached by grep and
 never restated here.
 

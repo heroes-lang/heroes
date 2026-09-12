@@ -7,7 +7,7 @@ paths:
 # The tool surface
 
 Home of CLAUDE.md § 10 since 2026-09-07. What each rule cost to learn is in
-`docs/contract/case-law.md`, cited as `CL-NNN`.
+`docs/records/contract/case-law.md`, cited as `CL-NNN`.
 
 ## One command
 

@@ -10,13 +10,13 @@ paths:
 # The records
 
 Home of CLAUDE.md § 14's naming, vocabulary and release rules since 2026-09-07.
-What each rule cost to learn is in `docs/contract/case-law.md`, cited as
+What each rule cost to learn is in `docs/records/contract/case-law.md`, cited as
 `CL-NNN`.
 
 ## A record is never rewritten
 
 `docs/panel/`, `docs/records/journal/`, `docs/measurements/`, `docs/records/done/`,
-`docs/records/book/beats/`, `docs/contract/`, `tests/golden/`, `DESIGN-LOG.md`, every
+`docs/records/book/beats/`, `docs/records/contract/`, `tests/golden/`, `DESIGN-LOG.md`, every
 commit subject and the twelve legacy tags are append-only. Where a sentence in
 one has since been falsified, the correction is **added underneath**, with its
 date: a measurement that was right when it was taken is history, and a record

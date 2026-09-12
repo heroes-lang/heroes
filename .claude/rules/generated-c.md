@@ -10,7 +10,7 @@ paths:
 # Generated C
 
 Home of CLAUDE.md § 7 since 2026-09-07. What each rule cost to learn is in
-`docs/contract/case-law.md`; the entries are cited as `CL-NNN`.
+`docs/records/contract/case-law.md`; the entries are cited as `CL-NNN`.
 
 ## The shape of the file
 
