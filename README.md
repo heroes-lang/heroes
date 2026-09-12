@@ -18,7 +18,7 @@
 <p align="center">
   <a href="https://heroes-lang.org"><b>heroes-lang.org</b></a> &nbsp;&middot;&nbsp;
   <a href="spec/heroes-spec.md">The spec</a> &nbsp;&middot;&nbsp;
-  <a href="design.md">The design</a> &nbsp;&middot;&nbsp;
+  <a href="docs/design/design.md">The design</a> &nbsp;&middot;&nbsp;
   <a href="docs/ROADMAP.md">The chain</a> &nbsp;&middot;&nbsp;
   <a href="docs/records/journal/README.md">The journals</a> &nbsp;&middot;&nbsp;
   <a href="docs/panel/">The panels</a> &nbsp;&middot;&nbsp;
