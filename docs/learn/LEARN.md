@@ -39,7 +39,7 @@ line, not a file, and `records/lists` goes red on a wrong resolution rather than
 letting one through.
 
 *******************************************************************************
-**OPEN: 356**
+**OPEN: 360**
 
 - [ ] **M-interpolated-strings, walkthrough** | Read `selfhost/lex_interp.hero` and say, before opening `scan.hero`, how a `}` inside a map literal in a hole is told apart from the `}` that closes the hole, and where the number it is compared against comes from | `selfhost/lex_interp.hero` · `selfhost/state.hero` § Emitting | the skipping scan the sitting priced is free because bracket depth was already counted for the layout rule
 
@@ -1898,5 +1898,26 @@ letting one through.
     explicit worklist has no stack depth to run out of; a walk that must report
     *where* needs a C frame per level unless the path is carried in the list
     too — and that is the difference between the two numbers.
+
+- [ ] **M-rotated-records, walkthrough** | Open `tests/harness/suite_records.hero` at `removed_below` and say, before running anything, what it reports for a diff whose only hunk header is `@@ -3,7 +3,3 @@` and whose third line starts with `-`. Then say what `hunk_start` returns for a header it cannot read, and why that answer is the safe one rather than the tidy one.
+
+    **Origin:** M-rotated-records close, 2026-09-12. The loud direction
+    (`.claude/rules/module-shape.md`) is easy to agree with and hard to spot in
+    code: here it is one comparison.
+
+- [ ] **M-rotated-records, the count** | `docs/book/beats.md` was 140 lines before the rotation and is 140 lines after it. Say what the file holds now, and what would have broken if it had come out 141 — name the citation, not the check.
+
+    **Origin:** M-rotated-records close, 2026-09-12. It came out 141 on the
+    first attempt, with line 6 empty.
+
+- [ ] **M-rotated-records, a choice** | Two sessions each file a defect on the same trunk, and both read *the next number to issue is 029* in the preamble. Say which of these the merge produces: (a) a conflict git refuses, (b) two defects numbered 029 and a clean merge, (c) `records/lists` going red. Then say which check exists because the answer is not (a).
+
+    **Origin:** M-rotated-records close, 2026-09-12. `014` is in the record
+    twice, and no parallel session was involved.
+
+- [ ] **M-rotated-records, the refusal** | `DESIGN-LOG.md` keeps its 1119 lines instead of being deleted. Say what would have gone wrong if it had been deleted and every citation repointed instead — and why *repoint them all* is not available, in one sentence about `docs/panel/`.
+
+    **Origin:** M-rotated-records close, 2026-09-12. This is CL-069's shape one
+    level down, and the same answer.
 
 *******************************************************************************
