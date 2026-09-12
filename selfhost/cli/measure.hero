@@ -34,8 +34,7 @@
 use cli/io
 use cli/argv
 use cli/digest
-use cli/count_tokens
-use cli/refresh
+use measure/pinned
 use cli/table as cli_table
 use measure/bpe
 use measure/pieces
@@ -67,33 +66,6 @@ constant VENDOR: str
 # over a SET is not a property of the document.
 constant CEILING: i64
     8192
-
-# THE RECORD: the reader's own count, refreshed by hand and never by a check
-# (panel 123 R1 and R5). The gate may not touch the network — design.md Part
-# 11 metric 1 forbids it in as many words, and the repository being public
-# means GitHub passes no secrets to a fork's pull request, so a key-gated
-# check is structurally red on every fork PR forever. So the number is
-# recorded, with the model that produced it and the day it was taken, and
-# `heroes measure --refresh` is what goes and asks. It is the shape Bazel's
-# `sha256`, pip's hash-checking mode and Nix's fixed-output derivations all
-# take, and Go's `toolchain` line is the precedent for writing the
-# instrument's name beside the pinned data, *"for reproducibility"*.
-#
-# THE DIGEST IS WHAT MAKES A STALE RECORD LOUD. It is the spec's content
-# hash, and when it does not match the file in hand the verdict is WITHHELD
-# rather than computed — because a headroom sentence against a stale count is
-# the exact sentence that cost this project 998 tokens.
-constant REAL_TOKENS: i64
-    5716
-
-constant REAL_MODEL: str
-    "claude-opus-5"
-
-constant REAL_TAKEN: str
-    "2026-09-12"
-
-constant SPEC_DIGEST: str
-    "35968b435ed519d7"
 
 # THE SOFT LINE IS RETIRED, and it is the named removal that pays for the
 # raise above (panel 123 R7). It was 2000, set when the spec measured 2231 on
@@ -159,7 +131,7 @@ function run(inv: argv.Invocation) -> cli_table.Exit
         return .failed_exit
 
     if argv.has(inv, spelling: "--refresh")
-        return run_refresh(path: path, text: text.must())
+        return pinned.run_refresh(path: path, text: text.must(), spec: SPEC)
     parts = pieces.pieces_of(text.must())
     readings: [Reading] @ []
 
@@ -226,23 +198,42 @@ function reported(path: str, here: str, readings: [Reading]) -> cli_table.Exit
     )
 
     if path == SPEC
-        if here != SPEC_DIGEST
+        if here != pinned.SPEC_DIGEST
             print("")
-            print("STALE: the recorded count is for " + SPEC_DIGEST + " and this file is " + here + ".")
+            print("STALE: the recorded count is for " + pinned.SPEC_DIGEST + " and this file is " + here + ".")
             print("Run `heroes measure " + path + " --refresh` and paste what it prints.")
             print("No verdict is given against a stale count: that is the sentence that")
             print("spent 998 tokens nobody had (docs/measurements/023).")
             return .diagnostics_exit
         print(
-            "  " + padded(text: "real", width: 16) + " " + aligned(number: REAL_TOKENS, width: 6) + "   " + REAL_MODEL + ", " + REAL_TAKEN + " — the binding number"
+            "  " + padded(text: "real", width: 16) + " " + aligned(number: pinned.REAL_TOKENS, width: 6) + "   " + pinned.REAL_MODEL + ", " + pinned.REAL_TAKEN + " — the binding number"
         )
     print("")
 
+    # A PATH WITH NO REGISTERED CEILING IS NOT JUDGED, and saying so is the
+    # repair panel 133 filed (2026-09-12). Until that day this branch weighed
+    # the VENDORED maximum against `CEILING`, which has been a `claude-opus-5`
+    # REAL number since 2026-09-09 — the wrong ceiling and the wrong scale at
+    # once, the scale error being the 26% gap the spec itself shows (5716 real
+    # against 4521 vendored). So `heroes measure design.md` answered **"BREACH:
+    # 64490 over the 6144-token ceiling (design.md §1.6)"** and exited 1, while
+    # §1.6 says in its own words that *"The spec has a budget; the compiler does
+    # not"*. A false verdict, citing the section that refutes it. The other half
+    # was quieter and worse: a draft measured here printed "Headroom: 3241", a
+    # number a later session could quote as permission to spend it.
+    #
+    # The sentence printed instead is the one `run_refresh` below already gives
+    # for the same reason, and the two now agree.
+    if path != SPEC && path != CONTRACT
+        print("No ceiling judges `" + path + "` and no check keeps it honest")
+        print("(panel 123 R5), so this is a count and not a verdict.")
+        print("The two documents that are judged are `" + SPEC + "` and `" + CONTRACT + "`.")
+        return .ok_exit
     ceiling: i64 @ CEILING
     judged: i64 @ highest
 
     if path == SPEC
-        judged @ REAL_TOKENS
+        judged @ pinned.REAL_TOKENS
 
     if path == CONTRACT
         ceiling @ CONTRACT_CEILING
@@ -264,49 +255,23 @@ function reported(path: str, here: str, readings: [Reading]) -> cli_table.Exit
 function room(path: str, highest: i64) -> str
     if path == CONTRACT
         return "Headroom: " + (CONTRACT_CEILING - highest).to_str() + " against the contract's own " + CONTRACT_CEILING.to_str() + ", which is a ceiling and not a pin: the repair for crossing it is to move a story into docs/records/contract/case-law.md, never a bigger number."
+
+    # **There is no third branch since 2026-09-12**, and its absence is the
+    # repair rather than a tidy-up: `if path != SPEC` used to return a bare
+    # "Headroom: N." against the spec's own ceiling for any file at all, which
+    # is a number about a document nobody budgeted. `reported` now returns
+    # before calling this for such a path, so only the two judged documents
+    # reach here and a dead branch would be a place for the old answer to come
+    # back.
     left = CEILING - highest
 
-    if path != SPEC
-        return "Headroom: " + left.to_str() + "."
-
     # THE SUM THE CHECK COMPARES, and not a subtraction of my own: the
-    # harness goes red at `REAL_TOKENS + FFI_FLOOR >= CEILING`, so a
+    # harness goes red at `pinned.REAL_TOKENS + FFI_FLOOR >= CEILING`, so a
     # "usable room" figure computed here is off by one the moment that
     # `>=` is read as `>`. It was, in the first version of this line,
     # 2026-09-08. Stating both sides of the comparison leaves the reader
     # no arithmetic to get wrong.
     return "Headroom: " + left.to_str() + " against the " + CEILING.to_str() + " ceiling — but the FFI floor mortgages " + FFI_FLOOR.to_str() + " of it (panel 030 R3), so what is measured against the ceiling is " + (highest + FFI_FLOOR).to_str() + " and the check goes red at " + CEILING.to_str() + "."
-
-# `--refresh`: ask the reader's own tokeniser and print the record to paste.
-#
-# THE ARTIFACT IS THE FOUR CONSTANTS, ON STDOUT, and the instruction that goes
-# with them is on stderr — `.claude/rules/cli-surface.md`'s contract, and here
-# it earns itself: a reader can redirect stdout into a file and get eight lines
-# that compile.
-#
-# AND IT REFUSES EVERY FILE BUT THE SPEC. The record belongs to one document. A
-# digest of another file is a digest nothing cross-checks, printed beside a
-# count nothing judges: a measurement in the shape of one, which is the class
-# this whole flag exists to close.
-function run_refresh(path: str, text: str) -> cli_table.Exit
-    if path != SPEC
-        io.eprint(
-            text: "error: `--refresh` refreshes the record for `" + SPEC + "`, and `" + path + "` has none — no ceiling judges it and no check keeps it honest (panel 123 R5)"
-        )
-        return .failed_exit
-    lines = refresh.refreshed(text)
-
-    if lines.is_err()
-        io.eprint(text: "error: " + refresh.why_lines(lines))
-        return .failed_exit
-
-    for row in lines.must()
-        print(row)
-
-    io.eprint(
-        text: "note: paste these into `tests/harness/suite_spec.hero` AND this file, in ONE commit — the two copies are what the harness cross-checks against what this tool prints, and the digest is of `" + SPEC + "` exactly as it stands now"
-    )
-    return .ok_exit
 
 # Left-aligned in `width` columns, counted in characters.
 function padded(text: str, width: i64) -> str
@@ -339,7 +304,7 @@ test "a reading is laid out in the bootstrap's own columns"
 
     # The verdict is printed, not returned as text — what this pins is the
     # arithmetic and the branch, which is where a port goes wrong.
-    verdict = reported(path: "spec/heroes-spec.md", here: SPEC_DIGEST, readings: readings)
+    verdict = reported(path: "spec/heroes-spec.md", here: pinned.SPEC_DIGEST, readings: readings)
     assert cli_table.exit_code(verdict) == 0
 
     # And the staleness gate WITHHOLDS rather than computes: a digest that
@@ -355,11 +320,23 @@ test "the columns are the bootstrap's widths"
     assert aligned(number: 0, width: 6) == "     0"
     assert aligned(number: 1234567, width: 6) == "1234567"
 
-test "a breach is exit 1 and a clean measurement is exit 0"
-    over: [Reading] = [Reading(instrument: "one", vocabulary: 1, tokens: CEILING + 1)]
-    assert cli_table.exit_code(reported(path: "x", here: "unused", readings: over)) == 1
+test "a breach is exit 1, a clean measurement is exit 0, and an unjudged path is neither"
+    # The contract is the judged document a test can reach without the spec's
+    # digest gate, and its ceiling is its own.
+    over: [Reading] = [Reading(instrument: "one", vocabulary: 1, tokens: CONTRACT_CEILING + 1)]
+    assert cli_table.exit_code(reported(path: CONTRACT, here: "unused", readings: over)) == 1
     under: [Reading] = [Reading(instrument: "one", vocabulary: 1, tokens: 10)]
-    assert cli_table.exit_code(reported(path: "x", here: "unused", readings: under)) == 0
+    assert cli_table.exit_code(reported(path: CONTRACT, here: "unused", readings: under)) == 0
+
+    # **The repair of 2026-09-12, and this pair is the defect itself.** Both
+    # lines above read `path: "x"` until that day, which is why nobody noticed
+    # that an arbitrary path was being judged at all: the test asserted the
+    # broken behaviour and passed. A path no ceiling covers is COUNTED and never
+    # judged, however large — `design.md` measured 64490 and was told it had
+    # breached §1.6, the section that says the compiler has no budget.
+    huge: [Reading] = [Reading(instrument: "one", vocabulary: 1, tokens: CEILING * 10)]
+    assert cli_table.exit_code(reported(path: "design.md", here: "unused", readings: huge)) == 0
+    assert cli_table.exit_code(reported(path: "x", here: "unused", readings: huge)) == 0
 
 test "no operand measures the spec, and an unreadable file is the tool failing"
     # The whole pipeline, on the real tables and the real spec: this is the
@@ -383,17 +360,7 @@ function asked(file: str?) -> argv.Invocation
     return argv.Invocation(tag: .measure_cmd, file: file, program_args: [], flags: [])
 
 # The recorded model and the pinned model are two different facts and they
-# must agree: `PINNED_MODEL` is who `--refresh` asks, `REAL_MODEL` is who
+# must agree: `PINNED_MODEL` is who `--refresh` asks, `pinned.REAL_MODEL` is who
 # answered the number in the record. A drift between them is a record
 # attributed to the wrong tokeniser, which is the whole class this machinery
 # exists to close.
-test "the model in the record is the model the refresh asks"
-    assert REAL_MODEL == count_tokens.PINNED_MODEL
-
-# The digest was a placeholder for one build, and this is what stopped it
-# staying one. It is kept rather than deleted: a record whose digest is all
-# zeroes is a count of nothing, and the day somebody pastes a number without
-# pasting what it was a count OF, this fires.
-test "the record's digest is a real one and not the placeholder"
-    assert SPEC_DIGEST != "0000000000000000"
-    assert SPEC_DIGEST.len() == 16
