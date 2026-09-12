@@ -29,28 +29,28 @@
 
 use cases
 use report
+use floors
 use shell
 use strings
 
 constant RUN_DIR: str
     "tests/golden/run"
 
-# Measured 2026-08-18: 87 cases. golden.rs floors the corpus at 40 and
-# floors the number that actually emitted at 40 as well — a machine that
-# emits nothing must not report green.
+# golden.rs floors the corpus at 40 and floors the number that actually emitted
+# at 40 as well — a machine that emits nothing must not report green.
+#
+# **87 cases on 2026-08-18, 111 on 2026-09-12**, re-based to today's count by
+# `floors.check`. The second use below is the SKIP floor and keeps this number
+# deliberately: what it asks is *did this machine emit as many as the tree
+# holds*, so both sides of that comparison have to be the same tree.
 constant LEAST: i64
-    87
+    111
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     found = cases.collect(scratch: scratch, dir: RUN_DIR)?
 
-    if found.len() < LEAST
-        report.keep_failure(
-            @r,
-            label: "lines",
-            detail: "  " + RUN_DIR + " has " + found.len().to_str() + " cases and had " + LEAST.to_str()
-        )
+    floors.check(@r, label: "lines", found: found.len(), floor: LEAST, what: "cases in " + RUN_DIR)
     emitted: i64 @ 0
 
     for item in found

@@ -11,6 +11,7 @@
 # one-time cleanup that rots on the next commit.
 
 use report
+use floors
 use shell
 use strings
 
@@ -1018,12 +1019,7 @@ function is_generated(path: str) -> bool
 # Every row of `MOVED` still says something true: the old path is gone and the
 # new one is there. See the table's own comment for what it is for.
 function redirects(@r: report.Report, present: [str])
-    if MOVED.len() < LEAST_MOVED
-        report.keep_failure(
-            @r,
-            label: "records/redirects",
-            detail: "  MOVED has " + MOVED.len().to_str() + " rows and the floor is " + LEAST_MOVED.to_str() + " — a table that empties out is one nobody maintains, and an empty loop passes"
-        )
+    if !floors.sound(@r, label: "records/redirects", found: MOVED.len(), floor: LEAST_MOVED, what: "rows in MOVED")
         return
     wrong: [str] @ []
 

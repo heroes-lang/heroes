@@ -33,6 +33,7 @@
 # compiler.
 
 use report
+use floors
 use shell
 use strings
 
@@ -52,15 +53,20 @@ constant MARK: str
 constant WALK: str
     "keys("
 
-# Floors, measured 2026-08-25: 16 marks in 12 files, 13 walks outside
-# tests. They exist for the reason `suite_layout`'s does — a sweep that
-# reaches nothing reports green — and they are floors rather than
-# equalities, so deleting a map does not turn a refactor red.
+# Floors. They exist for the reason `suite_layout`'s does — a sweep that reaches
+# nothing reports green — and they are floors rather than equalities, so deleting
+# a map does not turn a refactor red.
+#
+# **Set 2026-08-25 at 14 and 10, against 16 marks in 12 files and 13 walks.
+# Re-measured 2026-09-12: 23 and 22**, so the marks floor had 9 of slack and the
+# walks floor had 12 — more than the floor itself, which is a net with a hole
+# wider than the net. Re-based to today's counts by `floors.check`, and that
+# check is now what will notice the next time.
 constant LEAST_MARKS: i64
-    14
+    23
 
 constant LEAST_WALKS: i64
-    10
+    22
 
 function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()
@@ -114,14 +120,8 @@ function run_all(scratch: str) -> report.Report?
     else
         report.keep_pass(@r)
 
-    if marks < LEAST_MARKS || walks < LEAST_WALKS
-        report.keep_failure(
-            @r,
-            label: "order",
-            detail: "  the sweep found " + walks.to_str() + " map walks and " + marks.to_str() + " marks across " + modules.len().to_str() + " modules, and had " + LEAST_WALKS.to_str() + " and " + LEAST_MARKS.to_str() + " — it is not reaching the tree"
-        )
-    else
-        report.keep_pass(@r)
+    floors.check(@r, label: "order", found: walks, floor: LEAST_WALKS, what: "map walks")
+    floors.check(@r, label: "order", found: marks, floor: LEAST_MARKS, what: "`# ORDER:` marks")
     return ok(r)
 
 # Which rows a reader must hold in their head: everything outside a `test`

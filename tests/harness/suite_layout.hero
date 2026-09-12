@@ -32,6 +32,7 @@
 # the net, not the compiler.
 
 use report
+use floors
 use shell
 use strings
 
@@ -364,15 +365,15 @@ constant DECIDED: [str]
 # `assert!(files.len() > 100, "the walk is not reaching the tree")` — and
 # it exists because a walk that finds nothing reports green.
 #
-# **Set at 140 against 144 modules on 2026-08-18. Re-measured 2026-09-12: 202
-# modules, so the slack is 62 rather than 4.** The number is left alone here
-# deliberately — what a floor owes as the tree grows is a question for the panel
-# and not for this line — but the measurement is written down, because the
-# paragraph below reasons from the old one. A floor's job is to catch a PARTIAL
-# walk, and a partial walk of a bigger tree returns a bigger number: what was a
-# net with four lines of give now has sixty-two.
+# **140 against 144 modules on 2026-08-18, and 204 on 2026-09-12**, which is 64
+# of slack on a net written with four. It is RE-BASED to today's count rather
+# than nudged, and `floors.check` is what noticed: a floor's job is to catch a
+# PARTIAL walk, and a partial walk of a bigger tree returns a bigger number, so a
+# floor that stands still stops catching the thing it was written for. The
+# ratchet only ever goes up, and the day this number is wrong again the check
+# will say so with the number to write.
 constant LEAST: i64
-    140
+    204
 
 function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()
@@ -401,12 +402,7 @@ function run_all(scratch: str) -> report.Report?
         if strings.ends_with(text: path, suffix: ".hero")
             modules @ modules.push(path)
 
-    if modules.len() < LEAST
-        report.keep_failure(
-            @r,
-            label: "layout",
-            detail: "  the walk found " + modules.len().to_str() + " modules and had " + LEAST.to_str() + " — it is not reaching the tree"
-        )
+    floors.check(@r, label: "layout", found: modules.len(), floor: LEAST, what: "modules")
     over: [str] @ []
 
     for path in modules

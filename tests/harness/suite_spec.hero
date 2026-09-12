@@ -38,6 +38,7 @@
 # into decorations.
 
 use report
+use floors
 use shell
 use spec_text
 use strings
@@ -557,12 +558,7 @@ function spendable(@r: report.Report, scratch: str, compiler: str)
 
 # Every name the compiler reserves appears in the spec.
 function named(@r: report.Report, spec: str, reserved: [str])
-    if reserved.len() < LEAST_BUILTINS
-        report.keep_failure(
-            @r,
-            label: "spec/names",
-            detail: "  " + reserved.len().to_str() + " built-ins read out of " + BUILTIN_SOURCE + " and there were " + LEAST_BUILTINS.to_str() + " — the extractor is reading the wrong shape, and this check was about to pass vacuously"
-        )
+    if !floors.sound(@r, label: "spec/names", found: reserved.len(), floor: LEAST_BUILTINS, what: "built-ins read out of " + BUILTIN_SOURCE)
         return
     mentioned: {str: bool} @ {}
 
@@ -634,12 +630,7 @@ function offered(@r: report.Report, spec: str, reserved: [str])
 
 # No word the lexer refuses appears in the spec's code.
 function rejected(@r: report.Report, spec: str, refused: [str])
-    if refused.len() < LEAST_FOREIGN
-        report.keep_failure(
-            @r,
-            label: "spec/rejected",
-            detail: "  " + refused.len().to_str() + " refused words read out of " + KEYWORD_SOURCE + " and there were " + LEAST_FOREIGN.to_str() + " — the extractor is reading the wrong shape"
-        )
+    if !floors.sound(@r, label: "spec/rejected", found: refused.len(), floor: LEAST_FOREIGN, what: "refused words read out of " + KEYWORD_SOURCE)
         return
     mentioned: {str: bool} @ {}
 

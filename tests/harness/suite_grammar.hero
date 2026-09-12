@@ -23,6 +23,7 @@
 # mistake this table can have that still parses.
 
 use report
+use floors
 use shell
 use strings
 
@@ -80,12 +81,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 function keywords(@r: report.Report, out: str)
     written = quoted_before_arrow(path: KEYWORD_SOURCE, marker: "=> ok(.kw_")
 
-    if written.len() < LEAST_KEYWORDS
-        report.keep_failure(
-            @r,
-            label: "grammar/keywords",
-            detail: "  " + written.len().to_str() + " keywords read out of " + KEYWORD_SOURCE + " and there are at least " + LEAST_KEYWORDS.to_str() + " — the extractor is reading the wrong shape, and every comparison under it was about to pass vacuously"
-        )
+    if !floors.sound(@r, label: "grammar/keywords", found: written.len(), floor: LEAST_KEYWORDS, what: "keywords read out of " + KEYWORD_SOURCE)
         return
     printed = words_after(text: out, marker: "which a program may not use as a name:")
 
@@ -122,12 +118,7 @@ record Row
 function powers(@r: report.Report, out: str)
     written = arms_of_binary_op()
 
-    if written.len() < LEAST_OPERATORS
-        report.keep_failure(
-            @r,
-            label: "grammar/powers",
-            detail: "  " + written.len().to_str() + " operators read out of " + OPERATOR_SOURCE + " and there are at least " + LEAST_OPERATORS.to_str() + " — the extractor is reading the wrong shape"
-        )
+    if !floors.sound(@r, label: "grammar/powers", found: written.len(), floor: LEAST_OPERATORS, what: "operators read out of " + OPERATOR_SOURCE)
         return
     printed = printed_rows(out)
 
@@ -329,12 +320,7 @@ record Production
 function productions(@r: report.Report, out: str)
     found = productions_of(out)
 
-    if found.len() < LEAST_PRODUCTIONS
-        report.keep_failure(
-            @r,
-            label: "grammar/productions",
-            detail: "  " + found.len().to_str() + " productions read out of " + SPEC + " and there are at least " + LEAST_PRODUCTIONS.to_str() + " — the extractor is reading the wrong shape, and both comparisons under it were about to pass vacuously"
-        )
+    if !floors.sound(@r, label: "grammar/productions", found: found.len(), floor: LEAST_PRODUCTIONS, what: "productions read out of " + SPEC)
         return
     defined: {str: bool} @ {}
 

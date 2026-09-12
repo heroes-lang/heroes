@@ -52,6 +52,7 @@
 #     reporting green, as every other suite here does.
 
 use report
+use floors
 use shell
 use strings
 use suite_descriptors
@@ -90,13 +91,17 @@ constant ENTRIES: [str]
         "whole"
     ]
 
-# Measured 2026-08-18: 127 golden cases (emit 6 · fixedbugs 14 · ir 20 ·
-# run 87) and 15 example programs — `main.hero` in fourteen directories and
-# `examples/calculator/whole.hero`. The floor is the real count rather than
-# a round number below it, for the reason `suite_golden.hero` gives: slack
-# in a floor is a case that may stop running.
+# The floor is the real count rather than a round number below it, for the reason
+# `suite_golden.hero` gives: slack in a floor is a case that may stop running.
+#
+# **142 on 2026-08-18** — 127 golden cases (emit 6 · fixedbugs 14 · ir 20 · run
+# 87) and 15 example programs. **225 on 2026-09-12**, so the slack that sentence
+# forbids had reached 83, and the sentence went on reading as true the whole
+# time. That is the class `.claude/rules/module-shape.md` names: a premise about
+# the world expires in silence while the argument for it stays valid. Re-based by
+# `floors.check`, which is the caller the rule never had.
 constant LEAST: i64
-    142
+    225
 
 # One program and the bytes it was blessed to emit.
 record Program
@@ -106,14 +111,16 @@ record Program
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     programs = collect(scratch)?
-    return sweep(
-        scratch: scratch,
-        compiler: compiler,
-        store: STORE,
-        programs: programs,
-        update: shell.env("UPDATE_EMISSION") == "1",
-        least: LEAST
-    )
+    r: report.Report @ report.empty()
+
+    # **The floor is checked from both sides HERE and not inside `sweep`**, and
+    # the seam is deliberate: `sweep` takes its floor as a parameter and the
+    # cases below hand it 1 or 2 over a two-file tree, so a decay check in there
+    # would call every test's stub tree outgrown. This is where the REAL floor
+    # meets the REAL count.
+    floors.check(@r, label: "emission", found: programs.len(), floor: LEAST, what: "programs reaching the emitter")
+    swept = sweep(scratch: scratch, compiler: compiler, store: STORE, programs: programs, update: shell.env("UPDATE_EMISSION") == "1", least: LEAST)?
+    return ok(report.tally(one: r, two: swept))
 
 # Every program in the repository that reaches the emitter, with the path
 # its blessed emission lives at.

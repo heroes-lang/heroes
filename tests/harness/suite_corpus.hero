@@ -33,6 +33,7 @@
 
 use expectation
 use report
+use floors
 use shell
 use strings
 
@@ -109,12 +110,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     programs = program_directories(scratch)?
 
-    if programs.len() < LEAST
-        report.keep_failure(
-            @r,
-            label: "corpus",
-            detail: "  " + EXAMPLES + " has " + programs.len().to_str() + " program directories and had " + LEAST.to_str()
-        )
+    floors.check(@r, label: "corpus", found: programs.len(), floor: LEAST, what: "program directories in " + EXAMPLES)
     binaries = scratch + "/corpus"
     shell.mkdir_all(binaries)?
     skipped: i64 @ 0

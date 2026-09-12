@@ -33,6 +33,7 @@
 
 use cases
 use report
+use floors
 use shell
 use strings
 
@@ -91,8 +92,19 @@ constant RUN_ROOTS: [str]
 # was read out of the suite rather than added up by hand: the floor was
 # briefly set impossibly high so the failure message would print the true
 # count, which is this file's own rule applied to itself.
+# **207 on 2026-08-26, 319 on 2026-09-12.** The census that opened
+# M-declared-thresholds could not measure this one from outside — the criterion
+# sums extracted markers AND diagnostics produced by running the compiler, so no
+# grep replicates it — and it was written down as NOT MEASURED rather than
+# estimated. `floors.check` measured it from the inside on the first run, which
+# is the method this comment already described: put the floor where it cannot
+# pass and read the true count out of the failure.
+#
+# The total is machine-independent by construction, which is why it can be a
+# floor at the real count: a mark this machine cannot ask is counted in
+# `stepped_aside` rather than dropped.
 constant LEAST: i64
-    207
+    319
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
@@ -140,12 +152,13 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     # The floor counts what this machine could ask plus what it honestly could
     # not: a mark that stepped aside for a missing header is accounted, never
     # absorbed — so a machine that skips EVERYTHING still goes red here.
-    if annotated + stepped_aside < LEAST
-        report.keep_failure(
-            @r,
-            label: "annotations",
-            detail: "  only " + annotated.to_str() + " annotated diagnostics (+" + stepped_aside.to_str() + " that this machine cannot ask), and there were " + LEAST.to_str() + " — annotations that stop being checked are the shape §9 calls a decoration"
-        )
+    floors.check(
+        @r,
+        label: "annotations",
+        found: annotated + stepped_aside,
+        floor: LEAST,
+        what: "annotated diagnostics, " + annotated.to_str() + " asked and " + stepped_aside.to_str() + " this machine cannot ask"
+    )
     return ok(r)
 
 # SWEEP 001'S AUDIT S13, PORTED AT LAST (2026-09-03). The thesis rules —
