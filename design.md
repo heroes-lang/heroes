@@ -63,8 +63,8 @@ only thing that distinguishes reasoning from improvisation.
 
 A declared end-goal of the journey itself: a **mini-book about how this language came to be** — the
 adventure, the decisions, the prompts, the wrong turns. The journal, the DESIGN-LOG, the panel
-records and the story beats in `docs/book/` are its raw material, collected as we go; see
-`docs/book/README.md`.
+records and the story beats in `docs/records/book/` are its raw material, collected as we go; see
+`docs/records/book/README.md`.
 
 ### Two definitions of success
 

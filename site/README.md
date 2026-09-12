@@ -1305,7 +1305,7 @@ changes a page.
 When the author asks for a site refresh (typically before publishing, or
 after a stretch of milestones): update the badge on `index.html`; append one
 entry per milestone closed since the last refresh to `log.html` (newest first,
-postcard register, distilled from `docs/book/beats.md`, not from the commit log);
+postcard register, distilled from `docs/records/book/beats.md`, not from the commit log);
 re-check `why.html`'s objections against design.md's current state; re-run every
 number; re-check each code block against its `data-src` anchor.
 

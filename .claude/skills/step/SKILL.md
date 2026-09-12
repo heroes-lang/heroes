@@ -136,9 +136,9 @@ Milestone close — the checklist (this is its only copy):
 - journal `docs/records/journal/NNN-<slug>.md`, 3 sections: **goal** · **what
   surprised** (impersonal — shapes and rules, never scores) · **what broke
   and why**;
-- one story beat, **a new file in `docs/book/beats/`** named
+- one story beat, **a new file in `docs/records/book/beats/`** named
   `YYYY-MM-DD-HHMM-<slug>.md` and holding the one line
-  `date | milestone | the beat`. Never a line appended to `docs/book/beats.md`,
+  `date | milestone | the beat`. Never a line appended to `docs/records/book/beats.md`,
   which has been the MAP since 2026-09-12: it keeps the line count the record
   had so that a `beats.md:NNN` citation still resolves, and `records/rotated`
   goes red on a line added to it;

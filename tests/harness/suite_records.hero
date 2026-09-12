@@ -61,7 +61,7 @@ constant RECORD: [str]
         "docs/panel"
         "docs/records/journal"
         "docs/measurements"
-        "docs/book"
+        "docs/records/book"
         "tests/golden"
         "tests/emission"
         "DESIGN-LOG.md"
@@ -473,7 +473,7 @@ constant WHERE_CEILING: i64
 # **Italian function words, and the reason the list is ASCII only.** CLAUDE.md
 # §11's first line says the repository's working text is English. It said so
 # while 241 Italian quotations sat in the tree, 19 of them in that very section,
-# because a doctrine written at `docs/book/README.md` held that quoted speech is
+# because a doctrine written at `docs/records/book/README.md` held that quoted speech is
 # not an artifact and everything else cited it. The doctrine is retired
 # (2026-09-04) and this is what replaces the honour system.
 #
@@ -1503,7 +1503,7 @@ function unmerged(@r: report.Report, scratch: str)
 # appended is the one no citation can reach.
 constant ROTATED: [str]
     [
-        "docs/book/beats.md 140 docs/book/beats"
+        "docs/records/book/beats.md 140 docs/records/book/beats"
         "DESIGN-LOG.md 1119 docs/log"
         "docs/work/DONE.md 4071 docs/done"
     ]
@@ -4210,14 +4210,14 @@ test "an entry file carries its day and its place in that day, and six names tha
     assert !is_entry_name("2026-08-03-0000-the-author-arrived.txt")
 
 test "a map row hands on the path it names, and a row that names none says so"
-    row = "2026-08-03 | pre-M0 | docs/book/beats/2026-08-03-0000-the-author-arrived.md"
-    assert tree_path_in(row: row, tree: "docs/book/beats") == "docs/book/beats/2026-08-03-0000-the-author-arrived.md"
+    row = "2026-08-03 | pre-M0 | docs/records/book/beats/2026-08-03-0000-the-author-arrived.md"
+    assert tree_path_in(row: row, tree: "docs/records/book/beats") == "docs/records/book/beats/2026-08-03-0000-the-author-arrived.md"
 
     # The preamble names the tree with a trailing slash and no file, which is
     # why the `.md` is required and the prefix alone is not enough.
-    preamble = "Every beat is one file in `docs/book/beats/`, and a new beat is a new file."
-    assert tree_path_in(row: preamble, tree: "docs/book/beats") == ""
-    assert tree_path_in(row: "", tree: "docs/book/beats") == ""
+    preamble = "Every beat is one file in `docs/records/book/beats/`, and a new beat is a new file."
+    assert tree_path_in(row: preamble, tree: "docs/records/book/beats") == ""
+    assert tree_path_in(row: "", tree: "docs/records/book/beats") == ""
 
     # THE SHAPE THAT COST THIS FUNCTION ITS FIRST DRAFT. DESIGN-LOG.md's own
     # preamble names its tree and then says `design.md` nine words later, and a

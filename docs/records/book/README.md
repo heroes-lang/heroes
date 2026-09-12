@@ -35,15 +35,15 @@ for that book a first-class output of the process, not an afterthought.
 | `docs/panel/` | the arguments — objections, verdicts, and the author's answers |
 | `git log` + tags | the true chronology; `git checkout m2` re-opens any chapter's code |
 | measurement records (born with the first harness run) | the numbers that make the thesis a claim, not an opinion |
-| `docs/book/beats/` | **story beats** (see below) — the human texture the other sources drop |
+| `docs/records/book/beats/` | **story beats** (see below) — the human texture the other sources drop |
 
 ## The one new habit: story beats
 
 Technical records forget how things *felt*, and the book needs exactly that.
 So every **milestone close** and every panel decision writes one line as a new
-file in `docs/book/beats/`, named `YYYY-MM-DD-HHMM-<slug>.md` (cadence per
+file in `docs/records/book/beats/`, named `YYYY-MM-DD-HHMM-<slug>.md` (cadence per
 CLAUDE.md rule 14 — and any day something genuinely diverged deserves one too).
-`docs/book/beats.md` is the MAP since 2026-09-12 and is never appended to: it
+`docs/records/book/beats.md` is the MAP since 2026-09-12 and is never appended to: it
 keeps the line count the record had, so a `beats.md:NNN` citation still lands on
 its own beat. The line itself is unchanged:
 

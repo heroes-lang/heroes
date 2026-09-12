@@ -98,7 +98,7 @@ survive.
 ## What landed, and what carried forward
 
 **Landed**: `DESIGN-LOG.md` → `docs/log/` (620 entries), `docs/work/DONE.md` →
-`docs/done/` (491), `docs/book/beats.md` → `docs/book/beats/` (114), and
+`docs/done/` (491), `docs/records/book/beats.md` → `docs/records/book/beats/` (114), and
 § The milestones, one by one → `docs/milestones/` (43 files), which absorbed the
 53 items `docs/work/SCHEDULED.md` held until 2026-09-12. Each rotated file keeps
 its path and its exact line count. Five checks with them — `records/appended`,

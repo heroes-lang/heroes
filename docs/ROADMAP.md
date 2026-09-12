@@ -38,7 +38,7 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 | Milestones closed | **50** of 74 · **49** milestone tags, the legacy `m0`-`m8` included |
 | The compiler | **58,665** lines of Heroes in **199** modules (`find selfhost -name '*.hero'`) · the seed **790,756** lines of C |
 | The spec | **4430** on the vendored ranks, unchanged by this milestone, which spent no spec token · the real count is `heroes measure --refresh`'s and was last taken 2026-09-11 |
-| Records | sittings **131** · journals **50** · milestone files **44** · entries: `docs/log/` **621**, `docs/done/` **491**, `docs/book/beats/` **115** · **open defects 0** |
+| Records | sittings **131** · journals **50** · milestone files **44** · entries: `docs/log/` **621**, `docs/done/` **491**, `docs/records/book/beats/` **115** · **open defects 0** |
 | Waiting on the author | **0** decisions. The one this milestone filed was answered the same day: § The chain may carry more than one open row, and the site's page lists them all |
 
 **Re-measured 2026-09-12 at M-rotated-records' close, not carried.** `records` is
@@ -643,7 +643,7 @@ Milestones were numbered until 2026-08-12 and are named now. The algorithm that
 assigns the next one is **CLAUDE.md §14** — its only home; this section is only
 the map, and it exists because **the record was not rewritten**. `docs/panel/`,
 `DESIGN-LOG.md`, `docs/records/journal/`, `docs/measurements/`, `docs/work/DONE.md`,
-`docs/book/beats.md`, `tests/golden/`, every commit subject and all twelve legacy
+`docs/records/book/beats.md`, `tests/golden/`, every commit subject and all twelve legacy
 tags keep the identifiers they were written with. Panel 030 R7, as amended, is
 the argument.
 
