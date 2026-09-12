@@ -115,7 +115,9 @@ before reading the fix.
 ## 4. Queue comprehension — per new concept, not per step
 When a step introduces a new concept (first tokens, first tree, first types,
 first blocks, first C…), append 2–4 closed-form items (a count, a choice
-among structures, an output value) to `docs/learn/LEARN.md`:
+among structures, an output value) to the END of `docs/learn/LEARN.md`, which
+appends at the bottom since 2026-09-12 (it appended at line 31 before, so every
+filing touched one line):
 `- [ ] <origin> | <question / task> | <where to look> | <why it matters>`
 Plumbing steps — CLI, harness, refactors, bulk cases — add nothing.
 
