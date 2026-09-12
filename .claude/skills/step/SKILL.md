@@ -16,7 +16,7 @@ for it before a step; no other ceremony attaches to it.)
 `spec/heroes-spec.md` in full. If no step was named, take the next one from
 the ROADMAP.
 
-**Opening a milestone means opening its own file, `docs/milestones/<its name>.md`,
+**Opening a milestone means opening its own file, `docs/work/milestones/<its name>.md`,
 which carries its reasoning and the open items that name it.** That list is work with a home — a measurement to run, a
 paragraph owed, a row to price — put aside precisely because doing it earlier
 would do it against a smaller corpus or a compiler that had not grown into the
@@ -147,7 +147,7 @@ Milestone close — the checklist (this is its only copy):
   `date | decision | reason | design.md § | panel`. `DESIGN-LOG.md` has been the
   MAP since 2026-09-12 and is never appended to;
 - **score every prediction whose milestone this is**, and lapse the ones you
-  cannot: `grep -n "$(git describe --tags --abbrev=0)\|<this milestone>" docs/milestones/
+  cannot: `grep -n "$(git describe --tags --abbrev=0)\|<this milestone>" docs/work/milestones/
   docs/measurements/010-spec-budget-ledger.md docs/panel/*.md`. (It named
   `crates/heroes/src/measure/gate.rs` until 2026-08-23 — doubly dead: the tree is
   archived, and panel 086 moved the ledger's 38 rows out of that doc comment into

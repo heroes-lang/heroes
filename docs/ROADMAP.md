@@ -571,7 +571,7 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
 
 ## The milestones, one by one
 
-**Moved to `docs/milestones/` on 2026-09-12**, one file per milestone, and
+**Moved to `docs/work/milestones/` on 2026-09-12**, one file per milestone, and
 each file carries that milestone's own open items as well — the work the list
 at `docs/work/SCHEDULED.md` held until 2026-09-12, when it was retired into these
 files. One milestone is one file is one lane: two sessions on two milestones
