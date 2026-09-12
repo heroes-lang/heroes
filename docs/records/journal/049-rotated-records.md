@@ -67,7 +67,7 @@ thing**, which is the more useful half.
   own preamble into a path. **A path has no space in it**; the name now ends at
   a space, a backtick or a tab, and the sewn line is a test case.
 - `records/citations` refused a new test's literals, because
-  `docs/doneness/not-under-it.md` reads as a path claim. A test about tree
+  `docs/records/doneness/not-under-it.md` reads as a path claim. A test about tree
   walking cannot use names that look like this project's.
 - `records/lists` found a **third banner** in `M-publication-gate.md`: the last
   item of `SCHEDULED.md` ran to the end of the file and carried the list's own
@@ -98,7 +98,7 @@ survive.
 ## What landed, and what carried forward
 
 **Landed**: `DESIGN-LOG.md` → `docs/records/log/` (620 entries), `docs/work/DONE.md` →
-`docs/done/` (491), `docs/records/book/beats.md` → `docs/records/book/beats/` (114), and
+`docs/records/done/` (491), `docs/records/book/beats.md` → `docs/records/book/beats/` (114), and
 § The milestones, one by one → `docs/milestones/` (43 files), which absorbed the
 53 items `docs/work/SCHEDULED.md` held until 2026-09-12. Each rotated file keeps
 its path and its exact line count. Five checks with them — `records/appended`,

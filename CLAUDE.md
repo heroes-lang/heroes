@@ -124,7 +124,7 @@ the recommended resolution as the default, say which way it went once (CL-002).
 **Five lists.** `docs/work/DECIDE.md` holds what should be true,
 `docs/work/milestones/` work inside the file of the milestone that will do it,
 `docs/work/DEFECTS.md` what is broken, `docs/work/learn/LEARN.md` what is true, and
-`docs/done/` is the record. A list holds only OPEN items and a ticked one
+`docs/records/done/` is the record. A list holds only OPEN items and a ticked one
 moves to the record at once. Notation is `- [ ]` and `- [x]` only, because a
 bare bullet is invisible to every count here (CL-032); the item shape and its
 executor are `.claude/rules/records.md` (CL-066).

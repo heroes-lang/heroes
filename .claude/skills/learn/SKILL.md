@@ -86,7 +86,7 @@ have to filter before you can read it is a list nobody opens:
 - **`SCHEDULED.md`** — work with a home, read by `/step` at the milestone that
   names it.
 
-`docs/done/` is the record: every ticked item lands there and stays.
+`docs/records/done/` is the record: every ticked item lands there and stays.
 
 **This paragraph named `QUEUE.md` until 2026-09-07 and that file has not existed
 since 2026-08-26**, when the lists were renamed. Worse, the reason it gave was
