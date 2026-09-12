@@ -6,7 +6,7 @@
 honour:
 
 - **Robust over cheap, on every platform, and never a `-Wno-` flag** (author
-  instruction 2026-09-03, four sentences, § Who scheduled what). A landing is
+  instruction 2026-09-03, four sentences, `docs/roadmap/scheduling.md`). A landing is
   measured on the Mac, the Linux image and the Windows box BEFORE its commit;
   a flag that hides what clang saw is not one of the options a sitting may choose.
 - **The clang floor is 18** (`selfhost/cli/clang_floor.hero`; panel 103, author

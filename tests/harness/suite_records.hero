@@ -2114,12 +2114,13 @@ constant MOVED: [str]
         "docs/ROADMAP.md § What production-ready means -> docs/roadmap/production-ready.md"
         "docs/ROADMAP.md § The milestones, one by one -> docs/roadmap/milestones.md"
         "docs/ROADMAP.md § Decisions this file records -> docs/roadmap/decisions.md"
+        "docs/ROADMAP.md § Who scheduled what -> docs/roadmap/scheduling.md"
     ]
 
 # The floor. A table that has emptied out is a table nobody is maintaining, and
 # an empty loop passes.
 constant LEAST_MOVED: i64
-    8
+    9
 
 constant RETIRED_ROOTS: [str]
     [
