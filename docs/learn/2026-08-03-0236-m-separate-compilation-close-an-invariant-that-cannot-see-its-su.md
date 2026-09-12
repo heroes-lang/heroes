@@ -1,0 +1,4 @@
+- [ ] **M-separate-compilation close (an invariant that cannot see its subject)** | `suite_annotations` is described in this project as its one unforgeable check: a regenerator can rewrite an expectation file but cannot invent a `#~` mark in the program. It sweeps two directories. Measured at the close: 19 marks live outside them, 15 of those in `tests/golden/fixedbugs/`, which is the directory that exists for defects that already shipped once. **The question**: what property of the suite's MECHANISM limits it to two directories, and which of the three ways out keeps the word *unforgeable* true?
+
+    **Where to look:** tests/harness/suite_annotations.hero:42-46 · docs/work/DECIDE.md · CLAUDE.md §9
+    **Why it matters:** the interesting part is that the suite's own failure message describes the state it is in, about a floor it cannot see past

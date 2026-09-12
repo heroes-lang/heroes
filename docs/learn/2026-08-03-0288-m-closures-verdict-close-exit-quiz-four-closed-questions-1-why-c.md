@@ -1,0 +1,4 @@
+- [ ] **M-closures-verdict close — exit quiz** | Four closed questions. (1) Why can a signature not state whether `filter` keeps or discards what its function accepts? (2) The compiler passes a function as a value at four production sites — name what all four have in common that makes closures useless to them. (3) A `total: i64 @ 0` captured by copy: say which of a read and a write a checker can refuse, and why the other cannot. (4) The free spec budget is 70 and not 71 — say which character in `suite_spec.hero` decides that
+
+    **Where to look:** docs/panel/119-the-warning-that-does-not-fit.md · docs/panel/120-the-signature-cannot-say-which-half-it-keeps.md · docs/measurements/020-four-sites-in-fifty-five-thousand-lines.md · tests/harness/suite_spec.hero:204
+    **Why it matters:** each of the four is a place this milestone's own coordinator or a seat got it wrong first

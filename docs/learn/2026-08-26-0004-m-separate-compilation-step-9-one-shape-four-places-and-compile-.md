@@ -1,0 +1,4 @@
+- [ ] **M-separate-compilation step 9 (one shape, four places)** | `out.uses @ out.uses.push(v)` and `uses @ uses.push(v)` compile to different C: the first copies the whole array, the second grows it in place. The difference is that `out.uses` is a FIELD of a record and `uses` is a bare name. Four places in the compiler had the first form in a hot loop — the resolver's two arenas, the lexer's token array, and the scope table — and fixing all four took the check from 28 s to about 8. **The question**: why can the in-place store only fire on a bare name? What would it have to prove to fire on a field?
+
+    **Where to look:** selfhost/resolve/state.hero (`new_resolver`, `declare`) · selfhost/state.hero (`push_token`) · design.md §4.10 · DESIGN-LOG 2026-08-26
+    **Why it matters:** this is copy-on-write seen from the inside, and the answer is about aliasing rather than about optimisation

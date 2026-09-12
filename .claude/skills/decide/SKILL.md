@@ -85,7 +85,7 @@ answer.** No retrieval, no walkthrough, no drill, no glossary. If the author ask
    no `- [x]` in a work list, no `- [ ]` in the record, nothing outside the
    banners, and the count in the banner equal to the items counted. It exists
    because this rule was stated in four documents and performed by none.
-   `docs/learn/LEARN.md` takes the same shape with one rule fewer — a ticked
+   `docs/learn/` takes the same shape with one rule fewer — a ticked
    question stays in it, because that list is also its own record — so the check
    reads it with `ticked_allowed` and its banner counts the open questions.
 

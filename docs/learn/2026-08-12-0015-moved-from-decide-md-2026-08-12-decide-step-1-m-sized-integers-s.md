@@ -1,0 +1,4 @@
+- [ ] **Moved from `DECIDE.md` 2026-08-12 — `/decide` step 1** | M-sized-integers step 2 | The shape of an enum decided whether a ruling was true. Open `archive/bootstrap-rs/heroes/src/emit/ops.rs` at the line `let integral = matches!(operands, Ty::Int(_));` and read the comment above it. Question: with one `Ty` variant per width instead, what does that line evaluate to for a `u8`, what C comes out, and what does the program print? Then: how many rustc errors did each shape produce, and why is the difference not a matter of taste
+
+    **Where to look:** archive/bootstrap-rs/heroes/src/emit/ops.rs · archive/bootstrap-rs/heroes/src/types/table.rs (`IntKind`) · docs/records/journal/015 § What surprised
+    **Why it matters:** a promise about runtime behaviour turned out to depend on a choice nobody would look at for it

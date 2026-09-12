@@ -1,0 +1,4 @@
+- [ ] **M-separate-compilation step 9 (the question that was the wrong question)** | `cursor.take_docs` decides whether a comment documents the declaration under it. It used to ask `line_col(text, offset)` for a LINE NUMBER, which counts newlines from byte 0. It now asks two other things and never learns a line number at all. The whole repair is that substitution, and it took `heroes check` on the compiler's own source from 88 s to 28. **The question**: what are the two things it asks instead, and why is neither of them expensive?
+
+    **Where to look:** selfhost/text_lines.hero (`newlines_between`, `column_of`, `lines_above`) · selfhost/cursor.hero (`take_docs`) · docs/records/journal/025
+    **Why it matters:** it is the clearest case in the project of a cost that came from asking for more than you need, and the general rule is one sentence long

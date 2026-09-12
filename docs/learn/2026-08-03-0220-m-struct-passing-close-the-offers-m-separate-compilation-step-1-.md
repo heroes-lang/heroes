@@ -1,0 +1,4 @@
+- [ ] **M-struct-passing close — the offers** | M-separate-compilation step 1 (a convention that could not be checked) | The rule was written down and greppable for six milestones, and the grep returned 10 hits of which 4 were prose quoting the rule rather than obeying it. Now `# ORDER:` counts only as the first word of a comment, and a check reads it. Say what the check must search to decide whether a walk is covered — why a fixed window of lines above the walk is the wrong answer, and what the right scope is
+
+    **Where to look:** tests/harness/suite_order.hero (`marked_above` and its cases) · selfhost/resolve/cycles.hero:177 (a mark 25 lines above its sort)
+    **Why it matters:** a convention nothing executes decays into prose, which is CLAUDE.md §11's expiring premise with a comment on top

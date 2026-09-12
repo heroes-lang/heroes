@@ -1,0 +1,4 @@
+- [ ] **M-struct-passing close — the offers** | panel 092 (the macro that hid a check) | For months, `extern "string.h" function memset(s: ptr, c: i32, n: i32)` — where C says `size_t` — compiled at exit 0, while the same mistake against a hand-written header was exit 1. The emitted probe line was **byte-identical** in both cases. Say what was different, and why `-fno-builtin` did not help. Then the useful half: the compiler emits a tiny never-called function per `extern` just so clang will type-check the arguments — say why that function has to exist at all, when the real call site is right there in the same file
+
+    **Where to look:** selfhost/emit/extern_probe.hero (the module doc, then the parenthesis) · docs/panel/092 § The cause, wrong twice before it was right
+    **Why it matters:** the check existed, the diagnostic was good, and one macro expansion made it invisible on exactly the functions everybody binds

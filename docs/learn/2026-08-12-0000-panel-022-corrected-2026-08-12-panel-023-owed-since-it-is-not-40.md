@@ -1,0 +1,4 @@
+- [ ] **panel 022** | **CORRECTED 2026-08-12 (panel 023, owed since):** it is *not* 40 bytes for every `T` — `sizeof(Big?)` is **48** for a 40-byte record, because past 32 bytes the payload wins and the union takes the larger side. The claim was measured while the judge was compiling something else, and it is the shape of statement that is easy to write and false at one boundary. Original, kept as the record's own vocabulary: `T?` is **40 bytes for every `T`**, because `Failure` is two `str`s — so every `m[k]` returns through memory rather than in registers, measured on AAPCS64. design.md fixes `T?`'s C representation **nowhere**; M-value-aggregates states it rather than inheriting it. Rust polices the same largest-case tax with two lints, `result_large_err`'s threshold being 128 bytes
+
+    **Where to look:** docs/panel/022 § Watch list · design.md §4.6, §4.20
+    **Why it matters:** the cost lands on the return type of every fallible function in the language
