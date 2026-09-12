@@ -28,7 +28,7 @@ import { readText, isFile } from './repo.ts';
 import { plain } from './highlight.ts';
 import { tracklist } from './nods.ts';
 import { version } from './tables.ts';
-import { checkClaims, specReal } from './claims.ts';
+import { checkClaims, specReal, ceilingK } from './claims.ts';
 import { chainSection } from './chain.ts';
 
 /** One figure, as the check reads it. */
@@ -150,7 +150,9 @@ export function page(html: string, pagePath: string): string {
   // thing this function checked and the prose around them was the last thing
   // anybody did, which is where four false claims in one day came from.
   checkClaims(html, pagePath);
-  return fillOutbound(fillChain(fillTracklist(fillMeasured(fillVersion(html, pagePath)), pagePath), pagePath));
+  return fillOutbound(
+    fillChain(fillTracklist(fillCeiling(fillMeasured(fillVersion(html, pagePath))), pagePath), pagePath)
+  );
 }
 
 /**
@@ -229,6 +231,32 @@ export function fillMeasured(html: string): string {
   // token count is a number a reader compares with `heroes measure`'s output,
   // which prints it bare.
   return html.replaceAll('{{realTokens}}', String(real.tokens)).replaceAll('{{realModel}}', real.model);
+}
+
+/**
+ * `{{ceilingK}}` in a fragment becomes the specification's ceiling as the pages
+ * say it, `8K`, derived from the suite that holds the document under it
+ * (`claims.ts::ceilingK`, which refuses a ceiling that is not a whole number
+ * of K).
+ *
+ * IT EXISTS BECAUSE THE HAND-WRITTEN COPY WENT STALE AND NOTHING SAW IT. The
+ * ceiling moved 6144 -> 8192 on 2026-09-12 (panel 133). The strapline on both
+ * home pages moved with it, because a claim in `claims.ts` reads that sentence;
+ * the figure card below it and the note under the card did not, because nothing
+ * read those. They sat at `6K` against a document measuring 7531 — a threshold
+ * the text was already over, printed as reassurance.
+ *
+ * A CLAIM WOULD NOT HAVE BEEN THE REPAIR, and the ordering in `page()` is the
+ * reason: `checkClaims` runs BEFORE the fills, so a claim over a generated
+ * value would read the braces and never the number. The two mechanisms are
+ * exclusive by construction, which makes the choice per sentence rather than
+ * per page — a number typed by a hand gets a claim, a number the build writes
+ * gets this. The strapline stays typed and keeps its claim; the card and the
+ * note are written here.
+ */
+export function fillCeiling(html: string): string {
+  if (!html.includes('{{ceilingK}}')) return html;
+  return html.replaceAll('{{ceilingK}}', ceilingK());
 }
 
 /**

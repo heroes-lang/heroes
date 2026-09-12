@@ -31,8 +31,11 @@ import { fillMeasured } from './figures.ts';
 import { colourMarkdown, assertVerbatim } from './markdown.ts';
 
 const SPEC = 'spec/heroes-spec.md';
-// The ceiling as the pages say it, `6K`, the author's word (2026-09-09); the exact
-// number is the suite's and `ceilingK` refuses one that is not a whole number of K.
+// The ceiling as the pages say it, in whole K, the author's word for it
+// (2026-09-09). The number is NOT written here — it was `6K` in this comment
+// until 2026-09-12 and the ceiling had moved to 8192 — because a number in a
+// comment is checked by nothing. The exact one is the suite's, and `ceilingK`
+// refuses a ceiling that is not a whole number of K.
 const K = ceilingK();
 
 export interface SpecPage {

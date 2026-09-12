@@ -54,9 +54,9 @@
 
   <ul class="figures">
     <li>
-      <span class="n">6K</span>
+      <span class="n">{{ceilingK}}</span>
       <span class="what">token: il tetto della specifica</span>
-      <span class="how">La specifica descrive tutto il linguaggio in meno di cinque pagine. Un token è un frammento di testo che il modello legge o genera. Con una specifica breve, nel prompt resta spazio per il tuo programma.
+      <span class="how">La specifica descrive tutto il linguaggio in circa sette pagine. Un token è un frammento di testo che il modello legge o genera. Con una specifica breve, nel prompt resta spazio per il tuo programma.
       <a href="/it/spec/">la specifica&nbsp;&rarr;</a> <a href="/it/why/">perché è progettato così&nbsp;&rarr;</a></span>
     </li>
     <li>
@@ -72,7 +72,7 @@
       <a href="/it/project/#self-hosted">si compila da solo&nbsp;&rarr;</a></span>
     </li>
   </ul>
-  <p class="figures-note">Il conteggio dietro i 6K è quello del modello stesso, preso attraverso l&rsquo;API di conteggio dei token di Claude e registrato insieme al modello che lo ha prodotto; un test tiene la specifica sotto quel tetto a ogni commit.</p>
+  <p class="figures-note">Il conteggio dietro gli {{ceilingK}} è quello del modello stesso, preso attraverso l&rsquo;API di conteggio dei token di Claude e registrato insieme al modello che lo ha prodotto; un test tiene la specifica sotto quel tetto a ogni commit.</p>
   <p class="whole-language">Tutto il linguaggio, in un file solo: <code class="cmd">curl -L heroes-lang.org/spec.md</code></p>
 
   <h2>Il compilatore segnala gli errori</h2>
