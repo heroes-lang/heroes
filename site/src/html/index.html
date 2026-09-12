@@ -53,9 +53,9 @@
 
   <ul class="figures">
     <li>
-      <span class="n">6K</span>
+      <span class="n">{{ceilingK}}</span>
       <span class="what">tokens: the specification&rsquo;s ceiling</span>
-      <span class="how">The specification describes the whole language in under five pages. A token is a piece of text a model reads or generates. A short specification leaves room in the prompt for your program. <a href="/spec/">the specification&nbsp;&rarr;</a> <a href="/why/">why it is designed this way&nbsp;&rarr;</a></span>
+      <span class="how">The specification describes the whole language in about seven pages. A token is a piece of text a model reads or generates. A short specification leaves room in the prompt for your program. <a href="/spec/">the specification&nbsp;&rarr;</a> <a href="/why/">why it is designed this way&nbsp;&rarr;</a></span>
     </li>
     <li>
       <span class="n">0</span>
@@ -70,7 +70,7 @@
       <a href="/project/#self-hosted">it compiles itself&nbsp;&rarr;</a></span>
     </li>
   </ul>
-  <p class="figures-note">The count behind the 6K is the model&rsquo;s own, taken through Claude&rsquo;s token-counting API and recorded with the model that produced it; a test holds the specification under that ceiling on every commit.</p>
+  <p class="figures-note">The count behind the {{ceilingK}} is the model&rsquo;s own, taken through Claude&rsquo;s token-counting API and recorded with the model that produced it; a test holds the specification under that ceiling on every commit.</p>
   <p class="whole-language">The whole language, in one file: <code class="cmd">curl -L heroes-lang.org/spec.md</code></p>
 
   <h2>The compiler reports mistakes</h2>

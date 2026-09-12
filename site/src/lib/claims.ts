@@ -71,10 +71,15 @@ export function specCeiling(): number {
 }
 
 /**
- * The ceiling as the pages say it: `6K`, the author's own word for it (2026-09-09,
- * *"fewer than 6K tokens"*). Derived, never typed, and refused if the ceiling
- * stops being a whole number of K: a claim that rounds would be a claim the
- * tree does not make.
+ * The ceiling as the pages say it, in whole K — the author's own word for it
+ * (2026-09-09, *"fewer than 6K tokens"*, when the ceiling was 6144). Derived,
+ * never typed, and refused if the ceiling stops being a whole number of K: a
+ * claim that rounds would be a claim the tree does not make.
+ *
+ * The quotation keeps its own number because it is dated and a record is not
+ * rewritten. No CURRENT number appears in this comment: it said `6K` in the
+ * present tense until 2026-09-12, three days after the ceiling reached 8192,
+ * which is what a number costs when it lives where nothing reads it.
  */
 export function ceilingK(): string {
   const n = specCeiling();
@@ -353,10 +358,20 @@ const CLAIMS: Claim[] = [
   { page: 'site/src/html/it/about/thanks.html', what: 'the titles spent as section nods',
     fact: nodCount, shape: (n) => new RegExp(`Sono tutte e ${n} qui sopra`, 'i') },
 
-  // The specification's ceiling, in the author's own word for it, `6K`
-  // (2026-09-09), derived from the suite by `ceilingK` and said on the two
-  // home pages, the two why pages and the two specification pages. The shape
-  // ignores the formatted number it is handed and reads the K form itself.
+  // The specification's ceiling, in the author's own word for it — whole K,
+  // 2026-09-09 — derived from the suite by `ceilingK` and said on the two home
+  // pages, the two why pages and the two specification pages. The shape ignores
+  // the formatted number it is handed and reads the K form itself.
+  //
+  // SIX SENTENCES AND NOT THE WHOLE OF THE SIX PAGES. Each row below reads ONE
+  // sentence, and on the two home pages that sentence is the strapline. The
+  // figure card and the note under it say the ceiling too, and they went stale
+  // at `6K` for three days because no row here reached them. They are not
+  // repaired by adding rows: they carry `{{ceilingK}}` now and the build writes
+  // them (`figures.ts::fillCeiling`), which this checker cannot see, because
+  // `page()` runs `checkClaims` BEFORE the fills. That ordering is what divides
+  // the work — a sentence somebody types gets a row here, a sentence the build
+  // writes gets a placeholder — and it is why these six rows stay.
   { page: 'site/src/html/index.html', what: 'the specification ceiling in tokens',
     fact: specCeiling, shape: () => new RegExp(`fewer than ${ceilingK()} tokens`) },
   { page: 'site/src/html/it/index.html', what: 'the specification ceiling in tokens',
