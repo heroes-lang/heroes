@@ -37,7 +37,7 @@ same applies to an item this step *finds* rather than finishes: it is filed as
 `- [ ]` in the list that matches what it asks — `SCHEDULED.md` if it names a
 milestone, `DECIDE.md` if it names a default the compiler is running on,
 **`DEFECTS.md` if it is BROKEN** (a crash, a wrong answer at exit 0, a silence
-where a message is owed), `docs/work/learn/LEARN.md` if it only asks what is true —
+where a message is owed), `docs/learn/LEARN.md` if it only asks what is true —
 and **never as a bare bullet or a `## ` section**, which is a notation no count
 in this project can see. **`DEFECTS.md` was missing from this list until
 2026-09-07**, four days after the author instituted it, so no skill read or
@@ -51,7 +51,7 @@ optional body indented four spaces opening with `**Origin:**` and its date, and
 the whole region fenced by two lines of asterisks (`docs/work/DECIDE.md` carries
 the rule and `/decide` § 6 the reasoning). The first field is what the
 instrument reads: a milestone in `SCHEDULED.md`, `panel NNN` in `DECIDE.md`, the
-number in `DEFECTS.md`, the origin in `docs/work/learn/LEARN.md`. **When an item is
+number in `DEFECTS.md`, the origin in `docs/learn/LEARN.md`. **When an item is
 added, the `**OPEN: N**` line under the banner moves with it** — `records/lists`
 compares that number to the items it counts, so the count cannot drift the way
 one in a second document does. **A line that will carry a path into a body needs its
@@ -115,7 +115,7 @@ before reading the fix.
 ## 4. Queue comprehension — per new concept, not per step
 When a step introduces a new concept (first tokens, first tree, first types,
 first blocks, first C…), append 2–4 closed-form items (a count, a choice
-among structures, an output value) to the END of `docs/work/learn/LEARN.md`, which
+among structures, an output value) to the END of `docs/learn/LEARN.md`, which
 appends at the bottom since 2026-09-12 (it appended at line 31 before, so every
 filing touched one line):
 `- [ ] <origin> | <question / task> | <where to look> | <why it matters>`
@@ -158,7 +158,7 @@ Milestone close — the checklist (this is its only copy):
   renewed with a new milestone name** (panel 046 R2). This bullet exists because
   the mechanism failed without it: panel 036's *"Score at M-ffi-ladder close"*
   survived that milestone's close untouched;
-- **WRITE** the milestone's `/learn` offers into `docs/work/learn/LEARN.md` as items
+- **WRITE** the milestone's `/learn` offers into `docs/learn/LEARN.md` as items
   (walkthrough, golden ratification, mutation drill, exit-quiz), and **do not
   put them to the author**. `/learn` is never convened by the assistant, not at
   a milestone close and not as a suggestion at the end of a step; this bullet

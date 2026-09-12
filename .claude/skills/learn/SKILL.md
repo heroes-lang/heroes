@@ -1,6 +1,6 @@
 ---
 name: learn
-description: Teach the author one part of the compiler they want to understand, from the learning list (docs/work/learn/LEARN.md). Long preamble, code on screen, then one very clear question. NEVER convened by the assistant, never blocking, no decisions — it exists only when the author asks for it.
+description: Teach the author one part of the compiler they want to understand, from the learning list (docs/learn/LEARN.md). Long preamble, code on screen, then one very clear question. NEVER convened by the assistant, never blocking, no decisions — it exists only when the author asks for it.
 ---
 
 # /learn [n] — understanding, only when asked for
@@ -13,7 +13,7 @@ does this teach you"* with *"the compiler is waiting on your answer"* is two
 different clocks in one room, and the second always wins.
 
 **Never convened by the assistant.** Not at a milestone close, not when the queue
-grows, not as a suggestion at the end of a step. `docs/work/learn/LEARN.md` is written by `/step`
+grows, not as a suggestion at the end of a step. `docs/learn/LEARN.md` is written by `/step`
 and read here, and the author decides when. Conversation in Italian, using
 `/where`'s canonical analogies; artifacts written here in English.
 
@@ -75,7 +75,7 @@ written is what the *code* teaches.
 
 ## Where the items are
 
-`docs/work/learn/LEARN.md`, and nowhere else. The queue was split into three lists
+`docs/learn/LEARN.md`, and nowhere else. The queue was split into three lists
 on 2026-08-12 because one file held 192 open items of three kinds, and a list you
 have to filter before you can read it is a list nobody opens:
 

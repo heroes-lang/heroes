@@ -2967,7 +2967,7 @@ constant OPEN_PREFIX: str
 # rule fewer: a ticked question stays in it (`/learn`'s rule — the list is also
 # its own record), so `records/lists` reads it with `ticked_allowed`.
 constant LEARNING: str
-    "docs/work/learn/LEARN.md"
+    "docs/learn/LEARN.md"
 
 # The record the three lists empty into. **The same string appears in `RECORD`,
 # `QUOTES_THE_OLD_SPELLING` and `APPENDED` above, and it is not the same fact**:
@@ -3441,7 +3441,7 @@ function record_offences(text: str) -> [str]
 # with a file — which is `homed`/`item_milestone`'s division, for the same
 # reason: a check nobody has watched fail is a check nobody has watched.
 #
-# **`ticked_allowed` is `docs/work/learn/LEARN.md`, and it is one line rather than a
+# **`ticked_allowed` is `docs/learn/LEARN.md`, and it is one line rather than a
 # second function.** A ticked question STAYS in that file by `/learn`'s own rule,
 # because the list is also its own record: a question the author has answered is
 # a different object from a decision the compiler acted on. So there the first
