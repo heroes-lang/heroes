@@ -41,6 +41,9 @@ constant LEAST_KEYWORDS: i64
 constant LEAST_OPERATORS: i64
     18
 
+constant LEAST_PRODUCTIONS: i64
+    40
+
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     said = shell.run(scratch: scratch, program: compiler, words: [compiler, "grammar"])
@@ -68,6 +71,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     out = said.must().out
     keywords(@r, out: out)
     powers(@r, out: out)
+    productions(@r)
     return ok(r)
 
 ## The keywords
@@ -285,3 +289,192 @@ test "the printed rows are read by their columns, and the header is not one"
 test "the words after a marker stop at the blank line"
     out = "head:\n  a b\n  c\n\nnot this\n"
     assert words_after(text: out, marker: "head:") == ["a", "b", "c"]
+
+## The productions, against themselves
+
+# **WHAT THIS IS, said exactly.** It is `ebnflint`'s class and Go's, and
+# grammarkdown's for ECMAScript: the grammar checked against ITSELF, never
+# against the parser. Panel 133's historian named those three and said Heroes'
+# four proposed checks would be "strictly stronger"; three of those four were
+# never built, so the sentence would be inherited falsely if it were not said
+# here. Nothing in this repository compares a production to the function that
+# reads it, and the engineer measured the reason: roughly 82 hand-written
+# exception rows to judge 74 productions, where a name-only row is a mute button.
+#
+# What it does catch is real and cheap: a non-terminal used and never defined,
+# which is a typo or a production somebody deleted; and one defined and
+# unreachable from `File`, which is a production nothing can ever use. Both are
+# silent in prose and neither costs a spec token to find.
+constant SPEC: str
+    "spec/heroes-spec.md"
+
+# The classes the lexer builds and the indentation plants. They are used by the
+# productions, named in the document's opening paragraph, and defined by no
+# production — so they are the one legitimate reason a name appears on a right
+# side and nowhere on a left.
+function lexical() -> [str]
+    return ["ident", "integer", "float", "string", "character", "piece", "NEWLINE", "INDENT", "DEDENT"]
+
+record Production
+    name: str
+    uses: [str]
+
+function productions(@r: report.Report)
+    text = read_file(SPEC)
+
+    if text.is_err()
+        report.keep_failure(@r, label: "grammar/productions", detail: "  cannot read " + SPEC)
+        return
+    found = productions_of(text.must())
+
+    if found.len() < LEAST_PRODUCTIONS
+        report.keep_failure(
+            @r,
+            label: "grammar/productions",
+            detail: "  " + found.len().to_str() + " productions read out of " + SPEC + " and there are at least " + LEAST_PRODUCTIONS.to_str() + " — the extractor is reading the wrong shape, and both comparisons under it were about to pass vacuously"
+        )
+        return
+    defined: {str: bool} @ {}
+
+    for one in found
+        defined[one.name] @ true
+
+    for word in lexical()
+        defined[word] @ true
+
+    missing: [str] @ []
+
+    for one in found
+        for used in one.uses
+            if defined[used].is_err()
+                missing @ missing.push(one.name + " uses " + used)
+
+    if missing.len() > 0
+        report.keep_failure(
+            @r,
+            label: "grammar/productions",
+            detail: "  a production names something no production defines and the lexer does not build:\n    " + missing.join("\n    ") + "\n  Either the name is a typo, or the production it named has been deleted."
+        )
+        return
+    seen: {str: bool} @ {}
+    mark(found: found, at: "File", @seen)
+    orphans: [str] @ []
+
+    for one in found
+        if seen[one.name].is_err()
+            orphans @ orphans.push(one.name)
+
+    if orphans.len() > 0
+        report.keep_failure(
+            @r,
+            label: "grammar/productions",
+            detail: "  a production is defined and cannot be reached from `File`:\n    " + orphans.join(" ") + "\n  Nothing that parses a Heroes file can ever use it, so either the grammar\n  lost the production that named it, or it describes a form the language\n  does not have."
+        )
+        return
+
+    report.keep_pass(@r)
+
+# Everything reachable from `at`, marked in place. Heroes has no recursion
+# limit worth fearing here: the grammar is under a hundred productions.
+function mark(found: [Production], at: str, @seen: {str: bool})
+    if !seen[at].is_err()
+        return
+    seen[at] @ true
+
+    for one in found
+        if one.name == at
+            for used in one.uses
+                mark(found: found, at: used, @seen)
+
+## Reading the blocks
+
+# The four-space blocks outside a fence, which is where `.claude/rules/spec-shape.md`
+# puts the productions and why: a grammar in a fence is refused, because the
+# `rejected` check reads every fence as Heroes source.
+function productions_of(text: str) -> [Production]
+    out: [Production] @ []
+    buffer: str @ ""
+    in_fence: bool @ false
+
+    for line in strings.lines(text)
+        if strings.starts_with(text: line, prefix: "```")
+            in_fence @ !in_fence
+            continue
+
+        if in_fence || !strings.starts_with(text: line, prefix: "    ")
+            continue
+        body = strings.trimmed(line)
+
+        if body.len() == 0
+            continue
+
+        if opens_production(body)
+            if buffer.len() > 0
+                out @ out.push(one_production(buffer))
+            buffer @ body
+        else if buffer.len() > 0
+            buffer @ buffer + " " + body
+
+    if buffer.len() > 0
+        out @ out.push(one_production(buffer))
+
+    return out
+
+# `Name = ...` — a name, then spaces, then `=`. A continuation line opens with
+# `|` or with a piece of the right side, so it never matches.
+function opens_production(body: str) -> bool
+    i: i64 @ 0
+
+    while i < body.len() && is_name_byte(body[i])
+        i @ i + 1
+
+    if i == 0
+        return false
+
+    while i < body.len() && body[i] == ' '
+        i @ i + 1
+
+    return i < body.len() && body[i] == '='
+
+function is_name_byte(b: u8) -> bool
+    if b >= 'a' && b <= 'z'
+        return true
+
+    if b >= 'A' && b <= 'Z'
+        return true
+
+    if b >= '0' && b <= '9'
+        return true
+    return b == '_'
+
+# The name on the left, and every name on the right that is not inside quotes.
+function one_production(body: str) -> Production
+    cut = strings.index_of(text: body, needle: "=")
+    name: str @ strings.trimmed(body.slice(from: 0, to: cut.default(0)))
+    rest = body.slice(from: cut.default(0) + 1, to: body.len())
+    return Production(name: name, uses: names_outside_quotes(rest))
+
+function names_outside_quotes(text: str) -> [str]
+    out: [str] @ []
+    word: str @ ""
+    quoted: bool @ false
+    i: i64 @ 0
+
+    while i < text.len()
+        b = text[i]
+
+        if b == '"'
+            quoted @ !quoted
+            word @ ""
+        else if !quoted && is_name_byte(b)
+            word @ word + text.slice(from: i, to: i + 1)
+        else
+            if word.len() > 0
+                out @ out.push(word)
+            word @ ""
+        i @ i + 1
+
+    if word.len() > 0
+        out @ out.push(word)
+
+    return out
