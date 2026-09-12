@@ -59,6 +59,7 @@ use ast
 use cursor
 use lex_interp
 use parse/type
+use operators
 
 ## The precedence table — §4.14, read from the bottom up
 
@@ -1211,8 +1212,8 @@ function render(a: ast.Ast, at: i64, text: str) -> str
     node = a.exprs[at]
 
     return match node.kind
-        .binary b     => "(" + render(a, b.left, text) + " " + op_text(b.op) + " " + render(a, b.right, text) + ")"
-        .unary u      => "(" + unary_text(u.op) + render(a, u.operand, text) + ")"
+        .binary b => "(" + render(a, b.left, text) + " " + operators.spelling(b.op) + " " + render(a, b.right, text) + ")"
+        .unary u      => "(" + operators.unary_spelling(u.op) + render(a, u.operand, text) + ")"
         .field f      => "(" + render(a, f.base, text) + "." + cursor.slice_of(text, f.name) + ")"
         .field_name f => "(" + render(a, f.base, text) + "::" + cursor.slice_of(text, f.name) + ")"
         .index i      => "(" + render(a, i.base, text) + "[" + render(a, i.index, text) + "])"
@@ -1229,33 +1230,6 @@ function render(a: ast.Ast, at: i64, text: str) -> str
         .hole                                                    => "???"
         .if_expr | .match_expr                                   => "<control>"
         .error                                                   => "<error>"
-
-function op_text(op: ast.BinaryOp) -> str
-    return match op
-        .add     => "+"
-        .sub     => "-"
-        .mul     => "*"
-        .div     => "/"
-        .rem     => "%"
-        .eq      => "=="
-        .ne      => "!="
-        .lt      => "<"
-        .le      => "<="
-        .gt      => ">"
-        .ge      => ">="
-        .and     => "&&"
-        .or      => "||"
-        .bit_and => "&"
-        .bit_or  => "|"
-        .bit_xor => "^"
-        .shl     => "<<"
-        .shr     => ">>"
-
-function unary_text(op: ast.UnaryOp) -> str
-    return match op
-        .neg     => "-"
-        .not     => "!"
-        .bit_not => "~"
 
 test "multiplication binds tighter than addition, and both are left-associative"
     # 1 + 2 * 3

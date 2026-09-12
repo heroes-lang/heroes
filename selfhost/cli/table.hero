@@ -26,6 +26,7 @@ variant Tag
     doctor_cmd
     mutate_cmd
     measure_cmd
+    grammar_cmd
     this_cmd
     # The two that live outside the table: --version and --help/none.
     version_cmd
@@ -130,6 +131,7 @@ function commands() -> [Command]
         Command(tag: .doctor_cmd, name: "doctor", operand: .no_operand, flags: no_flags, summary: "check the toolchain (clang, CLT, arch, runtime, cache)")
         Command(tag: .mutate_cmd, name: "mutate", operand: .optional_operand, flags: mutate_flags, summary: "metric 3: make one plausible mistake per site and count what the compiler catches (default: examples/)")
         Command(tag: .measure_cmd, name: "measure", operand: .optional_operand, flags: measure_flags, summary: "count a spec file against its ceiling (default: spec/heroes-spec.md)")
+        Command(tag: .grammar_cmd, name: "grammar", operand: .no_operand, flags: no_flags, summary: "print the terminals and the precedence, from the compiler's own tables")
         Command(tag: .this_cmd, name: "this", operand: .no_operand, flags: no_flags, summary: "print The Zen of Heroes")
     ]
 
@@ -194,7 +196,12 @@ function exit_code(e: Exit) -> i64
 
 test "the table is the pipeline's order and the flags carry their shapes"
     table = commands()
-    assert table.len() == 11
+
+    # **11 -> 12 on 2026-09-12**, `grammar`, which prints the terminals and the
+    # precedence from this compiler's own tables (panel 133 R1). The number is
+    # pinned rather than derived so that a command added in silence cannot be:
+    # it moves in the commit that adds one, beside the row.
+    assert table.len() == 12
     assert table[0].name == "lex"
     assert table[3].name == "build"
 

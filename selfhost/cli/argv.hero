@@ -120,6 +120,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
                 .run_cmd                                                        => take @ true
                 .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .test_cmd     => take @ take
                 .fmt_cmd | .doctor_cmd | .mutate_cmd | .measure_cmd | .this_cmd => take @ take
+                .grammar_cmd                                                    => take @ take
                 .version_cmd | .help_cmd                                        => take @ take
 
             if !take
@@ -256,7 +257,7 @@ test "strict against the table, and every refusal names what is accepted"
 
     match bad
         .ok    => assert false
-        .err e => assert e.msg == "unknown command `explode` — the commands are lex, parse, check, build, run, test, fmt, doctor, mutate, measure, this"
+        .err e => assert e.msg == "unknown command `explode` — the commands are lex, parse, check, build, run, test, fmt, doctor, mutate, measure, grammar, this"
 
     old: [str] = ["fmt", "main.hero", "--write"]
 

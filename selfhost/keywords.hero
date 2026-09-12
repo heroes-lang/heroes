@@ -31,6 +31,43 @@ constant ERR_NOT_FOREIGN: str
 
 ## The keywords
 
+# The closed list, as a LIST, for the one caller that must enumerate what
+# `keyword` below can only be asked about one word at a time: `heroes grammar`,
+# which prints the language's terminals from the compiler's own tables rather
+# than from a document somebody kept up to date (panel 133 R1).
+#
+# **Two spellings of one fact, and what holds them together is not a comment.**
+# Heroes has no reflection, so this list cannot be derived from the match below
+# and a word added to one and not the other would be a silence. The test at the
+# foot of this file asserts every entry here is a keyword; the `grammar` suite
+# asserts the other direction, reading the ARMS of `keyword` out of this file as
+# text and comparing them to what the command prints. A word added to the match
+# alone turns that check red, which is the direction a comment could never hold.
+function keywords() -> [str]
+    return [
+        "constant"
+        "function"
+        "record"
+        "variant"
+        "match"
+        "if"
+        "else"
+        "for"
+        "while"
+        "in"
+        "break"
+        "continue"
+        "return"
+        "test"
+        "assert"
+        "extern"
+        "nullptr"
+        "use"
+        "true"
+        "false"
+        "fail"
+    ]
+
 # The closed list. A miss means the word is an ordinary identifier.
 function keyword(text: str) -> token.TokenKind?
     return match text
@@ -198,6 +235,18 @@ test "every keyword resolves and an identifier does not"
     assert keyword("fail").must() == .kw_fail
     assert keyword("main").is_err()
     assert keyword("Function").is_err()
+
+    # The list and the match, one direction. Every word the list offers IS a
+    # keyword, so the list can never advertise one the lexer does not reserve.
+    # The other direction is the `grammar` suite's, which reads the arms out of
+    # this file as text: together they leave no silence.
+    for word in keywords()
+        assert !keyword(word).is_err()
+
+    # And the count, pinned, because a word DELETED from the list would pass the
+    # loop above in silence. Twenty-one since the language reached its fixpoint;
+    # it moves in the commit that adds or removes a keyword, never on its own.
+    assert keywords().len() == 21
 
 test "a foreign word arrives with its repair"
     fw = foreign_word(text: "int", called: false).must()

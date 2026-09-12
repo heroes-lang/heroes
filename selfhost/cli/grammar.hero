@@ -1,0 +1,178 @@
+# heroes grammar — the language's terminals and its precedence, printed from
+# the compiler's own tables (panel 133 R1).
+#
+# **WHY THIS IS A COMMAND AND NOT A DOCUMENT.** Panel 133 sat on a proposal to
+# write the whole grammar into a file beside the specification and keep it
+# honest with four checks. Five seats falsified the same half of it from five
+# different inputs, and the historian's survey found every free-standing grammar
+# archived — Rust's removed in 2019 and its working group closed in 2024, and
+# `ziglang/zig-spec`, the same mechanism feature for feature, archived in 2025
+# three years after its checker had correctly reported six divergences nobody
+# repaired. What survived everywhere is Wirth's arrangement: the productions
+# beside the prose that governs them, and printed again collected.
+#
+# So the document and the command split by DERIVABILITY. The productions are
+# prose's half and live in `spec/heroes-spec.md`. The terminals and the powers
+# are already data inside this compiler, so nothing needs to keep a copy of them
+# in sync with anything: this reads the tables at run time and prints them.
+#
+# **AND IT PRINTS THE OPERATOR'S AST NAME BESIDE ITS SPELLING**, which is the
+# whole reason the operator half is worth printing at all. Panel 067's defect
+# was `.percent => .add`: the spelling `%`, the power 9, and the wrong operator,
+# with `heroes check` at exit 0 and every test passing. A table that stops at
+# spellings and powers cannot show it. This one puts the pairing on the page.
+#
+# The contract is `.claude/rules/cli-surface.md`'s: the artifact on stdout,
+# nothing on stderr, exit 0. It reads no file and takes no operand, so there is
+# nothing for it to fail on.
+
+use cli/io
+use cli/table as cli_table
+use token
+use keywords
+use grammar_expr
+use operators
+
+function run() -> cli_table.Exit
+    io.print_artifact(text: report())
+    return .ok_exit
+
+# One string, so a reader can redirect stdout into a file and get the whole
+# report — `heroes this`'s shape, and `.claude/rules/cli-surface.md`'s contract.
+function report() -> str
+    return "Heroes: the terminals and the precedence, read from the compiler's own tables.\n\n" + keyword_block() + "\n\n" + power_block() + "\n\n" + what_is_not_here() + "\n"
+
+# The reserved words, in the order `selfhost/keywords.hero` declares them, four
+# to a line. **The order is the source's and not alphabetical**, because the
+# `grammar` suite reads that file's match arms as text and compares the two
+# sequences: sorting here would make the comparison a set comparison, which
+# cannot see a word moved between two arms.
+function keyword_block() -> str
+    words = keywords.keywords()
+    out: str @ "Keywords (" + words.len().to_str() + "), which a program may not use as a name:"
+    line: str @ ""
+    i: i64 @ 0
+
+    while i < words.len()
+        line @ line + pad(text: words[i], width: 11)
+
+        if (i + 1) % 4 == 0
+            out @ out + "\n  " + trim_right(line)
+            line @ ""
+        i @ i + 1
+
+    if line.len() > 0
+        out @ out + "\n  " + trim_right(line)
+
+    return out
+
+# The binary operators, loosest first, each with the power the climber asks for
+# and the name the tree carries.
+function power_block() -> str
+    out: str @ "Binary operators, loosest first. Every one is left-associative, so the\nclimber asks for `power + 1` on the right. The `operator` column is the name\nthe tree carries, and a spelling paired with the wrong one parses as the wrong\noperator with every test green (panel 067).\n"
+    out @ out + "\n  power  spelling  operator"
+
+    for kind in operators.binary_tokens()
+        found = grammar_expr.binary_op(kind)
+
+        if found.is_err()
+            # Unreachable while `operators()` and `binary_op` agree, and the
+            # `grammar` suite is what asserts they do. Loud rather than skipped:
+            # a silently dropped row is the shape this whole command exists to
+            # refuse.
+            out @ out + "\n  " + token.kind_name(kind) + " IS IN THE LIST AND NOT IN THE TABLE"
+        else
+            one = found.must()
+            out @ out + "\n" + aligned(number: one.power, width: 7) + "  " + pad(text: operators.spelling(one.op), width: 8) + "  " + operators.name(one.op)
+
+    return out
+
+# **What this command cannot print, said rather than left to be discovered.**
+# A reader who finds only two tables here should be told why, and the answer is
+# the sitting's: these two are data in the compiler and the rest is not.
+function what_is_not_here() -> str
+    return "Not here, because the compiler holds no table to print it from:\n  the productions, which are in `spec/heroes-spec.md` beside the prose that\n  governs each one; and the six contextual words — `as`, `link`, `package`,\n  `tag`, `partial`, `owned` — which are ordinary identifiers everywhere except\n  the one position each is read in."
+
+function pad(text: str, width: i64) -> str
+    out: str @ text
+    count: i64 @ text.chars().len()
+
+    while count < width
+        out @ out + " "
+        count @ count + 1
+
+    return out
+
+function aligned(number: i64, width: i64) -> str
+    shown = number.to_str()
+    out: str @ ""
+    count: i64 @ shown.chars().len()
+
+    while count < width
+        out @ out + " "
+        count @ count + 1
+
+    return out + shown
+
+function trim_right(text: str) -> str
+    cs = text.chars()
+    last: i64 @ cs.len()
+
+    while last > 0 && cs[last - 1] == " "
+        last @ last - 1
+
+    return cs.slice(from: 0, to: last).join("")
+
+test "every operator in the list is in the table, and the table's name travels with its spelling"
+    # The half a unit test can hold: the list cannot name a token the match
+    # refuses. The other half — the match naming one the list forgot — is the
+    # `grammar` suite's, because it needs to read this file's neighbour as text.
+    for kind in operators.binary_tokens()
+        assert !grammar_expr.binary_op(kind).is_err()
+
+    assert operators.binary_tokens().len() == 18
+
+    # The pairing panel 067 lost. `%` is `rem` at power 9, and if one day it is
+    # `add` again this line is what says so.
+    percent = grammar_expr.binary_op(.percent).must()
+    assert operators.spelling(percent.op) == "%"
+    assert operators.name(percent.op) == "rem"
+    assert percent.power == 9
+
+test "the printed report names every keyword and every operator"
+    out = keyword_block() + power_block()
+
+    for word in keywords.keywords()
+        assert strings_contains(text: out, needle: word)
+
+    for kind in operators.binary_tokens()
+        assert strings_contains(text: out, needle: operators.name(grammar_expr.binary_op(kind).must().op))
+
+test "a column is padded to its width and never past it"
+    assert pad(text: "if", width: 5) == "if   "
+    assert pad(text: "continue", width: 5) == "continue"
+    assert aligned(number: 9, width: 7) == "      9"
+    assert trim_right(text: "a  ") == "a"
+
+# A needle in a haystack, because this module has no other reason to reach for
+# the harness's string helpers and one loop is cheaper than a dependency.
+function strings_contains(text: str, needle: str) -> bool
+    if needle.len() == 0
+        return true
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        same: bool @ true
+        i: i64 @ 0
+
+        while i < needle.len()
+            if text[at + i] != needle[i]
+                same @ false
+                break
+            i @ i + 1
+
+        if same
+            return true
+        at @ at + 1
+
+    return false
