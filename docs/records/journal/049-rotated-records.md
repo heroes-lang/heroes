@@ -114,6 +114,14 @@ decision that blocked its own tag rather than taking it, because
 took the recommendation, and the tag went on the commit that settled it, which is
 where CLAUDE.md § Verification puts it.
 
+*Correction, 2026-09-13.* The row is **50**. It was 74 when this was written and
+75 after `508977b9` opened M-declared-thresholds at row 51, and both times it sat
+behind the scheduled block, against the chain's own rule that closed rows come
+first in the order they closed. The author saw the two parked rows and asked for
+the order to be repaired; the reorder of 2026-09-13 moved this row and
+`M-stated-grammar`'s into closing order, by journal number, and renumbered the
+rows below them.
+
 **And settling it found the same assumption one level up.** Removing the throw
 was not the whole repair: `chainSection` wrote *"the open one is X"* from
 `rows.find`, so with two lanes the page would have named the first milestone and
