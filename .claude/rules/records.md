@@ -16,7 +16,7 @@ What each rule cost to learn is in `docs/contract/case-law.md`, cited as
 ## A record is never rewritten
 
 `docs/panel/`, `docs/records/journal/`, `docs/measurements/`, `docs/done/`,
-`docs/book/beats/`, `docs/contract/`, `tests/golden/`, `DESIGN-LOG.md`, every
+`docs/records/book/beats/`, `docs/contract/`, `tests/golden/`, `DESIGN-LOG.md`, every
 commit subject and the twelve legacy tags are append-only. Where a sentence in
 one has since been falsified, the correction is **added underneath**, with its
 date: a measurement that was right when it was taken is history, and a record
@@ -47,7 +47,7 @@ historical entry has no clock reading, and two entries of one day still have an
 order. **No directory index**, because an index is a second place where truth
 lives and the only tabulated one here drifted for nine closes in silence.
 
-Rotated so far: `docs/book/beats.md` → `docs/book/beats/` (2026-09-12, 114
+Rotated so far: `docs/records/book/beats.md` → `docs/records/book/beats/` (2026-09-12, 114
 entries), `DESIGN-LOG.md` → `docs/log/` (620) and `docs/work/DONE.md` →
 `docs/done/` (491), all three on 2026-09-12.
 `ROTATED` in `tests/harness/suite_records.hero` is the live list.
