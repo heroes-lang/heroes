@@ -1,0 +1,96 @@
+# The reader's own count of the spec, pinned, and the flag that goes and asks
+# for a new one (design.md §1.6; panels 011, 123).
+#
+# **Its own module since 2026-09-12, and the seam is a question rather than a
+# line count.** `cli/measure.hero` answers *what does this file measure on the
+# tables we carry* — offline, from the working directory, for any path. This one
+# answers *what did the tokeniser that actually reads the spec say, and when*: a
+# different input (the network), a different cadence (by hand, never a check)
+# and a different subject (one document and no other). The two were one file
+# until `cli/measure.hero` passed §11's threshold, and the split had to be
+# argued rather than rounded to; the argument is this paragraph.
+#
+# **Which file is the spec stays with the tool that defaults to it.** This
+# module is handed the path rather than holding it, because it decides nothing
+# about which document the tool measures and everything about what was
+# measured.
+#
+# THE GATE MAY NOT TOUCH THE NETWORK (panel 123 R1 and R5). design.md Part 11
+# metric 1 forbids it in as many words, and the repository being public means
+# GitHub passes no secrets to a fork's pull request, so a key-gated check is
+# structurally red on every fork PR forever. So the number is recorded, with
+# the model that produced it and the day it was taken, and `heroes measure
+# --refresh` is what goes and asks. It is the shape Bazel's `sha256`, pip's
+# hash-checking mode and Nix's fixed-output derivations all take, and Go's
+# `toolchain` line is the precedent for writing the instrument's name beside
+# the pinned data, *"for reproducibility"*.
+#
+# THE DIGEST IS WHAT MAKES A STALE RECORD LOUD. It is the spec's content hash,
+# and when it does not match the file in hand the verdict is WITHHELD rather
+# than computed — because a headroom sentence against a stale count is the
+# exact sentence that cost this project 998 tokens.
+
+use cli/io
+use cli/refresh
+use cli/count_tokens
+use cli/table as cli_table
+
+constant REAL_TOKENS: i64
+    5716
+
+constant REAL_MODEL: str
+    "claude-opus-5"
+
+constant REAL_TAKEN: str
+    "2026-09-12"
+
+constant SPEC_DIGEST: str
+    "35968b435ed519d7"
+
+# `--refresh`: ask the reader's own tokeniser and print the record to paste.
+#
+# THE ARTIFACT IS THE FOUR CONSTANTS, ON STDOUT, and the instruction that goes
+# with them is on stderr — `.claude/rules/cli-surface.md`'s contract, and here
+# it earns itself: a reader can redirect stdout into a file and get eight lines
+# that compile.
+#
+# AND IT REFUSES EVERY FILE BUT THE SPEC. The record belongs to one document. A
+# digest of another file is a digest nothing cross-checks, printed beside a
+# count nothing judges: a measurement in the shape of one, which is the class
+# this whole flag exists to close.
+function run_refresh(path: str, text: str, spec: str) -> cli_table.Exit
+    if path != spec
+        io.eprint(
+            text: "error: `--refresh` refreshes the record for `" + spec + "`, and `" + path + "` has none — no ceiling judges it and no check keeps it honest (panel 123 R5)"
+        )
+        return .failed_exit
+    lines = refresh.refreshed(text)
+
+    if lines.is_err()
+        io.eprint(text: "error: " + refresh.why_lines(lines))
+        return .failed_exit
+
+    for row in lines.must()
+        print(row)
+
+    io.eprint(
+        text: "note: paste these into `tests/harness/suite_spec.hero` AND `selfhost/measure/pinned.hero`, in ONE commit — the two copies are what the harness cross-checks against what this tool prints, and the digest is of `" + spec + "` exactly as it stands now"
+    )
+    return .ok_exit
+
+test "the model in the record is the model the refresh asks"
+    assert REAL_MODEL == count_tokens.PINNED_MODEL
+
+# The digest was a placeholder for one build, and this is what stopped it
+# staying one. It is kept rather than deleted: a record whose digest is all
+# zeroes is a count of nothing, and the day somebody pastes a number without
+# pasting what it was a count OF, this fires.
+test "the record's digest is a real one and not the placeholder"
+    assert SPEC_DIGEST != "0000000000000000"
+    assert SPEC_DIGEST.len() == 16
+
+test "the refresh refuses every file but the spec, on the path and not on the key"
+    # The half of `--refresh` a test can reach with no key in the environment:
+    # the refusal happens on the PATH, before anything asks the network.
+    assert cli_table.exit_code(run_refresh(path: "design.md", text: "x", spec: "spec/heroes-spec.md")) == 2
+    assert cli_table.exit_code(run_refresh(path: "CLAUDE.md", text: "x", spec: "spec/heroes-spec.md")) == 2
