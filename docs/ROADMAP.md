@@ -33,15 +33,16 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 
 | | |
 |---|---|
-| **Current milestone** | **none open.** Next in the chain is **M-reflection-verdict**. The defect list is empty, nothing waits on the author, and the last five milestones carry their tags |
-| **Last closed** | **M-named-callbacks**, 2026-09-11, `m-named-callbacks` ([048](journal/048-named-callbacks.md)) — the role inversion through a generic callback, closed at 7 of 7: `fold`'s type names its accumulator and its element and a function handed to it names them the same way · before it **M-labelled-types** ([047](journal/047-labelled-types.md)), **M-positional-values** ([046](journal/046-positional-values.md)), **M-labelled-builtins** ([045](journal/045-labelled-builtins.md)) and **M-anchored-spec** ([044](journal/044-anchored-spec.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **49** of 73 · **46** milestone tags. Four were placed on 2026-09-11 on the commit that emptied the defect list rather than on their own, because CLAUDE.md § Verification tags only over a clean list and three of those four had closed with a defect open (author instruction, 2026-09-11) |
-| The compiler | **57,120** lines of Heroes in **197** modules · the seed **773,509** lines of C at runtime ABI **22**, regenerated at the close with the fixpoint verified by `cmp` · one token kind, one AST node and three helper modules for `f"…"`, and four decided ceilings moved by their measured lines |
-| The spec | **5662 real tokens** on `claude-opus-5` through `count_tokens`, read by `heroes measure --refresh` at the landing, digest `6e82771d0dbabc31`; **4474** on the vendored ranks · 482 free against the 6144 ceiling, **422** net of the 60-token FFI floor · ledger **67** rows |
-| Records | sittings **130** · journals **49** · examples **120** files · **open defects 0** · mutation: `swap-args` **1733 of 1910 killed, 96%** over `examples/`, unmoved by either of the day's last two milestones because that corpus holds no function type with two parameters of one type; on the shapes they target, **6 of 6** through a function value and **7 of 7** on a transposed `fold` callback, against 1 of 6 and 2 of 7 |
-| Waiting on the author | **0** decisions. `panel 126` to `panel 130` all ratified 2026-09-11, each conservative route recorded beside its verdict and declined · **54** in `SCHEDULED.md` |
+| **Current milestone** | **none open.** Next in the chain is **M-reflection-verdict**, which a parallel session has been working since 2026-09-11 without opening its row. One decision waits on the author: whether § The chain may carry more than one `**OPEN**` row, which is what a second lane needs |
+| **Last closed** | **M-rotated-records**, 2026-09-12, **untagged** — the list is not clean, by its own filing ([049](journal/049-rotated-records.md)) — the records became directories and the files they were stay as maps · before it **M-named-callbacks** ([048](journal/048-named-callbacks.md)) and **M-labelled-types** ([047](journal/047-labelled-types.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **50** of 74 · **49** milestone tags, the legacy `m0`-`m8` included |
+| The compiler | **58,665** lines of Heroes in **199** modules (`find selfhost -name '*.hero'`) · the seed **790,756** lines of C |
+| The spec | **4430** on the vendored ranks, unchanged by this milestone, which spent no spec token · the real count is `heroes measure --refresh`'s and was last taken 2026-09-11 |
+| Records | sittings **131** · journals **50** · milestone files **44** · entries: `docs/log/` **621**, `docs/done/` **491**, `docs/book/beats/` **115** · **open defects 0** |
+| Waiting on the author | **1** decision, and a push: 11 commits stand unpushed, 1 of them touching `site/` |
 
-**Re-measured 2026-09-11 at M-anchored-spec's close, not carried**: the compiler's own suite is **618** and the net's own **129** (126 at the last close; three joined with this milestone's two checks and the section reader). The full net ran on this Mac on the closing tree and reads **1693 passed, 0 failed** once the five pins moved, on the regenerated seed whose fixpoint `cmp` confirmed silent. Every suite green: `check` 104, `annotations` 140, `fixes` 7, `run` 108, `ir` 23, `emit` 6, `unsupported` 12, `emission` 441, `descriptors` 221, `cache` 5, `units` 3, `corpus` 54, `warnings` 168, `determinism` 137, `lines` 108, `canonical` 1, `layout` 1, `order` 2, `runtime` 7, `surface` 107, `special` 10, **`spec` 13** where it was 11 before this milestone, and `records` 15. **Two suites went red on the way and both were this session's own doing**: `emission` on five comment lines added at the top of a golden, which moved every `#line` in its blessed trace, and the pin class in `spec` and `surface`, which is what a spec amendment is supposed to do. **All three legs ran on this tree and passed**, 2026-09-11, 23 minutes: Linux x86-64, Windows x86-64 and Darwin arm64 on the pushed commit, which is the first time the widened matrix of 2026-09-10 has judged a spec amendment; the site's own deploy went green in 31 s and the live page carries the numbered sections and the copy button.
+**Re-measured 2026-09-12 at M-rotated-records' close, not carried.** `records` is
+**20** checks, the net's own tests **137**, and the suite reads 23 s against 17.7 s on 2026-09-06, over 1,227 files more.
 
 ---
 
@@ -235,7 +236,7 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 71 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
 | 72 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
 | 73 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
-| 74 | **M-rotated-records** | scheduled | — | — | the records become directories, one entry per file and one milestone per file, and the file that held each stays behind as a map so every citation still resolves · CLAUDE.md §14 |
+| 74 | **M-rotated-records** | done 2026-09-12 | **untagged**, one open decision | [049](journal/049-rotated-records.md) | the records become directories, one entry per file and one milestone per file, and the file that held each stays behind as a map so every citation still resolves · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
