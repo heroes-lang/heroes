@@ -16,7 +16,7 @@ What each rule cost to learn is in `docs/contract/case-law.md`, cited as
 ## A record is never rewritten
 
 `docs/panel/`, `docs/journal/`, `docs/measurements/`, `docs/work/DONE.md`,
-`docs/book/beats.md`, `docs/contract/`, `tests/golden/`, `DESIGN-LOG.md`, every
+`docs/book/beats/`, `docs/contract/`, `tests/golden/`, `DESIGN-LOG.md`, every
 commit subject and the twelve legacy tags are append-only. Where a sentence in
 one has since been falsified, the correction is **added underneath**, with its
 date: a measurement that was right when it was taken is history, and a record
@@ -24,7 +24,31 @@ that quietly loses its inconvenient half is worth less than none.
 
 **Appending to a dated record uses that record's vocabulary**, with the new name
 in parentheses on first use. `tests/harness/suite_records.hero` knows which
-trees are records and treats them accordingly.
+trees are records and treats them accordingly, and `records/appended` is what
+makes this section a rule rather than a sentence: it went unperformed until
+2026-09-12, and `76799a18` had already removed a line from the record with every
+suite green.
+
+## A rotated record: the entries are files, the old file is a map
+
+**A new entry in a rotated record is a NEW FILE**, `YYYY-MM-DD-HHMM-<slug>.md`
+in the tree, never a line appended to the map. Two sessions then write two files
+and never one line, which is the whole reason the shape exists.
+
+The file that used to hold the entries stays at its path **with the line count
+it had**, one row per entry naming the file that now holds it. That is what
+keeps a `<file>:NNN` citation resolving: CL-037 says a line number is the one
+citation shape no instrument can see, and this repository writes 161 of them
+into its two largest records. A map makes them checkable instead —
+`records/positions` reads every one and follows it.
+
+The minute in the name is a POSITION for an entry written before its rotation: a
+historical entry has no clock reading, and two entries of one day still have an
+order. **No directory index**, because an index is a second place where truth
+lives and the only tabulated one here drifted for nine closes in silence.
+
+Rotated so far: `docs/book/beats.md` → `docs/book/beats/` (2026-09-12, 114
+entries). `ROTATED` in `tests/harness/suite_records.hero` is the live list.
 
 ## And the record says whose idea it was
 

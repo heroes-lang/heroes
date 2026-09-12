@@ -1,0 +1,1 @@
+2026-08-03 | M0 | Day zero produced no compiler and four hand-written C programs — the targets the compiler must hit. The machine found the first design bug before any human: clang warned that the entry label was never used, so every generated function now enters with an explicit goto.

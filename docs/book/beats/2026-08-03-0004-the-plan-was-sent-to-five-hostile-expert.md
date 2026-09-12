@@ -1,0 +1,1 @@
+2026-08-03 | pre-M0 | The plan was sent to five hostile expert reviewers before a line of code existed. Three said "object". The prediction protocol was cued (the answer written above the blank), the thesis metric had no control arm, and two whole compiler passes were missing. The plan that survived is revision 2.

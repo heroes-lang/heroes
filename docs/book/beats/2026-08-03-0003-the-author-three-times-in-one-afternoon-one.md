@@ -1,0 +1,1 @@
+2026-08-03 | pre-M0 | The author, three times in one afternoon: one command like zig, everything in English (but talk to me in Italian), keep the surface tiny enough to compile itself. Constraints, not features.
