@@ -15,7 +15,7 @@ The division of labour, and the reason this file exists:
 - **These journals say what happened**, one milestone at a time, with the lesson
   next to the inventory.
 - `DESIGN-LOG.md` says what was decided, `docs/panel/` why, `docs/measurements/`
-  and `docs/work/DONE.md` with what numbers, and `docs/records/book/beats.md` what it felt
+  and `docs/work/DONE.md` with what numbers, and `docs/book/beats.md` what it felt
   like. (That line named a defects directory until 2026-09-05: it went on
   2026-09-03 by author instruction, its seven files becoming six record entries
   and one open item, and this pointer outlived it by two days. The dead-citation
