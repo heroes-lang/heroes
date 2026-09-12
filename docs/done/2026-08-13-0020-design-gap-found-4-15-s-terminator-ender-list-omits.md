@@ -1,0 +1,1 @@
+- [x] The record | M1.1 | Design gap found: §4.15's terminator ender-list omits `break`/`continue`/`???` — panel session needed before M2 | resolved: docs/panel/007-terminator-enders.md, author ratified live 2026-08-03 | the parser cannot land on an ambiguous line-ending rule

@@ -1,0 +1,1 @@
+- [x] The record | panel 011 | RATIFIED 2026-08-04 — budget as hard measured ceiling (3000, panel 012) (max over two vendored tokenisers), metric 3 primary-but-never-pooled with three arms, metric 2 via local model or paced sampling | docs/panel/011-measurement-without-an-api-key.md § Resolution | the repo is IN BREACH today at 2050 — this decides what happens next

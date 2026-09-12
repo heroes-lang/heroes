@@ -1,0 +1,1 @@
+- [x] The record | panel 010 | RATIFIED 2026-08-04 — the repeated-`@` rule: two `@` arguments sharing a root binding are a compile error, over-rejecting distinct-index pairs by design | docs/panel/010-repeated-mutable-arguments.md § Resolution | three judges converged; Ada reached the same rule in 2012 after 33 years of the alternative

@@ -1,0 +1,1 @@
+- [x] The record | M2.3 | `heroes fmt` is idempotent AND tree-preserving. Which of the two would a formatter that deletes every comment still pass? | crates/heroes/src/printer/tests.rs (assert_canonical) | the two properties are not the same property, and only one of them is about the reader

@@ -59,6 +59,7 @@ constant RECORD: [str]
         "DESIGN-LOG.md"
         "docs/log"
         "docs/work/DONE.md"
+        "docs/done"
         "docs/contract"
         "vendor"
         "editors/vscode/icons"
@@ -715,7 +716,7 @@ function run_all(scratch: str) -> report.Report?
     lists(@r)
     tagged(@r, scratch: scratch)
     appended(@r, scratch: scratch)
-    numbering(@r)
+    numbering(@r, present: walked)
     unmerged(@r, scratch: scratch)
     rotated(@r, present: walked)
     positions(@r, scratch: scratch, present: walked)
@@ -1029,11 +1030,19 @@ function selects_suffix(entry: str, present: [str]) -> bool
 # right to. Below it is the record.
 constant APPEND_ONLY: [str]
     [
-        "docs/work/DONE.md 34"
+        "docs/contract/case-law.md 34"
     ]
 
 function appended(@r: report.Report, scratch: str)
     offences: [str] @ []
+
+    if APPEND_ONLY.len() == 0
+        report.keep_failure(
+            @r,
+            label: "records/appended",
+            detail: "  this list is empty, so this check guards nothing and passes for the\n  wrong reason. Every record that grows BY LINE belongs here; one that\n  grows by FILE belongs in ROTATED, where its height is pinned instead."
+        )
+        return
 
     for entry in APPEND_ONLY
         fields = strings.words(entry)
@@ -1129,7 +1138,7 @@ function hunk_start(row: str) -> i64
 constant DEFECT_NUMBERED: [str]
     [
         "docs/work/DEFECTS.md"
-        "docs/work/DONE.md"
+        "docs/done"
     ]
 
 # The one number this record carries twice, named and dated instead of letting
@@ -1139,10 +1148,34 @@ constant DEFECT_NUMBERED: [str]
 constant ISSUED_TWICE: str
     "014"
 
-function numbering(@r: report.Report)
-    rows: [str] @ []
+# A ROTATED RECORD IS A TREE, AND THIS CHECK WALKS IT. An entry of
+# `DEFECT_NUMBERED` names either a file or the root of one, and the difference
+# is resolved against what git tracks rather than against the disk — the same
+# oracle `project_files` is. This is the line the rotation of `docs/work/DONE.md`
+# demanded: the moment the record became a map, the check read zero numbers and
+# **said so** instead of passing, which is what its floor is for.
+function readable(entry: str, present: [str]) -> [str]
+    for path in present
+        if path == entry
+            return [entry]
 
-    for path in DEFECT_NUMBERED
+    under: [str] @ []
+
+    for path in present
+        if strings.starts_with(text: path, prefix: entry + "/")
+            under @ under.push(path)
+
+    return under
+
+function numbering(@r: report.Report, present: [str])
+    rows: [str] @ []
+    sources: [str] @ []
+
+    for entry in DEFECT_NUMBERED
+        for path in readable(entry: entry, present: present)
+            sources @ sources.push(path)
+
+    for path in sources
         text = read_file(path)
 
         if text.is_err()
@@ -1327,6 +1360,7 @@ constant ROTATED: [str]
     [
         "docs/book/beats.md 140 docs/book/beats"
         "DESIGN-LOG.md 1119 docs/log"
+        "docs/work/DONE.md 4071 docs/done"
     ]
 
 function rotated(@r: report.Report, present: [str])
@@ -3926,12 +3960,23 @@ test "a number issued twice is reported once, and the record's own exception is 
     assert numbers_issued(doubled).len() == 0
     assert issued_twice(numbers_issued(doubled)).len() == 0
 
-test "the defect numbers this repository has issued carry no duplicate"
-    # The real files, which is the point: this check exists because one number
-    # was issued twice already, with no parallel work involved at all.
-    r: report.Report @ report.empty()
-    numbering(@r)
-    assert r.failed == 0
+test "a rotated record is walked as a tree, and a file is still one file"
+    # The names here are deliberately not paths this repository has. A literal
+    # that looks like one is read as a CITATION by the check above, and a test
+    # about tree walking would fail as a dead pointer — which happened when
+    # this one was first written.
+    present = [
+        "one/file.md"
+        "tree/2026-08-04-0000-a.md"
+        "tree/2026-08-04-0001-b.md"
+        "treeish/not-under-it.md"
+    ]
+    assert readable(entry: "one/file.md", present: present).len() == 1
+    assert readable(entry: "tree", present: present).len() == 2
+
+    # The separator is part of the prefix, or `tree` would swallow `treeish`
+    # and the check would read a tree nobody named.
+    assert readable(entry: "missing", present: present).len() == 0
 
 test "an entry file carries its day and its place in that day, and six names that do not"
     assert is_entry_name("2026-08-03-0000-the-author-arrived.md")
