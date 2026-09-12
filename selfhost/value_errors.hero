@@ -36,7 +36,7 @@ function mismatch(expected: str, got: str, span: token.Span) -> diag.Diagnostic
 # are below. `.expected` compares `check --brief`'s stderr, which carries no
 # `fix (…)` line, and `suite_fixes` tests only `certain` fixes through
 # `.fixed`, so a `guess` fix's TEXT is unwatched by every golden — the gap
-# `docs/journal/039-closures-verdict.md` filed rather than tapped shut, and
+# `docs/records/journal/039-closures-verdict.md` filed rather than tapped shut, and
 # the reason the `fit_` fix could have stood indefinitely.
 function mixed_arithmetic(op: str, left: str, right: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
