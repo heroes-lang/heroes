@@ -11,7 +11,7 @@
  *
  * This is that instrument, and it lives in the build rather than in the harness
  * for one reason: the build is what the deploy runs, so a drifted figure is a
- * red workflow and never a live page. `docs/work/SCHEDULED.md` planned it as a
+ * red workflow and never a live page. `docs/work/SCHEDULED.md (retired 2026-09-12)` planned it as a
  * row in the net instead and said "not a build of the site, which the one
  * command rule keeps out of `heroes`". That rule is about the `heroes` binary's
  * surface, and this is not a `heroes` subcommand: it is the site's own build

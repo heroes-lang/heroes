@@ -321,7 +321,7 @@ a clock with a free reset is the one mechanism the record shows failing: IETF In
 at six months and are re-posted unchanged (the draft to abolish expiry expired), sunset clauses are
 renewed by the inertia they were meant to overcome, and FDAAA 801's 12-month deadline ran fourteen
 years to its first notice, has never produced a fine, and sits at 41% compliance. This project has
-already run the clock version and lost: `docs/work/SCHEDULED.md`'s panel-036 item says *"Score at
+already run the clock version and lost: `docs/work/SCHEDULED.md (retired 2026-09-12)`'s panel-036 item says *"Score at
 M-ffi-ladder close"* and was still open after that milestone closed.
 
 **What the raise is not backed by, recorded rather than argued away** (panel 024). The mortgage above
