@@ -47,7 +47,7 @@ shape how you work:
 
 1. **Implement first; queue the understanding.** The assistant never stops mid-step to ask.
    Everything worth understanding — a new concept, a surprising output, a design default — becomes
-   an entry in `docs/learn/LEARN.md`, read in `/learn` sessions **when the author asks and never
+   an entry in `docs/work/learn/LEARN.md`, read in `/learn` sessions **when the author asks and never
    otherwise**. Retrieval still comes first: the question before the explanation, because the
    gap between the author's guess and reality is the lesson.
 2. **The assistant writes the tests; the author ratifies them.** Golden tests (a directory of
