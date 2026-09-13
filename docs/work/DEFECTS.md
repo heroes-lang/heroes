@@ -114,8 +114,16 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `free(h.cell)` — passing `b` — then write through `a.cell`. **Build exit 0,
     zero diagnostics. Run exit 0**, both prints reached. Under `--sanitize`:
     `ERROR: AddressSanitizer: heap-use-after-free on address 0x6020000000f0`,
-    `WRITE of size 8`, naming the `.hero` line. Measured on Darwin arm64; the
-    other two platforms are **unrun** and are not inferred.
+    `WRITE of size 8`, naming the `.hero` line.
+
+    **Measured on two platforms the same night, and — unlike defect 029 — it does
+    not change class.** Darwin arm64 and x86-64 Linux (Debian 13, clang 22, glibc
+    2.41) both build at exit 0 with zero diagnostics, both reach both prints, both
+    exit 0, and both report `heap-use-after-free, WRITE of size 8` under
+    `--sanitize`, each naming `uaf.hero:22`. That matters because 029's reproducer
+    **does** change class — a segfault on Darwin, a wrong answer at exit 0 on
+    Linux — so a reader must not assume the family behaves uniformly. Windows is
+    **unrun** and is not inferred.
 
     **Cause, and why it is the sharper twin of 030.** 030 is *two copies reach one
     foreign thing*; this is *one copy can destroy what the other holds*. Both come
