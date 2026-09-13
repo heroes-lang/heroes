@@ -209,8 +209,36 @@ the specification lands now.**
 
 ## Author's verdict
 
-Pending — queued in `docs/work/DECIDE.md` as `panel 139`, with the network call
-named as the one act it needs.
+**Ratified 2026-09-13, by the yes that authorised the network call.** The author
+was asked, the evening M-deferral-ledger closed, whether to run
+`heroes measure spec/heroes-spec.md --refresh` — the one act this sitting named
+as blocking its landing — in a question that listed the three specification
+corrections it would unblock, this sitting's § 3 sentence first. The answer was
+yes, it ran that hour, and the four acts landed in one commit as M-handle-verdict
+step 1 (`docs/records/log/2026-09-13-1000-…`; the DECIDE item is
+`docs/records/done/2026-09-13-1001-…`).
+
+**What the yes settles**: the merged wording, measured at **+75 vendored** alone;
+the § 4 removal, measured at **−43** against the −54 priced here, because the
+rule sentence stays and only the half the grammar repeats goes; the eight
+descendants, the goldens corrected underneath with the date; and
+`stepped(@statement)` at thirteen lines across two files, the compiler catching
+two call sites the first pass missed with a `fix (certain)`.
+
+**What it does not settle**: the type's name, reserved above for M-handle-verdict
+and untouched by this yes; and defects 029 and 031, which the sentence now
+describes and no rule refuses.
+
+**Scored at the landing, as § Predictions asked**: the spec-warden's *≤ +45 real,
+lands ≤ 7525* is **falsified** — measured **+79** and **7610** — for two causes the
+record names: this sitting adopted the merged wording at +75 over the warden's
+own W2 at +33, and the landing carried panel 144's § 10 correction beside it.
+The real-to-vendored ratio of the pair is 1.18 against the document's 1.33.
+
+**And one thing the landing found that the sitting did not**: the harness held a
+single `REAL_TAKEN` for two independently refreshed documents, and went red the
+moment the spec was re-taken and the contract was not. `pinned.hero` had two
+dates all along; the suite now has two.
 
 ## Predictions to score
 

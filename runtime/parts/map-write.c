@@ -114,7 +114,9 @@ static HeroMapHeader *hero_map_grown(HeroMapHeader *m) {
  * `hero_map_set` to write in place with no refcount check, so `n = m` followed by
  * `m["b"] @ 2` changed `n` as well — `2 2 2` where spec § 3 Types requires `1 2 -1`.
  * ASan clean, leak counter zero, exit 0: a green harness on a program that
- * violates "no aliasing exists anywhere", which is exactly the shape panel 022
+ * violates "no aliasing exists among the values this language owns" (the sentence
+ * said "anywhere" until panel 139 dated 2026-09-13; a map is owned), which is
+ * exactly the shape panel 022
  * measured for arrays and exactly the container that landed after it.
  *
  * The copy goes through `hero_map_put`, which increfs every key and value through

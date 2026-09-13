@@ -5,6 +5,12 @@
 # Exit 0, ASan clean, leak counter zero: a green harness on a program that
 # violates spec line 60, "no aliasing exists anywhere".
 #
+#
+# **The sentence quoted above was narrowed on 2026-09-13** (panel 139): spec § 3
+# now reads *"No aliasing exists among the values this language owns"*, because a
+# `ptr` is a copied address and two copies of one reach one foreign thing
+# (defect 030). This case is about a value the language OWNS, so what it tests is
+# unchanged; the quotation is corrected here rather than rewritten above.
 # CAUSE: M6 step 2 landed the map's mutation half with NO copy-on-write.
 # `hero_map_set` wrote through `*slot` without ever looking at the refcount,
 # while `hero_array_set` had unshared since M5c step 6. Panel 022 measured this

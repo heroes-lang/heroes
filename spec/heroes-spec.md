@@ -60,7 +60,11 @@ separates, a production writes it; elsewhere it may fall between any two tokens.
 
 - No implicit conversions, widths included: `1 + 2.0` is an error.
 - Every value behaves as an independent copy: after `b = a`, mutating `b`
-  never changes `a`. No aliasing exists anywhere.
+  never changes `a`. No aliasing exists among the values this language owns.
+  A `ptr` is a copied ADDRESS, wherever it sits: two copies reach one foreign
+  thing, so a function taking one without `@` may still change, or free, what
+  C holds. A `cstr` copies an address too, and only a group's `record` may
+  hold one.
 - A record or variant holds its fields **by value**, so it may contain itself only
   through `[T]` or `{K: V}`: `children: [Node]` is a tree, `child: Node` has no size.
 
@@ -71,9 +75,7 @@ separates, a production writes it; elsewhere it may fall between any two tokens.
     TypeArg  = Type | ident ":" Type .
 
 ## 4. Top-level declarations
-Every top-level line starts with its kind. A `constant`'s name takes `: type`;
-a `function`'s parameter list attaches to its name; `record` and `variant`
-declare types, so nothing follows their name.
+Every top-level line starts with its kind.
 
 ```
 constant MAX_DEPTH: i64
@@ -277,8 +279,9 @@ for k in sort(keys(m))
 ```
 
 `+` on `str` copies both sides — a concatenation loop is quadratic; `join` and
-`repeat` build in one pass. `xs @ xs.push(4)` grows in place while nothing else
-holds `xs`.
+`repeat` build in one pass. `xs @ xs.push(4)` grows in place when `xs` is a plain
+name; reached through a field or an index it copies the whole array, so lend the
+array itself to an `@` parameter or hoist it into a name.
 
 `m[k]` is a `V?` with code `missing_key`; `m[k] @ v` inserts or replaces;
 `keys(m) -> [K]` gives the keys in no order, and `for k in sort(keys(m))` walks

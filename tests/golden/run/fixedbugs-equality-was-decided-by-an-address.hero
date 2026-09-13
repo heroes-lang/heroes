@@ -14,6 +14,12 @@
 # rebuild. That made copy-on-write's sharing observable, and `spec:73` promises
 # "no aliasing exists anywhere".
 #
+#
+# **The sentence quoted above was narrowed on 2026-09-13** (panel 139): spec § 3
+# now reads *"No aliasing exists among the values this language owns"*, because a
+# `ptr` is a copied address and two copies of one reach one foreign thing
+# (defect 030). This case is about a value the language OWNS, so what it tests is
+# unchanged; the quotation is corrected here rather than rewritten above.
 # WHY IT IS NOT A FLOAT BUG, which is the finding the sitting turned on: the
 # compiler-engineer reproduced it with NO FLOAT IN THE PROGRAM. With panel 061's
 # partial-record refusal reachable, the shared operands returned `true` at exit 0
