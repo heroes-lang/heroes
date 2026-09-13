@@ -52,8 +52,17 @@ extern "sqlite3.h" link "sqlite3"
     # assertions check it: `HERO_RET_PTR` on the type and
     # `__builtin_constant_p` on it being a value rather than an object.
     constant SQLITE_TRANSIENT: ptr
-    function sqlite3_open(filename: cstr, @out: ptr) -> i64
-    function sqlite3_close(db: ptr) -> i64
+    # The two HANDLES, since 2026-09-13 (panel 145, defect 029). A `record`
+    # inside a group with a `tag` and NO fields is a pointer to a type the
+    # header names and leaves opaque: `CDb` is C's `sqlite3 *` and `CStmt` is
+    # `sqlite3_stmt *`. The two wrapper records below kept two Heroes types
+    # over one `ptr` by hand, at thirteen `.handle` unwraps and with the
+    # binding's own interior unprotected; the handles now carry that inside
+    # the group, where clang checks the names against the header too.
+    record CDb tag sqlite3
+    record CStmt tag sqlite3_stmt
+    function sqlite3_open(filename: cstr, @out: CDb) -> i64
+    function sqlite3_close(db: CDb) -> i64
     # **The fifth argument is `char **errmsg`, and this program asks for it
     # again** — panel 109's condition 8, the program the whole milestone was
     # convened for. A non-NULL one makes SQLite allocate a copy of the message
@@ -72,24 +81,24 @@ extern "sqlite3.h" link "sqlite3"
     # then measured three ways: **a caller-owned C string could be freed or
     # read, never both**, so the program that reads the message and frees it
     # could not be written in this language at all. It can now, and this is it.
-    function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, @error: cstr owned sqlite3_free) -> i64
+    function sqlite3_exec(db: CDb, sql: cstr, callback: ptr, context: ptr, @error: cstr owned sqlite3_free) -> i64
     # The freer the mark names. It is declared and never called: calling it is
     # a compile error precisely because the compiler already does.
     function sqlite3_free(p: ptr)
-    function sqlite3_errmsg(db: ptr) -> cstr
-    function sqlite3_changes(db: ptr) -> i32
-    function sqlite3_prepare_v2(db: ptr, sql: cstr, length: i32, @statement: ptr, @tail: ptr) -> i64
-    function sqlite3_step(statement: ptr) -> i64
-    function sqlite3_reset(statement: ptr) -> i64
-    function sqlite3_finalize(statement: ptr) -> i64
-    function sqlite3_bind_int64(statement: ptr, column: i32, value: i64) -> i64
-    function sqlite3_bind_double(statement: ptr, column: i32, value: f64) -> i64
-    function sqlite3_bind_text(statement: ptr, column: i32, text: cstr, length: i32, destructor: ptr) -> i64
-    function sqlite3_column_count(statement: ptr) -> i32
-    function sqlite3_column_type(statement: ptr, column: i32) -> i32
-    function sqlite3_column_int64(statement: ptr, column: i32) -> i64
-    function sqlite3_column_double(statement: ptr, column: i32) -> f64
-    function sqlite3_column_text(statement: ptr, column: i32) -> cstr
+    function sqlite3_errmsg(db: CDb) -> cstr
+    function sqlite3_changes(db: CDb) -> i32
+    function sqlite3_prepare_v2(db: CDb, sql: cstr, length: i32, @statement: CStmt, @tail: ptr) -> i64
+    function sqlite3_step(statement: CStmt) -> i64
+    function sqlite3_reset(statement: CStmt) -> i64
+    function sqlite3_finalize(statement: CStmt) -> i64
+    function sqlite3_bind_int64(statement: CStmt, column: i32, value: i64) -> i64
+    function sqlite3_bind_double(statement: CStmt, column: i32, value: f64) -> i64
+    function sqlite3_bind_text(statement: CStmt, column: i32, text: cstr, length: i32, destructor: ptr) -> i64
+    function sqlite3_column_count(statement: CStmt) -> i32
+    function sqlite3_column_type(statement: CStmt, column: i32) -> i32
+    function sqlite3_column_int64(statement: CStmt, column: i32) -> i64
+    function sqlite3_column_double(statement: CStmt, column: i32) -> f64
+    function sqlite3_column_text(statement: CStmt, column: i32) -> cstr
 
 # Eighteen functions and seven constants. The count is here because the
 # milestone's plan asked for **at least fifteen bound functions** — the
@@ -127,7 +136,7 @@ variant Cell
 # than assumed**: `sqlite3_column_int64` on a text column answers 0 and
 # says nothing, which is the silent wrong answer this whole corpus exists
 # to catch.
-function cell_at(statement: ptr, column: i32) -> Cell?
+function cell_at(statement: CStmt, column: i32) -> Cell?
     kind = sqlite3_column_type(statement: statement, column: column)
 
     if to_i64(kind).must() == SQLITE_INTEGER
@@ -192,16 +201,16 @@ function cell_at(statement: ptr, column: i32) -> Cell?
 # — so the program keeps the records and the finding is filed rather than
 # argued here.
 record Db
-    handle: ptr
+    handle: CDb
 
 record Statement
-    handle: ptr
+    handle: CStmt
 
 # A database, opened in memory. `:memory:` because a corpus program that
 # wrote a file would have to clean it up, and its output would depend on
 # what a previous run left behind.
 function opened() -> Db?
-    db: ptr @ nullptr
+    db: CDb @ nullptr
 
     if sqlite3_open(":memory:".cstr(), @db) != SQLITE_OK
         # **A FAILED OPEN STILL HANDS BACK A CONNECTION, and dropping it leaks
@@ -260,7 +269,7 @@ function changed(db: Db) -> i64
 # A prepared statement, which is the shape that makes this program different
 # from `examples/sqlite/`: prepared once, bound and stepped many times.
 function prepared(db: Db, sql: str) -> Statement?
-    statement: ptr @ nullptr
+    statement: CStmt @ nullptr
     tail: ptr @ nullptr
 
     if sqlite3_prepare_v2(db: db.handle, sql: sql.cstr(), length: -1, statement: @statement, tail: @tail) != SQLITE_OK

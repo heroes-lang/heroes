@@ -1,0 +1,3 @@
+tests/golden/check/ffi-handle-refusals.hero:20:12: error[duplicate_tag]: `Db2` and `Db` both name the C type `sqlite3` — one tag, one type
+tests/golden/check/ffi-handle-refusals.hero:30:14: error[handle_map_key]: `Db` cannot be a map key, because it is a handle, an address C owns
+tests/golden/check/ffi-handle-refusals.hero:31:12: error[handle_map_key]: `Conn` cannot be a map key, because `Conn.handle` is a handle, an address C owns

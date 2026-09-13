@@ -337,8 +337,9 @@ points at is held to the same width and sign — `@n: u64` where it says
 ```
 extern "sqlite3.h" link "sqlite3"
     constant SQLITE_OK: i64
-    function sqlite3_open(path: cstr, @out: ptr) -> i64
-    function sqlite3_close(db: ptr) -> i64
+    record Db tag sqlite3
+    function sqlite3_open(path: cstr, @out: Db) -> i64
+    function sqlite3_close(db: Db) -> i64
 ```
 A callback is a **parameter**, never a result; its parameters follow the same rule
 and `()` is `void`: `atexit(f: (function() -> ()))`.
@@ -350,7 +351,11 @@ field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixe
 array of one: `i32[4]`, never a `[T]`; build one with `[a, b, c, d]`.
 `record Font partial` names only some, and then comparing it and using it as a
 map key are compile errors — for it and for any value holding it. Its size stays
-C's, not the field list's.
+C's, not the field list's. One with a `tag` and no fields is a **handle**, C's
+pointer to what the header leaves opaque: `record Db tag sqlite3` is `sqlite3 *`.
+`nullptr` is its null and `==` compares the address; a map key is an error. A
+parameter declared with it takes no other handle, and two records may not name
+one tag.
 A group's `constant` has no body: the header holds the value.
 
 `s.cstr()` lends a `str` to C; outside a group nothing answers `cstr` and no
@@ -364,8 +369,7 @@ cell, and a lease nobody ends aborts when `main` returns, saying how many.
 compiler frees that string with that function, hands it over as a `str?` (the
 `@` cell is only written), and refuses your own call of it. Unmarked pointers
 are never freed.
-Where a library lives is the machine's answer, not the program's, so a group may
-name a **package** instead of a library: `extern "raylib.h" package "raylib"`
+A group may name a **package** instead of a library: `extern "raylib.h" package "raylib"`
 asks the system where its headers and libraries are and what else it needs. A
 package answering with anything this compiler does not pass on is refused,
 naming what it said.
@@ -375,5 +379,5 @@ naming what it said.
     Member = "function" ident "(" [ CParam { "," CParam } ] ")"
                [ "->" Type [ "owned" ident ] ] NEWLINE
            | "constant" ident ":" Type NEWLINE
-           | "record" ident [ "tag" ident ] [ "partial" ] Fields .
+           | "record" ident [ "tag" ident ] [ "partial" ] ( Fields | NEWLINE ) .
     CParam = [ "@" ] ident ":" Type [ "owned" ident ] .

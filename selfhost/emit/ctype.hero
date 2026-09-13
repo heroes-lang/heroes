@@ -31,6 +31,7 @@
 
 use ast
 use source
+use handles
 use check/table
 use check/state
 use widths
@@ -123,7 +124,13 @@ function new_names(s: source.Source, decls: [ast.Decl]) -> Names
                     foreign_decls[index] @ true
 
                     if !rec.tag.is_err()
-                        aggregates[index] @ "struct " + source.span_text(s, rec.tag.must())
+                        # A HANDLE is a pointer to what the header leaves
+                        # opaque, so its tag is VERBATIM and starred and never
+                        # `struct <tag>`; `handles.hero` says why.
+                        if handles.is_handle_record(decl.kind)
+                            aggregates[index] @ source.span_text(s, rec.tag.must()) + " *"
+                        else
+                            aggregates[index] @ "struct " + source.span_text(s, rec.tag.must())
                     else
                         aggregates[index] @ source.span_text(s, decl.name)
                 else

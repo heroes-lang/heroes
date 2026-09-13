@@ -23,6 +23,7 @@
 # index — same bytes out, one fewer string trick.
 
 use ast
+use handles
 use source
 use check/table
 use check/state
@@ -40,7 +41,7 @@ function equality_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
     writer.at_generated(@w)
     writer.line(
         @w,
-        text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(const " + at.c_type + " *a, const " + at.c_type + " *b) {"
+        text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(" + handles.const_pointer(at.c_type) + "a, " + handles.const_pointer(at.c_type) + "b) {"
     )
 
     # A partial record's _eq is emitted and ABORTS (panel 061): the
@@ -160,7 +161,7 @@ function variant_equality_body(@w: writer.Writer, names: ctype.Names, s: source.
     writer.at_generated(@w)
     writer.line(
         @w,
-        text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(const " + at.c_type + " *a, const " + at.c_type + " *b) {"
+        text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(" + handles.const_pointer(at.c_type) + "a, " + handles.const_pointer(at.c_type) + "b) {"
     )
     writer.line(@w, text: "    if (a->tag != b->tag) return false;")
     writer.line(@w, text: "    switch (a->tag) {")
@@ -257,7 +258,7 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
             reads_the_value @ true
 
     if reads_the_value
-        writer.line(@w, text: "    const " + at.c_type + " *v = elem;")
+        writer.line(@w, text: "    " + handles.const_pointer(at.c_type) + "v = elem;")
     writer.line(@w, text: "    uint64_t h = UINT64_C(0xcbf29ce484222325);")
 
     for line in lines
@@ -300,7 +301,7 @@ function one_hash(c: state.Checked, names: ctype.Names, ty: i64, place: str) -> 
 function variant_hash_body(@w: writer.Writer, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, at: ctype.Aggregate)
     writer.at_generated(@w)
     writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + at.prefix + "_hash(const void *elem) {")
-    writer.line(@w, text: "    const " + at.c_type + " *v = elem;")
+    writer.line(@w, text: "    " + handles.const_pointer(at.c_type) + "v = elem;")
     writer.line(@w, text: "    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)")
     writer.line(@w, text: "        * UINT64_C(0x100000001b3);")
     writer.line(@w, text: "    switch (v->tag) {")

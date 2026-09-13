@@ -4,8 +4,16 @@
 # its own keyword. It used to point at the EOF line; the library appended to
 # every compilation (§1.11) made that "the library's first line", which is a
 # place the author cannot open, so `Cursor::here_or` clamps it here instead.
+#
+# **Corrected 2026-09-13 (M-handle-verdict step 4): `empty_record` is no longer
+# one of them.** It landed on the next declaration's line for the same reason
+# the others do — by the time it fires, the parser has crossed the record's own
+# line end — and that made it underline a line the author had done nothing wrong
+# on. It now underlines `record <Name>`, which is the text to change, so its
+# annotation moved up two lines. The other two are unchanged and the sentence
+# above still describes them.
 constant MAX: i64
 
-record Point  #~ missing_body
+record Point  #~ missing_body #~ empty_record
 
-variant Token  #~ empty_record #~ empty_variant
+variant Token  #~ empty_variant

@@ -1,0 +1,32 @@
+# The two shapes the handle form REFUSES, and each is refused rather than
+# implemented on the author's decision of 2026-09-13 narrowing panel 145.
+#
+# A `record` inside an `extern` group with a `tag` and no fields is a handle: a
+# pointer to a type the header names and leaves opaque. What it may not do:
+#
+#   - be a map KEY, directly or through a record that holds one. A handle is an
+#     address C owns, and C recycles an address — close one and the next
+#     allocation can hand back the same bytes, so a value stored under the
+#     closed handle is found again by a handle that has nothing to do with it.
+#     The sitting that adopted the form did not rule on hashing at all, so the
+#     language refuses the shape rather than choosing an answer nobody argued.
+#   - share its TAG with another record. Two records over one tag are two Heroes
+#     types and ONE C type, so this compiler refuses handing one where the other
+#     belongs and clang accepts it: the mutant survives every instrument the
+#     language has, permanently.
+extern "sqlite3.h" link "sqlite3"
+    record Db tag sqlite3
+    record Stmt tag sqlite3_stmt
+    record Db2 tag sqlite3  #~ duplicate_tag
+    function sqlite3_close(db: Db) -> i64
+    function sqlite3_finalize(statement: Stmt) -> i64
+
+# A record that HOLDS a handle carries the refusal with it, and the message
+# names the field that reaches one.
+record Conn
+    handle: Db
+
+function main()
+    direct: {Db: i64} @ {}  #~ handle_map_key
+    held: {Conn: i64} @ {}  #~ handle_map_key
+    print((direct.len() + held.len()).to_str())

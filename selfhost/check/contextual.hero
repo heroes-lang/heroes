@@ -24,6 +24,7 @@
 
 use token
 use ast
+use handles
 use source
 use resolved
 use digits
@@ -91,7 +92,7 @@ function float_literal(a: ast.Ast, id: i64) -> bool
 # adopts a pointer and nothing else. The other contextual forms adopt
 # anything: they have no type at all, so the expectation is the only
 # information there is.
-function adopts(c: state.Checker, a: ast.Ast, id: i64, offered: i64) -> bool
+function adopts(c: state.Checker, a: ast.Ast, decls: [ast.Decl], id: i64, offered: i64) -> bool
     if number_literal(a, id)
         return match table.get(c.out.types, offered)
             .int_ty                                                  => true
@@ -114,9 +115,14 @@ function adopts(c: state.Checker, a: ast.Ast, id: i64, offered: i64) -> bool
 
     if is_null
         return match table.get(c.out.types, offered)
-            .ptr | .cstr                                        => true
+            .ptr | .cstr => true
+            # A HANDLE is a pointer to what the header leaves opaque, so
+            # `nullptr` is its null exactly as it is a `ptr`'s; an ordinary
+            # record is a value and has none (`handles.hero`, panel 145).
+
+            .named n                                            => handles.is_handle(decls[n.decl])
             .int_ty | .float_ty | .bool | .str | .unit | .array => false
-            .fixed | .map | .fallible | .function_ty | .named   => false
+            .fixed | .map | .fallible | .function_ty            => false
             .case_ty | .failure | .generic | .error             => false
     return true
 
@@ -210,11 +216,11 @@ test "number and float literals adopt disjoint width sets"
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 2)
     u8_id = table.intern(@c.out.types, .int_ty(kind: .u8))
     f32_id = table.intern(@c.out.types, .float_ty(kind: .f32))
-    assert adopts(c, a, id: one, offered: u8_id)
-    assert !adopts(c, a, id: one, offered: f32_id)
-    assert adopts(c, a, id: half, offered: f32_id)
-    assert !adopts(c, a, id: half, offered: u8_id)
-    assert !adopts(c, a, id: one, offered: table.str_ty(c.out.types))
+    assert adopts(c, a, no_decls(), id: one, offered: u8_id)
+    assert !adopts(c, a, no_decls(), id: one, offered: f32_id)
+    assert adopts(c, a, no_decls(), id: half, offered: f32_id)
+    assert !adopts(c, a, no_decls(), id: half, offered: u8_id)
+    assert !adopts(c, a, no_decls(), id: one, offered: table.str_ty(c.out.types))
 
 test "nullptr is contextual between ptr and cstr, and nothing else"
     a: ast.Ast @ ast.new_ast()
@@ -224,9 +230,9 @@ test "nullptr is contextual between ptr and cstr, and nothing else"
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 1)
     cstr_id = table.intern(@c.out.types, .cstr)
     ptr_id = table.intern(@c.out.types, .ptr)
-    assert adopts(c, a, id: null_id, offered: cstr_id)
-    assert adopts(c, a, id: null_id, offered: ptr_id)
-    assert !adopts(c, a, id: null_id, offered: table.str_ty(c.out.types))
+    assert adopts(c, a, no_decls(), id: null_id, offered: cstr_id)
+    assert adopts(c, a, no_decls(), id: null_id, offered: ptr_id)
+    assert !adopts(c, a, no_decls(), id: null_id, offered: table.str_ty(c.out.types))
 
 test "the empty literals are contextual and the filled ones are not"
     a: ast.Ast @ ast.new_ast()
@@ -248,3 +254,8 @@ test "the empty literals are contextual and the filled ones are not"
     )
     assert !number_literal(a, neg_name)
     assert !contextual(a, neg_name)
+
+# The tests below check the literal rules, which no declaration reaches.
+function no_decls() -> [ast.Decl]
+    none: [ast.Decl] = []
+    return none
