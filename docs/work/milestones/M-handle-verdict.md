@@ -62,7 +62,31 @@ decided item 10 by accident would take a milestone's work without its row.
 open defect, so **M-deferral-ledger closes untagged** while 029 stands, on
 M-anchored-spec's precedent (chain rows 45 to 47), and its tag lands on the first
 commit where every list it leaves open is clean — the way `m-cstr-lifetime`'s did on
-2026-09-09.
+2026-09-09. It closed that way at `481ec6ae`, 2026-09-13.
+
+**All three defects were re-run at that closing commit rather than inherited**, so
+this milestone opens on a measurement and not a memory (2026-09-13, Darwin arm64,
+reproducers in the session scratchpad):
+
+- **029** — `examples/sqlite/main.hero` with line 74 reading `sqlite3_step(db)`:
+  **build exit 0, zero diagnostics, run exit 139**. Unchanged, and still the one
+  of the three that **changes class across platforms** (a wrong answer at exit 0
+  on Linux), so a reader must not assume the family behaves uniformly.
+- **030** — a `record Cursor { handle: ptr }`, one `sqlite3_stmt *`, one copy:
+  **`a sees 1`, `b sees 2`, `same handle: true`, exit 0**, against spec § 3's
+  *"No aliasing exists anywhere"*. Two independent copies advancing one cursor.
+- **031** — a `record Holder { cell: ptr }`, the copy closed and the original
+  written through: **build exit 0, run exit 0, both prints reached**, and under
+  `--sanitize` `heap-use-after-free, WRITE of size 8` naming `uaf.hero:22`.
+
+**One thing the re-run added that the entries did not have.** Writing 030's
+reproducer from scratch, the width of `sqlite3_prepare_v2`'s third argument was
+got wrong — `length: 0 - 1` for an `i32` — and the compiler refused it with
+`error[type_mismatch]: expected \`i32\`, found \`i64\``, pointing at the argument.
+**The same program hands the same function a database handle where a statement
+handle belongs and is accepted in silence.** The width of a number is checked at
+the boundary and the identity of a pointer is not, in one call, in one line. That
+contrast is this milestone's argument in miniature and it should open its sitting.
 
 *******************************************************************************
 **OPEN: 3**
