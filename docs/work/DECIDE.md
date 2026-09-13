@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 6**
+**OPEN: 7**
 
 - [ ] **panel 136** | Part 7 item 6, doctests: ratify DEFERRED AGAIN with the expired clock struck, the reason replaced by §1.7's zero subtraction and the corpus that refutes the wording, the three ancestors corrected, and the documented test block named as the form that returns at M-doc-generator — or rule ENTERS or REFUSED with what each compels | `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md` · design.md §4.18, Part 7 item 6
 
@@ -137,5 +137,24 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     heading, before the seats start. It costs nothing at sitting time and it makes
     the differentiation checkable, which is the whole claim the five-seat design
     rests on.
+
+- [ ] **panel 141** | Part 7 item 14, declaration visibility: ratify REFUSED to Part 6, the three struck claims, and **"left to a count" closed by measuring that the count cannot decide it** — or rule ENTERS or DEFERRED with what each compels | `docs/panel/141-the-premise-expired-the-ancestry-was-for-another-form-and-the-count-cannot-decide.md` · design.md Part 6, Part 7 item 14
+
+    **Origin:** 2026-09-13, M-deferral-ledger step 6. **The default the compiler
+    runs on while this is open**: every top-level declaration visible to every
+    module that names it, and an uncalled one reported by nothing — `heroes check`
+    exits 0 in silence, measured. **The item's hinge expired two weeks after it
+    was written**: panel 033 rested on one translation unit giving visibility no
+    linkage consequence, and M-separate-compilation landed 2026-08-26. **Its
+    ancestry is for another form**: six languages default to hidden and none marks
+    hiding. **And the direction was left to a count that three methods now read at
+    49.5%, 50% and 50%** — a ratio at half is not a tie-breaker, so the sitting
+    closes the question rather than passing it on, and names the measurement that
+    could decide instead. **The seats split 2-2 on the direction and the sitting
+    says so** rather than claiming a ruling it does not have. Conservative was
+    recorded: defer a third time with the derived rule as the return condition.
+    **Recommendation: ratify as adopted.** An item costed twice, refuted on its own
+    argument, and waiting on an undecidable count is the exact shape this milestone
+    exists to end.
 
 *******************************************************************************
