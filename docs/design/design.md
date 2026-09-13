@@ -2598,6 +2598,7 @@ in `tests/golden/`; where it is a measurement, it belongs in `docs/measurements/
 | Style-insensitive identifiers (Nim's `fooBar` ≡ `foo_bar`) | two spellings for one thing, against §4.15's "exactly one correct way"; for a model it is pure confusion |
 | Private record fields | it is an *opaque type* wearing a field annotation's name: §4.9 makes field-named construction mandatory, so a hidden field makes the type unconstructible from outside, and §4.3's structural `==` compares a field the caller cannot name. The precedented form (Haskell 2010 §5.2, Ada 83) hides the **type**, never the field — and §4.20 makes a record a C struct by value, so a shim reads the "private" field at its offset anyway (panel 033) |
 | Private variant cases | it forces `_` to be legal on a variant whose hidden case the reader may not see, so a line's legality depends on a declaration nobody may read — and §4.7 bans `_` on variants precisely to keep exhaustiveness meaning something. Rust shipped this (`priv` variants), deleted it in 2014 as rarely used, re-added it per-**type** as `#[non_exhaustive]` in 1.40, and documents the price as the loss of exhaustiveness checking (panel 033) |
+| Traits / interfaces (a named set of functions a type supplies, and a generic constrained to types that supply it) | **refused because the hole it fills is two operations wide and the corpus wants one of them** — Part 7 item 8 until panel 137, 2026-09-13. Measured that day, eight cases compiled: a generic needing two operations on one type parameter works, `==` on a type parameter over a user record works, a `{A: i64}` map key works, a recursive generic works, and a **cross-module generic `sort_by` works** — because §4.12's generics are unconstrained and §4.8's top-level functions are values, so the operation is passed explicitly. Only `<` on a type parameter, `sort([A])` and `print`/`to_str` on one are refused, and the reason is Part 5's descriptor pass, which generates `copy`, `drop`, `eq` and `hash` per reachable type and simply has no `ord` and no `show`. **The corpus does not want them**: all 26 `sort(` sites in `selfhost/` sort `[str]` from `keys(m)` and **none** sorts a record; `selfhost/` holds **zero** generic functions in 59,511 lines. The cost is **900-1400 lines**, two `DeclKind` arms against **219 enumeration sites in 53 modules**, and **coherence has no home** — `selfhost/resolved.hero` keys names `{module: {name: decl}}` precisely because two modules may each declare `Point`, and `ir/mono.hero`'s `Instance` carries no witness field. §1.7's subtraction returns **zero**, and what the four hand-written sorts actually want is a library function: `sort_by` is the seventh row of a table that already ships six. The strongest argument for traits — coherence, the one-canonical-instance guarantee — **evaporates under unconstrained generics**, because no site exists at which a container calls a user operation behind the programmer's back. Precedent: C++ voted concepts in (2008) and out (2009), returning eleven years later deliberately minimal. **The falsifier**: a compiled program on the §1.0 closure list that a passed function cannot express — heterogeneous dispatch over a collection whose element types are unknown where it is built, shown not to be carriable by a variant — **or** a decision to admit constrained generics, the day of which makes the coherence argument live and reopens this row |
 | Closures that capture | **refused on cost alone**, which this Part's own preamble licenses and §1.1 makes legitimate by making simplicity the ceiling — Part 7 item 1 until panel 119, 2026-09-08. **282 exhaustive-match arms in 74 of 190 modules**, five DECIDED file ceilings breached, no legal home for the parser, **+118 spec tokens** against 70 free with six removals priced and none admissible, and four **compiled** corruption classes at the C boundary. **The falsifier**: a program on the §1.0 closure list, or a measured Part 11 effect, that a named top-level function cannot express — *together with* a representation, written down and compiled, in which a capturing closure has one type per signature, lets the ownership pass decide release from the type alone with no runtime descriptor pointer, and keeps eight bytes at every `extern` position. The paragraph below the table carries the measurements, and the **capture-free** narrowing is named there as the form that returns |
 
 **What the closures row rests on, since a refusal is held to a feature's standard** (§12 of
@@ -2862,9 +2863,25 @@ are *on* the closure list.
    panel 121 R5: `selfhost/grammar_expr.hero` is a knot at its decided ceiling, a helper module that
    calls `parse_expr` closes a `use` cycle, so the hook that reads the holes stays in the knot and
    the ceiling rises by its lines with the reason written (CLAUDE.md §11's knot clause).
-8. **Traits / interfaces** — genuinely useful, but instance resolution is expensive. Their absence
+8. ~~**Traits / interfaces** — genuinely useful, but instance resolution is expensive. Their absence
    means there is no user-extensible iteration protocol: `for x in ...` stays a compiler special case
-   for arrays, maps and ranges.
+   for arrays, maps and ranges.~~ **Left this list for Part 6 at panel 137, 2026-09-13**
+   (M-deferral-ledger step 3; `docs/panel/137-the-hole-was-two-operations-wide-and-the-answer-was-a-library-function.md`),
+   refused with its falsifier in the row and the measurements under Part 6's table. The number stays
+   8 because Part 7's numbers are cited. **Both clauses of the struck text were measured false that
+   day.** *"Instance resolution is expensive"* merges three costs that are not one: coherence at
+   compile time is Rust's recursive instances and Haskell's `UndecidableInstances`, monomorphisation
+   codegen this language **already pays**, and dynamic dispatch it structurally cannot have, having no
+   subtyping — while Swift's famous compile-time collapse is its constraint solver over overload sets
+   and literal protocols, none of which exist here. *"Their absence means there is no user-extensible
+   iteration protocol"* is **falsified six times**: C++ range-for looks for `begin`/`end` by name,
+   Python duck-types `__iter__`, Go shipped `range` over a plain function in 1.23 having declined the
+   interface proposal on its own table, Lua uses a metamethod, Nim rewrites `for` to a named `items`
+   call resolved by ordinary overload lookup, and Zig refuses both independently — which is the
+   conflation. **And the arithmetic was wrong**: `for` is a compiler special case for **arrays alone**,
+   `range` being a library function returning `[i64]` and a map being `not_iterable`, so the item
+   overstated its own cost by two thirds. The iteration half is **Part 8 wart 11's**, rewritten there
+   with its true cause and its return condition.
 9. **Variant constructors as values** — the parser's `term` and `expression` functions are identical
    except for two names, and would unify into
    `sequence(@p, is_times, .product)` if a variant constructor could be passed as a value. This is
@@ -3088,7 +3105,27 @@ visible rather than patched with a second form.
    acknowledged as the exception to "one way only".
 10. **`?` combined with `@` copy-out** needed an explicit rule (copy-out always happens) because it
     was undefined. Watch for other interactions of this kind.
-11. **No user-extensible iteration**, since there are no traits.
+11. **No user-extensible iteration**, ~~since there are no traits.~~ **and the stated cause was false
+    (corrected 2026-09-13, panel 137).** The wart stands: `for x in v` takes an array and nothing
+    else. Its cause is not the absence of traits — five languages extend `for` by **a name and a
+    shape** with no interface anywhere (C++'s `begin`/`end`, Python's `__iter__`, Go 1.23's `range`
+    over a plain function, Lua's `__pairs`, Nim's `items` rewrite), and Zig refuses traits and an
+    extensible `for` **independently**, which is what shows the two are separate choices. The cause is
+    that **both spellings that would open it are refused by rules this language already has.** A
+    structural rule — `for x in v` calling a module's `function next(@it: T) -> E?` — contradicts
+    §4.8's *"UFCS does not apply when the first parameter is `@`"*, since the loop writes no `@` at
+    all, and the compiler already refuses the neighbouring shape by name; it also **drops a `T?` on
+    every exit**, against §4.4's answer-the-error rule. A nominal trait is refused in Part 6 above.
+    **The arithmetic is also corrected**: this was called a special case for *"arrays, maps and
+    ranges"*, and it is arrays alone — `range` is a library function returning `[i64]` and a map is
+    `not_iterable`. **What would make this wart worth closing**, measured rather than argued: the tree
+    contains **five or more** loops advancing a C handle until it stops, against **two** today
+    (`examples/ledger/main.hero:150` and `examples/tally/main.hero:66`, enumerated across all 22 files
+    holding an `extern`). A binding whose primary shape is a cursor would move that number honestly;
+    until one exists, the case is unrun rather than argued. Two shapes are already known not to fit
+    and are named so a later sitting does not rediscover them: an iterator whose termination is an
+    out-parameter (`curl_multi_perform` — *"a pump, not an iterator"*) and one with no handle at all
+    (`getchar`).
 12. **Every name passes through a mangler** (§3.1): a valid Heroes identifier can collide with a C
     keyword or a libc symbol, and without the mangler a correct program fails to compile for
     reasons invisible to its author — the exact error class this project exists to eliminate. The

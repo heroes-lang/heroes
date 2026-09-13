@@ -20,14 +20,14 @@ them already in the record.
 **Numbers are never reused, and 014 was issued twice** — `docs/work/DONE.md`
 carries a Windows-diagnostic defect and an FFI-boundary defect both numbered
 014, filed a day apart. A record is not rewritten (CLAUDE.md §14), so the
-collision stands there; the next number to issue is **030** (022 and 023 were issued on 2026-09-08, 022 was SPLIT on 2026-09-09 by panel 122 into 022 and 024, and all three closed the same day, 024 last, at M-held-bytes; **025** and **026** were issued and closed on 2026-09-11 at M-labelled-builtins and M-named-callbacks, **027** was issued 2026-09-11 beside panel 131 and **028** beside panel 132, and **029** was issued 2026-09-13 beside panel 135) — 017 to 021 were
+collision stands there; the next number to issue is **031** (022 and 023 were issued on 2026-09-08, 022 was SPLIT on 2026-09-09 by panel 122 into 022 and 024, and all three closed the same day, 024 last, at M-held-bytes; **025** and **026** were issued and closed on 2026-09-11 at M-labelled-builtins and M-named-callbacks, **027** was issued 2026-09-11 beside panel 131 and **028** beside panel 132, and **029** was issued 2026-09-13 beside panel 135 and **030** the same day beside panel 137) — 017 to 021 were
 all issued on 2026-09-08 and all closed on 2026-09-08, and all five are in the
 record.
 
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 1**
+**OPEN: 2**
 
 - [ ] **029 — a swapped opaque handle compiles at zero diagnostics and segfaults** | `examples/sqlite/main.hero` with line 74 changed from `sqlite3_step(statement)` to `sqlite3_step(db)` builds with no diagnostic and exits 139, because `sqlite3 *` and `sqlite3_stmt *` are both `ptr` and the probe passes a `void *` C converts in silence | `docs/panel/135-the-form-was-cheap-and-the-reasons-under-it-were-borrowed.md` § Found beside the sitting · `examples/sqlite/main.hero:46-48,74` · `selfhost/emit/callback_guard.hero` · design.md §1.12, §4.19
 
@@ -60,5 +60,35 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     new `Ty` case (179 arms in 49 files); the sitting owes the cheaper route or
     the reason there is none. design.md §1.12 says a Heroes program must not
     segfault, and `.claude/rules/c-boundary.md` says that goal wins here first.
+
+- [ ] **030 — the specification's promise about copies is false through a `ptr` field** | two copies of one record holding a `sqlite3_stmt *` advance the SAME C cursor: `a` sees row 1, `b` sees row 2, and `a.handle == b.handle` — while spec § 3 says *"Every value behaves as an independent copy … No aliasing exists anywhere"* | `spec/heroes-spec.md` § 3 · `examples/ledger/db/sqlite.hero:287` · `docs/panel/137-the-hole-was-two-operations-wide-and-the-answer-was-a-library-function.md` § Found beside the sitting
+
+    **Origin:** 2026-09-13, panel 137's ffi-pragmatist, measuring what a
+    structural iteration rule would cost at the C boundary. Found while testing
+    something else, and it is independent of everything that sitting ruled on.
+
+    **Reproducer.** A `record Statement` with one field, `handle: ptr`, holding a
+    `sqlite3_stmt *`. Bind `a: Statement @ st`, then `b: Statement @ a`, then
+    advance each once through `sqlite3_step`. Measured against a real in-memory
+    database on Darwin arm64: **`a sees id 1`, `b sees id 2`, and
+    `a.handle == b.handle after the copy: true`** — `b` was copied BEFORE `a`
+    advanced and still sees row 2. Hand-written C of the same shape under
+    `-Wall -Wextra` is accepted at zero warnings and gives the identical answer.
+
+    **Cause.** The copy copies the address, and the state is in C. Every Heroes
+    value is an independent copy of what Heroes owns; a `ptr` field owns nothing,
+    so two copies reach one C object. **This is not hypothetical and not new**:
+    `examples/ledger/db/sqlite.hero:287` ships `stepped(statement: Statement)`,
+    which takes the wrapper **by value**, not `@`, and mutates the C cursor
+    through it — a function whose signature promises it changes nothing.
+
+    **What is owed.** Not a compiler change: refusing this would refuse the FFI.
+    What is wrong is the sentence, and it is the one a reader is most confident
+    about, so the repair is **a panel**: § 3 must say that a `ptr` and a `cstr`
+    are copied ADDRESSES and that two copies of a value holding one reach the
+    same foreign state. CLAUDE.md § 12 says spec beats compiler, which is exactly
+    why a false sentence in the spec is the defect rather than the compiler's
+    behaviour. Until it says so, `@` on a parameter is not what tells a reader
+    whether a call can change what they passed.
 
 *******************************************************************************
