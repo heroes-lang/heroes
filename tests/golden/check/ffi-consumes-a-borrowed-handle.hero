@@ -1,0 +1,39 @@
+# Defect 031's own reproducer, with the mark that refuses it (panel 145, landed
+# 2026-09-13 as M-handle-verdict step 5).
+#
+# `consumes` on a C parameter says the call ENDS the life of what it is given.
+# A parameter written without `@` is BORROWED: the caller keeps the value and
+# reads it again after the call. Handing one to the other is a promise the
+# signature cannot keep, and it is the line this file exists to refuse.
+#
+# **What it does not catch, and the second note on the diagnostic says so.**
+# Repaired to `closed(@h: Holder)` this program compiles again, and a copy made
+# BEFORE the call still holds the freed address — `--sanitize` reports
+# `heap-use-after-free` on it. That class is design.md Part 8 wart 20.
+extern "stdlib.h"
+    function malloc(size: u64) -> ptr
+    function free(p: ptr consumes)
+
+record Holder
+    cell: ptr
+
+# The refusal. `h` is borrowed, and `free` ends what it is given.
+function closed(h: Holder)
+    free(h.cell)  #~ consumed_borrowed_handle
+
+# A local is not borrowed from anybody, so consuming one is the ordinary case
+# and is left alone.
+function fine()
+    p: ptr @ malloc(size: 8)
+    free(p)
+
+# An `@` parameter says on the signature that the value does not survive, which
+# is the repair the diagnostic names.
+function closed_well(@h: Holder)
+    free(h.cell)
+
+function main()
+    a: Holder @ Holder(cell: malloc(size: 8))
+    closed(a)
+    fine()
+    closed_well(@a)

@@ -176,6 +176,23 @@ break a legitimate binding — the fieldless form MEANS the pointer. Spec § 13
 gains the sentence **and its fence is rewritten to use it**, +76 vendored net,
 real 7610 → 7721.
 
+**Step 5, 2026-09-13: DEFECT 031 CLOSES, and both lists reach zero.**
+`consumes` after a C parameter says the call ends that value's life, and a call
+that ends a life may not be handed one the caller borrowed. The filed reproducer
+is `error[consumed_borrowed_handle]` on the line that frees. **The condition
+panel 145 wrote is met exactly** — a prototype at ≤ 150 code lines refusing it in
+`heroes check` — at **114**. **Two seats contradicted each other and the run
+settled it**: the engineer predicted 0 of 17 refusals in the shipped binding, the
+critic said 2, and it is 2, the two the critic named. **A third cost neither
+counted**: the mark propagates, 24 lines across `examples/ledger/` for two marks,
+because `@` obliges every caller to hold a cell. **And 2 of 17 fired the Part 6
+borrow-checker row's own falsifier** (below 13 of 17), so that row's ground moved
+from soundness to cost the same day. **What is closed is the defect as filed**:
+repaired to `closed(@h)`, `--sanitize` still fires, and Part 8 wart 20 states
+that class in the present tense with this measurement in it. The two diagnostic
+repairs landed with it, and the formatter was taught the mark after it was caught
+dropping it in silence.
+
 **What step 4 owes and did not do**, filed rather than half-done: the two
 repairs panel 145 charged to it — `emit/ffi_tag.hero` reading clang's
 *incomplete definition* as *absent*, and `check/freer.hero` retyping any `owned`
@@ -183,7 +200,7 @@ parameter to `str?` so a `ptr` gets two diagnostics about a string. They are the
 milestone's fifth item.
 
 *******************************************************************************
-**OPEN: 5**
+**OPEN: 4**
 
 - [ ] **M-handle-verdict** | the sitting, and the counts it is handed rather than guesses | `docs/work/DEFECTS.md` 029 · `docs/panel/135-the-form-was-cheap-and-the-reasons-under-it-were-borrowed.md` § Found beside the sitting · design.md Part 7 item 5, Part 8 wart 17 · `spec/heroes-spec.md` § 3, § 9, § 13
 
@@ -301,29 +318,5 @@ milestone's fifth item.
     Swift's regret is that `OpaquePointer` cannot tell two handles apart, not
     that it is called `OpaquePointer` — so the precedent does not transfer and
     the sitting must find its own.
-
-- [ ] **M-handle-verdict** | the two diagnostic repairs panel 145 charged to step 4, which step 4 filed rather than half-did | `selfhost/emit/ffi_tag.hero:64-80` · `selfhost/check/freer.hero:90-93` · `docs/panel/145-a-handle-is-a-pointer-with-a-name-and-the-compiler-already-reads-the-name.md` § Found beside the sitting
-
-    **Origin:** panel 145, 2026-09-13, and step 4's own decision not to rush them.
-
-    **`ffi_unknown_tag` says a header declares no `struct X` when it declares it
-    OPAQUE.** `emit/ffi_tag.hero:69` keys on clang's *incomplete definition of
-    type* and reads it as *the tag is not there*; `sqlite3.h` writes
-    `typedef struct sqlite3 sqlite3;`, which is declared AND incomplete. It is a
-    premise about the world in `module-shape.md`'s sense, and the handle form
-    makes it reachable far more often, since every handle names an incomplete
-    type on purpose. What it owes: tell absent from incomplete, and a test that
-    fires when the distinction dies.
-
-    **`owned` on a non-`cstr` parameter is retyped to `str?` in silence.**
-    `check/freer.hero:90-93` retypes ANY `owned` parameter regardless of its
-    declared type, so `function sqlite3_finalize(statement: ptr owned sqlite3_finalize)`
-    parses and answers `type_mismatch: expected str?, found ptr` plus
-    `owned_freer_called` — two diagnostics about a string on a program that has
-    none. Three of panel 145's five seats found it independently. It should be
-    refused at the DECLARATION by the declared type's name. **And it is step 5's
-    neighbour**: the consume mark 031 needs is a word that is NOT `owned`, so
-    this repair is what keeps the two vocabularies from being confused on the day
-    the second one lands.
 
 *******************************************************************************

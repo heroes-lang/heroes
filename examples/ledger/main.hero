@@ -36,20 +36,20 @@ function main()
     if opened.is_err()
         print("sqlite would not open a database: ", why_open(opened))
         exit(1)
-    db = opened.must()
+    db: sqlite.Db @ opened.must()
     built = build(db)
 
     if built.is_err()
         print("the ledger could not be built: ", err_text_of(built))
-        _ = sqlite.closed(db)
+        _ = sqlite.closed(@db)
         exit(1)
     shown = show(db)
 
     if shown.is_err()
         print("the ledger could not be read back: ", err_text_of(shown))
-        _ = sqlite.closed(db)
+        _ = sqlite.closed(@db)
         exit(1)
-    _ = sqlite.closed(db)
+    _ = sqlite.closed(@db)
 
 # The schema, the accounts and the entries — the entries through ONE
 # prepared statement, bound and stepped and reset ten times, which is the
@@ -69,7 +69,7 @@ function build(db: sqlite.Db) -> ()?
         _ = sqlite.stepped(@accounts)?
         sqlite.reset(accounts)?
 
-    _ = sqlite.finalized(accounts)
+    _ = sqlite.finalized(@accounts)
     rows: sqlite.Statement @ sqlite.prepared(db, "insert into entry(id, account, memo, cents) values (?, ?, ?, ?)")?
 
     for e in entry.book()
@@ -80,7 +80,7 @@ function build(db: sqlite.Db) -> ()?
         _ = sqlite.stepped(@rows)?
         sqlite.reset(rows)?
 
-    _ = sqlite.finalized(rows)
+    _ = sqlite.finalized(@rows)
     sqlite.run(db, "commit")?
     return ok()
 
@@ -156,7 +156,7 @@ function queried_balances(db: sqlite.Db) -> [entry.Balance]?
                 out @ out.push(entry.Balance(account: name, entries: count, total: entry.Amount(cents: cents)))
             .stepped_done => going @ false
 
-    _ = sqlite.finalized(statement)
+    _ = sqlite.finalized(@statement)
     return ok(out)
 
 # One integer from one row — through the typed cell reader, so a query
@@ -172,7 +172,7 @@ function queried_int(db: sqlite.Db, sql: str) -> i64?
             found @ true
         .stepped_done => found @ false
 
-    _ = sqlite.finalized(statement)
+    _ = sqlite.finalized(@statement)
 
     if !found
         return fail(code: "no_row", msg: sql + " answered no rows")
@@ -195,7 +195,7 @@ function queried_float(db: sqlite.Db, sql: str) -> f64?
             found @ true
         .stepped_done => found @ false
 
-    _ = sqlite.finalized(statement)
+    _ = sqlite.finalized(@statement)
 
     if !found
         return fail(code: "no_row", msg: sql + " answered no rows")
@@ -239,22 +239,22 @@ function verdict(holds: bool) -> str
     return "no"
 
 test "the book goes into the database and comes back unchanged"
-    db = sqlite.opened().must()
+    db: sqlite.Db @ sqlite.opened().must()
     build(db).must()
     from_db = queried_balances(db).must()
     mine = entry.balances(entry.book())
     assert same_balances(from_db: from_db, mine: mine)
-    _ = sqlite.closed(db)
+    _ = sqlite.closed(@db)
 
 test "sqlite's total and heroes' total are the same number"
-    db = sqlite.opened().must()
+    db: sqlite.Db @ sqlite.opened().must()
     build(db).must()
     assert queried_int(db, "select sum(cents) from entry").must() == entry.total(entry.book()).cents
     assert queried_int(db, "select count(*) from entry").must() == entry.book().len()
-    _ = sqlite.closed(db)
+    _ = sqlite.closed(@db)
 
 test "the join agrees with the same join done in Heroes"
-    db = sqlite.opened().must()
+    db: sqlite.Db @ sqlite.opened().must()
     build(db).must()
     living = queried_int(db, "select sum(cents) from entry join account on account.name = entry.account where account.kind = 'living'").must(
     )
@@ -265,28 +265,28 @@ test "the join agrees with the same join done in Heroes"
             mine @ mine + e.amount.cents
 
     assert living == mine
-    _ = sqlite.closed(db)
+    _ = sqlite.closed(@db)
 
 test "a statement the database refuses is a refusal here, with sqlite's own words"
-    db = sqlite.opened().must()
+    db: sqlite.Db @ sqlite.opened().must()
     bad = sqlite.run(db, "select * from nothing_at_all")
     assert bad.is_err()
     assert lines.holds(text: err_text_of(bad), needle: "no such table")
-    _ = sqlite.closed(db)
+    _ = sqlite.closed(@db)
 
 test "a column read at the wrong type is a refusal and not a zero"
-    db = sqlite.opened().must()
+    db: sqlite.Db @ sqlite.opened().must()
     build(db).must()
     statement: sqlite.Statement @ sqlite.prepared(db, "select memo from entry where id = 1").must()
     _ = sqlite.stepped(@statement).must()
     cell = sqlite.cell(statement: statement, column: 0).must()
     assert sqlite.text_of(cell).must() == "september"
     assert sqlite.integer_of(cell).is_err()
-    _ = sqlite.finalized(statement)
-    _ = sqlite.closed(db)
+    _ = sqlite.finalized(@statement)
+    _ = sqlite.closed(@db)
 
 test "the prepared statement really is reused: ten entries, one statement"
-    db = sqlite.opened().must()
+    db: sqlite.Db @ sqlite.opened().must()
     build(db).must()
 
     # `changes` is SQLite's own counter for the last statement, so ten
@@ -294,7 +294,7 @@ test "the prepared statement really is reused: ten entries, one statement"
     # what says the statement was reset and reused rather than re-prepared.
     assert sqlite.changed(db) == 1
     assert queried_int(db, "select count(*) from entry").must() == 10
-    _ = sqlite.closed(db)
+    _ = sqlite.closed(@db)
 
 # The message of a failed call, one function per result type — because a
 # generic `err_text<T>(x: T?)` is a shape this language does not have:

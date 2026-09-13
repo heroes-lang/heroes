@@ -133,7 +133,7 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                     # incompatible type 'const char *'`. That is §7's own
                     # forbidden shape — the compiler blaming itself for a typo
                     # in a `.hero` file.
-                    for refused in freer.mark_refusals(s, decls, at: index)
+                    for refused in freer.mark_refusals(a, s, decls, at: index)
                         state.push_diagnostic(@c, refused)
 
                 if !fd.value.body.is_err()
