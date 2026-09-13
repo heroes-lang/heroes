@@ -280,11 +280,18 @@ function reset(statement: Statement) -> ()?
 # One step. `.stepped_row` when a row is there, `.stepped_done` at the end,
 # and a refusal otherwise — a variant rather than the raw code, so a caller
 # cannot compare against the wrong constant.
+#
+# `stepped` takes its statement `@`, since 2026-09-13 (panel 139, defect 030).
+# The marker changes nothing in C — the handle is a copied address either way —
+# but the signature stops PROMISING what it cannot keep: a step advances the
+# cursor every copy of this record reaches, and spec § 3 now says so. This is one
+# of thirteen by-value wrappers in this file; it is the one that ships the
+# counterexample, so it is the one marked.
 variant Step
     stepped_row
     stepped_done
 
-function stepped(statement: Statement) -> Step?
+function stepped(@statement: Statement) -> Step?
     code = sqlite3_step(statement.handle)
 
     if code == SQLITE_ROW

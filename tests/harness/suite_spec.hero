@@ -70,7 +70,7 @@ constant LEDGER: str
 # DATED, and prose beside the constant is neither, however dated it looks. The
 # constant is the count; `ledger` below is what holds it to the file.
 constant LEDGER_ROWS: i64
-    69
+    70
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.
@@ -84,7 +84,7 @@ constant LEDGER_ROWS: i64
 # check does not enforce that rule: it makes its question unavoidable, and
 # the answer lands in the commit body where a reader can audit it.
 constant SPEC_TOKENS: i64
-    5655
+    5722
 
 # The registry's own size, gated separately — it is NOT part of §1.6's budget
 # (panel 035 D: the spec is *the prompt*, and compiler output can never be in
@@ -122,13 +122,13 @@ constant CEILING: i64
 # passes no secret to a fork's pull request, so such a check is structurally
 # red on every fork PR forever.
 constant REAL_TOKENS: i64
-    7531
+    7610
 
 constant REAL_MODEL: str
     "claude-opus-5"
 
 constant REAL_TAKEN: str
-    "2026-09-12"
+    "2026-09-13"
 
 # The contract's own record, pinned here the way the spec's is, and cross-checked
 # against `selfhost/measure/pinned.hero` by `recorded` below. **It carries a
@@ -141,6 +141,19 @@ constant REAL_TAKEN: str
 # the contract never had.
 constant CONTRACT_REAL_TOKENS: i64
     7402
+
+# **The contract's date is its own, and this constant is why.** `REAL_TAKEN`
+# above judged BOTH documents until 2026-09-13, and it worked for exactly as
+# long as the two were refreshed on the same day. The moment panel 139's § 3
+# amendment landed, the spec's count was re-taken and the contract's was not —
+# and `real` went red saying `measure CLAUDE.md` fails to print a date the
+# contract had never claimed. `selfhost/measure/pinned.hero` has carried
+# `SPEC_REAL_TAKEN` and `CONTRACT_REAL_TAKEN` separately all along, so this is
+# the harness catching up with the compiler's own record rather than a check
+# being loosened: two independent documents, two independent refreshes, two
+# dates. A shared constant between them was a coupling nothing had stated.
+constant CONTRACT_REAL_TAKEN: str
+    "2026-09-12"
 
 constant CONTRACT_TOKENS: i64
     5556
@@ -156,7 +169,7 @@ constant DELTA_GATE: i64
 # rather than reassuring. `selfhost/cli/digest.hero` computes it and
 # `measure` refuses to give a verdict when it disagrees.
 constant SPEC_DIGEST: str
-    "0b96e29b3ca14666"
+    "196e3bfd0166e373"
 
 # The operating contract, weighed on the same scale as the language.
 #
@@ -1078,7 +1091,7 @@ function recorded(@r: report.Report, scratch: str, compiler: str)
     if told.is_err()
         report.keep_failure(@r, label: "spec/real", detail: "  cannot run `measure " + CONTRACT + "`")
         return
-    contract_row = CONTRACT_REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + REAL_TAKEN
+    contract_row = CONTRACT_REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + CONTRACT_REAL_TAKEN
 
     if !strings.contains(text: told.must().out, needle: contract_row)
         report.keep_failure(
@@ -1225,7 +1238,9 @@ test "the record has to be printed by the tool, and still be called the binding 
     # The tool as it stands: the record, then the label. **Both records since
     # 2026-09-12** — the stub ignores its argument, so one script has to answer
     # for the spec AND for the contract, and `recorded` now reads a row for each.
-    contract_row = "  real                 " + CONTRACT_REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + REAL_TAKEN
+    # **Each row carries its OWN date since 2026-09-13**: the two documents are
+    # refreshed independently, and this stub said so a day before the check did.
+    contract_row = "  real                 " + CONTRACT_REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + CONTRACT_REAL_TAKEN
     speaks = scratch + "/stub-real.sh"
     assert !write_file(path: speaks, text: "#!/bin/sh\necho '" + row + " — the binding number'\necho '" + contract_row + " — the binding number'\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", speaks]).is_err()

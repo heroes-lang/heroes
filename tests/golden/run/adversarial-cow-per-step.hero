@@ -6,6 +6,12 @@
 # WHAT WAS MEASURED (panel 022): with one unshare at the primitive, `h = g` then
 # `g.rows[0].cells[0] @ 7` changes `h` too — ASan clean, leak counter zero, exit 0. A
 # green harness on a program that violates spec line 60, "No aliasing exists anywhere".
+#
+# **The sentence quoted above was narrowed on 2026-09-13** (panel 139): spec § 3
+# now reads *"No aliasing exists among the values this language owns"*, because a
+# `ptr` is a copied address and two copies of one reach one foreign thing
+# (defect 030). This case is about a value the language OWNS, so what it tests is
+# unchanged; the quotation is corrected here rather than rewritten above.
 # Nothing in this project could have caught it: the counter reads 0, the sanitisers are
 # silent, and no golden read a second name after a nested mutation. This one does.
 #

@@ -445,7 +445,8 @@ HeroStr hero_str_join(const HeroArrayHeader *parts, HeroStr sep);
  * WHY PER STEP, measured: with a single unshare at the primitive, `h = g` then
  * `g.rows[0].cells[0] @ 7` changes `h` too — ASan clean, leak counter zero, exit
  * 0. A green harness on a program that violates spec § 3 Types ("No aliasing exists
- * anywhere"). It is *necessarily* wrong, not accidentally: unsharing level 1
+ * among the values this language owns" — "anywhere" until panel 139 narrowed it
+ * on 2026-09-13 for `ptr` alone; a record of arrays is owned, so this stands). It is *necessarily* wrong, not accidentally: unsharing level 1
  * copies its elements, whose `copy` increfs level 2, so level 2 is shared exactly
  * when level 1 was copied.
  *

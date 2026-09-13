@@ -137,7 +137,10 @@ HeroArrayHeader *hero_array_push(const HeroArrayHeader *a, const void *elem) {
  * 069's whole resolution. Copy-on-write makes `b = a` share a header, so that
  * line made the answer depend on how the second value was PRODUCED rather than
  * on what it holds: with a nan inside, `a == b` was true and `a == c` was false
- * for identical contents. spec § 3 Types promises "no aliasing exists anywhere", and
+ * for identical contents. spec § 3 Types promises "no aliasing exists among the
+ * values this language owns" — it read "no aliasing exists anywhere" until
+ * 2026-09-13, when panel 139 narrowed it for `ptr`; an array is a value this
+ * language owns, so the half this comment rests on is untouched — and
  * the line made copy-on-write's sharing observable — so the shortcut was not a
  * float bug, it was an aliasing leak that a float happened to expose.
  *

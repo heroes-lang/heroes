@@ -61,23 +61,23 @@ function build(db: sqlite.Db) -> ()?
     # A transaction, so ten inserts are one unit — and so the program has a
     # reason to name `begin` and `commit` rather than describing them.
     sqlite.run(db, "begin")?
-    accounts = sqlite.prepared(db, "insert into account(name, kind) values (?, ?)")?
+    accounts: sqlite.Statement @ sqlite.prepared(db, "insert into account(name, kind) values (?, ?)")?
 
     for a in entry.accounts()
         sqlite.bind_text(statement: accounts, at: 1, text: a.name)?
         sqlite.bind_text(statement: accounts, at: 2, text: a.kind)?
-        _ = sqlite.stepped(accounts)?
+        _ = sqlite.stepped(@accounts)?
         sqlite.reset(accounts)?
 
     _ = sqlite.finalized(accounts)
-    rows = sqlite.prepared(db, "insert into entry(id, account, memo, cents) values (?, ?, ?, ?)")?
+    rows: sqlite.Statement @ sqlite.prepared(db, "insert into entry(id, account, memo, cents) values (?, ?, ?, ?)")?
 
     for e in entry.book()
         sqlite.bind_int(statement: rows, at: 1, value: e.id)?
         sqlite.bind_text(statement: rows, at: 2, text: e.account)?
         sqlite.bind_text(statement: rows, at: 3, text: e.memo)?
         sqlite.bind_int(statement: rows, at: 4, value: e.amount.cents)?
-        _ = sqlite.stepped(rows)?
+        _ = sqlite.stepped(@rows)?
         sqlite.reset(rows)?
 
     _ = sqlite.finalized(rows)
@@ -143,12 +143,12 @@ function show(db: sqlite.Db) -> ()?
 # `balances` produces — `order by` in the query, because a database's row
 # order is no more promised than a map's key order.
 function queried_balances(db: sqlite.Db) -> [entry.Balance]?
-    statement = sqlite.prepared(db, "select account, count(*), sum(cents) from entry group by account order by account")?
+    statement: sqlite.Statement @ sqlite.prepared(db, "select account, count(*), sum(cents) from entry group by account order by account")?
     out: [entry.Balance] @ []
     going: bool @ true
 
     while going
-        match sqlite.stepped(statement)?
+        match sqlite.stepped(@statement)?
             .stepped_row =>
                 name = sqlite.text_of(sqlite.cell(statement: statement, column: 0)?)?
                 count = sqlite.integer_of(sqlite.cell(statement: statement, column: 1)?)?
@@ -162,11 +162,11 @@ function queried_balances(db: sqlite.Db) -> [entry.Balance]?
 # One integer from one row — through the typed cell reader, so a query
 # edited to return text does not answer zero.
 function queried_int(db: sqlite.Db, sql: str) -> i64?
-    statement = sqlite.prepared(db, sql)?
+    statement: sqlite.Statement @ sqlite.prepared(db, sql)?
     value: i64 @ 0
     found: bool @ false
 
-    match sqlite.stepped(statement)?
+    match sqlite.stepped(@statement)?
         .stepped_row =>
             value @ sqlite.integer_of(sqlite.cell(statement: statement, column: 0)?)?
             found @ true
@@ -179,11 +179,11 @@ function queried_int(db: sqlite.Db, sql: str) -> i64?
     return ok(value)
 
 function queried_float(db: sqlite.Db, sql: str) -> f64?
-    statement = sqlite.prepared(db, sql)?
+    statement: sqlite.Statement @ sqlite.prepared(db, sql)?
     value: f64 @ 0.0
     found: bool @ false
 
-    match sqlite.stepped(statement)?
+    match sqlite.stepped(@statement)?
         .stepped_row =>
             match sqlite.cell(statement: statement, column: 0)?
                 .float_cell f   => value @ f.value
@@ -277,8 +277,8 @@ test "a statement the database refuses is a refusal here, with sqlite's own word
 test "a column read at the wrong type is a refusal and not a zero"
     db = sqlite.opened().must()
     build(db).must()
-    statement = sqlite.prepared(db, "select memo from entry where id = 1").must()
-    _ = sqlite.stepped(statement).must()
+    statement: sqlite.Statement @ sqlite.prepared(db, "select memo from entry where id = 1").must()
+    _ = sqlite.stepped(@statement).must()
     cell = sqlite.cell(statement: statement, column: 0).must()
     assert sqlite.text_of(cell).must() == "september"
     assert sqlite.integer_of(cell).is_err()

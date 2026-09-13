@@ -88,6 +88,21 @@ handle belongs and is accepted in silence.** The width of a number is checked at
 the boundary and the identity of a pointer is not, in one call, in one line. That
 contrast is this milestone's argument in miniature and it should open its sitting.
 
+**Step 1, 2026-09-13: defect 030 closes, before the sitting.** Panel 139's
+four-act repair and panel 144's § 10 correction had both been adopted and both
+sat behind the one network call the spec's digest needs; the author authorised
+it the evening M-deferral-ledger closed and everything queued landed in one
+commit. § 3 now says a `ptr` is a copied address wherever it sits, § 10 says a
+push through a field copies the array and names the cheap spelling, § 4 lost the
+half of a sentence the grammar beneath it already said, and
+`examples/ledger/db/sqlite.hero`'s `stepped` takes `@statement`. Real count
+7531 → 7610 against 8192. **Two things the sitting had not found**: the harness
+held one refresh date for two independent documents (split), and the warden's
+landing prediction is falsified at +79 real against ≤ +45. **What remains for
+the sitting is exactly what the sentence now names and nothing refuses**: 031,
+one copy freeing what every other copy holds, and 029, the swapped handle. Open
+defects go from three to **two**.
+
 *******************************************************************************
 **OPEN: 3**
 

@@ -109,8 +109,12 @@ function inout_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
 # which copy-out lands last: `10` under left-to-right, `11` under the
 # reference reading every mainstream language installs. Nothing specifies
 # the order, so the form is refused — and the refusal is the precondition
-# that makes spec § 3 Types's *"No aliasing exists anywhere"* true, because two
-# copy-outs landing on one place is aliasing of the destination.
+# that makes spec § 3 Types's *"No aliasing exists among the values this language
+# owns"* true, because two copy-outs landing on one place is aliasing of the
+# destination. (The sentence read *"No aliasing exists anywhere"* until
+# 2026-09-13, when panel 139 narrowed it: a `ptr` is a copied address and two
+# copies of one reach one foreign thing. This refusal is about the values the
+# language OWNS, which is the half that was always true.)
 #
 # **PLACES, not roots, and the difference is two working programs**
 # (panel 110). design.md:1298 says *"comparing roots is a complete alias
@@ -304,7 +308,7 @@ function aliased_mutable_arguments(name: str, first: str?, span: token.Span) -> 
         span: span
     )
     d.notes @ d.notes.push(
-        "with two copies of one place landing back on it the call's answer would depend on the copy-out order, and that is what `no aliasing exists anywhere` rules out (panel 010)"
+        "with two copies of one place landing back on it the call's answer would depend on the copy-out order, and that is what `no aliasing exists among the values this language owns` rules out (panel 010)"
     )
     d.fixes @ d.fixes.push(
         diag.Fix(title: "pass a copy for one of them: declare a second cell holding the same value, pass `@` that cell, and write it back after the call", replacement: "", span: span, certainty: .guess)
