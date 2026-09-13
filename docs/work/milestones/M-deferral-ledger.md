@@ -89,6 +89,23 @@ package is written.
     5 keeps open, owed a sitting of its own and not this milestone's to land.
     Eight of the ledger's nine remain; item 6, doctests, is next.
 
+    **Step 2, 2026-09-13: item 6 sat (panel 136,
+    `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md`)
+    — DEFERRED AGAIN, and the first of the ledger's items whose stated condition
+    had already EXPIRED**: *"once the `test` mechanism is proven"* against 641
+    `test` blocks in `selfhost/`, 545 in `examples/` and the compiler's own tests
+    being one of the three suites. The clock is struck rather than re-wound, and
+    that is the shape this milestone was scheduled to find: **a condition that
+    expires without waking anybody is the promise without a date**, and the ledger
+    should expect more of them. The reason is replaced by §1.7's zero subtraction
+    and by the corpus, and the item's three named ancestors are corrected — Go and
+    D, unnamed in it, obtain the benefit with no second test mechanism, so **the
+    form that returns is the documented test block and its home is
+    M-doc-generator**. Found beside the sitting and filed at the milestone that
+    owns it: a failing `assert` names no file and no line, a fifth surface
+    M-panic-location's own census did not name. Seven of the ledger's nine remain;
+    item 8, traits, is next.
+
 - [ ] **M-deferral-ledger** | the ledger widens from Part 7 to Part 8's warts, and coverage gets the answer it already has | `design.md` Part 8 warts 5, 8, 11 · `docs/panel/034` · `selfhost/mutate/`
 
     **Origin:** author decision 2026-09-10, § What production-ready means.
