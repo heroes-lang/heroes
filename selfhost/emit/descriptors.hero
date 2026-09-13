@@ -22,6 +22,7 @@ use emit/descriptor_set
 use emit/synth
 use ir/layout
 use ast
+use handles
 use source
 use parse
 use resolve
@@ -154,13 +155,13 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, de
         counted = layout.is_refcounted(c, ty)
         writer.at_generated(@w)
         writer.line(@w, text: "static void " + prefix + "_desc_copy(void *dst, const void *src) {")
-        writer.line(@w, text: "    *(" + c_type + " *)dst = *(const " + c_type + " *)src;")
+        writer.line(@w, text: "    *(" + c_type + " *)dst = *(" + handles.const_pointer(c_type) + ")src;")
 
         if counted
             # Shallow plus incref, never deep (panel 022): copy-on-write
             # is what makes a deep copy unnecessary, because sharing is
             # unobservable until somebody mutates.
-            writer.line(@w, text: "    " + prefix + "_retain((const " + c_type + " *)dst);")
+            writer.line(@w, text: "    " + prefix + "_retain((" + handles.const_pointer(c_type) + ")dst);")
         writer.line(@w, text: "}")
         writer.line(@w, text: "static void " + prefix + "_desc_drop(void *elem) {")
 
@@ -172,7 +173,7 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, de
         writer.line(@w, text: "static bool " + prefix + "_desc_eq(const void *a, const void *b) {")
         writer.line(
             @w,
-            text: "    return " + prefix + "_eq((const " + c_type + " *)a, (const " + c_type + " *)b);"
+            text: "    return " + prefix + "_eq((" + handles.const_pointer(c_type) + ")a, (" + handles.const_pointer(c_type) + ")b);"
         )
         writer.line(@w, text: "}")
         writer.line(@w, text: "HERO_TU_QUIET static const HeroDesc " + prefix + "_desc = {")

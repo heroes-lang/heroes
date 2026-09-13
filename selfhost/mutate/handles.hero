@@ -34,6 +34,7 @@ use parse
 use source
 use token
 use mutate/sites
+use handles as handle_form
 
 # Every mutant one source makes: one handle name swapped for another handle
 # name in scope, at one call argument.
@@ -44,15 +45,15 @@ function swap_ptr(a: ast.Ast, s: source.Source, decls: [ast.Decl]) -> [str]
         match d.kind
             .function_decl fd =>
                 match fd.value.body
-                    .ok body => swaps_in(@out, a: a, s: s, params: fd.value.params, body: body)
+                    .ok body => swaps_in(@out, a: a, s: s, decls: decls, params: fd.value.params, body: body)
                     .err _   => out @ out
             .constant_decl | .record_decl | .variant_decl | .test_decl => out @ out
 
     return out
 
 # The mutants of one function body, pushed onto `out`.
-function swaps_in(@out: [str], a: ast.Ast, s: source.Source, params: [ast.Param], body: ast.Block)
-    names = handle_names(a: a, s: s, params: params, body: body)
+function swaps_in(@out: [str], a: ast.Ast, s: source.Source, decls: [ast.Decl], params: [ast.Param], body: ast.Block)
+    names = handle_names(a: a, s: s, decls: decls, params: params, body: body)
 
     # One handle is one operand; a swap needs two.
     if names.len() < 2
@@ -82,11 +83,11 @@ function swaps_in(@out: [str], a: ast.Ast, s: source.Source, params: [ast.Param]
 # the `declare` and typed `bind` statements inside its body. A statement is
 # inside the body when its span is; the arena is flat and a nested block's
 # statements are in it too, so containment reaches every depth.
-function handle_names(a: ast.Ast, s: source.Source, params: [ast.Param], body: ast.Block) -> [str]
+function handle_names(a: ast.Ast, s: source.Source, decls: [ast.Decl], params: [ast.Param], body: ast.Block) -> [str]
     names: [str] @ []
 
     for p in params
-        if is_ptr(a: a, s: s, ty: p.ty)
+        if is_ptr(a: a, s: s, decls: decls, ty: p.ty)
             names @ names.push(source.span_text(s, p.name))
 
     for st in a.stmts
@@ -95,12 +96,12 @@ function handle_names(a: ast.Ast, s: source.Source, params: [ast.Param], body: a
 
         match st.kind
             .declare d =>
-                if is_ptr(a: a, s: s, ty: d.ty)
+                if is_ptr(a: a, s: s, decls: decls, ty: d.ty)
                     names @ names.push(source.span_text(s, d.name))
             .bind b =>
                 match b.ty
                     .ok ty =>
-                        if is_ptr(a: a, s: s, ty: ty)
+                        if is_ptr(a: a, s: s, decls: decls, ty: ty)
                             names @ names.push(source.span_text(s, b.name))
                     .err _ => names @ names
             .mutate | .return_stmt | .break_stmt | .continue_stmt      => names @ names
@@ -110,12 +111,35 @@ function handle_names(a: ast.Ast, s: source.Source, params: [ast.Param], body: a
 
 # Whether a type node is the bare name `ptr`. A `[ptr]`, a `ptr?` or a record
 # holding one is not a handle argument this operator swaps.
-function is_ptr(a: ast.Ast, s: source.Source, ty: i64) -> bool
+function is_ptr(a: ast.Ast, s: source.Source, decls: [ast.Decl], ty: i64) -> bool
     node = a.types[ty]
 
     return match node.kind
-        .named => source.span_text(s, node.span) == "ptr"
+        .named => is_handle_name(s, decls, written: source.span_text(s, node.span))
         .unit | .array_of | .fixed | .map_of | .fallible | .function_type | .error => false
+
+# `ptr`, or the name of a handle declared in this file.
+#
+# **The second half is what keeps this operator measuring anything.** The handle
+# form's whole point is that a binding stops writing `ptr`, so once
+# `examples/sqlite` declares `Db` and `Stmt` an operator that knew only the word
+# `ptr` would find no sites, report zero mutants, and the form it exists to judge
+# would be scored against silence. It plants the same mutants and they die in the
+# checker, which is the measurement.
+#
+# The lookup is by the WRITTEN name because a mutation site is a fact about the
+# file's own tree — `ops.hero` parses the source bare — so there is no resolver
+# to ask and a handle imported from another module is out of reach, which the
+# operator's row states.
+function is_handle_name(s: source.Source, decls: [ast.Decl], written: str) -> bool
+    if written == "ptr"
+        return true
+
+    for d in decls
+        if handle_form.is_handle(d) && source.span_text(s, d.name) == written
+            return true
+
+    return false
 
 function within(inner: token.Span, outer: token.Span) -> bool
     return inner.start >= outer.start && inner.end <= outer.end

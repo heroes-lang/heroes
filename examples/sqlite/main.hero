@@ -31,8 +31,17 @@ extern "sqlite3.h" link "sqlite3"
     # because there is no number: this file used to say `0` and `100`.
     constant SQLITE_OK: i64
     constant SQLITE_ROW: i64
-    function sqlite3_open(filename: cstr, @out: ptr) -> i64
-    function sqlite3_close(db: ptr) -> i64
+    # The two HANDLES, since 2026-09-13 (panel 145, defect 029). A `record`
+    # inside a group with a `tag` and NO fields is a pointer to a type the
+    # header names and leaves opaque: `Db` is C's `sqlite3 *` and `Stmt` is
+    # `sqlite3_stmt *`. Until this line both were `ptr`, one Heroes type over
+    # two C types, and `sqlite3_step(db)` built at zero diagnostics and exited
+    # 139. It is now `error[type_mismatch]: expected Stmt, found Db` on the
+    # line that writes it, and clang refuses it a second time from the header.
+    record Db tag sqlite3
+    record Stmt tag sqlite3_stmt
+    function sqlite3_open(filename: cstr, @out: Db) -> i64
+    function sqlite3_close(db: Db) -> i64
     # The fifth argument is `char **errmsg`, and a non-NULL one makes SQLite
     # allocate a copy of the message that the CALLER must release with
     # `sqlite3_free`. This program does not want one, so it is a plain `ptr`
@@ -43,21 +52,21 @@ extern "sqlite3.h" link "sqlite3"
     # because no statement here is ever refused, which is a fact about its SQL
     # and not a defence. Repaired as the class rather than the case
     # (CLAUDE.md §1).
-    function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, error: ptr) -> i64
-    function sqlite3_prepare_v2(db: ptr, sql: cstr, length: i32, @statement: ptr, @tail: ptr) -> i64
-    function sqlite3_step(statement: ptr) -> i64
-    function sqlite3_column_int(statement: ptr, column: i32) -> i64
-    function sqlite3_finalize(statement: ptr) -> i64
+    function sqlite3_exec(db: Db, sql: cstr, callback: ptr, context: ptr, error: ptr) -> i64
+    function sqlite3_prepare_v2(db: Db, sql: cstr, length: i32, @statement: Stmt, @tail: ptr) -> i64
+    function sqlite3_step(statement: Stmt) -> i64
+    function sqlite3_column_int(statement: Stmt, column: i32) -> i64
+    function sqlite3_finalize(statement: Stmt) -> i64
 
 # One statement, run for its effect. The three pointers SQLite's callback
 # protocol takes are `nullptr`: §4.19 fixes a callback at `ptr` until the
 # boundary has a C-width type vocabulary, and this program needs none.
-function run(db: ptr, sql: str) -> i64
+function run(db: Db, sql: str) -> i64
     return sqlite3_exec(db: db, sql: sql.cstr(), callback: nullptr, context: nullptr, error: nullptr)
 
 # The first column of the first row, which is the whole of "read a result".
-function first_int(db: ptr, sql: str) -> i64
-    statement: ptr @ nullptr
+function first_int(db: Db, sql: str) -> i64
+    statement: Stmt @ nullptr
     tail: ptr @ nullptr
     rc = sqlite3_prepare_v2(
         db: db,
@@ -77,7 +86,7 @@ function first_int(db: ptr, sql: str) -> i64
     return value
 
 function main()
-    db: ptr @ nullptr
+    db: Db @ nullptr
 
     if sqlite3_open(":memory:".cstr(), @db) != SQLITE_OK
         print("cannot open the database")

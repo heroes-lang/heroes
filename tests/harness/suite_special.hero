@@ -320,7 +320,14 @@ function the_specs_own_example_opens_a_database(@r: report.Report, scratch: str,
         )
         return
     path = scratch + "/spec-ffi.hero"
-    program = block + "\nfunction main()\n    db: ptr @ nullptr\n    rc = sqlite3_open(path: \":memory:\".cstr(), @db)\n    print(rc)\n    _ = sqlite3_close(db)\n"
+
+    # `Db`, not `ptr`, since 2026-09-13: the document's own fence declares the
+    # handle now (panel 145, defect 029), and this body is what a reader would
+    # write from it. The two move together on purpose — a body that still said
+    # `ptr` would be the one program in the tree that reads the spec and ignores
+    # it, and this check exists to prove the example is a program and not a
+    # picture.
+    program = block + "\nfunction main()\n    db: Db @ nullptr\n    rc = sqlite3_open(path: \":memory:\".cstr(), @db)\n    print(rc)\n    _ = sqlite3_close(db)\n"
 
     if write_file(path: path, text: program).is_err()
         report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot write " + path)

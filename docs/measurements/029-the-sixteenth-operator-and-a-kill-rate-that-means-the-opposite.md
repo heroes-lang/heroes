@@ -105,6 +105,35 @@ read nobody mistakes the eight accidents for a defence.
 the rewrite kills fewer than seven, or if the total is no longer 15 — which
 would mean the operator's site set moved and the two numbers are not comparable.
 
+## Scored at step 4, the same evening: 15 of 15
+
+The handle form landed and both bindings were retyped —
+`examples/sqlite/main.hero` to `Db`/`Stmt`, `examples/ledger/db/sqlite.hero` to
+`CDb`/`CStmt` with its two hand-written wrapper records now holding handles
+instead of `ptr`. Both produce **byte-identical output** and the ledger's
+sixteen tests pass.
+
+```
+| operator | mutants | excluded | killed (check) | killed (--permissive) |
+| swap-ptr |      15 |        0 |      15 (100%) |             15 (100%) |
+```
+
+**The denominator did not move**, which is what makes the two numbers
+comparable: the operator learned the form in the same commit
+(`selfhost/mutate/handles.hero` asks `handles.is_handle`, so a `Db`-typed name
+is a site exactly as a `ptr`-typed one was), and it finds the same fifteen
+sites. Had it not, the rewrite would have hidden the sites and the form would
+have been scored against silence — which is the failure this file's own
+prediction named.
+
+**The honest half: 7 of 7.** The seven pure-use mutants, one of them defect 029
+verbatim, all die now. The eight that died before still die, on the same two
+rules that were never about handles. So the headline moved 53% → 100% and the
+half that means what it says moved **0 → 7 of 7**.
+
+**The prediction above is scored: it held**, in both halves. Every one of the
+seven is refused, and the total is still 15.
+
 ## What was not measured
 
 - **`--permissive` reads 6 rather than 8**, so two of the eight die on a rule

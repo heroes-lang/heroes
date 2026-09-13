@@ -149,7 +149,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             if contextual.contextual(a, b.right) && !contextual.contextual(a, b.left)
                 left_ty @ synth(@c, a, r, s, decls, b.left)
 
-                if contextual.adopts(c, a, id: b.right, offered: left_ty)
+                if contextual.adopts(c, a, decls, id: b.right, offered: left_ty)
                     check(@c, a, r, s, decls, id: b.right, expected: left_ty)
                     right_ty @ left_ty
                 else
@@ -157,7 +157,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             else if contextual.contextual(a, b.left) && !contextual.contextual(a, b.right)
                 right_ty @ synth(@c, a, r, s, decls, b.right)
 
-                if contextual.adopts(c, a, id: b.left, offered: right_ty)
+                if contextual.adopts(c, a, decls, id: b.left, offered: right_ty)
                     check(@c, a, r, s, decls, id: b.left, expected: right_ty)
                     left_ty @ right_ty
                 else
@@ -400,7 +400,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
 
     if is_null
-        if contextual.adopts(c, a, id: id, offered: expected)
+        if contextual.adopts(c, a, decls, id: id, offered: expected)
             _ = state.record_expr(@c, at: id, ty: expected)
         else
             mismatch_shown(@c, s, decls, expected: expected, got: "ptr", span: span)

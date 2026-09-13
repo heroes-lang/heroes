@@ -8,17 +8,17 @@ The status and the chain. Why the table looks the way it does is
 
 | | |
 |---|---|
-| **Current milestone** | **M-handle-verdict**, opened 2026-09-13 on the trunk and at step 3: the sitting has sat (panel 145) and **the instrument it ordered before the form has landed**. A handle is a pointer with a name, and the compiler already reads the name: **029 ENTERS** as a fieldless `extern` record spelled as the header's own type name starred, **030 REFUSED** as a form with its home the Part 6 row, **031 a WART with the defect held open** until the consume-mark prototype is measured. The 16th mutation operator now reports the before-number: **15 mutants, 8 killed — and 0 of the 7 that are actually the defect's shape**, the eight dying on rules about orphaned names rather than about handles. Step 4 is the form, judged against 7 of 7 |
-| **Last closed** | **M-deferral-ledger**, 2026-09-13, **untagged while defects 029, 030 and 031 stand** ([053](journal/053-deferral-ledger.md)) — every deferred item now carries a date, and nine times the reason under it had rotted first · before it **M-declared-thresholds** ([052](journal/052-declared-thresholds.md)) and **M-reflection-verdict** ([051](journal/051-reflection-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| **Current milestone** | **M-handle-verdict**, opened 2026-09-13 on the trunk and at step 4: **defect 029 is closed**. A fieldless `record` in an `extern` group is a handle, C's pointer to what the header leaves opaque, and `sqlite3_step(db)` no longer builds — `expected Stmt, found Db` on its own line. The instrument built first says it: **15 mutants, 8 killed and 0 of the 7 that were the class** before, **15 of 15 and 7 of 7** after. **One defect open**, 031, whose consume-mark prototype is step 5 |
+| **Last closed** | **M-deferral-ledger**, 2026-09-13, **untagged while defect 031 stands** ([053](journal/053-deferral-ledger.md)) — every deferred item now carries a date, and nine times the reason under it had rotted first · before it **M-declared-thresholds** ([052](journal/052-declared-thresholds.md)) and **M-reflection-verdict** ([051](journal/051-reflection-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **54** of 77 · **53** tags matching `m*`, the legacy `m0`-`m8` included — one fewer than the closes, because `records/tagged` allows no tag over an open defect |
-| The compiler | **59,515** lines of Heroes in **204** modules (`find selfhost -name '*.hero'`) · the seed **796,428** lines of C, regenerated at M-handle-verdict step 1 when `pinned.hero` took the spec's new record |
-| The spec | **5722** on the vendored ranks and **7610** on the reader's own, against a ceiling of 8192 — **+67 and +79** at M-handle-verdict step 1, three corrections and one removal each measured alone, **582 free** and 522 net of the FFI floor |
+| The compiler | **60,037** lines of Heroes in **206** modules (`find selfhost -name '*.hero'`) · the seed **803,414** lines of C, regenerated at M-handle-verdict step 4 with the handle form |
+| The spec | **5798** on the vendored ranks and **7721** on the reader's own, against a ceiling of 8192 — **+76 and +111** at M-handle-verdict step 4, the handle sentence with § 13's fence rewritten to use it, paid by the package paragraph's reason clause at −17; **394 free** and 334 net of the FFI floor |
 | The contract | **7402** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5` since 2026-09-12. It was judged on OpenAI's vendored table until then, and was **1806 over** while `measure` printed nine to spare |
-| Records | sittings **142** · journals **54** · milestone files **47** · entries: `docs/records/log/` **641**, `docs/records/done/` **500**, `docs/records/book/beats/` **119** · **open defects 2** (029 and 031, filed 2026-09-13 beside sittings; 030 closed the same evening at M-handle-verdict step 1) |
+| Records | sittings **143** · journals **54** · milestone files **47** · entries: `docs/records/log/` **647**, `docs/records/done/` **511**, `docs/records/book/beats/` **119** · **open defects 1** (031, one copy freeing what every other copy holds; 029 and 030 both closed 2026-09-13) |
 | Waiting on the author | **0** decisions. Every sitting of M-deferral-ledger, the sitting-brief question and M-handle-verdict's own sitting were ratified on 2026-09-13, the day the ledger closed and the next milestone opened |
 
-**Re-measured 2026-09-13 at M-handle-verdict step 3, not carried.** `records`
-is **23** checks, the compiler's own tests **644**, the net's own **150**.
+**Re-measured 2026-09-13 at M-handle-verdict step 4, not carried.** `records`
+is **23** checks, the compiler's own tests **645**, the net's own **150**.
 
 ---
 

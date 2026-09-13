@@ -1,0 +1,156 @@
+# What a C handle is, asked once (panel 145, 2026-09-13; `docs/work/DEFECTS.md` 029).
+#
+# A **handle** is a `record` declared inside an `extern` group with a `tag` and
+# no fields: a pointer to a type the header names and leaves opaque.
+# `record Db tag sqlite3` is C's `sqlite3 *`, the tag written **verbatim as the
+# header spells the type** and never `struct sqlite3 *` — `curl/curl.h` reads
+# `typedef void CURL;` on this Mac's SDK, so a `struct <tag>` spelling reaches
+# one of the three handle types in this tree, and the verbatim name is also the
+# text `cli/pointee.hero` already receives from clang's own AST dump.
+#
+# **THIS FILE EXISTS BECAUSE THE QUESTION WAS ABOUT TO BE ANSWERED FOUR TIMES.**
+# Five scouts mapped step 4 and each proposed its own predicate in its own home:
+# the parser wanted `in_group && tag && !partial`, the checker `header &&
+# !partial && fields == 0` with `tag` deliberately dropped, the emitter
+# `fields == 0` nested inside a `tag` branch with `partial` untested, and
+# `mutate` a fourth. A completeness critic counted them, and CLAUDE.md's opening
+# rule is that each rule is written in exactly one place and everything else
+# cites it. So it is written here and the parser, the checker, the emitter and
+# `heroes mutate` all ask this function.
+#
+# **Why all three clauses, and none of them is decoration.**
+#
+#   - **inside a group**: outside one there is no header to leave a type opaque,
+#     so a fieldless `record` names nothing and stays `error[empty_record]`.
+#   - **a `tag`**: the C type has to be NAMED — the Heroes name is the author's
+#     and the C name is the header's — and requiring it is what keeps a group
+#     record whose field block lost its indentation from becoming a handle in
+#     silence.
+#   - **not `partial`**: `partial` means *names only SOME of the struct's
+#     fields*, and spec § 13 makes `==` on a `partial` record a compile error,
+#     while a handle has to compare as an address. A `partial` record with no
+#     fields names nothing at all, which is its own diagnostic.
+
+use ast
+use token
+use diag
+
+# The three clauses, over the PIECES, because the parser asks before a
+# declaration exists: it holds `is_from_c(linkage)` where everyone later holds
+# `header`, and it has not read a field block yet. One definition, two shapes of
+# caller, and every other spelling in the compiler calls one of them.
+function is_handle_parts(in_group: bool, tagged: bool, partial: bool, field_count: i64) -> bool
+    return in_group && tagged && !partial && field_count == 0
+
+# Whether a record declaration is a handle. It takes the declaration rather than
+# a name so that no caller has to know which of `header`, `tag` and `partial`
+# carries which half of the answer.
+function is_handle_record(kind: ast.DeclKind) -> bool
+    return match kind
+        .record_decl r => is_handle_parts(
+            in_group: !r.header.is_err(),
+            tagged: !r.tag.is_err(),
+            partial: r.partial,
+            field_count: r.fields.len()
+        )
+        .constant_decl | .function_decl | .variant_decl | .test_decl => false
+
+# The same question of a declaration, which is what most callers hold.
+function is_handle(decl: ast.Decl) -> bool
+    return is_handle_record(decl.kind)
+
+# A `const` pointer TO a value of this C type, and the reason it is a function
+# rather than a `"const " +` at four sites.
+#
+# `const T *` qualifies what T points AT when T is itself a pointer, and a
+# handle's C type is one: `const sqlite3 * *` reads `const sqlite3 **`, and C's
+# qualification conversion does not reach one level down, so `&db` — a
+# `sqlite3 **` — is refused. Measured 2026-09-13 under
+# `-Werror=incompatible-pointer-types-discards-qualifiers` (`cli/flags.hero:50`),
+# at every generated `_eq`, at a record holding a handle, and in the descriptor's
+# own copy. The const has to land on the CELL: `sqlite3 * const *`.
+#
+# For every other type the two spellings are the same type, and this one keeps
+# the old text so no emission golden moves.
+function const_pointer(c_type: str) -> str
+    if c_type.len() > 0 && c_type[c_type.len() - 1] == 42
+        return c_type + " const *"
+    return "const " + c_type + " *"
+
+# The C type a handle is spelled as: the tag verbatim, starred. The caller has
+# already asked `is_handle`, so a record that is not one answers the empty
+# string rather than a guess.
+function c_spelling(decl: ast.Decl, tag_text: str) -> str
+    if !is_handle(decl)
+        return ""
+    return tag_text + " *"
+
+# Two records naming ONE C type, and it is refused for a reason that outlives
+# this compiler (panel 145's narrowing, author decision 2026-09-13). Two handles
+# of one tag are two Heroes types and ONE C type, so the checker refuses a swap
+# between them and clang accepts it: the mutant survives every instrument the
+# language has, permanently. And the diagnostic machinery cannot even name the
+# second — `record_by_tag` answers with the FIRST record carrying the tag, so a
+# message about the second would carry the first's caret. One tag, one type.
+function duplicate_tag(tag: str, first: str, second: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "duplicate_tag",
+        message: "`" + second + "` and `" + first + "` both name the C type `" + tag + "` — one tag, one type",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "two Heroes types over one C type is a hole nothing can close: this compiler refuses handing one where the other belongs, and clang accepts it, so the mistake survives every check the language has. Give the two types two tags, or give the one type one name and use it twice"
+    )
+    return d
+
+# A HANDLE cannot be a map key, and this is a REFUSAL rather than a cost
+# (panel 145's narrowing, author decision 2026-09-13). A handle is an address C
+# owns: two handles are equal when the addresses are, and an address is recycled
+# — the allocator hands the same bytes back for an unrelated object, so a key
+# stored under a closed handle is found again by a fresh one that has nothing to
+# do with it. The sitting that adopted the form did not rule on hashing at all
+# (`hash` appears zero times in it), so the language refuses the shape rather
+# than choosing an answer nobody argued.
+function handle_map_key(key: str, reached: str, span: token.Span) -> diag.Diagnostic
+    because: str @ "it is a handle, an address C owns"
+
+    if reached.len() > 0
+        because @ "`" + reached + "` is a handle, an address C owns"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "handle_map_key",
+        message: "`" + key + "` cannot be a map key, because " + because,
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "two handles are equal when their addresses are, and C recycles an address: close one and the next allocation can hand back the same bytes, so a value stored under the closed handle is found again by a handle that has nothing to do with it. Key the map on something the program owns — an `i64` the library gives you, or a `str` — and keep the handle in the value"
+    )
+    return d
+
+test "all three clauses are load-bearing, and a record with fields is never a handle"
+    header: token.Span? = ok(token.Span(start: 0, end: 1))
+    tag: token.Span? = ok(token.Span(start: 2, end: 3))
+    none: token.Span? = fail(code: "absent", msg: "none")
+    empty: [ast.Field] = []
+    one: [ast.Field] = [ast.Field(name: token.Span(start: 4, end: 5), ty: 0, doc: [])]
+
+    assert is_handle_record(
+        .record_decl(fields: empty, header: header, library: none_library(), partial: false, tag: tag)
+    )
+
+    # Outside a group there is no header to leave a type opaque.
+    assert !is_handle_record(.record_decl(fields: empty, header: none, library: none_library(), partial: false, tag: tag))
+
+    # Without a tag the C type has no name.
+    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), partial: false, tag: none))
+
+    # `partial` names SOME fields; with none it names nothing.
+    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), partial: true, tag: tag))
+
+    # A group record WITH fields is the header's struct, by value, as before.
+    assert !is_handle_record(.record_decl(fields: one, header: header, library: none_library(), partial: false, tag: tag))
+
+    # And nothing else is a record at all.
+    assert !is_handle_record(.test_decl(body: ast.Block(span: token.Span(start: 0, end: 0), stmts: [])))
+
+function none_library() -> ast.Library?
+    return fail(code: "absent", msg: "no library")

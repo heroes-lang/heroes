@@ -28,6 +28,7 @@
 use token
 use cursor
 use ast
+use handles
 use parse/type
 use parse/members as parse_members
 use grammar_expr
@@ -235,31 +236,64 @@ function partial_marker(@c: cursor.Cursor, text: str, in_group: bool) -> bool
     _ = cursor.bump(@c)
     return true
 
+# A group `record` with a `tag` and NO fields is a HANDLE: a pointer to a type
+# the header names and leaves opaque (panel 145, ratified 2026-09-13).
+# `handles.is_handle_parts` is the one place that says which three facts make
+# one, and this is one of its four callers.
+#
+# **The caret no longer asks the cursor where it is.** By the time the refusal
+# below runs, `skip_terminators` has crossed the record's own line end and the
+# current token is the NEXT declaration's first, so `empty_record` underlined a
+# line the author had done nothing wrong on — measured 2026-09-13, and it is the
+# repair panel 145 owed this step. It underlines `record <Name> tag <tag>`
+# instead, which is the text to change.
 function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage)
-    tag = tag_marker(@c, text, in_group: is_from_c(linkage))
-    partial = partial_marker(@c, text, in_group: is_from_c(linkage))
+    in_group = is_from_c(linkage)
+    tag = tag_marker(@c, text, in_group: in_group)
+    partial = partial_marker(@c, text, in_group: in_group)
+    head_end: token.Span @ name
+
+    if !tag.is_err()
+        head_end @ tag.must()
+    is_handle = handles.is_handle_parts(in_group: in_group, tagged: !tag.is_err(), partial: partial, field_count: 0)
     grammar_expr.eat_python_colon(@c)
     cursor.skip_terminators(@c)
 
-    if !cursor.at(c, .indent)
+    if !cursor.at(c, .indent) && !is_handle
         if !cursor.at_reported_error(c)
             cursor.error(
                 @c,
                 code: "empty_record",
-                message: "a `record` needs at least one field, indented one level below it",
-                span: here_or(c, keyword)
+                message: empty_record_message(in_group: in_group, partial: partial),
+                span: token.Span(start: keyword.start, end: head_end.end)
             )
         cursor.recover_to_next_decl(@c)
         return
-    start = cursor.current_span(c)
-    fields = parse_members.field_block(@c, @a, text)
-    finish: token.Span @ start
+    fields: [ast.Field] @ []
+    finish: token.Span @ head_end
+
+    if cursor.at(c, .indent)
+        finish @ cursor.current_span(c)
+        fields @ parse_members.field_block(@c, @a, text)
 
     if fields.len() > 0
         finish @ fields[fields.len() - 1].name
     decls @ decls.push(
         ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: linkage_header(linkage), library: linkage_library(linkage), partial: partial, tag: tag))
     )
+
+# What `empty_record` says. Three messages rather than one, because the repair
+# differs and §4.17 asks a diagnostic to carry it: outside a group there is no
+# header, so fields are the only answer; inside one, a `tag` and no fields is the
+# handle form; and a `partial` record with no fields names nothing at all, which
+# is the case a reader reaches by deleting a field block and forgetting the word.
+function empty_record_message(in_group: bool, partial: bool) -> str
+    if !in_group
+        return "a `record` needs at least one field, indented one level below it"
+
+    if partial
+        return "`partial` names only SOME of the header's fields, so a `partial` `record` with none names nothing — give it its fields, or drop `partial` and name the type for a HANDLE: `record Db tag sqlite3` is C's `sqlite3 *`"
+    return "a `record` needs at least one field, indented one level below it — or, in an `extern` group, a `tag` and no fields make it a HANDLE, a pointer to a type the header leaves opaque: `record Db tag sqlite3` is C's `sqlite3 *`"
 
 # An `extern` with a body is a mistake worth naming: the body would never be
 # compiled, and silently ignoring it is the class of thing this language

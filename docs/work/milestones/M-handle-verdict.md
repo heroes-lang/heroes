@@ -157,8 +157,33 @@ inside one step. **And `selfhost/cli/pointee.hero:116` is the file nobody
 named**: `.named` answers *not numeric*, so `@out: Db` gets no pointee width
 assertion and the out-parameter story rests on the `_Static_assert` probe alone.
 
+**Step 4, 2026-09-13: the form lands and DEFECT 029 CLOSES**
+(`docs/records/log/2026-09-13-1400-…`). `sqlite3_step(db)` is
+`error[type_mismatch]: expected Stmt, found Db` on its own line, and the
+unchanged example prints `rows: 3` byte-identical. **The measurement**:
+`swap-ptr` read 15 mutants, 8 killed and **0 of the 7 that were the class**
+before; **15 of 15** and **7 of 7** after, with the denominator unmoved because
+the operator learned the form in the same commit. **The form is ~170 lines**
+against the scouts' ~203 and with both ceilings untouched: the predicate written
+once in `selfhost/handles.hero`, the form in `parse/tails.hero`, the spelling in
+`emit/ctype.hero`, `nullptr` adopting a handle in `check/contextual.hero`, and
+`const_pointer` at the five sites where `const T *` qualified the pointee.
+**Zero new `Ty` cases, `check/table.hero` untouched** — the engineer's own
+prediction, held. **Two refusals landed** (a handle as a map key, two records
+one tag) **and the third was withdrawn on evidence**: `record File tag FILE`
+compiles, runs and writes through `FILE *`, so refusing a complete tag would
+break a legitimate binding — the fieldless form MEANS the pointer. Spec § 13
+gains the sentence **and its fence is rewritten to use it**, +76 vendored net,
+real 7610 → 7721.
+
+**What step 4 owes and did not do**, filed rather than half-done: the two
+repairs panel 145 charged to it — `emit/ffi_tag.hero` reading clang's
+*incomplete definition* as *absent*, and `check/freer.hero` retyping any `owned`
+parameter to `str?` so a `ptr` gets two diagnostics about a string. They are the
+milestone's fifth item.
+
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 5**
 
 - [ ] **M-handle-verdict** | the sitting, and the counts it is handed rather than guesses | `docs/work/DEFECTS.md` 029 · `docs/panel/135-the-form-was-cheap-and-the-reasons-under-it-were-borrowed.md` § Found beside the sitting · design.md Part 7 item 5, Part 8 wart 17 · `spec/heroes-spec.md` § 3, § 9, § 13
 
@@ -276,5 +301,29 @@ assertion and the out-parameter story rests on the `_Static_assert` probe alone.
     Swift's regret is that `OpaquePointer` cannot tell two handles apart, not
     that it is called `OpaquePointer` — so the precedent does not transfer and
     the sitting must find its own.
+
+- [ ] **M-handle-verdict** | the two diagnostic repairs panel 145 charged to step 4, which step 4 filed rather than half-did | `selfhost/emit/ffi_tag.hero:64-80` · `selfhost/check/freer.hero:90-93` · `docs/panel/145-a-handle-is-a-pointer-with-a-name-and-the-compiler-already-reads-the-name.md` § Found beside the sitting
+
+    **Origin:** panel 145, 2026-09-13, and step 4's own decision not to rush them.
+
+    **`ffi_unknown_tag` says a header declares no `struct X` when it declares it
+    OPAQUE.** `emit/ffi_tag.hero:69` keys on clang's *incomplete definition of
+    type* and reads it as *the tag is not there*; `sqlite3.h` writes
+    `typedef struct sqlite3 sqlite3;`, which is declared AND incomplete. It is a
+    premise about the world in `module-shape.md`'s sense, and the handle form
+    makes it reachable far more often, since every handle names an incomplete
+    type on purpose. What it owes: tell absent from incomplete, and a test that
+    fires when the distinction dies.
+
+    **`owned` on a non-`cstr` parameter is retyped to `str?` in silence.**
+    `check/freer.hero:90-93` retypes ANY `owned` parameter regardless of its
+    declared type, so `function sqlite3_finalize(statement: ptr owned sqlite3_finalize)`
+    parses and answers `type_mismatch: expected str?, found ptr` plus
+    `owned_freer_called` — two diagnostics about a string on a program that has
+    none. Three of panel 145's five seats found it independently. It should be
+    refused at the DECLARATION by the declared type's name. **And it is step 5's
+    neighbour**: the consume mark 031 needs is a word that is NOT `owned`, so
+    this repair is what keeps the two vocabularies from being confused on the day
+    the second one lands.
 
 *******************************************************************************

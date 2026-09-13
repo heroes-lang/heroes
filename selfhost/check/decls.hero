@@ -30,10 +30,12 @@ use check/freer as freer
 use check/generics
 use check/discard
 use value_errors
+use handles
 use flow_errors
 use contextless_errors
 
 function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
+    one_tag_one_type(@c, s, decls)
     index: i64 @ 0
 
     for decl in decls
@@ -265,3 +267,37 @@ test "a type parameter that appears nowhere in the signature is refused at its l
         "function wanted<A>(what: str) -> A?\n    return fail(code: \"type\", msg: what)\n\nfunction main()\n    x: i64? = wanted(what: \"a\")\n    print(x.is_err())\n"
     )
     assert fine.out.diagnostics.len() == 0
+
+# One tag, one type: two group records may not name the same C type.
+#
+# Refused rather than allowed, on the author's decision of 2026-09-13 narrowing
+# panel 145's form. Two records over one tag are two Heroes types and one C
+# type, so this compiler refuses handing one where the other belongs and clang
+# accepts it — the mutant survives every instrument the language has, for good.
+# The diagnostic machinery cannot name the second either: `emit/ffi_tag.hero`'s
+# `record_by_tag` answers with the FIRST record carrying a tag, so a message
+# about the second would carry the first's caret.
+#
+# The walk is over the declarations rather than the groups because a group is
+# flattened in the parser and no later pass knows the word: two records in two
+# groups over one header are the same mistake, and the header is not compared
+# for the same reason — `sqlite3.h` included twice is one type.
+function one_tag_one_type(@c: state.Checker, s: source.Source, decls: [ast.Decl])
+    seen: {str: str} @ {}
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err() && !rec.tag.is_err()
+                    tag = source.span_text(s, rec.tag.must())
+                    name = source.span_text(s, decl.name)
+                    first = seen[tag]
+
+                    if first.is_err()
+                        seen[tag] @ name
+                    else
+                        state.push_diagnostic(
+                            @c,
+                            handles.duplicate_tag(tag: tag, first: first.must(), second: name, span: decl.name)
+                        )
+            .constant_decl | .function_decl | .variant_decl | .test_decl => seen @ seen

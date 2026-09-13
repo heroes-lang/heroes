@@ -15,6 +15,7 @@
 # small record (§4.2), so it gets exactly what a record gets.
 
 use ast
+use handles
 use source
 use check/state
 use ir/layout
@@ -81,7 +82,7 @@ function prototypes(@w: writer.Writer, c: state.Checked, names: ctype.Names, dec
             writer.line(@w, text: "HERO_TU_LOCAL void " + one.at.prefix + "_release(" + one.at.c_type + " *v);")
         writer.line(
             @w,
-            text: "HERO_TU_LOCAL bool " + one.at.prefix + "_eq(const " + one.at.c_type + " *a, const " + one.at.c_type + " *b);"
+            text: "HERO_TU_LOCAL bool " + one.at.prefix + "_eq(" + handles.const_pointer(one.at.c_type) + "a, " + handles.const_pointer(one.at.c_type) + "b);"
         )
         writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + one.at.prefix + "_hash(const void *elem);")
         wrote @ true

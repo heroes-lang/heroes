@@ -27,64 +27,7 @@ record.
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
-
-- [ ] **029 — a swapped opaque handle compiles at zero diagnostics and segfaults** | `examples/sqlite/main.hero` with line 74 changed from `sqlite3_step(statement)` to `sqlite3_step(db)` builds with no diagnostic and exits 139, because `sqlite3 *` and `sqlite3_stmt *` are both `ptr` and the probe passes a `void *` C converts in silence | `docs/panel/135-the-form-was-cheap-and-the-reasons-under-it-were-borrowed.md` § Found beside the sitting · `examples/sqlite/main.hero:46-48,74` · `selfhost/emit/callback_guard.hero` · design.md §1.12, §4.19
-
-    **Origin:** 2026-09-13, panel 135's ffi-pragmatist, measuring what a
-    transparent alias buys the boundary (nothing against this class); rebuilt
-    from source and re-run by the coordinator in the seat's copy before filing.
-
-    **Reproducer.** Copy `examples/sqlite/main.hero`, change line 74 to
-    `if sqlite3_step(db) == SQLITE_ROW`, `heroes build` it: **exit 0, zero
-    diagnostics**. Run it: **exit 139**. The unchanged example built with the same
-    binary prints `rows: 3` / `longest: 6` at exit 0. Measured on Darwin arm64,
-    clang 21, the SDK's `sqlite3.h`.
-
-    **2026-09-13, the second platform run, and it makes this defect WORSE rather
-    than confirming it.** The line above said the other two platforms were unrun;
-    the author put the Linux container up and it was run. On x86-64 Linux (Debian
-    13, clang 22, glibc 2.41) the same swapped program **builds clean AND runs to
-    completion at exit 0**, printing `rows: -1` and `longest: -1` where the
-    unchanged example prints `rows: 3` / `longest: 6`. So the class is not a crash:
-    **on Darwin it is a loud segfault and on Linux it is a wrong answer at exit 0**,
-    which is the shape this list names first and the hardest to notice. A reader
-    who met it on a Mac would file a crash; a program shipping on Linux returns a
-    number nobody checks. **Windows stays unrun and is not inferred**: that box has
-    no sqlite3 (`pkg-config` absent, measured the same night).
-
-    **Cause.** Every C pointer that is not a `cstr` is one Heroes type, `ptr`
-    (spec § 3). The extern's probe is `(void)(sqlite3_step)(a0)` with `a0` a
-    `void *`, so clang has nothing to compare: the header's `sqlite3_stmt *` and
-    the program's `sqlite3 *` meet at a parameter C converts without a word.
-    `examples/sqlite` has two pointee types collapsing to `ptr` and six call sites
-    that hand one on (`main.hero:56,74-76,82,89`); `heroes mutate`'s `swap-args`
-    swaps a label with its value and cannot produce this mutant.
-
-    **What is owed.** A sitting on the class and not a patch at the witness: the
-    repair is a fact about `ptr`, not about `alias` — the *distinct types* door
-    design.md Part 7 item 5 keeps open, and the one the FFI seat asked for by
-    name. The boundary's needs, stated by that seat and not designed: the same C
-    spelling as `ptr` (`void *`, 8 bytes, no box), `nullptr` as its literal, an
-    `@` out-parameter still emitted `(void *)&x`, the `_Static_assert` probe
-    unchanged, and `Db` refused where `Stmt` is written so the build above fails
-    at `main.hero:74` instead of at run time. Panel 109 refused `ptr owned` as a
-    new `Ty` case (179 arms in 49 files); the sitting owes the cheaper route or
-    the reason there is none. design.md §1.12 says a Heroes program must not
-    segfault, and `.claude/rules/c-boundary.md` says that goal wins here first.
-
-    **Ruled 2026-09-13 at panel 145 (M-handle-verdict step 2): ENTERS.** A fieldless
-    `extern` record is a handle, a pointer to a type the header names and leaves
-    opaque, spelled as the header's own type name starred — `record Db tag sqlite3`
-    is `sqlite3 *`. Compiled before it was adopted: with a nominal parameter type the
-    checker **already** refuses `sqlite3_step(db)` at this exact line
-    (`type_mismatch: expected Stmt, found Db`), and in C the header's own pointer
-    type makes clang refuse it too under `-Werror=incompatible-pointer-types`.
-    Zero new `Ty` cases; 60-90 code lines plus two probe files. **This defect
-    closes at step 4, when the form lands and the reproducer above fails
-    `heroes build` naming line 74** — after step 3 lands the `swap-ptr` mutation
-    operator that measures 0 of ~14 today, so the number the form is judged by is
-    run before the form. Sitting: `docs/panel/145-a-handle-is-a-pointer-with-a-name-and-the-compiler-already-reads-the-name.md`.
+**OPEN: 1**
 
 - [ ] **031 — one copy of a value can free what every other copy holds, at exit 0 with no diagnostic** | a `record Holder { cell: ptr }`, a copy, `free` through the copy, then a write through the original's own field: builds clean, runs to exit 0, and AddressSanitizer says `heap-use-after-free, WRITE of size 8` | `spec/heroes-spec.md` § 13's *"Unmarked pointers are never freed"* · `examples/ledger/db/sqlite.hero:225`, `:270` · `docs/panel/139-the-sentence-was-false-and-so-were-four-of-its-neighbours.md` § Found beside the sitting
 
