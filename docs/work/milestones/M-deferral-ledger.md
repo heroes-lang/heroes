@@ -232,4 +232,32 @@ package is written.
     because no operator produces it, which a covered-line report would have
     named.
 
+    **Step 9, 2026-09-13: wart 8 and coverage sat together (panel 144,
+    `docs/panel/144-the-cost-is-in-the-spelling-and-nobody-had-written-the-cheap-one.md`)
+    — and the sitting found that the two warts it thought were settled are not.**
+    That closes this item and the milestone's list. **The shape this step adds to
+    the ledger's account is the sharpest of the nine**: an entry can be false and
+    true at once, because **the cost lives in the spelling rather than in the
+    shape**. Three ways to write one accumulation, medians of three runs: a bare
+    local at 1 000 000 pushes **0.02 s**, a record field at 50 000 **11.51 s**, the
+    field lent to an `@` parameter at 1 000 000 **0.02 s**. Twenty times the work
+    in five hundred times less time, with nothing in the source to tell them
+    apart, and `--emit-c | grep -c hero_array_push_owned` reading **1**, **0**,
+    **1**. **The repair the entry never absorbed is twenty days old** — `aacd2dbd`,
+    2026-08-24 — so §4.10 and Part 8 have contradicted each other since, and **the
+    cheap spelling is one this repository already applied to itself**,
+    `push_expr(@exprs: [Expr], node)` taking `heroes check` from 191 s to 88 s on
+    2026-08-26. Coverage is **refused as the first Part 6 row whose subject is a
+    tool**, the column head widened in the same edit so the precedent breaks
+    loudly. **Two neighbours in this same item were stale and are corrected**:
+    wart 5's *"0 of 25"* re-runs as 59 mutants, 0 killed over 120 programs, and
+    warts 11 and 15 disagreed on one count inside one document, both dated
+    2026-09-13, where **neither method reproduces 22**. **What this step could not
+    do, and it is the milestone's one unfinished sentence**: the specification's
+    § 10 condition is true and insufficient, the replacement is drafted and
+    measured at **+35 vendored**, and it cannot be applied while
+    `tests/harness/suite_spec.hero:158`'s content-addressed digest withholds the
+    verdict — clearable only by a network refresh, which is a hard stop. That one
+    command is also the key to defects 030 and 031's spec half.
+
 *******************************************************************************

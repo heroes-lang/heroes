@@ -45,6 +45,33 @@ function without_suffix(text: str, suffix: str) -> str
         return text
     return text.slice(from: 0, to: text.len() - suffix.len())
 
+# The largest offset at or below `at` that a `slice` may cut at.
+#
+# This is the one place in the harness that cuts at an offset nobody chose
+# for its content, so it is the one place that has to ask. The module doc
+# above says why: `slice` aborts when it splits a character, and prose is
+# UTF-8. Measured 2026-09-13 — `suite_records.hero`'s `head_of` cut a
+# truncated line at a fixed 78 and took the WHOLE suite down with
+# `panic: string slice splits a character` on a 79-byte and an 80-byte line
+# ending in an em dash, while 81 and 82 passed, because at those two
+# lengths the three bytes of the dash straddled the offset. The suite has
+# paid this once already, in `suite_records.hero`'s `without_position`, and
+# that repair did not reach here.
+#
+# UTF-8 marks every byte INSIDE a character `0b10xxxxxx`, 128 through 191,
+# and no first byte is in that range, so walking down while the byte at the
+# cut is one of those lands on the start of the character containing it.
+function boundary_at_or_below(text: str, at: i64) -> i64
+    if at >= text.len()
+        return text.len()
+
+    cut: i64 @ at
+
+    while cut > 0 && text[cut] >= 128 && text[cut] <= 191
+        cut @ cut - 1
+
+    return cut
+
 # Split on one ASCII byte, keeping empty pieces.
 #
 # The separator is a byte and not a `str` because the one caller that
@@ -307,3 +334,28 @@ test "base_name and trimmed"
     assert base_name(path: "x.hero") == "x.hero"
     assert trimmed(text: "  a b \n") == "a b"
     assert trimmed(text: "\n\n") == ""
+
+test "boundary_at_or_below never lands inside a character"
+    # Five bytes: 'a', 'b', then three for the em dash. Every offset inside
+    # the dash answers 2, which is where the dash begins.
+    dash = "ab—"
+    assert dash.len() == 5
+    assert boundary_at_or_below(text: dash, at: 2) == 2
+    assert boundary_at_or_below(text: dash, at: 3) == 2
+    assert boundary_at_or_below(text: dash, at: 4) == 2
+
+    # The end is a boundary, and so is anything past it.
+    assert boundary_at_or_below(text: dash, at: 5) == 5
+    assert boundary_at_or_below(text: dash, at: 9) == 5
+
+    # Two bytes rather than three, cut in the middle.
+    section = "a§"
+    assert section.len() == 3
+    assert boundary_at_or_below(text: section, at: 2) == 1
+
+    # ASCII: every offset is already a boundary, and the empty string has one.
+    assert boundary_at_or_below(text: "abcd", at: 2) == 2
+    assert boundary_at_or_below(text: "", at: 0) == 0
+
+    # And the whole point: the slice that panicked now does not.
+    assert dash.slice(from: 0, to: boundary_at_or_below(text: dash, at: 3)) == "ab"
