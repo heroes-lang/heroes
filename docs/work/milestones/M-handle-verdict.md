@@ -124,6 +124,39 @@ route exposed (`ffi_tag.hero` incomplete-as-absent, `freer.hero`'s silent retype
 of `owned` on a `ptr`, `empty_record`'s caret) plus CL-036's re-printer walk, 5
 rule (i)'s prototype and the affine handle's copy-site count.
 
+**Step 4's scouting, 2026-09-13, and the form NARROWS before it lands**
+(`docs/records/log/2026-09-13-1300-the-form-narrows-before-it-lands-and-the-false-clause-was-the-coordinators-not-the-sittings.md`).
+Five scouts plus a completeness critic mapped the change before a line was
+written, and two author decisions came out of it. **A handle does NOT convert to
+`ptr`**: the clause saying otherwise was in the **coordinator's brief**, not in
+the ratified resolution — checked line by line — and the critic ran it
+(`error[type_mismatch]: expected ptr, found Db`). Implementing it would have
+re-opened the class through every function still declared `ptr`. Struck at zero
+cost, since it is today's behaviour; the price is that a parameter receiving a
+handle is retyped, 7 sites in `examples/sqlite`, 18 in the ledger, 2 in curl.
+**And three shapes the sitting never ruled on are REFUSED rather than
+implemented**: a handle as a map key (the checker and emitter scouts had
+opposite plans and panel 145 says `hash` zero times), two records sharing one
+tag (two Heroes types, one C type, so a swap between them is a mutant clang
+accepts and nothing could ever kill), and a `tag` naming a type the header
+declares COMPLETE (silently a pointer where the author meant the struct). **The
+engineer's 150-line condition had fired at the scouts' scope** — ≈203 for the
+form alone, with `emit/ctype.hero` at 371/380 `DECIDED` and
+`emit/structural.hero` at 293/300 — and the narrowing is what answers it rather
+than a retreat to WART or a build that decides three reserved questions by
+omission.
+
+**What step 4 still owes, as one coherent diff**: the form; the three refusals;
+the three repairs the route exposed; § 13's sentence **with the fence rewritten
+to use it**; CL-036's walk; `examples/sqlite` rewritten; the seed; and the
+after-number, which must read **7 of 7** on the class `docs/measurements/029`
+measured at 0 of 7. **The handle predicate is written ONCE** and called from the
+parser, the checker, the emitter and `mutate`: the scouts proposed four
+definitions in four homes, which is the contract's opening rule broken four ways
+inside one step. **And `selfhost/cli/pointee.hero:116` is the file nobody
+named**: `.named` answers *not numeric*, so `@out: Db` gets no pointee width
+assertion and the out-parameter story rests on the `_Static_assert` probe alone.
+
 *******************************************************************************
 **OPEN: 4**
 
