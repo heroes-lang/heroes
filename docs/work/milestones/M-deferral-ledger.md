@@ -177,6 +177,24 @@ package is written.
     sitting as its example. Three of the ledger's nine remain; item 16, symmetric
     variant syntax, is next.
 
+    **Step 7, 2026-09-13: item 16 sat (panel 142,
+    `docs/panel/142-there-is-no-asymmetry-to-restore-because-there-is-no-destructuring-anywhere.md`)
+    — REFUSED to Part 6, and with it the LAST Part 7 item this ledger owed a
+    verdict.** Seven Part 7 items entered this milestone and seven now carry dated
+    verdicts: 5 `alias` deferred with a condition, 6 doctests deferred with an
+    expired clock struck, and 8, 9, 11, 14 and 16 refused to Part 6 with
+    falsifiers. **Five of the seven carried a stated reason that was false or
+    expired**, and item 16 is the sharpest: its premise was false **one level up**,
+    since a record pattern is refused by name and nothing in the language
+    destructures at all, so the symmetric proposal would have created the asymmetry
+    it claimed to remove. **"v2" is struck as a verdict this ledger can carry**,
+    which is the milestone's own thesis applied to the last word standing.
+    **A third correction to the coordinator is on the record**: a construction
+    count of 1457 was a regex counting every dotted call with a labelled first
+    argument, and the true figure from the compiler's own AST is about 626 — the
+    match-arm count of 994 is exact. What remains of the ledger is Part 8: warts
+    15 and 16, then the widening item's warts 5, 8 and 11 with coverage.
+
 - [ ] **M-deferral-ledger** | the ledger widens from Part 7 to Part 8's warts, and coverage gets the answer it already has | `design.md` Part 8 warts 5, 8, 11 · `docs/panel/034` · `selfhost/mutate/`
 
     **Origin:** author decision 2026-09-10, § What production-ready means.
