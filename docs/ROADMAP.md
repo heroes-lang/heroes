@@ -15,7 +15,7 @@ The status and the chain. Why the table looks the way it does is
 | The spec | **5722** on the vendored ranks and **7610** on the reader's own, against a ceiling of 8192 — **+67 and +79** at M-handle-verdict step 1, three corrections and one removal each measured alone, **582 free** and 522 net of the FFI floor |
 | The contract | **7402** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5` since 2026-09-12. It was judged on OpenAI's vendored table until then, and was **1806 over** while `measure` printed nine to spare |
 | Records | sittings **142** · journals **54** · milestone files **47** · entries: `docs/records/log/` **641**, `docs/records/done/` **500**, `docs/records/book/beats/` **119** · **open defects 2** (029 and 031, filed 2026-09-13 beside sittings; 030 closed the same evening at M-handle-verdict step 1) |
-| Waiting on the author | **9** decisions: panels 136 to 138 and 140 to 144, plus the sitting-brief question, in `docs/work/DECIDE.md`. Panel 139 was answered the evening its landing needed it, with the one network call it asked for |
+| Waiting on the author | **0** decisions. The eight sittings of M-deferral-ledger and the sitting-brief question were all ratified on 2026-09-13, the evening the milestone closed; panel 145 sits with its ratification not yet queued |
 
 **Re-measured 2026-09-13 at M-deferral-ledger's close, not carried.** `records`
 is **23** checks, the compiler's own tests **641**, the net's own **150**.

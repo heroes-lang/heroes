@@ -211,7 +211,7 @@ files were written and the seat re-run with its context intact.
 
 ## Author's verdict
 
-Pending — queued in `docs/work/DECIDE.md` as `panel 137`.
+**Ratified 2026-09-13 as adopted, nothing changed** — by the author, together with the other seven sittings of M-deferral-ledger the evening the milestone closed, after each was verified against the repository: design.md carries the amendment, `records` is green, every citation resolves. The record is `docs/records/done/2026-09-13-11NN-decided-2026-09-13-author-…` for this sitting; what the yes settles and what it leaves to a later sitting is written there and in the sitting's own resolution above. The return conditions stand exactly as written.
 
 ## Predictions to score
 
