@@ -368,7 +368,27 @@ instrument lands before the number it measures.
 
 ## Author's verdict
 
-**Pending** — queued in `docs/work/DECIDE.md` as `panel 145`.
+**Ratified 2026-09-13: all three verdicts as adopted, and the undecided question
+answered by scheduling a sitting rather than a name.** The author ratified 029
+ENTERS, 030 REFUSED as a form with its home the Part 6 borrow-checker row, and
+031 a WART **with the defect held open** until the consume-mark prototype is
+measured — which is the point the sitting refused to take the cheap resolution
+on, and the author took the robust one.
+
+**On the type's name**, which panel 139 reserved for this sitting and which no
+seat received: the author declined both standing options and **ordered a sitting
+of its own, after the form lands**, so that it argues over how many bare `ptr`
+remain in the tree rather than over how many it imagines. That is a stronger
+answer than the coordinator's recommendation, which was to keep `ptr` and treat
+a rename as optional: the question is not closed, it is given an instrument and
+a date. It is filed as `M-handle-verdict`'s fourth item and it may not sit before
+step 4.
+
+**What the yes settles**: the form's shape and spelling, the refusal's home and
+its zero words, the wart's text, and the order of the steps — the operator
+before the form, the form before the prototype. **What it does not settle**: the
+form's measured cost, which is step 4's diff; whether the consume mark ever
+enters, which its prototype decides; and the name.
 
 ## Predictions to score
 
