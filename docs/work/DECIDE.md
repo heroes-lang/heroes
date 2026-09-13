@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 5**
 
 - [ ] **panel 136** | Part 7 item 6, doctests: ratify DEFERRED AGAIN with the expired clock struck, the reason replaced by §1.7's zero subtraction and the corpus that refutes the wording, the three ancestors corrected, and the documented test block named as the form that returns at M-doc-generator — or rule ENTERS or REFUSED with what each compels | `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md` · design.md §4.18, Part 7 item 6
 
@@ -95,5 +95,23 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     ratify, and authorise the refresh.** A reader of the specification is being
     told something untrue about what a copy is, and nothing else on any list is
     costing more than that.
+
+- [ ] **panel 140** | Part 7 item 11, a `raw` module: ratify REFUSED to Part 6 with its falsifier, **Part 9 corrected beneath itself** because its thesis is contradicted by §4.10 in the same document, and the per-declaration confinement the compiler already performs named as the form that returns at M-handle-verdict | `docs/panel/140-the-document-had-already-ruled-against-part-9-and-nobody-told-part-9.md` · design.md Part 6, Part 7 item 11, Part 9
+
+    **Origin:** 2026-09-13, M-deferral-ledger step 5. **The default the compiler
+    runs on while this is open**: no `raw` module, `ptr` a first-class type in
+    every file, and design.md carrying both the refusal and Part 9's correction.
+    **Three vetoes and no seat in favour.** The measurement that ended it is a
+    sentence in the same document: §4.10 says *"§4.19's `ptr`/`cstr` sits outside
+    the guarantee"* and Part 9 says everything breaking the guarantees goes in
+    `raw`, pointers first. **Both of the item's stated preconditions landed
+    2026-08-12 and woke nobody**, the fourth such item in this ledger. The
+    reader's seat found the sharper objection — `raw.load_u8` would **remove** a
+    guarantee, since the same read through `[u8]` aborts — and the critic found
+    that the language already implements the principle better than the module
+    would, by declaration rather than by import. Conservative was recorded rather
+    than adopted: defer with the builtin route as the return condition.
+    **Recommendation: ratify as adopted**, and note that the Part 9 correction is
+    free, design.md carrying no token budget.
 
 *******************************************************************************
