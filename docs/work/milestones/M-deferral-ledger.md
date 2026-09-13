@@ -159,6 +159,24 @@ package is written.
     written where a later reader can check what the seats were told. Four of the
     ledger's nine remain; item 14, declaration visibility, is next.
 
+    **Step 6, 2026-09-13: item 14 sat (panel 141,
+    `docs/panel/141-the-premise-expired-the-ancestry-was-for-another-form-and-the-count-cannot-decide.md`)
+    — REFUSED to Part 6, and the milestone's thesis arrives in its purest form.**
+    This item did not merely carry a stale reason: it carried **an instruction to
+    wait for a measurement that cannot decide**. *"Direction unresolved and left to
+    a count"*, and the count now reads 49.5%, 50% and 50% by three methods, against
+    a 42% that was another method on another tree in another language. **A ratio
+    hovering at half is not a tie-breaker**, and the sitting closed the question by
+    measuring that rather than passing it on — which is the one move a ledger of
+    deferrals has to be able to make. Its hinge had also expired two weeks after
+    being written (M-separate-compilation, 2026-08-26), and its ancestry turned out
+    to be for a form none of the six cited languages uses. **Two corrections to the
+    coordinator are on the record**: a brief asserted a sentence the specification
+    does not contain, and a brief's line citation was invalidated by this same
+    session's own edits to the document above it — CL-037's shape, with this
+    sitting as its example. Three of the ledger's nine remain; item 16, symmetric
+    variant syntax, is next.
+
 - [ ] **M-deferral-ledger** | the ledger widens from Part 7 to Part 8's warts, and coverage gets the answer it already has | `design.md` Part 8 warts 5, 8, 11 · `docs/panel/034` · `selfhost/mutate/`
 
     **Origin:** author decision 2026-09-10, § What production-ready means.
