@@ -2585,7 +2585,7 @@ in `tests/golden/`; where it is a measurement, it belongs in `docs/measurements/
 | Global type inference (Hindley–Milner) | moves errors far from their cause |
 | Subtyping | variance is the most expensive item in modern type systems |
 | Higher-kinded types, dependent types | out of scale |
-| Borrow checker | **unnecessary** — value semantics removes aliasing, so there is nothing to check. **That reason is false as written, corrected 2026-09-13 (panel 139) and the refusal stands on a narrower one.** §12 holds a refusal to a feature's standard, and the fact that would make this row wrong is now in the tree, measured twice: two copies of a record holding a `ptr` reach one C object (defect 030), and **one copy can `free` what every other copy holds, at exit 0 with zero diagnostics and `heap-use-after-free` under ASan** (defect 031). So value semantics removes aliasing **among the values this language owns**, and not among the addresses it borrows — which is precisely the territory a borrow checker patrols. The row survives on cost and on the founding constraint instead: §1.11 makes every real program reach C, a lifetime checker over foreign memory would need ownership facts **no C header carries** — `sqlite3_column_count` is not const-qualified, compiled at that sitting, so a mutating step and a pure read have the identical signature — and a checker guessing there would refuse 13 of 17 functions in the shipped SQLite binding, four of which mutate nothing. **The falsifier, restated so it can expire in its turn**: a header-derivable ownership signal, or an annotation a binding author writes once per function, that separates a call which invalidates a handle from one which reads it — with a measured refusal rate on `examples/` below the 13-of-17 above. Produce one and this row is a cost argument rather than a soundness one |
+| Borrow checker | **unnecessary** — value semantics removes aliasing, so there is nothing to check. **That reason is false as written, corrected 2026-09-13 (panel 139) and the refusal stands on a narrower one.** §12 holds a refusal to a feature's standard, and the fact that would make this row wrong is now in the tree, measured twice: two copies of a record holding a `ptr` reach one C object (defect 030), and **one copy can `free` what every other copy holds, at exit 0 with zero diagnostics and `heap-use-after-free` under ASan** (defect 031). So value semantics removes aliasing **among the values this language owns**, and not among the addresses it borrows — which is precisely the territory a borrow checker patrols. The row survives on cost and on the founding constraint instead: §1.11 makes every real program reach C, a lifetime checker over foreign memory would need ownership facts **no C header carries** — `sqlite3_column_count` is not const-qualified, compiled at that sitting, so a mutating step and a pure read have the identical signature — and a checker guessing there would refuse 13 of 17 functions in the shipped SQLite binding, four of which mutate nothing. **The falsifier, restated so it can expire in its turn**: a header-derivable ownership signal, or an annotation a binding author writes once per function, that separates a call which invalidates a handle from one which reads it — with a measured refusal rate on `examples/` below the 13-of-17 above. Produce one and this row is a cost argument rather than a soundness one. **Confirmed as the home of defect 030's identity refusal at panel 145, 2026-09-13**: no form gives a copied `ptr` identity — a refcounted box breaks the ABI and an affine handle is core — and the spec § 3 sentence of that morning is the ruling. **And the falsifier above is closer than it reads**: the consume mark panel 145 priced for defect 031 refuses **2 of 17** functions in the shipped binding, below the 13 of 17 named here, so if that mark lands this row's ground moves from *unwritable from the headers* to *cost*, and the row must say so on that day |
 | Ruby-style metaprogramming (`method_missing`, `instance_eval`) | you cannot tell from the source what is callable; this is why LLMs err more on Rails/RSpec than on plain Ruby; and it requires runtime dispatch, i.e. an interpreter. **That last clause is about dispatch by name and does not carry to reflection over types**, which has its own row below and its own ground; panel 039's C4 row filed reflection here and panel 131 corrected it (2026-09-11) |
 | Coroutines | require stack switching (`ucontext` or stack copying) — a step change in complexity |
 | Metatables / dynamic dispatch | boxing every value, which makes every C call require unbox-in/box-out — precisely the glue we refused to write |
@@ -3483,6 +3483,34 @@ visible rather than patched with a second form.
    One such binding and this stops being a wart and becomes §1.0 compiler-need — and the route
    it must take is then the one panel 112 R6 records, a qualifier field on the function type
    that already exists (**2 edits in 1 file**, measured) rather than a new `Ty` case.
+
+20. **One copy of a value holding a `ptr` can free what every other copy holds, at exit 0**
+    (panel 145, 2026-09-13; defect 031, filed at panel 139 and **still open** while this entry
+    stands). `record Holder { cell: ptr }`, a copy, `free(h.cell)` through the copy inside a
+    function that takes its `Holder` **without `@`**, then a write through the original's own
+    field: build exit 0, run exit 0, both prints reached, and `--sanitize` reports
+    `heap-use-after-free, WRITE of size 8` naming the Heroes line — on Darwin and on Linux. The
+    cost is stated here in the present tense because it is the language's present behaviour, and
+    §4.10 already places it outside the guarantee: *§4.19's `ptr`/`cstr` sits outside the
+    guarantee*, and §4.19 says *free it explicitly*. **The remedy today is `--sanitize`**, which
+    names the line. **The remedy priced and scheduled** is a consume mark on a C parameter — one
+    word that is **not** `owned`, since `owned` means *C hands you this and the compiler frees
+    it*, the opposite direction — with the rule *consume through a borrowed parameter is
+    refused*, which refuses the shipped reproducer as written at the line that frees, and refuses
+    **2 of 17** correct calls in `examples/ledger/db/sqlite.hero` (`closed(db: Db)`,
+    `finalized(statement: Statement)`), both repaired by `@`; 120-200 lines in a new checker
+    module, `ast.hero` and `fmt.hero` at ceiling, zero C-side consequence. **What no mark catches
+    is the class**: the copy `b: Holder @ a`, whose refusal is an affine handle — core by §1.7 and
+    the Part 6 borrow-checker row's territory — so **this wart's class is refused by transitivity
+    and the affine handle is owed a priced count** at the prototype step. **Why a wart is admissible
+    for a §1.12 violation at exit 0**, since the completeness critic asked and nobody else had:
+    only where this document already places the operation outside the guarantee, and only while
+    the cheapest guard is being built rather than argued about — CLAUDE.md § Precedence ranks
+    robustness above Principle 0 and says a guard that closes a corruption class lands with its
+    cost measured. **The return condition, dated 2026-09-13**: a prototype of the rule at ≤ 150
+    code lines refusing the reproducer in `heroes check`, at which point the mark ENTERS and this
+    entry records where; or the author ratifying this wart as the final answer with that measured
+    cost in front of them, at which point defect 031 closes on it.
 
 ## Part 9 — Low-level access, when the time comes
 

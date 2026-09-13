@@ -73,6 +73,19 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the reason there is none. design.md §1.12 says a Heroes program must not
     segfault, and `.claude/rules/c-boundary.md` says that goal wins here first.
 
+    **Ruled 2026-09-13 at panel 145 (M-handle-verdict step 2): ENTERS.** A fieldless
+    `extern` record is a handle, a pointer to a type the header names and leaves
+    opaque, spelled as the header's own type name starred — `record Db tag sqlite3`
+    is `sqlite3 *`. Compiled before it was adopted: with a nominal parameter type the
+    checker **already** refuses `sqlite3_step(db)` at this exact line
+    (`type_mismatch: expected Stmt, found Db`), and in C the header's own pointer
+    type makes clang refuse it too under `-Werror=incompatible-pointer-types`.
+    Zero new `Ty` cases; 60-90 code lines plus two probe files. **This defect
+    closes at step 4, when the form lands and the reproducer above fails
+    `heroes build` naming line 74** — after step 3 lands the `swap-ptr` mutation
+    operator that measures 0 of ~14 today, so the number the form is judged by is
+    run before the form. Sitting: `docs/panel/145-a-handle-is-a-pointer-with-a-name-and-the-compiler-already-reads-the-name.md`.
+
 - [ ] **031 — one copy of a value can free what every other copy holds, at exit 0 with no diagnostic** | a `record Holder { cell: ptr }`, a copy, `free` through the copy, then a write through the original's own field: builds clean, runs to exit 0, and AddressSanitizer says `heap-use-after-free, WRITE of size 8` | `spec/heroes-spec.md` § 13's *"Unmarked pointers are never freed"* · `examples/ledger/db/sqlite.hero:225`, `:270` · `docs/panel/139-the-sentence-was-false-and-so-were-four-of-its-neighbours.md` § Found beside the sitting
 
     **Origin:** panel 139, 2026-09-13. The spec-warden named it as a suspect while
@@ -102,6 +115,21 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     it dangerous: `closed(h: Holder)` takes its argument **without `@`**, which
     spec § 9 makes a promise that nothing the caller passed is changed — and this
     one invalidates it for every copy in the program.
+
+    **Ruled 2026-09-13 at panel 145 (M-handle-verdict step 2): WART adopted, defect
+    NOT closed.** design.md Part 8 wart 20 states the cost in the present tense and
+    the remedy priced: a consume mark on a C parameter (not `owned`, which means
+    the opposite direction) with the rule *consume through a borrowed parameter is
+    refused* — which refuses THIS reproducer as written at line 14, the `free`
+    inside `closed(h: Holder)`, and refuses 2 of 17 correct calls in the shipped
+    binding, both repairable by `@`. **What it cannot refuse is the class**: the
+    copy `b: Holder @ a`, whose refusal is an affine handle, core and unpriced —
+    owed a count at step 5. The critic asked whether a wart is admissible for a
+    §1.12 violation at exit 0 and the sitting answered: only where §4.10 already
+    places `ptr` outside the guarantee, and only while the cheapest guard is being
+    built. **This defect closes when the step-5 prototype refuses this program in
+    `heroes check` at ≤ 150 code lines, or when the author ratifies the wart with
+    that measured cost in front of them.** Until then it stays here.
 
     **It is shipped, not synthetic.** `examples/ledger/db/sqlite.hero:225`
     `function closed(db: Db) -> i64` and `:270` `function finalized(statement: Statement) -> i64`
