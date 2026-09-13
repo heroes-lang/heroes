@@ -103,6 +103,27 @@ the sitting is exactly what the sentence now names and nothing refuses**: 031,
 one copy freeing what every other copy holds, and 029, the swapped handle. Open
 defects go from three to **two**.
 
+**Step 2, 2026-09-13: the sitting (panel 145,
+`docs/panel/145-a-handle-is-a-pointer-with-a-name-and-the-compiler-already-reads-the-name.md`).**
+Five seats plus the critic, and every brief on disk for the first time. **029
+ENTERS**: a fieldless `extern` record is a handle spelled as the header's own type
+name starred; the checker already refuses the swap once the parameter type is
+nominal, and clang refuses it too under a flag already carried; zero new `Ty`
+cases. **030 REFUSED as a form**, its home the Part 6 borrow-checker row, zero
+words added; the affine handle unpriced and owed a count. **031 WART adopted,
+defect not closed**: the consume mark with the borrowed-parameter rule is priced
+at 120-200 lines and scheduled as a prototype, because the critic asked whether a
+wart is admissible for a §1.12 violation at exit 0 and the honest answer is *only
+while the guard is being built*. **The critic corrected the coordinator's brief
+four ways** and the form's spelling once (`struct <tag> *` reaches one of three
+handle types; `CURL` is `typedef void`). **Not decided, said rather than omitted**:
+the type's name, `unsafe_ptr` or a family, reserved by panel 139 and handed to no
+seat. **The steps this sitting orders**: 3 the `swap-ptr` operator (the number
+before the form), 4 the form with § 13's fence rewritten and the three repairs the
+route exposed (`ffi_tag.hero` incomplete-as-absent, `freer.hero`'s silent retype
+of `owned` on a `ptr`, `empty_record`'s caret) plus CL-036's re-printer walk, 5
+rule (i)'s prototype and the affine handle's copy-site count.
+
 *******************************************************************************
 **OPEN: 3**
 
@@ -173,5 +194,16 @@ defects go from three to **two**.
     is sitting to decide. So the operator's verdict follows the sitting's, and the
     item exists so the question is not lost if the sitting rules that nothing
     enters.
+
+    **Ruled at panel 145, 2026-09-13: it enters, and it enters FIRST** — step 3,
+    before the form — ~50-70 lines in a new `mutate/handles.hero` (`edits.hero` is
+    271/300), sites found syntactically: names whose written type is `ptr` within
+    one function, each bare-name argument substituted by each other such name.
+    ~14 mutants on `examples/` and **0 killed today by construction**, because
+    `score.fate` judges by `checker.check` and both names are `ptr`. Four seats
+    disagreed on the denominator (5, 6, 7, ~14) and the warden said the whole §1.2
+    case rests on an after-number nobody has; the operator is what makes both
+    measured rather than argued. Blind spots to state on its row: field paths
+    (`db.handle`) and untyped `=` bindings.
 
 *******************************************************************************
