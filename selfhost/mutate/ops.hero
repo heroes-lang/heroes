@@ -15,6 +15,7 @@
 use source
 use parse
 use mutate/edits
+use mutate/handles
 use mutate/typo
 
 record Operator
@@ -42,6 +43,7 @@ function operators() -> [Operator]
         Operator(id: "typo-digit", imitates: "a one-digit slip in a number copied from elsewhere")
         Operator(id: "boolean-twin", imitates: "`&` for `&&`, the habit C and Java leave behind")
         Operator(id: "local-takes-a-module", imitates: "a local wearing the name a `use` bound")
+        Operator(id: "swap-ptr", imitates: "one C handle handed where another belongs")
     ]
 
 function known(id: str) -> bool
@@ -118,6 +120,9 @@ function apply(id: str, name: str, text: str) -> [str]
 
     if id == "local-takes-a-module"
         return edits.local_takes_a_module(a: a, s: s, uses: parsed.uses)
+
+    if id == "swap-ptr"
+        return handles.swap_ptr(a: a, s: s, decls: parsed.decls)
     return none
 
 test "the table is the list, and the count is read off it"
@@ -132,13 +137,27 @@ test "the table is the list, and the count is read off it"
     # ONE of them typoed a string literal — so `heroes mutate` was blind to the
     # exact mistake M-reflection-verdict exists to kill. The denominator moves
     # again, on the same terms as the last time.
-    assert operators().len() == 15
+    #
+    # 15 -> 16 on 2026-09-13: `swap-ptr`, ordered by panel 145 to land BEFORE
+    # the handle form it measures, because four seats disagreed on the
+    # denominator (5, 6, 7, ~14 mutants over `examples/`) and the whole §1.2
+    # case for the form rests on an after-number nobody had. Every C pointer
+    # is one type `ptr` today, so the kill rate is 0% by construction: this
+    # operator exists to measure a hole (defect 029) and then to measure the
+    # form that closes it.
+    assert operators().len() == 16
+    assert known("swap-ptr")
     assert known("swap-args")
     assert known("boolean-twin")
     assert known("local-takes-a-module")
     assert known("typo-key")
     assert !known("swapargs")
-    assert ids().len() == 15
+
+    # THE THIRD PLACE THIS NUMBER IS PINNED, and it caught the sixteenth on the
+    # way in: the count above moved and this one did not, so the suite went red
+    # at exactly the assertion whose own comment says a number in prose expires
+    # in silence. `cli/mutate.hero`'s help text is the second.
+    assert ids().len() == 16
     assert ids()[0] == "swap-args"
 
 test "a program that does not parse yields no mutants at all"

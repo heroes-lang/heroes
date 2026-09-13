@@ -194,7 +194,9 @@ test "an unknown operator names the ones there are"
     # text needs it: the message below quotes the count to the author, so a
     # table that grew without it would print a lie in a diagnostic.
     # 14 -> 15 on 2026-09-12, `typo-key` (panel 132).
-    assert ops.ids().len() == 15
+    # 15 -> 16 on 2026-09-13, `swap-ptr` (panel 145), the operator that lands
+    # before the handle form it measures.
+    assert ops.ids().len() == 16
     assert !ops.known("swapargs")
 
 test "a module below a nested program's root is checked from the root, the nearest one no higher than the corpus"
