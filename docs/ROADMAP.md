@@ -14,8 +14,8 @@ The status and the chain. Why the table looks the way it does is
 | The compiler | **59,511** lines of Heroes in **204** modules (`find selfhost -name '*.hero'`) · the seed **796,427** lines of C, re-measured 2026-09-13 when it was regenerated four hours behind `selfhost/` |
 | The spec | **5655** on the vendored ranks and **7531** on the reader's own, against a ceiling of 8192 — unmoved by M-declared-thresholds, which spent none of it |
 | The contract | **7402** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5` since 2026-09-12. It was judged on OpenAI's vendored table until then, and was **1806 over** while `measure` printed nine to spare |
-| Records | sittings **136** · journals **53** · milestone files **46** · entries: `docs/records/log/` **627**, `docs/records/done/` **494**, `docs/records/book/beats/` **118** · **open defects 2** (029 and 030, both filed 2026-09-13 beside sittings: a swapped opaque handle compiles clean and segfaults, and the specification's promise about copies is false through a `ptr` field) |
-| Waiting on the author | **3** decisions: panels 136, 137 and 138, in `docs/work/DECIDE.md`. Panel 135 was answered the night it sat, as 131 to 134 were |
+| Records | sittings **137** · journals **53** · milestone files **46** · entries: `docs/records/log/` **627**, `docs/records/done/` **494**, `docs/records/book/beats/` **118** · **open defects 3** (029, 030 and 031, all filed 2026-09-13 beside sittings and all one family: `ptr` carries neither a pointee type, nor identity, nor ownership) |
+| Waiting on the author | **4** decisions: panels 136, 137, 138 and 139, in `docs/work/DECIDE.md`, the last of which also asks for the one network call a spec amendment needs. Panel 135 was answered the night it sat, as 131 to 134 were |
 
 **Re-measured 2026-09-12 at M-declared-thresholds' close, not carried.** `records`
 is **23** checks, the compiler's own tests **641**, the net's own **149**.
