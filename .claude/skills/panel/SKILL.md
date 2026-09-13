@@ -41,6 +41,17 @@ is a full panel.
    do not stage dissent.
 
 2. **Prepare each judge's input** (this is the step that matters):
+   - **Every brief is written to disk before any seat starts** — author decision
+     2026-09-13, on panel 140's completeness critic, who found that two of five
+     sittings that night carried framing facts no later reader could check because
+     a brief existed only as a prompt. The place is the sitting's own directory in
+     the scratchpad, `panel-NNN/briefs/<seat>.md` plus one `00-shared.md`, and each
+     seat's prompt tells it to read its brief first; the critic (below) reads all of
+     them and says whether a seat was handed a framing fact it did not check. The
+     first sitting to do it was panel 145, the same evening. A seat that is launched
+     before its brief exists returns UNRUN rather than substituting material —
+     panel 137 recorded exactly that — which is the behaviour this bullet makes
+     unnecessary.
    - `compiler-engineer` ← the proposal + pointers into `selfhost/` and
      `runtime/` (it must cite files and line counts). **Never `crates/`** (archived 2026-08-19): that
      tree is `archive/bootstrap-rs/`, nothing builds it, and a seat sent there
@@ -87,6 +98,22 @@ is a full panel.
    but a rule that binds judges and not the seat that convened them has its hole
    exactly where the most privileged actor stands. The working tree is frozen from
    the moment the briefs go out until the synthesis is written.
+
+   **3b. Run a completeness critic over the five reports**, after the seats and
+   before the synthesis. Not a sixth judge and it gives no verdict: it reads the
+   five reports and the six briefs and names what is MISSING — a route nobody
+   listed, a claim asserted and not measured with the command that settles it, a
+   contradiction between seats with which is checkable, and the question the
+   sitting should have asked and did not. It was added at panel 137 (2026-09-13)
+   and **changed the resolution in every sitting it ran** through panel 144: at
+   144 it falsified the compiler-engineer's own conclusion and found the spelling
+   four seats had missed. Five seats differentiated by input still share one blind
+   spot — each generalises from the shape it happened to write — and the critic is
+   the instrument for that. The historian has no file write by its own definition,
+   so its report is handed to the critic verbatim inside the critic's prompt
+   (panel 145's shape); until then panels 143 and 144 both recorded that the
+   historian could not be audited. Recorded here 2026-09-13 as what the procedure
+   has done, so the skill describes the sittings that actually sat.
 
 4. **Synthesize** into `docs/panel/NNN-<topic>.md`:
    - the proposal, verbatim
