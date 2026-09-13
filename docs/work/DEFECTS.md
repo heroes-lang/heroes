@@ -39,7 +39,19 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `if sqlite3_step(db) == SQLITE_ROW`, `heroes build` it: **exit 0, zero
     diagnostics**. Run it: **exit 139**. The unchanged example built with the same
     binary prints `rows: 3` / `longest: 6` at exit 0. Measured on Darwin arm64,
-    clang 21, the SDK's `sqlite3.h`; the other two platforms are *unrun*.
+    clang 21, the SDK's `sqlite3.h`.
+
+    **2026-09-13, the second platform run, and it makes this defect WORSE rather
+    than confirming it.** The line above said the other two platforms were unrun;
+    the author put the Linux container up and it was run. On x86-64 Linux (Debian
+    13, clang 22, glibc 2.41) the same swapped program **builds clean AND runs to
+    completion at exit 0**, printing `rows: -1` and `longest: -1` where the
+    unchanged example prints `rows: 3` / `longest: 6`. So the class is not a crash:
+    **on Darwin it is a loud segfault and on Linux it is a wrong answer at exit 0**,
+    which is the shape this list names first and the hardest to notice. A reader
+    who met it on a Mac would file a crash; a program shipping on Linux returns a
+    number nobody checks. **Windows stays unrun and is not inferred**: that box has
+    no sqlite3 (`pkg-config` absent, measured the same night).
 
     **Cause.** Every C pointer that is not a `cstr` is one Heroes type, `ptr`
     (spec § 3). The extern's probe is `(void)(sqlite3_step)(a0)` with `a0` a

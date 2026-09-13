@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 3**
 
 - [ ] **panel 136** | Part 7 item 6, doctests: ratify DEFERRED AGAIN with the expired clock struck, the reason replaced by §1.7's zero subtraction and the corpus that refutes the wording, the three ancestors corrected, and the documented test block named as the form that returns at M-doc-generator — or rule ENTERS or REFUSED with what each compels | `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md` · design.md §4.18, Part 7 item 6
 
@@ -57,5 +57,20 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     too, rather than refusing it. **Recommendation: ratify as adopted.** A Part 6
     row carries a falsifier a reader can check; a fifth deferral would carry a
     promise, and this ledger exists to end promises.
+
+- [ ] **panel 138** | Part 7 item 9, variant constructors as values: ratify REFUSED to Part 6 with its falsifier, the row's own text struck because every testable clause of it is false, and `Expr::product` on the existing `::` operator named as the form that returns — or rule ENTERS or DEFERRED with what each compels | `docs/panel/138-the-item-named-a-parser-that-never-existed-and-the-route-was-already-in-the-grammar.md` · design.md Part 6, Part 7 item 9
+
+    **Origin:** 2026-09-13, M-deferral-ledger step 4. **The default the compiler
+    runs on while this is open**: no constructor values, the named wrapper and the
+    exhaustive-`match` dispatch both legal, and design.md carrying the refusal.
+    **Two vetoes engaged and no seat in favour**: the compiler seat on §1.7, since
+    a case lowers to a shape and has no C function whose address could be taken,
+    and the thread guard is indexed by declaration; the reader on locality, since
+    the spelling contradicts a sentence already in § 9 and makes a stored case
+    compare as an address. **Every testable clause of the row is false**, which is
+    the third ledger item in a row to fail that way, and the sitting strikes the
+    text as well as ruling on the feature. Conservative was recorded rather than
+    adopted: defer with the `::` route as the return condition. **Recommendation:
+    ratify as adopted.** A Part 6 row carries a falsifier a reader can check.
 
 *******************************************************************************

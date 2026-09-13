@@ -125,6 +125,24 @@ package is written.
     sitting owns release on every path. Six of the ledger's nine remain; item 9,
     variant constructors as values, is next.
 
+    **Step 4, 2026-09-13: item 9 sat (panel 138,
+    `docs/panel/138-the-item-named-a-parser-that-never-existed-and-the-route-was-already-in-the-grammar.md`)
+    — REFUSED to Part 6, and the FIRST sitting of this ledger to run a
+    completeness critic over the five seats.** The pattern is now three for three:
+    an item's stated reason is measured false before its verdict is written. Here
+    **every testable clause** of the row was — it names a parser this repository
+    has never had, the pair is one example program written twice, the names that
+    differ are three or four rather than two, and the unification it promises would
+    not compile even with the feature granted, because a function type cannot carry
+    `@`. **The critic earned its place on its first run**: it found `Expr::product`
+    on the existing `::` operator, a route no seat had named and which closes every
+    silence by construction; it settled an engineer-against-warden corpus count by
+    reading the disputed file; and it caught that all five seats had judged the
+    feature while none had judged the row. **A method the ledger now carries
+    forward**: strike the row's false text under it with the date, as panel 137 did
+    for traits, rather than ruling only on the form. Five of the ledger's nine
+    remain; item 11, the `raw` module, is next.
+
 - [ ] **M-deferral-ledger** | the ledger widens from Part 7 to Part 8's warts, and coverage gets the answer it already has | `design.md` Part 8 warts 5, 8, 11 · `docs/panel/034` · `selfhost/mutate/`
 
     **Origin:** author decision 2026-09-10, § What production-ready means.
