@@ -21,6 +21,23 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 0**
+**OPEN: 1**
+
+- [ ] **panel 136** | Part 7 item 6, doctests: ratify DEFERRED AGAIN with the expired clock struck, the reason replaced by §1.7's zero subtraction and the corpus that refutes the wording, the three ancestors corrected, and the documented test block named as the form that returns at M-doc-generator — or rule ENTERS or REFUSED with what each compels | `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md` · design.md §4.18, Part 7 item 6
+
+    **Origin:** 2026-09-13, M-deferral-ledger step 2. **The default the compiler
+    runs on while this is open**: no doctests, and design.md carrying the dated
+    deferral with its corrections beneath both places the item lives. Five seats,
+    no veto on the form and one on a route: all five arrive at wait by four
+    different routes, and the two that wrote `adopt-with-condition` meant the
+    condition — the reader's seat says *"unconditioned, I refuse the text"*, and
+    the historian's condition is a different feature rather than a schedule.
+    **The measurement that decided it was found three times independently**: the
+    tree's one comment fence holds an `extern` group, so the proposal stops the
+    compiler compiling itself on the day it lands. Conservative was recorded
+    rather than adopted: the same deferral with the expired clock left in place
+    and only a date added. **Recommendation: ratify as adopted.** The expired
+    condition is the exact shape this ledger exists to remove, and the sitting
+    replaces it with four conditions an instrument in this tree can check.
 
 *******************************************************************************

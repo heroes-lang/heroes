@@ -2088,6 +2088,52 @@ a good feature — documentation that cannot lie, because it stops compiling —
 Python and Elixir. Deferred because they would be a *second way to write a test*, which the form
 budget forbids until the first mechanism is proven.
 
+**That condition expired and triggered nothing, so the paragraph is corrected underneath rather
+than over (2026-09-13, panel 136, five seats, one veto on a route).** The `test` mechanism is
+**proven**: 641 `test` blocks in `selfhost/` and 545 in `examples/`, with the compiler's own tests
+one of the three suites that gate every step. What survives the expiry is not a clock. **§1.7's
+subtraction returns zero** — no `test` block, of 641, is deleted by a fence — and the *"form
+budget"* this paragraph cites is **defined nowhere in this repository**, the sentence above being
+its only occurrence; the rules it was reaching for are §1.7's subtraction test and §4.15's *exactly
+one correct way*, which are named here instead.
+
+**The repository's one instance of the form refutes the rule, and three seats found it without
+conferring.** `selfhost/parse/group.hero:33-36` is the only markdown fence inside a comment in the
+whole tree; it documents `function extern_group` and holds an `extern` group. Run as statements it
+is `error[expected_expression]` at column 5, exit 1, so the proposal stops the compiler compiling
+itself on the day it lands; repair the parse and it fails again at name resolution, because the
+module documenting it declares no `extern` group; and an `extern` group is a **Declaration** in the
+specification's own grammar and never a **Statement**. The fence in this project is a **form
+exhibit**, and at the FFI what is worth showing beside a signature is a declaration — which is what
+§4.19's own illustration below and the specification's § 13 both are.
+
+**And the three named ancestors are the wrong three.** Rust pays, by its own published
+measurement, 775 seconds of compile time for one crate's doctests and eight attributes of dialect
+`#[test]` does not need, having changed the default twice; Python's own documentation warns that
+*"if even a single character doesn't match, the test fails"*; and **Elixir is not a third mechanism
+at all** — `doctest MyModule` is a macro that generates ordinary ExUnit tests inside an ordinary
+test module, opt-in per module. **The two this paragraph needed are Go and D**, unnamed in it, which
+obtain the identical stated benefit with **no second test mechanism**: the example is a test, in the
+file where tests live, and the doc tool pulls it into the prose. That is the direction Part 6
+already chose in writing — *"`heroes doc` generates the document instead — one direction only"*. **A
+doctest reverses that arrow; a documented test block extends it**, and the form that returns is
+therefore the second one, homed at **M-doc-generator**, which is also the missing consumer: no
+`heroes doc` exists today, so a doctest would be the only reader of a doc fence.
+
+**Return conditions, falsifiable, any one of which reopens it**: `grep -rn '^test "' selfhost/`
+falls from **641 to ≤ 591** under a candidate implementation with the suites green and
+`heroes fmt selfhost/parse/group.hero` byte-identical · a grep for comment fences finds **four or
+more whose first body line is not a declaration keyword**, today zero of one · **≥ 50 real fences**
+exist and `heroes mutate` shows them raising the `selfhost/` kill rate by **≥ 1 point** ·
+M-doc-generator ships the Go/D form and the question becomes whether a fence adds anything it does
+not. **If it ever enters**: route R1 only (a second bounded pass over the doc spans producing a
+synthetic `test_decl`, ~370-420 lines and zero exhaustive-match arms; the lexer route is vetoed,
+because it contradicts `selfhost/scan.hero:83-85`'s written invariant that comments never influence
+terminator insertion), the declaration-shaped fence decided in the specification's own text rather
+than in the milestone, the clause the complete one at +61 tokens, and a name for a failing example
+— today a failing `assert` carries no file and no line, `runtime/heroes_runtime.h:300-301`, so what
+locates a failure is the author's title and a fence has none.
+
 ### 4.19 FFI
 
 **Read 1.11 first — this is the section that carries the project's founding constraint, so treat its
@@ -2790,7 +2836,20 @@ are *on* the closure list.
    open**: the seat that compiled the C found `sqlite3_step(db)` for `sqlite3_step(statement)`
    building at zero diagnostics and exiting 139, filed as defect 029, and a transparent alias
    catches none of it.
-6. **Doctests** — v2, once the `test` mechanism is proven.
+6. **Doctests** — ~~v2, once the `test` mechanism is proven.~~ **DEFERRED AGAIN, dated 2026-09-13,
+   with a return condition** (panel 136, M-deferral-ledger step 2;
+   `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md`). **The
+   stated condition is MET** — 641 `test` blocks in `selfhost/`, 545 in `examples/`, the compiler's
+   own tests one of the three suites — **and it triggered nothing**, which is the promise without a
+   date this ledger exists to end, so the clock is struck and the reason replaced. What survives:
+   §1.7's subtraction returns **zero**, the *"form budget"* the §4.18 paragraph cites exists nowhere
+   in this repository, and the tree's **one** comment fence refutes the proposed wording twice over
+   — it holds an `extern` group, which is a Declaration and not a Statement, so the form would stop
+   the compiler compiling itself on the day it landed. **The form that returns is not the doctest**
+   but the **documented test block**, Go's and D's shape, which obtains the same benefit with no
+   second test mechanism and runs in the direction Part 6 already chose; its home is
+   **M-doc-generator**. The four return conditions and what an ENTERS verdict would compel are under
+   §4.18, beside the paragraph this line summarises.
 7. **String interpolation** — **ENTERS**, ruled 2026-09-09 (`M-interpolation-verdict`; panel 121,
    ratified the same day; the spelling the author's): `f"line {n}: {word}"`, the brace active only
    behind an `f`, a hole admitting any expression with the scan stated, one AST node carrying the

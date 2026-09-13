@@ -8,14 +8,14 @@ The status and the chain. Why the table looks the way it does is
 
 | | |
 |---|---|
-| **Current milestone** | **M-deferral-ledger**, opened 2026-09-13 at step 1 on the trunk: panel 135 sat on Part 7 item 5, `alias`, the first of the ledger's thirteen — deferred again, this time with a date and a return condition; eight of Part 7's nine remain, then Part 8's warts and coverage |
+| **Current milestone** | **M-deferral-ledger**, opened 2026-09-13 on the trunk and at step 2: panel 135 deferred `alias` with a date and a return condition, panel 136 deferred doctests and struck a condition that had already expired without waking anybody; seven of the nine remain, then Part 8's warts and coverage |
 | **Last closed** | **M-declared-thresholds**, 2026-09-12, `m-declared-thresholds` ([052](journal/052-declared-thresholds.md)) — the contract was 1806 tokens over a ceiling that reported nine to spare, and eight floors had gone slack · before it **M-reflection-verdict** ([051](journal/051-reflection-verdict.md)) and **M-stated-grammar** ([050](journal/050-stated-grammar.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **53** of 77 · **53** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **59,511** lines of Heroes in **204** modules (`find selfhost -name '*.hero'`) · the seed **790,756** lines of C |
 | The spec | **5655** on the vendored ranks and **7531** on the reader's own, against a ceiling of 8192 — unmoved by M-declared-thresholds, which spent none of it |
 | The contract | **7402** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5` since 2026-09-12. It was judged on OpenAI's vendored table until then, and was **1806 over** while `measure` printed nine to spare |
-| Records | sittings **133** · journals **53** · milestone files **46** · entries: `docs/records/log/` **627**, `docs/records/done/` **494**, `docs/records/book/beats/` **118** · **open defects 1** (029, filed 2026-09-13 beside panel 135: a swapped opaque handle compiles clean and segfaults) |
-| Waiting on the author | **0** decisions. Panel 135 was answered the night it sat, as 131, 132, 133 and 134 were |
+| Records | sittings **134** · journals **53** · milestone files **46** · entries: `docs/records/log/` **627**, `docs/records/done/` **494**, `docs/records/book/beats/` **118** · **open defects 1** (029, filed 2026-09-13 beside panel 135: a swapped opaque handle compiles clean and segfaults) |
+| Waiting on the author | **1** decision: panel 136's ratification, in `docs/work/DECIDE.md`. Panel 135 was answered the night it sat, as 131 to 134 were |
 
 **Re-measured 2026-09-12 at M-declared-thresholds' close, not carried.** `records`
 is **23** checks, the compiler's own tests **641**, the net's own **149**.
