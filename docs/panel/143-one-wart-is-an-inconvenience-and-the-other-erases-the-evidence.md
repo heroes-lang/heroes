@@ -219,12 +219,18 @@ Pending — queued in `docs/work/DECIDE.md` as `panel 143`.
 
 ## What the seats could not source or could not run
 
-The coordinator reproduced that `sqlite3_open` **and** `sqlite3_exec` both return
-`SQLITE_OK` at exit 0 on a path the author never wrote, and **could not reproduce**
-the FFI seat's further claim that a file with that name appears in the tree: it
-looked and found none, `heroes run` building and running in a temporary directory.
-The confirmed half is narrower and still decisive — the program believes it
-succeeded. The warden's drafts carry no `real` row and its deltas are vendored
+**A correction the coordinator filed against a seat, and then had to withdraw.**
+It reproduced that `sqlite3_open` **and** `sqlite3_exec` both return `SQLITE_OK` at
+exit 0 on a path the author never wrote, and wrote down that it **could not**
+reproduce the FFI seat's further claim that a file with that name appears in the
+tree — having searched `build/` and the scratchpad and found nothing. **The seat
+was right and the coordinator was wrong.** `git status` found it minutes later in
+the repository root, where the binary runs: a file named `probe` TAB `emp` NEWLINE
+`otes.sqlite`, **8192 bytes**, a real SQLite database. The search failed because
+the name carries a tab and a newline, which broke the pipeline looking for it —
+**the wart defeated the instrument hunting it**, which is the finding's own shape
+arriving one level up. The file was deleted; the withdrawal stands here rather
+than being edited away. The warden's drafts carry no `real` row and its deltas are vendored
 floors rather than converted numbers, which it says. The historian's PowerShell
 rationale is secondary-sourced with no designer statement found. And one seat
 overwrote another's scratch file before noticing and said so, which is why its
