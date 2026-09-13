@@ -106,6 +106,25 @@ package is written.
     M-panic-location's own census did not name. Seven of the ledger's nine remain;
     item 8, traits, is next.
 
+    **Step 3, 2026-09-13: item 8 sat WITH Part 8 wart 11 (panel 137,
+    `docs/panel/137-the-hole-was-two-operations-wide-and-the-answer-was-a-library-function.md`)
+    — traits REFUSED to Part 6, a structural `for` DEFERRED, wart 11 REWRITTEN,
+    and what was adopted is not a language change at all.** Two items in one
+    sitting because the wart's own text made them one question, and ruling either
+    alone would have left the other standing as a promise. **The pattern the
+    ledger is now finding twice over**: an item's stated reason is measured false
+    before its verdict is written — item 6's clock had expired, and item 8's two
+    clauses are both wrong, *"instance resolution is expensive"* merging three
+    costs that are not one and *"no traits means no extensible iteration"*
+    falsified six times. **The third route the sitting adopted came from the
+    corpus rather than from either proposal**: `sort_by` is a library function,
+    filed at M-core-packages, and the language needs nothing. Two things found
+    beside it and filed where they belong: **defect 030**, the specification's
+    promise about copies being false through a `ptr` field, measured on a shipped
+    example; and the handle a `break` leaks, filed at M-cleanup-verdict, whose
+    sitting owns release on every path. Six of the ledger's nine remain; item 9,
+    variant constructors as values, is next.
+
 - [ ] **M-deferral-ledger** | the ledger widens from Part 7 to Part 8's warts, and coverage gets the answer it already has | `design.md` Part 8 warts 5, 8, 11 · `docs/panel/034` · `selfhost/mutate/`
 
     **Origin:** author decision 2026-09-10, § What production-ready means.

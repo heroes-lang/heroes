@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 1**
+**OPEN: 2**
 
 - [ ] **panel 136** | Part 7 item 6, doctests: ratify DEFERRED AGAIN with the expired clock struck, the reason replaced by §1.7's zero subtraction and the corpus that refutes the wording, the three ancestors corrected, and the documented test block named as the form that returns at M-doc-generator — or rule ENTERS or REFUSED with what each compels | `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md` · design.md §4.18, Part 7 item 6
 
@@ -39,5 +39,23 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     and only a date added. **Recommendation: ratify as adopted.** The expired
     condition is the exact shape this ledger exists to remove, and the sitting
     replaces it with four conditions an instrument in this tree can check.
+
+- [ ] **panel 137** | Part 7 item 8, traits: ratify the three verdicts — traits REFUSED to Part 6 with their falsifier, a structural iteration rule DEFERRED because it contradicts §4.8, and `sort_by` scheduled to the library instead — plus wart 11 rewritten because its stated cause is false | `docs/panel/137-the-hole-was-two-operations-wide-and-the-answer-was-a-library-function.md` · design.md Part 6, Part 7 item 8, Part 8 wart 11
+
+    **Origin:** 2026-09-13, M-deferral-ledger step 3. **The default the compiler
+    runs on while this is open**: no traits, no extensible `for`, the four
+    hand-written sorts standing, and design.md carrying all three verdicts.
+    **On route A there was no disagreement at all** — five seats, five noes, for
+    five different reasons, one of them a veto from the seat whose mandate is
+    cost. **On route B the seats disagreed about what kind of fault it has**, and
+    the sitting took the compiler seat's ground over the reader's: it contradicts
+    §4.8, an existing written rule, which is a different act from having a
+    silence in it. **What the sitting adopts is not a language change at all**:
+    `sort_by` joins the six generic higher-order functions the library already
+    ships, scheduled at M-generics-library with the engineer's prediction as its
+    acceptance test. Conservative was recorded rather than adopted: defer route A
+    too, rather than refusing it. **Recommendation: ratify as adopted.** A Part 6
+    row carries a falsifier a reader can check; a fifth deferral would carry a
+    promise, and this ledger exists to end promises.
 
 *******************************************************************************
