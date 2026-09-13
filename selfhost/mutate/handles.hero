@@ -1,0 +1,163 @@
+# One C handle handed where another belongs — the sixteenth mutation operator
+# (design.md Part 11; panel 145, 2026-09-13; `docs/work/DEFECTS.md` 029).
+#
+# `sqlite3_step(db)` for `sqlite3_step(statement)` builds at zero diagnostics
+# and exits 139 on Darwin, `rows: -1` at exit 0 on Linux, because every C
+# pointer that is not a `cstr` is one Heroes type, `ptr` (spec § 3). Fifteen
+# operators and none of them planted that mistake, which is how it survived:
+# the corpus's own instrument was blind to the class. This one plants it.
+#
+# **It lands before the form that closes the hole, on purpose.** Four seats of
+# panel 145 disagreed on how many such mutants `examples/` holds (5, 6, 7, ~14)
+# and the case for the handle form rests on a kill rate nobody had run. So the
+# before-number is measured here first — 0% by construction today, since
+# `score.fate` judges by `checker.check` and both names are `ptr` — and the
+# form, when it lands, is judged against it rather than against an argument.
+#
+# THE SITE IS SYNTACTIC, like every operator here (`sites.hero`): inside one
+# function, the names whose WRITTEN type is `ptr` — its parameters and its
+# `x: ptr @` and `x: ptr =` bindings — and every call argument that is one of
+# those names, bare or behind `@`. One mutant per (argument, other such name).
+# A function with one handle has no second operand and makes nothing, which is
+# the census's own finding: 029 can be written in two functions of the tree.
+# Scoping is by span containment in the function's body rather than by a tree
+# walk, so this file names no expression case it does not touch.
+#
+# BLIND BY DESIGN, and the row in `harness/mutations/operators.md` says so: a
+# handle reached through a field path (`db.handle`), an untyped `=` binding
+# (`handle = curl_easy_init()`), and a UFCS receiver. The ledger's own binding
+# wraps its handles in records and so hides 17 of its 18 sites from this
+# operator — which is exactly the hand-written discipline the form replaces.
+
+use ast
+use parse
+use source
+use token
+use mutate/sites
+
+# Every mutant one source makes: one handle name swapped for another handle
+# name in scope, at one call argument.
+function swap_ptr(a: ast.Ast, s: source.Source, decls: [ast.Decl]) -> [str]
+    out: [str] @ []
+
+    for d in decls
+        match d.kind
+            .function_decl fd =>
+                match fd.value.body
+                    .ok body => swaps_in(@out, a: a, s: s, params: fd.value.params, body: body)
+                    .err _   => out @ out
+            .constant_decl | .record_decl | .variant_decl | .test_decl => out @ out
+
+    return out
+
+# The mutants of one function body, pushed onto `out`.
+function swaps_in(@out: [str], a: ast.Ast, s: source.Source, params: [ast.Param], body: ast.Block)
+    names = handle_names(a: a, s: s, params: params, body: body)
+
+    # One handle is one operand; a swap needs two.
+    if names.len() < 2
+        return
+
+    for e in a.exprs
+        if !within(inner: e.span, outer: body.span)
+            continue
+
+        for arg in sites.args_of(e)
+            value = a.exprs[arg.value]
+
+            if !sites.is_name(value)
+                continue
+            written = source.span_text(s, value.span)
+
+            if !among(name: written, names: names)
+                continue
+
+            for other in names
+                # Handing back the original is not a mutation, and would
+                # inflate the denominator with a mutant nothing could kill.
+                if other != written
+                    out @ out.push(sites.edit(s: s, span: value.span, replacement: other))
+
+# The names in one function whose WRITTEN type is `ptr`: its parameters, and
+# the `declare` and typed `bind` statements inside its body. A statement is
+# inside the body when its span is; the arena is flat and a nested block's
+# statements are in it too, so containment reaches every depth.
+function handle_names(a: ast.Ast, s: source.Source, params: [ast.Param], body: ast.Block) -> [str]
+    names: [str] @ []
+
+    for p in params
+        if is_ptr(a: a, s: s, ty: p.ty)
+            names @ names.push(source.span_text(s, p.name))
+
+    for st in a.stmts
+        if !within(inner: st.span, outer: body.span)
+            continue
+
+        match st.kind
+            .declare d =>
+                if is_ptr(a: a, s: s, ty: d.ty)
+                    names @ names.push(source.span_text(s, d.name))
+            .bind b =>
+                match b.ty
+                    .ok ty =>
+                        if is_ptr(a: a, s: s, ty: ty)
+                            names @ names.push(source.span_text(s, b.name))
+                    .err _ => names @ names
+            .mutate | .return_stmt | .break_stmt | .continue_stmt      => names @ names
+            .while_stmt | .for_in | .assert_stmt | .expr_stmt | .error => names @ names
+
+    return names
+
+# Whether a type node is the bare name `ptr`. A `[ptr]`, a `ptr?` or a record
+# holding one is not a handle argument this operator swaps.
+function is_ptr(a: ast.Ast, s: source.Source, ty: i64) -> bool
+    node = a.types[ty]
+
+    return match node.kind
+        .named => source.span_text(s, node.span) == "ptr"
+        .unit | .array_of | .fixed | .map_of | .fallible | .function_type | .error => false
+
+function within(inner: token.Span, outer: token.Span) -> bool
+    return inner.start >= outer.start && inner.end <= outer.end
+
+function among(name: str, names: [str]) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
+
+test "two handles in one function give one mutant per handle argument, and one handle gives none"
+    text = "extern \"sqlite3.h\"\n    function sqlite3_step(statement: ptr) -> i64\n\nfunction first(db: ptr) -> i64\n    statement: ptr @ nullptr\n    return sqlite3_step(statement)\n\nfunction lone(db: ptr) -> i64\n    return sqlite3_step(db)\n"
+    s = source.new_source(name: "x.hero", text: text)
+    parsed = parse.parse_source(s)
+    assert parsed.diagnostics.len() == 0
+    mutants = swap_ptr(a: parsed.tree, s: s, decls: parsed.decls)
+
+    # `first` holds two handles and one call: one mutant, `statement` -> `db`.
+    # `lone` holds one handle: nothing to swap it with.
+    assert mutants.len() == 1
+    assert !sites.index_of(text: mutants[0], needle: "return sqlite3_step(db)\n\nfunction lone").is_err()
+
+test "a handle behind @ keeps its marker, and a name that is not a handle is never a site"
+    text = "extern \"sqlite3.h\"\n    function sqlite3_open(path: cstr, @out: ptr) -> i64\n\nfunction open(db: ptr, other: ptr, count: i64) -> i64\n    rc = sqlite3_open(\":memory:\".cstr(), @db)\n    return rc + count\n"
+    s = source.new_source(name: "x.hero", text: text)
+    parsed = parse.parse_source(s)
+    assert parsed.diagnostics.len() == 0
+    mutants = swap_ptr(a: parsed.tree, s: s, decls: parsed.decls)
+
+    # One handle argument, one other handle: one mutant, and the `@` stays
+    # on the line because the edit replaces the name alone. `count` is an
+    # `i64` and is never offered as a handle.
+    assert mutants.len() == 1
+    assert !sites.index_of(text: mutants[0], needle: "@other)").is_err()
+
+test "a handle reached through a field is not a site, which the operator's row says"
+    text = "extern \"sqlite3.h\"\n    function sqlite3_step(statement: ptr) -> i64\n\nrecord Wrap\n    handle: ptr\n\nfunction step(db: ptr, statement: ptr, w: Wrap) -> i64\n    return sqlite3_step(w.handle)\n"
+    s = source.new_source(name: "x.hero", text: text)
+    parsed = parse.parse_source(s)
+    assert parsed.diagnostics.len() == 0
+
+    # Two handles are in scope, so a bare-name argument WOULD be a site; the
+    # argument is a field path, and the operator is blind to it by design.
+    assert swap_ptr(a: parsed.tree, s: s, decls: parsed.decls).len() == 0

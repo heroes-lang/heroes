@@ -8,7 +8,7 @@ The status and the chain. Why the table looks the way it does is
 
 | | |
 |---|---|
-| **Current milestone** | **M-handle-verdict**, opened 2026-09-13 on the trunk and at step 2: **the sitting has sat** (panel 145). A handle is a pointer with a name, and the compiler already reads the name: with a nominal parameter type the checker refuses the swapped handle today, no new rule, and clang refuses it too under a flag already carried, so **029 ENTERS** as a fieldless `extern` record spelled as the header's own type name starred; **030 REFUSED** as a form, its home the Part 6 row; **031 a WART adopted with the defect held open** until the consume-mark prototype is measured. Steps 3 to 5 in RUN IT's order: the `swap-ptr` operator, then the form, then the prototype |
+| **Current milestone** | **M-handle-verdict**, opened 2026-09-13 on the trunk and at step 3: the sitting has sat (panel 145) and **the instrument it ordered before the form has landed**. A handle is a pointer with a name, and the compiler already reads the name: **029 ENTERS** as a fieldless `extern` record spelled as the header's own type name starred, **030 REFUSED** as a form with its home the Part 6 row, **031 a WART with the defect held open** until the consume-mark prototype is measured. The 16th mutation operator now reports the before-number: **15 mutants, 8 killed — and 0 of the 7 that are actually the defect's shape**, the eight dying on rules about orphaned names rather than about handles. Step 4 is the form, judged against 7 of 7 |
 | **Last closed** | **M-deferral-ledger**, 2026-09-13, **untagged while defects 029, 030 and 031 stand** ([053](journal/053-deferral-ledger.md)) — every deferred item now carries a date, and nine times the reason under it had rotted first · before it **M-declared-thresholds** ([052](journal/052-declared-thresholds.md)) and **M-reflection-verdict** ([051](journal/051-reflection-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **54** of 77 · **53** tags matching `m*`, the legacy `m0`-`m8` included — one fewer than the closes, because `records/tagged` allows no tag over an open defect |
 | The compiler | **59,515** lines of Heroes in **204** modules (`find selfhost -name '*.hero'`) · the seed **796,428** lines of C, regenerated at M-handle-verdict step 1 when `pinned.hero` took the spec's new record |
@@ -17,8 +17,8 @@ The status and the chain. Why the table looks the way it does is
 | Records | sittings **142** · journals **54** · milestone files **47** · entries: `docs/records/log/` **641**, `docs/records/done/` **500**, `docs/records/book/beats/` **119** · **open defects 2** (029 and 031, filed 2026-09-13 beside sittings; 030 closed the same evening at M-handle-verdict step 1) |
 | Waiting on the author | **1** decision: panel 145, in `docs/work/DECIDE.md`, which also puts the one question the sitting was reserved and did not decide, the type's name. The eight sittings of M-deferral-ledger and the sitting-brief question were ratified earlier the same evening |
 
-**Re-measured 2026-09-13 at M-deferral-ledger's close, not carried.** `records`
-is **23** checks, the compiler's own tests **641**, the net's own **150**.
+**Re-measured 2026-09-13 at M-handle-verdict step 3, not carried.** `records`
+is **23** checks, the compiler's own tests **644**, the net's own **150**.
 
 ---
 

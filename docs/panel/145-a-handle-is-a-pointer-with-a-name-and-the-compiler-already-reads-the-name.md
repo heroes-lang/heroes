@@ -385,6 +385,36 @@ instrument lands before the number it measures.
 | historian | every defect filed against 030's class through the next three milestones is a 029 or a 031 in disguise | re-reading `DEFECTS.md` | each close |
 | historian | the 2 curl sites compile after renaming to the header type — **scorable only under the verbatim-tag spelling**, unscorable under `struct <tag>` | `heroes build` | step 4 |
 
+## Scored at step 3, 2026-09-13, and the prediction is corrected underneath
+
+The sitting ordered the `swap-ptr` operator to land before the form. It landed
+the same evening, and the number it returns is not the one the sitting expected.
+
+**The engineer predicted 0 of ~14 killed today.** Measured over 120 programs:
+**15 mutants, 8 killed, 53%** (`docs/measurements/029`). The mechanism the
+prediction named is right and its number is wrong, for a reason worth more than
+the number: **not one of the eight dies because the compiler can tell one handle
+from another.** They die on `error[unused_binding]` — `db: db` → `db: statement`
+leaves the parameter `db` unread — or on `error[aliased_mutable_arguments]` —
+`statement: @statement` → `@tail` beside `tail: @tail` puts two `@` on one place.
+Both were run. Both fire on the **shape of the edit**, never on the identity of
+the value. **Where the swap is a pure use, which is defect 029's own shape, the
+program compiles every time: 0 of 7 killed, and one of the seven is the filed
+defect verbatim.**
+
+**The denominator nobody had: 15.** The FFI seat said 5, the ergonomist 6, the
+census 7, the engineer ~14 — and the FFI seat was counting *sites* where the
+engineer was counting *mutants*, with neither naming its unit, which is CL-017's
+shape and panel 144's own finding one sitting earlier. Twelve come from
+`examples/sqlite/main.hero`, whose `first_int` holds **three** handles at once;
+three from `examples/ledger`; **zero from `examples/curl`**, so the historian's
+curl prediction has no site to be scored at.
+
+**So the sitting's own headline number must be read in halves**, which is panel
+011's rule arriving in a new place: when the form lands, the total will read 15
+of 15 and the honest half is **7 of 7**. This paragraph exists so that nobody
+reads the eight accidents as a defence that was already there.
+
 ## What seats could not run
 
 - **Every seat's cost is unrun as a prototype**: the 60-90 lines are the

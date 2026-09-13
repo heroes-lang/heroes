@@ -206,4 +206,17 @@ rule (i)'s prototype and the affine handle's copy-site count.
     measured rather than argued. Blind spots to state on its row: field paths
     (`db.handle`) and untyped `=` bindings.
 
+    **Step 3, 2026-09-13: it landed, and the number is not the one the sitting
+    expected** (`docs/measurements/029`). `selfhost/mutate/handles.hero`, 16th
+    operator, with the count moved in the **three** places that pin it — the
+    third caught it: `ops.hero` asserts it twice and `cli/mutate.hero` once, and
+    the suite went red at exactly the assertion whose own comment says a number
+    in prose expires in silence. **15 mutants over 120 programs, 8 killed,
+    53%** — and **not one of the eight dies for handle identity**. They die on
+    `unused_binding` or `aliased_mutable_arguments`, both fired by the shape of
+    the edit. **The class this operator exists to measure reads 0 of 7**, one of
+    the seven being defect 029 verbatim. Four seats had guessed 5, 6, 7 and ~14,
+    two of them counting different units. When the form lands the headline will
+    read 15 of 15 and **the honest half is 7 of 7**.
+
 *******************************************************************************
