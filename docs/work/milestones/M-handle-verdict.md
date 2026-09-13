@@ -7,6 +7,30 @@ own milestone, or the language's answer is written where a reader can check it �
 Part 8 wart with its remedy named, or a Part 6 row naming the program that would make
 it wrong (CLAUDE.md § 12). Full five seats, because a form that enters has surface.
 
+**Since 2026-09-13 it warrants THREE defects, and they are one question.** The
+milestone was scheduled for defect 029 alone; panels 137 and 139 filed two more
+the same night, and the critic of panel 139 separated them cleanly. They are the
+three things a `ptr` does not carry:
+
+| defect | what `ptr` lacks | what it costs |
+|---|---|---|
+| **029** | a **pointee type** — `sqlite3 *` and `sqlite3_stmt *` are one Heroes type | a swapped handle builds at zero diagnostics: **exit 139 on Darwin, and on Linux a wrong answer at exit 0**, `rows: -1` |
+| **030** | **identity** — a copy copies the address | two copies of one record advance the same C cursor; § 3 says no aliasing exists anywhere, which is false in **six compiled shapes**, one of them a bare `ptr` parameter with no record at all |
+| **031** | **ownership** — nothing models a foreign lifetime | one copy can `free` what every other copy holds: build exit 0, run exit 0, `heap-use-after-free` under ASan, and the shipped SQLite binding has that shape twice |
+
+**This is the sitting's real subject and the reason it is one sitting rather than
+three.** A route that gives `ptr` a pointee type closes 029 and leaves 030 and
+031 untouched; a sentence closes neither. The sitting must say which of the three
+it answers and which it does not, and must not be allowed to look like it
+answered all three because it answered the loudest.
+
+**And one thing it must not re-derive**: panel 139 measured that a rule keyed on
+*reaches C through a `ptr`* cannot be written from the headers — `sqlite3_column_count`
+is **not** const-qualified, compiled, so a mutating step and a pure read have the
+identical C signature, and such a rule would refuse **13 of 17** functions in the
+shipped binding, four of which mutate nothing. Whatever this sitting adopts, the
+ownership signal comes from the binding author or from nowhere.
+
 **What warrants it is a measured crash, not a silence.** `examples/sqlite/main.hero`
 with one line changed, `sqlite3_step(db)` for `sqlite3_step(statement)`, **builds at
 exit 0 with zero diagnostics and runs to exit 139** (panel 135's ffi-pragmatist,
@@ -41,7 +65,7 @@ commit where every list it leaves open is clean — the way `m-cstr-lifetime`'s 
 2026-09-09.
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 3**
 
 - [ ] **M-handle-verdict** | the sitting, and the counts it is handed rather than guesses | `docs/work/DEFECTS.md` 029 · `docs/panel/135-the-form-was-cheap-and-the-reasons-under-it-were-borrowed.md` § Found beside the sitting · design.md Part 7 item 5, Part 8 wart 17 · `spec/heroes-spec.md` § 3, § 9, § 13
 
@@ -77,6 +101,22 @@ commit where every list it leaves open is clean — the way `m-cstr-lifetime`'s 
     ceilings, an ABI move or a descriptor reuse — and set the condition on which it
     returns. A route that adds a `Ty` case owes that refusal an answer; a route that
     adds none owes the count of what it cannot catch.
+
+- [ ] **M-handle-verdict** | the hazard panel 139 could not file, because its reproducer is not deterministic | `spec/heroes-spec.md` § 7 · `docs/panel/139-the-sentence-was-false-and-so-were-four-of-its-neighbours.md` § Found beside the sitting
+
+    **Origin:** panel 139's completeness critic, 2026-09-13, and the coordinator's
+    failure to reproduce it, which is why it is here and not in `DEFECTS.md`.
+
+    § 7 says `==` is structural equality, and that a `ptr` compares as an address.
+    The critic measured a record holding a **freed** pointer comparing `==` **true**
+    to a record holding a fresh, unrelated allocation, because the allocator had
+    reused the address. The coordinator ran the same shape and got **false**. So the
+    class is real — an address can be recycled, and equality cannot tell — but the
+    reproducer depends on the allocator, and `docs/work/DEFECTS.md` holds measured
+    failures with reproducers. **This sitting owns it** because the answer is
+    whatever `ptr` ends up carrying: give it identity and the question dissolves;
+    leave it an address and § 7 owes a sentence saying equality on one is an address
+    test with a recycling hazard, not an identity test.
 
 - [ ] **M-handle-verdict** | whether `heroes mutate` gains the operator that would have caught 029, and what it costs | `selfhost/mutate/ops.hero` · `docs/work/DEFECTS.md` 029
 
