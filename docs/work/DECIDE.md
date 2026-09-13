@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 9**
+**OPEN: 10**
 
 - [ ] **panel 136** | Part 7 item 6, doctests: ratify DEFERRED AGAIN with the expired clock struck, the reason replaced by §1.7's zero subtraction and the corpus that refutes the wording, the three ancestors corrected, and the documented test block named as the form that returns at M-doc-generator — or rule ENTERS or REFUSED with what each compels | `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md` · design.md §4.18, Part 7 item 6
 
@@ -192,5 +192,37 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     Conservative was recorded: leave both entries as written and add only the
     dates. **Recommendation: ratify as adopted.** A wart is a *stated* cost, and
     an entry that understates it is not doing the one job Part 8 has.
+
+- [ ] **panel 144** | Part 8 wart 8 and coverage, the ledger's last item: ratify wart 8 as STAYING, **rewritten so that the cost is named in the spelling rather than the shape**; the `Builder` promise struck; line coverage REFUSED as the first Part 6 row whose subject is a tool; warts 5 and 11 corrected; and **one spec correction adopted but not applied** | `docs/panel/144-the-cost-is-in-the-spelling-and-nobody-had-written-the-cheap-one.md` · design.md Part 6, Part 8 warts 5, 8, 11, 15 · `spec/heroes-spec.md` § 10
+
+    **Origin:** 2026-09-13, M-deferral-ledger step 9, its last. **The default
+    while this is open**: wart 8 as rewritten and the coverage row as written.
+    **The finding**: three spellings of one operation, medians of three runs —
+    a bare local at 1 000 000 pushes **0.02 s**, a record field at 50 000
+    **11.51 s**, the field lent to an `@` parameter at 1 000 000 **0.02 s**.
+    Twenty times the work in five hundred times less time. The witness is
+    `--emit-c | grep -c hero_array_push_owned`: **1** lent, **0** in-field. **The
+    repository had already found the cheap spelling and forgotten it** —
+    `push_expr(@exprs: [Expr], node)` took `heroes check` from 191 s to 88 s on
+    2026-08-26 — and design.md has contradicted itself for twenty days, §4.10
+    carrying the repair while Part 8 quoted panel 037's 806 s.
+    **Conservative was recorded**: strike the array half outright, as the
+    ffi-pragmatist asked; refused because 50 000 in-field pushes cost 11.51 s and
+    a struck sentence would be a false one.
+
+    **One decision here is the author's and cannot be defaulted.** The
+    specification's § 10 sentence *"grows in place while nothing else holds
+    `xs`"* is **true and insufficient** — nothing else holds `w.parts` and it is
+    500× slower — and two seats reached it from disjoint inputs. The replacement
+    is drafted and **measured at +35 vendored** (5655 → 5690), its `real` delta
+    **estimated** at ~+47. It was **not applied**, because
+    `tests/harness/suite_spec.hero:158` pins a content-addressed `SPEC_DIGEST`
+    and `measure` withholds its verdict when it disagrees: the only command that
+    clears it is `heroes measure spec/heroes-spec.md --refresh`, **which reaches
+    the network and is a hard stop**. **That single command is also the key to
+    defects 030 and 031's spec half**, which name § 3 and § 13 of the same
+    document. **Recommendation: ratify the sitting as adopted, and authorise the
+    one refresh** — it unblocks three corrections at once, and until it is run
+    every one of them stays a drafted sentence rather than a shipped one.
 
 *******************************************************************************

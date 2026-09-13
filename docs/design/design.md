@@ -2571,7 +2571,7 @@ of *every* Heroes program, each of which carries two `_Static_assert(__builtin_c
 the preamble's own "each" died the same afternoon. Where a row's falsifier is a program, it belongs
 in `tests/golden/`; where it is a measurement, it belongs in `docs/measurements/`.
 
-| Feature | Why not |
+| Feature or tool | Why not |
 |---|---|
 | `null` | the billion-dollar mistake; retrofitting absence is what Kotlin and C# spent years on |
 | Exceptions | invisible control flow; produces unhandled-path bugs that raise no compile error; unwinding across the C boundary is UB |
@@ -2604,6 +2604,7 @@ in `tests/golden/`; where it is a measurement, it belongs in `docs/measurements/
 | A variant's case as a value (`.product` alone, meaning the function that builds one) | **refused because the row's own justification names a parser this repository has never had** — Part 7 item 9 until panel 138, 2026-09-13, where every testable clause of it was measured false: the compiler's expression parser has been precedence climbing since the hour it was written, the `term`/`expression` pair is one example program written twice, the names that differ are three or four rather than two, and the unification the row promises **would not compile even with the feature granted**, because a function type cannot carry `@` and the sub-parser takes one. §1.7's subtraction is **zero**: a scan of every `.hero` in the tree for a function whose whole body is `return .case(...)` finds none in `selfhost/` and none in `examples/`. The cost is core by §1.7's own test — a case lowers to a `.construct` shape, so **no C function exists whose address a case value could take**, and `selfhost/emit/callback_guard.hero:77-82` indexes the thread guard **by declaration**, which a synthesised constructor has none of, so the guard cannot be attached (§1.12). Two files it must touch sit at exactly their DECIDED ceiling. The spelling also contradicts §4.5, which already makes `.plus` a value, so one bare form would mean a value or a nullary function depending on the expected type; and §4.3's *a function value compares as an address* would silently replace structural `==` for a stored case. Precedent runs against it: **OCaml refused for 25 years** and stalled on exactly this language's case — *"curried, tupled, or labelled"* — **Swift ships it and drops the labels** (SE-0111 forbids them in a function type) where this draft keeps them, and **Scala 3 un-shipped it and recommends the hand-written wrapper**. **The falsifier**: a corpus program where a variant constructor must be chosen at run time from data that is not itself a variant case already in scope, so no exhaustive `match` can dispatch it — **or** three or more one-line constructor wrappers passed as values in `selfhost/` itself, which reads zero today. What returns instead is `Expr::product` on the `::` operator, named under Part 7 item 9 |
 | Traits / interfaces (a named set of functions a type supplies, and a generic constrained to types that supply it) | **refused because the hole it fills is two operations wide and the corpus wants one of them** — Part 7 item 8 until panel 137, 2026-09-13. Measured that day, eight cases compiled: a generic needing two operations on one type parameter works, `==` on a type parameter over a user record works, a `{A: i64}` map key works, a recursive generic works, and a **cross-module generic `sort_by` works** — because §4.12's generics are unconstrained and §4.8's top-level functions are values, so the operation is passed explicitly. Only `<` on a type parameter, `sort([A])` and `print`/`to_str` on one are refused, and the reason is Part 5's descriptor pass, which generates `copy`, `drop`, `eq` and `hash` per reachable type and simply has no `ord` and no `show`. **The corpus does not want them**: all 26 `sort(` sites in `selfhost/` sort `[str]` from `keys(m)` and **none** sorts a record; `selfhost/` holds **zero** generic functions in 59,511 lines. The cost is **900-1400 lines**, two `DeclKind` arms against **219 enumeration sites in 53 modules**, and **coherence has no home** — `selfhost/resolved.hero` keys names `{module: {name: decl}}` precisely because two modules may each declare `Point`, and `ir/mono.hero`'s `Instance` carries no witness field. §1.7's subtraction returns **zero**, and what the four hand-written sorts actually want is a library function: `sort_by` is the seventh row of a table that already ships six. The strongest argument for traits — coherence, the one-canonical-instance guarantee — **evaporates under unconstrained generics**, because no site exists at which a container calls a user operation behind the programmer's back. Precedent: C++ voted concepts in (2008) and out (2009), returning eleven years later deliberately minimal. **The falsifier**: a compiled program on the §1.0 closure list that a passed function cannot express — heterogeneous dispatch over a collection whose element types are unknown where it is built, shown not to be carriable by a variant — **or** a decision to admit constrained generics, the day of which makes the coherence argument live and reopens this row |
 | Closures that capture | **refused on cost alone**, which this Part's own preamble licenses and §1.1 makes legitimate by making simplicity the ceiling — Part 7 item 1 until panel 119, 2026-09-08. **282 exhaustive-match arms in 74 of 190 modules**, five DECIDED file ceilings breached, no legal home for the parser, **+118 spec tokens** against 70 free with six removals priced and none admissible, and four **compiled** corruption classes at the C boundary. **The falsifier**: a program on the §1.0 closure list, or a measured Part 11 effect, that a named top-level function cannot express — *together with* a representation, written down and compiled, in which a capturing closure has one type per signature, lets the ownership pass decide release from the type alone with no runtime descriptor pointer, and keeps eight bytes at every `extern` position. The paragraph below the table carries the measurements, and the **capture-free** narrowing is named there as the form that returns |
+| Line coverage (`heroes cover`, a per-line executed/not-executed report) | **refused because on a §1.11 program the number measures the glue and reports it as the program** — the first row here whose subject is a tool rather than a language form, which is why the column head above says *or tool* (panel 144, 2026-09-13; M-deferral-ledger's last item, where the answer was owed because the word `coverage` occurs **once** in this document, at :132, meaning *spec* coverage, and **zero** times in `spec/heroes-spec.md`, so a production reader finds a silence rather than a ruling). Instrumented rather than argued: a real SQLite binding compiled with `clang -fprofile-instr-generate -fcoverage-mapping` and linked against real `-lsqlite3` executed eight SQLite entry points, prepared and stepped a 65 KB statement and bound 65 532 values — and **`sqlite3` appears 0 times in the `llvm-cov` report**, while **all 8 `hero_ffi_probe_*` functions read 0.00%**, they being emitted so clang type-checks an argument list and never called. So the instrument reports 0% on the lines that do the checking and nothing at all about the library that, by §1.11, **is** the program. `heroes mutate` is the instrument this language already has and it reaches where coverage cannot: over the two pure bindings, 79 mutants, 66 killed, **not one survivor at a C call site**, **44 of 44** one-character edits to `extern` names dead at compile time, and the two constructs mutation cannot reach — the `cstr` lend and the `owned` freer — are compile errors by construction. **Two falsifiers, the first stronger**: an instrument that attributes executed regions to the C library a Heroes program calls, without that program building the library from source — name one and this becomes a cost argument rather than an honesty one; **or** a defect class `mutate` cannot reach because no operator produces it **which a covered-line report would have named** — a line no test runs carrying a defect no operator kills. The second was the ledger's own and **half-fired** at this sitting: `selfhost/mutate/edits.hero:322-323` returns `""` for every arithmetic and relational operator, so `i < n` → `i <= n` is unreachable by mutation, but that defect sits on a line that ran in a test that passed, so coverage is blind to it too. It argues for a sixteenth operator, not for a tool. Either falsifier's home is `docs/measurements/`. **This refuses the per-line report and nothing else**: §132's spec coverage and M-corpus-coverage, closed 2026-09-02, are two practices this project performs under that word |
 
 **What the closures row rests on, since a refusal is held to a feature's standard** (§12 of
 CLAUDE.md; panel 119, and every number below was run on 2026-09-08 rather than recalled).
@@ -3211,12 +3212,52 @@ visible rather than patched with a second form.
    to be; and `record R { next: R? }` is unchanged either way. Swift shipped typed throws in 6.0,
    a decade in and with full generics, and SE-0413 itself says *"Resist the temptation to use typed
    throws"*.
+   **STAYS A WART, dated 2026-09-13, panel 034's ruling of 2026-08-12 unchanged and its number
+   refreshed** (panel 144, M-deferral-ledger step 9). The *"0 of 25"* above was measured against a
+   17-programme corpus in `docs/measurements/004`. Re-run this sitting,
+   `./heroes mutate examples --operator typo-code`: corpus **120 programs**, **59 mutants, 0 killed,
+   0%**. **The rate survives exactly and the magnitude is 2.4× stale** — which is the failure panel
+   143 named one sitting earlier, a wart wrong in the direction nobody checks, found here in an entry
+   this same ledger item owns.
 6. **The unrecoverable indentation case** (4.15). One accepted silent-error class.
 7. **A single-child node needs a one-element array**, because arrays are the only indirection.
-8. **String concatenation is O(n²)** under value semantics — **and so is the `[str]` you build to
-   hand `join`** (panel 037, measured: 1 000 000 pushes 806 s). The remedy that works today is
+8. **String concatenation is O(n²)** under value semantics — ~~**and so is the `[str]` you build to
+   hand `join`** (panel 037, measured: 1 000 000 pushes 806 s).~~ The remedy that works today is
    chunked accumulation, not a language change; §4.10 carries the numbers and the refused
-   alternative. Needs `join`/`Builder` for compiler-scale output.
+   alternative. ~~Needs `join`/`Builder` for compiler-scale output.~~
+   **STAYS A WART, dated 2026-09-13, and the cost is in the SPELLING rather than in the shape**
+   (panel 144, M-deferral-ledger step 9,
+   `docs/panel/144-the-cost-is-in-the-spelling-and-nobody-had-written-the-cheap-one.md`).
+   **The first half is true and re-measured on a ladder**: `s @ s + "x"` reads 0.12 · 0.40 · 1.43 ·
+   5.39 s user at 100k · 200k · 400k · 800k, ratios 3.3, 3.6, 3.8. **The second half is false as an
+   unconditional claim and was never updated after the repair it describes**: the place store landed
+   in **`aacd2dbd`, 2026-08-24** (*"944.76 s to 188.51 s"*), and §4.10 has said so ever since while
+   this entry went on quoting 806 s. What replaces it, medians of three runs, `/usr/bin/time -p`,
+   `user` read: **`parts @ parts.push("x")` on a bare local, 1 000 000 in 0.02 s** ·
+   **`w.parts @ w.parts.push("x")` through a field, 50 000 in 11.51 s** ·
+   **`put(@w.parts, "x")`, the field lent to an `@` parameter, 1 000 000 in 0.02 s** · hoisting the
+   field into a local and storing back once, 200 000 in 0.00 s. **Twenty times the work in five
+   hundred times less time, between two spellings of one operation.** The mechanical witness is
+   `--emit-c | grep -c hero_array_push_owned`: **1** lent, **1** hoisted, **0** in-field.
+   `selfhost/ir/place_store.hero:27-31` says why — *"the path is empty … a path step would put a
+   container between the slot and the header, which is the exact corruption panel 037 measured"* —
+   and `@w.parts` resolves the path **at the call**, leaving the place bare inside the callee. **This
+   repository had already found the route and forgotten it**: `docs/records/log/2026-08-26-0001-…`
+   reached the compiler's own arena by changing the call shape to `push_expr(@exprs: [Expr], node)`,
+   and `heroes check` went **191 s to 88 s**. The reachability count nobody had taken:
+   `grep -rn quadratic selfhost/` returns **6 hits, all comments** — `text_lines.hero:14`,
+   `state.hero:84`, `resolve/state.hero:159`, `measure/bpe.hero:53`, `emit/writer.hero:35` and `:62`
+   — six places where this compiler's authors hit the cliff and worked around it by hand. **The
+   `Builder` promise is struck on the compiler-engineer's veto**: `join` shipped and is Tier 1
+   (§1.11), the largest Heroes program accumulates through a 267-line `Writer` record of ordinary
+   Heroes, and a builtin `Builder` is **core** by §1.7's own test — it cannot be erased in the
+   frontend and lands in descriptors, ownership and the emitter forever, 500-800 lines across six
+   modules to replace a record a user can write. §2 Principle 0: the compiler does not need it.
+   **The return condition**: `ir_place_store` firing on `x.f @ x.f.push(v)` directly, or 100 000
+   in-field pushes under 0.1 s user — either one and this half dies for good. **What conservative
+   would have been**, recorded so it can be chosen: strike the array half outright, as the
+   ffi-pragmatist asked on bare-local measurements; refused because 50 000 in-field pushes cost
+   11.51 s and a struck sentence would be a false one.
 9. **UFCS is the one deliberate duplication**: `f(x)` and `x.f()` both work. Kept for chains,
    acknowledged as the exception to "one way only".
 10. **`?` combined with `@` copy-out** needed an explicit rule (copy-out always happens) because it
@@ -3236,8 +3277,12 @@ visible rather than patched with a second form.
     ranges"*, and it is arrays alone — `range` is a library function returning `[i64]` and a map is
     `not_iterable`. **What would make this wart worth closing**, measured rather than argued: the tree
     contains **five or more** loops advancing a C handle until it stops, against **two** today
-    (`examples/ledger/main.hero:150` and `examples/tally/main.hero:66`, enumerated across all 22 files
-    holding an `extern`). A binding whose primary shape is a cursor would move that number honestly;
+    (`examples/ledger/main.hero:150` and `examples/tally/main.hero:66`, enumerated across all ~~22~~
+    files holding an `extern` — **corrected 2026-09-13, panel 144: no method reproduces 22.**
+    `grep -rl --include='*.hero' extern examples/` counts **24**, `grep -rlE '^extern'` counts **21**,
+    and wart 15 below says 24 in an entry written the same day. Two counts of one population,
+    disagreeing inside one document, because neither carried the command that produced it — CL-017,
+    in this milestone's own work). A binding whose primary shape is a cursor would move that number honestly;
     until one exists, the case is unrun rather than argued. Two shapes are already known not to fit
     and are named so a later sitting does not rediscover them: an iterator whose termination is an
     out-parameter (`curl_multi_perform` — *"a pump, not an iterator"*) and one with no handle at all
@@ -3293,7 +3338,9 @@ visible rather than patched with a second form.
 
     **The return condition, and it is a boundary condition**: a program in `examples/` or on §1.0's
     closure list whose `cstr` lend carries a path or a pattern wrong at exit 0 — **zero today**, one
-    literal with a backslash across the 24 files that declare an `extern`, and that one correct — **or**
+    literal with a backslash across the 24 files that declare an `extern` (the count is
+    `grep -rl --include='*.hero' extern examples/`, named 2026-09-13 at panel 144 after wart 11 above
+    was found saying 22 of the same population), and that one correct — **or**
     the Windows leg landing a real path-taking binding, which turns one-in-twenty-four into the
     common case.
 16. **`print` took only half of `WriteLn`** (panel 008, historian). design.md cites Pascal's

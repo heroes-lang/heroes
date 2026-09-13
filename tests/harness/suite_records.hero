@@ -3532,10 +3532,17 @@ function all_digits(text: str) -> bool
 
 # Enough of an offending line to recognise it without printing the item, which
 # runs to several thousand characters.
+#
+# The cut asks where a character boundary is, and it has to: 78 is an offset
+# chosen for width, and the line is prose. Measured 2026-09-13 — a fixed cut here
+# took the whole suite down with `panic: string slice splits a character` on a
+# 79-byte and an 80-byte line ending in an em dash, while 81 and 82 passed,
+# because at those two lengths the dash's three bytes straddled the offset. The
+# item was legal and the instrument died reporting it.
 function head_of(row: str) -> str
     if row.len() <= 78
         return row
-    return row.slice(from: 0, to: 78) + " …"
+    return row.slice(from: 0, to: strings.boundary_at_or_below(text: row, at: 78)) + " …"
 
 # The three live lists hold OPEN items and nothing else — the shape the author
 # asked for on 2026-09-07: the items with their state and their description, no
