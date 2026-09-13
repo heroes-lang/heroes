@@ -341,7 +341,7 @@ const CLAIMS: Claim[] = [
   { page: 'site/src/html/project.html', what: 'the seats that can refuse',
     fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} can veto`, 'i') },
   { page: 'site/src/html/it/project.html', what: 'the seats of the panel',
-    fact: () => judges().seats, shape: (n) => new RegExp(`collegio di ${n} seggi`, 'i') },
+    fact: () => judges().seats, shape: (n) => new RegExp(`panel di ${n} seggi`, 'i') },
   { page: 'site/src/html/it/project.html', what: 'the seats that can refuse',
     fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} possono porre un veto`, 'i') },
   { page: 'site/src/html/about/thanks.html', what: 'the number of judges',
