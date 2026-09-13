@@ -227,6 +227,9 @@ constant REFUSED: [str]
         "M-formal-syntax"
         "M-ceiling-raise"
         "M-numbers-that-move"
+        "M-distinct-pointers"
+        "M-pointer-types"
+        "M-opaque-handles"
     ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
@@ -458,8 +461,22 @@ constant REFUSED: [str]
 # runners-up: `M-ceiling-raise`, which names an act the milestone mostly refuses
 # — the spec's ceiling is left alone and no floor is raised — and
 # `M-numbers-that-move`, four words where §14 asks for two, naming the symptom.
+#
+# **80 -> 81 on 2026-09-13**, `M-handle-verdict`, scheduled by author decision at
+# panel 135's ratification and **entering at chain row 55 rather than after the
+# last scheduled row**, which moved the twenty-two rows below it one down. It is
+# the second id whose subject is a defect the panel found while sitting on
+# something else: `sqlite3_step(db)` for `sqlite3_step(statement)` builds at zero
+# diagnostics and exits 139, because every C pointer that is not a `cstr` is one
+# `ptr`. The id enters with its chain row in the same commit, so this number is
+# moved by hand rather than read off a red run. `REFUSED` gains three runners-up:
+# `M-distinct-pointers`, which names the form the sitting exists to decide and so
+# would claim its own verdict — `M-closures-verdict`'s precedent, a milestone
+# named for a ruling being free to close with a refusal — and `M-pointer-types`
+# and `M-opaque-handles`, which name the area and would appropriate it for the
+# milestone that may yet implement what this one only rules on.
 constant ROWS: i64
-    80
+    81
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose

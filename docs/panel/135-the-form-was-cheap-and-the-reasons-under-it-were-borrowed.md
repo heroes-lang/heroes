@@ -215,9 +215,33 @@ the alias sitting that follows owes it the test that fires when it dies.
 
 ## Author's verdict
 
-Pending — queued in `docs/work/DECIDE.md` as `panel 135`. The question put: ratify
-DEFERRED AGAIN with the return condition in point 4 and the corrections in point 2, or
-rule ENTERS or REFUSED with what each compels above.
+**RATIFIED the same night, 2026-09-13, as adopted, with nothing changed** (was
+`provisional — author ratification pending`). The author took the resolution in full:
+the deferral with its date, the return condition's three routes, the three struck
+claims, and the settled shape of the form for whoever sits on it next.
+
+**And the second half of the answer is a scheduling decision, taken on the
+assistant's recommendation**: defect 029 does not belong to this milestone and is not
+repaired at the witness. It gets **a milestone-verdict of its own, `M-handle-verdict`,
+immediately after this ledger** — row 55 of the chain, the ruling on whether one C
+handle can be told from another. The reasoning the author accepted: the repair is a
+question about `ptr` that decides a language rule, and this ledger's job is to date
+Part 7's items rather than to answer a new question found beside one of them. Widening
+the ledger to hold the repair would be the same mistake the ledger exists to end,
+in the other direction.
+
+**What the yes settles, and what it does not.** It settles that `alias` has a date and
+a condition, so it is no longer a promise; that the three false claims are struck at
+their sources; and that the next sitting on the form starts from a shape rather than
+from the item's own text. It does not settle whether `alias` ever enters: the return
+condition decides that, and every later sitting of this ledger re-reads it. It does
+not decide the repair of defect 029, which is `M-handle-verdict`'s to take — and that
+sitting may rule that nothing enters, in which case the wart is named in Part 8 with
+its falsifier. **One consequence is named rather than left to be discovered**:
+`records/tagged` allows no tag over an open defect, so M-deferral-ledger closes
+**untagged** while 029 stands, on M-anchored-spec's precedent (rows 45 to 47), and its
+tag lands on the first commit where every list it leaves open is clean, as
+`m-cstr-lifetime`'s did on 2026-09-09.
 
 ## Predictions to score
 
