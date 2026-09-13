@@ -125,7 +125,7 @@ of `owned` on a `ptr`, `empty_record`'s caret) plus CL-036's re-printer walk, 5
 rule (i)'s prototype and the affine handle's copy-site count.
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 4**
 
 - [ ] **M-handle-verdict** | the sitting, and the counts it is handed rather than guesses | `docs/work/DEFECTS.md` 029 · `docs/panel/135-the-form-was-cheap-and-the-reasons-under-it-were-borrowed.md` § Found beside the sitting · design.md Part 7 item 5, Part 8 wart 17 · `spec/heroes-spec.md` § 3, § 9, § 13
 
@@ -218,5 +218,30 @@ rule (i)'s prototype and the affine handle's copy-site count.
     the seven being defect 029 verbatim. Four seats had guessed 5, 6, 7 and ~14,
     two of them counting different units. When the form lands the headline will
     read 15 of 15 and **the honest half is 7 of 7**.
+
+- [ ] **M-handle-verdict** | whether `ptr` keeps its name, and it may not sit before the handle form has landed | `docs/panel/139-the-sentence-was-false-and-so-were-four-of-its-neighbours.md` § the reserved question · `docs/panel/145-a-handle-is-a-pointer-with-a-name-and-the-compiler-already-reads-the-name.md` § Author's verdict · `spec/heroes-spec.md` § 3, § 13
+
+    **Origin:** author decision 2026-09-13, ratifying panel 145. Panel 139 had
+    reserved the type's name — `unsafe_ptr`, or a family — for that sitting *by
+    name*, and no seat's brief carried it; the sitting recorded that it was not
+    deciding it rather than deciding it by omission, and put it to the author.
+
+    **The author declined both offered answers** — keep `ptr`, or rename now —
+    **and ordered a sitting of its own, after step 4.** The reason is the
+    strongest thing said about the question all evening: today a rename would be
+    argued over **27 `extern` lines in `examples/` that name a `ptr`**, and the
+    handle form removes most reasons to write a bare `ptr` at all. So the sitting
+    that argues the name should argue over **what is left**, which is a number
+    nobody can have until the form has landed and the bindings are rewritten.
+
+    **What it may not do**: sit before step 4. **What it is owed at its
+    opening**: the count of bare `ptr` remaining in `examples/`, `selfhost/` and
+    `tests/golden/run/` after the rewrite, per position — parameter, result,
+    field, binding — because the argument for a name that says *unsafe* rests on
+    how often a reader still meets one. **What it inherits**: the historian's
+    survey at panel 145, whose finding was about **typing** and not naming —
+    Swift's regret is that `OpaquePointer` cannot tell two handles apart, not
+    that it is called `OpaquePointer` — so the precedent does not transfer and
+    the sitting must find its own.
 
 *******************************************************************************
