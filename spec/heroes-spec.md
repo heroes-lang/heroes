@@ -178,7 +178,8 @@ Precedence, strongest first: call, `.` and `::` → unary `-` `!` `~` → `* / %
 
 `==` is structural equality on any two values of one type, recursively; a map's
 insertion order does not affect it. A `ptr`, a `cstr` and a function value compare
-as an address, and `nan` equals nothing, itself included, so `x != x` asks whether it is one;
+as an address and not as an identity — free one and the next allocation may reuse
+that address. `nan` equals nothing, itself included, so `x != x` asks whether it is one;
 ordering one aborts, in `< <= > >=` and in `sort`.
 Overflow aborts at every width. Integer division by zero aborts. `/` and `%` truncate
 toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
