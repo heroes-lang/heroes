@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 4**
 
 - [ ] **panel 136** | Part 7 item 6, doctests: ratify DEFERRED AGAIN with the expired clock struck, the reason replaced by §1.7's zero subtraction and the corpus that refutes the wording, the three ancestors corrected, and the documented test block named as the form that returns at M-doc-generator — or rule ENTERS or REFUSED with what each compels | `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md` · design.md §4.18, Part 7 item 6
 
@@ -72,5 +72,28 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     text as well as ruling on the feature. Conservative was recorded rather than
     adopted: defer with the `::` route as the return condition. **Recommendation:
     ratify as adopted.** A Part 6 row carries a falsifier a reader can check.
+
+- [ ] **panel 139** | defect 030's repair: ratify the sentence, its descendants in the compiler, and the marking of the shipped counterexample — **and authorise the ONE network call the landing needs**, `heroes measure spec/heroes-spec.md --refresh`, which is the only command in the compiler that reaches out | `docs/panel/139-the-sentence-was-false-and-so-were-four-of-its-neighbours.md` · `spec/heroes-spec.md` § 3 · `docs/work/DEFECTS.md` 030
+
+    **Origin:** 2026-09-13, convened on a defect rather than a proposal. **The
+    default the compiler runs on while this is open**: § 3 goes on saying *"No
+    aliasing exists anywhere"*, which is false six ways, and the compiler goes on
+    printing two diagnostics that quote it. **Why this one is blocked where the
+    others were not**: amending the specification trips the staleness detector —
+    measured in a copy — and `measure` gives **no verdict against a stale count**,
+    so the landing needs `--refresh`. That command sends the document to an
+    external service; the document is already public, and the hard stop still asks
+    every time. **Everything that does not touch the specification has landed**:
+    defect 031 filed, design.md's borrow-checker row corrected on §12's own rule,
+    and the sitting recorded. **The wording adopted** merges the two seats that
+    each covered what the other missed, and adds *"or free"* after defect 031 was
+    measured: *"No aliasing exists among the values this language owns. A `ptr` is
+    a copied ADDRESS, wherever it sits: two copies reach one foreign thing, so a
+    function taking one without `@` may still change, or free, what C holds. A
+    `cstr` copies an address too, and only a group's `record` may hold one."*
+    **+73 vendored**, payable by § 4's kinds sentence at −54. **Recommendation:
+    ratify, and authorise the refresh.** A reader of the specification is being
+    told something untrue about what a copy is, and nothing else on any list is
+    costing more than that.
 
 *******************************************************************************
