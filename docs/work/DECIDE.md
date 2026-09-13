@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 8**
+**OPEN: 9**
 
 - [ ] **panel 136** | Part 7 item 6, doctests: ratify DEFERRED AGAIN with the expired clock struck, the reason replaced by §1.7's zero subtraction and the corpus that refutes the wording, the three ancestors corrected, and the documented test block named as the form that returns at M-doc-generator — or rule ENTERS or REFUSED with what each compels | `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md` · design.md §4.18, Part 7 item 6
 
@@ -174,5 +174,23 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     **Recommendation: ratify as adopted**, and note that what returns is a sentence
     rather than a syntax — the document never states the contrast between the two
     spellings, and one clause at +35 would.
+
+- [ ] **panel 143** | Part 8 warts 15 and 16: ratify both as STAYING warts with dated return conditions, **and both entries corrected** — 15 understates its cost three ways and names an unenumerated remedy, 16 was filed as an inconvenience and its workaround silently reorders output | `docs/panel/143-one-wart-is-an-inconvenience-and-the-other-erases-the-evidence.md` · design.md Part 8 warts 15, 16
+
+    **Origin:** 2026-09-13, M-deferral-ledger step 8, the last two items of the
+    ledger's original list. **The default while this is open**: both warts as
+    written, understating what they cost. **Wart 15's sharpest finding**: the
+    injected carriage return **erases C's own error message from the terminal**,
+    so the one line that would name the bug deletes it — measured byte for byte.
+    And the seat that reads only the specification **wrote the bug first try**.
+    **Wart 16's**: the workaround a reader finds, `write_file` to `/dev/stdout`,
+    **silently reorders output** at exit 0 using only built-ins, so the entry is
+    filed as the wrong kind of thing. **What the sitting did not adopt and named
+    anyway**: `"C:/temp"` works today at zero cost, one clause of about 51
+    characters would target the failure that actually happens, and a lent literal
+    carrying a control byte is checkable at an existing site — nobody built it.
+    Conservative was recorded: leave both entries as written and add only the
+    dates. **Recommendation: ratify as adopted.** A wart is a *stated* cost, and
+    an entry that understates it is not doing the one job Part 8 has.
 
 *******************************************************************************

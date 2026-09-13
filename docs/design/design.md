@@ -3255,12 +3255,80 @@ visible rather than patched with a second form.
 15. **`"C:\temp"` is silently a tab** (panel 008). Reserving the backslash makes `"\d+"` a loud
     error, but it cannot catch a path whose next letter happens to name a legal escape. Inherited by
     every language with C-style escapes; the remedy is raw string literals, which v1 does not have.
+
+    **STAYS A WART, dated 2026-09-13, and the entry above understates it in three ways** (panel 143,
+    M-deferral-ledger step 8;
+    `docs/panel/143-one-wart-is-an-inconvenience-and-the-other-erases-the-evidence.md`). **One: two
+    escapes are eaten, not one.** `"C:\temp\report.txt"` is 16 bytes, `C : \t e m p \r e p o r t
+    . t x t`. **Two: the emitted C is not a witness.** It reads `HERO_STR_STATIC(…, "C:\temp\015eport.txt")`
+    — the tab half is **textually identical to the Heroes source**, so `--emit-c` shows only the
+    carriage return. **Three, and it is the cost nobody had named: the failure erases its own
+    evidence.** `perror` writes `C:` TAB `emp` **CR** `eport.txt: No such file or directory`, and the
+    carriage return is a control byte **this language injected**, so a terminal rewinds and the reader
+    sees `eport.txt: No such file or directory` with the path gone from the screen. The one line that
+    would name the bug deletes it. **The silent set is exactly five letters** — a component beginning
+    `n`, `t`, `r`, `\` or `"` passes, and the other twenty-one are `error[unknown_escape]`: seven of
+    twelve realistic path components measured silent. **The seat that reads only the specification
+    wrote the bug first try**, before seeing any proposal, and reported honestly that it noticed only
+    because the task said *Windows path*.
+
+    **And "the remedy is raw string literals" is an unenumerated option set** (CL-057), corrected
+    here. Python spent a decade making unknown escapes stricter — warning in 3.6, syntax warning in
+    3.12, error promised — and **it does not help**, because the escapes that bite are the legal ones;
+    its own example is `'..\training\new_memo.doc'`, *"a corrupted file name, but no warning"*. A raw
+    literal does not help either: it aids the writer **who already noticed**, and that writer was
+    going to write `\\` correctly — *"it targets I do not know how to escape this, which is not the
+    failure that happens"*. It also has a permanent hole on this exact path, since a raw string cannot
+    end in an odd number of backslashes, so `r"C:\temp\"` does not parse. Three routes cost less and
+    were never listed: **`"C:/temp"` works today at zero language cost**, Windows normalising forward
+    slashes; **one clause in the specification** — *a backslash starts one, so `"C:\temp"` holds a
+    tab* — costs about **51 characters** and targets the failure that actually happens; and
+    `hero_cstr_nonnull` is already emitted at **every** `cstr` lend, so a lent literal carrying a C0
+    control byte is checkable at one existing site with no new syntax. The compiler already refuses a
+    **raw** carriage return in a literal for word-for-word the same reason
+    (`selfhost/literals.hero:82-89`). **None of the three is adopted here** — nobody built the check,
+    and separating an intended `\t` from a transcribed one is heuristic and owes its own sitting.
+    **Note also that this language has no warning level**: a diagnostic is exit 1 or nothing, so
+    "just warn" is not available.
+
+    **The return condition, and it is a boundary condition**: a program in `examples/` or on §1.0's
+    closure list whose `cstr` lend carries a path or a pattern wrong at exit 0 — **zero today**, one
+    literal with a backslash across the 24 files that declare an `extern`, and that one correct — **or**
+    the Windows leg landing a real path-taking binding, which turns one-in-twenty-four into the
+    common case.
 16. **`print` took only half of `WriteLn`** (panel 008, historian). design.md cites Pascal's
     `WriteLn` as the fifty-year precedent for `print`'s forced trailing newline — but Pascal pairs it
     with `write` (no newline) and out-of-string character codes (`#10`), and Oberon-07 uses `0AX`.
     Heroes has neither, so before escapes landed it was strictly weaker than its own cited
     precedent. Escapes close the gap for literals; there is still no way to print without a
     trailing newline.
+
+    **STAYS A WART, dated 2026-09-13 — and it was filed as the wrong kind of thing** (panel 143,
+    M-deferral-ledger step 8;
+    `docs/panel/143-one-wart-is-an-inconvenience-and-the-other-erases-the-evidence.md`). The entry
+    reads as a missing convenience. **It is not one.** The gap is reachable three ways and **two of
+    them silently reorder the output**. Measured: `write_file(path: "/dev/stdout", text: …)` writes
+    without a trailing newline at exit 0 with zero built-ins and zero spec tokens — and interleaved
+    with `print`, source order *label: · value · second: · again* comes out **`label: second:
+    value\nagain\n`**, both writes before both prints, exit 0, zero diagnostics, **using only what
+    the language ships**. The same happens through C: `stdout` is not nameable
+    (`constant stdout: ptr` is `error[ffi_not_constant]`), so an author reaches for `fdopen(1, "w")`
+    and gets the same reordering. **The cause is not §4.19 refusing `stdout`** — no FFI is involved in
+    the first case — **it is two buffers on one descriptor**, and a reader who finds the route finds
+    the hazard with it. A wart whose workaround fails silently is not an inconvenience.
+
+    **The route that is safe was compiled**: one `extern`, one `printf` signature, a call-scoped
+    `.cstr()` lend, nine lines, `const char *` straight through with no box and no copy, the
+    `importc` probe type-checking against the real `<stdio.h>`. **What has NOT been found is a silent
+    failure of `print` itself**: every wrong guess about it shows in the output on the first run.
+
+    **The remedy, named and priced rather than left open**: a second built-in `write` at **+5** spec
+    tokens for the name and **+17** with prose, or `print` gaining `end: ""` at **+8**. The compiler
+    side is one line in the built-ins table **plus renaming a shipped example**, because
+    `builtin_name_taken` reserves the name everywhere and `examples/markdown/` would break in the
+    same commit. **The return condition**: a corpus program that interleaves unterminated output with
+    `print` and is stopped by the reordering — which is now a measured shape rather than a
+    hypothesis.
 
 ---
 

@@ -195,6 +195,20 @@ package is written.
     match-arm count of 994 is exact. What remains of the ledger is Part 8: warts
     15 and 16, then the widening item's warts 5, 8 and 11 with coverage.
 
+    **Step 8, 2026-09-13: warts 15 and 16 sat together (panel 143,
+    `docs/panel/143-one-wart-is-an-inconvenience-and-the-other-erases-the-evidence.md`)
+    — both STAY, and BOTH ENTRIES ARE CORRECTED.** That closes this item: **nine
+    of nine**, seven Part 7 items and the two watch-list entries, all now carrying
+    dated verdicts. **The shape this step adds to the ledger's account** is that a
+    wart can be wrong in the direction nobody checks — not by claiming too much
+    but by **understating what it costs**. Wart 15 understates it three ways, the
+    sharpest being that the control byte the language injects **erases C's own
+    error message from the terminal**. Wart 16 was filed as a missing convenience
+    and is not one: the workaround a reader finds silently reorders output, with
+    built-ins only. **A wart is a stated cost, and an entry that understates it is
+    not doing the one job Part 8 has.** What remains of this milestone is the
+    second item: the widening to warts 5, 8 and 11, with coverage.
+
 - [ ] **M-deferral-ledger** | the ledger widens from Part 7 to Part 8's warts, and coverage gets the answer it already has | `design.md` Part 8 warts 5, 8, 11 · `docs/panel/034` · `selfhost/mutate/`
 
     **Origin:** author decision 2026-09-10, § What production-ready means.
