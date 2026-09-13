@@ -324,6 +324,31 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   open: putting it in position would have moved twenty-three row numbers while a
   parallel session was committing into this same checkout, and the fifth
   renumbering (2026-09-08) is the reason that is worth avoiding.
+- **M-handle-verdict** — **entered 2026-09-13 by author decision**, at panel
+  135's ratification and on the assistant's recommendation, out of a defect the
+  sitting found while measuring something else: `sqlite3_step(db)` for
+  `sqlite3_step(statement)` builds at zero diagnostics and exits 139, because
+  every C pointer that is not a `cstr` is one `ptr` (defect 029, reproduced from
+  source before filing). **It delivers a decision and not a feature**, in
+  M-closures-verdict's shape, which is why it is named for the ruling: the
+  sitting may rule that nothing enters and the answer becomes a Part 8 wart or a
+  Part 6 row with its falsifier. **Why it is not a step of M-deferral-ledger**,
+  which it stands immediately behind: that milestone dates Part 7's items, and
+  this question is on no list at all, so a row that inherited it would report a
+  promise the record does not hold — the same reason M-cleanup-verdict is not
+  one. **The row was put IN POSITION and moved twenty-two row numbers**, which
+  the entry above this one names as the thing worth avoiding: the two conditions
+  that made it avoidable then were a parallel session committing into this
+  checkout and a position that carried no argument, and neither held here — the
+  checkout was clean and held by one session, and the position IS the argument,
+  since Part 7 item 5's own text keeps the distinct-types door open and panel 135
+  deferred `alias` partly because a transparent alias catches none of this. The
+  sequence was verified after the move rather than assumed: 77 rows, no gap,
+  which is what `site/src/lib/chain.ts` asserts at build time. **A consequence
+  recorded at the scheduling rather than found at the close**: `records/tagged`
+  allows no tag over an open defect, so M-deferral-ledger closes untagged while
+  029 stands, on M-anchored-spec's precedent, and its tag lands on the first
+  commit where every list it leaves open is clean.
 
 ---
 
