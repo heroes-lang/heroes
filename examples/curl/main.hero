@@ -40,10 +40,17 @@ extern "curl/curl.h" link "curl"
     constant CURLE_OK: i64
     constant CURLE_UNSUPPORTED_PROTOCOL: i64
     function curl_version() -> cstr
-    function curl_easy_init() -> ptr
-    function curl_easy_setopt(handle: ptr, option: u32, value: cstr) -> i64
+    # The HANDLE, since 2026-09-13 (panel 145). `CURL` is `typedef void CURL;`
+    # on this Mac's SDK — a struct only under `CURL_STRICTER` — so there is no
+    # `struct CURL` to name, and this is exactly the case the completeness
+    # critic raised against the `struct <tag>` spelling every seat had proposed.
+    # The form writes the tag VERBATIM and starred, so `Curl` is `CURL *` and
+    # the binding needs nothing else.
+    record Curl tag CURL
+    function curl_easy_init() -> Curl
+    function curl_easy_setopt(handle: Curl, option: u32, value: cstr) -> i64
     function curl_easy_strerror(code: u32) -> cstr
-    function curl_easy_cleanup(handle: ptr)
+    function curl_easy_cleanup(handle: Curl consumes)
 
 function main()
     print("libcurl: ", validated(c: curl_version()).default("<unnamed>"))
