@@ -143,6 +143,22 @@ package is written.
     for traits, rather than ruling only on the form. Five of the ledger's nine
     remain; item 11, the `raw` module, is next.
 
+    **Step 5, 2026-09-13: item 11 sat (panel 140,
+    `docs/panel/140-the-document-had-already-ruled-against-part-9-and-nobody-told-part-9.md`)
+    — REFUSED to Part 6, and Part 9 itself corrected beneath, because the
+    correction was owed at the Part rather than at the item.** Four for four now:
+    every item this ledger has opened had a stated reason that was false or
+    expired before its verdict was written. This one is the sharpest of the four —
+    **the document had already ruled against Part 9's premise, in the same
+    document**, §4.10 naming `ptr` and `cstr` as sitting outside the guarantee
+    while Part 9 puts pointers first among what `raw` would bound. And its two
+    preconditions landed on 2026-08-12 and woke nobody, the second expired clock
+    of this milestone. **A finding about the ledger's own method**: the critic
+    noted that two of the coordinator's four framing facts were unverifiable from
+    the sitting's artifacts, because the briefs go out as prompts and are never
+    written where a later reader can check what the seats were told. Four of the
+    ledger's nine remain; item 14, declaration visibility, is next.
+
 - [ ] **M-deferral-ledger** | the ledger widens from Part 7 to Part 8's warts, and coverage gets the answer it already has | `design.md` Part 8 warts 5, 8, 11 · `docs/panel/034` · `selfhost/mutate/`
 
     **Origin:** author decision 2026-09-10, § What production-ready means.
