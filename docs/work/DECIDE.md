@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 7**
+**OPEN: 8**
 
 - [ ] **panel 136** | Part 7 item 6, doctests: ratify DEFERRED AGAIN with the expired clock struck, the reason replaced by §1.7's zero subtraction and the corpus that refutes the wording, the three ancestors corrected, and the documented test block named as the form that returns at M-doc-generator — or rule ENTERS or REFUSED with what each compels | `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md` · design.md §4.18, Part 7 item 6
 
@@ -156,5 +156,23 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     **Recommendation: ratify as adopted.** An item costed twice, refuted on its own
     argument, and waiting on an undecidable count is the exact shape this milestone
     exists to end.
+
+- [ ] **panel 142** | Part 7 item 16, symmetric variant syntax: ratify REFUSED to Part 6 with its falsifier, **"v2" struck as a verdict the ledger cannot carry**, and the premise falsified one level up — there is no asymmetry to restore, because nothing in this language destructures | `docs/panel/142-there-is-no-asymmetry-to-restore-because-there-is-no-destructuring-anywhere.md` · design.md Part 6, Part 7 item 16
+
+    **Origin:** 2026-09-13, M-deferral-ledger step 7, the last Part 7 item.
+    **The default the compiler runs on while this is open**: `.case(field: value)`
+    builds and `.case name` matches, as today. **A veto is engaged and no seat
+    supports the change.** The reader wrote all six acts from the specification
+    alone, first try, which kills the item's last live claim; then it found the
+    price nobody had named — the symmetric spelling wants to bind the field's own
+    name, and shadowing is an error here, so the choice is a non-local intermittent
+    error or a new silent-capture class. The critic found the premise is false one
+    level up: a record pattern is refused by name, so nothing destructures and the
+    proposal would create the asymmetry it claims to remove. And Swift reached this
+    language's design **deliberately**, with the symmetric option written down in
+    front of it. Conservative was recorded: defer with the reader's 15% threshold.
+    **Recommendation: ratify as adopted**, and note that what returns is a sentence
+    rather than a syntax — the document never states the contrast between the two
+    spellings, and one clause at +35 would.
 
 *******************************************************************************
