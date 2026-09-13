@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 5**
+**OPEN: 6**
 
 - [ ] **panel 136** | Part 7 item 6, doctests: ratify DEFERRED AGAIN with the expired clock struck, the reason replaced by §1.7's zero subtraction and the corpus that refutes the wording, the three ancestors corrected, and the documented test block named as the form that returns at M-doc-generator — or rule ENTERS or REFUSED with what each compels | `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md` · design.md §4.18, Part 7 item 6
 
@@ -113,5 +113,29 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     than adopted: defer with the builtin route as the return condition.
     **Recommendation: ratify as adopted**, and note that the Part 9 correction is
     free, design.md carrying no token budget.
+
+- [ ] **panel 140** | a sitting's briefs are never written down, so two of five sittings tonight carry framing facts no later reader can check — should `/panel` write each seat's brief into the sitting's own directory before the seats start? | `.claude/skills/panel/SKILL.md` § Procedure step 2 · `docs/panel/140-the-document-had-already-ruled-against-part-9-and-nobody-told-part-9.md` § What the critic found
+
+    **Origin:** panel 140's completeness critic, 2026-09-13, about the coordinator
+    rather than about the seats. **Why it is put to you rather than done**:
+    CLAUDE.md § 4 says the skills are amended by author instruction and no panel,
+    so this is not the assistant's to change.
+
+    **The finding, in the critic's own words**: of the coordinator's four framing
+    facts, two *"are quoted by nobody and no brief exists on disk"*, so they are
+    unverifiable from the sitting's own artifacts. The briefs are prompts; they
+    vanish when the workflow ends. A sitting's file records what the seats
+    ANSWERED and never what they were ASKED, which means a reader cannot tell a
+    seat that missed something from a seat that was never told it.
+
+    **The default while this is open**: every sitting's brief is unrecoverable
+    once its agents finish, and the panel's own rule that a judge is differentiated
+    *by input* has no artifact behind it.
+
+    **Recommendation: yes, one line in `/panel` step 2** — write each seat's brief
+    to `docs/panel/NNN-briefs/<seat>.md`, or to the sitting's own file under a
+    heading, before the seats start. It costs nothing at sitting time and it makes
+    the differentiation checkable, which is the whole claim the five-seat design
+    rests on.
 
 *******************************************************************************
