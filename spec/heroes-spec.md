@@ -368,7 +368,9 @@ cell, and a lease nobody ends aborts when `main` returns, saying how many.
 `owned sqlite3_free` after a `cstr` result or a `char **` out-parameter: the
 compiler frees that string with that function, hands it over as a `str?` (the
 `@` cell is only written), and refuses your own call of it. Unmarked pointers
-are never freed.
+are never freed. `consumes` after a parameter says the call ends that value's
+life, so passing one the function borrowed is an error: mark the parameter `@`
+and the value does not survive the call.
 A group may name a **package** instead of a library: `extern "raylib.h" package "raylib"`
 asks the system where its headers and libraries are and what else it needs. A
 package answering with anything this compiler does not pass on is refused,
@@ -380,4 +382,4 @@ naming what it said.
                [ "->" Type [ "owned" ident ] ] NEWLINE
            | "constant" ident ":" Type NEWLINE
            | "record" ident [ "tag" ident ] [ "partial" ] ( Fields | NEWLINE ) .
-    CParam = [ "@" ] ident ":" Type [ "owned" ident ] .
+    CParam = [ "@" ] ident ":" Type [ "owned" ident ] [ "consumes" ] .

@@ -108,7 +108,7 @@ function handed_back_param(@t: table.Types, param: ast.Param, declared: i64) -> 
 # a freer declared in another module would be `call to undeclared function`.
 # One parameter, because the release hands the freer exactly one thing — the
 # string — and panel 109's condition 1 names the arity as what is verified.
-function mark_refusals(s: source.Source, decls: [ast.Decl], at: i64) -> [diag.Diagnostic]
+function mark_refusals(a: ast.Ast, s: source.Source, decls: [ast.Decl], at: i64) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @ []
 
     match decls[at].kind
@@ -121,13 +121,48 @@ function mark_refusals(s: source.Source, decls: [ast.Decl], at: i64) -> [diag.Di
 
             for param in fd.value.params
                 if !param.owned.is_err()
-                    found = refusal_for_mark(s, decls, at: at, mark: param.owned.must())
+                    wrong = wrong_owned_type(a, s, param: param)
 
-                    if !found.is_err()
-                        out @ out.push(found.must())
+                    if !wrong.is_err()
+                        out @ out.push(wrong.must())
+                    else
+                        found = refusal_for_mark(s, decls, at: at, mark: param.owned.must())
+
+                        if !found.is_err()
+                            out @ out.push(found.must())
         .constant_decl | .record_decl | .variant_decl | .test_decl => return out
 
     return out
+
+# `owned` on a parameter that is not a `cstr`, refused where it is WRITTEN.
+#
+# The mark means one thing: *C writes a string through this cell and the
+# compiler frees it with that function* (§4.19, panel 109). Until 2026-09-13 the
+# type was never asked: `handed_back_param` below retypes ANY marked parameter
+# to `str?`, so `function sqlite3_finalize(statement: ptr owned sqlite3_finalize)`
+# parsed and came back as `type_mismatch: expected str?, found ptr` at the CALL,
+# plus `owned_freer_called` — two diagnostics about a string on a program that
+# has none, and neither of them at the line the author wrote. Three of panel
+# 145's five seats found it independently while looking for something else.
+#
+# It is refused here rather than made to work, because the mark's direction is
+# the opposite of what a handle wants: `owned` says C hands you a thing and the
+# compiler releases it, where a handle parameter wants to say the CALL consumes
+# what the caller passed. One word, one meaning.
+function wrong_owned_type(a: ast.Ast, s: source.Source, param: ast.Param) -> diag.Diagnostic?
+    written = source.span_text(s, a.types[param.ty].span)
+
+    if written == "cstr"
+        return fail(code: "none", msg: "the mark is on the type it is for")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "owned_needs_cstr",
+        message: "`owned` marks a `cstr`, and `" + source.span_text(s, param.name) + "` is a `" + written + "`",
+        span: param.owned.must()
+    )
+    d.notes @ d.notes.push(
+        "`owned <freer>` says C writes a string THROUGH this cell and the compiler frees it with that function, so it belongs on a `@x: cstr` out-parameter or on a `cstr` result. On anything else it says nothing the compiler can act on"
+    )
+    return ok(d)
 
 # One mark's verdict: absent when the name is a one-parameter `extern` of the
 # marked declaration's module.

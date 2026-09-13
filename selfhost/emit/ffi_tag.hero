@@ -57,7 +57,18 @@ function missing_tag(s: source.Source, decls: [ast.Decl], line: str) -> diag.Dia
     return ok(d)
 
 # clang's "incomplete definition of type 'struct NoSuchTag'" — the
-# group's record named a tag the header does not declare (panel 074).
+# group's record whose tag clang cannot lay out (panel 074; corrected
+# 2026-09-13, M-handle-verdict step 5).
+#
+# **It used to say the header declares no such struct, and clang never said
+# that.** Clang reports *incomplete definition of type* for a tag that is
+# MISSPELLED — C invents an empty type of that name — and for one that is
+# declared OPAQUE on purpose, `typedef struct sqlite3 sqlite3;` and nothing
+# more. The two are one message, so a diagnostic that picked the first was
+# asserting a fact it had not checked, and it picked the wrong one for every
+# opaque handle in every real header. It now says what clang said — the type
+# has no fields here — and carries both repairs, the second of which is the
+# handle form that landed one step earlier.
 # This is the llm-ergonomist's condition of approval, and without it
 # the marker's own typo is exit 2: measured before this function
 # existed, a tag with no struct behind it produced "internal error",
@@ -77,11 +88,11 @@ function unknown_tag(s: source.Source, decls: [ast.Decl], line: str) -> diag.Dia
         return fail(code: "none", msg: "no record names this tag")
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_unknown_tag",
-        message: "`" + found.must().header + "` declares no `struct " + tag_name + "` — clang read the header and the tag is not there",
+        message: "`struct " + tag_name + "` has no fields in `" + found.must().header + "` — clang read the header and cannot lay the type out",
         span: found.must().span
     )
     d.notes @ d.notes.push(
-        "`tag` names the struct tag C uses, and clang checks it against the header (§4.19): correct the spelling, or name the header that declares `struct " + tag_name + "`"
+        "two things give clang that answer and it reports them alike, so both repairs are here. The tag may be MISSPELLED, in which case C has invented an empty type of that name: correct it, or name the header that declares it. Or the type may be OPAQUE on purpose — `typedef struct sqlite3 sqlite3;` and nothing more — in which case the header never means for a program to hold one by value, and what is wanted is a HANDLE: drop the field block and the `record` becomes C's pointer to it, `record Db tag " + tag_name + "` (§ 13)"
     )
     return ok(d)
 
@@ -169,7 +180,7 @@ test "unknown_tag and tag_is_a_union land the caret on the tag token"
     line = "main.c:8:1: error: incomplete definition of type 'struct statt'"
     d = unknown_tag(s, parsed.decls, line: line)
     assert d.must().code == "ffi_unknown_tag"
-    assert d.must().message == "`sys/stat.h` declares no `struct statt` — clang read the header and the tag is not there"
+    assert d.must().message == "`struct statt` has no fields in `sys/stat.h` — clang read the header and cannot lay the type out"
     assert source.span_text(s, d.must().span) == "statt"
     u = "main.c:8:1: error: use of 'statt' with tag type that does not match previous declaration"
     k = tag_is_a_union(s, parsed.decls, line: u)

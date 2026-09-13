@@ -339,10 +339,18 @@ constant CEILING: i64
 # thing this file exists to own, and two modules that both had to agree on
 # `ty_key` would be one module wearing two names.
 #
+# `print/fmt.hero` 1150 -> **1156** on 2026-09-13, M-handle-verdict step 5: the
+# `consumes` marker on a C parameter, four lines and a two-line comment. The
+# reason is CL-036's and it was MEASURED rather than argued — with the formatter
+# left alone, `heroes fmt` on a binding stripped the safety mark off it and said
+# nothing, which is the failure that rule exists to name: a tool that has not
+# learned a new form does not error, it drops it. Three lines of room are left
+# rather than none, because a ceiling set at exactly today's measure is the
+# pattern M-declared-thresholds spent a milestone removing.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1870"
-        "selfhost/print/fmt.hero 1150"
+        "selfhost/print/fmt.hero 1156"
         "selfhost/ir/flatten.hero 1150"
         "selfhost/grammar_expr.hero 1085"
         "selfhost/ir/print.hero 470"

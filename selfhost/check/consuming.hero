@@ -1,0 +1,129 @@
+# A call that ENDS a handle's life may not be handed one the caller borrowed
+# (panel 145, defect 031; author decision 2026-09-13).
+#
+# **The defect.** A `record Holder { cell: ptr }`, a copy, `free` through the
+# copy inside a function that takes its `Holder` WITHOUT `@`, then a write
+# through the original's own field: build exit 0, run exit 0, both prints
+# reached, and `heap-use-after-free, WRITE of size 8` under `--sanitize` on
+# Darwin and on Linux. Nothing in the language refused any line of it.
+#
+# **What this rule is, and what it deliberately is not.** Panel 139 measured
+# that a rule keyed on *reaches C through a `ptr`* cannot be written from the
+# headers at all — `sqlite3_column_count` is not const-qualified, so a mutating
+# step and a pure read have the identical C signature, and such a rule would
+# refuse 13 of 17 functions in the shipped SQLite binding, four of which mutate
+# nothing. So the signal comes from the binding author or from nowhere: one
+# word, `consumes`, written once per consuming function.
+#
+# The rule it buys is **local** and that is the whole of its cost. A plain
+# parameter is BORROWED (Part 5): the caller keeps the value and sees it again
+# after the call. Handing such a value to a call that frees it is a promise the
+# signature cannot keep, and it is decided by the argument's place root and the
+# enclosing function's parameter list — two facts on the page, no flow analysis
+# (`check/leasing.hero` states that the checker has none).
+#
+# **What it does NOT close, said here rather than discovered later.** Repaired
+# to `closed(@h: Holder)`, the program compiles again and `h` is copied out, so
+# a COPY made before the call still holds the freed address and ASan still
+# fires. That shape — one copy freeing what another holds — is an affine
+# handle, which is core by §1.7 and the Part 6 borrow-checker row's territory,
+# and design.md Part 8 wart 20 is where the language states the cost it keeps.
+# This rule refuses the program that was filed; the class above it is refused by
+# transitivity and written down rather than patched.
+
+use ast
+use source
+use token
+use diag
+use resolved
+use check/state
+use check/leasing
+
+# Every consuming parameter of a declaration, by position. Absent for anything
+# that is not a function, and empty for a function with no marked parameter,
+# which is almost all of them.
+function consuming_positions(decl: ast.Decl) -> [i64]
+    out: [i64] @ []
+
+    match decl.kind
+        .function_decl fd =>
+            at: i64 @ 0
+
+            for p in fd.value.params
+                if p.consumes
+                    out @ out.push(at)
+                at @ at + 1
+        .constant_decl | .record_decl | .variant_decl | .test_decl => out @ out
+
+    return out
+
+# Is this expression's place rooted in a parameter the enclosing function
+# BORROWED — a parameter written without `@`?
+#
+# `leasing.place_root` walks a field path or an index down to the name it
+# stands on, which is exactly the question here: `h.cell` is `h`. The resolver
+# then says what that name IS, so the rule never has to carry the enclosing
+# function's parameter list around: a `.param` local that is not `mutable` is a
+# parameter written without `@`, and nothing else in the language is.
+function borrowed_root(a: ast.Ast, r: resolved.Resolved, at: i64) -> i64?
+    root = leasing.place_root(a, at: at)
+
+    if root.is_err()
+        return fail(code: "none", msg: "the argument is not a place")
+
+    match r.uses[root.must()]
+        .local l =>
+            one = r.locals[l.at]
+
+            match one.kind
+                .param =>
+                    if one.mutable
+                        return fail(code: "none", msg: "an `@` parameter is not borrowed")
+                    return ok(root.must())
+                .bind | .cell | .loop_var | .payload => return fail(code: "none", msg: "not a parameter")
+        .top | .module | .builtin | .unresolved => return fail(code: "none", msg: "not a local")
+
+    return fail(code: "none", msg: "unreached")
+
+# The rule, at one call: for every parameter the callee marked `consumes`, if
+# the argument in that position is rooted in a borrowed parameter, refuse.
+#
+# It runs on the NAMED-callee path only. A call through a function value carries
+# no declaration, so there is no mark to read — which is a hole this says out
+# loud rather than hides: `(function(Db) -> i64)` erases the word, as it erases
+# every other thing a declaration knows.
+function refuse_borrowed(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decl: ast.Decl, given: [ast.Arg])
+    positions = consuming_positions(decl)
+
+    if positions.len() == 0
+        return
+    callee = source.span_text(s, decl.name)
+
+    for at in positions
+        if at >= given.len()
+            continue
+        borrowed = borrowed_root(a, r, at: given[at].value)
+
+        if !borrowed.is_err()
+            span = a.exprs[given[at].value].span
+            state.push_diagnostic(
+                @c,
+                refusal(borrowed: source.span_text(s, a.exprs[borrowed.must()].span), callee: callee, span: span)
+            )
+
+# The refusal. It names the parameter the caller borrowed, because that is the
+# name to put an `@` on, and the consuming function, because that is what ends
+# the value's life.
+function refusal(borrowed: str, callee: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "consumed_borrowed_handle",
+        message: "`" + callee + "` ends the life of what it is given, and `" + borrowed + "` was borrowed — this function promised not to change it",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a parameter written without `@` is borrowed: the caller keeps the value and reads it again after the call, so a call that frees it leaves them holding an address C has taken back. Mark the parameter `@" + borrowed + "` and the call site `@" + borrowed + "` too, which says on both lines that the value does not survive"
+    )
+    d.notes @ d.notes.push(
+        "this refuses the call, not the copy: a copy made BEFORE the call still holds the freed address, and nothing here sees that. design.md Part 8 wart 20 states that cost and names what would close it"
+    )
+    return d

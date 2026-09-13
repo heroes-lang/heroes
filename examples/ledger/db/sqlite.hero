@@ -231,7 +231,7 @@ function opened() -> Db?
         return fail(code: "cannot_open", msg: reason)
     return ok(Db(handle: db))
 
-function closed(db: Db) -> i64
+function closed(@db: Db) -> i64
     return sqlite3_close(db.handle)
 
 # One statement run for its effect, with SQLite's own message on failure.
@@ -276,7 +276,7 @@ function prepared(db: Db, sql: str) -> Statement?
         return fail(code: "cannot_prepare", msg: sql + ": " + why(db))
     return ok(Statement(handle: statement))
 
-function finalized(statement: Statement) -> i64
+function finalized(@statement: Statement) -> i64
     return sqlite3_finalize(statement.handle)
 
 # Ready to be bound and stepped again. The whole reason a prepared

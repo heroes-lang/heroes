@@ -78,6 +78,24 @@ function generics(@c: cursor.Cursor, text: str) -> [token.Span]
 # and that is the cycle rule rather than a preference**: this marker is read
 # in two places, one of them inside `params` below, and `tails` already uses
 # this module — so putting it there would close the ring Heroes refuses.
+# `consumes` after a group parameter's type, if it is there: the call ENDS the
+# life of what is passed (panel 145, defect 031).
+#
+# **A contextual keyword and not a reserved word**, read only here, in the one
+# position where it can stand — so `consumes` stays an ordinary identifier
+# everywhere else in the language, as `tag` and `partial` do.
+#
+# **And it is not `owned`, deliberately.** `owned <freer>` says C hands the
+# program a string and the COMPILER frees it; this says the C call frees what
+# the PROGRAM handed over. Opposite directions, so one word would mean two
+# things decided by the parameter's type — which is exactly the confusion that
+# made `ptr owned f` parse and come back as a diagnostic about a string.
+function consumes_marker(@c: cursor.Cursor, text: str, in_group: bool) -> bool
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "consumes"
+        return false
+    _ = cursor.bump(@c)
+    return true
+
 function owned_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
     if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "owned"
         return fail(code: "absent", msg: "nothing here is owned")
@@ -127,7 +145,8 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
             else
                 ty = type.parse_type(@c, @a, text)
                 owned = owned_marker(@c, text, in_group: in_group)
-                out @ out.push(ast.Param(name: name, ty: ty, mutable: mutable, owned: owned))
+                consumes = consumes_marker(@c, text, in_group: in_group)
+                out @ out.push(ast.Param(name: name, ty: ty, mutable: mutable, owned: owned, consumes: consumes))
                 cursor.skip_terminators(@c)
 
                 if !cursor.eat(@c, .comma)

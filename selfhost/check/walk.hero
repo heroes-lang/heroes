@@ -51,6 +51,7 @@ use check/render
 use check/ops
 use check/access
 use check/contextual
+use check/consuming
 use check/join
 use check/builtins
 use check/labels
@@ -1317,6 +1318,7 @@ function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
                     # — the lowering reads expr_types, not the tree.
                     signature = signature_of(@c, a, r, s, decls, decl: t.at)
                     _ = state.record_expr(@c, at: callee, ty: signature)
+                    consuming.refuse_borrowed(@c, a, r, s, decl: decls[t.at], given: given)
                     return ok(
                         user_call(@c, a, r, s, decls, decl: t.at, given: given, receiver: fail(code: "absent", msg: "no receiver"), span: span, expected: expected)
                     )

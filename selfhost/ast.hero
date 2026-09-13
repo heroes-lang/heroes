@@ -363,6 +363,9 @@ record Param
     # of one signature can be owned by different functions, and because the
     # cell is out-only: nothing is copied in for the callee to observe.
     owned: token.Span?
+    # `db: Db consumes` — the call ENDS this handle's life (panel 145, defect
+    # 031). The opposite direction to `owned`, which is why it is a second word.
+    consumes: bool
 
 # A record field, or a variant case's payload field. Fields carry doc comments
 # of their own — §4.1's adjacency rule is about declarations, and a field is
@@ -624,7 +627,8 @@ test "the tree is copied by value, so a walk cannot disturb it"
 test "a declaration owns its members directly, no arena"
     zero = token.Span(start: 0, end: 1)
     generics: [token.Span] = []
-    ps: [Param] = [Param(name: zero, ty: 0, mutable: false, owned: fail(code: "none", msg: "not owned"))]
+    unowned: token.Span? = fail(code: "none", msg: "not owned")
+    ps: [Param] = [Param(name: zero, ty: 0, mutable: false, owned: unowned, consumes: false)]
     doc: [token.Span] = []
     f = FunctionDecl(
         generics: generics,
