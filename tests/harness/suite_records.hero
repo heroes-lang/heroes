@@ -73,6 +73,7 @@ constant RECORD: [str]
         "vendor"
         "editors/vscode/icons"
         "archive"
+        "talks"
     ]
 
 # **`site/log.html` was on that list and is not any more** (deleted 2026-08-18), and it is
@@ -131,6 +132,22 @@ constant GENERATED: [str]
 # `suite_emission.hero`: a `.c` in there that no program claims is
 # a failure by name, which is more than "a C file lives outside the
 # directories that own C".
+
+# **`talks/` is a second tree too, added 2026-09-14**, and it is here on this
+# list's own stated argument rather than a new one: *a second tree's names are
+# not this tree's*. It holds a talk ABOUT this language — its own rules file,
+# its own reviews, its own citations into paths that do not exist here — and it
+# is written in Italian on purpose, which `english` reported as 30 living files
+# and `citations` as four dangling paths, none of them a claim this repository
+# makes.
+#
+# **And it exposed something wider than itself, which is filed rather than
+# fixed here**: this walk reads the WORKING DIRECTORY and not what git tracks,
+# so any untracked directory somebody leaves beside the compiler becomes a
+# living file of this project. `talks/` is untracked today. The entry above
+# would go on skipping it if it were ever committed, which is the cost of
+# taking the cheap repair, and it is stated so the next reader can price the
+# other one.
 
 # **The archived bootstrap is a frozen tree, not a living file.** `archive/bootstrap-rs/`
 # became `archive/bootstrap-rs/` at M-bootstrap-archive; nothing builds it,
