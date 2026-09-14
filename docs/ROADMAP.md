@@ -8,33 +8,28 @@ The status and the chain. Why the table looks the way it does is
 
 | | |
 |---|---|
-| **Current milestone** | **M-marked-acquisition**, opened 2026-09-14, chain row 57: the mark goes where the obligation is CREATED, on the acquiring call. Steps 1 and 2 counted the census from the tree and priced the two instruments, which turned out **not to be alternatives**; panel 148 then refused the inferred form on **12 real headers of 19** and chose the mark that **names what ends the life**. Landed: the mark in both positions, the runtime counter in both directions, the spec at +82, and a `consumes` the AST dump had been dropping since the day it shipped |
-| **Last closed** | **M-cleanup-verdict**, 2026-09-14, `m-cleanup-verdict` ([055](journal/055-cleanup-verdict.md)) — the ruling on a scope-bound release for a C handle, and the census it was forbidden to argue without rewrote its question twice before the sitting sat. `owned` puts no obligation on any path and a missed `lease` aborts saying how many, so the handle is the **only** silent one; and a releaser keyed on the TYPE is refused to Part 6 because ownership is a property of the **call** — the same `sqlite3_stmt *` comes back owned from one C function and borrowed from another · before it **M-handle-verdict** ([054](journal/054-handle-verdict.md)) and **M-deferral-ledger** ([053](journal/053-deferral-ledger.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **56** of 78 · **56** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **60,360** lines of Heroes in **207** modules (`find selfhost -name '*.hero'`) · the seed **806,238** lines of C, regenerated at M-cleanup-verdict step 1 |
-| The spec | **5988** on the vendored ranks and **7974** on the reader's own, against a ceiling of **10240** — raised from 8192 by author decision 2026-09-14, taken while the mark was landing and the document stood 211 free. The three marks are **+125 vendored and +168 real** across this milestone: `acquires <releaser>` and the balance clause at +82/+115, then `borrows` at +43/+53, ratios of 1.40 and 1.23 and both inside the band panel 148's warden gave while refusing any single factor; **2266 free** and 2206 net of the FFI floor |
+| **Current milestone** | **none open.** `M-check-completeness` is next on the chain and has not been started: what `heroes check` accepts, `heroes build` compiles — through a generic too |
+| **Last closed** | **M-marked-acquisition**, 2026-09-14, `m-marked-acquisition` ([056](journal/056-marked-acquisition.md)) — the form closed at **three words**, each saying one thing and none inferred: `acquires <releaser>`, `consumes`, `borrows`. Two instruments answering two questions — a runtime counter for *did the program give back what it took*, and a 126-line rule for *is this binding finished* — and neither needs the flow analysis the checker says twice it does not have · before it **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) and **M-handle-verdict** ([054](journal/054-handle-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **57** of 78 · **57** tags matching `m*`, the legacy `m0`-`m8` included |
+| The compiler | **60,673** lines of Heroes in **208** modules (`find selfhost -name '*.hero'`) · the seed **811,337** lines of C, regenerated at M-marked-acquisition step 5 |
+| The spec | **5988** on the vendored ranks and **7974** on the reader's own, against a ceiling of **10240** — raised from 8192 by author decision 2026-09-14 with the document 211 free. The three marks are **+125 vendored and +168 real**, in two payments at ratios of 1.40 and 1.23, both inside the band panel 148's warden gave while refusing any single factor; **2266 free** and 2206 net of the FFI floor |
 | The contract | **7402** on the reader's own against a ceiling of **12288**, unchanged, judged on `claude-opus-5` since 2026-09-12 |
-| Records | sittings **146** · journals **56** · milestone files **48** · entries: `docs/records/log/` **654**, `docs/records/done/` **520**, `docs/records/book/beats/` **121** · **open defects 0**, **open decisions 1** |
-| Waiting on the author | **1** decision: panel 148's ratification, filed 2026-09-14. Panel 147 was ratified in full the day it sat, and panel 140's brief-home question with it |
+| Records | sittings **146** · journals **57** · milestone files **48** · entries: `docs/records/log/` **655**, `docs/records/done/` **523**, `docs/records/book/beats/` **123** · **open defects 0**, **open decisions 1** |
+| Waiting on the author | **1** decision: panel 148's ratification, filed 2026-09-14. Panel 147 was ratified in full the day it sat |
 
-**Re-measured 2026-09-14 at the M-cleanup-verdict close, not carried.** `records`
-is **23** checks, `spec` **20**, the compiler's own tests **646**, the net's own
-**154** — one more than at the last close, the new case being the one that
-asserts a sitting is a file in `docs/panel/` and never one under a subdirectory
-of it — and the full net **1792**, run once here as CL-063 asks rather than at
-every commit. **It went red on its first run of this close, twice and both
-correctly**: a milestone name with no row in the alias table, and closing prose
-written BETWEEN a list's banners where only items may live. **No prediction was registered against this milestone**, so none is
-scored and none lapses: panel 137's mention of it is a handoff, which the
-milestone honoured and closed, and the spec budget ledger has no row for it
-because it spent no tokens.
+**Re-measured 2026-09-14 at the M-marked-acquisition close, not carried.**
+`records` is **23** checks, `spec` **20**, the compiler's own tests **646**, and
+the golden suites moved with the four cases this milestone added: `check` **116**,
+`run` **116**, `lines` **117**, `warnings` **177**, `emission` **462**. **The
+full net is run before the push and its figure is written there**, not here,
+because this close asked for the push in the same breath.
 
 ---
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–56
-are done, in the order they closed, and rows 57–78 are what is next, in the order
+One table, one row per milestone, **closed first and scheduled after**: rows 1–57
+are done, in the order they closed, and rows 58–78 are what is next, in the order
 they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
@@ -44,7 +39,8 @@ down, and 1–53 and 54–77 until M-deferral-ledger closed that evening, and 1�
 and 56–77 until M-cleanup-verdict closed on 2026-09-14 — a close that both ticked
 its own row and entered `M-marked-acquisition` at 57, the form its own verdict
 admitted, so the twenty-one rows after it each moved one down and the table is
-78 long: it is the
+78 long, and 1–56 and 57–78 until M-marked-acquisition closed later the same
+day, which is the first close in this table that opened no row after itself: it is the
 one number in this file that no instrument reads, so it is
 restated here and re-read at every close with § Where we are — and at every
 OPENING too, which is what moved it twice on one day. `warrant` is why a milestone exists: **v1** (the self-hosting
@@ -112,7 +108,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 54 | **M-deferral-ledger** | done 2026-09-13 | `m-deferral-ledger`, taken 2026-09-13 once all three defects closed | [053](journal/053-deferral-ledger.md) | every Part 7 item with no milestone gets a dated verdict or a return condition, and Part 8's homeless warts with it · nine sittings, and **nine times the item's stated reason was measured false or expired before its verdict could be written** · five refused to Part 6 with falsifiers, two deferred again with conditions somebody can check · coverage refused as Part 6's **first row whose subject is a tool** · wart 8 rewritten because the cost is in the **spelling**: the same push is 0.02 s at a million through a plain name or a lent field, and 11.51 s at fifty thousand through a field in place |
 | 55 | **M-handle-verdict** | done 2026-09-14 | `m-handle-verdict` | [054](journal/054-handle-verdict.md) | the ruling on telling one C handle from another, and three defects that were one question · **§1.12**, defects 029, 030, 031 |
 | 56 | **M-cleanup-verdict** | done 2026-09-14 | `m-cleanup-verdict` | [055](journal/055-cleanup-verdict.md) | the ruling on a scope-bound release for a C handle: a releaser keyed on the TYPE refused to Part 6, because ownership is a property of the CALL · a decision, not a feature |
-| 57 | **M-marked-acquisition** | **OPEN** | — | — | the mark goes where the obligation is CREATED — on the acquiring call — so a C handle nobody releases stops being silent · panel 147 R4, **§1.12** |
+| 57 | **M-marked-acquisition** | done 2026-09-14 | `m-marked-acquisition` | [056](journal/056-marked-acquisition.md) | the mark goes where the obligation is CREATED — on the acquiring call — so a C handle nobody releases stops being silent · panel 147 R4, **§1.12** |
 | 58 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
 | 59 | **M-arm-platform** | scheduled | — | — | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
 | 60 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
