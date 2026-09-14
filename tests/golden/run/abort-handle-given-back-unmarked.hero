@@ -1,25 +1,44 @@
-# The OTHER direction, and it is a different fault: a `consumes` whose
-# `acquires` is missing, so a correct program hands back what the count never
-# saw arrive (M-marked-acquisition, panel 148 R2).
+# The NEGATIVE direction, and it is a different fault from a leak: a `consumes`
+# with no `acquires` behind it, so a program hands back what the count never saw
+# arrive (M-marked-acquisition, panel 148 R2).
 #
 # **This case exists because it happened.** `examples/curl/main.hero` has
 # carried `consumes` since panel 145 landed it on 2026-09-13, and the first
 # counter built for this milestone killed that correct program at exit 134 with
 # a message saying **`1 C handle(s) never given back`** — the exact opposite of
 # what had occurred. One counter, two sentences: positive accuses the PROGRAM,
-# negative accuses the BINDING, and the repair is one word on the producing
-# declaration.
+# negative accuses the BINDING.
+#
+# **THE PROGRAM BELOW WAS REWRITTEN ON 2026-09-14, one step after it was
+# written, and the rewrite is the finding.** It used to declare
+# `function slot_open(n: i64) -> Slot` unmarked and call it directly. Then
+# `check/acquiring.hero` landed and refuses exactly that at COMPILE time, so
+# this case could no longer reach the runtime at all: three suites went red —
+# `run`, `emission` and `determinism` — and the full net before the push is what
+# read them.
+#
+# The shape below is the one that still arrives: the handle comes back inside a
+# record FIELD. `unmarked_handle_producer` reads results and `@` out-parameters
+# and does not look into a returned record, so `pair_make` carries no mark, the
+# compiler says nothing, and the count is what catches it. That gap is filed as
+# **defect 033** rather than closed here, because widening what a diagnostic
+# refuses is a diagnostic CLASS and goes to the panel.
 #
 # The program below is right and its binding is not, which is the whole point:
 # the diagnosis has to name the declaration, not the code.
 
 extern "abort-handle-given-back-unmarked.h"
     record Slot tag Slot
-    function slot_open(n: i64) -> Slot
+
+    # The handle rides home in a field, which is where the rule cannot see it.
+    record Pair
+        s: Slot
+        k: i64
     function slot_close(s: Slot consumes)
     function slot_value(s: Slot) -> i64
+    function pair_make(n: i64) -> Pair
 
 function main()
-    a = slot_open(n: 7)
-    print(slot_value(s: a))
-    slot_close(a)
+    p = pair_make(n: 7)
+    print(slot_value(s: p.s))
+    slot_close(p.s)

@@ -14,15 +14,19 @@ The status and the chain. Why the table looks the way it does is
 | The compiler | **60,673** lines of Heroes in **208** modules (`find selfhost -name '*.hero'`) · the seed **811,337** lines of C, regenerated at M-marked-acquisition step 5 |
 | The spec | **5988** on the vendored ranks and **7974** on the reader's own, against a ceiling of **10240** — raised from 8192 by author decision 2026-09-14 with the document 211 free. The three marks are **+125 vendored and +168 real**, in two payments at ratios of 1.40 and 1.23, both inside the band panel 148's warden gave while refusing any single factor; **2266 free** and 2206 net of the FFI floor |
 | The contract | **7402** on the reader's own against a ceiling of **12288**, unchanged, judged on `claude-opus-5` since 2026-09-12 |
-| Records | sittings **146** · journals **57** · milestone files **48** · entries: `docs/records/log/` **655**, `docs/records/done/` **523**, `docs/records/book/beats/` **123** · **open defects 0**, **open decisions 1** |
+| Records | sittings **146** · journals **57** · milestone files **48** · entries: `docs/records/log/` **656**, `docs/records/done/` **523**, `docs/records/book/beats/` **123** · **open defects 1**, **open decisions 1** |
 | Waiting on the author | **1** decision: panel 148's ratification, filed 2026-09-14. Panel 147 was ratified in full the day it sat |
 
-**Re-measured 2026-09-14 at the M-marked-acquisition close, not carried.**
-`records` is **23** checks, `spec` **20**, the compiler's own tests **646**, and
-the golden suites moved with the four cases this milestone added: `check` **116**,
-`run` **116**, `lines` **117**, `warnings` **177**, `emission` **462**. **The
-full net is run before the push and its figure is written there**, not here,
-because this close asked for the push in the same breath.
+**Re-measured 2026-09-14 after the full net, not carried, and these figures
+REPLACE the ones this close first wrote.** `records` **23**, `spec` **20**, the
+compiler's own tests **646**, `check` **116**, `run` **119**, `lines` **120**,
+`warnings` **179**, `determinism` **148**, `emission` **468**.
+
+**The first version was measured and still misleading**: it wrote `run` **116**
+and `emission` **462**, the counts of what PASSED while one case in each was
+failing. A passing count is not a suite's count while anything in it is red. The
+net came back **1813 passed, 6 failed** and the repair is the log entry of
+2026-09-14 1930.
 
 ---
 

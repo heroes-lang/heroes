@@ -1,0 +1,29 @@
+# A DOUBLE RELEASE, and it is the most serious thing this counter catches
+# (M-marked-acquisition, 2026-09-14). The binding below is entirely correct:
+# `slot_open` says `acquires slot_close`, `slot_close` says `consumes`, and
+# `check/acquiring.hero` is satisfied. The PROGRAM hands the same handle back
+# twice, so the count goes to -1 and the exit says so.
+#
+# **This case exists because the message was wrong for it.** Until this day the
+# negative sentence named exactly one cause, *a `consumes` whose producer
+# carries no mark*, which was the only one there was when the counter landed.
+# Run against this program it accused the declaration, sending its reader to
+# edit an `extern` while the program was releasing twice. Three causes were run
+# that afternoon and the message named one; it now names all three, worst
+# first, and this is the worst.
+#
+# Why the counter and not a rule: `selfhost/check/leasing.hero:29` and
+# `selfhost/check/consuming.hero:22` both state that the checker has no flow
+# analysis, and *how many times does this path run* is a flow question.
+
+extern "abort-handle-given-back-twice.h"
+    record Slot tag Slot
+    function slot_open(n: i64) -> Slot acquires slot_close
+    function slot_close(s: Slot consumes)
+    function slot_value(s: Slot) -> i64
+
+function main()
+    a = slot_open(n: 7)
+    print(slot_value(s: a))
+    slot_close(a)
+    slot_close(a)

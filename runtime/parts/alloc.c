@@ -146,7 +146,42 @@ void hero_runtime_check_leaks(void) {
      * program hands back what the count never saw arrive. The second was found
      * by running `examples/curl/main.hero`, which has carried `consumes` since
      * panel 145 and was killed at exit 134 by a message saying the opposite of
-     * what had happened. One counter, two sentences. */
+     * what had happened. One counter, two sentences.
+     *
+     * **AND THE NEGATIVE SENTENCE WAS REWRITTEN ON 2026-09-14, because the
+     * world moved under it one step after it was written.** It named exactly
+     * one cause, *a `consumes` whose producer carries no mark*, which was the
+     * only one there was when `hero_live_handles` landed. `check/acquiring.hero`
+     * then made the direct form of that a COMPILE error, and the sentence went
+     * on naming it. Three programs were run here, all three arriving with the
+     * old wording and only one of them matching it:
+     *
+     *   - the same handle given back TWICE, a double release, reported as a
+     *     missing annotation, which sends its reader to edit a declaration
+     *     while the program is corrupting memory;
+     *   - an `extern` marked `borrows` whose C function in fact hands
+     *     ownership over, reached directly and through an ordinary Heroes
+     *     function, where the mark is a lie no rule can catch;
+     *   - a handle arriving inside a record FIELD, `pair_make() -> Pair`,
+     *     which `unmarked_handle_producer` does not look into, so its producer
+     *     is genuinely unmarked and the compiler said nothing. That gap is
+     *     filed as defect 033 rather than widened here, because widening what a
+     *     diagnostic refuses is a diagnostic CLASS and goes to the panel.
+     *
+     * The count cannot tell the three apart, so the message states what it
+     * measured and names all three rather than asserting one. Worst first.
+     *
+     * **And WHY it cannot is worth saying, because it names the price of the
+     * alternative**: this is a counter and not a set. Telling a double release
+     * from an unmarked producer needs the IDENTITY of each handle, so the
+     * runtime would hold every live pointer and every call site would pay a
+     * lookup — a different instrument, not a better sentence. Three cases in
+     * `tests/golden/run/` keep the three-cause claim honest, one per cause, and
+     * they are `abort-handle-given-back-twice`,
+     * `abort-handle-borrows-that-gives-away` and
+     * `abort-handle-given-back-unmarked`. If a later rule catches one of them
+     * at compile time, its case goes red and this sentence is what must
+     * change — which is exactly how the old one was caught. */
     int64_t handles = hero_live_handles;
     if (handles > 0) {
         fflush(stdout);
@@ -159,9 +194,16 @@ void hero_runtime_check_leaks(void) {
     if (handles < 0) {
         fflush(stdout);
         fprintf(stderr, "panic: %lld more handle(s) given back than were taken — "
-                        "a `consumes` in this program's bindings has no "
-                        "`acquires` to pair it, so the call that hands the "
-                        "handle over is unmarked\n",
+                        "a call marked `consumes` ran with no `acquires` behind "
+                        "it. Three things do this and the count cannot tell "
+                        "them apart, worst first: the same handle given back "
+                        "TWICE, which is a double release; an `extern` marked "
+                        "`borrows` whose C function in fact hands ownership "
+                        "over, which makes the mark wrong; or a handle that "
+                        "reached this program inside a record FIELD, whose "
+                        "producer carries no mark because "
+                        "`unmarked_handle_producer` does not look inside a "
+                        "returned record\n",
                 (long long)-handles);
         abort();
     }
