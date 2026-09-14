@@ -52,25 +52,26 @@ whether its own warrant has grown.
 *******************************************************************************
 **OPEN: 3**
 
-- [ ] **M-marked-acquisition** | build the counter, which is the half of the mark that does anything — and its price is unrun | `docs/measurements/032-the-two-instruments-priced-and-one-is-not-an-alternative.md` § 5 · `runtime/parts/alloc.c:126-137` · `selfhost/emit/ops.hero`
+- [ ] **M-marked-acquisition** | neither thing that COLOURS a program knows any of the eight contextual marks, and no check compares their word lists | `editors/vscode/syntaxes/heroes.tmLanguage.json` · `site/src/lib/highlight.ts` · `.claude/rules/diagnostics-and-goldens.md` § A new surface form
 
-    **Origin:** M-marked-acquisition step 2, 2026-09-14, out of what the
-    pricing did NOT reach.
+    **Origin:** M-marked-acquisition step 4, 2026-09-14, found while walking
+    CL-036's list for `acquires`.
 
-    **The surface is measured and the instrument is not.** `acquires` parses,
-    formats and builds at **+25 code lines across 7 files**; what makes it do
-    anything is an increment emitted at the acquiring call, a decrement at the
-    `consumes`-marked release, and a **fourth** exit check in
-    `runtime/parts/alloc.c` beside the three already there. That half is
-    **unbuilt and its number is unrun**, and no sentence in 032 prices it.
+    **Measured, not assumed**: the site derives its keyword set from
+    `selfhost/keywords.hero`'s own `keyword()`, so it follows the compiler for
+    KEYWORDS automatically — and the eight contextual marks are deliberately not
+    keywords, so neither highlighter colours `owned`, `consumes`, `acquires`,
+    `tag`, `partial`, `link`, `package` or `as`. That is the state as it was
+    before this milestone, not a regression it introduced.
 
-    **What the built half already settles**: the checker needs **no flow
-    analysis**, because both ends are written by the binding author —
-    `acquires` on the producer, `consumes` on the releaser, which
-    `examples/curl/main.hero` already carries. Both `check/leasing.hero:29` and
-    `check/consuming.hero:22` state the checker has none, and this design does
-    not ask for any. **Two ceilings will have to move**, measured in the
-    prototype: `ast.hero` 505 -> 508 and `print/fmt.hero` 1156 -> 1160.
+    **Why it is filed as a class rather than patched for one word**: adding
+    `acquires` to two files and leaving seven uncovered would make the gap
+    harder to see, not easier. `.claude/rules/diagnostics-and-goldens.md` already
+    says what is owed and where it lives — *a check that compares each
+    highlighter's word list against `selfhost/keywords.hero`'s keywords and
+    `selfhost/inventory.hero`'s built-ins has somewhere to live*, namely beside
+    `suite_spec.hero`'s reading of `spec/reserved-words.md`. **Build the check,
+    then the colouring follows from it.**
 
 - [ ] **M-marked-acquisition** | decide whether a missed release is a compile error or a loud exit, and say what the checker can actually see | `selfhost/check/leasing.hero:29` · `selfhost/check/consuming.hero:22` · `runtime/parts/alloc.c:126-137`
 

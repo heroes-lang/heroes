@@ -27,7 +27,15 @@
 constant SPEC: str
     "spec/heroes-spec.md"
 
-# design.md §1.6, raised to 8192 by author decision (2026-09-12), to make room
+# design.md §1.6, **raised to 10240 by author decision (2026-09-14)**, taken
+# while M-marked-acquisition was landing `acquires <releaser>` and the document
+# stood at 7921 real against 8192 — 211 free after the FFI floor, which is two
+# forms' room and not three. It relaxes nothing: §1.6's payment rule is
+# unconditional at every level. **10 × 1024 and not 10000**, because the site
+# derives this number and says it in K, and refuses a ceiling that is not a
+# whole number of them.
+#
+# It was raised to 8192 by author decision (2026-09-12), to make room
 # inside the spec for the grammar's productions — panel 133 found that every
 # free-standing grammar in its survey has been archived, and that the one
 # arrangement still alive is Wirth's own, the productions beside the prose they
@@ -46,7 +54,7 @@ constant SPEC: str
 # counts the same content as Opus 5 and wraps it differently, so a maximum
 # over a SET is not a property of the document.
 constant CEILING: i64
-    8192
+    10240
 
 # THE SOFT LINE IS RETIRED, and it is the named removal that pays for the
 # raise above (panel 123 R7). It was 2000, set when the spec measured 2231 on

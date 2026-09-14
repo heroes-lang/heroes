@@ -195,6 +195,11 @@ const char *hero_str_cstr(HeroStr s);
 /* A copy of s's bytes, NUL-terminated, that the program owns and frees. */
 const char *hero_str_held(HeroStr s);
 void hero_held_release(const char **slot); /* nulls the cell: the second release is caught before any read */
+/* The handle pair. Both ends are the binding author's words — `acquires` on the
+ * call that hands one over, `consumes` on the one that takes it back — so the
+ * compiler places these and chooses neither (panel 148 R2). */
+void hero_handle_acquired(void);
+void hero_handle_consumed(void);
 
 /* THE MISSING PRIMITIVE (panel 021). §4.19's ladder step 3 is "open a database,
  * run a query, READ A RESULT, close". sqlite3_column_text hands back a borrowed

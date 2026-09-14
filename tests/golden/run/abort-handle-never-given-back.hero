@@ -1,0 +1,24 @@
+# A handle taken and never given back: the counter says how many, and the
+# program dies saying it (M-marked-acquisition, panel 148 R2).
+#
+# **This is the class the whole milestone exists for.** Before the mark, the
+# same shape was exit 0 in silence — measured at `docs/measurements/030`, where
+# SQLite itself had to be asked how many statements were still open because
+# LeakSanitizer does not exist on Darwin arm64. The counting is what turns the
+# census's SILENT row into its LOUD one, which is what `lease` already does.
+#
+# **It is a balance and not a matching**, and spec § 13 says so: two taken and
+# one given back twice would be a net of zero with a leak and a double free
+# inside it. This case takes two and gives one back.
+
+extern "abort-handle-never-given-back.h"
+    record Slot tag Slot
+    function slot_open(n: i64) -> Slot acquires slot_close
+    function slot_close(s: Slot consumes)
+    function slot_value(s: Slot) -> i64
+
+function main()
+    a = slot_open(n: 7)
+    b = slot_open(n: 9)
+    print(slot_value(s: a) + slot_value(s: b))
+    slot_close(a)

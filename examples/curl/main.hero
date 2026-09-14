@@ -47,7 +47,7 @@ extern "curl/curl.h" link "curl"
     # The form writes the tag VERBATIM and starred, so `Curl` is `CURL *` and
     # the binding needs nothing else.
     record Curl tag CURL
-    function curl_easy_init() -> Curl
+    function curl_easy_init() -> Curl acquires curl_easy_cleanup
     function curl_easy_setopt(handle: Curl, option: u32, value: cstr) -> i64
     function curl_easy_strerror(code: u32) -> cstr
     function curl_easy_cleanup(handle: Curl consumes)

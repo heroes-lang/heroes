@@ -365,13 +365,17 @@ fails `null_cstr`.
 `x: cstr @ s.lease()` is a COPY of the bytes that C may read for as long as the
 program says, and `end_lease(@x)` frees it and empties the cell. A lend and a
 lease name stand only as an argument of a call, nothing else writes a lease's
-cell, and a lease nobody ends aborts when `main` returns, saying how many.
+cell, and a lease nobody ends, like a handle nobody consumes, aborts when
+`main` returns, saying how many.
 `owned sqlite3_free` after a `cstr` result or a `char **` out-parameter: the
 compiler frees that string with that function, hands it over as a `str?` (the
 `@` cell is only written), and refuses your own call of it. Unmarked pointers
 are never freed. `consumes` after a parameter says the call ends that value's
 life, so passing one the function borrowed is an error: mark the parameter `@`
-and the value does not survive the call.
+and the value does not survive the call. `acquires sqlite3_finalize` after a handle
+result or `@` out-parameter says the call begins that handle's life and names
+the one that ends it, which the program owes it. The owing is counted, so a
+handle consumed twice hides one never consumed.
 A group may name a **package** instead of a library: `extern "raylib.h" package "raylib"`
 asks the system where its headers and libraries are and what else it needs. A
 package answering with anything this compiler does not pass on is refused,
@@ -380,7 +384,8 @@ naming what it said.
     Extern = "extern" string [ ( "link" | "package" ) string ] NEWLINE
              INDENT { Member } DEDENT .
     Member = "function" ident "(" [ CParam { "," CParam } ] ")"
-               [ "->" Type [ "owned" ident ] ] NEWLINE
+               [ "->" Type [ "owned" ident ] [ "acquires" ident ] ] NEWLINE
            | "constant" ident ":" Type NEWLINE
            | "record" ident [ "tag" ident ] [ "partial" ] ( Fields | NEWLINE ) .
-    CParam = [ "@" ] ident ":" Type [ "owned" ident ] [ "consumes" ] .
+    CParam = [ "@" ] ident ":" Type [ "owned" ident ]
+             [ "consumes" | "acquires" ident ] .

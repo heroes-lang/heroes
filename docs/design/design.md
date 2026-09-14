@@ -22,7 +22,7 @@ Two practical notes for the implementation:
 - **Bowie references belong in prose, never in the language surface.** Section headings in example
   files, chapter epigraphs, the README, the book — all fair game. But keyword names, error message
   text, and library function names stay plain and literal, because they are read by a machine that
-  has to parse them and by a model that has to learn them from an 8192-token spec. A cute error
+  has to parse them and by a model that has to learn them from a 10240-token spec. A cute error
   message costs spec tokens and comprehension; a cute README costs nothing. This is the same
   discipline as Part 1.10 (ASCII-only syntax): personality in the packaging, precision in the
   substrate.
@@ -252,8 +252,8 @@ annotations at use sites; anything derivable is derived. Note this is the *oppos
 
 ### 1.6 The spec budget
 
-**The entire language specification — syntax, semantics, built-in library — must fit in 8192
-tokens, measured by `claude-opus-5` through `POST /v1/messages/count_tokens`.** About seven pages.
+**The entire language specification — syntax, semantics, built-in library — must fit in 10240
+tokens, measured by `claude-opus-5` through `POST /v1/messages/count_tokens`.** About nine pages.
 That document is not documentation, it is *the prompt*, so the tokeniser that counts it must be the
 one that reads it — a sentence this section did not contain until 2026-09-09, and its absence cost
 998 tokens (`docs/measurements/023-the-instrument-was-not-the-readers.md`).
@@ -275,8 +275,15 @@ headroom on the binding instrument, which was taken to be roughly what §1.0's m
 by author decision (2026-08-10; panel 024, retro-record.)** **Raised again to 6144 by author
 decision 2026-09-09**, and this time **the number carries its instrument**, because the last one did
 not. It is `claude-opus-5`'s count through `POST /v1/messages/count_tokens`, content less that
-model's own measured request offset, and the spec read **5094** on the day it was set. **Raised
-again to 8192 by author decision 2026-09-12**, to make room inside this document for the grammar's
+model's own measured request offset, and the spec read **5094** on the day it was set. **Raised again to 10240 by author decision 2026-09-14**, taken while
+M-marked-acquisition was landing `acquires <releaser>` and the document stood at **7921** real
+against 8192 — **211 free** once §4.19's FFI floor is deducted, which is two forms' room and not
+three. The instrument is unchanged and **the raise relaxes nothing**: the payment rule below is
+unconditional at every level, so every row of `docs/measurements/010` is owed exactly as before.
+It is **10 × 1024 and not 10000**, because the site derives this number rather than restating it
+and says it in K — `site/src/lib/claims.ts`'s `ceilingK` refuses a ceiling that is not a whole
+number of them, which is what keeps one number in one home. **Raised
+before that to 8192 by author decision 2026-09-12**, to make room inside this document for the grammar's
 productions (panel 133, which found that every free-standing grammar in the survey has been
 archived and that the one arrangement still alive is Wirth's, the productions beside the prose they
 govern). The instrument does not change, and **the raise relaxes nothing below it**: the payment
@@ -3682,7 +3689,7 @@ that compiles and diffs. This is the only thing that makes it possible to evolve
 silently breaking it.
 
 **Write the spec in condensed English early — around step 7, not at the end.** It is the control
-instrument: if it doesn't fit in 8192 tokens, too much has been added, and you find out in an hour
+instrument: if it doesn't fit in 10240 tokens, too much has been added, and you find out in an hour
 instead of three months. Count it with a real tokeniser, not by estimation — the BPE vocabulary
 contains arbitrary choices nobody predicts.
 
