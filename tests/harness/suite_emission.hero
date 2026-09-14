@@ -100,8 +100,14 @@ constant ENTRIES: [str]
 # time. That is the class `.claude/rules/module-shape.md` names: a premise about
 # the world expires in silence while the argument for it stays valid. Re-based by
 # `floors.check`, which is the caller the rule never had.
+#
+# **233 on 2026-09-14** — emit 6 · fixedbugs 30 · ir 23 · run 119, and 55 example
+# programs. The slack had reached 8 in two days, which is the rate this floor
+# actually drifts at and the reason it is re-based at a close rather than when
+# somebody notices. Found while repairing what the full net caught before the
+# push: three of the eight are that repair's own cases.
 constant LEAST: i64
-    225
+    233
 
 # One program and the bytes it was blessed to emit.
 record Program

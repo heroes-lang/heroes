@@ -83,19 +83,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 43 "examples/sqlite/main.hero"
+#line 51 "examples/sqlite/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_open(const char * a0, sqlite3 * * a1) { (void)(sqlite3_open)(a0, a1); }
-#line 44 "examples/sqlite/main.hero"
+#line 52 "examples/sqlite/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_close(sqlite3 * a0) { (void)(sqlite3_close)(a0); }
-#line 55 "examples/sqlite/main.hero"
+#line 63 "examples/sqlite/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_exec(sqlite3 * a0, const char * a1, void * a2, void * a3, void * a4) { (void)(sqlite3_exec)(a0, a1, a2, a3, a4); }
-#line 56 "examples/sqlite/main.hero"
+#line 64 "examples/sqlite/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_prepare_v2(sqlite3 * a0, const char * a1, int32_t a2, sqlite3_stmt * * a3, const char * * a4) { (void)(sqlite3_prepare_v2)(a0, a1, a2, a3, a4); }
-#line 57 "examples/sqlite/main.hero"
+#line 65 "examples/sqlite/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_step(sqlite3_stmt * a0) { (void)(sqlite3_step)(a0); }
-#line 58 "examples/sqlite/main.hero"
+#line 66 "examples/sqlite/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_column_int(sqlite3_stmt * a0, int32_t a1) { (void)(sqlite3_column_int)(a0, a1); }
-#line 59 "examples/sqlite/main.hero"
+#line 67 "examples/sqlite/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_finalize(sqlite3_stmt * a0) { (void)(sqlite3_finalize)(a0); }
 #line 112 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
@@ -143,7 +143,7 @@ int64_t h_main_SQLITE_ROW(void) {
     return SQLITE_ROW;
 }
 
-#line 64 "examples/sqlite/main.hero"
+#line 72 "examples/sqlite/main.hero"
 int64_t h_main_run(sqlite3 * h0_db, HeroStr h1_sql) {
 #line 149 "main.c"
     sqlite3 * t1;
@@ -155,26 +155,26 @@ int64_t h_main_run(sqlite3 * h0_db, HeroStr h1_sql) {
     int64_t t7;
     goto bb0;
 bb0:
-#line 65 "examples/sqlite/main.hero"
+#line 73 "examples/sqlite/main.hero"
     t1 = h0_db;
-#line 65 "examples/sqlite/main.hero"
+#line 73 "examples/sqlite/main.hero"
     t2 = h1_sql;
-#line 65 "examples/sqlite/main.hero"
+#line 73 "examples/sqlite/main.hero"
     t3 = hero_str_cstr(t2);
-#line 65 "examples/sqlite/main.hero"
+#line 73 "examples/sqlite/main.hero"
     t4 = ((void *)0);
-#line 65 "examples/sqlite/main.hero"
+#line 73 "examples/sqlite/main.hero"
     t5 = ((void *)0);
-#line 65 "examples/sqlite/main.hero"
+#line 73 "examples/sqlite/main.hero"
     t6 = ((void *)0);
-#line 65 "examples/sqlite/main.hero"
+#line 73 "examples/sqlite/main.hero"
     t7 = sqlite3_exec(t1, hero_cstr_nonnull(t3), t4, t5, t6);
-#line 65 "examples/sqlite/main.hero"
+#line 73 "examples/sqlite/main.hero"
     return t7;
 #line 175 "main.c"
 }
 
-#line 68 "examples/sqlite/main.hero"
+#line 76 "examples/sqlite/main.hero"
 int64_t h_main_first_int(sqlite3 * h0_db, HeroStr h1_sql) {
 #line 180 "main.c"
     sqlite3_stmt * h2_statement;
@@ -208,100 +208,104 @@ int64_t h_main_first_int(sqlite3 * h0_db, HeroStr h1_sql) {
     int64_t t26;
     goto bb0;
 bb0:
-#line 69 "examples/sqlite/main.hero"
+#line 77 "examples/sqlite/main.hero"
     t1 = ((void *)0);
-#line 69 "examples/sqlite/main.hero"
+#line 77 "examples/sqlite/main.hero"
     h2_statement = t1;
-#line 70 "examples/sqlite/main.hero"
+#line 78 "examples/sqlite/main.hero"
     t2 = ((void *)0);
-#line 70 "examples/sqlite/main.hero"
+#line 78 "examples/sqlite/main.hero"
     h3_tail = t2;
-#line 72 "examples/sqlite/main.hero"
+#line 80 "examples/sqlite/main.hero"
     t3 = h0_db;
-#line 73 "examples/sqlite/main.hero"
+#line 81 "examples/sqlite/main.hero"
     t4 = h1_sql;
-#line 73 "examples/sqlite/main.hero"
+#line 81 "examples/sqlite/main.hero"
     t5 = hero_str_cstr(t4);
-#line 74 "examples/sqlite/main.hero"
+#line 82 "examples/sqlite/main.hero"
     t6 = INT64_C(-1);
-#line 71 "examples/sqlite/main.hero"
+#line 79 "examples/sqlite/main.hero"
     t7 = sqlite3_prepare_v2(t3, hero_cstr_nonnull(t5), t6, &h2_statement, &h3_tail);
-#line 71 "examples/sqlite/main.hero"
+#line 79 "examples/sqlite/main.hero"
+    hero_handle_acquired();
+#line 79 "examples/sqlite/main.hero"
     h4_rc = t7;
-#line 79 "examples/sqlite/main.hero"
+#line 87 "examples/sqlite/main.hero"
     t8 = h4_rc;
-#line 79 "examples/sqlite/main.hero"
+#line 87 "examples/sqlite/main.hero"
     t9 = h_main_SQLITE_OK();
-#line 79 "examples/sqlite/main.hero"
+#line 87 "examples/sqlite/main.hero"
     t10 = t8 != t9;
-#line 79 "examples/sqlite/main.hero"
+#line 87 "examples/sqlite/main.hero"
     if (t10) goto bb2; else goto bb3;
-#line 79 "examples/sqlite/main.hero"
+#line 87 "examples/sqlite/main.hero"
 bb1:
-#line 81 "examples/sqlite/main.hero"
+#line 89 "examples/sqlite/main.hero"
     t14 = INT64_C(0);
-#line 81 "examples/sqlite/main.hero"
+#line 89 "examples/sqlite/main.hero"
     t15 = INT64_C(1);
-#line 81 "examples/sqlite/main.hero"
+#line 89 "examples/sqlite/main.hero"
     if (__builtin_sub_overflow(t14, t15, &t16)) hero_panic_overflow();
-#line 81 "examples/sqlite/main.hero"
+#line 89 "examples/sqlite/main.hero"
     h5_value = t16;
-#line 83 "examples/sqlite/main.hero"
+#line 91 "examples/sqlite/main.hero"
     t17 = h2_statement;
-#line 83 "examples/sqlite/main.hero"
+#line 91 "examples/sqlite/main.hero"
     t18 = sqlite3_step(t17);
-#line 83 "examples/sqlite/main.hero"
+#line 91 "examples/sqlite/main.hero"
     t19 = h_main_SQLITE_ROW();
-#line 83 "examples/sqlite/main.hero"
+#line 91 "examples/sqlite/main.hero"
     t20 = t18 == t19;
-#line 83 "examples/sqlite/main.hero"
+#line 91 "examples/sqlite/main.hero"
     if (t20) goto bb5; else goto bb6;
-#line 83 "examples/sqlite/main.hero"
+#line 91 "examples/sqlite/main.hero"
 bb2:
-#line 80 "examples/sqlite/main.hero"
+#line 88 "examples/sqlite/main.hero"
     t11 = INT64_C(0);
-#line 80 "examples/sqlite/main.hero"
+#line 88 "examples/sqlite/main.hero"
     t12 = INT64_C(1);
-#line 80 "examples/sqlite/main.hero"
+#line 88 "examples/sqlite/main.hero"
     if (__builtin_sub_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 80 "examples/sqlite/main.hero"
+#line 88 "examples/sqlite/main.hero"
     return t13;
-#line 80 "examples/sqlite/main.hero"
+#line 88 "examples/sqlite/main.hero"
 bb3:
-#line 80 "examples/sqlite/main.hero"
+#line 88 "examples/sqlite/main.hero"
     goto bb1;
-#line 80 "examples/sqlite/main.hero"
+#line 88 "examples/sqlite/main.hero"
 bb4:
-#line 85 "examples/sqlite/main.hero"
+#line 93 "examples/sqlite/main.hero"
     t24 = h2_statement;
-#line 85 "examples/sqlite/main.hero"
+#line 93 "examples/sqlite/main.hero"
     (void)sqlite3_finalize(t24);
-#line 86 "examples/sqlite/main.hero"
+#line 93 "examples/sqlite/main.hero"
+    hero_handle_consumed();
+#line 94 "examples/sqlite/main.hero"
     t26 = h5_value;
-#line 86 "examples/sqlite/main.hero"
+#line 94 "examples/sqlite/main.hero"
     return t26;
-#line 86 "examples/sqlite/main.hero"
+#line 94 "examples/sqlite/main.hero"
 bb5:
-#line 84 "examples/sqlite/main.hero"
+#line 92 "examples/sqlite/main.hero"
     t21 = h2_statement;
-#line 84 "examples/sqlite/main.hero"
+#line 92 "examples/sqlite/main.hero"
     t22 = INT64_C(0);
-#line 84 "examples/sqlite/main.hero"
+#line 92 "examples/sqlite/main.hero"
     t23 = sqlite3_column_int(t21, t22);
-#line 84 "examples/sqlite/main.hero"
+#line 92 "examples/sqlite/main.hero"
     h5_value = t23;
-#line 84 "examples/sqlite/main.hero"
+#line 92 "examples/sqlite/main.hero"
     goto bb4;
-#line 84 "examples/sqlite/main.hero"
+#line 92 "examples/sqlite/main.hero"
 bb6:
-#line 84 "examples/sqlite/main.hero"
+#line 92 "examples/sqlite/main.hero"
     goto bb4;
-#line 300 "main.c"
+#line 304 "main.c"
 }
 
-#line 88 "examples/sqlite/main.hero"
+#line 96 "examples/sqlite/main.hero"
 void h_main_main(void) {
-#line 305 "main.c"
+#line 309 "main.c"
     sqlite3 * h0_db;
     sqlite3 * t1;
     HeroStr t2 = {0};
@@ -326,89 +330,95 @@ void h_main_main(void) {
     sqlite3 * t24;
     goto bb0;
 bb0:
-#line 89 "examples/sqlite/main.hero"
+#line 97 "examples/sqlite/main.hero"
     t1 = ((void *)0);
-#line 89 "examples/sqlite/main.hero"
+#line 97 "examples/sqlite/main.hero"
     h0_db = t1;
-#line 91 "examples/sqlite/main.hero"
+#line 99 "examples/sqlite/main.hero"
     t2 = HERO_STR_LIT(hero_str_41b4cad0);
-#line 91 "examples/sqlite/main.hero"
+#line 99 "examples/sqlite/main.hero"
     t3 = hero_str_cstr(t2);
-#line 91 "examples/sqlite/main.hero"
+#line 99 "examples/sqlite/main.hero"
     t4 = sqlite3_open(hero_cstr_nonnull(t3), &h0_db);
-#line 91 "examples/sqlite/main.hero"
+#line 99 "examples/sqlite/main.hero"
+    hero_handle_acquired();
+#line 99 "examples/sqlite/main.hero"
     t5 = h_main_SQLITE_OK();
-#line 91 "examples/sqlite/main.hero"
+#line 99 "examples/sqlite/main.hero"
     t6 = t4 != t5;
-#line 91 "examples/sqlite/main.hero"
+#line 99 "examples/sqlite/main.hero"
     if (t6) goto bb2; else goto bb3;
-#line 91 "examples/sqlite/main.hero"
+#line 99 "examples/sqlite/main.hero"
 bb1:
-#line 103 "examples/sqlite/main.hero"
+#line 111 "examples/sqlite/main.hero"
     t10 = h0_db;
-#line 103 "examples/sqlite/main.hero"
+#line 111 "examples/sqlite/main.hero"
     t11 = HERO_STR_LIT(hero_str_58d8efb7);
-#line 103 "examples/sqlite/main.hero"
+#line 111 "examples/sqlite/main.hero"
     h_main_run(t10, t11);
-#line 104 "examples/sqlite/main.hero"
+#line 112 "examples/sqlite/main.hero"
     t13 = h0_db;
-#line 104 "examples/sqlite/main.hero"
+#line 112 "examples/sqlite/main.hero"
     t14 = HERO_STR_LIT(hero_str_37763c95);
-#line 104 "examples/sqlite/main.hero"
+#line 112 "examples/sqlite/main.hero"
     h_main_run(t13, t14);
-#line 105 "examples/sqlite/main.hero"
+#line 113 "examples/sqlite/main.hero"
     t16 = HERO_STR_LIT(hero_str_2d6bfc4a);
-#line 105 "examples/sqlite/main.hero"
+#line 113 "examples/sqlite/main.hero"
     t17 = h0_db;
-#line 105 "examples/sqlite/main.hero"
+#line 113 "examples/sqlite/main.hero"
     t18 = HERO_STR_LIT(hero_str_4a7e2e7);
-#line 105 "examples/sqlite/main.hero"
+#line 113 "examples/sqlite/main.hero"
     t19 = h_main_first_int(t17, t18);
-#line 105 "examples/sqlite/main.hero"
+#line 113 "examples/sqlite/main.hero"
     hero_print_str(t16);
-#line 105 "examples/sqlite/main.hero"
+#line 113 "examples/sqlite/main.hero"
     hero_print_int(t19);
-#line 105 "examples/sqlite/main.hero"
+#line 113 "examples/sqlite/main.hero"
     hero_print_end();
-#line 106 "examples/sqlite/main.hero"
+#line 114 "examples/sqlite/main.hero"
     t20 = HERO_STR_LIT(hero_str_31daf47e);
-#line 106 "examples/sqlite/main.hero"
+#line 114 "examples/sqlite/main.hero"
     t21 = h0_db;
-#line 106 "examples/sqlite/main.hero"
+#line 114 "examples/sqlite/main.hero"
     t22 = HERO_STR_LIT(hero_str_4ea48131);
-#line 106 "examples/sqlite/main.hero"
+#line 114 "examples/sqlite/main.hero"
     t23 = h_main_first_int(t21, t22);
-#line 106 "examples/sqlite/main.hero"
+#line 114 "examples/sqlite/main.hero"
     hero_print_str(t20);
-#line 106 "examples/sqlite/main.hero"
+#line 114 "examples/sqlite/main.hero"
     hero_print_int(t23);
-#line 106 "examples/sqlite/main.hero"
+#line 114 "examples/sqlite/main.hero"
     hero_print_end();
-#line 107 "examples/sqlite/main.hero"
+#line 115 "examples/sqlite/main.hero"
     t24 = h0_db;
-#line 107 "examples/sqlite/main.hero"
+#line 115 "examples/sqlite/main.hero"
     (void)sqlite3_close(t24);
-#line 107 "examples/sqlite/main.hero"
+#line 115 "examples/sqlite/main.hero"
+    hero_handle_consumed();
+#line 115 "examples/sqlite/main.hero"
     return;
-#line 107 "examples/sqlite/main.hero"
+#line 115 "examples/sqlite/main.hero"
 bb2:
-#line 100 "examples/sqlite/main.hero"
+#line 108 "examples/sqlite/main.hero"
     t7 = HERO_STR_LIT(hero_str_4e2b1705);
-#line 100 "examples/sqlite/main.hero"
+#line 108 "examples/sqlite/main.hero"
     hero_print_str(t7);
-#line 100 "examples/sqlite/main.hero"
+#line 108 "examples/sqlite/main.hero"
     hero_print_end();
-#line 101 "examples/sqlite/main.hero"
+#line 109 "examples/sqlite/main.hero"
     t8 = h0_db;
-#line 101 "examples/sqlite/main.hero"
+#line 109 "examples/sqlite/main.hero"
     (void)sqlite3_close(t8);
-#line 101 "examples/sqlite/main.hero"
+#line 109 "examples/sqlite/main.hero"
+    hero_handle_consumed();
+#line 109 "examples/sqlite/main.hero"
     return;
-#line 101 "examples/sqlite/main.hero"
+#line 109 "examples/sqlite/main.hero"
 bb3:
-#line 101 "examples/sqlite/main.hero"
+#line 109 "examples/sqlite/main.hero"
     goto bb1;
-#line 412 "main.c"
+#line 422 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Db_eq(sqlite3 * const *a, sqlite3 * const *b) {
     return *a == *b;

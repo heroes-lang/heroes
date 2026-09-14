@@ -60,6 +60,32 @@ happened here first.
 | `docs/**`, `DESIGN-LOG.md`, `CLAUDE.md`, `.claude/**` | `records` |
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero` |
 
+**A NEW CHECKER RULE is not a `selfhost/**` change, and the row above says it
+is.** Added 2026-09-14, at the M-marked-acquisition close, and it cost six red
+checks in the full net over a milestone that had gated every sub-step. The
+`selfhost/**` row names `canonical` `layout` `order` `records` and the
+compiler's own tests, and **not one of those compiles a golden program**. So
+when step 5 landed `check/acquiring.hero`, which REFUSES a shape that was legal
+the day before, a golden case written at step 4 stopped compiling and three
+suites went red in silence — `run`, `emission` and `determinism`, all three on
+one file, none of them named by the row that sent the change through.
+
+The rule, and it is about the KIND of change rather than the directory:
+
+> **A change to what the checker REFUSES is judged by every golden tree, not by
+> the `selfhost/**` row.** Widening a refusal can invalidate any program
+> already in the repository, and the programs live in `tests/golden/**` and
+> `examples/**`. Run `check` `run` `emission` `determinism` `corpus` as well.
+
+Two things this is not. It is not *run the full net for every compiler change*,
+which CL-063 refuses on cost; the trigger is narrow and nameable — a new
+diagnostic, or an existing one that fires where it did not. And it is not a
+claim that the map was wrong on 2026-09-09: it was right about which suite
+reads which DIRECTORY, and this is the case where the directory is not what
+decides. That is the same shape `.claude/rules/module-shape.md` names, one
+level up: **the map rests on a premise about what a change can reach, and a
+refusal reaches further than the file it is written in.**
+
 **`emission` on `tests/golden/fixedbugs/` is the row that cost this file.**
 That suite's own comment states its premise: *"those cases are wrong FFI
 bindings, and the thing that refuses them is clang, at build time. `--emit-c`
