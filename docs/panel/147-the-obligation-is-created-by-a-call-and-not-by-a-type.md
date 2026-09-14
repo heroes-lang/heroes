@@ -283,9 +283,14 @@ rule meant is filed in `docs/work/DECIDE.md`; this sitting used both.
 
 ## Author's verdict
 
-**Pending.** The item is open in `docs/work/DECIDE.md` as `panel 147`.
+**Ratified 2026-09-14, the day it sat: all six resolutions as adopted, nothing
+changed.** The author took the robust resolution and not the conservative one
+recorded at R5, so R4 stands: a form enters, its axis is the acquiring **call**,
+and the compiler never picks the release call. `M-marked-acquisition` is the
+milestone that carries it and it was already in the chain at row 57 when the
+yes was given.
 
-**What a yes settles**: R1, that a releaser keyed on the TYPE is refused on its
+**What the yes settles**: R1, that a releaser keyed on the TYPE is refused on its
 axis and no spelling repairs it; R2, that a scope-bound statement does not enter
 as drafted and would be block-scoped if it ever did; R3, that Route C is not
 taken, because C adopted `defer` this year and the Part 6 row's falsifier has
@@ -294,16 +299,16 @@ its own milestone, whose first act is to price a `consumes`-shaped mark against
 escape refusal — with the clause that **the compiler never picks the release
 call**.
 
-**What a yes does not settle**: the spelling, which the milestone file forbade
+**What the yes does not settle**: the spelling, which the milestone file forbade
 this sitting from choosing; which of the two instruments wins, which is the
-successor milestone's to measure; and the name of that milestone.
+successor milestone's to measure; and the name of that milestone, which was
+settled separately by the naming algorithm and is `M-marked-acquisition`.
 
-**The conservative resolution is written at R5** and the author may take it
-instead: Route C, refuse, with a falsifier redrafted on the corrected census —
-*no shipped program leaks a handle and goes on running; all 22 paths end in
-`exit(1)` or `abort`*. The sitting did not adopt it because CLAUDE.md § 4 takes
-robust where the two disagree, and the correction weakens the urgency without
-touching the class.
+**The conservative resolution written at R5 was NOT taken**: Route C, refuse,
+with a falsifier redrafted on the corrected census — *no shipped program leaks a
+handle and goes on running; all 22 paths end in `exit(1)` or `abort`*. It stays
+here as the record of what the other answer would have been, which is what
+CL-040 asks of a sitting that takes robust over conservative.
 
 ## What this sitting did not do
 

@@ -14,8 +14,8 @@ The status and the chain. Why the table looks the way it does is
 | The compiler | **60,360** lines of Heroes in **207** modules (`find selfhost -name '*.hero'`) · the seed **806,238** lines of C, regenerated at M-cleanup-verdict step 1 |
 | The spec | **5863** on the vendored ranks and **7806** on the reader's own, against a ceiling of 8192 — **unchanged across this milestone, +0 and +0**, which is what a verdict costs when its verdict is a refusal; **386 free** and 326 net of the FFI floor |
 | The contract | **7402** on the reader's own against a ceiling of **12288**, unchanged, judged on `claude-opus-5` since 2026-09-12 |
-| Records | sittings **145** · journals **56** · milestone files **48** · entries: `docs/records/log/` **652**, `docs/records/done/` **517**, `docs/records/book/beats/` **121** · **open defects 0**, **open decisions 2** |
-| Waiting on the author | **2** decisions, both filed 2026-09-14: panel 147's ratification, and where a sitting's briefs live |
+| Records | sittings **145** · journals **56** · milestone files **48** · entries: `docs/records/log/` **653**, `docs/records/done/` **518**, `docs/records/book/beats/` **121** · **open defects 0**, **open decisions 0** |
+| Waiting on the author | **0** decisions. Panel 147 was ratified in full on 2026-09-14, the day it sat, and panel 140's brief-home question with it |
 
 **Re-measured 2026-09-14 at the M-cleanup-verdict close, not carried.** `records`
 is **23** checks, `spec` **20**, the compiler's own tests **646**, the net's own

@@ -41,17 +41,31 @@ is a full panel.
    do not stage dissent.
 
 2. **Prepare each judge's input** (this is the step that matters):
-   - **Every brief is written to disk before any seat starts** — author decision
-     2026-09-13, on panel 140's completeness critic, who found that two of five
-     sittings that night carried framing facts no later reader could check because
-     a brief existed only as a prompt. The place is the sitting's own directory in
-     the scratchpad, `panel-NNN/briefs/<seat>.md` plus one `00-shared.md`, and each
-     seat's prompt tells it to read its brief first; the critic (below) reads all of
-     them and says whether a seat was handed a framing fact it did not check. The
-     first sitting to do it was panel 145, the same evening. A seat that is launched
+   - **Every brief is written to disk before any seat starts, and the disk is
+     `docs/panel/NNN-briefs/<seat>.md` plus one `00-shared.md`, committed with
+     the sitting** — author decision 2026-09-13, on panel 140's completeness
+     critic, who found that two of five sittings that night carried framing
+     facts no later reader could check because a brief existed only as a
+     prompt; **the home amended to this one by author decision 2026-09-14**, at
+     panel 147, because the scratchpad this line named until then is
+     session-specific and **goes away with the session**, so panels 145 and 146
+     wrote briefs no later reader can open and the finding the rule exists to
+     answer was still true of them. `find docs/panel -maxdepth 1 -type d`
+     returned one directory, from 2026-08, on the day this was changed. **The
+     seats' REPORTS go beside them**, `docs/panel/NNN-reports/<seat>.md`,
+     including the historian's, which the coordinator writes out because that
+     seat has no write tool — panels 143 and 144 both recorded that it could not
+     be audited for exactly that reason.
+     Each seat's prompt tells it to read its brief first; the critic (below)
+     reads all of them and says whether a seat was handed a framing fact it did
+     not check. The first sitting to write briefs at all was panel 145; the
+     first to keep them was 147. A seat that is launched
      before its brief exists returns UNRUN rather than substituting material —
      panel 137 recorded exactly that — which is the behaviour this bullet makes
-     unnecessary.
+     unnecessary. **`is_sitting` in `tests/harness/suite_records.hero` knows
+     about these two directories**: a sitting is a file directly in
+     `docs/panel/`, never one under a subdirectory of it, and that clause was
+     added the day the first briefs landed there.
    - `compiler-engineer` ← the proposal + pointers into `selfhost/` and
      `runtime/` (it must cite files and line counts). **Never `crates/`** (archived 2026-08-19): that
      tree is `archive/bootstrap-rs/`, nothing builds it, and a seat sent there
