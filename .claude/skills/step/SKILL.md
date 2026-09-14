@@ -175,10 +175,28 @@ Milestone close — the checklist (this is its only copy):
   this rule existed, growing ~66 per close, and the reader met 512 lines about the
   past before the first line about the future.)
 - update `docs/ROADMAP.md` § Where we are and § The chain — the closing row takes
-  its date, tag and journal link, the next row becomes `**OPEN**`, and the counts
-  in the summary table are **re-measured, never carried** (CLAUDE.md §1); then the
-  milestone's own section under § The milestones, one by one keeps only the
-  reasoning a future milestone has to honour, the rest going to the journal;
+  its date, tag and journal link, and the counts in the summary table are
+  **re-measured, never carried** (CLAUDE.md §1). **The reasoning a future
+  milestone has to honour stays in that milestone's own file under
+  `docs/work/milestones/`**, and the rest goes to the journal.
+
+  **This bullet pointed at a § The milestones that does not exist, from
+  2026-09-12 until 2026-09-14.** `abc3d503`, *"The ROADMAP becomes the chain and
+  the status, and nothing else"*, deleted 301 lines and left the document with two
+  sections; the line went on ordering a close to prune a third. **Four closes ran
+  against it** — `m-reflection-verdict`, `m-declared-thresholds`,
+  `m-deferral-ledger`, `m-handle-verdict`, each measured by ancestry rather than by
+  date — and not one noticed, because an instruction naming a heading nobody can
+  find reads as done. It is the shape CLAUDE.md § RUN IT warns about, in the one
+  document that tells a session how to check its own work.
+
+  **And the `**OPEN**` half is narrowed rather than deleted**: it said *the next
+  row becomes `**OPEN**`*, which was true while `site/src/lib/chain.ts` asserted
+  exactly one open row. It stopped asserting that on the author's decision of
+  2026-09-12, because work happens in lanes and two sessions can hold two
+  milestones. So the next row becomes `**OPEN**` **when somebody opens it**, and a
+  close that opens nothing leaves it `scheduled` — which is what M-handle-verdict's
+  close did, and why.
 - **tag `m-<name>` LOCALLY, and stop there.** This bullet said *push
   `--follow-tags`* until 2026-09-07, and that command pushes the branch as well
   as its tags: the site lives on this branch and
