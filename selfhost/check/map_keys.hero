@@ -31,6 +31,7 @@ use check/decls as check_decls
 use check/table
 use check/state
 use check/partial
+use check/reaches
 use handles
 use ffi_errors
 
@@ -84,11 +85,11 @@ function refuse(@c: state.Checker, s: source.Source, decls: [ast.Decl], key: i64
             ffi_errors.partial_operation(holder: name, shown: shown, what: "a map key", span: span)
         )
         return
-    handled = reaches_handle(c, s, decls, ty: key, depth: 0)
+    handled = reaches.reaches_handle(c, s, decls, ty: key)
 
     if !handled.is_err()
         shown = state.show(c, s, decls, key)
-        state.push_diagnostic(@c, handles.handle_map_key(key: shown, reached: handled.must(), span: span))
+        state.push_diagnostic(@c, handles.handle_map_key(key: shown, reached: handled.must().path, span: span))
         return
     floated = reaches_float(c, s, decls, ty: key, depth: 0)
 
@@ -96,65 +97,20 @@ function refuse(@c: state.Checker, s: source.Source, decls: [ast.Decl], key: i64
         shown = state.show(c, s, decls, key)
         state.push_diagnostic(@c, ffi_errors.float_map_key(key: shown, reached: floated.must(), span: span))
 
-# Does this key type REACH a handle? The float walk's twin, and it is a separate
-# walk rather than a flag on that one because the two answer different questions
-# and §4.17 gives one mistake one message: a key that is a float AND holds a
-# handle is reported as the handle, which is the one the reader cannot see.
-function reaches_handle(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, depth: i64) -> str?
-    if depth > 16
-        return fail(code: "absent", msg: "past any nesting worth naming")
-
-    match table.get(c.out.types, ty)
-        .named n =>
-            if handles.is_handle(decls[n.decl])
-                return ok("")
-            owner = source.span_text(s, decls[n.decl].name)
-
-            match decls[n.decl].kind
-                .record_decl rec => return inside_handle(c, s, decls, owner: owner, fields: rec.fields, depth: depth)
-                .variant_decl v =>
-                    for one_case in v.cases
-                        found = inside_handle(c, s, decls, owner: owner, fields: one_case.fields, depth: depth)
-
-                        if !found.is_err()
-                            return found
-
-                    return fail(code: "absent", msg: "no payload reaches a handle")
-                .constant_decl | .function_decl | .test_decl => return fail(
-                    code: "absent",
-                    msg: "not a data declaration"
-                )
-        .fixed x    => return reaches_handle(c, s, decls, ty: x.element, depth: depth + 1)
-        .array arr  => return reaches_handle(c, s, decls, ty: arr.element, depth: depth + 1)
-        .fallible o => return reaches_handle(c, s, decls, ty: o.payload, depth: depth + 1)
-        .map m =>
-            in_key = reaches_handle(c, s, decls, ty: m.key, depth: depth + 1)
-
-            if !in_key.is_err()
-                return in_key
-            return reaches_handle(c, s, decls, ty: m.value, depth: depth + 1)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "absent", msg: "no handle here")
-        .function_ty | .case_ty | .failure | .generic | .error    => return fail(code: "absent", msg: "no handle here")
-
-    return fail(code: "absent", msg: "unreached")
-
-# The first field or case payload that reaches a handle, as a dotted path.
-function inside_handle(c: state.Checker, s: source.Source, decls: [ast.Decl], owner: str, fields: [ast.Field], depth: i64) -> str?
-    for field in fields
-        written = state.written_type(c.out, field.ty)
-
-        if written.is_err()
-            continue
-        found = reaches_handle(c, s, decls, ty: written.must(), depth: depth + 1)
-
-        if found.is_err()
-            continue
-
-        if found.must() == ""
-            return ok(owner + "." + source.span_text(s, field.name))
-        return found
-
-    return fail(code: "absent", msg: "every field is the program's own")
+# The handle walk MOVED to `check/reaches.hero` on 2026-09-14 (panel 149), which
+# is where its termination argument is now written down and where
+# `unmarked_handle_producer` became its second caller. CLAUDE.md's opening rule
+# is that each rule is written in exactly one place and everything else cites
+# it, and this is the citation.
+#
+# **What moved with it is defect 035.** The walk terminated on `if depth > 16`,
+# which terminates by GIVING UP: a handle nested past that depth was accepted as
+# a map key in silence, and three different programs put the boundary in three
+# different places. The float twin below KEEPS its bound, and its own opening
+# sentence is why — a missed float refusal costs a named abort because the
+# runtime guard is still behind it. There is no such guard behind the handle
+# rule, only an address, which is what made the same line correct here and a
+# hole there.
 
 # Does this key type REACH an f32 or an f64? Returns WHERE it found one
 # — an empty string when the key IS the float, a dotted path when it is

@@ -181,7 +181,25 @@ void hero_runtime_check_leaks(void) {
      * `abort-handle-borrows-that-gives-away` and
      * `abort-handle-given-back-unmarked`. If a later rule catches one of them
      * at compile time, its case goes red and this sentence is what must
-     * change — which is exactly how the old one was caught. */
+     * change — which is exactly how the old one was caught.
+     *
+     * **AND IT HAPPENED AGAIN THE NEXT DAY, WHICH IS WHY THE MESSAGE NOW NAMES
+     * TWO.** Panel 149 widened `unmarked_handle_producer` to ask what a type
+     * REACHES rather than what it IS, so the third cause above — a handle
+     * arriving inside a record field — became a compile error, and its case
+     * moved to `tests/golden/check/fixedbugs-a-handle-reached-through-a-field`.
+     * The clause naming it is struck below rather than left standing, because a
+     * message that offers a cause the compiler has already closed sends its
+     * reader to look for something that cannot be there.
+     *
+     * **Only the clause, and not the sentence.** The two remaining causes still
+     * ship and still have their cases: the count cannot tell a double release
+     * from a lying `borrows`, and no rule catches either, because the first
+     * needs handle IDENTITY and the second is a claim about C that no Heroes
+     * declaration can refute. The prediction registered with this paragraph is
+     * that the next rule to close one of those two will come for `borrows`, and
+     * the case that goes red will be
+     * `abort-handle-borrows-that-gives-away`. */
     int64_t handles = hero_live_handles;
     if (handles > 0) {
         fflush(stdout);
@@ -195,15 +213,11 @@ void hero_runtime_check_leaks(void) {
         fflush(stdout);
         fprintf(stderr, "panic: %lld more handle(s) given back than were taken — "
                         "a call marked `consumes` ran with no `acquires` behind "
-                        "it. Three things do this and the count cannot tell "
-                        "them apart, worst first: the same handle given back "
-                        "TWICE, which is a double release; an `extern` marked "
+                        "it. Two things do this and the count cannot tell them "
+                        "apart, worst first: the same handle given back TWICE, "
+                        "which is a double release; or an `extern` marked "
                         "`borrows` whose C function in fact hands ownership "
-                        "over, which makes the mark wrong; or a handle that "
-                        "reached this program inside a record FIELD, whose "
-                        "producer carries no mark because "
-                        "`unmarked_handle_producer` does not look inside a "
-                        "returned record\n",
+                        "over, which makes the mark wrong\n",
                 (long long)-handles);
         abort();
     }
