@@ -18582,24 +18582,24 @@ HERO_TU_LOCAL uint64_t h_bookentry_Account_hash(const void *elem) {
 }
 
 HERO_TU_LOCAL bool h_dbsqlite_CDb_eq(sqlite3 * const *a, sqlite3 * const *b) {
-    (void)a;
-    (void)b;
-    return true;
+    return *a == *b;
 }
 
 HERO_TU_LOCAL uint64_t h_dbsqlite_CDb_hash(const void *elem) {
+    sqlite3 * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
     return h;
 }
 
 HERO_TU_LOCAL bool h_dbsqlite_CStmt_eq(sqlite3_stmt * const *a, sqlite3_stmt * const *b) {
-    (void)a;
-    (void)b;
-    return true;
+    return *a == *b;
 }
 
 HERO_TU_LOCAL uint64_t h_dbsqlite_CStmt_hash(const void *elem) {
+    sqlite3_stmt * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
     return h;
 }
 

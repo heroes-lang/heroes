@@ -89,7 +89,16 @@ function main()
     db: Db @ nullptr
 
     if sqlite3_open(":memory:".cstr(), @db) != SQLITE_OK
+        # **A FAILED OPEN STILL HANDS BACK A CONNECTION.** This branch dropped
+        # it until 2026-09-14, when M-cleanup-verdict's opening census read the
+        # pair: `examples/ledger/db/sqlite.hero` had measured the fact on two
+        # platforms and closed the handle on its own failure path, and this
+        # program — the one a reader meets FIRST — went on leaking beside it.
+        # SQLite's documentation is explicit that a handle is returned even
+        # when the open fails, so the connection is this program's to release
+        # here as much as on the way out.
         print("cannot open the database")
+        _ = sqlite3_close(db)
         return
     _ = run(db, "create table note(body text)")
     _ = run(db, "insert into note(body) values ('hello'), ('from'), ('sqlite')")
