@@ -84,17 +84,22 @@ whether its own warrant has grown.
     the checker has **no flow analysis**, so a rule that needs one is a
     different and larger milestone.
 
-- [ ] **M-marked-acquisition** | re-measure the census before arguing from it, because its urgency is the one number that can grow | `docs/measurements/030-three-release-obligations-and-only-one-of-them-is-silent.md` § Corrected 2026-09-14
+- [ ] **M-marked-acquisition** | the corpus throws away the one answer it already has: 19 of 21 release sites discard the releaser's return code | `docs/measurements/031-the-census-counted-from-the-tree-and-it-has-two-levels.md` § 4 · design.md:1869 · `examples/ledger/main.hero`
 
-    **Origin:** panel 147's completeness critic, 2026-09-14.
+    **Origin:** found at this milestone's own step 1, 2026-09-14, while
+    re-counting the census from the tree.
 
-    The corrected census says **no shipped program leaks a handle and goes on
-    running**: all 22 paths end in `exit(1)` or `abort`. That is a fact about
-    **this corpus on this date** and it is exactly the shape
-    `.claude/rules/module-shape.md` calls a premise about the world — it expires
-    in silence the first time somebody writes a program that recovers from a
-    database error instead of exiting. **Re-run it rather than citing it**, and
-    say which way it moved. The enumeration itself was wrong by seven pairs the
-    first time, so count from the tree and name the command (CL-057).
+    **`sqlite3_close` answers `SQLITE_BUSY` exactly when a statement was left
+    open.** That is this milestone's entire subject, already computed by the
+    library, already across the boundary — and the corpus discards it at **21
+    of 21** sites, 19 as `_ = <release>(…)` and 2 as a wrapper's `return` to a
+    caller that then discards it. design.md:1869 already names the shape: *an
+    ignored C return code is C's own classic silent bug*.
+
+    **Price it as a THIRD row on the ladder and not as the answer**, and say its
+    width honestly: `free` and `curl_easy_cleanup` return `void`, so it detects
+    nothing for them, and it reports at close time rather than at the leak. What
+    it costs is near zero and what it buys is real on one library; both numbers
+    belong beside the other two instruments rather than instead of them.
 
 *******************************************************************************
