@@ -270,33 +270,82 @@ that judges the budget. 7974 → 7978, against a ceiling of 10240.
 
 ## Author's verdict
 
-**PENDING.** The resolution above is `provisional — author ratification
-pending`, and the item is queued in `docs/work/DECIDE.md` as `panel 149`. Work
-proceeds on it as the default; this section is where the answer is appended,
-whenever it is given.
+**RATIFIED 2026-09-15, the resolution as adopted: the robust one and not the
+conservative one.** The alternative this sitting recorded under CL-040 — R1
+producer-side only, the consumer side left at one level, no releaser check — is
+declined, so the rule asks what a type REACHES on both sides, prints the dotted
+path, refuses nothing for a record reaching several handles, and reads the word
+a mark names.
 
-**What a yes settles.** That a handle is what a type REACHES rather than what it
-IS, to any depth, on the consumer side as well as the producer side. That the
-dotted path is printed. That **no refusal lands** for a record reaching several
-handles, so `LoadFont(fileName: cstr) -> Font acquires UnloadFont` stays legal
-and one mark stays one obligation on the whole value. That the releaser a mark
-names is checked. And the +4 real on the specification.
+**The ratification came after the repair had shipped**, as panel 148's did, so
+what follows is a verdict on what LANDED rather than on what was proposed. Three
+things that only that order can find.
 
-**What a yes does NOT settle, and each is filed rather than folded in.** The
-per-ELEMENT release — four array elements released against one mark — stays
-unresolved, because both real headers say in their own text that the count is
-unknowable, and because the route that would answer it acts on the CONSUMER's
-declaration, which no seat was asked about. The three defects this sitting
-produced are repairs and not design questions, so they need no ratification:
-**034** (the counter counts calls, not marks), **035** (the depth bound gives up
-in silence), **036** (`owned` after a non-`cstr` result). And the `ptr` blind
-spot the ffi-pragmatist measured — a producer whose whole result is a `ptr`,
-exit 0 with a real leak — is a **silent** class where this sitting's is a loud
-one, so by §1.12 it outranks what was repaired here and is owed its own sitting.
+**One. The spec sentence the resolution bought has not landed, and the yes does
+not make it land.** The resolution priced R1 at **+4 real**, the warden's `dsub`
+substitution of *"after a result or `@` out-parameter reaching a handle"*. It is
+still unwritten: `heroes measure --refresh` needs `ANTHROPIC_API_KEY`, which is
+unset on this machine, and the instrument refuses a verdict against a stale
+count — *"that is the sentence that spent 998 tokens nobody had"*. The draft was
+written, measured on the vendored ranks at **+12** for a longer phrasing than
+the warden's, and **reverted**, because a spec change that cannot update its own
+recorded count takes four suite checks red with it. **This is the one item the
+ratification leaves open**, and it is owed at the next session with a key.
 
-**The conservative alternative is on the table and named** (CL-040): R1
-producer-side only, the consumer side left at one level, no releaser check. A yes
-to that instead is a complete answer and the work reshapes to it.
+**Two. The sitting's own resolution understated what shipped, in the direction
+that matters.** R3 was adopted as *no refusal lands*, and what landed alongside
+it is a refusal the resolution named only as a condition: `unread_releaser`, the
+rule that reads the word `acquires` names. It is the ffi-pragmatist's condition
+promoted, and it closes a hole that three measurements found at exit 0 —
+`acquires sqlite3_notafunction`, and `acquires sqlite3_finalize` on a `Db`. A
+sitting that adopts *no refusal* and lands one should say so rather than leave a
+reader to find it in the code.
+
+**Three. The critic's structural finding was the whole sitting and it is worth
+keeping separately.** Five seats differentiated by input still shared one blind
+spot: every one of them read the rule as a question about PRODUCERS. The
+consumer side was never in any brief, including the coordinator's own shared
+one, and a producer-only widening was measured to stay silent on raylib's
+`Font`, the only real shipped-library case, while erroring on the contrived one.
+**The repair would have shipped looking correct and doing nothing.**
+
+**What the yes settles**, restated so a later reader needs no other file: a
+handle is what a type reaches, to any depth, on both sides; the diagnostic
+prints the route; one mark is one obligation on the whole value, which is what C
+ships; the releaser is checked.
+
+**What it does not settle.** The per-ELEMENT release — four array elements
+released against one mark — stays unresolved, and both real headers say in their
+own text that the count is unknowable. The `ptr` blind spot the ffi-pragmatist
+measured is worse in KIND than what was repaired here, because it is silent
+where this was loud, and by §1.12 it outranks it: a producer whose whole result
+is a `ptr` leaks at exit 0 with zero diagnostics. Neither is filed as a defect
+yet and both are named here so they are not lost.
+
+## Predictions, scored at the ratification
+
+**historian — HELD, on its own number.** *The fixed array will break the mark's
+arity before anything else, at +3 or abort 134.* Run on receipt of the report:
+`Slot[4]`, one mark, four releases, **exactly +3, abort 134**.
+
+**ffi-pragmatist — HELD, both halves.** *Exactly one file changes verdict, and
+zero under `examples/`.* Measured: `tests/golden/run/abort-handle-given-back-unmarked`
+went red in three suites and nothing else did; `corpus` stayed at 55 passed.
+
+**compiler-engineer — its ANTECEDENT was refused, which is what a condition is
+for.** *If R1 lands calling the walk as it stands, a seventeen-deep chain checks
+at exit 0.* The walk did not land as it stood: the bound died in the same commit,
+as that seat's own condition required. Measured after: 15, 16, 17 and 18 are all
+refused. **Scored as addressed rather than as held**, because the seat wrote it
+to force the repair and it did.
+
+**spec-warden — HELD on the suites, UNRUN on the number.** Five suites green with
+zero existing programs newly refused, `fixedbugs-a-handle-in-a-record-field`
+included, exactly as predicted. The `≤ 7991 real` half cannot be scored on this
+machine and stays registered.
+
+**llm-ergonomist — not yet checkable.** It needs the three-header, two-variant
+experiment it specified, and no harness runs one.
 
 ## Seat track record from this sitting
 

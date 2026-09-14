@@ -1,0 +1,44 @@
+# `owned` marks a `cstr`, at BOTH positions (defect 036, 2026-09-15).
+#
+# `spec § 13` gives the mark after *"a `cstr` result or a `char **`
+# out-parameter"*, two positions, and `owned_needs_cstr` asked only the
+# parameter. So the document said two, the diagnostic's own note said two —
+# *"it belongs on a `@x: cstr` out-parameter or on a `cstr` result"* — and the
+# rule asked one. Only the rule shipped.
+#
+# **WHAT THE GAP DID.** `function labs(x: i64) -> i64 owned free` checked at exit
+# **0**, `handed_back` silently retyped the result as `str?`, the emitter wrote
+# `h_library_validated` on an integer, and clang refused it:
+#
+#     internal error: compiling the generated C failed
+#     incompatible integer to pointer conversion passing 'int64_t' to
+#     parameter of type 'const char *'
+#
+# Exit **2**, the compiler blaming itself for a binding the author wrote, which
+# is the failure §4.19's guarantee exists to prevent and which
+# `.claude/rules/c-boundary.md` keeps a list of four named classes to avoid.
+#
+# **The guard existed and watched the wrong half.** `unknown_freer` asks whether
+# the NAME resolves, and it does its job: without `free` declared this same
+# program is refused correctly at exit 1. Nothing asked what the mark was ON.
+# That is why the repair is one call site and a parameter rather than a new
+# refusal, and why the code below is the one that already shipped.
+#
+# Found by panel 149's completeness critic, outside that sitting's question.
+
+extern "stdlib.h"
+    function free(p: ptr)
+
+    # The result position, which nothing asked until this case existed.
+    function labs(x: i64) -> i64 owned free  #~ owned_needs_cstr
+
+    # A pointer result is the same refusal: `owned` hands the program a `str?`,
+    # and there is no string here to hand.
+    function malloc(n: u64) -> ptr owned free  #~ owned_needs_cstr
+
+    # The parameter position, refused since 2026-09-13 and kept here so the two
+    # halves are read together.
+    function qsort(base: ptr owned free, n: u64, size: u64, cmp: ptr)  #~ owned_needs_cstr
+
+function main()
+    print(0)

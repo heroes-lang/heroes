@@ -11,20 +11,20 @@ The status and the chain. Why the table looks the way it does is
 | **Current milestone** | **none open.** `M-check-completeness` is next on the chain and has not been started: what `heroes check` accepts, `heroes build` compiles — through a generic too |
 | **Last closed** | **M-marked-acquisition**, 2026-09-14, `m-marked-acquisition` ([056](journal/056-marked-acquisition.md)) — the form closed at **three words**, each saying one thing and none inferred: `acquires <releaser>`, `consumes`, `borrows`. Two instruments answering two questions — a runtime counter for *did the program give back what it took*, and a 126-line rule for *is this binding finished* — and neither needs the flow analysis the checker says twice it does not have · before it **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) and **M-handle-verdict** ([054](journal/054-handle-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **57** of 78 · **57** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **60,999** lines of Heroes in **209** modules (`find selfhost -name '*.hero'`) · the seed **813,914** lines of C, regenerated at panel 149's repair and verified at the fixpoint |
+| The compiler | **60,999** lines of Heroes in **209** modules (`find selfhost -name '*.hero'`) · the seed **814,210** lines of C, regenerated at defect 036's repair and verified at the fixpoint |
 | The spec | **5988** on the vendored ranks and **7974** on the reader's own, against a ceiling of **10240** — raised from 8192 by author decision 2026-09-14 with the document 211 free. The three marks are **+125 vendored and +168 real**, in two payments at ratios of 1.40 and 1.23, both inside the band panel 148's warden gave while refusing any single factor; **2266 free** and 2206 net of the FFI floor |
 | The contract | **7402** on the reader's own against a ceiling of **12288**, unchanged, judged on `claude-opus-5` since 2026-09-12 |
-| Records | sittings **147** · journals **58** · milestone files **48** · entries: `docs/records/log/` **659**, `docs/records/done/` **525**, `docs/records/book/beats/` **123** · **open defects 1**, **open decisions 1** |
-| Waiting on the author | **panel 149's ratification**, queued 2026-09-14, with its resolution already in force as the default. And **one thing this machine could not do**: the specification's +4 is unlanded because `heroes measure --refresh` needs `ANTHROPIC_API_KEY`, which is unset here, and the instrument refuses a verdict against a stale count |
+| Records | sittings **147** · journals **58** · milestone files **48** · entries: `docs/records/log/` **660**, `docs/records/done/` **527**, `docs/records/book/beats/` **123** · **open defects 2**, **open decisions 0** |
+| Waiting on the author | **nothing.** Panel 149 was ratified on 2026-09-15, as adopted, and the verdict on what SHIPPED found a refusal the resolution had not named. **One thing this machine could not do**: the specification's +4 is unlanded because `heroes measure --refresh` needs `ANTHROPIC_API_KEY`, which is unset here, and the instrument refuses a verdict against a stale count |
 
 **Re-measured 2026-09-15 after panel 149's repair, one suite at a time against a
 compiler built from `selfhost/`, not carried.** `records` **23**, `spec` **20**,
-the compiler's own tests **647**, `check` **118**, `run` **119**, `lines`
+the compiler's own tests **647**, `check` **119**, `run` **119**, `lines`
 **120**, `warnings` **179**, `determinism` **148**, `emission` **468**,
-`annotations` **154**, `fixes` **10**, `corpus` **55**, `canonical` **2**.
+`annotations` **155**, `fixes` **10**, `corpus` **55**, `canonical` **2**.
 
 **Two moved and two held for the same reason.** The compiler's own tests are
-**+1** and `check` **+2**, the new cases. `run` and `emission` are unchanged
+**+1** and `check` **+3**, the new cases. `run` and `emission` are unchanged
 because a case left each and a case arrived: `abort-handle-given-back-unmarked`
 became a compile error and moved, as `runtime/parts/alloc.c` predicted in
 writing. The figures of 2026-09-14 are superseded, not wrong.
