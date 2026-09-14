@@ -96,6 +96,30 @@ function consumes_marker(@c: cursor.Cursor, text: str, in_group: bool) -> bool
     _ = cursor.bump(@c)
     return true
 
+# `acquires <releaser>` after a handle result or `@` out-parameter: the call
+# BEGINS that handle's life and names the one that ends it (panel 148 R2).
+#
+# **It is `owned`'s shape and not `consumes`'s, and that is the sitting's
+# finding.** A bare word was the cheaper draft and the named one measured
+# CHEAPER still — +66 vendored against +70 — because naming the releaser is
+# what this repository already does one line away, at `owned sqlite3_free`, and
+# what GCC does at `__attribute__((malloc (fclose, 1)))`. It buys the class a
+# bare mark cannot see: closing a `CStmt` with `sqlite3_close`.
+function acquires_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "acquires"
+        return fail(code: "absent", msg: "nothing here is acquired")
+    keyword = cursor.bump(@c).span
+
+    if !cursor.at(c, .ident)
+        cursor.error(
+            @c,
+            code: "expected_releaser",
+            message: "`acquires` names the C function that gives this handle back: `-> Curl acquires curl_easy_cleanup`",
+            span: cursor.here_or(c, keyword)
+        )
+        return fail(code: "absent", msg: "the releaser's name is missing")
+    return ok(cursor.bump(@c).span)
+
 function owned_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
     if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "owned"
         return fail(code: "absent", msg: "nothing here is owned")
@@ -146,7 +170,10 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
                 ty = type.parse_type(@c, @a, text)
                 owned = owned_marker(@c, text, in_group: in_group)
                 consumes = consumes_marker(@c, text, in_group: in_group)
-                out @ out.push(ast.Param(name: name, ty: ty, mutable: mutable, owned: owned, consumes: consumes))
+                acquires = acquires_marker(@c, text, in_group: in_group)
+                out @ out.push(
+                    ast.Param(name: name, ty: ty, mutable: mutable, owned: owned, consumes: consumes, acquires: acquires)
+                )
                 cursor.skip_terminators(@c)
 
                 if !cursor.eat(@c, .comma)

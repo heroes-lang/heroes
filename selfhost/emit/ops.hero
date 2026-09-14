@@ -12,6 +12,7 @@ use source
 use check/table
 use check/state
 use check/freer as freer
+use handles
 use ir
 use ir/containers
 use inventory
@@ -153,6 +154,16 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
                         .case_ty | .failure | .generic | .error                    => cast @ cast
 
             writer.line(@w, text: "    " + assign + cast + extern_name + "(" + guarded.join(", ") + ");")
+
+            # The counter rides the call it belongs to, on the line after it, so
+            # the two are one instruction to read and cannot drift apart. The
+            # compiler PLACES these and chooses neither end: `acquires` and
+            # `consumes` are both the binding author's words (panel 147 R4).
+            if handles.hands_a_handle_over(decls[e.decl])
+                writer.line(@w, text: "    hero_handle_acquired();")
+
+            if handles.takes_a_handle_back(decls[e.decl])
+                writer.line(@w, text: "    hero_handle_consumed();")
 
 # print is a compiler form, not a function value (panel 006): one
 # monomorphic printer per type, composed by the emitter. The contract

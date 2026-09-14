@@ -59,6 +59,39 @@ function is_handle_record(kind: ast.DeclKind) -> bool
 function is_handle(decl: ast.Decl) -> bool
     return is_handle_record(decl.kind)
 
+# The two ENDS of a handle's life, asked of a declaration. Both are the binding
+# author's own words and neither is a guess: `acquires <releaser>` says this
+# call hands one over and names what takes it back, `consumes` says this call
+# takes one back (panel 148 R2, panel 145). They live here because this file is
+# where a question about a handle is asked once — the emitter is the caller.
+function hands_a_handle_over(decl: ast.Decl) -> bool
+    return match decl.kind
+        .function_decl fd                                          => any_acquires(fd.value)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => false
+
+function any_acquires(f: ast.FunctionDecl) -> bool
+    found: bool @ !f.acquires_result.is_err()
+
+    for p in f.params
+        if !p.acquires.is_err()
+            found @ true
+
+    return found
+
+function takes_a_handle_back(decl: ast.Decl) -> bool
+    return match decl.kind
+        .function_decl fd                                          => any_consumes(fd.value)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => false
+
+function any_consumes(f: ast.FunctionDecl) -> bool
+    found: bool @ false
+
+    for p in f.params
+        if p.consumes
+            found @ true
+
+    return found
+
 # A `const` pointer TO a value of this C type, and the reason it is a function
 # rather than a `"const " +` at four sites.
 #

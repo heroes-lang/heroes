@@ -366,6 +366,11 @@ record Param
     # `db: Db consumes` — the call ENDS this handle's life (panel 145, defect
     # 031). The opposite direction to `owned`, which is why it is a second word.
     consumes: bool
+    # `@statement: CStmt acquires sqlite3_finalize` — the call BEGINS this
+    # handle's life and NAMES the one that ends it (panel 148 R2). A SPAN and
+    # not a bool for `owned`'s reason: a diagnostic about the releaser has to
+    # point at the word the author wrote.
+    acquires: token.Span?
 
 # A record field, or a variant case's payload field. Fields carry doc comments
 # of their own — §4.1's adjacency rule is about declarations, and a field is
@@ -446,6 +451,10 @@ record FunctionDecl
     # other name. Absent everywhere else, which is the ordinary case: an
     # unmarked pointer is never freed.
     owned_result: token.Span?
+    # `-> Curl acquires curl_easy_cleanup` — the RESULT begins a handle's life
+    # and names what ends it (panel 148 R2). Both positions, as `owned` has
+    # both, because C hands a handle back either way.
+    acquires_result: token.Span?
 
 variant DeclKind
     # `constant MAX: i64` + body (§4.2), or — inside an `extern` group — no
@@ -628,7 +637,7 @@ test "a declaration owns its members directly, no arena"
     zero = token.Span(start: 0, end: 1)
     generics: [token.Span] = []
     unowned: token.Span? = fail(code: "none", msg: "not owned")
-    ps: [Param] = [Param(name: zero, ty: 0, mutable: false, owned: unowned, consumes: false)]
+    ps: [Param] = [Param(name: zero, ty: 0, mutable: false, owned: unowned, consumes: false, acquires: unowned)]
     doc: [token.Span] = []
     f = FunctionDecl(
         generics: generics,
@@ -638,7 +647,8 @@ test "a declaration owns its members directly, no arena"
         is_extern: true,
         header: ok(zero),
         library: fail(code: "absent", msg: "none"),
-        owned_result: fail(code: "none", msg: "nothing to free")
+        owned_result: fail(code: "none", msg: "nothing to free"),
+        acquires_result: fail(code: "none", msg: "nothing to give back")
     )
     d = Decl(name: zero, doc: doc, span: zero, kind: .function_decl(value: f))
 

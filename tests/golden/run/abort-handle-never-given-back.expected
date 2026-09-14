@@ -1,0 +1,2 @@
+16
+!panic: 1 C handle(s) never given back — every call marked `acquires` owes one marked `consumes`, and this program is missing that many

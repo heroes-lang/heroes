@@ -1,0 +1,25 @@
+# The OTHER direction, and it is a different fault: a `consumes` whose
+# `acquires` is missing, so a correct program hands back what the count never
+# saw arrive (M-marked-acquisition, panel 148 R2).
+#
+# **This case exists because it happened.** `examples/curl/main.hero` has
+# carried `consumes` since panel 145 landed it on 2026-09-13, and the first
+# counter built for this milestone killed that correct program at exit 134 with
+# a message saying **`1 C handle(s) never given back`** — the exact opposite of
+# what had occurred. One counter, two sentences: positive accuses the PROGRAM,
+# negative accuses the BINDING, and the repair is one word on the producing
+# declaration.
+#
+# The program below is right and its binding is not, which is the whole point:
+# the diagnosis has to name the declaration, not the code.
+
+extern "abort-handle-given-back-unmarked.h"
+    record Slot tag Slot
+    function slot_open(n: i64) -> Slot
+    function slot_close(s: Slot consumes)
+    function slot_value(s: Slot) -> i64
+
+function main()
+    a = slot_open(n: 7)
+    print(slot_value(s: a))
+    slot_close(a)

@@ -363,14 +363,32 @@ constant CEILING: i64
 # instead, and its own module doc says why: generated `eq` and generated `hash`
 # are ONE invariant and live where one diff shows both, so the only seam
 # available is the one the file was written to refuse.
+# **Two moved on 2026-09-14, M-marked-acquisition, for a RATIFIED surface form**
+# (panel 148 R2: `acquires <releaser>` on a handle result or `@` out-parameter).
+# `ast.hero` 505 -> **525** (measured 512) and `print/fmt.hero` 1156 -> **1175**
+# (measured 1161), each raised with room as every entry here is.
+#
+# **This table is the budget the sitting did not judge, and its own critic said
+# so.** Five seats priced the spec in tokens; the layout budget is the one the
+# form actually breaches, and the number that looked like a before-and-after —
+# *"`ast.hero` 505 -> 508"* — was a CEILING against a measure, not two measures.
+# Recorded here because a ceiling moved without a reader being told why is the
+# thing this table exists to prevent.
+#
+# **The mark rides both positions, which is where the two files come from**: the
+# AST carries it on a `Param` and on a `FunctionDecl`'s result, and the
+# formatter prints it in both — the second position added an hour after the
+# first, because the first pass taught `fmt` the parameter only and `heroes fmt`
+# **silently dropped the mark off a result**, which is CL-036 firing twice in one
+# day on one form.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1870"
-        "selfhost/print/fmt.hero 1156"
+        "selfhost/print/fmt.hero 1175"
         "selfhost/ir/flatten.hero 1150"
         "selfhost/grammar_expr.hero 1085"
         "selfhost/ir/print.hero 470"
-        "selfhost/ast.hero 505"
+        "selfhost/ast.hero 525"
         "selfhost/check/table.hero 389"
         "selfhost/value_errors.hero 334"
         "selfhost/check/builtins.hero 377"

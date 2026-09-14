@@ -74,7 +74,7 @@ constant LEDGER: str
 # DATED, and prose beside the constant is neither, however dated it looks. The
 # constant is the count; `ledger` below is what holds it to the file.
 constant LEDGER_ROWS: i64
-    73
+    74
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.
@@ -88,7 +88,7 @@ constant LEDGER_ROWS: i64
 # check does not enforce that rule: it makes its question unavoidable, and
 # the answer lands in the commit body where a reader can audit it.
 constant SPEC_TOKENS: i64
-    5863
+    5945
 
 # The registry's own size, gated separately — it is NOT part of §1.6's budget
 # (panel 035 D: the spec is *the prompt*, and compiler output can never be in
@@ -98,7 +98,19 @@ constant SPEC_TOKENS: i64
 constant REGISTRY_TOKENS: i64
     916
 
-# The ceiling, 8192 by author decision 2026-09-12, which made room inside the
+# **The ceiling, 10240 by author decision 2026-09-14**, taken while
+# M-marked-acquisition was landing `acquires <releaser>` and the document stood
+# at 7921 real against 8192 — 211 free once the FFI floor is deducted, which is
+# two forms' room and not three. **It relaxes nothing**: §1.6's payment rule is
+# unconditional at every level, with no threshold to be under, so every row of
+# `docs/measurements/010` is owed exactly as before.
+#
+# **It is 10 × 1024 and not 10000**, because `site/src/lib/claims.ts`'s
+# `ceilingK` refuses a ceiling that is not a whole number of K and the pages say
+# it in K — the site derives this constant rather than restating it, so a
+# number that is not a multiple of 1024 stops the site's build by design.
+#
+# It was 8192 by author decision 2026-09-12, which made room inside the
 # spec for the grammar's productions (panel 133). It relaxes nothing: §1.6's
 # payment rule is unconditional at every level, with no threshold to be under.
 #
@@ -112,7 +124,7 @@ constant REGISTRY_TOKENS: i64
 # always answered correctly, and re-basing it would make the next ledger row
 # incomparable with the first thirty-eight.
 constant CEILING: i64
-    8192
+    10240
 
 # THE RECORD: the reader's own count, and the same four constants
 # `selfhost/cli/measure.hero` holds — for the reason `CEILING` is in two
@@ -126,13 +138,13 @@ constant CEILING: i64
 # passes no secret to a fork's pull request, so such a check is structurally
 # red on every fork PR forever.
 constant REAL_TOKENS: i64
-    7806
+    7921
 
 constant REAL_MODEL: str
     "claude-opus-5"
 
 constant REAL_TAKEN: str
-    "2026-09-13"
+    "2026-09-14"
 
 # The contract's own record, pinned here the way the spec's is, and cross-checked
 # against `selfhost/measure/pinned.hero` by `recorded` below. **It carries a
@@ -173,7 +185,7 @@ constant DELTA_GATE: i64
 # rather than reassuring. `selfhost/cli/digest.hero` computes it and
 # `measure` refuses to give a verdict when it disagrees.
 constant SPEC_DIGEST: str
-    "7e8ad63e0a607452"
+    "00ca5fc2380ac960"
 
 # The operating contract, weighed on the same scale as the language.
 #

@@ -96,6 +96,11 @@ static _Atomic int64_t hero_live_scratch = 0;
  * that blames the compiler for a program's own omission is the one that gets
  * a reader to file a bug against the wrong thing (panel 124 R6). */
 static _Atomic int64_t hero_live_held = 0;
+/* FOURTH, and it accuses the program for the third one's reason. A C handle is
+ * the one resource this runtime never allocated and can never size: no header,
+ * no magic, no length — so a COUNT is all there can be, and both ends are the
+ * binding author's own words (panel 148 R2). */
+static _Atomic int64_t hero_live_handles = 0;
 
 int64_t hero_runtime_live(void) { return hero_live_blocks; }
 
@@ -133,6 +138,31 @@ void hero_runtime_check_leaks(void) {
                         "one `end_lease`, and this program is missing that "
                         "many\n",
                 (long long)held);
+        abort();
+    }
+    /* TWO DIRECTIONS, AND THEY ARE TWO DIFFERENT FAULTS. Positive is the
+     * PROGRAM's: a handle it was given and never gave back. NEGATIVE is the
+     * BINDING's: a `consumes` with no `acquires` to pair it, so a correct
+     * program hands back what the count never saw arrive. The second was found
+     * by running `examples/curl/main.hero`, which has carried `consumes` since
+     * panel 145 and was killed at exit 134 by a message saying the opposite of
+     * what had happened. One counter, two sentences. */
+    int64_t handles = hero_live_handles;
+    if (handles > 0) {
+        fflush(stdout);
+        fprintf(stderr, "panic: %lld C handle(s) never given back — every call "
+                        "marked `acquires` owes one marked `consumes`, and this "
+                        "program is missing that many\n",
+                (long long)handles);
+        abort();
+    }
+    if (handles < 0) {
+        fflush(stdout);
+        fprintf(stderr, "panic: %lld more handle(s) given back than were taken — "
+                        "a `consumes` in this program's bindings has no "
+                        "`acquires` to pair it, so the call that hands the "
+                        "handle over is unmarked\n",
+                (long long)-handles);
         abort();
     }
 }
@@ -184,6 +214,15 @@ static void *hero_alloc_held(size_t size) {
 static void hero_release_held(void *p) {
     atomic_fetch_sub_explicit(&hero_live_held, 1, memory_order_relaxed);
     free(p);
+}
+
+/* The handle pair, and it allocates nothing. */
+void hero_handle_acquired(void) {
+    atomic_fetch_add_explicit(&hero_live_handles, 1, memory_order_relaxed);
+}
+
+void hero_handle_consumed(void) {
+    atomic_fetch_sub_explicit(&hero_live_handles, 1, memory_order_relaxed);
 }
 
 /* A THIRD SHAPE, AND IT IS NOT A PAIR: memory the RUNTIME keeps for the life of
