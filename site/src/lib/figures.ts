@@ -235,7 +235,7 @@ export function fillMeasured(html: string): string {
 
 /**
  * `{{ceilingK}}` in a fragment becomes the specification's ceiling as the pages
- * say it, `8K`, derived from the suite that holds the document under it
+ * say it, `10K` today, derived from the suite that holds the document under it
  * (`claims.ts::ceilingK`, which refuses a ceiling that is not a whole number
  * of K).
  *
