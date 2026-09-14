@@ -14,8 +14,8 @@ The status and the chain. Why the table looks the way it does is
 | The compiler | **60,673** lines of Heroes in **208** modules (`find selfhost -name '*.hero'`) · the seed **811,337** lines of C, regenerated at M-marked-acquisition step 5 |
 | The spec | **5988** on the vendored ranks and **7974** on the reader's own, against a ceiling of **10240** — raised from 8192 by author decision 2026-09-14 with the document 211 free. The three marks are **+125 vendored and +168 real**, in two payments at ratios of 1.40 and 1.23, both inside the band panel 148's warden gave while refusing any single factor; **2266 free** and 2206 net of the FFI floor |
 | The contract | **7402** on the reader's own against a ceiling of **12288**, unchanged, judged on `claude-opus-5` since 2026-09-12 |
-| Records | sittings **146** · journals **57** · milestone files **48** · entries: `docs/records/log/` **657**, `docs/records/done/` **523**, `docs/records/book/beats/` **123** · **open defects 1**, **open decisions 1** |
-| Waiting on the author | **1** decision: panel 148's ratification, filed 2026-09-14. Panel 147 was ratified in full the day it sat |
+| Records | sittings **146** · journals **57** · milestone files **48** · entries: `docs/records/log/` **658**, `docs/records/done/` **524**, `docs/records/book/beats/` **123** · **open defects 1**, **open decisions 0** |
+| Waiting on the author | **nothing.** Panel 148 was ratified in full on 2026-09-14, after the close, and the verdict on what SHIPPED found R1's design.md Part 6 row had never been written |
 
 **Re-measured 2026-09-14 after the full net, not carried, and these figures
 REPLACE the ones this close first wrote.** `records` **23**, `spec` **20**, the
