@@ -8,35 +8,43 @@ The status and the chain. Why the table looks the way it does is
 
 | | |
 |---|---|
-| **Current milestone** | **none open.** `M-cleanup-verdict` is next on the chain and has not been started: the ruling on a scope-bound release — `defer` or another form — for the two obligations `owned` and `lease` put on every path. A decision, not a feature |
-| **Last closed** | **M-handle-verdict**, 2026-09-14, `m-handle-verdict` ([054](journal/054-handle-verdict.md)) — three defects filed on three days against three symptoms were one question, *what does a bare address not carry*, and the answer is one sentence: a fieldless `record` in an `extern` group with a `tag` is C's pointer to what the header names and leaves opaque. The last sitting, convened to decide whether `ptr` keeps its name, kept it and found a **cast** instead · before it **M-deferral-ledger** ([053](journal/053-deferral-ledger.md)) and **M-declared-thresholds** ([052](journal/052-declared-thresholds.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **55** of 77 · **55** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **60,312** lines of Heroes in **207** modules (`find selfhost -name '*.hero'`) · the seed **805,685** lines of C, regenerated at M-handle-verdict step 8 |
-| The spec | **5863** on the vendored ranks and **7806** on the reader's own, against a ceiling of 8192 — the handle form, the consuming mark and § 7's equality clause, **+208 vendored and +275 real** across the milestone, one removal paying 17 of it; **386 free** and 326 net of the FFI floor |
-| The contract | **7402** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5` since 2026-09-12. It was judged on OpenAI's vendored table until then, and was **1806 over** while `measure` printed nine to spare |
-| Records | sittings **144** · journals **55** · milestone files **47** · entries: `docs/records/log/` **651**, `docs/records/done/` **516**, `docs/records/book/beats/` **120** · **open defects 0**, **open decisions 0** |
-| Waiting on the author | **0** decisions. Panel 146 was ratified in full on 2026-09-14, the day it sat |
+| **Current milestone** | **none open.** `M-marked-acquisition` is next on the chain, entered 2026-09-14 by panel 147 R4 and not started: the mark goes where the obligation is CREATED, on the acquiring call, and its first act is to price two instruments the sitting refused to choose between |
+| **Last closed** | **M-cleanup-verdict**, 2026-09-14, `m-cleanup-verdict` ([055](journal/055-cleanup-verdict.md)) — the ruling on a scope-bound release for a C handle, and the census it was forbidden to argue without rewrote its question twice before the sitting sat. `owned` puts no obligation on any path and a missed `lease` aborts saying how many, so the handle is the **only** silent one; and a releaser keyed on the TYPE is refused to Part 6 because ownership is a property of the **call** — the same `sqlite3_stmt *` comes back owned from one C function and borrowed from another · before it **M-handle-verdict** ([054](journal/054-handle-verdict.md)) and **M-deferral-ledger** ([053](journal/053-deferral-ledger.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **56** of 78 · **56** tags matching `m*`, the legacy `m0`-`m8` included |
+| The compiler | **60,360** lines of Heroes in **207** modules (`find selfhost -name '*.hero'`) · the seed **806,238** lines of C, regenerated at M-cleanup-verdict step 1 |
+| The spec | **5863** on the vendored ranks and **7806** on the reader's own, against a ceiling of 8192 — **unchanged across this milestone, +0 and +0**, which is what a verdict costs when its verdict is a refusal; **386 free** and 326 net of the FFI floor |
+| The contract | **7402** on the reader's own against a ceiling of **12288**, unchanged, judged on `claude-opus-5` since 2026-09-12 |
+| Records | sittings **145** · journals **56** · milestone files **48** · entries: `docs/records/log/` **652**, `docs/records/done/` **517**, `docs/records/book/beats/` **121** · **open defects 0**, **open decisions 2** |
+| Waiting on the author | **2** decisions, both filed 2026-09-14: panel 147's ratification, and where a sitting's briefs live |
 
-**Re-measured 2026-09-14 at the M-handle-verdict close, not carried.** `records`
+**Re-measured 2026-09-14 at the M-cleanup-verdict close, not carried.** `records`
 is **23** checks, `spec` **20**, the compiler's own tests **646**, the net's own
-**153**, the full net **1785**. **The previous figure for the net's own tests was
-one too many**: this close added three and the count went 150 to 153, both
-counted from `^test "` at HEAD and now, so the **151** this row carried at step 5
-was carried rather than re-measured — in the one section whose rule is that its
-counts are re-measured and never carried.
+**154** — one more than at the last close, the new case being the one that
+asserts a sitting is a file in `docs/panel/` and never one under a subdirectory
+of it — and the full net **1792**, run once here as CL-063 asks rather than at
+every commit. **It went red on its first run of this close, twice and both
+correctly**: a milestone name with no row in the alias table, and closing prose
+written BETWEEN a list's banners where only items may live. **No prediction was registered against this milestone**, so none is
+scored and none lapses: panel 137's mention of it is a handoff, which the
+milestone honoured and closed, and the spec budget ledger has no row for it
+because it spent no tokens.
 
 ---
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–54
-are done, in the order they closed, and rows 55–77 are what is next, in the order
+One table, one row per milestone, **closed first and scheduled after**: rows 1–56
+are done, in the order they closed, and rows 57–78 are what is next, in the order
 they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
 scheduled block, then 1–53 and 54–76 later that same day, when
 `M-handle-verdict` entered at 55 and the twenty-two rows after it each moved one
-down, and 1–53 and 54–77 until M-deferral-ledger closed that evening: it is the
+down, and 1–53 and 54–77 until M-deferral-ledger closed that evening, and 1–55
+and 56–77 until M-cleanup-verdict closed on 2026-09-14 — a close that both ticked
+its own row and entered `M-marked-acquisition` at 57, the form its own verdict
+admitted, so the twenty-one rows after it each moved one down and the table is
+78 long: it is the
 one number in this file that no instrument reads, so it is
 restated here and re-read at every close with § Where we are — and at every
 OPENING too, which is what moved it twice on one day. `warrant` is why a milestone exists: **v1** (the self-hosting
@@ -103,28 +111,29 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 53 | **M-declared-thresholds** | done 2026-09-12 | `m-declared-thresholds` | [052](journal/052-declared-thresholds.md) | every ceiling and floor says which way it may move, and something notices when it should have moved and did not · **§1.1** |
 | 54 | **M-deferral-ledger** | done 2026-09-13 | `m-deferral-ledger`, taken 2026-09-13 once all three defects closed | [053](journal/053-deferral-ledger.md) | every Part 7 item with no milestone gets a dated verdict or a return condition, and Part 8's homeless warts with it · nine sittings, and **nine times the item's stated reason was measured false or expired before its verdict could be written** · five refused to Part 6 with falsifiers, two deferred again with conditions somebody can check · coverage refused as Part 6's **first row whose subject is a tool** · wart 8 rewritten because the cost is in the **spelling**: the same push is 0.02 s at a million through a plain name or a lent field, and 11.51 s at fifty thousand through a field in place |
 | 55 | **M-handle-verdict** | done 2026-09-14 | `m-handle-verdict` | [054](journal/054-handle-verdict.md) | the ruling on telling one C handle from another, and three defects that were one question · **§1.12**, defects 029, 030, 031 |
-| 56 | **M-cleanup-verdict** | scheduled | — | — | the ruling on a scope-bound release — `defer` or another form — for the two obligations `owned` and `lease` put on every path · a decision, not a feature |
-| 57 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
-| 58 | **M-arm-platform** | scheduled | — | — | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
-| 59 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
-| 60 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 61 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
-| 62 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
-| 63 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
-| 64 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
-| 65 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
-| 66 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
-| 67 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
-| 68 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 69 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
-| 70 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 71 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 72 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
-| 73 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
-| 74 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
-| 75 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
-| 76 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
-| 77 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 56 | **M-cleanup-verdict** | done 2026-09-14 | `m-cleanup-verdict` | [055](journal/055-cleanup-verdict.md) | the ruling on a scope-bound release for a C handle: a releaser keyed on the TYPE refused to Part 6, because ownership is a property of the CALL · a decision, not a feature |
+| 57 | **M-marked-acquisition** | scheduled | — | — | the mark goes where the obligation is CREATED — on the acquiring call — so a C handle nobody releases stops being silent · panel 147 R4, **§1.12** |
+| 58 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
+| 59 | **M-arm-platform** | scheduled | — | — | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
+| 60 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
+| 61 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
+| 62 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
+| 63 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
+| 64 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
+| 65 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
+| 66 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
+| 67 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
+| 68 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
+| 69 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 70 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
+| 71 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 72 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 73 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
+| 74 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
+| 75 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
+| 76 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 77 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
+| 78 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**

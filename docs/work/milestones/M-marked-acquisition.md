@@ -1,0 +1,100 @@
+# M-marked-acquisition — the mark goes where the obligation is created
+
+**Scheduled 2026-09-14 by panel 147 R4**, at M-cleanup-verdict's close, and it
+is the form that milestone's verdict admitted. The sitting refused a releaser
+keyed on the handle TYPE and named the axis instead of the spelling: **the
+obligation is created by a CALL, so the mark goes on the acquiring call, and the
+compiler never picks the release call.**
+
+**What it delivers**: a compiler rule by which a C handle acquired in a scope
+and not released on some path out of it stops being silent. Whether *stops being
+silent* means a compile error or a loud exit is the first thing this milestone
+measures, not something it inherits.
+
+**Why the sitting would not choose the instrument here.** Two are on the ladder
+and both have shipped relatives in this tree, so the choice is a price and not
+an argument — and panel 147 had no price, because Route A did not even parse
+(`error[expected_extern_signature]`), so nothing at that sitting was built.
+
+- **A `consumes`-shaped mark on the acquiring call.** Nearest shipped
+  neighbour: `selfhost/check/consuming.hero`, **114 code lines**, landed
+  2026-09-13 at panel 145. It already expresses *this call ends that value's
+  life*; the mirror is *this call begins one*.
+- **Escape refusal.** Its machinery ships **twice already** — `cstr_escapes`
+  (`selfhost/check/lending.hero:242`) and `lease_escapes`
+  (`selfhost/check/leasing.hero:109`) — and panel 147's completeness critic
+  found that **panel 122 refused an INFERRED release and not escape refusal**,
+  so the precedent usually cited against it is for another form. Five shipped
+  relatives measure **93 to 241 code lines** (`ffi_sweep` 93, `consuming` 114,
+  `leasing` 195, `freer` 221, `lending` 241), two of them under the
+  compiler-engineer's own 120-line bar. **Blast radius on this tree: five
+  sites** — three handle-typed fields outside an `extern` group and two
+  wrapper-returning functions.
+
+**What this milestone may not do.** Re-open panel 147's R1: a releaser keyed on
+the type is refused on its axis, it now has a design.md Part 6 row with a
+falsifier, and no spelling repairs it. Adopt a scope-bound statement without
+answering the `@`-cell defect two seats found from opposite ends — the deferred
+call's arguments are read where the statement is written, so the natural program
+registers the release of a value the acquiring call has not yet filled, and it
+compiles.
+
+**The urgency it inherits is smaller than the sitting was told, and that is
+written here rather than discovered later.** `docs/measurements/030`'s
+correction of 2026-09-14: live exposure is **22 paths in one file**, not 23 in
+two, and **all 22 end in `exit(1)` or `abort`** — `main` closes and exits on
+`is_err()`, the six test blocks use `.must()`. **No shipped program leaks a
+handle and then goes on running.** The class is real, the reduction proves the
+mechanism, and no program in this corpus has yet been written that handles an
+error instead of leaving. A milestone that opens by re-measuring that will know
+whether its own warrant has grown.
+
+*******************************************************************************
+**OPEN: 3**
+
+- [ ] **M-marked-acquisition** | price the two instruments against each other, compiled, before choosing either | `selfhost/check/consuming.hero` · `selfhost/check/lending.hero:242` · `selfhost/check/leasing.hero:109` · `docs/panel/147-the-obligation-is-created-by-a-call-and-not-by-a-type.md` R4
+
+    **Origin:** panel 147 R4, 2026-09-14.
+
+    The sitting refused to pick between them and said why: it had no price,
+    because the form it was convened on does not parse, so **every Route A
+    finding in that sitting is hand-inserted C or a reading of four draft
+    lines**. This milestone's first act is the measurement that sitting could
+    not take. The completeness critic's own prediction is on the board and is
+    scorable here: **escape refusal prices under 120 code lines**, on the
+    evidence of `ffi_sweep` at 93 and `consuming` at 114.
+
+- [ ] **M-marked-acquisition** | decide whether a missed release is a compile error or a loud exit, and say what the checker can actually see | `selfhost/check/leasing.hero:29` · `selfhost/check/consuming.hero:22` · `runtime/parts/alloc.c:126-137`
+
+    **Origin:** panel 147, 2026-09-14, out of the three fourth-routes its seats
+    proposed independently.
+
+    **Both halves are already built here, for other obligations.** The loud
+    exit ships: `runtime/parts/alloc.c` carries the counter whose panic
+    *accuses the program rather than this compiler*, and a lease nobody ends
+    aborts at `main`'s return saying how many. The compile error ships twice, as
+    the two escape refusals above.
+
+    **What the sitting found and this item must not forget**: the runtime
+    counter as the compiler-engineer drafted it **carries the same defect as
+    its own veto** — keyed on the type, a borrowed handle from
+    `sqlite3_db_handle` increments and never decrements. Any instrument here
+    inherits the axis: **it must be told which call acquires.** And both
+    `check/leasing.hero:29` and `check/consuming.hero:22` state in terms that
+    the checker has **no flow analysis**, so a rule that needs one is a
+    different and larger milestone.
+
+- [ ] **M-marked-acquisition** | re-measure the census before arguing from it, because its urgency is the one number that can grow | `docs/measurements/030-three-release-obligations-and-only-one-of-them-is-silent.md` § Corrected 2026-09-14
+
+    **Origin:** panel 147's completeness critic, 2026-09-14.
+
+    The corrected census says **no shipped program leaks a handle and goes on
+    running**: all 22 paths end in `exit(1)` or `abort`. That is a fact about
+    **this corpus on this date** and it is exactly the shape
+    `.claude/rules/module-shape.md` calls a premise about the world — it expires
+    in silence the first time somebody writes a program that recovers from a
+    database error instead of exiting. **Re-run it rather than citing it**, and
+    say which way it moved. The enumeration itself was wrong by seven pairs the
+    first time, so count from the tree and name the command (CL-057).
+
+*******************************************************************************
