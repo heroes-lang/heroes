@@ -230,10 +230,10 @@ the author can take it.
 | # | whose | prediction | checkable at |
 |---|---|---|---|
 | 1 | historian | the next handle-returning SQLite function the corpus binds is a **borrowing** one | the next binding that grows |
-| 2 | ffi-pragmatist | under C, `sqlite3_finalize consumes` + `sqlite3_next_stmt` cannot be written; under A both compile | M-marked-acquisition |
-| 3 | compiler-engineer | the unbuilt half lands at **120–280** code lines, and `heroes check selfhost/main.hero` moves under 1% | the milestone close |
-| 4 | spec-warden | the landing text's **real** count lands in **7864–7896**, leaving ≥236 free | the commit that lands the spec |
-| 5 | spec-warden | the shipped tree needs **exactly three** `acquires` marks and no fourth | the milestone close |
+| 2 | ffi-pragmatist | under C, `sqlite3_finalize consumes` + `sqlite3_next_stmt` cannot be written; under A both compile | **SCORED 2026-09-14 — HELD.** It is the measurement C was refused on, reproduced twice against real libraries at the sitting, and the shipped corpus compiles under the written mark |
+| 3 | compiler-engineer | the unbuilt half lands at **120–280** code lines, and `heroes check selfhost/main.hero` moves under 1% | **SCORED 2026-09-14 — HELD on both halves.** `check/acquiring.hero` is **126** code lines, at the band's low edge. Timed with the machine still, three runs each, minimum taken, `real`/`user` at 1.005 so nothing was waiting: **16.61 → 16.66 real** and **16.47 → 16.59 user**, **+0.30%** and **+0.73%**. Measured against a compiler built from the seed at `7e3bb986` in a detached worktree; each checked its OWN source, so the figure carries step 5's source growth too and the rule alone can only be cheaper |
+| 4 | spec-warden | the landing text's **real** count lands in **7864–7896**, leaving ≥236 free | **SCORED 2026-09-14 — MISSED on the band, HELD on the headroom.** The landing commit `7e3bb986` measured **7921** on `claude-opus-5`, **25 over** the band's top; against the then-ceiling of 8192 it left **271** free, above the 236 asked. The seat priced the text and not the two repairs its own review added to it |
+| 5 | spec-warden | the shipped tree needs **exactly three** `acquires` marks and no fourth | **SCORED 2026-09-14 — MISSED on its own instrument, HELD on what it meant, and the gap between those is the finding.** `grep` over `examples/` reads **five** mark sites; they are **three** distinct C producers, because the corpus binds SQLite **twice** and the author's instruction of the same day asked both bindings to demonstrate the form. The prediction named three FUNCTIONS and wrote *marks*, and the two units parted the moment a second binding carried the mark. Its other half HELD: **zero** `borrows` declarations in the corpus, the single occurrence being a comment. **Consequence, since this prediction is what PAID for ledger rows 154 and 155**: the payment is annotated there rather than left standing |
 | 6 | ergonomist | under the written mark, the dominant failure becomes the loud abort, not the silent leak | a Part 11 run |
 | 7 | historian | its own option costs *"more than A's +64"* | **SCORED — HELD, and beaten.** Measured +66: right in sign, and four tokens under the corrected A it was compared against |
 
@@ -248,16 +248,41 @@ procedure rather than omitted.
 
 ## Author's verdict
 
-**Pending.** The item is open in `docs/work/DECIDE.md` as `panel 148`.
+**RATIFIED 2026-09-14, all six resolutions as adopted, the robust one and not
+the conservative one.** The bare `acquires` at +58 recorded at R5's end is
+declined, so the mark names its releaser and the completeness diagnostic stands.
+The ratification was given after the milestone had already closed and been
+tagged, so what follows is a verdict on what SHIPPED and not on what was
+proposed — which is the only useful kind, and it found two things.
 
-**What a yes settles**: R1, C refused to Part 6 with its falsifier; R2, the mark
-is written and names its releaser, at +66; R3, both grammar repairs; R4, the
-balance clause; R5, the completeness diagnostic keyed on the type, in its own
-step.
+**R1's Part 6 row did not exist when the yes was given.** The resolution said
+the inferred obligation goes to design.md Part 6 with the ffi seat's falsifier,
+the milestone closed, and no row was written: `grep SSL_get0_peer_certificate
+docs/design/design.md` was empty on 2026-09-14 at the ratification. **It was
+written at the ratification**, carrying the twelve-of-nineteen count, the
+adjacent-lines pair, the `-Weverything` probe, the compelled-free direction that
+makes it a refusal rather than a price, and the falsifier verbatim. A resolution
+is not landed because a sitting adopted it.
 
-**What a yes does not settle**: R6 — whether a missed release is a loud exit or
-a compile error — which returns to the milestone undecided, and which the
-extern-only placement of the mark must be answered against first.
+**R5 shipped needing a word the resolution did not name.** R5 adopts the ffi
+seat's axis, *a producer of a consumed handle type must say which it is*, and
+step 4 landed `acquires <releaser>` alone — under which a BORROWING producer has
+no legal spelling and the rule would refuse a correct binding. `borrows` landed
+at step 5 for that reason, +43 vendored. The synthesis had adopted half an
+answer, and it was found by building the rule rather than by reading the sitting
+back.
 
-**The conservative resolution is at R5's end** and the author may take it
-instead: the bare `acquires` at +58, no named releaser, no diagnostic.
+**R6 was settled after this sitting, not by it.** The sitting returned it
+undecided and said the brief had settled it by accident; the milestone's close
+DECIDED it on the critic's structural ground — a loud exit, because the mark is
+extern-only while the corpus acquires inside Heroes wrappers a module away, and
+a compile error would need the obligation to cross an ordinary signature that
+carries no mark of any kind. Its return condition is named: a measured program
+in `examples/` that leaks a handle and CONTINUES. That decision is ratified here
+with the rest.
+
+**What the yes settles**: R1, the inferred obligation refused to Part 6 with its
+falsifier, the row now written; R2, the mark written and naming its releaser;
+R3, both grammar repairs; R4, the balance clause; R5, the completeness
+diagnostic keyed on the type, with `borrows` as the half it needed; R6, the loud
+exit with its return condition.
