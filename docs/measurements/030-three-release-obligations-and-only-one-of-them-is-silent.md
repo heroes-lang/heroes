@@ -160,3 +160,51 @@ twenty-one FFI programs in the corpus.
 It does not price a form, name a spelling, or say whether one should enter.
 That is the sitting's, and the milestone file forbids deciding a spelling before
 deciding whether a form enters at all.
+
+---
+
+## Corrected 2026-09-14, by panel 147's completeness critic
+
+Everything above stands as it was written and is not deleted; four of its
+numbers are wrong and the corrections are here, as a record requires. This
+document was handed to five judges as fact, and **nobody had audited it** —
+which is the same shape as the defect it was written alongside.
+
+**1. Live exposure is 22 paths in ONE file, not 23 in two.** The 23rd, in
+`examples/sqlite/main.hero`, was repaired earlier in the same session, and § 2
+says so three paragraphs further down while the headline above goes on saying
+23. A number and its own correction in one document, with the correction placed
+where the reader meets it second.
+
+**2. The pair list is short by at least seven, so it is ≥19 pairs and not 12.**
+`main`'s own open/close pair and six `test` blocks were never enumerated. **The
+list is a measurement too (CL-057)**, and this one was taken by reading twelve
+bodies rather than by enumerating the tree — which is exactly the failure that
+rule names. The `?` and jump counts for the twelve that were read stand; what is
+wrong is the claim that twelve was all of them.
+
+**3. "10 of 21 FFI programs have no acquire-and-release pair at all" is 8.** The
+partition given — 10 pairless, 10 threaded, of 21 — leaves one slot for three
+programs. An arithmetic error in the summary, and it was in § 4, the section
+handed to the seats as *what the sitting is handed*.
+
+**4. And the correction that changes what this document argues: all 22 paths
+end in `exit(1)` or `abort`.** `main` closes the database and exits on
+`is_err()`; the six test blocks use `.must()`. **No shipped program leaks a
+handle and then goes on running.** The `exit 0, in silence` headline of § 1 was
+measured on a **synthetic reduction** written for the purpose — it is true of
+that reduction, and it overstates this corpus.
+
+**What survives the correction, and it is the part the sitting used.** The class
+is real: a program that handles an error rather than exiting leaks, and the
+reduction proves the mechanism. What does not survive is the urgency the
+headline carried. Panel 147's R5 records the conservative resolution this
+correction supports — refuse, with a falsifier naming *a corpus or closure-list
+program that leaks a handle and continues* — and § 4 of the contract is why the
+sitting took the robust one instead.
+
+**One further error, in the briefs rather than here.** The shared brief and the
+spec-warden's converted vendored token counts to real ones at a ratio of 1.331.
+`docs/measurements/010-spec-budget-ledger.md` says in terms that **no row is
+convertible**: *"1.275 is a property of one day's mix of prose and code spans,
+not a factor."* The warden caught it at the sitting and answered with a range.
