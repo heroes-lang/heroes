@@ -1,0 +1,34 @@
+# A binding that says how a handle is GIVEN BACK must say how each one is
+# HANDED OVER (panel 148 R5, M-marked-acquisition).
+#
+# Where any `extern` function consumes a handle type, every `extern` function
+# handing one back — as a result or through an `@` out-parameter — says which it
+# is: `acquires <releaser>` when the program owes a release, `borrows` when the
+# library keeps it. Unmarked is refused, and the message names both lines,
+# because the fact is not in any C header and only the binding author has it.
+#
+# **The rule is keyed on the TYPE and not on the group**, because a group does
+# not survive the parser — `parse/group.hero` says so of itself — while
+# `one_tag_one_type` makes one tag one handle type across the whole program.
+#
+# `slot_value` below takes a `Slot` and hands none back, so it is untouched: the
+# rule asks about the calls that CREATE an obligation, not about every mention.
+
+extern "slots.h"
+    record Slot tag Slot
+    function slot_open(n: i64) -> Slot acquires slot_close
+    function slot_close(s: Slot consumes)
+    function slot_value(s: Slot) -> i64
+
+    # A result that hands back a handle and says nothing.
+    function slot_peek() -> Slot  #~ unmarked_handle_producer
+
+    # And the same through an out-parameter, which is the shape C uses more
+    # often: `sqlite3_open` and `sqlite3_prepare_v2` both hand their handle
+    # back that way.
+    function slot_take(n: i64, @out: Slot) -> i64  #~ unmarked_handle_producer
+
+function main()
+    a = slot_open(n: 1)
+    print(slot_value(s: a))
+    slot_close(a)

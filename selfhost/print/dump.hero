@@ -166,10 +166,10 @@ function signature(tree: ast.Ast, s: source.Source, name: str, f: ast.FunctionDe
         if param.mutable
             marker @ "@"
         rendered @ rendered.push(
-            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + owned_suffix(s, param.owned) + consumes_suffix(param.consumes) + acquires_suffix(s, param.acquires)
+            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + owned_suffix(s, param.owned) + consumes_suffix(param.consumes) + acquires_suffix(s, param.acquires) + borrows_suffix(param.borrows)
         )
 
-    return out + "(" + rendered.join(", ") + ") -> " + types.render_type(tree, f.result, s) + owned_suffix(s, f.owned_result) + acquires_suffix(s, f.acquires_result)
+    return out + "(" + rendered.join(", ") + ") -> " + types.render_type(tree, f.result, s) + owned_suffix(s, f.owned_result) + acquires_suffix(s, f.acquires_result) + borrows_suffix(f.borrows_result)
 
 # ` owned sqlite3_free`, or nothing (§4.19, panel 109). **This dump is what
 # `heroes fmt` compares its own output against**, so a form missing HERE makes
@@ -191,6 +191,11 @@ function consumes_suffix(consumes: bool) -> str
     if !consumes
         return ""
     return " consumes"
+
+function borrows_suffix(borrows: bool) -> str
+    if !borrows
+        return ""
+    return " borrows"
 
 function acquires_suffix(s: source.Source, mark: token.Span?) -> str
     if mark.is_err()

@@ -73,42 +73,58 @@ whether its own warrant has grown.
     `suite_spec.hero`'s reading of `spec/reserved-words.md`. **Build the check,
     then the colouring follows from it.**
 
-- [ ] **M-marked-acquisition** | decide whether a missed release is a compile error or a loud exit, and say what the checker can actually see | `selfhost/check/leasing.hero:29` · `selfhost/check/consuming.hero:22` · `runtime/parts/alloc.c:126-137`
+- [ ] **M-marked-acquisition** | R6 is DECIDED and the reason is the critic's, not a preference — what is owed now is the return condition somebody can check | `docs/panel/148-the-mark-is-written-and-never-inferred-and-it-names-what-ends-the-life.md` R6 · `docs/measurements/031` § 2 · `spec/heroes-spec.md` § 13
 
-    **Origin:** panel 147, 2026-09-14, out of the three fourth-routes its seats
-    proposed independently.
+    **Origin:** panel 147 left it open, panel 148's brief closed it by accident,
+    and it is decided here on the recommended resolution as CL-002 allows.
 
-    **Both halves are already built here, for other obligations.** The loud
-    exit ships: `runtime/parts/alloc.c` carries the counter whose panic
-    *accuses the program rather than this compiler*, and a lease nobody ends
-    aborts at `main`'s return saying how many. The compile error ships twice, as
-    the two escape refusals above.
+    **The decision: a missed release is a LOUD EXIT, and it is not a compile
+    error today.** The reason is structural rather than a preference, and panel
+    148's completeness critic wrote it: every text on that sitting's table
+    amends `Member` and `CParam`, so the mark is **extern-only** — while this
+    corpus acquires inside **Heroes wrappers** one module away, `opened` with 7
+    call sites and `prepared` with 6, because §4.19 refuses an `extern` call
+    across a module boundary. A runtime counter does not care where the value
+    goes next. **A compile error would need the obligation to cross an ordinary
+    function's signature, and no ordinary `Param` in this language carries a
+    mark of any kind** — not `owned`, not `consumes`, not `acquires`.
 
-    **What the sitting found and this item must not forget**: the runtime
-    counter as the compiler-engineer drafted it **carries the same defect as
-    its own veto** — keyed on the type, a borrowed handle from
-    `sqlite3_db_handle` increments and never decrements. Any instrument here
-    inherits the axis: **it must be told which call acquires.** And both
-    `check/leasing.hero:29` and `check/consuming.hero:22` state in terms that
-    the checker has **no flow analysis**, so a rule that needs one is a
-    different and larger milestone.
+    **What is decided is the instrument and not the ambition.** The loud exit
+    ships and is measured in both directions; what would make the compile error
+    reachable is a separate and larger question — a mark on an ordinary
+    parameter, which is surface no sitting has seen and which `Params` at
+    `spec § 4` would have to admit.
 
-- [ ] **M-marked-acquisition** | the corpus throws away the one answer it already has: 19 of 21 release sites discard the releaser's return code | `docs/measurements/031-the-census-counted-from-the-tree-and-it-has-two-levels.md` § 4 · design.md:1869 · `examples/ledger/main.hero`
+    **The return condition, so this does not sit forever**: a measured program
+    in `examples/` that leaks a handle and **continues**, rather than exiting —
+    which `docs/measurements/031` § 3 records does not exist today, all 22 paths
+    ending in `exit(1)` or `abort`. The day one is written, the loud exit
+    reports at a moment nobody is watching and the case for catching it earlier
+    is made by a program rather than by an argument.
 
-    **Origin:** found at this milestone's own step 1, 2026-09-14, while
-    re-counting the census from the tree.
+- [ ] **M-marked-acquisition** | the corpus discards 22 releaser return codes, and the question is now whether that still matters | `docs/measurements/031` § 4 · `examples/ledger/main.hero` · design.md:1869
 
-    **`sqlite3_close` answers `SQLITE_BUSY` exactly when a statement was left
-    open.** That is this milestone's entire subject, already computed by the
-    library, already across the boundary — and the corpus discards it at **21
-    of 21** sites, 19 as `_ = <release>(…)` and 2 as a wrapper's `return` to a
-    caller that then discards it. design.md:1869 already names the shape: *an
-    ignored C return code is C's own classic silent bug*.
+    **Origin:** step 1 filed it as the ladder's third row; step 6 re-measured it
+    against a ladder that has changed underneath it.
 
-    **Price it as a THIRD row on the ladder and not as the answer**, and say its
-    width honestly: `free` and `curl_easy_cleanup` return `void`, so it detects
-    nothing for them, and it reports at close time rather than at the leak. What
-    it costs is near zero and what it buys is real on one library; both numbers
-    belong beside the other two instruments rather than instead of them.
+    **What was measured, and it stands**: `sqlite3_close` and `sqlite3_finalize`
+    answer an `i64`, `curl_easy_cleanup` answers `void` — **two of the three
+    shipped releasers report at all** — and the corpus discards the answer at
+    **22** sites with `_ =`. design.md:1869 names the shape: *an ignored C
+    return code is C's own classic silent bug*.
+
+    **What changed**: the counter landed, and it reports the same class at exit
+    134 saying how many, for **every** library rather than for one. So the
+    return code is no longer a candidate instrument for the leak — it is
+    **subsumed** — and what remains of it is narrower and still real: SQLite's
+    `SQLITE_BUSY` is the library's own opinion about a handle, which the counter
+    does not model and cannot.
+
+    **The honest verdict is therefore NOT to build a third instrument**, and to
+    say what would reverse that: a measured case where `sqlite3_close` reports
+    BUSY and the counter does **not** fire — a handle the library considers
+    live for a reason the count cannot see. Produce one and this becomes a
+    detector rather than a tidiness complaint. Until then the 22 sites are a
+    corpus question about error reporting, not a compiler one.
 
 *******************************************************************************

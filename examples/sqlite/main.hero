@@ -40,8 +40,16 @@ extern "sqlite3.h" link "sqlite3"
     # line that writes it, and clang refuses it a second time from the header.
     record Db tag sqlite3
     record Stmt tag sqlite3_stmt
-    function sqlite3_open(filename: cstr, @out: Db) -> i64
-    function sqlite3_close(db: Db) -> i64
+    # **The two ends of a handle's life, since 2026-09-14** (panel 148). C hands
+    # this program a connection and a statement, and nothing in a C header says
+    # which calls give one away and which lend one — so the binding author says
+    # it, once per declaration, and the compiler chooses neither end.
+    # `acquires <releaser>` names the function that takes it back, so closing a
+    # `Stmt` with `sqlite3_close` is a mistake with a name; `consumes` marks the
+    # call that takes it. A handle taken and not given back is a panic at exit
+    # saying how many, where before this it was exit 0 and silence.
+    function sqlite3_open(filename: cstr, @out: Db acquires sqlite3_close) -> i64
+    function sqlite3_close(db: Db consumes) -> i64
     # The fifth argument is `char **errmsg`, and a non-NULL one makes SQLite
     # allocate a copy of the message that the CALLER must release with
     # `sqlite3_free`. This program does not want one, so it is a plain `ptr`
@@ -53,10 +61,10 @@ extern "sqlite3.h" link "sqlite3"
     # and not a defence. Repaired as the class rather than the case
     # (CLAUDE.md §1).
     function sqlite3_exec(db: Db, sql: cstr, callback: ptr, context: ptr, error: ptr) -> i64
-    function sqlite3_prepare_v2(db: Db, sql: cstr, length: i32, @statement: Stmt, @tail: cstr) -> i64
+    function sqlite3_prepare_v2(db: Db, sql: cstr, length: i32, @statement: Stmt acquires sqlite3_finalize, @tail: cstr) -> i64
     function sqlite3_step(statement: Stmt) -> i64
     function sqlite3_column_int(statement: Stmt, column: i32) -> i64
-    function sqlite3_finalize(statement: Stmt) -> i64
+    function sqlite3_finalize(statement: Stmt consumes) -> i64
 
 # One statement, run for its effect. The three pointers SQLite's callback
 # protocol takes are `nullptr`: §4.19 fixes a callback at `ptr` until the

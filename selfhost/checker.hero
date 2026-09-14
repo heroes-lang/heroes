@@ -32,6 +32,7 @@ use check/decls as check_decls
 use check/map_keys
 use check/type_labels
 use check/ffi_sweep
+use check/acquiring
 use check/lending
 use check/leasing
 use check/counted
@@ -64,6 +65,13 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # panel 062 wired its rule to one call site and three other positions
     # shipped.
     ffi_sweep.fixed_only_in_a_group(@c, a, s, decls)
+
+    # panel 148 R5: a binding that says how a handle is GIVEN BACK must say how
+    # each one is handed over. Asked here, beside the other declaration-shaped
+    # FFI rules, because it reads `written_types` and therefore runs after the
+    # declarations are checked — the same ordering `map_keys` and `ffi_sweep`
+    # state above.
+    acquiring.bindings_say_which(@c, s, decls)
 
     # §4.20's lend, asked at every position rather than at the one call
     # site that types it: defect 022 was a `cstr` RETURNED, and a rule

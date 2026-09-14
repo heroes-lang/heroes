@@ -544,14 +544,14 @@ function signature(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionD
         # program whose string C allocated is never freed, at exit 0 and with
         # no diagnostic. CLAUDE.md §9's list, and the reason it is a list.
         rendered @ rendered.push(
-            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + owned_suffix(s, param.owned) + consumes_suffix(param.consumes) + acquires_suffix(s, param.acquires)
+            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + owned_suffix(s, param.owned) + consumes_suffix(param.consumes) + acquires_suffix(s, param.acquires) + borrows_suffix(param.borrows)
         )
 
     out @ out + "(" + rendered.join(", ") + ")"
     result = types.render_type(tree, fd.result, s)
 
     if result != "()"
-        out @ out + " -> " + result + owned_suffix(s, fd.owned_result) + acquires_suffix(s, fd.acquires_result)
+        out @ out + " -> " + result + owned_suffix(s, fd.owned_result) + acquires_suffix(s, fd.acquires_result) + borrows_suffix(fd.borrows_result)
     return out
 
 # ` consumes`, or nothing. Printed because a formatter that has not learned a
@@ -560,6 +560,11 @@ function signature(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionD
 # because the unwritten version was MEASURED dropping the word at panel 148's
 # pricing: `@out: Db acquires` came back as `@out: Db`, exit 0, no diagnostic
 # (CL-036).
+function borrows_suffix(borrows: bool) -> str
+    if !borrows
+        return ""
+    return " borrows"
+
 function acquires_suffix(s: source.Source, mark: token.Span?) -> str
     if mark.is_err()
         return ""
