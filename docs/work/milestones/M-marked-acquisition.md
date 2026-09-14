@@ -52,17 +52,25 @@ whether its own warrant has grown.
 *******************************************************************************
 **OPEN: 3**
 
-- [ ] **M-marked-acquisition** | price the two instruments against each other, compiled, before choosing either | `selfhost/check/consuming.hero` · `selfhost/check/lending.hero:242` · `selfhost/check/leasing.hero:109` · `docs/panel/147-the-obligation-is-created-by-a-call-and-not-by-a-type.md` R4
+- [ ] **M-marked-acquisition** | build the counter, which is the half of the mark that does anything — and its price is unrun | `docs/measurements/032-the-two-instruments-priced-and-one-is-not-an-alternative.md` § 5 · `runtime/parts/alloc.c:126-137` · `selfhost/emit/ops.hero`
 
-    **Origin:** panel 147 R4, 2026-09-14.
+    **Origin:** M-marked-acquisition step 2, 2026-09-14, out of what the
+    pricing did NOT reach.
 
-    The sitting refused to pick between them and said why: it had no price,
-    because the form it was convened on does not parse, so **every Route A
-    finding in that sitting is hand-inserted C or a reading of four draft
-    lines**. This milestone's first act is the measurement that sitting could
-    not take. The completeness critic's own prediction is on the board and is
-    scorable here: **escape refusal prices under 120 code lines**, on the
-    evidence of `ffi_sweep` at 93 and `consuming` at 114.
+    **The surface is measured and the instrument is not.** `acquires` parses,
+    formats and builds at **+25 code lines across 7 files**; what makes it do
+    anything is an increment emitted at the acquiring call, a decrement at the
+    `consumes`-marked release, and a **fourth** exit check in
+    `runtime/parts/alloc.c` beside the three already there. That half is
+    **unbuilt and its number is unrun**, and no sentence in 032 prices it.
+
+    **What the built half already settles**: the checker needs **no flow
+    analysis**, because both ends are written by the binding author —
+    `acquires` on the producer, `consumes` on the releaser, which
+    `examples/curl/main.hero` already carries. Both `check/leasing.hero:29` and
+    `check/consuming.hero:22` state the checker has none, and this design does
+    not ask for any. **Two ceilings will have to move**, measured in the
+    prototype: `ast.hero` 505 -> 508 and `print/fmt.hero` 1156 -> 1160.
 
 - [ ] **M-marked-acquisition** | decide whether a missed release is a compile error or a loud exit, and say what the checker can actually see | `selfhost/check/leasing.hero:29` · `selfhost/check/consuming.hero:22` · `runtime/parts/alloc.c:126-137`
 
