@@ -281,7 +281,8 @@ test "a value in type position is named for what it is"
         header: fail(code: "absent", msg: "none"),
         library: fail(code: "absent", msg: "none"),
         owned_result: fail(code: "none", msg: "nothing to free"),
-        acquires_result: fail(code: "none", msg: "nothing to give back")
+        acquires_result: fail(code: "none", msg: "nothing to give back"),
+        borrows_result: false
     )
     fspan = token.Span(start: 12, end: 13)
     decls: [ast.Decl] @ [ast.Decl(name: fspan, doc: doc, span: fspan, kind: .function_decl(value: f))]

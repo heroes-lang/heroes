@@ -61,8 +61,19 @@ extern "sqlite3.h" link "sqlite3"
     # the group, where clang checks the names against the header too.
     record CDb tag sqlite3
     record CStmt tag sqlite3_stmt
-    function sqlite3_open(filename: cstr, @out: CDb) -> i64
-    function sqlite3_close(db: CDb) -> i64
+    # **The two ends of a handle's life, since 2026-09-14** (panel 148). This is
+    # the file the sitting was decided against: 22 of the 23 escaping paths the
+    # census counted acquire inside THIS module's wrappers, one module away from
+    # every place the rest of the program holds a handle. The mark therefore
+    # goes on the CALL that creates the obligation and propagates outward, the
+    # way `consumes` did — not on the TYPE, which cannot know whether a given
+    # call gives or lends.
+    #
+    # `sqlite3_next_stmt` and `sqlite3_db_handle` are the counter-examples and
+    # this binding declares neither: both hand back a handle SQLite keeps, and
+    # the day one of them is bound it says `borrows` rather than nothing.
+    function sqlite3_open(filename: cstr, @out: CDb acquires sqlite3_close) -> i64
+    function sqlite3_close(db: CDb consumes) -> i64
     # **The fifth argument is `char **errmsg`, and this program asks for it
     # again** — panel 109's condition 8, the program the whole milestone was
     # convened for. A non-NULL one makes SQLite allocate a copy of the message
@@ -87,10 +98,10 @@ extern "sqlite3.h" link "sqlite3"
     function sqlite3_free(p: ptr)
     function sqlite3_errmsg(db: CDb) -> cstr
     function sqlite3_changes(db: CDb) -> i32
-    function sqlite3_prepare_v2(db: CDb, sql: cstr, length: i32, @statement: CStmt, @tail: cstr) -> i64
+    function sqlite3_prepare_v2(db: CDb, sql: cstr, length: i32, @statement: CStmt acquires sqlite3_finalize, @tail: cstr) -> i64
     function sqlite3_step(statement: CStmt) -> i64
     function sqlite3_reset(statement: CStmt) -> i64
-    function sqlite3_finalize(statement: CStmt) -> i64
+    function sqlite3_finalize(statement: CStmt consumes) -> i64
     function sqlite3_bind_int64(statement: CStmt, column: i32, value: i64) -> i64
     function sqlite3_bind_double(statement: CStmt, column: i32, value: f64) -> i64
     function sqlite3_bind_text(statement: CStmt, column: i32, text: cstr, length: i32, destructor: ptr) -> i64

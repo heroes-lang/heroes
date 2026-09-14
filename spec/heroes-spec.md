@@ -375,7 +375,9 @@ life, so passing one the function borrowed is an error: mark the parameter `@`
 and the value does not survive the call. `acquires sqlite3_finalize` after a handle
 result or `@` out-parameter says the call begins that handle's life and names
 the one that ends it, which the program owes it. The owing is counted, so a
-handle consumed twice hides one never consumed.
+handle consumed twice hides one never consumed. `borrows` says the call hands
+back one it keeps, and where a group consumes a handle type every call handing
+one back says which it is.
 A group may name a **package** instead of a library: `extern "raylib.h" package "raylib"`
 asks the system where its headers and libraries are and what else it needs. A
 package answering with anything this compiler does not pass on is refused,
@@ -384,8 +386,8 @@ naming what it said.
     Extern = "extern" string [ ( "link" | "package" ) string ] NEWLINE
              INDENT { Member } DEDENT .
     Member = "function" ident "(" [ CParam { "," CParam } ] ")"
-               [ "->" Type [ "owned" ident ] [ "acquires" ident ] ] NEWLINE
+               [ "->" Type [ "owned" ident ] [ "acquires" ident | "borrows" ] ] NEWLINE
            | "constant" ident ":" Type NEWLINE
            | "record" ident [ "tag" ident ] [ "partial" ] ( Fields | NEWLINE ) .
     CParam = [ "@" ] ident ":" Type [ "owned" ident ]
-             [ "consumes" | "acquires" ident ] .
+             [ "consumes" | "acquires" ident | "borrows" ] .

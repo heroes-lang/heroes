@@ -1,0 +1,2 @@
+tests/golden/check/unmarked-handle-producer.hero:24:14: error[unmarked_handle_producer]: `slot_peek` hands back a `Slot` and does not say whether the program owes it — `slot_close` takes one back, so this binding has said how a `Slot` ends and not how it begins
+tests/golden/check/unmarked-handle-producer.hero:29:33: error[unmarked_handle_producer]: `slot_take` hands back a `Slot` and does not say whether the program owes it — `slot_close` takes one back, so this binding has said how a `Slot` ends and not how it begins

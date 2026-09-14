@@ -105,6 +105,14 @@ function consumes_marker(@c: cursor.Cursor, text: str, in_group: bool) -> bool
 # what this repository already does one line away, at `owned sqlite3_free`, and
 # what GCC does at `__attribute__((malloc (fclose, 1)))`. It buys the class a
 # bare mark cannot see: closing a `CStmt` with `sqlite3_close`.
+# `borrows`, the third mark and the one that says NOTHING is owed. It carries no
+# name because there is no releaser to name.
+function borrows_marker(@c: cursor.Cursor, text: str, in_group: bool) -> bool
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "borrows"
+        return false
+    _ = cursor.bump(@c)
+    return true
+
 function acquires_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
     if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "acquires"
         return fail(code: "absent", msg: "nothing here is acquired")
@@ -171,8 +179,9 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
                 owned = owned_marker(@c, text, in_group: in_group)
                 consumes = consumes_marker(@c, text, in_group: in_group)
                 acquires = acquires_marker(@c, text, in_group: in_group)
+                borrows = borrows_marker(@c, text, in_group: in_group)
                 out @ out.push(
-                    ast.Param(name: name, ty: ty, mutable: mutable, owned: owned, consumes: consumes, acquires: acquires)
+                    ast.Param(name: name, ty: ty, mutable: mutable, owned: owned, consumes: consumes, acquires: acquires, borrows: borrows)
                 )
                 cursor.skip_terminators(@c)
 

@@ -1,0 +1,145 @@
+# A binding that says how a handle is GIVEN BACK must say how each one is
+# HANDED OVER (panel 148 R5, M-marked-acquisition).
+#
+# **The rule.** Where any `extern` function consumes a handle type `T`, every
+# `extern` function handing a `T` back — as a result or through an `@`
+# out-parameter — says which it is: `acquires <releaser>` when the program owes
+# a release for it, `borrows` when the library keeps it. Unmarked is an error
+# naming both lines.
+#
+# **Why it is keyed on the TYPE and not on the group, which is where panel 148's
+# compiler seat and its critic disagreed.** That seat priced a group-keyed rule
+# at ~90 lines over a key the language does not define: `parse/group.hero` says
+# *"the group is flattened here and only here… nothing after the parser knows
+# the word"*, and this compiler's own source holds two `extern "hero_os.h"`
+# groups and two `extern "stdlib.h"` ones, so a header-text key merges what
+# should stay apart and a head-line key loses a binding split across modules —
+# which §4.19 FORCES, since an `extern` is not callable across a module
+# boundary. The critic found the answer already shipped: `check/decls.hero`'s
+# `one_tag_one_type` is 17 lines and program-wide, and **one tag is one handle
+# type across the whole program**. So the question needs no group identity, no
+# span reconstruction and no new kind of table.
+#
+# **What this rule is NOT.** It does not ask whether a release happens on every
+# path — that is a flow question and `check/leasing.hero:29` and
+# `check/consuming.hero:22` both state the checker has no flow analysis. The
+# counter in `runtime/parts/alloc.c` answers that one at exit. This rule asks
+# only whether the BINDING is finished, which is a fact about declarations.
+#
+# **And it is why `borrows` exists.** Without a word for the borrow this rule
+# would refuse a correct binding — `sqlite3_next_stmt` hands back a statement
+# SQLite keeps — and the only escape would be to claim `acquires`, which the
+# compiler would then enforce by making the program give back what was never
+# its own. That is the objection that killed the inferred form at the same
+# sitting, and adopting half of the answer to it brought it back.
+
+use ast
+use source
+use token
+use diag
+use handles
+use check/state
+use check/table
+
+# The handle type a declaration's TYPE NODE names, if it names one. Absent for
+# every other type, which is almost all of them.
+#
+# It goes through `written_types` for `ffi_sweep`'s reason: the node is what the
+# author wrote and the interned id is what the checker knows, and only the
+# second can be asked what KIND of type it is.
+function handle_behind(c: state.Checker, decls: [ast.Decl], node: i64) -> i64?
+    written = c.out.written_types[node]
+
+    if written.is_err()
+        return fail(code: "none", msg: "this node has no written type")
+
+    match table.get(c.out.types, written.must())
+        .named n =>
+            if handles.is_handle(decls[n.decl])
+                return ok(n.decl)
+            return fail(code: "none", msg: "a named type that is not a handle")
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "not a record")
+        .array | .fixed | .map | .fallible | .function_ty         => return fail(code: "none", msg: "not a record")
+        .case_ty | .failure | .generic | .error                   => return fail(code: "none", msg: "not a record")
+
+    return fail(code: "none", msg: "unreached")
+
+# Every handle type some `extern` function takes back. The map is keyed on the
+# handle's DECLARATION, which `one_tag_one_type` makes a program-wide identity.
+function consumed_types(c: state.Checker, decls: [ast.Decl]) -> {i64: bool}
+    taken: {i64: bool} @ {}
+
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.is_extern
+                    for p in fd.value.params
+                        if p.consumes
+                            behind = handle_behind(c, decls, node: p.ty)
+
+                            if !behind.is_err()
+                                taken[behind.must()] @ true
+            .constant_decl | .record_decl | .variant_decl | .test_decl => taken @ taken
+
+    return taken
+
+# The name of one function that takes this handle type back, for the message:
+# the diagnostic names both lines, and this is the second one.
+function taker_of(c: state.Checker, s: source.Source, decls: [ast.Decl], handle: i64) -> str
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.is_extern
+                    for p in fd.value.params
+                        if p.consumes
+                            behind = handle_behind(c, decls, node: p.ty)
+
+                            if !behind.is_err() && behind.must() == handle
+                                return source.span_text(s, decl.name)
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return ""
+
+# The rule itself.
+function bindings_say_which(@c: state.Checker, s: source.Source, decls: [ast.Decl])
+    taken = consumed_types(c, decls)
+
+    if taken.len() == 0
+        return
+
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.is_extern
+                    result_handle = handle_behind(c, decls, node: fd.value.result)
+
+                    if !result_handle.is_err() && !taken[result_handle.must()].is_err() && fd.value.acquires_result.is_err() && !fd.value.borrows_result
+                        state.push_diagnostic(
+                            @c,
+                            unmarked(producer: source.span_text(s, decl.name), taker: taker_of(c, s, decls, handle: result_handle.must()), handle: source.span_text(s, decls[result_handle.must()].name), span: decl.name)
+                        )
+
+                    for p in fd.value.params
+                        if p.mutable
+                            behind = handle_behind(c, decls, node: p.ty)
+
+                            if !behind.is_err() && !taken[behind.must()].is_err() && p.acquires.is_err() && !p.borrows
+                                state.push_diagnostic(
+                                    @c,
+                                    unmarked(producer: source.span_text(s, decl.name), taker: taker_of(c, s, decls, handle: behind.must()), handle: source.span_text(s, decls[behind.must()].name), span: p.name)
+                                )
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+# The refusal. It names the handle, the call that takes one back, and the two
+# words that answer it — because §4.17 asks that an error carry everything
+# needed to fix the program without opening another file.
+function unmarked(producer: str, taker: str, handle: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unmarked_handle_producer",
+        message: "`" + producer + "` hands back a `" + handle + "` and does not say whether the program owes it — `" + taker + "` takes one back, so this binding has said how a `" + handle + "` ends and not how it begins",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "write `acquires " + taker + "` if the call gives the handle away and the program must return it, or `borrows` if the library keeps it and the program owes nothing. No C header states which, so the binding author states it: `sqlite3_prepare_v2` gives a statement and `sqlite3_next_stmt` lends one, and their C signatures are the same shape"
+    )
+    return d
