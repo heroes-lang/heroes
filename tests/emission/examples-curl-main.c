@@ -897,13 +897,13 @@ bb6:
     goto bb4;
 }
 HERO_TU_LOCAL bool h_main_Curl_eq(CURL * const *a, CURL * const *b) {
-    (void)a;
-    (void)b;
-    return true;
+    return *a == *b;
 }
 
 HERO_TU_LOCAL uint64_t h_main_Curl_hash(const void *elem) {
+    CURL * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
     return h;
 }
 

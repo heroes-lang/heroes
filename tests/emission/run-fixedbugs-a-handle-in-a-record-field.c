@@ -176,13 +176,13 @@ bb0:
 #line 177 "fixedbugsahandleinarecordfield.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b) {
-    (void)a;
-    (void)b;
-    return true;
+    return *a == *b;
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsahandleinarecordfield_Thing_hash(const void *elem) {
+    Thing * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
     return h;
 }
 
