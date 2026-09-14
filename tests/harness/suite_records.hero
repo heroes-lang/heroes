@@ -475,8 +475,20 @@ constant REFUSED: [str]
 # named for a ruling being free to close with a refusal — and `M-pointer-types`
 # and `M-opaque-handles`, which name the area and would appropriate it for the
 # milestone that may yet implement what this one only rules on.
+#
+# **81 -> 82 on 2026-09-14**, `M-marked-acquisition`, scheduled by **panel 147
+# R4** at `M-cleanup-verdict`'s close and entering at chain row 57, which moved
+# the twenty-one rows below it one down. It is the first id this table has taken
+# from a sitting's resolution rather than from an author's scheduling decision,
+# and the naming runs the OTHER way from the four `*-verdict` rows above: the
+# ruling has been made, so what remains is a form and the id names it.
+# `REFUSED` gains `M-released-handles`, and for a reason worth keeping — the
+# word `released` was the sitting's REFUSED spelling, so an id built on it would
+# carry a claim the record contradicts, which is the one thing §14 says an
+# identifier may never do. `M-handle-release` and `M-scope-cleanup` are refused
+# for the ordinary reason, that they name the area.
 constant ROWS: i64
-    81
+    82
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
