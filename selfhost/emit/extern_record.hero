@@ -15,6 +15,7 @@
 # count — under a locally-armed -Wmissing-field-initializers.
 
 use ast
+use handles
 use source
 use check/table
 use check/state
@@ -134,6 +135,26 @@ function completeness_probes(@w: writer.Writer, c: state.Checked, names: ctype.N
         # defect reborn one field down, two files with different inodes
         # equal at exit 0. Two characters, measured to leave a union
         # silent and raise no false positive on struct in_addr.
+        #
+        # **A HANDLE is named and is NOT an aggregate** (2026-09-13,
+        # M-handle-verdict step 8, found by panel 146's completeness
+        # critic while testing whether a `ptr` field could be typed). A
+        # handle is a `record` so its type is `.named`, and this arm
+        # braced it — but a handle EMITS as `<tag> *`, a scalar, so
+        # clang answered `braces around scalar initializer` twice on a
+        # program that builds at exit 0. Measured on raylib's `Font`
+        # with `recs` and `glyphs` retyped from `ptr` to handles.
+        #
+        # **Why it was never met before**, at the width the measurement
+        # was actually taken: no handle was a field of a record declared
+        # INSIDE an `extern` group, which is the only position this
+        # function reaches. Three handles ARE fields of plain Heroes
+        # records — two in `examples/ledger/db/sqlite.hero`, one in
+        # `tests/golden/check/ffi-handle-refusals.hero` — and those get
+        # no probe at all, so they could not have found it.
+        #
+        # `is_handle` is asked about the FIELD's own declaration, so the
+        # answer cannot go stale the way a list of shapes would.
         zeros: [str] @ []
 
         match decls[decl_at].kind
@@ -144,7 +165,8 @@ function completeness_probes(@w: writer.Writer, c: state.Checked, names: ctype.N
 
                     if !written.is_err()
                         match table.get(c.types, written.must())
-                            .named | .fixed                                           => aggregate @ true
+                            .named n                                                  => aggregate @ !handles.is_handle(decls[n.decl])
+                            .fixed                                                    => aggregate @ true
                             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => aggregate @ aggregate
                             .array | .map | .fallible | .function_ty                  => aggregate @ aggregate
                             .case_ty | .failure | .generic | .error                   => aggregate @ aggregate
@@ -225,3 +247,28 @@ test "assertions land on the field's line, the probe counts positionally"
     assert has(text: got, needle: "hero_ffi_complete_h_t_Point(void) { Point v = {(0)}; (void)v; }")
     assert !has(text: got, needle: "hero_ffi_complete_h_t_Font")
     assert has(text: got, needle: "#pragma clang diagnostic error \"-Wmissing-field-initializers\"")
+
+test "a handle field is a scalar in the probe, and the record beside it is not"
+    # M-handle-verdict step 8, panel 146's completeness critic. A handle is a
+    # `record`, so its type is `.named` and this emitter braced it — but it
+    # emits as `<tag> *`, and clang answered `braces around scalar initializer`
+    # on a program that builds at exit 0. `Slot` holds one of each kind, so the
+    # two answers are asserted against each other in one probe rather than in
+    # two tests that could drift.
+    text = "extern \"m.h\"\n    record Opaque tag thing\n    record Inner\n        x: f64\n    record Slot\n        handle: Opaque\n        inner: Inner\n        count: i64\n\nfunction touch(s: Slot)\n    _ = s\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    names = ctype.new_names(s, parsed.decls)
+    w: writer.Writer @ writer.new_writer("t")
+    extern_record_assertions(@w, c, names, s, parsed.decls)
+    got = writer.finish(w)
+
+    # The handle is `0`, the nested record is `{0}`, the number is `0`.
+    assert has(text: got, needle: "hero_ffi_complete_h_t_Slot(void) { Slot v = {0,{0},0}; (void)v; }")
+
+    # And a fieldless handle gets no probe of its own: it has nothing to be
+    # complete about, which is what makes it a handle.
+    assert !has(text: got, needle: "hero_ffi_complete_h_t_Opaque")

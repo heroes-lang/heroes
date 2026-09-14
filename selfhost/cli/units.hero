@@ -143,8 +143,36 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         return fail(code: "clang", msg: failure_note(compiled) + "\nthe generated C is at " + c_file)
     captured = read_file(err_path)
 
-    if !captured.is_err() && captured.must().len() > 0
-        write_file(path: saved, text: captured.must())?
+    # WRITTEN UNCONDITIONALLY, and the empty case is the whole point
+    # (2026-09-14, M-handle-verdict step 8). This read
+    # `if !captured.is_err() && captured.must().len() > 0`, so a CLEAN
+    # recompile left its predecessor's `warnings.txt` on disk and the
+    # warm-hit replay above then reported a compile that no longer
+    # exists. Met live: a golden whose header was repaired to silence
+    # two `-Wunused-function` warnings was clean on every direct run,
+    # cold and warm, and `suite_warnings` still failed it — replaying
+    # the two warnings with the LINE NUMBERS OF THE OLD HEADER, which
+    # is what named the cause.
+    #
+    # It is the exact mirror of the defect the replay was added for.
+    # That one SWALLOWED a warning after the first hit; this one
+    # INVENTS one, and the same instrument catches both — once going
+    # green on a program that warns, once going red on a program that
+    # does not. A stale answer at exit 0 is what `cli/deps.hero`'s own
+    # doc calls the worst outcome a build system has, and this is that
+    # shape in the one output the object file does not carry.
+    #
+    # Unreadable stderr writes EMPTY rather than leaving the old file:
+    # a compile whose warnings could not be read is a compile whose
+    # warnings are unknown, and replaying somebody else's is worse than
+    # replaying none. `deps.fresh` is unaffected either way — it was
+    # measured correct here, a header edit still rebuilds and still
+    # changes the answer.
+    kept_text: str @ ""
+
+    if !captured.is_err()
+        kept_text @ captured.must()
+    write_file(path: saved, text: kept_text)?
 
     # Recorded BEFORE the object is published: an object on disk with no
     # record beside it would be a hit this cache cannot justify. The

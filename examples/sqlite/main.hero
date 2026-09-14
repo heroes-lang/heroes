@@ -53,7 +53,7 @@ extern "sqlite3.h" link "sqlite3"
     # and not a defence. Repaired as the class rather than the case
     # (CLAUDE.md §1).
     function sqlite3_exec(db: Db, sql: cstr, callback: ptr, context: ptr, error: ptr) -> i64
-    function sqlite3_prepare_v2(db: Db, sql: cstr, length: i32, @statement: Stmt, @tail: ptr) -> i64
+    function sqlite3_prepare_v2(db: Db, sql: cstr, length: i32, @statement: Stmt, @tail: cstr) -> i64
     function sqlite3_step(statement: Stmt) -> i64
     function sqlite3_column_int(statement: Stmt, column: i32) -> i64
     function sqlite3_finalize(statement: Stmt) -> i64
@@ -67,7 +67,7 @@ function run(db: Db, sql: str) -> i64
 # The first column of the first row, which is the whole of "read a result".
 function first_int(db: Db, sql: str) -> i64
     statement: Stmt @ nullptr
-    tail: ptr @ nullptr
+    tail: cstr @ nullptr
     rc = sqlite3_prepare_v2(
         db: db,
         sql: sql.cstr(),

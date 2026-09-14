@@ -28,7 +28,11 @@
 #               reads and the compiler lacks is a call to nothing;
 #   rejected    no word the lexer refuses appears in the spec's code;
 #   inventory   the spec's characters above ASCII are punctuation, which is
-#               the premise `selfhost/measure/pieces.hero` is written on.
+#               the premise `selfhost/measure/pieces.hero` is written on;
+#   colouring   the editor's grammar admits the escapes the compiler accepts
+#               and calls the words it calls keywords, because that file is a
+#               copy of the language that reads from nothing (added 2026-09-13,
+#               after it painted a correct program as an error for three days).
 #
 # WHERE THE COMPILER'S SIDE COMES FROM. The two lists — what it reserves and
 # what it refuses — are read out of `selfhost/`'s own source, not copied
@@ -246,6 +250,45 @@ constant BUILTIN_SOURCE: str
 constant KEYWORD_SOURCE: str
     "selfhost/keywords.hero"
 
+# The editor's grammar, and the table it must agree with.
+#
+# **This file is a FOURTH copy of what the language is** — after the compiler,
+# the spec and the site — and it is the only one that is a copy at all.
+# `site/src/lib/tables.ts` reads its keywords out of `selfhost/keywords.hero`
+# and its types out of § 3's table, each behind a floor, and
+# `site/src/lib/highlight.ts` does not colour escapes at all. The grammar is the
+# one place the language is written down a second time by hand and read from
+# nothing, and on 2026-09-13 that cost what this file's own doc comment
+# predicts: it admitted **four** escapes where the spec gives **five**, so a
+# legal `\r` fell through to the rule below it and a CORRECT program was painted
+# `invalid.illegal` in the editor. `print("a\rb")` runs at exit 0.
+#
+# The defect had been **measured three days earlier** and written into
+# `.claude/rules/diagnostics-and-goldens.md`, which named the reason it could
+# survive in the same paragraph: *"Nothing judged either file until then, which
+# is exactly how the grammar rotted in silence."* A second hand-correction with
+# no instrument would rot the same way. This is the instrument.
+constant GRAMMAR: str
+    "editors/vscode/syntaxes/heroes.tmLanguage.json"
+
+constant ESCAPE_SOURCE: str
+    "selfhost/escape.hero"
+
+# Measured 2026-09-14: `escape_text` has **six** arms — `n` `t` `r` `\` `"` `'`
+# — and `keyword()` has 21. The floor said 3 for one day, because only the
+# letters were compared; panel 146's review showed that leaving the other three
+# out let a grammar drop them, or SWAP the two quotes between the string class
+# and the character class, with this check at 20 passed and correct programs
+# painted `invalid.illegal`.
+constant LEAST_ESCAPES: i64
+    6
+
+constant LEAST_KEYWORDS: i64
+    21
+
+constant LOWER: str
+    "abcdefghijklmnopqrstuvwxyz"
+
 # Measured 2026-08-18: 37 rows in the table, 23 words across the match arms.
 constant LEAST_BUILTINS: i64
     37
@@ -306,6 +349,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     inventory(@r, spec: text.must())
     shape(@r, spec: text.must())
     anchors(@r)
+    colouring(@r)
     return ok(r)
 
 # The two gated numbers, and the headroom.
@@ -1101,6 +1145,385 @@ function recorded(@r: report.Report, scratch: str, compiler: str)
         )
         return
     report.keep_pass(@r)
+
+## The fourth copy
+
+# The editor's grammar against the compiler's own tables: the escapes it paints
+# as legal, and the words it paints as keywords.
+#
+# Both sides are READ rather than pinned, so this holds two files together
+# instead of adding a third place for the truth to live — which is the rule the
+# top of this file opens with.
+function colouring(@r: report.Report)
+    text = read_file(GRAMMAR)
+
+    if text.is_err()
+        report.keep_failure(@r, label: "spec/colouring", detail: "  cannot read " + GRAMMAR)
+        return
+    want = compiler_escapes(ESCAPE_SOURCE)
+
+    if !floors.sound(@r, label: "spec/colouring", found: want.len(), floor: LEAST_ESCAPES, what: "escapes read out of " + ESCAPE_SOURCE)
+        return
+    escapes_agree(
+        @r,
+        want: for_context(want: want, delimiter: "\""),
+        got: class_members(text: text.must(), marker: "constant.character.escape.hero"),
+        where: "a string"
+    )
+    escapes_agree(
+        @r,
+        want: for_context(want: want, delimiter: "'"),
+        got: class_members(text: text.must(), marker: "constant.character.hero"),
+        where: "a character literal"
+    )
+    reserved = compiler_keywords(KEYWORD_SOURCE)
+
+    if !floors.sound(@r, label: "spec/colouring", found: reserved.len(), floor: LEAST_KEYWORDS, what: "keyword arms read out of " + KEYWORD_SOURCE)
+        return
+    painted = alternatives(text: text.must(), marker: "keyword.control.hero")
+    absent = absent_from(want: reserved, got: painted)
+    extra = absent_from(want: painted, got: reserved)
+
+    if absent.len() == 0 && extra.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "spec/colouring",
+        detail: "  the editor's grammar and " + KEYWORD_SOURCE + " disagree about what a keyword is.\n  the compiler reserves and the grammar leaves plain: " + absent.join(" ") + "\n  the grammar paints and the compiler does not reserve: " + extra.join(" ") + "\n  The first kind leaves a real keyword uncoloured. The SECOND is the one that\n  hurts: a word the grammar paints as a keyword and the lexer does not reserve\n  is a legal identifier shown to the author as syntax, so a correct program\n  reads as one that cannot be."
+    )
+
+# One comparison, in one direction, said twice.
+function escapes_agree(@r: report.Report, want: [str], got: [str], where: str)
+    absent = absent_from(want: want, got: got)
+    extra = absent_from(want: got, got: want)
+
+    if absent.len() == 0 && extra.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "spec/colouring",
+        detail: "  in " + where + " " + GRAMMAR + " admits the escapes `" + got.join("` `") + "` and " + ESCAPE_SOURCE + " accepts `" + want.join("` `") + "`.\n  missing from the grammar: " + absent.join(" ") + "\n  admitted by the grammar and not by the compiler: " + extra.join(" ") + "\n  An escape the compiler accepts and the grammar omits does not go UNCOLOURED:\n  it falls through to the `invalid.illegal` rule below it, so a correct program\n  is painted as an error in the editor. That is what `\\r` did from the day the\n  grammar was written until 2026-09-13, and `print(\"a\\rb\")` runs at exit 0."
+    )
+
+# What is in `want` and not in `got`.
+function absent_from(want: [str], got: [str]) -> [str]
+    here: {str: bool} @ {}
+
+    for one in got
+        here[one] @ true
+
+    out: [str] @ []
+
+    for one in want
+        if here[one].is_err()
+            out @ out.push(one)
+
+    return out
+
+# EVERY escape the compiler accepts, read out of `escape_text`'s own arms — the
+# rows read `if after_backslash == "n"` and `if after_backslash == "\\"`.
+#
+# **All six, not the three letters.** This took only lowercase letters until
+# 2026-09-14, on the argument that the backslash and the two quotes are
+# structural and spelled differently in a regular expression than in Heroes
+# source. Panel 146's review refuted the argument by running it: dropping `\\`
+# and the quote from BOTH grammar classes left this check at **20 passed, 0
+# failed** while `"a\\b"`, `"a\"b"` and `'\''` were all painted
+# `invalid.illegal` — and **swapping the quotes between the two contexts** did
+# the same, which is panel 008's whole split undetected. Half of § 2's six
+# escapes were outside the instrument.
+#
+# The notations do differ, and that is handled by comparing SETS of the one
+# character after the backslash rather than the spelling around it: the Heroes
+# source writes `"\\\\"` for a backslash and the JSON writes `\\\\` inside a
+# class, and both denote the single character this reads.
+function compiler_escapes(path: str) -> [str]
+    text = read_file(path)
+
+    if text.is_err()
+        none: [str] = []
+        return none
+    marker = "if after_backslash == \""
+    found: [str] @ []
+
+    for row in strings.lines(text.must())
+        at = strings.index_of(text: row, needle: marker)
+
+        if at.is_err()
+            continue
+        rest = row.slice(from: at.must() + marker.len(), to: row.len())
+
+        if rest.len() == 0
+            continue
+        cs = rest.chars()
+        one = cs[0]
+
+        # TWO characters, not one, and that is the whole of this arm: in the
+        # Heroes source a backslash is written `\\` and a quote `\"`, so both
+        # arms OPEN with a backslash and reading one character reports the
+        # quote arm as a backslash. Measured the hour this was widened.
+        if one == "\\"
+            if cs.len() < 2
+                continue
+
+            if cs[1] == "\\"
+                found @ found.push("\\")
+            else if cs[1] == "\""
+                found @ found.push("\"")
+            continue
+
+        if strings.contains(text: LOWER, needle: one) || one == "'"
+            found @ found.push(one)
+
+    return found
+
+# One JSON string's escapes undone, so what is read afterwards is the regular
+# expression the editor compiles rather than the bytes the file stores.
+#
+# `\\` becomes one backslash and `\"` becomes one quote, which is the whole of
+# what a TextMate `match` uses. Without this pass the class for a string reads
+# as five backslashes and a quote, and any comparison against the compiler's
+# own table would be comparing two notations rather than two claims.
+function json_unescape(text: str) -> str
+    cs = text.chars()
+    out: str @ ""
+    i: i64 @ 0
+
+    while i < cs.len()
+        if cs[i] == "\\" && i + 1 < cs.len()
+            out @ out + cs[i + 1]
+            i @ i + 2
+            continue
+        out @ out + cs[i]
+        i @ i + 1
+
+    return out
+
+# The escapes legal in ONE context, from the set the compiler accepts.
+#
+# `escape_text` gates the two quotes on the context — `"` only in a string, `'`
+# only in a character literal — so the other one is dropped here. Without this
+# the check could not see the quotes SWAPPED between the two classes, which the
+# review demonstrated passing at 20/0.
+function for_context(want: [str], delimiter: str) -> [str]
+    out: [str] @ []
+
+    for one in want
+        if one == "\"" || one == "'"
+            if one == delimiter
+                out @ out.push(one)
+            continue
+        out @ out.push(one)
+
+    return out
+
+# Every word the lexer's own table calls a keyword: `"constant" => ok(.kw_constant)`.
+function compiler_keywords(path: str) -> [str]
+    text = read_file(path)
+
+    if text.is_err()
+        none: [str] = []
+        return none
+    found: [str] @ []
+
+    for row in strings.lines(text.must())
+        at = strings.index_of(text: row, needle: "=> ok(.kw_")
+
+        if at.is_err()
+            continue
+        quoted = first_quoted(text: row.slice(from: 0, to: at.must()), from: 0)
+
+        if !quoted.is_err()
+            found @ found.push(quoted.must())
+
+    return found
+
+# The `"match"` VALUE of the rule that `marker` names, and nothing else.
+#
+# **This is the repair panel 146's review paid for, and it is worth its own
+# paragraph.** Until 2026-09-14 the two readers below took the line PHYSICALLY
+# ABOVE the scope name, on the true observation that the string rule writes its
+# `name` on the next line and the character rule on the same one. That bound the
+# instrument to the file's hand-formatting rather than to its JSON, and the
+# review ran all three consequences:
+#
+#   - merging the string rule's `"match"` and `"name"` onto one line — the style
+#     the character rule three lines below ALREADY uses, and a change `json.load`
+#     confirms is semantics-preserving — made the reader take the rule's
+#     `"comment"`, whose prose quotes the historical class, and report a correct
+#     grammar RED with a message quoting a sentence;
+#   - expanding the character rule the other way made the reader take the
+#     `"name"` line, which holds no bracket, and report every escape missing;
+#   - and with the comment prose refreshed to name today's class and the real
+#     regex broken back, the suite read **20 passed, 0 failed** while `"a\rb"`
+#     scoped through that same file came out `invalid.illegal.unknown-escape`.
+#     That is the defect this check exists to catch, back, with the instrument
+#     green — a check written against silent rot, rotting silently.
+#
+# Keying on `"match":` cannot read a comment, because a comment's key is
+# `"comment":`, and it is layout-free: the value may sit on the marker's own
+# line or on any line above it, stopping at the rule's own opening brace so a
+# rule with no `match` cannot borrow the previous rule's.
+function match_value(text: str, marker: str) -> str
+    rows = strings.lines(text)
+    at: i64 @ -1
+    i: i64 @ 0
+
+    while i < rows.len()
+        if !strings.index_of(text: rows[i], needle: marker).is_err()
+            at @ i
+            i @ rows.len()
+        else
+            i @ i + 1
+
+    if at < 0
+        return ""
+    key = "\"match\":"
+    back: i64 @ at
+
+    while back >= 0
+        found = strings.index_of(text: rows[back], needle: key)
+
+        if !found.is_err()
+            return rows[back].slice(from: found.must() + key.len(), to: rows[back].len())
+
+        # A rule's own opening brace ends the search. Without it a rule that has
+        # `begin`/`end` and no `match` would read the rule above it.
+        if back < at && strings.contains(text: rows[back], needle: "{")
+            return ""
+        back @ back - 1
+
+    return ""
+
+# The members of the first `[…]` in that rule's `"match"`, as single characters.
+#
+# A doubled backslash in the JSON is one backslash in the regular expression, so
+# `\\\\` reads as one member and not two.
+function class_members(text: str, marker: str) -> [str]
+    found: [str] @ []
+    source = json_unescape(match_value(text: text, marker: marker))
+    opens = strings.index_of(text: source, needle: "[")
+
+    if opens.is_err()
+        return found
+    rest = source.slice(from: opens.must() + 1, to: source.len())
+    closes = strings.index_of(text: rest, needle: "]")
+
+    if closes.is_err()
+        return found
+    cs = rest.slice(from: 0, to: closes.must()).chars()
+    i: i64 @ 0
+
+    while i < cs.len()
+        one = cs[i]
+
+        if one == "\\"
+            if i + 1 < cs.len() && cs[i + 1] == "\\"
+                found @ found.push("\\")
+                i @ i + 2
+                continue
+            i @ i + 1
+            continue
+
+        if strings.contains(text: LOWER, needle: one) || one == "\"" || one == "'"
+            found @ found.push(one)
+        i @ i + 1
+
+    return found
+
+# The alternatives inside the first `(…)` of that rule's `"match"`, which for a
+# TextMate grammar is `\b(constant|function|…)\b`.
+function alternatives(text: str, marker: str) -> [str]
+    none: [str] = []
+    source = json_unescape(match_value(text: text, marker: marker))
+    opens = strings.index_of(text: source, needle: "(")
+
+    if opens.is_err()
+        return none
+    rest = source.slice(from: opens.must() + 1, to: source.len())
+    closes = strings.index_of(text: rest, needle: ")")
+
+    if closes.is_err()
+        return none
+    return strings.split_text(text: rest.slice(from: 0, to: closes.must()), separator: "|")
+
+test "the grammar's rules are read out of their match, in either layout"
+    # The two layouts that already coexist in `heroes.tmLanguage.json`: the
+    # string rule writes its `name` on the NEXT line, the character rule on the
+    # SAME one. Both must read alike, because each is the other's counter-example
+    # and a reformat between them is semantics-preserving.
+    # THE REAL FILE, because writing its class as a Heroes literal would need
+    # every backslash doubled twice over and the test would then be about the
+    # transcription rather than about the reader.
+    real = read_file(GRAMMAR)
+    assert !real.is_err()
+    assert class_members(text: real.must(), marker: "constant.character.escape.hero") == ["n", "t", "r", "\\", "\""]
+    assert class_members(text: real.must(), marker: "constant.character.hero") == ["n", "t", "r", "\\", "'"]
+    assert absent_from(want: ["constant", "function", "record", "variant", "nullptr"], got: alternatives(text: real.must(), marker: "keyword.control.hero")).len() == 0
+
+    # THE REGRESSION PANEL 146 PAID FOR, on a class simple enough to read at a
+    # glance. Three layouts of one rule: `match` above `name`, the two merged
+    # onto one line, and a comment above both whose prose quotes a DIFFERENT
+    # class. All three must give the same answer, and none may give the
+    # comment's.
+    split = "        {\n          \"comment\": \"this prose quotes the old class [xy] and must never be read\",\n          \"match\": \"[ntr]\",\n          \"name\": \"constant.character.escape.hero\"\n        }\n"
+    merged = "        {\n          \"comment\": \"this prose quotes the old class [xy] and must never be read\",\n          \"match\": \"[ntr]\", \"name\": \"constant.character.escape.hero\"\n        }\n"
+    bare = "        { \"match\": \"[ntr]\", \"name\": \"constant.character.escape.hero\" },\n"
+    assert class_members(text: split, marker: "constant.character.escape.hero") == ["n", "t", "r"]
+    assert class_members(text: merged, marker: "constant.character.escape.hero") == ["n", "t", "r"]
+    assert class_members(text: bare, marker: "constant.character.escape.hero") == ["n", "t", "r"]
+
+    # A rule that is not there reads as nothing rather than as agreement, which
+    # is what the floor above it exists to catch.
+    assert class_members(text: split, marker: "no.such.scope").len() == 0
+    assert alternatives(text: split, marker: "no.such.scope").len() == 0
+
+    # And a scope whose rule carries no `match` reads as nothing rather than
+    # borrowing the rule above it: the search stops at the opening brace.
+    beginning = "        { \"match\": \"[ntr]\", \"name\": \"other.scope\" },\n        {\n          \"begin\": \"q\",\n          \"name\": \"string.quoted.double.hero\"\n        }\n"
+    assert class_members(text: beginning, marker: "string.quoted.double.hero").len() == 0
+
+test "the two sides of the colouring check are read out of the compiler's own source"
+    # Not pinned here: read from the files, so this test dies with a rename
+    # rather than agreeing with a stale copy of itself.
+    escapes = compiler_escapes(ESCAPE_SOURCE)
+    assert escapes.len() >= LEAST_ESCAPES
+
+    # All six of § 2's escapes, not the three letters. Half of them were outside
+    # this check until 2026-09-14, and the review demonstrated a grammar that
+    # drops `\\` and the quotes passing at 20/0 while painting three correct
+    # programs as errors.
+    assert absent_from(want: ["n", "t", "r", "\\", "\"", "'"], got: escapes).len() == 0
+    assert absent_from(want: escapes, got: ["n", "t", "r", "\\", "\"", "'"]).len() == 0
+
+    # The two quotes are gated on context, so the SWAP the review found is
+    # visible: a string admits `"` and not `'`, a character literal the reverse.
+    assert absent_from(want: for_context(want: escapes, delimiter: "\""), got: ["n", "t", "r", "\\", "\""]).len() == 0
+    assert absent_from(want: ["'"], got: for_context(want: escapes, delimiter: "\"")).len() == 1
+    assert absent_from(want: ["\""], got: for_context(want: escapes, delimiter: "'")).len() == 1
+    reserved = compiler_keywords(KEYWORD_SOURCE)
+    assert reserved.len() >= LEAST_KEYWORDS
+    assert absent_from(want: ["constant", "function", "record", "variant"], got: reserved).len() == 0
+
+    # The foreign table lives in the same file and must not leak in: `elif` is
+    # a word the lexer REFUSES, and painting it as a keyword would show a legal
+    # identifier to the author as syntax.
+    assert absent_from(want: ["elif"], got: reserved).len() == 1
+
+test "one side missing is reported in the direction it is missing"
+    r: report.Report @ report.empty()
+    escapes_agree(@r, want: ["n", "t", "r"], got: ["n", "t"], where: "a string")
+    assert r.failed == 1
+    assert r.passed == 0
+    ok_report: report.Report @ report.empty()
+    escapes_agree(@ok_report, want: ["n", "t", "r"], got: ["r", "n", "t"], where: "a string")
+    assert ok_report.passed == 1
+
+    # Order is not the claim. A class written `[rnt]` colours the same three
+    # escapes, and a check that reddened on it would be reporting the notation.
+    assert ok_report.failed == 0
 
 test "the ledger's rows are read, and only the rows"
     figures = ledger_figures(

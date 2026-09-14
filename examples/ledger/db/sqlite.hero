@@ -87,7 +87,7 @@ extern "sqlite3.h" link "sqlite3"
     function sqlite3_free(p: ptr)
     function sqlite3_errmsg(db: CDb) -> cstr
     function sqlite3_changes(db: CDb) -> i32
-    function sqlite3_prepare_v2(db: CDb, sql: cstr, length: i32, @statement: CStmt, @tail: ptr) -> i64
+    function sqlite3_prepare_v2(db: CDb, sql: cstr, length: i32, @statement: CStmt, @tail: cstr) -> i64
     function sqlite3_step(statement: CStmt) -> i64
     function sqlite3_reset(statement: CStmt) -> i64
     function sqlite3_finalize(statement: CStmt) -> i64
@@ -270,7 +270,7 @@ function changed(db: Db) -> i64
 # from `examples/sqlite/`: prepared once, bound and stepped many times.
 function prepared(db: Db, sql: str) -> Statement?
     statement: CStmt @ nullptr
-    tail: ptr @ nullptr
+    tail: cstr @ nullptr
 
     if sqlite3_prepare_v2(db: db.handle, sql: sql.cstr(), length: -1, statement: @statement, tail: @tail) != SQLITE_OK
         return fail(code: "cannot_prepare", msg: sql + ": " + why(db))

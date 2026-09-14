@@ -1,0 +1,57 @@
+# FIXED DEFECT, 2026-09-13 (M-handle-verdict step 8), found by panel 146's
+# completeness critic while testing whether the `ptr` fields of
+# `fixedbugs-a-nested-record-and-a-typed-pointer.hero` could be given a type.
+#
+# SYMPTOM: a handle used as a field of a group `record` built at exit 0 and made
+# clang say, twice,
+#
+#     warning: braces around scalar initializer [-Wbraced-scalar-init]
+#     Slot v = {{0},0,0};
+#
+# on a program with nothing wrong with it. The `warnings` suite holds the
+# generated C to ZERO warnings over this directory, so the bar existed and the
+# shape that breaks it did not.
+#
+# **The measurement, stated at the width it was actually taken.** An earlier
+# draft of this comment said *not one `record X tag Y` anywhere in the tree was
+# used as a record field*, and panel 146's review falsified it by grep: three
+# were — `handle: CDb` and `handle: CStmt` in `examples/ledger/db/sqlite.hero`
+# and `handle: Db` in `tests/golden/check/ffi-handle-refusals.hero`, all landed
+# by `e0f7b84f` on the very date the sentence claimed. The true property is
+# narrower and is the one that matters here, re-measured against HEAD: **no
+# handle was a field of a record declared INSIDE an `extern` group**, which is
+# the only position `extern_record_assertions` reaches, because the probe runs
+# on group records alone. The three counter-examples are plain Heroes records,
+# which get no probe. So the form landed at step 4 without ever meeting the one
+# position that breaks it — and the sentence that said so was too wide by three.
+#
+# CAUSE: `selfhost/emit/extern_record.hero` decides each field's zero by asking
+# what KIND of type it is, and a handle is declared with `record`, so its type is
+# `.named` and the arm braced it with every other named type. But a handle emits
+# as `Thing *` — a scalar — while the nested record beside it emits as a struct
+# and genuinely needs `{0}`. One question, two right answers, and the emitter was
+# giving one answer to both.
+#
+# FIX: the arm asks `handles.is_handle` about the FIELD's own declaration, which
+# is a fact about the value in hand and cannot expire the way a list of shapes
+# would (`.claude/rules/module-shape.md`). `Slot` below holds one of each kind on
+# purpose, so the two answers are asserted against each other in one probe:
+# `Slot v = {0,{0},0}`.
+
+extern "fixedbugs-a-handle-in-a-record-field.h"
+    record Thing tag Thing
+    record Slot
+        handle: Thing
+        ratio: f64
+        count: i64
+    function slot_make(n: i64) -> Slot
+    function slot_count(s: Slot) -> i64
+
+function main()
+    s = slot_make(n: 7)
+    print(slot_count(s: s))
+
+    # The handle field is readable and compares against the null of its own
+    # type, which is what step 4 made `nullptr` do for a handle.
+    print(s.handle == nullptr)
+    print(s.ratio)
