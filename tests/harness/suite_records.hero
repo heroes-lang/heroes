@@ -3225,6 +3225,18 @@ function is_sitting(path: str) -> bool
     if rest.len() == 0
         return false
 
+    # A sitting is a file sitting DIRECTLY in that tree, so what remains after
+    # the prefix carries no separator. Without this clause the predicate takes
+    # everything under a subdirectory too, and it always has:
+    # `docs/panel/000-plan-review/README.md` has matched since the day it was
+    # written and was only ever skipped by `VERDICT_FLOOR`, its number being 0.
+    # Panel 147 is the first sitting to keep its briefs beside it, at
+    # `docs/panel/147-briefs/`, and 147 is above the floor — so twelve files
+    # that are not sittings were asked for an author's verdict, which is how
+    # a masked predicate finally answered out loud.
+    if strings.contains(text: rest, needle: "/")
+        return false
+
     # The BYTE, not a one-character slice: `<` and friends take a number in this
     # language and never a `str` (spec § Operators), which is the first thing
     # this function got wrong.
@@ -4294,6 +4306,25 @@ test "a sitting's queue item is found by the digits the record actually writes"
     # differ exactly where the defect lived.
     assert sitting_number("docs/panel/091-a-name.md").must() == 91
     assert sitting_digits("docs/panel/091-a-name.md").must() != sitting_number("docs/panel/091-a-name.md").must().to_str()
+
+test "a sitting is a file in that tree and never one under a subdirectory of it"
+    # The four clauses, each asserted on the value in hand. Added 2026-09-14 at
+    # panel 147, the first sitting to keep its briefs beside it.
+    assert is_sitting("docs/panel/147-a-name.md")
+    assert !is_sitting("docs/panel/a-name.md")
+    assert !is_sitting("docs/panel/147-a-name.txt")
+    assert !is_sitting("elsewhere/147-a-name.md")
+
+    # The clause this test exists for, and it was MISSING until a file provoked
+    # it. `docs/panel/000-plan-review/README.md` has satisfied the other three
+    # since the day it was written and was skipped only by `VERDICT_FLOOR`,
+    # its number being 0 — so the predicate was wrong for as long as nothing
+    # numbered above the floor lived in a subdirectory. Panel 147's twelve
+    # brief and report files were the first, and twelve things that are not
+    # sittings were asked for an author's verdict.
+    assert !is_sitting("docs/panel/147-briefs/00-shared.md")
+    assert !is_sitting("docs/panel/147-reports/historian.md")
+    assert !is_sitting("docs/panel/000-plan-review/README.md")
 
 test "the pending rule fires only when nothing is asking"
     # ONE DIRECTION ONLY, AND THE MISSING ONE IS THE LESSON. This case asserted
