@@ -1,0 +1,51 @@
+# A handle is what a type REACHES, not what it IS (defect 033, panel 149,
+# 2026-09-14). Plus the releaser check the same sitting adopted, which reads a
+# word that until then nobody read (`docs/work/DEFECTS.md` 033).
+#
+# **THIS CASE USED TO LIVE IN `tests/golden/run/`, AS
+# `abort-handle-given-back-unmarked`, AND THAT IS THE POINT.** It was written
+# there because the program reached the runtime and aborted at exit 134: the
+# rule read a declaration's RESULT and asked whether it WAS a handle, so a
+# handle riding home inside a struct field answered no and the binding carried
+# no mark. `runtime/parts/alloc.c` predicted this move in writing — *"If a later
+# rule catches one of them at compile time, its case goes red and this sentence
+# is what must change."* It went red in three suites on the day the rule
+# widened, and `.claude/rules/verification.md` says where such a case belongs:
+# `tests/golden/check/` under a `fixedbugs-` prefix.
+#
+# Four shapes, and none of them is a contrivance. `struct addrinfo` carries
+# pointers the caller must free; raylib's `Font` is returned BY VALUE carrying
+# two owned pointers that one `UnloadFont` releases; `jpeglib.h` holds an array
+# of quantisation tables. The rule must see all four or it sees none of them.
+
+extern "fixedbugs-a-handle-reached-through-a-field.h"
+    record Slot tag Slot
+    record Conn tag Conn
+
+    # A handle in a field.
+    record Pair
+        s: Slot
+        k: i64
+
+    # A handle two records down. `Outer` names no handle anywhere in its own
+    # field block, which is why the diagnostic prints the ROUTE and not just
+    # the producer: the line the caret sits on shows nothing wrong.
+    record Outer
+        p: Pair
+        z: i64
+
+    # A handle in a fixed array, which is a C array member (spec § 13).
+    record Four
+        a: Slot[4]
+    function slot_close(s: Slot consumes)
+    function conn_close(c: Conn consumes)
+    function slot_open(n: i64) -> Slot borrows
+
+    # The four refusals.
+    function pair_make(n: i64) -> Pair  #~ unmarked_handle_producer
+    function outer_make(n: i64) -> Outer  #~ unmarked_handle_producer
+    function four_make(n: i64) -> Four  #~ unmarked_handle_producer
+    function pair_out(n: i64, @out: Pair)  #~ unmarked_handle_producer
+
+function main()
+    print(0)

@@ -155,15 +155,32 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
 
             writer.line(@w, text: "    " + assign + cast + extern_name + "(" + guarded.join(", ") + ");")
 
-            # The counter rides the call it belongs to, on the line after it, so
+            # The counter rides the call it belongs to, on the lines after it, so
             # the two are one instruction to read and cannot drift apart. The
             # compiler PLACES these and chooses neither end: `acquires` and
             # `consumes` are both the binding author's words (panel 147 R4).
-            if handles.hands_a_handle_over(decls[e.decl])
-                writer.line(@w, text: "    hero_handle_acquired();")
+            #
+            # **ONE LINE PER MARK, and it was one line per CALL until 2026-09-14**
+            # — defect 034, found by panel 149's spec-warden. A declaration
+            # carrying two marks got one increment, which made the CORRECT program
+            # abort and the leaking one pass. `selfhost/handles.hero` carries what
+            # it cost and why `spec § 13` had already settled it.
+            #
+            # A `while` and not a `for` over `range`, because `range` builds an
+            # array and this runs once per emitted call.
+            handed_over = handles.handles_handed_over(decls[e.decl])
+            given: i64 @ 0
 
-            if handles.takes_a_handle_back(decls[e.decl])
+            while given < handed_over
+                writer.line(@w, text: "    hero_handle_acquired();")
+                given @ given + 1
+
+            taken_back = handles.handles_taken_back(decls[e.decl])
+            took: i64 @ 0
+
+            while took < taken_back
                 writer.line(@w, text: "    hero_handle_consumed();")
+                took @ took + 1
 
 # print is a compiler form, not a function value (panel 006): one
 # monomorphic printer per type, composed by the emitter. The contract

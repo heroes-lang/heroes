@@ -1,2 +1,0 @@
-7
-!panic: 1 more handle(s) given back than were taken — a call marked `consumes` ran with no `acquires` behind it. Three things do this and the count cannot tell them apart, worst first: the same handle given back TWICE, which is a double release; an `extern` marked `borrows` whose C function in fact hands ownership over, which makes the mark wrong; or a handle that reached this program inside a record FIELD, whose producer carries no mark because `unmarked_handle_producer` does not look inside a returned record

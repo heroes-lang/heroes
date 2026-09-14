@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-a-releaser-that-ends-nothing.hero:18:59: error[unread_releaser]: `sqlite3_nosuchcall` does not end a `Db`'s life: no `extern` of this module declares it taking one back with `consumes`
+tests/golden/check/fixedbugs-a-releaser-that-ends-nothing.hero:22:59: error[unread_releaser]: `sqlite3_finalize` does not end a `Db`'s life: no `extern` of this module declares it taking one back with `consumes`

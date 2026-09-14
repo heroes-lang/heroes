@@ -1,0 +1,170 @@
+# What a type REACHES, asked once (panel 149, 2026-09-14; `docs/work/DEFECTS.md`
+# 033 and 035).
+#
+# A handle is C's pointer to something opaque, and a type reaches one when the
+# handle is the type itself, or sits in a field, or in a field of a field, or as
+# the element of a fixed array, or in a variant's payload. This walk answers
+# **where**: absent when nothing is reached, the empty string when the type IS a
+# handle, and otherwise the dotted path to it — `Font.recs`, `Outer.p.s`.
+#
+# **THIS FILE EXISTS BECAUSE THE WALK WAS ALREADY WRITTEN AND ALREADY HAD A
+# SECOND CALLER COMING.** It lived in `check/map_keys.hero`, where the rule that
+# refuses a handle as a map key needs it. Panel 149 was convened on whether
+# `unmarked_handle_producer` should look inside a returned record, and the
+# compiler-engineer seat found the walk already shipping, with three tests and a
+# golden printing its answer. CLAUDE.md's opening rule is that each rule is
+# written in exactly one place and everything else cites it, so the walk moved
+# here rather than being asked a second time somewhere else. The FFI half of
+# this compiler has paid for the alternative: `check/table.hero` records
+# `c_type_of` and `c_type` disagreeing about a group's record for a whole
+# milestone, in silence.
+#
+# **Why here and not in `handles.hero`, which is where a question about a handle
+# is asked once.** Measured at the sitting: every function in that module takes
+# an `ast.Decl` or loose pieces and it imports no table, while this walk needs
+# `state.Checker` and `check/table`. Twelve modules `use handles`, and three of
+# them are the parser, the mutator and the emitters. Dragging the checker's
+# interned table into `handles.hero` would drag it into the parser.
+#
+# ## Termination, and it is the reason a depth bound is not here
+#
+# The walk crosses two structures and only one of them is safe on its own.
+#
+# **The interned type table is acyclic by construction**: a structure is
+# interned after its components, so a component's id is smaller than its
+# container's. `check/ffi.hero`'s `crosses_the_boundary` writes the same
+# argument down for the same reason.
+#
+# **The declaration graph is NOT acyclic, and a user can write the cycle.**
+# `record Loop` holding a `Loop`, or two records holding each other, both parse
+# and both pass `ffi_field`; `check/sized.hero` refuses them — and **does not
+# stop this pass**. Measured 2026-09-14: a program carrying both a record cycle
+# and an unmarked producer prints `error[no_size]` AND
+# `error[unmarked_handle_producer]`, because `checker.hero` pushes `sized`'s
+# diagnostics and then calls the later rules anyway. So an unguarded walk over
+# declarations would not terminate on a program that compiles today.
+#
+# **The guard is a set of the declarations already on the route**, and it is
+# sound for this question because whether a type reaches a handle is a property
+# of the type and not of the path that arrived at it: a declaration that reached
+# nothing the first time reaches nothing the second.
+#
+# **What was here before was `if depth > 16`, and that was defect 035.** It
+# terminated by GIVING UP, silently, so a handle used as a map key was refused at
+# one nesting depth and accepted at the next. The sentence licensing that bound
+# still sits beside the float twin in `check/map_keys.hero`, where it is true —
+# a missed float refusal costs a named abort because the runtime guard is still
+# behind it. It is false here: behind the handle rule there is no runtime guard,
+# only an address, and `handles.hero` calls the refusal it protects *a hole
+# nothing can close*. **The walk was copied and its premise was left behind on
+# the original.**
+
+use ast
+use source
+use check/table
+use check/state
+use handles
+
+# What the walk found: WHICH handle, and WHERE. Two callers want different
+# halves and one walk answers both, which is the whole reason this record exists
+# rather than two functions. `check/map_keys.hero` prints the path; the
+# completeness rule in `check/acquiring.hero` keys a map on the declaration,
+# because `one_tag_one_type` makes a handle's declaration a program-wide
+# identity.
+record Reached
+    # The handle's own declaration, which is what identifies the handle TYPE.
+    decl: i64
+    # The dotted route to it, empty when the type asked about IS the handle.
+    path: str
+
+# Where this type reaches a handle. Absent when it reaches none, a `path` of
+# `""` when the type IS one, and otherwise the dotted path anchored at the first
+# declaration on the route: `Font.recs`, `Outer.p.s`.
+function reaches_handle(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64) -> Reached?
+    seen: {i64: bool} @ {}
+
+    return walk(c, s, decls, ty: ty, anchor: true, @seen)
+
+# The walk. `anchor` decides whether this level writes the declaration's own
+# name in front of the path, and only the outermost level does: the reader wants
+# `Outer.p.s` and not `Outer.p.Pair.s`, so the name is written once, where the
+# route begins. It is a fact about the MESSAGE and not about the world, which is
+# why it is a parameter rather than a second walk.
+function walk(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, anchor: bool, @seen: {i64: bool}) -> Reached?
+    match table.get(c.out.types, ty)
+        .named n =>
+            if handles.is_handle(decls[n.decl])
+                return ok(Reached(decl: n.decl, path: ""))
+
+            # Already on this route: a cycle, or the second arm of a diamond.
+            # Either way the answer for this declaration is settled.
+            if !seen[n.decl].is_err()
+                return fail(code: "absent", msg: "this declaration is already on the route")
+            seen[n.decl] @ true
+            inner = below(c, s, decls, decl: n.decl, @seen)
+
+            if inner.is_err()
+                return inner
+
+            if !anchor
+                return inner
+
+            return ok(
+                Reached(decl: inner.must().decl, path: source.span_text(s, decls[n.decl].name) + "." + inner.must().path)
+            )
+        .fixed x    => return walk(c, s, decls, ty: x.element, anchor: anchor, @seen)
+        .array arr  => return walk(c, s, decls, ty: arr.element, anchor: anchor, @seen)
+        .fallible o => return walk(c, s, decls, ty: o.payload, anchor: anchor, @seen)
+        .map m =>
+            in_key = walk(c, s, decls, ty: m.key, anchor: anchor, @seen)
+
+            if !in_key.is_err()
+                return in_key
+
+            return walk(c, s, decls, ty: m.value, anchor: anchor, @seen)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "absent", msg: "no handle here")
+        .function_ty | .case_ty | .failure | .generic | .error    => return fail(code: "absent", msg: "no handle here")
+
+    return fail(code: "absent", msg: "unreached")
+
+# The field chain below one declaration, carrying no owner: `s`, or `p.s`. A
+# variant answers for the first case payload that reaches one, because a value
+# of that type may be in any case and the diagnostic needs a route the reader
+# can follow.
+function below(c: state.Checker, s: source.Source, decls: [ast.Decl], decl: i64, @seen: {i64: bool}) -> Reached?
+    match decls[decl].kind
+        .record_decl rec => return in_fields(c, s, decls, fields: rec.fields, @seen)
+        .variant_decl v =>
+            for one_case in v.cases
+                found = in_fields(c, s, decls, fields: one_case.fields, @seen)
+
+                if !found.is_err()
+                    return found
+
+            return fail(code: "absent", msg: "no payload reaches a handle")
+        .constant_decl | .function_decl | .test_decl => return fail(code: "absent", msg: "not a data declaration")
+
+    return fail(code: "absent", msg: "unreached")
+
+# The first field that reaches a handle, as a dotted chain of field names. It
+# asks `written_type` for `ffi_sweep`'s reason: the node is what the author
+# wrote and the interned id is what the checker knows, and only the second can
+# be asked what KIND of type it is.
+function in_fields(c: state.Checker, s: source.Source, decls: [ast.Decl], fields: [ast.Field], @seen: {i64: bool}) -> Reached?
+    for field in fields
+        written = state.written_type(c.out, field.ty)
+
+        if written.is_err()
+            continue
+        found = walk(c, s, decls, ty: written.must(), anchor: false, @seen)
+
+        if found.is_err()
+            continue
+        name = source.span_text(s, field.name)
+
+        if found.must().path == ""
+            return ok(Reached(decl: found.must().decl, path: name))
+
+        return ok(Reached(decl: found.must().decl, path: name + "." + found.must().path))
+
+    return fail(code: "absent", msg: "every field is the program's own")

@@ -1,0 +1,28 @@
+# `acquires <releaser>` names the call that ENDS what this one begins, and until
+# 2026-09-14 nobody read the name (panel 149, adopted from its ffi-pragmatist's
+# condition on R1). Measured that day, both at exit 0: a releaser that does not
+# exist, and a releaser that ends a DIFFERENT handle's life.
+#
+# design.md Part 6 had already ruled on the shape — *"A tag nobody reads is a
+# comment that looks like a guarantee, which is the one thing an FFI must never
+# carry."* The sitting widened a mandatory word to more positions, which is
+# exactly when an unread word becomes worth reading.
+
+extern "sqlite3.h" link "sqlite3"
+    record Db tag sqlite3
+    record Stmt tag sqlite3_stmt
+    function sqlite3_close(db: Db consumes) -> i64
+    function sqlite3_finalize(statement: Stmt consumes) -> i64
+
+    # A name no `extern` of this module declares.
+    function sqlite3_open_a(path: cstr, @out: Db acquires sqlite3_nosuchcall) -> i64  #~ unread_releaser
+
+    # A name that exists and ends the WRONG life: `sqlite3_finalize` takes back
+    # a statement, and this parameter is a database.
+    function sqlite3_open_b(path: cstr, @out: Db acquires sqlite3_finalize) -> i64  #~ unread_releaser
+
+    # And the one that is right, which must stay silent.
+    function sqlite3_open_c(path: cstr, @out: Db acquires sqlite3_close) -> i64
+
+function main()
+    print(0)
