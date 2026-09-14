@@ -1,0 +1,86 @@
+# FIXED DEFECT 032, 2026-09-14 (M-cleanup-verdict step 1), found while running
+# this milestone's opening census — a probe that walked SQLite's own list of
+# open statements answered `0` where the same program in C answered `1`.
+#
+# SYMPTOM: `==` on a handle was a constant `true`, at exit 0, in silence. Five
+# questions, four wrong answers:
+#
+#     a == nullptr (want false): true
+#     a != nullptr (want true):  false
+#     a == b       (want false): true
+#     a == a       (want true):  true
+#     null == null (want true):  true
+#
+# and the wrong answer travelled through every container that asks a handle's
+# `_eq` — a Heroes record holding one, an array of them, a `Chunk?`.
+#
+# WHAT IT BREAKS is the commonest line in a binding. `if h == nullptr` after an
+# init that can fail was always taken, and `if h != nullptr` never was — so a
+# guard written the second way let a null handle through to the next C call.
+# spec § 13 promises the opposite in as many words: *`nullptr` is its null and
+# `==` compares the address*, and `handles.handle_map_key`'s note tells the
+# programmer *two handles are equal when their addresses are*. The compiler
+# stated the rule in a diagnostic and broke it in the C it generated.
+#
+# CAUSE: `selfhost/emit/structural.hero`'s zero-field arm emitted
+# `(void)a; (void)b; return true;` under the comment *record E is
+# error[empty_record] in the checker, so this is belt to those braces*. That is
+# a premise about the WORLD and it was true when written; M-handle-verdict
+# killed it on 2026-09-14 by making a fieldless group `record` with a `tag`
+# legal and giving it a pointer C type. The premise died, the comment went on
+# reading as correct, and the fallback had been put in the QUIET direction —
+# the one thing `.claude/rules/module-shape.md` says not to do, fifteen lines
+# below a `partial` arm in the same function that gets it right with
+# `hero_panic`.
+#
+# WHY NOTHING CAUGHT IT: `fixedbugs-a-handle-in-a-record-field.hero`, landed the
+# day before, asserts `print(s.handle == nullptr)` against an expected `true` —
+# and its handle IS null, so the wrong answer and the right one are the same
+# value there. The one golden that compared a handle picked the single case
+# where a constant `true` is indistinguishable from an address comparison. This
+# case exists to separate them.
+#
+# FIX: the arm asks `at.handle`, carried from `handles.is_handle_record` through
+# `ctype.Aggregate`, and emits `return *a == *b;`. A fieldless record that is
+# NOT a handle cannot be written at all, so that arm became `hero_panic` — the
+# loud direction its neighbour already used. `_hash` folds the same address, so
+# the two walks this module exists to keep together say the same thing.
+
+extern "fixedbugs-a-handle-compares-as-an-address.h"
+    record Chunk tag Chunk
+    function chunk_at(i: i64) -> Chunk
+    function chunk_none() -> Chunk
+    function chunk_tag(c: Chunk) -> i64
+
+# A handle as the field of a plain Heroes record, which reaches the same `_eq`
+# one level down.
+record Held
+    h: Chunk
+    name: str
+
+function main()
+    a = chunk_at(i: 0)
+    b = chunk_at(i: 1)
+    n = chunk_none()
+
+    # The handles are real and distinct, so the comparisons below are asking
+    # about two different addresses rather than two copies of one.
+    print(chunk_tag(c: a))
+    print(chunk_tag(c: b))
+
+    # The witness: the four answers a constant `true` gets wrong, and the one
+    # it gets right.
+    print(a == n)
+    print(a != n)
+    print(a == b)
+    print(a == a)
+    print(n == nullptr)
+
+    # The neighbouring shapes, each of which asks the handle's own `_eq`.
+    print(Held(h: a, name: "x") == Held(h: b, name: "x"))
+    print(Held(h: a, name: "x") == Held(h: a, name: "x"))
+    print([a] == [b])
+    print([a] == [a])
+    oa: Chunk? = ok(a)
+    ob: Chunk? = ok(b)
+    print(oa == ob)

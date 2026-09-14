@@ -58,6 +58,11 @@ record Aggregate
     foreign: bool
     # Whether the field list names only SOME of that struct.
     partial: bool
+    # Whether this is a HANDLE, so its C type is a pointer and not a
+    # struct. Carried rather than re-read off `c_type`'s last character:
+    # that is a fact about a SPELLING where the question is about the
+    # declaration. `handles.hero` owns the predicate; this is its answer.
+    handle: bool
 
 # The C typedef name of every declared aggregate, by declaration index.
 # A table rather than a lookup on demand, because a name needs the
@@ -70,6 +75,7 @@ record Names
     satellites: {i64: str}
     foreign_decls: {i64: bool}
     partial_decls: {i64: bool}
+    handle_decls: {i64: bool}
     # The C type of each distinct T?, by the id of the whole T?. Named
     # by CONTENT since panel 093 R6 — `h_0opt_<hash of the rendering>` —
     # so the name is a function of the type alone: the same in every
@@ -98,6 +104,7 @@ function new_names(s: source.Source, decls: [ast.Decl]) -> Names
     satellites: {i64: str} @ {}
     foreign_decls: {i64: bool} @ {}
     partial_decls: {i64: bool} @ {}
+    handle_decls: {i64: bool} @ {}
     cases: {str: str} @ {}
     index: i64 @ 0
 
@@ -128,6 +135,7 @@ function new_names(s: source.Source, decls: [ast.Decl]) -> Names
                         # opaque, so its tag is VERBATIM and starred and never
                         # `struct <tag>`; `handles.hero` says why.
                         if handles.is_handle_record(decl.kind)
+                            handle_decls[index] @ true
                             aggregates[index] @ source.span_text(s, rec.tag.must()) + " *"
                         else
                             aggregates[index] @ "struct " + source.span_text(s, rec.tag.must())
@@ -167,6 +175,7 @@ function new_names(s: source.Source, decls: [ast.Decl]) -> Names
         satellites: satellites,
         foreign_decls: foreign_decls,
         partial_decls: partial_decls,
+        handle_decls: handle_decls,
         options: empty_options,
         cases: cases,
         funcs: empty_funcs
@@ -322,14 +331,15 @@ function aggregate(names: Names, decl: i64) -> Aggregate
         prefix: satellite(names, decl: decl),
         c_type: of(names, decl: decl),
         foreign: !names.foreign_decls[decl].is_err(),
-        partial: !names.partial_decls[decl].is_err()
+        partial: !names.partial_decls[decl].is_err(),
+        handle: !names.handle_decls[decl].is_err()
     )
 
 # A generated payload type is this compiler's own invention, so both
 # names are the same one — stated rather than left implicit, because
 # the pair exists precisely where that is false.
 function generated(name: str) -> Aggregate
-    return Aggregate(prefix: name, c_type: name, foreign: false, partial: false)
+    return Aggregate(prefix: name, c_type: name, foreign: false, partial: false, handle: false)
 
 # The prefix whose _eq/_retain/_release/_hash serve this TYPE — the
 # satellite for a declared aggregate, the option's own name for a T?,

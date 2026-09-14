@@ -60,13 +60,31 @@ function equality_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
         writer.blank(@w)
         return
 
+    # A HANDLE compares as an ADDRESS (spec § 13). Until 2026-09-14 the
+    # zero-field arm below answered `true` for every fieldless record, so
+    # `h == nullptr` was constant `true` at exit 0 — defect 032, whose story
+    # and reproducer are
+    # `tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero`. It
+    # asks the DECLARATION and never the field count, because *a fieldless
+    # record cannot be written* was a premise about the world
+    # (`.claude/rules/module-shape.md`) that M-handle-verdict killed.
+    if at.handle
+        writer.line(@w, text: "    return *a == *b;")
+        writer.line(@w, text: "}")
+        writer.blank(@w)
+        return
+
     if fields.len() == 0
-        # record E is error[empty_record] in the checker, so this is
-        # belt to those braces — and (void) keeps the parameters used,
-        # because -Wall is on.
-        writer.line(@w, text: "    (void)a;")
-        writer.line(@w, text: "    (void)b;")
-        writer.line(@w, text: "    return true;")
+        # Not a handle and no fields: `record E` is error[empty_record], so
+        # nothing reaches this. Same "should never" as the partial arm above,
+        # and it goes in the same LOUD direction; the quiet one was defect 032.
+        writer.line(
+            @w,
+            text: "    hero_panic(\"" + at.prefix + "_eq: a record with no fields is not a handle\");"
+        )
+        writer.line(@w, text: "}")
+        writer.blank(@w)
+        return
 
     for field in fields
         ty: i64 @ table.error_ty(c.types)
@@ -199,6 +217,19 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
             @w,
             text: "    (void)elem; hero_panic(\"" + at.prefix + "_hash: a partial record has no structural hash\");"
         )
+        writer.line(@w, text: "}")
+        writer.blank(@w)
+        return
+
+    # A handle hashes the ADDRESS its `_eq` compares, because the two walks
+    # are one invariant (the module doc). `handle_map_key` refuses a handle as
+    # a key through containers and fields alike, so the constant this returned
+    # was sound by luck — every hash equal — rather than by construction.
+    if at.handle
+        writer.line(@w, text: "    " + handles.const_pointer(at.c_type) + "v = elem;")
+        writer.line(@w, text: "    uint64_t h = UINT64_C(0xcbf29ce484222325);")
+        writer.line(@w, text: "    h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);")
+        writer.line(@w, text: "    return h;")
         writer.line(@w, text: "}")
         writer.blank(@w)
         return

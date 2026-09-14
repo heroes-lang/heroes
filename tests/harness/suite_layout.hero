@@ -347,6 +347,22 @@ constant CEILING: i64
 # learned a new form does not error, it drops it. Three lines of room are left
 # rather than none, because a ceiling set at exactly today's measure is the
 # pattern M-declared-thresholds spent a milestone removing.
+#
+# **Two moved on 2026-09-14, M-cleanup-verdict step 1, for a DEFECT repair**
+# (defect 032: `==` on a handle answered a constant `true`, so `h == nullptr`
+# was always taken and `h != nullptr` never was). The repair gives the two
+# generated walks a handle arm each and gives `ctype.Aggregate` the bit they
+# ask, and the shape of the cost is the point: `foreign` and `partial` already
+# travel from `new_names` to `Aggregate` through a `{i64: bool}`, so a third
+# fact of exactly that kind costs the same five lines in five places, and the
+# alternative — reading the handle off `c_type`'s trailing star — is a premise
+# about a SPELLING, which is what `.claude/rules/module-shape.md` refuses and
+# what `handles.hero` exists to keep in one place.
+# `emit/ctype.hero` 380 -> **395** (measured 388) and `emit/structural.hero` is
+# a NEW entry at **335** against §11's 300 (measured 323). That file is not cut
+# instead, and its own module doc says why: generated `eq` and generated `hash`
+# are ONE invariant and live where one diff shows both, so the only seam
+# available is the one the file was written to refuse.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1870"
@@ -359,7 +375,8 @@ constant DECIDED: [str]
         "selfhost/value_errors.hero 334"
         "selfhost/check/builtins.hero 377"
         "selfhost/ir/mono.hero 380"
-        "selfhost/emit/ctype.hero 380"
+        "selfhost/emit/ctype.hero 395"
+        "selfhost/emit/structural.hero 335"
         "selfhost/emit/gate.hero 365"
         "selfhost/resolve/cycles.hero 331"
         "selfhost/resolve/state.hero 330"
@@ -629,4 +646,8 @@ test "the ceiling is per file, and a decided file keeps its own"
     # language refuses to split. Two rows out and one in is a net of minus one,
     # and the ceiling that was the highest in the lowering fell from 1511 to
     # 1110. The reason for each number is above DECIDED.
-    assert DECIDED.len() == 18
+    #
+    # **18 -> 19 on 2026-09-14**, M-cleanup-verdict step 1: `emit/structural.hero`
+    # arrives for defect 032's repair, an ADDITION, which is the direction this
+    # assert exists to make somebody type. The reason is above DECIDED.
+    assert DECIDED.len() == 19
