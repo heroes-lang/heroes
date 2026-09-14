@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-owned-asks-the-result-too.hero:33:40: error[owned_needs_cstr]: `owned` marks a `cstr`, and the result of `labs` is a `i64`
+tests/golden/check/fixedbugs-owned-asks-the-result-too.hero:37:42: error[owned_needs_cstr]: `owned` marks a `cstr`, and the result of `malloc` is a `ptr`
+tests/golden/check/fixedbugs-owned-asks-the-result-too.hero:41:36: error[owned_needs_cstr]: `owned` marks a `cstr`, and `base` is a `ptr`

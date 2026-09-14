@@ -114,14 +114,32 @@ function mark_refusals(a: ast.Ast, s: source.Source, decls: [ast.Decl], at: i64)
     match decls[at].kind
         .function_decl fd =>
             if !fd.value.owned_result.is_err()
-                found = refusal_for_mark(s, decls, at: at, mark: fd.value.owned_result.must())
+                mark = fd.value.owned_result.must()
+                wrong = wrong_owned_type(
+                    a,
+                    s,
+                    ty: fd.value.result,
+                    subject: "the result of `" + source.span_text(s, decls[at].name) + "`",
+                    mark: mark
+                )
 
-                if !found.is_err()
-                    out @ out.push(found.must())
+                if !wrong.is_err()
+                    out @ out.push(wrong.must())
+                else
+                    found = refusal_for_mark(s, decls, at: at, mark: mark)
+
+                    if !found.is_err()
+                        out @ out.push(found.must())
 
             for param in fd.value.params
                 if !param.owned.is_err()
-                    wrong = wrong_owned_type(a, s, param: param)
+                    wrong = wrong_owned_type(
+                        a,
+                        s,
+                        ty: param.ty,
+                        subject: "`" + source.span_text(s, param.name) + "`",
+                        mark: param.owned.must()
+                    )
 
                     if !wrong.is_err()
                         out @ out.push(wrong.must())
@@ -134,7 +152,7 @@ function mark_refusals(a: ast.Ast, s: source.Source, decls: [ast.Decl], at: i64)
 
     return out
 
-# `owned` on a parameter that is not a `cstr`, refused where it is WRITTEN.
+# `owned` on something that is not a `cstr`, refused where it is WRITTEN.
 #
 # The mark means one thing: *C writes a string through this cell and the
 # compiler frees it with that function* (§4.19, panel 109). Until 2026-09-13 the
@@ -149,15 +167,32 @@ function mark_refusals(a: ast.Ast, s: source.Source, decls: [ast.Decl], at: i64)
 # the opposite of what a handle wants: `owned` says C hands you a thing and the
 # compiler releases it, where a handle parameter wants to say the CALL consumes
 # what the caller passed. One word, one meaning.
-function wrong_owned_type(a: ast.Ast, s: source.Source, param: ast.Param) -> diag.Diagnostic?
-    written = source.span_text(s, a.types[param.ty].span)
+#
+# **AND IT ASKED THE PARAMETER AND NOT THE RESULT UNTIL 2026-09-15, WHICH WAS
+# DEFECT 036.** `spec § 13` gives `owned` after *"a `cstr` result or a `char **`
+# out-parameter"*, two positions, and the note below has always named both — so
+# the document, the message and the rule disagreed with each other and only the
+# rule shipped. `function labs(x: i64) -> i64 owned free` checked at exit **0**,
+# silently retyped the result as `str?`, emitted `h_library_validated` on the
+# integer, and clang refused it as `internal error: compiling the generated C
+# failed` at exit **2** — the compiler blaming itself for a binding the author
+# wrote, which is the failure §4.19's guarantee exists to prevent.
+#
+# **The guard existed and watched the wrong half**, which is why the repair is
+# one call site and a parameter rather than a new refusal: `unknown_freer` asked
+# whether the NAME resolves and nothing asked what the mark was ON. Found by
+# panel 149's completeness critic, outside that sitting's question. It is the
+# same shape `check/ffi.hero` records of panel 062, one rule wired to one call
+# site while the other positions shipped.
+function wrong_owned_type(a: ast.Ast, s: source.Source, ty: i64, subject: str, mark: token.Span) -> diag.Diagnostic?
+    written = source.span_text(s, a.types[ty].span)
 
     if written == "cstr"
         return fail(code: "none", msg: "the mark is on the type it is for")
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "owned_needs_cstr",
-        message: "`owned` marks a `cstr`, and `" + source.span_text(s, param.name) + "` is a `" + written + "`",
-        span: param.owned.must()
+        message: "`owned` marks a `cstr`, and " + subject + " is a `" + written + "`",
+        span: mark
     )
     d.notes @ d.notes.push(
         "`owned <freer>` says C writes a string THROUGH this cell and the compiler frees it with that function, so it belongs on a `@x: cstr` out-parameter or on a `cstr` result. On anything else it says nothing the compiler can act on"
