@@ -90,7 +90,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_close(sqlite3 
 #line 55 "examples/sqlite/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_exec(sqlite3 * a0, const char * a1, void * a2, void * a3, void * a4) { (void)(sqlite3_exec)(a0, a1, a2, a3, a4); }
 #line 56 "examples/sqlite/main.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_prepare_v2(sqlite3 * a0, const char * a1, int32_t a2, sqlite3_stmt * * a3, void * * a4) { (void)(sqlite3_prepare_v2)(a0, a1, a2, a3, (void *)a4); }
+__attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_prepare_v2(sqlite3 * a0, const char * a1, int32_t a2, sqlite3_stmt * * a3, const char * * a4) { (void)(sqlite3_prepare_v2)(a0, a1, a2, a3, a4); }
 #line 57 "examples/sqlite/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_step(sqlite3_stmt * a0) { (void)(sqlite3_step)(a0); }
 #line 58 "examples/sqlite/main.hero"
@@ -178,11 +178,11 @@ bb0:
 int64_t h_main_first_int(sqlite3 * h0_db, HeroStr h1_sql) {
 #line 180 "main.c"
     sqlite3_stmt * h2_statement;
-    __attribute__((unused)) void * h3_tail;
+    __attribute__((unused)) const char * h3_tail;
     int64_t h4_rc;
     int64_t h5_value;
     sqlite3_stmt * t1;
-    void * t2;
+    const char * t2;
     sqlite3 * t3;
     HeroStr t4 = {0};
     const char * t5;
@@ -225,7 +225,7 @@ bb0:
 #line 74 "examples/sqlite/main.hero"
     t6 = INT64_C(-1);
 #line 71 "examples/sqlite/main.hero"
-    t7 = sqlite3_prepare_v2(t3, hero_cstr_nonnull(t5), t6, &h2_statement, (void *)&h3_tail);
+    t7 = sqlite3_prepare_v2(t3, hero_cstr_nonnull(t5), t6, &h2_statement, &h3_tail);
 #line 71 "examples/sqlite/main.hero"
     h4_rc = t7;
 #line 79 "examples/sqlite/main.hero"

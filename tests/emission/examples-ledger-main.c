@@ -344,7 +344,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_errmsg(sql
 #line 89 "examples/ledger/db/sqlite.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_changes(sqlite3 * a0) { (void)(sqlite3_changes)(a0); }
 #line 90 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_prepare_v2(sqlite3 * a0, const char * a1, int32_t a2, sqlite3_stmt * * a3, void * * a4) { (void)(sqlite3_prepare_v2)(a0, a1, a2, a3, (void *)a4); }
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_prepare_v2(sqlite3 * a0, const char * a1, int32_t a2, sqlite3_stmt * * a3, const char * * a4) { (void)(sqlite3_prepare_v2)(a0, a1, a2, a3, a4); }
 #line 91 "examples/ledger/db/sqlite.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_step(sqlite3_stmt * a0) { (void)(sqlite3_step)(a0); }
 #line 92 "examples/ledger/db/sqlite.hero"
@@ -15287,14 +15287,14 @@ bb2:
 h_0opt_791f9719 h_dbsqlite_prepared(h_dbsqlite_Db h0_db, HeroStr h1_sql) {
 #line 15289 "main.c"
     sqlite3_stmt * h2_statement;
-    __attribute__((unused)) void * h3_tail;
+    __attribute__((unused)) const char * h3_tail;
     h_0opt_791f9719 h4_own4 = {0};
     HeroStr h5_own5 = {0};
     HeroStr h6_own6 = {0};
     HeroStr h7_own7 = {0};
     h_0opt_791f9719 h8_own8 = {0};
     sqlite3_stmt * t1;
-    void * t2;
+    const char * t2;
     h_dbsqlite_Db t3;
     sqlite3 * t4;
     HeroStr t5 = {0};
@@ -15340,7 +15340,7 @@ bb0:
 #line 275 "examples/ledger/db/sqlite.hero"
     t7 = INT64_C(-1);
 #line 275 "examples/ledger/db/sqlite.hero"
-    t8 = sqlite3_prepare_v2(t4, hero_cstr_nonnull(t6), t7, &h2_statement, (void *)&h3_tail);
+    t8 = sqlite3_prepare_v2(t4, hero_cstr_nonnull(t6), t7, &h2_statement, &h3_tail);
 #line 275 "examples/ledger/db/sqlite.hero"
     t9 = h_dbsqlite_SQLITE_OK();
 #line 275 "examples/ledger/db/sqlite.hero"

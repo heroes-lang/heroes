@@ -8,17 +8,22 @@ The status and the chain. Why the table looks the way it does is
 
 | | |
 |---|---|
-| **Current milestone** | **M-handle-verdict**, opened 2026-09-13 on the trunk and at step 5: **every defect this milestone was scheduled for is closed** — 029 by the handle form, 030 by the specification's own sentence, 031 by `consumes` and the rule that a call ending a value's life may not be handed one the caller borrowed, at 114 code lines against the 150 the sitting set. **Both lists are at zero.** What remains is the § 7 equality hazard panel 139 could not file, the naming sitting the author ordered for after the form, and whether `heroes mutate` gains an operator for the consuming shape |
-| **Last closed** | **M-deferral-ledger**, 2026-09-13, `m-deferral-ledger` ([053](journal/053-deferral-ledger.md)) — every deferred item now carries a date, and nine times the reason under it had rotted first. **Its tag was withheld for a day** because `records/tagged` allows no tag over an open defect, and lands on the commit that emptied both lists · before it **M-declared-thresholds** ([052](journal/052-declared-thresholds.md)) and **M-reflection-verdict** ([051](journal/051-reflection-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **54** of 77 · **54** tags matching `m*`, the legacy `m0`-`m8` included — level again, because `m-deferral-ledger` landed the day both lists reached zero |
-| The compiler | **60,244** lines of Heroes in **207** modules (`find selfhost -name '*.hero'`) · the seed **805,698** lines of C, regenerated at M-handle-verdict step 5 |
-| The spec | **5847** on the vendored ranks and **7785** on the reader's own, against a ceiling of 8192 — the handle form and the consuming mark, **+125 and +175** across steps 4 and 5, one removal paying 17 of it; **345 free** and 285 net of the FFI floor |
+| **Current milestone** | **none open.** `M-cleanup-verdict` is next on the chain and has not been started: the ruling on a scope-bound release — `defer` or another form — for the two obligations `owned` and `lease` put on every path. A decision, not a feature |
+| **Last closed** | **M-handle-verdict**, 2026-09-14, `m-handle-verdict` ([054](journal/054-handle-verdict.md)) — three defects filed on three days against three symptoms were one question, *what does a bare address not carry*, and the answer is one sentence: a fieldless `record` in an `extern` group with a `tag` is C's pointer to what the header names and leaves opaque. The last sitting, convened to decide whether `ptr` keeps its name, kept it and found a **cast** instead · before it **M-deferral-ledger** ([053](journal/053-deferral-ledger.md)) and **M-declared-thresholds** ([052](journal/052-declared-thresholds.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **55** of 77 · **55** tags matching `m*`, the legacy `m0`-`m8` included |
+| The compiler | **60,312** lines of Heroes in **207** modules (`find selfhost -name '*.hero'`) · the seed **805,685** lines of C, regenerated at M-handle-verdict step 8 |
+| The spec | **5863** on the vendored ranks and **7806** on the reader's own, against a ceiling of 8192 — the handle form, the consuming mark and § 7's equality clause, **+208 vendored and +275 real** across the milestone, one removal paying 17 of it; **386 free** and 326 net of the FFI floor |
 | The contract | **7402** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5` since 2026-09-12. It was judged on OpenAI's vendored table until then, and was **1806 over** while `measure` printed nine to spare |
-| Records | sittings **143** · journals **54** · milestone files **47** · entries: `docs/records/log/` **648**, `docs/records/done/` **512**, `docs/records/book/beats/` **119** · **open defects 0** — 029, 030 and 031 all filed and all closed on 2026-09-13, and they were one question |
-| Waiting on the author | **0** decisions. Every sitting of M-deferral-ledger, the sitting-brief question and M-handle-verdict's own sitting were ratified on 2026-09-13, the day the ledger closed and the next milestone opened |
+| Records | sittings **144** · journals **55** · milestone files **47** · entries: `docs/records/log/` **651**, `docs/records/done/` **516**, `docs/records/book/beats/` **120** · **open defects 0**, **open decisions 0** |
+| Waiting on the author | **0** decisions. Panel 146 was ratified in full on 2026-09-14, the day it sat |
 
-**Re-measured 2026-09-13 at M-handle-verdict step 5, not carried.** `records`
-is **23** checks, the compiler's own tests **645**, the net's own **151**.
+**Re-measured 2026-09-14 at the M-handle-verdict close, not carried.** `records`
+is **23** checks, `spec` **20**, the compiler's own tests **646**, the net's own
+**153**, the full net **1785**. **The previous figure for the net's own tests was
+one too many**: this close added three and the count went 150 to 153, both
+counted from `^test "` at HEAD and now, so the **151** this row carried at step 5
+was carried rather than re-measured — in the one section whose rule is that its
+counts are re-measured and never carried.
 
 ---
 
@@ -97,7 +102,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 52 | **M-reflection-verdict** | done 2026-09-12 | `m-reflection-verdict` | [051](journal/051-reflection-verdict.md) | reflection refused at run time and as a general tag; a field's name becomes a name the checker resolves · **scheduled, no warrant** |
 | 53 | **M-declared-thresholds** | done 2026-09-12 | `m-declared-thresholds` | [052](journal/052-declared-thresholds.md) | every ceiling and floor says which way it may move, and something notices when it should have moved and did not · **§1.1** |
 | 54 | **M-deferral-ledger** | done 2026-09-13 | `m-deferral-ledger`, taken 2026-09-13 once all three defects closed | [053](journal/053-deferral-ledger.md) | every Part 7 item with no milestone gets a dated verdict or a return condition, and Part 8's homeless warts with it · nine sittings, and **nine times the item's stated reason was measured false or expired before its verdict could be written** · five refused to Part 6 with falsifiers, two deferred again with conditions somebody can check · coverage refused as Part 6's **first row whose subject is a tool** · wart 8 rewritten because the cost is in the **spelling**: the same push is 0.02 s at a million through a plain name or a lent field, and 11.51 s at fifty thousand through a field in place |
-| 55 | **M-handle-verdict** | **OPEN** | — | — | the ruling on telling one C handle from another: `sqlite3_step(db)` for `sqlite3_step(statement)` builds at zero diagnostics and exits 139, because every C pointer is one `ptr` · **§1.12**, defect 029 |
+| 55 | **M-handle-verdict** | done 2026-09-14 | `m-handle-verdict` | [054](journal/054-handle-verdict.md) | the ruling on telling one C handle from another, and three defects that were one question · **§1.12**, defects 029, 030, 031 |
 | 56 | **M-cleanup-verdict** | scheduled | — | — | the ruling on a scope-bound release — `defer` or another form — for the two obligations `owned` and `lease` put on every path · a decision, not a feature |
 | 57 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
 | 58 | **M-arm-platform** | scheduled | — | — | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |

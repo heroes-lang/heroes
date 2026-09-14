@@ -53,8 +53,8 @@
       "name": "string.quoted.double.hero",
       "patterns": [
         {
-          "comment": "panel 008: exactly these four in a string",
-          "match": "\\\\[nt\\\\\"]",
+          "comment": "spec § 2: five in a string, `\\n` `\\t` `\\r` `\\\\` `\\\"`. This read `[nt\\\\\"]` and said `exactly these four` until 2026-09-13, so a legal `\\r` fell through to the rule below and a CORRECT program was painted `invalid.illegal`. Measured the day it was fixed: `print(\"a\\rb\")` runs at exit 0. `spec/heroes-spec.md:39` and `selfhost/escape.hero`'s `escape_text` are the two sides the `spec/colouring` check now holds together.",
+          "match": "\\\\[ntr\\\\\"]",
           "name": "constant.character.escape.hero"
         },
         {
@@ -65,9 +65,9 @@
       ]
     },
     "char": {
-      "comment": "one ASCII character or one escape; its value is an int (§4.3)",
+      "comment": "one ASCII character or one escape; its value is an int (§4.3). The escape class carried `[nt\\\\']` until 2026-09-13 and so painted `'\\r'` as `invalid.illegal.char-literal.hero` by falling through to the third pattern — the same missing `r` as in the string rule above, in the second of the two places it had to be written by hand.",
       "patterns": [
-        { "match": "'\\\\[nt\\\\']'", "name": "constant.character.hero" },
+        { "match": "'\\\\[ntr\\\\']'", "name": "constant.character.hero" },
         { "match": "'[\\x20-\\x7E]'", "name": "constant.character.hero" },
         { "match": "'[^']*'", "name": "invalid.illegal.char-literal.hero" }
       ]

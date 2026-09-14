@@ -199,10 +199,31 @@ repairs panel 145 charged to it — `emit/ffi_tag.hero` reading clang's
 parameter to `str?` so a `ptr` gets two diagnostics about a string. They are the
 milestone's fifth item.
 
-*******************************************************************************
-**OPEN: 1**
+**Step 8 answered it, 2026-09-14: panel 146 sat, the name survives, and the
+sitting convened over a word found a cast.** The item's own conditions were met
+before it opened — it sat after step 4, and it was handed the census it was owed,
+per position. What it was NOT handed was a correct brief: the coordinator's
+carried six errors, the completeness critic refused its central sentence and
+compiled three counter-examples, and two of those three then failed re-running
+here. **What the sitting actually bought is not the name.** It is that
+`@tail: ptr` was making this compiler emit a `(void *)` cast where `@tail: cstr`
+hands clang the exact type, so panel 140's *11 times in 2 files* is now **0**.
+Ratified in full the same day; the record is
+`docs/records/done/2026-09-14-0100-panel-146-is-ratified-and-the-sitting-convened-over-a-word-found-a-cast.md`
+and the sitting is
+`docs/panel/146-the-name-survives-and-the-sitting-convened-over-it-found-a-cast.md`.
 
-- [ ] **M-handle-verdict** | whether `ptr` keeps its name, and it may not sit before the handle form has landed | `docs/panel/139-the-sentence-was-false-and-so-were-four-of-its-neighbours.md` § the reserved question · `docs/panel/145-a-handle-is-a-pointer-with-a-name-and-the-compiler-already-reads-the-name.md` § Author's verdict · `spec/heroes-spec.md` § 3, § 13
+**Three questions it refused to decide** and filed instead, because a sitting
+convened on a name may not settle them: whether the **13 lines across 7 files**
+that **recommend** `ptr` are still right after the handle form — the sitting
+claimed one was measured wrong and the close withdrew that, since each names a
+position no handle can reach, so the live question is whether a fourteenth place
+should now recommend the handle; the **§ 3 routing clause**, which is the defect
+the sitting turned out to be about; and whether `ptr` is an FFI type or a core
+type.
+
+*******************************************************************************
+**OPEN: 0**
 
     **Origin:** author decision 2026-09-13, ratifying panel 145. Panel 139 had
     reserved the type's name — `unsafe_ptr`, or a family — for that sitting *by

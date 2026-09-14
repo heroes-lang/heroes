@@ -48,6 +48,15 @@
 #    where every healthy object is already warm. A build that goes green
 #    on its second run is the worst outcome a build system has, because
 #    nobody re-reads a green build.
+# 6. **A warm cache never turns a PASS into a failure**, which is (5)
+#    read the other way and was measured 2026-09-14. A warm object
+#    replays the warnings its compile produced, so that a warning is not
+#    swallowed after the first hit — and the saved file was written only
+#    when clang spoke, so a clean recompile left its predecessor's text
+#    in place and every later build replayed a compile that no longer
+#    exists. A repaired program reported its old warnings forever. Both
+#    halves of this pair are the same instrument pointed at the two
+#    directions a cache can lie in.
 #
 # THE PROGRAM IS WRITTEN HERE rather than kept under
 # `tests/golden/surface-fixtures/`, and the header is why: the case is
@@ -100,6 +109,41 @@ constant FAIL_CALLER: str
 constant GOOD_CALLER: str
     "use failbind\n\nfunction main()\n    print(failbind.root(x: 16.0))\n"
 
+# The sixth direction, and it is the fifth one's mirror: a warm cache
+# must not turn a PASS into a failure either. A warm object replays the
+# warnings its compile produced — added deliberately, so a warning is not
+# swallowed after the first hit — and `warnings.txt` was written only
+# when clang said something, so a CLEAN recompile left its predecessor's
+# file on disk and the next hit replayed a compile that no longer exists.
+#
+# Met live on 2026-09-14: a golden whose header was repaired to silence
+# two `-Wunused-function` warnings was silent on every direct run, cold
+# and warm, and `suite_warnings` failed it anyway — replaying the two
+# warnings with the LINE NUMBERS OF THE OLD HEADER, which is what named
+# the cause. The repaired program went on reporting them forever, on
+# every warm build, until the cache directory was deleted by hand.
+#
+# The header is the thing edited here rather than the `.hero`, because
+# only a header edit rebuilds the object WITHOUT changing the key: the
+# directory is the same, so the stale file is still sitting in it.
+constant NOISE_HOME: str
+    "cache-warnings"
+
+constant NOISE_BIND: str
+    "extern \"noise.h\"\n    function noise_take(n: i64) -> i64\n\nfunction take(n: i64) -> i64\n    return noise_take(n: n)\n"
+
+constant NOISE_CALLER: str
+    "use noisebind\n\nfunction main()\n    print(noisebind.take(n: 3))\n"
+
+# `static` is the warning: this header reaches a translation unit that
+# calls neither function, and clang says `unused function`. `static
+# inline` is the silence, and C11 is where the difference lives.
+constant NOISE_HEADER_WARNS: str
+    "#include <stdint.h>\nstatic int64_t noise_spare(int64_t n) { return n; }\nstatic inline int64_t noise_take(int64_t n) { return n + 1; }\n"
+
+constant NOISE_HEADER_SILENT: str
+    "#include <stdint.h>\nstatic inline int64_t noise_spare(int64_t n) { return n; }\nstatic inline int64_t noise_take(int64_t n) { return n + 1; }\n"
+
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     a_header_edit_is_not_invisible(@r, scratch: scratch, compiler: compiler)
@@ -107,7 +151,74 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     only_the_module_that_read_it_is_rebuilt(@r, scratch: scratch, compiler: compiler)
     a_reordered_variant_is_not_served_warm(@r, scratch: scratch, compiler: compiler)
     a_warm_cache_never_turns_a_failure_into_a_pass(@r, scratch: scratch, compiler: compiler)
+    a_warm_cache_never_replays_a_warning_that_was_repaired(@r, scratch: scratch, compiler: compiler)
     return ok(r)
+
+# **A warning a repair silenced stays silenced, on every later build.**
+#
+# Four builds, and the third is the one that mattered: warn, repair
+# (which rebuilds), then TWO warm hits. The defect lived only in the
+# hits after the rebuild, so a three-build case would have passed.
+function a_warm_cache_never_replays_a_warning_that_was_repaired(@r: report.Report, scratch: str, compiler: str)
+    label = "cache/a warm cache never replays a warning that was repaired"
+    dir = scratch + "/" + NOISE_HOME
+
+    if shell.remove_tree(dir).is_err() || shell.mkdir_all(dir).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + dir)
+        return
+
+    if write_file(path: dir + "/noisebind.hero", text: NOISE_BIND).is_err() || write_file(path: dir + "/caller.hero", text: NOISE_CALLER).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot write the program")
+        return
+
+    if write_file(path: dir + "/noise.h", text: NOISE_HEADER_WARNS).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot write the noisy header")
+        return
+    wrong: [str] @ []
+    noisy = shell.run_guarded(scratch: scratch, words: [compiler, "build", dir + "/caller.hero"])
+
+    if noisy.is_err() || noisy.must().code != 0
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  the first build did not succeed, so there is no warning to repair"
+        )
+        return
+
+    # The premise, asserted rather than assumed: without a warning here
+    # the rest of this case tests nothing and would pass vacuously.
+    if !strings.contains(text: noisy.must().err, needle: "unused function")
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  the noisy header produced no `unused function` warning, so this case has nothing to measure. clang said:\n    " + strings.trimmed(noisy.must().err) + "\n  Repair the header above rather than deleting the check: a case that cannot fire is worse than none."
+        )
+        return
+
+    if write_file(path: dir + "/noise.h", text: NOISE_HEADER_SILENT).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot write the repaired header")
+        return
+
+    for attempt in ["the rebuild", "the first warm hit", "the second warm hit"]
+        said = shell.run_guarded(scratch: scratch, words: [compiler, "build", dir + "/caller.hero"])
+
+        if said.is_err() || said.must().code != 0
+            wrong @ wrong.push("    " + attempt + " did not succeed after the header was repaired")
+            continue
+
+        if strings.contains(text: said.must().err, needle: "unused function")
+            wrong @ wrong.push(
+                "    " + attempt + " reported `unused function` on a header that no longer has one:\n      " + strings.trimmed(said.must().err)
+            )
+
+    if wrong.len() > 0
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: wrong.join("\n") + "\n  A warm object replays the warnings its compile produced, so that a warning is\n  not swallowed after the first hit. The saved file must therefore be written on\n  every compile INCLUDING a clean one: written only when clang speaks, a repair\n  leaves the old text in place and every later build replays a compile that no\n  longer exists. It is the mirror of the case above — that one turns a failure\n  into a pass, this one turns a pass into a failure, and the same instrument\n  catches both."
+        )
+    else
+        report.keep_pass(@r)
 
 # The program, freshly laid down with the header at `value`. Returns
 # the directory it lives in.
