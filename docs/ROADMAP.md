@@ -11,30 +11,24 @@ The status and the chain. Why the table looks the way it does is
 | **Current milestone** | **none open.** `M-check-completeness` is next on the chain and has not been started: what `heroes check` accepts, `heroes build` compiles — through a generic too |
 | **Last closed** | **M-marked-acquisition**, 2026-09-14, `m-marked-acquisition` ([056](journal/056-marked-acquisition.md)) — the form closed at **three words**, each saying one thing and none inferred: `acquires <releaser>`, `consumes`, `borrows`. Two instruments answering two questions — a runtime counter for *did the program give back what it took*, and a 126-line rule for *is this binding finished* — and neither needs the flow analysis the checker says twice it does not have · before it **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) and **M-handle-verdict** ([054](journal/054-handle-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **57** of 78 · **57** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **61,657** lines of Heroes in **212** modules (`find selfhost -name '*.hero'`) · the seed **819,163** lines of C, regenerated at defect 042's close and verified at the fixpoint |
+| The compiler | **61,758** lines of Heroes in **212** modules (`find selfhost -name '*.hero'`) · the seed **819,710** lines of C, regenerated at defect 044's close and verified at the fixpoint |
 | The spec | **5989** on the vendored ranks and **7974** on the reader's own, against a ceiling of **10240** — raised from 8192 by author decision 2026-09-14 with the document 211 free. The three marks are **+125 vendored and +168 real**, in two payments at ratios of 1.40 and 1.23, both inside the band panel 148's warden gave while refusing any single factor; defect 037's close is **+1 vendored and +0 real**, a −3 phrase and a +7 correction cancelling on the reader's instrument; **2266 free** and 2206 net of the FFI floor |
-| The contract | **7402** on the reader's own against a ceiling of **12288**, unchanged, judged on `claude-opus-5` since 2026-09-12 |
-| Records | sittings **151** · journals **58** · milestone files **48** · entries: `docs/records/log/` **665**, `docs/records/done/` **533**, `docs/records/book/beats/` **123** · **open defects 2**, **open decisions 1** |
+| The contract | **7449** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-15 with the wakeup instruction: of the 36 vendored tokens the pin was behind, 14 predate that session and no commit had named them |
+| Records | sittings **151** · journals **58** · milestone files **48** · entries: `docs/records/log/` **665**, `docs/records/done/` **534**, `docs/records/book/beats/` **123** · **open defects 1**, **open decisions 1** |
 | Waiting on the author | **panel 153's ratification**, queued 2026-09-15 with its resolution already in force as the default. Its completeness critic measured a route five seats had missed: three lines of a header of the author's own and the SHIPPED compiler reads the struct behind a pointer C hands back and walks the list, output byte-identical to the equivalent C program. So the sitting adopted the rule narrowing both routes needed, closed defect 042 on it, and queued the question the critic's finding actually poses — whether the LANGUAGE should do what a header already does, or whether the one thing it would buy, a guard on the null read, is the thing to build |
 
-**Re-measured 2026-09-15 at defect 037's close, one suite at a time against a
-compiler built from the regenerated seed, which is CI's own configuration.**
-`records` **23**, `spec` **20**, the compiler's own tests **649**, `check` **120**,
-`run` **121**, `lines` **122**, `warnings` **181**, `determinism` **150**,
-`emission` **474**, `annotations` **157**, `fixes` **10**, `corpus` **55**,
-`canonical` **2**, `runtime` **8**, `surface` **108**, `descriptors` **237**,
-`layout` **2**. The twenty-four suites sum to **1863**.
+**Re-measured 2026-09-15 at defect 044's close, the full net on a compiler built
+from the regenerated seed, which is CI's own configuration.** `check` **120**,
+`run` **124**, `emission` **482**, `determinism` **153**, `descriptors` **241**,
+`surface` **109**, `warnings` **184**, `lines` **125**, `annotations` **157**,
+`records` **23**, `spec` **20**, `corpus` **55**, `canonical` **2**, `layout`
+**2**, `runtime` **8**, the compiler's own tests **653** and the net's own
+**154**. **The net reads 1888 passed, 0 failed.**
 
-**What moved, and why each.** The compiler's own tests are **+3**, one per new
-module and one for the reader of clang's refusal; `check` **+1**, `run` **+2**
-and `emission` **+2** are the new cases, `emission` also swapping the blessed
-`addrinfo *` that pinned the wrong C for the misspelled tag that pins the right
-refusal; `surface` **+1** is the two-module fixture; `descriptors` **+2** follows
-`run`. **The day's first full net came back 1855 passed, 6 failed**: four were
-one cause — the binary under test carried the spec's old pinned digest, the pins
-having moved while the seed was emitted — and two were real, `emit/ctype.hero`
-at 399 lines of code against a decided 395, repaired by moving the handle's
-spelling into `handles.hero`, and the two run emissions unblessed.
+**Five defects were closed on 2026-09-15 and two were opened**, 037, 042, 043 and
+044 repaired and 045 left open with half of it landed; the four closing records
+carry the measurements and the day's two sittings are 152 and 153. The morning's
+figures are superseded, not wrong.
 
 ---
 

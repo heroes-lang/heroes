@@ -27,7 +27,7 @@ record.
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 1**
 
 - [ ] **045 — a null handle handed to a C function that reads through it SEGFAULTS, which §1.12 forbids outright** | `cstr` arguments are guarded on their way out and handles are not, so `ai_read(p: nullptr)` against a header that dereferences its parameter builds clean and dies at **exit 139** with nothing on either stream | `selfhost/emit/ops.hero`'s call emission · `guard_cstr_arguments` beside it · `runtime/parts/` for the abort shapes
 
@@ -77,64 +77,33 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `owned` machinery are the precedent for a mark that says what a call does
     with what it is given.
 
-- [ ] **044 — a record naming one field type TWICE registers only the first handle behind it, so a correct program aborts and a leaking one passes** | `check/reaches.hero`'s `gather` threads one `seen` map across sibling fields, so the second field whose type was already walked enumerates nothing: the runtime's set of live handles is short by one, a program that gives every handle back is aborted at 134, and a program that leaks the un-enumerated one exits 0 in silence | `selfhost/check/reaches.hero`'s `gather` and `handle_suffixes` · `selfhost/emit/ops.hero`'s `handle_traffic`
+    **THE DEFECT IS WORSE THAN IT WAS FILED, measured 2026-09-15 while its first
+    repair was being attacked at the shapes beside it.** The entry above measures
+    a null the optimiser can PROVE. Written so it cannot — the null arrives from
+    a C function whose argument depends on `args()` — the three levels disagree,
+    and the disagreement is the finding:
 
-    **Origin:** found 2026-09-15 by a **six-agent adversarial sweep** over the
-    shapes next to defect 037's repair, and put to an independent skeptic told to
-    refute it, which could not: it reproduced both arms, built a STRICTER control
-    than the finder's, and reported *"the claim stands; I could not refute it on
-    any route."*
+    | level | what the program does |
+    |---|---|
+    | `-O0` | `panic: a null pointer was read through …, called from node_value`, **exit 134** — the runtime guard below |
+    | `-O2` | prints the WRONG VALUE for a node that does not exist, **exit 0**, both streams otherwise empty |
+    | `--sanitize` | `runtime error: member access within null pointer`, UBSan, exit 0 |
 
-    **The reproducer, and the control beside it is what makes it a defect rather
-    than a rule.**
+    **A wrong answer at exit 0 is what this list exists for, and no signal
+    handler can ever reach it**, because at `-O2` clang assumes the pointer is
+    non-null — that is what the standard licenses — and folds the fault away
+    entirely. So the repair cannot live in the runtime: **it has to be a check
+    before the call**, which is what `guard_cstr_arguments` already does for
+    every `cstr`, and which for a handle needs the binding author to say whether
+    NULL is legal for that parameter.
 
-    ```
-    extern "pairs.h"
-        record Slot tag Slot
-        record Inner
-            s: Slot
-        record Pair
-            a: Inner
-            b: Inner
-        function pair_open() -> Pair acquires pair_close
-        function pair_close(p: Pair consumes)
-        function slot_close(s: Slot consumes)
-    ```
-
-    A program that opens a `Pair` and closes BOTH slots emits **one**
-    `hero_handle_acquired(t1.a.s);` and dies: `panic: 1 C handle(s) given back
-    that were never taken`, **exit 134**, on a program that is correct. The
-    identical program with `b` given a SECOND Heroes record name over the same C
-    struct emits **both** acquires and **exits 0**. The skeptic rebuilt the
-    control over one C type under two spellings — `typedef struct Inner Inner2;`
-    — so the C side is not a variable: `b: Inner` aborts, `b: Inner2` exits 0,
-    and the emitted C differs only by the missing `hero_handle_acquired(t1.b.s);`.
-
-    **And it fails OPEN in the other direction, which is the worse half.** A
-    program that leaks the un-enumerated handle **exits 0 in silence**, where the
-    same leak on the enumerated one panics *"1 C handle(s) never given back"*.
-    So the instrument that panel 150 built to close a silent leak class has a
-    shape it cannot see.
-
-    **The cause, in the compiler's own lines.** `check/reaches.hero`'s `gather`
-    walks a type's fields accumulating the dotted suffix of every handle it
-    reaches, and threads one `seen` map across SIBLING fields: `seen[n.decl]` is
-    set once and never cleared, so the second field whose type is a declaration
-    already walked returns having pushed nothing. **The map exists to break
-    cycles and it also truncates a DAG.** `walk`, the sibling function the
-    refusal rules use, is unaffected because it stops at the FIRST handle it
-    finds; only `handle_suffixes`, which must enumerate EVERY handle, is wrong.
-    The fixed-array form `e: Inner[2]` collapses the same way, and so does a
-    third repetition.
-
-    **It is the shape `reaches.hero`'s own module doc argues against, one
-    milestone later.** That doc says of defect 035's `depth > 16` bound that it
-    *"terminated by GIVING UP, silently"*; this guard gives up silently too, on a
-    different shape, in the same function.
-
-    **What is owed**: `seen` guards the current ROUTE rather than the whole walk,
-    so a sibling may revisit a declaration and a cycle still terminates — with a
-    golden case per shape, the `run/` case that must exit 0 and whatever pins the
-    silent-leak direction.
+    **A PARTIAL REPAIR LANDED 2026-09-15 and it is named partial rather than
+    counted.** `runtime/parts/stack.c` turns a read through the null page into
+    `panic: a null pointer was read through`, exit 134, naming the Heroes
+    function that called C — defect 013's own resolution one argument over, on
+    the measurement that a field's offset is smaller than a page. It closes the
+    `-O0` shape and the silent 139, it costs nothing, and it leaves the `-O2`
+    wrong answer standing. The case is
+    `tests/golden/surface-fixtures/nullread/main.hero`.
 
 *******************************************************************************

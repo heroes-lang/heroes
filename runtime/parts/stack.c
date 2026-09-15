@@ -337,6 +337,54 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
         hero_stack_say("panic: a null function pointer was called — a `ptr` holding `nullptr` reached C where C calls it back\n");
         abort();
     }
+
+    /* A READ OR WRITE THROUGH A NULL POINTER, and it is defect 013's own
+     * shape one argument over (defect 045, 2026-09-15). A handle holding
+     * `nullptr` handed to a C function that dereferences it — `getaddrinfo`'s
+     * list head before it is filled, a `struct addrinfo *` read for
+     * `ai_family` — died at 139 with both streams empty, which is the one
+     * thing §1.12 forbids by name.
+     *
+     * THE WITNESS IS THE ADDRESS AND IT IS MEASURED, not assumed. Four shapes
+     * on this Mac, one probe, `si_addr` against the field's own offset:
+     *
+     *     read `p->a` through NULL          si_addr 0x0   pc NONZERO
+     *     read `p->b`, offset 4             si_addr 0x4   pc NONZERO
+     *     read a field at offset 72         si_addr 0x48  pc NONZERO
+     *     copy the whole struct, `*p`       si_addr 0x0   pc NONZERO
+     *
+     * Every one lands in the FIRST PAGE, because the offset of a field is
+     * smaller than a page in every struct a header can lay out, and the null
+     * page is unmappable on all three platforms. So the window is one page and
+     * nothing wider: panel 104's wild store, eight kibibytes under the stack,
+     * is megabytes from here and still re-raises as before, which is the
+     * measurement that rule cost and which this clause must not undo.
+     *
+     * WHY THIS AND NOT A REFUSAL AT COMPILE TIME, which is defect 013's
+     * paragraph above and it is the same answer: `freeaddrinfo(NULL)` and
+     * `sqlite3_close(NULL)` are legal C and real programs call them, so whether
+     * NULL is legal is a property of the C FUNCTION and not of the type, and no
+     * header states it. The promise §1.12 can keep is not prevention; it is
+     * that the program says what happened.
+     *
+     * The caller is named where the frame walk can find a Heroes function,
+     * because unlike the `pc == 0` case the stack here is intact: the fault is
+     * inside the C function the program called, and its caller is the author's
+     * own line. Nothing is printed when the walk finds no Heroes name, which is
+     * a fault raised entirely inside C.
+     *
+     * NOTHING UNDER THE SANITIZER, as the file's head already says: ASan
+     * installs its own handler and reports `SEGV on unknown address` itself. */
+    if (addr < 4096) {
+        const char *who = hero_stack_blame(pc, fp);
+        hero_stack_say("panic: a null pointer was read through — a handle or `ptr` holding `nullptr` reached C where C dereferences it");
+        if (who != NULL) {
+            hero_stack_say(", called from ");
+            hero_stack_say_heroes_name(who);
+        }
+        hero_stack_say("\n");
+        abort();
+    }
     hero_stack_pass_on(signum, si, ctx);
 }
 
