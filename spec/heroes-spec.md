@@ -353,7 +353,7 @@ array of one: `i32[4]`, never a `[T]`; build one with `[a, b, c, d]`.
 `record Font partial` names only some, and then comparing it and using it as a
 map key are compile errors — for it and for any value holding it. Its size stays
 C's, not the field list's. One with a `tag` and no fields is a **handle**, C's
-pointer to what the header leaves opaque: `record Db tag sqlite3` is `sqlite3 *`.
+pointer to that type: `record Db tag sqlite3` is `sqlite3 *`.
 `nullptr` is its null and `==` compares the address; a map key is an error. A
 parameter declared with it takes no other handle, and two records may not name
 one tag.
@@ -372,11 +372,11 @@ compiler frees that string with that function, hands it over as a `str?` (the
 `@` cell is only written), and refuses your own call of it. Unmarked pointers
 are never freed. `consumes` after a parameter says the call ends that value's
 life, so passing one the function borrowed is an error: mark the parameter `@`
-and the value does not survive the call. `acquires sqlite3_finalize` after a handle
-result or `@` out-parameter says the call begins that handle's life and names
+and the value does not survive the call. `acquires sqlite3_finalize` after a result
+or `@` out-parameter reaching a handle says the call begins that handle's life and names
 the one that ends it, which the program owes it. The owing is counted, so a
 handle consumed twice hides one never consumed. `borrows` says the call hands
-back one it keeps, and where a group consumes a handle type every call handing
+back one it keeps, and where any `extern` consumes a handle type every call handing
 one back says which it is.
 A group may name a **package** instead of a library: `extern "raylib.h" package "raylib"`
 asks the system where its headers and libraries are and what else it needs. A

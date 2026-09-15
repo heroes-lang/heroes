@@ -1,12 +1,20 @@
 # What a C handle is, asked once (panel 145, 2026-09-13; `docs/work/DEFECTS.md` 029).
 #
 # A **handle** is a `record` declared inside an `extern` group with a `tag` and
-# no fields: a pointer to a type the header names and leaves opaque.
-# `record Db tag sqlite3` is C's `sqlite3 *`, the tag written **verbatim as the
-# header spells the type** and never `struct sqlite3 *` — `curl/curl.h` reads
-# `typedef void CURL;` on this Mac's SDK, so a `struct <tag>` spelling reaches
-# one of the three handle types in this tree, and the verbatim name is also the
-# text `cli/pointee.hero` already receives from clang's own AST dump.
+# no fields: a pointer to a type the header names. `record Db tag sqlite3` is
+# C's `sqlite3 *`, the tag being **the author's word**, written as the author
+# wrote it: `curl/curl.h` reads `typedef void CURL;` on this Mac's SDK, so a
+# `struct <tag>` spelling written unconditionally would fabricate an incomplete
+# type over one of the handle types in this tree, and `netdb.h` declares
+# `struct addrinfo` with no typedef, so the bare word written unconditionally
+# does not compile there. **Neither spelling works for every header, and the
+# compiler guesses neither** (panels 151 and 152, defect 037): the emitter
+# writes the author's word, and where clang refuses it with *must use 'struct'
+# tag to refer to type 'addrinfo'* — a message clang produces only when that
+# exact word names a struct tag — `cli/produce.hero` reads the refusal, spells
+# the tag `struct addrinfo` and compiles again. A misspelled tag stays refused,
+# because clang says *unknown type name* for it and never *must use 'struct'*.
+# `c_spelling` below is the one place both spellings are written.
 #
 # **THIS FILE EXISTS BECAUSE THE QUESTION WAS ABOUT TO BE ANSWERED FOUR TIMES.**
 # Five scouts mapped step 4 and each proposed its own predicate in its own home:
@@ -33,6 +41,7 @@
 
 use ast
 use token
+use source
 use diag
 
 # The three clauses, over the PIECES, because the parser asks before a
@@ -97,13 +106,22 @@ function const_pointer(c_type: str) -> str
         return c_type + " const *"
     return "const " + c_type + " *"
 
-# The C type a handle is spelled as: the tag verbatim, starred. The caller has
-# already asked `is_handle`, so a record that is not one answers the empty
-# string rather than a guess.
-function c_spelling(decl: ast.Decl, tag_text: str) -> str
-    if !is_handle(decl)
-        return ""
+# The C type a handle is spelled as: the author's word, starred, and `struct`
+# in front of it only where clang's own refusal named that word (the module doc
+# above). `spelled` below is the one caller, and this is the one place the two
+# spellings are written, so a third cannot appear elsewhere.
+function c_spelling(tag_text: str, needs_struct: bool) -> str
+    if needs_struct
+        return "struct " + tag_text + " *"
     return tag_text + " *"
+
+# The same answer from the record's own tag span and the set of tags clang said
+# need `struct` (`cli/produce.hero` fills it; empty on every first emission).
+# `emit/ctype.hero` asks this and writes one line, so the file that names every
+# C type does not also decide how a handle is spelled.
+function spelled(s: source.Source, tag: token.Span, struct_tags: {str: bool}) -> str
+    word = source.span_text(s, tag)
+    return c_spelling(tag_text: word, needs_struct: !struct_tags[word].is_err())
 
 # Two records naming ONE C type, and it is refused for a reason that outlives
 # this compiler (panel 145's narrowing, author decision 2026-09-13). Two handles
@@ -174,3 +192,16 @@ test "all three clauses are load-bearing, and a record with fields is never a ha
 
 function none_library() -> ast.Library?
     return fail(code: "absent", msg: "no library")
+
+test "a handle is spelled with the author's word, and `struct` only where clang asked"
+    assert c_spelling(tag_text: "sqlite3", needs_struct: false) == "sqlite3 *"
+    assert c_spelling(tag_text: "addrinfo", needs_struct: true) == "struct addrinfo *"
+
+    # From the span, through the set: the word is the key, and only a word in
+    # the set is qualified.
+    s = source.new_source(name: "t.hero", text: "record AI tag addrinfo\n")
+    tag = token.Span(start: 14, end: 22)
+    asked: {str: bool} @ {}
+    assert spelled(s, tag, asked) == "addrinfo *"
+    asked["addrinfo"] @ true
+    assert spelled(s, tag, asked) == "struct addrinfo *"

@@ -10,12 +10,19 @@
 # Repaired to `closed(@h: Holder)` this program compiles again, and a copy made
 # BEFORE the call still holds the freed address — `--sanitize` reports
 # `heap-use-after-free` on it. That class is design.md Part 8 wart 20.
+#
+# **The binding was `ptr consumes` until 2026-09-15.** Panel 150 R3 refuses a
+# mark on a type that reaches no handle (`unread_mark`), because on a `ptr` the
+# word was never read and obeying a wrong one was measured to corrupt. So the
+# memory is a handle here — `record Block tag void` is C's `void *` — and the
+# borrowed-handle rule below reads exactly as it did.
 extern "stdlib.h"
-    function malloc(size: u64) -> ptr
-    function free(p: ptr consumes)
+    record Block tag void
+    function malloc(size: u64) -> Block acquires free
+    function free(p: Block consumes)
 
 record Holder
-    cell: ptr
+    cell: Block
 
 # The refusal. `h` is borrowed, and `free` ends what it is given.
 function closed(h: Holder)
@@ -24,7 +31,7 @@ function closed(h: Holder)
 # A local is not borrowed from anybody, so consuming one is the ordinary case
 # and is left alone.
 function fine()
-    p: ptr @ malloc(size: 8)
+    p: Block @ malloc(size: 8)
     free(p)
 
 # An `@` parameter says on the signature that the value does not survive, which

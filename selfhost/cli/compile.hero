@@ -236,6 +236,9 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
         .tests_build   => wants_text @ true
         .program_build => wants_text @ wants_text
 
+    # The author's word for every handle tag: this is the first emission, and
+    # what clang says about a tag is learned in `cli/produce.hero`, after it.
+    no_tags: {str: bool} = {}
     emitted = emit.emit_maybe(
         target: options.target,
         p: p,
@@ -243,7 +246,8 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
         s: s,
         decls: parsed.decls,
         version: version,
-        text: wants_text
+        text: wants_text,
+        struct_tags: no_tags
     )
     stop_e = stage(emitted.diagnostics, s)
 

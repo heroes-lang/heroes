@@ -58,10 +58,10 @@ constant SPEC_REAL_MODEL: str
     "claude-opus-5"
 
 constant SPEC_REAL_TAKEN: str
-    "2026-09-14"
+    "2026-09-15"
 
 constant SPEC_DIGEST: str
-    "7066ff27485400b0"
+    "2e77c4e72ce69512"
 
 # The contract's record. **It carries no digest, and the refusal is measured**
 # (panel 134, the compiler seat's veto). A digest withholds the verdict when the

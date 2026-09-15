@@ -9,21 +9,26 @@
 # owns. The arrows already pointed one way, which is the only condition
 # under which a seam exists here: Heroes refuses module cycles whatever
 # the edge carries.
+#
+# Split again on 2026-09-15 (defect 037): the compile-and-link half is
+# `cli/assemble.hero`, one ROUND, because this file now asks for a round
+# twice when clang's refusal of a handle's tag says the header needs
+# `struct` in front of it. What stays here is what decides: the cache
+# directory, the runtime object, the package question, the rounds and the
+# verdict on their failure.
 
 use source
 use module/names as module_names
 use modules
 use emit/ffi
+use emit/ffi_tag
 use cli/io
 use cli/compile
 use cli/toolchain
 use cli/process
-use cli/units
-use cli/pointee
 use cli/pointee_ask
 use cli/clang_floor
-use emit/unit
-use emit/members
+use cli/assemble
 use cli/libraries
 
 record Produced
@@ -108,18 +113,12 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     if dir.is_err()
         io.eprint(text: "error: cannot create the build directory")
         return fail(code: "failed", msg: "no build directory")
+
+    # Written only where it is compiled, by the round: the fused unit is the
+    # test binary's, and a program build writes one .c per module instead
+    # (units.tu_object). It used to be written on both paths, which put
+    # 785,323 dead lines on disk for every build of the compiler.
     c_file = dir.must() + "/" + module + ".c"
-
-    # Written only where it is compiled: the fused unit is the test
-    # binary's, and a program build writes one .c per module instead
-    # (units.tu_object). It used to be written on both paths, which
-    # put 785,323 dead lines on disk for every build of the compiler.
-    if is_tests
-        written = write_file(path: c_file, text: art.must().c)
-
-        if written.is_err()
-            io.eprint(text: "error: cannot write " + c_file)
-            return fail(code: "failed", msg: "cannot write the unit")
     object = toolchain.runtime_object(t, level: options.level, sanitize: options.sanitize)
 
     if object.is_err()
@@ -131,13 +130,14 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         binary @ options.output.must()
 
     # What the header said each `@` parameter points at (defect 010): filled
-    # by the pointee check below, empty for the package failure explained
-    # first, since no pointee has been asked about yet.
+    # by the pointee check inside the round, empty for the package failure
+    # explained first, since no pointee has been asked about yet.
     answered: [pointee_ask.Answered] @ []
 
     # Asked before clang runs, so a package that is not installed is
     # reported as itself rather than as a header clang could not find.
     package_flags = libraries.resolve_packages(art.must().packages, build_dir: t.build)
+    no_tags: {str: bool} = {}
 
     if package_flags.is_err()
         # **A package failure is the AUTHOR's, so it goes through the same
@@ -153,7 +153,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         # compiler is allowed to blame the author's own `extern` (§7).
         message = failure_text(package_flags)
 
-        if blamed(message, art.must(), s, answered)
+        if blamed(message, art.must(), s, answered, struct_tags: no_tags)
             return fail(code: "diagnostics", msg: "the package could not answer")
         io.eprint(text: message)
         return fail(code: "diagnostics", msg: "the package could not answer")
@@ -171,110 +171,47 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
 
     if source_dir.len() == 0
         source_dir @ "."
-
-    # What the extern out-parameters point at, asked of the header before
-    # any unit compiles (panel 103): the width and sign of a numeric `@`
-    # against the header's own type. A failure here is the AUTHOR's, and it
-    # rides the same mapping a clang failure does, below — `emit/ffi.hero`
-    # reads the assertion's marker back into the parameter's diagnostic.
-    linked: ()? @ pointee.check(
-        t,
-        art.must().program,
-        art.must().checked,
-        s,
-        art.must().decls,
-        answered: @answered,
-        search_include: options.headers_from,
+    site = assemble.Site(
+        c_file: c_file,
+        object: object.must(),
+        binary: binary,
+        is_tests: is_tests,
+        source_dir: source_dir,
+        link_names: names,
         package_flags: package_flags.must(),
-        source_dir: source_dir
+        version: version
     )
 
-    if !linked.is_err()
-        if is_tests
-            # A test binary keeps the fused unit: `heroes test` compiles
-            # once and runs per block, and the fused path is the artifact
-            # path the blessed emissions pin.
-            linked @ toolchain.link(
-                t,
-                c_file: c_file,
-                object: object.must(),
-                binary: binary,
-                level: options.level,
-                sanitize: options.sanitize,
-                source_dir: source_dir,
-                search_include: options.headers_from,
-                search_library: options.library,
-                package_flags: package_flags.must(),
-                link_names: names
-            )
-        else
+    # THE ROUNDS, and the one reason there is more than one (defect 037,
+    # panel 152 R1). The first round spells every handle's tag as the author
+    # wrote it. When clang refuses a tag with *must use 'struct' tag to refer
+    # to type 'X'* — which it says only when the bare word X names a struct
+    # tag of exactly that spelling — the word is learned, and the round runs
+    # again with `struct X *` where `X *` was. A round that learns nothing
+    # new ends the loop with its verdict, so the loop is bounded by the
+    # number of tagged handles in the program and a program whose tags need
+    # nothing runs one round, as before. Cost, measured 2026-09-15 on the
+    # one-module case: one extra failing clang compile of that module, and
+    # the second round's object is cached under its own text so a warm build
+    # pays only the first.
+    struct_tags: {str: bool} @ {}
+    linked: ()? @ ok()
 
-            # One .c per module (panel 093): each TU compiled to its own
-            # cached object, every dirty TU before any verdict (R5), one
-            # link over all of them re-run every build.
-            root = module_names.module_of(s.name)
-            objects: [str] @ [object.must()]
-            stopped: ()? @ ok()
+    while true
+        went = assemble.round(t, options, art.must(), s, site, answered: @answered, struct_tags: struct_tags)
+        linked @ went.verdict
 
-            # The whole-program tables, built once for the whole build
-            # rather than once per TU. They are functions of the program,
-            # so 157 modules used to buy 157 identical answers — and the
-            # arena walk and the content hashing behind them is what made
-            # the per-module self-build take longer than the fused one.
-            whole = members.whole_of(art.must().program, c: art.must().checked, s: s, decls: art.must().decls)
+        if !linked.is_err()
+            break
+        learned: i64 @ 0
 
-            # One build's answers about files on disk. Every TU asks whether
-            # the headers it read still say the same thing, and 157 of them
-            # share almost all of those headers — so the map is threaded
-            # through the loop rather than rebuilt per unit.
-            memo: {str: str} @ {}
+        for tag in ffi_tag.needs_struct(s, art.must().decls, stderr: went.refusals.join("\n"))
+            if struct_tags[tag].is_err()
+                struct_tags[tag] @ true
+                learned @ learned + 1
 
-            for component in units.components(s)
-                tu_text = unit.unit(
-                    module: component,
-                    p: art.must().program,
-                    c: art.must().checked,
-                    s: s,
-                    decls: art.must().decls,
-                    version: version,
-                    is_root: component == root,
-                    whole: whole
-                )
-                made = units.tu_object(
-                    t,
-                    module: component,
-                    tu_text: tu_text,
-                    level: options.level,
-                    sanitize: options.sanitize,
-                    search: compile.search_key(headers_from: options.headers_from, library: options.library),
-                    package_flags: package_flags.must(),
-                    source_dir: source_dir,
-                    search_include: options.headers_from,
-                    @memo
-                )
-
-                if made.is_err()
-                    if stopped.is_err()
-                        stopped @ stopped
-                    else
-                        stopped @ carry_failure(made)
-                else
-                    objects @ objects.push(made.must())
-
-            if stopped.is_err()
-                linked @ stopped
-            else
-                linked @ units.link_objects(
-                    t,
-                    objects: objects,
-                    binary: binary,
-                    level: options.level,
-                    sanitize: options.sanitize,
-                    search_include: options.headers_from,
-                    search_library: options.library,
-                    package_flags: package_flags.must(),
-                    link_names: names
-                )
+        if learned == 0
+            break
 
     if linked.is_err()
         # Some clang failures are the AUTHOR's, and the ffi mapping is
@@ -282,7 +219,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         # pipeline pieces ride in the Artifact for exactly this call.
         message = failure_message(linked)
 
-        if blamed(message, art.must(), s, answered)
+        if blamed(message, art.must(), s, answered, struct_tags: struct_tags)
             return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
         io.eprint(text: "internal error: " + message)
 
@@ -305,7 +242,7 @@ function failure_text(failed: [str]?) -> str
 # lines back into diagnostics on the `.hero` line, prints them, and the answer
 # is yes (CLAUDE.md §7's named exception). One door for the package that could
 # not answer and the unit clang refused — the same eleven lines twice, before.
-function blamed(message: str, art: compile.Artifact, s: source.Source, answered: [pointee_ask.Answered]) -> bool
+function blamed(message: str, art: compile.Artifact, s: source.Source, answered: [pointee_ask.Answered], struct_tags: {str: bool}) -> bool
     theirs = ffi.explain(
         message,
         s,
@@ -314,7 +251,8 @@ function blamed(message: str, art: compile.Artifact, s: source.Source, answered:
         art.checked,
         art.program,
         word_bits: io.word_bits(),
-        answered: answered
+        answered: answered,
+        struct_tags: struct_tags
     )
 
     if theirs.len() == 0
@@ -322,17 +260,9 @@ function blamed(message: str, art: compile.Artifact, s: source.Source, answered:
     _ = compile.stage(theirs, s).is_err()
     return true
 
-# The message of a failed `()?` — the clang floor's and the unit's alike.
+# The message of a failed `()?` — the clang floor's and the round's alike.
 # It was two identical functions under two names until 2026-09-04.
 function failure_message(failed: ()?) -> str
     match failed
         .ok    => return ""
         .err e => return e.msg
-
-# A TU object's failure, re-shaped for the link result the caller
-# reads: same code (the exit), same message (clang's words, which the
-# ffi mapping reads).
-function carry_failure(failed: str?) -> ()?
-    match failed
-        .ok    => return ok()
-        .err e => return fail(code: e.code, msg: e.msg)

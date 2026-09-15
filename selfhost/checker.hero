@@ -32,6 +32,7 @@ use check/decls as check_decls
 use check/map_keys
 use check/type_labels
 use check/ffi_sweep
+use check/marks
 use check/acquiring
 use check/lending
 use check/leasing
@@ -65,6 +66,11 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # panel 062 wired its rule to one call site and three other positions
     # shipped.
     ffi_sweep.fixed_only_in_a_group(@c, a, s, decls)
+
+    # panel 150 R3: a mark on a type that reaches no handle is a word nothing
+    # reads, and it is refused before the rule below asks what the marks say.
+    # Same table, same reason for the position.
+    marks.marks_are_read(@c, a, s, decls)
 
     # panel 148 R5: a binding that says how a handle is GIVEN BACK must say how
     # each one is handed over. Asked here, beside the other declaration-shaped

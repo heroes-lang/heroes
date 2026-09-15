@@ -100,6 +100,14 @@ function case_key(decl: i64, at: i64) -> str
     return decl.to_str() + ":" + at.to_str()
 
 function new_names(s: source.Source, decls: [ast.Decl]) -> Names
+    return new_names_qualified(s, decls, struct_tags: {})
+
+# `struct_tags` is what clang's own refusal said about a handle's tag on this
+# build — *must use 'struct' tag* — and nothing else ever puts a word in it
+# (`cli/produce.hero`, defect 037). Empty on every first emission, so `--emit-c`,
+# the seed and the blessed emissions write the author's word; `handles.spelled`
+# is where it is read.
+function new_names_qualified(s: source.Source, decls: [ast.Decl], struct_tags: {str: bool}) -> Names
     aggregates: {i64: str} @ {}
     satellites: {i64: str} @ {}
     foreign_decls: {i64: bool} @ {}
@@ -131,12 +139,12 @@ function new_names(s: source.Source, decls: [ast.Decl]) -> Names
                     foreign_decls[index] @ true
 
                     if !rec.tag.is_err()
-                        # A HANDLE is a pointer to what the header leaves
-                        # opaque, so its tag is VERBATIM and starred and never
-                        # `struct <tag>`; `handles.hero` says why.
+                        # A HANDLE is a pointer to the tagged type, spelled in
+                        # `handles.hero` and nowhere else: the author's word,
+                        # and `struct` only where clang asked for it.
                         if handles.is_handle_record(decl.kind)
                             handle_decls[index] @ true
-                            aggregates[index] @ source.span_text(s, rec.tag.must()) + " *"
+                            aggregates[index] @ handles.spelled(s, rec.tag.must(), struct_tags)
                         else
                             aggregates[index] @ "struct " + source.span_text(s, rec.tag.must())
                     else

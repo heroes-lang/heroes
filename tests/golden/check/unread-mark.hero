@@ -1,0 +1,42 @@
+# A mark nothing reads is refused (panel 150 R3, defect 037; landed 2026-09-15).
+#
+# `acquires`, `borrows` and `consumes` are read on a handle and on a value that
+# reaches one through its fields. On a `ptr` they were words: `consumed_types`
+# keys on a handle's declaration and a `ptr` has none, so `-> ptr acquires
+# nosuchthing` checked at exit 0 and a program that never released the pointer
+# leaked with zero diagnostics on every platform — the silent half of defect
+# 037. Panel 150 measured what obeying such a word costs: `fopen(...) -> ptr
+# acquires free`, released with `free`, was *attempting free on address which
+# was not malloc()-ed* under the sanitizer.
+#
+# Every position and every word, and the neighbouring types too: a `cstr` and an
+# `i32` reach no handle any more than a `ptr` does. The last group is the
+# repair the diagnostic names, and it is not annotated because it is legal.
+
+extern "stdlib.h"
+    function malloc(size: u64) -> ptr acquires free  #~ unread_mark
+    function free(p: ptr consumes)  #~ unread_mark
+
+extern "stdio.h"
+    function tmpfile() -> ptr borrows  #~ unread_mark
+    function fdopen(fd: i32, mode: cstr, @stream: ptr acquires fclose) -> i32  #~ unread_mark
+    function fclose(@stream: ptr borrows) -> i32  #~ unread_mark
+
+extern "string.h"
+    function strdup(s: cstr consumes) -> cstr  #~ unread_mark
+
+extern "unistd.h"
+    function close(fd: i32 consumes) -> i32  #~ unread_mark
+
+# The spelling that is read: name the C type the pointer stands for, and the
+# marks on it are checked — the releaser has to exist and take one back, and a
+# handle nobody gives back aborts at exit.
+extern "pool.h"
+    record Block tag block
+    function block_open(n: i64) -> Block acquires block_close
+    function block_close(b: Block consumes)
+
+function main()
+    b = block_open(n: 8)
+    block_close(b)
+    print(0)

@@ -11,30 +11,30 @@ The status and the chain. Why the table looks the way it does is
 | **Current milestone** | **none open.** `M-check-completeness` is next on the chain and has not been started: what `heroes check` accepts, `heroes build` compiles — through a generic too |
 | **Last closed** | **M-marked-acquisition**, 2026-09-14, `m-marked-acquisition` ([056](journal/056-marked-acquisition.md)) — the form closed at **three words**, each saying one thing and none inferred: `acquires <releaser>`, `consumes`, `borrows`. Two instruments answering two questions — a runtime counter for *did the program give back what it took*, and a 126-line rule for *is this binding finished* — and neither needs the flow analysis the checker says twice it does not have · before it **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) and **M-handle-verdict** ([054](journal/054-handle-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **57** of 78 · **57** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **61,199** lines of Heroes in **210** modules (`find selfhost -name '*.hero'`) · the seed **816,932** lines of C, regenerated at defect 037's half-repair and verified at the fixpoint |
-| The spec | **5988** on the vendored ranks and **7974** on the reader's own, against a ceiling of **10240** — raised from 8192 by author decision 2026-09-14 with the document 211 free. The three marks are **+125 vendored and +168 real**, in two payments at ratios of 1.40 and 1.23, both inside the band panel 148's warden gave while refusing any single factor; **2266 free** and 2206 net of the FFI floor |
+| The compiler | **61,571** lines of Heroes in **212** modules (`find selfhost -name '*.hero'`) · the seed **818,752** lines of C, regenerated at defect 037's close and verified at the fixpoint |
+| The spec | **5989** on the vendored ranks and **7974** on the reader's own, against a ceiling of **10240** — raised from 8192 by author decision 2026-09-14 with the document 211 free. The three marks are **+125 vendored and +168 real**, in two payments at ratios of 1.40 and 1.23, both inside the band panel 148's warden gave while refusing any single factor; defect 037's close is **+1 vendored and +0 real**, a −3 phrase and a +7 correction cancelling on the reader's instrument; **2266 free** and 2206 net of the FFI floor |
 | The contract | **7402** on the reader's own against a ceiling of **12288**, unchanged, judged on `claude-opus-5` since 2026-09-12 |
-| Records | sittings **150** · journals **58** · milestone files **48** · entries: `docs/records/log/` **662**, `docs/records/done/` **530**, `docs/records/book/beats/` **123** · **open defects 3**, **open decisions 0** |
+| Records | sittings **150** · journals **58** · milestone files **48** · entries: `docs/records/log/` **663**, `docs/records/done/` **531**, `docs/records/book/beats/` **123** · **open defects 2**, **open decisions 0** |
 | Waiting on the author | **nothing.** Panels 150, 151 and 152 were all ratified on 2026-09-15, as adopted, queued 2026-09-15, with its resolution already in force as the default. **CORRECTION, 2026-09-15**: the sentence here said the specification's +4 was unlandable because `ANTHROPIC_API_KEY` was unset. **That was false.** `.env` carries the key, `--refresh` runs, and panel 150's spec-warden falsified the claim by running it. It was a negative claim nobody searched for |
 
-**Re-measured 2026-09-15 after panel 149's repair, one suite at a time against a
-compiler built from `selfhost/`, not carried.** `records` **23**, `spec` **20**,
-the compiler's own tests **646**, `check` **119**, `run` **119**, `lines`
-**120**, `warnings` **179**, `determinism` **148**, `emission` **470**,
-`annotations` **156**, `fixes` **10**, `corpus` **55**, `canonical` **2**,
-`runtime` **8**. The full net reads **1846**.
+**Re-measured 2026-09-15 at defect 037's close, one suite at a time against a
+compiler built from the regenerated seed, which is CI's own configuration.**
+`records` **23**, `spec` **20**, the compiler's own tests **649**, `check` **120**,
+`run` **121**, `lines` **122**, `warnings` **181**, `determinism` **150**,
+`emission` **474**, `annotations` **157**, `fixes` **10**, `corpus` **55**,
+`canonical` **2**, `runtime` **8**, `surface` **108**, `descriptors` **237**,
+`layout` **2**. The twenty-four suites sum to **1863**.
 
-**Two moved and two held for the same reason.** The compiler's own tests are
-**+1** and `check` **+3**, the new cases. `run` and `emission` are unchanged
-because a case left each and a case arrived: `abort-handle-given-back-unmarked`
-became a compile error and moved, as `runtime/parts/alloc.c` predicted in
-writing. The figures of 2026-09-14 are superseded, not wrong.
-
-**The first version was measured and still misleading**: it wrote `run` **116**
-and `emission` **462**, the counts of what PASSED while one case in each was
-failing. A passing count is not a suite's count while anything in it is red. The
-net came back **1813 passed, 6 failed** and the repair is the log entry of
-2026-09-14 1930.
+**What moved, and why each.** The compiler's own tests are **+3**, one per new
+module and one for the reader of clang's refusal; `check` **+1**, `run` **+2**
+and `emission` **+2** are the new cases, `emission` also swapping the blessed
+`addrinfo *` that pinned the wrong C for the misspelled tag that pins the right
+refusal; `surface` **+1** is the two-module fixture; `descriptors` **+2** follows
+`run`. **The day's first full net came back 1855 passed, 6 failed**: four were
+one cause — the binary under test carried the spec's old pinned digest, the pins
+having moved while the seed was emitted — and two were real, `emit/ctype.hero`
+at 399 lines of code against a decided 395, repaired by moving the handle's
+spelling into `handles.hero`, and the two run emissions unblessed.
 
 ---
 

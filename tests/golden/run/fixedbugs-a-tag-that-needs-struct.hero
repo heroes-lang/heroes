@@ -1,0 +1,43 @@
+# A handle over a struct that C names with two words (defect 037, panels 151
+# and 152; closed 2026-09-15).
+#
+# **Until this case ran, the binding could not be written.** `record Probe tag
+# probe` against a header that declares `struct probe` and gives it no typedef
+# emitted `probe *`, clang refused it — *must use 'struct' tag to refer to type
+# 'probe'* — and the author got, in turn, `internal error: compiling the
+# generated C failed` at exit 2 (until panel 152's first half landed) and then
+# `error[ffi_tag_needs_struct]`, an honest refusal with no fix, because a `tag`
+# holds one word and the language had no way to write the second. `netdb.h`'s
+# `struct addrinfo` is that shape, and so is every linked list in every C
+# header.
+#
+# **What closes it is clang's own sentence, obeyed and not guessed.** The
+# emitter still writes the author's word. When clang refuses it with that exact
+# message — which it produces only when the bare word names a struct tag of
+# that spelling — `cli/produce.hero` learns the tag and compiles once more with
+# `struct probe *` where `probe *` was. Two sittings refused the two ways of
+# knowing in advance: a spelling read from the header can no longer disagree
+# with the header (panel 151), and one bit — does `struct X` compile? — says yes
+# for a misspelled X too (panel 152). So the author's word is compiled first,
+# every refusal of it survives, and only the qualifier the header demands is
+# supplied.
+#
+# Two tags, so the round learns both from one refusal; both marks, so the
+# handles are counted and given back like any other.
+
+extern "fixedbugs-a-tag-that-needs-struct.h"
+    record Probe tag probe
+    record Gauge tag gauge
+    function probe_open(n: i64) -> Probe acquires probe_close
+    function probe_value(p: Probe) -> i64
+    function probe_close(p: Probe consumes)
+    function gauge_open(n: i64) -> Gauge acquires gauge_close
+    function gauge_read(g: Gauge) -> i64
+    function gauge_close(g: Gauge consumes)
+
+function main()
+    p = probe_open(n: 7)
+    g = gauge_open(n: 35)
+    print(probe_value(p) + gauge_read(g))
+    probe_close(p)
+    gauge_close(g)
