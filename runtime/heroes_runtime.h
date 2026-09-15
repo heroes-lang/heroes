@@ -198,8 +198,12 @@ void hero_held_release(const char **slot); /* nulls the cell: the second release
 /* The handle pair. Both ends are the binding author's words — `acquires` on the
  * call that hands one over, `consumes` on the one that takes it back — so the
  * compiler places these and chooses neither (panel 148 R2). */
-void hero_handle_acquired(void);
-void hero_handle_consumed(void);
+/* The handle set's two ends. They take the ADDRESS since 2026-09-15 (panel
+ * 150): a counter could not tell a NULL from a handle, a null release from a
+ * real one, or a double release from a part-release, and each of those was a
+ * measured defect. `parts/alloc.c` carries what the number cost. */
+void hero_handle_acquired(const void *handle);
+void hero_handle_consumed(const void *handle);
 
 /* THE MISSING PRIMITIVE (panel 021). §4.19's ladder step 3 is "open a database,
  * run a query, READ A RESULT, close". sqlite3_column_text hands back a borrowed

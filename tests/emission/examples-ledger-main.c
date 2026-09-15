@@ -14734,7 +14734,7 @@ bb0:
 #line 226 "examples/ledger/db/sqlite.hero"
     t4 = sqlite3_open(hero_cstr_nonnull(t3), &h0_db);
 #line 226 "examples/ledger/db/sqlite.hero"
-    hero_handle_acquired();
+    hero_handle_acquired(h0_db);
 #line 226 "examples/ledger/db/sqlite.hero"
     t5 = h_dbsqlite_SQLITE_OK();
 #line 226 "examples/ledger/db/sqlite.hero"
@@ -14797,7 +14797,7 @@ bb2:
 #line 241 "examples/ledger/db/sqlite.hero"
     (void)sqlite3_close(t10);
 #line 241 "examples/ledger/db/sqlite.hero"
-    hero_handle_consumed();
+    hero_handle_consumed(t10);
 #line 242 "examples/ledger/db/sqlite.hero"
     t12 = HERO_STR_LIT(hero_str_2cb37c54);
 #line 242 "examples/ledger/db/sqlite.hero"
@@ -14852,7 +14852,7 @@ bb0:
 #line 246 "examples/ledger/db/sqlite.hero"
     t3 = sqlite3_close(t2);
 #line 246 "examples/ledger/db/sqlite.hero"
-    hero_handle_consumed();
+    hero_handle_consumed(t2);
 #line 14857 "main.c"
     *ph0_db = h0_db;
     return t3;
@@ -15348,7 +15348,7 @@ bb0:
 #line 286 "examples/ledger/db/sqlite.hero"
     t8 = sqlite3_prepare_v2(t4, hero_cstr_nonnull(t6), t7, &h2_statement, &h3_tail);
 #line 286 "examples/ledger/db/sqlite.hero"
-    hero_handle_acquired();
+    hero_handle_acquired(h2_statement);
 #line 286 "examples/ledger/db/sqlite.hero"
     t9 = h_dbsqlite_SQLITE_OK();
 #line 286 "examples/ledger/db/sqlite.hero"
@@ -15475,7 +15475,7 @@ bb0:
 #line 291 "examples/ledger/db/sqlite.hero"
     t3 = sqlite3_finalize(t2);
 #line 291 "examples/ledger/db/sqlite.hero"
-    hero_handle_consumed();
+    hero_handle_consumed(t2);
 #line 15480 "main.c"
     *ph0_statement = h0_statement;
     return t3;

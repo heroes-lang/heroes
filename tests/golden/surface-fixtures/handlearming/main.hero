@@ -1,0 +1,9 @@
+use slots
+
+extern "pool.h"
+    function slot_close(s: slots.Slot consumes)
+
+function main()
+    s = slots.make(n: 1)
+    slot_close(s)
+    print(0)

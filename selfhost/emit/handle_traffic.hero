@@ -1,0 +1,108 @@
+# What the handle SET is told about one C call (panel 150, 2026-09-15).
+#
+# **It lived in `emit/ops.hero` until the `layout` suite refused that file at 337
+# lines**, and the seam it named is real rather than convenient: `ops.hero`
+# answers *what is this operation in C*, and this answers *what does the runtime
+# learn from it*. Two questions, and the second grew a walk of its own the day
+# the runtime started holding addresses instead of a number.
+#
+# **Why there is anything to say at all.** `runtime/parts/alloc.c` held one
+# `_Atomic int64_t` until panel 150, so a mark meant `+1` and the VALUE never
+# had to be named. A set has to be told which address, and that is the whole
+# reason these lines exist: a counter could not tell a NULL from a handle, a null
+# release from a real one, or a double release from a part-release, and each of
+# those was a measured defect.
+
+use ast
+use source
+use check/state
+use check/reaches
+use emit/writer
+
+# WHICH VALUES each mark is about, because since panel 150 the runtime holds a
+# set of addresses and not a number: the two ends take the handles themselves.
+#
+# A mark on a handle is one address. A mark on a RECORD is every handle that
+# record reaches, which is panel 149 R3's *one mark is one obligation on the
+# whole value* made precise — `check/reaches.hero` computes the suffixes and says
+# why the written length of a fixed array is the only number there is.
+#
+# The result's value is the assignment target, already a name. An `@`
+# out-parameter's is the CELL, and the call was handed `&cell`, so the `&` comes
+# off: a fact about the one string this emitter just built, not a guess about C.
+# A mark whose value cannot be named emits a comment into the C rather than
+# nothing, because a silently skipped record is the defect this whole mechanism
+# exists to catch, and a reader of a strange balance needs to find it.
+function for_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str], target: str?)
+    match decls[decl].kind
+        .function_decl fd =>
+            if !fd.value.acquires_result.is_err()
+                if target.is_err()
+                    writer.line(@w, text: "    /* heroes: an acquiring result with no destination */")
+                else
+                    written = state.written_type(c, fd.value.result)
+
+                    if written.is_err()
+                        writer.line(@w, text: "    /* heroes: an acquiring result with no written type */")
+                    else
+                        emit_each(
+                            @w,
+                            c,
+                            s,
+                            decls,
+                            ty: written.must(),
+                            value: target.must(),
+                            entry: "hero_handle_acquired"
+                        )
+            at: i64 @ 0
+
+            for p in fd.value.params
+                if at < arguments.len()
+                    written = state.written_type(c, p.ty)
+
+                    if !written.is_err()
+                        if !p.acquires.is_err()
+                            emit_each(
+                                @w,
+                                c,
+                                s,
+                                decls,
+                                ty: written.must(),
+                                value: cell_of(arguments[at]),
+                                entry: "hero_handle_acquired"
+                            )
+
+                        if p.consumes
+                            emit_each(
+                                @w,
+                                c,
+                                s,
+                                decls,
+                                ty: written.must(),
+                                value: arguments[at],
+                                entry: "hero_handle_consumed"
+                            )
+                at @ at + 1
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return
+
+# One line per handle the value reaches. None at all is a comment and not
+# silence: a marked declaration whose type reaches nothing is a binding the
+# checker should already have refused, so if one arrives here the C says so.
+function emit_each(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, value: str, entry: str)
+    suffixes = reaches.handle_suffixes(c, s, decls, ty: ty)
+
+    if suffixes.len() == 0
+        writer.line(@w, text: "    /* heroes: a mark on a type that reaches no handle */")
+        return
+
+    for suffix in suffixes
+        writer.line(@w, text: "    " + entry + "(" + value + suffix + ");")
+
+# The cell behind `&cell`. An `@` parameter is emitted as an address-of, so this
+# reads the one character off the front; anything else is handed back whole,
+# which keeps the emitted C compilable and wrong-looking rather than silently
+# right about the wrong value.
+function cell_of(argument: str) -> str
+    if argument.len() > 1 && argument[0] == 38
+        return argument.slice(from: 1, to: argument.len())
+    return argument

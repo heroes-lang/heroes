@@ -337,7 +337,7 @@ bb3:
 #line 57 "examples/curl/main.hero"
     t12 = curl_easy_init();
 #line 57 "examples/curl/main.hero"
-    hero_handle_acquired();
+    hero_handle_acquired(t12);
 #line 57 "examples/curl/main.hero"
     h2_handle = t12;
 #line 69 "examples/curl/main.hero"
@@ -661,7 +661,7 @@ bb18:
 #line 82 "examples/curl/main.hero"
     (void)curl_easy_cleanup(t73);
 #line 82 "examples/curl/main.hero"
-    hero_handle_consumed();
+    hero_handle_consumed(t73);
 #line 666 "main.c"
     h_0opt_f87774a_release(&h0_f0);
 #line 82 "examples/curl/main.hero"

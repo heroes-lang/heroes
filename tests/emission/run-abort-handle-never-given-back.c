@@ -123,7 +123,7 @@ bb0:
 #line 21 "tests/golden/run/abort-handle-never-given-back.hero"
     t2 = slot_open(t1);
 #line 21 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_acquired();
+    hero_handle_acquired(t2);
 #line 21 "tests/golden/run/abort-handle-never-given-back.hero"
     h0_a = t2;
 #line 22 "tests/golden/run/abort-handle-never-given-back.hero"
@@ -131,7 +131,7 @@ bb0:
 #line 22 "tests/golden/run/abort-handle-never-given-back.hero"
     t4 = slot_open(t3);
 #line 22 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_acquired();
+    hero_handle_acquired(t4);
 #line 22 "tests/golden/run/abort-handle-never-given-back.hero"
     h1_b = t4;
 #line 23 "tests/golden/run/abort-handle-never-given-back.hero"
@@ -153,7 +153,7 @@ bb0:
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     (void)slot_close(t10);
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_consumed();
+    hero_handle_consumed(t10);
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     return;
 #line 160 "aborthandlenevergivenback.c"

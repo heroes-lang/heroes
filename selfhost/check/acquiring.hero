@@ -111,9 +111,23 @@ function handle_behind(c: state.Checker, s: source.Source, decls: [ast.Decl], no
 
     return reaches.reaches_handle(c, s, decls, ty: written.must())
 
-# The name of one function that takes this handle type back, for the message:
-# the diagnostic names both lines, and this is the second one.
-function taker_of(c: state.Checker, s: source.Source, decls: [ast.Decl], handle: i64) -> str
+# One function that takes this handle type back, as its NAME SPAN: the
+# diagnostic names both lines, and this is the second one.
+#
+# **IT RETURNED A BARE NAME UNTIL 2026-09-15, AND THAT WAS DEFECT 041.** This
+# rule is program-wide — `one_tag_one_type` makes a handle's declaration a
+# program-wide identity, and `checker.hero` checks one resolved PROGRAM — so the
+# refusal lands in whatever file declares the producer, which may be a file whose
+# author never wrote the `consumes` that armed it and which imports nothing.
+# Measured in two files: the error landed in `slots.hero` because `main.hero`
+# declared `slot_close`, naming `slot_close` and never saying where it was.
+#
+# design.md §4.17 asks a diagnostic to carry everything needed without opening
+# another file, and here a reader could not learn WHICH other file. **The answer
+# already shipped**: `source.elsewhere` says `line 12` when both ends are in one
+# file and `geom.hero:12` when they are not, which is exactly the rule §4.17
+# wants — six other diagnostics call it and this one did not.
+function taker_of(c: state.Checker, s: source.Source, decls: [ast.Decl], handle: i64) -> token.Span?
     for decl in decls
         match decl.kind
             .function_decl fd =>
@@ -123,10 +137,10 @@ function taker_of(c: state.Checker, s: source.Source, decls: [ast.Decl], handle:
                             behind = handle_behind(c, s, decls, node: p.ty)
 
                             if !behind.is_err() && behind.must().decl == handle
-                                return source.span_text(s, decl.name)
+                                return ok(decl.name)
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
-    return ""
+    return fail(code: "absent", msg: "no extern of this program takes one back")
 
 # The rule itself.
 function bindings_say_which(@c: state.Checker, s: source.Source, decls: [ast.Decl])
@@ -145,7 +159,7 @@ function bindings_say_which(@c: state.Checker, s: source.Source, decls: [ast.Dec
                         if fd.value.acquires_result.is_err() && !fd.value.borrows_result
                             state.push_diagnostic(
                                 @c,
-                                unmarked(producer: source.span_text(s, decl.name), taker: taker_of(c, s, decls, handle: result_handle.must().decl), handle: source.span_text(s, decls[result_handle.must().decl].name), route: result_handle.must().path, span: decl.name)
+                                refusal_for(c, s, decls, handle: result_handle.must().decl, producer: decl.name, route: result_handle.must().path, at: decl.name)
                             )
                         else
                             releaser_reads(
@@ -164,7 +178,7 @@ function bindings_say_which(@c: state.Checker, s: source.Source, decls: [ast.Dec
                                 if p.acquires.is_err() && !p.borrows
                                     state.push_diagnostic(
                                         @c,
-                                        unmarked(producer: source.span_text(s, decl.name), taker: taker_of(c, s, decls, handle: behind.must().decl), handle: source.span_text(s, decls[behind.must().decl].name), route: behind.must().path, span: p.name)
+                                        refusal_for(c, s, decls, handle: behind.must().decl, producer: decl.name, route: behind.must().path, at: p.name)
                                     )
                                 else
                                     releaser_reads(@c, s, decls, mark: p.acquires, reached: behind.must())
@@ -205,14 +219,38 @@ function releaser_reads(@c: state.Checker, s: source.Source, decls: [ast.Decl], 
 # not the result's own type it names the ROUTE to it, because the line the caret
 # sits on shows no handle at all: `LoadFont(fileName: cstr) -> Font` is a
 # perfectly ordinary signature until somebody opens `record Font`.
-function unmarked(producer: str, taker: str, handle: str, route: str, span: token.Span) -> diag.Diagnostic
+# The refusal, built from the declarations rather than from strings, so the two
+# call sites cannot drift on what they pass. `where_taken` is `source.elsewhere`'s
+# answer: silent when the taker is on screen, `slots.hero:14` when it is not.
+function refusal_for(c: state.Checker, s: source.Source, decls: [ast.Decl], handle: i64, producer: token.Span, route: str, at: token.Span) -> diag.Diagnostic
+    taker = taker_of(c, s, decls, handle: handle)
+    taker_name: str @ ""
+    where_taken: str @ ""
+
+    if !taker.is_err()
+        taker_name @ source.span_text(s, taker.must())
+        there = source.elsewhere(s, here: at.start, there: taker.must().start)
+
+        if source.file_of(s, at.start) != source.file_of(s, taker.must().start)
+            where_taken @ ", at " + there
+
+    return unmarked(
+        producer: source.span_text(s, producer),
+        taker: taker_name,
+        where_taken: where_taken,
+        handle: source.span_text(s, decls[handle].name),
+        route: route,
+        span: at
+    )
+
+function unmarked(producer: str, taker: str, where_taken: str, handle: str, route: str, span: token.Span) -> diag.Diagnostic
     where: str @ "hands back a `" + handle + "`"
 
     if route != ""
         where @ "hands back a `" + handle + "` inside `" + route + "`"
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "unmarked_handle_producer",
-        message: "`" + producer + "` " + where + " and does not say whether the program owes it — `" + taker + "` takes one back, so this binding has said how a `" + handle + "` ends and not how it begins",
+        message: "`" + producer + "` " + where + " and does not say whether the program owes it — `" + taker + "` takes one back" + where_taken + ", so this binding has said how a `" + handle + "` ends and not how it begins",
         span: span
     )
     d.notes @ d.notes.push(

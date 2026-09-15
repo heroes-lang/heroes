@@ -1,2 +1,2 @@
 7
-!panic: 1 more handle(s) given back than were taken — a call marked `consumes` ran with no `acquires` behind it. Two things do this and the count cannot tell them apart, worst first: the same handle given back TWICE, which is a double release; or an `extern` marked `borrows` whose C function in fact hands ownership over, which makes the mark wrong
+!panic: 1 C handle(s) given back that were never taken — the set of live handles did not hold that address when a call marked `consumes` ran. Two things do this: the same handle given back TWICE, which is a double release and may already have corrupted memory; or a value acquired WHOLE and released part by part, since one mark is one obligation on the whole value

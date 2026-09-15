@@ -12,7 +12,6 @@ use source
 use check/table
 use check/state
 use check/freer as freer
-use handles
 use ir
 use ir/containers
 use inventory
@@ -23,6 +22,7 @@ use emit/builtins
 use emit/convert
 use emit/extern_probe
 use emit/writer
+use emit/handle_traffic
 use token
 use parse
 use resolve
@@ -168,19 +168,7 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
             #
             # A `while` and not a `for` over `range`, because `range` builds an
             # array and this runs once per emitted call.
-            handed_over = handles.handles_handed_over(decls[e.decl])
-            given: i64 @ 0
-
-            while given < handed_over
-                writer.line(@w, text: "    hero_handle_acquired();")
-                given @ given + 1
-
-            taken_back = handles.handles_taken_back(decls[e.decl])
-            took: i64 @ 0
-
-            while took < taken_back
-                writer.line(@w, text: "    hero_handle_consumed();")
-                took @ took + 1
+            handle_traffic.for_call(@w, c, s, decls: decls, decl: e.decl, arguments: guarded, target: target)
 
 # print is a compiler form, not a function value (panel 006): one
 # monomorphic printer per type, composed by the emitter. The contract
