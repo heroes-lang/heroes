@@ -104,10 +104,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     150's unpaid correction, so spending it twice is the arithmetic a sitting
     exists to do.
 
-    **And `.claude/rules/spec-shape.md` asks for one thing first**: a change to a
-    fence is COMPILED before it is written, because an example in the one document
-    a reader is told to trust is a claim, and an unexecuted claim expires in
-    silence.
+    **THE PRECONDITION IS MET, 2026-09-15**: `.claude/rules/spec-shape.md` asks
+    that a change to a fence be COMPILED before it is written, because an example
+    in the one document a reader is told to trust is a claim and an unexecuted
+    claim expires in silence. The corrected example was built and run against
+    real SQLite:
+
+    ```
+    function sqlite3_open(path: cstr, @out: Db acquires sqlite3_close) -> i64
+    function sqlite3_close(db: Db consumes) -> i64
+    ```
+
+    opened `:memory:`, closed it, printed, **exit 0**. So the sitting inherits a
+    claim that has been executed, which is the one thing this defect is about:
+    the example as it stands was never run against its own section's rule.
 
     **What is owed**: the example gains the two marks. It is spec text, so it is
     priced and it is the panel's, and the same sitting should ask whether the one
