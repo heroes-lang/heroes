@@ -64,6 +64,38 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     This one is SILENT: exit 0, no diagnostic, a real leak. design.md §1.12 and
     CLAUDE.md § Precedence rank 3 put a silent corruption class above a loud one.
 
+    **THE OPTION SET WAS SHORT BY TWO, measured 2026-09-15 after panel 150.**
+    The sitting adopted *a `tag` names a C type name* and its ffi-pragmatist said
+    in as many words that it was not recommending a spelling. Two routes exist
+    and neither was priced:
+
+    **Route A, a surface change.** `tag struct addrinfo` is `error[reserved_word]`
+    today, raised in the LEXER at `selfhost/scan.hero:128`, so the parser never
+    sees a usable identifier — `struct`, `union` and `enum` are refused as text
+    and the refusal cannot know it is in a tag position. Freeing the position
+    means either moving that refusal to where position is known, which weakens a
+    diagnostic defect 015 paid for, or a second spelling such as
+    `tag "struct addrinfo"`, which is consistent with `extern "netdb.h"` putting
+    C text in quotes two words earlier and is two forms where the project
+    prefers one. **Either is surface syntax and owes a sitting.**
+
+    **Route B, and it needs NO surface change at all.** The compiler already asks
+    clang what a header's type text is: `cli/pointee.hero` declares
+    `extern __typeof__(f) hero_ty_f;` per extern and reads the `qualType` out of
+    `-ast-dump=json`, which for `freeaddrinfo(ai: AI consumes)` is the header's
+    own `struct addrinfo *`. So the correct spelling is already reachable and the
+    author would not have to say it twice. `handles.c_spelling` writes
+    `tag_text + " *"` from the author's word alone, and that is the one line the
+    answer would replace. This is the direction panel 150's ffi-pragmatist
+    praised — the only route measured to INCREASE what clang checks — arrived at
+    from the other side.
+
+    **What was re-measured here, so a later session need not.** `netdb.h` on this
+    Mac declares **19** struct-returning entry points and **zero** `typedef` for
+    `addrinfo`, so this is not one header's quirk. `tag struct addrinfo` is
+    `error[reserved_word]`. And `record Blob tag void` works but is capped at
+    ONE per program by `duplicate_tag`, which is why it is not the answer.
+
     **What is owed, and why it is not done here.** Demanding a mark on a `ptr`
     producer widens what a diagnostic refuses, which is a diagnostic CLASS, so
     CLAUDE.md § 4 sends it to the panel. The question that sitting has to answer
