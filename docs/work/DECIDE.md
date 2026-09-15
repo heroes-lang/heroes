@@ -21,7 +21,27 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 1**
+**OPEN: 2**
+
+- [ ] **panel 151** | Route B is refused for inverting the §4.19 probe, and the narrowing both seats compiled — ask clang ONE BIT, the namespace qualifier, never the type name — is owed a FULL sitting because it amends design.md Part 4 | `docs/panel/151-the-probe-must-carry-the-authors-word.md`
+
+    **Origin:** panel 151, 2026-09-15, soundness lane on defect 037. **Both seats
+    refused the lane**, for different reasons, which is what makes it the finding
+    and not one seat's scruple.
+
+    **What the lane settled, and it needs no full sitting**: Route B is refused.
+    A probe generated from the header cannot check the binding against the
+    header. Measured: `record Db tag sqlite3_stmt` gives **two**
+    `error[ffi_parameter_type]` today and **zero** under Route B.
+
+    **What it could not settle**: the narrowing. It amends design.md:2192, *"The
+    tag is written verbatim"*, and §4.19's *"no external tool, no libclang"* —
+    Part 4 sentences a two-seat lane cannot touch. No `spec/heroes-spec.md` token
+    moves under either form.
+
+    **The cost of leaving it open** is that defect 037 stays open: a `ptr`
+    producer keeps leaking at exit 0 and the author of a `getaddrinfo` binding
+    keeps having no spelling but `ptr`.
 
 - [ ] **panel 150** | the counter becomes a SET, a `tag` may name a C type NAME, the mark is refused on a `ptr`, and the spec is corrected on both counts it is false about — ratify, or take the conservative resolution the sitting recorded | `docs/panel/150-the-runtime-holds-a-number-where-it-needs-a-set.md`
 

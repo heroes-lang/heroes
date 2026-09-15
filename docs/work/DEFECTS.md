@@ -96,6 +96,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `error[reserved_word]`. And `record Blob tag void` works but is capped at
     ONE per program by `duplicate_tag`, which is why it is not the answer.
 
+    **PANEL 151 REFUSED ROUTE B AND COMPILED THE NARROWING**, 2026-09-15, both
+    seats with a veto. A probe generated from the header cannot check the binding
+    against the header: measured, `record Db tag sqlite3_stmt` gives two
+    `error[ffi_parameter_type]` today and zero under Route B. **Route A stands
+    and Route B is struck.**
+
+    **What replaces it, compiled by the ffi-pragmatist**: ask clang ONE BIT per
+    tag — *does this word need `struct` in front of it?* — and keep the author's
+    word as the identity, so every refusal survives. `addrinfo *hero_tagprobe;`
+    fails to compile, `CURL *hero_tagprobe;` succeeds, and that single bit is the
+    whole answer. 0.02 s per tag, cacheable under the existing key. **It is owed
+    a FULL sitting**, queued as `panel 151` in `docs/work/DECIDE.md`, because it
+    amends design.md:2192 and §4.19's *"no external tool, no libclang"*.
+
     **What is owed, and why it is not done here.** Demanding a mark on a `ptr`
     producer widens what a diagnostic refuses, which is a diagnostic CLASS, so
     CLAUDE.md § 4 sends it to the panel. The question that sitting has to answer
