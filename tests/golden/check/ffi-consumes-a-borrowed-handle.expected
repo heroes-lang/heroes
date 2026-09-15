@@ -1,1 +1,1 @@
-tests/golden/check/ffi-consumes-a-borrowed-handle.hero:22:10: error[consumed_borrowed_handle]: `free` ends the life of what it is given, and `h` was borrowed — this function promised not to change it
+tests/golden/check/ffi-consumes-a-borrowed-handle.hero:29:10: error[consumed_borrowed_handle]: `free` ends the life of what it is given, and `h` was borrowed — this function promised not to change it

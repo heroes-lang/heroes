@@ -1,0 +1,213 @@
+# One round of turning an emitted program into a binary: the pointee check,
+# then the fused unit or one translation unit per module, then the link.
+#
+# Split out of `cli/produce.hero` on 2026-09-15 (defect 037, panel 152 R1)
+# because a round can now be asked for TWICE. The emitter writes a handle's tag
+# as the author wrote it — `record AI tag addrinfo` is `addrinfo *` — and
+# `netdb.h` declares `struct addrinfo` with no typedef, so clang refuses that
+# word with *must use 'struct' tag to refer to type 'addrinfo'*. That message is
+# clang's own statement that the word names a struct tag of exactly that
+# spelling, and it is the one place the qualifier can be learned without the
+# compiler guessing: `produce` reads it off the round's refusals
+# (`emit/ffi_tag.hero`'s `needs_struct`), adds the tag to `struct_tags`, and
+# asks for the round again. Everything a round needs and does not decide rides
+# in `Site`, so two rounds cannot differ in anything but that set.
+#
+# **Why a second clang run and not a probe or a header dump.** Panel 151
+# measured that a spelling read FROM the header can no longer disagree with it:
+# `record Db tag sqlite3_stmt` gives two `error[ffi_parameter_type]` today and
+# zero under that route. Panel 152 measured that one bit — does this word
+# compile with `struct` in front? — is answered yes for a misspelled tag too,
+# because `struct nosuchtype *p;` is legal C. So the author's word is compiled
+# first, every refusal clang would make of it stands, and only clang's own
+# request for `struct` is obeyed. A program whose tags need no qualifier never
+# reaches the second round and pays nothing.
+
+use source
+use module/names as module_names
+use cli/compile
+use cli/toolchain
+use cli/units
+use cli/pointee
+use cli/pointee_ask
+use emit
+use emit/unit
+use emit/members
+
+# What one build has settled before any round runs.
+record Site
+    c_file: str
+    object: str
+    binary: str
+    is_tests: bool
+    source_dir: str
+    link_names: [str]
+    package_flags: [str]
+    version: str
+
+# What a round came back with: the verdict, and EVERY clang refusal it met and
+# not only the first. A program of several modules may need `struct` on a tag in
+# each, and every dirty TU is compiled before any verdict (panel 093 R5), so one
+# round can learn them all and the second is the last.
+record Round
+    verdict: ()?
+    refusals: [str]
+
+function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, @answered: [pointee_ask.Answered], struct_tags: {str: bool}) -> Round
+    # What the extern out-parameters point at, asked of the header before
+    # any unit compiles (panel 103): the width and sign of a numeric `@`
+    # against the header's own type. A failure here is the AUTHOR's, and it
+    # rides the same mapping a clang failure does — `emit/ffi.hero` reads the
+    # assertion's marker back into the parameter's diagnostic.
+    checked = pointee.check(
+        t,
+        art.program,
+        art.checked,
+        s,
+        art.decls,
+        answered: @answered,
+        search_include: options.headers_from,
+        package_flags: site.package_flags,
+        source_dir: site.source_dir
+    )
+
+    if checked.is_err()
+        return Round(verdict: checked, refusals: messages_of(checked))
+
+    if site.is_tests
+        return fused(t, options, art, s, site, struct_tags)
+    return per_module(t, options, art, s, site, struct_tags)
+
+# A test binary keeps the fused unit: `heroes test` compiles once and runs per
+# block, and the fused path is the artifact path the blessed emissions pin. The
+# text is the pipeline's own on the first round; a round that carries a learned
+# tag emits again, because the tag's spelling is in the text.
+function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}) -> Round
+    none: [str] = []
+    text: str @ art.c
+
+    if struct_tags.len() > 0
+        text @ emit.emit_maybe(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: site.version, text: true, struct_tags: struct_tags).c
+    written = write_file(path: site.c_file, text: text)
+
+    if written.is_err()
+        return Round(verdict: fail(code: "failed", msg: "cannot write " + site.c_file), refusals: none)
+    linked = toolchain.link(
+        t,
+        c_file: site.c_file,
+        object: site.object,
+        binary: site.binary,
+        level: options.level,
+        sanitize: options.sanitize,
+        source_dir: site.source_dir,
+        search_include: options.headers_from,
+        search_library: options.library,
+        package_flags: site.package_flags,
+        link_names: site.link_names
+    )
+    return Round(verdict: linked, refusals: messages_of(linked))
+
+# One .c per module (panel 093): each TU compiled to its own cached object,
+# every dirty TU before any verdict (R5), one link over all of them re-run
+# every build.
+function per_module(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}) -> Round
+    root = module_names.module_of(s.name)
+    objects: [str] @ [site.object]
+    stopped: ()? @ ok()
+    refusals: [str] @ []
+
+    # The whole-program tables, built once for the whole round rather than
+    # once per TU. They are functions of the program and of `struct_tags`,
+    # so 157 modules used to buy 157 identical answers — and the arena walk
+    # and the content hashing behind them is what made the per-module
+    # self-build take longer than the fused one.
+    whole = members.whole_of(art.program, c: art.checked, s: s, decls: art.decls, struct_tags: struct_tags)
+
+    # One build's answers about files on disk. Every TU asks whether the
+    # headers it read still say the same thing, and 157 of them share
+    # almost all of those headers — so the map is threaded through the loop
+    # rather than rebuilt per unit.
+    memo: {str: str} @ {}
+
+    for component in units.components(s)
+        tu_text = unit.unit(
+            module: component,
+            p: art.program,
+            c: art.checked,
+            s: s,
+            decls: art.decls,
+            version: site.version,
+            is_root: component == root,
+            whole: whole
+        )
+        made = units.tu_object(
+            t,
+            module: component,
+            tu_text: tu_text,
+            level: options.level,
+            sanitize: options.sanitize,
+            search: compile.search_key(headers_from: options.headers_from, library: options.library),
+            package_flags: site.package_flags,
+            source_dir: site.source_dir,
+            search_include: options.headers_from,
+            @memo
+        )
+
+        if made.is_err()
+            refusals @ refusals.push(failure_of(made))
+
+            # The FIRST failure is the verdict, as before; the rest are kept
+            # for what they may teach about a tag.
+            if !stopped.is_err()
+                stopped @ carry_failure(made)
+        else
+            objects @ objects.push(made.must())
+
+    if stopped.is_err()
+        return Round(verdict: stopped, refusals: refusals)
+    linked = units.link_objects(
+        t,
+        objects: objects,
+        binary: site.binary,
+        level: options.level,
+        sanitize: options.sanitize,
+        search_include: options.headers_from,
+        search_library: options.library,
+        package_flags: site.package_flags,
+        link_names: site.link_names
+    )
+    return Round(verdict: linked, refusals: messages_of(linked))
+
+# The message of a failed `()?`, as the one-element list a round's refusals
+# are; empty for a verdict that is not a failure.
+function messages_of(verdict: ()?) -> [str]
+    match verdict
+        .ok    => return []
+        .err e => return [e.msg]
+
+# A TU object's failure, re-shaped for the link result the caller reads:
+# same code (the exit), same message (clang's words, which the ffi mapping
+# reads).
+function carry_failure(failed: str?) -> ()?
+    match failed
+        .ok    => return ok()
+        .err e => return fail(code: e.code, msg: e.msg)
+
+function failure_of(failed: str?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
+## Tests
+
+test "a round's refusals are its failures' words, and a clean verdict has none"
+    clean: ()? = ok()
+    assert messages_of(clean).len() == 0
+    refused: ()? = fail(code: "clang", msg: "main.c:8:1: error: must use 'struct' tag to refer to type 'addrinfo'")
+    assert messages_of(refused) == ["main.c:8:1: error: must use 'struct' tag to refer to type 'addrinfo'"]
+    made: str? = fail(code: "clang", msg: "refused")
+    assert failure_of(made) == "refused"
+    assert carry_failure(made).is_err()
+    fine: str? = ok("a.o")
+    assert failure_of(fine) == ""
+    assert !carry_failure(fine).is_err()

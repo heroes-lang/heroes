@@ -1,0 +1,115 @@
+# A mark nothing reads is refused (panel 150 R3, defect 037; author
+# ratification 2026-09-15).
+#
+# **The rule.** `acquires`, `borrows` and `consumes` are read on a HANDLE — a
+# group `record` with a `tag` and no fields (`handles.hero`) — and on a value
+# that reaches one through its fields (`check/reaches.hero`). Written on a
+# result or parameter of any other type they are refused, with the handle
+# spelling named as the repair.
+#
+# **Why refuse rather than widen, and it was measured.** `check/acquiring.hero`
+# keys its map on the handle's DECLARATION, and a `ptr` has none: it points at
+# whatever the header says and the type system holds no pointee for it. So on a
+# `ptr` the word could not be read, and panel 150 measured what an unread word
+# costs: `malloc(size: u64) -> ptr acquires sqlite3_notafunction` checked at
+# exit 0; `fopen(...) -> ptr acquires free`, released with `free`, was
+# *attempting free on address which was not malloc()-ed* under the sanitizer;
+# the two `netdb.h` releasers swapped were a `SEGV` inside `freeaddrinfo`.
+# design.md Part 6 already rules on the shape — *a tag nobody reads is a comment
+# that looks like a guarantee* — and every one of those programs carried the
+# mark the comment describes.
+#
+# **What it costs, said here: no program in the tree.** Every mark in
+# `examples/` and `tests/golden/` sits on a handle, measured 2026-09-15 before
+# this rule existed. `record Block tag void` is C's `void *` and binds `malloc`
+# and `free` with both marks read; a struct C names with two words has its
+# spelling since `cli/produce.hero` supplies `struct` from clang's own refusal.
+# The one limit is `one_tag_one_type`: two opaque `void *` families in one
+# program cannot both be `tag void`, and the second is then a `ptr` with no
+# mark — which is what it was in effect before this rule — and the design.md
+# Part 6 row names that as its falsifier.
+
+use ast
+use source
+use token
+use diag
+use check/state
+use check/acquiring
+
+function marks_are_read(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if !fd.value.is_extern
+                    continue
+                name = source.span_text(s, decl.name)
+
+                if !fd.value.acquires_result.is_err() || fd.value.borrows_result
+                    word: str @ "borrows"
+                    at: token.Span @ a.types[fd.value.result].span
+
+                    if !fd.value.acquires_result.is_err()
+                        word @ "acquires"
+                        at @ fd.value.acquires_result.must()
+                    refuse_unread(
+                        @c,
+                        s,
+                        decls,
+                        word: word,
+                        holder: "the result of `" + name + "`",
+                        node: fd.value.result,
+                        at: at
+                    )
+
+                for p in fd.value.params
+                    if !p.consumes && p.acquires.is_err() && !p.borrows
+                        continue
+                    on: str @ "consumes"
+                    where: token.Span @ a.types[p.ty].span
+
+                    if p.borrows
+                        on @ "borrows"
+
+                    if !p.acquires.is_err()
+                        on @ "acquires"
+                        where @ p.acquires.must()
+                    refuse_unread(
+                        @c,
+                        s,
+                        decls,
+                        word: on,
+                        holder: "`" + source.span_text(s, p.name) + "`",
+                        node: p.ty,
+                        at: where
+                    )
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+# The one question, asked of the type node the author wrote: does it reach a
+# handle? `acquiring.handle_behind` is the same walk the completeness rule
+# uses, so the two rules cannot disagree about what a handle is.
+function refuse_unread(@c: state.Checker, s: source.Source, decls: [ast.Decl], word: str, holder: str, node: i64, at: token.Span)
+    if !acquiring.handle_behind(c, s, decls, node: node).is_err()
+        return
+    written = c.out.written_types[node]
+    shown: str @ "this type"
+
+    if !written.is_err()
+        shown @ "`" + state.show(c, s, decls, written.must()) + "`"
+    state.push_diagnostic(@c, unread_mark(word: word, holder: holder, shown: shown, span: at))
+
+# The refusal. It names the word, where it sits, and the type that cannot carry
+# it, and then the spelling that can — because §4.17 asks that an error carry
+# everything needed to fix the program without opening another file.
+function unread_mark(word: str, holder: str, shown: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unread_mark",
+        message: "`" + word + "` on " + holder + " is a word nothing reads: " + shown + " reaches no handle, so no rule can say which call hands the value over or takes it back, and the word could be false without anything noticing",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "the marks are read on a handle — a group `record` with a `tag` and no fields — and on a value reaching one through its fields. Name the C type the pointer stands for and mark that: `record Block tag void` is C's `void *`, `record AI tag addrinfo` is `struct addrinfo *`, and the compiler writes `struct` where the header needs it"
+    )
+    d.notes @ d.notes.push(
+        "on a handle the word does work: `acquires` must name an `extern` that takes one back with `consumes`, `consumes` refuses a value the caller only borrowed, and a handle nobody gives back aborts when `main` returns, naming its address. On a `ptr` none of that can happen, and a wrong word there was measured to free memory `malloc` never gave"
+    )
+    return d

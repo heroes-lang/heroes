@@ -1,0 +1,29 @@
+# `getaddrinfo`, the binding defect 037 was filed about, written and run
+# (2026-09-15).
+#
+# `netdb.h` declares `struct addrinfo` and no typedef for it, on this Mac and on
+# Linux alike, so `record AI tag addrinfo` is the only spelling there is and
+# until 2026-09-15 it did not compile: the emitter wrote `addrinfo *` and clang
+# refused it. Panel 149's ffi-pragmatist measured that the one binding that
+# worked was `ptr`, on which no mark is read, so the program leaked at exit 0
+# with zero diagnostics — the silent half of the defect, and the half that
+# outranked the loud one. The handle now compiles, because the compiler reads
+# clang's *must use 'struct' tag* and writes `struct addrinfo *` on its second
+# round; the marks are read; and a result nobody frees would abort at exit.
+#
+# `service` and `hints` are `ptr` so that C's null can be passed: a `cstr`
+# argument is guarded against null on its way out, by design.
+#
+# Windows has no `netdb.h`; the harness skips a case whose header the machine
+# lacks, and that skip is deliberate and counted.
+
+extern "netdb.h"
+    record AI tag addrinfo
+    function getaddrinfo(node: cstr, service: ptr, hints: ptr, @res: AI acquires freeaddrinfo) -> i32
+    function freeaddrinfo(ai: AI consumes)
+
+function main()
+    res: AI @ nullptr
+    rc = getaddrinfo("127.0.0.1".cstr(), service: nullptr, hints: nullptr, @res)
+    print(rc)
+    freeaddrinfo(res)

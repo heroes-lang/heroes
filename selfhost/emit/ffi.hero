@@ -48,7 +48,7 @@ use ir/lower
 # two things about one mistake, and only the tag line names the
 # repair). add_once keeps one diagnostic per span, so whichever runs
 # first wins.
-function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: containers.Program, word_bits: i64, answered: [pointee_ask.Answered]) -> [diag.Diagnostic]
+function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: containers.Program, word_bits: i64, answered: [pointee_ask.Answered], struct_tags: {str: bool}) -> [diag.Diagnostic]
     # `with_functions`, and it is not decoration: this table is used to
     # REBUILD the probe line clang complained about, so it has to be the
     # same table the emitter wrote it with or the column arithmetic
@@ -59,8 +59,16 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
     # is the compiler blaming itself for a mistake in a .hero file
     # (measured on `atexit(f: (function(i64) -> ()))`, panel 111 R4).
     # The gap was latent before the permission: every other boundary
-    # type spells itself without a table.
-    names = ctype.with_functions(ctype.new_names(s, decls), c: c, s: s, decls: decls, p: p)
+    # type spells itself without a table. `struct_tags` is the same
+    # reason one level up: the round that failed spelled its handles with
+    # it, so the table rebuilt here has to (defect 037).
+    names = ctype.with_functions(
+        ctype.new_names_qualified(s, decls, struct_tags: struct_tags),
+        c: c,
+        s: s,
+        decls: decls,
+        p: p
+    )
     found: [diag.Diagnostic] @ []
 
     for line in ffi_lookup.lines(text: stderr)
@@ -167,12 +175,23 @@ test "one mistake, several lines, one diagnostic — and the order is the messag
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     none: [pointee_ask.Answered] = []
+    no_tags: {str: bool} = {}
 
     # The return assertion's message line, then clang's echo of the
     # same source line: one diagnostic survives, by matching rather
     # than by luck of ordering.
     two_lines = "m.c:9:1: error: static assertion failed due to requirement 'x': heroes-ffi-return sqrt i64\n_Static_assert(HERO_RET_INT(sqrt((double)0)), \"heroes-ffi-return sqrt i64\");\n"
-    found = explain(two_lines, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64, answered: none)
+    found = explain(
+        two_lines,
+        s,
+        parsed.tree,
+        parsed.decls,
+        c,
+        low.program,
+        word_bits: 64,
+        answered: none,
+        struct_tags: no_tags
+    )
     assert found.len() == 1
     assert found[0].code == "ffi_return_type"
 
@@ -180,10 +199,20 @@ test "one mistake, several lines, one diagnostic — and the order is the messag
     # first and add_once keeps it, so the author is not told to
     # correct a length that cannot exist.
     both = "m.c:2:1: error: static assertion failed due to requirement 'a': heroes-ffi-flex Packet data\nm.c:3:1: error: static assertion failed due to requirement 'b': heroes-ffi-field Packet data\n"
-    kept = explain(both, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64, answered: none)
+    kept = explain(
+        both,
+        s,
+        parsed.tree,
+        parsed.decls,
+        c,
+        low.program,
+        word_bits: 64,
+        answered: none,
+        struct_tags: no_tags
+    )
     assert kept.len() == 1
     assert kept[0].code == "ffi_flexible_array_member"
 
     # Any other clang failure explains nothing: still the compiler's.
     other = "m.c:1:1: error: expected ';' after top level declarator\n"
-    assert explain(other, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64, answered: none).len() == 0
+    assert explain(other, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64, answered: none, struct_tags: no_tags).len() == 0

@@ -273,6 +273,7 @@ function verb_probes() -> [probe.Probe]
         row(name: "a wrong extern signature is exit 1 on the declaring module's line", argv: "build tests/golden/surface-fixtures/externsignature/wrong.hero", code: 1).err_has("error[ffi_return_type]").err_has("externsignature/bind.hero:13:5").err_has("that is what `math.h` says").err_lacks("internal error").err_lacks("build/").err_lacks("hero_ffi_probe")
         row(name: "the same shape with the header's own signature runs", argv: "run tests/golden/surface-fixtures/externsignature/right.hero", code: 0).out_is("4.0\n")
         row(name: "one C symbol carries two bindings, in two modules", argv: "run tests/golden/surface-fixtures/twoarity/main.hero", code: 0).out_is("n = 42\ns = forty-two\n")
+        row(name: "a handle tag that C names with two words is spelled from clang's own refusal, in the module that declares it and in the one that only uses it (defect 037)", argv: "run tests/golden/surface-fixtures/structtag/main.hero", code: 0).out_is("7\n").err_empty()
         row(name: "a local may not take the name a use bound, and one mistake is one diagnostic", argv: "check tests/golden/surface-fixtures/localtakesamodule/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("what this file calls the module `state`").err_has("use state as <other>").err_has("or rename this binding").err_lacks("module_is_not_a_value").err_lacks("internal error")
         row(name: "a ptr local wearing a module's name is two diagnostics, and the qualifying repair is a guess", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("error[needs_qualifying]").err_lacks("fix (certain)").err_lacks("internal error")
         row(name: "apply on it leaves the text untouched, because a fix that reproduced itself was no fix", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero --apply", code: 0).out_is("use window\n\nfunction main()\n    window: ptr @ nullptr  #~ shadowed_binding\n    window @ nullptr\n    _ = window.destroy()  #~ needs_qualifying\n").out_lacks("window.window")
@@ -396,7 +397,11 @@ test "the tables are what this module is, so they are counted"
     # built-in constructors are inside `spec § 9 Functions and calls`'s mandatory-label rule. They
     # are outside it and accept the labels anyway — both spellings compile — so
     # the answer is pinned by a fixture rather than bought with spec tokens.
-    assert verb_probes().len() == 48
+    # 48 -> 49 on 2026-09-15, defect 037's close: a handle tag that C names with
+    # two words, declared in one module and used in another, runs — the
+    # qualifier learned from clang's refusal has to reach both translation
+    # units, and a golden case cannot hold two modules.
+    assert verb_probes().len() == 49
 
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"

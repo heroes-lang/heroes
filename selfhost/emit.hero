@@ -193,7 +193,8 @@ function emit(p: containers.Program, c: state.Checked, s: source.Source, decls: 
 # message that carries the list is one round trip and three
 # invocations is three.
 function emit_for(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
-    return emit_maybe(target: target, p: p, c: c, s: s, decls: decls, version: version, text: true)
+    none: {str: bool} = {}
+    return emit_maybe(target: target, p: p, c: c, s: s, decls: decls, version: version, text: true, struct_tags: none)
 
 # The same walk with the TEXT made optional, because the per-module
 # path does not want it and used to pay for it anyway: `heroes build`
@@ -205,7 +206,11 @@ function emit_for(target: emit_decls.BuildTarget, p: containers.Program, c: stat
 #
 # `--emit-c`, `heroes test` and the seed still take `text: true`: they
 # ARE the artifact path, and R1 says it stays one fused unit.
-function emit_maybe(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, text: bool) -> Emitted
+#
+# `struct_tags` is empty on every first emission and carries, on a second
+# one, the handle tags clang refused with *must use 'struct' tag*
+# (`cli/produce.hero`, defect 037); `emit/ctype.hero` is where it is read.
+function emit_maybe(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, text: bool, struct_tags: {str: bool}) -> Emitted
     refused = gate.refuse(target: target, p: p, c: c, s: s, decls: decls)
 
     if refused.len() > 0
@@ -236,7 +241,7 @@ function emit_maybe(target: emit_decls.BuildTarget, p: containers.Program, c: st
     walked = reach_of(p, c, target: target, shown: shown)
     reached: {i64: bool} @ walked.reached
     constructed: {i64: bool} @ walked.constructed
-    names: ctype.Names @ ctype.new_names(s, decls)
+    names: ctype.Names @ ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
     names @ ctype.with_options(names, c: c, s: s, decls: decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
 

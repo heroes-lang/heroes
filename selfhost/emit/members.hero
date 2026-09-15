@@ -46,8 +46,8 @@ record Whole
     # is what `instance_index` already costs for the generic ones.
     by_decl: {i64: i64}
 
-function whole_of(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Whole
-    names: ctype.Names @ ctype.new_names(s, decls)
+function whole_of(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], struct_tags: {str: bool}) -> Whole
+    names: ctype.Names @ ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
     names @ ctype.with_options(names, c: c, s: s, decls: decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
     by_decl: {i64: i64} @ {}
