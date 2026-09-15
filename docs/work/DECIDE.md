@@ -21,7 +21,28 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 3**
+
+- [ ] **panel 152** | the `struct` qualifier is read from clang's own refusal rather than guessed by a probe, an unknown tag stays refused as a Heroes error, the spec nets +4 real, and design.md stops saying the tag is written verbatim — ratify | `docs/panel/152-the-answer-was-already-spoken-and-thrown-away.md`
+
+    **Origin:** panel 152, 2026-09-15, three seats under CL-023 after panel 151's
+    two ruled. **The capability is adopted and the mechanism is refused**, because
+    the answer already arrives and is discarded.
+
+    **The one fact**: clang already distinguishes the three cases by message —
+    *must use 'struct' tag*, *unknown type name*, and silence — and
+    `emit/ffi_tag.hero:31` already reads the first and already builds a Heroes
+    diagnostic with a `certain` fix. `emit/ffi_lookup.hero:69` discards it by
+    comparing the declaration's NAME and never its TAG.
+
+    **Why the probe was refused, measured**: `struct addrinfoo *p;` compiles at
+    exit 0 with zero diagnostics, so a misspelled tag gives the same bit as a
+    correct struct-only one, and the route's advertised strength is exactly where
+    nothing downstream refuses it.
+
+    **The cost of leaving it open** is defect 037: a `getaddrinfo` binding has no
+    spelling but `ptr`, where the handle machinery is blind and the program leaks
+    at exit 0.
 
 - [ ] **panel 151** | Route B is refused for inverting the §4.19 probe, and the narrowing both seats compiled — ask clang ONE BIT, the namespace qualifier, never the type name — is owed a FULL sitting because it amends design.md Part 4 | `docs/panel/151-the-probe-must-carry-the-authors-word.md`
 
