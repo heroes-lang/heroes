@@ -14,7 +14,7 @@ The status and the chain. Why the table looks the way it does is
 | The compiler | **61,803** lines of Heroes in **212** modules (`find selfhost -name '*.hero'`) · the seed **819,718** lines of C, regenerated at defect 045's close and verified at the fixpoint |
 | The spec | **5989** on the vendored ranks and **7974** on the reader's own, against a ceiling of **10240** — raised from 8192 by author decision 2026-09-14 with the document 211 free. The three marks are **+125 vendored and +168 real**, in two payments at ratios of 1.40 and 1.23, both inside the band panel 148's warden gave while refusing any single factor; defect 037's close is **+1 vendored and +0 real**, a −3 phrase and a +7 correction cancelling on the reader's instrument; **2266 free** and 2206 net of the FFI floor |
 | The contract | **7449** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-15 with the wakeup instruction: of the 36 vendored tokens the pin was behind, 14 predate that session and no commit had named them |
-| Records | sittings **153** · journals **58** · milestone files **48** · entries: `docs/records/log/` **668**, `docs/records/done/` **537**, `docs/records/book/beats/` **123** · **open defects 0**, **open decisions 0** |
+| Records | sittings **153** · journals **58** · milestone files **48** · entries: `docs/records/log/` **668**, `docs/records/done/` **536**, `docs/records/book/beats/` **123** · **open defects 0**, **open decisions 0** |
 | Waiting on the author | **nothing.** Panels 153 and 154 were ratified on 2026-09-15, both as adopted and both decided AGAINST their own seats' convergence by a completeness critic that measured an option nobody had listed — a header of the author's own at 153, one string in the compile-flag list at 154. What each leaves owed is named with the trigger that releases it, in `docs/records/done/`'s ratification entry: route A's guard when a milestone next opens `emit/ops.hero`, route B's word on a second witness, and what § 13 should say about the header route when a milestone next opens `spec/` |
 
 **Re-measured 2026-09-15 at defect 044's close, the full net on a compiler built
@@ -129,15 +129,15 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 67 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
 | 68 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
 | 69 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 70 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
-| 71 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 72 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 73 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
-| 74 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
-| 75 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
-| 76 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
-| 77 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
-| 78 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 70 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
+| 71 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
+| 72 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 73 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
+| 74 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 75 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
+| 76 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
+| 77 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 78 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**

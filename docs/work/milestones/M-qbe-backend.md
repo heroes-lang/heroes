@@ -117,7 +117,10 @@ deliberately handed to clang (DESIGN-LOG 2026-08-03, panel 001).
     program shows under it, or say plainly that it shows nothing. **Where the
     milestone sits is unchanged and the author's**: after the tools and before
     the books, for the 2026-09-03 reason that the IR should have stopped moving
-    first (`docs/ROADMAP.md` § Who scheduled what).
+    first (`docs/ROADMAP.md` § Who scheduled what). **Moved behind
+    M-publication-gate on 2026-09-15, by author instruction**, and still after
+    the tools and before the books; `docs/roadmap/scheduling.md` carries the
+    move.
 
     **Where to look also:** `design.md` §3.2 (`:698-707`) · `docs/ROADMAP.md`
     § M-qbe-backend, § M-typed-inspection ·

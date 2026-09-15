@@ -37,6 +37,9 @@ across `runtime/`, and the attribution of the two vendored BPE tables.
   and stating it unmeasured publishes an opinion with a decimal point — the one
   thing §12 forbids, the author included. Not delegable: the held-out tasks must
   be author-written, or they measure the assistant's priors (panel 011).
+  **Since 2026-09-15 both books follow the gate**, by author instruction, so at
+  the gate it is the site alone that states the claim, and the books state it
+  after.
 - **A compatibility policy.** What v1 promises to somebody who writes code
   against it, in one honest paragraph. Silence reads as a promise.
 - **The licence re-check on vendored material**, against the upstream

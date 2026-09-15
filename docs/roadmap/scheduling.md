@@ -349,6 +349,29 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   allows no tag over an open defect, so M-deferral-ledger closes untagged while
   029 stands, on M-anchored-spec's precedent, and its tag lands on the first
   commit where every list it leaves open is clean.
+- **M-microcontroller-verdict, M-qbe-backend, M-journey-book and M-guide-book
+  behind M-publication-gate** — **moved 2026-09-15 by author instruction**, four
+  names and one word, *after*, in that order and with no reason attached, so
+  none is written here. The rows they left, as the table numbered them that
+  evening: 74, 70, 71 and 72; the rows they take: 75 to 78. The gate and the
+  four rows that stood between come forward by the same count: M-deployable-binary
+  from 73 to 70, M-install-channels from 75 to 71, M-online-compiler from 76 to
+  72, M-compatibility-promise from 77 to 73, M-publication-gate from 78 to 74. A
+  reorder and not an insert: the table stays 78 long, the closed block still ends
+  at 57, and § The chain's own sentence about the boundary is untouched. **What
+  it makes true**: the gate's outward act waits on no second backend, no ruling
+  about a device and neither book. **What it makes false, with a dated
+  correction under each sentence in its own file**: M-microcontroller-verdict's
+  *before M-install-channels, which would otherwise ship for a class of machine
+  nobody has ruled on*, since it now stands after the channels, the online
+  compiler, the compatibility suite and the gate, first of the four; and the
+  gate's *the site and both books will state the claim*, since at the gate only
+  the site can and both books follow it. What still holds: M-qbe-backend after
+  the tools and before the books, journey before guide, and M-thesis-harness
+  ahead of M-guide-book, where the 2026-08-24 decision left the bulk of metric
+  2's tasks. Verified after the move rather than assumed: 78 rows and no gap by
+  a count over the table, and `site/src/lib/chain.ts`, which refuses a gap at
+  build time, read the same table in a site build of 186 pages that completed.
 
 ---
 
