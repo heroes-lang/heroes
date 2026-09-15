@@ -1,0 +1,32 @@
+# The diagnostic path panel 153's completeness critic measured broken BEFORE the
+# narrowing landed, and the golden that keeps it honest (2026-09-15).
+#
+# `one_tag_one_type` now admits one handle and one record with fields on a tag.
+# `selfhost/handles.hero` had given the diagnostic machinery as a REASON for the
+# old rule, in its own words: *"`record_by_tag` answers with the FIRST record
+# carrying the tag, so a message about the second would carry the first's
+# caret."* The critic built exactly that shape against the prototype and got it:
+# `error[ffi_unknown_tag]` with the caret on `record Db tag sqlite3`, the HANDLE,
+# whose line is correct C, and with a repair reading *"drop the field block"* —
+# printed at a record that has no field block, while `DbValue`, the record that
+# is actually wrong, was never named.
+#
+# **The repair is that the lookup is asked WHICH KIND the message is about.**
+# Every clang message this file reads names `struct <tag>`, which is the record
+# with FIELDS, so that is the one it now finds. The handle beside it is correct
+# and is left alone.
+#
+# `sqlite3.h` reads `typedef struct sqlite3 sqlite3;` and nothing more, so the
+# struct is opaque on purpose: a record with fields over it cannot be laid out,
+# and that is what the author is told, on the author's own line.
+#
+# This file must NOT compile.
+
+extern "sqlite3.h" link "sqlite3"
+    record Db tag sqlite3
+    record DbValue tag sqlite3 partial  #~ ffi_unknown_tag
+        nBtree: i32
+    function sqlite3_close(db: Db) -> i64
+
+function main()
+    print(0)

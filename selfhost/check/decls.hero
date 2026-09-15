@@ -268,15 +268,31 @@ test "a type parameter that appears nowhere in the signature is refused at its l
     )
     assert fine.out.diagnostics.len() == 0
 
-# One tag, one type: two group records may not name the same C type.
+# One tag, one KIND: a tag names at most one handle and at most one record with
+# fields, and never two of either.
 #
 # Refused rather than allowed, on the author's decision of 2026-09-13 narrowing
-# panel 145's form. Two records over one tag are two Heroes types and one C
-# type, so this compiler refuses handing one where the other belongs and clang
-# accepts it — the mutant survives every instrument the language has, for good.
-# The diagnostic machinery cannot name the second either: `emit/ffi_tag.hero`'s
-# `record_by_tag` answers with the FIRST record carrying a tag, so a message
-# about the second would carry the first's caret.
+# panel 145's form. Two records over one tag were two Heroes types and one C
+# type, so this compiler refused handing one where the other belongs and clang
+# accepted it — the mutant survives every instrument the language has, for good.
+#
+# **NARROWED 2026-09-15, panel 153, because that premise is true of two handles
+# and FALSE of a handle beside a fielded record.** Measured in C alone under
+# `-Wall -Wextra`: two handles over one struct are `struct s *` and `struct s *`,
+# so the swap is a type handed where its own type belongs and clang is **silent**;
+# a handle beside a value is `struct s *` and `struct s`, and the swap in either
+# direction is **two clang errors**, *passing 'struct addrinfo' to parameter of
+# incompatible type 'struct addrinfo *'*. Heroes refuses it too, with
+# `type_mismatch`. So the pair this rule was written to catch is still caught,
+# and the pair it was catching by accident is not a hole.
+#
+# **What it buys is the shape C uses most** (`docs/work/DEFECTS.md` 042).
+# `getaddrinfo` hands back `struct addrinfo **`, which is a handle, and takes
+# `const struct addrinfo *hints`, which is a record with fields; `netdb.h`
+# declares 19 struct-pointer-returning entry points and no typedef for any of
+# them, so before this narrowing the binding had no spelling at all. Measured
+# after: the whole binding builds and runs against `netdb.h` alone, with no shim
+# header and no new syntax.
 #
 # The walk is over the declarations rather than the groups because a group is
 # flattened in the parser and no later pass knows the word: two records in two
@@ -291,13 +307,28 @@ function one_tag_one_type(@c: state.Checker, s: source.Source, decls: [ast.Decl]
                 if !rec.header.is_err() && !rec.tag.is_err()
                     tag = source.span_text(s, rec.tag.must())
                     name = source.span_text(s, decl.name)
-                    first = seen[tag]
+                    first = seen[tag_kind(decl, tag: tag)]
 
                     if first.is_err()
-                        seen[tag] @ name
+                        seen[tag_kind(decl, tag: tag)] @ name
                     else
                         state.push_diagnostic(
                             @c,
-                            handles.duplicate_tag(tag: tag, first: first.must(), second: name, span: decl.name)
+                            handles.duplicate_tag(tag: tag, first: first.must(), second: name, kind: kind_word(decl), span: decl.name)
                         )
             .constant_decl | .function_decl | .variant_decl | .test_decl => seen @ seen
+
+# The key: the C type's name and which of the two kinds of record names it. A
+# handle is `struct s *` and a fielded record is `struct s`, and those are two C
+# types, which is the whole reason one tag may carry one of each.
+function tag_kind(decl: ast.Decl, tag: str) -> str
+    if handles.is_handle(decl)
+        return tag + " *"
+    return tag
+
+# What the diagnostic calls the kind the two records share, so the message says
+# which of the two rules was broken rather than restating the rule.
+function kind_word(decl: ast.Decl) -> str
+    if handles.is_handle(decl)
+        return "handles"
+    return "records with fields"

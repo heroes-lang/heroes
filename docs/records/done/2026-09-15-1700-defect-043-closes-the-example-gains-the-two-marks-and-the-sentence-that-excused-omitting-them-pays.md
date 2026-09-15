@@ -49,3 +49,25 @@
     it names the instrument that makes it enforceable: `special/the spec's
     example` compiles that fence as a program, so an example the section's rules
     would refuse is an example the harness refuses.
+
+    **CORRECTION, 2026-09-15, appended the same day by panel 153's completeness
+    critic and verified by the coordinator.** This entry and the ledger row it
+    cites give **8 of 10** and **2 of 10** as the measurement that paid, and
+    describe them as ten independent readings per fence. They are ten readings
+    NARRATED IN ONE PASS BY ONE SEAT, not ten runs of a model, and the seat's own
+    report proposes the real instrument in its predictions — *"Harness sqlite
+    ':memory:' task, spec prompt with fence Y versus fence X … Instrument: count
+    the two words in each sample's `extern` group"* — which was **not run**.
+    Second, the brief promised the seat a BLIND A/B and then printed § 13
+    verbatim at its foot, fence Y included, so the seat could and did identify
+    which fence was live. The blinding was broken by the brief.
+
+    **What survives the correction, and it is what the repair rests on.** The
+    direction is not in doubt and it was measured on programs rather than on
+    readings: the forgetful reader exits 0 in silence under the old fence and is
+    stopped at 134 under the new one, both run; `special` compiles the corrected
+    fence as a program and passes; and the removal that paid, *Unmarked pointers
+    are never freed.*, is a sentence whose content survives in three other places.
+    **What does not survive is the precision of the ratio**, and the ledger row's
+    forward prediction is the instrument that would settle it. Written here rather
+    than in a rewrite, because a record is corrected underneath (CLAUDE.md §14).
