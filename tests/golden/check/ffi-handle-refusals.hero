@@ -10,16 +10,32 @@
 #     closed handle is found again by a handle that has nothing to do with it.
 #     The sitting that adopted the form did not rule on hashing at all, so the
 #     language refuses the shape rather than choosing an answer nobody argued.
-#   - share its TAG with another record. Two records over one tag are two Heroes
-#     types and ONE C type, so this compiler refuses handing one where the other
-#     belongs and clang accepts it: the mutant survives every instrument the
-#     language has, permanently.
+#   - share its TAG with another HANDLE. Two handles over one tag are two Heroes
+#     types and ONE C type — `sqlite3 *` twice — so this compiler refuses handing
+#     one where the other belongs and clang accepts it: the mutant survives every
+#     instrument the language has, permanently.
+#
+# **And one shape that was refused until 2026-09-15 and is not a refusal at
+# all**: a handle beside a record WITH FIELDS on one tag. Those are `struct s *`
+# and `struct s`, two C types, and clang refuses a swap between them unaided —
+# measured, two errors in either direction. Panel 153 narrowed the rule to one
+# of each KIND, because the pair it was refusing by accident is how a struct C
+# hands back by pointer is both pointed at and read. The legal pair is
+# `tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero`.
 extern "sqlite3.h" link "sqlite3"
     record Db tag sqlite3
     record Stmt tag sqlite3_stmt
     record Db2 tag sqlite3  #~ duplicate_tag
     function sqlite3_close(db: Db) -> i64
     function sqlite3_finalize(statement: Stmt) -> i64
+
+# Two records WITH FIELDS over one tag are the same refusal seen from the other
+# side: both are `struct tm`, and nothing tells them apart.
+extern "time.h"
+    record Broken tag tm partial
+        tm_year: i32
+    record Broken2 tag tm partial  #~ duplicate_tag
+        tm_year: i32
 
 # A record that HOLDS a handle carries the refusal with it, and the message
 # names the field that reaches one.

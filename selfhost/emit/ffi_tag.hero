@@ -156,7 +156,7 @@ function unknown_tag(s: source.Source, decls: [ast.Decl], line: str) -> diag.Dia
     if quoted.is_err()
         return fail(code: "none", msg: "not an incomplete-tag line")
     tag_name = ffi_lookup.up_to_quote(quoted.must())
-    found = record_by_tag(s, decls, tag_name: tag_name)
+    found = record_by_tag(s, decls, tag_name: tag_name, want_handle: false)
 
     if found.is_err()
         return fail(code: "none", msg: "no record names this tag")
@@ -177,7 +177,26 @@ record TaggedRecord
     span: token.Span
     header: str
 
-function record_by_tag(s: source.Source, decls: [ast.Decl], tag_name: str) -> TaggedRecord?
+# **IT ANSWERED WITH THE FIRST RECORD ON THE TAG UNTIL 2026-09-15, and that was
+# safe only while one tag meant one record.** `handles.hero` gave this very
+# lookup as a REASON for `one_tag_one_type`: *"a message about the second would
+# carry the first's caret."* Panel 153 narrowed that rule to one of each KIND, so
+# a tag may now carry a handle and a record with fields — and the two are two
+# different C types, `struct s *` and `struct s`, which clang names differently.
+#
+# So the lookup is asked WHICH KIND the message is about, and it is the caller
+# that knows: every message this file reads names `struct <tag>` and is therefore
+# about the record with FIELDS, whose C type is exactly that. Panel 153's
+# completeness critic measured the wrong caret before this parameter existed —
+# `record DbValue tag sqlite3 partial` beside `record Db tag sqlite3` put
+# `ffi_unknown_tag` on the HANDLE's line, and printed as its repair the very line
+# it was pointing at.
+#
+# A tag with only one record answers the same either way, which is every binding
+# in this tree today.
+function record_by_tag(s: source.Source, decls: [ast.Decl], tag_name: str, want_handle: bool) -> TaggedRecord?
+    fallback: TaggedRecord? @ fail(code: "none", msg: "no record names this tag")
+
     for decl in decls
         match decl.kind
             .record_decl rec =>
@@ -186,10 +205,16 @@ function record_by_tag(s: source.Source, decls: [ast.Decl], tag_name: str) -> Ta
 
                 if source.span_text(s, rec.tag.must()) != tag_name
                     continue
-                return ok(TaggedRecord(span: rec.tag.must(), header: emit_externs.unquoted(s, span: rec.header.must())))
+                here = TaggedRecord(span: rec.tag.must(), header: emit_externs.unquoted(s, span: rec.header.must()))
+
+                if handles.is_handle(decl) == want_handle
+                    return ok(here)
+
+                if fallback.is_err()
+                    fallback @ ok(here)
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
-    return fail(code: "none", msg: "no record names this tag")
+    return fallback
 
 # clang's "use of 'utag' with tag type that does not match previous
 # declaration" — the tag names a UNION and the emitter spelled struct
@@ -207,7 +232,7 @@ function tag_is_a_union(s: source.Source, decls: [ast.Decl], line: str) -> diag.
     if quoted.is_err()
         return fail(code: "none", msg: "no tag on the line")
     tag_name = ffi_lookup.up_to_quote(quoted.must())
-    found = record_by_tag(s, decls, tag_name: tag_name)
+    found = record_by_tag(s, decls, tag_name: tag_name, want_handle: false)
 
     if found.is_err()
         return fail(code: "none", msg: "no record names this tag")

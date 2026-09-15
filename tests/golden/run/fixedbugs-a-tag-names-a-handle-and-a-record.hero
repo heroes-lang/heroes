@@ -1,0 +1,40 @@
+# A struct C both HANDS BACK BY POINTER and READS BY POINTER, bound whole
+# (defect 042, panel 153; closed 2026-09-15).
+#
+# **`getaddrinfo` is the shape C uses most and it had no spelling at all.** It
+# takes `const struct addrinfo *hints`, which is the struct with its fields, and
+# fills `struct addrinfo **res`, which is a handle. Both are `tag addrinfo`, and
+# `one_tag_one_type` refused two records on one tag, so the binding could not be
+# written — not with a shim, not with a cast, not at all. `netdb.h` declares
+# nineteen struct-pointer-returning entry points and a typedef for none of them.
+#
+# **What the rule was defending is real and still defended.** Two HANDLES over
+# one tag are `struct s *` twice, so a swap between them is invisible to clang:
+# measured under `-Wall -Wextra`, silence. Two RECORDS WITH FIELDS over one tag
+# are `struct s` twice, and the same. Both stay refused, in
+# `tests/golden/check/ffi-handle-refusals.hero`.
+#
+# **What it was refusing by accident is not a hole.** A handle beside a fielded
+# record is `struct s *` and `struct s`, two different C types: the swap is two
+# clang errors in either direction, and Heroes answers `type_mismatch` first. So
+# the narrowing gives up nothing — the rule now reads *one tag, one of each
+# kind* — and this program is what it buys.
+#
+# `service` is a `ptr` so C's null can be passed; a `cstr` argument is guarded
+# against null on its way out, by design. Windows has no `netdb.h` and the
+# harness skips a case whose header the machine lacks.
+
+extern "netdb.h"
+    record AI tag addrinfo
+    record Hints tag addrinfo partial
+        ai_family: i32
+        ai_socktype: i32
+    function getaddrinfo(node: cstr, service: ptr, @hints: Hints, @res: AI acquires freeaddrinfo) -> i32
+    function freeaddrinfo(ai: AI consumes)
+
+function main()
+    h: Hints @ Hints(ai_family: 0, ai_socktype: 1)
+    r: AI @ nullptr
+    rc = getaddrinfo(node: "127.0.0.1".cstr(), service: nullptr, hints: @h, res: @r)
+    print(rc)
+    freeaddrinfo(r)

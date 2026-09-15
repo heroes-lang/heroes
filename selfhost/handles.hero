@@ -123,21 +123,37 @@ function spelled(s: source.Source, tag: token.Span, struct_tags: {str: bool}) ->
     word = source.span_text(s, tag)
     return c_spelling(tag_text: word, needs_struct: !struct_tags[word].is_err())
 
-# Two records naming ONE C type, and it is refused for a reason that outlives
-# this compiler (panel 145's narrowing, author decision 2026-09-13). Two handles
-# of one tag are two Heroes types and ONE C type, so the checker refuses a swap
-# between them and clang accepts it: the mutant survives every instrument the
-# language has, permanently. And the diagnostic machinery cannot even name the
-# second — `record_by_tag` answers with the FIRST record carrying the tag, so a
-# message about the second would carry the first's caret. One tag, one type.
-function duplicate_tag(tag: str, first: str, second: str, span: token.Span) -> diag.Diagnostic
+# Two records of the SAME KIND naming one C type, and it is refused for a reason
+# that outlives this compiler (panel 145's narrowing, author decision
+# 2026-09-13). Two handles of one tag are two Heroes types and ONE C type,
+# `struct s *` twice, so the checker refuses a swap between them and clang
+# accepts it: the mutant survives every instrument the language has,
+# permanently. Two records WITH FIELDS are the same story as `struct s`.
+#
+# **A handle BESIDE a record with fields is not that shape, and panel 153
+# narrowed the rule to say so.** Those are `struct s *` and `struct s`, two C
+# types, and the swap is two clang errors in either direction — measured, under
+# the compiler's own flags. It is how a struct C hands back by pointer is both
+# pointed at and read, which `netdb.h` needs nineteen times over.
+#
+# **The second reason this entry used to give is repaired rather than
+# inherited.** It read *"the diagnostic machinery cannot even name the second —
+# `record_by_tag` answers with the FIRST record carrying the tag, so a message
+# about the second would carry the first's caret"*, and panel 153's completeness
+# critic measured exactly that wrong caret against the narrowing before it
+# landed. `record_by_tag` is now asked WHICH KIND the message is about. One tag,
+# one of each kind.
+function duplicate_tag(tag: str, first: str, second: str, kind: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "duplicate_tag",
-        message: "`" + second + "` and `" + first + "` both name the C type `" + tag + "` — one tag, one type",
+        message: "`" + second + "` and `" + first + "` are both " + kind + " over `" + tag + "` — one tag, one of each kind",
         span: span
     )
     d.notes @ d.notes.push(
-        "two Heroes types over one C type is a hole nothing can close: this compiler refuses handing one where the other belongs, and clang accepts it, so the mistake survives every check the language has. Give the two types two tags, or give the one type one name and use it twice"
+        "two Heroes types over ONE C type is a hole nothing can close: this compiler refuses handing one where the other belongs, and clang accepts it, so the mistake survives every check the language has. Give the two types two tags, or give the one type one name and use it twice"
+    )
+    d.notes @ d.notes.push(
+        "one tag may carry a HANDLE and a record WITH FIELDS, because those are two different C types — `struct " + tag + " *` and `struct " + tag + "` — and clang refuses a swap between them on its own. That pair is how a struct C hands back by pointer is both pointed at and read (§ 13). What is refused here is two of the SAME kind"
     )
     return d
 
