@@ -218,4 +218,31 @@ close it.
 
 ## Author's verdict
 
-*Pending. Queued in `docs/work/DECIDE.md` as `panel 153`.*
+**RATIFIED 2026-09-15**, as adopted, with panel 154 the same evening.
+
+**What the yes settles.** That `one_tag_one_type` admits one handle and one
+record with fields per tag, which closed defect 042 and made `getaddrinfo`
+writable against `netdb.h` alone. That `record_by_tag` is asked which kind a
+message is about, which the completeness critic measured broken before the
+narrowing landed. And that the READ question was rightly not settled by a sitting
+whose option set was short by one.
+
+**AND THE QUEUED QUESTION WAS ANSWERED THE SAME EVENING, by the sitting that
+followed rather than by the one that was promised.** R2 asked whether the
+LANGUAGE should read the struct behind a pointer when a header of the author's
+own already does, and named the built-in's one advantage over the header: a guard
+on the null read. Panel 154 built that guard — as `-fno-delete-null-pointer-checks`
+in the compile-flag list, which closes the class at zero surface and zero spec
+tokens — and closed defect 045 with it. **So the option this sitting recommended
+is the one that landed**, and no second sitting is owed on that axis.
+
+**What remains of R2, named so it is not lost, and it is one question rather than
+a sitting.** A route the specification does not mention is a route a reader of the
+prompt cannot find: § 13 says nothing about reaching a struct through a header of
+the author's own, and this sitting's own argument against the header route was
+exactly that. Whether the document should say so is spec text and therefore
+priced; the removal panel 154's critic measured, **R4 at −9 real**, is unspent and
+is the obvious payment. It waits for the milestone that next opens `spec/`.
+
+**What the yes does not settle**: nothing filed. Defects 042 and 043 are both
+closed, and the sitting produced defect 045, which is closed too.
