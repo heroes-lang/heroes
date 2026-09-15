@@ -133,6 +133,42 @@ static _Thread_local uintptr_t hero_stack_hi = 0;
 static _Thread_local void *hero_stack_alt = NULL;
 static _Thread_local size_t hero_stack_alt_size = 0;
 
+/* The low addresses this platform will not map, so a fault in them is a
+ * dereference of a null pointer plus an offset and never a wild address.
+ *
+ * **IT IS THE PLATFORM'S OWN FLOOR AND IT WAS ONE PAGE FOR AN HOUR** (defect
+ * 045, panel 154's completeness critic). 4096 rested on *"a field's offset is
+ * smaller than a page in every struct a header can lay out"*, which is a
+ * premise about the world that `.claude/rules/module-shape.md` forbids a
+ * narrowing to rest on, and three lines of header falsified it: `struct bignode
+ * { char pad[1048576]; int64_t value; }` faults at offset 1 MiB and died at 139
+ * in silence, at `-O0`. That seat then laid out 275 records from 21 headers of
+ * this SDK and found exactly one over a page, `_opaque_pthread_t` at 8192
+ * bytes — so the premise was false and the corpus that would have caught it
+ * does not exist.
+ *
+ * **Darwin 64-bit: 4 GiB, measured on this Mac** with `otool -l`, which reports
+ * `__PAGEZERO vmsize 0x100000000`. Nothing can be mapped there by construction,
+ * so a fault anywhere below it is a dereference of something small, and the
+ * message below prints the offset so a reader can tell a null plus a field from
+ * a small wild pointer. Panel 104's wild store, eight kibibytes under the stack,
+ * is far above this and still re-raises: the stack lives near the top of the
+ * address space, which is why widening the floor does not undo the measurement
+ * that rule cost.
+ *
+ * **Elsewhere: 64 KiB**, the smallest floor the other two platforms document —
+ * Linux's `mmap_min_addr` defaults to 65536 and Windows reserves the low 64 KiB.
+ * Neither was run from this Mac, and `.claude/rules/platforms.md` says a
+ * platform fact is run on a platform or it is an inference, so this one is
+ * marked as the inference it is: the number is safe because it is the SMALLER
+ * claim, and what would replace it is each platform's floor read on that
+ * platform. */
+#if defined(__APPLE__) && defined(__LP64__)
+#define HERO_NULL_WINDOW 0x100000000ULL
+#else
+#define HERO_NULL_WINDOW 65536ULL
+#endif
+
 /* What was installed before us, for SIGSEGV and SIGBUS. */
 static struct sigaction hero_stack_prev_segv;
 static struct sigaction hero_stack_prev_bus;
@@ -171,6 +207,30 @@ static void hero_stack_say(const char *s) {
         s += (size_t)put;
         n -= (size_t)put;
     }
+}
+
+/* An address as `0x…`, written with `write(2)` like everything else here: a
+ * signal handler may not call `snprintf`, which is why this exists at all. The
+ * offset is in the message because the null-page window is the platform's own
+ * floor and not one page — 4 GiB on Darwin — so a reader has to be able to tell
+ * a null plus a field offset from a small wild pointer, and the number is the
+ * only thing that says which (defect 045). */
+static void hero_stack_say_hex(uintptr_t v) {
+    char buf[2 + 16 + 1];
+    const char *digits = "0123456789abcdef";
+    int at = 0;
+    buf[at++] = '0';
+    buf[at++] = 'x';
+    int started = 0;
+    for (int shift = 60; shift >= 0; shift -= 4) {
+        unsigned nibble = (unsigned)((v >> shift) & 0xf);
+        if (nibble != 0 || started || shift == 0) {
+            buf[at++] = digits[nibble];
+            started = 1;
+        }
+    }
+    buf[at] = '\0';
+    hero_stack_say(buf);
 }
 
 static int hero_stack_is_heroes(const char *sym) {
@@ -353,12 +413,33 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      *     read a field at offset 72         si_addr 0x48  pc NONZERO
      *     copy the whole struct, `*p`       si_addr 0x0   pc NONZERO
      *
-     * Every one lands in the FIRST PAGE, because the offset of a field is
-     * smaller than a page in every struct a header can lay out, and the null
-     * page is unmappable on all three platforms. So the window is one page and
-     * nothing wider: panel 104's wild store, eight kibibytes under the stack,
-     * is megabytes from here and still re-raises as before, which is the
-     * measurement that rule cost and which this clause must not undo.
+     * Every one lands near zero, at the field's own offset.
+     *
+     * **THE WINDOW IS 64 KIB AND IT WAS ONE PAGE FOR AN HOUR** (panel 154's
+     * completeness critic, the same day). The sentence here read *"the offset
+     * of a field is smaller than a page in every struct a header can lay
+     * out"*, which is a premise about the world and `.claude/rules/module-shape.md`
+     * forbids resting a narrowing on one. It was falsified by three lines of
+     * header — `struct bignode { char pad[1048576]; int64_t value; }` reads at
+     * offset 1 MiB and died at 139 in silence, at `-O0` — and the seat then
+     * laid out 275 records from 21 headers of this SDK and found exactly one
+     * over a page: `_opaque_pthread_t`, **8192 bytes**, the struct behind
+     * `pthread_t`.
+     *
+     * 64 KiB is the smallest of the three platforms' own unmappable floors,
+     * so it is safe on all three rather than tuned to this one: Darwin's
+     * `__PAGEZERO` is 4 GiB here (`otool -l`), Linux's `mmap_min_addr`
+     * defaults to 65536, and Windows reserves the low 64 KiB. Panel 104's
+     * wild store, eight kibibytes under the stack, is megabytes from here and
+     * still re-raises as before, which is the measurement that rule cost and
+     * which this clause must not undo.
+     *
+     * **What it still does not reach, said rather than discovered later**: a
+     * hand-written struct whose touched field sits past 64 KiB. No record in
+     * this SDK does, measured above; the falsifier is a program that reads one
+     * and dies at 139 in silence, and what would close it is each platform's
+     * own floor asked of the platform, which needs a measurement on the Linux
+     * and Windows machines rather than on this one.
      *
      * WHY THIS AND NOT A REFUSAL AT COMPILE TIME, which is defect 013's
      * paragraph above and it is the same answer: `freeaddrinfo(NULL)` and
@@ -375,9 +456,10 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      *
      * NOTHING UNDER THE SANITIZER, as the file's head already says: ASan
      * installs its own handler and reports `SEGV on unknown address` itself. */
-    if (addr < 4096) {
+    if ((unsigned long long)addr < HERO_NULL_WINDOW) {
         const char *who = hero_stack_blame(pc, fp);
-        hero_stack_say("panic: a null pointer was read through — a handle or `ptr` holding `nullptr` reached C where C dereferences it");
+        hero_stack_say("panic: a null pointer was read through — a handle or `ptr` holding `nullptr` reached C where C dereferences it, at offset ");
+        hero_stack_say_hex(addr);
         if (who != NULL) {
             hero_stack_say(", called from ");
             hero_stack_say_heroes_name(who);
