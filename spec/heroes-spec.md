@@ -339,8 +339,8 @@ points at is held to the same width and sign — `@n: u64` where it says
 extern "sqlite3.h" link "sqlite3"
     constant SQLITE_OK: i64
     record Db tag sqlite3
-    function sqlite3_open(path: cstr, @out: Db) -> i64
-    function sqlite3_close(db: Db) -> i64
+    function sqlite3_open(path: cstr, @out: Db acquires sqlite3_close) -> i64
+    function sqlite3_close(db: Db consumes) -> i64
 ```
 A callback is a **parameter**, never a result; its parameters follow the same rule
 and `()` is `void`: `atexit(f: (function() -> ()))`.
@@ -369,8 +369,8 @@ cell, and a lease nobody ends, like a handle nobody consumes, aborts when
 `main` returns, saying how many.
 `owned sqlite3_free` after a `cstr` result or a `char **` out-parameter: the
 compiler frees that string with that function, hands it over as a `str?` (the
-`@` cell is only written), and refuses your own call of it. Unmarked pointers
-are never freed. `consumes` after a parameter says the call ends that value's
+`@` cell is only written), and refuses your own call of it. `consumes` after a
+parameter says the call ends that value's
 life, so passing one the function borrowed is an error: mark the parameter `@`
 and the value does not survive the call. `acquires sqlite3_finalize` after a result
 or `@` out-parameter reaching a handle says the call begins that handle's life and names
