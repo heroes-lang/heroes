@@ -9,7 +9,8 @@
 # corrected — a count in prose is the premise §11 says expires in
 # silence. The reasons ride each flag below; the array is the fact.
 
-# The fourteen — the bootstrap's thirteen in their order, then panel 103's:
+# The fifteen — the bootstrap's thirteen in their order, then panel 103's,
+# then panel 154's:
 # - gnu11 not c11: one predefined macro apart (__STRICT_ANSI__), whose
 #   only effect on glibc is to hide M_PI, strdup, fileno and most of
 #   what §1.11 says a program binds (panel 047, ratified).
@@ -31,6 +32,22 @@
 #   itself (ops.hero, extern_probe.hero), so a correct binding compiles
 #   clean under it on every clang. Never a -Wno- flag (author
 #   instruction, the same day).
+# - -fno-delete-null-pointer-checks is panel 154's (2026-09-15, defect 045):
+#   the standard lets clang assume a pointer it dereferences is non-null and
+#   delete every check downstream, so a program that handed a null handle to a
+#   C function printed a fabricated integer and exited 0 — measured, `8372224`,
+#   five runs of five identical, which is a wrong answer a golden would have
+#   recorded and passed on forever. With the flag the dereference happens, the
+#   fault reaches `runtime/parts/stack.c`'s handler, and the program says what
+#   it did. It guards the DEREFERENCE and not the argument, which is why it
+#   refuses nothing: `free(NULL)`, `sqlite3_close(NULL)` and the shipped
+#   `getaddrinfo(hints: nullptr)` golden all stay legal, where five seats spent
+#   a sitting legislating the argument. Measured on this Mac with the machine
+#   still: twenty `--emit-c` runs of `examples/ledger/`, median real 2.87 s with
+#   the flag and 2.87 s without; 10^9 iterations of a chain walk carrying three
+#   redundant null checks the optimiser would otherwise delete, real 1.04 s
+#   both; the seed binary +16,528 bytes, 0.38%; the emitted C byte-identical.
+#   It landed in clang 7 and the floor here is 18 (`cli/clang_floor.hero`).
 use cli/process
 
 function flags() -> [str]
@@ -45,6 +62,7 @@ function flags() -> [str]
         "-Werror=format"
         "-Werror=conditional-uninitialized"
         "-fno-strict-aliasing"
+        "-fno-delete-null-pointer-checks"
         "-Werror=shorten-64-to-32"
         "-Werror=sign-conversion"
         "-Werror=incompatible-pointer-types-discards-qualifiers"
@@ -147,13 +165,14 @@ function sanitizers(sanitize: bool) -> [str]
 
 ## Tests
 
-test "the array is the fact: fourteen flags, gnu11 named first"
+test "the array is the fact: fifteen flags, gnu11 named first"
     got = flags()
-    assert got.len() == 14
+    assert got.len() == 15
     assert got[0] == "-std=gnu11"
     assert got[1] == "-g"
-    assert got[12] == "-Werror=incompatible-pointer-types-discards-qualifiers"
-    assert got[13] == "-Werror=incompatible-pointer-types"
+    assert got[10] == "-fno-delete-null-pointer-checks"
+    assert got[13] == "-Werror=incompatible-pointer-types-discards-qualifiers"
+    assert got[14] == "-Werror=incompatible-pointer-types"
     assert sanitizers(sanitize: true).len() == 1
     assert sanitizers(sanitize: false).len() == 0
 
@@ -171,7 +190,7 @@ test "the link flags are one platform's, and the platform is asked not assumed"
         assert got == ["-rdynamic"]
 
     # And a link flag never reaches a compile line. `flags()` is pinned at
-    # fourteen above, so the way this could break is somebody pasting the
+    # fifteen above, so the way this could break is somebody pasting the
     # stack reserve into the wrong list — which this names exactly.
     for flag in flags()
         assert flag != "-Wl,/STACK:67108864"

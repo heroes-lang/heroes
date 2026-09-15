@@ -27,9 +27,17 @@ program can reach an address nobody checked.
 ## What the compiler already shuts
 
 A null `cstr` reaching a C function is `panic: a null cstr was passed to a C
-function`, exit 134, because `guard_cstr_arguments` wraps every `cstr` argument
+function`, exit 134, because `guard_arguments` wraps every `cstr` argument
 on its way out (measured twice on 2026-08-24). `to_str` on a null `cstr` is a
 clean abort in the runtime.
+
+**The function's name was wrong here until 2026-09-15**, and it is corrected
+rather than annotated because a rule file is read for its citations: this line
+said `guard_cstr_arguments` and the function is `guard_arguments`,
+`selfhost/emit/ops.hero:244`, called at `:121`. Panel 154's compiler-engineer
+found it while pricing a symmetric guard for handles, and the stale name had
+already been copied out of here into that sitting's own briefs and into defect
+045's entry — which is what a citation nobody greps costs.
 
 **Say this rather than the danger it replaced.** A contract that states a danger
 the compiler has already closed funds the wrong decision next time, and it
