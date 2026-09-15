@@ -1,0 +1,36 @@
+# FIXED DEFECT, 2026-09-15, the SILENT half of
+# `fixedbugs-sibling-fields-of-one-record-type.hero`.
+#
+# SYMPTOM: this program LEAKS — it takes two handles and gives one back — and it
+# exited 0 with nothing on stderr. `check/reaches.hero`'s `gather` had enumerated
+# only `p.a.s`, so the set held one address, the one `slot_close` discharged it,
+# and the balance came out even while a handle stayed live. The same leak moved
+# to the OTHER field aborted, which is how one program disagreed with itself
+# about the same mistake.
+#
+# **This case is the one that cannot be faked.** A truncated walk still lets the
+# passing program pass in one arrangement, and it cannot let this one exit 0: the
+# abort exists only if BOTH handles were acquired. A regenerator can rewrite an
+# `.expected`; it cannot make an unenumerated handle leak loudly.
+#
+# CAUSE and FIX are in the sibling case, written once there: `seen` guarded the
+# whole walk instead of the current route.
+
+extern "fixedbugs-the-unacquired-sibling-leaks-loudly.h"
+    record Slot tag Slot
+    record Inner
+        s: Slot
+    record Pair
+        a: Inner
+        b: Inner
+    function pair_open(n: i64) -> Pair acquires slot_close
+    function slot_close(s: Slot consumes)
+    function slot_value(s: Slot) -> i64
+
+function main()
+    p = pair_open(n: 7)
+    print(slot_value(s: p.a.s) + slot_value(s: p.b.s))
+
+    # `p.b.s` is never given back. Until the repair this was exit 0 in silence.
+    slot_close(p.a.s)
+    print("one given back, one leaked")

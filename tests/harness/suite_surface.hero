@@ -280,6 +280,7 @@ function verb_probes() -> [probe.Probe]
         row(name: "both spellings of the failure constructor compile, and the label rule still binds a user function", argv: "run tests/golden/surface-fixtures/faillabels/main.hero", code: 0).out_is("1\n2\nthe rule still binds a user function\n").err_empty()
         row(name: "a foreign word that is CALLED keeps its message and loses its certain fix (defect 015)", argv: "check tests/golden/surface-fixtures/calledforeign/main.hero", code: 1).err_has("error[reserved_word]").err_has("to_i64").err_has("fix (guess)").err_lacks("fix (certain)").err_lacks("internal error")
         row(name: "and apply leaves that program untouched, because a fix that broke the program was no fix", argv: "check tests/golden/surface-fixtures/calledforeign/main.hero --apply", code: 0).out_has("n @ int(3)").out_has("n @ switch(3)").out_has("n @ const(3)").out_lacks("i64(3)").out_lacks("match(3)").out_lacks("constant(3)")
+        row(name: "a null handle read through by C says so instead of dying at 139, and the level is part of the claim (defect 045, half of it)", argv: "run tests/golden/surface-fixtures/nullread/main.hero -O0", code: -1).err_has("panic: a null pointer was read through").err_has("called from node_value").out_is("7\n")
         row(name: "deep recursion stops with a word at -O0, on every platform", argv: "run tests/golden/surface-fixtures/deep/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "and on a thread the program started, where it said nothing at all until M-thread-stacks", argv: "run tests/golden/surface-fixtures/deepthread/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "a recursion of WIDE frames stops with the same word at -O0: the probe reaches the guard before sp does (defect 007, `docs/work/DONE.md`)", argv: "run tests/golden/surface-fixtures/wideframe/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
@@ -401,7 +402,7 @@ test "the tables are what this module is, so they are counted"
     # two words, declared in one module and used in another, runs — the
     # qualifier learned from clang's refusal has to reach both translation
     # units, and a golden case cannot hold two modules.
-    assert verb_probes().len() == 49
+    assert verb_probes().len() == 50
 
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"

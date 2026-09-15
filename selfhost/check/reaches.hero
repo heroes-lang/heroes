@@ -61,6 +61,9 @@
 
 use ast
 use source
+use parse
+use resolve
+use check/decls as check_decls
 use check/table
 use check/state
 use handles
@@ -112,26 +115,24 @@ function gather(out: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64
                 found @ found.push(prefix)
                 return
 
-            if !seen[n.decl].is_err()
+            # ON THE CURRENT ROUTE, and not *anywhere in this walk* — defect 044.
+            # `walk` below may memoise a declaration for the whole walk because it
+            # asks an EXISTENTIAL question and unwinds on the first hit, so every
+            # entry it leaves behind belongs to a subtree that reached NOTHING.
+            # This function COLLECTS, its answer is the prefix and the prefix
+            # differs per route, so a whole-walk memo drops every route after the
+            # first: `record Pair / a: Inner / b: Inner` emitted one
+            # `hero_handle_acquired(p.a.s)` and the program that released both
+            # slots aborted at 134, while the program that leaked `b` exited 0.
+            if on_route(seen, decl: n.decl)
                 return
             seen[n.decl] @ true
+            fields_of(out, s, decls, decl: n.decl, prefix: prefix, @found, @seen)
 
-            match decls[n.decl].kind
-                .record_decl rec =>
-                    for field in rec.fields
-                        written = state.written_type(out, field.ty)
-
-                        if !written.is_err()
-                            gather(
-                                out,
-                                s,
-                                decls,
-                                ty: written.must(),
-                                prefix: prefix + "." + source.span_text(s, field.name),
-                                @found,
-                                @seen
-                            )
-                .constant_decl | .function_decl | .variant_decl | .test_decl => return
+            # OFF the route again, so a SIBLING may walk this declaration under
+            # its own prefix. A cycle still terminates: a declaration reached from
+            # inside its own subtree is still marked when it arrives.
+            seen[n.decl] @ false
         .fixed x =>
             at: i64 @ 0
 
@@ -141,6 +142,40 @@ function gather(out: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
         .array | .map | .fallible | .function_ty                  => return
         .case_ty | .failure | .generic | .error                   => return
+
+# The fields below one declaration, each under its own prefix. It is a separate
+# function so that `gather`'s mark-descend-unmark is three statements in a row
+# with nothing able to `return` between them: the arm that ends a non-record
+# declaration used to `return` out of `gather` itself, which with a route-scoped
+# mark would leave the declaration marked forever.
+function fields_of(out: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, prefix: str, @found: [str], @seen: {i64: bool})
+    match decls[decl].kind
+        .record_decl rec =>
+            for field in rec.fields
+                written = state.written_type(out, field.ty)
+
+                if !written.is_err()
+                    gather(
+                        out,
+                        s,
+                        decls,
+                        ty: written.must(),
+                        prefix: prefix + "." + source.span_text(s, field.name),
+                        @found,
+                        @seen
+                    )
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return
+
+# Whether this declaration is on the route the walk is currently standing on.
+# The language has no map removal, so leaving a route writes `false` rather than
+# dropping the key and the question is about the VALUE and not the presence.
+function on_route(seen: {i64: bool}, decl: i64) -> bool
+    here = seen[decl]
+
+    if here.is_err()
+        return false
+
+    return here.must()
 
 # Where this type reaches a handle. Absent when it reaches none, a `path` of
 # `""` when the type IS one, and otherwise the dotted path anchored at the first
@@ -233,3 +268,69 @@ function in_fields(c: state.Checker, s: source.Source, decls: [ast.Decl], fields
         return ok(Reached(decl: found.must().decl, path: name + "." + found.must().path))
 
     return fail(code: "absent", msg: "every field is the program's own")
+
+## Tests
+
+# The whole pipeline a suffix walk needs: interning and `written_types` are the
+# checker's, so the walk cannot be asked anything before `check_decls.file` runs.
+# Same shape as `check/map_keys.hero`'s `swept`, and it is here rather than
+# borrowed because a module may not reach into another module's test helper.
+function suffixes_of(text: str, producer: str) -> [str]
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+
+    check_decls.file(@c, p.tree, out, s, p.decls)
+
+    for decl in p.decls
+        match decl.kind
+            .function_decl fd =>
+                if source.span_text(s, decl.name) == producer
+                    written = state.written_type(c.out, fd.value.result)
+
+                    if !written.is_err()
+                        return handle_suffixes(c.out, s, p.decls, ty: written.must())
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return []
+
+test "two fields of the SAME record type are two handles, not one"
+    got = suffixes_of(
+        text: "extern \"p.h\"\n    record Slot tag Slot\n    record Inner\n        s: Slot\n    record Pair\n        a: Inner\n        b: Inner\n    function pair_open() -> Pair acquires slot_close\n    function slot_close(s: Slot consumes)\n",
+        producer: "pair_open"
+    )
+    assert got.len() == 2
+    assert got[0] == ".a.s"
+    assert got[1] == ".b.s"
+
+test "a fixed array of a record type expands per element"
+    got = suffixes_of(
+        text: "extern \"p.h\"\n    record Slot tag Slot\n    record Inner\n        s: Slot\n    record Bag\n        e: Inner[3]\n    function bag_open() -> Bag acquires slot_close\n    function slot_close(s: Slot consumes)\n",
+        producer: "bag_open"
+    )
+    assert got.len() == 3
+    assert got[0] == ".e[0].s"
+    assert got[2] == ".e[2].s"
+
+# TERMINATION. `check/sized.hero` refuses a record that contains itself, so this
+# program does not compile — and it does not have to: `checker.hero` pushes
+# `sized`'s diagnostics and runs the later rules anyway, which is exactly the
+# state this walk has to survive. The assertion is that the call RETURNS, and
+# what it returns is the one route that is not the cycle.
+test "a record containing itself terminates and yields its non-cyclic route"
+    got = suffixes_of(
+        text: "extern \"p.h\"\n    record Slot tag Slot\n    record Loop\n        s: Slot\n        next: Loop\n    function loop_open() -> Loop acquires slot_close\n    function slot_close(s: Slot consumes)\n",
+        producer: "loop_open"
+    )
+    assert got.len() == 1
+    assert got[0] == ".s"
+
+test "two records holding each other terminate too"
+    got = suffixes_of(
+        text: "extern \"p.h\"\n    record Slot tag Slot\n    record A\n        s: Slot\n        b: B\n    record B\n        s: Slot\n        a: A\n    function a_open() -> A acquires slot_close\n    function slot_close(s: Slot consumes)\n",
+        producer: "a_open"
+    )
+    assert got.len() == 2
+    assert got[0] == ".s"
+    assert got[1] == ".b.s"
