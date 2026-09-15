@@ -167,6 +167,20 @@ what advanced, what was verified as already closed, and what was deliberately
 not done and why. The last is the one that is easy to omit and the only one
 that lets the author disagree.
 
+**Widened beyond `/loop` on 2026-09-15, by author instruction, and the occasion
+is the useful half.** A session scheduled its own wakeups at **1200 and then
+1500 seconds** — twenty and twenty-five minutes — while three jobs ran, and the
+author's words were *twenty-five minutes is an eternity; it may never be that
+high*. The rule it broke was **already in § 3**, in this entry's own sentence:
+*in a `/loop` a wakeup is at most three minutes*. What made it breakable is that
+the harness's own scheduling tool advises 1200 to 1800 seconds and explains why
+in terms of token cost — so the session followed the skill over the contract, on
+a question the two answer differently because they are answering different
+questions. **The harness's advice is about what a wakeup COSTS. This rule is
+about how long the author is left in silence**, and § Precedence puts the
+contract above a skill. So the number binds every scheduled wakeup and not only
+a loop's, and a skill's reasoning about cost is not an exception to it.
+
 ## CL-011 — The ~300 governs what a reader must hold in their head, so it binds the compiler's code and not its tests
 2026-08-14 · author decision · § 11
 

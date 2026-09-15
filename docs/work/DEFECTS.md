@@ -20,7 +20,7 @@ them already in the record.
 **Numbers are never reused, and 014 was issued twice** — `docs/work/DONE.md`
 carries a Windows-diagnostic defect and an FFI-boundary defect both numbered
 014, filed a day apart. A record is not rewritten (CLAUDE.md §14), so the
-collision stands there; the next number to issue is **037** (022 and 023 were issued on 2026-09-08, 022 was SPLIT on 2026-09-09 by panel 122 into 022 and 024, and all three closed the same day, 024 last, at M-held-bytes; **025** and **026** were issued and closed on 2026-09-11 at M-labelled-builtins and M-named-callbacks, **027** was issued 2026-09-11 beside panel 131 and **028** beside panel 132, and **029** was issued 2026-09-13 beside panel 135 and **030** the same day beside panel 137, **031** beside panel 139; **032** was issued and closed on 2026-09-14 at M-cleanup-verdict step 1, and it is the first since 025 that no sitting produced — the census that opens this milestone found it, and the compiler simply disagreed with `spec § 13`; **033** was issued on 2026-09-14 at the M-marked-acquisition close, by the full net before the push, and it is the first here found by attacking the shapes NEXT to a repair rather than the repair itself; **034** was issued on 2026-09-14 by panel 149's spec-warden while it was pricing 033's repair, and it is the first here that a SITTING CONVENED ON ANOTHER DEFECT found — the seat went looking for what the specification already said and found the compiler disagreeing with it somewhere nobody had asked about; **035** and **036** were issued the same day by the same sitting, 035 by its compiler-engineer and 036 by its completeness critic, so **panel 149 produced three defects while ruling on a fourth** and **039**, **040** and **041** were issued on 2026-09-15 by panel 150, which was convened on 037 and 038 and produced three more while ruling on them — 039 by its ffi-pragmatist, 040 and 041 by its completeness critic, and 039 is the first here that reaches a mechanism two earlier sittings built rather than a gap they left; the next number to issue is **044** — **042** and **043** were issued on 2026-09-15 by panel 152, both by its llm-ergonomist, which was asked about a qualifier and found instead that the language cannot bind C's commonest struct shape and that the document's one example teaches the omission its own section forbids — **037** and **038** were both issued on 2026-09-15 at panel 149's ratification, out of what that sitting had NAMED and not filed: 037 is the `ptr` blind spot its ffi-pragmatist called the more serious of the two holes it looked at, and 038 is the per-element release its completeness critic found no seat had been briefed on) — 017 to 021 were
+collision stands there; the next number to issue is **037** (022 and 023 were issued on 2026-09-08, 022 was SPLIT on 2026-09-09 by panel 122 into 022 and 024, and all three closed the same day, 024 last, at M-held-bytes; **025** and **026** were issued and closed on 2026-09-11 at M-labelled-builtins and M-named-callbacks, **027** was issued 2026-09-11 beside panel 131 and **028** beside panel 132, and **029** was issued 2026-09-13 beside panel 135 and **030** the same day beside panel 137, **031** beside panel 139; **032** was issued and closed on 2026-09-14 at M-cleanup-verdict step 1, and it is the first since 025 that no sitting produced — the census that opens this milestone found it, and the compiler simply disagreed with `spec § 13`; **033** was issued on 2026-09-14 at the M-marked-acquisition close, by the full net before the push, and it is the first here found by attacking the shapes NEXT to a repair rather than the repair itself; **034** was issued on 2026-09-14 by panel 149's spec-warden while it was pricing 033's repair, and it is the first here that a SITTING CONVENED ON ANOTHER DEFECT found — the seat went looking for what the specification already said and found the compiler disagreeing with it somewhere nobody had asked about; **035** and **036** were issued the same day by the same sitting, 035 by its compiler-engineer and 036 by its completeness critic, so **panel 149 produced three defects while ruling on a fourth** and **039**, **040** and **041** were issued on 2026-09-15 by panel 150, which was convened on 037 and 038 and produced three more while ruling on them — 039 by its ffi-pragmatist, 040 and 041 by its completeness critic, and 039 is the first here that reaches a mechanism two earlier sittings built rather than a gap they left; the next number to issue is **045** — **044** was issued on 2026-09-15 by a six-agent adversarial sweep over the shapes NEXT to defect 037's repair, each finding put to an independent skeptic told to refute it, and it is the first here that a SWEEP found rather than a sitting, a suite or a census; **042** and **043** were issued on 2026-09-15 by panel 152, both by its llm-ergonomist, which was asked about a qualifier and found instead that the language cannot bind C's commonest struct shape and that the document's one example teaches the omission its own section forbids — **037** and **038** were both issued on 2026-09-15 at panel 149's ratification, out of what that sitting had NAMED and not filed: 037 is the `ptr` blind spot its ffi-pragmatist called the more serious of the two holes it looked at, and 038 is the per-element release its completeness critic found no seat had been briefed on) — 017 to 021 were
 all issued on 2026-09-08 and all closed on 2026-09-08, and all five are in the
 record.
 
@@ -28,6 +28,66 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
 *******************************************************************************
 **OPEN: 2**
+
+- [ ] **044 — a record naming one field type TWICE registers only the first handle behind it, so a correct program aborts and a leaking one passes** | `check/reaches.hero`'s `gather` threads one `seen` map across sibling fields, so the second field whose type was already walked enumerates nothing: the runtime's set of live handles is short by one, a program that gives every handle back is aborted at 134, and a program that leaks the un-enumerated one exits 0 in silence | `selfhost/check/reaches.hero`'s `gather` and `handle_suffixes` · `selfhost/emit/ops.hero`'s `handle_traffic`
+
+    **Origin:** found 2026-09-15 by a **six-agent adversarial sweep** over the
+    shapes next to defect 037's repair, and put to an independent skeptic told to
+    refute it, which could not: it reproduced both arms, built a STRICTER control
+    than the finder's, and reported *"the claim stands; I could not refute it on
+    any route."*
+
+    **The reproducer, and the control beside it is what makes it a defect rather
+    than a rule.**
+
+    ```
+    extern "pairs.h"
+        record Slot tag Slot
+        record Inner
+            s: Slot
+        record Pair
+            a: Inner
+            b: Inner
+        function pair_open() -> Pair acquires pair_close
+        function pair_close(p: Pair consumes)
+        function slot_close(s: Slot consumes)
+    ```
+
+    A program that opens a `Pair` and closes BOTH slots emits **one**
+    `hero_handle_acquired(t1.a.s);` and dies: `panic: 1 C handle(s) given back
+    that were never taken`, **exit 134**, on a program that is correct. The
+    identical program with `b` given a SECOND Heroes record name over the same C
+    struct emits **both** acquires and **exits 0**. The skeptic rebuilt the
+    control over one C type under two spellings — `typedef struct Inner Inner2;`
+    — so the C side is not a variable: `b: Inner` aborts, `b: Inner2` exits 0,
+    and the emitted C differs only by the missing `hero_handle_acquired(t1.b.s);`.
+
+    **And it fails OPEN in the other direction, which is the worse half.** A
+    program that leaks the un-enumerated handle **exits 0 in silence**, where the
+    same leak on the enumerated one panics *"1 C handle(s) never given back"*.
+    So the instrument that panel 150 built to close a silent leak class has a
+    shape it cannot see.
+
+    **The cause, in the compiler's own lines.** `check/reaches.hero`'s `gather`
+    walks a type's fields accumulating the dotted suffix of every handle it
+    reaches, and threads one `seen` map across SIBLING fields: `seen[n.decl]` is
+    set once and never cleared, so the second field whose type is a declaration
+    already walked returns having pushed nothing. **The map exists to break
+    cycles and it also truncates a DAG.** `walk`, the sibling function the
+    refusal rules use, is unaffected because it stops at the FIRST handle it
+    finds; only `handle_suffixes`, which must enumerate EVERY handle, is wrong.
+    The fixed-array form `e: Inner[2]` collapses the same way, and so does a
+    third repetition.
+
+    **It is the shape `reaches.hero`'s own module doc argues against, one
+    milestone later.** That doc says of defect 035's `depth > 16` bound that it
+    *"terminated by GIVING UP, silently"*; this guard gives up silently too, on a
+    different shape, in the same function.
+
+    **What is owed**: `seen` guards the current ROUTE rather than the whole walk,
+    so a sibling may revisit a declaration and a cycle still terminates — with a
+    golden case per shape, the `run/` case that must exit 0 and whatever pins the
+    silent-leak direction.
 
 - [ ] **042 — spec § 13 cannot bind a struct that is both READ and POINTED AT, which is the shape C uses most** | the fielded record and the handle record would both need `tag addrinfo`, and two records may not name one tag, so `getaddrinfo` has no writable binding at all | `spec/heroes-spec.md` § 13 · `selfhost/check/decls.hero`'s `one_tag_one_type`
 
@@ -59,68 +119,5 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     panel 145 — *"two Heroes types over one C type is a hole nothing can close"* —
     so widening it is a design question and not a repair, and the answer may be a
     different construct rather than a wider rule.
-
-- [ ] **043 — the specification's only FFI example teaches the omission it exists to prevent** | `sqlite3_open` and `sqlite3_close` are an acquire-and-release pair and the example carries neither `acquires` nor `consumes`, so a reader copies a binding that leaks in silence | `spec/heroes-spec.md` § 13's fenced example
-
-    **Origin:** found 2026-09-15 by **panel 152's llm-ergonomist**, which named
-    the example as the CAUSE of its own predicted failure rate rather than as a
-    coincidence.
-
-    **The example, verbatim from `spec § 13`:**
-
-    ```
-    extern "sqlite3.h" link "sqlite3"
-        constant SQLITE_OK: i64
-        record Db tag sqlite3
-        function sqlite3_open(path: cstr, @out: Db) -> i64
-        function sqlite3_close(db: Db) -> i64
-    ```
-
-    **`sqlite3_close` ends a database's life and does not say `consumes`.
-    `sqlite3_open` begins one and does not say `acquires`.** The seat's
-    prediction: **at least 8 in 10** models omit both on this shape, following
-    the example, and *"that omission compiles, runs, leaks, and produces no
-    diagnostic and no abort"*.
-
-    **Why nothing fires, and it is the machinery working as designed.**
-    `check/acquiring.hero` arms only where some `extern` declares `consumes`. The
-    example declares none, so `consumed_types` is empty, `bindings_say_which`
-    returns at its first line, and the runtime counter is never incremented
-    either. Three sittings built a mechanism the document's own example steps
-    around.
-
-    **PRICED 2026-09-15, so the sitting starts from a number rather than from a
-    guess.** The repair is two words — `@out: Db acquires sqlite3_close` and
-    `db: Db consumes` — and it costs **+7 on the vendored ranks**, base 5988 to
-    5995. The binding `real` figure was not taken, because taking it means
-    writing the draft to the spec path and refreshing the pinned record, which is
-    the change itself.
-
-    **It is not landed here, and the reason is the contract rather than caution.**
-    It is spec text, so design.md §1.6's payment rule applies: an addition owes a
-    named removal or a registered prediction. A removal IS available and panel
-    152's spec-warden already measured it — dropping *"what the header leaves
-    opaque"* is **−3 real** — but that seat has already allocated it to panel
-    150's unpaid correction, so spending it twice is the arithmetic a sitting
-    exists to do.
-
-    **THE PRECONDITION IS MET, 2026-09-15**: `.claude/rules/spec-shape.md` asks
-    that a change to a fence be COMPILED before it is written, because an example
-    in the one document a reader is told to trust is a claim and an unexecuted
-    claim expires in silence. The corrected example was built and run against
-    real SQLite:
-
-    ```
-    function sqlite3_open(path: cstr, @out: Db acquires sqlite3_close) -> i64
-    function sqlite3_close(db: Db consumes) -> i64
-    ```
-
-    opened `:memory:`, closed it, printed, **exit 0**. So the sitting inherits a
-    claim that has been executed, which is the one thing this defect is about:
-    the example as it stands was never run against its own section's rule.
-
-    **What is owed**: the example gains the two marks. It is spec text, so it is
-    priced and it is the panel's, and the same sitting should ask whether the one
-    worked example of a section may be incomplete on the section's own rule.
 
 *******************************************************************************

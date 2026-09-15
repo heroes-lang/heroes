@@ -2152,9 +2152,16 @@ plus the header it comes from, no external tool, no libclang, no generated bindi
 ```
 extern "sqlite3.h" link "sqlite3"
     record Db tag sqlite3
-    function sqlite3_open(path: cstr, @out: Db) -> i64
-    function sqlite3_close(db: Db) -> i64
+    function sqlite3_open(path: cstr, @out: Db acquires sqlite3_close) -> i64
+    function sqlite3_close(db: Db consumes) -> i64
 ```
+
+**And it gained `acquires` and `consumes` on 2026-09-15** (panel 153, defect 043), for the same
+reason the line below gives: this pair begins and ends a database's life, and a fence that shows it
+unmarked teaches a binding that compiles, runs, leaks, and says nothing. Measured that day on the
+same program, once against each fence: unmarked it prints its code and **exits 0 with an empty
+stderr**; marked it prints its code and then `panic: 1 C handle(s) never given back … The first is
+at 0x1030202c0`, **exit 134**.
 
 **This fence said `out: ptr` and `db: ptr` until 2026-09-13** (M-handle-verdict, panel 145), and it
 is corrected rather than annotated because a form this document SHOWS is the form a reader writes:
