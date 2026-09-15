@@ -209,4 +209,28 @@ entry, the `-O2` row of that entry, and the window premise in
 
 ## Author's verdict
 
-*Pending. Queued in `docs/work/DECIDE.md` as `panel 154`.*
+**RATIFIED 2026-09-15**, as adopted, with panel 153 the same evening: the
+resolution the critic reached and not the one four seats converged on.
+
+**What the yes settles.** That the class is a dereference and not an argument, so
+`-fno-delete-null-pointer-checks` closes it where five routes could not. That the
+null window is the platform's own floor rather than a page, which repaired a
+premise about the world under a repair that had landed an hour earlier. That
+routes C and D stay refused, D because §1.12 refuses a provenance rule in advance
+and in words no seat had quoted.
+
+**What is owed, with the trigger that releases it, so neither is lost.** Route A's
+guard is adopted and unlanded: it buys the blame line and not the class, its patch
+exists and passes `canonical`, `layout` and `order`, and it lands when a milestone
+next opens `selfhost/emit/ops.hero`. Route B's fourth parameter word waits for a
+**second** shipped program to be refused by that guard — exactly one exists today,
+and *two is a class and one is a witness* is the rule this sitting was held to.
+
+**And one measurement stays an inference until two machines say otherwise.**
+`HERO_NULL_WINDOW` is 64 KiB off Darwin, which is the smaller claim rather than a
+measured floor: `.claude/rules/platforms.md` says a platform fact is run on a
+platform, and the Linux and Windows floors were not. The falsifier is a program
+that reads a field past it and dies at 139 in silence.
+
+**What the yes does not settle**: nothing filed. Defect 045 is closed and the
+open list is at zero.
