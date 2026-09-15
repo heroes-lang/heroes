@@ -43,6 +43,17 @@ function missing_tag(s: source.Source, decls: [ast.Decl], line: str) -> diag.Dia
 
     if !named.is_err()
         at @ named.must()
+
+    # **TWO SHAPES REACH THIS MESSAGE SINCE 2026-09-15, and only one of them is
+    # missing a tag.** Until panel 152 this function was unreachable for a record
+    # that HAD the tag, because `ffi_lookup.declaration` compared the Heroes name
+    # and clang's message carries C's — so `record AI tag addrinfo` was looked up
+    # under a name no declaration holds, found nothing, and the author got
+    # `internal error: compiling the generated C failed` instead. With the lookup
+    # repaired the message arrives, and the old text is a lie on this shape: it
+    # tells an author who wrote `tag addrinfo` to write `tag addrinfo`.
+    if tagged_already(s, decls, name: name)
+        return ok(no_spelling(header: found.must().header, name: name, span: at))
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_missing_tag",
         message: "`" + found.must().header + "` declares `" + name + "` as a struct **tag** and gives it no typedef, so C reaches it only as `struct " + name + "`",
@@ -55,6 +66,44 @@ function missing_tag(s: source.Source, decls: [ast.Decl], line: str) -> diag.Dia
         diag.Fix(title: "name the header's tag: `tag " + name + "`", replacement: name + " tag " + name, span: at, certainty: .certain)
     )
     return ok(d)
+
+# Whether some group record already NAMES this C tag. The question is asked of
+# the tag and never of the Heroes name, because those are deliberately allowed to
+# differ and clang's message carries C's.
+function tagged_already(s: source.Source, decls: [ast.Decl], name: str) -> bool
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.tag.is_err() && !rec.header.is_err()
+                    if source.span_text(s, rec.tag.must()) == name
+                        return true
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return false
+
+# The author's tag is RIGHT and this language cannot write what C needs.
+#
+# There is no fix, `certain` or `guess`, and offering one would be the shape
+# `.claude/rules/diagnostics-and-goldens.md` refuses: a fix that leaves the
+# defect standing. §4.17 asks an error to carry everything needed to repair the
+# program, and when the repair does not exist the honest thing an error can carry
+# is that fact — so this one names the limitation rather than dressing it as a
+# typo. `docs/work/DEFECTS.md` 037 is the entry, and panel 152 adopted the route:
+# supply the qualifier from clang's own refusal, which is the message this
+# function is reading.
+function no_spelling(header: str, name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_tag_needs_struct",
+        message: "`" + name + "` is the right tag and this compiler cannot write it: `" + header + "` gives it no typedef, so C reaches the type only as `struct " + name + "`, and a `tag` holds one word",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "nothing in the binding is wrong. C keeps struct tags in a namespace of their own and a header that declares `struct " + name + "` without a matching typedef can only be named with both words, which `tag` has no room for. A handle over this type cannot be spelled today"
+    )
+    d.notes @ d.notes.push(
+        "what works meanwhile is `ptr`, and it is worse rather than equivalent: the marks `acquires`, `borrows` and `consumes` are read on a handle and not on a `ptr`, so the compiler stops checking the lifetime it would otherwise count"
+    )
+    return d
 
 # clang's "incomplete definition of type 'struct NoSuchTag'" — the
 # group's record whose tag clang cannot lay out (panel 074; corrected

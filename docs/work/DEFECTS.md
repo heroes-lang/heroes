@@ -89,11 +89,31 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     either. Three sittings built a mechanism the document's own example steps
     around.
 
+    **PRICED 2026-09-15, so the sitting starts from a number rather than from a
+    guess.** The repair is two words — `@out: Db acquires sqlite3_close` and
+    `db: Db consumes` — and it costs **+7 on the vendored ranks**, base 5988 to
+    5995. The binding `real` figure was not taken, because taking it means
+    writing the draft to the spec path and refreshing the pinned record, which is
+    the change itself.
+
+    **It is not landed here, and the reason is the contract rather than caution.**
+    It is spec text, so design.md §1.6's payment rule applies: an addition owes a
+    named removal or a registered prediction. A removal IS available and panel
+    152's spec-warden already measured it — dropping *"what the header leaves
+    opaque"* is **−3 real** — but that seat has already allocated it to panel
+    150's unpaid correction, so spending it twice is the arithmetic a sitting
+    exists to do.
+
+    **And `.claude/rules/spec-shape.md` asks for one thing first**: a change to a
+    fence is COMPILED before it is written, because an example in the one document
+    a reader is told to trust is a claim, and an unexecuted claim expires in
+    silence.
+
     **What is owed**: the example gains the two marks. It is spec text, so it is
     priced and it is the panel's, and the same sitting should ask whether the one
     worked example of a section may be incomplete on the section's own rule.
 
-- [ ] **037 — a `ptr` producer leaks at exit 0, and the whole handle machinery cannot see it** | where a group consumes a `ptr`, nothing demands a mark on the call that hands one back, so the program leaks with zero diagnostics on every platform | `selfhost/check/acquiring.hero`'s `consumed_types` · `selfhost/handles.hero`'s `is_handle` · `runtime/parts/alloc.c`
+- [ ] **037 — a handle over a struct C names with two words cannot be spelled, so the author falls back to `ptr` and leaks at exit 0** | where a group consumes a `ptr`, nothing demands a mark on the call that hands one back, so the program leaks with zero diagnostics on every platform | `selfhost/check/acquiring.hero`'s `consumed_types` · `selfhost/handles.hero`'s `is_handle` · `runtime/parts/alloc.c`
 
     **Origin:** measured by panel 149's **ffi-pragmatist**, which called it *"the
     more serious"* of the two holes that sitting looked at, and re-measured by
@@ -159,6 +179,40 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `addrinfo`, so this is not one header's quirk. `tag struct addrinfo` is
     `error[reserved_word]`. And `record Blob tag void` works but is capped at
     ONE per program by `duplicate_tag`, which is why it is not the answer.
+
+    **HALF OF THIS CLOSED 2026-09-15, and the half that closed is the one a
+    program author meets.** Until then `record AI tag addrinfo` against `netdb.h`
+    emitted `addrinfo *`, clang refused it, and the author got **`internal error:
+    compiling the generated C failed`, exit 2, twenty-two raw clang errors, zero
+    Heroes diagnostics**, and a path into a generated file — the failure §4.19's
+    own guarantee exists to prevent.
+
+    **The answer was already spoken and one line was throwing it away.** clang
+    says *"must use 'struct' tag to refer to type 'addrinfo'"*;
+    `emit/ffi_tag.hero` has read that exact string since panel 074; and
+    `emit/ffi_lookup.hero` discarded it by comparing the declaration's Heroes
+    NAME where clang's message carries C's. One comparison, repaired: a record is
+    now found by its TAG as well as by its name.
+
+    **Measured after**: `error[ffi_tag_needs_struct]` with the caret on the
+    author's own line, saying the tag is RIGHT and that this compiler cannot
+    write it. A misspelled tag stays `error[ffi_unknown_name]`. A record with no
+    tag keeps the old `certain` fix, unchanged.
+
+    **The diagnostic offers no fix, and that is deliberate.** Its sibling offers
+    a `certain` one because a record with no tag can be given one; here the tag is
+    already correct and the repair does not exist, so a fix would be the shape
+    `.claude/rules/diagnostics-and-goldens.md` refuses — one that leaves the
+    defect standing. The case is `tests/golden/fixedbugs/fixedbugs-a-tag-that-needs-struct.hero`,
+    and its blessed emission **pins the wrong C in bytes**: `addrinfo *`, five
+    times, so the day the capability lands the file moves and a suite says so.
+
+    **WHAT REMAINS OPEN is the capability.** The author now knows exactly what is
+    wrong and still cannot write the binding. Panel 152 adopted the route and it
+    is queued for ratification: supply the qualifier **from clang's own refusal**,
+    which is the message this diagnostic already reads, and never from a generated
+    probe — because `struct nosuchtype *p;` compiles at exit 0, so one bit cannot
+    tell a missing qualifier from a misspelled tag.
 
     **PANEL 151 REFUSED ROUTE B AND COMPILED THE NARROWING**, 2026-09-15, both
     seats with a veto. A probe generated from the header cannot check the binding

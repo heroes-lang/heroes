@@ -64,24 +64,42 @@ record Declared
 # milestone (panel 074, both seats): a type the author DID declare in
 # a group came back as exit 2, the compiler blaming itself for the
 # author's line.
+# **AND A RECORD REACHES CLANG BY ITS TAG AS WELL AS BY ITS NAME**, since
+# 2026-09-15 (panel 152, defect 037). The Heroes name is the author's and the
+# TAG is C's, and clang's messages use C's: *"must use 'struct' tag to refer to
+# type 'addrinfo'"* names `addrinfo` where the declaration is `record AI tag
+# addrinfo`. This function compared only `decl.name`, so that message was looked
+# up under a name no declaration carries, found nothing, and was discarded —
+# which is how a tag needing `struct` reached the author as `internal error:
+# compiling the generated C failed`, exit 2, the compiler blaming itself for a
+# binding the author wrote.
+#
+# **`emit/ffi_tag.hero`'s `missing_tag` has read that exact string since panel
+# 074 and already carries a `certain` fix.** Panel 152 measured that clang
+# distinguishes all three cases by message — *must use 'struct' tag*, *unknown
+# type name*, and silence — and refused a generated probe on the ground that one
+# bit cannot: `struct nosuchtype *p;` compiles at exit 0, so a probe would
+# fabricate a type for a misspelled tag. The disagreement §4.19 exists to hear
+# was already spoken; one comparison was throwing it away.
 function declaration(s: source.Source, decls: [ast.Decl], name: str) -> Declared?
     for decl in decls
-        if source.span_text(s, decl.name) != name
-            continue
+        named = source.span_text(s, decl.name) == name
 
         match decl.kind
             .function_decl fd =>
-                if !fd.value.header.is_err()
+                if named && !fd.value.header.is_err()
                     return ok(
                         Declared(span: decl.span, header: emit_externs.unquoted(s, span: fd.value.header.must()), is_constant: false)
                     )
             .constant_decl k =>
-                if !k.header.is_err()
+                if named && !k.header.is_err()
                     return ok(
                         Declared(span: decl.span, header: emit_externs.unquoted(s, span: k.header.must()), is_constant: true)
                     )
             .record_decl rec =>
-                if !rec.header.is_err()
+                by_tag = !rec.tag.is_err() && source.span_text(s, rec.tag.must()) == name
+
+                if (named || by_tag) && !rec.header.is_err()
                     return ok(
                         Declared(span: decl.span, header: emit_externs.unquoted(s, span: rec.header.must()), is_constant: false)
                     )
