@@ -59,58 +59,25 @@ function is_handle_record(kind: ast.DeclKind) -> bool
 function is_handle(decl: ast.Decl) -> bool
     return is_handle_record(decl.kind)
 
-# The two ENDS of a handle's life, asked of a declaration, and each answers HOW
-# MANY rather than whether. Both are the binding author's own words and neither
-# is a guess: `acquires <releaser>` says this call hands one over and names what
-# takes it back, `consumes` says this call takes one back (panel 148 R2, panel
-# 145). They live here because this file is where a question about a handle is
-# asked once — the emitter is the caller.
+# THE TWO COUNTS THAT LIVED HERE WERE DELETED ON 2026-09-15, one day after they
+# were written, and the reason is worth more than the code was.
 #
-# **THEY ANSWERED A BOOLEAN UNTIL 2026-09-14, AND THAT WAS DEFECT 034.** One
-# call carrying two marks got one `hero_handle_acquired();`, because
-# `emit/ops.hero` tested a yes-or-no where it needed a number. So a binding with
-# two `@` out-parameters, each correctly marked, made the **correct** program
-# abort at 134 and the **leaking** one exit 0: the instrument inverted, and the
-# message the correct program died with named three causes, none of them the one
-# that happened.
+# They arrived as defect 034's repair: `emit/ops.hero` asked a per-DECLARATION
+# BOOLEAN and wrote one `hero_handle_acquired();` per call however many marks the
+# call carried, so a correct program aborted and a leaking one passed. Making
+# them COUNTS was right while the runtime held a NUMBER.
 #
-# `spec § 13` had already ruled the other way — *"which the program owes it. The
-# owing is counted"* — one owing per handle and not per call, so this was the
-# compiler disagreeing with the specification (CLAUDE.md § 12) and it cost no
-# spec token to settle. Panel 149's spec-warden found it while pricing a repair
-# to a different rule, and the compiler-engineer seat reproduced it
-# independently with two parameters of ONE handle type, which is why the axis is
-# the number of HANDLES and never the number of TYPES.
-function handles_handed_over(decl: ast.Decl) -> i64
-    return match decl.kind
-        .function_decl fd                                          => acquires_count(fd.value)
-        .constant_decl | .record_decl | .variant_decl | .test_decl => 0
-
-function acquires_count(f: ast.FunctionDecl) -> i64
-    found: i64 @ 0
-
-    if !f.acquires_result.is_err()
-        found @ 1
-
-    for p in f.params
-        if !p.acquires.is_err()
-            found @ found + 1
-
-    return found
-
-function handles_taken_back(decl: ast.Decl) -> i64
-    return match decl.kind
-        .function_decl fd                                          => consumes_count(fd.value)
-        .constant_decl | .record_decl | .variant_decl | .test_decl => 0
-
-function consumes_count(f: ast.FunctionDecl) -> i64
-    found: i64 @ 0
-
-    for p in f.params
-        if p.consumes
-            found @ found + 1
-
-    return found
+# Panel 150 made it hold a SET, so the two ends take the handle's own address and
+# the emitter needs each mark's POSITION rather than how many there are — which
+# is the AST and not a rule, so nothing is asked twice and nothing belongs here.
+# `emit/ops.hero`'s `handle_traffic` reads `acquires_result`, `p.acquires` and
+# `p.consumes` directly.
+#
+# **What carries defect 034's regression now is stronger than the test that
+# went with them**: `tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero`
+# builds a program with two marks on one call, releases both handles, and asserts
+# it exits 0 — which the unit test could not do, because it read the counts and
+# not the emitted C.
 
 # A `const` pointer TO a value of this C type, and the reason it is a function
 # rather than a `"const " +` at four sites.
@@ -207,71 +174,3 @@ test "all three clauses are load-bearing, and a record with fields is never a ha
 
 function none_library() -> ast.Library?
     return fail(code: "absent", msg: "no library")
-
-test "a call's marks are COUNTED and not merely noticed, which is defect 034"
-    at: token.Span? = ok(token.Span(start: 0, end: 1))
-
-    # TWO `@` out-parameters, each with its own `acquires`. This is the shape
-    # that made the CORRECT program abort at 134 while one increment was emitted
-    # for two handles, and it is why the axis is the number of marks rather than
-    # the number of handle TYPES: both parameters may be one type and it still
-    # breaks.
-    assert acquires_count(signature(params: [marked_param(at), marked_param(at)], acquires_result: no_span())) == 2
-
-    # A result mark and a parameter mark on one call is two as well, because C
-    # hands a handle back either way and the counter is one integer.
-    assert acquires_count(signature(params: [marked_param(at)], acquires_result: at)) == 2
-
-    # The ordinary case, and the one every binding shipped here writes.
-    empty: [ast.Param] = []
-    assert acquires_count(signature(params: empty, acquires_result: at)) == 1
-
-    # No mark is no increment, which is what keeps an unmarked binding out of
-    # the ledger entirely rather than in it at zero.
-    assert acquires_count(signature(params: empty, acquires_result: no_span())) == 0
-
-    # The other end, counted for the same reason and on its own axis: a
-    # parameter carrying `acquires` is not one carrying `consumes`.
-    assert consumes_count(signature(params: [consuming_param(), consuming_param()], acquires_result: no_span())) == 2
-    assert consumes_count(signature(params: [marked_param(at)], acquires_result: no_span())) == 0
-
-function no_span() -> token.Span?
-    return fail(code: "absent", msg: "no mark")
-
-function marked_param(at: token.Span?) -> ast.Param
-    return ast.Param(
-        name: token.Span(start: 0, end: 0),
-        ty: 0,
-        mutable: true,
-        owned: no_span(),
-        consumes: false,
-        acquires: at,
-        borrows: false
-    )
-
-function consuming_param() -> ast.Param
-    return ast.Param(
-        name: token.Span(start: 0, end: 0),
-        ty: 0,
-        mutable: false,
-        owned: no_span(),
-        consumes: true,
-        acquires: no_span(),
-        borrows: false
-    )
-
-function signature(params: [ast.Param], acquires_result: token.Span?) -> ast.FunctionDecl
-    generics: [token.Span] = []
-    body: ast.Block? = fail(code: "absent", msg: "an extern has no body")
-    return ast.FunctionDecl(
-        generics: generics,
-        params: params,
-        result: 0,
-        body: body,
-        is_extern: true,
-        header: no_span(),
-        library: none_library(),
-        owned_result: no_span(),
-        acquires_result: acquires_result,
-        borrows_result: false
-    )

@@ -188,7 +188,7 @@ constant SHARED_BY_DECISION: [str]
         "runtime/parts/alloc.c hero_kept_key | the POSIX key whose destructor gives a thread's kept buffer back. Written ONCE, inside `pthread_once`, and only read afterwards — which is what a once-guard buys and the one shape where `shared` and `safe` are the same word. A plain `_Atomic` flag would not do: two threads racing to make the key would make two, and the loser's destructor would never run"
         "runtime/parts/alloc.c hero_kept_slot | the Windows half of the same thing, `FlsAlloc`'s index, written once inside `InitOnceExecuteOnce`. Windows has no pthreads at all — measured on the box 2026-09-06, `pthread.h` is not found under clang targeting MSVC"
         "runtime/parts/alloc.c once | the two once-guards themselves, `pthread_once_t` and `INIT_ONCE`, one per platform arm. Being shared is their entire job and the platform owns their synchronisation; there is nothing here for this project to make safe"
-        "runtime/parts/spawn.c hero_spawn_slots | THE ONE OBJECT IN THIS RUNTIME THAT IS SHARED ON PURPOSE AND GUARDED BY A LOCK, and the only entry here that is not waiting for a repair. It is the table of running threads, and it cannot be any of the three other answers: a spawned thread may itself spawn, so two threads choose a slot at the same moment, and choosing one is a read-then-write over several fields rather than one counter — the shape an atomic cannot make single, which is `cow.c`'s shape and the reason panel 113 left that open. Here the answer is a mutex because here the runtime owns both sides of it (design.md Part 7.13; panels 111, 113, 114)"
+        "runtime/parts/spawn.c hero_spawn_slots | SHARED ON PURPOSE AND GUARDED BY A LOCK — it said THE ONE OBJECT until 2026-09-15, when the handle set below became the second and the claim stopped being true. Not waiting for a repair. It is the table of running threads, and it cannot be any of the three other answers: a spawned thread may itself spawn, so two threads choose a slot at the same moment, and choosing one is a read-then-write over several fields rather than one counter — the shape an atomic cannot make single, which is `cow.c`'s shape and the reason panel 113 left that open. Here the answer is a mutex because here the runtime owns both sides of it (design.md Part 7.13; panels 111, 113, 114)"
         "runtime/parts/spawn.c hero_spawn_lock | the mutex that guards the table above, one per platform arm — `pthread_mutex_t` on POSIX, `SRWLOCK` on Windows, which has no pthreads at all. Being shared is what a lock IS, and the platform owns its safety"
         "runtime/parts/os.c done | two once-guards, for byte-mode stdout on Windows and for unbuffered stderr. Safe because of WHERE THEY ARE CALLED and not because of how they are written: both run inside `hero_args_set`, which the generated `main` calls before a program's first line, on the thread that owns the program. If a second caller is ever added this entry is wrong"
         "runtime/parts/os.c hero_argc | the process's own argument count, written once by `hero_args_set` before any thread can exist and only read afterwards. Process-wide by nature: `args()` must answer the same thing on every thread"
@@ -196,6 +196,12 @@ constant SHARED_BY_DECISION: [str]
         "runtime/parts/spawn.c hero_spawn_floor | the stack of the thread that ran `main`, which every thread this runtime starts is given at least as much of (panel 115). Written ONCE by `hero_args_set` before any thread can exist and only read afterwards, which is `hero_argc`'s shape two entries above — and process-wide BY NATURE rather than pending a repair: it is a fact about the process, so a per-thread copy would be a different and wrong answer on the second thread that spawns a third"
         "runtime/parts/stack.c hero_stack_prev_segv | the disposition installed before this runtime's, so a fault it does not own is passed on. Shared BY THE KERNEL'S OWN DEFINITION and not while waiting for a repair: `sigaction` sets a handler for the whole process, where `sigaltstack` and the bounds are the calling thread's, and reading that split the other way is exactly what made this guard silent on every thread but one until M-thread-stacks"
         "runtime/parts/stack.c hero_stack_prev_bus | the same, for SIGBUS"
+        "runtime/parts/alloc.c hero_handle_set | the set of live C handle addresses, shared on purpose and guarded by a lock — the second object in this runtime of `hero_spawn_slots`'s kind, and for the same reason one level up. It cannot be `_Thread_local`: panel 111 R5 measured that making the LEAK COUNTERS thread-local left the instrument silent, because `hero_runtime_check_leaks()` runs on the main thread and would read the main thread's own balance. It cannot be `_Atomic`: inserting is a probe-then-write over a table, which is the shape an atomic cannot make single. It replaced an `_Atomic int64_t` on 2026-09-15 (panel 150), so the lock is what keeps the safety that was already there rather than adding any"
+        "runtime/parts/alloc.c hero_handle_lock | the lock that guards the set above, one per platform arm — `pthread_mutex_t` on POSIX, `SRWLOCK` on Windows, which has no pthreads at all. Being shared is what a lock IS, and the platform owns its safety. Both spellings are statically initialisable, which is what keeps this twenty lines rather than the kept buffer's hundred"
+        "runtime/parts/alloc.c hero_handle_cap | the set's capacity, read and written only under that lock, so it is the lock's own state and not a second shared thing to make safe"
+        "runtime/parts/alloc.c hero_handle_live | how many addresses the set holds, under the same lock and for the same reason. It is deliberately NOT `_Atomic`: an atomic count beside a locked table would be a second answer to one question, which is the drift this file exists to catch"
+        "runtime/parts/alloc.c hero_handle_strays | handles given back that the set did not hold — a double release, or a part of something acquired whole. Under the same lock, and process-wide for `hero_live_blocks`' reason: the gate that reads it runs on the main thread at exit"
+        "runtime/parts/alloc.c hero_handle_first_stray | the first such address, kept so the message can name one rather than offer a list of causes. The list was the old counter's only option and it was rewritten three times in two days (panel 150)"
         "runtime/parts/stack.c done | the once-flag over the PROCESS-wide half of the guard — the two dispositions on POSIX, the vectored handler on Windows — in each platform arm. The per-thread half moved out from under it at M-thread-stacks and is `_Thread_local`, so what is left here is genuinely the process's; `hero_args_set`'s callee, exactly like `os.c`'s pair above"
     ]
 
@@ -417,7 +423,18 @@ function declares_object(row: str) -> bool
     if !strings.ends_with(text: row, suffix: ";")
         return false
 
-    if names_word(code: row, name: "const")
+    # `const` USED TO SKIP THE WHOLE ROW, AND THAT WAS A HOLE THIS SWEEP FELL
+    # INTO ON 2026-09-15. A `static const int64_t X = 5;` is a compile-time
+    # constant and genuinely not shared mutable state, which is what the skip was
+    # for. But in `static const void **hero_handle_set = NULL;` the `const`
+    # qualifies the POINTEE and the object is an ordinary mutable pointer — so
+    # panel 150's handle set landed in the runtime, between calls, invisible to
+    # the one check that exists to find exactly that.
+    #
+    # The narrowing now asks the row in hand rather than the word: a declaration
+    # with no `*` at all cannot be a pointer, so its `const` is the object's.
+    # A `T *const p` is caught instead of skipped, which is the loud direction.
+    if names_word(code: row, name: "const") && !strings.contains(text: row, needle: "*")
         return false
 
     return !strings.contains(text: row, needle: "(")
@@ -687,6 +704,11 @@ test "the inline ban reads a word and not a fragment"
 test "an object that survives between calls is one, and a function is not"
     assert declares_object("static int64_t hero_live_blocks = 0;")
     assert declares_object("static char **hero_dir_names = NULL;")
+
+    # The hole of 2026-09-15: a mutable pointer TO const, which the old
+    # whole-row `const` skip made invisible.
+    assert declares_object("static const void **hero_handle_set = NULL;")
+    assert !declares_object("static const int64_t HERO_HANDLES_FLOOR = 16;")
     assert declares_object("static struct sigaction hero_stack_prev_segv;")
     assert declares_object("static char *hero_run_words[HERO_RUN_MAX_ARGS + 1];")
 

@@ -98,9 +98,75 @@ static _Atomic int64_t hero_live_scratch = 0;
 static _Atomic int64_t hero_live_held = 0;
 /* FOURTH, and it accuses the program for the third one's reason. A C handle is
  * the one resource this runtime never allocated and can never size: no header,
- * no magic, no length — so a COUNT is all there can be, and both ends are the
- * binding author's own words (panel 148 R2). */
-static _Atomic int64_t hero_live_handles = 0;
+ * no magic, no length — and both ends are the binding author's own words
+ * (panel 148 R2).
+ *
+ * **THIS SAID "so a COUNT is all there can be" UNTIL 2026-09-15, AND THAT
+ * SENTENCE WAS THE DEFECT.** It is true that a handle cannot be SIZED. It does
+ * not follow that it cannot be IDENTIFIED: the address is the identity, and a
+ * set of addresses needs no header, no magic and no length either. Panel 150
+ * found four separate failures that are all one fact — the counter held a number
+ * where it needed a set — and this file had already named the instrument, three
+ * paragraphs down, as *"a different instrument, not a better sentence"*, while
+ * pricing it at nothing.
+ *
+ * What a number cannot tell apart, and a set can:
+ *
+ *   - a NULL from an address. A producer that fails returns NULL, which is the C
+ *     convention for all of them, and the counter counted it — so the correct
+ *     failure path aborted (defect 039).
+ *   - a null RELEASE from a real one. `slot_close(nullptr)` decremented, so a
+ *     leaked handle plus one null release balanced and exited 0 in silence
+ *     (defect 040). The escape from 039 and the hole in the leak check were the
+ *     same construct.
+ *   - a double release from an unmarked producer, which the old message had to
+ *     offer as a list of causes and got rewritten three times in two days.
+ *   - a composite release from an element-by-element one (defect 038).
+ *
+ * **It is a KEPT buffer, on `hero_eq_queue`'s model and for its reasons**: it
+ * goes through `hero_malloc_raw` so §4.20's single allocation point stays
+ * literally true, and it is deliberately outside `hero_live_blocks`, because a
+ * buffer that is never freed would report a leak at every exit of every program
+ * that binds C. THE DAY THREADS ARRIVE this is the same edit `hero_eq_queue`
+ * owes, decided in this file and not at the call site.
+ *
+ * **The lock is not decoration.** What it replaces was `_Atomic`, so a set
+ * without one would remove thread safety in silence, and a regression nobody
+ * writes down is the thing this file exists to prevent. */
+/* TWO PLATFORM SPELLINGS, on the model this file already uses for the kept
+ * buffer's key and for its reason: Windows has no pthreads at all, measured on
+ * the box 2026-09-06 and written down below. Both spellings are chosen to be
+ * STATICALLY initialisable, so the lock needs no once-flag and no make — which
+ * is what keeps this twenty lines rather than the kept buffer's hundred.
+ * `SRWLOCK_INIT` and `PTHREAD_MUTEX_INITIALIZER` are the two that are.
+ *
+ * **The Windows half is UNRUN on this Mac** (`.claude/rules/platforms.md`: a
+ * platform fact is run on a platform or it is an inference). CI's Windows leg is
+ * the judge, and it is the leg that has caught this class before. */
+#if defined(_WIN32)
+#include <windows.h>
+typedef SRWLOCK hero_handle_mutex;
+#define HERO_HANDLE_MUTEX_INIT SRWLOCK_INIT
+#define hero_handle_lock_take(m) AcquireSRWLockExclusive(m)
+#define hero_handle_lock_drop(m) ReleaseSRWLockExclusive(m)
+#else
+#include <pthread.h>
+typedef pthread_mutex_t hero_handle_mutex;
+#define HERO_HANDLE_MUTEX_INIT PTHREAD_MUTEX_INITIALIZER
+#define hero_handle_lock_take(m) pthread_mutex_lock(m)
+#define hero_handle_lock_drop(m) pthread_mutex_unlock(m)
+#endif
+
+#define HERO_HANDLES_MIN 16
+static hero_handle_mutex hero_handle_lock = HERO_HANDLE_MUTEX_INIT;
+static const void **hero_handle_set = NULL;
+static size_t hero_handle_cap = 0;
+static size_t hero_handle_live = 0;
+/* Released while the set did not hold it: a double release, or a part of
+ * something acquired whole. Counted rather than stored, because the message
+ * names the first one and the reader needs a number for the rest. */
+static size_t hero_handle_strays = 0;
+static const void *hero_handle_first_stray = NULL;
 
 int64_t hero_runtime_live(void) { return hero_live_blocks; }
 
@@ -200,25 +266,44 @@ void hero_runtime_check_leaks(void) {
      * that the next rule to close one of those two will come for `borrows`, and
      * the case that goes red will be
      * `abort-handle-borrows-that-gives-away`. */
-    int64_t handles = hero_live_handles;
-    if (handles > 0) {
+    /* THE STRAY IS REPORTED FIRST, because it is the one that may already have
+     * corrupted memory: a handle given back that the set did not hold is either
+     * a second release of something already gone, or a part of something
+     * acquired whole. A leak has not damaged anything yet. */
+    hero_handle_lock_take(&hero_handle_lock);
+    size_t strays = hero_handle_strays;
+    const void *first_stray = hero_handle_first_stray;
+    size_t live = hero_handle_live;
+    const void *first_live = NULL;
+
+    for (size_t i = 0; i < hero_handle_cap && first_live == NULL; i++)
+        if (hero_handle_set[i] != NULL) first_live = hero_handle_set[i];
+    hero_handle_lock_drop(&hero_handle_lock);
+
+    if (strays > 0) {
         fflush(stdout);
-        fprintf(stderr, "panic: %lld C handle(s) never given back — every call "
-                        "marked `acquires` owes one marked `consumes`, and this "
-                        "program is missing that many\n",
-                (long long)handles);
+        /* THE ADDRESS GOES LAST, and that is not a style choice. A golden
+         * asserts a SUBSTRING of this message, so an address in the middle
+         * splits the one stable sentence in two and no case can assert it —
+         * measured 2026-09-15, when three shipped goldens went red on a message
+         * that was right. Last, the sentence a case asserts is contiguous and
+         * the address a reader needs is still here. */
+        fprintf(stderr, "panic: %llu C handle(s) given back that were never taken — "
+                        "the set of live handles did not hold that address when a "
+                        "call marked `consumes` ran. Two things do this: the same "
+                        "handle given back TWICE, which is a double release and "
+                        "may already have corrupted memory; or a value acquired "
+                        "WHOLE and released part by part, since one mark is one "
+                        "obligation on the whole value. The first is at %p\n",
+                (unsigned long long)strays, first_stray);
         abort();
     }
-    if (handles < 0) {
+    if (live > 0) {
         fflush(stdout);
-        fprintf(stderr, "panic: %lld more handle(s) given back than were taken — "
-                        "a call marked `consumes` ran with no `acquires` behind "
-                        "it. Two things do this and the count cannot tell them "
-                        "apart, worst first: the same handle given back TWICE, "
-                        "which is a double release; or an `extern` marked "
-                        "`borrows` whose C function in fact hands ownership "
-                        "over, which makes the mark wrong\n",
-                (long long)-handles);
+        fprintf(stderr, "panic: %llu C handle(s) never given back — every call "
+                        "marked `acquires` owes one marked `consumes`, and this "
+                        "program is missing that many. The first is at %p\n",
+                (unsigned long long)live, first_live);
         abort();
     }
 }
@@ -272,13 +357,99 @@ static void hero_release_held(void *p) {
     free(p);
 }
 
-/* The handle pair, and it allocates nothing. */
-void hero_handle_acquired(void) {
-    atomic_fetch_add_explicit(&hero_live_handles, 1, memory_order_relaxed);
+/* The handle set. Open addressing, linear probing, power-of-two capacity, so a
+ * slot is found with a mask and never a division. NULL is the empty slot, which
+ * is free: a NULL handle is never stored, because a producer that returned NULL
+ * acquired nothing (defect 039).
+ *
+ * The mix is Fibonacci hashing on the pointer's own bits. An address is already
+ * well distributed in its middle bits and poorly in its low ones, which are
+ * alignment, so the shift is what a naive mask would throw away. */
+static size_t hero_handle_slot(const void **table, size_t cap, const void *h) {
+    size_t i = (size_t)(((uintptr_t)h * (uintptr_t)0x9E3779B97F4A7C15u) >> 32) & (cap - 1);
+    while (table[i] != NULL && table[i] != h) i = (i + 1) & (cap - 1);
+    return i;
 }
 
-void hero_handle_consumed(void) {
-    atomic_fetch_sub_explicit(&hero_live_handles, 1, memory_order_relaxed);
+/* Grown in place, never shrunk, and the old table is freed: that is what makes
+ * it ONE live allocation rather than a leak per growth. Called with the lock
+ * held. */
+static void hero_handle_grow(void) {
+    size_t cap = hero_handle_cap == 0 ? (size_t)HERO_HANDLES_MIN : hero_handle_cap * 2;
+    const void **fresh = (const void **)hero_malloc_raw(cap * sizeof(const void *));
+    for (size_t i = 0; i < cap; i++) fresh[i] = NULL;
+    for (size_t i = 0; i < hero_handle_cap; i++) {
+        if (hero_handle_set[i] != NULL)
+            fresh[hero_handle_slot(fresh, cap, hero_handle_set[i])] = hero_handle_set[i];
+    }
+    free(hero_handle_set);
+    hero_handle_set = fresh;
+    hero_handle_cap = cap;
+}
+
+void hero_handle_acquired(const void *h) {
+    /* A producer that failed handed back nothing. Counting it is what killed the
+     * correct failure path, and the failure path is the one C programs take. */
+    if (h == NULL) return;
+    hero_handle_lock_take(&hero_handle_lock);
+    /* Grow at half full. Linear probing degrades sharply past that, and this
+     * table is read on every FFI handle call. */
+    if (hero_handle_cap == 0 || (hero_handle_live + 1) * 2 > hero_handle_cap) hero_handle_grow();
+    size_t i = hero_handle_slot(hero_handle_set, hero_handle_cap, h);
+    /* Already live means the previous one was never given back and C has handed
+     * the address out again. The set holds one entry per ADDRESS, so the earlier
+     * life is lost here rather than double-counted — and it is lost either way,
+     * since nothing can now tell the two apart. */
+    if (hero_handle_set[i] == NULL) {
+        hero_handle_set[i] = h;
+        hero_handle_live++;
+    }
+    hero_handle_lock_drop(&hero_handle_lock);
+}
+
+void hero_handle_consumed(const void *h) {
+    /* Releasing a null discharges nothing. C lets a program free NULL and this
+     * lets it too; what it must not do is let that pay off a real obligation. */
+    if (h == NULL) return;
+    hero_handle_lock_take(&hero_handle_lock);
+
+    if (hero_handle_cap == 0) {
+        hero_handle_strays++;
+        if (hero_handle_first_stray == NULL) hero_handle_first_stray = h;
+        hero_handle_lock_drop(&hero_handle_lock);
+        return;
+    }
+    size_t i = hero_handle_slot(hero_handle_set, hero_handle_cap, h);
+
+    if (hero_handle_set[i] != h) {
+        /* Given back while the set did not hold it: the second of a double
+         * release, or a part of something acquired whole. The old counter could
+         * only go negative and offer a list of causes. */
+        hero_handle_strays++;
+        if (hero_handle_first_stray == NULL) hero_handle_first_stray = h;
+        hero_handle_lock_drop(&hero_handle_lock);
+        return;
+    }
+    /* Backward-shift deletion, because linear probing cannot tombstone without
+     * the table filling with tombstones on a long-running program. */
+    size_t hole = i;
+    size_t scan = (i + 1) & (hero_handle_cap - 1);
+    hero_handle_set[hole] = NULL;
+
+    while (hero_handle_set[scan] != NULL) {
+        size_t home = (size_t)(((uintptr_t)hero_handle_set[scan] * (uintptr_t)0x9E3779B97F4A7C15u) >> 32) & (hero_handle_cap - 1);
+        size_t from_hole = (scan - hole) & (hero_handle_cap - 1);
+        size_t from_home = (scan - home) & (hero_handle_cap - 1);
+
+        if (from_home >= from_hole) {
+            hero_handle_set[hole] = hero_handle_set[scan];
+            hero_handle_set[scan] = NULL;
+            hole = scan;
+        }
+        scan = (scan + 1) & (hero_handle_cap - 1);
+    }
+    hero_handle_live--;
+    hero_handle_lock_drop(&hero_handle_lock);
 }
 
 /* A THIRD SHAPE, AND IT IS NOT A PAIR: memory the RUNTIME keeps for the life of

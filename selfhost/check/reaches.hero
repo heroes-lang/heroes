@@ -77,6 +77,71 @@ record Reached
     # The dotted route to it, empty when the type asked about IS the handle.
     path: str
 
+# EVERY handle a type reaches, as the suffix that names it from a value of that
+# type: `""` when the type IS a handle, otherwise `.s`, `.p.s`, `.a[0]`.
+#
+# **This exists because the runtime holds a SET since panel 150.** While it held
+# a number, a mark on a composite meant one increment and the value was never
+# needed; an address set has to be told WHICH handles, and `-> Pair acquires
+# slot_close` is a `Pair` and not a pointer. Panel 149 R3's *one mark is one
+# obligation on the whole value* is what this makes precise: the obligation is
+# every handle the value reaches, recorded and discharged together.
+#
+# **The suffix is C, and that is a fact about the value rather than a premise.**
+# Every record on the route is a group record, because `check/ffi.hero`'s
+# `ffi_field` admits a named field only when `header_owned` answers yes, and
+# `mangle.field_of` leaves a foreign record's members alone — so the name the
+# author wrote IS the C member name. A non-foreign record cannot appear here.
+#
+# **A fixed array is expanded by its WRITTEN length**, which is the only number
+# there is. Panel 150 measured that C's FILLED count is a runtime choice and no
+# mark can carry it; what the written length buys is that the elements are in the
+# set individually, so releasing them one by one balances and releasing the
+# composite balances, while doing both is a double release the set can name.
+function handle_suffixes(out: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> [str]
+    found: [str] @ []
+    seen: {i64: bool} @ {}
+
+    gather(out, s, decls, ty: ty, prefix: "", @found, @seen)
+    return found
+
+function gather(out: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, prefix: str, @found: [str], @seen: {i64: bool})
+    match table.get(out.types, ty)
+        .named n =>
+            if handles.is_handle(decls[n.decl])
+                found @ found.push(prefix)
+                return
+
+            if !seen[n.decl].is_err()
+                return
+            seen[n.decl] @ true
+
+            match decls[n.decl].kind
+                .record_decl rec =>
+                    for field in rec.fields
+                        written = state.written_type(out, field.ty)
+
+                        if !written.is_err()
+                            gather(
+                                out,
+                                s,
+                                decls,
+                                ty: written.must(),
+                                prefix: prefix + "." + source.span_text(s, field.name),
+                                @found,
+                                @seen
+                            )
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return
+        .fixed x =>
+            at: i64 @ 0
+
+            while at < x.length
+                gather(out, s, decls, ty: x.element, prefix: prefix + "[" + at.to_str() + "]", @found, @seen)
+                at @ at + 1
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+        .array | .map | .fallible | .function_ty                  => return
+        .case_ty | .failure | .generic | .error                   => return
+
 # Where this type reaches a handle. Absent when it reaches none, a `path` of
 # `""` when the type IS one, and otherwise the dotted path anchored at the first
 # declaration on the route: `Font.recs`, `Outer.p.s`.

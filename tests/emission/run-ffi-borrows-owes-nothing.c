@@ -126,7 +126,7 @@ bb0:
 #line 25 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t2 = slot_open(t1);
 #line 25 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_handle_acquired();
+    hero_handle_acquired(t2);
 #line 25 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     h0_mine = t2;
 #line 26 "tests/golden/run/ffi-borrows-owes-nothing.hero"
@@ -152,7 +152,7 @@ bb0:
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     (void)slot_close(t9);
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_handle_consumed();
+    hero_handle_consumed(t9);
 #line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t10 = HERO_STR_LIT(hero_str_2f69e1a4);
 #line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"

@@ -227,7 +227,7 @@ bb0:
 #line 79 "examples/sqlite/main.hero"
     t7 = sqlite3_prepare_v2(t3, hero_cstr_nonnull(t5), t6, &h2_statement, &h3_tail);
 #line 79 "examples/sqlite/main.hero"
-    hero_handle_acquired();
+    hero_handle_acquired(h2_statement);
 #line 79 "examples/sqlite/main.hero"
     h4_rc = t7;
 #line 87 "examples/sqlite/main.hero"
@@ -279,7 +279,7 @@ bb4:
 #line 93 "examples/sqlite/main.hero"
     (void)sqlite3_finalize(t24);
 #line 93 "examples/sqlite/main.hero"
-    hero_handle_consumed();
+    hero_handle_consumed(t24);
 #line 94 "examples/sqlite/main.hero"
     t26 = h5_value;
 #line 94 "examples/sqlite/main.hero"
@@ -341,7 +341,7 @@ bb0:
 #line 99 "examples/sqlite/main.hero"
     t4 = sqlite3_open(hero_cstr_nonnull(t3), &h0_db);
 #line 99 "examples/sqlite/main.hero"
-    hero_handle_acquired();
+    hero_handle_acquired(h0_db);
 #line 99 "examples/sqlite/main.hero"
     t5 = h_main_SQLITE_OK();
 #line 99 "examples/sqlite/main.hero"
@@ -395,7 +395,7 @@ bb1:
 #line 115 "examples/sqlite/main.hero"
     (void)sqlite3_close(t24);
 #line 115 "examples/sqlite/main.hero"
-    hero_handle_consumed();
+    hero_handle_consumed(t24);
 #line 115 "examples/sqlite/main.hero"
     return;
 #line 115 "examples/sqlite/main.hero"
@@ -411,7 +411,7 @@ bb2:
 #line 109 "examples/sqlite/main.hero"
     (void)sqlite3_close(t8);
 #line 109 "examples/sqlite/main.hero"
-    hero_handle_consumed();
+    hero_handle_consumed(t8);
 #line 109 "examples/sqlite/main.hero"
     return;
 #line 109 "examples/sqlite/main.hero"

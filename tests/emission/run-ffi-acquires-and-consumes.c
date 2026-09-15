@@ -127,7 +127,7 @@ bb0:
 #line 18 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t2 = slot_open(t1);
 #line 18 "tests/golden/run/ffi-acquires-and-consumes.hero"
-    hero_handle_acquired();
+    hero_handle_acquired(t2);
 #line 18 "tests/golden/run/ffi-acquires-and-consumes.hero"
     h0_a = t2;
 #line 19 "tests/golden/run/ffi-acquires-and-consumes.hero"
@@ -135,7 +135,7 @@ bb0:
 #line 19 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t4 = slot_open(t3);
 #line 19 "tests/golden/run/ffi-acquires-and-consumes.hero"
-    hero_handle_acquired();
+    hero_handle_acquired(t4);
 #line 19 "tests/golden/run/ffi-acquires-and-consumes.hero"
     h1_b = t4;
 #line 20 "tests/golden/run/ffi-acquires-and-consumes.hero"
@@ -157,13 +157,13 @@ bb0:
 #line 21 "tests/golden/run/ffi-acquires-and-consumes.hero"
     (void)slot_close(t10);
 #line 21 "tests/golden/run/ffi-acquires-and-consumes.hero"
-    hero_handle_consumed();
+    hero_handle_consumed(t10);
 #line 22 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t11 = h1_b;
 #line 22 "tests/golden/run/ffi-acquires-and-consumes.hero"
     (void)slot_close(t11);
 #line 22 "tests/golden/run/ffi-acquires-and-consumes.hero"
-    hero_handle_consumed();
+    hero_handle_consumed(t11);
 #line 23 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t12 = HERO_STR_LIT(hero_str_455ecde8);
 #line 23 "tests/golden/run/ffi-acquires-and-consumes.hero"

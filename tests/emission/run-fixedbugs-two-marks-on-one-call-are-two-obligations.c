@@ -130,21 +130,21 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     (void)both_open(t3, &h0_a, &h1_b);
 #line 28 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_handle_acquired();
+    hero_handle_acquired(h0_a);
 #line 28 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_handle_acquired();
+    hero_handle_acquired(h1_b);
 #line 29 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     t4 = h0_a;
 #line 29 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     (void)slot_close(t4);
 #line 29 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_handle_consumed();
+    hero_handle_consumed(t4);
 #line 30 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     t5 = h1_b;
 #line 30 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     (void)conn_close(t5);
 #line 30 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_handle_consumed();
+    hero_handle_consumed(t5);
 #line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     t6 = HERO_STR_LIT(hero_str_455ecde8);
 #line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
