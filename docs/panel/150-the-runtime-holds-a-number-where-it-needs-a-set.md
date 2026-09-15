@@ -197,8 +197,34 @@ that is memory-safe, while the two that corrupt exit 133 saying nothing at all.
 
 ## Author's verdict
 
-**PENDING.** Queued in `docs/work/DECIDE.md` as `panel 150`. Work proceeds on the
-resolution as the default; the answer is appended here whenever it is given.
+**RATIFIED 2026-09-15**, the resolution as adopted: the robust one and not the
+conservative one. The alternative recorded under CL-040 — rewrite the runtime
+message and nothing else — is declined.
+
+**Two of the four resolutions had already landed when the yes was given**, and
+the verdict is therefore partly on what SHIPPED and partly on what is owed. That
+distinction is the useful half and it is written out rather than left to a
+reader.
+
+**LANDED, and measured before and after.** R1, the counter as a set of live
+handle addresses. It closed defects 038, 039 and 040 together, because all three
+were one fact. The correct failure path went from abort 134 to exit 0; a leaked
+handle plus one null release went from exit 0 in silence to an abort naming the
+address; a fixed array released element by element went from `+3` and an abort to
+exit 0, because the program was correct all along.
+
+**OWED, and named so it is not lost.** R3, the mark refused on a `ptr`, is
+**unlanded** — and panels 151 and 152 changed what it should look like, since the
+author now has no alternative spelling for a struct C names with two words, so
+refusing `ptr` today would leave `getaddrinfo` unbindable rather than badly
+bound. It waits on defect 037's remaining half. R4, the specification corrected
+on both counts it is false about, is **unlanded** at +7 real, and panel 152's
+spec-warden re-ran all three probes and confirmed the document is still false at
+HEAD.
+
+**R2 is superseded rather than owed.** *A `tag` names a C type NAME* was adopted
+here without a spelling; panels 151 and 152 then refused two spellings on
+measurement and adopted a third. The chain is the record.
 
 **What a yes settles**: that the instrument becomes a set rather than a number,
 that a `tag` may name what C actually writes, that the mark is refused where it

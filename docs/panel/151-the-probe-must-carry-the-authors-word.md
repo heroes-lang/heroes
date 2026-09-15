@@ -137,7 +137,22 @@ recording it costs nothing.
 
 ## Author's verdict
 
-**PENDING.** Queued in `docs/work/DECIDE.md` as `panel 151`.
+**RATIFIED 2026-09-15.** Route B is refused, on the ground both seats reached
+separately: a probe generated from the header cannot check the binding against
+the header.
+
+**Nothing is owed by this ratification**, which is unusual and worth saying: a
+sitting whose resolution is a refusal lands by not being built. What it leaves
+behind is the measurement that makes the refusal permanent — `record Db tag
+sqlite3_stmt` gives two `error[ffi_parameter_type]` today and zero under the
+refused route — so a later session proposing it again meets a number rather than
+an argument.
+
+**And the lane finding is ratified with it.** Both seats said a two-seat lane
+could not ratify what the sitting was asked; the coordinator then convened three
+more seats under CL-023 rather than five, and panel 152 is that sitting. The
+skill's §Two lanes is confirmed rather than amended: the lane was wrong, the
+seats said so, and saying so cost one sitting instead of a wrong resolution.
 
 **What a yes settles**: that Route B is refused for inverting §4.19's instrument,
 and that the narrowing — one bit, the namespace qualifier, never the type name —

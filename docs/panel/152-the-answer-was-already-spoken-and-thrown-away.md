@@ -162,7 +162,31 @@ itself: `addrinfoo` fails, `struct addrinfoo` exits 0 silently.
 
 ## Author's verdict
 
-**PENDING.** Queued in `docs/work/DECIDE.md` as `panel 152`.
+**RATIFIED 2026-09-15**, as adopted: the capability yes, the generated probe no.
+
+**HALF OF R1 LANDED THE SAME DAY**, and it is the half a program author meets.
+`emit/ffi_lookup.hero` now finds a record by its TAG as well as by its name, so
+clang's *"must use 'struct' tag"* stops being looked up under a name no
+declaration holds. A binding that produced `internal error: compiling the
+generated C failed` at exit 2 with zero Heroes diagnostics now produces
+`error[ffi_tag_needs_struct]` with the caret on the author's own line. **R2
+landed with it**: a misspelled tag stays `error[ffi_unknown_name]`.
+
+**OWED.** The other half of R1 — actually SUPPLYING `struct` from that same
+refusal — is unlanded, and defect 037 stays open for exactly it. R3, the spec at
++4 real with digest `7898916124eeea2b`, is unlanded. R4, the design.md row that
+stops saying *the tag is written verbatim*, is unlanded and free.
+
+**The diagnostic that landed offers no fix, and the yes ratifies that too.** Its
+sibling offers a `certain` one because a record with no tag can be given one;
+here the tag is already correct and the repair does not exist, so a fix would be
+what `.claude/rules/diagnostics-and-goldens.md` refuses — one that leaves the
+defect standing however well it compiles. The blessed emission pins the wrong C
+in bytes, `addrinfo *` five times, so the day the capability lands a suite says
+so.
+
+**What the yes does not settle**: defects 042 and 043, both filed by this sitting
+and neither of which it was convened on.
 
 **What a yes settles**: that the qualifier is read from clang's refusal rather
 than guessed, that an unknown tag stays refused as a Heroes error, the +4 on the
