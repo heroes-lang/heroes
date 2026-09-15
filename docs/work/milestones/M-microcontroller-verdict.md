@@ -90,6 +90,13 @@ M-install-channels, which would otherwise ship for a class of machine nobody has
 ruled on. The cheaper position, a note and no row, was declined by the author
 (CL-040).
 
+**Moved behind the gate on 2026-09-15, by author instruction.** The paragraph
+above placed this row before M-install-channels; it now stands after the
+channels, the online compiler, the compatibility suite and M-publication-gate,
+first of the four rows the author put behind the gate. The paragraph stays as
+written because it is the reasoning the row entered with, and
+`docs/roadmap/scheduling.md` carries the move.
+
 **What it does not deliver**: a `--target` flag, a fifth CI leg, a board, a
 standard library for the device (§1.11), a form in the language (panel 114 R1),
 or code. What it may become is the sitting's to say.
