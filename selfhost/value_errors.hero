@@ -171,6 +171,25 @@ function main_returns(got: str, span: token.Span) -> diag.Diagnostic
     d.notes @ d.notes.push("drop the result type; a value `main` computed and returned would have nowhere to go")
     return d
 
+# `main` takes nothing either, and this half went unguarded until 2026-09-16.
+# The guard above reads the RESULT and nothing read the PARAMETERS, so
+# `function main(n: i64)` reached the emitter, which writes the call as
+# `h_<module>_main()` with no arguments and hands clang *too few arguments to
+# function call* — an internal error at exit 2, in clang's voice, about a
+# program the checker had passed (defect 053, panel 159's completeness critic).
+function main_parameters(count: i64, span: token.Span) -> diag.Diagnostic
+    tail: str @ " parameters"
+
+    if count == 1
+        tail @ " parameter"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "main_parameters",
+        message: "`main` is called by the runtime and takes nothing, and this one declares " + count.to_str() + tail + " — nothing exists that could pass a value to it",
+        span: span
+    )
+    d.notes @ d.notes.push("the command line reaches a program through `args()`, not through `main`'s signature")
+    return d
+
 function not_callable(got: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "not_callable",

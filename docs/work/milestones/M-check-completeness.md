@@ -58,40 +58,6 @@ body's line stays undecidable from the line plus its signature, and lifting that
 needs constraints on generics, which is the author's trade.
 
 *******************************************************************************
-**OPEN: 1**
-
-- [ ] **M-check-completeness** | three rules a blind reader guessed at, and one of the guesses compiles: `sort`'s direction, `xs[i] @ v`, and whether `main` may be fallible | `docs/panel/126-the-document-nobody-had-tidied.md` · `spec § 10 Strings, arrays, maps` · `spec § 11 Built-ins`
-
-    **Origin:** panel 126's ergonomist seat, 2026-09-11, out of three tasks
-    written twice each. **`sort`'s direction is the one that matters**: neither
-    version of the specification says ascending, both say only *walks them in
-    order*, and a tie-break written on the wrong assumption compiles and prints
-    a silently different answer. That is the single silent-error risk the seat
-    found in six programs, and it is one word of the document. **`xs[i] @ v` is
-    given nowhere** while `m[k] @ v` is given, so every sort the seat wrote
-    carried a map of taken keys instead of swapping; measure first whether the
-    compiler accepts it, because the seat could not. **Whether `main` may be
-    `-> ()?`** decides whether `?` is usable in the one function every program
-    has, and the document says a file holds `function main()` and nothing more.
-    Each is a spec sentence, so each is the panel's; this row is the home
-    because that milestone already asks what `heroes check` accepts.
-
-    **ALL THREE ARE MEASURED, 2026-09-16, and every one has an answer the
-    document does not give.** The seat could not run them; its only input is the
-    specification, which is the point of that seat and the reason these stayed
-    open.
-
-    | the question | the compiler, measured | the document |
-    |---|---|---|
-    | is `sort` ascending? | **yes** — `1,2,3`; `apple,fig,pear`; `false,true` | says only *walks them in order* |
-    | is `xs[i] @ v` accepted? | **yes**, exit 0, prints `99` | gives `m[k] @ v` and nothing for an array |
-    | may `main` be `-> ()?` | **no**: `error[main_returns]`, *"a program reports failure by what it prints, not by what it returns"* | says a file holds `function main()` and no more |
-
-    **So none of the three is a compiler defect and all three are silences.**
-    The sitting's question is therefore narrower than the item first framed it:
-    not *what should the language do* but *what does the document owe*, with the
-    behaviour already settled. `sort`'s direction is the one that matters, as
-    the seat said — a tie-break written on the wrong assumption compiles and
-    prints a silently different answer, and it costs one word.
+**OPEN: 0**
 
 *******************************************************************************

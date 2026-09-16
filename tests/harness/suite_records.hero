@@ -827,6 +827,7 @@ function run_all(scratch: str) -> report.Report?
     boundary(@r)
     verdicts(@r, present: walked)
     where_we_are(@r)
+    counts(@r)
     homed(@r, present: walked)
     lists(@r, present: walked)
     tagged(@r, scratch: scratch)
@@ -3166,6 +3167,32 @@ constant BANNER: str
 constant OPEN_PREFIX: str
     "**OPEN: "
 
+# THE TWO LIVE LISTS CARRY A SHORT PREAMBLE — author instruction 2026-09-16.
+#
+# What sits above the opening banner is the file's rules, and `list_offences`
+# never looked there: it polices the item region alone, so `DEFECTS.md` grew to
+# 982 words of preamble — 4551 bytes of them ONE sentence recording who issued
+# which defect number — under the check written to keep that very file short.
+# The instrument was watching the half of the file that was not the problem,
+# and the register it held stated the next number TWICE with two different
+# values, which is what a paragraph nothing reads does.
+#
+# **The milestone files are deliberately NOT judged here.** Their preamble IS
+# the milestone's reasoning, which `/step` § 1 calls the thing that must not be
+# lost; the longest runs to 224 lines. The author's rule names `DEFECTS.md`,
+# `DECIDE.md` and the ROADMAP, and this exemption is written down so that a
+# later session does not finish a job nobody asked for and delete the one thing
+# a milestone file exists to carry.
+#
+# Measured 2026-09-16 after the trim: `DEFECTS.md` 19 lines, `DECIDE.md` 22.
+# The ceiling is that plus room and never a round figure (CL-069).
+constant PREAMBLE_CEILING: i64
+    34
+
+# The ROADMAP's own count line, `**Open: 2 defects · 0 decisions.**`.
+constant OPEN_LINE_PREFIX: str
+    "**Open: "
+
 # The comprehension list. It takes the same shape as the three above and one
 # rule fewer: a ticked question stays in it (`/learn`'s rule — the list is also
 # its own record), so `records/lists` reads it with `ticked_allowed`.
@@ -3373,6 +3400,113 @@ function scan_where(text: str) -> WhereScan
                     mangled @ mangled + 1
 
     return WhereScan(counted: counted, mangled: mangled, found: inside)
+
+# THE ROADMAP'S TWO COUNTS ARE THE LISTS' OWN, AND A SECOND PLACE DRIFTS.
+#
+# Author instruction 2026-09-16: `docs/ROADMAP.md` carries a short preamble,
+# the two open counts, and the tables. The counts get an INSTRUMENT rather than
+# a convention because they had already drifted on the day the rule was given —
+# § Where we are read *open defects 0, open decisions 0* while `DEFECTS.md`'s
+# own banner read `**OPEN: 3**`. It is the rotation rule's own lesson — an index
+# is a second place where truth lives — arriving in the one document the author
+# opens to see where the project is.
+#
+# It fails LOUDLY when it cannot find the line, the way `numbering` fails when
+# it reads zero numbers: a check that silently finds nothing would pass whatever
+# the file held.
+record OpenCounts
+    defects: i64
+    decisions: i64
+
+function roadmap_counts(text: str) -> OpenCounts?
+    for row in strings.lines(text)
+        if !strings.starts_with(text: row, prefix: OPEN_LINE_PREFIX)
+            continue
+        rest = strings.without_prefix(text: row, prefix: OPEN_LINE_PREFIX)
+        cut = strings.index_of(text: rest, needle: " defects")
+
+        if cut.is_err()
+            return fail(code: "shape", msg: "no ` defects` after the first count")
+        head = strings.to_number(text: rest.slice(from: 0, to: cut.must()))
+        tail = strings.without_prefix(
+            text: rest.slice(from: cut.must(), to: rest.len()),
+            prefix: " defects · "
+        )
+        stop = strings.index_of(text: tail, needle: " decisions")
+
+        if stop.is_err()
+            return fail(code: "shape", msg: "no ` decisions` after the second count")
+        second = strings.to_number(text: tail.slice(from: 0, to: stop.must()))
+
+        if head.is_err() || second.is_err()
+            return fail(code: "shape", msg: "the two counts are not numbers")
+        return ok(OpenCounts(defects: head.must(), decisions: second.must()))
+
+    return fail(code: "absent", msg: "no count line")
+
+# The `**OPEN: N**` a live list states under its own opening banner.
+function banner_open(path: str) -> i64?
+    text = read_file(path)
+
+    if text.is_err()
+        return fail(code: "absent", msg: "cannot read " + path)
+    banners: i64 @ 0
+
+    for row in strings.lines(text.must())
+        if row == BANNER
+            banners @ banners + 1
+            continue
+
+        if banners == 1 && strings.starts_with(text: row, prefix: OPEN_PREFIX)
+            return count_stated(row)
+
+    return fail(code: "absent", msg: "no count line in " + path)
+
+function counts(@r: report.Report)
+    text = read_file("docs/ROADMAP.md")
+
+    if text.is_err()
+        report.keep_failure(@r, label: "records/counts", detail: "  docs/ROADMAP.md cannot be read")
+        return
+    stated = roadmap_counts(text.must())
+
+    if stated.is_err()
+        report.keep_failure(
+            @r,
+            label: "records/counts",
+            detail: "  docs/ROADMAP.md has no `" + OPEN_LINE_PREFIX + "N defects · M decisions.**` line.\n  The author asked for a preamble, the two open counts and the tables, and a\n  check that finds no line at all passes whatever the file holds."
+        )
+        return
+    held_defects = banner_open(DEFECTS)
+    held_decisions = banner_open(DECISIONS)
+
+    if held_defects.is_err() || held_decisions.is_err()
+        report.keep_failure(
+            @r,
+            label: "records/counts",
+            detail: "  a live list states no `" + OPEN_PREFIX + "N**` under its banner, so the ROADMAP's\n  count line cannot be compared with anything"
+        )
+        return
+    trouble: [str] @ []
+
+    if stated.must().defects != held_defects.must()
+        trouble @ trouble.push(
+            "    the ROADMAP says " + stated.must().defects.to_str() + " open defects and " + DEFECTS + " says " + held_defects.must().to_str()
+        )
+
+    if stated.must().decisions != held_decisions.must()
+        trouble @ trouble.push(
+            "    the ROADMAP says " + stated.must().decisions.to_str() + " open decisions and " + DECISIONS + " says " + held_decisions.must().to_str()
+        )
+
+    if trouble.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/counts",
+            detail: trouble.join("\n") + "\n  One number in two places: whichever moved, the other moves with it."
+        )
+    else
+        report.keep_pass(@r)
 
 function where_we_are(@r: report.Report)
     text = read_file("docs/ROADMAP.md")
@@ -3626,6 +3760,17 @@ function lists(@r: report.Report, present: [str])
             for complaint in list_offences(text.must(), ticked_allowed: false)
                 offenders @ offenders.push("    " + path + ": " + complaint)
 
+    for short in [DECISIONS, DEFECTS]
+        body = read_file(short)
+
+        if !body.is_err()
+            above = preamble_lines(body.must())
+
+            if above > PREAMBLE_CEILING
+                offenders @ offenders.push(
+                    "    " + short + ": " + above.to_str() + " lines above the banner, ceiling " + PREAMBLE_CEILING.to_str() + " — the rules stay, a story moves to docs/records/"
+                )
+
     asked: i64 @ 0
 
     for path in present
@@ -3723,6 +3868,19 @@ function one_question(text: str) -> [str]
 
     return out
 
+# Lines above the opening banner. A file with no banner has no item region at
+# all, which `list_offences` already complains about, so this returns the whole
+# length rather than inventing a second accusation about the same shape.
+function preamble_lines(text: str) -> i64
+    n: i64 @ 0
+
+    for row in strings.lines(text)
+        if row == BANNER
+            return n
+        n @ n + 1
+
+    return n
+
 function list_offences(text: str, ticked_allowed: bool) -> [str]
     out: [str] @ []
     banners: i64 @ 0
@@ -3803,6 +3961,53 @@ test "a live list in the shape its preamble states has nothing to complain about
     # banners, a zero, nothing between them.
     empty = "# T\n\nthe rules\n\n" + BANNER + "\n**OPEN: 0**\n\n" + BANNER + "\n"
     assert list_offences(empty, ticked_allowed: false).len() == 0
+
+test "the preamble is counted, and the shape that grew is the one it catches"
+    # Four lines of rules above the banner, which is what a live list is for.
+    short = "# T\n\nthe rules\n\n" + BANNER + "\n**OPEN: 0**\n\n" + BANNER + "\n"
+    assert preamble_lines(short) == 4
+
+    # The shape `DEFECTS.md` had actually grown into: the rules, and then a
+    # register of everything that ever happened. Thirty-five lines is one past
+    # the ceiling, which is the boundary rather than a comfortable margin.
+    grown: str @ "# T\n"
+    added: i64 @ 1
+
+    while added < 35
+        grown @ grown + "a sentence about a defect repaired last month\n"
+        added @ added + 1
+
+    assert preamble_lines(grown + BANNER + "\n**OPEN: 0**\n") == 35
+    assert preamble_lines(grown + BANNER + "\n") > PREAMBLE_CEILING
+
+    # A file with no banner at all has no item region, which `list_offences`
+    # already accuses; this returns the whole length rather than a second
+    # accusation about the same shape.
+    none = "# T\nno banner here\n"
+    assert preamble_lines(none) == strings.lines(none).len()
+
+test "the ROADMAP's two counts are read, and a line that is not there is not a pass"
+    line = "**Open: 2 defects · 0 decisions.** they live in two files\n"
+    got = roadmap_counts("# ROADMAP\n\nprose\n\n" + line + "\n## Where we are\n")
+    assert !got.is_err()
+    assert got.must().defects == 2
+    assert got.must().decisions == 0
+
+    # Two digits on each side, because a one-character reader would pass the
+    # single-digit case and lose the count that matters.
+    wide = roadmap_counts("**Open: 12 defects · 34 decisions.**\n")
+    assert wide.must().defects == 12
+    assert wide.must().decisions == 34
+
+    # THE SHAPE THAT MUST NOT PASS QUIETLY: no line at all. The check above
+    # turns this into a failure rather than a silent green, which is
+    # `numbering`'s own floor applied to a second count.
+    assert roadmap_counts("# ROADMAP\n\nno counts anywhere\n").is_err()
+
+    # And a line whose halves are not numbers, which is what a hand-edit that
+    # writes "a few" instead of a figure would leave.
+    assert roadmap_counts("**Open: some defects · 0 decisions.**\n").is_err()
+    assert roadmap_counts("**Open: 2 defects and no decisions.**\n").is_err()
 
 test "the four shapes these three files have actually been in"
     # 1. A ticked item in a live list. This is the rule four documents stated and

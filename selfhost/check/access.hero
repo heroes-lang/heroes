@@ -255,6 +255,36 @@ function index_type(@c: state.Checker, s: source.Source, decls: [ast.Decl], base
 
     return state.error_ty_of(c)
 
+# The WRITE side of the index rule above, and it lives here because it is the
+# same rule: `s[i]` READS a `u8` and there is nothing to write it back into,
+# because `spec § 3` calls a `str` an immutable UTF-8 string.
+#
+# The question is asked of THIS place's base type and never of what that type
+# REACHES (`.claude/rules/module-shape.md`): a `[str]` holds `str`s, and
+# `xs[0] @ "b"` is a legal write of a whole element.
+#
+# Unguarded until 2026-09-16 the store reached the emitter, whose place walk at
+# `selfhost/emit/container.hero:195-230` has no arm for a `str`: it falls to
+# `if element < 0` and returns a failure that `emit/inst.hero:130-132` renders
+# as `hero_unreachable()`. Three shapes did it — a local, a `str` in a record
+# field, a `str` inside an array — all `check` 0 and all aborting 134 saying
+# *this is a compiler bug*, which blames the author for a gap in the compiler
+# (defect 052, panel 159).
+function refuse_str_element(@c: state.Checker, a: ast.Ast, place: i64)
+    match a.exprs[place].kind
+        .index i =>
+            base_is_str = match table.get(c.out.types, c.out.expr_types[i.base])
+                .str                                               => true
+                .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => false
+                .array | .fixed | .map | .fallible | .function_ty  => false
+                .named | .case_ty | .failure | .generic | .error   => false
+
+            if base_is_str
+                state.push_diagnostic(@c, flow_errors.str_element_write(a.exprs[place].span))
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return
+        .name | .hole | .unary | .binary | .field | .field_name | .call | .method      => return
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => return
+
 function expect_index(@c: state.Checker, s: source.Source, decls: [ast.Decl], got: i64, want: i64, span: token.Span)
     if got != want && !table.poisoned(c.out.types, got)
         a = state.show(c, s, decls, want)

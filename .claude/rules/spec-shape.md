@@ -155,3 +155,30 @@ spec/heroes-spec.md --refresh`, whose output is pasted into
 with the ledger's row). A change to a fence is compiled before it is written:
 an example in the one document a reader is told to trust is a claim, and an
 unexecuted claim expires in silence.
+
+**A vendored delta is not a price — author instruction 2026-09-16, in three
+words: *always measure with the real.*** The order above ends at the real count
+and that is not decoration, because the two instruments disagree by a third:
+this document reads **5989** on the vendored `cl100k_base` table and **7974** on
+`claude-opus-5`, a gap of **1985 tokens** measured 2026-09-15. A draft priced at
+`+11` offline may cost fifteen on the instrument design.md §1.6 actually names,
+and a sitting that picks the cheaper of two drafts on the vendored number has
+ranked them on a scale that does not judge them.
+
+What makes this a rule rather than a caution is that the offline route **cannot**
+reach the binding number. `--refresh` refuses every path but
+`spec/heroes-spec.md` and `CLAUDE.md` (`selfhost/measure/pinned.hero:106-112`,
+panel 123 R5), so `heroes measure <draft>` reads the vendored tables and nothing
+else. A draft is therefore priced one of two ways and there is no third: **apply
+it to the real path, `--refresh`, and revert** if the sitting rejects it; or
+write the number down as a **lower bound, in those words**, so the sitting knows
+what it does not know. Panel 159's spec-warden did the second and said so, which
+is the behaviour this paragraph makes ordinary rather than admirable.
+
+**And the instrument can be unavailable.** `--refresh` exits **2** when
+`ANTHROPIC_API_KEY` is unset — measured 2026-09-16, which is why the whole of
+panel 159 was priced offline. An unavailable instrument is CLAUDE.md § RUN IT's
+*unrun*, never a licence to promote the number that is available: the vendored
+figure is a real measurement of the wrong thing, and that is the 2026-09-09
+failure (`docs/measurements/023-the-instrument-was-not-the-readers.md`) whose
+whole content is this sentence.

@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-a-write-into-a-str-element.hero:38:5: error[str_element_write]: a `str` is immutable, so `s[i]` is a value and not a place — this writes into one
+tests/golden/check/fixedbugs-a-write-into-a-str-element.hero:41:5: error[str_element_write]: a `str` is immutable, so `s[i]` is a value and not a place — this writes into one
+tests/golden/check/fixedbugs-a-write-into-a-str-element.hero:44:5: error[str_element_write]: a `str` is immutable, so `s[i]` is a value and not a place — this writes into one
+tests/golden/check/fixedbugs-a-write-into-a-str-element.hero:48:5: error[str_element_write]: a `str` is immutable, so `s[i]` is a value and not a place — this writes into one

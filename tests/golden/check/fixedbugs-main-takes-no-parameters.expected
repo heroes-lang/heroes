@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-main-takes-no-parameters.hero:30:15: error[main_parameters]: `main` is called by the runtime and takes nothing, and this one declares 1 parameter — nothing exists that could pass a value to it

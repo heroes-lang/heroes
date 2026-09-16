@@ -747,6 +747,7 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             return falls_with_nothing()
         .mutate m =>
             target = synth(@c, a, r, s, decls, m.place)
+            access.refuse_str_element(@c, a, place: m.place)
 
             # The write side of m[k] is V, not V? (§4.9, panel 026):
             # reading a map yields a fallible because the key may be

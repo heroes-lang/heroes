@@ -7,8 +7,18 @@
  * `WITH` in the tag above, because that operator takes an exception from
  * SPDX's own registry and this one is not in it. */
 
-/* parts/sort.c — `sort(xs) -> [T]`, stable, ascending, for the three element
- * types that have an order.
+/* parts/sort.c — `sort(xs) -> [T]`, stable, ascending, for every element type
+ * that has an order.
+ *
+ * It said "the three element types" until 2026-09-16, when panel 159's
+ * completeness critic read this line against `hero_cmp_for` below and counted
+ * TWELVE: every integer width, both floats, `str` and `bool`. The list had
+ * been false since M-sized-integers and panel 068, in the two places a reader
+ * meets it — here and `heroes_runtime.h` — while the emitter's copy of the
+ * same list was found stale and corrected. It is defect 051's class, a comment
+ * asserting what the code falsifies, and it is why this line now names the
+ * PROPERTY instead of counting the types: a count rots and `hero_cmp_for` is
+ * the only honest census.
  *
  * Two decisions live here and both were measured rather than argued
  * (panel 027): the comparison is INTERNAL to this translation unit rather than a

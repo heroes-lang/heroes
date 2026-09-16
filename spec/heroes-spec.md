@@ -12,7 +12,8 @@ instead. Inside `(` `[` `{` a NEWLINE never ends a statement: where it
 separates, a production writes it; elsewhere it may fall between any two tokens.
 
 ## 1. Files and layout
-- One file is one module; the file you compile holds `function main()`.
+- One file is one module; the file you compile holds `function main()`, which
+  takes nothing and produces nothing.
 - `use geom` binds `geom` to `geom.hero`'s declarations, written
   qualified: `geom.dist2(a: p, b: q)`, `p: geom.Point`. Every
   module you name needs its own `use`. No wildcard.
@@ -63,8 +64,7 @@ separates, a production writes it; elsewhere it may fall between any two tokens.
   never changes `a`. No aliasing exists among the values this language owns.
   A `ptr` is a copied ADDRESS, wherever it sits: two copies reach one foreign
   thing, so a function taking one without `@` may still change, or free, what
-  C holds. A `cstr` copies an address too, and only a group's `record` may
-  hold one.
+  C holds. A `cstr` copies an address too.
 - A record or variant holds its fields **by value**, so it may contain itself only
   through `[T]` or `{K: V}`: `children: [Node]` is a tree, `child: Node` has no size.
 
@@ -118,7 +118,8 @@ x = 5              # immutable binding, type inferred
 v: i64 @ 0         # mutable declaration — the type is REQUIRED
 v @ v + 1          # mutation; only a declared @ name can be mutated
 ```
-`=` binds once, forever. `@` declares a mutable cell and re-binds it.
+`=` binds once, forever. `@` declares a mutable cell and re-binds it, or a
+field or element inside one.
 Signatures are always explicit; inference is local only.
 All bindings are initialised. An unused binding or parameter is a compile
 error; a read is a use and a write is not, except through an `@` parameter.
@@ -291,7 +292,7 @@ An out-of-bounds index or slice aborts, and so does a slice that splits a charac
 
 ## 11. Built-ins
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` ·
-`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (a number, `str` or `bool`, never a type parameter) ·
+`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (ascending: a number by value, a `str` by bytes, `false` before `true`; never a type parameter) ·
 `to_f32` · `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
 `to_u32` `to_u64` — and, written in Heroes: `map` · `filter`, keeping what
 the function accepts · `fold` (left, its function names them `acc` then `item`) · `find` (the first it accepts, else `not_found`) ·

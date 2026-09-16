@@ -55,10 +55,24 @@ happened here first.
 | `tests/golden/ir/**` | **`ir`** `canonical` `determinism` |
 | `tests/golden/surface-fixtures/**` | `annotations` `fixes` |
 | `examples/**` | `canonical` `corpus` `emission` `warnings` |
-| `spec/heroes-spec.md` | `spec` `special` |
+| `spec/heroes-spec.md` | `spec` `special` **`grammar`** |
 | `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, plus everything `selfhost/**` already gets |
 | `docs/**`, `DESIGN-LOG.md`, `CLAUDE.md`, `.claude/**` | `records` |
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero` |
+
+**`grammar` was missing from the spec row until 2026-09-16**, found by panel
+159's completeness critic while auditing the briefs that sitting was working
+from. The row named `spec` and `special`, and `tests/harness/suite_grammar.hero:307`
+reads `spec/heroes-spec.md` too — grepped, three suites name the path, not two.
+It is load-bearing rather than tidy: that sitting's resolution amends **§ 5**,
+the section holding the `Place` and `Param` productions `grammar` cross-checks
+against what `heroes grammar` prints, so a session that obeyed this file to the
+letter would have landed a § 5 sentence and run two of its three judges. This
+file's own warning applies to it word for word — *a suite name that selects
+nothing is a green run that tested nothing* — and so does the shape it keeps
+finding: **the map is a premise about the world, and it expires in silence.**
+The commands at the top of this file are the instrument; the table is only their
+last answer.
 
 **A NEW CHECKER RULE is not a `selfhost/**` change, and the row above says it
 is.** Added 2026-09-14, at the M-marked-acquisition close, and it cost six red
