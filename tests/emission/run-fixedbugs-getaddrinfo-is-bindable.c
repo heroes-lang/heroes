@@ -26,8 +26,8 @@ _Static_assert(HERO_RUNTIME_ABI == 22, "heroes_runtime.h is from another compile
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_I32(getaddrinfo(0, (void *)0, (void *)0, (struct addrinfo * *)0)), "heroes-ffi-return getaddrinfo i32");
-_Static_assert(HERO_RET_UNIT(freeaddrinfo((struct addrinfo *){0})), "heroes-ffi-return freeaddrinfo ()");
+_Static_assert(HERO_RET_I32(getaddrinfo(0, (void *)0, (void *)0, (addrinfo * *)0)), "heroes-ffi-return getaddrinfo i32");
+_Static_assert(HERO_RET_UNIT(freeaddrinfo((addrinfo *){0})), "heroes-ffi-return freeaddrinfo ()");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -68,9 +68,9 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 22 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsgetaddrinfoisbindable_getaddrinfo(const char * a0, void * a1, void * a2, struct addrinfo * * a3) { (void)(getaddrinfo)(a0, a1, a2, a3); }
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsgetaddrinfoisbindable_getaddrinfo(const char * a0, void * a1, void * a2, addrinfo * * a3) { (void)(getaddrinfo)(a0, a1, a2, a3); }
 #line 23 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsgetaddrinfoisbindable_freeaddrinfo(struct addrinfo * a0) { (void)(freeaddrinfo)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsgetaddrinfoisbindable_freeaddrinfo(addrinfo * a0) { (void)(freeaddrinfo)(a0); }
 #line 112 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
@@ -86,7 +86,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 87 "fixedbugsgetaddrinfoisbindable.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b);
+HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(addrinfo * const *a, addrinfo * const *b);
 HERO_TU_LOCAL uint64_t h_fixedbugsgetaddrinfoisbindable_AI_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
@@ -102,16 +102,16 @@ void h_fixedbugsgetaddrinfoisbindable_main(void);
 #line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
 void h_fixedbugsgetaddrinfoisbindable_main(void) {
 #line 105 "fixedbugsgetaddrinfoisbindable.c"
-    struct addrinfo * h0_res;
+    addrinfo * h0_res;
     int32_t h1_rc;
-    struct addrinfo * t1;
+    addrinfo * t1;
     HeroStr t2 = {0};
     const char * t3;
     void * t4;
     void * t5;
     int32_t t6;
     int32_t t7;
-    struct addrinfo * t8;
+    addrinfo * t8;
     goto bb0;
 bb0:
 #line 26 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
@@ -148,12 +148,12 @@ bb0:
     return;
 #line 150 "fixedbugsgetaddrinfoisbindable.c"
 }
-HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b) {
+HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(addrinfo * const *a, addrinfo * const *b) {
     return *a == *b;
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsgetaddrinfoisbindable_AI_hash(const void *elem) {
-    struct addrinfo * const *v = elem;
+    addrinfo * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
     return h;

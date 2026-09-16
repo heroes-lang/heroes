@@ -198,10 +198,8 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
             art.must(),
             s,
             answered: @answered,
-            c_file: c_file,
             source_dir: source_dir,
-            package_flags: package_flags.must(),
-            version: version
+            package_flags: package_flags.must()
         )
 
         if wrote.is_err()

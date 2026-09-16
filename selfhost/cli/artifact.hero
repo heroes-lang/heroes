@@ -50,58 +50,16 @@
 # under which this seam exists at all.
 
 use source
-use emit
-use emit/ffi_tag
 use cli/io
 use cli/compile
 use cli/toolchain
-use cli/process
 use cli/pointee
 use cli/pointee_ask
-use cli/flags
-
-# `process.run` and not `toolchain.run_clang`, deliberately: that one prints
-# clang's noise on success, and an advisory probe that puts warnings on the
-# reader's terminal has stopped being advisory.
-function probe_tags(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, c_file: str, source_dir: str, package_flags: [str]) -> {str: bool}
-    tags: {str: bool} @ {}
-    written = write_file(path: c_file, text: art.c)
-
-    if written.is_err()
-        return tags
-    err_path = t.build + "/clang-tagprobe.txt"
-    line: [str] @ toolchain.with_all(list: ["clang"], more: flags.flags())
-    line @ line.push("-fsyntax-only")
-
-    for one in options.headers_from
-        line @ toolchain.with_all(list: line, more: ["-I", one])
-
-    for flag in package_flags
-        if toolchain.starts_with(text: flag, prefix: "-I")
-            line @ line.push(flag)
-
-    line @ toolchain.with_all(list: line, more: [c_file, "-I", t.runtime])
-
-    if source_dir.len() > 0
-        line @ toolchain.with_all(list: line, more: ["-I", source_dir])
-    ran = process.run(program: "clang", words: line, out: "", err: err_path)
-
-    if !ran.started || ran.code == 0
-        return tags
-    captured = read_file(err_path)
-
-    if captured.is_err()
-        return tags
-
-    for tag in ffi_tag.needs_struct(s, art.decls, stderr: toolchain.without_returns(captured.must()))
-        tags[tag] @ true
-
-    return tags
 
 # The artifact, written or printed, after both questions have been asked. A
 # failure here is the pointee check's and carries its message up so the caller
 # can decide whose it is — this file never blames anybody.
-function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], c_file: str, source_dir: str, package_flags: [str], version: str) -> ()?
+function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], source_dir: str, package_flags: [str]) -> ()?
     checked = pointee.check(
         t,
         art.program,
@@ -115,14 +73,28 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     )
     checked?
 
-    # Re-emitted only when something was learned, so a program with no tagged
-    # handle — every program in this repository's own `selfhost/` — pays one
-    # syntax-only compile and writes the bytes it already had.
+    # **THE TAG PROBE WAS HERE FOR ONE COMMIT AND IS WITHDRAWN, 2026-09-16.** It
+    # asked clang whether a handle's tag needs `struct` in front, discarded the
+    # verdict and re-emitted — and it worked: `structtag`'s artifact went from
+    # 20 clang errors to 0. What it also did is make this artifact **a function
+    # of the local headers**, and `emission` blesses these bytes. CI measured
+    # the consequence within the hour: macOS learned `struct addrinfo` and
+    # Windows, which has no `netdb.h`, learned nothing, so the same program
+    # emitted two different files and the suite compared one against the other.
+    #
+    # That is defect 047's own class — a golden encoding one platform's
+    # answer — committed inside the repair, on the day the rule naming it was
+    # written. **A blessed byte-for-byte artifact cannot depend on the machine
+    # it was produced on**, so either this probe goes or those programs stop
+    # being blessed by bytes. The second is panel 157's R4, adopted and not
+    # built, and the choice between them belongs to a sitting rather than to
+    # the hour after a red leg.
+    #
+    # What stays is the half that outranks it: the pointee check above, which
+    # refuses an artifact whose binding writes past its slot (§1.12). That one
+    # cannot make the output platform-dependent, because it does not change a
+    # byte — it decides whether there is an artifact at all.
     text: str @ art.c
-    learned = probe_tags(t, options, art, s, c_file: c_file, source_dir: source_dir, package_flags: package_flags)
-
-    if learned.len() > 0
-        text @ emit.emit_maybe(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: version, text: true, struct_tags: learned).c
 
     if options.output.is_err()
         io.print_artifact(text: text)
