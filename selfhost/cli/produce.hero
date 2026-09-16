@@ -28,6 +28,7 @@ use cli/toolchain
 use cli/process
 use cli/pointee_ask
 use cli/clang_floor
+use cli/artifact
 use cli/assemble
 use cli/libraries
 
@@ -181,6 +182,39 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         package_flags: package_flags.must(),
         version: version
     )
+
+    # **`--emit-c` STOPS HERE, AND NOT BEFORE THE CHECKS** (defect 048, panel
+    # 157). The write used to live in `cli/compile.hero`, which returned before
+    # this file ran at all, so the artifact was the FIRST emission: before the
+    # pointee check, which is a REFUSAL, and before the rounds, which learn a
+    # tag's spelling from clang. What that costs is in `cli/artifact.hero`,
+    # which now owns both questions — this file owns only the verdict on a
+    # failure, because `blamed` is the round's too and an arrow that points one
+    # way is the condition under which the seam exists.
+    if art.must().emit_c
+        wrote = artifact.write_c(
+            t,
+            options,
+            art.must(),
+            s,
+            answered: @answered,
+            c_file: c_file,
+            source_dir: source_dir,
+            package_flags: package_flags.must(),
+            version: version
+        )
+
+        if wrote.is_err()
+            message = failure_message(wrote)
+
+            if blamed(message, art.must(), s, answered, struct_tags: no_tags)
+                return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
+
+            if message.len() > 0
+                io.eprint(text: "internal error: " + message)
+            return fail(code: "failed", msg: "the artifact was not written")
+        none_e: [str] = []
+        return ok(Produced(binary: "", tests: none_e, stopped: true))
 
     # THE ROUNDS, and the one reason there is more than one (defect 037,
     # panel 152 R1). The first round spells every handle's tag as the author

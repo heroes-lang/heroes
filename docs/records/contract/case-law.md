@@ -1733,3 +1733,116 @@ tell a figure that was run from a figure that was quoted, and this class is
 invisible to every check the repository has. The three suites that judge prose
 read what a sentence says, not where it came from. So the only guard is the
 sentence's own grammar, which is why the remedy above is a rule about wording.
+
+## CL-076
+
+**An instrument must watch the WORLD, never the program's current behaviour.**
+Author instruction 2026-09-16, in their own words: *the thread that ties them
+together is one, and it is the thing I would take away from today — every time,
+the instrument was watching itself instead of the world.*
+
+Home: `.claude/rules/diagnostics-and-goldens.md`.
+
+**Three witnesses in one day, at M-check-completeness**, and each is the same
+shape wearing different clothes.
+
+**The rule that was closed and unwatched.** Panel 084 R1 closed a `check`/`build`
+gap on 2026-08-16 by refusing `sort` on a type parameter. Its only witness was a
+unit test that interns a `.generic` type id and asserts `is_refusable` on it —
+**a fact about a row in the type table, where the rule is about a program.** A
+compiler that stopped refusing `first([Point(x: 1, y: 2)])` would have passed
+every suite in this repository. The golden written on 2026-09-16 pins the
+program instead.
+
+**The test that pinned a FAILURE as the answer.** A surface row asserted
+`called from node_value` and was green on this Mac for a day.
+`hero_stack_blame` returns the `dladdr` symbol at the faulting pc **when the
+frame walk finds no Heroes name** — so `node_value` was the FALLBACK, and the
+row had been asserting the runtime's own failure as the required output. Worse,
+the runtime's comment two lines above said *"Nothing is printed when the walk
+finds no Heroes name"*, which is false of the code beneath it. The test agreed
+with the code and both disagreed with the world.
+
+**The suite that compares bytes and cannot ask whether they compile.**
+`emission` blesses 240 emissions and compares them byte for byte. Measured
+2026-09-16: **28 fail `-fsyntax-only` and 3 fail with *must use 'struct' tag***,
+all three green in the suite. Defect 048 was already committed and blessed,
+because the assertion the suite makes cannot reach the property the artifact is
+for.
+
+**The rule, stated so it can be applied before the fact.** When an assertion is
+written, name the fact about the WORLD it rests on, and then ask the one question
+that separates the two kinds: **what would still pass if the thing under test
+were wrong?** An assertion nothing can falsify except the instrument itself is
+watching the instrument.
+
+Three tells, each cheap to check while writing:
+
+- the assertion names an internal identifier — a table id, an index, a symbol
+  the program never writes — where the rule is about something an author typed;
+- the expected value was **transcribed from a run** rather than derived from the
+  contract, so it records what happened rather than what is owed. That is how a
+  platform's failure becomes a golden;
+- the artifact is compared for EQUALITY where the property that matters is a
+  predicate — compiles, links, terminates, is not corrupt. Bytes cannot be asked
+  whether they build.
+
+**What this does NOT say.** Snapshots stay: `.claude/rules/diagnostics-and-goldens.md`
+already carries why a diagnostic is annotated in its own source AND snapshotted,
+and the annotation is exactly the second witness this rule asks for. What is
+refused is a snapshot or a unit assertion standing ALONE for a rule about
+programs.
+
+## CL-077
+
+**A brief is assembled from the TREE, never from a document.** Author instruction
+2026-09-16, on the coordinator's own report of the day: *six numbers in my briefs
+were taken from documents instead of from the tree, across three sittings. The
+judges caught all six. One of them dismantled an objection that would have
+favoured its own position, and said so.*
+
+Home: `.claude/skills/panel/SKILL.md` § Prepare each judge's input.
+
+**The six, named, because a count with no list is the shape this rule is
+about.**
+
+| the brief said | the tree said | what it cost |
+|---|---|---|
+| `check/walk.hero` is **1708** against a ceiling of exactly 1708 — no headroom | **1861** against **1870**, nine lines of headroom | it cut FOR the proposal, and the seat that would have benefited refused to stand on an objection it had disproved |
+| **17** generic functions across `examples/` and the golden trees | **17** in `examples/` and **33** in `tests/golden/` — 50 | four seats judged blast radius on it |
+| `walk.hero:2225` already walks the instantiations, *so the seam is not speculative* | that line is **inside a `test` block** | the private brief carried the qualifier and the shared one dropped it |
+| the IR route **provably** cannot carry the diagnostic | traced to `.rs` paths in `archive/bootstrap-rs/`, the tree the brief's own rules forbid reading | the conclusion survived re-measurement; the word did not, and it was the sentence that excluded a route |
+| the fixture's expectation is in `.expected` | **there is no `.expected` file**; the pin is one row of `suite_surface.hero` | two seats corrected it independently |
+| Windows is **unrun**, the box is offline | the author had powered it hours earlier | the seat measured 139-with-silence, which changed the sitting |
+
+**Every one was caught by a seat and none by the coordinator**, which is the
+finding rather than the numbers. A brief is the one document in a sitting that
+nobody is assigned to check: the seats check the WORLD against the brief, and the
+brief against the world is nobody's job unless it is written into the procedure.
+
+**The rule.** Every number, path and count in a brief is produced by a command
+run while the brief is being written, and the brief says which command. A figure
+copied from `docs/`, from a milestone file, from an earlier sitting or from this
+session's own earlier paragraph is **carried**, and CLAUDE.md § RUN IT already
+forbids it — this is that rule at the one place it kept failing. Two shapes are
+worth naming because both appeared:
+
+- **a number that was true when it was written.** The ceiling, the generic count
+  and the `.expected` path were all correct once. A brief inherits the date of
+  the document it copied from, never the date of the sitting.
+- **a word that is a claim about the option set.** *Provably*, *the only*,
+  *never* — each asserts that a search was done. Write what was searched and
+  where, or write the weaker sentence.
+
+**And the direction of the error is not a comfort.** Four of the six would have
+helped the proposal the coordinator was already leaning toward. A brief drifts
+toward the writer's expectation because that is the version they do not
+re-check, which is exactly why the remedy is mechanical — run the command — and
+not *be careful*.
+
+**What the sittings did right and should keep.** The seats' corrections were
+recorded in each synthesis in the coordinator's own voice, including the one
+that ran against a seat's own argument. `.claude/rules/records.md` § And the
+record says whose idea it was is why: a sitting that quietly absorbs its
+corrections teaches nobody, and the next brief is written by somebody reading
+this one.

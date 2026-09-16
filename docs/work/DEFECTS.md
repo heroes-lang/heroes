@@ -27,41 +27,6 @@ record.
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 1**
-
-- [ ] **048 — `heroes build --emit-c` emits C that does not compile, for any `tag` binding** | a program with `record <Name> tag <name>` builds fine, and the same program's `--emit-c` output gives 15 clang errors: it writes `node *` where the header says `struct node` | `selfhost/cli/pointee.hero` · `selfhost/cli/assemble.hero` · `docs/panel/156-the-blame-line-was-never-a-platform-fact.md`
-
-    **Origin:** panel 156's ffi-pragmatist, 2026-09-16, found at its own boundary
-    while measuring something else — the sitting was about a crash message and
-    nobody had asked about `--emit-c`.
-
-    **The compiler is CORRECT and only `--emit-c` hands out the wrong round.**
-    Defect 037's repair (panels 150-152) compiles the author's word first, reads
-    clang's own refusal — *must use 'struct' tag to refer to type 'node'* — and
-    recompiles with `struct node *`. That is a ROUND, and `cli/assemble.hero` is
-    where it lives. The seat counted `struct node` **12 times** in the translation
-    units that produced objects and **0 times** in the ones that did not: so the
-    build is right and the artifact `--emit-c` writes is the pre-probe spelling.
-
-    **The reproducer** is `tests/golden/surface-fixtures/structtag/main.hero`,
-    which `surface` already runs at `run` and which passes: `heroes build … -o`
-    works, `heroes build … --emit-c` writes C that clang refuses.
-
-    **Why it matters more than an artifact usually would.** `--emit-c` is not a
-    debugging convenience here: it is how the SEED is made
-    (`heroes build selfhost/main.hero --emit-c -o seed/heroes.c`, `seed/README.md`),
-    and CI asserts on every push that `seed/heroes.c` is exactly what today's
-    source emits. `selfhost/` declares no `record … tag` of its own today —
-    measured 2026-09-16, the 28 occurrences are comments, message strings and
-    parser fixtures — so the seed is not affected and the fixpoint held at this
-    milestone. **The day the compiler binds a C library through a tagged handle,
-    it would be.**
-
-    **What is owed.** The probe round applied to the `--emit-c` path as it is to
-    the object path, or a refusal saying `--emit-c` cannot serve a tagged
-    binding — a silence that writes a file nobody can compile is the shape this
-    list exists for. **And a surface row that runs clang over what `--emit-c`
-    wrote**, which nothing does today: `emission` reads `--emit-c` output but does
-    not compile it, which is why 15 clang errors were invisible to every suite.
+**OPEN: 0**
 
 *******************************************************************************

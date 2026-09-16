@@ -8,29 +8,31 @@ The status and the chain. Why the table looks the way it does is
 
 | | |
 |---|---|
-| **Current milestone** | **M-check-completeness**, opened 2026-09-16: what `heroes check` accepts, `heroes build` compiles — through a generic too. Its opening measurement found one of its four faces already closed by panel 084 R1 on the day panel 082 R3 named it, and closed with **no golden case** behind it — pinned the same day. The two that remain are `float_map_key` and `ffi_partial_operation`, both `check` 0 and `build` 0 through a generic, one printing a wrong answer and one aborting at **134** |
-| **Last closed** | **M-marked-acquisition**, 2026-09-14, `m-marked-acquisition` ([056](journal/056-marked-acquisition.md)) — the form closed at **three words**, each saying one thing and none inferred: `acquires <releaser>`, `consumes`, `borrows`. Two instruments answering two questions — a runtime counter for *did the program give back what it took*, and a 126-line rule for *is this binding finished* — and neither needs the flow analysis the checker says twice it does not have · before it **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) and **M-handle-verdict** ([054](journal/054-handle-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| **Current milestone** | **M-check-completeness**, opened 2026-09-16 and **still open**: three of its four items are untouched, and the milestone is not closed over them. What landed is the whole of its check/build subject — face 1 was found already closed and pinned, faces 2 and 3 are panel 155's, face 4 is M-package-manager's — plus the three defects that hunt turned up |
+| **Last closed** | **M-marked-acquisition**, 2026-09-14, `m-marked-acquisition` ([056](journal/056-marked-acquisition.md)) — the form closed at **three words**, each saying one thing and none inferred: `acquires <releaser>`, `consumes`, `borrows` · before it **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) and **M-handle-verdict** ([054](journal/054-handle-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **57** of 78 · **57** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **61,803** lines of Heroes in **212** modules (`find selfhost -name '*.hero'`) · the seed **819,718** lines of C, regenerated at defect 045's close and verified at the fixpoint |
+| The compiler | **62,231** lines of Heroes in **215** modules (`find selfhost -name '*.hero'`) · the seed **823,415** lines of C, regenerated four times this milestone and the fixpoint verified byte-identical each time, the last through the REPAIRED `--emit-c` path |
 | The spec | **5989** on the vendored ranks and **7974** on the reader's own, against a ceiling of **10240** — raised from 8192 by author decision 2026-09-14 with the document 211 free. The three marks are **+125 vendored and +168 real**, in two payments at ratios of 1.40 and 1.23, both inside the band panel 148's warden gave while refusing any single factor; defect 037's close is **+1 vendored and +0 real**, a −3 phrase and a +7 correction cancelling on the reader's instrument; **2266 free** and 2206 net of the FFI floor |
 | The contract | **7449** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-15 with the wakeup instruction: of the 36 vendored tokens the pin was behind, 14 predate that session and no commit had named them |
-| Records | sittings **153** · journals **58** · milestone files **48** · entries: `docs/records/log/` **668**, `docs/records/done/` **536**, `docs/records/book/beats/` **123** · **open defects 0**, **open decisions 0** |
-| Waiting on the author | **nothing.** Panels 153 and 154 were ratified on 2026-09-15, both as adopted and both decided AGAINST their own seats' convergence by a completeness critic that measured an option nobody had listed — a header of the author's own at 153, one string in the compile-flag list at 154. What each leaves owed is named with the trigger that releases it, in `docs/records/done/`'s ratification entry: route A's guard when a milestone next opens `emit/ops.hero`, route B's word on a second witness, and what § 13 should say about the header route when a milestone next opens `spec/` |
+| Records | sittings **155** · journals **59** · milestone files **48** · entries: `docs/records/log/` **673**, `docs/records/done/` **544**, `docs/records/book/beats/` **125** · **open defects 0**, **open decisions 0** |
+| Waiting on the author | **nothing.** Panels 155, 156 and 157 were ratified on 2026-09-16 **by delegation and not by reading**, under an instruction of that day, and all three files say so in those words rather than crediting a reading that did not happen. What each leaves owed is named with its trigger: panel 155's `float_map_key` through a generic, which waits under Principle 0; panel 156's two refused spec merges; and panel 157's R4 instrument, filed with its price in `docs/work/milestones/M-package-manager.md` |
 
-**Re-measured 2026-09-15 at defect 044's close, the full net on a compiler built
-from the regenerated seed, which is CI's own configuration.** `check` **120**,
-`run` **124**, `emission` **482**, `determinism` **153**, `descriptors` **241**,
-`surface` **109**, `warnings` **184**, `lines` **125**, `annotations` **157**,
-`records` **23**, `spec` **20**, `corpus` **55**, `canonical` **2**, `layout`
-**2**, `runtime` **8**, the compiler's own tests **653** and the net's own
-**154**. **The net reads 1888 passed, 0 failed.**
+**Re-measured 2026-09-16, the full net on a compiler built from the regenerated
+seed, which is CI's own configuration.** `check` **123**, `run` **124**,
+`emission` **478**, `determinism` **153**, `descriptors` **237**, `surface`
+**109**, `warnings` **184**, `lines` **125**, `annotations` **160**, `records`
+**23**, `spec` **20**, `corpus` **55**, `canonical` **2**, `layout` **2**,
+`runtime` **8**, the compiler's own **654** and the net's own **154**. **The net
+reads 1886 passed, 0 failed**, and **CI is green on all three platforms**.
 
-**Five defects were closed on 2026-09-15 and the list is at zero**: 037, 042,
-043, 044 and 045, each with a closing record carrying its measurements. Two of
-the five were opened the same day — 044 by a six-agent adversarial sweep over the
-shapes beside 037's repair, 045 by a sitting's completeness critic — and the day's
-sittings are 150 to 154. The morning's
-figures are superseded, not wrong.
+**Three defects closed on 2026-09-16 and the list is at zero**, and none was what
+it was filed as: **046** against generics, and it is two walks giving up at
+sixteen levels with no generic in reach; **047** as *Linux names the wrong
+caller*, and it is macOS's frame walk failing while a test transcribed that
+failure as the answer; **048** as an artifact bug, carrying a §1.12 corruption
+with five committed witnesses. Sittings 155 to 157, all ratified by delegation.
+`emission` fell 482 to 478 and `descriptors` 241 to 237 because four cases
+stopped comparing bytes and now assert that a refused program gets no artifact.
 
 ---
 
