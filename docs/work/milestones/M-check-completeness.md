@@ -112,6 +112,33 @@ needs constraints on generics, which is the author's trade.
     until defect 012 was repaired, and this one is check 0 with a type no
     signature can hold.
 
+    **THE FOUR MEASUREMENTS THIS ITEM ASKED FOR ARE RUN, 2026-09-16, and the
+    sitting has no precondition left.**
+
+    1. **The nested fallible has a stable representation under monomorphisation.**
+       `--dump-ir` on the `find`-over-`[i64?]` program names it in full:
+       `slots xs: [i64?] · found: i64?? · $f0: i64?? · $own7: i64??`, and
+       `$t8: i64?? = call heroes find($t6, $t7)`. So the IR prints a type the
+       parser refuses, exactly as the diagnostic does — the type is real
+       everywhere except in the syntax.
+    2. **`?` peels the outer level in the emitted C as well**: a two-level
+       program emits at exit 0 and the C carries 26 fallible/tag references, so
+       nothing is lost between the checked path and the artifact.
+    3. **`hero_runtime_check_leaks()` is CLEAN on a nested fallible carrying a
+       `str`**: `{str: str?}` with an allocating payload, built and run, exit 0.
+       So the shape is not leaking and the question is consistency, not safety.
+    4. **The library list is COMPLETE and it is one function, not six.** Of the
+       six generics in `selfhost/library_source.hero` — `map`, `filter`, `fold`,
+       `find`, `any`, `all` — only `find<A>(xs: [A], f) -> A?` WRAPS what it
+       bound: `map` and `filter` return `[B]` and `[A]`, `fold` returns `B`
+       bare, `any` and `all` return `bool`. The item recorded *one of six
+       measured*; all six are measured now and the one was already the whole
+       list. A user generic still nests without bound, which is unchanged.
+
+    **What is left is the sitting**, and both routes were re-run the same day to
+    confirm the ground under it: `m: {str: i64?}` with `v.must().must()` is
+    `check` 0, `build` 0, run 0 printing 1, and so is the `find` route.
+
     **Re-verified 2026-09-10: STILL OPEN on the code, UNSETTLED on the run.**
     Every code claim holds: `selfhost/parse/type.hero:51-58` refuses the **written**
     form only, `selfhost/library_source.hero:92` is the `find` signature as quoted,
@@ -139,5 +166,23 @@ needs constraints on generics, which is the author's trade.
     has, and the document says a file holds `function main()` and nothing more.
     Each is a spec sentence, so each is the panel's; this row is the home
     because that milestone already asks what `heroes check` accepts.
+
+    **ALL THREE ARE MEASURED, 2026-09-16, and every one has an answer the
+    document does not give.** The seat could not run them; its only input is the
+    specification, which is the point of that seat and the reason these stayed
+    open.
+
+    | the question | the compiler, measured | the document |
+    |---|---|---|
+    | is `sort` ascending? | **yes** — `1,2,3`; `apple,fig,pear`; `false,true` | says only *walks them in order* |
+    | is `xs[i] @ v` accepted? | **yes**, exit 0, prints `99` | gives `m[k] @ v` and nothing for an array |
+    | may `main` be `-> ()?` | **no**: `error[main_returns]`, *"a program reports failure by what it prints, not by what it returns"* | says a file holds `function main()` and no more |
+
+    **So none of the three is a compiler defect and all three are silences.**
+    The sitting's question is therefore narrower than the item first framed it:
+    not *what should the language do* but *what does the document owe*, with the
+    behaviour already settled. `sort`'s direction is the one that matters, as
+    the seat said — a tie-break written on the wrong assumption compiles and
+    prints a silently different answer, and it costs one word.
 
 *******************************************************************************
