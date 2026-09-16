@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-a-nesting-bound-was-a-silence.hero:149:12: error[float_map_key]: `F17` cannot be a map key, because `F0.f` is a float
+tests/golden/check/fixedbugs-a-nesting-bound-was-a-silence.hero:157:11: error[ffi_partial_operation]: `FileStat` is `partial`, so it cannot be compared with `==` — reached through `P17`: the fields it does not name are part of the answer, and this program cannot see them
+tests/golden/check/fixedbugs-a-nesting-bound-was-a-silence.hero:162:15: error[float_map_key]: `F0` cannot be a map key, because `F0.f` is a float
+tests/golden/check/fixedbugs-a-nesting-bound-was-a-silence.hero:166:11: error[ffi_partial_operation]: `FileStat` is `partial`, so it cannot be compared with `==` — reached through `P0`: the fields it does not name are part of the answer, and this program cannot see them

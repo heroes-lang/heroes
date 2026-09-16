@@ -1,0 +1,166 @@
+# A NESTING BOUND WAS A SILENCE, in two rules at once (defect 046, filed by
+# panel 155 R4 and measured at panel 156's convening; repaired 2026-09-16).
+#
+# THE SYMPTOM. A chain of records 16 deep ending in an `f64` used as a map key,
+# or 16 deep ending in a `partial` group record compared with `==`, was
+# `heroes check` **0** where the same chain 15 deep was `heroes check` 1. Both
+# then built at 0 and aborted at 134 with a named message. No generic was
+# involved anywhere: this is straight-line code, and the milestone that found it
+# had spent five panel seats on generics.
+#
+# THE CAUSE. `check/map_keys.hero`'s `reaches_float` and `check/partial.hero`'s
+# `reaches_within` both terminated on `if depth > 16` — which terminates by
+# GIVING UP. `check/reaches.hero` carried the identical line until panel 149
+# repaired it there as defect 035, and its own comment says what this case
+# re-learns: a bound that ends a walk by abandoning it answers *absent* for a
+# type it never looked at.
+#
+# WHY THE ARGUMENT FOR THE BOUND WAS TRUE AND NOT ENOUGH. `map_keys.hero` held
+# that absence was safe because the runtime guard sits behind the rule — and it
+# does, and it fires: a `nan` key at depth 16 still aborts 134, measured,
+# because the guard is a structural self-comparison nesting cannot evade. But a
+# guard licensing a compile-time silence is a guard the compiler leans on to be
+# wrong quietly, and `spec § 13` promises its refusal "for it and for any value
+# holding it" — for a VALUE, never to a depth.
+#
+# THE REPAIR is the shape the compiler already had in a third place: a set of
+# the type ids walked. Total without giving up, because the arena is finite and
+# each id is entered once. Measured after it at depths 1, 15, 16, 17, 24 and 40:
+# `check` 1 at every one, for both rules.
+# Date: 2026-09-16.
+# Bulk regression case.
+
+extern "sys/stat.h"
+    record FileStat tag stat partial
+        st_size: i64
+
+# The float chain: L0 holds the f64, each Lk holds the one below.
+record F0
+    f: f64
+
+record F1
+    inner: F0
+
+record F2
+    inner: F1
+
+record F3
+    inner: F2
+
+record F4
+    inner: F3
+
+record F5
+    inner: F4
+
+record F6
+    inner: F5
+
+record F7
+    inner: F6
+
+record F8
+    inner: F7
+
+record F9
+    inner: F8
+
+record F10
+    inner: F9
+
+record F11
+    inner: F10
+
+record F12
+    inner: F11
+
+record F13
+    inner: F12
+
+record F14
+    inner: F13
+
+record F15
+    inner: F14
+
+record F16
+    inner: F15
+
+record F17
+    inner: F16
+
+# The partial chain, the same depth, so one file proves both walks.
+record P0
+    inner: FileStat
+
+record P1
+    inner: P0
+
+record P2
+    inner: P1
+
+record P3
+    inner: P2
+
+record P4
+    inner: P3
+
+record P5
+    inner: P4
+
+record P6
+    inner: P5
+
+record P7
+    inner: P6
+
+record P8
+    inner: P7
+
+record P9
+    inner: P8
+
+record P10
+    inner: P9
+
+record P11
+    inner: P10
+
+record P12
+    inner: P11
+
+record P13
+    inner: P12
+
+record P14
+    inner: P13
+
+record P15
+    inner: P14
+
+record P16
+    inner: P15
+
+record P17
+    inner: P16
+
+function main()
+    # 17 levels deep: `check` 0 before the repair, and it ran and aborted.
+    deep: {F17: i64} @ {}  #~ float_map_key
+    print(len(deep))
+    a: P17 @ P17(
+        inner: P16(inner: P15(inner: P14(inner: P13(inner: P12(inner: P11(inner: P10(inner: P9(inner: P8(inner: P7(inner: P6(inner: P5(inner: P4(inner: P3(inner: P2(inner: P1(inner: P0(inner: FileStat(st_size: 0))))))))))))))))))
+    )
+    b: P17 @ P17(
+        inner: P16(inner: P15(inner: P14(inner: P13(inner: P12(inner: P11(inner: P10(inner: P9(inner: P8(inner: P7(inner: P6(inner: P5(inner: P4(inner: P3(inner: P2(inner: P1(inner: P0(inner: FileStat(st_size: 0))))))))))))))))))
+    )
+    print(a == b)  #~ ffi_partial_operation
+
+    # THE CONTROL, one level down from nothing: the same two rules at depth 1,
+    # which were the only depths that ever worked. If either stops firing the
+    # repair has traded one hole for another.
+    shallow: {F0: i64} @ {}  #~ float_map_key
+    print(len(shallow))
+    c: P0 @ P0(inner: FileStat(st_size: 0))
+    d: P0 @ P0(inner: FileStat(st_size: 0))
+    print(c == d)  #~ ffi_partial_operation
