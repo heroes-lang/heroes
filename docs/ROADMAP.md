@@ -8,7 +8,7 @@ The status and the chain. Why the table looks the way it does is
 
 | | |
 |---|---|
-| **Current milestone** | **M-check-completeness**, opened 2026-09-16 and **still open**: three of its four items are untouched, and the milestone is not closed over them. What landed is the whole of its check/build subject — face 1 was found already closed and pinned, faces 2 and 3 are panel 155's, face 4 is M-package-manager's — plus the three defects that hunt turned up |
+| **Current milestone** | **M-check-completeness**, opened 2026-09-16 and **still open** on two items — the doubly-fallible value the checker tracks and the syntax cannot write, and three rules a blind reader had to guess at, both with a step of their own. What landed is the whole of its check/build subject — face 1 was found already closed and pinned, faces 2 and 3 are panel 155's, face 4 is M-package-manager's — plus the three defects that hunt turned up |
 | **Last closed** | **M-marked-acquisition**, 2026-09-14, `m-marked-acquisition` ([056](journal/056-marked-acquisition.md)) — the form closed at **three words**, each saying one thing and none inferred: `acquires <releaser>`, `consumes`, `borrows` · before it **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) and **M-handle-verdict** ([054](journal/054-handle-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **57** of 78 · **57** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **62,231** lines of Heroes in **215** modules (`find selfhost -name '*.hero'`) · the seed **823,415** lines of C, regenerated four times this milestone and the fixpoint verified byte-identical each time, the last through the REPAIRED `--emit-c` path |
@@ -22,8 +22,9 @@ seed, which is CI's own configuration.** `check` **123**, `run` **124**,
 `emission` **478**, `determinism` **153**, `descriptors` **237**, `surface`
 **109**, `warnings` **184**, `lines` **125**, `annotations` **160**, `records`
 **23**, `spec` **20**, `corpus` **55**, `canonical` **2**, `layout` **2**,
-`runtime` **8**, the compiler's own **654** and the net's own **154**. **The net
-reads 1886 passed, 0 failed**, and **CI is green on all three platforms**.
+`runtime` **8**, `fixes` **25**, the compiler's own **654** and the net's own
+**154**. **The net reads 1901 passed, 0 failed**, and **CI is green on all three
+platforms**.
 
 **Three defects closed on 2026-09-16 and the list is at zero**, and none was what
 it was filed as: **046** against generics, and it is two walks giving up at
