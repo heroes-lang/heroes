@@ -280,7 +280,7 @@ function verb_probes() -> [probe.Probe]
         row(name: "both spellings of the failure constructor compile, and the label rule still binds a user function", argv: "run tests/golden/surface-fixtures/faillabels/main.hero", code: 0).out_is("1\n2\nthe rule still binds a user function\n").err_empty()
         row(name: "a foreign word that is CALLED keeps its message and loses its certain fix (defect 015)", argv: "check tests/golden/surface-fixtures/calledforeign/main.hero", code: 1).err_has("error[reserved_word]").err_has("to_i64").err_has("fix (guess)").err_lacks("fix (certain)").err_lacks("internal error")
         row(name: "and apply leaves that program untouched, because a fix that broke the program was no fix", argv: "check tests/golden/surface-fixtures/calledforeign/main.hero --apply", code: 0).out_has("n @ int(3)").out_has("n @ switch(3)").out_has("n @ const(3)").out_lacks("i64(3)").out_lacks("match(3)").out_lacks("constant(3)")
-        row(name: "a null handle read through by C says so instead of dying at 139, and the level is part of the claim (defect 045, half of it)", argv: "run tests/golden/surface-fixtures/nullread/main.hero -O0", code: -1).err_has("panic: a null pointer was read through").err_has("called from node_value").out_is("7\n")
+        row(name: "a null handle read through by C says so, with its offset, instead of dying at 139 — on every platform, and the level is part of the claim (defect 045, defect 047)", argv: "run tests/golden/surface-fixtures/nullread/main.hero -O0", code: -1).err_has("panic: a null pointer was read through").err_has("at offset 0x0").out_is("7\n")
         row(name: "deep recursion stops with a word at -O0, on every platform", argv: "run tests/golden/surface-fixtures/deep/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "and on a thread the program started, where it said nothing at all until M-thread-stacks", argv: "run tests/golden/surface-fixtures/deepthread/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "a recursion of WIDE frames stops with the same word at -O0: the probe reaches the guard before sp does (defect 007, `docs/work/DONE.md`)", argv: "run tests/golden/surface-fixtures/wideframe/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
@@ -302,6 +302,20 @@ function verb_probes() -> [probe.Probe]
         row(name: "an unknown operator names the ones there are", argv: "mutate --operator swapargs", code: 2).err_has("no operator `swapargs`").err_has("swap-args")
         row(name: "the zen prints and says nothing on stderr", argv: "this", code: 0).err_empty().out_has("20. We can be heroes, just for one day.\n")
     ]
+
+# NARROWED 2026-09-16 (panel 156 R1 and R5, defect 047). It asserted
+# `called from node_value` and that was the runtime's own FAILURE:
+# `hero_stack_blame` returns the `dladdr` symbol at the faulting pc when
+# the frame walk finds no Heroes name, so the row pinned the fallback.
+# The name is also an OPTIMISATION-level fact, not a platform one — the
+# same program on the same Mac says `node_value` at -O0 and `main` at
+# -O2, because `h_main_main` is inlined away — so no symbol may be
+# pinned. The contract is the sentence and the offset; `called from` is
+# best effort and Windows has no frame walk to produce one.
+#
+# `out_is("7\n")` STAYS and is now stronger, not weaker: it was true
+# only here until `parts/os.c` made stdout survive an abort on every
+# platform, and it is measured true on all three.
 
 # Panel 099 R5 (M-robustness-guards step 6): a nested program, its leaf
 # compiled directly. The root program runs; the leaf alone refuses and

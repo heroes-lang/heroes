@@ -20,7 +20,7 @@ them already in the record.
 **Numbers are never reused, and 014 was issued twice** — `docs/work/DONE.md`
 carries a Windows-diagnostic defect and an FFI-boundary defect both numbered
 014, filed a day apart. A record is not rewritten (CLAUDE.md §14), so the
-collision stands there; the next number to issue is **037** (022 and 023 were issued on 2026-09-08, 022 was SPLIT on 2026-09-09 by panel 122 into 022 and 024, and all three closed the same day, 024 last, at M-held-bytes; **025** and **026** were issued and closed on 2026-09-11 at M-labelled-builtins and M-named-callbacks, **027** was issued 2026-09-11 beside panel 131 and **028** beside panel 132, and **029** was issued 2026-09-13 beside panel 135 and **030** the same day beside panel 137, **031** beside panel 139; **032** was issued and closed on 2026-09-14 at M-cleanup-verdict step 1, and it is the first since 025 that no sitting produced — the census that opens this milestone found it, and the compiler simply disagreed with `spec § 13`; **033** was issued on 2026-09-14 at the M-marked-acquisition close, by the full net before the push, and it is the first here found by attacking the shapes NEXT to a repair rather than the repair itself; **034** was issued on 2026-09-14 by panel 149's spec-warden while it was pricing 033's repair, and it is the first here that a SITTING CONVENED ON ANOTHER DEFECT found — the seat went looking for what the specification already said and found the compiler disagreeing with it somewhere nobody had asked about; **035** and **036** were issued the same day by the same sitting, 035 by its compiler-engineer and 036 by its completeness critic, so **panel 149 produced three defects while ruling on a fourth** and **039**, **040** and **041** were issued on 2026-09-15 by panel 150, which was convened on 037 and 038 and produced three more while ruling on them — 039 by its ffi-pragmatist, 040 and 041 by its completeness critic, and 039 is the first here that reaches a mechanism two earlier sittings built rather than a gap they left; the next number to issue is **048** — **046** and **047** were issued on 2026-09-16 at M-check-completeness step 2, and they are unlike each other in a way worth keeping: 046 came from panel 155's ffi-pragmatist attacking the shapes NEXT to the one the sitting was convened about, and it falsified one of the three grounds that sitting's split rested on; **047 is the first here the AUTHOR opened by asking a question** — why is CI broken — and it is a platform fact measured on one machine and shipped for three, which is the rule `.claude/rules/platforms.md` exists to state; **045** was issued on 2026-09-15 by panel 153's completeness critic, as the measured COST of a route that seat found and that five seats had missed, so it is the first here that a critic filed out of an option nobody had listed; **044** was issued on 2026-09-15 by a six-agent adversarial sweep over the shapes NEXT to defect 037's repair, each finding put to an independent skeptic told to refute it, and it is the first here that a SWEEP found rather than a sitting, a suite or a census; **042** and **043** were issued on 2026-09-15 by panel 152, both by its llm-ergonomist, which was asked about a qualifier and found instead that the language cannot bind C's commonest struct shape and that the document's one example teaches the omission its own section forbids — **037** and **038** were both issued on 2026-09-15 at panel 149's ratification, out of what that sitting had NAMED and not filed: 037 is the `ptr` blind spot its ffi-pragmatist called the more serious of the two holes it looked at, and 038 is the per-element release its completeness critic found no seat had been briefed on) — 017 to 021 were
+collision stands there; the next number to issue is **037** (022 and 023 were issued on 2026-09-08, 022 was SPLIT on 2026-09-09 by panel 122 into 022 and 024, and all three closed the same day, 024 last, at M-held-bytes; **025** and **026** were issued and closed on 2026-09-11 at M-labelled-builtins and M-named-callbacks, **027** was issued 2026-09-11 beside panel 131 and **028** beside panel 132, and **029** was issued 2026-09-13 beside panel 135 and **030** the same day beside panel 137, **031** beside panel 139; **032** was issued and closed on 2026-09-14 at M-cleanup-verdict step 1, and it is the first since 025 that no sitting produced — the census that opens this milestone found it, and the compiler simply disagreed with `spec § 13`; **033** was issued on 2026-09-14 at the M-marked-acquisition close, by the full net before the push, and it is the first here found by attacking the shapes NEXT to a repair rather than the repair itself; **034** was issued on 2026-09-14 by panel 149's spec-warden while it was pricing 033's repair, and it is the first here that a SITTING CONVENED ON ANOTHER DEFECT found — the seat went looking for what the specification already said and found the compiler disagreeing with it somewhere nobody had asked about; **035** and **036** were issued the same day by the same sitting, 035 by its compiler-engineer and 036 by its completeness critic, so **panel 149 produced three defects while ruling on a fourth** and **039**, **040** and **041** were issued on 2026-09-15 by panel 150, which was convened on 037 and 038 and produced three more while ruling on them — 039 by its ffi-pragmatist, 040 and 041 by its completeness critic, and 039 is the first here that reaches a mechanism two earlier sittings built rather than a gap they left; the next number to issue is **049** — **048** was issued on 2026-09-16 by panel 156's ffi-pragmatist, at its own boundary and unasked: the sitting was about a crash message and nobody had put `--emit-c` to it, which makes it the second here a seat found while briefed on something else; **046** and **047** were issued on 2026-09-16 at M-check-completeness step 2, and they are unlike each other in a way worth keeping: 046 came from panel 155's ffi-pragmatist attacking the shapes NEXT to the one the sitting was convened about, and it falsified one of the three grounds that sitting's split rested on; **047 is the first here the AUTHOR opened by asking a question** — why is CI broken — and it is a platform fact measured on one machine and shipped for three, which is the rule `.claude/rules/platforms.md` exists to state; **045** was issued on 2026-09-15 by panel 153's completeness critic, as the measured COST of a route that seat found and that five seats had missed, so it is the first here that a critic filed out of an option nobody had listed; **044** was issued on 2026-09-15 by a six-agent adversarial sweep over the shapes NEXT to defect 037's repair, each finding put to an independent skeptic told to refute it, and it is the first here that a SWEEP found rather than a sitting, a suite or a census; **042** and **043** were issued on 2026-09-15 by panel 152, both by its llm-ergonomist, which was asked about a qualifier and found instead that the language cannot bind C's commonest struct shape and that the document's one example teaches the omission its own section forbids — **037** and **038** were both issued on 2026-09-15 at panel 149's ratification, out of what that sitting had NAMED and not filed: 037 is the `ptr` blind spot its ffi-pragmatist called the more serious of the two holes it looked at, and 038 is the per-element release its completeness critic found no seat had been briefed on) — 017 to 021 were
 all issued on 2026-09-08 and all closed on 2026-09-08, and all five are in the
 record.
 
@@ -73,101 +73,39 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and the sitting spent five seats on generics while straight-line code with no
     generic in it walks through both rules.
 
-- [ ] **047 — defect 045's blame line is measured on one platform and fails on the other two** | `tests/golden/surface-fixtures/nullread/` is green on Darwin, names the wrong caller on Linux, and produces no message at all on Windows — `main` has been red since 2026-09-15 | `.github/workflows/` · `docs/panel/154-the-class-was-never-argument-shaped-and-one-flag-closed-it.md` · `.claude/rules/platforms.md`
+- [ ] **048 — `heroes build --emit-c` emits C that does not compile, for any `tag` binding** | a program with `record <Name> tag <name>` builds fine, and the same program's `--emit-c` output gives 15 clang errors: it writes `node *` where the header says `struct node` | `selfhost/cli/pointee.hero` · `selfhost/cli/assemble.hero` · `docs/panel/156-the-blame-line-was-never-a-platform-fact.md`
 
-    **Origin:** the author, 2026-09-16, who asked why CI was broken. The two most
-    recent pushes to `main` both failed, runs `35022453104` and `35025566586`.
+    **Origin:** panel 156's ffi-pragmatist, 2026-09-16, found at its own boundary
+    while measuring something else — the sitting was about a crash message and
+    nobody had asked about `--emit-c`.
 
-    **What CI measured**, one test, `surface/a null handle read through by C says
-    so instead of dying at 139, and the level is part of the claim (defect 045,
-    half of it)`, under `heroes run tests/golden/surface-fixtures/nullread/main.hero -O0`:
+    **The compiler is CORRECT and only `--emit-c` hands out the wrong round.**
+    Defect 037's repair (panels 150-152) compiles the author's word first, reads
+    clang's own refusal — *must use 'struct' tag to refer to type 'node'* — and
+    recompiles with `struct node *`. That is a ROUND, and `cli/assemble.hero` is
+    where it lives. The seat counted `struct node` **12 times** in the translation
+    units that produced objects and **0 times** in the ones that did not: so the
+    build is right and the artifact `--emit-c` writes is the pre-probe spelling.
 
-    | leg | stdout, expected `7` | the panic line | the caller named |
-    |---|---|---|---|
-    | **Darwin arm64** | `7` | present | `node_value` — green |
-    | **Linux x86-64** | empty | **present and correct** | says `main.main`, not `node_value` |
-    | **Windows x86-64** | empty | **absent — stderr empty** | none |
+    **The reproducer** is `tests/golden/surface-fixtures/structtag/main.hero`,
+    which `surface` already runs at `run` and which passes: `heroes build … -o`
+    works, `heroes build … --emit-c` writes C that clang refuses.
 
-    Darwin reads `surface` 109 passed; Linux 108 passed 1 failed; Windows 101
-    passed 1 failed. Every other suite is 0 failed on all three legs.
+    **Why it matters more than an artifact usually would.** `--emit-c` is not a
+    debugging convenience here: it is how the SEED is made
+    (`heroes build selfhost/main.hero --emit-c -o seed/heroes.c`, `seed/README.md`),
+    and CI asserts on every push that `seed/heroes.c` is exactly what today's
+    source emits. `selfhost/` declares no `record … tag` of its own today —
+    measured 2026-09-16, the 28 occurrences are comments, message strings and
+    parser fixtures — so the seed is not affected and the fixpoint held at this
+    milestone. **The day the compiler binds a C library through a tagged handle,
+    it would be.**
 
-    **So they are two defects wearing one test.** On Linux the guard fires and
-    attributes the call to the wrong function; on Windows it does not fire at all
-    and the program dies silently, which is the exact behaviour defect 045 was
-    filed to end.
-
-    **The rule this is a case of**, and it is the reason the entry names it rather
-    than just the symptom: `.claude/rules/platforms.md` — *a platform fact is run
-    on a platform, or it is an inference*, and the three are measured from this Mac
-    **before** the commit. The repair was measured on Darwin and shipped for three.
-    Panel 154's ratification record separately says route A's guard was *"adopted
-    and unlanded"*, with a trigger naming `selfhost/emit/ops.hero`; a test
-    demanding the blame line shipped anyway and passes here, so nothing local could
-    have caught it.
-
-    **What is owed.** The measurement on both machines rather than from here — Docker
-    was up and the Windows box was not, measured below — then
-    the repair, then the three-platform measurement the rule asks for before the
-    commit. **Whether the test's claim or the compiler is what is wrong is an open
-    question and not a premise**: it may be that the blame line is owed and absent,
-    or that the test asserts a caller name only one platform's unwinder can give.
-    Nothing here decides that, and the CI log cannot.
-
-    **MEASURED ON THE LINUX MACHINE 2026-09-16, and the diagnosis inverts.**
-    The entry above was written from CI logs; this is the container, built from
-    `docs/ref/environment/linux/Dockerfile`, image `heroes-linux`, `uname -m`
-    `x86_64`, the tree copied in read-only and the seed built inside. Same
-    program, `heroes run tests/golden/surface-fixtures/nullread/main.hero -O0`:
-
-    | | macOS arm64 (this Mac) | Linux x86-64 (the container) |
-    |---|---|---|
-    | exit | 134 | 134 |
-    | stdout | `7` | **empty** |
-    | stderr | `panic: … at offset 0x0, called from node_value` | `panic: … at offset 0x0, called from main.main` |
-
-    **The green leg is the suspect one.** `hero_stack_blame`
-    (`runtime/parts/stack.c:297`) asks `dladdr` which symbol holds the PC; if
-    that symbol is a Heroes one it is returned at once, otherwise it is kept as
-    a fallback and the frame chain is walked for a Heroes symbol.
-    `hero_stack_is_heroes` tests for the `h_` prefix, so the C function
-    `node_value` is **not** one — it is the fallback. `main.main` is
-    `h_main_main` demangled, which is the frame walk **succeeding**.
-
-    So on Linux the walk finds the author's own function, which is what the
-    handler's own comment says it is for: *"the fault is inside the C function
-    the program called, and its caller is the author's own line"*. On this Mac
-    the walk finds nothing and falls back to the C function that faulted. **The
-    fixture pins the fallback**, and `.expected` has been asserting the macOS
-    failure as the answer since defect 045's repair landed. Which behaviour is
-    correct is now a question with a measurement under it rather than a premise:
-    the candidate repair is the fixture and the arm64 frame walk, not the Linux
-    runtime.
-
-    **The lost `7` is a second and separate defect in the same test.** It is
-    printed before the fault. `hero_stack_say` writes with a raw `write`, while
-    `print` goes through buffered stdio, and the handler ends at `abort()`.
-    macOS's libc flushes stdio on abort and glibc does not, so the line the
-    program had already produced is destroyed by the crash report. A program
-    that aborts must not lose what it printed first, and nothing in the tree
-    says which of the two behaviours is intended.
-
-    **Windows stays UNRUN, and the reading below is from the source, not from
-    the machine.** `runtime/parts/stack.c:567-590` has exactly two arms in its
-    vectored handler: `EXCEPTION_STACK_OVERFLOW`, and `EXCEPTION_ACCESS_VIOLATION`
-    **with `ExceptionAddress == 0`**, which is the PC — a null FUNCTION POINTER
-    CALLED, defect 013. A null pointer READ THROUGH has a valid PC inside the C
-    function and the touched address in `ExceptionInformation[1]`, which no arm
-    reads, so the exception falls through to `EXCEPTION_CONTINUE_SEARCH` and the
-    process dies with nothing on either stream — which is what CI measured. The
-    file's own comment names `ExceptionInformation[1]` two paragraphs above the
-    gap, while explaining why the POSIX arm reads the PC instead. **The
-    measurement is owed on the box**: `tailscale status` reads `apponfly-vps …
-    offline, last seen 15m ago` at 2026-09-16, and only the author can power it
-    from the appOnFly console.
-
-    **And `runtime/parts/stack.c:440-442` had already said this was owed**, in
-    its own words: the class closes with *"each platform's own floor asked of
-    the platform, which needs a measurement on the Linux and Windows machines
-    rather than on this one"*. It was written and nobody ran it.
+    **What is owed.** The probe round applied to the `--emit-c` path as it is to
+    the object path, or a refusal saying `--emit-c` cannot serve a tagged
+    binding — a silence that writes a file nobody can compile is the shape this
+    list exists for. **And a surface row that runs clang over what `--emit-c`
+    wrote**, which nothing does today: `emission` reads `--emit-c` output but does
+    not compile it, which is why 15 clang errors were invisible to every suite.
 
 *******************************************************************************

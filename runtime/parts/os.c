@@ -62,12 +62,66 @@ static void hero_stdout_is_bytes(void) {}
  *
  * `_IONBF` rather than an `fflush` at each of the six abort sites: a call that
  * has to be remembered at every exit is a call that will be forgotten at the
- * seventh. This runs once, before a program's first line. */
-static void hero_err_unbuffered(void) {
+ * seventh. This runs once, before a program's first line.
+ *
+ * **STDOUT JOINED IT ON 2026-09-16, AT `_IOLBF` AND NOT `_IONBF`** (panel 156
+ * R3). The function was `hero_err_unbuffered` until then and the name had
+ * stopped being true of it.
+ *
+ * WHAT IT REPAIRS. A program that printed a line and then aborted lost that line
+ * on Linux and kept it on this Mac — measured, the `nullread` fixture's `7`. The
+ * divergence is two libcs: glibc flushed on `abort()` until 2.27 and removed it
+ * citing *"deadlocks and data corruption"*, while the FreeBSD lineage still
+ * flushes under a source comment reading `XXX ISO C requires that abort() be
+ * async-signal-safe`. The panel's llm-ergonomist, handed the three behaviours
+ * blind, reported that the surviving line was what located the defect — not the
+ * blame name the sitting had been convened about.
+ *
+ * WHY NOT AN `fflush` ON THE ABORT PATH, and this is the one place in this file
+ * where a standard settles it rather than a measurement: POSIX.1-2024 § 2.4.3's
+ * async-signal-safe list contains `write()` and `abort()` and **does not contain
+ * `fflush()`**, and C § 7.22.4.1 leaves flushing on `abort` implementation-defined.
+ * The same standard downgraded its own *"shall include the effect of `fclose()`"*
+ * to *"may"*, and says in its rationale that it did so because `abort()` must be
+ * async-signal-safe. So the repair is to leave nothing in the buffer, never to
+ * empty it from a handler.
+ *
+ * WHY `_IOLBF` AND NOT `_IONBF`. `print` ends every line with a newline
+ * (`parts/panic.c`), so line buffering loses nothing a program wrote; measured
+ * over 200 000 prints, the default reads 0.01 s, `_IOLBF` 0.23 s and `_IONBF`
+ * 0.43 s, output byte-identical. And the panel's ffi-pragmatist refused a global
+ * `_IONBF` on a ground that survives the price: stdout is a stream a linked C
+ * library also writes to, and unbuffering it takes a decision on that library's
+ * behalf. `_IOLBF` changes WHEN a line leaves and never whether it arrives, and
+ * it is what a terminal-attached program already gets. The caution is recorded
+ * rather than dismissed: a program that prints at a firehose while linking a C
+ * library that shares stdout is the shape that would reopen this.
+ *
+ * **AND WINDOWS TAKES `_IONBF`, MEASURED ON THE BOX THE SAME DAY** — the line
+ * below was `_IOLBF, 0` for both and that call **kills the process there**. Three
+ * probes, one per call, so no abort could hide another: `setvbuf(stdout, NULL,
+ * _IOLBF, 0)` is **exit 127 with nothing on either stream**, while `_IOLBF, 4096`
+ * and `_IONBF, 0` both return 0 and print. Microsoft's CRT gives a size of 0 to
+ * its invalid-parameter handler, which terminates at once and silently — the
+ * compiler built from this file would not have survived `heroes doctor`.
+ *
+ * Passing a size would compile and would not repair anything: that CRT
+ * implements `_IOLBF` as FULL buffering, so the line would still be in the
+ * buffer when the process died. `_IONBF` is the only mode on that platform that
+ * keeps the promise, which makes the ffi seat's caution unavoidable there rather
+ * than declined — and the alternative it is weighed against is losing the line
+ * outright. Each platform gets the weakest setting that keeps the promise, which
+ * is why this is a split and not one call. */
+static void hero_streams_survive_abort(void) {
     static int done = 0;
     if (!done) {
         done = 1;
         setvbuf(stderr, NULL, _IONBF, 0);
+#if defined(_WIN32)
+        setvbuf(stdout, NULL, _IONBF, 0);
+#else
+        setvbuf(stdout, NULL, _IOLBF, 0);
+#endif
     }
 }
 
@@ -79,7 +133,7 @@ static char **hero_argv = NULL;
 
 void hero_args_set(int argc, char **argv) {
     hero_stdout_is_bytes();
-    hero_err_unbuffered();
+    hero_streams_survive_abort();
     /* The stack guard goes up here, before a program's first line, because
      * this is the one call every generated `main` makes first — so the
      * emitted C and the ABI stamp are untouched (panel 104). */
