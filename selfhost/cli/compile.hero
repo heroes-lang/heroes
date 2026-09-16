@@ -113,6 +113,17 @@ record Artifact
     link: [str]
     packages: [str]
     stopped: bool
+    # `--emit-c` asked for the C and it is NOT written yet (defect 048,
+    # panel 157 R1 and R2). It used to be written here and the pipeline
+    # halted, which meant the artifact was the FIRST emission: before the
+    # pointee check, which is a refusal, and before the tag round, which
+    # learns a spelling from clang. So `--emit-c` handed out C that a
+    # build would have refused — measured, a binding declaring `@n: i32`
+    # against `uint64_t *` emitted at exit 0, compiled clean under the
+    # real flag list, and wrote over the adjacent stack slot (§1.12).
+    # The write moved to `cli/produce.hero`, which holds the toolchain;
+    # this flag is what tells it to do the work and stop.
+    emit_c: bool
     # The pipeline pieces the link-failure explanation needs (panel
     # 036 rider 3): the ffi mapping rebuilds probe lines and asks
     # declaration(), so the tree, the declarations, the checked types
@@ -132,6 +143,7 @@ function halted(tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: container
         link: none_c,
         packages: none_p,
         stopped: true,
+        emit_c: false,
         tree: tree,
         decls: decls,
         checked: c,
@@ -254,16 +266,22 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
     if !stop_e.is_err()
         return leave(stop_e.must(), stage_name: "the FFI check")
 
-    if options.emit_c
-        if options.output.is_err()
-            io.print_artifact(text: emitted.c)
-        else
-            written = write_file(path: options.output.must(), text: emitted.c)
-
-            if written.is_err()
-                io.eprint(text: "error: cannot write " + options.output.must())
-                return fail(code: "failed", msg: "cannot write the artifact")
-        return ok(halted(parsed.tree, parsed.decls, c: c, p: p))
+    # **THE `--emit-c` WRITE USED TO BE HERE AND THAT WAS DEFECT 048** (panel
+    # 157, 2026-09-16). Returning at this line made the artifact the FIRST
+    # emission — before `cli/pointee.hero`'s check, which is a refusal, and
+    # before the tag round, which learns a spelling from clang's own words. The
+    # measured cost was not a cosmetic one: `function fill(@n: i32)` against
+    # `static inline void fill(uint64_t *n)` emitted at exit 0 here, compiled
+    # clean under the real flag list, and wrote `0xAAAAAAAA` over the adjacent
+    # stack slot, which is design.md §1.12 and outranks everything else this
+    # file does. Five `tests/golden/fixedbugs/` cases the build refuses are
+    # silent in exactly that way.
+    #
+    # The C now rides out on the Artifact with `emit_c` set, and
+    # `cli/produce.hero` — which holds the toolchain this file deliberately does
+    # not import — runs the checks and writes it. `--emit-c` owes the artifact
+    # of a build that PASSED, not merely C that clang accepts: the weaker bar is
+    # what those five cases already satisfy.
 
     # A test build needs no main: the test blocks are the program.
     needs_main: bool @ false
@@ -271,6 +289,16 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
     match options.target
         .program_build => needs_main @ true
         .tests_build   => needs_main @ needs_main
+
+    # **AND `--emit-c` NEEDS NONE**, which this file used to say by returning
+    # above rather than here. `no_entry_point`'s own note reads *"use `--emit-c`
+    # to produce C for another program to compile"*, so requiring a `main` on
+    # this path would refuse the very use the diagnostic recommends — 23
+    # emission cases measured it the moment the early return moved out (defect
+    # 048's repair, 2026-09-16). The rule stated positively: a `main` is what a
+    # BINARY needs, and `--emit-c` produces no binary.
+    if options.emit_c
+        needs_main @ false
 
     if needs_main && emit.entry_point(p).is_err()
         # The ROOT file's end, never the whole text's: the library is
@@ -295,7 +323,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
         if !stop_n.is_err()
             return leave(stop_n.must(), stage_name: "the C emission")
     return ok(
-        Artifact(c: emitted.c, tests: emit.tests_of(p), link: emitted.link, packages: emitted.packages, stopped: false, tree: parsed.tree, decls: parsed.decls, checked: c, program: p)
+        Artifact(c: emitted.c, tests: emit.tests_of(p), link: emitted.link, packages: emitted.packages, stopped: false, emit_c: options.emit_c, tree: parsed.tree, decls: parsed.decls, checked: c, program: p)
     )
 
 # **A stage that stops names itself.** This used to answer "a stage
@@ -334,7 +362,20 @@ test "the two stops, the hole refusal, and the missing main"
     s = source.new_source(name: "t.hero", text: "function main()\n    print(1)\n")
     got = to_unit(s, options, version: "0.0.0-test")
     assert !got.is_err()
-    assert got.must().stopped
+
+    # **`--emit-c` IS NO LONGER `stopped` HERE, AND THE ASSERT BELOW IS THE
+    # NEW CONTRACT** (defect 048, panel 157, 2026-09-16). This read
+    # `assert got.must().stopped`, because this file used to write the C and
+    # halt the pipeline — which is exactly the defect: the artifact was the
+    # first emission, before the pointee check that refuses a wrong `@`
+    # parameter and before the tag round that learns a spelling from clang.
+    # The C now rides out with `emit_c` set and `cli/produce.hero` does the
+    # work, so what this file produces is a unit that CONTINUES, carrying its
+    # text. `stopped` still means what it always meant — a dump already
+    # answered — and `--emit-c` is not a dump (`.claude/rules/cli-surface.md`).
+    assert !got.must().stopped
+    assert got.must().emit_c
+    assert got.must().c.len() > 0
 
     # A holed file: diagnostics exit, no unit.
     hs = source.new_source(name: "t.hero", text: "function main()\n    n: i64 @ ???\n    print(n)\n")

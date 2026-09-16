@@ -124,3 +124,42 @@ built-ins has somewhere to live. **Nothing judged either file until then**
 (`grep tmLanguage tests/harness/` was empty; `suite_records.hero` reads
 `editors/vscode/icons` for the SVG-path rule alone), which is exactly how the
 grammar rotted in silence.
+
+## An instrument watches the world, never the program's current behaviour
+
+Author instruction 2026-09-16, after three of them were found in one day
+(CL-076). In their own words: *every time, the instrument was watching itself
+instead of the world.*
+
+**Before an assertion is written, name the fact about the WORLD it rests on.**
+Then ask the one question that separates the two kinds: **what would still pass
+if the thing under test were wrong?** An assertion nothing can falsify except
+the instrument itself is watching the instrument.
+
+Three tells, each cheap to check while writing:
+
+- **it names an internal identifier** — a table id, an arena index, a symbol no
+  author ever types — where the rule is about something somebody wrote. A
+  closed `check`/`build` gap was guarded for a month by a unit test asserting
+  `is_refusable` on an interned `.generic` type id; the compiler could have
+  stopped refusing the program with every suite green.
+- **its expected value was transcribed from a run** rather than derived from the
+  contract, so it records what happened instead of what is owed. That is how a
+  surface row came to demand `called from node_value` — the FALLBACK the runtime
+  returns when the frame walk finds nothing — and to be green on the one
+  platform that failed that way.
+- **it compares for EQUALITY where the property is a predicate**: compiles,
+  links, terminates, does not corrupt. `emission` blesses 240 emissions byte for
+  byte, and 28 of them do not survive `-fsyntax-only`; three were shipping C
+  that clang refuses, green.
+
+**This does not weaken the snapshot rule above it.** A diagnostic is annotated in
+its own source AND snapshotted precisely because the annotation is the second
+witness this rule asks for: a regenerator can rewrite `x.expected` and cannot
+invent an annotation. What is refused is a snapshot, or a unit assertion,
+standing ALONE for a rule about programs.
+
+**The repair when you find one is not to delete the instrument.** Add the witness
+it lacks — the program beside the table assertion, the contract beside the
+transcript, the predicate beside the bytes — because the old one still catches
+the drift it was written for.

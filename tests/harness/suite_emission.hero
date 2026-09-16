@@ -72,6 +72,23 @@ constant STORE: str
 # array. They carry no `.expected`, which is why this suite reads the
 # directory itself instead of `cases.collect`: the pairing invariant
 # belongs to the suites whose artifact is a snapshot.
+#
+# **THE SENTENCE ABOVE IS FALSE SINCE 2026-09-16 AND ITS SUBSTANCE SURVIVES**
+# (defect 048, panel 157). `--emit-c` DOES call clang now — the pointee check
+# runs on its path, because an artifact emitted before that check is the
+# artifact of a build that never happened, and four of these cases were
+# emitting C that compiled clean and wrote over the adjacent stack slot
+# (design.md §1.12). Those four — `ffi-pointee-opaque`, `-sign`, `-void`,
+# `-width` — are now REFUSED at exit 1 and their blessed files are retired;
+# the loop below treats that as a pass **on the condition that nothing is
+# blessed for them**, so the retirement is what records the decision.
+#
+# What survives is the substance: the rest of `fixedbugs/` still emits,
+# because the tag half of the round is ADVISORY — it asks clang, discards the
+# verdict, and re-emits — so a wrong binding clang would refuse at link time
+# still has C. The premise was *this suite sees C for programs a build
+# rejects*; what changed is that a §1.12 refusal is no longer one of the ways
+# a build may reject them and still hand out the bytes.
 constant GROUPS: [str]
     [
         "emit"
@@ -207,11 +224,34 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
         if said.must().code != 0
             if shell.machine_lacks_the_library(said.must().err)
                 skipped @ skipped + 1
+            else if said.must().code == 1 && read_file(one.stored).is_err()
+                # **EXIT 1 IS THE PROGRAM BEING REFUSED, AND SINCE 2026-09-16
+                # THAT IS A PASS** (defect 048, panel 157 R1 and R3). `--emit-c`
+                # owes the artifact of a build that PASSED, so a program the
+                # compiler rejects gets no C — which is the whole repair, and a
+                # suite that called it a failure would be asserting the defect.
+                #
+                # **The condition is not a list of names**, which would be a
+                # premise about the world and would expire in silence: it is
+                # that NOTHING IS BLESSED for this program. A blessed file
+                # standing beside a refused program is yesterday's artifact of
+                # a program that should have none, and it stays a failure below.
+                # So retiring the file is what records the decision, and the
+                # decision cannot drift from the instrument.
+                #
+                # Exit 1 and exit 2 are not interchangeable here: 1 is the
+                # input having diagnostics and 2 is the tool unable to run
+                # (`.claude/rules/cli-surface.md`), so only the first is a
+                # verdict about the author's program.
+                report.keep_pass(@r)
             else
                 blame: str @ "  " + one.source + " emits nothing: exit " + said.must().code.to_str() + "\n"
 
                 if said.must().code == 2
                     blame @ blame + "  exit 2 is the compiler blaming ITSELF — it wrote C it could not compile\n"
+
+                if said.must().code == 1
+                    blame @ blame + "  exit 1 is the program REFUSED, which is legal since defect 048 — but " + one.stored + " still blesses an artifact it may no longer have; retire that file\n"
                 report.keep_failure(@r, label: "emission/" + one.label, detail: blame + said.must().err)
             continue
         judge(@r, one: one, emitted: said.must().out, update: update)

@@ -1,0 +1,136 @@
+# What `--emit-c` owes, and the two clang questions it must ask before it
+# writes a byte (defect 048, panel 157, 2026-09-16).
+#
+# Split out of `cli/produce.hero` the day the work landed, when that file
+# passed §11's 300 lines. **The seam is a concern and not a line count**:
+# `produce` answers *how a program becomes a binary* and this answers *what the
+# artifact of a stopped build owes*, which is a different question with a
+# different verdict — `produce` may refuse a program, and this may only refuse
+# the ARTIFACT.
+#
+# ## The defect this file is the repair for
+#
+# The write used to live in `cli/compile.hero`, which returned before
+# `cli/produce.hero` ran at all. So the artifact was the FIRST emission: before
+# the pointee check, which is a refusal, and before the tag round, which learns
+# a spelling from clang's own words. `--emit-c` owes **the artifact of a build
+# that PASSED**, and *C that clang accepts* is the weaker bar — five
+# `tests/golden/fixedbugs/` cases satisfied it while writing over the stack.
+#
+# ## Two questions, two shapes, and they are opposites
+#
+# **The pointee check REFUSES.** A binding declaring `@n: i32` against a header's
+# `uint64_t *` emitted at exit 0, compiled clean under the real flag list, and
+# wrote `0xAAAAAAAA` over the next stack slot — design.md §1.12, measured. Its
+# *no* is the whole point, so it must be able to say it.
+#
+# **The tag probe NEVER refuses.** It asks clang the one question the build's
+# round asks — does this header want `struct` in front of the author's word —
+# and throws the verdict away, keeping only the spelling. That is what makes it
+# safe here: fourteen `fixedbugs/` bindings exist precisely to have C where a
+# build has none, and a refusal would delete them. A probe that can only ADD a
+# spelling cannot turn an emission into a failure, and on a machine without the
+# header it learns nothing and the output is yesterday's.
+#
+# Treating the two alike would have broken whichever one it was not written for.
+#
+# ## Why clang and not a rule
+#
+# Four header shapes, compiled at the sitting: `struct X *` fails on a typedef
+# of an ANONYMOUS struct, the bare word fails on a tag-only header, and a
+# typedef shim at the top of the artifact fails on the anonymous shape too. No
+# fixed spelling is correct. The only clang-free route left is a C declaration
+# parser inside Heroes, which the compiler seat's veto is aimed at.
+#
+# ## The one-way edge
+#
+# This file does the work and returns a verdict; `cli/produce.hero` decides
+# whose fault a failure is, because `blamed` lives there and is the round's too.
+# Heroes refuses module cycles, so the arrow pointing one way is the condition
+# under which this seam exists at all.
+
+use source
+use emit
+use emit/ffi_tag
+use cli/io
+use cli/compile
+use cli/toolchain
+use cli/process
+use cli/pointee
+use cli/pointee_ask
+use cli/flags
+
+# `process.run` and not `toolchain.run_clang`, deliberately: that one prints
+# clang's noise on success, and an advisory probe that puts warnings on the
+# reader's terminal has stopped being advisory.
+function probe_tags(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, c_file: str, source_dir: str, package_flags: [str]) -> {str: bool}
+    tags: {str: bool} @ {}
+    written = write_file(path: c_file, text: art.c)
+
+    if written.is_err()
+        return tags
+    err_path = t.build + "/clang-tagprobe.txt"
+    line: [str] @ toolchain.with_all(list: ["clang"], more: flags.flags())
+    line @ line.push("-fsyntax-only")
+
+    for one in options.headers_from
+        line @ toolchain.with_all(list: line, more: ["-I", one])
+
+    for flag in package_flags
+        if toolchain.starts_with(text: flag, prefix: "-I")
+            line @ line.push(flag)
+
+    line @ toolchain.with_all(list: line, more: [c_file, "-I", t.runtime])
+
+    if source_dir.len() > 0
+        line @ toolchain.with_all(list: line, more: ["-I", source_dir])
+    ran = process.run(program: "clang", words: line, out: "", err: err_path)
+
+    if !ran.started || ran.code == 0
+        return tags
+    captured = read_file(err_path)
+
+    if captured.is_err()
+        return tags
+
+    for tag in ffi_tag.needs_struct(s, art.decls, stderr: toolchain.without_returns(captured.must()))
+        tags[tag] @ true
+
+    return tags
+
+# The artifact, written or printed, after both questions have been asked. A
+# failure here is the pointee check's and carries its message up so the caller
+# can decide whose it is — this file never blames anybody.
+function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], c_file: str, source_dir: str, package_flags: [str], version: str) -> ()?
+    checked = pointee.check(
+        t,
+        art.program,
+        art.checked,
+        s,
+        art.decls,
+        answered: @answered,
+        search_include: options.headers_from,
+        package_flags: package_flags,
+        source_dir: source_dir
+    )
+    checked?
+
+    # Re-emitted only when something was learned, so a program with no tagged
+    # handle — every program in this repository's own `selfhost/` — pays one
+    # syntax-only compile and writes the bytes it already had.
+    text: str @ art.c
+    learned = probe_tags(t, options, art, s, c_file: c_file, source_dir: source_dir, package_flags: package_flags)
+
+    if learned.len() > 0
+        text @ emit.emit_maybe(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: version, text: true, struct_tags: learned).c
+
+    if options.output.is_err()
+        io.print_artifact(text: text)
+        return ok()
+    written = write_file(path: options.output.must(), text: text)
+
+    if written.is_err()
+        io.eprint(text: "error: cannot write " + options.output.must())
+        return fail(code: "failed", msg: "cannot write the artifact")
+
+    return ok()

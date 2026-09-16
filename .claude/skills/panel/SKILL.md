@@ -66,6 +66,30 @@ is a full panel.
      about these two directories**: a sitting is a file directly in
      `docs/panel/`, never one under a subdirectory of it, and that clause was
      added the day the first briefs landed there.
+   - **EVERY NUMBER, PATH AND COUNT IN A BRIEF IS PRODUCED BY A COMMAND RUN
+     WHILE THE BRIEF IS BEING WRITTEN, AND THE BRIEF SAYS WHICH COMMAND**
+     (author instruction 2026-09-16, `docs/records/contract/case-law.md` CL-077).
+     A figure copied from `docs/`, from a milestone file, from an earlier
+     sitting, or from this session's own earlier paragraph is **carried**, and
+     CLAUDE.md § RUN IT already forbids it — this line is that rule at the one
+     place it kept failing. Six numbers across panels 155, 156 and 157 were
+     carried: a ceiling that had moved (1708 against 1861), a count that was a
+     third of the truth (17 against 50), a seam that was inside a `test` block,
+     a *provably* traced to `archive/bootstrap-rs/`, an `.expected` file that
+     does not exist, and a platform marked unrun hours after the author powered
+     the box. **Every one was caught by a seat and none by the coordinator**,
+     which is the finding rather than the count: a brief is the one document in
+     a sitting nobody is assigned to check, because the seats check the world
+     against the brief and nothing checks the brief against the world.
+
+     Two shapes are named because both appeared. **A number that was true when
+     it was written** — a brief inherits the date of the document it copied
+     from, never the date of the sitting. And **a word that is a claim about the
+     option set**: *provably*, *the only*, *never* each assert that a search was
+     done, so write what was searched and where, or write the weaker sentence.
+     Four of the six ran in the direction the coordinator was already leaning,
+     which is why the remedy is mechanical — run the command — and not *be
+     careful*.
    - `compiler-engineer` ← the proposal + pointers into `selfhost/` and
      `runtime/` (it must cite files and line counts). **Never `crates/`** (archived 2026-08-19): that
      tree is `archive/bootstrap-rs/`, nothing builds it, and a seat sent there
