@@ -313,6 +313,20 @@ constant CEILING: i64
 # diagnostics module is one concern read one message at a time, and cutting it by
 # line count would put two messages of one family in two files.
 #
+# **That row LEFT on 2026-09-16, at M-check-completeness step 3, and the sentence
+# above is why it could.** `generic_equality` took the file to 363 and this check
+# refused the growth. The split that followed was by FAMILY and not by line count,
+# which is exactly what the refusal above asks for: the five discard messages —
+# `discarded_value`, `answers`, `discarded_failure`,
+# `discarded_failure_parameter`, `bound_unit` — are one family and moved together,
+# with the tests and the `has` helper they need, to
+# `selfhost/discard_errors.hero`. Neither half needs a row now: `value_errors.hero`
+# measures **221** and `discard_errors.hero` **177**, both under §11's own 300, and
+# a row kept at 334 over a 221-line file would have handed it 113 lines of growth
+# nobody would see. Four call sites moved, in `check/discard.hero` and
+# `check/walk.hero`, and the language itself caught the leftover — `use
+# value_errors` in `check/discard.hero` became `unused_binding` at exit 1.
+#
 # **Three moved on 2026-09-11 for defect 026's repair**, the conservative route
 # panel 128 priced and scheduled: a function type carries its parameter names,
 # mandatory where two of them share a type, and the names are part of the type's
@@ -390,7 +404,6 @@ constant DECIDED: [str]
         "selfhost/ir/print.hero 470"
         "selfhost/ast.hero 525"
         "selfhost/check/table.hero 389"
-        "selfhost/value_errors.hero 334"
         "selfhost/check/builtins.hero 377"
         "selfhost/ir/mono.hero 380"
         "selfhost/emit/ctype.hero 395"
@@ -668,4 +681,4 @@ test "the ceiling is per file, and a decided file keeps its own"
     # **18 -> 19 on 2026-09-14**, M-cleanup-verdict step 1: `emit/structural.hero`
     # arrives for defect 032's repair, an ADDITION, which is the direction this
     # assert exists to make somebody type. The reason is above DECIDED.
-    assert DECIDED.len() == 19
+    assert DECIDED.len() == 18
