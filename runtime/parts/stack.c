@@ -83,6 +83,57 @@
 #  define HERO_STACK_GUARD_YIELDS_TO_ASAN 1
 #endif
 
+/* The low addresses this platform will not map, so a fault in them is a
+ * dereference of a null pointer plus an offset and never a wild address.
+ *
+ * **IT IS THE PLATFORM'S OWN FLOOR AND IT WAS ONE PAGE FOR AN HOUR** (defect
+ * 045, panel 154's completeness critic). 4096 rested on *"a field's offset is
+ * smaller than a page in every struct a header can lay out"*, which is a
+ * premise about the world that `.claude/rules/module-shape.md` forbids a
+ * narrowing to rest on, and three lines of header falsified it: `struct bignode
+ * { char pad[1048576]; int64_t value; }` faults at offset 1 MiB and died at 139
+ * in silence, at `-O0`. That seat then laid out 275 records from 21 headers of
+ * this SDK and found exactly one over a page, `_opaque_pthread_t` at 8192
+ * bytes — so the premise was false and the corpus that would have caught it
+ * does not exist.
+ *
+ * **Darwin 64-bit: 4 GiB, measured on this Mac** with `otool -l`, which reports
+ * `__PAGEZERO vmsize 0x100000000`. Nothing can be mapped there by construction,
+ * so a fault anywhere below it is a dereference of something small, and the
+ * message below prints the offset so a reader can tell a null plus a field from
+ * a small wild pointer. Panel 104's wild store, eight kibibytes under the stack,
+ * is far above this and still re-raises: the stack lives near the top of the
+ * address space, which is why widening the floor does not undo the measurement
+ * that rule cost.
+ *
+ * **Elsewhere: 64 KiB**, the smallest floor the other two platforms document —
+ * Linux's `mmap_min_addr` defaults to 65536 and Windows reserves the low 64 KiB.
+ * Neither was run from this Mac, and `.claude/rules/platforms.md` says a
+ * platform fact is run on a platform or it is an inference, so this one is
+ * marked as the inference it is: the number is safe because it is the SMALLER
+ * claim, and what would replace it is each platform's floor read on that
+ * platform.
+ *
+ * **THE WINDOWS HALF IS NO LONGER AN INFERENCE, 2026-09-16** (panel 156 R4,
+ * the ffi-pragmatist, measured on the box): `GetSystemInfo()` reports
+ * `lpMinimumApplicationAddress` = `0x10000` = 65536, which is this constant
+ * exactly. The paragraph above asked for that measurement by name and it was
+ * right. Widening past it is what that seat's condition refuses: one byte
+ * higher and the guard starts claiming faults on memory a library legitimately
+ * mapped.
+ *
+ * **AND IT LIVED WHERE WINDOWS COULD NOT SEE IT UNTIL THE SAME DAY.** This
+ * block sat inside `#elif !defined(_WIN32)`, so the Windows arm could not have
+ * used it even had it been written — which is half of why that platform had no
+ * arm for a null READ at all and died at 139 in silence. It is hoisted above
+ * the platform split, where a constant about the machine belongs.
+ */
+#if defined(__APPLE__) && defined(__LP64__)
+#define HERO_NULL_WINDOW 0x100000000ULL
+#else
+#define HERO_NULL_WINDOW 65536ULL
+#endif
+
 #if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
 
 /* ASan owns the signal; its report is the better one. All three doors are empty
@@ -133,41 +184,6 @@ static _Thread_local uintptr_t hero_stack_hi = 0;
 static _Thread_local void *hero_stack_alt = NULL;
 static _Thread_local size_t hero_stack_alt_size = 0;
 
-/* The low addresses this platform will not map, so a fault in them is a
- * dereference of a null pointer plus an offset and never a wild address.
- *
- * **IT IS THE PLATFORM'S OWN FLOOR AND IT WAS ONE PAGE FOR AN HOUR** (defect
- * 045, panel 154's completeness critic). 4096 rested on *"a field's offset is
- * smaller than a page in every struct a header can lay out"*, which is a
- * premise about the world that `.claude/rules/module-shape.md` forbids a
- * narrowing to rest on, and three lines of header falsified it: `struct bignode
- * { char pad[1048576]; int64_t value; }` faults at offset 1 MiB and died at 139
- * in silence, at `-O0`. That seat then laid out 275 records from 21 headers of
- * this SDK and found exactly one over a page, `_opaque_pthread_t` at 8192
- * bytes — so the premise was false and the corpus that would have caught it
- * does not exist.
- *
- * **Darwin 64-bit: 4 GiB, measured on this Mac** with `otool -l`, which reports
- * `__PAGEZERO vmsize 0x100000000`. Nothing can be mapped there by construction,
- * so a fault anywhere below it is a dereference of something small, and the
- * message below prints the offset so a reader can tell a null plus a field from
- * a small wild pointer. Panel 104's wild store, eight kibibytes under the stack,
- * is far above this and still re-raises: the stack lives near the top of the
- * address space, which is why widening the floor does not undo the measurement
- * that rule cost.
- *
- * **Elsewhere: 64 KiB**, the smallest floor the other two platforms document —
- * Linux's `mmap_min_addr` defaults to 65536 and Windows reserves the low 64 KiB.
- * Neither was run from this Mac, and `.claude/rules/platforms.md` says a
- * platform fact is run on a platform or it is an inference, so this one is
- * marked as the inference it is: the number is safe because it is the SMALLER
- * claim, and what would replace it is each platform's floor read on that
- * platform. */
-#if defined(__APPLE__) && defined(__LP64__)
-#define HERO_NULL_WINDOW 0x100000000ULL
-#else
-#define HERO_NULL_WINDOW 65536ULL
-#endif
 
 /* What was installed before us, for SIGSEGV and SIGBUS. */
 static struct sigaction hero_stack_prev_segv;
@@ -265,41 +281,68 @@ static void hero_stack_say_heroes_name(const char *sym) {
 /* The faulting pc, fp and sp from the interrupted context — the only lines in
  * this file that know a register file. An unknown architecture answers zeros,
  * which fails the second witness and re-raises the fault as before. */
-static void hero_stack_regs(void *ctx, uintptr_t *pc, uintptr_t *fp, uintptr_t *sp) {
+/* THE LINK REGISTER IS THE FOURTH REGISTER AND ON AArch64 IT IS THE ONLY ONE
+ * THAT KNOWS (panel 156 R2, 2026-09-16). On AArch64 a LEAF function saves no
+ * frame record: the fixture's `node_value` compiles to `sub sp / str / ldr /
+ * ldr x0,[x8]` with no `stp x29, x30`, so at the fault x29 still points at its
+ * CALLER's frame and the chain walk below asks "who called `h_main_main`"
+ * instead of "who is `h_main_main`". x86-64's `call` pushes a return address
+ * unconditionally, so the identical walk lands one frame lower and finds it —
+ * which is why Linux x86-64 answered correctly and this Mac did not, and why
+ * Linux arm64 would have failed the same way. The datum that closes it is x30,
+ * live at the fault and nowhere on the stack.
+ *
+ * Zero on both x86-64 arms and on the fallback, where the chain walk already
+ * has what it needs and a stale register would be a second answer. */
+static void hero_stack_regs(void *ctx, uintptr_t *pc, uintptr_t *fp, uintptr_t *sp, uintptr_t *lr) {
     ucontext_t *uc = (ucontext_t *)ctx;
 #if defined(__APPLE__) && defined(__aarch64__)
     *pc = (uintptr_t)uc->uc_mcontext->__ss.__pc;
     *fp = (uintptr_t)uc->uc_mcontext->__ss.__fp;
     *sp = (uintptr_t)uc->uc_mcontext->__ss.__sp;
+    *lr = (uintptr_t)uc->uc_mcontext->__ss.__lr;
 #elif defined(__APPLE__) && defined(__x86_64__)
     *pc = (uintptr_t)uc->uc_mcontext->__ss.__rip;
     *fp = (uintptr_t)uc->uc_mcontext->__ss.__rbp;
     *sp = (uintptr_t)uc->uc_mcontext->__ss.__rsp;
+    *lr = 0;
 #elif defined(__linux__) && defined(__x86_64__)
     *pc = (uintptr_t)uc->uc_mcontext.gregs[REG_RIP];
     *fp = (uintptr_t)uc->uc_mcontext.gregs[REG_RBP];
     *sp = (uintptr_t)uc->uc_mcontext.gregs[REG_RSP];
+    *lr = 0;
 #elif defined(__linux__) && defined(__aarch64__)
     *pc = (uintptr_t)uc->uc_mcontext.pc;
     *fp = (uintptr_t)uc->uc_mcontext.regs[29];
     *sp = (uintptr_t)uc->uc_mcontext.sp;
+    *lr = (uintptr_t)uc->uc_mcontext.regs[30];
 #else
     (void)uc;
     *pc = 0;
     *fp = 0;
     *sp = 0;
+    *lr = 0;
 #endif
 }
 
 /* The Heroes function on the interrupted stack nearest the fault: the pc's own
  * symbol if it is one, else the first frame up the chain that is. Every fp is
  * checked against the stack range before it is read, and the walk must go up. */
-static const char *hero_stack_blame(uintptr_t pc, uintptr_t fp) {
+static const char *hero_stack_blame(uintptr_t pc, uintptr_t fp, uintptr_t lr) {
     Dl_info info;
     const char *first = NULL;
     if (dladdr((void *)pc, &info) != 0) {
         if (hero_stack_is_heroes(info.dli_sname)) return info.dli_sname;
         first = info.dli_sname;
+    }
+    /* The link register, once, BEFORE the chain: on AArch64 it holds the return
+     * address of a leaf callee that saved no frame record, which is the one
+     * frame the chain below structurally cannot see. `lr - 1` for the same
+     * reason the loop uses `ret - 1` — the return address is the instruction
+     * AFTER the call, and at the end of a function that can belong to the next
+     * symbol. Zero everywhere the chain suffices, so this costs one compare. */
+    if (lr != 0 && dladdr((void *)(lr - 1), &info) != 0 && hero_stack_is_heroes(info.dli_sname)) {
+        return info.dli_sname;
     }
     for (int i = 0; i < 64; i++) {
         if (fp < hero_stack_lo - HERO_STACK_WINDOW || fp + 16 > hero_stack_hi || (fp & 7) != 0) break;
@@ -334,8 +377,8 @@ static void hero_stack_pass_on(int signum, siginfo_t *si, void *ctx) {
 
 static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
     uintptr_t addr = (uintptr_t)si->si_addr;
-    uintptr_t pc, fp, sp;
-    hero_stack_regs(ctx, &pc, &fp, &sp);
+    uintptr_t pc, fp, sp, lr;
+    hero_stack_regs(ctx, &pc, &fp, &sp, &lr);
     int in_guard = addr >= hero_stack_lo - HERO_STACK_WINDOW && addr < hero_stack_lo;
     int sp_low = sp >= hero_stack_lo - HERO_STACK_WINDOW && sp < hero_stack_lo + 4096;
     /* THE SECOND WITNESS HAS TWO SHAPES, and this file knew one of them until
@@ -353,7 +396,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      * is megabytes below `sp`, so it still re-raises as before. */
     int probing = addr < sp && sp - addr < HERO_STACK_WINDOW;
     if (in_guard && (sp_low || probing)) {
-        const char *who = hero_stack_blame(pc, fp);
+        const char *who = hero_stack_blame(pc, fp, lr);
         hero_stack_say("panic: stack exhausted");
         if (who != NULL) {
             hero_stack_say(" in ");
@@ -457,7 +500,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      * NOTHING UNDER THE SANITIZER, as the file's head already says: ASan
      * installs its own handler and reports `SEGV on unknown address` itself. */
     if ((unsigned long long)addr < HERO_NULL_WINDOW) {
-        const char *who = hero_stack_blame(pc, fp);
+        const char *who = hero_stack_blame(pc, fp, lr);
         hero_stack_say("panic: a null pointer was read through — a handle or `ptr` holding `nullptr` reached C where C dereferences it, at offset ");
         hero_stack_say_hex(addr);
         if (who != NULL) {
@@ -585,6 +628,59 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
         && (uintptr_t)ep->ExceptionRecord->ExceptionAddress == 0) {
         const char *line = "panic: a null function pointer was called \xe2\x80\x94 a `ptr` holding `nullptr` reached C where C calls it back\n";
         _write(2, line, (unsigned int)strlen(line));
+        abort();
+    }
+
+    /* THE OTHER POSIX WITNESS, AND WINDOWS HAD NO ARM FOR IT UNTIL 2026-09-16
+     * (panel 156 R4, built and measured on the box). The arm above reads
+     * `ExceptionAddress`, which is the PC, so it catches a null pointer being
+     * CALLED. A null pointer READ THROUGH has a perfectly valid PC inside the C
+     * function doing the reading, and the address it TOUCHED is
+     * `ExceptionInformation[1]` — the field the paragraph above already names
+     * while explaining why the POSIX arm reads the PC and not `si_addr`. With no
+     * arm testing it the exception fell to `EXCEPTION_CONTINUE_SEARCH` and the
+     * process died at **139 with both streams empty**, measured, which is what
+     * design.md §1.12 forbids by name and what defect 045 was filed to end. So
+     * defect 045's repair never reached this platform at all.
+     *
+     * `NumberParameters >= 2` first, because Microsoft documents the array as
+     * undefined for most exception codes and `NumberParameters` as how many
+     * elements are defined. `[0]` is the access type — 0 read, 1 write, 8 DEP —
+     * which POSIX's `si_addr` cannot tell us; it is deliberately not read here,
+     * because a null WRITE is the same defect and takes the same sentence.
+     *
+     * No frame walk, for the reason the file's head already gives: `SymFromAddr`
+     * needs dbghelp initialised before the fault and a PDB beside the binary,
+     * and neither is measured on the box. The sentence and the offset are the
+     * contract (panel 156 R1) and `called from` is best effort, so this arm is
+     * complete without a name rather than missing one. */
+    if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
+        && ep->ExceptionRecord->NumberParameters >= 2
+        && (unsigned long long)ep->ExceptionRecord->ExceptionInformation[1] < HERO_NULL_WINDOW) {
+        const char *line = "panic: a null pointer was read through \xe2\x80\x94 a handle or `ptr` holding `nullptr` reached C where C dereferences it, at offset ";
+        _write(2, line, (unsigned int)strlen(line));
+        /* The offset is half the contract (panel 156 R1: the sentence and the
+         * offset are what a reader may rely on, and `called from` is best
+         * effort), so it is written here rather than left to the platform with
+         * a frame walk. Same digits as `hero_stack_say_hex` above, written by
+         * hand because that one lives in the POSIX arm and a second `#include`
+         * of it would be a shared helper for two callers on two platforms. */
+        unsigned long long v = (unsigned long long)ep->ExceptionRecord->ExceptionInformation[1];
+        char buf[2 + 16 + 2];
+        const char *digits = "0123456789abcdef";
+        int at = 0;
+        buf[at++] = '0';
+        buf[at++] = 'x';
+        int started = 0;
+        for (int shift = 60; shift >= 0; shift -= 4) {
+            unsigned nibble = (unsigned)((v >> shift) & 0xf);
+            if (nibble != 0 || started || shift == 0) {
+                buf[at++] = digits[nibble];
+                started = 1;
+            }
+        }
+        buf[at++] = '\n';
+        _write(2, buf, (unsigned int)at);
         abort();
     }
     return EXCEPTION_CONTINUE_SEARCH;
