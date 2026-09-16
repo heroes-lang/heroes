@@ -27,12 +27,12 @@ _Static_assert(HERO_RUNTIME_ABI == 22, "heroes_runtime.h is from another compile
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_RECORD(probe_open((int64_t)0), struct probe *), "heroes-ffi-return probe_open Probe");
-_Static_assert(HERO_RET_INT(probe_value((struct probe *){0})), "heroes-ffi-return probe_value i64");
-_Static_assert(HERO_RET_UNIT(probe_close((struct probe *){0})), "heroes-ffi-return probe_close ()");
-_Static_assert(HERO_RET_RECORD(gauge_open((int64_t)0), struct gauge *), "heroes-ffi-return gauge_open Gauge");
-_Static_assert(HERO_RET_INT(gauge_read((struct gauge *){0})), "heroes-ffi-return gauge_read i64");
-_Static_assert(HERO_RET_UNIT(gauge_close((struct gauge *){0})), "heroes-ffi-return gauge_close ()");
+_Static_assert(HERO_RET_RECORD(probe_open((int64_t)0), probe *), "heroes-ffi-return probe_open Probe");
+_Static_assert(HERO_RET_INT(probe_value((probe *){0})), "heroes-ffi-return probe_value i64");
+_Static_assert(HERO_RET_UNIT(probe_close((probe *){0})), "heroes-ffi-return probe_close ()");
+_Static_assert(HERO_RET_RECORD(gauge_open((int64_t)0), gauge *), "heroes-ffi-return gauge_open Gauge");
+_Static_assert(HERO_RET_INT(gauge_read((gauge *){0})), "heroes-ffi-return gauge_read i64");
+_Static_assert(HERO_RET_UNIT(gauge_close((gauge *){0})), "heroes-ffi-return gauge_close ()");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -73,15 +73,15 @@ typedef struct h_0opt_a8ea2 {
 #line 31 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_probe_open(int64_t a0) { (void)(probe_open)(a0); }
 #line 32 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_probe_value(struct probe * a0) { (void)(probe_value)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_probe_value(probe * a0) { (void)(probe_value)(a0); }
 #line 33 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_probe_close(struct probe * a0) { (void)(probe_close)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_probe_close(probe * a0) { (void)(probe_close)(a0); }
 #line 34 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_gauge_open(int64_t a0) { (void)(gauge_open)(a0); }
 #line 35 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_gauge_read(struct gauge * a0) { (void)(gauge_read)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_gauge_read(gauge * a0) { (void)(gauge_read)(a0); }
 #line 36 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_gauge_close(struct gauge * a0) { (void)(gauge_close)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_gauge_close(gauge * a0) { (void)(gauge_close)(a0); }
 #line 112 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
@@ -97,9 +97,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 98 "fixedbugsatagthatneedsstruct.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Probe_eq(struct probe * const *a, struct probe * const *b);
+HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Probe_eq(probe * const *a, probe * const *b);
 HERO_TU_LOCAL uint64_t h_fixedbugsatagthatneedsstruct_Probe_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Gauge_eq(struct gauge * const *a, struct gauge * const *b);
+HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Gauge_eq(gauge * const *a, gauge * const *b);
 HERO_TU_LOCAL uint64_t h_fixedbugsatagthatneedsstruct_Gauge_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
@@ -115,19 +115,19 @@ void h_fixedbugsatagthatneedsstruct_main(void);
 #line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 void h_fixedbugsatagthatneedsstruct_main(void) {
 #line 118 "fixedbugsatagthatneedsstruct.c"
-    struct probe * h0_p;
-    struct gauge * h1_g;
+    probe * h0_p;
+    gauge * h1_g;
     int64_t t1;
-    struct probe * t2;
+    probe * t2;
     int64_t t3;
-    struct gauge * t4;
-    struct probe * t5;
+    gauge * t4;
+    probe * t5;
     int64_t t6;
-    struct gauge * t7;
+    gauge * t7;
     int64_t t8;
     int64_t t9;
-    struct probe * t10;
-    struct gauge * t11;
+    probe * t10;
+    gauge * t11;
     goto bb0;
 bb0:
 #line 39 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
@@ -176,23 +176,23 @@ bb0:
     return;
 #line 178 "fixedbugsatagthatneedsstruct.c"
 }
-HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Probe_eq(struct probe * const *a, struct probe * const *b) {
+HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Probe_eq(probe * const *a, probe * const *b) {
     return *a == *b;
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsatagthatneedsstruct_Probe_hash(const void *elem) {
-    struct probe * const *v = elem;
+    probe * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Gauge_eq(struct gauge * const *a, struct gauge * const *b) {
+HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Gauge_eq(gauge * const *a, gauge * const *b) {
     return *a == *b;
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsatagthatneedsstruct_Gauge_hash(const void *elem) {
-    struct gauge * const *v = elem;
+    gauge * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
     return h;
