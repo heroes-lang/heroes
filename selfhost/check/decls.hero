@@ -78,9 +78,21 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 # assumed: `main() -> i64?` returning fail(…) compiled,
                 # printed nothing and exited 0 — the only failure in this
                 # language with no instrument at all (panel 035).
-                if source.is_root(s, decl.name.start) && source.span_text(s, decl.name) == "main" && result != table.unit_ty(c.out.types)
+                is_main = source.is_root(s, decl.name.start) && source.span_text(s, decl.name) == "main"
+
+                if is_main && result != table.unit_ty(c.out.types)
                     want = state.show(c, s, decls, result)
                     state.push_diagnostic(@c, value_errors.main_returns(want, a.types[fd.value.result].span))
+
+                # And the same rule about its PARAMETERS, which nothing read
+                # until 2026-09-16: the emitted `int main` calls
+                # `h_<module>_main()` with no arguments, so a declared parameter
+                # is `check` 0 and a clang error at `run` (defect 053).
+                if is_main && fd.value.params.len() > 0
+                    state.push_diagnostic(
+                        @c,
+                        value_errors.main_parameters(count: fd.value.params.len(), span: fd.value.params[0].name)
+                    )
                 c.out.results[index] @ result
                 c.result @ result
                 c.fallible @ discard.is_fallible(c, result)

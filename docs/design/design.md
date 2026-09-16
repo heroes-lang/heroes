@@ -2836,6 +2836,18 @@ are *on* the closure list.
    It deletes nothing (§1.7), and it retires in silence the parser's refusal of `T??` that
    `selfhost/check/table.hero:66-67` relies on, unless the checker re-earns it.
 
+   **CORRECTED 2026-09-16 (defect 051, panel 158's compiler-engineer and spec-warden
+   independently, narrowed by its completeness critic).** The clause above cites those lines as a
+   live invariant, and they were never one. The parser's refusal covers the WRITTEN form alone;
+   the checker builds a nested fallible from a container's element type with nothing written
+   passing through, measured three ways at exit 0 — the map read, the `find` route, and `wrap<T>`
+   applied twice, the last naming `i64???` at 27 sites under `--dump-ir`. So the `alias` costing
+   above does not rest on a refusal that could retire: the thing it names had already retired,
+   silently, before this paragraph was written. The comment at those lines is corrected in the
+   same commit, and the audit it owed was run: six consumers peel exactly one level without
+   recursing, one level is the right depth for all six, and four of them were run on an `i64??`.
+   **Nothing rested on the false half, which is a result and not an absence of one.**
+
    **Three of the paragraph's claims are false and are struck here, the number kept.** *"Go
    shipped in 2012 and added transparent type aliases in 1.9, in 2017. Five years, nobody
    died"*: the dates hold (go1 2012-03-28, go1.9 2017-08-24), but a general alias `=>` was

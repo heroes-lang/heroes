@@ -108,6 +108,55 @@ verdict reports as unqueued, silently.
 **A line that carries an archived or never-written path carries its date on that
 same physical line**, because the citation check reads one line at a time.
 
+## A live list is a preamble, a count and its items — author instruction 2026-09-16
+
+`docs/work/DECIDE.md`, `docs/work/DEFECTS.md` and the files under
+`docs/work/milestones/` carry **a very short preamble**, then the `**OPEN: N**`
+banner, then the items. `docs/ROADMAP.md` carries a very short preamble, then
+the two open counts, then its tables. **No other story goes in any of them**,
+and a story already there is MOVED rather than deleted — to `docs/records/done/`,
+to the milestone's journal, or to a `docs/records/log/` entry, all three
+append-only, which is where a thing that happened belongs anyway.
+
+The reason is what these files are for. A list is opened by somebody about to
+attack an item, and the ROADMAP by somebody asking what is next; both are opened
+to find a number and a row. On the day this rule was given, `DEFECTS.md`'s
+preamble ran to **28 lines and 982 words**, and **one paragraph of it** was a
+single sentence of **4551 bytes** recording which sitting issued which defect
+number since 2026-09-08 — true, hard-won, and standing in front of every reader
+who only wanted to know what is broken today.
+
+**Two things the move measured, and both argue for it.** That paragraph stated
+the next number to issue **twice, with different values** — `grep -o` returns
+**037** and **052** inside the one sentence, because it had been appended to for
+weeks and nothing reads it: `records/numbering` computes the next number as one
+above the highest issued, and its own comment says why. And it pointed **three
+times** at `docs/work/DONE.md`, a file that has been a MAP since 2026-09-12 (two
+hits there, one in `DECIDE.md`). A pointer nobody follows does not rot loudly.
+
+**The gap this closes is that `list_offences` only ever policed the item
+region.** It refuses a ticked item between the banners, prose between the
+banners, an item outside them — and says nothing about what sits ABOVE the
+opening banner, which is where all 982 words were. The instrument written after
+`DEFECTS.md` grew 2753 bytes of prose about five already-repaired defects was
+watching the half of the file that was not the problem. So the executor is
+extended rather than the rule left as prose: `records/lists` measures the
+preamble against a ceiling, and `records/counts` compares the ROADMAP's two
+numbers to the banners the two lists state.
+
+**And the ROADMAP's counts had already drifted when the rule was given**, which
+is why they get an instrument and not a convention: § Where we are read *open
+defects 0, open decisions 0* while `DEFECTS.md`'s own banner read `**OPEN: 3**`.
+That is § A rotated record's lesson — an index is a second place where truth
+lives — arriving in the one document the author opens to see where the project
+is.
+
+**The milestone files get a larger allowance than the two lists**, named
+separately and for a reason rather than by generosity: their preamble IS the
+milestone's reasoning, which `/step` § 1 calls the thing that must not be lost.
+What the rule excludes there is the same thing it excludes everywhere — the
+record of what has already happened.
+
 ## Two habits that come from being one checkout among several
 
 **Re-read the chain and the log immediately before writing a scheduling fact**,

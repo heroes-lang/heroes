@@ -419,7 +419,9 @@ HeroArrayHeader *hero_array_slice(const HeroArrayHeader *a, int64_t from, int64_
 
 /* `sort(xs)` — a NEW array, STABLE, ascending.
  *
- * Works on `[i64]`, `[f64]` and `[str]`, which is exactly the set with an order;
+ * Works on every element type with an order — every integer width, both
+ * floats, `str` and `bool`, twelve in all; `hero_cmp_for` in `runtime.c` is the
+ * census, and this line named three of them until 2026-09-16 (defect 051);
  * the comparison lives inside `runtime.c` and is NOT part of this contract,
  * because panel 027 vetoed putting a `cmp` in `HeroDesc`: C11 6.7.9p21
  * zero-fills a short initialiser list, so every descriptor that forgot the field

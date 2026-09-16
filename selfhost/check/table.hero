@@ -63,8 +63,8 @@ variant Ty
     map
         key: i64
         value: i64
-    # `T?` — never nested: `T??` is rejected by the parser, so this
-    # node's argument is never itself a fallible.
+    # `T?`, and it CAN be nested: the parser refuses only the WRITTEN `T??`,
+    # and `{str: i64?}` read at a key is an `i64??`. Defect 051's record.
     fallible
         payload: i64
     function_ty

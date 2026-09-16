@@ -42,6 +42,22 @@ function not_indexable(got: str, span: token.Span) -> diag.Diagnostic
         span: span
     )
 
+# `s[0] @ 65` — `spec § 3` calls a `str` an immutable UTF-8 string, so an
+# element of one is a value and never a place. Unguarded until 2026-09-16 the
+# store reached the emitter, whose place walk has no arm for a `str` and writes
+# `hero_unreachable()` instead: the program aborted 134 saying *this is a
+# compiler bug*, blaming the author for a gap in the compiler (defect 052,
+# panel 159's compiler-engineer). The read `s[i]` is untouched and still yields
+# a `u8`.
+function str_element_write(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "str_element_write",
+        message: "a `str` is immutable, so `s[i]` is a value and not a place — this writes into one",
+        span: span
+    )
+    d.notes @ d.notes.push("build the new text instead, or hold the bytes as a `[u8]`, whose elements are places")
+    return d
+
 function jump_outside_loop(word: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "jump_outside_loop",

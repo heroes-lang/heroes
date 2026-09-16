@@ -4,36 +4,37 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
+**Open: 2 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
+`docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
+A preamble, these two counts and the tables are the whole of this file — author
+instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
+a count and its items — and the counts get an instrument rather than a
+convention because on the day the rule was given this line read *open defects 0*
+against a banner reading 3.
+
 ## Where we are
 
 | | |
 |---|---|
-| **Current milestone** | **M-check-completeness**, opened 2026-09-16 and **still open** on two items — the doubly-fallible value the checker tracks and the syntax cannot write, and three rules a blind reader had to guess at, both with a step of their own. What landed is the whole of its check/build subject — face 1 was found already closed and pinned, faces 2 and 3 are panel 155's, face 4 is M-package-manager's — plus the three defects that hunt turned up |
+| **Current milestone** | **M-check-completeness**, opened 2026-09-16, **its own list at zero** and held open by two defects rather than by work of its own: 049 waits on panel 157 R4's instrument, which belongs to M-package-manager, and 050 on a language decision panel 158 measured closable by one option it did not adopt. What landed is the whole of its check/build subject plus five sittings, 155 to 159, and the seven defects they turned up |
 | **Last closed** | **M-marked-acquisition**, 2026-09-14, `m-marked-acquisition` ([056](journal/056-marked-acquisition.md)) — the form closed at **three words**, each saying one thing and none inferred: `acquires <releaser>`, `consumes`, `borrows` · before it **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) and **M-handle-verdict** ([054](journal/054-handle-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **57** of 78 · **57** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **62,231** lines of Heroes in **215** modules (`find selfhost -name '*.hero'`) · the seed **823,415** lines of C, regenerated four times this milestone and the fixpoint verified byte-identical each time, the last through the REPAIRED `--emit-c` path |
-| The spec | **5989** on the vendored ranks and **7974** on the reader's own, against a ceiling of **10240** — raised from 8192 by author decision 2026-09-14 with the document 211 free. The three marks are **+125 vendored and +168 real**, in two payments at ratios of 1.40 and 1.23, both inside the band panel 148's warden gave while refusing any single factor; defect 037's close is **+1 vendored and +0 real**, a −3 phrase and a +7 correction cancelling on the reader's instrument; **2266 free** and 2206 net of the FFI floor |
+| The compiler | **62,178** lines of Heroes in **214** modules (`find selfhost -name '*.hero'`) · the seed **822,780** lines of C, regenerated six times this milestone and the fixpoint verified byte-identical each time |
+| The spec | **6004** on the vendored ranks and **7998** on the reader's own, against a ceiling of **10240**. Panel 159's three sentences are **+15 vendored and +24 real**, a ratio of **1.60** — the same as the grammar row's and far above this document's own 1.33, so the vendored figure understated the price by 60%. Paid by a −14 removal in § 3 and CLAUDE.md §12. **2242 free** and 2182 net of the FFI floor |
 | The contract | **7449** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-15 with the wakeup instruction: of the 36 vendored tokens the pin was behind, 14 predate that session and no commit had named them |
-| Records | sittings **155** · journals **59** · milestone files **48** · entries: `docs/records/log/` **673**, `docs/records/done/` **544**, `docs/records/book/beats/` **125** · **open defects 0**, **open decisions 0** |
-| Waiting on the author | **nothing.** Panels 155, 156 and 157 were ratified on 2026-09-16 **by delegation and not by reading**, under an instruction of that day, and all three files say so in those words rather than crediting a reading that did not happen. What each leaves owed is named with its trigger: panel 155's `float_map_key` through a generic, which waits under Principle 0; panel 156's two refused spec merges; and panel 157's R4 instrument, filed with its price in `docs/work/milestones/M-package-manager.md` |
+| Records | sittings **157** · journals **59** · milestone files **48** · entries: `docs/records/log/` **675**, `docs/records/done/` **548**, `docs/records/book/beats/` **124** |
+| Waiting on the author | **nothing.** Panels 155 to 159 were all ratified on 2026-09-16 **by delegation and not by reading**, under an instruction of that day, and every file says so in those words rather than crediting a reading that did not happen. What each leaves owed is named with its trigger: panel 155's `float_map_key` through a generic, which waits under Principle 0; panel 156's two refused spec merges; panel 157's R4 instrument, filed with its price in `docs/work/milestones/M-package-manager.md`; and panel 159's refused route, defining `<` on `str`, which is a sitting of its own |
 
 **Re-measured 2026-09-16, the full net on a compiler built from the regenerated
-seed, which is CI's own configuration.** `check` **123**, `run` **124**,
+seed, which is CI's own configuration.** `check` **125**, `run` **124**,
 `emission` **478**, `determinism` **153**, `descriptors` **237**, `surface`
-**109**, `warnings` **184**, `lines` **125**, `annotations` **160**, `records`
-**23**, `spec` **20**, `corpus` **55**, `canonical` **2**, `layout` **2**,
+**109**, `warnings` **184**, `lines` **125**, `annotations` **162**, `records`
+**24**, `spec` **20**, `corpus` **55**, `canonical` **2**, `layout` **2**,
 `runtime` **8**, `fixes` **25**, the compiler's own **654** and the net's own
-**154**. **The net reads 1901 passed, 0 failed**, and **CI is green on all three
-platforms**.
-
-**Three defects closed on 2026-09-16 and the list is at zero**, and none was what
-it was filed as: **046** against generics, and it is two walks giving up at
-sixteen levels with no generic in reach; **047** as *Linux names the wrong
-caller*, and it is macOS's frame walk failing while a test transcribed that
-failure as the answer; **048** as an artifact bug, carrying a §1.12 corruption
-with five committed witnesses. Sittings 155 to 157, all ratified by delegation.
-`emission` fell 482 to 478 and `descriptors` 241 to 237 because four cases
-stopped comparing bytes and now assert that a refused program gets no artifact.
+**156**. **The net reads 1906 passed, 0 failed.** `check` and `annotations` each
+gained the two goldens of defects 052 and 053, and `records` gained
+`records/counts`, which compares this file's two open counts with the banners
+the two lists state — it exists because those counts had already drifted.
 
 ---
 

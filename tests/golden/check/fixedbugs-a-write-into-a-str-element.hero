@@ -1,0 +1,55 @@
+# fixedbugs, 2026-09-16 (defect 052, found by panel 159's compiler-engineer on
+# exactly the form that sitting was pricing a spec sentence for, and widened
+# from one shape to three by its completeness critic).
+#
+# SYMPTOM: `s[0] @ 65` passed `heroes check` at exit 0, `heroes build` at exit
+# 0, and the program aborted 134 with `panic: entered unreachable code — this
+# is a compiler bug, please report it`. The compiler blamed the author for its
+# own gap, on a program the specification already forbids: `spec § 3` calls a
+# `str` an immutable UTF-8 string, and `spec § 10` gives only the read.
+#
+# CAUSE: nothing between the grammar and the runtime refused the store. § 5's
+# `Place` production derives `s[i] @ v`; the checker type-checked the value
+# against `u8` and passed it — `s[0] @ "z"` was a clean `type_mismatch`, so the
+# checker fully understood the assignment; and `selfhost/emit/container.hero`'s
+# place walk has no arm for a `str`, so `.str` fell into the do-nothing match
+# group, the element type stayed below zero, and the failure that came back was
+# rendered by `selfhost/emit/inst.hero` as `hero_unreachable()`. The emitter
+# turned its own *I have no arm for this* into the program's *you have found a
+# compiler bug*.
+#
+# The same file's comment records the identical shape being fixed for
+# `xs[i].f @ v` on 2026-08-17. The element-kind case beside it was not looked
+# at, which is the contract's rule that a repair is attacked at the shapes next
+# to the one that provoked it, unpaid for thirteen months.
+#
+# FIX: `refuse_str_element` in `selfhost/check/walk.hero`, asked of THIS
+# place's own base type and never of what that type reaches — so an element of
+# a `[str]` is still a place and only an element of a `str` is not.
+#
+# All three shapes that reached it are here, with the four legal neighbours the
+# refusal must not touch.
+
+record Holder
+    s: str
+
+function main()
+    s: str @ "abc"
+    s[0] @ 65  #~ str_element_write
+
+    r: Holder @ Holder(s: "abc")
+    r.s[0] @ 65  #~ str_element_write
+
+    xs: [str] @ ["abc"]
+    xs[0][0] @ 65  #~ str_element_write
+
+    # An out-of-range index is the same refusal and not a bounds question: the
+    # place is wrong before its subscript is worth asking about.
+    s[99] @ 65  #~ str_element_write
+
+    # The neighbours. A `[u8]` element IS a place; a whole `str` element of a
+    # `[str]` IS a place; and the read side of `s[i]` is untouched.
+    bs: [u8] @ [1, 2]
+    bs[0] @ 65
+    xs[0] @ "zzz"
+    print(f"{s[0]} {bs[0]} {xs[0]} {r.s}")

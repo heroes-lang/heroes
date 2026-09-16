@@ -1,0 +1,31 @@
+# fixedbugs, 2026-09-16 (defect 053, found by panel 159's completeness critic
+# and by no seat, while auditing whether the sitting's R3 sentence about
+# `main`'s signature was one the compiler actually checks).
+#
+# SYMPTOM: `function main(n: i64)` passed `heroes check` at exit 0 and `heroes
+# run` exited 2 with `internal error: compiling the generated C failed:
+# too few arguments to function call, single argument 'h0_n' was not
+# specified`. A program the checker had passed, refused by clang, reported in
+# clang's voice.
+#
+# CAUSE: `selfhost/check/decls.hero` guarded `main`'s RESULT — that guard is
+# panel 035's, bought when `main() -> i64?` returning a failure printed nothing
+# and exited 0 — and nothing read its PARAMETERS. The emitted `int main` calls
+# `h_<module>_main()` with no arguments, so a declared parameter has nothing
+# that could ever pass it a value. The only rule that caught any of these was
+# `unused_binding`, which fires on an unread parameter of ANY function and says
+# nothing about `main`: read the parameter, as here, and the program reached
+# the backend.
+#
+# FIX: the parameter half of the same guard, beside the result half, so the two
+# sentences about `main`'s signature are enforced in one place.
+#
+# The legal neighbours are the other three signatures: a plain `main`, an
+# explicit `-> ()` (which passes by construction, because the result guard asks
+# `result != unit`), and any other function, which takes parameters freely.
+
+function helper(n: i64) -> i64
+    return n + 1
+
+function main(n: i64)  #~ main_parameters
+    print(f"{helper(n)}")

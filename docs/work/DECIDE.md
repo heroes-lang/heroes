@@ -5,7 +5,7 @@ answered the compiler goes on behaving some way by default — so the item names
 that default, because it is the cost of leaving the item open.
 
 **Only open items live here.** The moment one is answered it is ticked with the
-verdict written into it and moved to `docs/work/DONE.md`, the record. Rank by
+verdict written into it and moved to `docs/records/done/`, the record. Rank by
 what an item blocks, never by age, and verify it against the repository before
 putting it to the author: asking a settled question is the one cost this list
 cannot pay.
