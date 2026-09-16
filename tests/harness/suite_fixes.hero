@@ -28,6 +28,7 @@
 # program is all of them.
 
 use cases
+use fix_names
 use report
 use shell
 use strings
@@ -53,7 +54,15 @@ constant LEAST_FIXTURES: i64
 function run_default(scratch: str, compiler: str) -> report.Report?
     single = run_all(scratch: scratch, compiler: compiler, dir: CHECK_DIR, least: LEAST)?
     multi = run_fixtures(scratch: scratch, compiler: compiler, dir: FIXTURES_DIR, least: LEAST_FIXTURES)?
-    return ok(report.tally(one: single, two: multi))
+
+    # **The TEXT of a fix, which nothing watched until 2026-09-16.** This
+    # suite's two legs above judge a `certain` fix by APPLYING it; the leg
+    # below judges what a fix SAYS, which is the half a `guess` fix lives in
+    # and the half a person actually reads. It lives in its own module
+    # because the concern differs — `fix_names.hero` carries the measurement
+    # the rule was built from.
+    named = fix_names.run_default(scratch: scratch, compiler: compiler)?
+    return ok(report.tally(one: report.tally(one: single, two: multi), two: named))
 
 function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Report?
     # One directory walk answers "does this case have a .fixed?" for every
