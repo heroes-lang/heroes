@@ -1,0 +1,2 @@
+tests/golden/check/equality-on-a-type-parameter.hero:42:12: error[generic_equality]: `==` compares two values of one type structurally, and `A` is a type parameter — this line cannot know what the call will choose
+tests/golden/check/equality-on-a-type-parameter.hero:47:12: error[generic_equality]: `==` compares two values of one type structurally, and `A` is a type parameter — this line cannot know what the call will choose

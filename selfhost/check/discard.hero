@@ -27,7 +27,7 @@ use source
 use token
 use check/state
 use check/table
-use value_errors
+use discard_errors
 
 # Whether this type is a `T?`. One home for the question: `check/decls`
 # asks it of a signature's result to set `Checker.fallible`, and both
@@ -73,7 +73,7 @@ function refuse(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Dec
         return
     state.push_diagnostic(
         @c,
-        value_errors.discarded_failure(got: state.show(c, s, decls, ty), propagates: c.fallible, has_payload: carries_a_payload(c, ty), span: span, value: a.exprs[value].span)
+        discard_errors.discarded_failure(got: state.show(c, s, decls, ty), propagates: c.fallible, has_payload: carries_a_payload(c, ty), span: span, value: a.exprs[value].span)
     )
 
 # A `_` parameter whose declared type is a `T?`. The same hole at the
@@ -85,4 +85,4 @@ function refuse_parameter(@c: state.Checker, s: source.Source, decls: [ast.Decl]
 
     if source.span_text(s, name) != "_"
         return
-    state.push_diagnostic(@c, value_errors.discarded_failure_parameter(got: state.show(c, s, decls, ty), span: name))
+    state.push_diagnostic(@c, discard_errors.discarded_failure_parameter(got: state.show(c, s, decls, ty), span: name))

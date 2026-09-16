@@ -105,12 +105,69 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     demanding the blame line shipped anyway and passes here, so nothing local could
     have caught it.
 
-    **What is owed.** The measurement on both machines rather than from here — the
-    author reports the Windows box and Docker are both up as of 2026-09-16 — then
+    **What is owed.** The measurement on both machines rather than from here — Docker
+    was up and the Windows box was not, measured below — then
     the repair, then the three-platform measurement the rule asks for before the
     commit. **Whether the test's claim or the compiler is what is wrong is an open
     question and not a premise**: it may be that the blame line is owed and absent,
     or that the test asserts a caller name only one platform's unwinder can give.
     Nothing here decides that, and the CI log cannot.
+
+    **MEASURED ON THE LINUX MACHINE 2026-09-16, and the diagnosis inverts.**
+    The entry above was written from CI logs; this is the container, built from
+    `docs/ref/environment/linux/Dockerfile`, image `heroes-linux`, `uname -m`
+    `x86_64`, the tree copied in read-only and the seed built inside. Same
+    program, `heroes run tests/golden/surface-fixtures/nullread/main.hero -O0`:
+
+    | | macOS arm64 (this Mac) | Linux x86-64 (the container) |
+    |---|---|---|
+    | exit | 134 | 134 |
+    | stdout | `7` | **empty** |
+    | stderr | `panic: … at offset 0x0, called from node_value` | `panic: … at offset 0x0, called from main.main` |
+
+    **The green leg is the suspect one.** `hero_stack_blame`
+    (`runtime/parts/stack.c:297`) asks `dladdr` which symbol holds the PC; if
+    that symbol is a Heroes one it is returned at once, otherwise it is kept as
+    a fallback and the frame chain is walked for a Heroes symbol.
+    `hero_stack_is_heroes` tests for the `h_` prefix, so the C function
+    `node_value` is **not** one — it is the fallback. `main.main` is
+    `h_main_main` demangled, which is the frame walk **succeeding**.
+
+    So on Linux the walk finds the author's own function, which is what the
+    handler's own comment says it is for: *"the fault is inside the C function
+    the program called, and its caller is the author's own line"*. On this Mac
+    the walk finds nothing and falls back to the C function that faulted. **The
+    fixture pins the fallback**, and `.expected` has been asserting the macOS
+    failure as the answer since defect 045's repair landed. Which behaviour is
+    correct is now a question with a measurement under it rather than a premise:
+    the candidate repair is the fixture and the arm64 frame walk, not the Linux
+    runtime.
+
+    **The lost `7` is a second and separate defect in the same test.** It is
+    printed before the fault. `hero_stack_say` writes with a raw `write`, while
+    `print` goes through buffered stdio, and the handler ends at `abort()`.
+    macOS's libc flushes stdio on abort and glibc does not, so the line the
+    program had already produced is destroyed by the crash report. A program
+    that aborts must not lose what it printed first, and nothing in the tree
+    says which of the two behaviours is intended.
+
+    **Windows stays UNRUN, and the reading below is from the source, not from
+    the machine.** `runtime/parts/stack.c:567-590` has exactly two arms in its
+    vectored handler: `EXCEPTION_STACK_OVERFLOW`, and `EXCEPTION_ACCESS_VIOLATION`
+    **with `ExceptionAddress == 0`**, which is the PC — a null FUNCTION POINTER
+    CALLED, defect 013. A null pointer READ THROUGH has a valid PC inside the C
+    function and the touched address in `ExceptionInformation[1]`, which no arm
+    reads, so the exception falls through to `EXCEPTION_CONTINUE_SEARCH` and the
+    process dies with nothing on either stream — which is what CI measured. The
+    file's own comment names `ExceptionInformation[1]` two paragraphs above the
+    gap, while explaining why the POSIX arm reads the PC instead. **The
+    measurement is owed on the box**: `tailscale status` reads `apponfly-vps …
+    offline, last seen 15m ago` at 2026-09-16, and only the author can power it
+    from the appOnFly console.
+
+    **And `runtime/parts/stack.c:440-442` had already said this was owed**, in
+    its own words: the class closes with *"each platform's own floor asked of
+    the platform, which needs a measurement on the Linux and Windows machines
+    rather than on this one"*. It was written and nobody ran it.
 
 *******************************************************************************

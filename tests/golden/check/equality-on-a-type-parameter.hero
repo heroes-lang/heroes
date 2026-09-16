@@ -1,0 +1,90 @@
+# `==` on two values of a BARE type parameter is refused in the body (panel 155
+# R2, provisional 2026-09-16, ratification queued as `panel 155`).
+#
+# WHAT IT CLOSES. `same<A>(x: A, y: A)` whose body is `return x == y`, handed a
+# `partial` group record, was `check` 0, `build` 0 and **run 134** before this —
+# `panic: a partial record has no structural equality` — while `a == b` written
+# down is `check` 1. One rule, two answers, depending on whether a generic stood
+# in the middle. `spec § 13` promises the refusal "for it and for any value
+# holding it", unconditionally, so the compiler was the thing with the bug
+# (CLAUDE.md § 12) and the repair costs the specification nothing.
+#
+# WHY THE BODY AND NOT THE CALL, which is what panel 082 R3 had ruled in August.
+# The call-site pass was measured at panel 155 at 284 code lines against an
+# estimate of 90-110, needing a second span-keyed table against the standing rule
+# at `selfhost/check/state.hero:78-85`, and needing its own `depth > 16` give-up
+# with no runtime guard behind it — the defect 035 shape reproduced inside the
+# repair. Against it stood four language communities' recorded experience of that
+# exact mechanism, Stroustrup's own included: *"The requirements of `sort` on its
+# argument type are implicit (hidden) in its function body."*
+#
+# What was adopted instead was already written in `docs/design/design.md:1721`,
+# and no seat had cited it: **"No constraints. No `where`, no bounds. If an
+# operation on `T` is needed, pass it as a parameter."** `chooses` below is that
+# sentence as a program.
+#
+# THE RULE IS NARROW AND THE CONTROLS BELOW ARE WHAT SAY SO. It asks whether the
+# operand's type IS a type parameter, never whether it REACHES one. Measured
+# 2026-09-16: of the 50 generic functions in this tree, two use `==` in a body and
+# neither compares two bare type parameters, so this deletes nothing. Widening it
+# to `reaches` would delete `tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero`
+# and `tests/golden/run/abort-map-key-nan.hero`, and that half of the question —
+# a type parameter used as a map KEY — is open, panel 155 R3.
+# Date: 2026-09-16.
+# Bulk regression case.
+
+record Point
+    x: i64
+    y: i64
+
+# The refusal, at the one line that provokes it.
+function same<A>(x: A, y: A) -> bool
+    return x == y  #~ generic_equality
+
+# `!=` is the same rule and the same arm, so a case reaching only `==` would be
+# half a case.
+function differs<A>(x: A, y: A) -> bool
+    return x != y  #~ generic_equality
+
+# THE REPAIR, compiled here rather than described: the comparison arrives as a
+# parameter, and two parameters of one type are named in the type.
+function chooses<A>(x: A, y: A, alike: (function(left: A, right: A) -> bool)) -> bool
+    return alike(left: x, right: y)
+
+function points_alike(left: Point, right: Point) -> bool
+    return left.x == right.x && left.y == right.y
+
+# THE CONTROLS. If any of these grows a diagnostic the rule has spread past what
+# panel 155 adopted, and two goldens in `tests/golden/run/` die with them.
+
+# A map whose KEY is a type parameter: it HOLDS one without being one.
+function maps_alike<K>(a: {K: i64}, b: {K: i64}) -> bool
+    return a == b
+
+# An array of a type parameter, likewise.
+function arrays_alike<A>(xs: [A], ys: [A]) -> bool
+    return xs == ys
+
+# A fallible holding one, which is a third container shape and a separate arm.
+function maybe_alike<A>(x: A?, y: A?) -> bool
+    return x == y
+
+# And a generic that compares something concrete inside itself is untouched: the
+# rule is about the operand's type, not about the function being generic.
+function counted<A>(xs: [A]) -> bool
+    return xs.len() == 0
+
+function main()
+    p = Point(x: 1, y: 2)
+    q = Point(x: 1, y: 2)
+    print(same(x: p, y: q))
+    print(differs(x: p, y: q))
+    print(chooses(x: p, y: q, alike: points_alike))
+    m: {str: i64} @ {"a": 1}
+    n: {str: i64} @ {"a": 1}
+    print(maps_alike(a: m, b: n))
+    print(arrays_alike(xs: [1, 2], ys: [1, 2]))
+    one: i64? = ok(1)
+    two: i64? = ok(1)
+    print(maybe_alike(x: one, y: two))
+    print(counted([3, 4]))
