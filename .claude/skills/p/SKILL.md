@@ -109,4 +109,25 @@ outside can speak. The session itself has to.
 ## What this skill never does
 
 Recap the whole conversation. Teach. Put more than four items on a line. Edit a
-file. Start or resume work. It is a glance, then back to work.
+file. Take the work in a new direction. It is a glance, then back to work.
+
+## And it never stops the work — author instruction 2026-09-16
+
+**`/p` informs, it does not interrupt.** The glance is emitted and the session
+**continues the task in the same turn**, without waiting for a reply and without
+ending the turn on the glance. The author types one letter to find out where
+things are, not to halt them, and a glance that stops the work costs more than
+the silence it was meant to cure.
+
+This line exists because the section above said *"Start or resume work"* among
+the things the skill never does, two words before *"It is a glance, then back to
+work"* — and the two readings are opposite. The first is now *"Take the work in a
+new direction"*, which is what it meant: `/p` does not choose what happens next.
+Resuming the task already under way is not starting work, it is the default, and
+the only thing that may follow a glance.
+
+The one exception is the one that already stops every turn: a **push or other
+outward-facing act**, a **panel gate**, or an item of `docs/work/DECIDE.md` put
+to the author while a long build runs (CLAUDE.md § 3). Those pause the work
+whether or not anybody typed `/p`, and the glance names them on its `Now:` line
+because they are what changes what the author does next.
