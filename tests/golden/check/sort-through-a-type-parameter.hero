@@ -1,0 +1,61 @@
+# `sort` on a TYPE PARAMETER is refused inside the generic's own body, and this
+# file is what pins it to a program. The rule is panel 084 R1's, ratified
+# 2026-08-16; until 2026-09-16 its only witness was a unit test in
+# `selfhost/check/ordering.hero`, which asserts `is_refusable` on a `.generic`
+# type id — a fact about a table entry, not about anything anybody would write.
+#
+# WHAT IT CLOSED, measured 2026-09-16 against a compiler built from the seed:
+# `first([Point(x: 1, y: 2)])`, through a `function first<A>(xs: [A])` whose body
+# sorts, is `check` 1 and `build` 1. It was `check` 0 and `build` 1 when panel 082
+# R3 wrote M-check-completeness's opening sentence, and it was the one shape where
+# *check accepts ⇒ build succeeds* was still false.
+#
+# WHY THE BODY, when that milestone says the concrete type arrives at the CALL.
+# `sort`'s domain is twelve types — the eight integer widths, the two floats,
+# `str` and `bool` — so refusing it on `[A]` deletes no working program: nothing a
+# call could choose both sorts and is still a type parameter here. The two rules
+# beside it cannot take this shape and `docs/work/milestones/M-check-completeness.md`
+# carries the measurement: a map keyed on `K` is legal at `str` and every integer,
+# and `==` is legal on almost everything, so a body refusal there would delete
+# programs that run today.
+#
+# WHAT IT DOES NOT CLOSE is the llm-ergonomist's veto at that sitting: the line
+# `sort(xs)` is still undecidable from the line plus its signature, and lifting
+# that needs constraints on generics. The third function below is here so that a
+# later session widening this rule can see what a lift would have to keep — it is
+# instantiated only at `i64`, which sorts, and is refused anyway.
+# Date: 2026-09-16.
+# Bulk regression case.
+
+record Point
+    x: i64
+    y: i64
+
+# The refusal, at the one line that provokes it.
+function first<A>(xs: [A]) -> A
+    ys = sort(xs)  #~ unordered_element
+    return ys[0]
+
+# The same refusal through UFCS, because `xs.sort()` is `sort(xs)` and a rule
+# that reached only one spelling would be half a rule.
+function smallest<A>(xs: [A]) -> A
+    zs = xs.sort()  #~ unordered_element
+    return zs[0]
+
+# THE CONTROL. A generic that does not sort is untouched; if this line ever grows
+# a diagnostic the rule has spread past what panel 084 adopted.
+function head<A>(xs: [A]) -> A
+    return xs[0]
+
+function main()
+    p = first([Point(x: 2, y: 1), Point(x: 1, y: 2)])
+    print(p.x)
+
+    # Bound at `i64`, which sorts, and refused all the same: the body is the
+    # decider, so what the call chose never reaches this rule.
+    print(smallest([3, 1, 2]))
+    print(head([3, 1, 2]))
+
+    # And the concrete spellings still sort, so the refusal is provably about the
+    # element type rather than about the built-in's name.
+    print(join(sort(["b", "a"]), ""), sort([2, 1])[0], sort([2.0, 1.0])[0])

@@ -18,6 +18,23 @@ is `check` 0, `build` 0, **run 134**; and a module that is nothing but an
 never runs clang — that fourth one is M-package-manager's, where a distributable
 binding makes it load-bearing.
 
+**Corrected 2026-09-16, at this milestone's opening: the first face is CLOSED,
+and the sentence above is false as it stands.** Measured on a compiler built
+from the seed, `first([Point(x: 1, y: 2)])` through a `function first<A>(xs:
+[A])` whose body sorts is `check` **1** and `build` **1**, not `check` 0 —
+panel 084 R1's body refusal closed it, by the very route the next paragraph
+names as the one that worked. The other three faces were re-run the same day and
+each holds exactly as written: the map through `tally<K>` is `check` 0, `build` 0,
+**run 0 printing 1** where `m: {f64: i64}` written down is `check` 1; and
+`same<A>(x: a, y: b)` over a `partial` group record is `check` 0, `build` 0,
+**run 134** — `panic: a partial record has no structural equality` — where `a ==
+b` written down is `check` 1. **What was found in the closing rather than in the
+gap**: the refusal that closed the first face had no golden case, only a unit
+test asserting `is_refusable` on a `.generic` type id, which is a fact about a
+table entry and not about a program.
+`tests/golden/check/sort-through-a-type-parameter.hero` is that case, and it
+pins both spellings — `sort(xs)` and `xs.sort()`.
+
 **Why none of them can be fixed in the body.** Panel 084 R1's shape worked
 because `sort`'s domain is restricted, so refusing it on `[A]` deleted nothing. A
 map keyed on `K` is legal at `str` and every integer, and `==` is legal on almost
@@ -43,7 +60,15 @@ needs constraints on generics, which is the author's trade.
 *******************************************************************************
 **OPEN: 4**
 
-- [ ] **M-check-completeness** | the sortable obligation and the two written-type rules, in the one pass that closes all three | `docs/panel/082` R3 · `selfhost/check/walk.hero` · `selfhost/check/ordering.hero` · `selfhost/check/map_keys.hero` · `selfhost/check/partial.hero`
+- [ ] **M-check-completeness** | the two written-type rules, in the one pass that closes both | `docs/panel/082` R3 · `selfhost/check/walk.hero` · `selfhost/check/map_keys.hero` · `selfhost/check/partial.hero`
+
+    **Narrowed 2026-09-16, and the line above said *the sortable obligation and
+    the two written-type rules* until then.** The sortable third is closed and
+    its measurement is in this file's opening, so the item may no longer claim
+    it; `selfhost/check/ordering.hero` leaves the pointer list with it, because
+    the pass this item still owes never reads that module. The two that remain
+    are the two the merge below joined, and the reason they cannot take the
+    closed one's shape is unchanged.
 
     **Merged 2026-09-10** from two items, by author instruction, and the merge is
     the second item's own sentence rather than a judgement: it said *"whose pass is

@@ -1,0 +1,2 @@
+tests/golden/check/sort-through-a-type-parameter.hero:36:10: error[unordered_element]: `sort` orders arrays of numbers, `str` and `bool` — `[A]` is none of those
+tests/golden/check/sort-through-a-type-parameter.hero:42:10: error[unordered_element]: `sort` orders arrays of numbers, `str` and `bool` — `[A]` is none of those
