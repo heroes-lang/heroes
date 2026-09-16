@@ -27,51 +27,7 @@ record.
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
-
-- [ ] **046 — both static walks abandon past a nesting bound, so `check` accepts what its own rule refuses** | a record chain 16 deep ending in an `f64` map key, or in a `partial` group record compared with `==`, is `check` 0 where 15 deep is `check` 1 — and no generic is involved | `selfhost/check/map_keys.hero:115-119` · `selfhost/check/partial.hero:44-51` · `docs/panel/155-the-hole-was-never-made-by-the-generic.md` R4
-
-    **Origin:** panel 155, 2026-09-16, found by its ffi-pragmatist while testing
-    the shapes beside the one the sitting was convened about, and re-measured at
-    the synthesis by the coordinator with one construction for both rules.
-
-    **The reproducers, measured 2026-09-16 on a compiler built from the seed.**
-    `L0` holds the offending thing and `Lk` holds `inner: L(k-1)`:
-
-    | depth | `{Ln: i64}` keyed through to an `f64` | `a == b` on `Ln` holding a `partial` |
-    |---|---|---|
-    | 1, 8, 14, **15** | `check` **1**, `error[float_map_key]` | `check` **1**, `error[ffi_partial_operation]` |
-    | **16**, 17, 18, 24 | `check` **0**, no diagnostic | `check` **0**, no diagnostic |
-
-    Both then build at 0 and abort at **134** with a named message — `panic: a map
-    key that is not equal to itself (nan)` and `panic: …_FileStat_eq: a partial
-    record has no structural equality`. **So the runtime guard holds in both
-    cases and this is a silence where a message is owed, not a corruption.** That
-    is what keeps it here rather than at §1.12's rank.
-
-    **Both walks abandon at the SAME depth**, measured with an identical
-    construction. Panel 155's completeness critic reported the float twin giving
-    up one level shallower; that reading compared two nests built differently, and
-    the corrected measurement makes the two rules identical rather than merely
-    similar. It also settles the sitting's R4: the spec-warden offered *only the
-    float rule has a guard leaning on it* as one of three grounds for splitting
-    the question, and that ground is false — `check/partial.hero:44-51` and
-    `check/map_keys.hero:115-119` state the same `depth > 16` give-up, licensed by
-    the same kind of guard, in the same words.
-
-    **What is owed.** A total walk, or a bound with a diagnostic behind it rather
-    than a silence. The `depth > 16` line in `check/map_keys.hero` calls its
-    absence *"the safe direction"* and says so **because the runtime guard sits
-    behind this rule** — which is true and is exactly the argument defect 035
-    falsified in the twin handle walk, where no guard sat behind it. A guard that
-    licenses a compile-time silence is a guard the compiler is leaning on to be
-    wrong quietly.
-
-    **Where to look also:** `tests/golden/run/abort-map-key-nan.hero` ·
-    `docs/records/done/` for defect 035, the same line in the handle walk.
-    **Why it matters:** this milestone is named for what `heroes check` accepts,
-    and the sitting spent five seats on generics while straight-line code with no
-    generic in it walks through both rules.
+**OPEN: 1**
 
 - [ ] **048 — `heroes build --emit-c` emits C that does not compile, for any `tag` binding** | a program with `record <Name> tag <name>` builds fine, and the same program's `--emit-c` output gives 15 clang errors: it writes `node *` where the header says `struct node` | `selfhost/cli/pointee.hero` · `selfhost/cli/assemble.hero` · `docs/panel/156-the-blame-line-was-never-a-platform-fact.md`
 

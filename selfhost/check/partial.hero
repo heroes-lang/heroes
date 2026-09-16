@@ -39,16 +39,30 @@ function is_partial(decls: [ast.Decl], decl: i64) -> bool
 # container kinds would have missed. Returns the DECLARATION reached
 # rather than a boolean, so the diagnostic can name it (§4.17).
 function reaches(c: state.Checker, decls: [ast.Decl], ty: i64) -> i64?
-    return reaches_within(c, decls, ty: ty, depth: 0)
+    seen: {i64: bool} @ {}
+    return reaches_within(c, decls, ty: ty, @seen)
 
-# The bound is not a guess about nesting — it is what makes the walk
-# total: a GENERIC type in the arena can still be cyclic through a type
-# parameter, and this walk runs before monomorphisation removes those.
-# Sixteen is past anything a C header's struct can reach, and the
-# fallback is absence, the safe direction here.
-function reaches_within(c: state.Checker, decls: [ast.Decl], ty: i64, depth: i64) -> i64?
-    if depth > 16
-        return fail(code: "absent", msg: "past any header's nesting")
+# **THE BOUND WAS `depth > 16` UNTIL 2026-09-16 AND THAT WAS DEFECT 046**
+# (panel 156's convening measurement; panel 155 R4 filed it). The sentence
+# above it said the bound was *what makes the walk total*, and it was —
+# by GIVING UP. A chain of records 16 deep ending in a `partial` was
+# `check` 0 where 15 deep was `check` 1, with no generic anywhere near
+# it, so `spec § 13`'s promise *for it and for any value holding it* held
+# to a depth and not to a value. `check/map_keys.hero`'s float twin
+# carried the identical line and the identical hole, and this is defect
+# 035's shape for the third time.
+#
+# What replaces it is what `check/reaches.hero` already uses, so the
+# compiler now answers this question one way: a set of the type ids
+# already walked. It is total without giving up — the arena is finite and
+# every id is entered once — and it is why the cyclic-generic worry the
+# old comment named is answered rather than bounded. A type already
+# walked returned absence then and returns it now, so the memo is
+# correct as well as terminating.
+function reaches_within(c: state.Checker, decls: [ast.Decl], ty: i64, @seen: {i64: bool}) -> i64?
+    if !seen[ty].is_err()
+        return fail(code: "absent", msg: "this type was already walked")
+    seen[ty] @ true
 
     match table.get(c.out.types, ty)
         .named n =>
@@ -58,14 +72,14 @@ function reaches_within(c: state.Checker, decls: [ast.Decl], ty: i64, depth: i64
             match decls[n.decl].kind
                 .record_decl r =>
                     for field in r.fields
-                        found = through_field(c, decls, field_ty: field.ty, depth: depth)
+                        found = through_field(c, decls, field_ty: field.ty, @seen)
 
                         if !found.is_err()
                             return found
                 .variant_decl v =>
                     for one_case in v.cases
                         for field in one_case.fields
-                            found = through_field(c, decls, field_ty: field.ty, depth: depth)
+                            found = through_field(c, decls, field_ty: field.ty, @seen)
 
                             if !found.is_err()
                                 return found
@@ -75,14 +89,14 @@ function reaches_within(c: state.Checker, decls: [ast.Decl], ty: i64, depth: i64
                 )
 
             return fail(code: "absent", msg: "no partial inside")
-        .array a    => return reaches_within(c, decls, ty: a.element, depth: depth + 1)
-        .fallible o => return reaches_within(c, decls, ty: o.payload, depth: depth + 1)
+        .array a    => return reaches_within(c, decls, ty: a.element, @seen)
+        .fallible o => return reaches_within(c, decls, ty: o.payload, @seen)
         .map m =>
-            in_key = reaches_within(c, decls, ty: m.key, depth: depth + 1)
+            in_key = reaches_within(c, decls, ty: m.key, @seen)
 
             if !in_key.is_err()
                 return in_key
-            return reaches_within(c, decls, ty: m.value, depth: depth + 1)
+            return reaches_within(c, decls, ty: m.value, @seen)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr => return fail(
             code: "absent",
             msg: "a scalar reaches nothing"
@@ -94,12 +108,12 @@ function reaches_within(c: state.Checker, decls: [ast.Decl], ty: i64, depth: i64
 
     return fail(code: "absent", msg: "unreached")
 
-function through_field(c: state.Checker, decls: [ast.Decl], field_ty: i64, depth: i64) -> i64?
+function through_field(c: state.Checker, decls: [ast.Decl], field_ty: i64, @seen: {i64: bool}) -> i64?
     written = state.written_type(c.out, field_ty)
 
     if written.is_err()
         return fail(code: "absent", msg: "the field's type was never lowered")
-    return reaches_within(c, decls, ty: written.must(), depth: depth + 1)
+    return reaches_within(c, decls, ty: written.must(), @seen)
 
 ## Tests
 

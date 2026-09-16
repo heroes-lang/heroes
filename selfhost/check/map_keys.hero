@@ -91,7 +91,8 @@ function refuse(@c: state.Checker, s: source.Source, decls: [ast.Decl], key: i64
         shown = state.show(c, s, decls, key)
         state.push_diagnostic(@c, handles.handle_map_key(key: shown, reached: handled.must().path, span: span))
         return
-    floated = reaches_float(c, s, decls, ty: key, depth: 0)
+    float_seen: {i64: bool} @ {}
+    floated = reaches_float(c, s, decls, ty: key, @float_seen)
 
     if !floated.is_err()
         shown = state.show(c, s, decls, key)
@@ -111,15 +112,30 @@ function refuse(@c: state.Checker, s: source.Source, decls: [ast.Decl], key: i64
 # runtime guard is still behind it. There is no such guard behind the handle
 # rule, only an address, which is what made the same line correct here and a
 # hole there.
+#
+# **THE FLOAT TWIN KEPT ITS BOUND UNTIL 2026-09-16, AND THE ARGUMENT ABOVE WAS
+# TRUE AND NOT ENOUGH** (defect 046, filed by panel 155 R4 and measured at panel
+# 156's convening). The guard IS behind this rule and it does fire — a `nan` key
+# at depth 16 still aborts 134, measured, because the guard is a structural
+# self-comparison that nesting cannot evade. What the argument missed is that a
+# guard licensing a compile-time SILENCE is a guard the compiler leans on to be
+# wrong quietly: `m: {L16: i64}` was `check` 0 where `{L15: i64}` was `check` 1,
+# so the rule held to a depth rather than to a value, and `spec § 13`'s twin in
+# `check/partial.hero` held the same way at the same depth. Both are now a set
+# of the type ids walked, which is what `check/reaches.hero` has used since
+# panel 149, so the compiler answers this question one way in three places.
 
 # Does this key type REACH an f32 or an f64? Returns WHERE it found one
 # — an empty string when the key IS the float, a dotted path when it is
-# inside. Absence at the bound is safe in the direction that matters:
-# the runtime guard still sits behind this rule, so a missed refusal
-# costs a named abort rather than a wrong answer.
-function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, depth: i64) -> str?
-    if depth > 16
-        return fail(code: "absent", msg: "past any nesting worth naming")
+# inside. Total by the set of type ids already walked rather than by a
+# depth: the arena is finite, every id is entered once, and a type walked
+# before returned absence then and returns it now. The runtime guard
+# still sits behind this rule and still fires, but it no longer licenses
+# a silence — that was defect 046.
+function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, @seen: {i64: bool}) -> str?
+    if !seen[ty].is_err()
+        return fail(code: "absent", msg: "this type was already walked")
+    seen[ty] @ true
 
     match table.get(c.out.types, ty)
         .float_ty => return ok("")
@@ -127,10 +143,10 @@ function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty
             owner = source.span_text(s, decls[n.decl].name)
 
             match decls[n.decl].kind
-                .record_decl rec => return inside(c, s, decls, owner: owner, fields: rec.fields, depth: depth)
+                .record_decl rec => return inside(c, s, decls, owner: owner, fields: rec.fields, @seen)
                 .variant_decl v =>
                     for one_case in v.cases
-                        found = inside(c, s, decls, owner: owner, fields: one_case.fields, depth: depth)
+                        found = inside(c, s, decls, owner: owner, fields: one_case.fields, @seen)
 
                         if !found.is_err()
                             return found
@@ -140,20 +156,20 @@ function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty
                     code: "absent",
                     msg: "not a data declaration"
                 )
-        .fixed x => return reaches_float(c, s, decls, ty: x.element, depth: depth + 1)
+        .fixed x => return reaches_float(c, s, decls, ty: x.element, @seen)
         # [T], {K: V} and T? are not key types today — each is refused
         # before this walk runs — but the arms are here rather than
         # folded, so the day one becomes a key this rule does not
         # silently stop applying.
 
-        .array arr  => return reaches_float(c, s, decls, ty: arr.element, depth: depth + 1)
-        .fallible o => return reaches_float(c, s, decls, ty: o.payload, depth: depth + 1)
+        .array arr  => return reaches_float(c, s, decls, ty: arr.element, @seen)
+        .fallible o => return reaches_float(c, s, decls, ty: o.payload, @seen)
         .map m =>
-            in_key = reaches_float(c, s, decls, ty: m.key, depth: depth + 1)
+            in_key = reaches_float(c, s, decls, ty: m.key, @seen)
 
             if !in_key.is_err()
                 return in_key
-            return reaches_float(c, s, decls, ty: m.value, depth: depth + 1)
+            return reaches_float(c, s, decls, ty: m.value, @seen)
         .int_ty | .bool | .str | .ptr | .cstr | .unit          => return fail(code: "absent", msg: "no float here")
         .function_ty | .case_ty | .failure | .generic | .error => return fail(code: "absent", msg: "no float here")
 
@@ -166,13 +182,13 @@ function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty
 # sort refuses the whole value and the reader needs the route in, while
 # a map key is repaired by changing ONE declaration, and `Point.y` names
 # the declaration to open.
-function inside(c: state.Checker, s: source.Source, decls: [ast.Decl], owner: str, fields: [ast.Field], depth: i64) -> str?
+function inside(c: state.Checker, s: source.Source, decls: [ast.Decl], owner: str, fields: [ast.Field], @seen: {i64: bool}) -> str?
     for field in fields
         written = state.written_type(c.out, field.ty)
 
         if written.is_err()
             continue
-        found = reaches_float(c, s, decls, ty: written.must(), depth: depth + 1)
+        found = reaches_float(c, s, decls, ty: written.must(), @seen)
 
         if found.is_err()
             continue
