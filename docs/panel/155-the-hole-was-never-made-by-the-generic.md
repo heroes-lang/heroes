@@ -213,9 +213,25 @@ propagation, so the trigger is not reached.
 
 ## Author's verdict
 
-**PENDING.** Queued as `panel 155` in `docs/work/DECIDE.md`, 2026-09-16. Work
-proceeds on the provisional resolution above, which is what CLAUDE.md § 4 asks of
-a sitting that never blocks.
+**RATIFIED 2026-09-16, as adopted — BY DELEGATION AND NOT BY READING, and that
+distinction is the record's and not a formality.** The author's instruction, in
+full: *continue until the step is finished with zero defects and zero open
+decisions — ratify the panels for me — and at the end push everything and check
+that CI is green on all three systems.* So the yes below is the assistant's
+judgement exercised under an authority the author handed over, on a sitting the
+author has not read. Recording it as *the author ratified* would credit them
+with a reading that did not happen (`.claude/rules/records.md` § And the record
+says whose idea it was), and nobody would check it.
+
+**What that means for anyone reading this later**: the resolution stands and the
+work built on it is legitimate, but this ratification carries none of the
+independent weight a read one does. The conservative resolution below is
+untaken rather than rejected, and it stays available at no cost — R2 landed in
+`selfhost/check/ops.hero` as a body rule, so reversing it is a deletion and not
+an unwinding.
+
+Queued as `panel 155` in `docs/work/DECIDE.md` on 2026-09-16 and closed the same
+day; the item's record entry carries the same distinction.
 
 **What a yes would settle.** That a body refusal is this language's answer to an
 operation a type parameter may not support, because `design.md:1721` already says
