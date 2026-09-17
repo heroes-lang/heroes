@@ -108,7 +108,32 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
 
     if written.is_err()
         return fail(code: "failed", msg: "cannot write " + c_file)
-    err_path = t.build + "/clang-stderr.txt"
+
+    # **This file belongs to THIS translation unit, and until 2026-09-17 it
+    # belonged to the build directory** (defect 057). Every clang invocation
+    # in a tree wrote `build/clang-stderr.txt`, opened `O_TRUNC`, and then two
+    # readers took it back: `run_clang` prints it as this process's own
+    # stderr, and the line below bakes it into `warnings.txt`, which the warm
+    # hit above REPLAYS on every later build. One `heroes` process in a tree
+    # is safe, because each compile truncates before its own clang writes. Two
+    # are not: a second build between this clang's exit and these reads
+    # substitutes its warnings for ours, and the replay then repeats somebody
+    # else's compile forever, under our program's name.
+    #
+    # Measured, and it is what the defect reported: `warnings/curl under
+    # build` failed naming three warnings from
+    # `tests/golden/ir/regression-extern-parameter-types`, a program curl does
+    # not touch. That TU's directory is made by `heroes build --emit-c`, which
+    # the `ir` and `determinism` suites run, and compiling its `.c` by hand
+    # reproduces the warning text exactly: `-Wabsolute-value` on the
+    # `_Static_assert` the FFI probe emits for `abs`.
+    #
+    # The repair is the name and not a lock: a path nobody else writes cannot
+    # be substituted, and the TU directory is already unique per module, per
+    # text and per flag set. Two builds compiling the identical TU do share
+    # it, and that is the one collision left: their clang output is identical
+    # too, so the file says the same thing either way.
+    err_path = dir + "/clang-stderr.txt"
     staged = object + ".tmp"
 
     # `-MT dep` names the listing's target a word rather than a path,
@@ -196,7 +221,11 @@ function failure_note(failed: ()?) -> str
 # is one clang call, and it is what lets a `link` name change take
 # effect on a fully warm cache.
 function link_objects(t: toolchain.Toolchain, objects: [str], binary: str, level: str, sanitize: bool, search_include: [str], search_library: [str], package_flags: [str], link_names: [str]) -> ()?
-    err_path = t.build + "/clang-stderr.txt"
+    # Named for the binary it produces, for `tu_object`'s reason (defect 057):
+    # the build directory's one `clang-stderr.txt` was a channel between two
+    # `heroes` processes in one tree. The digest keeps the name inside
+    # `build/` rather than beside the author's `-o`, which may be anywhere.
+    err_path = t.build + "/link-" + digest.digest(binary) + "-clang-stderr.txt"
     line: [str] @ toolchain.with_all(list: ["clang"], more: flags.flags())
     line @ line.push(level)
     line @ toolchain.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))

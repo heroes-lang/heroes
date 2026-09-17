@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 1 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 0 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -19,7 +19,7 @@ against a banner reading 3.
 | **Current milestone** | **none open.** The next row is 59, `M-arm-platform`, and nobody has opened it |
 | **Last closed** | **M-check-completeness**, 2026-09-17, `m-check-completeness` ([057](journal/057-check-completeness.md)) — it could not close for two days, because the rule forbids a tag over an open defect and its own sittings kept finding them: ten opened, ten closed, six sittings · before it **M-marked-acquisition** ([056](journal/056-marked-acquisition.md)) and **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **58** of 78 · **58** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **62,308** lines of Heroes in **215** modules (`find selfhost -name '*.hero'`) · the seed **824,114** lines of C, regenerated nine times this milestone and the fixpoint verified byte-identical each time |
+| The compiler | **62,341** lines of Heroes in **215** modules (`find selfhost -name '*.hero'`) · the seed **824,173** lines of C, regenerated twice more at defect 057's close and the fixpoint verified byte-identical each time |
 | The spec | **5997** on the vendored ranks and **7984** on the reader's own, against a ceiling of **10240**. Panel 160's refusal lands at **−11 vendored and −12 real**, the first ledger row where the document SHRINKS while gaining a rule; defect 054's correction is **+4 vendored and −2 real**, the first where the two instruments disagree on the SIGN. **2256 free** and 2196 net of the FFI floor |
 | The contract | **7449** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-15 with the wakeup instruction: of the 36 vendored tokens the pin was behind, 14 predate that session and no commit had named them |
 | Records | sittings **158** · journals **59** · milestone files **48** · entries: `docs/records/log/` **675**, `docs/records/done/` **553**, `docs/records/book/beats/` **124** |
