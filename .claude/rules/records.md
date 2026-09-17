@@ -203,6 +203,40 @@ them a file nobody else is writing.
   so the shape already exists.
 - **The clock is exclusive.** Parallel work is free on correctness and forbidden
   on duration (CL-025, `.claude/rules/verification.md`).
+
+**A LANE IS ALSO HOW WORK CONTINUES WHILE THIS TREE IS OWNED** — author
+instruction 2026-09-17, *learn this business of using lanes and write it down*.
+Two things own the working tree and neither is rare: **a suite reading it**
+(CL-025 — the full net is twenty minutes) and **a sitting between its briefs and
+its synthesis** (`/panel`, and it binds the coordinator, not only the judges).
+The reflex was to wait. **Waiting is a choice and usually the wrong one**: a
+detached worktree has its own index, its own tree and its own compiler, so the
+work goes on where nothing the gate reads can move.
+
+What that bought on the night it was written: panel 160 sat on the frozen tree
+while defect 049 was repaired, verified on two platforms and merged; then three
+lanes ran at once, one per defect, and they met in **merges rather than
+conflicts** because each touched files the others did not. A lane per DEFECT,
+not per file — that is what makes the independence real and checkable in advance.
+
+Five things a lane needs that this tree has and a fresh worktree does not:
+
+- **its own compiler.** `clang -I runtime seed/heroes.c runtime/runtime.c -o
+  heroes` inside it, a few seconds. The trunk's binary is the trunk's.
+- **`.env`, which git ignores and a worktree therefore never gets.** `.` it from
+  the trunk — `. /path/to/trunk/.env` — and print `${#ANTHROPIC_API_KEY}` if you
+  need to know it loaded, never the value. Without it `measure --refresh` exits 2
+  and a spec change cannot be priced on the instrument that judges it.
+- **the seed regenerated in the lane** when it touches `selfhost/`, with the
+  fixpoint verified there, because the seed is what the merge carries.
+- **its own suite runs.** A green suite on the trunk says nothing about a lane.
+- **removal when it is done**: `git worktree remove` and `git branch -d`, in the
+  same session. A worktree left behind is a second tree a later check can walk,
+  which is what § Working in lanes' first bullet is about.
+
+And the ordering that makes it safe: **merge the lane before opening the next
+one on the same files**, so the second starts from the first's result rather than
+from a base that is already behind.
 - **One `**OPEN**` row at a time, today.** `site/src/lib/chain.ts` throws when
   § The chain carries more than one, so two lanes cannot both open their row
   until that is decided — it is an outward-facing file. The question is filed in
