@@ -18,47 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
-
-- [ ] **049 — `--emit-c` writes the pre-probe tag spelling, and the obvious repair makes the artifact platform-dependent** | a program binding `record <Name> tag <name>` gets C that clang refuses — 20 errors on `structtag` — and the probe that fixes it made the SAME program emit two different files on two machines | `selfhost/cli/artifact.hero` · `docs/panel/157-the-artifact-of-a-build-that-never-happened.md` R2 and R4
-
-    **Origin:** the tag half of defect 048, withdrawn 2026-09-16 within the hour
-    of landing, by CI. 048's §1.12 half — the pointee check on the `--emit-c`
-    path — **stands and is closed**; this is only the spelling.
-
-    **The repair worked and its consequence is the defect.** The advisory probe
-    asks clang `-fsyntax-only`, harvests the `struct` request, discards the
-    verdict and re-emits: `structtag`'s artifact went from **20 clang errors to
-    0**, with `struct probe *` written 21 times. But it made the artifact **a
-    function of the local headers**, and `tests/emission/` blesses those bytes.
-
-    **Measured by CI, both legs of one push:**
-
-    | | the blessed line |
-    |---|---|
-    | macOS | `(struct addrinfo * *)0` — the probe learned |
-    | Windows | `(addrinfo * *)0` — no `netdb.h`, so it learned nothing |
-
-    The probe's degradation is correct by design — *on a machine without the
-    header it learns nothing and the output is yesterday's* — and that is
-    precisely what a byte-for-byte blessing cannot tolerate. **It is defect
-    047's own class**, a golden encoding one platform's answer, committed inside
-    a repair on the day the rule naming it was written
-    (`.claude/rules/diagnostics-and-goldens.md`, CL-076).
-
-    **So the sitting's question is not how to spell a tag.** It is: a blessed
-    artifact cannot depend on the machine that produced it, so either
-    `--emit-c` stays deterministic and a tagged binding keeps getting C that
-    does not compile, or those programs stop being blessed by bytes and are
-    judged by a predicate instead. The second is **panel 157's R4**, adopted and
-    unbuilt, filed with its price in
-    `docs/work/milestones/M-package-manager.md`: build both ways, compare exit
-    code and stdout, and LINK.
-
-    **What is owed** is that choice, made at a sitting rather than in the hour
-    after a red leg — and the withdrawn probe is thirty lines that can be put
-    back in one commit, kept in `selfhost/cli/artifact.hero`'s own comment with
-    its date and its measurement.
+**OPEN: 4**
 
 - [ ] **050 — a test of a doubly-fallible value asks the outer layer and reads as asking the inner one** | `m["b"].is_err()` on a `{str: i64?}` and `find(xs, …).is_err()` on a `[i64?]` are `check` 0 and RUN, and both answer *was the key there* where the line reads *did the stored value fail* | `docs/panel/158-the-sitting-produced-a-resolution-and-left-it-off-its-own-ballot.md` R4 · `selfhost/check/ops.hero`
 
@@ -98,5 +58,103 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     — so the repair is its own, not a by-product. Note that `.default(0)` on the
     same shape IS loud today, exit 1 with two diagnostics, so the three operations
     do not agree with each other and that disagreement is the place to start.
+
+    **RESOLVED 2026-09-17 by panel 160, adopted and not yet built: option E.**
+    `.is_err()` is refused where the payload is itself fallible; `.must()`,
+    `.default(v)`, `?` and `match` are untouched, because each of those three
+    hands back a value that still carries the second level and `.is_err()`
+    hands back a `bool`. Prototyped by two seats independently at **+58 lines**,
+    all in the checker: a new module of about 40 lines holding the `is_nested`
+    question, a `nested_read` constructor in `selfhost/flow_errors.hero`, and
+    one arm rewritten in `selfhost/check/builtins.hero` — whose `DECIDED`
+    ceiling moves by 1.
+    **0 bootstrap sites, 0 corpus files, `check` time flat.**
+
+    **The message must name BOTH repairs** — `match` for the outer question,
+    `.must()` then `.is_err()` for the inner — or the ergonomist's measurement
+    says at least one repair in five lands `.must().is_err()`, which asks the
+    inner question and aborts on an absent key. A refusal that relocates the
+    silent error is not a repair. No `Fix`: both repairs change what the program
+    means, and `missing_return` in the same file is the precedent for a note
+    alone.
+
+    The specification's half is **E3**, a clause in § 6's `.is_err()` row at
+    **+17 vendored / +21 real**, paid by two measured duplicates: § 10's
+    *and `for k in sort(keys(m))` walks them in order* (−18/−21) and § 8's
+    *`break` and `continue` exist.* (−10/−12). The package lands at 5993 / 7986,
+    so the document shrinks while gaining a refusal.
+
+- [ ] **054 — the specification states a balance the runtime stopped keeping** | § 13 says a handle consumed twice hides one never consumed; the counter became a set on 2026-09-15 and the program aborts naming the stray FIRST | `spec/heroes-spec.md:378-379` · `runtime/parts/alloc.c` · `tests/golden/run/abort-handle-given-back-twice.expected`
+
+    **Origin:** 2026-09-17, panel 160's ffi-pragmatist, measured on real SQLite
+    while answering a question about something else. The tenth correction to a
+    coordinator's briefs across six sittings, and the first that is a sentence in
+    the specification rather than a number in a brief.
+
+    **The false sentence**, verbatim: *"The owing is counted, so a handle
+    consumed twice hides one never consumed."* It entered on 2026-09-14. On
+    2026-09-15 commit `2e7d221c` — *"the counter became a set"*, its own
+    subject — replaced the count with a set of live addresses in
+    `runtime/parts/alloc.c`, and the specification was not touched.
+
+    **Measured (the seat's P3b, two platforms):** two successful opens, `dbs[0]`
+    closed TWICE through two copies, `dbs[1]` never closed. Exit **134**, and the
+    message is the SET's — *1 C handle(s) given back that were never taken … the
+    set of live handles did not hold that address* — with the stray reported
+    BEFORE the leak. `tests/golden/run/abort-handle-given-back-twice.expected`
+    asserts exactly that, so the instrument already knows what the document does
+    not.
+
+    **What is owed.** The sentence, corrected to what the set does. The seat
+    priced the merge that replaces it at **−11 vendored**; the real number is
+    UNRUN and the rule of 2026-09-16 says a vendored delta is not a price. That
+    removal would then be available to pay for a later addition.
+
+- [ ] **055 — `design.md` strikes `has(m, k)` on a spelling panel 160 removes** | the reason given for having no presence test is `!m[k].is_err()`, which is refused on a `{K: V?}` under the adopted resolution | `docs/design/design.md:1389-1392` · `docs/panel/160-the-reader-that-forgets-the-level.md`
+
+    **Origin:** 2026-09-17, panel 160's compiler-engineer, handed on as an
+    interaction outside its own seat.
+
+    **The paragraph**, verbatim: *"`has(m, k)` is **struck** (panel 026, −17
+    measured): map access returns `V?` always, so `has(m, k)` and
+    `!m[k].is_err()` are two spellings of one predicate."* Under option E the
+    second spelling does not exist for a map whose value is fallible, so on that
+    map there is exactly **one** spelling and it is `match`.
+
+    **Why it is a defect and not a footnote.** The struck row's own reason is
+    that a second spelling would be redundant. Where the resolution removes the
+    first, the reason is gone and the row is unargued — which is the shape that
+    paragraph's own last sentence names: *the shape of a reason outliving the
+    thing it argued against*.
+
+    **What is owed.** A dated correction under it (the document is append-only),
+    saying what a `{K: V?}` map's presence test is. The historian's prediction
+    stands beside it: Go named that question `v, ok` and Kotlin named it
+    `containsKey`, and both did so as an ADDITION beside a form that still
+    compiled. If the answer is a distinct spelling, it is a sitting of its own.
+
+- [ ] **056 — a generic body reads the outer level of whatever it is instantiated with** | `is_bad<A>(x: A?) -> bool` returning `x.is_err()`, called with `A := i64?`, passes under every option panel 160 weighed | `selfhost/ir/mono.hero` · `docs/panel/160-the-reader-that-forgets-the-level.md` R5
+
+    **Origin:** 2026-09-17, panel 160's compiler-engineer, confirmed by its
+    llm-ergonomist from the specification alone (its hesitation 10) without
+    either knowing of the other.
+
+    **The hole.** A generic body is checked ONCE, with a `.generic` payload, and
+    instantiation happens after the checker in `selfhost/ir/mono.hero`. So a
+    refusal that reads the written type cannot see that `A` arrived fallible.
+    Measured: the probe checks at exit 0 under the prototypes of option A and of
+    option E alike.
+
+    **Why it is filed and not repaired.** Live instances: **0** in `selfhost/`,
+    **0** in the corpus. Of eight corpus generics carrying an `A?`, the two that
+    touch it use `.len()` and `==`. And the repair is a post-`mono` check — a
+    second layer under design.md §1.7 — which panel 160's compiler-engineer said
+    it would **veto** in a resolution that required it without a costing.
+
+    **What is owed** is the costing, before anyone argues about the rule: how
+    many lines a post-`mono` check is, what it does to `check` time, and whether
+    the library's own `find<A>(xs: [A], f) -> A?` reaches it when `A` is
+    instantiated fallible. That last one is **UNRUN** and is the question that
+    decides whether this is theoretical or one `find` away.
 
 *******************************************************************************
