@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { page } from '../../lib/figures.ts';
+import content from '../../html/why/not.html?raw';
+---
+<BaseLayout url="/why/not/" title={"The refusals: what Heroes evaluated and turned down"} description={"The language forms and tools evaluated and refused, with the reason in plain words, who said no and what would prove each refusal wrong."} current="why">
+<Fragment set:html={page(content, 'site/src/html/why/not.html')} />
+</BaseLayout>

@@ -1,0 +1,114 @@
+
+  <div class="page-head">
+    <h1 class="page">I no</h1>
+  </div>
+  <p class="lede">
+    Le cose che Heroes ha valutato e ha rifiutato: che cosa, perché in parole semplici, chi ha detto no, e che cosa dimostrerebbe che il no era sbagliato. I sì di un linguaggio si leggono nella specifica; i no si vedono solo se qualcuno li scrive.
+  </p>
+
+  <h2 id="who">Chi dice no</h2>
+  <p>
+    Ogni modifica al linguaggio passa da un panel di cinque seggi, descritti nella <a href="/it/project/#panel">pagina del progetto</a>: ognuno riceve materiale diverso, misura invece di dare un parere, e quattro possono porre un veto. Un veto chiude la proposta, e nessun prezzo la riapre. Ma nessun rifiuto esce dalla seduta come definitivo: viene adottato come provvisorio, in attesa della parola dell&rsquo;autore. Un no diventa un no quando l&rsquo;autore lo ratifica, e ogni no di questa pagina porta a registro quella ratifica, con la sua data. Dove il panel gli ha lasciato accanto un&rsquo;alternativa più prudente, ha scelto la più solida.
+  </p>
+  <p>
+    Tre regole del procedimento sono sue. Mai un compromesso: il panel prende la soluzione più solida e completa, mai la più economica né una via di mezzo, e per questo un no qui non viene mai dimezzato. Ogni no nuovo deve nominare il programma o il fatto del compilatore che lo smentirebbe, così chi legge può verificarlo invece di fidarsi: la regola l&rsquo;ha proposta il guardiano della specifica e l&rsquo;autore l&rsquo;ha resa vincolante. E ogni cosa rimandata riceve un verdetto con una data: da quella decisione, in un solo giorno, cinque cose che aspettavano da settimane sono diventate no. Un no è toccato anche a una proposta sua: aveva chiesto una seduta contro il parere dell&rsquo;assistente, il panel ha rifiutato la proposta e ha trovato che il meccanismo richiesto esisteva già, e l&rsquo;autore ha approvato il rifiuto.
+  </p>
+  <p>
+    I no più vecchi, dal null alle macro agli indici che partono da uno, stanno nel documento di progetto dal primo giorno, nel primo commit, la prima modifica registrata del repository, che porta la firma dell&rsquo;autore ed è anteriore a qualunque seduta. Sono nati prima della regola su come smentirli, e questa pagina non finge che la portino.
+  </p>
+
+  <h2 id="refusals">I no, dal più grande</h2>
+  <ol class="log">
+    <li id="standard-library">
+      <span class="when">Niente libreria standard</span>
+      <b>Tutto ciò che va oltre la specifica, dai file ai socket ai database, arriva da librerie C che dichiari tu.</b> È il vincolo fondativo del linguaggio e l&rsquo;ha posto l&rsquo;autore prima di ogni altra cosa: ogni funzione fornita in più è un impegno di manutenzione permanente e una concorrente delle librerie che esistono già. Il pragmatico del C ne è il custode a ogni seduta: compila il codice C che un binding richiederebbe, oppure dimostra perché non compila. È un non-obiettivo dichiarato nel documento di progetto, fuori dalla tabella dei rifiuti, e non porta un falsificatore scritto.
+      <a class="more" href="/it/docs/the-c-boundary/">Il confine con il C</a>
+    </li>
+    <li id="null">
+      <span class="when">Niente null</span>
+      <b>L&rsquo;assenza è un tipo, <code>i64?</code>, non un valore che può nascondersi in qualunque variabile.</b> La ragione a registro è una frase: l&rsquo;errore da un miliardo di dollari, e i linguaggi che hanno provato ad aggiungere dopo la nozione di assenza ci hanno messo anni. Sta nel documento di progetto dal primo giorno. Il puntatore nullo del C conserva il suo nome, <code>nullptr</code>, e resta al confine.
+      <a class="more" href="/it/docs/failure-is-a-value/">Come si gestisce un errore</a>
+    </li>
+    <li id="exceptions">
+      <span class="when">Niente eccezioni</span>
+      <b>Un errore è un valore che la riga mostra, <code>T?</code>, non un salto invisibile che risale il programma.</b> La ragione a registro: un flusso di controllo che non si vede produce percorsi non gestiti che nessun compilatore segnala, e attraversare il confine con il C con un&rsquo;eccezione in volo è un comportamento indefinito, cioè il C non promette più niente su quello che succede.
+      <a class="more" href="/it/docs/failure-is-a-value/">L&rsquo;errore è un valore</a>
+    </li>
+    <li id="invisible-reason">
+      <span class="when">Niente ereditarietà, niente overloading, niente conversioni automatiche</span>
+      <b>Quattro no con una sola ragione: una riga deve valere quello che dice, senza che il suo significato dipenda da qualcosa scritto altrove.</b> Con l&rsquo;ereditarietà, per capire <code>this.save()</code> devi risalire una catena di classi che non vedi. Con l&rsquo;overloading degli operatori, <code>a + b</code> può fare qualunque cosa, definita da un&rsquo;altra parte; con quello delle funzioni, quale versione gira dipende da una scelta che sulla riga non si vede. E con le conversioni automatiche, <code>f(x)</code> funziona per una ragione invisibile.
+    </li>
+    <li id="macros">
+      <span class="when">Niente macro</span>
+      <b>Il codice che leggi è il codice che gira.</b> Una macro è codice che si espande in altro codice, o che estende la sintassi, e dopo di lei le due cose non coincidono più. Il no sta anche nella regola di lavoro del progetto su che cosa da Nim non si copia mai: macro, template, sistemi di effetti, e identificatori che ignorano la differenza fra <code>fooBar</code> e <code>foo_bar</code>.
+    </li>
+    <li id="three-small-ones">
+      <span class="when">Niente shadowing, niente stato globale modificabile, niente indici da uno</span>
+      <b>Tre no piccoli con la stessa radice: quello che chi scrive crede di leggere deve essere quello che c&rsquo;è.</b> Con lo shadowing, cioè un nome che ne copre un altro uguale, credi di riferirti a una variabile e ne colpisci un&rsquo;altra. Con uno stato globale modificabile, il significato di una riga dipende da un contesto che non si vede. E con gli indici che partono da uno, ogni passaggio verso il C diventa uno sbaglio di uno, silenzioso.
+    </li>
+    <li id="closures">
+      <span class="when">Niente closure</span>
+      <b>Una funzione che porta con sé le variabili intorno non entra: ogni funzione ha un nome e una dichiarazione che puoi leggere.</b> Il no è stato deciso sul costo, misurato e non stimato, da tutti e cinque i seggi. L&rsquo;ingegnere del compilatore ha contato centinaia di punti del compilatore da riscrivere, in decine di moduli. Il guardiano della specifica ha pesato le frasi che servivano e non stavano nel bilancio. Il pragmatico del C ha compilato una closure contro una libreria vera e l&rsquo;ha vista passare ogni controllo e andare in crash appena eseguita, perché una funzione che porta valori occupa più spazio di quello che il C si aspetta. E il guadagno era piccolo: nel compilatore, una funzione viene passata a un&rsquo;altra in meno di cinque posti. Lo smentirebbe un programma di cui il compilatore ha bisogno che una funzione col nome non riesce a esprimere, insieme a una rappresentazione compilata in cui una closure ha un solo tipo e otto byte al confine con il C.
+      <a class="more" href="/it/docs/generics-and-function-values/">Le funzioni come valori</a>
+    </li>
+    <li id="traits">
+      <span class="when">Niente trait, niente interfacce</span>
+      <b>Un insieme di funzioni che un tipo promette di avere, e una generica limitata ai tipi che lo promettono: non entra, perché il buco che riempirebbe è largo due operazioni e il codice ne vuole una sola.</b> La seduta ha compilato otto casi: quasi tutto quello per cui altrove servono le interfacce qui funziona già, passando la funzione come argomento. Restano fuori l&rsquo;ordinamento e la stampa di un tipo generico, e nel compilatore nessuno dei ventisei ordinamenti ordina un record. L&rsquo;ingegnere del compilatore ha posto il veto sulla forma piena, fra le novecento e le millequattrocento righe e senza un posto dove far vivere la regola che vieta due definizioni per lo stesso tipo; il lettore ha posto il veto sull&rsquo;alternativa più leggera così com&rsquo;era scritta. Lo smentirebbe un programma di cui il compilatore ha bisogno che deve smistare su una collezione i cui tipi non si conoscono dove viene costruita, e che una variante non riesce a portare.
+    </li>
+    <li id="reflection">
+      <span class="when">Niente reflection, niente annotazioni inventate</span>
+      <b>Un valore non può chiedere a se stesso di che cosa è fatto, e un programma non può inventare etichette da attaccare a una dichiarazione.</b> Il no alla reflection è unanime, con i veti dell&rsquo;ingegnere del compilatore e del pragmatico del C, e la ragione è la disposizione in memoria: mettere il tipo dentro il valore cambia la dimensione di ogni record e il modo in cui ogni chiamata al C passa i suoi argomenti, e una libreria grafica che aspetta otto byte ne riceverebbe sedici. Il no alle etichette è unanime perché nessuno potrebbe leggerle: niente macro, niente calcolo a compile-time, niente reflection, quindi un&rsquo;etichetta che nessuno legge è un commento vestito da garanzia. Lo smentirebbe, per la reflection, un linguaggio compilato che scriva i metadati solo per i tipi che un programma chiede, con un binario cresciuto meno del due per cento; per le etichette, un lettore: un consumatore che esista nel compilatore e trasformi un&rsquo;etichetta sconosciuta in un errore.
+      <a class="more" href="/it/docs/values-all-the-way-down/">I valori, fino in fondo</a>
+    </li>
+    <li id="borrow-checker">
+      <span class="when">Niente borrow checker</span>
+      <b>Il no che è scaduto ed è rimasto in piedi.</b> Un borrow checker è il controllo che segue chi tiene un riferimento a che cosa, e per quanto. Per settimane la ragione scritta era: non serve, perché ogni valore è una copia indipendente e non c&rsquo;è niente da controllare. Poi una seduta ha misurato che la frase era falsa alla lettera: due copie di un record che tiene un puntatore C raggiungono la stessa cosa, e una copia poteva liberare quello che tutte le altre tenevano, con il programma che usciva bene e zero segnalazioni. La ragione è caduta e la riga è rimasta, riscritta sotto con la data: il no oggi sta sul costo. Un controllo sulla memoria del C avrebbe bisogno di fatti che nessun header dichiara, e un controllo che li indovinasse rifiuterebbe tredici funzioni su diciassette del binding SQLite del repository, quattro delle quali non toccano niente. Quello che ha chiuso il buco è una parola, <code>consumes</code>, che ne rifiuta due su diciassette. Lo smentirebbe una regola sugli alias di un record che tiene un puntatore, prezzata e compilata.
+      <a class="more" href="/it/docs/the-c-boundary/#handles">Gli handle</a>
+    </li>
+    <li id="raw">
+      <span class="when">Niente modulo <code>raw</code></span>
+      <b>Un modulo dove vivrebbe tutto ciò che rompe le garanzie del linguaggio, così che un file è pericoloso solo se lo importa: non entra, perché il documento di progetto aveva già deciso il contrario, in un&rsquo;altra pagina.</b> Un linguaggio senza libreria standard mette un puntatore in ogni binding, e un marchio che ogni binding porta non dice niente. La seduta ha contato i puntatori nudi che escono da un gruppo nel resto dei programmi d&rsquo;esempio, e il numero è zero: la forma handle li ha presi tutti. Tre veti, dell&rsquo;ingegnere del compilatore, del lettore e del guardiano della specifica. Il lettore ha trovato l&rsquo;obiezione più netta: una lettura attraverso il modulo avrebbe tolto una garanzia invece di recintare un pericolo, perché lo stesso accesso attraverso un array di byte si ferma se esce dai limiti. Il pragmatico del C ha compilato la proposta alla lettera. Lo smentirebbe un programma di cui il compilatore ha bisogno che deve leggere, scrivere o convertire un indirizzo in un modo che nessuna dichiarazione riesce a esprimere.
+    </li>
+    <li id="releaser">
+      <span class="when">Niente rilascio legato al tipo</span>
+      <b>Scrivere sul tipo di un handle chi lo chiude, così che il compilatore lo chiuda da solo quando esce di scena: non entra, perché la proprietà è della chiamata e non del tipo.</b> La stessa connessione viene consegnata da una funzione della libreria e solo mostrata da un&rsquo;altra, e un marchio sul tipo non può sapere quale delle due l&rsquo;ha data. Il pragmatico del C l&rsquo;ha compilato: con il rilascio automatico, un programma che legge tre righe ne legge zero e riferisce che è andato tutto bene. L&rsquo;ingegnere del compilatore ha posto il veto di solidità, l&rsquo;unico formale della seduta, dopo aver inserito a mano quella riga nel C del binding e aver visto la connessione chiusa prima del primo uso. Una perdita di memoria si può contare; una risposta sbagliata che dice che è andato tutto bene no, e il progetto mette questa differenza sopra ogni costo. Lo storico ha trovato un solo linguaggio che lo faccia, e paga il conto marcando ogni riferimento. Lo smentirebbe un fatto leggibile nell&rsquo;header che separi una funzione che dà da una che presta.
+      <a class="more" href="/it/docs/the-c-boundary/#handles">Le tre parole</a>
+    </li>
+    <li id="inferred">
+      <span class="when">Niente obbligo dedotto, niente marchio su un <code>ptr</code></span>
+      <b>Se il binding dice come si chiude un tipo di handle, il compilatore potrebbe dedurre da sé quale chiamata te ne consegna uno. Non entra: il pragmatico del C ha aperto diciannove header di librerie vere, e in dodici la stessa libreria consegna un handle da tenere con una funzione e da guardare soltanto con un&rsquo;altra, senza dirlo.</b> In uno di quegli header le due funzioni stanno su righe adiacenti e differiscono per una cifra nel nome. Un obbligo dedotto male non dimentica un rilascio: ne impone uno su qualcosa che non è tuo, e questo è corrompere la memoria, non perderla. Quattro veti, di tutti i seggi che ne hanno uno. Al suo posto la parola si scrive: <code>acquires</code>, con il nome di chi riprende l&rsquo;handle. E la parola su un <code>ptr</code> nudo è rifiutata a sua volta, con i veti dell&rsquo;ingegnere del compilatore e del pragmatico del C: lì il compilatore non avrebbe dove leggerla, e obbedire a un marchio sbagliato è stato misurato peggio che ignorarlo. Lo smentirebbe una regola, derivata dal solo testo dell&rsquo;header, che separi le due funzioni adiacenti con zero falsi sui dodici.
+      <a class="more" href="/it/docs/the-c-boundary/#handles">Le tre parole</a>
+    </li>
+    <li id="coverage">
+      <span class="when">Niente copertura per riga</span>
+      <b>Uno strumento che dice quali righe del programma i test hanno eseguito e quali no: è il primo no a uno strumento e non a una forma del linguaggio, e non entra perché il numero misurerebbe la colla e la riporterebbe come programma.</b> La seduta ha compilato un binding SQLite vero con la copertura accesa e ha letto il rapporto: la libreria, che per questo linguaggio è il programma, non compare mai, e le funzioni di controllo che il compilatore emette perché clang verifichi gli argomenti segnano zero per cento, perché non vengono mai chiamate. Lo strumento che Heroes ha già, <code>heroes mutate</code>, introduce un errore alla volta in programmi che funzionano e conta quanti il compilatore ne prende, e arriva dove la copertura non arriva. Lo smentirebbe uno strumento che attribuisca le righe eseguite alla libreria C che un programma chiama senza che il programma la compili dai sorgenti, oppure una classe di difetti che la mutazione non raggiunge e che un rapporto per riga avrebbe nominato.
+      <a class="more" href="/it/docs/errors/#measured">La misura</a>
+    </li>
+    <li id="performance">
+      <span class="when">Le prestazioni non sono mai una giustificazione</span>
+      <b>Dove una scelta scambia velocità con semplicità, vince la semplicità, ogni volta.</b> È dell&rsquo;autore, in due frasi: le prestazioni non sono un obiettivo, e non devono diventare un soffitto. La lentezza non è per questo accettabile, e un costo che impedisce a un programma necessario di girare torna al panel come bisogno del compilatore. È un non-obiettivo dichiarato nel documento di progetto, fuori dalla tabella dei rifiuti, e non porta un falsificatore scritto.
+    </li>
+  </ol>
+  <p>
+    La tabella dei rifiuti nel documento di progetto tiene anche i no più tecnici, ognuno con la sua ragione e, dove è nato dopo la regola, con ciò che lo smentirebbe: una parola per nascondere una dichiarazione agli altri moduli, perché quello che aggiungerebbe è una prestazione e non una garanzia; una seconda grafia per costruire e leggere un caso di variante con lo stesso disegno, perché in questo linguaggio niente si smonta per pattern e la simmetria creerebbe la cosa che dice di togliere; un campo o un caso privato; l&rsquo;inferenza dei tipi a distanza; i sottotipi; le coroutine; la sintassi fuori dall&rsquo;ASCII. Il documento e i verbali sono nel repository, aperto in lettura.
+  </p>
+
+  <h2 id="expired">Un no può scadere</h2>
+  <p>
+    Un no vale finché la sua ragione resiste a una misura. Il borrow checker qui sopra ha visto cadere la ragione e restare il no. E una seduta convocata per tutt&rsquo;altro ha riletto tre rifiuti, la reflection e le etichette fra questi, e ha trovato tre ragioni false sotto tre risposte giuste: ha scritto sotto ciascuna la ragione vera, con la data. La tabella non si riscrive mai: una frase smentita resta, e la correzione le va sotto.
+  </p>
+
+  <h2 id="postponed">Rimandato non è rifiutato</h2>
+  <p>
+    Accanto alla tabella dei no c&rsquo;è una lista di cose rimandate: perdono solo sulla semplicità, e aspettano. Per decisione dell&rsquo;autore ogni voce ha ricevuto una data e uno di tre verdetti: entra, con un suo pezzo di lavoro; è rifiutata per sempre, e il rifiuto nomina ciò che lo smentirebbe; oppure aspetta ancora, con una condizione che qualcuno possa controllare. Cinque voci di quella lista sono diventate no in un solo giorno, e stanno qui sopra. Aspettano ancora, ciascuna con la sua condizione: gli alias di tipo, i test scritti nei commenti, le regole di conversione fra interi di larghezza diversa, la concorrenza dentro il linguaggio, e un secondo modo di produrre il programma finale che non passi dal C. Due cose sono state lasciate di proposito senza casella, né sì né no né dopo: il calcolo a compile-time, perché il C che il compilatore emette ne fa già un pezzo, e i blocchi inline, perché perdono anche sulla leggibilità, che è un veto e non un prezzo.
+  </p>
+
+  <p class="next away">
+    Il perché di quello che c&rsquo;è: <a href="/it/why/">le regole del linguaggio</a>. Chi giudica: <a href="/it/project/#panel">il panel, seggio per seggio</a>. E <a href="/it/spec/">tutto il linguaggio in un file solo</a>, dove stanno tutti i sì.
+  </p>
+
+  <footer>
+    <p>
+    I no di questa pagina sono la tabella dei rifiuti permanenti del documento di progetto, riletta a mano quando il sito viene aggiornato, e i verbali delle sedute che li hanno decisi. Documento e verbali sono nel <a href="https://github.com/heroes-lang/heroes">repository</a>, aperto in lettura, dove ogni no porta la data della sua ratifica.
+  </p>
+  </footer>

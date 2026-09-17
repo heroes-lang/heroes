@@ -1,0 +1,114 @@
+
+  <div class="page-head">
+    <h1 class="page">The refusals</h1>
+  </div>
+  <p class="lede">
+    The things Heroes evaluated and turned down: what, why in plain words, who said no, and what would prove the no wrong. A language&rsquo;s yeses can be read in its specification; its no&rsquo;s show only if somebody writes them down.
+  </p>
+
+  <h2 id="who">Who says no</h2>
+  <p>
+    Every change to the language goes through a panel of five seats, described on <a href="/project/#panel">the project page</a>: each receives different material, measures rather than opines, and four can veto. A veto closes the proposal, and no price reopens it. But no refusal leaves the sitting as final: it is adopted as provisional, waiting for the author&rsquo;s word. A no becomes a no when the author ratifies it, and every no on this page carries that ratification on the record, with its date. Where the panel left a more cautious alternative beside it, he chose the stronger one.
+  </p>
+  <p>
+    Three rules of the procedure are his. Never a compromise: the panel takes the strongest and most complete solution, never the cheapest and never a middle way, which is why a no here is never halved. Every new no has to name the program or the compiler fact that would prove it wrong, so a reader can check it rather than trust it: the spec warden proposed that rule and the author made it binding. And everything postponed receives a dated verdict: from that decision, in a single day, five things that had waited for weeks became no&rsquo;s. One no fell on a proposal of his own: he had asked for a sitting against the assistant&rsquo;s advice, the panel refused the proposal and found that the mechanism he asked for already existed, and he approved the refusal.
+  </p>
+  <p>
+    The oldest no&rsquo;s, from null to macros to indices that start at one, have been in the design document since its first day, in the first commit, the repository&rsquo;s first recorded change, which carries the author&rsquo;s signature and predates any sitting. They were born before the rule about how to disprove them, and this page does not pretend they carry it.
+  </p>
+
+  <h2 id="refusals">The no&rsquo;s, largest first</h2>
+  <ol class="log">
+    <li id="standard-library">
+      <span class="when">No standard library</span>
+      <b>Everything beyond the specification, from files to sockets to databases, comes from C libraries you declare yourself.</b> It is the language&rsquo;s founding constraint and the author set it before anything else: every function provided on top is a permanent maintenance commitment and a competitor to the libraries that already exist. The C pragmatist guards it at every sitting: it compiles the C a binding would need, or shows why it does not compile. It is a declared non-goal in the design document, outside the refusals table, and it carries no written falsifier.
+      <a class="more" href="/docs/the-c-boundary/">The C boundary</a>
+    </li>
+    <li id="null">
+      <span class="when">No null</span>
+      <b>Absence is a type, <code>i64?</code>, not a value that can hide in any variable.</b> The reason on the record is one sentence: the billion-dollar mistake, and the languages that tried to add the notion of absence afterwards spent years on it. In the design document since its first day. C&rsquo;s null pointer keeps its own name, <code>nullptr</code>, and stays at the boundary.
+      <a class="more" href="/docs/failure-is-a-value/">How an error is handled</a>
+    </li>
+    <li id="exceptions">
+      <span class="when">No exceptions</span>
+      <b>An error is a value the line shows, <code>T?</code>, not an invisible jump back up the program.</b> The reason on the record: control flow nobody sees produces unhandled paths no compiler reports, and crossing the C boundary with an exception in flight is undefined behaviour, that is, C no longer promises anything about what happens.
+      <a class="more" href="/docs/failure-is-a-value/">Failure is a value</a>
+    </li>
+    <li id="invisible-reason">
+      <span class="when">No inheritance, no overloading, no implicit conversions</span>
+      <b>Four no&rsquo;s with one reason: a line has to mean what it says, without its meaning depending on something written elsewhere.</b> With inheritance, understanding <code>this.save()</code> means walking a chain of classes you cannot see. With operator overloading, <code>a + b</code> can do anything, defined somewhere else; with function overloading, which version runs depends on a choice the line does not show. And with implicit conversions, <code>f(x)</code> works for an invisible reason.
+    </li>
+    <li id="macros">
+      <span class="when">No macros</span>
+      <b>The code you read is the code that runs.</b> A macro is code that expands into other code, or extends the syntax, and after it the two no longer coincide. The no also stands in the project&rsquo;s working rule about what is never copied from Nim: macros, templates, effect systems, and identifiers that ignore the difference between <code>fooBar</code> and <code>foo_bar</code>.
+    </li>
+    <li id="three-small-ones">
+      <span class="when">No shadowing, no global mutable state, no indices from one</span>
+      <b>Three small no&rsquo;s with one root: what the writer believes they are reading has to be what is there.</b> With shadowing, one name covering another of the same spelling, you believe you refer to one variable and hit another. With global mutable state, the meaning of a line depends on a context nobody sees. And with indices starting at one, every crossing into C becomes an off-by-one, silently.
+    </li>
+    <li id="closures">
+      <span class="when">No closures</span>
+      <b>A function that carries the variables around it with it does not enter: every function has a name and a declaration you can read.</b> The no was decided on cost, measured rather than estimated, by all five seats. The compiler engineer counted hundreds of places in the compiler to rewrite, across dozens of modules. The spec warden weighed the sentences it would take and found they did not fit the budget. The C pragmatist compiled a closure against a real library and watched it pass every check and crash as soon as it ran, because a function carrying values takes up more room than C expects. And the gain was small: in the compiler, a function is passed to another one in fewer than five places. What would prove it wrong is a program the compiler needs that a named function cannot express, together with a compiled representation in which a closure has one type and eight bytes at the C boundary.
+      <a class="more" href="/docs/generics-and-function-values/">Functions as values</a>
+    </li>
+    <li id="traits">
+      <span class="when">No traits, no interfaces</span>
+      <b>A set of functions a type promises to have, and a generic limited to the types that promise it: it does not enter, because the hole it would fill is two operations wide and the code wants one of them.</b> The sitting compiled eight cases: almost everything interfaces are needed for elsewhere already works here, by passing the function as an argument. What stays out is sorting and printing a generic type, and in the compiler not one of the twenty-six sorts sorts a record. The compiler engineer vetoed the full form, between nine hundred and fourteen hundred lines and with no place for the rule that forbids two definitions for one type to live; the reader vetoed the lighter alternative as it was written. What would prove it wrong is a program the compiler needs that has to dispatch over a collection whose types are unknown where it is built, and that a variant cannot carry.
+    </li>
+    <li id="reflection">
+      <span class="when">No reflection, no invented annotations</span>
+      <b>A value cannot ask itself what it is made of, and a program cannot invent labels to attach to a declaration.</b> The no to reflection is unanimous, with vetoes from the compiler engineer and the C pragmatist, and the reason is the layout in memory: putting the type inside the value changes the size of every record and the way every call into C passes its arguments, and a graphics library expecting eight bytes would receive sixteen. The no to labels is unanimous because nobody could read them: no macros, no compile-time computation, no reflection, so a label nobody reads is a comment dressed as a guarantee. What would prove it wrong, for reflection, is a compiled language that writes metadata only for the types a program asks about, with a binary grown by less than two per cent; for labels, a reader: a consumer that exists in the compiler and turns an unknown label into an error.
+      <a class="more" href="/docs/values-all-the-way-down/">Values all the way down</a>
+    </li>
+    <li id="borrow-checker">
+      <span class="when">No borrow checker</span>
+      <b>The no that expired and stayed standing.</b> A borrow checker is the check that follows who holds a reference to what, and for how long. For weeks the written reason was: not needed, because every value is an independent copy and there is nothing to check. Then a sitting measured that the sentence was false as written: two copies of a record holding a C pointer reach the same thing, and one copy could free what all the others held, with the program exiting cleanly and zero diagnostics. The reason fell and the row stayed, rewritten underneath with the date: today the no rests on cost. A check over C&rsquo;s memory would need facts no header declares, and a check that guessed them would refuse thirteen of the seventeen functions in the repository&rsquo;s SQLite binding, four of which touch nothing. What closed the hole is one word, <code>consumes</code>, which refuses two of the seventeen. What would prove it wrong is a rule about aliases of a record holding a pointer, priced and compiled.
+      <a class="more" href="/docs/the-c-boundary/#handles">Handles</a>
+    </li>
+    <li id="raw">
+      <span class="when">No <code>raw</code> module</span>
+      <b>A module where everything that breaks the language&rsquo;s guarantees would live, so that a file is dangerous only if it imports it: it does not enter, because the design document had already ruled the other way, on another page.</b> A language with no standard library puts a pointer in every binding, and a mark every binding carries says nothing. The sitting counted the bare pointers escaping a group into the rest of the example programs, and the number is zero: the handle form took them all. Three vetoes, from the compiler engineer, the reader and the spec warden. The reader found the sharpest objection: a read through the module would remove a guarantee rather than fence a danger, because the same access through an array of bytes stops if it goes out of bounds. The C pragmatist compiled the proposal at its word. What would prove it wrong is a program the compiler needs that has to read, write or convert an address in a way no declaration can express.
+    </li>
+    <li id="releaser">
+      <span class="when">No release tied to the type</span>
+      <b>Writing on a handle&rsquo;s type who closes it, so the compiler closes it by itself when it leaves the scene: it does not enter, because ownership belongs to the call and not to the type.</b> The same connection is handed over by one library function and merely shown by another, and a mark on the type cannot know which of the two gave it. The C pragmatist compiled it: with the automatic release, a program that reads three rows reads zero and reports that all went well. The compiler engineer cast the soundness veto, the sitting&rsquo;s only formal one, after inserting that line by hand into the binding&rsquo;s C and watching the connection close before its first use. A memory leak can be counted; a wrong answer that says all went well cannot, and the project puts that difference above any cost. The historian found one language that does it, and it pays the bill by marking every reference. What would prove it wrong is a fact readable in the header that separates a function that gives from one that lends.
+      <a class="more" href="/docs/the-c-boundary/#handles">The three words</a>
+    </li>
+    <li id="inferred">
+      <span class="when">No inferred obligation, no mark on a <code>ptr</code></span>
+      <b>If the binding says how a handle type is closed, the compiler could work out by itself which call hands you one. It does not enter: the C pragmatist opened nineteen headers of real libraries, and in twelve the same library hands out a handle to keep with one function and to look at only with another, without saying so.</b> In one of those headers the two functions sit on adjacent lines and differ by one digit in their names. A wrongly inferred obligation does not forget a release: it forces one on something that is not yours, and that is corrupting memory, not leaking it. Four vetoes, from every seat that holds one. In its place the word is written: <code>acquires</code>, with the name of who takes the handle back. And the word on a bare <code>ptr</code> is refused in turn, with vetoes from the compiler engineer and the C pragmatist: there the compiler would have nowhere to read it, and obeying a wrong mark was measured to be worse than ignoring it. What would prove it wrong is a rule, derived from the header&rsquo;s text alone, that separates the two adjacent functions with zero false positives over the twelve.
+      <a class="more" href="/docs/the-c-boundary/#handles">The three words</a>
+    </li>
+    <li id="coverage">
+      <span class="when">No line coverage</span>
+      <b>A tool that says which lines of the program the tests ran and which they did not: the first no to a tool rather than to a language form, and it does not enter because the number would measure the glue and report it as the program.</b> The sitting compiled a real SQLite binding with coverage on and read the report: the library, which for this language is the program, never appears, and the checking functions the compiler emits so that clang can verify the arguments read zero per cent, because they are never called. The tool Heroes already has, <code>heroes mutate</code>, introduces one mistake at a time into working programs and counts how many the compiler catches, and it reaches where coverage cannot. What would prove it wrong is a tool that attributes the lines executed to the C library a program calls without the program building that library from source, or a class of defects mutation cannot reach and that a per-line report would have named.
+      <a class="more" href="/docs/errors/#measured">The measurement</a>
+    </li>
+    <li id="performance">
+      <span class="when">Performance is never a justification</span>
+      <b>Where a choice trades speed for simplicity, simplicity wins, every time.</b> It is the author&rsquo;s, in two sentences: performance is not a goal, and it must not become a ceiling either. Slowness is not acceptable for that, and a cost that stops a needed program from running at all goes back to the panel as a need of the compiler. It is a declared non-goal in the design document, outside the refusals table, and it carries no written falsifier.
+    </li>
+  </ol>
+  <p>
+    The refusals table in the design document also holds the more technical no&rsquo;s, each with its reason and, where it was born after the rule, with what would prove it wrong: a word to hide a declaration from other modules, because what it would add is performance and not a guarantee; a second spelling for building and reading a variant case with the same shape, because nothing in this language is taken apart by pattern and the symmetry would create the thing it claims to remove; a private field or case; type inference at a distance; subtyping; coroutines; syntax outside ASCII. The document and the sitting records are in the repository, open to read.
+  </p>
+
+  <h2 id="expired">A no can expire</h2>
+  <p>
+    A no holds as long as its reason survives a measurement. The borrow checker above saw its reason fall and its no stay. And a sitting convened for something else entirely reread three refusals, reflection and labels among them, and found three false reasons under three right answers: it wrote the true reason under each, with the date. The table is never rewritten: a disproved sentence stays, and the correction goes underneath.
+  </p>
+
+  <h2 id="postponed">Postponed is not refused</h2>
+  <p>
+    Beside the table of no&rsquo;s is a list of things postponed: they lose only on simplicity, and they wait. By the author&rsquo;s decision every entry received a date and one of three verdicts: it enters, with a piece of work of its own; it is refused for good, and the refusal names what would prove it wrong; or it waits again, with a condition somebody could check. Five entries of that list became no&rsquo;s in a single day, and they stand above. Still waiting, each with its condition: type aliases, tests written in comments, the conversion rules between integers of different widths, concurrency inside the language, and a second way of producing the final program that does not go through C. Two things were deliberately left with no box, neither yes nor no nor later: compile-time computation, because the C the compiler emits already does a piece of it, and inline blocks, because they also lose on readability, which is a veto and not a price.
+  </p>
+
+  <p class="next away">
+    Why what is there is there: <a href="/why/">the language rules</a>. Who judges: <a href="/project/#panel">the panel, seat by seat</a>. And <a href="/spec/">the whole language in one file</a>, where all the yeses are.
+  </p>
+
+  <footer>
+    <p>
+    The no&rsquo;s on this page are the design document&rsquo;s table of permanent refusals, reread by hand when the site is refreshed, and the records of the sittings that decided them. Document and records are in the <a href="https://github.com/heroes-lang/heroes">repository</a>, open to read, where every no carries the date of its ratification.
+  </p>
+  </footer>
