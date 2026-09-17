@@ -1846,3 +1846,52 @@ that ran against a seat's own argument. `.claude/rules/records.md` § And the
 record says whose idea it was is why: a sitting that quietly absorbs its
 corrections teaches nobody, and the next brief is written by somebody reading
 this one.
+
+## CL-078 — the shapes beside it are where the defect turns out to be something else
+2026-09-17 · author instruction · § Run it, or say it is unrun
+
+*"Save this rule: attack the shapes next to the one described, instead of
+repairing the one described. It is the rule this project repeats most often, and
+it is the only one that changed WHAT I was repairing and not just how."*
+
+The rule itself is CL-061's and has stood since 2026-09-06. What this adds is the
+half the author names, and it is not a refinement of the same idea: the neighbour
+shapes are not only where a repair is made complete, they are where the defect
+turns out not to be the thing its entry describes.
+
+**What earned it: three of five defects in one milestone, each written down as
+the finder saw it, and each wrong about itself.**
+
+- **049** was filed as *`--emit-c` writes the pre-probe tag spelling*, and its
+  entry said the choice between two evils belonged to a sitting. Probing the
+  neighbour — a header this machine does not have, rather than a tag it spells
+  differently — measured `--emit-c` at exit **0** writing 10468 bytes where
+  `heroes build` on the same machine said `ffi_missing_header` at exit **1**. The
+  defect was not a spelling: `--emit-c` was writing the artifact of a build that
+  never passed, and the withdrawn probe had fallen through that hole rather than
+  opening it. No sitting was needed; panel 157 R1 already said what an artifact
+  owes.
+- **050** was filed as a question about *the four readers of a fallible value*.
+  Reading what each of the four RETURNS showed three hand the second level back
+  in their type, so a wrong depth fails at the next line. Only `.is_err()`
+  returns a `bool`. The asymmetry is one reader wide, and the sitting's
+  dissenting seat — which had built the four-reader refusal and read the
+  one-reader option from prose — had its own thirteen probes refused by the
+  option it argued against.
+- **056** was filed as *a generic body reads the outer level*. Reading the
+  library's six generics showed not one applies a reader to its type parameter:
+  `find` constructs, `any` and `all` return the caller's predicate's `bool`. The
+  hole is unreachable from anything but a generic the author writes, which moved
+  it from urgent to filed with a costing.
+
+**Why the entry is wrong so reliably, and it is not carelessness.** A defect is
+written by whoever met it, at the point where it became visible — a red CI leg, a
+failing probe, a sitting's brief. That point is a symptom's location, not a
+cause's. The neighbour shapes are the cheapest instrument for the difference,
+and they are cheap: each of the three above cost one probe program.
+
+**The tell that the rule was skipped**: a repair that fits the entry exactly.
+`emission` said *retire that file* twenty-two times when 049's real repair
+landed, and fifteen of those files were blessing C that does not compile — a
+consequence no reading of the entry would have predicted, because the entry was
+about a tag.
