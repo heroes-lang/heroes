@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 2 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 4 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -16,7 +16,7 @@ against a banner reading 3.
 
 | | |
 |---|---|
-| **Current milestone** | **M-check-completeness**, opened 2026-09-16, **its own list at zero** and held open by two defects rather than by work of its own: 049 waits on panel 157 R4's instrument, which belongs to M-package-manager, and 050 on a language decision panel 158 measured closable by one option it did not adopt. What landed is the whole of its check/build subject plus five sittings, 155 to 159, and the seven defects they turned up |
+| **Current milestone** | **M-check-completeness**, opened 2026-09-16, **its own list at zero** and held open by four defects. 049 closed on 2026-09-17 without the sitting its entry called for: the measurement found `--emit-c` writing the artifact of a build that never passed. 050 is **resolved and unbuilt** — panel 160 adopted option E. 054, 055 and 056 are that sitting's own findings. What landed is the whole of its check/build subject plus six sittings, 155 to 160, and the ten defects they turned up |
 | **Last closed** | **M-marked-acquisition**, 2026-09-14, `m-marked-acquisition` ([056](journal/056-marked-acquisition.md)) — the form closed at **three words**, each saying one thing and none inferred: `acquires <releaser>`, `consumes`, `borrows` · before it **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) and **M-handle-verdict** ([054](journal/054-handle-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **57** of 78 · **57** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **62,178** lines of Heroes in **214** modules (`find selfhost -name '*.hero'`) · the seed **822,780** lines of C, regenerated six times this milestone and the fixpoint verified byte-identical each time |
