@@ -16,9 +16,9 @@ against a banner reading 3.
 
 | | |
 |---|---|
-| **Current milestone** | **M-check-completeness**, opened 2026-09-16, and **both its own list and the defect list are at zero**. Six sittings, 155 to 160, and the ten defects they turned up, all closed. The last four went in parallel lanes on a frozen trunk — the way of working the author asked be written down on 2026-09-17 |
-| **Last closed** | **M-marked-acquisition**, 2026-09-14, `m-marked-acquisition` ([056](journal/056-marked-acquisition.md)) — the form closed at **three words**, each saying one thing and none inferred: `acquires <releaser>`, `consumes`, `borrows` · before it **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) and **M-handle-verdict** ([054](journal/054-handle-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **57** of 78 · **57** tags matching `m*`, the legacy `m0`-`m8` included |
+| **Current milestone** | **none open.** The next row is 59, `M-arm-platform`, and nobody has opened it |
+| **Last closed** | **M-check-completeness**, 2026-09-17, `m-check-completeness` ([057](journal/057-check-completeness.md)) — it could not close for two days, because the rule forbids a tag over an open defect and its own sittings kept finding them: ten opened, ten closed, six sittings · before it **M-marked-acquisition** ([056](journal/056-marked-acquisition.md)) and **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **58** of 78 · **58** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **62,308** lines of Heroes in **215** modules (`find selfhost -name '*.hero'`) · the seed **824,114** lines of C, regenerated nine times this milestone and the fixpoint verified byte-identical each time |
 | The spec | **5997** on the vendored ranks and **7984** on the reader's own, against a ceiling of **10240**. Panel 160's refusal lands at **−11 vendored and −12 real**, the first ledger row where the document SHRINKS while gaining a rule; defect 054's correction is **+4 vendored and −2 real**, the first where the two instruments disagree on the SIGN. **2256 free** and 2196 net of the FFI floor |
 | The contract | **7449** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-15 with the wakeup instruction: of the 36 vendored tokens the pin was behind, 14 predate that session and no commit had named them |
@@ -120,7 +120,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 55 | **M-handle-verdict** | done 2026-09-14 | `m-handle-verdict` | [054](journal/054-handle-verdict.md) | the ruling on telling one C handle from another, and three defects that were one question · **§1.12**, defects 029, 030, 031 |
 | 56 | **M-cleanup-verdict** | done 2026-09-14 | `m-cleanup-verdict` | [055](journal/055-cleanup-verdict.md) | the ruling on a scope-bound release for a C handle: a releaser keyed on the TYPE refused to Part 6, because ownership is a property of the CALL · a decision, not a feature |
 | 57 | **M-marked-acquisition** | done 2026-09-14 | `m-marked-acquisition` | [056](journal/056-marked-acquisition.md) | the mark goes where the obligation is CREATED — on the acquiring call — so a C handle nobody releases stops being silent · panel 147 R4, **§1.12** |
-| 58 | **M-check-completeness** | **OPEN** | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
+| 58 | **M-check-completeness** | done 2026-09-17 | `m-check-completeness` | [057](journal/057-check-completeness.md) | ten defects the hunt turned up, closed — and three were not what their own entry said · scheduled, no warrant |
 | 59 | **M-arm-platform** | scheduled | — | — | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
 | 60 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
 | 61 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
