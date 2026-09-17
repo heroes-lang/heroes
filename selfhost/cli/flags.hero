@@ -9,8 +9,8 @@
 # corrected — a count in prose is the premise §11 says expires in
 # silence. The reasons ride each flag below; the array is the fact.
 
-# The fifteen — the bootstrap's thirteen in their order, then panel 103's,
-# then panel 154's:
+# The sixteen — the bootstrap's thirteen in their order, then panel 103's,
+# then panel 154's, then panel 161's:
 # - gnu11 not c11: one predefined macro apart (__STRICT_ANSI__), whose
 #   only effect on glibc is to hide M_PI, strdup, fileno and most of
 #   what §1.11 says a program binds (panel 047, ratified).
@@ -48,6 +48,44 @@
 #   redundant null checks the optimiser would otherwise delete, real 1.04 s
 #   both; the seed binary +16,528 bytes, 0.38%; the emitted C byte-identical.
 #   It landed in clang 7 and the floor here is 18 (`cli/clang_floor.hero`).
+# - **-fsigned-char is panel 161's** (2026-09-18, defects 058 and 059): C has
+#   three `char` types and the sign of the plain one belongs to the PLATFORM —
+#   unsigned under the generic AAPCS, which Debian arm64 follows, and signed on
+#   x86-64, on Darwin arm64 (Apple overrides the AAPCS default against Arm's own
+#   stated advice) and on Windows. So a header's `char name[65]` is a signed
+#   array on three legs and an unsigned one on the fourth, while `spec § 13`
+#   tells the author to declare a field at *the header's own width and sign* —
+#   which that header does not have. Measured 2026-09-17 on two containers one
+#   axis apart, same Debian and same clang: `i8[4]` against `char[4]` is
+#   accepted on x86-64 and refused on arm64 Linux, `u8[4]` the reverse, and a
+#   scalar, a parameter and a result all invert the same way.
+#   `tests/golden/run/ffi-a-char-array-member.hero` has shipped since
+#   2026-08-16 and did not compile on the fourth leg.
+#
+#   **The flag removes the divergence instead of describing it**, which is why
+#   it beat a ninth integer type, a new spelling inside `extern`, accepting
+#   either spelling, and refusing the type outright. § 13's sentence stays true
+#   to the letter: the header's own sign, as the translation unit compiling it
+#   sees it, is signed everywhere. No spec token is spent and no guard is
+#   relaxed — `signed char`, `unsigned char`, a wrong width and a wrong length
+#   all stay refused, because what moved is what clang thinks `char` is and not
+#   what `emit/extern_field.hero` asks about it. `unsignedness_of` there is a
+#   `_Generic` evaluated INSIDE this same translation unit, so it answers
+#   consistently with this flag by construction, and that is why defect 059
+#   closes here with no edit to `emit/c_spellings.hero`: its `char -> i8` row
+#   was never wrong code, only a sentence that was false on one leg.
+#
+#   **The one hazard was run rather than argued.** The only leg where this
+#   disagrees with the platform default is Debian arm64, and `clang -O2 -S` says
+#   an aarch64-linux callee re-narrows a one-byte argument in both directions
+#   (`and w0, w0, #0xff`), so the sign is not observable across a
+#   translation-unit boundary there; a Darwin callee does trust its caller, but
+#   on Darwin this flag AGREES with the default. What remained was a bound
+#   header's `static inline` code whose behaviour depends on the sign —
+#   Microsoft documents that shape for its own `/J` and ATL/MFC — and the corpus
+#   was rebuilt under this flag on that leg to settle it. The Linux kernel took
+#   the mirror flag, `-funsigned-char`, in 6.2 for the reason Torvalds gave:
+#   making the language rules stricter to avoid differences is a good thing.
 use cli/process
 
 function flags() -> [str]
@@ -67,6 +105,7 @@ function flags() -> [str]
         "-Werror=sign-conversion"
         "-Werror=incompatible-pointer-types-discards-qualifiers"
         "-Werror=incompatible-pointer-types"
+        "-fsigned-char"
     ]
 
 # **WHAT A BINARY IS LINKED WITH, and it exists for one platform.**
@@ -165,14 +204,20 @@ function sanitizers(sanitize: bool) -> [str]
 
 ## Tests
 
-test "the array is the fact: fifteen flags, gnu11 named first"
+test "the array is the fact: sixteen flags, gnu11 named first and the char sign last"
     got = flags()
-    assert got.len() == 15
+    assert got.len() == 16
     assert got[0] == "-std=gnu11"
     assert got[1] == "-g"
     assert got[10] == "-fno-delete-null-pointer-checks"
     assert got[13] == "-Werror=incompatible-pointer-types-discards-qualifiers"
     assert got[14] == "-Werror=incompatible-pointer-types"
+
+    # Panel 161's. It is asserted by NAME and not only by the count,
+    # because the count alone would go green on any sixteenth string and
+    # this one is the difference between a plain `char` meaning the same
+    # thing on four legs and meaning two things on four legs.
+    assert got[15] == "-fsigned-char"
     assert sanitizers(sanitize: true).len() == 1
     assert sanitizers(sanitize: false).len() == 0
 
