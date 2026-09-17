@@ -88,3 +88,87 @@ so panel 155's split is two independent readings plus two informed concurrences
 rather than four of five. The rule that came out of it — a resumed seat is given
 its own brief again, never another seat's answers — held at 156 and 157, where no
 seat died at all.
+
+## What landed, and what carried forward
+
+**M-check-completeness closes 2026-09-17 with every list at zero**, which is the
+first thing to say because for most of the milestone it could not have. The tag
+rule refuses a close over an open defect, and the defects kept arriving from the
+sittings convened to answer other questions — ten opened, ten closed, six
+sittings, 155 to 160.
+
+**Its subject was `heroes check` accepting what `heroes build` refuses.** Face 1
+was found already closed and pinned on the morning it opened; faces 2 and 3 went
+to panel 155 and wait under Principle 0; face 4 is M-package-manager's. What the
+milestone actually delivered is the ten defects that hunt turned up, and they
+are better than the subject: three of them were not what their own entry said.
+
+**049** was filed as *the spelling of a tag*. It was `--emit-c` writing the
+artifact of a build that never passed — exit 0 and 10468 bytes where `build`
+said `ffi_missing_header` at exit 1. **050** was filed as *the four readers of a
+fallible value*. It is the one reader that returns a `bool`: the other three
+hand the second level back in their type. **056** was filed as a hole in the
+generics. It is a hole the library cannot reach, since not one of `find`, `any`,
+`all`, `map`, `filter` or `fold` applies a reader to its type parameter — which
+moves it from urgent to filed.
+
+**Three numbers worth carrying.** The document ends the milestone **smaller than
+it started while gaining two rules**: panel 160's refusal is −11 vendored and
+−12 real, the first ledger row ever to shrink. Defect 054's correction is **+4
+vendored and −2 real**, the first where the two instruments disagree on the
+SIGN — no factor can bridge that, which is the author's instruction of
+2026-09-16 arriving with its own worked example. And `emission` fell by 22
+because defect 049 retired that many blessed artifacts, **fifteen of which were
+blessing C that does not compile**.
+
+### Predictions scored at this close
+
+- **Ledger row 85's, from panel 110's historian, HELD.** It said the first
+  generic instantiated at `()` would need either a value expression for `()` or
+  a rule refusing it, and named its falsifier as a generic taking `()`
+  everywhere with no special case. Measured: `fold(xs, (), step)` is
+  `error[expected_expression]` — there is no value expression for `()` — and
+  `map(xs, nothing)` where the callback returns `()` is `check` 0 and `build` 1,
+  `unsupported[unit_element]`. The disjunction's second branch is what the
+  compiler took, and the special case exists.
+- **Panel 160's compiler-engineer, HELD on all four clauses.** `suite_layout`
+  reads `selfhost/check/builtins.hero 378`; `nested.hero` is 53 lines against
+  its ≤ 60; `nested_read` fires on **0** files across `examples/` and
+  `tests/golden/run/`; and the landing touched no file under `selfhost/ir/` or
+  `selfhost/emit/`, which was its own named falsifier.
+- **Panel 155's compiler-engineer, LAPSED and not falsified.** It said
+  `-- ./heroes run` would go red on exactly two files *if the float half lands*.
+  That half did not land — panel 155 R3 left `float_map_key` through a generic
+  waiting under Principle 0 — so the prediction's precondition is false and it
+  is marked lapsed rather than scored, which panel 046 R2 asks for explicitly.
+- **Panel 158's spec-warden, LAPSED.** It predicted 7974 real / 5989 vendored
+  unchanged under a +0 resolution; panel 159 moved the base with three unrelated
+  sentences before it could be read. Unscorable as written, and the synthesis
+  says so rather than scoring it against a base it did not price.
+- **Panel 160's spec-warden, SCORED EXACT ON BOTH INSTRUMENTS.** It said
+  E3+Ra+Re lands at **7986 real / 5993 cl100k**, and it does — the first
+  prediction in that ledger to hit a real count to the token.
+
+### What carried forward
+
+**Panel 157's R4** — build both ways, compare exit code and stdout, and LINK —
+stays adopted and unbuilt at M-package-manager. It is the instrument that would
+have FOUND 048 and 049; what this milestone did is repair what it would have
+found. **Panel 155's R3**, `float_map_key` through a generic, waits under
+Principle 0. **Panel 160's open question**, whether the presence test on a
+`{K: V?}` deserves a spelling of its own, is a sitting of its own — the
+historian found Go named it `v, ok` and Kotlin `containsKey`, both as additions
+beside a form that still compiled, and predicted the request arrives before the
+next tag. And **defect 056's costing** is half done: the shape that fits the
+existing call-site seam is described and neither shape is built.
+
+### Three rules the author gave, all with an executor
+
+*Always measure with the real* (`spec-shape.md`): a vendored delta is not a
+price, and the offline route cannot reach the binding number at all.
+*A live list is a preamble, a count and its items* (`records.md`): `DEFECTS.md`
+went from 982 words of preamble to 135, and the two new checks — a preamble
+ceiling and a comparison of the ROADMAP's counts against the lists' own banners
+— were each made to fail before being trusted. *And the lane* (`records.md`): a
+lane is how work continues while this tree is owned, which is what four of the
+ten defects were repaired under.
