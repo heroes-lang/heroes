@@ -8,6 +8,76 @@
   </p>
 
   <ol class="log">
+    <li id="58">
+      <span class="when">Un buco che non era dove diceva il nome</span>
+      <b>La milestone cercava programmi che <code>heroes check</code> accetta e <code>heroes build</code> rifiuta, e ha trovato che una sola faccia su quattro era quel divario, ed era già chiusa da una seduta tenuta lo stesso giorno di quella che l&rsquo;aveva nominata.</b> Il buco vero era una discesa nel codice che si arrendeva dopo sedici livelli, difesa da un argomento vero: la guardia a runtime esiste e scatta. All&rsquo;argomento mancava una frase, e cioè che una guardia che autorizza un silenzio a compile-time è una guardia su cui il compilatore si appoggia per sbagliare in silenzio. Dieci difetti aperti dalle sue stesse sedute e dieci chiusi, uno aperto dall&rsquo;autore chiedendo perché la CI fosse rossa; e la specifica è uscita più corta di com&rsquo;era entrata, con due regole in più.
+      <a class="more" href="/it/docs/errors/">Cosa il compilatore ferma</a>
+    </li>
+    <li id="57">
+      <span class="when">Tre parole per ciò che si prende in prestito dal C</span>
+      <b>Un binding ora dice, su ogni funzione che tocca un handle, una di tre cose: <code>acquires</code> e chi lo riprende, <code>consumes</code>, <code>borrows</code>. Nessuna delle tre viene dedotta dal compilatore.</b> La forma che deduce da sola è caduta quando il pragmatico del C ha aperto diciannove header di librerie vere: in dodici la stessa libreria consegna un handle da tenere con una funzione e da guardare con un&rsquo;altra, senza dirlo. La grafia che nomina chi rilascia l&rsquo;aveva proposta il lettore, che non aveva modo di pesarla, ed è risultata anche la meno cara. E la regola per cui ogni strumento che rilegge un programma va istruito su una forma nuova è scattata tre volte, una su un difetto che nessuno aveva visto.
+      <a class="more" href="/it/docs/the-c-boundary/#handles">Gli handle e le tre parole</a>
+    </li>
+    <li id="56">
+      <span class="when">L&rsquo;etichetta va sulla consegna, non sulla cosa</span>
+      <b>Scrivere sul tipo di un handle chi lo chiude, così che il compilatore chiuda da solo: rifiutato, perché la stessa connessione una funzione la consegna e un&rsquo;altra la mostra soltanto, e un&rsquo;etichetta sul tipo non sa quale delle due l&rsquo;ha data.</b> Il pragmatico del C l&rsquo;ha compilato: un programma che legge tre righe ne leggeva zero e diceva che era andato tutto bene. L&rsquo;ingegnere del compilatore ha posto l&rsquo;unico veto formale della seduta. E il conteggio fatto prima di discutere ha trovato, di passaggio, che confrontare due handle rispondeva sempre sì: la riga più comune di chi prende in prestito qualcosa dal C, quella che chiede se ha ricevuto qualcosa, non aveva mai funzionato.
+      <a class="more" href="/it/why/not/#releaser">Il no, per intero</a>
+    </li>
+    <li id="55">
+      <span class="when">Il nome della libreria diventa il tipo</span>
+      <b>Un puntatore che una libreria C ti consegna può portare il nome che la libreria gli dà: <code>record Db tag sqlite3</code>. Consegnane uno dove ne serve un altro e il compilatore ti ferma su quella riga.</b> Tre difetti aperti da tre persone in tre giorni diversi erano una sola domanda: che cosa non dice un indirizzo nudo? Non dice a che cosa punta, quale è, e di chi è. Lo strumento costruito prima della correzione diceva che metà dei casi era già presa: ne prendeva zero, e la metà erano accidenti del test. Alla fine una seduta convocata su una parola ha tenuto la parola, e il critico di completezza ha trovato una conversione nascosta al confine e ha svuotato gli ultimi posti degli esempi dove un indirizzo nudo usciva allo scoperto.
+      <a class="more" href="/it/docs/the-c-boundary/#handles">Gli handle</a>
+    </li>
+    <li id="54">
+      <span class="when">Le ragioni erano marcite sotto le risposte</span>
+      <b>Ogni voce della lista delle cose rimandate ha ricevuto una data e un verdetto: entra, è rifiutata per sempre, oppure aspetta con una condizione controllabile. Nove voci, nove sedute, e nove volte la risposta era buona e la ragione scritta sotto era marcita.</b> Una aveva un orologio già scaduto; una diceva che una cosa non si poteva fare e otto programmi l&rsquo;hanno fatta quel pomeriggio; una descriveva un pezzo del compilatore che questo progetto non ha mai avuto; una era contraddetta dallo stesso documento, quaranta pagine prima. La decisione che ogni voce rimandata riceva un verdetto è dell&rsquo;autore, e cinque voci sono diventate no in un solo giorno.
+      <a class="more" href="/it/why/not/#postponed">Rimandato non è rifiutato</a>
+    </li>
+    <li id="53">
+      <span class="when">Ogni soffitto dice da che parte può muoversi</span>
+      <b>L&rsquo;autore ha detto che continuava a sbattere la testa contro i soffitti e ha chiesto quali avessero ancora senso. Quasi tutti erano fissati all&rsquo;altezza esatta della cosa misurata, il giorno in cui qualcuno l&rsquo;aveva misurata.</b> Uno era peggio degli altri. Il regolamento che l&rsquo;assistente legge prima di ogni lavoro veniva pesato con una bilancia presa in prestito, e con quella stava sotto il limite per nove unità; con la bilancia che il lettore usa davvero era sopra di milleottocento, e ogni strumento diceva che andava tutto bene. Ora accanto a ogni numero c&rsquo;è scritto in che direzione può muoversi, e qualcosa se ne accorge quando avrebbe dovuto muoversi e non l&rsquo;ha fatto.
+      <a class="more" href="https://github.com/heroes-lang/heroes">Il repository</a>
+    </li>
+    <li id="52">
+      <span class="when">Il nome di una cosa non è più un testo scritto a mano</span>
+      <b>Un programma non può chiedere a un valore di che cosa è fatto: tre no, e ogni volta la ragione scritta era falsa, quindi le ragioni sono state sostituite con ragioni misurabili.</b> Poi è arrivata la parte non prevista. Un programma che manda fuori dei dati doveva scrivere i nomi dei propri campi come testo, e una lettera sbagliata usciva nel mondo senza che niente si lamentasse. Quattro dei cinque seggi hanno inventato qualcosa che non era in lista, a coppie, senza vedersi: <code>Point::x</code> è il nome del campo, e il compilatore sa se esiste. Il lettore e l&rsquo;ingegnere l&rsquo;hanno proposto nella stessa ora con due grafie, e l&rsquo;autore ha scelto la grafia che la macchina non aveva già costruito, per una ragione di lettura. Con i nomi come testo, quattro refusi e nessuno preso; con i nomi come nomi, cinque su cinque.
+      <a class="more" href="/it/why/not/#reflection">Il no alla reflection</a>
+    </li>
+    <li id="51">
+      <span class="when">La grammatica è andata dove stava la prosa</span>
+      <b>L&rsquo;autore ha chiesto il linguaggio scritto in forma formale, in un file suo. Cinque seggi l&rsquo;hanno guardato da cinque direzioni e ognuno ha rotto la stessa metà: quella che sarebbe stata copiata a mano.</b> Il lettore, che poteva leggere solo la specifica, ha trovato che diceva già la cosa che la proposta voleva sistemare; lo storico è tornato con ogni tentativo di quel genere, in ogni altro linguaggio, abbandonato. Così ogni regola di sintassi sta ora nella sezione della specifica che la spiega, nella notazione di Wirth, e la parte che una macchina può ricavare da sé la ricava <code>heroes grammar</code>, ogni volta che glielo chiedi.
+      <a class="more" href="/it/spec/">La specifica</a>
+    </li>
+    <li id="50">
+      <span class="when">I registri non sono più un file ciascuno</span>
+      <b>L&rsquo;autore ha chiesto se due lavori potessero correre insieme, e la risposta è stata una misura: due sessioni non si incontrano mai nel compilatore, si incontrano nei registri, sulla riga che entrambe devono scrivere.</b> Così ogni voce di un registro è un file, e il vecchio file resta al suo posto come mappa, riga per riga, perché centosessantuno citazioni puntavano a numeri di riga che nessuno poteva controllare. Il punto cieco che il progetto aveva documentato come incorreggibile è diventato un controllo che gira a ogni verifica.
+      <a class="more" href="https://github.com/heroes-lang/heroes">Il repository</a>
+    </li>
+    <li id="49">
+      <span class="when">Il tipo di <code>fold</code> dice quale dei due è il mucchio</span>
+      <b>La funzione che combina due cose riceve l&rsquo;accumulatore e l&rsquo;elemento, e se sono dello stesso tipo entrambi gli ordini compilano e il programma risponde altro. Ora il tipo dice quale è quale, e il compilatore controlla che la funzione che passi sia d&rsquo;accordo.</b> Il panel aveva detto che era il prezzo di una regola già scritta; l&rsquo;autore ha detto di chiudere comunque. La versione gentile prendeva due dei sette casi veri del progetto, quella severa sette, al prezzo che chiunque scriva una funzione per <code>fold</code> chiami i due parametri <code>acc</code> e <code>item</code>: l&rsquo;autore ha letto i due numeri e ha scelto la severa. Un lettore che non aveva mai visto il progetto ha scritto quelle due parole tre volte in tre programmi senza fermarsi a sceglierle.
+      <a class="more" href="/it/docs/generics-and-function-values/">Le funzioni come valori</a>
+    </li>
+    <li id="48">
+      <span class="when">Un tipo funzione porta i nomi che si confondono</span>
+      <b>La metà del buco che il panel aveva prezzato e rifiutato, l&rsquo;autore ha detto di costruirla comunque: il tipo di una funzione porta i nomi degli argomenti che si possono scambiare, e cambiarne uno lo rende un altro tipo.</b> Poi il panel ha giudicato una cosa già esistente e tre seggi su cinque l&rsquo;hanno rimandata indietro: il guardiano della specifica per una frase con una lettura falsa, il pragmatico del C con una callback che ignora un argomento, come fanno le callback tutto il giorno, e l&rsquo;ingegnere per due ragioni fuori dal disegno, l&rsquo;albero che non compilava e il prezzo contato con il righello sbagliato. Con quello giusto sono quattrocentotrentadue righe contro un bilancio di circa centocinquanta, e il numero è stato messo davanti all&rsquo;autore. Il classico scambio, attraverso una funzione tenuta in una variabile, è passato da uno preso su sei a sei su sei.
+      <a class="more" href="/it/docs/generics-and-function-values/">Le funzioni come valori</a>
+    </li>
+    <li id="47">
+      <span class="when">Tre vie rifiutate da tre seggi, e la quarta costruita in venticinque righe</span>
+      <b>Un&rsquo;etichetta scritta in una chiamata fatta attraverso una funzione tenuta in una variabile è rifiutata: la funzione non ha nomi da confrontare.</b> Nella seduta è successa una cosa mai vista: tre delle quattro vie d&rsquo;uscita sono state rifiutate, ognuna da un seggio diverso e nessuna sul costo. Il guardiano della specifica ha rifiutato una frase perché un programma in esecuzione la smentiva; il pragmatico del C ha rifiutato una regola che avrebbe cancellato un programma funzionante, portando tre misure in cui lo stesso errore arrivava alla memoria; l&rsquo;ingegnere ha rifiutato la correzione elegante perché non era una correzione ma una ricostruzione di undici stanze della casa. Poi lo stesso ingegnere ha costruito la via che nessuno aveva elencato, e ha chiuso metà del buco. L&rsquo;altra metà è la cartolina sopra.
+      <a class="more" href="/it/docs/generics-and-function-values/">Le funzioni come valori</a>
+    </li>
+    <li id="46">
+      <span class="when">La regola dei nomi arriva alle funzioni predefinite</span>
+      <b>Se due argomenti di una funzione sono dello stesso tipo, devi dire quale è quale. Il compilatore lo imponeva su tutto ciò che scriveva l&rsquo;autore e su niente di ciò che forniva da sé.</b> Lo ha trovato un lettore che aveva solo la specifica, scrivendo la stessa chiamata in due modi e non venendo ripreso per nessuno dei due. Lo strumento che imita l&rsquo;errore classico, scambiare due argomenti dello stesso tipo, produceva trecentosessantasette programmi che il compilatore accettava e non doveva: centocinquantanove erano questa chiamata. Dopo la correzione ne restavano settantacinque, e nessuno era lei.
+      <a class="more" href="/it/docs/records-and-functions/">Record e funzioni</a>
+    </li>
+    <li id="45">
+      <span class="when">Tredici numeri sopra tredici porte</span>
+      <b>L&rsquo;autore ha letto la descrizione del linguaggio e ha detto che sembrava una stanza che nessuno aveva mai messo in ordine: ogni regola c&rsquo;era, ognuna dov&rsquo;era caduta. Il riordino è costato meno di niente.</b> Venti frasi che dicevano la stessa cosa due volte sono diventate una, e il documento è uscito più leggero, con tredici sezioni numerate nell&rsquo;ordine che il comitato di Naur scelse e Wirth tenne per quarant&rsquo;anni. E perché l&rsquo;autore l&rsquo;ha chiesto, sei lettori che non avevano visto né il piano né il repository hanno ricevuto i due testi senza etichetta: hanno trovato tre aggiunte, tutte previste, niente di mancante, e una frase ambigua nel testo vecchio.
+      <a class="more" href="/it/spec/">La specifica</a>
+    </li>
     <li id="44">
       <span class="when">Testo con dei buchi dentro</span>
       <b>Una stringa ora può portare dei valori: <code>f"line {n}: {word}"</code> scrive ogni buco come lo scriverebbe <code>to_str</code>.</b> In un buco può stare qualsiasi espressione, <code>{{</code> scrive una graffa e una <code>}</code> da sola resta una graffa, e una stringa semplice resta quella di prima. Il compilatore rifiuta un buco il cui valore non ha un testo, e la sua nota dice cosa scrivere al suo posto.
