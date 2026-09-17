@@ -35,6 +35,40 @@ function try_in_infallible(result: str, span: token.Span) -> diag.Diagnostic
         span: span
     )
 
+# `.is_err()` on a value that is fallible twice (defect 050, panel 160 R1).
+#
+# The message names the PAYLOAD and never the outer type, which is what lets it
+# exist today: `i64??` is a spelling the parser refuses, and a diagnostic that
+# printed it would teach a form the compiler will not read back. `i64?` is
+# ordinary and writable.
+#
+# **Both repairs are named, and that is the resolution's own condition** (R3).
+# The two questions are different and the reader wants one of them: `match`
+# answers *did the outer level succeed*, and `.must()` then `.is_err()` answers
+# *did the stored value fail*. Panel 160's llm-ergonomist measured that a note
+# naming only `match` sends at least one repair in five to `.must().is_err()`
+# for the OUTER question — which aborts on an absent key and answers the inner
+# one where the key is there. A refusal that relocates the silent error is not
+# a repair.
+#
+# No `Fix`: both repairs change what the program means, and a `match` skeleton
+# is multi-line control flow, so a fix here would be a `guess` at best — the
+# goldens rule's own bar, that a fix leaving the defect standing is a guess
+# however well it compiles.
+function nested_read(inner: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "nested_read",
+        message: "`.is_err()` reads one level, and this value is fallible twice — its payload is itself a `" + inner + "`, so the failure stored inside would go unread",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "to ask whether the OUTER level failed: `match` it — `.ok inner` when it succeeded, `.err e` when it did not"
+    )
+    d.notes @ d.notes.push(
+        "to ask whether the stored `" + inner + "` failed: peel the outer level first, `.must().is_err()`, which aborts if the outer level failed"
+    )
+    return d
+
 function not_indexable(got: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "not_indexable",

@@ -30,6 +30,7 @@ use check/table
 use check/state
 use check/ordering
 use check/lending
+use check/nested
 use value_errors
 
 ## What a built-in expects of an argument
@@ -375,7 +376,7 @@ function fallible_builtin(@c: state.Checker, s: source.Source, decls: [ast.Decl]
 
     if name == "is_err" && given.len() == 1
         match table.get(c.out.types, given[0])
-            .fallible => return ok(table.bool_ty(c.out.types))
+            .fallible o => return ok(nested.is_err_type(@c, s, decls, payload: o.payload, span: span))
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
                 arg_error(@c, s, decls, name: "is_err", allowed: "a fallible value", got: given[0], span: span)
             )

@@ -1,0 +1,53 @@
+# A value fallible twice, and the one reader that cannot say so.
+#
+# `m[k]` on a `{str: i64?}` is an `i64??`, and so is `find` over a `[i64?]`:
+# nothing was WRITTEN to make it, so the parser's `nested_fallible` never fires
+# — that refusal covers the written form alone (defect 051).
+#
+# Of §4.6's four one-level readers, three hand the second level back in their
+# TYPE: `.must()` and `?` give an `i64?`, and `.default(v)` types `v` against
+# the payload, so a wrong depth fails at its next use and the compiler says so
+# there. **`.is_err()` returns a bare `bool`**, and the stored failure leaves
+# the line unread — a plausible program that compiles, runs, and answers the
+# question the author did not ask (defect 050).
+#
+# So the asymmetry is exactly one reader wide, and panel 160 refused exactly
+# one reader. Refusing all four was measured and declined: it refuses correct
+# programs, `tests/golden/check/a-fallible-type-is-never-written-fallible-twice.hero`
+# among them, and the single mistake it catches that this does not is already
+# an abort at 134 in the runtime's own handle ledger.
+#
+# The question this module asks is the one none of the readers asked: **what is
+# the payload?**
+
+use token
+use ast
+use source
+use check/table
+use check/state
+use flow_errors
+
+# Whether `payload` is itself a fallible type. A poisoned payload is `.fallible`
+# too — `check/discard.hero` paid for that one, where a `T?` whose payload was
+# poisoned printed as `??` on a line that already carried `cannot_infer` — so
+# the caller asks `table.poisoned` first and this stays a pure shape question.
+function is_nested(c: state.Checker, payload: i64) -> bool
+    return match table.get(c.out.types, payload)
+        .fallible                                                 => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .map | .function_ty | .named            => false
+        .case_ty | .failure | .generic | .error                   => false
+
+# `.is_err()` where the payload is itself fallible. The answer would be about
+# the OUTER level only and the `bool` it returns would not say so, so it is
+# refused. The poisoned type goes back so nothing downstream reports it twice.
+#
+# One mistake, one report: a poisoned payload already carries its own
+# diagnostic, and a value that is not nested is the ordinary case and answers
+# `bool` as it always did.
+function is_err_type(@c: state.Checker, s: source.Source, decls: [ast.Decl], payload: i64, span: token.Span) -> i64
+    if table.poisoned(c.out.types, payload) || !is_nested(c, payload)
+        return table.bool_ty(c.out.types)
+    inner = state.show(c, s, decls, payload)
+    state.push_diagnostic(@c, flow_errors.nested_read(inner: inner, span: span))
+    return state.error_ty_of(c)

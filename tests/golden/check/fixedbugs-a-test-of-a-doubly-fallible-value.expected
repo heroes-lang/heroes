@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-a-test-of-a-doubly-fallible-value.hero:43:8: error[nested_read]: `.is_err()` reads one level, and this value is fallible twice — its payload is itself a `i64?`, so the failure stored inside would go unread
+tests/golden/check/fixedbugs-a-test-of-a-doubly-fallible-value.hero:51:8: error[nested_read]: `.is_err()` reads one level, and this value is fallible twice — its payload is itself a `i64?`, so the failure stored inside would go unread
