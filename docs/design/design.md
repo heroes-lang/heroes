@@ -1390,6 +1390,19 @@ m = { "mario": 30, "anna": 25 }
   `has(m, k)` and `!m[k].is_err()` are two spellings of one predicate. The parenthetical that
   used to justify it — "its absence forced a sentinel-value hack" — was retired by the bullet
   above it, which is the shape of a reason outliving the thing it argued against.
+
+  **CORRECTED 2026-09-17 (defect 055, panel 160's compiler-engineer), and the row above is the
+  shape this one just took.** The reason held for every map until panel 160 refused `.is_err()`
+  on a value whose payload is itself fallible. On a `{K: V?}` the second spelling is now a
+  compile error, so there are not two spellings of one predicate there — there is one, and it is
+  `match`. Measured: `if m[k].is_err()` on a `{str: i64?}` was `check` 0 and answered *was the
+  key there* while reading as *did the stored value fail*, which is why it is refused; the
+  presence question on such a map now costs a `match` with two arms. **The struck row stands and
+  its reason narrows**: `has(m, k)` is redundant wherever `V` is not fallible, which is every map
+  in this repository today, and where `V` is fallible the question has no one-line spelling at
+  all. Whether it should get one is panel 160's own open question — the historian found that Go
+  named it `v, ok` and Kotlin `containsKey`, both as ADDITIONS beside a form that still compiled,
+  and predicted the request arrives before the next tag.
 - **The order of `keys(m)` is unspecified; a program that needs an order sorts** (panel 026,
   replacing panel 006's insertion-order guarantee of 2026-08-03). The guarantee is not
   weakened, it is **withdrawn as false**: `HeroMapHeader` has no order field, so arrival is
