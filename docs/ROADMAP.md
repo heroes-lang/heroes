@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 2 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 0 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -16,25 +16,24 @@ against a banner reading 3.
 
 | | |
 |---|---|
-| **Current milestone** | **M-check-completeness**, opened 2026-09-16, **its own list at zero** and held open by four defects. 049 closed on 2026-09-17 without the sitting its entry called for: the measurement found `--emit-c` writing the artifact of a build that never passed. 050 is **resolved and unbuilt** — panel 160 adopted option E. 054, 055 and 056 are that sitting's own findings. What landed is the whole of its check/build subject plus six sittings, 155 to 160, and the ten defects they turned up |
+| **Current milestone** | **M-check-completeness**, opened 2026-09-16, and **both its own list and the defect list are at zero**. Six sittings, 155 to 160, and the ten defects they turned up, all closed. The last four went in parallel lanes on a frozen trunk — the way of working the author asked be written down on 2026-09-17 |
 | **Last closed** | **M-marked-acquisition**, 2026-09-14, `m-marked-acquisition` ([056](journal/056-marked-acquisition.md)) — the form closed at **three words**, each saying one thing and none inferred: `acquires <releaser>`, `consumes`, `borrows` · before it **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) and **M-handle-verdict** ([054](journal/054-handle-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **57** of 78 · **57** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **62,178** lines of Heroes in **214** modules (`find selfhost -name '*.hero'`) · the seed **822,780** lines of C, regenerated six times this milestone and the fixpoint verified byte-identical each time |
-| The spec | **6004** on the vendored ranks and **7998** on the reader's own, against a ceiling of **10240**. Panel 159's three sentences are **+15 vendored and +24 real**, a ratio of **1.60** — the same as the grammar row's and far above this document's own 1.33, so the vendored figure understated the price by 60%. Paid by a −14 removal in § 3 and CLAUDE.md §12. **2242 free** and 2182 net of the FFI floor |
+| The compiler | **62,308** lines of Heroes in **215** modules (`find selfhost -name '*.hero'`) · the seed **824,114** lines of C, regenerated nine times this milestone and the fixpoint verified byte-identical each time |
+| The spec | **5997** on the vendored ranks and **7984** on the reader's own, against a ceiling of **10240**. Panel 160's refusal lands at **−11 vendored and −12 real**, the first ledger row where the document SHRINKS while gaining a rule; defect 054's correction is **+4 vendored and −2 real**, the first where the two instruments disagree on the SIGN. **2256 free** and 2196 net of the FFI floor |
 | The contract | **7449** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-15 with the wakeup instruction: of the 36 vendored tokens the pin was behind, 14 predate that session and no commit had named them |
-| Records | sittings **157** · journals **59** · milestone files **48** · entries: `docs/records/log/` **675**, `docs/records/done/` **548**, `docs/records/book/beats/` **124** |
+| Records | sittings **158** · journals **59** · milestone files **48** · entries: `docs/records/log/` **675**, `docs/records/done/` **553**, `docs/records/book/beats/` **124** |
 | Waiting on the author | **nothing.** Panels 155 to 159 were all ratified on 2026-09-16 **by delegation and not by reading**, under an instruction of that day, and every file says so in those words rather than crediting a reading that did not happen. What each leaves owed is named with its trigger: panel 155's `float_map_key` through a generic, which waits under Principle 0; panel 156's two refused spec merges; panel 157's R4 instrument, filed with its price in `docs/work/milestones/M-package-manager.md`; and panel 159's refused route, defining `<` on `str`, which is a sitting of its own |
 
-**Re-measured 2026-09-16, the full net on a compiler built from the regenerated
-seed, which is CI's own configuration.** `check` **125**, `run` **124**,
-`emission` **478**, `determinism` **153**, `descriptors` **237**, `surface`
-**109**, `warnings` **184**, `lines` **125**, `annotations` **162**, `records`
+**Re-measured 2026-09-17, the full net on a compiler built from the regenerated
+seed, which is CI's own configuration.** `check` **126**, `run` **124**,
+`emission` **456**, `determinism` **153**, `descriptors` **215**, `surface`
+**109**, `warnings` **184**, `lines` **125**, `annotations` **163**, `records`
 **24**, `spec` **20**, `corpus` **55**, `canonical` **2**, `layout` **2**,
 `runtime` **8**, `fixes` **25**, the compiler's own **654** and the net's own
-**156**. **The net reads 1906 passed, 0 failed.** `check` and `annotations` each
-gained the two goldens of defects 052 and 053, and `records` gained
-`records/counts`, which compares this file's two open counts with the banners
-the two lists state — it exists because those counts had already drifted.
+**156**. **The net reads 1864 passed, 0 failed.** `emission` and `descriptors`
+each fell by 22: defect 049 retired that many blessed artifacts, fifteen of
+which were blessing C that does not compile.
 
 ---
 
