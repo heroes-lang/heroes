@@ -2804,7 +2804,22 @@ are *on* the closure list.
    that record is 32. The **capture-free** narrowing is named in Part 6 as the form that returns.
 2. **File I/O** — `read_file(path) -> str?`, `write_file(path, s) -> ()?`. Two functions via FFI to
    `fopen`/`fread`. **Required for self-hosting.**
+   **ENTERED 2026-08-12, and this line never said so** (author decision at panel 036,
+   `docs/records/log/2026-08-12-0020-file-i-o-and-are-named-by-the-spec-and-delivered-as.md`; landed
+   at M-ffi-ladder step 2, `6a58d47c`). Both names are in spec § 11 today, with `exit(code)` beside
+   them, and the route is the half the sitting decided against this item's own text: **not** two
+   functions via the FFI, because file I/O through the FFI as specified is impossible rather than
+   awkward — no buffer type, no allocation, no `cstr`→`str` — and **not** compiler built-ins, because
+   the compiler-engineer vetoed on §1.7, a `T?` being a per-translation-unit generated struct the C
+   runtime cannot name. They are Tier 2 over `hero_os.h`: the spec carries the four names and
+   signatures, and where the code lives is not something a reader can observe. **Noted 2026-09-17**,
+   at the site refresh that put the deferral list in front of a reader and found this item and the
+   next reading as deferred for thirteen months of work that had shipped.
 3. **Command-line arguments** — `args() -> [str]`. One function. **Required for self-hosting.**
+   **ENTERED 2026-08-12, same decision, same route** (panel 036). `args() -> [str]` and
+   `args_checked() -> [str?]` are both in spec § 11, the second added 2026-08-24 (`ed249fe0`) when an
+   argument that is not UTF-8 stopped killing the program: `args` aborts on one and `args_checked`
+   hands back the failure. **Noted 2026-09-17.**
 4. **Modules** — ~~`use "list"`~~ **landed at panel 031 as `use list`**, a bare identifier rather
    than a quoted path: one file per module, always-qualified references (`list.map`), no
    `import *`, no aliases, no package hierarchy. Qualification costs tokens but **buys locality**:
