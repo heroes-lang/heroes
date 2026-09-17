@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 2**
 
 - [ ] **050 — a test of a doubly-fallible value asks the outer layer and reads as asking the inner one** | `m["b"].is_err()` on a `{str: i64?}` and `find(xs, …).is_err()` on a `[i64?]` are `check` 0 and RUN, and both answer *was the key there* where the line reads *did the stored value fail* | `docs/panel/158-the-sitting-produced-a-resolution-and-left-it-off-its-own-ballot.md` R4 · `selfhost/check/ops.hero`
 
@@ -109,52 +109,5 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     priced the merge that replaces it at **−11 vendored**; the real number is
     UNRUN and the rule of 2026-09-16 says a vendored delta is not a price. That
     removal would then be available to pay for a later addition.
-
-- [ ] **055 — `design.md` strikes `has(m, k)` on a spelling panel 160 removes** | the reason given for having no presence test is `!m[k].is_err()`, which is refused on a `{K: V?}` under the adopted resolution | `docs/design/design.md:1389-1392` · `docs/panel/160-the-reader-that-forgets-the-level.md`
-
-    **Origin:** 2026-09-17, panel 160's compiler-engineer, handed on as an
-    interaction outside its own seat.
-
-    **The paragraph**, verbatim: *"`has(m, k)` is **struck** (panel 026, −17
-    measured): map access returns `V?` always, so `has(m, k)` and
-    `!m[k].is_err()` are two spellings of one predicate."* Under option E the
-    second spelling does not exist for a map whose value is fallible, so on that
-    map there is exactly **one** spelling and it is `match`.
-
-    **Why it is a defect and not a footnote.** The struck row's own reason is
-    that a second spelling would be redundant. Where the resolution removes the
-    first, the reason is gone and the row is unargued — which is the shape that
-    paragraph's own last sentence names: *the shape of a reason outliving the
-    thing it argued against*.
-
-    **What is owed.** A dated correction under it (the document is append-only),
-    saying what a `{K: V?}` map's presence test is. The historian's prediction
-    stands beside it: Go named that question `v, ok` and Kotlin named it
-    `containsKey`, and both did so as an ADDITION beside a form that still
-    compiled. If the answer is a distinct spelling, it is a sitting of its own.
-
-- [ ] **056 — a generic body reads the outer level of whatever it is instantiated with** | `is_bad<A>(x: A?) -> bool` returning `x.is_err()`, called with `A := i64?`, passes under every option panel 160 weighed | `selfhost/ir/mono.hero` · `docs/panel/160-the-reader-that-forgets-the-level.md` R5
-
-    **Origin:** 2026-09-17, panel 160's compiler-engineer, confirmed by its
-    llm-ergonomist from the specification alone (its hesitation 10) without
-    either knowing of the other.
-
-    **The hole.** A generic body is checked ONCE, with a `.generic` payload, and
-    instantiation happens after the checker in `selfhost/ir/mono.hero`. So a
-    refusal that reads the written type cannot see that `A` arrived fallible.
-    Measured: the probe checks at exit 0 under the prototypes of option A and of
-    option E alike.
-
-    **Why it is filed and not repaired.** Live instances: **0** in `selfhost/`,
-    **0** in the corpus. Of eight corpus generics carrying an `A?`, the two that
-    touch it use `.len()` and `==`. And the repair is a post-`mono` check — a
-    second layer under design.md §1.7 — which panel 160's compiler-engineer said
-    it would **veto** in a resolution that required it without a costing.
-
-    **What is owed** is the costing, before anyone argues about the rule: how
-    many lines a post-`mono` check is, what it does to `check` time, and whether
-    the library's own `find<A>(xs: [A], f) -> A?` reaches it when `A` is
-    instantiated fallible. That last one is **UNRUN** and is the question that
-    decides whether this is theoretical or one `find` away.
 
 *******************************************************************************
