@@ -207,7 +207,9 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
         list: line,
         more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, t.runtime + "/runtime.c", "-I", t.runtime, "-o", staged]
     )
-    ran = run_clang(line: line, what: "compiling the runtime", err_path: t.build + "/clang-stderr.txt")
+
+    # Beside its object, one file per clang invocation: `units.tu_object` (057).
+    ran = run_clang(line: line, what: "compiling the runtime", err_path: object + ".clang-stderr.txt")
 
     if ran.is_err()
         ran?
@@ -256,7 +258,9 @@ function with_all(list: [str], more: [str]) -> [str]
 # caller's (cli_libraries, the next crossing): what arrives here is
 # already flags.
 function link(t: Toolchain, c_file: str, object: str, binary: str, level: str, sanitize: bool, source_dir: str, search_include: [str], search_library: [str], package_flags: [str], link_names: [str]) -> ()?
-    err_path = t.build + "/clang-stderr.txt"
+    # Beside the C it compiles: `units.tu_object` (057). The two invocations
+    # below share it and are sequential; no other build in the tree writes it.
+    err_path = c_file + ".clang-stderr.txt"
     unit_object = c_file + ".o"
     staged_object = unit_object + ".tmp"
     compile_line: [str] @ with_all(list: ["clang"], more: flags.flags())

@@ -84,6 +84,15 @@ function judge(@r: report.Report, scratch: str, compiler: str, label: str, main:
         noise = warnings_in(said.must().err)
 
         if noise.len() > 0
+            blamed = foreign_program(noise: noise, main: main)
+
+            if blamed.len() > 0
+                report.keep_failure(
+                    @r,
+                    label: label + " under `" + verb + "`",
+                    detail: "  this invocation was building " + main + " and its stderr carried warnings about " + blamed + ":\n    " + noise.join("\n    ") + "\n  a warning names the program it is about, so one program's warnings reaching another's\n  stderr is a misattribution and not a finding (defect 057). Look for a file two clang\n  invocations share: before 2026-09-17 every one of them wrote `build/clang-stderr.txt`."
+                )
+                return
             report.keep_failure(
                 @r,
                 label: label + " under `" + verb + "`",
@@ -107,6 +116,61 @@ test "a warning line is found wherever clang puts it, and nothing else is"
     assert warnings_in(said).len() == 1
     assert warnings_in("").len() == 0
     assert warnings_in("no warnings here\n").len() == 0
+
+# **A warning names the program it is about, and this suite had no way to say
+# so** (defect 057, 2026-09-17). One net run reported three warnings against
+# `examples/curl` that named `tests/golden/ir/regression-extern-parameter-types`,
+# a program curl does not touch, and the row read as curl's own defect. The
+# repair is in the compiler, where every clang invocation now writes its own
+# stderr file instead of the build directory's one; this is the half that makes
+# the next occurrence say what it is rather than blame the nearest program.
+#
+# A `use` starts at the directory of the file being compiled (spec § 1), so
+# every module a program reaches is under that program's own directory. A
+# `.hero` path outside it, in this invocation's stderr, is therefore another
+# program's — and a C or header path is not evidence either way, since a
+# program may legitimately warn about a header it includes from anywhere.
+function foreign_program(noise: [str], main: str) -> str
+    home = directory_of(main)
+
+    for row in noise
+        for word in strings.words(row)
+            if !strings.contains(text: word, needle: ".hero")
+                continue
+            at = strings.index_of(text: word, needle: ".hero").must()
+            named = word.slice(from: 0, to: at + 5)
+
+            if named == main
+                continue
+
+            if home.len() > 0 && strings.starts_with(text: named, prefix: home + "/")
+                continue
+            return named
+
+    return ""
+
+# The directory a path sits in, or "" for a bare name.
+function directory_of(path: str) -> str
+    name = strings.base_name(path: path)
+
+    if name.len() >= path.len()
+        return ""
+    return path.slice(from: 0, to: path.len() - name.len() - 1)
+
+test "a warning naming another program is told apart from one naming this program's own modules"
+    mine = "examples/curl/main.hero"
+    own = ["examples/curl/http.hero:4:9: warning: unused variable 'a'"]
+    theirs = ["tests/golden/ir/regression-extern-parameter-types.hero:14:109: warning: absolute value"]
+    generated = ["build/tu-08401abe1c35d47d/x.c:28:29: warning: absolute value function 'abs'"]
+    assert foreign_program(noise: own, main: mine) == ""
+    assert foreign_program(noise: theirs, main: mine) == "tests/golden/ir/regression-extern-parameter-types.hero"
+
+    # A C path names no program, so it is not evidence: the `.hero` line beside
+    # it is what says whose compile this was.
+    assert foreign_program(noise: generated, main: mine) == ""
+    assert foreign_program(noise: [], main: mine) == ""
+    assert directory_of("examples/curl/main.hero") == "examples/curl"
+    assert directory_of("main.hero") == ""
 
     # A `note:` mentioning the word is not a warning line; a real warning
     # line always carries `warning:` itself.
