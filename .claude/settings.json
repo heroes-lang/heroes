@@ -33,14 +33,6 @@
     ],
     "ask": [
       "Bash(git push*)"
-    ],
-    "additionalDirectories": [
-      "/Users/joseph/Temp/heroes-lane-049/selfhost/cli",
-      "/Users/joseph/Temp/heroes-lane-050/selfhost",
-      "/Users/joseph/Temp/heroes-lane-055/docs/design",
-      "/Users/joseph/Temp/heroes-lane-050/selfhost/check",
-      "/Users/joseph/Temp/heroes-lane-050/tests/golden/check",
-      "/Users/joseph/Temp/heroes-lane-050/tests/harness"
     ]
   },
   "hooks": {
