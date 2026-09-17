@@ -40,6 +40,13 @@ record Site
     object: str
     binary: str
     is_tests: bool
+    # Whether the round LINKS after it compiles. `--emit-c` says no (defect
+    # 049, 2026-09-17): a tag's spelling is learned at the compile, where clang
+    # says *must use 'struct' tag*, and a module with no `main` — every
+    # `tests/golden/ir/` fixture — has C worth handing out and no binary to
+    # link. With the link on, eighteen of them died at exit 2, *Undefined
+    # symbols: _main*, the compiler blaming itself for a legal program.
+    link: bool
     source_dir: str
     link_names: [str]
     package_flags: [str]
@@ -92,6 +99,27 @@ function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
 
     if written.is_err()
         return Round(verdict: fail(code: "failed", msg: "cannot write " + site.c_file), refusals: none)
+
+    # Compile only, through the same cached-object route `per_module` takes
+    # for every TU, so the tag round still meets clang's refusal.
+    if !site.link
+        memo: {str: str} @ {}
+        made = units.tu_object(
+            t,
+            module: module_names.module_of(s.name),
+            tu_text: text,
+            level: options.level,
+            sanitize: options.sanitize,
+            search: compile.search_key(headers_from: options.headers_from, library: options.library),
+            package_flags: site.package_flags,
+            source_dir: site.source_dir,
+            search_include: options.headers_from,
+            @memo
+        )
+
+        if made.is_err()
+            return Round(verdict: carry_failure(made), refusals: [failure_of(made)])
+        return Round(verdict: ok(), refusals: none)
     linked = toolchain.link(
         t,
         c_file: site.c_file,
@@ -165,6 +193,11 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
 
     if stopped.is_err()
         return Round(verdict: stopped, refusals: refusals)
+
+    # Every TU compiled and none refused: for a build that does not link, that
+    # IS the verdict, and the refusals it met are what a tag round reads.
+    if !site.link
+        return Round(verdict: ok(), refusals: refusals)
     linked = units.link_objects(
         t,
         objects: objects,

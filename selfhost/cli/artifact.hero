@@ -17,22 +17,22 @@
 # that PASSED**, and *C that clang accepts* is the weaker bar — five
 # `tests/golden/fixedbugs/` cases satisfied it while writing over the stack.
 #
-# ## Two questions, two shapes, and they are opposites
+# ## Two questions, and since 2026-09-17 one of them is not asked here
 #
 # **The pointee check REFUSES.** A binding declaring `@n: i32` against a header's
 # `uint64_t *` emitted at exit 0, compiled clean under the real flag list, and
 # wrote `0xAAAAAAAA` over the next stack slot — design.md §1.12, measured. Its
 # *no* is the whole point, so it must be able to say it.
 #
-# **The tag probe NEVER refuses.** It asks clang the one question the build's
-# round asks — does this header want `struct` in front of the author's word —
-# and throws the verdict away, keeping only the spelling. That is what makes it
-# safe here: fourteen `fixedbugs/` bindings exist precisely to have C where a
-# build has none, and a refusal would delete them. A probe that can only ADD a
-# spelling cannot turn an emission into a failure, and on a machine without the
-# header it learns nothing and the output is yesterday's.
-#
-# Treating the two alike would have broken whichever one it was not written for.
+# **The tag's spelling is the ROUNDS' answer, handed in.** `cli/produce.hero`
+# runs the build's rounds first; when clang says *must use 'struct' tag* the
+# word is learned and the round runs again, and only a build that PASSED reaches
+# `write_c`, which re-renders with what was learned. So `--emit-c` refuses
+# exactly what `build` refuses — a missing header, a binding the header refutes
+# — and there is no longer any C for a program that has no build. That retires
+# the sentence this file carried for a day, *fourteen `fixedbugs/` bindings exist
+# precisely to have C where a build has none*: they have their refusal instead,
+# which is what panel 157 R1 said an artifact owes (defect 049).
 #
 # ## Why clang and not a rule
 #
@@ -50,16 +50,22 @@
 # under which this seam exists at all.
 
 use source
+use emit
 use cli/io
 use cli/compile
 use cli/toolchain
 use cli/pointee
 use cli/pointee_ask
 
-# The artifact, written or printed, after both questions have been asked. A
+# The artifact, written or printed, AFTER the build's own rounds have passed. A
 # failure here is the pointee check's and carries its message up so the caller
 # can decide whose it is — this file never blames anybody.
-function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], source_dir: str, package_flags: [str]) -> ()?
+#
+# `struct_tags` is what those rounds learned from clang — the handles whose
+# tag the header spells with `struct` in front — and `version` is the build's,
+# because `emit_maybe` stamps it. Both come from `cli/produce.hero`, which owns
+# the rounds; this file only applies their answer.
+function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], source_dir: str, package_flags: [str], struct_tags: {str: bool}, version: str) -> ()?
     checked = pointee.check(
         t,
         art.program,
@@ -73,28 +79,31 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     )
     checked?
 
-    # **THE TAG PROBE WAS HERE FOR ONE COMMIT AND IS WITHDRAWN, 2026-09-16.** It
-    # asked clang whether a handle's tag needs `struct` in front, discarded the
-    # verdict and re-emitted — and it worked: `structtag`'s artifact went from
-    # 20 clang errors to 0. What it also did is make this artifact **a function
-    # of the local headers**, and `emission` blesses these bytes. CI measured
-    # the consequence within the hour: macOS learned `struct addrinfo` and
-    # Windows, which has no `netdb.h`, learned nothing, so the same program
-    # emitted two different files and the suite compared one against the other.
+    # **THE ARTIFACT IS THE C THAT COMPILED, NOT THE FIRST DRAFT** (defect 049,
+    # closing panel 157 R1 the way it was written). Until 2026-09-17 this ran
+    # BEFORE the rounds, so a handle whose header spells `struct X` was written
+    # as the bare word clang had just refused — and `run-fixedbugs-getaddrinfo-
+    # is-bindable`'s blessed artifact carried `addrinfo *` seven times where
+    # `heroes build` compiled `struct addrinfo *`.
     #
-    # That is defect 047's own class — a golden encoding one platform's
-    # answer — committed inside the repair, on the day the rule naming it was
-    # written. **A blessed byte-for-byte artifact cannot depend on the machine
-    # it was produced on**, so either this probe goes or those programs stop
-    # being blessed by bytes. The second is panel 157's R4, adopted and not
-    # built, and the choice between them belongs to a sitting rather than to
-    # the hour after a red leg.
+    # A probe lived here for one commit and was withdrawn: it asked clang the
+    # same question SEPARATELY, and on a machine without the header it learned
+    # nothing and emitted the bare word at exit 0, where `build` on that machine
+    # says `error[ffi_missing_header]` at exit 1. So the artifact differed
+    # between two machines and `emission` compared one against the other. The
+    # probe's error was to decide alone what the rounds and `blamed` already
+    # decide together: `--emit-c` owes the artifact of a build that PASSED, so
+    # on the machine without the header there is no artifact and the build's own
+    # refusal is the answer — which `emission` already knows to skip. The
+    # artifact is CONDITIONAL on the machine, never DEPENDENT on it.
     #
-    # What stays is the half that outranks it: the pointee check above, which
-    # refuses an artifact whose binding writes past its slot (§1.12). That one
-    # cannot make the output platform-dependent, because it does not change a
-    # byte — it decides whether there is an artifact at all.
+    # `emit_maybe` with the learned tags is exactly what `assemble.fused`
+    # compiles, so the bytes written are the bytes clang accepted. With no
+    # tagged handle the map is empty and the text is untouched.
     text: str @ art.c
+
+    if struct_tags.len() > 0
+        text @ emit.emit_maybe(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: version, text: true, struct_tags: struct_tags).c
 
     if options.output.is_err()
         io.print_artifact(text: text)

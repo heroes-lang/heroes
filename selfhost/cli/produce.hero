@@ -177,42 +177,12 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         object: object.must(),
         binary: binary,
         is_tests: is_tests,
+        link: !art.must().emit_c,
         source_dir: source_dir,
         link_names: names,
         package_flags: package_flags.must(),
         version: version
     )
-
-    # **`--emit-c` STOPS HERE, AND NOT BEFORE THE CHECKS** (defect 048, panel
-    # 157). The write used to live in `cli/compile.hero`, which returned before
-    # this file ran at all, so the artifact was the FIRST emission: before the
-    # pointee check, which is a REFUSAL, and before the rounds, which learn a
-    # tag's spelling from clang. What that costs is in `cli/artifact.hero`,
-    # which now owns both questions — this file owns only the verdict on a
-    # failure, because `blamed` is the round's too and an arrow that points one
-    # way is the condition under which the seam exists.
-    if art.must().emit_c
-        wrote = artifact.write_c(
-            t,
-            options,
-            art.must(),
-            s,
-            answered: @answered,
-            source_dir: source_dir,
-            package_flags: package_flags.must()
-        )
-
-        if wrote.is_err()
-            message = failure_message(wrote)
-
-            if blamed(message, art.must(), s, answered, struct_tags: no_tags)
-                return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
-
-            if message.len() > 0
-                io.eprint(text: "internal error: " + message)
-            return fail(code: "failed", msg: "the artifact was not written")
-        none_e: [str] = []
-        return ok(Produced(binary: "", tests: none_e, stopped: true))
 
     # THE ROUNDS, and the one reason there is more than one (defect 037,
     # panel 152 R1). The first round spells every handle's tag as the author
@@ -262,6 +232,36 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
             # failure would name a file clang never refused.
             io.eprint(text: "the generated C is at " + c_file)
         return fail(code: "failed", msg: "clang refused the generated C")
+
+    # **`--emit-c` WRITES AFTER THE ROUNDS, WHICH COMPILE AND DO NOT LINK FOR
+    # IT** (panel 157 R1; defect 049, 2026-09-17). It sat above them until then,
+    # so the artifact was the bare spelling clang had just refused, and a program
+    # this machine cannot build got yesterday's C at exit 0 where `build` said
+    # `ffi_missing_header` at exit 1. Now one refusal above answers both verbs.
+    if art.must().emit_c
+        wrote = artifact.write_c(
+            t,
+            options,
+            art.must(),
+            s,
+            answered: @answered,
+            source_dir: source_dir,
+            package_flags: package_flags.must(),
+            struct_tags: struct_tags,
+            version: version
+        )
+
+        if wrote.is_err()
+            message = failure_message(wrote)
+
+            if blamed(message, art.must(), s, answered, struct_tags: struct_tags)
+                return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
+
+            if message.len() > 0
+                io.eprint(text: "internal error: " + message)
+            return fail(code: "failed", msg: "the artifact was not written")
+        none_e: [str] = []
+        return ok(Produced(binary: "", tests: none_e, stopped: true))
     return ok(Produced(binary: binary, tests: art.must().tests, stopped: false))
 
 # The failure's message, out of a fallible that is known to be err.
