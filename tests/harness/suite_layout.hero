@@ -395,6 +395,16 @@ constant CEILING: i64
 # first, because the first pass taught `fmt` the parameter only and `heroes fmt`
 # **silently dropped the mark off a result**, which is CL-036 firing twice in one
 # day on one form.
+#
+# **One moved on 2026-09-17, by exactly one line, and the seat that asked for it
+# named the number first.** `check/builtins.hero` 377 -> **378**: panel 160's
+# refusal of `.is_err()` on a nested fallible is a new module,
+# `selfhost/check/nested.hero` at 40 lines, and this file's whole share of it is
+# the `use` that reaches it — the `is_err` arm is rewritten one line for one.
+# The sitting's compiler-engineer predicted *"`suite_layout.hero`'s row reads
+# `selfhost/check/builtins.hero 378`"* before building anything, which is the
+# shape a ratified exception should move in: a number somebody committed to in
+# advance, not one discovered when the check went red.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1870"
@@ -404,7 +414,7 @@ constant DECIDED: [str]
         "selfhost/ir/print.hero 470"
         "selfhost/ast.hero 525"
         "selfhost/check/table.hero 389"
-        "selfhost/check/builtins.hero 377"
+        "selfhost/check/builtins.hero 378"
         "selfhost/ir/mono.hero 380"
         "selfhost/emit/ctype.hero 395"
         "selfhost/emit/structural.hero 335"

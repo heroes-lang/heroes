@@ -153,7 +153,7 @@ An abort ends the program at once, saying why; no `T?` carries one.
 | `expr?` | propagate the error to the caller (whose return type must be fallible) |
 | `.must()` | extract or abort |
 | `.default(v)` | extract or fall back |
-| `.is_err()` | boolean test |
+| `.is_err()` | boolean test; refused where `T` is itself fallible — `match` names both levels |
 
 ```
 function head(xs: [str]) -> str?
@@ -225,8 +225,7 @@ value = match e
 
 `if` and `match` are expressions and may stand as statements; there is no ternary.
 `if cond` / `else if` / `else` take only `bool` — there is no truthiness.
-Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11);
-`break` and `continue` exist.
+Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
 
     While   = "while" Expression Block .
     For     = "for" ident "in" Expression Block .
@@ -286,8 +285,7 @@ name; reached through a field or an index it copies the whole array, so lend the
 array itself to an `@` parameter or hoist it into a name.
 
 `m[k]` is a `V?` with code `missing_key`; `m[k] @ v` inserts or replaces;
-`keys(m) -> [K]` gives the keys in no order, and `for k in sort(keys(m))` walks
-them in order.
+`keys(m) -> [K]` gives the keys in no order.
 An out-of-bounds index or slice aborts, and so does a slice that splits a character.
 
 ## 11. Built-ins
