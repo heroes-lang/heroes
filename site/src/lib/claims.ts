@@ -348,6 +348,16 @@ const CLAIMS: Claim[] = [
     fact: () => judges().seats, shape: (n) => new RegExp(`${n} judges review proposals`, 'i') },
   { page: 'site/src/html/it/about/thanks.html', what: 'the number of judges',
     fact: () => judges().seats, shape: (n) => new RegExp(`${n} giudici valutano le proposte`, 'i') },
+  // The refusals page opens with how a no is made, and says the two numbers
+  // the project page says. Same shapes, so the two pages cannot disagree.
+  { page: 'site/src/html/why/not.html', what: 'the seats of the panel',
+    fact: () => judges().seats, shape: (n) => new RegExp(`panel of ${n} seats`, 'i') },
+  { page: 'site/src/html/why/not.html', what: 'the seats that can refuse',
+    fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} can veto`, 'i') },
+  { page: 'site/src/html/it/why/not.html', what: 'the seats of the panel',
+    fact: () => judges().seats, shape: (n) => new RegExp(`panel di ${n} seggi`, 'i') },
+  { page: 'site/src/html/it/why/not.html', what: 'the seats that can refuse',
+    fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} possono porre un veto`, 'i') },
 
   // The nods, and the key to them. The sentence claims the list is complete, so
   // the count comes from the rows the build prints and `assertNodsMirrored`
@@ -629,8 +639,8 @@ function checkRepositoryIsOpen(html: string, pagePath: string): string[] {
  * the panel, where `lines` is the Zen in one paragraph and Rust in another.
  */
 const UNAMBIGUOUS: { page: RegExp; noun: RegExp; fact: () => number }[] = [
-  { page: /^site\/src\/html\/(index|project|about\/thanks)\.html$/, noun: /(judges|seats)/, fact: () => judges().seats },
-  { page: /^site\/src\/html\/it\/(index|project|about\/thanks)\.html$/, noun: /(giudici|seggi)/, fact: () => judges().seats },
+  { page: /^site\/src\/html\/(index|project|about\/thanks|why\/not)\.html$/, noun: /(judges|seats)/, fact: () => judges().seats },
+  { page: /^site\/src\/html\/it\/(index|project|about\/thanks|why\/not)\.html$/, noun: /(giudici|seggi)/, fact: () => judges().seats },
   { page: /^site\/src\/html\/start\.html$/, noun: /verbs/, fact: () => verbs().length },
   { page: /^site\/src\/html\/it\/start\.html$/, noun: /verbi/, fact: () => verbs().length },
   { page: /^site\/src\/html\/docs\/index\.html$/, noun: /chapters/, fact: chapters },

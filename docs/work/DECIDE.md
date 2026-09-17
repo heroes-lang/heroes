@@ -21,6 +21,8 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 0**
+**OPEN: 1**
+
+- [ ] **Site refresh 2026-09-17** | design.md Part 7 items 2 (file I/O) and 3 (command-line arguments) carry no status line, while spec § 11 provides `read_file`, `write_file`, `args`, `args_checked` and `exit`, so the ledger reads as deferring what has shipped: do the two items get an ENTERS date and the milestone that landed them, or a note saying why they stay? Default until answered: the site's refusals page lists neither among the postponed items | `docs/design/design.md` Part 7 · `spec/heroes-spec.md` § 11 · `site/src/html/why/not.html`
 
 *******************************************************************************

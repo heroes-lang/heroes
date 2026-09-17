@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { page } from '../../../lib/figures.ts';
+import content from '../../../html/it/why/not.html?raw';
+---
+<BaseLayout url="/it/why/not/" title={"I no: le proposte che Heroes ha valutato ed escluso"} description={"Le forme e gli strumenti valutati e rifiutati, con la ragione in parole semplici, chi ha detto no e che cosa smentirebbe ciascun rifiuto."} current="why">
+<Fragment set:html={page(content, 'site/src/html/it/why/not.html')} />
+</BaseLayout>

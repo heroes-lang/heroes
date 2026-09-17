@@ -24,7 +24,10 @@ tabs; name arguments when two parameters share a type; handle every variant
 case in `match`, without a catch-all `_` branch; represent fallible results as
 `T?` and handle or propagate errors explicitly. Use `???` for an unfinished
 expression. The compiler reports its expected type and checks the surrounding
-code, but produces no executable while holes remain.
+code, but produces no executable while holes remain. When a C function hands
+back a handle, a pointer the library keeps for itself, declare it with
+`acquires <releaser>` or `borrows`, and write `consumes` on the parameter of the
+function that ends it; a handle never given back stops the program at exit.
 
 ## Pages
 
@@ -32,6 +35,7 @@ code, but produces no executable while holes remain.
 - [Examples](https://heroes-lang.org/examples/): source code, commands and recorded output where available. `/examples/index.json` provides the same collection as data, with a hash for each file.
 - [Start](https://heroes-lang.org/start/): how to build the compiler, find its runtime and run a program.
 - [Why Heroes](https://heroes-lang.org/why/): why the language uses explicit syntax and C libraries, what has been measured and what remains to be tested.
+- [What Heroes refused](https://heroes-lang.org/why/not/): the design proposals evaluated and turned down, who said no, and what would prove each refusal wrong.
 - [The project](https://heroes-lang.org/project/): how to verify that the compiler reproduces its own C, how changes are reviewed and the principles printed by `heroes this`.
 - [The author](https://heroes-lang.org/about/): Giuseppe Arici, CTO at Codermine in Brescia and author of *Heroes of code*, a history of programming languages told as a dream journey with David Bowie. The book is published on Amazon. Arici had never written a compiler before Heroes.
 - [Development log](https://heroes-lang.org/log/): project changes and review findings, newest first.

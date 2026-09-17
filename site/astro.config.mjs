@@ -163,11 +163,17 @@ function alternates(pathname) {
 // as the seven pages in the nav, which tells a crawler that `examples/nqueens/`
 // matters as much as the front door of the documentation. The INDEX of them
 // stays at 0.8, because that page is in the nav and is where a reader starts.
+//
+// The refusals page, `/why/not/`, is not in the nav either: it is one click
+// below three pages that are, the same distance a program is from the examples
+// index, so it takes that tier rather than the default and the tiers keep
+// meaning what this comment says.
 function priority(pathname) {
   if (pathname === '/' || pathname === '/it/') return 1.0;
   const path = pathname.startsWith('/it/') ? pathname.slice(3) : pathname;
   if (path === '/examples/') return 0.8;
   if (path.startsWith('/examples/')) return 0.7;
+  if (path === '/why/not/') return 0.7;
   return path.startsWith('/docs/') ? 0.6 : 0.8;
 }
 
