@@ -22,15 +22,15 @@ $ cmp out.c seed/heroes.c
   seed/heroes.c   the C the repository ships: the way in
   out.c           what the compiler writes when it compiles itself
 
-<span class="c">  over 22 megabytes of C, and more than 700,000 lines of it</span></code></pre>
+<span class="c">  over 23 megabytes of C, and more than 800,000 lines of it</span></code></pre>
   <p>
     If the files are identical, <code>cmp</code> prints nothing. The comparison verifies that the compiler reproduces the C it was built from. The middle command takes under a minute on a MacBook Air. Anyone can repeat the test: the repository is open and the three commands are the whole of it.
   </p>
   <ul class="stats">
-    <li><span class="n">180+</span><span class="what">modules of Heroes</span></li>
-    <li><span class="n">55k</span><span class="what">lines, and growing</span></li>
+    <li><span class="n">200+</span><span class="what">modules of Heroes</span></li>
+    <li><span class="n">60k</span><span class="what">lines, and growing</span></li>
     <li><span class="n">0</span><span class="what">TODO, FIXME or HACK in the compiler</span></li>
-    <li><span class="n">100+</span><span class="what">design sittings on the record</span></li>
+    <li><span class="n">150+</span><span class="what">design sittings on the record</span></li>
   </ul>
   <p>
     Heroes implements every part of the compiler: reading the words and structure of the code, connecting names to declarations, checking types, creating and checking an intermediate representation of the program, managing memory, generating C, checking external libraries, reporting errors, formatting code and handling commands.
@@ -59,10 +59,10 @@ $ cmp out.c seed/heroes.c
     <li><span class="who">The historian</span><span>Has to search the web and cite dates and sources: unsourced precedent is inadmissible. It has also read the author&rsquo;s history of programming languages, and uses it to know where to look rather than as the source, because a book by this project&rsquo;s author cannot be evidence for this project. Advises without veto power.</span></li>
   </ul>
   <p>
-    The panel chooses the solution it considers strongest and most complete, then submits it to the author for approval. Work continues while confirmation is pending. If there is a more cautious alternative, it is recorded so the author can consider it.
+    The panel chooses the solution it considers strongest and most complete, then submits it to the author for approval. Work continues while confirmation is pending. If there is a more cautious alternative, it is recorded so the author can consider it. After the five verdicts a sixth reader, the completeness critic, asks what nobody listed, and more than once the solution adopted was a route no seat had proposed.
   </p>
   <p>
-    Each review is recorded in a repository file, including the material examined, the verdicts and any vetoes. There are more than a hundred reviews. Every language change requires this review process.
+    Each review is recorded in a repository file, including the material examined, the verdicts and any vetoes. There are more than a hundred and fifty reviews. Every language change requires this review process. What the panel refused, and who said no, has a page of its own: <a href="/why/not/">what Heroes refused&nbsp;&rarr;</a>
   </p>
 
   <h2 id="zen">Twenty lines</h2>

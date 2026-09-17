@@ -119,9 +119,11 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     decided by the line and the function around it, never by something written
     three files away. No inheritance, no macros, no exceptions, no implicit
     conversions, no null: absence is a type, <code>i64?</code>. C&rsquo;s zero
-    pointer keeps its own name, <code>nullptr</code>, and a <code>ptr</code>,
-    the opaque handle a C library hands back, cannot be read through by any
-    Heroes code.</li>
+    pointer keeps its own name, <code>nullptr</code>; a <code>ptr</code> is a
+    bare address no Heroes code reads through, and the pointer a C library
+    hands you carries the name the library gives it, so one cannot be handed
+    where another belongs. Every one of these no&rsquo;s is on the record, with
+    who said it: <a href="/why/not/">what Heroes refused&nbsp;&rarr;</a></li>
     <li><b>One way to write anything.</b> A formatter with one canonical form,
     one word for loops, and argument names required where types cannot tell two
     arguments apart.</li>
@@ -141,20 +143,25 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <code>repeat</code>, sorting, the numeric conversions, and <code>map</code>,
     <code>filter</code>, <code>fold</code>, <code>find</code>,
     <code>any</code>, <code>all</code> and <code>range</code>, which are
-    themselves written in Heroes. Everything else is a C library you declare
-    yourself, and there is no package manager and no registry to pull it
-    from.</li>
+    themselves written in Heroes; plus reading and writing a file, the
+    command-line arguments and <code>exit</code>. Everything else is a C
+    library you declare yourself, and there is no package manager and no
+    registry to pull it from.</li>
     <li><b>Parallel work carries one number.</b> A thread takes an
     <code>i64</code> and gives one back. Put a list inside a callback&rsquo;s
     type and the compiler refuses it before anything runs, with
     <code>error[ffi_type]</code>, and its note tells you to hand C a pointer
     and a length instead. Spreading a large array across cores is not what
     this language does today.</li>
-    <li><b>Past the C boundary nothing is checked.</b> clang checks that your
-    declarations match the library&rsquo;s header. It does not check that the
-    pointer a library hands back is the one you wanted, or how long that
-    library keeps the one you gave it. That mistake stays yours.
-    <a href="/docs/the-c-boundary/">What the boundary does check&nbsp;&rarr;</a></li>
+    <li><b>Past the C boundary, what is checked is what you wrote down.</b>
+    clang checks that your declarations match the library&rsquo;s header. A
+    handle, the pointer to something the library keeps for itself, taken with a
+    call marked <code>acquires</code> is counted, and the program stops at exit
+    if one was never given back; one you were only lent cannot be handed to a
+    call that closes it. What no check sees: what the library does with an
+    address once it has it, and whether it still reads a text after you took it
+    back. That part stays yours.
+    <a href="/docs/the-c-boundary/#handles">What the boundary does check&nbsp;&rarr;</a></li>
     <li><b>Some mistakes no check catches.</b> A typo in a string used as an
     error code is still a valid string, and <code>10</code> where you meant
     <code>100</code> is still a number. The errors page carries the
