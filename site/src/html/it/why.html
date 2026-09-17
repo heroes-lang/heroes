@@ -122,8 +122,11 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     più in là. Niente ereditarietà, niente macro, niente eccezioni, niente
     conversioni automatiche, niente null: l&rsquo;assenza è un tipo,
     <code>i64?</code>. Il puntatore a zero del C conserva il suo nome,
-    <code>nullptr</code>, e un <code>ptr</code>, il riferimento opaco che una
-    libreria C restituisce, non è leggibile da nessun codice Heroes.</li>
+    <code>nullptr</code>; un <code>ptr</code> è un indirizzo nudo che nessun
+    codice Heroes legge, e il puntatore che una libreria C ti consegna porta il
+    nome che la libreria gli dà, così uno non passa al posto di un altro. Ognuno
+    di questi no è a registro, con chi l&rsquo;ha detto:
+    <a href="/it/why/not/">i no di Heroes&nbsp;&rarr;</a></li>
     <li><b>Un solo modo di scrivere qualunque cosa.</b> Un formattatore con
     una sola forma canonica, una parola sola per i cicli, e i nomi degli
     argomenti obbligatori dove i tipi non bastano a distinguerli.</li>
@@ -144,21 +147,25 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     l&rsquo;ordinamento, le conversioni
     numeriche, e <code>map</code>, <code>filter</code>, <code>fold</code>,
     <code>find</code>, <code>any</code>, <code>all</code> e
-    <code>range</code>, che sono scritte in Heroes a loro volta. Tutto il
-    resto è una libreria C che dichiari tu, e non ci sono un package manager
-    né un registry da cui prenderla.</li>
+    <code>range</code>, che sono scritte in Heroes a loro volta; più leggere e
+    scrivere un file, gli argomenti della riga di comando ed <code>exit</code>.
+    Tutto il resto è una libreria C che dichiari tu, e non ci sono un package
+    manager né un registry da cui prenderla.</li>
     <li><b>Il lavoro in parallelo porta un numero solo.</b> Un thread prende
     un <code>i64</code> e ne restituisce uno. Se metti una lista dentro il
     tipo di una callback, il compilatore la rifiuta prima che il programma
     parta, con <code>error[ffi_type]</code>, e la sua nota ti dice di passare
     al C un puntatore e una lunghezza. Distribuire un array grande su più core
     non è quello che questo linguaggio fa oggi.</li>
-    <li><b>Oltre il confine con il C non è controllato niente.</b> clang
-    verifica che le tue dichiarazioni combacino con l&rsquo;header della
-    libreria. Non verifica che il puntatore che la libreria restituisce sia
-    quello che volevi, né per quanto tempo quella libreria tiene quello che le
-    hai dato. Quell&rsquo;errore resta tuo.
-    <a href="/it/docs/the-c-boundary/">Cosa il confine controlla&nbsp;&rarr;</a></li>
+    <li><b>Oltre il confine con il C si controlla quello che hai scritto.</b>
+    clang verifica che le tue dichiarazioni combacino con l&rsquo;header della
+    libreria. Un handle, il puntatore a qualcosa che la libreria tiene per sé,
+    preso con una chiamata marcata <code>acquires</code> viene contato, e il
+    programma si ferma in uscita se uno non è stato restituito; uno ricevuto in
+    prestito non passa a una chiamata che lo chiude. Quello che nessun controllo
+    vede: cosa la libreria fa di un indirizzo una volta che lo ha, e se legge
+    ancora un testo dopo che gliel&rsquo;hai ritirato. Quella parte resta tua.
+    <a href="/it/docs/the-c-boundary/#handles">Cosa il confine controlla&nbsp;&rarr;</a></li>
     <li><b>Alcuni errori nessun controllo li prende.</b> Un codice
     d&rsquo;errore scritto male dentro una stringa resta una stringa valida, e
     <code>10</code> dove volevi <code>100</code> resta un numero. La pagina

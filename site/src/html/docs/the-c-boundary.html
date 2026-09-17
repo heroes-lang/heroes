@@ -83,7 +83,7 @@
     The copy is taken when the lease begins, so later changes to the string do not reach C. And if the library still reads the text after <code>end_lease</code>, no compiler can see it: the header does not say how long C keeps a pointer, so that mistake stays yours, and the memory checker the Linux build runs with, the sanitizer, is what finds it. <a href="/examples/gallery/13-lease/">The whole example, with its header&nbsp;&rarr;</a>
   </p>
   <p>
-    Heroes does not verify that a <code>ptr</code> returned to a library is the correct one or how the library uses it. Type checks do not remove the risks of C code.
+    A bare <code>ptr</code> stays an address and nothing more: Heroes cannot know whether the one you hand back to a library is the right one, or how the library uses it. When the library has a name for its pointer, the group can use that name and the compiler checks more: those are the <a href="#handles">handles</a>, further down this chapter. Type checks do not remove the risks of C code.
   </p>
   <p>
     Another check runs during execution. If a C library calls a Heroes function from a thread it created itself, execution stops and the message names the function. Each Heroes thread manages its own memory; the external thread is not initialised to do so. The library must call the function from the original calling thread, or the thread must be started from Heroes.
@@ -141,6 +141,44 @@
     Use <code>owned</code> to name the C function that frees a library-allocated string, received as a result or through an <code>@</code> parameter. The compiler uses that function to free the string and returns the text as a Heroes value.
   </p>
 
+  <h3 id="handles">Handles, and the three words that say whose they are</h3>
+  <p>
+    Many C libraries hand you a <b>handle</b>: a pointer to something the library keeps for itself, a database connection, a prepared query, and that sooner or later you will have to give back. So far that would be a <code>ptr</code>, an address you know nothing about. Inside a group you can instead give it the name the library itself uses: a <code>record</code> with no fields, a <code>tag</code> and the name of the C type is the pointer to that type. Clang checks the name against the header, a <code>CDb</code> cannot be handed where a <code>CStmt</code> belongs, and <code>nullptr</code> is its empty value.
+  </p>
+  <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="62-63">
+<pre><code>    <span class="k">record</span> CDb tag sqlite3
+    <span class="k">record</span> CStmt tag sqlite3_stmt</code></pre>
+    <figcaption>examples/ledger/db/sqlite.hero, lines 62&ndash;63</figcaption>
+  </figure>
+  <p>
+    Then every declaration that touches a handle says what it does, with one of three words. <code>acquires</code> and a name: the call hands you one, and that name is the function that takes it back. <code>consumes</code>: the call takes one back and ends its life. <code>borrows</code>: the call shows you one the library goes on keeping, and you owe nothing. None of the three is guessed by the compiler, because two functions with the same signature can do the first thing and the third: you write it.
+  </p>
+  <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="75-76">
+<pre><code>    <span class="k">function</span> sqlite3_open(filename: <span class="t">cstr</span>, @out: CDb acquires sqlite3_close) -&gt; <span class="t">i64</span>
+    <span class="k">function</span> sqlite3_close(db: CDb consumes) -&gt; <span class="t">i64</span></code></pre>
+    <figcaption>examples/ledger/db/sqlite.hero, lines 75&ndash;76</figcaption>
+  </figure>
+  <p>
+    Two checks follow from those words. The first happens before the program runs. A parameter written without <code>@</code> is borrowed: the caller keeps the value and reads it again afterwards. Handing it to a call that closes it would leave them holding an address C has already taken back, so the compiler refuses the line, and the repair is to write <code>@</code> on the parameter and at the call. Here <code>shut</code> receives the connection on loan and tries to close it:
+  </p>
+  <pre class="diag"><code>$ heroes check handles.hero
+<span class="msg">error[consumed_borrowed_handle]: `sqlite3_close` ends the life of what it is given, and `db` was borrowed — this function promised not to change it</span>
+  at handles.hero:8:27
+    |
+  8 |     _ = sqlite3_close(db: db)
+    |                           ^^
+<span class="msg">  note: a parameter written without `@` is borrowed: the caller keeps the value and reads it again after the call, so a call that frees it leaves them holding an address C has taken back. Mark the parameter `@db` and the call site `@db` too, which says on both lines that the value does not survive</span>
+<span class="msg">  note: this refuses the call, not the copy: a copy made BEFORE the call still holds the freed address, and nothing here sees that. design.md Part 8 wart 20 states that cost and names what would close it</span></code></pre>
+  <p>
+    The second check happens when the program ends. Every handle taken with a call marked <code>acquires</code> has to be given back with one marked <code>consumes</code>. When <code>main</code> returns, the runtime, the piece of program that sits underneath and keeps things working while it runs, counts the handles still open and, if it finds any, stops the program saying how many. This program opens a connection and never closes it:
+  </p>
+  <pre><code>$ heroes run forgetful.hero
+opened, rc = 0
+panic: 1 C handle(s) never given back — every call marked `acquires` owes one marked `consumes`, and this program is missing that many. The first is at 0x1031491f0</code></pre>
+  <p>
+    The same count stops a handle given back twice, which in C would free the same memory twice. And the three words check each other: once one function in the group declares <code>consumes</code> for a handle type, every function that hands one out has to say which of the three words applies, and one that stays silent is refused at its declaration. They make sense only on a handle, that is on a <code>record</code> with a <code>tag</code>: on a bare <code>ptr</code> the compiler would have nowhere to read them, and refuses them.
+  </p>
+
   <h3>The program</h3>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="41-43">
 <pre><code><span class="k">test</span> <span class="s">"the C library does the maths"</span>
@@ -166,7 +204,7 @@ the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
 
   <h3>The rules covered so far</h3>
   <p>
-    Seven words that can start a top-level line, explicit rules for data, errors and changes, and C libraries for external features: these are the language elements covered so far.
+    Seven words that can start a top-level line, explicit rules for data, errors and changes, C libraries for external features, and three words that say whose a handle is: these are the language elements covered so far.
   </p>
 
   <p class="next">
@@ -184,8 +222,14 @@ the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
   <footer>
     <p>Every code block on this page is a slice of
     <code>examples/gallery/08-ffi.hero</code> in the repository, except the
-    lease&rsquo;s, which is a slice of <code>examples/gallery/13-lease.hero</code>.
-    The two diagnostics are the first file with <code>floor</code> misspelled at
-    its declaration and at its one call, and with one result type changed, built
-    as <code>ffi.hero</code>.</p>
+    lease&rsquo;s, which is a slice of <code>examples/gallery/13-lease.hero</code>,
+    and the two on handles, which are slices of
+    <code>examples/ledger/db/sqlite.hero</code>. The three diagnostics are the
+    first file with <code>floor</code> misspelled at its declaration and at its
+    one call, and with one result type changed, built as <code>ffi.hero</code>;
+    and a short program that declares the two SQLite functions of the figure and
+    hands the connection it was lent to <code>sqlite3_close</code>, checked as
+    <code>handles.hero</code>. The program stopped at exit,
+    <code>forgetful.hero</code>, opens <code>:memory:</code> with the same
+    declarations and never calls <code>sqlite3_close</code>.</p>
   </footer>
