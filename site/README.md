@@ -15,7 +15,7 @@ hold the source, and each answers a different question:
 | `src/html/` | the pages themselves, one HTML fragment each: the inside of `<main>`, prose and code, and a `<footer>` holding only the closing paragraphs that belong to that page, if it has any |
 | `src/pages/` | one tiny `.astro` per page, carrying four facts and no content: its path, its title, its description, which nav entry is current |
 | `src/layouts/`, `src/components/` | the head, the nav and the footer's shared tail, written **once** |
-| `public/` | the assets, copied into `dist/` untouched: `style.css`, `images/`, `robots.txt`, the three icon files, and the pre-launch parking page. A `CNAME` sat here until it was removed for naming a host that never read it: this site is Cloudflare Pages by Direct Upload, GitHub Pages was never in play, and the file was served publicly at `/CNAME` while doing nothing. `llms.txt` left this directory when it was found still saying 4096 after the ceiling moved: its prose is `src/llms.txt` and `src/pages/llms.txt.ts` fills its numbers from the suite at build time |
+| `public/` | the assets, copied into `dist/` untouched: `style.css`, `images/`, `robots.txt`, `_redirects` and `_headers` (Pages reads both from `dist/` and serves neither; `/_redirects` answers 404, measured), the three icon files, and the pre-launch parking page. A `CNAME` sat here until it was removed for naming a host that never read it: this site is Cloudflare Pages by Direct Upload, GitHub Pages was never in play, and the file was served publicly at `/CNAME` while doing nothing. `llms.txt` left this directory when it was found still saying 4096 after the ceiling moved: its prose is `src/llms.txt` and `src/pages/llms.txt.ts` fills its numbers from the suite at build time |
 
 Beside them, **`site/.claude/skills/site-panel/`** holds the five-seat review
 panel as a directory-scoped skill.
@@ -369,6 +369,35 @@ have: 134 of the 180 pages sat at 0.8, the same figure as the seven pages in the
 nav, which told a crawler that `examples/nqueens/` matters as much as the front
 door of the documentation.
 
+**Three addresses are not pages, and `public/_headers` says what each is for.**
+`robots.txt` names them, `/spec.md`, `/llms.txt` and `/log.xml`, as the three
+the sitemap does not carry, and until 2026-09-17 nothing else on the site
+answered for them. What provoked it was the first Search Console report, read a
+fortnight after publication: every address it listed as not indexed was one the
+site declares, the 184 in the sitemap plus the two redirects, the feed and the
+not-found page, and of those only the feed was a question the site had left
+open. It sat under *crawled, currently not indexed*, which is where a feed a
+crawler finds in every page's `<head>` stays for good unless something says so.
+So the feed answers `X-Robots-Tag: noindex`: a state declared rather than
+suffered, and one no feed reader looks at. `spec.md` answers a `Link` header
+naming `/spec/` as its canonical, because the two carry the same text and a
+search engine given no preference picks the door itself, possibly the bare
+`.md`; the header changes nothing for `curl` or for a model, which still get the
+file. `llms.txt` gets nothing on purpose: it has no HTML twin, and `noindex`
+would hide it from the search crawlers `robots.txt` says yes to by name,
+since Claude-SearchBot and OAI-SearchBot honour it as Google does. Pages reads
+the file from `dist/` as it reads `_redirects`, and serves neither. There is no
+build-time audit for it, and that is a choice rather than a gap: the file is
+copied verbatim and git already guarantees its presence, while the fact that
+matters, the header on the wire, exists only at Cloudflare's edge, so the check
+is the live one in § The domain's post-publish list. The rest of the report
+showed nothing wrong. The two redirects are `http` and `www` doing their job,
+the one `noindex` is the not-found page by the decision of 2026-09-08, and the
+over a hundred addresses Google had discovered and not indexed were addresses
+it had not yet visited at all, which on a domain a fortnight old is the
+crawler's pace. The entry is
+`docs/records/log/2026-09-17-1217-the-pages-not-indexed-were-the-pages-not-yet-visited.md`.
+
 **One guard runs at the end of every build.** `astro:build:done` walks the
 output and unlinks every `.DS_Store`. Astro copies `public/` verbatim and macOS
 writes that file into any directory Finder has looked at, and `.gitignore`
@@ -584,10 +613,22 @@ issued to `heroes-lang.org`. **Three of those six facts were about the gate and
 are gone with it.** What still has to be true after a publish, and is worth
 re-running rather than assuming: both landings and a nested chapter in each
 edition answer 200, a missing page answers 404, `robots.txt` and
-`sitemap-index.xml` answer 200, no response carries `noindex`, `www` still
-answers 301 to the apex, the certificate still names the apex, and the visitor
-count's beacon is in the served HTML (the one-line check is in § The visitor
-count below).
+`sitemap-index.xml` answer 200, no HTML page carries `noindex` except the two
+not-found pages, `/log.xml` carries `X-Robots-Tag: noindex` and `/spec.md` a
+`Link` header naming `/spec/` as canonical while `/llms.txt` carries neither
+(§ What a machine that is not a browser gets says why), `/_headers` answers 404
+like `/_redirects`, `www` still answers 301 to the apex, the certificate still
+names the apex, and the visitor count's beacon is in the served HTML (the
+one-line check is in § The visitor count below). The header checks, each one
+line:
+
+```sh
+curl -sI https://heroes-lang.org/log.xml  | grep -i '^x-robots-tag'   # noindex
+curl -sI https://heroes-lang.org/spec.md  | grep -i '^link'           # rel="canonical", /spec/
+curl -sI https://heroes-lang.org/llms.txt | grep -ic 'x-robots-tag'   # 0
+curl -sI https://heroes-lang.org/         | grep -ic 'x-robots-tag'   # 0
+curl -sS -o /dev/null -w '%{http_code}\n' https://heroes-lang.org/_headers   # 404
+```
 
 ### The visitor count
 

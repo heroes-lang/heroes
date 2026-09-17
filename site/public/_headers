@@ -1,0 +1,26 @@
+# What each of the three addresses that are not pages is for.
+#
+# `robots.txt` names them, `/spec.md`, `/llms.txt` and `/log.xml`, as the three
+# the sitemap does not carry, and until the first Search Console report nothing
+# answered for them: the feed sat under "crawled, currently not indexed", which
+# is where a feed found in every page's <head> stays unless something says so.
+#
+# Cloudflare Pages reads this file from the build output directory, where Astro
+# copies site/public/, exactly as it reads _redirects, and serves neither. The
+# syntax is a path on its own line and the headers indented under it. The
+# reasoning in full is site/README.md § What a machine that is not a browser
+# gets; the live check after a publish is under § The domain there.
+
+# A feed is for feed readers, which never look at this header. Declared rather
+# than left to the crawler to decide.
+/log.xml
+  X-Robots-Tag: noindex
+
+# The same text as /spec/, in the file a model or curl fetches. The header tells
+# a search engine which of the two doors to show and changes nothing for anyone
+# who fetches the file.
+/spec.md
+  Link: <https://heroes-lang.org/spec/>; rel="canonical"
+
+# /llms.txt gets nothing on purpose: it has no HTML twin, and noindex would hide
+# it from the search crawlers robots.txt says yes to by name.
