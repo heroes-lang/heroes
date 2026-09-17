@@ -1,0 +1,64 @@
+# fixedbugs, 2026-09-17 (defect 050, found by panel 158's completeness critic
+# while auditing that sitting's own framing, and resolved by panel 160 as its
+# option E after five options were weighed and two seats prototyped two of them).
+#
+# SYMPTOM: `m["a"].is_err()` on a `{str: i64?}` holding a stored failure was
+# `check` 0, ran, and printed the OPPOSITE of what the line reads. `m["a"]` is
+# an `i64??`; `.is_err()` peeled the outer level and answered *was the key
+# there* — true, and not the question. The same silence arrived through a second
+# door with no map in it: `find` over a `[i64?]` returns an `A?` whose `A` is
+# already fallible.
+#
+# CAUSE: of the four readers of a fallible value, three hand the second level
+# back in their TYPE — `.must()` and `?` give an `i64?`, `.default(v)` types `v`
+# against the payload — so a wrong depth fails at its next use and the compiler
+# says so there. `.is_err()` returns a bare `bool`. Its arm in
+# `selfhost/check/builtins.hero` did not even bind the payload: it matched
+# `.fallible` and answered `bool`. The asymmetry is exactly one reader wide.
+#
+# FIX: `check/nested.hero`, asked from that one arm. Refusing all four was
+# measured and declined — it refuses correct programs, this file's own sibling
+# `a-fallible-type-is-never-written-fallible-twice.hero` among them, and the
+# single mistake it catches that this does not is already an abort at 134 in
+# the runtime's handle ledger.
+#
+# The two notes are the resolution's own condition: a message naming only
+# `match` was measured to send at least one repair in five to `.must().is_err()`
+# for the OUTER question, which aborts on an absent key and answers the inner
+# one where the key is there. A refusal that relocates the silent error is not
+# a repair.
+
+function failed(r: i64?) -> bool
+    return r.is_err()
+
+function main()
+    m: {str: i64?} @ {}
+    m["a"] @ fail(code: "parse", msg: "not a number")
+
+    # The map door, and the program this case exists for. The annotation is
+    # `#~v` — the NEXT line — because a trailing `#~` on a block opener is
+    # moved into the body by `heroes fmt`, which would point it at the wrong
+    # line and leave the real one unannotated.
+    #~v nested_read
+    if m["a"].is_err()
+        print("the stored value failed")
+
+    # The second door: no map, a library generic, the same silence.
+    xs: [i64?] @ [ok(1)]
+    hit = find(xs, failed)
+
+    #~v nested_read
+    if hit.is_err()
+        print("nothing matched")
+
+    # And the neighbours the refusal must not reach. A single-level fallible
+    # answers `bool` as it always did; the two ways to ask a nested one both
+    # stand, and each names the level it asks about.
+    n: i64? @ ok(1)
+    print(f"{n.is_err()}")
+
+    match m["a"]
+        .ok inner => print(f"the key was there, and the parse failed: {inner.is_err()}")
+        .err e    => print(f"no such key: {e.code}")
+
+    print(f"{m["a"].must().is_err()}")
