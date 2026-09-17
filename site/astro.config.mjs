@@ -8,6 +8,7 @@ import { assertNodsMirrored } from './src/lib/nods.ts';
 import { lastmodFor, assertHistoryAvailable, assertSitemapDated } from './src/lib/lastmod.ts';
 import { assertHeadsUsable } from './src/lib/seo.ts';
 import { assertScriptsHonest } from './src/lib/scripts.ts';
+import { assertCrumbsMatchTheNav } from './src/lib/crumbs.ts';
 
 const ORIGIN = 'https://heroes-lang.org';
 
@@ -193,6 +194,25 @@ function scriptsAudit() {
   };
 }
 
+// A page the nav points at is never shown as somebody's child, and every page
+// the nav does not point at says where it sits (author decision 2026-09-17).
+// `src/lib/crumbs.ts` carries the rule and what it cost to find.
+//
+// Listed after `nestedNotFound`, which renames `it/404/index.html`: a not-found
+// page is neither, and the check skips both 404s rather than carrying an
+// exception for a file that may or may not still be an `index.html` when it
+// runs.
+function crumbAudit() {
+  return {
+    name: 'heroes:crumbs',
+    hooks: {
+      'astro:build:done': ({ dir, logger }) => {
+        logger.info(assertCrumbsMatchTheNav(dir.pathname));
+      },
+    },
+  };
+}
+
 export default defineConfig({
   site: ORIGIN,
 
@@ -216,6 +236,7 @@ export default defineConfig({
     scriptsAudit(),
     withoutFinderDroppings(),
     nestedNotFound(),
+    crumbAudit(),
     sitemap({
       // The two not-found pages are addresses, so Astro hands them to the
       // sitemap like any other page, and a sitemap that lists them asks a

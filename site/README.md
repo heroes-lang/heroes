@@ -260,8 +260,27 @@ only test that counts: the author could not find it. **A page nobody can see
 from the chrome is not linked, whatever the link count says.**
 
 Two pages sit under an entry rather than in the row, for that reason and not by
-accident: `errors.html` under Docs, and `about/thanks.html` under About. Both
-carry a `.crumb` and both mark their parent as current.
+accident: `errors.html` under Docs, and `why/not.html` under Why. Both carry a
+`.crumb` and both mark their parent as current.
+
+**A page in the nav row carries no crumb, and every other page carries one**
+(author decision 2026-09-17, given as *"some pages show the crumb with the path
+and others do not, shall we make it uniform?"* and then *"all right, but then
+the ones that have an entry in the menu, never put them as children"*). Both
+halves of the complaint were real when it was given: sixteen hand-written pages
+carried a trail and nine did not, with no rule dividing them, and two of the
+sixteen were nav pages wearing somebody else's parent. `/spec/` read *Heroes /
+Guide / specification* while Spec is the ninth entry of the row, and
+`/about/thanks/` read *Heroes / Author / thanks* while Thanks is the tenth: a
+row in the nav is a top-level place, and a trail that files it under another
+page tells a reader the opposite of what the row tells them. Both lost their
+crumb that day; `about/thanks.html` keeps its own nav entry and marks itself
+current, which is the sentence above corrected, since it said *both mark their
+parent as current* from the days before Thanks was in the row. The executor is
+`src/lib/crumbs.ts`, run over `dist/` at the end of every build: it reads the
+row's slugs from `SiteNav.astro` rather than keeping a copy, refuses a nav page
+that carries a trail and a non-nav page that carries none, and prints how many
+of each it saw.
 
 `errors.html` did not lose anything by moving: it is a **chapter of the
 documentation**, the second one, carrying a `.crumb` (`Heroes / Docs / errors`)
