@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 0 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 2 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -16,7 +16,7 @@ against a banner reading 3.
 
 | | |
 |---|---|
-| **Current milestone** | **none open.** The next row is 59, `M-arm-platform`, and nobody has opened it |
+| **Current milestone** | **M-arm-platform**, row 59, opened 2026-09-17 — the fourth real machine. It is the first leg where plain `char` is **unsigned**, and the first hour of it refused a golden case the other three accept |
 | **Last closed** | **M-check-completeness**, 2026-09-17, `m-check-completeness` ([057](journal/057-check-completeness.md)) — it could not close for two days, because the rule forbids a tag over an open defect and its own sittings kept finding them: ten opened, ten closed, six sittings · before it **M-marked-acquisition** ([056](journal/056-marked-acquisition.md)) and **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **58** of 78 · **58** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **62,341** lines of Heroes in **215** modules (`find selfhost -name '*.hero'`) · the seed **824,173** lines of C, regenerated twice more at defect 057's close and the fixpoint verified byte-identical each time |
@@ -39,8 +39,8 @@ which were blessing C that does not compile.
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–57
-are done, in the order they closed, and rows 58–78 are what is next, in the order
+One table, one row per milestone, **closed first and scheduled after**: rows 1–58
+are done, in the order they closed, and rows 59–78 are what is next, in the order
 they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
@@ -51,10 +51,15 @@ and 56–77 until M-cleanup-verdict closed on 2026-09-14 — a close that both t
 its own row and entered `M-marked-acquisition` at 57, the form its own verdict
 admitted, so the twenty-one rows after it each moved one down and the table is
 78 long, and 1–56 and 57–78 until M-marked-acquisition closed later the same
-day, which is the first close in this table that opened no row after itself: it is the
+day, which is the first close in this table that opened no row after itself, and
+1–57 and 58–78 until M-check-completeness closed on 2026-09-17. **That close did
+not move it, and the OPENING of row 59 later the same day is what found it**: the
+sentence read *1–57 done* over a table whose row 58 said `done 2026-09-17` eight
+lines below. It is the
 one number in this file that no instrument reads, so it is
 restated here and re-read at every close with § Where we are — and at every
-OPENING too, which is what moved it twice on one day. `warrant` is why a milestone exists: **v1** (the self-hosting
+OPENING too, which is what moved it twice on one day and what caught it this
+time. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
 
@@ -121,7 +126,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 56 | **M-cleanup-verdict** | done 2026-09-14 | `m-cleanup-verdict` | [055](journal/055-cleanup-verdict.md) | the ruling on a scope-bound release for a C handle: a releaser keyed on the TYPE refused to Part 6, because ownership is a property of the CALL · a decision, not a feature |
 | 57 | **M-marked-acquisition** | done 2026-09-14 | `m-marked-acquisition` | [056](journal/056-marked-acquisition.md) | the mark goes where the obligation is CREATED — on the acquiring call — so a C handle nobody releases stops being silent · panel 147 R4, **§1.12** |
 | 58 | **M-check-completeness** | done 2026-09-17 | `m-check-completeness` | [057](journal/057-check-completeness.md) | ten defects the hunt turned up, closed — and three were not what their own entry said · scheduled, no warrant |
-| 59 | **M-arm-platform** | scheduled | — | — | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
+| 59 | **M-arm-platform** | **OPEN** | — | — | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
 | 60 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
 | 61 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
 | 62 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |

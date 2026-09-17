@@ -1,0 +1,63 @@
+# check=skip=FromPlatformFlagConstDisallowed
+#
+# The Linux arm64 machine of this project, as one file.
+#
+# The first line is a parser directive and has to be the first line, for the
+# same reason `Dockerfile.amd64` carries it: Docker's lint warns that the `FROM`
+# below names a constant platform, because a portable Dockerfile would let the
+# host choose. This one is not portable on purpose — the architecture IS the
+# question — so the warning would say the same true thing on every build.
+#
+# **This file and `Dockerfile.amd64` differ on exactly one axis, and that is the
+# whole design.** Same base image, same clang major, same five packages, same
+# `WORKDIR`; `--platform` is the only line that disagrees. A second Linux that
+# also changed distribution or compiler version would answer a divergence with
+# two candidate causes and no way to tell them apart, which is the shape
+# `LINUX-MACHINE.md` § How it differs from the judge already paid for once: the
+# sqlite finding of 2026-09-03 looked like a platform fact and was a clang
+# version fact. One axis, one question.
+#
+# `silkeh/clang:22` publishes an arm64 manifest of its own, so the major-version
+# pin costs nothing here: measured 2026-09-17, `docker manifest inspect` lists
+# amd64 `sha256:42cebd4a…` and arm64 `sha256:d315ac7f…` under the one tag. The
+# two images are therefore siblings and not cousins.
+#
+# What this machine answers that the x86-64 one cannot, and it is why the
+# milestone exists (`docs/work/milestones/M-arm-platform.md`):
+#
+#   - plain `char` is **unsigned** on the ARM ABI and **signed** on x86-64,
+#     while `spec § 13` declares a parameter and a field at *the header's own
+#     width and sign*. The corpus's 20 `extern` programs of 55 are where that
+#     divergence would show;
+#   - `INT64_MIN % -1` returns 0 at exit 0 here and raises SIGFPE on x86-64
+#     (`.github/workflows/ci.yml`, the Linux leg's own note), so the emitter's
+#     guard on `%` is exercised on the side that does NOT trap;
+#   - structure padding and `va_list` are the next two shapes, in that order.
+#
+# It runs NATIVELY on the author's arm64 Mac, where `Dockerfile.amd64` runs
+# through Rosetta. So this is the cheaper of the two instruments as well as the
+# newer one, and a timing taken here is comparable to the Mac's in a way the
+# emulated leg's never was.
+#
+# Nothing of Heroes is built here: the repository is copied in at run time and
+# the compiler inside is the one clang line from CLAUDE.md § Commands, typed by
+# hand, so this file stays an environment and not a build script (§10).
+FROM --platform=linux/arm64 silkeh/clang:22
+
+# The same five the bare image lacks and the CI leg has, in the same order as
+# `Dockerfile.amd64`, so a diff of the two files is one line long: lldb for
+# `lldb_breaks_on_a_hero_line`, pkg-config for every `package "…"` binding, the
+# two headers `examples/sqlite/` and `examples/curl/` bind, and git, without
+# which the net's own tests carry a red case and the `records` suite cannot run
+# at all. raylib is left out on purpose, exactly as in CI, so `examples/raylib/`
+# keeps exercising the skip rule.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git lldb-22 pkg-config libsqlite3-dev libcurl4-openssl-dev \
+ && ([ -e /usr/bin/lldb ] || ln -s /usr/bin/lldb-22 /usr/bin/lldb) \
+ && rm -rf /var/lib/apt/lists/*
+
+# Where the repository is copied to. It is COPIED, from a read-only mount,
+# never mounted writable: the compiler keeps its cache in `build/`, and a
+# writable mount would leave Linux objects in the Mac's own cache directory —
+# measured on the x86-64 machine's first day, eight of them.
+WORKDIR /w

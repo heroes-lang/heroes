@@ -1,4 +1,27 @@
-# The Linux machine — a container, built from one file, reachable in seconds
+# The Linux machines — two containers, one file each, reachable in seconds
+
+**There are TWO since 2026-09-17** (M-arm-platform), and the second is the
+reason to read this heading twice: `Dockerfile.amd64` is x86-64 and runs through
+Rosetta on the author's arm64 Mac, `Dockerfile.arm64` is arm64 and runs
+natively. They differ on **one line**, the `FROM`'s platform — same Debian
+13.6, same Debian clang 22.1.8, same glibc 2.41, same sqlite 3.46.1, same
+libcurl 8.14.1, same git 2.47.3, all read off the two images on the day the
+second was built. One axis, so a divergence between them has one candidate
+cause and not two; § How it differs from the judge is where that discipline was
+bought, by a finding that looked like a platform fact and was a clang version
+fact.
+
+**The x86-64 file was named `Dockerfile` until 2026-09-17.** The bare name had
+become the one that lies — `docker build <this directory>` would have handed a
+reader x86-64 without their choosing it — so there is now no default and the
+architecture is a thing you type. `tests/harness/suite_records.hero`'s `MOVED`
+table carries the rename so a citation in a record still resolves.
+
+**And the arm64 one earned its place in its first hour**, which is § What the
+arm64 machine measured on its first day: a golden case this repository has
+shipped since 2026-08-16 does not compile there, and the compiler's own
+diagnostic tells the author to write the spelling it has just refused. Defects
+058 and 059.
 
 **There is a Linux x86-64 for this project on the author's own Mac, and it is
 not the CI.** Until 2026-09-03 every Linux fact in this repository was learned
@@ -37,9 +60,30 @@ Measured 2026-09-03 on the author's Mac (`venus`, arm64, macOS 26.6.2):
 | Built image | `heroes-linux`, 1.93 GB; 1.99 GB since git joined (2026-09-09) |
 | Inside | Debian 13.6 (trixie), Debian clang 22.1.8, lld, lldb 22.1.8, glibc 2.41, pkg-config, sqlite 3.46.1, libcurl 8.14.1, git 2.47.3 |
 
-## The one file, and how to build it
+## The two files, and how to build them
 
-The `Dockerfile` beside this file is the whole machine. It names the base
+The two `Dockerfile`s beside this file are the whole of both machines:
+
+```
+docker build -f docs/ref/environment/linux/Dockerfile.amd64 -t heroes-linux       docs/ref/environment/linux
+docker build -f docs/ref/environment/linux/Dockerfile.arm64 -t heroes-linux-arm64 docs/ref/environment/linux
+```
+
+**`-f` is not optional and that is the design.** Neither file is named
+`Dockerfile`, so a build that does not say which architecture it wants fails
+instead of choosing one. The image names carry the same distinction, so a `docker
+run` cannot pick the wrong machine either.
+
+`silkeh/clang:22` publishes both architectures under the one tag — measured
+2026-09-17, `docker manifest inspect` gives amd64 `sha256:42cebd4a…` and arm64
+`sha256:d315ac7f…` — which is what makes the two images siblings rather than
+cousins, and what makes the major-version pin cost nothing on the new leg.
+**The arm64 image built in 145 s including the base-image pull** (19.4 s of
+that in Docker's own layer export; the rest was the network, so the figure is a
+first-build number and not a rebuild one) and comes to **3.1 GB** against the
+x86-64 image's 1.99 GB.
+
+Each file names the base
 image by major version, so that a `latest` moving to clang 23 cannot move this
 instrument in silence, and it installs the five things the bare image lacks and
 the CI leg has: `git`, `lldb-22`, `pkg-config`, `libsqlite3-dev`,
@@ -50,35 +94,44 @@ raylib is left out on purpose, as in CI, so
 arrived last (2026-09-09): the net's own tests have asked `git check-ignore`
 since 2026-09-07 and one of them was red here, unreported, until a run read the
 count instead of the goldens; and the `records` suite reads commits and tags, so
-a copy that carries `.git` can now run all three suites on this machine. From
-the repository root:
+a copy that carries `.git` can now run all three suites on this machine. Both
+lines are run from the repository root, and both took a first build of the same
+shape: **16.5 s for x86-64** on 2026-09-03, apt layer included, and the arm64
+figure above. A rebuild with nothing changed is served from the cache.
 
-```
-docker build -t heroes-linux docs/ref/environment/linux
-```
-
-**16.5 s the first time**, apt layer included; a rebuild with nothing changed
-is served from the cache. The file's first line is a parser directive that
+Each file's first line is a parser directive that
 switches off one lint, `FromPlatformFlagConstDisallowed`: Docker warns that
-the `FROM` names a constant platform, and it does, because the CI leg is
-x86-64 and nothing else is the instrument. The comment above the directive
-says the same thing in the file itself.
+the `FROM` names a constant platform, and it does, in both files and for the
+same reason — the architecture is the question here, so a portable Dockerfile
+that let the host choose would be an instrument that answers whatever it is
+asked. The comment above each directive says so in the file itself.
 
-Nothing of Heroes is built by the Dockerfile. The compiler inside is the one
+Nothing of Heroes is built by either Dockerfile. The compiler inside is the one
 clang line from CLAUDE.md § Commands, typed by hand at run time, so the file is
 an environment and not a build script (CLAUDE.md §10).
 
-## How to run something on it
+## How to run something on one of them
 
 The repository is **mounted read-only and copied inside**. Every run starts
-from a fresh copy and a fresh seed build, and both are cheap here:
+from a fresh copy and a fresh seed build, and both are cheap here. The image
+name is the only thing that changes between the two machines:
 
 ```
 docker run --rm -v "$PWD":/src:ro heroes-linux bash -c '
   tar -C /src --exclude=.git --exclude=build -cf - . | tar -xf -
   clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
   ./heroes test examples/ctime/main.hero'
+
+docker run --rm -v "$PWD":/src:ro heroes-linux-arm64 bash -c '…the same body…'
 ```
+
+**The copy is also what frees the tree**, and that is worth stating because it
+is not obvious: the `tar` finishes in seconds and everything after it reads the
+container's own copy, so a long run here does not own the Mac's working tree
+the way a local suite does (CL-025, `.claude/rules/verification.md`). Editing a
+document while the net runs in a container is safe, and waiting for it is the
+mistake `.claude/rules/records.md` § Working in lanes names. The clock is still
+exclusive: a timing taken while anything else runs is discarded.
 
 The copy is **3.8 s for 273 MB**; the seed build is **6.1 s** (3.5 s on the Mac,
 7.7 s on the Windows box). `--rm` discards the copy with the container, which
@@ -111,7 +164,7 @@ the same image without the flag runs and reports `x86_64` (both measured
 2026-09-03). The platform is fixed by the `FROM`, so the flag has nothing to
 add and one thing to break.
 
-## What it measured on its first day
+## What the x86-64 machine measured on its first day
 
 Everything below was run on 2026-09-03, inside the image as built that day.
 
@@ -166,7 +219,54 @@ the others) each change a flag on panel 047's list. Until it is decided, the
 CI's Linux leg is green on Ubuntu 24.04's clang 18.1.3 and will stop being
 green on the day `ubuntu-latest` carries a clang that errors.
 
-## How it differs from the judge
+## What the arm64 machine measured on its first day
+
+Everything below was run on 2026-09-17, inside the image as built that day.
+
+**The machine works, and says so in its own words.** The seed built from C
+alone; `heroes --version` printed `heroes 0.2.0`; `heroes doctor` reported six
+rows `ok` with `arch aarch64`, the clang floor among them (clang 22 against a
+floor of 18); and `heroes test selfhost/main.hero` read **654 tests, all
+passed** — the same count this tree reads on the Mac.
+
+**And then it refused something the other three accept.** Plain `char` is the
+finding, and it is the milestone's own registered prediction coming back half
+false:
+
+| machine | plain `char` | |
+|---|---|---|
+| Linux arm64 | **UNSIGNED**, `CHAR_MIN 0`, `CHAR_MAX 255` | as predicted |
+| Linux x86-64 | SIGNED, `-128` … `127` | as predicted |
+| Darwin arm64, this Mac | **SIGNED**, `-128` … `127` | **against the prediction** |
+
+The milestone file registered *"plain `char` is unsigned on the ARM ABI"*, and
+that sentence is false as written. The generic AAPCS does say unsigned, and
+Debian arm64 follows it; **Apple's own arm64 ABI deviates and declares `char`
+signed**, so the cause is the platform's ABI and not the architecture. Three
+legs were all signed and could not have shown it — which is the whole argument
+for a fourth real machine, arriving on the day the machine arrived.
+
+What it costs is **defects 058 and 059**, both measured here and both with
+their reproducers in `docs/work/DEFECTS.md`: there is no spelling of a plain
+`char` field or parameter that binds on every platform (`i8` on two legs, `u8`
+on the third, every shape inverting), so
+`tests/golden/run/ffi-a-char-array-member.hero` is accepted on x86-64 and
+refused here; and on this machine the `ffi_parameter_type` note tells the author
+to *"Declare it `i8`"* about the `i8` it has just refused, because
+`selfhost/emit/c_spellings.hero:59` tables the answer instead of asking the
+target.
+
+**The sign check itself is correct on both machines**, and that is the part
+worth keeping straight: `extern_field.hero:154` compares the header's sign to
+the declared one and answers rightly each time. Nothing here is a bug in the
+comparison. The hole is that C has three `char` types where Heroes has eight
+integers of fixed sign, so the author's question — *which one do I write* — has
+no portable answer to give.
+
+`INT64_MIN % -1` and structure padding are the next two shapes this machine is
+pointed at, in that order, and both are **unrun** as of this line.
+
+## How they differ from the judge
 
 The CI's Linux leg is `ubuntu-latest`, which on 2026-09-03 was **Ubuntu 24.04
 with Ubuntu clang 18.1.3** (read from the run's own `heroes doctor` step). This

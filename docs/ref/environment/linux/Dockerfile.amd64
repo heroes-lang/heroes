@@ -1,6 +1,13 @@
 # check=skip=FromPlatformFlagConstDisallowed
 #
-# The Linux machine of this project, as one file.
+# The Linux x86-64 machine of this project, as one file.
+#
+# **This file was named `Dockerfile` until 2026-09-17**, when `Dockerfile.arm64`
+# joined it and the bare name became the one that lies: a reader who typed
+# `docker build <this directory>` would have got x86-64 without choosing it.
+# There is now no default, so the architecture is a thing you type. The two
+# files differ on one line, the `FROM`'s platform, and that is deliberate —
+# `Dockerfile.arm64`'s header says why at length.
 #
 # The first line is a parser directive and has to be the first line. Docker's
 # lint warns that the `FROM` below names a constant platform, because a
