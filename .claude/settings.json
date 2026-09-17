@@ -1,5 +1,22 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(clang *)",
+      "Bash(./heroes *)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(git ls-files*)",
+      "Bash(git describe*)",
+      "Bash(git tag --list*)",
+      "Monitor",
+      "Bash(echo \"push exit=$?\")",
+      "Bash(echo \"push win exit=$?\")",
+      "Bash(echo \"push=$?\")",
+      "Bash(echo \"push win=$?\")",
+      "Bash(echo \"push tag=$?\")"
+    ],
     "deny": [
       "Bash(git add -A*)",
       "Bash(git add --all*)",
@@ -17,17 +34,13 @@
     "ask": [
       "Bash(git push*)"
     ],
-    "allow": [
-      "Bash(clang *)",
-      "Bash(./heroes *)",
-      "Bash(git status*)",
-      "Bash(git log*)",
-      "Bash(git diff*)",
-      "Bash(git show*)",
-      "Bash(git ls-files*)",
-      "Bash(git describe*)",
-      "Bash(git tag --list*)",
-      "Monitor"
+    "additionalDirectories": [
+      "/Users/joseph/Temp/heroes-lane-049/selfhost/cli",
+      "/Users/joseph/Temp/heroes-lane-050/selfhost",
+      "/Users/joseph/Temp/heroes-lane-055/docs/design",
+      "/Users/joseph/Temp/heroes-lane-050/selfhost/check",
+      "/Users/joseph/Temp/heroes-lane-050/tests/golden/check",
+      "/Users/joseph/Temp/heroes-lane-050/tests/harness"
     ]
   },
   "hooks": {
