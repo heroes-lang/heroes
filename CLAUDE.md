@@ -78,7 +78,12 @@ question until somebody runs it (CL-061). Four shapes:
 
 **A repair is attacked at the shapes next to the one that provoked it**: one
 field, none, padded, nested, tagged, generic, empty. A class is not a class
-until its exceptions have been looked for (CL-061).
+until its exceptions have been looked for (CL-061). **And this is the rule that
+changes WHAT is being repaired, not only how well** — author instruction
+2026-09-17, after three defects in one milestone turned out not to be what their
+own entry said. A defect is written down as the finder saw it, from where they
+stood; the shapes beside it are where what it actually is becomes visible
+(CL-078).
 
 ## Precedence
 
