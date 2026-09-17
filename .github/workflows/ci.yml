@@ -38,7 +38,8 @@
 #
 # **So the reason this matrix narrowed to Linux between tags is gone, and the
 # author took the decision on 2026-09-10: it widens.** Every push to `main`
-# runs all three legs, once — the milestone tags that used to widen it start no
+# runs every leg, once — three of them then and **four since 2026-09-17**, when
+# M-arm-platform added Linux arm64 — the milestone tags that used to widen it start no
 # run at all now, because the commit they point at has already been judged on
 # every platform, and four tags pushed with a branch were starting five runs of
 # work that had been done once. The measurements below stay exactly as they
@@ -65,8 +66,9 @@ on:
   push:
     branches: [main]
     # **Milestone tags no longer start a run, by author decision 2026-09-10**,
-    # and the reason is the line below it: the matrix runs all three platforms
-    # on every push to `main` now, so a `m-*` tag's run was a second full run of
+    # and the reason is the line below it: the matrix runs every platform
+    # on every push to `main` now — three when this was written, four since
+    # 2026-09-17 — so a `m-*` tag's run was a second full run of
     # a commit this workflow had already judged. `git push --follow-tags` used
     # to start one run per tag plus the branch's, which is five runs for a
     # session that closes four milestones; it starts one. A tag pushed on its
@@ -99,10 +101,12 @@ on:
   pull_request:
   workflow_dispatch:
     # **One leg at a time, when one leg is what is being fixed.** A full run is
-    # three legs and ~7 minutes, and Darwin was billed at ten Linux minutes to
+    # three legs and ~7 minutes when this was measured — **four legs since
+    # 2026-09-17**, and what the fourth costs in wall-clock is unrun — and
+    # Darwin was billed at ten Linux minutes to
     # the minute — so a session repairing Windows was paying for two legs it
     # had already read, fifteen times over. `all` stays the default, because
-    # the reason the three exist is that no platform's failure hides another's.
+    # the reason they exist is that no platform's failure hides another's.
     # (Past tense on the billing since 2026-09-08: see the header's note on the
     # cost premise, which a public repository may have retired.)
     inputs:
@@ -115,6 +119,11 @@ on:
           - windows
           - darwin
           - linux
+          # `arm` is the fourth since 2026-09-17 (M-arm-platform) and it is
+          # spelled for the LEG rather than the architecture, because Darwin is
+          # arm64 too and `arm` next to `darwin` in one list would read as the
+          # wrong thing. What it selects is Linux arm64.
+          - arm
       # **The mutation score, opted into.** Measured in run 33781889835, the
       # first full three-leg run after the score landed: the step alone cost
       # **1294 s on Linux and 1908 s on Windows**, against 586 s and 1474 s for
@@ -233,6 +242,40 @@ jobs:
       # this job: it costs 20 to 30 minutes a leg, produces a table identical on
       # all three, and so runs on a release tag or on request and not on every
       # push.
+      #   - **Linux arm64 — every push since 2026-09-17** (M-arm-platform), the
+      #     fourth real machine and the one that answers a question the other
+      #     three cannot ask. **Plain `char` is UNSIGNED here** and signed on
+      #     the other three, Darwin included: the generic AAPCS says unsigned
+      #     and Debian arm64 follows it, while Apple's own arm64 ABI deviates
+      #     and declares it signed. So the divergence is the PLATFORM's ABI
+      #     rather than the architecture, which is the half of the milestone's
+      #     registered prediction that came back false — and three legs could
+      #     not have shown it, because all three were signed.
+      #     **The local instrument for this leg is
+      #     `docs/ref/environment/linux/Dockerfile.arm64`**, native on the
+      #     author's arm64 Mac where the x86-64 container runs under Rosetta, so
+      #     this is the cheaper of the two hunts as well as the newer one. It
+      #     found defects 058 and 059 in its first hour, and
+      #     `tests/golden/run/ffi-a-char-array-member.hero` does not compile
+      #     here until 058 is resolved.
+      #
+      #     **`ubuntu-24.04-arm` is pinned because there is no `latest` for
+      #     arm**, read from GitHub's own runner reference on 2026-09-17: the
+      #     labels are `ubuntu-22.04-arm`, `ubuntu-24.04-arm` and
+      #     `ubuntu-26.04-arm`, and no alias. The same page states standard
+      #     runners are free and unlimited on public repositories, which this
+      #     one has been since 2026-09-08.
+      #
+      #     **TWO THINGS THIS LEG OWES A RUN, and they are stated rather than
+      #     implied** (CLAUDE.md § RUN IT). That the label is accepted for this
+      #     repository has not been executed — the same debt `macos-26` carried
+      #     when it was written, and the same answer: the first push is the
+      #     instrument. And which release `ubuntu-latest` resolves to today is
+      #     UNRUN, so whether the two Linux legs are one axis apart (same
+      #     Ubuntu, different architecture) or two (different Ubuntu as well) is
+      #     a question and not a premise. If the first green run reads two
+      #     different clang versions in the two `heroes doctor` steps, the pin
+      #     moves to match rather than the difference being absorbed.
       matrix:
         include: >-
           ${{ fromJSON(
@@ -242,7 +285,9 @@ jobs:
           && '[{"name":"Darwin arm64","os":"macos-26","exe":""}]'
           || (github.event_name == 'workflow_dispatch' && inputs.only == 'linux')
           && '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""}]'
-          || '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""},{"name":"Darwin arm64","os":"macos-26","exe":""},{"name":"Windows x86-64","os":"windows-latest","exe":".exe"}]'
+          || (github.event_name == 'workflow_dispatch' && inputs.only == 'arm')
+          && '[{"name":"Linux arm64","os":"ubuntu-24.04-arm","exe":""}]'
+          || '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""},{"name":"Linux arm64","os":"ubuntu-24.04-arm","exe":""},{"name":"Darwin arm64","os":"macos-26","exe":""},{"name":"Windows x86-64","os":"windows-latest","exe":".exe"}]'
           ) }}
 
     steps:
@@ -337,7 +382,7 @@ jobs:
         # `lldb_breaks_on_a_hero_line` executes that on Darwin and Linux and skips
         # here, because LLVM's `lldb.exe` exits `0xC0000135` before running a
         # command — a Python DLL, the installer's known gap. The **mapping** itself
-        # is covered on all three legs now, by
+        # is covered on every leg now, by
         # `no_generated_line_points_past_or_between_the_authors_lines`, which reads
         # the emitted C rather than a debugger. What is uncovered here is the
         # debugger leg, and the cheapest way back in would be `llvm-pdbutil`, which
@@ -388,7 +433,7 @@ jobs:
       # the two can disagree (CLAUDE.md §14, release tags). The version lives in
       # one constant, `VERSION` in `selfhost/main.hero`, and moves only in the
       # commit that carries `v<number>`; a tag pushed on a commit that forgot to
-      # move it, or moved it to something else, is red here on all three legs
+      # move it, or moved it to something else, is red here on every leg
       # before anything is released. `GITHUB_REF_NAME` is the tag itself.
       - name: The release tag names the version the compiler prints
         if: startsWith(github.ref, 'refs/tags/v')
@@ -636,17 +681,26 @@ jobs:
       # **ONE LEG, AND OPTED INTO ON A DISPATCH** (author decision 2026-09-03,
       # `/decide` answer `1c`; the numbers and the byte-for-byte identity of the
       # three tables are in the `mutation` input's own comment above). Linux is
-      # the leg because it is the cheapest of the three and the only one whose
+      # the leg because it is the cheapest and the only one whose
       # ASan also carries a leak detector. Nothing is lost unless the score is
       # platform-dependent, and run 33781889835 measured that it is not — three
       # machines, three architectures, one table.
+      #
+      # **The condition names `Linux x86-64` and not `runner.os == 'Linux'`, and
+      # since 2026-09-17 that is load-bearing rather than incidental**: there
+      # are two Linux legs now, and an `os`-shaped test would have put this
+      # 20-to-30-minute step on both the day the fourth leg landed. Whether the
+      # score is the same on arm64 is UNRUN, and it is the one platform axis
+      # that run 33781889835's three machines did not vary — all three were
+      # signed-`char` platforms. A dispatch with `only: arm, mutation: yes`
+      # is the door that answers it, through the clause below.
       #
       # **The day that stops being true, the way to find out must still exist**,
       # so the second half of this condition keeps one door open: a dispatch
       # that narrows to a single leg (`only: windows`, `mutation: yes`) scores
       # on THAT leg. A tag cannot take that door, because `inputs.only` is empty
       # on a tag push and an `!= 'all'` test alone would put the step back on
-      # all three legs — which is the thing being removed.
+      # every leg — which is the thing being removed.
       - name: The mutation score over the corpus
         if: (github.ref_type == 'tag' || inputs.mutation == 'yes') && (matrix.name == 'Linux x86-64' || (github.event_name == 'workflow_dispatch' && inputs.only != 'all'))
         shell: bash
@@ -692,7 +746,7 @@ jobs:
           ./heroes-from-seed${{ matrix.exe }} build selfhost/main.hero --emit-c -o /tmp/seed-fresh.c
           cmp seed/heroes.c /tmp/seed-fresh.c
 
-  # THE RELEASE, made by the machine after the three legs agree (CLAUDE.md §14,
+  # THE RELEASE, made by the machine after every leg agrees (CLAUDE.md §14,
   # release tags). What it publishes is the tag's own source archive, which
   # GitHub makes from the tag and which carries the seed inside it, where
   # `seed/README.md` § Why there is no uploaded executable says a seed belongs,

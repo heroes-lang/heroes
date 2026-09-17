@@ -18,6 +18,29 @@ sign*. So either the leg finds a divergence in the corpus's 20 `extern` programs
 of 55, or the FFI's width rules are stronger than three legs could show.
 Structure padding and `va_list` are the next two shapes.
 
+**SCORED 2026-09-17, and the prediction is half right — the interesting half
+being the false one.** The divergence is real and the leg found it in its first
+hour: `char` is unsigned on Linux arm64 and signed on Linux x86-64, measured on
+two containers one axis apart. **What is false is the stated cause.** *"Unsigned
+on the ARM ABI"* is not what the world does: the generic AAPCS says unsigned and
+Debian arm64 follows it, while **Apple's own arm64 ABI deviates and declares
+`char` signed** — so this Mac, an arm64 machine, is a signed-`char` platform and
+all three legs before today were signed. The divergence belongs to the
+PLATFORM's ABI, not to the architecture, and a fourth leg that had been chosen
+for its architecture alone could have been an arm64 Darwin and shown nothing.
+The record is
+`docs/records/log/2026-09-17-2317-the-fourth-leg-found-the-third-char.md`.
+
+**What it cost is defects 058 and 059**, and the corpus was not where it showed.
+The full net on the new machine reads **1825 passed, 3 failed**, with `corpus`
+at **53 passed, 0 failed** — so **none of the 20 `extern` programs of 55 binds a
+plain-`char` member**, and the row's own guess about where to look was wrong
+alongside its guess about why. The three failures are one program in three
+suites:
+`tests/golden/run/ffi-a-char-array-member.hero`, a golden case written at
+M-complete-structs whose own comment carries the premise *"`char` is signed
+here"* — measured on one machine, true on three legs, false on the fourth.
+
 **It is not the cross-compilation `DESIGN-LOG.md:539` refused.** That refusal's
 own ground — *"the three platforms are measured on real machines by rule"* —
 argues for a fourth real machine and against a `--target` flag. And it is cheap:
@@ -42,10 +65,17 @@ platform in M-online-compiler's sense. § The names carries why the id is neithe
 
     **What it delivers**, in the order the platforms rule asks: an arm64 Linux
     image beside the x86-64 one under `docs/ref/environment/linux/`, built from its own
-    `Dockerfile`; the seed built from C alone there; the compiler's **618** tests
-    and the harness's own **126** passing there; and a fourth CI matrix entry, so
+    `Dockerfile`; the seed built from C alone there; the compiler's own tests
+    and the harness's own passing there; and a fourth CI matrix entry, so
     the leg is a judge and not a hunting instrument (`.claude/rules/platforms.md`
     § A platform fact is run on a platform).
+
+    **The two counts this row carried were 618 and 126, written 2026-09-10 and
+    re-measured 2026-09-17**: the compiler's own tests read **654** on this Mac
+    and **654** on the new machine, the same number on both. A count in a row is
+    a measurement somebody took once, and CLAUDE.md §1 asks for it again rather
+    than carried — which is why the numbers are named here as what they were
+    instead of quietly replaced.
 
     **The prediction is registered here so it can be scored.** Plain `char` is
     unsigned on the ARM ABI and signed on x86-64, and `spec:228` declares a
