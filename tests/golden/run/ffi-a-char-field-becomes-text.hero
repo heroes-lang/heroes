@@ -1,0 +1,75 @@
+# M-readable-bytes, panel 162. The direction `str` never had: a run of bytes
+# from C becomes a `str?`.
+#
+# WHAT IT COST TO REACH. Before this, a header's `char[N]` field could be bound
+# and could not be read as text at all — `print` and `to_str` both answer *an
+# integer, a float, `bool` or `str`* and refuse `i8[256]`, `s.cstr()` and
+# `c.validated()` both refuse it, and the route a reader actually takes compiles
+# and lies: `out @ out + f.name[i].to_str()` builds at exit 0 and prints
+# `6897114119105110` where the program asked for `Darwin`. Panel 162's
+# llm-ergonomist found that by writing the program from the specification alone,
+# and the spec-warden measured that it compiles, which is what defeated refusing
+# the operation: design.md Part 6 asks a refusal to name the program fact that
+# would make it wrong, and the fact is that a wrong program already builds.
+#
+# THE RULE IS TO ITS FIRST ZERO, OR WHOLE, and that wording is load-bearing
+# rather than tidy. Panel 162's ffi-pragmatist walked 16 headers: 712 struct
+# fields, 50 of type `char[N]`, and only **13 reliably NUL-terminated**. A
+# terminator-only rule would over-read three fields in four, and unlike a null
+# handle there is no runtime guard to catch it, because the pointer is valid.
+#
+# THE FAILURE MODE WAS ALREADY CHOSEN. `read_file` answers `.err` with
+# `not_text` on invalid UTF-8 — measured, `printf 'abc\xff\xfe\x80def'` — so
+# this answers the same code. A second spelling of one state is a second state
+# to a program matching on `e.code`.
+#
+# BOTH SIGNS ARE ACCEPTED, and that is M-arm-platform's finding one day old: a
+# header's plain `char` is signed on three of this project's four platforms and
+# unsigned on the fourth, so the HEADER decides the element type and the binding
+# author cannot. This case binds one field each way against the same header to
+# prove it, which is the shape beside the one that provoked the work (CL-061).
+
+extern "ffi-a-char-field-becomes-text.h"
+    record Tag
+        name: i8[8]
+        raw: u8[8]
+        id: i32
+    function tag_id(t: Tag) -> i32
+
+function main()
+    t = Tag(
+        name: [72, 101, 114, 111, 101, 115, 0, 0],
+        raw: [98, 121, 116, 101, 115, 0, 0, 0],
+        id: 7
+    )
+
+    # The terminated case: six bytes of an eight-byte field.
+    print(t.name.validated_bytes().must())
+
+    # The same field bound UNSIGNED, which a header on another platform would
+    # require and which must read identically here.
+    print(t.raw.validated_bytes().must())
+
+    # A field with no terminator at all is the whole field, which is the half a
+    # `strlen` would get wrong.
+    full = Tag(name: [102, 117, 108, 108, 101, 115, 116, 33], raw: [0, 0, 0, 0, 0, 0, 0, 0], id: 1)
+    print(full.name.validated_bytes().must())
+
+    # An empty run is an empty `str` and not a failure.
+    print("[", full.raw.validated_bytes().must(), "]")
+
+    # Bytes that are not UTF-8 are a failure carrying `not_text`, the same code
+    # `read_file` gives, and never an abort.
+    # Written into the UNSIGNED field, because an `i8` cannot hold 255 and a
+    # computed `0 - 1` is an `i64` rather than a literal taking its context's
+    # type. That asymmetry is M-arm-platform's finding met from the other side:
+    # the two spellings of one byte are not interchangeable in source even
+    # though they are the same byte in the header.
+    bad = Tag(name: [0, 0, 0, 0, 0, 0, 0, 0], raw: [97, 98, 255, 254, 0, 0, 0, 0], id: 2)
+
+    match bad.raw.validated_bytes()
+        .ok text => print("unexpectedly ok: ", text)
+        .err e   => print(e.code)
+
+    # The record still crosses to C by value, untouched by any of this.
+    print(t.tag_id().to_i64().must())

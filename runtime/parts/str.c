@@ -355,6 +355,28 @@ HeroStr hero_str_try_from_bytes(const char *p, int64_t cap, int64_t *status) {
     return r;
 }
 
+/* **The same, over a `[u8]` this language owns** (panel 162). It exists rather
+   than the emitter composing `hero_array_at` with the function above, for one
+   measured reason: `hero_array_at` ABORTS out of range, so the composition needs
+   a length guard at every call site and an empty array is exactly the shape that
+   trips it. One function, one guard, written once.
+
+   The element width is not checked here and that is the checker's job, not
+   this one's: `check/lending.hero`'s `byte_run` asks the VALUE's element width
+   and admits 8 bits only, so a `[i64]` never reaches this line. */
+HeroStr hero_str_try_from_array(const HeroArrayHeader *a, int64_t *status) {
+    if (a == NULL) {
+        *status = HERO_STR_NULL;
+        return hero_str_empty();
+    }
+    int64_t n = hero_array_len(a);
+    if (n == 0) {
+        *status = HERO_STR_OK;
+        return hero_str_empty();
+    }
+    return hero_str_try_from_bytes((const char *)hero_array_at(a, 0), n, status);
+}
+
 /* **A `cstr` on its way INTO C, checked** (panel 053; CLAUDE.md §12's robustness
    rule). `hero_str_from_cstr` above guards the path where C's string comes into
    Heroes; this guards the path where it goes straight back out — `strstr(getenv(
