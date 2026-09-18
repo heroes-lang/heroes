@@ -1,0 +1,61 @@
+# M-readable-bytes' other direction, panel 164. A header field's ADDRESS
+# crosses to C, so C may read the bytes with a length beside them and write
+# back into them.
+#
+# WHAT IT COST TO REACH, and the sitting's premise turned out to be false. Defect
+# 061 said in bold that *no Heroes-side shim can route around it*, and the brief
+# carried that sentence as the question. Three seats ran it and it is wrong:
+# `f.validated_bytes().must().cstr()` reaches a `cstr` parameter today and, on an
+# eight-byte field with no terminator, hands C eight bytes where C's own decay
+# hands it seventeen. The true sentence is narrower — no shim lends the field's
+# ADDRESS — and it is what this case is about.
+#
+# WHY `ptr` AND NEVER `cstr`. Four seats vetoed the decay and two vetoed a `cstr`
+# lend, on one ground: a `cstr` is a promise of a terminating zero, design.md
+# §1.11 lists that promise among the decisions not to revisit, and a header's
+# `char[N]` field makes no such promise — 37 of 50 such fields across 16 headers
+# have none. So the text route stays `validated_bytes`, which COPIES, and this
+# lends the field itself to a `ptr` parameter that was told the extent.
+#
+# THE WRITE IS THE HALF THAT HAD NO DOOR, and it is why this case reads the
+# field back after C has filled it. The ffi seat measured that 50 of 141 pointer
+# parameters across those headers are non-`const` — `getcwd`, `read` — and
+# nothing in the language could produce their argument.
+#
+# AND THE ASSERTION AFTER THE FILL IS THE WHOLE POINT OF THE CASE. The first
+# implementation rendered the lend from `emit/storageless.hero`, which is right
+# for `validated_bytes` and wrong here: the IR loads a record into a fresh
+# temporary before reading a field of it, so C was handed the address of a COPY.
+# Reading through it was correct by accident; writing through it was lost in
+# silence, at exit 0, with every suite green. A case that stopped at "it compiles
+# and runs" would have blessed that.
+
+extern "ffi-a-byte-field-crosses-to-c.h"
+    record Slot
+        nsap: u8[8]
+        tag: i8[4]
+        id: i64
+    function slot_sum(p: ptr, n: i64) -> i64
+    function slot_fill(p: ptr, n: i64)
+
+function main()
+    s: Slot @ Slot(nsap: [1, 0, 3, 0, 5, 0, 7, 0], tag: [9, 8, 7, 6], id: 0)
+
+    # C reads the field, told where it ends by the argument beside it. The
+    # zeros inside are data here, not a terminator, which is the case a
+    # terminator-reading route gets wrong.
+    print(slot_sum(p: s.nsap.ptr(), n: 8))
+
+    # Both signs cross, because the HEADER decides the element type and the
+    # binding author cannot — M-arm-platform's finding, met again.
+    print(slot_sum(p: s.tag.ptr(), n: 4))
+
+    # C writes into the field, and the program reads it back. 1+2+...+8.
+    slot_fill(p: s.nsap.ptr(), n: 8)
+    print(slot_sum(p: s.nsap.ptr(), n: 8))
+    print(s.nsap[3].to_i64().must())
+
+    # The other direction is untouched and still copies: a terminated run of
+    # the same kind of field is text.
+    t: Slot @ Slot(nsap: [72, 105, 0, 0, 0, 0, 0, 0], tag: [0, 0, 0, 0], id: 1)
+    print(t.nsap.validated_bytes().must())

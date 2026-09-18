@@ -29,7 +29,7 @@ use widths
 use check/table
 use check/state
 use check/ordering
-use check/lending
+use check/lend_types
 use check/nested
 use value_errors
 
@@ -280,7 +280,7 @@ function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], na
         return ok(str_id)
 
     # §4.19's lend and lease, typed beside the position rule they answer to.
-    lent = lending.lend_call(@c, s, decls, name: name, given: given, span: span)
+    lent = lend_types.lend_call(@c, s, decls, name: name, given: given, span: span)
 
     if !lent.is_err()
         return lent

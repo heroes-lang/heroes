@@ -529,7 +529,7 @@ constant REFUSED: [str]
 # mechanism a sitting has yet to choose, the second describes only half of what
 # the row closes, the other half being a fixed-array literal of 256 elements.
 constant ROWS: i64
-    83
+    85
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
@@ -840,7 +840,7 @@ function run_all(scratch: str) -> report.Report?
     counts(@r)
     homed(@r, present: walked)
     lists(@r, present: walked)
-    tagged(@r, scratch: scratch)
+    tagged(@r, scratch: scratch, present: walked)
     appended(@r, scratch: scratch)
     numbering(@r, present: walked)
     unmerged(@r, scratch: scratch)
@@ -869,7 +869,7 @@ function run_all(scratch: str) -> report.Report?
 # It binds from the tag it first sees onwards. Older tags are not
 # re-judged, which is not leniency but § 14: a record is not rewritten,
 # and a rule cannot be applied to a commit made before it existed.
-function tagged(@r: report.Report, scratch: str)
+function tagged(@r: report.Report, scratch: str, present: [str])
     listed = shell.run(
         scratch: scratch,
         program: "git",
@@ -897,12 +897,15 @@ function tagged(@r: report.Report, scratch: str)
         return
 
     if open_defects.must().len() > 0
-        report.keep_failure(
-            @r,
-            label: "records/tagged",
-            detail: "  " + newest + " was placed over " + open_defects.must().len().to_str() + " open defect(s):\n    " + open_defects.must().join("\n    ") + "\n  A milestone is tagged only over a clean list (CLAUDE.md § Verification).\n  An open defect is something BROKEN, and a tag over one says the opposite."
-        )
-        return
+        refusal = tag_is_excused(tag: newest, open_rows: open_defects.must(), present: present)
+
+        if refusal != ""
+            report.keep_failure(
+                @r,
+                label: "records/tagged",
+                detail: "  " + newest + " was placed over " + open_defects.must().len().to_str() + " open defect(s):\n    " + open_defects.must().join("\n    ") + "\n  " + refusal + "\n  A milestone is tagged only over a clean list (CLAUDE.md § Verification).\n  An open defect is something BROKEN, and a tag over one says the opposite."
+            )
+            return
     open_decisions = open_items_at(scratch: scratch, tag: newest, path: "docs/work/DECIDE.md")
 
     if open_decisions.is_err()
@@ -940,6 +943,96 @@ function tagged(@r: report.Report, scratch: str)
         )
         return
     report.keep_pass(@r)
+
+# Whether `TAGGED_OVER` excuses this tag over exactly these defects. It answers
+# the EMPTY STRING when it does and the reason when it does not, so the caller
+# prints one sentence and decides nothing.
+#
+# Three world facts, in the order a reader would ask them, and each one can die
+# on its own. The row must NAME this tag; the numbers it names must be exactly
+# the ones the tag stands over, so a later mistake cannot shelter behind a row
+# written for two others; every done record it names must exist; and not one of
+# those defects may be open TODAY. That last one is what keeps this from being an
+# amnesty: reopen 061 and the row stops working.
+function tag_is_excused(tag: str, open_rows: [str], present: [str]) -> str
+    numbers: [str] @ []
+
+    for row in open_rows
+        n = defect_number(row)
+
+        if n != ""
+            numbers @ numbers.push(n)
+
+    found: str @ ""
+
+    for row in TAGGED_OVER
+        fields = strings.split_text(text: row, separator: "|")
+
+        if fields.len() == 4 && strings.trimmed(fields[0]) == tag
+            found @ row
+
+    if found == ""
+        return "Nothing in TAGGED_OVER names " + tag + ", so nothing excuses it."
+    parts = strings.split_text(text: found, separator: "|")
+    listed = strings.words(strings.trimmed(parts[2]))
+
+    if !same_numbers(listed: listed, numbers: numbers)
+        return "TAGGED_OVER names " + listed.join(" ") + " for " + tag + ", and the tag stands over " + numbers.join(" ") + " — a row excuses exactly what its tag stands over, never more and never less."
+
+    for entry in strings.words(strings.trimmed(parts[3]))
+        if !record_is_present(entry: entry, present: present)
+            return "TAGGED_OVER names the done record " + entry + ", and no such file is under docs/records/done/."
+
+    reopened = still_open(numbers)
+
+    if reopened != ""
+        return "TAGGED_OVER excuses " + tag + " only because those defects are CLOSED, and " + reopened + " is open in the working tree today."
+
+    return ""
+
+# Two lists of defect numbers holding the same members. Order is not meaning
+# here — `open_items_at` reads the file's order and the row is written by hand.
+function same_numbers(listed: [str], numbers: [str]) -> bool
+    if listed.len() != numbers.len()
+        return false
+
+    for one in numbers
+        seen: bool @ false
+
+        for other in listed
+            if one == other
+                seen @ true
+
+        if !seen
+            return false
+
+    return true
+
+function record_is_present(entry: str, present: [str]) -> bool
+    for path in present
+        if strings.ends_with(text: path, suffix: "docs/records/done/" + entry)
+            return true
+
+    return false
+
+# Any of these numbers still open in the working tree, or the empty string.
+function still_open(numbers: [str]) -> str
+    text = read_file("docs/work/DEFECTS.md")
+
+    if text.is_err()
+        return "docs/work/DEFECTS.md cannot be read, so whether they are closed"
+
+    for row in strings.lines(text.must())
+        n = defect_number(strings.trimmed(row))
+
+        if n == "" || !strings.starts_with(text: strings.trimmed(row), prefix: "- [ ] ")
+            continue
+
+        for one in numbers
+            if one == n
+                return n
+
+    return ""
 
 # The `- [ ] ` lines of a list AS IT WAS at a tag, which is the only way to
 # ask what a tag was placed over. `git show <tag>:<path>` and not the
@@ -997,6 +1090,36 @@ constant EXECUTOR: str
 # because this line is in it.
 constant RATIFICATION_MARKER: str
     "tagged reads the origin field and not the substring"
+
+# A tag placed over an open defect is a mistake, and this is where one that
+# CANNOT BE UNDONE is written down rather than forgiven (author decision,
+# 2026-09-18). `m-readable-bytes` was pushed over defects 061 and 062, and the
+# remote's ruleset *release and milestone tags are immovable* refused the
+# deletion; § 14 refuses a rewritten record. So the tag stays and says so here.
+#
+# A row is `<tag> | <date> | <defect numbers> | <the done records that closed
+# them>`, and **it is not an amnesty**. Three facts about the world have to hold
+# for it to be accepted, and every one of them can die:
+#
+#   - the defects it names are EXACTLY the ones open at that tag, so a later
+#     mistake cannot shelter behind a row written for two others;
+#   - every done record it names exists under `docs/records/done/`;
+#   - not one of those defects is open TODAY, read from the working tree.
+#
+# So the row fails loudly the day somebody reopens 061 or deletes the record
+# that closed it, which is what separates it from a line reading *ignore this
+# tag*. It names the RECORDS and not the commit hashes deliberately: a record is
+# a file this check can open, it carries the commit inside it, and the hash of
+# the commit that closes a defect does not exist while that commit is being
+# written.
+#
+# NO FLOOR, unlike `MOVED`'s `LEAST_MOVED`. A floor demands the table keep
+# growing, and this one grows only when another tag lands over another open
+# defect. Asking for more of those would be the wrong thing to want.
+constant TAGGED_OVER: [str]
+    [
+        "m-readable-bytes | 2026-09-18 | 061 062 | 2026-09-18-1745-defect-061-closes-and-its-own-premise-was-false.md 2026-09-18-1310-defect-062-closes-and-the-marker-was-one-word.md"
+    ]
 
 # Whether `newest`'s own tree carried the strict rule. An error means the
 # executor could not be read there and is never read as either answer.
@@ -4785,3 +4908,27 @@ test "a paths glob is asked for the part before its star"
 test "a quoted glob loses its quotes and an unquoted one is unchanged"
     assert unquoted("\"docs/**\"") == "docs/**"
     assert unquoted("docs/**") == "docs/**"
+
+# The exception row is not an amnesty, and this is what says so. Each clause of
+# `tag_is_excused` is made to fire on its own, because a row that excused
+# anything would pass a test that only checked the happy case.
+test "a tag's excuse covers exactly what it stood over, and nothing else"
+    two = ["- [ ] **061 — a fixed-array field** | x | y", "- [ ] **062 — a marker** | x | y"]
+    records = [
+        "docs/records/done/2026-09-18-1745-defect-061-closes-and-its-own-premise-was-false.md"
+        "docs/records/done/2026-09-18-1310-defect-062-closes-and-the-marker-was-one-word.md"
+    ]
+
+    # The real row, over the real pair, with both records present and both
+    # defects closed in the working tree today.
+    assert tag_is_excused(tag: "m-readable-bytes", open_rows: two, present: records) == ""
+
+    # A tag no row names is excused by nothing.
+    assert tag_is_excused(tag: "m-somewhere-else", open_rows: two, present: records) != ""
+
+    # A tag standing over a THIRD defect is not excused by a row naming two.
+    three = two.push("- [ ] **063 — something later** | x | y")
+    assert tag_is_excused(tag: "m-readable-bytes", open_rows: three, present: records) != ""
+
+    # A row naming a done record that is not in the tree is not excused.
+    assert tag_is_excused(tag: "m-readable-bytes", open_rows: two, present: []) != ""

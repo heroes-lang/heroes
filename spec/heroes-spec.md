@@ -62,9 +62,9 @@ separates, a production writes it; elsewhere it may fall between any two tokens.
 - No implicit conversions, widths included: `1 + 2.0` is an error.
 - Every value behaves as an independent copy: after `b = a`, mutating `b`
   never changes `a`. No aliasing exists among the values this language owns.
-  A `ptr` is a copied ADDRESS, wherever it sits: two copies reach one foreign
-  thing, so a function taking one without `@` may still change, or free, what
-  C holds. A `cstr` copies an address too.
+  A `ptr` or a `cstr` is a copied ADDRESS, wherever it sits: two copies reach
+  one foreign thing, so a function taking one without `@` may still change, or
+  free, what C holds.
 - A record or variant holds its fields **by value**, so it may contain itself only
   through `[T]` or `{K: V}`: `children: [Node]` is a tree, `child: Node` has no size.
 
@@ -363,6 +363,9 @@ A group's `constant` has no body: the header holds the value.
 record holds one. `c.validated()` copies one back as a `str?`, and a null one
 fails `null_cstr`; `f.validated_bytes()` does the same for a field of bytes,
 reading to its first zero or the whole field, and either fails `not_text`.
+Nothing lends a field to `cstr`, which promises a zero the field does not;
+`f.ptr()` lends a binding's field to a `ptr` parameter the call gives the extent
+to, and C may write back through it.
 `x: cstr @ s.lease()` is a COPY of the bytes that C may read for as long as the
 program says, and `end_lease(@x)` frees it and empties the cell. A lend and a
 lease name stand only as an argument of a call, nothing else writes a lease's

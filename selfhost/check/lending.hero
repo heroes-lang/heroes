@@ -58,7 +58,6 @@
 # choosing the strict rule over the escape-only one).
 
 use ast
-use token
 use source
 use parse
 use resolve
@@ -67,16 +66,14 @@ use resolved
 use inventory
 use check/state
 use check/table
-use widths
-use ffi_errors
-use value_errors
+use lend_errors
 
 # Whether this expression is a lend: `s.cstr()` or `cstr(s)`. The
 # RESOLVER answers, not the text — a name is only a builtin because the
 # resolver said so, and `check/builtins.hero`'s own dispatch reads the
 # same table.
 function is_lend(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
-    return is_builtin_named(a, r, at, name: "cstr")
+    return is_builtin_named(a, r, at, name: "cstr") || is_builtin_named(a, r, at, name: "ptr")
 
 function is_builtin_named(a: ast.Ast, r: resolved.Resolved, at: i64, name: str) -> bool
     named = match a.exprs[at].kind
@@ -92,79 +89,6 @@ function is_builtin_named(a: ast.Ast, r: resolved.Resolved, at: i64, name: str) 
     match r.uses[named]
         .builtin b                            => return inventory.table()[b.at].name == name
         .top | .local | .module | .unresolved => return false
-
-# The typing of the lend AND the lease, moved here from `check/builtins.hero`,
-# which is at its decided ceiling. A lend and a lease both take a `str` and
-# answer `cstr`; `end_lease` takes a `cstr` and answers nothing. Whether that
-# `cstr` is a lease CELL is not a type fact and is `check/leasing.hero`'s
-# question, asked over the whole file; the three are typed together because
-# they are one family and `builtins.hero` may make exactly one call out.
-function lend_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, given: [i64], span: token.Span) -> i64?
-    if (name == "cstr" || name == "lease") && given.len() == 1
-        if table.get(c.out.types, given[0]) == .str
-            return ok(table.intern(@c.out.types, .cstr))
-        return ok(refused_operand(@c, s, decls, name: name, allowed: "`str`", got: given[0], span: span))
-
-    if name == "end_lease" && given.len() == 1
-        if table.get(c.out.types, given[0]) == .cstr
-            return ok(table.unit_ty(c.out.types))
-        return ok(
-            refused_operand(@c, s, decls, name: name, allowed: "`@x` where `x: cstr @ s.lease()`", got: given[0], span: span)
-        )
-
-    # **A run of bytes becomes a `str?`** (panel 162, M-readable-bytes). It is
-    # typed HERE, with the lend and the lease, because the three are one family:
-    # every one of them is the boundary where C's bytes and this language's `str`
-    # change hands, and `check/builtins.hero` is at its decided ceiling and may
-    # make exactly one call out — which is this function.
-    #
-    # It answers a FIXED array of bytes, which is what a header's `char[N]` field
-    # binds as, and a `[u8]`, which is what `slice` over such a field gives, so a
-    # caller holding a sibling length — `d_namlen`, `sun_len`,
-    # `sqlite3_column_bytes` — says where the text stops instead of trusting a
-    # terminator. Panel 162 measured why that matters: of 50 `char[N]` fields
-    # across 16 headers, only 13 are reliably NUL-terminated.
-    #
-    # Both signs are accepted and that is deliberate. A header's plain `char` is
-    # signed on three of this project's four platforms and unsigned on the
-    # fourth, so the HEADER decides the element type and the binding author
-    # cannot — which M-arm-platform measured the day before this landed.
-    if name == "validated_bytes" && given.len() == 1
-        if byte_run(c, given[0])
-            return ok(table.intern(@c.out.types, .fallible(payload: table.str_ty(c.out.types))))
-        return ok(
-            refused_operand(@c, s, decls, name: name, allowed: "a run of bytes — `i8[N]`, `u8[N]` or `[u8]`", got: given[0], span: span)
-        )
-    return fail(code: "untypeable", msg: "not a lend, a lease or a release")
-
-# Whether this type is a run of bytes `validated_bytes` can read: a fixed array
-# of 8-bit integers, or a dynamic one. The question is asked of the VALUE's
-# element width rather than of a list of spellings, so a header binding its field
-# as `u8[N]` and one binding it as `i8[N]` are the same question (panel 162,
-# and `.claude/rules/module-shape.md`'s rule that a narrowing asks the value).
-function byte_run(c: state.Checker, ty: i64) -> bool
-    element: i64 @ -1
-
-    match table.get(c.out.types, ty)
-        .fixed x                                                  => element @ x.element
-        .array a                                                  => element @ a.element
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => element @ -1
-        .map | .fallible | .function_ty | .named | .case_ty       => element @ -1
-        .failure | .generic | .error                              => element @ -1
-
-    if element < 0
-        return false
-
-    match table.get(c.out.types, element)
-        .int_ty k                                                  => return widths.int_bits(k.kind) == 8
-        .float_ty | .bool | .str | .ptr | .cstr | .unit            => return false
-        .array | .fixed | .map | .fallible | .function_ty | .named => return false
-        .case_ty | .failure | .generic | .error                    => return false
-
-function refused_operand(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, allowed: str, got: i64, span: token.Span) -> i64
-    shown = state.show(c, s, decls, got)
-    state.push_diagnostic(@c, value_errors.bad_operand(op: name, allowed: allowed, got: shown, span: span))
-    return state.error_ty_of(c)
 
 # The call this expression is an argument of, for every expression in the
 # file. A UFCS receiver IS the first argument (§4.11), which is what makes
@@ -228,7 +152,7 @@ function no_cstr_out_of_heroes(@c: state.Checker, a: ast.Ast, s: source.Source, 
                 if table.get(c.out.types, declared.must()) == .cstr
                     state.push_diagnostic(
                         @c,
-                        ffi_errors.cstr_out_of_heroes(source.span_text(s, decl.name), a.types[fd.value.result].span)
+                        lend_errors.cstr_out_of_heroes(source.span_text(s, decl.name), a.types[fd.value.result].span)
                     )
             .record_decl | .constant_decl | .variant_decl | .test_decl => continue
 
@@ -262,7 +186,7 @@ function no_cstr_in_a_record(@c: state.Checker, a: ast.Ast, s: source.Source, de
                     if table.get(c.out.types, declared.must()) == .cstr
                         state.push_diagnostic(
                             @c,
-                            ffi_errors.cstr_in_a_record(holder: source.span_text(s, decl.name), field: source.span_text(s, field.name), span: a.types[field.ty].span)
+                            lend_errors.cstr_in_a_record(holder: source.span_text(s, decl.name), field: source.span_text(s, field.name), span: a.types[field.ty].span)
                         )
             .function_decl | .constant_decl | .variant_decl | .test_decl => continue
 
@@ -287,9 +211,46 @@ function lent_only_into_c(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
     at: i64 @ 0
 
     while at < a.exprs.len()
-        if is_lend(a, r, at) && into[at].is_err()
-            state.push_diagnostic(@c, ffi_errors.cstr_escapes(a.exprs[at].span))
+        if into[at].is_err()
+            if is_builtin_named(a, r, at, name: "cstr")
+                state.push_diagnostic(@c, lend_errors.cstr_escapes(a.exprs[at].span))
+
+            if is_builtin_named(a, r, at, name: "ptr")
+                state.push_diagnostic(@c, lend_errors.field_lend_escapes(a.exprs[at].span))
+
+        # **AND A LENT FIELD MUST NAME A PLACE** (panel 164). The lend hands C
+        # the field where it lies so C may write back into it, and that is only
+        # true when the bytes belong to a binding the program can still see:
+        # `make().nsap.ptr()` lends a returned temporary, and C's write lands in
+        # storage the next statement may reuse. Measured before this clause
+        # existed: it reached the emitter, found no place to render, and aborted
+        # at run time saying `this is a compiler bug`.
+        #
+        # It asks the RECEIVER's own shape and nothing about the world around it
+        # (`.claude/rules/module-shape.md`): a chain of fields rooted at a name.
+        if is_builtin_named(a, r, at, name: "ptr")
+            if !lends_a_place(a, at)
+                state.push_diagnostic(@c, lend_errors.field_lend_needs_a_place(a.exprs[at].span))
         at @ at + 1
+
+# Whether a `ptr` lend's receiver is a place: `s.name`, `s.inner.name`, and
+# never a call's result, a literal or an index. The root is a NAME, which is the
+# one shape whose storage outlives the call the lend stands in.
+function lends_a_place(a: ast.Ast, at: i64) -> bool
+    match a.exprs[at].kind
+        .method m => return rooted_at_a_name(a, m.receiver)
+        .call cl => return cl.args.len() == 1 && rooted_at_a_name(a, cl.args[0].value)
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return false
+        .null_ptr | .hole | .unary | .binary | .field | .field_name | .index => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
+
+function rooted_at_a_name(a: ast.Ast, at: i64) -> bool
+    match a.exprs[at].kind
+        .field fl => return rooted_at_a_name(a, fl.base)
+        .name => return true
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .call => return false
+        .null_ptr | .hole | .unary | .binary | .field_name | .index | .method => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
 
 function holds_a_lend(a: ast.Ast, r: resolved.Resolved) -> bool
     at: i64 @ 0
@@ -329,3 +290,20 @@ test "a record outside a group may not hold a cstr"
 
 test "the legal shape stays quiet: a lend as an argument, and a group's own record"
     assert swept("extern \"s.h\"\n    record C\n        name: cstr\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    return n(s: x.cstr())\n") == 0
+
+# Panel 164's two clauses, each made to fire and each shown quiet on the shape
+# beside it. The legal case is third on purpose: a rule with no quiet case is a
+# rule nobody can tell from "refuse everything".
+test "a lent field kept in a binding is refused"
+    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    k: ptr @ s.b.ptr()\n    return f(p: k, n: 4)\n") == 1
+
+test "a lent field of a value nothing holds is refused"
+    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr, n: i64) -> i64\n    function make() -> S\n\nfunction g() -> i64\n    return f(p: make().b.ptr(), n: 4)\n") == 1
+
+test "a lent field passed straight into C stays quiet"
+    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    return f(p: s.b.ptr(), n: 4)\n") == 0
+
+# A field reached through another field is still a place, which is the shape
+# beside the one that provoked the rule (CL-061).
+test "a lent field nested one record deep is still a place"
+    assert swept("extern \"s.h\"\n    record I\n        b: u8[4]\n    record S\n        i: I\n    function f(p: ptr, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    return f(p: s.i.b.ptr(), n: 4)\n") == 0

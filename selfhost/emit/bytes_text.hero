@@ -16,9 +16,16 @@
 #   a dynamic `[u8]`                 ->  hero_str_try_from_array(a, &st)
 #
 # The fixed form is what a header's `char[N]` binds as and the length is a fact
-# of its type, so it is written as a literal; the dynamic form is what `slice`
-# over such a field gives, which is how a caller holding a sibling length says
-# where the text stops. Panel 162 measured why the second exists: of 50 `char[N]`
+# of its type, so it is written as a literal; the dynamic form is how a caller
+# holding a sibling length says where the text stops.
+#
+# CORRECTION, panel 164's completeness critic, 2026-09-18: the sentence above
+# used to say the dynamic form was "what `slice` over such a field gives". That
+# is false and was never run — `t.name.slice(from: 0, to: 2)` is
+# `error[bad_operand]: slice takes str or [T], found i8[8]`. The `[u8]` arm is
+# reached from a dynamic array, never from a field.
+#
+# Panel 162 measured why the second exists: of 50 `char[N]`
 # fields across 16 headers, only 13 are reliably NUL-terminated, so a
 # terminator-only rule would over-read three fields in four, and unlike a null
 # handle there is no runtime guard to catch it, because the pointer is valid.

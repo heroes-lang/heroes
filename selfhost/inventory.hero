@@ -102,6 +102,7 @@ function table() -> [Builtin]
         Builtin(name: "lease", tier: .runtime)
         Builtin(name: "end_lease", tier: .runtime)
         Builtin(name: "validated_bytes", tier: .runtime)
+        Builtin(name: "ptr", tier: .runtime)
     ]
 
 # The banner, and only the banner (panel 054): the one program
@@ -174,7 +175,7 @@ test "a reserved name answers with its index, a free one with absence"
     assert index_of("Builder").is_err()
     assert index_of("banner").is_err()
 
-test "the inventory is forty names and the order is identity"
+test "the inventory is forty-one names and the order is identity"
     entries = table()
 
     # 37 -> 39 on 2026-09-09: `lease` and `end_lease`, §4.19's fourth case
@@ -183,10 +184,15 @@ test "the inventory is forty names and the order is identity"
     # same reason — and this assertion is what caught it when the first draft
     # inserted it beside `to_f32` instead, which would have moved `to_u8` from
     # 35 to 36 and every index after it.
-    assert entries.len() == 40
+    # 40 -> 41 on 2026-09-18: `ptr`, panel 164, appended for the same reason.
+    # It shares its name with the TYPE `ptr`, exactly as `cstr` has since
+    # §4.19 landed: a built-in and a type live in different namespaces here,
+    # and the resolver is what decides which one a name is.
+    assert entries.len() == 41
     assert entries[37].name == "lease"
     assert entries[38].name == "end_lease"
     assert entries[39].name == "validated_bytes"
+    assert entries[40].name == "ptr"
 
     # The two deliberate departures from alphabetical order, pinned so a
     # helpful future sort is caught: the index is meaning, not presentation.

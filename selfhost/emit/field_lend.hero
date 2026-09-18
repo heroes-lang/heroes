@@ -1,0 +1,108 @@
+# `ptr` — a header field's ADDRESS crosses to C (panel 164; design.md §4.19,
+# §4.10).
+#
+# WHY IT IS ITS OWN MODULE AND NOT A ROW IN `emit/builtins.hero`. That module
+# answers with a C entry point, and this built-in becomes no call at all: it is
+# one cast written at the use site. `emit/bytes_text.hero` is the sibling from
+# the sitting before, and it is the OTHER direction — that one COPIES the bytes
+# into a `str` the runtime terminates, this one lends the field where it lies.
+#
+# WHY THE OPERAND IS RENDERED AND NOT READ FROM `arguments[0]`. A fixed array has
+# no C storage to be a temporary in — `emit/ctype.hero` answers `C has no
+# assignable array` for it on purpose — so the prologue declares nothing and the
+# argument names an identifier that does not exist. `emit/storageless.hero` is
+# the renderer for exactly this class, and panel 162's implementation found the
+# trap the hard way: `use of undeclared identifier 't1300'` from clang.
+#
+# WHAT THE CAST IS, AND WHY IT IS `void *` AND NOT `const void *`. C writes
+# through this pointer as well as reading through it, which is the half of the
+# boundary panel 164 found had no door at all: of 141 pointer parameters across
+# 16 real headers, **50 are non-`const`** — `getcwd`, `read`, `uuid_generate` —
+# and nothing in this language could produce their argument. A `const` cast would
+# close the direction the sitting was convened to open.
+#
+# AND WHY NEVER `const char *`. That is `cstr`'s spelling and `cstr` is a promise
+# of a terminating zero that a header's `char[N]` field does not make: 37 of 50
+# such fields across those headers have none. design.md §1.11 lists that promise
+# among the decisions not to revisit. The text route stays `validated_bytes`,
+# which copies.
+
+use check/state
+use ir
+use ir/containers
+use emit/writer
+use emit/aggregate
+use ast
+use source
+
+# The C text of the PLACE a lent field lives in — `h0_s.nsap`, never `t13.nsap`.
+#
+# THIS IS THE WHOLE CORRECTNESS OF THE LEND AND IT WAS MEASURED WRONG FIRST.
+# The first draft rendered with `emit/storageless.hero`'s `fixed_text`, which is
+# right for `validated_bytes` and wrong here: the IR loads a record into a fresh
+# temporary before reading a field of it, so `fixed_text` gave `(void *)(t13.nsap)`
+# — the address of a COPY. Reading through it is correct by accident, because the
+# copy holds the same bytes. Writing through it is lost in silence: the probe
+# filled eight bytes, C returned, and the program's record was unchanged, at exit
+# 0 with every suite green. A silently useless write is the class this language
+# exists to refuse, so the renderer follows the load back to the cell instead.
+#
+# It walks producers rather than trusting one shape: a `.load` is the cell and a
+# `.field` is one step off it, so `s.inner.nsap` resolves as far as it needs to.
+# Anything else is not a place and fails, which `check/lending.hero` has already
+# refused at the source — this is the second witness, not the first.
+function lent_place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, value: i64) -> str?
+    for blk in f.blocks
+        for inst in blk.insts
+            if !inst.dest.is_err() && inst.dest.must() == value
+                match inst.op
+                    .load ld => return ok(aggregate.place(c, s, decls, f, at: ld.place))
+                    .field fl =>
+                        owner = containers.value_type(f, fl.base)
+                        found = aggregate.field(c, s, decls, owner: owner, index: fl.at)
+
+                        if found.is_err()
+                            return fail(code: "none", msg: "not a field of this type")
+                        base = lent_place(c, s, decls, f, value: fl.base)?
+                        return ok(base + "." + found.must().member)
+                    .lit | .store | .push_owned | .unary | .binary | .cast => return fail(
+                        code: "none",
+                        msg: "not a place"
+                    )
+                    .call | .construct | .index | .map_get | .len_of => return fail(
+                        code: "none",
+                        msg: "not a place"
+                    )
+                    .tag_of | .payload | .func_ref | .abort_op | .incref => return fail(
+                        code: "none",
+                        msg: "not a place"
+                    )
+                    .decref | .decref_slot | .hole | .missing | .copy_out => return fail(
+                        code: "none",
+                        msg: "not a place"
+                    )
+
+    return fail(code: "none", msg: "no producer")
+
+# Emit `into = ptr(value)`.
+function lent(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, into: str)
+    given = containers.args_of(f, run)
+    source_value: i64 @ 0 - 1
+
+    if given.len() > 0
+        match given[0]
+            .value_arg v => source_value @ v.value
+            .inout_arg   => source_value @ source_value
+
+    if source_value < 0
+        writer.line(@w, text: "    hero_unreachable(); /* ptr lost its argument */")
+        return
+    place = lent_place(c, s, decls, f, value: source_value)
+
+    # The checker admitted only a field of a named binding here, so a miss means
+    # the two passes disagree and it is loud rather than a guess
+    # (`emit/convert.hero`'s rule, one boundary over).
+    if place.is_err()
+        writer.line(@w, text: "    hero_unreachable(); /* a lent field with no place */")
+        return
+    writer.line(@w, text: "    " + into + " = (void *)(" + place.must() + ");")

@@ -19,6 +19,7 @@ use check/state
 use ir
 use ir/containers
 use ir/uses
+use inventory
 use emit/ctype
 use token
 use check/table
@@ -41,6 +42,24 @@ function may_lose_its_destination(op: ir.OpKind) -> bool
         .func_ref | .store | .push_owned | .unary | .binary | .cast | .construct => false
         .index | .map_get | .copy_out | .abort_op                                => false
         .incref | .decref | .decref_slot | .hole | .missing                      => false
+
+# Whether this instruction's emitted C names a PLACE instead of reading the
+# operand the IR gave it — today `ptr` alone (panel 164).
+#
+# IT ASKS THE INSTRUCTION AND NOT A LIST OF NAMES ELSEWHERE: the fact is about
+# what `emit/field_lend.hero` prints, so it is answered here beside the other
+# question about what the C reads, and a second such built-in adds its name to
+# this one function rather than to a table somebody has to find.
+function reads_a_place(op: ir.OpKind) -> bool
+    match op
+        .call cl =>
+            match cl.callee
+                .builtin_fn bt                      => return inventory.table()[bt.at].name == "ptr"
+                .heroes_fn | .extern_fn | .indirect => return false
+        .lit | .load | .field | .payload | .tag_of | .len_of | .func_ref => return false
+        .store | .push_owned | .unary | .binary | .cast | .construct     => return false
+        .index | .map_get | .copy_out | .abort_op | .incref              => return false
+        .decref | .decref_slot | .hole | .missing                        => return false
 
 # Whether the instruction disappears ENTIRELY when its result is unread
 # — the narrower half, and the one the fixpoint iterates over. A
@@ -150,6 +169,16 @@ function reads_given(f: containers.Function, c: state.Checked, gone: {i64: bool}
                     silent @ true
 
             if !one.dest.is_err() && !gone[one.dest.must()].is_err()
+                silent @ true
+
+            # **`ptr` reads a PLACE and not its operand** (panel 164). The lend
+            # renders `h0_s.nsap` from the cell the field lives in, never the
+            # loaded copy the IR hands it, because C writes through the pointer
+            # and a write into a copy is lost in silence. So the load that fed
+            # it is read by the IR and by no C, which is this module's whole
+            # subject — and without this arm clang says `variable 't18' set but
+            # not used` and CLAUDE.md §7 asks for not one warning.
+            if reads_a_place(one.op)
                 silent @ true
 
             if silent

@@ -1,0 +1,47 @@
+# Panel 164, the three things `.ptr()` refuses.
+#
+# THE LEND HANDS C THE FIELD ITSELF, which is what separates it from
+# `validated_bytes` beside it: that one copies the bytes out and answers a
+# `str?`, this one gives C the address so C may write back. Everything refused
+# here follows from that one difference.
+#
+# THE ESCAPE (panel 122 R2, inherited). A lend stands only as an argument of a
+# call. A field's bytes belong to the record, which is a value: the slot holding
+# it is released when its function returns, so an address kept past its call
+# points into storage the next statement may reuse.
+#
+# THE PLACE (panel 164's own clause). The receiver must be a field of something
+# the program can still name. `make().b.ptr()` lends a returned temporary, and
+# C's write lands nowhere. This was measured before the clause existed: it
+# reached the emitter, found no place to render, and aborted at run time saying
+# `this is a compiler bug` — which is the worst of the three outcomes, because
+# it blames the compiler for a program the compiler should have refused.
+#
+# THE DYNAMIC ARRAY (refused DELIBERATELY, not by omission). A `[u8]` is a
+# runtime-owned array with its own lifetime and refcount, and lending C the
+# interior of one is a question panel 164 did not put to its seats. The sitting
+# decided how a header FIELD crosses; a route nobody priced stays refused, which
+# is Principle 0 read the way CLAUDE.md § 2 writes it.
+
+extern "ffi-a-lent-field-needs-a-place.h"
+    record Slot
+        b: u8[4]
+        id: i64
+    function slot_sum(p: ptr, n: i64) -> i64
+    function slot_make() -> Slot
+
+function kept(s: Slot) -> i64
+    k: ptr @ s.b.ptr()  #~ field_lend_escapes
+    return slot_sum(p: k, n: 4)
+
+function unheld() -> i64
+    return slot_sum(p: slot_make().b.ptr(), n: 4)  #~ field_lend_needs_a_place
+
+function dynamic(xs: [u8]) -> i64
+    return slot_sum(p: xs.ptr(), n: 4)  #~ bad_operand
+
+function main()
+    s = Slot(b: [1, 2, 3, 4], id: 0)
+    print(kept(s: s).to_str())
+    print(unheld().to_str())
+    print(dynamic(xs: [1, 2, 3, 4]).to_str())
