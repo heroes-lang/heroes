@@ -191,7 +191,89 @@ function flexible_array_member(s: source.Source, tree: ast.Ast, decls: [ast.Decl
     )
     return ok(d)
 
+# The header declares a member `const`, so C refuses to assign the
+# struct after it has been declared — and building one from Heroes is
+# that assignment (defect 060, 2026-09-18). Before this reader the
+# program came back as `internal error: compiling the generated C
+# failed` at exit 2, which blames the compiler for a declaration the
+# author wrote: three of the four things design.md §4.17 exists to
+# prevent, in one message.
+#
+# **It is a fifth member of §7's named exception and not a new class**,
+# and that judgement is written here so it can be disagreed with. The
+# class is *a clang failure the author's own extern caused*
+# (`.claude/rules/c-boundary.md`, panel 036, widened by panel 048), its
+# narrowing is `declaration()` — recover a name and ask whether THIS
+# program declared it `extern` — and this reader obeys that rule
+# unchanged. What the repair does NOT do is move the line between
+# accepted and refused: the program is refused before and after, so no
+# panel gate is crossed. Measured before deciding that: **zero**
+# `const` non-pointer struct members across the six headers this
+# project binds (`time.h`, `stdio.h`, `sqlite3.h`, `curl/curl.h`,
+# `dirent.h`, `pwd.h`), by a clang JSON AST walk.
+#
+# It reads the ERROR line alone and never the warnings above it. clang
+# names the struct's TYPE only in the warning, and holding state across
+# clang's output is a premise about clang's layout — panel 038 paid for
+# one of those, and emit_ffi_record's own doc says so. So the member
+# name is the whole key, and the record is found by asking which of
+# this program's group records declares a field of that name.
+constant CONST_MEMBER: str
+    "with const-qualified data member '"
+
+function const_member(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+    tail = ffi_lookup.after(text: line, marker: CONST_MEMBER)
+
+    if tail.is_err()
+        return fail(code: "none", msg: "not a const-member line")
+    member = ffi_lookup.up_to_quote(tail.must())
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if rec.header.is_err()
+                    continue
+
+                for field in rec.fields
+                    if source.span_text(s, field.name) == member
+                        header = emit_externs.unquoted(s, span: rec.header.must())
+                        owner = source.span_text(s, decl.name)
+                        d: diag.Diagnostic @ diag.new_diagnostic(
+                            code: "ffi_const_field",
+                            message: "`" + header + "` declares `" + owner + "." + member + "` as `const`, so C refuses to assign a `" + owner + "` once it exists — and building one here is that assignment",
+                            span: field.name
+                        )
+                        d.notes @ d.notes.push(
+                            "the `const` is the header's decision and no spelling on this line changes it: every Heroes value is built by assignment, so a struct C will not let you assign is a struct you take FROM the library rather than make. Ask a function the group declares for one, or drop the field and mark the `record` `partial` if you only need to read the others"
+                        )
+                        return ok(d)
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return fail(code: "none", msg: "no group record declares this member")
+
 ## Tests
+
+test "a const member is blamed on the field, and anybody else's stays the compiler's"
+    text = "extern \"cm.h\"\n    record Locked\n        id: i32\n        n: i32\n\nfunction touch(l: Locked)\n    _ = l\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    line = "t.hero:9:5: error: cannot assign to variable 't3' with const-qualified data member 'id'"
+    d = const_member(s, parsed.decls, line: line)
+    assert d.must().code == "ffi_const_field"
+    assert d.must().message == "`cm.h` declares `Locked.id` as `const`, so C refuses to assign a `Locked` once it exists — and building one here is that assignment"
+
+    # The narrowing is §7's: a member THIS program does not declare in a
+    # group stays exit 2 and the compiler's fault. `n` is declared here
+    # and `colour` is not, so the first is blamed and the second is not.
+    assert !const_member(s, parsed.decls, line: "t.hero:9:5: error: cannot assign to variable 't3' with const-qualified data member 'n'").is_err()
+    assert const_member(s, parsed.decls, line: "t.hero:9:5: error: cannot assign to variable 't3' with const-qualified data member 'colour'").is_err(
+    )
+
+    # A line that is not this class at all.
+    assert const_member(s, parsed.decls, line: "t.hero:9:5: error: missing field 'b' initializer").is_err()
 
 test "field_type and flex read their markers and point at the field"
     text = "extern \"m.h\"\n    record Color\n        r: u8\n        data: i8[4]\n\nfunction touch(c: Color)\n    _ = c\n\nfunction main()\n    print(1)\n"
