@@ -1,0 +1,6 @@
+error[ffi_field_type]: `Tagged.name` is not `cstr` in `ffi-a-cstr-field-blames-the-field.h` — clang read the header's struct and the field disagrees
+  at tests/golden/unsupported/ffi-a-cstr-field-blames-the-field.hero:33:9
+     |
+  33 |         name: cstr  #~ ffi_field_type
+     |         ^^^^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `name`, or name the header that spells `Tagged` this way

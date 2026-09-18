@@ -101,9 +101,21 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !not_const.is_err()
             found @ ffi_lookup.add_once(found, d: not_const.must())
+
+        # **A record with a field at the WRONG type is not asked about
+        # completeness** (defect 062, 2026-09-18). The completeness probe is a
+        # positional initialiser list, one `0` per DECLARED field and `{0}` for
+        # a declared array — so when a field is declared `cstr` where the header
+        # has `char[N]`, the probe writes a scalar where C wants an array, C's
+        # brace-elision rule consumes that `0` and the next into the array's
+        # first two elements, and clang reports the NEXT member missing. That
+        # message names a field the author has already written. The type error
+        # above is the true one and is already in `found`; the count this line
+        # would add is unreliable the moment one type is wrong, so it waits for
+        # the author to fix the type and run again, which is the loud direction.
         incomplete = ffi_record.incomplete_record(s, decls, line: line)
 
-        if !incomplete.is_err()
+        if !incomplete.is_err() && !has_code(found, code: "ffi_field_type")
             found @ ffi_lookup.add_once(found, d: incomplete.must())
         unknown_f = ffi_field.unknown_field(s, decls, line: line)
 
@@ -175,6 +187,14 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
             found @ ffi_lookup.add_once(found, d: writable.must())
 
     return found
+
+# Whether a diagnostic with this code is already among the found ones.
+function has_code(found: [diag.Diagnostic], code: str) -> bool
+    for d in found
+        if d.code == code
+            return true
+
+    return false
 
 ## Tests
 
