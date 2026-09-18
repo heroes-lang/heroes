@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 1**
 
 - [ ] **061 — a fixed-array field cannot be passed to C at all** | `strlen(u.sysname)` against `function strlen(s: cstr) -> u64` is `type_mismatch`, because Heroes gives a fixed array no array-to-pointer decay, so a bound `char[N]` field only LOOKS bound | `selfhost/check/` · `spec § 13`
 
@@ -49,19 +49,5 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     parameter, to an `@` out-parameter, and as a struct member of a value
     crossing by value — the last of which works today, since the whole record
     crosses.
-
-- [ ] **062 — `ffi_incomplete_record` names a field that is present** | a single `cstr` field in an `extern record` reports *does not name `nodename`* with `nodename` declared on the line below | `selfhost/emit/ffi_record.hero:38-60`
-
-    **Origin:** panel 162's compiler-engineer, 2026-09-18, found beside the
-    question; reproduced by the completeness critic in the same sitting.
-
-    **Cause, named by the seat that found it**: `incomplete_record` forwards
-    clang's *missing field* wording verbatim, and clang is complaining about a
-    positional probe rather than about the field the author left out. So the
-    diagnostic is right that something is wrong and wrong about what.
-
-    **What it costs** is the thing design.md §4.17 exists to prevent: an error
-    that names a token the author has already written sends them to correct
-    something that is correct.
 
 *******************************************************************************

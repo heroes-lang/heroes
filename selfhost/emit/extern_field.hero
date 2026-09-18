@@ -195,9 +195,19 @@ function assertion(c: state.Checked, names: ctype.Names, s: source.Source, c_typ
         .array | .fixed | .map | .fallible | .function_ty | .named => is_cstr @ is_cstr
         .case_ty | .failure | .generic | .error                    => is_cstr @ is_cstr
 
+    # **The marker carries the HEROES record's name, like every other branch**
+    # (defect 062, 2026-09-18). This one wrote `c_type` until then, which for a
+    # tagged record is TWO words — `struct utsname` — where `ffi_field.field_type`
+    # reads exactly two: the record and the member. So it read `struct` as the
+    # record and `utsname` as the field, found no such record, and returned
+    # nothing. clang had said the true thing twice, `256 == 8` on both `cstr`
+    # fields, and the only diagnostic that survived was the completeness probe's
+    # — which names a field the author HAS declared and sends them to add it
+    # again. Five of the six branches in this file already wrote `hero_name`;
+    # this was the sixth.
     if is_cstr
         return ok(
-            "_Static_assert(_Generic(" + place + ", " + assert_spelling.CSTR_SPELLINGS + ", default:0) && sizeof(" + place + ") == sizeof(char *), \"" + FIELD_ASSERTION + " " + c_type + " " + member + "\");"
+            "_Static_assert(_Generic(" + place + ", " + assert_spelling.CSTR_SPELLINGS + ", default:0) && sizeof(" + place + ") == sizeof(char *), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
         )
     is_int: bool @ false
     int_kind: widths.IntKind @ .i64

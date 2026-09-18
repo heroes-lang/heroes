@@ -1,0 +1,39 @@
+# FIXED DEFECT 062, found by panel 162's compiler-engineer 2026-09-18, narrowed
+# and repaired at M-readable-bytes' close the same day.
+#
+# SYMPTOM: a field declared `cstr` where the header has `char[N]` reported
+# `ffi_incomplete_record: does not name nodename` — with `nodename` declared on
+# the line below — and never reported the wrong type at all. The author was sent
+# to add a field they had already written, while the real fault stayed silent.
+# design.md §4.17 inverted twice in one message.
+#
+# CAUSE, and it is one word. `emit/extern_field.hero`'s SIX branches each write
+# a marker clang echoes back on failure, `heroes-ffi-field <record> <member>`,
+# and `emit/ffi_field.field_type` reads exactly two words out of it. Five
+# branches wrote the HEROES record's name. The `cstr` branch wrote `c_type` —
+# which for a TAGGED record is two words, `struct tagged` — so the reader took
+# `struct` for the record and `tagged` for the member, found no such record, and
+# returned nothing. clang had said the true thing twice, `256 == 8` on both
+# fields; the only diagnostic that survived was the completeness probe's.
+#
+# FIX: the sixth branch writes `hero_name` like the other five.
+#
+# WHY THE HEADER IS TAGGED. An untagged `typedef struct {…} Tag;` gives a
+# one-word `c_type`, so the marker parses by accident and the defect does not
+# fire. The tag is what makes this case a test rather than a decoration.
+#
+# THE SHAPE BESIDE IT, and it is why this file is in `unsupported/` and not
+# `fixedbugs/`: with the field types CORRECT, `ffi_incomplete_record` is right
+# and stays right — measured at the close, two of five fields declared, and it
+# names `release`, which is genuinely the third and genuinely undeclared. This
+# case does not touch that.
+
+extern "ffi-a-cstr-field-blames-the-field.h"
+    record Tagged tag tagged
+        name: cstr  #~ ffi_field_type
+        id: i32
+    function tagged_id(t: Tagged) -> i32
+
+function main()
+    t = Tagged(name: "x".cstr(), id: 7)
+    print(t.tagged_id().to_i64().must())
