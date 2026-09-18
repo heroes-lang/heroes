@@ -16,14 +16,14 @@ against a banner reading 3.
 
 | | |
 |---|---|
-| **Current milestone** | **none open.** The next row is 61, `M-core-packages`, and nobody has opened it |
+| **Current milestone** | **M-declared-extents**, row 61, opened 2026-09-18 ([its file](../work/milestones/M-declared-extents.md)) — panel 164's route 6, the one row scheduled behind a MEASUREMENT rather than a decision. Step 1 ran it: `docs/measurements/035-not-one-byte-array-is-spelled-the-same-way-on-both.md`. **This cell named `M-core-packages` as the next row until 2026-09-18**, which is row 63; row 61 has been `M-declared-extents` since M-readable-bytes's close entered it |
 | **Last closed** | **M-readable-bytes**, 2026-09-18, `m-readable-bytes` ([059](journal/059-readable-bytes.md)) — a C byte field becomes text, and the second wall it was opened on turned out not to exist · before it **M-arm-platform** ([058](journal/058-arm-platform.md)), the fourth real machine · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **60** of 81 · **60** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **63,035** lines of Heroes in **219** modules (`find selfhost -name '*.hero'`) · the seed **831,603** lines of C, regenerated twice here and the fixpoint verified byte-identical each time — the second regeneration was not optional, because a COMMENT shifts the `#line` directives the emitted C carries |
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
 | The spec | **6089** on the vendored ranks and **8106** on the reader's own, against a ceiling of **10240**. Panel 164's row is **+48 vendored and +66 real**, the closest any row has run to the 50-token `DELTA_GATE`, and it is paid by panel 162's unspent **−6** removal and five registered predictions. **2134 free** and 2074 net of the FFI floor |
 | The contract | **7449** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-15 with the wakeup instruction: of the 36 vendored tokens the pin was behind, 14 predate that session and no commit had named them |
-| Records | sittings **161** · journals **61** · milestone files **49** · entries: `docs/records/log/` **679**, `docs/records/done/` **558**, `docs/records/book/beats/` **127** |
+| Records | sittings **162** · journals **61** · milestone files **50** · measurements **35** · entries: `docs/records/log/` **681**, `docs/records/done/` **560**, `docs/records/book/beats/` **127** |
 | Waiting on the author | **nothing.** Panels 155 to 159 were ratified on 2026-09-16 and **panel 161 on 2026-09-18**, all of them **by delegation and not by reading**, under instructions of those days, and every file says so in those words rather than crediting a reading that did not happen. What each leaves owed is named with its trigger: panel 155's `float_map_key` through a generic, which waits under Principle 0; panel 156's two refused spec merges; panel 157's R4 instrument, filed with its price in `docs/work/milestones/M-package-manager.md`; panel 159's refused route, defining `<` on `str`; and panel 161's two unpriced routes. **Panel 164 was ratified the same way on 2026-09-18**, and the gap panel 161 found — that no route leads from a `char[N]` field to C — is closed in both directions; what it leaves owed is its route 6, scheduled as **M-declared-extents** behind the one measurement that decides it |
 
 **Re-measured 2026-09-18, the full net on a compiler built from the regenerated
@@ -44,7 +44,7 @@ whole net rather than only the container at home.
 ## The chain
 
 One table, one row per milestone, **closed first and scheduled after**: rows 1–60
-are done, in the order they closed, and rows 61–79 are what is next, in the order
+are done, in the order they closed, and rows 61–81 are what is next, in the order
 they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
@@ -62,13 +62,18 @@ sentence read *1–57 done* over a table whose row 58 said `done 2026-09-17` eig
 lines below. Then 1–58 and 59–78 until M-arm-platform closed on 2026-09-18, and
 1–59 and 60–79 when `M-readable-bytes` entered at 60 the same day, on author
 instruction and on panel 161's largest unresolved finding, so the nineteen rows
-after it each moved one down and **the table is 79 long**, and 1–60 and 61–79
+after it each moved one down and the table was 79 long, and 1–60 and 61–79
 when M-readable-bytes closed later that same day, the second close in this table
-that opened no row after itself. It is the
+that opened no row after itself. **That last clause was false as it was written,
+and the OPENING of row 61 on 2026-09-18 found it**: the same close entered
+`M-declared-extents` at 61 and `M-buildable-structs` at 62, both out of panel
+164, so it opened two rows rather than none, **the table is 81 long**, and the
+scheduled block is 61–81. The sentence restated a length it had not recounted,
+which is the one thing this paragraph exists to prevent. It is the
 one number in this file that no instrument reads, so it is
 restated here and re-read at every close with § Where we are — and at every
-OPENING too, which is what moved it twice on one day and what caught it this
-time. `warrant` is why a milestone exists: **v1** (the self-hosting
+OPENING too, which is what moved it twice on one day, what caught it at row 59,
+and what caught it again here. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
 
@@ -137,7 +142,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 58 | **M-check-completeness** | done 2026-09-17 | `m-check-completeness` | [057](journal/057-check-completeness.md) | ten defects the hunt turned up, closed — and three were not what their own entry said · scheduled, no warrant |
 | 59 | **M-arm-platform** | done 2026-09-18 | `m-arm-platform` | [058](journal/058-arm-platform.md) | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
 | 60 | **M-readable-bytes** | done 2026-09-18 | `m-readable-bytes` | [059](journal/059-readable-bytes.md) | a C byte buffer becomes text a program can print: the inbound direction `str` has never had · **§1.11** |
-| 61 | **M-declared-extents** | scheduled | — | — | panel 164's route 6: a C header spells a parameter as an array, `function arr_len(s: i8[8])`, and it is the only route where the compiler CHECKS the extent instead of trusting the author or the callee. Its whole value is a number nobody has measured — how many real headers spell a parameter that way |
+| 61 | **M-declared-extents** | **OPEN** | — | — | panel 164's route 6: a C header spells a parameter as an array, `function arr_len(s: i8[8])`, and it is the only route where the compiler CHECKS the extent instead of trusting the author or the callee. Its whole value is a number nobody has measured — how many real headers spell a parameter that way |
 | 62 | **M-buildable-structs** | scheduled | — | — | a real five-field `utsname` needs 1280 literal zeros, 4312 bytes for a nine-line program, measured and RUN at panel 164. Not a defect, because nothing is broken: what is missing is a way to write *the rest are zero* |
 | 63 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
 | 64 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
