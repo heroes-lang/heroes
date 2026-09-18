@@ -55,7 +55,13 @@ constant EMITTED: [str]
         "to_u16"
         "to_u32"
         "to_u64"
+        "validated_bytes"
     ]
+
+# Panel 162: on the list so the gate admits it, and NOT in `entry`
+# below for the conversions' own reason — its result is a `str?`, a
+# union generated for that result type, so `emit/bytes_text.hero`
+# writes the call and the union together.
 
 # The type of a call's first argument, where there is one and it is a
 # value. Absent covers a zero-argument call and an @ argument — neither

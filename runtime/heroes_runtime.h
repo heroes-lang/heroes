@@ -246,6 +246,8 @@ HeroStr hero_str_try_from_cstr(const char *p, int64_t *status);
 /* The same, for a run whose end the caller states: to its first zero, or whole.
    A C `char[N]` field is not a `cstr` and need not be terminated (panel 162). */
 HeroStr hero_str_try_from_bytes(const char *p, int64_t cap, int64_t *status);
+/* The same over a `[u8]` this language owns; declared after HeroArrayHeader,
+   below, because it names it (panel 162). */
 /* The same guard on the outbound side: a `cstr` handed to a C function, which is
    the path `hero_str_from_cstr` never sees (panel 053, CLAUDE.md §12). */
 const char *hero_cstr_nonnull(const char *p);
@@ -402,6 +404,8 @@ int64_t hero_array_len(const HeroArrayHeader *a);
 /* Read one element. Aborts out of range (spec § 10 Strings, arrays, maps) — never reads
  * arbitrary memory, which is the guarantee §4.9 states. */
 const void *hero_array_at(const HeroArrayHeader *a, int64_t index);
+
+HeroStr hero_str_try_from_array(const HeroArrayHeader *a, int64_t *status);
 
 /* `push(xs, v)` — a NEW array, always, and the copy is not an oversight.
  *

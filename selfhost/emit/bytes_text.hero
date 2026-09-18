@@ -1,0 +1,113 @@
+# `validated_bytes` — a run of bytes becomes a `str?`, written INLINE
+# (panel 162, M-readable-bytes; design.md §4.19, §4.20).
+#
+# WHY IT IS NOT IN `emit/builtins.hero`'s table. That module answers with a C
+# entry point, and this built-in has none it can answer with: like every
+# `to_<width>`, its result is a `T?` — a union generated for that result type —
+# so the call and the union have to be written together. `emit/convert.hero` is
+# the sibling that does the same thing for the eight width conversions, and this
+# file is its shape one boundary over.
+#
+# THE TWO OPERANDS ARE TWO C CALLS, and the choice is made from the operand's
+# TYPE rather than from anything the runtime inspects (panel 006's rule, stated
+# in `emit/builtins.hero`'s own doc):
+#
+#   a fixed field `i8[N]` / `u8[N]`  ->  hero_str_try_from_bytes(p, N, &st)
+#   a dynamic `[u8]`                 ->  hero_str_try_from_array(a, &st)
+#
+# The fixed form is what a header's `char[N]` binds as and the length is a fact
+# of its type, so it is written as a literal; the dynamic form is what `slice`
+# over such a field gives, which is how a caller holding a sibling length says
+# where the text stops. Panel 162 measured why the second exists: of 50 `char[N]`
+# fields across 16 headers, only 13 are reliably NUL-terminated, so a
+# terminator-only rule would over-read three fields in four, and unlike a null
+# handle there is no runtime guard to catch it, because the pointer is valid.
+#
+# THE STATUS WORD IS READ AND NOT ASSUMED. `hero_str_try_from_bytes` answers
+# `HERO_STR_OK`, `HERO_STR_NULL` or `HERO_STR_NOT_TEXT`, and this emits the same
+# `not_text` failure `read_file` already gives — panel 162 measured that the
+# rule was chosen before the sitting sat, and a second spelling of one state is
+# a second state to a program matching on `e.code`.
+
+use check/table
+use check/state
+use ir
+use ir/containers
+use emit/ctype
+use emit/writer
+use emit/storageless
+use ast
+use source
+
+# Emit `into = validated_bytes(value)`.
+function validated(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], names: ctype.Names, f: containers.Function, run: ir.Run, arguments: [str], into: str)
+    given = containers.args_of(f, run)
+    source_value: i64 @ 0 - 1
+
+    if given.len() > 0
+        match given[0]
+            .value_arg v => source_value @ v.value
+            .inout_arg   => source_value @ source_value
+
+    if source_value < 0
+        writer.line(@w, text: "    hero_unreachable(); /* validated_bytes lost its argument */")
+        return
+    operand_ty = containers.value_type(f, source_value)
+
+    # lookup, not intern: the checker made this `str?` when it typed the call,
+    # so a miss means the two passes disagree and it is loud (convert.hero's
+    # rule, one boundary over).
+    option_id = table.lookup(c.types, .fallible(payload: table.str_ty(c.types)))
+
+    if option_id.is_err()
+        writer.line(@w, text: "    hero_unreachable(); /* the checker never interned str? */")
+        return
+    union_name = ctype.option_of(names, ty: option_id.must())
+    fixed_length: i64 @ 0 - 1
+    is_array: bool @ false
+
+    match table.get(c.types, operand_ty)
+        .fixed x                                                  => fixed_length @ x.length
+        .array                                                    => is_array @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_array @ is_array
+        .map | .fallible | .function_ty | .named | .case_ty       => is_array @ is_array
+        .failure | .generic | .error                              => is_array @ is_array
+
+    if fixed_length < 0 && !is_array
+        writer.line(@w, text: "    hero_unreachable(); /* validated_bytes over neither a fixed run nor an array */")
+        return
+    call: str @ "hero_str_try_from_array(" + arguments[0] + ", &hero_vb_status)"
+
+    if fixed_length >= 0
+        # **The operand is rendered AT THE USE SITE and never read from a
+        # temporary**, because a fixed array has no C storage to be a temporary
+        # in: `ctype.hero` answers `C has no assignable array` for it on purpose,
+        # so the prologue declares nothing and `arguments[0]` names an
+        # identifier that does not exist. `emit/storageless.hero` exists for
+        # exactly this class and `fixed_text` is its renderer — the first draft
+        # of this file used `arguments[0]` and clang said
+        # `use of undeclared identifier 't1300'`, which is how the class was
+        # found rather than remembered.
+        place = storageless.fixed_text(c, s, decls, f, value: source_value)
+
+        if place.is_err()
+            writer.line(@w, text: "    hero_unreachable(); /* a fixed run with no rendering */")
+            return
+        call @ "hero_str_try_from_bytes((const char *)(" + place.must() + "), INT64_C(" + fixed_length.to_str() + "), &hero_vb_status)"
+
+    # A BLOCK, so the status word is a fresh local at every call site rather
+    # than a name hoisted into the prologue. The emitter hoists every local it
+    # declares (CLAUDE.md §7), and this one is not a Heroes value — it is two
+    # statements' worth of scratch that no other instruction may see.
+    writer.line(@w, text: "    {")
+    writer.line(@w, text: "        int64_t hero_vb_status = 0;")
+    writer.line(@w, text: "        HeroStr hero_vb_text = " + call + ";")
+    writer.line(@w, text: "        if (hero_vb_status == HERO_STR_OK) {")
+    writer.line(@w, text: "            " + into + " = (" + union_name + "){.tag = INT64_C(0), .as.ok = hero_vb_text};")
+    writer.line(@w, text: "        } else {")
+    writer.line(
+        @w,
+        text: "            " + into + " = (" + union_name + "){.tag = INT64_C(1), .as.err = hero_failure_not_text()};"
+    )
+    writer.line(@w, text: "        }")
+    writer.line(@w, text: "    }")

@@ -67,6 +67,7 @@ use resolved
 use inventory
 use check/state
 use check/table
+use widths
 use ffi_errors
 use value_errors
 
@@ -110,7 +111,55 @@ function lend_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], name:
         return ok(
             refused_operand(@c, s, decls, name: name, allowed: "`@x` where `x: cstr @ s.lease()`", got: given[0], span: span)
         )
+
+    # **A run of bytes becomes a `str?`** (panel 162, M-readable-bytes). It is
+    # typed HERE, with the lend and the lease, because the three are one family:
+    # every one of them is the boundary where C's bytes and this language's `str`
+    # change hands, and `check/builtins.hero` is at its decided ceiling and may
+    # make exactly one call out — which is this function.
+    #
+    # It answers a FIXED array of bytes, which is what a header's `char[N]` field
+    # binds as, and a `[u8]`, which is what `slice` over such a field gives, so a
+    # caller holding a sibling length — `d_namlen`, `sun_len`,
+    # `sqlite3_column_bytes` — says where the text stops instead of trusting a
+    # terminator. Panel 162 measured why that matters: of 50 `char[N]` fields
+    # across 16 headers, only 13 are reliably NUL-terminated.
+    #
+    # Both signs are accepted and that is deliberate. A header's plain `char` is
+    # signed on three of this project's four platforms and unsigned on the
+    # fourth, so the HEADER decides the element type and the binding author
+    # cannot — which M-arm-platform measured the day before this landed.
+    if name == "validated_bytes" && given.len() == 1
+        if byte_run(c, given[0])
+            return ok(table.intern(@c.out.types, .fallible(payload: table.str_ty(c.out.types))))
+        return ok(
+            refused_operand(@c, s, decls, name: name, allowed: "a run of bytes — `i8[N]`, `u8[N]` or `[u8]`", got: given[0], span: span)
+        )
     return fail(code: "untypeable", msg: "not a lend, a lease or a release")
+
+# Whether this type is a run of bytes `validated_bytes` can read: a fixed array
+# of 8-bit integers, or a dynamic one. The question is asked of the VALUE's
+# element width rather than of a list of spellings, so a header binding its field
+# as `u8[N]` and one binding it as `i8[N]` are the same question (panel 162,
+# and `.claude/rules/module-shape.md`'s rule that a narrowing asks the value).
+function byte_run(c: state.Checker, ty: i64) -> bool
+    element: i64 @ -1
+
+    match table.get(c.out.types, ty)
+        .fixed x                                                  => element @ x.element
+        .array a                                                  => element @ a.element
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => element @ -1
+        .map | .fallible | .function_ty | .named | .case_ty       => element @ -1
+        .failure | .generic | .error                              => element @ -1
+
+    if element < 0
+        return false
+
+    match table.get(c.out.types, element)
+        .int_ty k                                                  => return widths.int_bits(k.kind) == 8
+        .float_ty | .bool | .str | .ptr | .cstr | .unit            => return false
+        .array | .fixed | .map | .fallible | .function_ty | .named => return false
+        .case_ty | .failure | .generic | .error                    => return false
 
 function refused_operand(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, allowed: str, got: i64, span: token.Span) -> i64
     shown = state.show(c, s, decls, got)
