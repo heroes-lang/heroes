@@ -18,36 +18,6 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 1**
-
-- [ ] **061 — a fixed-array field cannot be passed to C at all** | `strlen(u.sysname)` against `function strlen(s: cstr) -> u64` is `type_mismatch`, because Heroes gives a fixed array no array-to-pointer decay, so a bound `char[N]` field only LOOKS bound | `selfhost/check/` · `spec § 13`
-
-    **Origin:** panel 162's ffi-pragmatist, 2026-09-18, measured while answering a question about reading.
-
-    **Measured, verbatim**, with a full 256-element literal in place so nothing
-    else could error:
-
-    ```
-    function strlen(s: cstr) -> u64
-    strlen(u.sysname)   ->   error[type_mismatch]: expected cstr, found i8[256]
-    ```
-
-    **No Heroes-side shim can route around it.** In C, `char[N]` decays to
-    `char *` at every call; in Heroes the field has no spelling that reaches a
-    `cstr` or a `ptr` parameter. So a program cannot hand the field to the very
-    C function that would read it, and the seat that measured it calls this the
-    completeness failure `.claude/rules/c-boundary.md` names in its own words:
-    *a library Heroes cannot bind is a library the author must leave C code
-    around for*.
-
-    **It is filed apart from panel 162's resolution rather than absorbed.** That
-    sitting widens `slice`, `validated` and `repeat` so a field can be READ; this
-    is the other direction, handing a field TO C, and no route in that sitting
-    was priced against it.
-
-    **The shapes beside it are unrun** (CL-061): a fixed array passed to a `ptr`
-    parameter, to an `@` out-parameter, and as a struct member of a value
-    crossing by value — the last of which works today, since the whole record
-    crosses.
+**OPEN: 0**
 
 *******************************************************************************

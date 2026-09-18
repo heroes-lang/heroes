@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 1 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 0 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -18,21 +18,21 @@ against a banner reading 3.
 |---|---|
 | **Current milestone** | **none open.** The next row is 61, `M-core-packages`, and nobody has opened it |
 | **Last closed** | **M-readable-bytes**, 2026-09-18, `m-readable-bytes` ([059](journal/059-readable-bytes.md)) — a C byte field becomes text, and the second wall it was opened on turned out not to exist · before it **M-arm-platform** ([058](journal/058-arm-platform.md)), the fourth real machine · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **60** of 79 · **60** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **62,676** lines of Heroes in **216** modules (`find selfhost -name '*.hero'`) · the seed **827,754** lines of C, regenerated twice more here and the fixpoint verified byte-identical each time |
+| Milestones closed | **60** of 81 · **60** tags matching `m*`, the legacy `m0`-`m8` included |
+| The compiler | **63,035** lines of Heroes in **219** modules (`find selfhost -name '*.hero'`) · the seed **831,603** lines of C, regenerated twice here and the fixpoint verified byte-identical each time — the second regeneration was not optional, because a COMMENT shifts the `#line` directives the emitted C carries |
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
-| The spec | **5997** on the vendored ranks and **7984** on the reader's own, against a ceiling of **10240**. Panel 160's refusal lands at **−11 vendored and −12 real**, the first ledger row where the document SHRINKS while gaining a rule; defect 054's correction is **+4 vendored and −2 real**, the first where the two instruments disagree on the SIGN. **2256 free** and 2196 net of the FFI floor |
+| The spec | **6089** on the vendored ranks and **8106** on the reader's own, against a ceiling of **10240**. Panel 164's row is **+48 vendored and +66 real**, the closest any row has run to the 50-token `DELTA_GATE`, and it is paid by panel 162's unspent **−6** removal and five registered predictions. **2134 free** and 2074 net of the FFI floor |
 | The contract | **7449** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-15 with the wakeup instruction: of the 36 vendored tokens the pin was behind, 14 predate that session and no commit had named them |
 | Records | sittings **161** · journals **61** · milestone files **49** · entries: `docs/records/log/` **679**, `docs/records/done/` **558**, `docs/records/book/beats/` **127** |
-| Waiting on the author | **nothing.** Panels 155 to 159 were ratified on 2026-09-16 and **panel 161 on 2026-09-18**, all of them **by delegation and not by reading**, under instructions of those days, and every file says so in those words rather than crediting a reading that did not happen. What each leaves owed is named with its trigger: panel 155's `float_map_key` through a generic, which waits under Principle 0; panel 156's two refused spec merges; panel 157's R4 instrument, filed with its price in `docs/work/milestones/M-package-manager.md`; panel 159's refused route, defining `<` on `str`; and panel 161's two unpriced routes plus the gap it found and did not close, that no route leads from a `char[N]` field to `str` |
+| Waiting on the author | **nothing.** Panels 155 to 159 were ratified on 2026-09-16 and **panel 161 on 2026-09-18**, all of them **by delegation and not by reading**, under instructions of those days, and every file says so in those words rather than crediting a reading that did not happen. What each leaves owed is named with its trigger: panel 155's `float_map_key` through a generic, which waits under Principle 0; panel 156's two refused spec merges; panel 157's R4 instrument, filed with its price in `docs/work/milestones/M-package-manager.md`; panel 159's refused route, defining `<` on `str`; and panel 161's two unpriced routes. **Panel 164 was ratified the same way on 2026-09-18**, and the gap panel 161 found — that no route leads from a `char[N]` field to C — is closed in both directions; what it leaves owed is its route 6, scheduled as **M-declared-extents** behind the one measurement that decides it |
 
 **Re-measured 2026-09-18, the full net on a compiler built from the regenerated
-seed, which is CI's own configuration.** `check` **126**, `run` **126**,
-`emission` **460**, `determinism` **155**, `descriptors` **216**, `surface`
-**109**, `warnings` **186**, `lines` **127**, `annotations` **164**, `records`
+seed, which is CI's own configuration.** `check` **127**, `run` **127**,
+`emission` **462**, `determinism` **156**, `descriptors` **218**, `surface`
+**109**, `warnings` **187**, `lines` **128**, `annotations` **166**, `records`
 **24**, `spec` **20**, `corpus` **55**, `canonical` **2**, `layout` **2**,
-`runtime` **8**, `fixes` **25**, `unsupported` **14**, the compiler's own **655**
-and the net's own **157**. **The net reads 1879 passed, 0 failed.**
+`runtime` **8**, `fixes` **25**, `unsupported` **15**, the compiler's own **659**
+and the net's own **158**. **The net reads 1891 passed, 0 failed.**
 
 **The fourth leg was green in CI on its first push**, all four jobs, which
 settles the two things M-arm-platform wrote down as unrun: the
@@ -137,25 +137,27 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 58 | **M-check-completeness** | done 2026-09-17 | `m-check-completeness` | [057](journal/057-check-completeness.md) | ten defects the hunt turned up, closed — and three were not what their own entry said · scheduled, no warrant |
 | 59 | **M-arm-platform** | done 2026-09-18 | `m-arm-platform` | [058](journal/058-arm-platform.md) | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
 | 60 | **M-readable-bytes** | done 2026-09-18 | `m-readable-bytes` | [059](journal/059-readable-bytes.md) | a C byte buffer becomes text a program can print: the inbound direction `str` has never had · **§1.11** |
-| 61 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
-| 62 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 63 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
-| 64 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
-| 65 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
-| 66 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
-| 67 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
-| 68 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
-| 69 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
-| 70 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 71 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
-| 72 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
-| 73 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
-| 74 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
-| 75 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
-| 76 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
-| 77 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
-| 78 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 79 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 61 | **M-declared-extents** | scheduled | — | — | panel 164's route 6: a C header spells a parameter as an array, `function arr_len(s: i8[8])`, and it is the only route where the compiler CHECKS the extent instead of trusting the author or the callee. Its whole value is a number nobody has measured — how many real headers spell a parameter that way |
+| 62 | **M-buildable-structs** | scheduled | — | — | a real five-field `utsname` needs 1280 literal zeros, 4312 bytes for a nine-line program, measured and RUN at panel 164. Not a defect, because nothing is broken: what is missing is a way to write *the rest are zero* |
+| 63 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
+| 64 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
+| 65 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
+| 66 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
+| 67 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
+| 68 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
+| 69 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
+| 70 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
+| 71 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
+| 72 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 73 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
+| 74 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
+| 75 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 76 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
+| 77 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 78 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
+| 79 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
+| 80 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 81 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**

@@ -21,6 +21,7 @@ use emit/signature
 use emit/builtins
 use emit/convert
 use emit/bytes_text
+use emit/field_lend
 use emit/extern_probe
 use emit/writer
 use emit/handle_traffic
@@ -82,6 +83,13 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
             # written together (panel 162).
             if builtin_name == "validated_bytes" && !target.is_err()
                 bytes_text.validated(@w, c, s, decls, names, f, run: run, arguments: arguments, into: target.must())
+                return
+
+            # `ptr` is not a call either, and for the same reason one boundary
+            # over: it is a cast rendered at the use site, because a fixed array
+            # has no C storage for a temporary to live in (panel 164).
+            if builtin_name == "ptr" && !target.is_err()
+                field_lend.lent(@w, c, s, decls, f, run: run, into: target.must())
                 return
 
             in_emitted: bool @ false

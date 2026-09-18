@@ -46,7 +46,7 @@ use check/lower
 use resolved
 use check/state
 use check/lending
-use ffi_errors
+use lend_errors
 
 function is_lease(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
     return lending.is_builtin_named(a, r, at, name: "lease")
@@ -102,18 +102,18 @@ function lease_name_at(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
     name = source.span_text(s, r.locals[local].name)
 
     if !written[at].is_err()
-        state.push_diagnostic(@c, ffi_errors.lease_written(name: name, span: a.exprs[at].span))
+        state.push_diagnostic(@c, lend_errors.lease_written(name: name, span: a.exprs[at].span))
         return
 
     if into[at].is_err()
-        state.push_diagnostic(@c, ffi_errors.lease_escapes(name: name, span: a.exprs[at].span))
+        state.push_diagnostic(@c, lend_errors.lease_escapes(name: name, span: a.exprs[at].span))
         return
 
     # An `@` on it is a write, and the one writer allowed is its own release.
     call = into[at].must()
 
     if marked_in(a, call: call, value: at) && !is_end_lease(a, r, call)
-        state.push_diagnostic(@c, ffi_errors.lease_written(name: name, span: a.exprs[at].span))
+        state.push_diagnostic(@c, lend_errors.lease_written(name: name, span: a.exprs[at].span))
 
 # Whether `value` is an `@` argument of `call`.
 function marked_in(a: ast.Ast, call: i64, value: i64) -> bool
@@ -139,7 +139,7 @@ function end_lease_at(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, at: i
     given = arguments_of(a, at)
 
     if given.len() != 1 || !given[0].mutable || !names_a_lease_cell(a, r, at: given[0].value)
-        state.push_diagnostic(@c, ffi_errors.end_lease_of_no_lease(a.exprs[at].span))
+        state.push_diagnostic(@c, lend_errors.end_lease_of_no_lease(a.exprs[at].span))
 
 function names_a_lease_cell(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
     if !is_name(a, at)

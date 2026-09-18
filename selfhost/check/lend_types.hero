@@ -1,0 +1,138 @@
+# The TYPING of the lend family: `cstr`, `lease`, `end_lease`,
+# `validated_bytes` and `ptr` (design.md §4.19, §4.20; panels 122, 124, 162,
+# 164).
+#
+# WHY IT IS ITS OWN MODULE, AND THE SEAM IS ONE `check/lending.hero` NAMED
+# ITSELF. That file's opening doc says why it exists: *"the question is about a
+# POSITION, not about a type in hand"*. The typing was a guest there, moved in
+# from `check/builtins.hero` when that module hit its decided ceiling, and it
+# never belonged to the position rule. Panel 164's lend pushed the host past
+# §11's 300 lines — `layout` said so at 326 — and this is the cut the host's own
+# first paragraph asks for, rather than a raised ceiling.
+#
+# WHAT HOLDS THE FIVE TOGETHER. Every one of them is the boundary where C's
+# bytes and this language's values change hands, and `check/builtins.hero` may
+# make exactly one call out — which is `lend_call`. Whether a `cstr` is a lease
+# CELL is not a type fact and stays `check/leasing.hero`'s question; WHERE a lend
+# may stand is not a type fact either and stays `check/lending.hero`'s.
+
+use ast
+use token
+use source
+use check/state
+use check/table
+use widths
+use value_errors
+
+# The typing of the lend AND the lease, moved here from `check/builtins.hero`,
+# which is at its decided ceiling. A lend and a lease both take a `str` and
+# answer `cstr`; `end_lease` takes a `cstr` and answers nothing. Whether that
+# `cstr` is a lease CELL is not a type fact and is `check/leasing.hero`'s
+# question, asked over the whole file; the three are typed together because
+# they are one family and `builtins.hero` may make exactly one call out.
+function lend_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, given: [i64], span: token.Span) -> i64?
+    if (name == "cstr" || name == "lease") && given.len() == 1
+        if table.get(c.out.types, given[0]) == .str
+            return ok(table.intern(@c.out.types, .cstr))
+        return ok(refused_operand(@c, s, decls, name: name, allowed: "`str`", got: given[0], span: span))
+
+    if name == "end_lease" && given.len() == 1
+        if table.get(c.out.types, given[0]) == .cstr
+            return ok(table.unit_ty(c.out.types))
+        return ok(
+            refused_operand(@c, s, decls, name: name, allowed: "`@x` where `x: cstr @ s.lease()`", got: given[0], span: span)
+        )
+
+    # **A run of bytes becomes a `str?`** (panel 162, M-readable-bytes). It is
+    # typed HERE, with the lend and the lease, because the three are one family:
+    # every one of them is the boundary where C's bytes and this language's `str`
+    # change hands, and `check/builtins.hero` is at its decided ceiling and may
+    # make exactly one call out — which is this function.
+    #
+    # It answers a FIXED array of bytes, which is what a header's `char[N]` field
+    # binds as, and a `[u8]`, so a caller holding a sibling length — `d_namlen`,
+    # `sun_len`, `sqlite3_column_bytes` — says where the text stops instead of
+    # trusting a terminator. Panel 162 measured why that matters: of 50 `char[N]`
+    # fields across 16 headers, only 13 are reliably NUL-terminated.
+    #
+    # CORRECTION, panel 164's completeness critic, 2026-09-18: the sentence
+    # above used to say the `[u8]` was "what `slice` over such a field gives".
+    # That is false and was never run. Measured: `t.name.slice(from: 0, to: 2)`
+    # is `error[bad_operand]: slice takes str or [T], found i8[8]`. The `[u8]`
+    # arm is reached from a dynamic array, never from a field.
+    #
+    # Both signs are accepted and that is deliberate. A header's plain `char` is
+    # signed on three of this project's four platforms and unsigned on the
+    # fourth, so the HEADER decides the element type and the binding author
+    # cannot — which M-arm-platform measured the day before this landed.
+    if name == "validated_bytes" && given.len() == 1
+        if byte_run(c, given[0])
+            return ok(table.intern(@c.out.types, .fallible(payload: table.str_ty(c.out.types))))
+        return ok(
+            refused_operand(@c, s, decls, name: name, allowed: "a run of bytes — `i8[N]`, `u8[N]` or `[u8]`", got: given[0], span: span)
+        )
+
+    # **A field's ADDRESS crosses to C** (panel 164). The other direction from
+    # `validated_bytes` above, and the two are deliberately not alike:
+    # `validated_bytes` COPIES the bytes into a `str` the runtime terminates,
+    # while this lends the field where it lies, so C reads the extent the CALL
+    # states and may write back into it.
+    #
+    # IT ANSWERS `ptr` AND NEVER `cstr`, and that is the whole of panel 164's
+    # resolution. A `cstr` is a promise of a terminating zero — design.md §1.11
+    # lists that promise among the decisions not to revisit, and it is
+    # load-bearing three times: `hero_str_cstr` is zero-copy because of it,
+    # `validated` reads to it, and `guard_arguments` checks only null because it
+    # is assumed. A header's `char[N]` field makes no such promise; 37 of 50
+    # across 16 headers have none. So a field reaching a `cstr` parameter stays
+    # refused, and the text route stays `validated_bytes`, which copies.
+    if name == "ptr" && given.len() == 1
+        if fixed_byte_run(c, given[0])
+            return ok(table.intern(@c.out.types, .ptr))
+        return ok(
+            refused_operand(@c, s, decls, name: name, allowed: "a fixed run of bytes — `i8[N]` or `u8[N]`", got: given[0], span: span)
+        )
+    return fail(code: "untypeable", msg: "not a lend, a lease or a release")
+
+# Whether this type is a run of bytes `validated_bytes` can read: a fixed array
+# of 8-bit integers, or a dynamic one. The question is asked of the VALUE's
+# element width rather than of a list of spellings, so a header binding its field
+# as `u8[N]` and one binding it as `i8[N]` are the same question (panel 162,
+# and `.claude/rules/module-shape.md`'s rule that a narrowing asks the value).
+function byte_run(c: state.Checker, ty: i64) -> bool
+    element: i64 @ -1
+
+    match table.get(c.out.types, ty)
+        .fixed x                                                  => element @ x.element
+        .array a                                                  => element @ a.element
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => element @ -1
+        .map | .fallible | .function_ty | .named | .case_ty       => element @ -1
+        .failure | .generic | .error                              => element @ -1
+
+    if element < 0
+        return false
+
+    match table.get(c.out.types, element)
+        .int_ty k                                                  => return widths.int_bits(k.kind) == 8
+        .float_ty | .bool | .str | .ptr | .cstr | .unit            => return false
+        .array | .fixed | .map | .fallible | .function_ty | .named => return false
+        .case_ty | .failure | .generic | .error                    => return false
+
+# The same question asked of a FIXED run alone, which is what `ptr` takes.
+#
+# A dynamic `[u8]` is refused DELIBERATELY and not by omission: it is a
+# runtime-owned array with its own lifetime and refcount, and lending C the
+# interior of one is a question panel 164 did not put to its seats. The sitting
+# decided how a header FIELD crosses; a route nobody priced stays refused, which
+# is Principle 0 read the way § 2 writes it.
+function fixed_byte_run(c: state.Checker, ty: i64) -> bool
+    match table.get(c.out.types, ty)
+        .fixed                                                     => return byte_run(c, ty)
+        .array | .int_ty | .float_ty | .bool | .str | .ptr | .cstr => return false
+        .unit | .map | .fallible | .function_ty | .named           => return false
+        .case_ty | .failure | .generic | .error                    => return false
+
+function refused_operand(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, allowed: str, got: i64, span: token.Span) -> i64
+    shown = state.show(c, s, decls, got)
+    state.push_diagnostic(@c, value_errors.bad_operand(op: name, allowed: allowed, got: shown, span: span))
+    return state.error_ty_of(c)
