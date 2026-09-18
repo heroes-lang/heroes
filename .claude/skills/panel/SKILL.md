@@ -82,6 +82,22 @@ is a full panel.
      a sitting nobody is assigned to check, because the seats check the world
      against the brief and nothing checks the brief against the world.
 
+     **AND A BRIEF'S NEGATIVE SENTENCES ARE RUN, OR THEY GO OUT AS QUESTIONS**
+     — panel 163's completeness critic, 2026-09-18, naming a pattern CL-077 does
+     not cover. That rule binds every NUMBER in a brief to a command and says
+     nothing about the other half. Six of panel 163's premises were false and
+     three were the same shape, *the compiler does not have X*: that a call typed
+     by context does not exist (there are seven such arms and two ARE calls),
+     that `zero_of` already provides a zero-default mechanism (it is a C11 type
+     probe inside an expression that is never evaluated), and that `partial` does
+     not help (it cuts a literal from 4052 tokens to 903). **Every one was
+     written by a coordinator who had a shell and did not run it.** A fourth —
+     that one route was a refusal — handed every seat a false framing of the
+     option the sitting would adopt. CLAUDE.md § RUN IT already says a negative
+     claim rests on the searcher's vocabulary rather than the world; a brief is
+     where that failure is invisible, because the seats check the world against
+     the brief and nothing checks the brief against the world.
+
      Two shapes are named because both appeared. **A number that was true when
      it was written** — a brief inherits the date of the document it copied
      from, never the date of the sitting. And **a word that is a claim about the
