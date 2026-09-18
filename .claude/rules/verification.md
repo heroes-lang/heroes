@@ -145,6 +145,36 @@ a lane now writes files nobody else is writing — and what still binds is this
 section's own line: parallel work is free on correctness and forbidden on
 duration.
 
+## The compiler that judges is a build artifact, and it can be older than the tree
+
+Added 2026-09-18, at M-declared-extents step 1, and it cost two full-net runs —
+**thirty-one minutes for one bit of information**.
+
+`heroes` is `.gitignore:15`. It is therefore the one input to every gate that
+`git status` cannot report, and a session that reads a clean tree has been told
+nothing about it. On that day `./heroes` was built at 02:08 and HEAD was 18:17,
+so the net ran **1862 passed, 23 failed** against a tree whose own ROADMAP said
+1891 and 0 — and the tree was right. Rebuilding from the seed took **2.97
+seconds** and the same net read 1891 and 0.
+
+**The rule: build the compiler before the gate that judges with it, not after
+the gate goes red.** `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`
+is three seconds against the net's fifteen minutes, so there is no trade to
+weigh; and a suite selected by name is judged by the same stale binary just as
+silently as the whole net is.
+
+**What makes it hard to see is that the failure does not name itself.** Not one
+of the 23 lines said *your compiler is old*. The two `spec` failures said
+`STALE: the recorded count is for 6bdb9b497a141864 and this file is
+3c065c560426eb07` — the OLD binary carrying the OLD pin and correctly concluding
+that the DOCUMENT had moved. A golden failed with `error[unknown_function]: no
+function named validated_bytes`, which reads as a missing built-in rather than as
+a compiler that predates it. Both diagnostics were true statements by the
+program that made them, and both pointed away from the cause. That is CL-078's
+shape — *a defect is written down as the finder saw it, and the shapes beside it
+are where what it actually is becomes visible* — arriving in the harness rather
+than in the language.
+
 ## And the order that makes this worth doing
 
 CLAUDE.md § Verification already asks for it and CL-063 is its case: **the named
