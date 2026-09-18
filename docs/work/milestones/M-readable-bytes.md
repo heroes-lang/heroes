@@ -55,34 +55,23 @@ arbitrary file bytes, so the language already has an opinion about what
 happens when bytes are not valid text, and this milestone owes consistency with
 it rather than a new answer.
 
+**TWO OF THE FOUR ROWS ABOVE WERE FALSIFIED AT THE CLOSE, 2026-09-18, and they
+are corrected underneath rather than rewritten.** `partial` **does** help: it
+lets a program declare only the fields it reads, which cuts the literal for
+`struct utsname` from five arrays of 256 to one — 4052 program tokens to 903,
+measured by panel 163's completeness critic. And the second wall was **not a
+wall**: a record a C function fills is obtained from a function that returns it,
+which runs today, costs zero compiler lines, and is already used seven times in
+this repository's own golden tests. Both sentences were written here by a
+coordinator who had a shell and did not run them, which is the pattern panel 163
+turned into a rule for every brief.
+
 **Why here, before M-core-packages.** That milestone declares bindings against
 roughly eighteen C headers. Every `char[N]` field among them lands on this wall,
 and a binding written before the wall moves is a binding rewritten after it.
 The same argument M-arm-platform used for its own position, one row over.
 
 *******************************************************************************
-**OPEN: 1**
-
-- [ ] **M-readable-bytes** | the inbound direction: a C byte field becomes a `str`, and a fixed-array field becomes buildable without writing every element | `spec § 11` · `spec § 13` · `selfhost/check/builtins.hero` · `selfhost/inventory.hero`
-
-    **Origin:** author instruction 2026-09-18, on panel 161's unresolved
-    finding, which panel 161's llm-ergonomist reached from the specification
-    alone by writing the program.
-
-    **What the sitting has to settle**, and both halves block the one program:
-
-    - **The read.** What turns a run of bytes into a `str`, what it is called,
-      and what it does with bytes that are not valid UTF-8 — `spec § 3` says
-      `str` is *immutable UTF-8*, so the answer is a `str?` or an abort and the
-      sitting says which. Whether it answers `[u8]`, `i8[N]`, `u8[N]` or all
-      three is the same question asked four times.
-    - **The build.** A fixed-array field of 256 elements needs a literal of 256
-      elements today. Panel 081 recorded this gap and did not close it; it is
-      recorded again here because the program that provoked it is the same one.
-
-    **Two things the sitting must not lose.** `read_file` already returns a
-    `str?` from arbitrary bytes, so the failure mode is already chosen
-    somewhere; and `spec § 10` fixes the outbound convention, *`s[i]` yields a
-    `u8`*, which the inbound name should not contradict.
+**OPEN: 0**
 
 *******************************************************************************

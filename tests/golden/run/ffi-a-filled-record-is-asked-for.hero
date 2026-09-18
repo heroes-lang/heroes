@@ -1,0 +1,48 @@
+# M-readable-bytes, panel 163. **There was no second wall**, and this case is the
+# proof the sitting could not find in its own brief.
+#
+# THE QUESTION WAS: how does a program obtain a header record with a long array
+# field, so it can hand it to a C function that FILLS it? The brief said the only
+# route was a literal with one element per slot — 803 characters for a 256-field,
+# five times over for `struct utsname`. Three seats ran the thing the brief had
+# not: **ask for one**. A function that returns the record is all it takes, and
+# `partial` lets the program declare only the fields it reads.
+#
+# **THIS CASE USES NO C THE AUTHOR WROTE**, and that is the whole point. The
+# completeness critic separated two variants nobody else had: one with a
+# `static inline` shim in the author's own header, and one with a HEROES function
+# returning the record. The second is the route the resolution names, because
+# `.claude/rules/c-boundary.md` says the FFI must be complete — *a library Heroes
+# cannot bind is a library the author must leave C code around for* — and an
+# answer that required a shim would be adopting the thing that rule calls a
+# failure. Priced on `heroes measure`: the full literal is 3979 tokens, the Heroes
+# producer 874, a shim 159. The shim is an optimisation, never the route.
+#
+# WHAT WAS REFUSED, so nobody proposes it again as new. A call typed by context
+# (`repeat(0, 256)`): C cannot return an array, so the call must be erased at
+# compile time and this compiler has no constant folding — measured, the grep
+# returns nothing. A zero default: 120 to 180 lines across six modules, and
+# design.md §4.9 says no default values. An out-parameter needing no initial
+# value: **Rust shipped that and withdrew it in writing**, and this project's own
+# `selfhost/ir/inout.hero` already records a deleted out-cell store printing the
+# same four lines at -O0 AND under both sanitisers, because the indeterminate
+# local happened to be zero.
+#
+# The field is short here because the length is not what the case is about; the
+# mechanism is identical at 256 and the run below proves the shape, not the size.
+
+extern "ffi-a-filled-record-is-asked-for.h"
+    record Slot tag slot partial
+        name: i8[8]
+    function slot_fill(@s: Slot) -> i32
+
+# The producer, in HEROES, with no C behind it. A record a C function fills is
+# obtained rather than built, and this is what obtaining one looks like when the
+# author writes no C at all.
+function blank() -> Slot
+    return Slot(name: [0, 0, 0, 0, 0, 0, 0, 0])
+
+function main()
+    s: Slot @ blank()
+    _ = slot_fill(@s).to_i64().must()
+    print(s.name.validated_bytes().must())
