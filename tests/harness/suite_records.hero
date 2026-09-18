@@ -518,8 +518,18 @@ constant REFUSED: [str]
 # carry a claim the record contradicts, which is the one thing §14 says an
 # identifier may never do. `M-handle-release` and `M-scope-cleanup` are refused
 # for the ordinary reason, that they name the area.
+# **82 -> 83 on 2026-09-18**, `M-readable-bytes`, opened by author instruction on
+# panel 161's largest unresolved finding and entering at chain row 60, which
+# moved the nineteen rows below it one down. It is the second id this table has
+# taken from a sitting's finding rather than an author's scheduling decision,
+# and unlike the first it names a result the sitting did NOT rule on: the route
+# is undecided, so the id had to be neutral to it. `M-validated-bytes` and
+# `M-utf8-decoding` are refused in the table's own row and not in `REFUSED`,
+# because neither was ever written into a record — the first claims the
+# mechanism a sitting has yet to choose, the second describes only half of what
+# the row closes, the other half being a fixed-array literal of 256 elements.
 constant ROWS: i64
-    82
+    83
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
