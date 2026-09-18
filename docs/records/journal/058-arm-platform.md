@@ -112,3 +112,57 @@ four.
   time that sentence has been wrong. And § Where we are said the net's own tests
   were 156 where both machines read 157; the test that made the difference
   entered in `1029ee3c`, the commit before this milestone's first.
+## What landed, and what carried forward
+
+**The fourth real machine exists and judges.** An arm64 Linux container beside
+the x86-64 one, one axis apart and measured so rather than intended: same Debian
+13.6, same Debian clang 22.1.8, same lld and lldb, same glibc 2.41, same
+pkg-config, git, sqlite and libcurl on both images, and only `uname -m`
+disagreeing. `silkeh/clang:22` publishes both architectures under one tag, which
+is what makes them siblings instead of cousins. The seed builds from C alone
+there, `heroes doctor` reads six rows `ok` with `arch aarch64`, and the
+compiler's own tests read the same count as this Mac.
+
+**`Dockerfile` became `Dockerfile.amd64`.** With two machines the bare name was
+the one that lies, so neither file carries it and a build that does not name an
+architecture fails instead of choosing one. `MOVED` in
+`tests/harness/suite_records.hero` keeps the rename followable from a record.
+
+**The CI matrix takes a fourth leg**, `ubuntu-24.04-arm`, pinned because there is
+no `latest` for arm and free because the repository is public. Two things it owes
+a run are written as unrun rather than implied: that the label is accepted for
+this repository, and which release `ubuntu-latest` resolves to, which decides
+whether the two Linux legs are one axis apart or two.
+
+**The registered prediction is scored and its cause is corrected.** Plain `char`
+is unsigned on the new leg and signed on the other three, Darwin included, so
+the divergence belongs to the platform's ABI and not to the architecture. AAPCS64
+does say unsigned, and one line under it permits a platform ABI to differ, which
+Apple's does; so the prediction was incomplete rather than false, and a fourth leg
+chosen for its architecture alone could have shown nothing.
+
+**Panel 161 sat on what that cost**, five seats plus the completeness critic, and
+its resolution is one string: `-fsigned-char` on every clang invocation. It
+removes the divergence instead of describing it, so `spec § 13` stays true to the
+letter and no specification token is spent. Defects 058 and 059 close on it, the
+second with no edit at all.
+
+**Defect 060 closes too**, found by the sitting beside the question: a header
+record with a `const` member made the compiler answer `internal error` at exit 2
+for the author's own `extern`, and now answers `ffi_const_field` at exit 1 on the
+field the author wrote.
+
+**What carried forward, each with its trigger.** The sitting's R7 and R9 are
+unpriced and are where to start if the flag is ever withdrawn. Windows is unrun
+and every route here was priced against three measured legs and one document. And
+the largest thing the sitting found and did not resolve: **there is no route from
+a `char[N]` field to `str`**, which is a language gap rather than an unwritten
+sentence, so the program that motivates binding `char sysname[65]` stays blocked
+whichever route had won.
+
+| | |
+|---|---|
+| **M-arm-platform** | done 2026-09-18, `m-arm-platform` |
+| what it delivers | the fourth real machine: arm64 Linux, where `char` is unsigned · **§1.12** |
+| the sitting | panel 161, ratified by delegation |
+| the defects | 058, 059, 060 |

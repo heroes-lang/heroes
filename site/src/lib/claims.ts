@@ -264,13 +264,13 @@ function ci(): { fixpointLinuxOnly: boolean; pushPlatforms: number } {
   // widened it the day that expired, and the check went red naming the page,
   // which is what it is for. What it asserts now is the shape the page
   // describes: the fallback names the same legs as the whole matrix, so a push
-  // and a release tag run the same three, and a leg quietly dropped from the
+  // and a release tag run the same legs, and a leg quietly dropped from the
   // default is still a red build.
   const fallback = /\|\|\s*'(\[[^\n]*\])'\s*\n\s*\)\s*\}\}/.exec(text);
   if (fallback === null) throw new Error(`${CI_FILE}: no fallback matrix literal to read the push platforms from.`);
   const pushPlatforms = (fallback[1].match(/"name":/g) ?? []).length;
   if (pushPlatforms < 3 || !/"os":"ubuntu-latest"/.test(fallback[1])) {
-    throw new Error(`${CI_FILE}: the push matrix names ${pushPlatforms} platform(s) including Linux, and /project/ says a push runs on all three.`);
+    throw new Error(`${CI_FILE}: the push matrix names ${pushPlatforms} platform(s) including Linux, and /project/ says a push runs on all of them.`);
   }
   return { fixpointLinuxOnly, pushPlatforms };
 }

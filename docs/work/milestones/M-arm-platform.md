@@ -57,40 +57,6 @@ platform in M-online-compiler's sense. § The names carries why the id is neithe
 `M-fourth-platform` nor `M-arm-linux`.
 
 *******************************************************************************
-**OPEN: 1**
-
-- [ ] **M-arm-platform** | the fourth leg: an arm64 image, a matrix entry, and the `char` prediction scored | `docs/ref/environment/linux/` · `.github/workflows/ci.yml` § matrix · `.claude/rules/platforms.md`
-
-    **Origin:** author decision 2026-09-10, § What production-ready means row 3.
-
-    **What it delivers**, in the order the platforms rule asks: an arm64 Linux
-    image beside the x86-64 one under `docs/ref/environment/linux/`, built from its own
-    `Dockerfile`; the seed built from C alone there; the compiler's own tests
-    and the harness's own passing there; and a fourth CI matrix entry, so
-    the leg is a judge and not a hunting instrument (`.claude/rules/platforms.md`
-    § A platform fact is run on a platform).
-
-    **The two counts this row carried were 618 and 126, written 2026-09-10 and
-    re-measured 2026-09-17**: the compiler's own tests read **654** on this Mac
-    and **654** on the new machine, the same number on both. A count in a row is
-    a measurement somebody took once, and CLAUDE.md §1 asks for it again rather
-    than carried — which is why the numbers are named here as what they were
-    instead of quietly replaced.
-
-    **The prediction is registered here so it can be scored.** Plain `char` is
-    unsigned on the ARM ABI and signed on x86-64, and `spec:228` declares a
-    parameter and a field at *the header's own width and sign*, so either the leg
-    finds a divergence in the corpus's **20** `extern` programs of 55, or it finds
-    none and the FFI's width rules are stronger than three legs could show.
-    Structure padding and `va_list` are the next two shapes to attack, in that
-    order.
-
-    **Why it is cheap, measured before the row was written**: the existing image
-    runs x86-64 **under Rosetta** on an arm64 Mac, so the new one is the native
-    instrument and not the dearer one.
-
-    **What it may not become**: a `--target` flag. `DESIGN-LOG.md:539` refused
-    cross-compilation on 2026-09-03 and this row obeys that refusal rather than
-    bending it — a real machine, measured, exactly as the rule asks.
+**OPEN: 0**
 
 *******************************************************************************

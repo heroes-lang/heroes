@@ -1,0 +1,6 @@
+error[ffi_const_field]: `ffi-const-member.h` declares `Locked.id` as `const`, so C refuses to assign a `Locked` once it exists — and building one here is that assignment
+  at tests/golden/unsupported/ffi-const-member.hero:46:9
+     |
+  46 |         id: i32  #~ ffi_const_field
+     |         ^^
+  note: the `const` is the header's decision and no spelling on this line changes it: every Heroes value is built by assignment, so a struct C will not let you assign is a struct you take FROM the library rather than make. Ask a function the group declares for one, or drop the field and mark the `record` `partial` if you only need to read the others

@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 1 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 0 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -16,24 +16,29 @@ against a banner reading 3.
 
 | | |
 |---|---|
-| **Current milestone** | **M-arm-platform**, row 59, opened 2026-09-17 — the fourth real machine. It is the first leg where plain `char` is **unsigned**, and the first hour of it refused a golden case the other three accept |
-| **Last closed** | **M-check-completeness**, 2026-09-17, `m-check-completeness` ([057](journal/057-check-completeness.md)) — it could not close for two days, because the rule forbids a tag over an open defect and its own sittings kept finding them: ten opened, ten closed, six sittings · before it **M-marked-acquisition** ([056](journal/056-marked-acquisition.md)) and **M-cleanup-verdict** ([055](journal/055-cleanup-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **58** of 78 · **58** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **62,341** lines of Heroes in **215** modules (`find selfhost -name '*.hero'`) · the seed **824,173** lines of C, regenerated twice more at defect 057's close and the fixpoint verified byte-identical each time |
+| **Current milestone** | **none open.** The next row is 60, `M-core-packages`, and nobody has opened it |
+| **Last closed** | **M-arm-platform**, 2026-09-18, `m-arm-platform` ([058](journal/058-arm-platform.md)) — the fourth real machine, and the first leg where plain `char` is **unsigned**: it refused a golden case the other three accept, within an hour of existing · before it **M-check-completeness** ([057](journal/057-check-completeness.md)) and **M-marked-acquisition** ([056](journal/056-marked-acquisition.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **59** of 78 · **59** tags matching `m*`, the legacy `m0`-`m8` included |
+| The compiler | **62,480** lines of Heroes in **215** modules (`find selfhost -name '*.hero'`) · the seed **825,442** lines of C, regenerated twice at this milestone and the fixpoint verified byte-identical each time |
+| The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
 | The spec | **5997** on the vendored ranks and **7984** on the reader's own, against a ceiling of **10240**. Panel 160's refusal lands at **−11 vendored and −12 real**, the first ledger row where the document SHRINKS while gaining a rule; defect 054's correction is **+4 vendored and −2 real**, the first where the two instruments disagree on the SIGN. **2256 free** and 2196 net of the FFI floor |
 | The contract | **7449** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-15 with the wakeup instruction: of the 36 vendored tokens the pin was behind, 14 predate that session and no commit had named them |
-| Records | sittings **158** · journals **59** · milestone files **48** · entries: `docs/records/log/` **675**, `docs/records/done/` **553**, `docs/records/book/beats/` **124** |
-| Waiting on the author | **nothing.** Panels 155 to 159 were all ratified on 2026-09-16 **by delegation and not by reading**, under an instruction of that day, and every file says so in those words rather than crediting a reading that did not happen. What each leaves owed is named with its trigger: panel 155's `float_map_key` through a generic, which waits under Principle 0; panel 156's two refused spec merges; panel 157's R4 instrument, filed with its price in `docs/work/milestones/M-package-manager.md`; and panel 159's refused route, defining `<` on `str`, which is a sitting of its own |
+| Records | sittings **159** · journals **60** · milestone files **48** · entries: `docs/records/log/` **678**, `docs/records/done/` **558**, `docs/records/book/beats/` **126** |
+| Waiting on the author | **nothing.** Panels 155 to 159 were ratified on 2026-09-16 and **panel 161 on 2026-09-18**, all of them **by delegation and not by reading**, under instructions of those days, and every file says so in those words rather than crediting a reading that did not happen. What each leaves owed is named with its trigger: panel 155's `float_map_key` through a generic, which waits under Principle 0; panel 156's two refused spec merges; panel 157's R4 instrument, filed with its price in `docs/work/milestones/M-package-manager.md`; panel 159's refused route, defining `<` on `str`; and panel 161's two unpriced routes plus the gap it found and did not close, that no route leads from a `char[N]` field to `str` |
 
-**Re-measured 2026-09-17, the full net on a compiler built from the regenerated
+**Re-measured 2026-09-18, the full net on a compiler built from the regenerated
 seed, which is CI's own configuration.** `check` **126**, `run` **124**,
 `emission` **456**, `determinism` **153**, `descriptors` **215**, `surface`
-**109**, `warnings` **184**, `lines` **125**, `annotations` **163**, `records`
+**109**, `warnings` **184**, `lines` **125**, `annotations` **164**, `records`
 **24**, `spec` **20**, `corpus` **55**, `canonical` **2**, `layout` **2**,
-`runtime` **8**, `fixes` **25**, the compiler's own **654** and the net's own
-**156**. **The net reads 1864 passed, 0 failed.** `emission` and `descriptors`
-each fell by 22: defect 049 retired that many blessed artifacts, fifteen of
-which were blessing C that does not compile.
+`runtime` **8**, `fixes` **25**, `unsupported` **14**, the compiler's own **655**
+and the net's own **157**. **The net reads 1866 passed, 0 failed.**
+
+**The same net on the fourth leg reads 1830 passed, 0 failed**, against 1825 and
+3 the hour that machine existed; the lower counts there are a leg without raylib
+and SDL skipping those programs. The net's own tests read **157** on both, and
+this table said **156** until today because that count was carried rather than
+re-measured.
 
 ---
 
@@ -126,7 +131,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 56 | **M-cleanup-verdict** | done 2026-09-14 | `m-cleanup-verdict` | [055](journal/055-cleanup-verdict.md) | the ruling on a scope-bound release for a C handle: a releaser keyed on the TYPE refused to Part 6, because ownership is a property of the CALL · a decision, not a feature |
 | 57 | **M-marked-acquisition** | done 2026-09-14 | `m-marked-acquisition` | [056](journal/056-marked-acquisition.md) | the mark goes where the obligation is CREATED — on the acquiring call — so a C handle nobody releases stops being silent · panel 147 R4, **§1.12** |
 | 58 | **M-check-completeness** | done 2026-09-17 | `m-check-completeness` | [057](journal/057-check-completeness.md) | ten defects the hunt turned up, closed — and three were not what their own entry said · scheduled, no warrant |
-| 59 | **M-arm-platform** | **OPEN** | — | — | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
+| 59 | **M-arm-platform** | done 2026-09-18 | `m-arm-platform` | [058](journal/058-arm-platform.md) | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
 | 60 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
 | 61 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
 | 62 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |

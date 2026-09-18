@@ -113,6 +113,18 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !flex.is_err()
             found @ ffi_lookup.add_once(found, d: flex.must())
+
+        # Defect 060, 2026-09-18. It sits here rather than beside
+        # field_type because it is not a disagreement about a field's
+        # TYPE: the declaration is correct and C refuses the assignment
+        # the construction performs. Order against field_type does not
+        # matter — the two match disjoint clang wordings — but it goes
+        # after flex for the reason flex goes before field_type, that a
+        # reader meets the narrower message first.
+        const_f = ffi_field.const_member(s, decls, line: line)
+
+        if !const_f.is_err()
+            found @ ffi_lookup.add_once(found, d: const_f.must())
         field = ffi_field.field_type(s, tree, decls, line: line)
 
         if !field.is_err()
