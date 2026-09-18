@@ -243,6 +243,9 @@ HeroStr hero_str_from_cstr(const char *p); /* strlen, then from_bytes */
 #define HERO_STR_NULL 1
 #define HERO_STR_NOT_TEXT 2
 HeroStr hero_str_try_from_cstr(const char *p, int64_t *status);
+/* The same, for a run whose end the caller states: to its first zero, or whole.
+   A C `char[N]` field is not a `cstr` and need not be terminated (panel 162). */
+HeroStr hero_str_try_from_bytes(const char *p, int64_t cap, int64_t *status);
 /* The same guard on the outbound side: a `cstr` handed to a C function, which is
    the path `hero_str_from_cstr` never sees (panel 053, CLAUDE.md §12). */
 const char *hero_cstr_nonnull(const char *p);
@@ -295,6 +298,8 @@ uint64_t hero_failure_hash(const void *elem);
  * `.default(v)` chain. */
 HeroFailure hero_failure_missing_key(void);
 HeroFailure hero_failure_does_not_fit(void);
+/* Invalid UTF-8 from C, the same `not_text` `read_file` answers (panel 162). */
+HeroFailure hero_failure_not_text(void);
 
 /* `.must()` on an error (§4.6). Takes the failure, because the useful half of the
  * message is the `code` and `msg` the author wrote — a panic saying only that a

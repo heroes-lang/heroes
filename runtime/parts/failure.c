@@ -85,6 +85,28 @@ HeroFailure hero_failure_missing_key(void) {
                          {msg.b, (int64_t)sizeof(msg.b) - 1}};
 }
 
+/* **The same failure `read_file` and `validated` already give**, built here so
+   the emitter can write `validated` over a fixed byte field inline (panel 162,
+   M-readable-bytes). The code is `not_text` and it is the SAME STRING the
+   library's `validated` and `hero_file_read` answer with, because panel 162
+   measured that the rule was already chosen — invalid UTF-8 arriving from C is
+   a recoverable failure carrying a stable snake_case code, never an abort and
+   never a lossy decode — and a second spelling of one state is a second state
+   as far as a program matching on `e.code` is concerned.
+
+   `sizeof(b) - 1`, never a typed number, for the reason the sibling above
+   earned the hard way: shortening a message with a typed length ships a `str`
+   claiming bytes past its own text, silently, while lengthening it is a clang
+   error, so the two directions fail differently and only one of them loudly. */
+HeroFailure hero_failure_not_text(void) {
+    static const struct { HeroStrHeader h; char b[9]; } code = {
+        {-1, HERO_STR_MAGIC}, "not_text"};
+    static const struct { HeroStrHeader h; char b[31]; } msg = {
+        {-1, HERO_STR_MAGIC}, "these bytes are not valid UTF-8"};
+    return (HeroFailure){{code.b, (int64_t)sizeof(code.b) - 1},
+                         {msg.b, (int64_t)sizeof(msg.b) - 1}};
+}
+
 _Noreturn void hero_panic_must(HeroFailure f) {
     /* Built by hand rather than through `hero_panic`, so the two strings print
      * without needing a NUL-terminated join: a `HeroStr` always has its NUL, but
