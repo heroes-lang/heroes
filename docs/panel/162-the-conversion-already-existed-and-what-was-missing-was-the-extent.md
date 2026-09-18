@@ -127,6 +127,23 @@ section is added.**
    fields are reliably NUL-terminated, so a terminator-only rule would over-read
    three-quarters of the population.
 
+   **Corrected at implementation, 2026-09-18, and the correction is written here
+   rather than quietly applied.** This resolution said *three existing built-ins
+   widen*. `validated` is **not** a built-in: it is a library function taking a
+   `cstr` (`selfhost/library_source.hero:192`), and `spec § 9` gives the language
+   **no overloading**, so `validated(cstr)` and `validated(i8[N])` cannot both
+   exist as written. The sitting's own framing was wrong about one of its three
+   names and no seat caught it, because no seat was asked to implement.
+
+   **What the correction does not change is the name**, which is the
+   llm-ergonomist's finding and the reason to keep it: `validated` is the name a
+   reader reaches for. So `validated` **moves from the library into the built-in
+   table** and answers both a `cstr` and a fixed byte array. Measured before
+   choosing it: `spec/offered` is one-directional and `spec/named` asks only that
+   a reserved name appear in some code span, which `c.validated()` in § 13 already
+   does — so the move adds nothing to § 11's `Built-ins:` sentence and the
+   spec-warden's +45 merge stands.
+
 3. **`repeat(x, n)` builds a fixed array**, which closes the build wall while
    keeping design.md §4.9's *no default values* intact — the spec-warden
    measured that a zero default contradicts §4.9 and that widening `repeat`

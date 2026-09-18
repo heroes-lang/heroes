@@ -315,6 +315,46 @@ HeroStr hero_str_try_from_cstr(const char *p, int64_t *status) {
     return r;
 }
 
+/* **A FIXED RUN OF BYTES, whose end the caller states** (panel 162,
+   M-readable-bytes). `hero_str_try_from_cstr` above is this function with one
+   line different — its line 304 is `size_t n = strlen(p);` — and that one line
+   is why it cannot serve here: a C `char[N]` field is not a `cstr` and need not
+   be NUL-terminated at all. Panel 162 measured the population: 16 headers, 712
+   struct fields, **50** of type `char[N]`, and only **13 reliably
+   NUL-terminated**. A `strlen` over the other 37 walks past the field.
+
+   **So the rule is: to its first zero, or whole.** `memchr` over exactly `cap`
+   bytes, and where there is no zero the whole field is the text. That phrasing
+   is the spec-warden's and it is load-bearing — a terminator-only rule
+   over-reads three-quarters of the fields this exists for, and unlike a null
+   handle there is no runtime guard to catch it, because the pointer is valid.
+
+   Everything else is `hero_str_try_from_cstr`'s, deliberately: the same status
+   word, the same one-walk discipline (validate, then `alloc` and `memcpy`, never
+   validate-then-reconvert, which panel 089 measured at 1.96× against 0.87×), and
+   the same promise that on anything but OK the returned string is empty and owns
+   nothing. `read_file` answers `not_text` on bad UTF-8 and so does this; a
+   sitting that invented a different answer would have been spending tokens on a
+   contradiction. */
+HeroStr hero_str_try_from_bytes(const char *p, int64_t cap, int64_t *status) {
+    if (p == NULL) {
+        *status = HERO_STR_NULL;
+        return hero_str_empty();
+    }
+    if (cap < 0) hero_panic("hero_str_try_from_bytes: negative capacity");
+    const void *zero = memchr(p, 0, (size_t)cap);
+    int64_t len = (zero == NULL) ? cap : (int64_t)((const char *)zero - p);
+    if (!hero_utf8_valid(p, len)) {
+        *status = HERO_STR_NOT_TEXT;
+        return hero_str_empty();
+    }
+    *status = HERO_STR_OK;
+    if (len == 0) return hero_str_empty();
+    HeroStr r = hero_str_alloc(len);
+    memcpy((char *)(void *)(uintptr_t)r.ptr, p, (size_t)len);
+    return r;
+}
+
 /* **A `cstr` on its way INTO C, checked** (panel 053; CLAUDE.md §12's robustness
    rule). `hero_str_from_cstr` above guards the path where C's string comes into
    Heroes; this guards the path where it goes straight back out — `strstr(getenv(
