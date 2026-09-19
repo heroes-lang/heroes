@@ -3557,19 +3557,27 @@ function roadmap_counts(text: str) -> OpenCounts?
         if !strings.starts_with(text: row, prefix: OPEN_LINE_PREFIX)
             continue
         rest = strings.without_prefix(text: row, prefix: OPEN_LINE_PREFIX)
-        cut = strings.index_of(text: rest, needle: " defects")
+        cut = strings.index_of(text: rest, needle: " defect")
 
         if cut.is_err()
-            return fail(code: "shape", msg: "no ` defects` after the first count")
+            return fail(code: "shape", msg: "no ` defect` after the first count")
         head = strings.to_number(text: rest.slice(from: 0, to: cut.must()))
-        tail = strings.without_prefix(
-            text: rest.slice(from: cut.must(), to: rest.len()),
-            prefix: " defects · "
-        )
-        stop = strings.index_of(text: tail, needle: " decisions")
+        after = rest.slice(from: cut.must(), to: rest.len())
+        tail: str @ ""
+
+        # **Both nouns are read in the singular, since 2026-09-19**, because the
+        # plural needles obliged the line to say *1 decisions* on the first day a
+        # count reached one — and CLAUDE.md §11 asks that everything written be
+        # English. The check is not weakened: each count is still a number
+        # immediately before its own noun, and a missing noun still fails.
+        if strings.starts_with(text: after, prefix: " defects · ")
+            tail @ strings.without_prefix(text: after, prefix: " defects · ")
+        else
+            tail @ strings.without_prefix(text: after, prefix: " defect · ")
+        stop = strings.index_of(text: tail, needle: " decision")
 
         if stop.is_err()
-            return fail(code: "shape", msg: "no ` decisions` after the second count")
+            return fail(code: "shape", msg: "no ` decision` after the second count")
         second = strings.to_number(text: tail.slice(from: 0, to: stop.must()))
 
         if head.is_err() || second.is_err()
