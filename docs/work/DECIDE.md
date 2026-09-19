@@ -21,6 +21,21 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 0**
+**OPEN: 1**
+
+- [ ] **panel 167** | the lend's lifetime: a field lease that copies is adopted, two type rules are widened from `cstr` to `ptr`, and routes B, C and D are refused — ratify, or take the conservative resolution the sitting recorded | `docs/panel/167-nobody-checks-the-callee-and-the-lease-we-would-copy-is-open.md`
+
+    **Origin:** panel 167, 2026-09-20, on defect 066, which panel 166 filed and
+    declined to price. **The default while this is open** is the adopted
+    resolution: the field lease is built, defect 067 is repaired first because
+    the lease rests on its mechanism, and defects 066 and 068 stay open until it
+    lands.
+
+    **What conservative would have been**, recorded so it can be taken: route
+    C's absorbing sentence alone, **+13 real**, which documents the hole, closes
+    nothing, and leaves a corruption reachable from ordinary-looking code with
+    no instrument anywhere. Two seats vetoed it — on locality and on the
+    absence of any instrument — so taking it overrides two vetoes rather than
+    choosing a price.
 
 *******************************************************************************
