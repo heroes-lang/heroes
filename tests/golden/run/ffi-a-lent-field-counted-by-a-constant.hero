@@ -1,0 +1,49 @@
+# Panel 166's route C, the legal half: the extent a call states is checked
+# against the field in C, and the honest program compiles.
+#
+# FOUR SHAPES OF AN HONEST EXTENT, and the assertion the emitter writes before
+# each call compares C's own `sizeof` of the field against it. A literal, `8`.
+# A group `constant`, `SL_NAME_LEN`, which is the careful reader's spelling —
+# it lowers to a call of its accessor, so a Heroes-side check would have
+# refused it as a non-literal and accepted the careless `8` (panel 166's
+# critic); here the macro's NAME goes into the assertion and C does the
+# arithmetic. Arithmetic over those, `SL_NAME_LEN - 4`. And a count read at run
+# time, `k`, which no static check can see and which the assertion is not
+# written for: the resolution adopted the declaration without the inference.
+#
+# THE `partial` RECORD IS THE SHAPE THAT DECIDES THE MECHANISM: Heroes does not
+# know that struct's size, and the check is still right, because the number is
+# C's. The overstated shapes beside each of these are refused in
+# `tests/golden/fixedbugs/ffi-a-lent-field-extent-overstated.hero`.
+extern "ffi-a-lent-field-counted-by-a-constant.h"
+    constant SL_NAME_LEN: i64
+    record Sl
+        name: u8[8]
+        id: i64
+    record Both partial
+        name: u8[8]
+    function sl_make() -> Sl
+    function both_make() -> Both
+    function sum_n(p: ptr counted_by n, n: i64) -> i64
+    function sl_fill(p: ptr counted_by n, n: i64)
+
+function main()
+    s: Sl @ sl_make()
+
+    # A literal, a header constant, and arithmetic over one.
+    print(sum_n(p: s.name.ptr(), n: 8))
+    print(sum_n(p: s.name.ptr(), n: SL_NAME_LEN))
+    print(sum_n(p: s.name.ptr(), n: SL_NAME_LEN - 4))
+
+    # A count read at run time is the program's word, unchecked here.
+    k = 2
+    print(sum_n(p: s.name.ptr(), n: k))
+
+    # The write, at the field's own length, read back: 1+2+...+8.
+    sl_fill(p: s.name.ptr(), n: SL_NAME_LEN)
+    print(sum_n(p: s.name.ptr(), n: 8))
+    print(s.id)
+
+    # A partial record's field, at its length, from a `=` binding to a reader.
+    b = both_make()
+    print(sum_n(p: b.name.ptr(), n: SL_NAME_LEN))

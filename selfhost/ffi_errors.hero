@@ -99,6 +99,27 @@ function ffi_parameter_position(parameter: str, function_name: str, name: str, w
 # A field of a group's record whose type no C header can hold (§4.19,
 # panel 060). The author has written a Heroes type inside what is really
 # a C struct, and the repair depends on which one — carried in the note.
+# A `counted_by` whose shape is wrong (panel 166's route C; defect 063). The
+# mark names the sibling that says how far C reads through a pointer, and three
+# facts about the declaration in hand decide whether it can: the marked
+# parameter is a `ptr`, the name is another parameter of this signature, and
+# that parameter is an integer C takes by value.
+#
+# ONE CODE FOR THE THREE, because the class is one — the mark's shape — and the
+# `why` carries which. A reader is at the mark either way, and a second code
+# would be a second name for one question (`ffi_parameter_position`'s own
+# reasoning, one function up).
+function counted_by_shape(parameter: str, function_name: str, why: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "counted_by_shape",
+        message: "`counted_by` on `" + parameter + "` of `" + function_name + "` names no extent — " + why,
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "§4.19: `counted_by` says how far C reads or writes through a `ptr`, by naming the parameter beside it that carries the count: `read(fd: i32, buf: ptr counted_by n, n: u64) -> i64`. The compiler checks a lend's extent against the field it lends, wherever the call states a constant"
+    )
+    return d
+
 function ffi_field_type(name: str, why: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_field_type",

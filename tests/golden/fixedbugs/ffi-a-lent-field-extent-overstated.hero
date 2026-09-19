@@ -1,0 +1,45 @@
+# fixedbugs, defect 063, 2026-09-19 (found by panel 165's spec-warden and
+# ffi-pragmatist while pricing route 6; the write half by that sitting's
+# completeness critic; closed by panel 166's route C in its C-emitted form).
+#
+# SYMPTOM: `sl_fill(p: s.name.ptr(), n: 64)` on an `i8[8]` field moved the
+# sibling `id` from 7 to 1094795585 — `0x41414141` — at exit 0 with every suite
+# green, and `sum_n(p: t.name.ptr(), n: 4096)` summed 4096 bytes of the stack at
+# exit 0. Under `--sanitize`, `AddressSanitizer: stack-buffer-overflow`. Every
+# overshoot from 9 to 4096 bytes was as silent: nothing trapped.
+#
+# CAUSE: the lend hands C the field's address and the CALL states the extent,
+# and nothing related the number to the field — `sl_fill(p: ptr, n: i64)` is
+# two independent parameters, so there was no *extent argument* to check. The
+# first entry of the defect said one would be, and was corrected as
+# unimplementable the day it was written.
+#
+# FIX: the relation is DECLARED, `p: ptr counted_by n`, and where the call
+# states the extent as a compile-time constant the emitter writes one C
+# assertion before the call — `_Static_assert((int64_t)(INT64_C(64)) <=
+# (int64_t)sizeof(h0_s.name), …)` — so the number compared is C's own `sizeof`
+# of the field, against the real header. `emit/ffi_extent.hero` reads the
+# failure into `field_lend_extent`, on the number the author wrote, with the
+# field's length as a `guess` fix. The `partial` record below is the shape a
+# Heroes-side check could not judge, because its size is C's; `sizeof` of the
+# field is right there too. The honest call beside each is in
+# `tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero`.
+extern "ffi-a-lent-field-extent-overstated.h"
+    record Sl
+        name: u8[8]
+        id: i64
+    record Both partial
+        name: u8[8]
+    function sl_make() -> Sl
+    function both_make() -> Both
+    function sl_fill(p: ptr counted_by n, n: i64)
+    function sum_n(p: ptr counted_by n, n: i64) -> i64
+
+function main()
+    s: Sl @ sl_make()
+    sl_fill(p: s.name.ptr(), n: 64)  #~ field_lend_extent
+    print(s.id)
+    t = sl_make()
+    print(sum_n(p: t.name.ptr(), n: 4096))  #~ field_lend_extent
+    b = both_make()
+    print(sum_n(p: b.name.ptr(), n: 24))  #~ field_lend_extent

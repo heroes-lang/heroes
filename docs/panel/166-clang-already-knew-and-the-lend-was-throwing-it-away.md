@@ -374,3 +374,40 @@ owns. A `ptr` lend now stands only as an argument of an `extern` call
 (`field_lend_needs_a_header`), which is what route C's declaration on the
 group's parameter requires anyway. **Defect 065 is closed.** Route C and defect
 066 stand as the resolution left them.
+
+## ROUTE C LANDS TOO — 2026-09-19, M-declared-extents step 6, written underneath
+
+**`counted_by <sibling>` on a group's `ptr` parameter**, and the extent judged
+three ways rather than one. The `_Static_assert` this file priced is emitted
+where the call states a constant, against C's own `sizeof` of the field — right
+on a `partial` record and on a group `constant`, both measured refusing
+correctly, which is the critic's own § 1.2 finding arriving as code.
+
+**And the half this resolution left open did not stay open.** Resolution 2 says
+the extent is checked *"only where it is a compile-time constant"*; the
+compiler-engineer's condition for approving route C says a variable extent
+*"must be refused, not admitted. Admitting it silently is the defect wearing a
+mark."* Measured with the mark in place and no runtime half: `n: k` with `k` a
+parameter read **4096 bytes of the stack at exit 0**. So one compare lands
+before the call, with `hero_panic` and no new runtime entry point, timed at
+`user 0.81` against `0.81` unguarded over 200 million lends — the ffi-pragmatist
+had priced 1% and this run cannot see it. What conservative would have been is
+the condition read literally, refusing every non-constant extent at `check`,
+which also refuses a count the program computes and gets right.
+
+**The absence of the mark is a refusal**, `field_lend_uncounted`, which is the
+engineer's other condition.
+
+**The spec moved +37 vendored and +48 real**, under `DELTA_GATE`, by merging
+into the sentence rather than appending beside it — cheaper than the warden's
+D1 and D3 priced apart, which is that seat's own finding about merging. The
+`CParam` production and the parser land in one commit, which is what the
+warden's `grammar` footnote asked of the first change to owe it anything.
+
+**The ffi-pragmatist's prediction is SCORED CORRECT**: none of the four
+real-library `ptr` externs in `examples/` needs a clause, and `examples/` is
+untouched by this step. **The compiler-engineer's prediction is FALSIFIED as it
+expected to be**: the commit changes `selfhost/emit/` — which the sitting
+already knew, having adopted the C-emitted form the engineer did not price.
+
+**Defect 063 is closed. Defect 066 stands**, and its sitting is next.

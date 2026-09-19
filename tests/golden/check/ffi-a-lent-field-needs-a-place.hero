@@ -37,7 +37,7 @@ extern "ffi-a-lent-field-needs-a-place.h"
     record Slot
         b: u8[4]
         id: i64
-    function slot_sum(p: ptr, n: i64) -> i64
+    function slot_sum(p: ptr counted_by n, n: i64) -> i64
     function slot_make() -> Slot
 
 function kept(s: Slot) -> i64

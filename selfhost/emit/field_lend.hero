@@ -137,13 +137,17 @@ function slot_is_mutable(slot: containers.Slot) -> bool
         .local_slot ls  => ls.mutable
         .synthetic_slot => false
 
-# What a lend is: where the author wrote it, the name it is rooted at, and
-# whether they may write that name. `emit/ffi_lend.hero` reads it back when
-# clang refuses the lend against the header.
+# What a lend is: where the author wrote it, the name it is rooted at, whether
+# they may write that name, and the value it takes its address from.
+# `emit/ffi_lend.hero` reads the first three back when clang refuses the lend
+# against the header; `emit/lend_extent.hero` needs the fourth, because the
+# extent assertion names the FIELD — `sizeof(h0_s.name)` — and the field is
+# reached from the operand rather than from the root alone.
 record Lend
     span: token.Span
     root: str
     mutable: bool
+    operand: i64
 
 # The lend this instruction is, if it is one — the `ptr` built-in over a
 # place. Absent for every other instruction, and for a `ptr` whose operand is
@@ -163,7 +167,9 @@ function lend_at(f: containers.Function, inst: ir.Inst) -> Lend?
             if root.is_err()
                 return fail(code: "none", msg: "a lend with no place")
             slot = f.slots[root.must()]
-            return ok(Lend(span: inst.span, root: slot.name, mutable: slot_is_mutable(slot)))
+            return ok(
+                Lend(span: inst.span, root: slot.name, mutable: slot_is_mutable(slot), operand: from.must())
+            )
         .lit | .load | .field | .store | .push_owned | .unary | .binary | .cast => return fail(
             code: "none",
             msg: "not a lend"

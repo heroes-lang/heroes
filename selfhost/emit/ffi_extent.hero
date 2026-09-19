@@ -1,0 +1,73 @@
+# An extent the call states above the field's own length, read back from the
+# assertion `emit/lend_extent.hero` wrote (design.md §4.19, §1.12; panel 166's
+# route C; defect 063).
+#
+# The assertion is `#line`d at the call, and its message carries everything
+# this reader needs — the extern's name, the pointer's and the count's
+# parameter names, the lend's span, the extent's span and the field's length —
+# so nothing is read from clang's echo of the source and no column arithmetic
+# is done (panel 038's trap). The diagnostic lands on the NUMBER the author
+# wrote, because that is what is wrong; the lend is named in the sentence.
+
+use token
+use source
+use diag
+use emit/ffi_lookup
+use lend_errors
+
+constant MARKER: str
+    "heroes-ffi-extent "
+
+# `heroes-ffi-extent <name> <ptr param> <count param> <lend start> <lend end>
+# <extent start> <extent end> <length>` failed: C's `sizeof` of the field is
+# below the extent the call states.
+function overstated_extent(s: source.Source, line: str) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+        return fail(code: "none", msg: "not an assertion failure")
+    rest = ffi_lookup.after(text: line, marker: MARKER)
+
+    if rest.is_err()
+        return fail(code: "none", msg: "not an extent assertion")
+    parts = ffi_lookup.words(text: rest.must())
+
+    if parts.len() < 8
+        return fail(code: "none", msg: "the marker's tail is not ours")
+    lend_start = ffi_lookup.number(parts[3])
+    lend_end = ffi_lookup.number(parts[4])
+    extent_start = ffi_lookup.number(parts[5])
+    extent_end = ffi_lookup.number(parts[6])
+    length = ffi_lookup.number(trim_quote(parts[7]))
+
+    if lend_start.is_err() || lend_end.is_err() || extent_start.is_err() || extent_end.is_err() || length.is_err()
+        return fail(code: "none", msg: "a position is not numeric")
+    lend = token.Span(start: lend_start.must(), end: lend_end.must())
+    extent = token.Span(start: extent_start.must(), end: extent_end.must())
+    return ok(
+        lend_errors.field_lend_extent(lend: source.span_text(s, lend), callee: parts[0], parameter: parts[1], count: parts[2], stated: source.span_text(s, extent), length: length.must(), span: extent)
+    )
+
+# clang ends the line with the message's closing quote on some platforms and
+# not on others; a length never ends in one.
+function trim_quote(text: str) -> str
+    if text.len() > 0 && (text[text.len() - 1] == '"' || text[text.len() - 1] == '\'')
+        return text.slice(from: 0, to: text.len() - 1)
+    return text
+
+## Tests
+
+test "the marker's tail lands the diagnostic on the number the author wrote, with the field's length as the guess"
+    text = "extern \"s.h\"\n    record S\n        b: u8[8]\n    function fill(p: ptr counted_by n, n: i64)\n\nfunction main()\n    t: S @ S(b: [1, 2, 3, 4, 5, 6, 7, 8])\n    fill(p: t.b.ptr(), n: 64)\n"
+    s = source.new_source(name: "t.hero", text: text)
+    lend = ffi_lookup.char_index_of(text: text, needle: "t.b.ptr()").must()
+    stated = ffi_lookup.char_index_of(text: text, needle: "64)").must()
+    line = "t.hero:8:5: error: static assertion failed due to requirement 'x': heroes-ffi-extent fill p n " + lend.to_str() + " " + (lend + 9).to_str() + " " + stated.to_str() + " " + (stated + 2).to_str() + " 8\""
+    d = overstated_extent(s, line: line)
+    assert !d.is_err()
+    assert d.must().code == "field_lend_extent"
+    assert source.span_text(s, d.must().span) == "64"
+    assert d.must().fixes.len() == 1
+    assert d.must().fixes[0].replacement == "8"
+    assert d.must().fixes[0].certainty == .guess
+    assert overstated_extent(s, line: "t.hero:8:5: error: static assertion failed: heroes-ffi-pointee fill n int64_t size_t").is_err(
+    )
+    assert overstated_extent(s, line: "t.hero:8:5: error: static assertion failed: heroes-ffi-extent fill p n").is_err()

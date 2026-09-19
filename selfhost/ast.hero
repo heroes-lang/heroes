@@ -377,6 +377,9 @@ record Param
     # completeness rule would refuse a correct binding, which is the objection
     # that killed the inferred form at that same sitting.
     borrows: bool
+    # `buf: ptr counted_by n` — the sibling that gives the extent (panel 166;
+    # `parse/members.hero` carries why, and this file is at its ceiling).
+    counted_by: token.Span?
 
 # A record field, or a variant case's payload field. Fields carry doc comments
 # of their own — §4.1's adjacency rule is about declarations, and a field is
@@ -647,7 +650,7 @@ test "a declaration owns its members directly, no arena"
     generics: [token.Span] = []
     unowned: token.Span? = fail(code: "none", msg: "not owned")
     ps: [Param] = [
-        Param(name: zero, ty: 0, mutable: false, owned: unowned, consumes: false, acquires: unowned, borrows: false)
+        Param(name: zero, ty: 0, mutable: false, owned: unowned, consumes: false, acquires: unowned, borrows: false, counted_by: unowned)
     ]
     doc: [token.Span] = []
     f = FunctionDecl(

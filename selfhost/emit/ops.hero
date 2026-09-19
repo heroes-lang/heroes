@@ -22,6 +22,7 @@ use emit/builtins
 use emit/convert
 use emit/bytes_text
 use emit/field_lend
+use emit/lend_extent
 use emit/extern_probe
 use emit/writer
 use emit/handle_traffic
@@ -135,6 +136,15 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
 
         .extern_fn e =>
             extern_name = source.span_text(s, decls[e.decl].name)
+
+            # **The extent a lend crosses with, asserted in C before the call**
+            # (panel 166's route C; defect 063). The number compared is the
+            # header's own `sizeof` of the field, so it is right on a `partial`
+            # record whose size Heroes does not know, and on a group `constant`,
+            # which reaches here as a macro NAME rather than as a literal.
+            # Written before the call rather than folded into it because a
+            # `_Static_assert` is a declaration and the call is a statement.
+            lend_extent.assertions(@w, c, names, s, decls, f, run: run, decl: e.decl)
             guarded = guard_arguments(p, c, decls, decl: e.decl, arguments: arguments)
 
             # The result half of the const cast: sqlite3_column_blob

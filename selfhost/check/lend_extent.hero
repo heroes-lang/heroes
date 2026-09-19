@@ -1,0 +1,304 @@
+# The EXTENT of a `ptr` lend: declared on the group's parameter, landed on by
+# the lend (design.md §4.19, §1.12; panel 166's route C, ratified 2026-09-19;
+# defect 063).
+#
+# WHY A LEND NEEDS ONE. `f.ptr()` hands C the address of a fixed byte field and
+# nothing else: how far C reads or writes through it is the CALL's word, and
+# until this module nothing related that word to the field. `sl_fill(p:
+# s.name.ptr(), n: 64)` on an `i8[8]` moved the sibling `id` to `0x41414141` at
+# exit 0 with every suite green, and every overshoot from 9 to 4096 bytes was
+# as silent (panel 166's critic). The relation has to be DECLARED: `f(p: ptr,
+# n: i64)` is two independent parameters, and the sentence defect 063's first
+# entry rested on — *the extent argument is checked* — was corrected as
+# unimplementable the day it was written, because nothing says which argument
+# that is.
+#
+# THE DECLARATION IS `counted_by`, ON THE POINTER, NAMING ITS SIBLING:
+# `function read(fd: i32, buf: ptr counted_by n, n: u64) -> i64`. It is the
+# spelling Apple's SDK and the Linux kernel use for the same relation
+# (`__counted_by`), and it is `owned`'s and `acquires`'s shape here: a
+# declaration-site mark the checker reads, the lowering drops, and the emitter
+# turns into one C assertion where the extent is a constant
+# (`emit/lend_extent.hero`). Three things are judged about the mark, each a fact
+# about the declaration in hand and never about the world: the marked parameter
+# is a `ptr`, the name is a sibling, and the sibling is an integer C takes by
+# value.
+#
+# AND THE LEND MUST LAND ON A MARKED PARAMETER. Absence is a refusal and never
+# silence — panel 166's compiler-engineer's condition for approving the route,
+# because a check that applies only where somebody wrote the mark leaves defect
+# 063 standing wherever nobody did. So a `.ptr()` stands only as an argument of
+# an `extern` call, since only a group's parameter can carry the mark and only a
+# header can say whether C writes through the pointer (route H), and only at a
+# position whose parameter is `counted_by`. `check/lending.hero`'s sweep asks
+# both questions here, in this order, so a reader meets one message per lend.
+
+use ast
+use token
+use source
+use resolved
+use check/state
+use check/table
+use check/lower
+use ffi_errors
+use parse
+use resolve
+
+## The declaration
+
+# Every `counted_by` in an extern signature, judged where it is written.
+function declared_extents(@c: state.Checker, s: source.Source, f: ast.FunctionDecl, declared_name: token.Span)
+    function_name = source.span_text(s, declared_name)
+
+    for param in f.params
+        if param.counted_by.is_err()
+            continue
+        mark = param.counted_by.must()
+        param_name = source.span_text(s, param.name)
+        sibling_name = source.span_text(s, mark)
+        why: str @ ""
+
+        if !is_ptr(c, param.ty)
+            why @ "`counted_by` says how far C reads or writes through a `ptr`, and `" + param_name + "` is not one"
+        sibling = sibling_named(f, s, owner: param.name, name: sibling_name)
+
+        if why == "" && sibling.is_err()
+            why @ "`" + sibling_name + "` names no other parameter of `" + function_name + "` — the extent is a sibling in the same signature, the one C reads the count from"
+
+        if why == "" && !integer_by_value(c, sibling.must())
+            why @ "`" + sibling_name + "` is not an integer C takes by value, so it cannot say how far C reads — an extent is `i32`, `u64`, or another width the header spells"
+
+        if why != ""
+            state.push_diagnostic(
+                @c,
+                ffi_errors.counted_by_shape(parameter: param_name, function_name: function_name, why: why, span: mark)
+            )
+
+# The parameter of this signature with that name, other than the one carrying
+# the mark: `p: ptr counted_by p` names no sibling.
+function sibling_named(f: ast.FunctionDecl, s: source.Source, owner: token.Span, name: str) -> ast.Param?
+    for param in f.params
+        if param.name.start != owner.start && source.span_text(s, param.name) == name
+            return ok(param)
+
+    return fail(code: "none", msg: "no such sibling")
+
+function is_ptr(c: state.Checker, ty: i64) -> bool
+    written = state.written_type(c.out, ty)
+
+    if written.is_err()
+        return false
+    return table.get(c.out.types, written.must()) == .ptr
+
+# An integer the header takes by value: not `@`, and an `int_ty`. A float, a
+# `bool` and a pointer are refused as extents; so is `@n`, which is C's
+# out-parameter and holds no count on the way in.
+function integer_by_value(c: state.Checker, param: ast.Param) -> bool
+    if param.mutable
+        return false
+    written = state.written_type(c.out, param.ty)
+
+    if written.is_err()
+        return false
+
+    match table.get(c.out.types, written.must())
+        .int_ty                                                    => return true
+        .float_ty | .bool | .str | .ptr | .cstr | .unit            => return false
+        .array | .fixed | .map | .fallible | .function_ty | .named => return false
+        .case_ty | .failure | .generic | .error                    => return false
+
+    return false
+
+## The landing
+
+# Whether a call names a function of an `extern` group: `f(...)` through its
+# callee, `x.f(...)` through the method name the resolver bound. A function
+# value, a built-in and an unresolved name are not, and neither is a call the
+# AST gains tomorrow, which is the loud direction.
+function callee_is_extern(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], call: i64) -> bool
+    return !extern_callee(a, r, decls, call: call).is_err()
+
+# The declaration index of the extern function a call names, or absent.
+function extern_callee(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], call: i64) -> i64?
+    named = match a.exprs[call].kind
+        .call cl                                                                    => cl.callee
+        .method                                                                     => call
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit  => 0 - 1
+        .null_ptr | .hole | .unary | .binary | .field | .field_name | .index        => 0 - 1
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => 0 - 1
+
+    if named < 0
+        return fail(code: "none", msg: "not a call")
+
+    match r.uses[named]
+        .top t =>
+            match decls[t.at].kind
+                .function_decl fd =>
+                    if fd.value.is_extern
+                        return ok(t.at)
+                    return fail(code: "none", msg: "a function of this program")
+                .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(
+                    code: "none",
+                    msg: "not a function"
+                )
+        .builtin | .local | .module | .unresolved => return fail(code: "none", msg: "not a declared function")
+
+    return fail(code: "none", msg: "unreached")
+
+# The position of an argument in its call, counting from 0. A UFCS receiver is
+# position 0 with the written arguments after it (§4.11); a receiver that is a
+# module name is qualification, not an argument, and the resolver has said so
+# on the receiver itself.
+function argument_position(a: ast.Ast, r: resolved.Resolved, call: i64, arg: i64) -> i64?
+    match a.exprs[call].kind
+        .call cl =>
+            i: i64 @ 0
+
+            for one in cl.args
+                if one.value == arg
+                    return ok(i)
+                i @ i + 1
+        .method m =>
+            qualified = match r.uses[m.receiver]
+                .module                                => true
+                .top | .local | .builtin | .unresolved => false
+
+            if !qualified && m.receiver == arg
+                return ok(0)
+            i: i64 @ 1
+
+            if qualified
+                i @ 0
+
+            for one in m.args
+                if one.value == arg
+                    return ok(i)
+                i @ i + 1
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return fail(
+            code: "none",
+            msg: "not a call"
+        )
+        .null_ptr | .hole | .unary | .binary | .field | .field_name | .index => return fail(
+            code: "none",
+            msg: "not a call"
+        )
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
+            code: "none",
+            msg: "not a call"
+        )
+
+    return fail(code: "none", msg: "not an argument of this call")
+
+# The extern parameter a lend lands on and what it is called, when that
+# parameter declares no extent. Absent when it does, and absent when the
+# question is somebody else's: a callee that is not an extern is
+# `field_lend_needs_a_header`'s, and an argument past the signature's end is
+# the arity check's.
+record Uncounted
+    callee: str
+    parameter: str
+
+function uncounted_landing(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: i64, arg: i64) -> Uncounted?
+    decl = extern_callee(a, r, decls, call: call)
+
+    if decl.is_err()
+        return fail(code: "none", msg: "not an extern call")
+    position = argument_position(a, r, call: call, arg: arg)
+
+    if position.is_err()
+        return fail(code: "none", msg: "not an argument")
+
+    match decls[decl.must()].kind
+        .function_decl fd =>
+            if position.must() >= fd.value.params.len()
+                return fail(code: "none", msg: "past the signature, which arity refuses")
+            landed = fd.value.params[position.must()]
+
+            if !landed.counted_by.is_err()
+                return fail(code: "none", msg: "counted")
+            return ok(
+                Uncounted(callee: source.span_text(s, decls[decl.must()].name), parameter: source.span_text(s, landed.name))
+            )
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a function")
+
+    return fail(code: "none", msg: "unreached")
+
+## Tests
+
+# A bare checker and the lowering loop, which is `check/lending.hero`'s shape
+# and for its reason one level up: `checker.hero` imports THAT module, and this
+# one is imported by it, so a `use checker` here would be a module cycle the
+# language refuses outright. The lowering loop is not decoration —
+# `declared_extents` reads `written_types`, and `lower_ty` is what fills it.
+function shape_refusals(text: str) -> i64
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @ 0
+
+    while i < p.tree.types.len()
+        _ = lower.lower_ty(@c, p.tree, out, i)
+        i @ i + 1
+
+    for decl in p.decls
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.is_extern
+                    declared_extents(@c, s, f: fd.value, declared_name: decl.name)
+            .constant_decl | .record_decl | .variant_decl | .test_decl =>
+                _ = 0
+
+    n: i64 @ 0
+
+    for d in c.out.diagnostics
+        if d.code == "counted_by_shape"
+            n @ n + 1
+
+    return n
+
+test "the three shapes of a wrong mark are refused, and the right one is quiet"
+    assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by n, n: i64) -> i64\n\nfunction main()\n    print(f(p: nullptr, n: 0))\n") == 0
+    assert shape_refusals("extern \"s.h\"\n    function f(p: i64 counted_by n, n: i64) -> i64\n\nfunction main()\n    print(f(p: 0, n: 0))\n") == 1
+    assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by m, n: i64) -> i64\n\nfunction main()\n    print(f(p: nullptr, n: 0))\n") == 1
+    assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by n, n: f64) -> i64\n\nfunction main()\n    print(f(p: nullptr, n: 0.0))\n") == 1
+
+test "a mark naming its own parameter, or an `@` sibling, names no extent"
+    assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by p, n: i64) -> i64\n\nfunction main()\n    print(f(p: nullptr, n: 0))\n") == 1
+    assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by n, @n: i64) -> i64\n\nfunction main()\n    k: i64 @ 0\n    print(f(p: nullptr, @k))\n") == 1
+
+test "the landing: a counted parameter is quiet, an uncounted one is named, and a Heroes callee is not this question"
+    text = "extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n, n: i64) -> i64\n    function g(p: ptr, n: i64) -> i64\n\nfunction wrap(p: ptr, n: i64) -> i64\n    return g(p: p, n: n)\n\nfunction h(s: S) -> i64\n    return f(p: s.b.ptr(), n: 4) + g(p: s.b.ptr(), n: 4) + wrap(p: s.b.ptr(), n: 4)\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    landings: [str] @ []
+    at: i64 @ 0
+
+    while at < p.tree.exprs.len()
+        match p.tree.exprs[at].kind
+            .call cl =>
+                for arg in cl.args
+                    # The LEND alone, which is what the sweep asks about: every
+                    # other argument of an uncounted parameter would answer too,
+                    # and `n: 4` landing on an unmarked `n` is nobody's defect.
+                    # The first draft of this test asked about all of them and
+                    # read `f.n g.p g.n`, which is the instrument watching
+                    # itself rather than the rule (`.claude/rules/
+                    # diagnostics-and-goldens.md`).
+                    if source.span_text(s, p.tree.exprs[arg.value].span) != "s.b.ptr()"
+                        continue
+                    found = uncounted_landing(p.tree, out, s, p.decls, call: at, arg: arg.value)
+
+                    if !found.is_err()
+                        landings @ landings.push(found.must().callee + "." + found.must().parameter)
+            .method | .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit =>
+                _ = 0
+            .null_ptr | .hole | .unary | .binary | .field | .field_name | .index =>
+                _ = 0
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error =>
+                _ = 0
+
+        at @ at + 1
+
+    assert landings == ["g.p"]

@@ -76,6 +76,28 @@ Win32 spells 89, of which 2 are byte-typed with a fixed extent. `L_tmpnam` is
 `docs/records/done/2026-09-19-1030-the-fourth-platform-spells-none-in-its-c-library.md`,
 and it states that the Windows leg used a weaker instrument than the other three.
 
+## What the milestone has landed, and the prediction it registered
+
+**Three defects the sittings found under route 6 are closed**: 064 (2026-09-19,
+the guard was a list), 065 (route H — the lend's `const`, and the temporary's
+spelling), 063 (route C — `counted_by`, and the number judged three ways).
+**066 stands** and has its own sitting.
+
+**The registered prediction that pays for the spec's +48**, instruments that
+exist today, scored at this milestone's close:
+
+> A `.ptr()` lend at a parameter declaring `counted_by n` with an extent the
+> call states as a constant emits exactly one `_Static_assert` per lend and
+> **no runtime compare**; one whose extent is read at run time emits **no
+> assertion and exactly one compare**. Instrument: `./heroes build <program>
+> --emit-c` over this step's three goldens, counting `heroes-ffi-extent` and
+> `hero_panic(` lines. The falsifier is a lend that emits both or neither.
+
+**Route 6 itself is refused and stays refused** (panel 165, on two vetoes): a
+parameter's extent is erased by C, so route 6 would compare the author's
+declaration to the author's argument. What the milestone delivered instead is
+the relation declared where C can check it.
+
 *******************************************************************************
 **OPEN: 0**
 
