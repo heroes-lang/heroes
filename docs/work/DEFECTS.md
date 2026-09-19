@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 1**
+**OPEN: 3**
 
 - [ ] **066 — a `ptr` lend has no lifetime rule, so C may keep the address past the frame** | a field's address handed to C outlives the binding it came from, and a later C call reads a dead frame at exit 0 | `selfhost/check/lending.hero`'s `field_lend_escapes`, `spec § 13`'s lease sentences
 
@@ -53,5 +53,68 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     gains one, or the document says the address dies with the frame and the
     program is on its own — and the second is the shape panel 166's seats vetoed
     for the write direction.
+
+    **CORRECTION, 2026-09-20, by panel 167 and its completeness critic.** This is
+    a **lend** defect and not a field-lend defect: `s.cstr()` has the identical
+    hole, measured — exit 0, no diagnostic, `heap-use-after-free` under the
+    sanitizer — and it is the half the corpus uses, **59 occurrences against
+    `.ptr()`'s 33, ten of them in four shipped examples against zero**.
+
+    **And the sanitizer sentence above is false for the case that matters.** It
+    holds only because the reproducer's retainer is a `static inline` in a
+    header. Bound against the real `libsqlite3.dylib`, `--sanitize` prints **zero
+    AddressSanitizer lines, exits 0, and prints the CORRECT value** — it masks
+    the defect rather than catching it. So there is no instrument at all.
+
+    **Routes H and C of panel 166 narrowed this by zero**, run rather than
+    argued. **Panel 167 adopts route A** — a field lease that copies — with two
+    type rules widened from `cstr` to `ptr`, without which the lease is not
+    sound; this entry closes when that lands.
+
+- [ ] **067 — a lease pointer parked in a group's record survives its own release** | `end_lease` empties the cell and the copy inside an `extern` record keeps pointing at the freed bytes, which C then reads at exit 0 | `selfhost/check/lending.hero`'s `no_cstr_in_a_record`
+
+    **Origin:** panel 167's completeness critic, 2026-09-20, asking whether the
+    mechanism three seats proposed to replicate for fields is itself sound. It is
+    not. No seat asked.
+
+    **Reproducer**, and the record is a group's:
+
+        x: cstr @ s.lease()
+        b = Box(p: x)              # a record constructor IS a call
+        end_lease(@x)              # the cell is emptied; the copy is not
+        print(to_str(read_it(p: b.p)))
+
+        check   exit 0
+        run     prints 0 where 72 is honest
+        --sanitize: heap-use-after-free
+
+    **Why the door is open.** Panel 122's clause permits a lease name *"as an
+    argument of a call"*, and a record constructor is a call. The other four
+    escape shapes are correctly refused; this one is not. And
+    `cstr_in_a_record`'s own note blesses it — *"a group's `record` may hold a
+    `cstr`, because there the fields are the header's and C owns the bytes"* —
+    which is true of a header's field and **false of a lease**, whose bytes the
+    program owns and frees.
+
+    **What is owed.** The exemption asks the wrong question: it asks whose record
+    it is, and the fact that decides is whose bytes they are. **It is repaired
+    before panel 167's route A lands**, because that route rests on this
+    mechanism.
+
+- [ ] **068 — a record rewritten under C's held address, which no sanitizer can see** | C holds a field's address, the program writes the record, and C reads bytes the program never meant it to — a wrong answer at exit 0 with zero AddressSanitizer reports | `selfhost/check/lending.hero`, `spec § 13`'s lend sentence
+
+    **Origin:** panel 167's completeness critic, 2026-09-20, separating defect
+    066 into the two defects it is.
+
+    **How it differs from 066, and why the difference matters.** 066 is the frame
+    DYING under a held address, which a sanitizer can see when the retainer is
+    instrumented. Here nothing is freed and no frame dies: the storage is alive
+    and its contents change. **No sanitizer can ever see it**, on any platform,
+    because no memory rule is broken — only the program's meaning is.
+
+    **What is owed.** Nothing decides this one from a declaration, a header or an
+    argument: panel 167 measured that retention is per-call and that a run-time
+    `bool` can pick it. It is filed so that the route adopted for 066 is judged
+    against it too, and so that a later sitting does not discover it as new.
 
 *******************************************************************************
