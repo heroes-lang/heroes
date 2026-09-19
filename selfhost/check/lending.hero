@@ -231,6 +231,21 @@ function lent_only_into_c(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
         if is_builtin_named(a, r, at, name: "ptr")
             if !lends_a_place(a, at)
                 state.push_diagnostic(@c, lend_errors.field_lend_needs_a_place(a.exprs[at].span))
+
+            # **AND A LENT FIELD REACHES C DIRECTLY** (panel 166, 2026-09-19). The
+            # two questions about a lend are answered by the HEADER and nowhere
+            # else: whether C writes through it — the header's `const`, which
+            # clang checks against the cast the root decides — and how far it
+            # reads, the extent route C declares on the group's parameter. A
+            # Heroes function taking `ptr` carries neither: its parameter is a
+            # plain `void *`, so a lend from an immutable root failed inside
+            # clang at the wrapper's call, exit 2, and a lend from a `@` root
+            # reached C with nothing checked about it. Measured on the route's
+            # landing day, both. The `cstr` lend keeps panel 122's wider rule;
+            # this clause is the field's own, and the wrapper §4.19 prescribes
+            # takes the RECORD and lends inside itself, which stays legal.
+            if !into[at].is_err() && !callee_is_extern(a, r, decls, call: into[at].must())
+                state.push_diagnostic(@c, lend_errors.field_lend_needs_a_header(a.exprs[at].span))
         at @ at + 1
 
 # Whether a `ptr` lend's receiver is a place: `s.name`, `s.inner.name`, and
@@ -251,6 +266,30 @@ function rooted_at_a_name(a: ast.Ast, at: i64) -> bool
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .call => return false
         .null_ptr | .hole | .unary | .binary | .field_name | .index | .method => return false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
+
+# Whether a call names a function of an `extern` group: `f(...)` through its
+# callee, `x.f(...)` through the method name the resolver bound. A function
+# value, a built-in and an unresolved name are not, and neither is a call the
+# AST gains tomorrow, which is the loud direction.
+function callee_is_extern(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], call: i64) -> bool
+    named = match a.exprs[call].kind
+        .call cl                                                                    => cl.callee
+        .method                                                                     => call
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit  => 0 - 1
+        .null_ptr | .hole | .unary | .binary | .field | .field_name | .index        => 0 - 1
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => 0 - 1
+
+    if named < 0
+        return false
+
+    match r.uses[named]
+        .top t =>
+            match decls[t.at].kind
+                .function_decl fd                                          => return fd.value.is_extern
+                .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+        .builtin | .local | .module | .unresolved => return false
+
+    return false
 
 function holds_a_lend(a: ast.Ast, r: resolved.Resolved) -> bool
     at: i64 @ 0
@@ -307,3 +346,13 @@ test "a lent field passed straight into C stays quiet"
 # beside the one that provoked the rule (CL-061).
 test "a lent field nested one record deep is still a place"
     assert swept("extern \"s.h\"\n    record I\n        b: u8[4]\n    record S\n        i: I\n    function f(p: ptr, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    return f(p: s.i.b.ptr(), n: 4)\n") == 0
+
+# Panel 166's clause: the callee must be the group's. A wrapper taking `ptr`
+# and a function value are the two ways a lend used to reach C with no header
+# asked; the wrapper that takes the record is the legal shape beside them.
+test "a lent field handed to a function of this program is refused, through a name and through a value"
+    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr, n: i64) -> i64\n\nfunction wrap(p: ptr, n: i64) -> i64\n    return f(p: p, n: n)\n\nfunction g(s: S) -> i64\n    return wrap(p: s.b.ptr(), n: 4)\n") == 1
+    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr, n: i64) -> i64\n\nfunction wrap(p: ptr, n: i64) -> i64\n    return f(p: p, n: n)\n\nfunction g(s: S) -> i64\n    h = wrap\n    return h(s.b.ptr(), 4)\n") == 1
+
+test "a wrapper that takes the record and lends inside itself stays quiet"
+    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr, n: i64) -> i64\n\nfunction total(s: S) -> i64\n    return f(p: s.b.ptr(), n: 4)\n\nfunction g(s: S) -> i64\n    return total(s: s)\n") == 0

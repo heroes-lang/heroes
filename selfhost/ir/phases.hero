@@ -327,7 +327,7 @@ test "a type the checker never resolved is refused after mono, unless the progra
         term: .return_term(value: fail(code: "none", msg: "no value")),
         note: "t"
     )
-    slots: [containers.Slot] = [containers.Slot(name: "own5", ty: 0, kind: .local_slot)]
+    slots: [containers.Slot] = [containers.Slot(name: "own5", ty: 0, kind: .local_slot(mutable: false))]
     f = containers.Function(
         name: "t",
         decl: 0,

@@ -340,7 +340,7 @@ function inst(dest: i64?, op: ir.OpKind, ty: i64) -> ir.Inst
 # One block: t0 = lit; t1 = load xs; t2 = call push(t1, t0); store xs <- t2.
 function accumulator() -> containers.Function
     f: containers.Function @ uses.scaffold()
-    f.slots @ [containers.Slot(name: "xs", ty: 0, kind: .local_slot)]
+    f.slots @ [containers.Slot(name: "xs", ty: 0, kind: .local_slot(mutable: true))]
     f.values @ [0, 0, 0, 0, 0]
     f.arguments @ [.value_arg(value: 1), .value_arg(value: 0)]
     body: [ir.Inst] @ [

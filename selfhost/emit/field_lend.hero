@@ -1,5 +1,5 @@
 # `ptr` — a header field's ADDRESS crosses to C (panel 164; design.md §4.19,
-# §4.10).
+# §4.10; the cast is panel 166's, design.md §4.4).
 #
 # WHY IT IS ITS OWN MODULE AND NOT A ROW IN `emit/builtins.hero`. That module
 # answers with a C entry point, and this built-in becomes no call at all: it is
@@ -14,24 +14,41 @@
 # the renderer for exactly this class, and panel 162's implementation found the
 # trap the hard way: `use of undeclared identifier 't1300'` from clang.
 #
-# WHAT THE CAST IS, AND WHY IT IS `void *` AND NOT `const void *`. C writes
-# through this pointer as well as reading through it, which is the half of the
-# boundary panel 164 found had no door at all: of 141 pointer parameters across
-# 16 real headers, **50 are non-`const`** — `getcwd`, `read`, `uuid_generate` —
-# and nothing in this language could produce their argument. A `const` cast would
-# close the direction the sitting was convened to open.
+# WHAT THE CAST IS, AND THE HEADER DECIDES PER CALL (panel 166, 2026-09-19). A
+# lend rooted at a cell the author declared `@` is `(void *)`: C may write back
+# through it, which is the half of the boundary panel 164 found had no door —
+# of 141 pointer parameters across 16 real headers, 50 are non-`const`. A lend
+# rooted at a `=` binding or a by-value parameter is `(const void *)`, and
+# `-Werror=incompatible-pointer-types-discards-qualifiers` (`cli/flags.hero`,
+# shipped since panel 103) makes handing it to a parameter the header spells
+# without `const` a hard error at the call's own line. So *does C write?* — the
+# question the language cannot see from the binding — is answered by clang from
+# the header, and `spec § 5`'s *only a declared `@` name can be mutated* holds.
+# **This paragraph said `void *` and never `const void *` until that sitting**,
+# on a dichotomy of its own making — always-const or never-const — and the
+# write into an immutable binding it licensed is defect 065.
 #
 # AND WHY NEVER `const char *`. That is `cstr`'s spelling and `cstr` is a promise
 # of a terminating zero that a header's `char[N]` field does not make: 37 of 50
 # such fields across those headers have none. design.md §1.11 lists that promise
 # among the decisions not to revisit. The text route stays `validated_bytes`,
 # which copies.
+#
+# THE TEMPORARY CARRIES THE SAME SPELLING, and `const_lends` below is how. The
+# route was built once before this file learned that and reverted the same
+# afternoon: `emit/body.hero` declares a temporary by its Heroes type, `ptr`
+# spells `void *`, and `t4 = (const void *)(h0_t.name)` discards the qualifier
+# on the assignment — one line before it could reach any call, refusing the
+# honest READ from an immutable binding on the way. So the prologue asks this
+# module which values are const lends and declares those `const void *`.
 
+use token
 use check/state
 use ir
 use ir/containers
 use emit/writer
 use emit/aggregate
+use emit/unread
 use ast
 use source
 
@@ -84,20 +101,129 @@ function lent_place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
 
     return fail(code: "none", msg: "no producer")
 
-# Emit `into = ptr(value)`.
-function lent(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, into: str)
+# The slot a lent value is rooted at — the walk above, ending at the cell
+# rather than at its C text: a `.load` names the root and a `.field` is one
+# step off it.
+function lent_root(f: containers.Function, value: i64) -> i64?
+    for blk in f.blocks
+        for inst in blk.insts
+            if !inst.dest.is_err() && inst.dest.must() == value
+                match inst.op
+                    .load ld  => return ok(ld.place.root)
+                    .field fl => return lent_root(f, value: fl.base)
+                    .lit | .store | .push_owned | .unary | .binary | .cast => return fail(
+                        code: "none",
+                        msg: "not a place"
+                    )
+                    .call | .construct | .index | .map_get | .len_of => return fail(code: "none", msg: "not a place")
+                    .tag_of | .payload | .func_ref | .abort_op | .incref => return fail(
+                        code: "none",
+                        msg: "not a place"
+                    )
+                    .decref | .decref_slot | .hole | .missing | .copy_out => return fail(
+                        code: "none",
+                        msg: "not a place"
+                    )
+
+    return fail(code: "none", msg: "no producer")
+
+# Whether the author may write a slot: a `@` parameter or a `@` cell. A
+# synthetic slot is the lowering's and no program writes it through C, so it
+# takes the immutable answer, which is the loud direction — a lend rooted there
+# could only be refused, never written through in silence.
+function slot_is_mutable(slot: containers.Slot) -> bool
+    return match slot.kind
+        .param_slot ps  => ps.mutable
+        .local_slot ls  => ls.mutable
+        .synthetic_slot => false
+
+# What a lend is: where the author wrote it, the name it is rooted at, and
+# whether they may write that name. `emit/ffi_lend.hero` reads it back when
+# clang refuses the lend against the header.
+record Lend
+    span: token.Span
+    root: str
+    mutable: bool
+
+# The lend this instruction is, if it is one — the `ptr` built-in over a
+# place. Absent for every other instruction, and for a `ptr` whose operand is
+# not a place, which the checker has already refused.
+function lend_at(f: containers.Function, inst: ir.Inst) -> Lend?
+    if !unread.reads_a_place(inst.op)
+        return fail(code: "none", msg: "not a lend")
+
+    match inst.op
+        .call cl =>
+            from = lent_operand(f, run: cl.arguments)
+
+            if from.is_err()
+                return fail(code: "none", msg: "a lend with no operand")
+            root = lent_root(f, value: from.must())
+
+            if root.is_err()
+                return fail(code: "none", msg: "a lend with no place")
+            slot = f.slots[root.must()]
+            return ok(Lend(span: inst.span, root: slot.name, mutable: slot_is_mutable(slot)))
+        .lit | .load | .field | .store | .push_owned | .unary | .binary | .cast => return fail(
+            code: "none",
+            msg: "not a lend"
+        )
+        .construct | .index | .map_get | .len_of | .tag_of | .payload | .func_ref => return fail(
+            code: "none",
+            msg: "not a lend"
+        )
+        .abort_op | .incref | .decref | .decref_slot | .hole | .missing | .copy_out => return fail(
+            code: "none",
+            msg: "not a lend"
+        )
+
+    return fail(code: "none", msg: "unreached")
+
+# The lend a VALUE is, if it is one: the instruction that produced it, read as
+# `lend_at` reads it.
+function lend_of(f: containers.Function, value: i64) -> Lend?
+    for blk in f.blocks
+        for inst in blk.insts
+            if !inst.dest.is_err() && inst.dest.must() == value
+                return lend_at(f, inst: inst)
+
+    return fail(code: "none", msg: "no producer")
+
+# Every lend of this function whose result is `const void *`, by value id:
+# what `emit/body.hero`'s prologue declares with that spelling.
+function const_lends(f: containers.Function) -> {i64: bool}
+    out: {i64: bool} @ {}
+
+    for blk in f.blocks
+        for inst in blk.insts
+            found = lend_at(f, inst: inst)
+
+            if !found.is_err() && !found.must().mutable && !inst.dest.is_err()
+                out[inst.dest.must()] @ true
+
+    return out
+
+# The value a lend takes its address from: its one argument.
+function lent_operand(f: containers.Function, run: ir.Run) -> i64?
     given = containers.args_of(f, run)
-    source_value: i64 @ 0 - 1
 
-    if given.len() > 0
-        match given[0]
-            .value_arg v => source_value @ v.value
-            .inout_arg   => source_value @ source_value
+    if given.len() == 0
+        return fail(code: "none", msg: "no argument")
 
-    if source_value < 0
+    match given[0]
+        .value_arg v => return ok(v.value)
+        .inout_arg   => return fail(code: "none", msg: "a lend takes a value")
+
+    return fail(code: "none", msg: "unreached")
+
+# Emit `into = ptr(value)`, cast as the root decides.
+function lent(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, into: str)
+    source_value = lent_operand(f, run: run)
+
+    if source_value.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* ptr lost its argument */")
         return
-    place = lent_place(c, s, decls, f, value: source_value)
+    place = lent_place(c, s, decls, f, value: source_value.must())
 
     # The checker admitted only a field of a named binding here, so a miss means
     # the two passes disagree and it is loud rather than a guess
@@ -105,4 +231,9 @@ function lent(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast
     if place.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* a lent field with no place */")
         return
-    writer.line(@w, text: "    " + into + " = (void *)(" + place.must() + ");")
+    cast: str @ "(const void *)"
+    root = lent_root(f, value: source_value.must())
+
+    if !root.is_err() && slot_is_mutable(f.slots[root.must()])
+        cast @ "(void *)"
+    writer.line(@w, text: "    " + into + " = " + cast + "(" + place.must() + ");")

@@ -261,6 +261,17 @@ function slot(@b: Lowering, name: str, ty: i64, kind: containers.SlotKind) -> i6
     b.building.slots @ b.building.slots.push(containers.Slot(name: name, ty: ty, kind: kind))
     return b.building.slots.len() - 1
 
+# The kind of a slot the author wrote. Whether they may write it is the
+# resolver's fact, carried into the IR because the emitter's `ptr` lend
+# chooses its C cast from the root slot (panel 166, defect 065). A name the
+# resolver made no local for gets the immutable kind, which is the loud
+# direction: a lend rooted there can only be refused, never written through
+# in silence.
+function local_kind(r: resolved.Resolved, local: i64?) -> containers.SlotKind
+    if local.is_err()
+        return .local_slot(mutable: false)
+    return .local_slot(mutable: r.locals[local.must()].mutable)
+
 # A slot the author did not write: $i0 for a loop index, $r0 for a
 # branch's value, $s0 for a scrutinee held across arms.
 function synthetic(@b: Lowering, prefix: str, ty: i64) -> i64

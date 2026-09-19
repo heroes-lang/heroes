@@ -1,0 +1,41 @@
+# Panel 166, route H: the header decides, per call, whether a lend may be
+# written through.
+#
+# A LEND CROSSES AS `const void *` UNLESS ITS ROOT IS A `@` CELL, and clang
+# refuses a write against the real header with a flag this compiler already
+# shipped (`-Werror=incompatible-pointer-types-discards-qualifiers`, panel
+# 103). What this case asserts is the half that MUST stay legal: a `=` binding
+# and a by-value parameter, each lent to a C function that only reads — the
+# read-only wrapper design.md §4.19 prescribes as the route out of a module,
+# and the exact shape the route's first landing refused (2026-09-19: the
+# temporary was declared `void *` by its Heroes type, so the `const` died on
+# the assignment one line before the call). The `@` cell lent to a writer is
+# the other half and `ffi-a-byte-field-crosses-to-c.hero` holds it; the refused
+# third shape is `tests/golden/fixedbugs/ffi-a-lent-field-c-would-write.hero`.
+extern "ffi-a-lent-field-reads-through-const.h"
+    record Slot
+        nsap: u8[8]
+        id: i64
+    function slot_make() -> Slot
+    function slot_sum(p: ptr, n: i64) -> i64
+    function slot_fill(p: ptr, n: i64)
+
+# A by-value parameter is not a `@` name, and C only reads: legal.
+function total(s: Slot) -> i64
+    return slot_sum(p: s.nsap.ptr(), n: 8)
+
+function main()
+    # A `=` binding lent to a reader: `const void *` into `const void *`.
+    t = slot_make()
+    print(slot_sum(p: t.nsap.ptr(), n: 8))
+    print(total(s: t))
+
+    # A `@` cell lent to a writer and then to a reader: `void *` both ways, and
+    # the write is read back. 1+2+...+8.
+    u: Slot @ slot_make()
+    slot_fill(p: u.nsap.ptr(), n: 8)
+    print(slot_sum(p: u.nsap.ptr(), n: 8))
+
+    # The `=` binding is untouched by any of it.
+    print(slot_sum(p: t.nsap.ptr(), n: 8))
+    print(t.id)

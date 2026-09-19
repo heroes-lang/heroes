@@ -1,4 +1,4 @@
-# Panel 164, the three things `.ptr()` refuses.
+# Panel 164, the three things `.ptr()` refuses — and panel 166's fourth.
 #
 # THE LEND HANDS C THE FIELD ITSELF, which is what separates it from
 # `validated_bytes` beside it: that one copies the bytes out and answers a
@@ -22,6 +22,16 @@
 # interior of one is a question panel 164 did not put to its seats. The sitting
 # decided how a header FIELD crosses; a route nobody priced stays refused, which
 # is Principle 0 read the way CLAUDE.md § 2 writes it.
+#
+# THE HEADER (panel 166's clause, 2026-09-19). The lend crosses as `const void *`
+# from a name the program may not write, and whether C writes through it is the
+# HEADER's answer, per call; the extent it reads is the header's parameter's too.
+# A function of this program taking `ptr` has no header to ask, so a lend handed
+# to one — through its name or through a function value — is refused. Measured
+# before the clause: from a `=` binding it failed inside clang at the wrapper's
+# call, exit 2, the compiler blaming itself. The wrapper §4.19 prescribes takes
+# the RECORD and lends inside itself, and that shape is `kept`'s neighbour
+# `total` in `tests/golden/run/ffi-a-lent-field-reads-through-const.hero`.
 
 extern "ffi-a-lent-field-needs-a-place.h"
     record Slot
@@ -40,8 +50,15 @@ function unheld() -> i64
 function dynamic(xs: [u8]) -> i64
     return slot_sum(p: xs.ptr(), n: 4)  #~ bad_operand
 
+function wrap(p: ptr, n: i64) -> i64
+    return slot_sum(p: p, n: n)
+
+function wrapped(s: Slot) -> i64
+    return wrap(p: s.b.ptr(), n: 4)  #~ field_lend_needs_a_header
+
 function main()
     s = Slot(b: [1, 2, 3, 4], id: 0)
     print(kept(s: s).to_str())
     print(unheld().to_str())
     print(dynamic(xs: [1, 2, 3, 4]).to_str())
+    print(wrapped(s: s).to_str())

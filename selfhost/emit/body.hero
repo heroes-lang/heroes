@@ -32,6 +32,7 @@ use emit/mangle
 use emit/ctype
 use emit/signature
 use emit/callback_guard
+use emit/field_lend
 use emit/inst
 use emit/term
 use emit/unread
@@ -166,6 +167,7 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
         index @ index + 1
 
     value_at: i64 @ 0
+    lends = field_lend.const_lends(f)
 
     for ty in f.values
         keep: bool @ true
@@ -215,9 +217,21 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
 
                 if read[value_at].is_err()
                     deliberate @ "__attribute__((unused)) "
+
+                # A lend rooted at a name the author may not write is
+                # `const void *`, and the temporary has to say so: declared by
+                # its Heroes type alone it is `void *`, the qualifier dies on
+                # the assignment one line before the call it exists to reach,
+                # and clang refuses the honest READ instead of the write
+                # (panel 166; measured on the route's first landing, which was
+                # reverted for it, 2026-09-19).
+                spelling: str @ spelled.must()
+
+                if !lends[value_at].is_err()
+                    spelling @ "const " + spelled.must()
                 writer.line(
                     @w,
-                    text: "    " + deliberate + spelled.must() + " " + mangle.value(value_at) + initialiser + ";"
+                    text: "    " + deliberate + spelling + " " + mangle.value(value_at) + initialiser + ";"
                 )
         value_at @ value_at + 1
 

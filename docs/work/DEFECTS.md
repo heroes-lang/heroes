@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 2**
 
 - [ ] **066 — a `ptr` lend has no lifetime rule, so C may keep the address past the frame** | a field's address handed to C outlives the binding it came from, and a later C call reads a dead frame at exit 0 | `selfhost/check/lending.hero`'s `field_lend_escapes`, `spec § 13`'s lease sentences
 
@@ -96,51 +96,5 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     only form where the number can be checked at all; or the `len()` widening,
     which removes the literal without checking anything and is a change to
     `spec § 11`'s built-in.
-
-- [ ] **065 — C writes into an IMMUTABLE binding, with no `@` anywhere** | a field lent with `f.ptr()` from a binding declared `=`, or from an immutable parameter, is written by C and read back changed, falsifying `spec § 5` at exit 0 | `spec § 5`'s `@` sentence, `selfhost/emit/field_lend.hero`
-
-    **Origin:** panel 165's completeness critic, 2026-09-19. No seat found it,
-    and the shipped golden `tests/golden/run/ffi-a-byte-field-crosses-to-c.hero`
-    demonstrates the write as correct behaviour — on a `@` binding, which is why
-    it never showed.
-
-    **Reproducer**, and `t` is bound with `=`:
-
-        t = sl_make()
-        print(to_str(t.name[0].to_i64().must()))   # 72
-        sl_fill(p: t.name.ptr(), n: 8)             # no @ on the binding,
-        print(to_str(t.name[0].to_i64().must()))   # none on the parameter,
-                                                   # none at the call site
-        before: 72
-        after : 65
-
-    **What it falsifies, in the document a reader is told to trust.** `spec § 5`:
-    *"`=` binds once, forever"* and *"only a declared `@` name can be mutated"*.
-    `spec § 3`: *"Every value behaves as an independent copy."* Both are false
-    for this program and both are what the language sells.
-
-    **CORRECTION, 2026-09-19, by panel 166's spec-warden and re-run by the
-    session that wrote the line above. `spec § 3` is NOT false.** Measured: after
-    the lend is written, the lent binding reads **65** while a copy of it reads
-    **72**, a record field reads **72** and an array element reads **72**. No
-    other value this language owns sees the write, because a lend stands only as
-    an argument of a call (`selfhost/check/lending.hero`, `field_lend_escapes`),
-    so no two owned values ever alias. **Exactly one sentence is false**, § 5's
-    *"only a declared `@` name can be mutated"* — and § 13 already licenses what
-    falsifies it, so the document is **contradictory rather than incomplete**.
-
-    **And the falsification is WIDER than the `=` binding**, which the entry
-    above did not know: an immutable **parameter**'s field is written and read
-    back inside the callee while the caller still sees the old bytes. So a repair
-    written as *"refuse an immutable binding"* leaves § 5 false in every
-    by-value function.
-
-    **What is owed, and it is a question this entry does not answer.** Either
-    the lend of a field to a `ptr` a C function may write requires `@` at the
-    binding, the parameter and the call site — which is `spec § 13`'s own
-    sentence *"A C out-parameter is an `@` parameter"* reaching one more type,
-    and is what panel 165's llm-ergonomist held its veto for — or the language
-    says in writing that a `ptr` lend is a hole in `=`. The first is a language
-    change and owes a sitting.
 
 *******************************************************************************

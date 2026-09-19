@@ -174,3 +174,52 @@ function field_lend_needs_a_place(span: token.Span) -> diag.Diagnostic
         "bind the record first and lend the field of the binding: `s = make()` and then `s.name.ptr()`. C may write through this pointer, and a write into a value nothing holds lands in storage the next statement reuses. To READ a field's text without holding the record, `validated_bytes` copies the bytes out and needs no place"
     )
     return d
+
+# A `ptr` lend handed to anything but a function of an `extern` group (panel
+# 166, 2026-09-19; design.md §4.19).
+#
+# THE HEADER IS THE ONLY PLACE THE TWO QUESTIONS ABOUT A LEND ARE ANSWERED:
+# whether C writes through it — the header's `const`, which clang checks against
+# the cast the root decides — and how far it reads, the extent route C declares
+# on the group's parameter. A Heroes function taking `ptr` can carry neither:
+# its parameter is a plain `void *`, so a lend from an immutable root failed
+# inside clang at the wrapper's call at exit 2 (measured on the route's landing
+# day), and a lend from a `@` root reached C with nothing checked about it.
+function field_lend_needs_a_header(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "field_lend_needs_a_header",
+        message: "`.ptr()` lends a field's address to C, and it may stand only as an argument of a function declared in an `extern` group — here the callee is this program's own, and no header says whether it writes through the pointer or how far it reads",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "lend at the call that reaches C. A wrapper takes the record by value, or as `@`, and lends the field inside itself — `function total(s: Slot) -> i64` returning `slot_sum(p: s.nsap.ptr(), n: 8)` — which is the shape §4.19 prescribes as the route out of a module, and the header is asked where the lend is made"
+    )
+    return d
+
+# A `ptr` lend C would write through, rooted at a name the program may not
+# write (panel 166, 2026-09-19; defect 065; design.md §4.4, §4.19).
+#
+# THE HEADER DECIDES, PER CALL, and this compiler only carries the answer. A
+# lend rooted at a `=` binding or a by-value parameter crosses as
+# `const void *`; a parameter the header spells without `const` is one C may
+# write through; and clang refuses the two together, against the real header,
+# with a flag this compiler has shipped since panel 103. `emit/ffi_lend.hero`
+# reads that refusal into this sentence. Before that sitting the lend crossed as
+# `void *` from every root, and `t = make()` followed by a C fill read back
+# changed at exit 0 — `spec § 5`'s *only a declared `@` name can be mutated*,
+# false for that program.
+#
+# THE REPAIR IS A `@`, AND STILL NO `Fix`: declaring the name mutable changes
+# what every other line may do to it, and whether the author meant to WRITE or
+# only meant to READ through a parameter the header should have marked `const`
+# is theirs to say. The note names both roads.
+function field_lend_written(lend: str, root: str, callee: str, c_type: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "field_lend_written",
+        message: "`" + lend + "` lends a field of `" + root + "` to `" + callee + "`, and the header declares that parameter `" + c_type + "` — C may write through it, and `" + root + "` is not a `@` name",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "§4.4: only a declared `@` name can be mutated, and a C write is a mutation. Declare `" + root + "` with `@` — a `@` cell, or a `@` parameter — and the bytes C writes land where this program reads them back. To only READ the field, lend it to a parameter the header declares `const`"
+    )
+    return d

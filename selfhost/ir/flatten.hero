@@ -147,7 +147,7 @@ function bind_stmt(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: stat
     if local.is_err()
         return
     ty = c.local_types[local.must()]
-    slot = build.slot(@b, name: source.span_text(s, name), ty: ty, kind: .local_slot)
+    slot = build.slot(@b, name: source.span_text(s, name), ty: ty, kind: build.local_kind(r, local))
     build.bind_local(@b, local: local.must(), slot_id: slot)
     build.store_slot(@b, slot_id: slot, value: produced, span: span)
 
@@ -267,7 +267,7 @@ function for_loop(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
 
     if !local.is_err()
         element_ty @ c.local_types[local.must()]
-        slot = build.slot(@b, name: source.span_text(s, name), ty: element_ty, kind: .local_slot)
+        slot = build.slot(@b, name: source.span_text(s, name), ty: element_ty, kind: build.local_kind(r, local))
         build.bind_local(@b, local: local.must(), slot_id: slot)
         element @ ok(slot)
     head = build.block(@b, note: "for: test")
@@ -1036,13 +1036,13 @@ function tagged(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
             binding = questions.binding_of(arms[one.arm_at])
 
             if !binding.is_err()
-                bind_payload(@b, c, s, plan: plan, case_at: one.bound_case.must(), name: binding.must())
+                bind_payload(@b, r, c, s, plan: plan, case_at: one.bound_case.must(), name: binding.must())
         value = arm_body(@b, a, r, c, s, decls, arm: arms[one.arm_at], wants_value: plan.wants_value)
         emissions.store_arm(@b, result: plan.result, value: value, span: plan.span)
         build.terminate(@b, .jump(to: plan.meet))
 
 # `.num n` — the payload of a known case, into a slot the body can read.
-function bind_payload(@b: build.Lowering, c: state.Checked, s: source.Source, plan: Plan, case_at: i64, name: token.Span)
+function bind_payload(@b: build.Lowering, r: resolved.Resolved, c: state.Checked, s: source.Source, plan: Plan, case_at: i64, name: token.Span)
     held = build.load_slot(@b, slot_id: plan.subject, span: name)
     ty: i64 @ table.error_ty(c.types)
     local = build.local_at(b, name)
@@ -1050,7 +1050,7 @@ function bind_payload(@b: build.Lowering, c: state.Checked, s: source.Source, pl
     if !local.is_err()
         ty @ c.local_types[local.must()]
     payload_value = build.emit(@b, op: .payload(base: held, at: case_at), ty: ty, span: name)
-    slot = build.slot(@b, name: source.span_text(s, name), ty: ty, kind: .local_slot)
+    slot = build.slot(@b, name: source.span_text(s, name), ty: ty, kind: build.local_kind(r, local))
 
     if !local.is_err()
         build.bind_local(@b, local: local.must(), slot_id: slot)
