@@ -187,6 +187,41 @@ grounds.
 - **The corpus is two platforms of four.** Windows and its headers were not
   walked; `.claude/rules/platforms.md` would have them run rather than reasoned
   about, and they are **unrun** here.
+
+  **WINDOWS WAS WALKED ON 2026-09-19**, the day after this file was written, on
+  the box the author powered on. The row above stands at its date and the
+  numbers are added here rather than replacing it.
+
+  | | Windows UCRT + `shared` | Windows Win32 (`um`) |
+  |---|---|---|
+  | `.h` walked | 345 | 1516 |
+  | parameters spelled as an array | **0** | **89** |
+  | with a fixed extent | 0 | 33 |
+  | fixed **and** byte-typed | 0 | **2** |
+
+  The two byte cases are `BYTE abData[SAC_MAC_LEN]` in `scclient.h` and
+  `scserver.h` — the smart-card API. **The C library spells none at all**, and
+  structurally rather than by being small: the UCRT assembles declarations from
+  macros that take the type and the name as separate arguments
+  (`__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_0(char*, …, tmpnam, …, char, _Buffer)`),
+  so an array spelling is not a form that occurs there. A second, independent
+  text instrument over all 66 UCRT headers agrees: zero.
+
+  **And `L_tmpnam` is 260 on Windows** — compiled and run on the box — against
+  1024 on Darwin and 20 on glibc. Three platforms, three numbers, for one
+  constant of one C standard. Odin's shipped hand-written binding says **15**;
+  it is stale, which is the failure mode panel 165's historian named in the
+  abstract a few paragraphs before its own example proved it.
+
+  **THE WINDOWS NUMBERS COME FROM A DIFFERENT INSTRUMENT, and that is stated
+  rather than smoothed over.** The other three legs are text screen **plus**
+  clang AST confirmation through each parameter's source range. Windows is the
+  text screen alone: one `-ast-dump=json` over `windows.h` is **86.7 MB**, and
+  the AST pass over 1516 headers ran four hours without finishing before it was
+  stopped. The screen's precision is high on this tree because Win32 headers are
+  declarations rather than inline bodies — the false positives the AST stage
+  exists to remove are calls inside inline functions, and `um` has few — but it
+  is a weaker instrument and the Windows column should be read as such.
 - **`_LIBC_COUNT` is not counted as a spelling.** Darwin states extents in an
   annotation on a pointer, 9 times in this corpus. Whether Heroes should read
   that annotation is a different route, which no sitting has listed.

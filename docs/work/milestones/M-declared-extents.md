@@ -69,26 +69,14 @@ rediscovered: Darwin states extents in an **annotation on a pointer**,
 read that annotation is a different question from route 6, and no sitting has
 named it.
 
-**Windows is unrun.** Two platforms of four were walked.
-`.claude/rules/platforms.md` would have the other two run rather than reasoned
-about, and the census script takes a header root as its argument, so the cost is
-a run and not a rewrite.
+**Windows was unrun when this file was opened and was walked on 2026-09-19**, on
+the box the author powered on: the C library spells **zero** array parameters and
+Win32 spells 89, of which 2 are byte-typed with a fixed extent. `L_tmpnam` is
+**260** there, against 1024 and 20. The record is
+`docs/records/done/2026-09-19-1030-the-fourth-platform-spells-none-in-its-c-library.md`,
+and it states that the Windows leg used a weaker instrument than the other three.
 
 *******************************************************************************
-**OPEN: 2**
-
-- [ ] **M-declared-extents** | convene the panel on route 6, carrying measurement 035 as the brief's numbers rather than an estimate | `docs/measurements/035-not-one-byte-array-is-spelled-the-same-way-on-both.md`, `docs/panel/164-the-read-had-a-door-and-the-write-had-none.md` § Three routes nobody listed
-
-    **Origin:** panel 164's resolution point 4, 2026-09-18, *"Route 6 is QUEUED
-    behind its measurement"*. The measurement is run; the queue is what is left.
-    The sitting is a language change, so CLAUDE.md § 4 binds it, and the brief
-    carries the four platform numbers above and the `L_tmpnam` divergence.
-
-- [ ] **M-declared-extents** | walk the census on the Windows headers and on the fourth leg, so the route is priced on four platforms rather than two | `scratchpad/extents/census.py`, `docs/ref/environment/windows/WINDOWS-MACHINE.md`
-
-    **Origin:** this milestone's step 1, 2026-09-18. The script takes a header
-    root as its argument and reported 127/127 and 333/333 coverage on the two it
-    has walked, so what is missing is a run on a box, not an instrument. A
-    platform fact is run on a platform or it is an inference.
+**OPEN: 0**
 
 *******************************************************************************

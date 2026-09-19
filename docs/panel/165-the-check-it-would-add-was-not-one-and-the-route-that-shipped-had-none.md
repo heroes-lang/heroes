@@ -286,6 +286,27 @@ Each becomes checkable at the milestone that lands route 12 or route 14.
   (both legs, in containers) and the three Windows measurements, which were taken
   on the box on 2026-09-19.
 
+## Corrections, 2026-09-19, from panel 166
+
+Added underneath rather than rewritten, per CLAUDE.md §14.
+
+- **The defect table above says 065 *"falsifies `spec § 3` and `spec § 5`"*. `§ 3`
+  is NOT falsified.** Panel 166's spec-warden ran it and the coordinator re-ran
+  it: after the lend is written, the lent binding reads **65** while a copy reads
+  **72**, a record field **72** and an array element **72**. No other value this
+  language owns sees the write, because a lend stands only as an argument of a
+  call. **Exactly one sentence is false**, § 5's *"only a declared `@` name can be
+  mutated"* — and § 13 already licenses what falsifies it, so the document is
+  **contradictory rather than incomplete**. The falsification is also **wider**
+  than the `=` binding: an immutable **parameter**'s field is written and read
+  back inside the callee.
+- **Resolution 3's route 14 was corrected the same day it was written** and the
+  correction stands: nothing declares which argument is the extent. Panel 166
+  supersedes it.
+- **The three-defect table is now four.** Panel 166's completeness critic found
+  that the lend has no **lifetime** rule — C may keep the address past the frame,
+  `AddressSanitizer: stack-use-after-scope`, exit 0. Filed as defect 066.
+
 ## Author's verdict
 
 *Pending.* Queued as `panel 165` in `docs/work/DECIDE.md`.
