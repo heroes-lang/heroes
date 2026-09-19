@@ -465,7 +465,7 @@ test "an @ argument through an index verifies clean, because the lowering hands 
 
 test "an @ argument whose place still runs through an index is refused before the emitter"
     span = token.Span(start: 0, end: 1)
-    slots: [containers.Slot] = [containers.Slot(name: "bs", ty: 2, kind: .local_slot)]
+    slots: [containers.Slot] = [containers.Slot(name: "bs", ty: 2, kind: .local_slot(mutable: false))]
     steps: [ir.PathStep] = [.index_step(value: 0)]
     arguments: [ir.Arg] = [.inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 1)))]
     insts: [ir.Inst] = [

@@ -356,7 +356,7 @@ test "the session's own fixedbug: a trailing field behind an index releases then
     row = table.lookup(got.c.types, .named(decl: 0)).must()
     arr = table.lookup(got.c.types, .array(element: row)).must()
     int_id = table.int_ty_id(got.c.types)
-    slots: [containers.Slot] = [containers.Slot(name: "rows", ty: arr, kind: .local_slot)]
+    slots: [containers.Slot] = [containers.Slot(name: "rows", ty: arr, kind: .local_slot(mutable: false))]
     steps: [ir.PathStep] = [.index_step(value: 1), .field_step(at: 0)]
     f = containers.Function(
         name: "t",

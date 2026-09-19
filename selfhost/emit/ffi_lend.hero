@@ -1,0 +1,169 @@
+# A `ptr` lend C would write through, read back from clang's own refusal
+# (design.md §4.19, §4.4; panel 166, 2026-09-19; defect 065).
+#
+# THE MECHANISM IS THE HEADER'S, NOT THIS COMPILER'S. `emit/field_lend.hero`
+# writes a lend rooted at a name the program may not write as `const void *`,
+# and `-Werror=incompatible-pointer-types-discards-qualifiers` — shipped since
+# panel 103 — makes handing it to a parameter the header spells without
+# `const` a hard error at the CALL's own `#line`. So the question the language
+# cannot answer from the binding, *does C write?*, is answered by clang from
+# the header, per call, and this file only turns the answer into a sentence.
+#
+# WHY IT GATES ON THE LOCATION AND NOT ON A MARKER. The refusal is an implicit
+# conversion at an argument, and no `_Static_assert` can carry a message for
+# one: C11 has no form that names the k-th parameter's type, which is why
+# `cli/pointee.hero` reads the header through an AST dump instead. That dump
+# is `extern __typeof__(name)`, which no macro-named function survives, so a
+# marker written from it would leave the commonest libc shapes to fall through
+# to exit 2 — the compiler blaming itself for the author's binding. clang's own
+# line reaches every case, and the sibling reader `ffi_mutable` has gated on
+# the same phrase for a `cstr` since panel 058.
+#
+# WHERE IT POINTS, AND WHY THE TWO READERS CANNOT CLAIM ONE LINE. The probe
+# casts a `ptr` argument to `(void *)` (`extern_probe.is_cast_out`), so nothing
+# about a lend ever fails at the probe's `#line`, which is the extern's
+# declaration: the line clang names is the call's. `ffi_mutable` asks for an
+# extern DECLARED at that line and finds none there; this asks for a call MADE
+# there whose argument is a lend from an immutable root — the very fact the
+# emitter chose the cast from, read back off the IR rather than guessed from
+# the text.
+
+use ast
+use token
+use source
+use diag
+use ir
+use ir/containers
+use emit/ffi_lookup
+use emit/ffi_site
+use emit/field_lend
+use lend_errors
+use parse
+use resolve
+use checker
+use ir/lower
+
+# The lend clang refused: where the author wrote it, the name it is rooted at,
+# and the C function it was handed to.
+record Written
+    lend: token.Span
+    root: str
+    callee: str
+
+# `passing 'const void *' to parameter of type 'void *' discards qualifiers`
+# at a line where a lend from an immutable root is passed to C.
+function written_lend(s: source.Source, decls: [ast.Decl], p: containers.Program, line: str) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ffi_lookup.DISCARDS)
+        return fail(code: "none", msg: "not a qualifier line")
+    at = ffi_site.location(s, line: line)
+
+    if at.is_err()
+        return fail(code: "none", msg: "no usable location")
+
+    # 'const void *' to parameter of type 'void *' — the header's type is the
+    # last quoted name, the shape `ffi_mutable` and `ffi_narrowed` read.
+    c_type = ffi_site.last_quoted(at.must().rest)
+
+    if c_type.is_err()
+        return fail(code: "none", msg: "no header type on the line")
+    found = lend_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+
+    if found.is_err()
+        return fail(code: "none", msg: "no immutable lend is passed to C at that line")
+    return ok(
+        lend_errors.field_lend_written(lend: source.span_text(s, found.must().lend), root: found.must().root, callee: found.must().callee, c_type: c_type.must(), span: found.must().lend)
+    )
+
+# The first extern call at this file and line whose arguments carry a lend
+# rooted at a name the program may not write — the argument the emitter
+# spelled `const void *`. Two such lends on one line share one repair, so one
+# diagnostic names the first and `add_once` keeps it.
+function lend_at_line(p: containers.Program, s: source.Source, decls: [ast.Decl], file: i64, at_line: i64) -> Written?
+    for f in p.functions
+        for blk in f.blocks
+            for inst in blk.insts
+                match inst.op
+                    .call cl =>
+                        match cl.callee
+                            .extern_fn e =>
+                                if source.file_of(s, inst.span.start) != file || source.file_line_of(s, inst.span.start) != at_line
+                                    continue
+
+                                for arg in containers.args_of(f, cl.arguments)
+                                    lent = argument_lend(f, arg)
+
+                                    if !lent.is_err() && !lent.must().mutable
+                                        return ok(
+                                            Written(lend: lent.must().span, root: lent.must().root, callee: source.span_text(s, decls[e.decl].name))
+                                        )
+                            .heroes_fn | .builtin_fn | .indirect => continue
+                    .lit | .load | .field | .store | .push_owned | .unary | .binary | .cast     => continue
+                    .construct | .index | .map_get | .len_of | .tag_of | .payload | .func_ref   => continue
+                    .abort_op | .incref | .decref | .decref_slot | .hole | .missing | .copy_out => continue
+
+    return fail(code: "none", msg: "no immutable lend is passed to C at that line")
+
+# The lend an argument is, if it is one. An `@` argument is a place and never a
+# lend: the checker refuses `@s.name.ptr()` as `not_a_place`.
+function argument_lend(f: containers.Function, arg: ir.Arg) -> field_lend.Lend?
+    match arg
+        .value_arg v => return field_lend.lend_of(f, value: v.value)
+        .inout_arg   => return fail(code: "none", msg: "an @ argument is a place, not a lend")
+
+    return fail(code: "none", msg: "unreached")
+
+## Tests
+
+# The reader is handed the line clang prints for the defect's own shape, and
+# points at the lend the author wrote — never at the extern's declaration,
+# which is where every other qualifier reader points.
+test "a write through a lend from a `=` binding names the lend, its root, the callee and the header's type"
+    text = "extern \"s.h\"\n    record S\n        b: u8[4]\n    function fill(p: ptr, n: i64)\n    function mk() -> S\n\nfunction main()\n    t = mk()\n    fill(p: t.b.ptr(), n: 4)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    line = "t.hero:9:13: error: passing 'const void *' to parameter of type 'void *' discards qualifiers [-Werror,-Wincompatible-pointer-types-discards-qualifiers]"
+    d = written_lend(s, parsed.decls, low.program, line: line)
+    assert !d.is_err()
+    assert d.must().code == "field_lend_written"
+    assert d.must().message == "`t.b.ptr()` lends a field of `t` to `fill`, and the header declares that parameter `void *` — C may write through it, and `t` is not a `@` name"
+    assert source.span_text(s, d.must().span) == "t.b.ptr()"
+    assert d.must().fixes.len() == 0
+
+    # The same phrase at a line with no lend on it is not this class, and
+    # neither is a line without the phrase.
+    assert written_lend(s, parsed.decls, low.program, line: "t.hero:8:5: error: passing 'const void *' to parameter of type 'void *' discards qualifiers").is_err(
+    )
+    assert written_lend(s, parsed.decls, low.program, line: "t.hero:9:13: error: incompatible pointer types passing 'int *' to parameter of type 'void **'").is_err(
+    )
+
+# The shape beside it (CL-061): a lend from a `@` cell is never `const`, so a
+# qualifier line at ITS call is somebody else's and this reader steps aside.
+test "a lend from a `@` cell is not this class, whatever the line says"
+    text = "extern \"s.h\"\n    record S\n        b: u8[4]\n    function fill(p: ptr, n: i64)\n    function mk() -> S\n\nfunction main()\n    t: S @ mk()\n    fill(p: t.b.ptr(), n: 4)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    line = "t.hero:9:13: error: passing 'const void *' to parameter of type 'void *' discards qualifiers"
+    assert written_lend(s, parsed.decls, low.program, line: line).is_err()
+
+# And a by-value parameter is an immutable root too — the half defect 065's
+# first entry did not know (panel 166's spec-warden and critic).
+test "a lend from a by-value parameter is this class, and the root is the parameter's name"
+    text = "extern \"s.h\"\n    record S\n        b: u8[4]\n    function fill(p: ptr, n: i64)\n\nfunction via(s: S)\n    fill(p: s.b.ptr(), n: 4)\n\nfunction main()\n    via(s: S(b: [1, 2, 3, 4]))\n"
+    parsed = parse.parse(text)
+    src = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, src, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, src, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, src, parsed.decls)
+    line = "t.hero:7:13: error: passing 'const void *' to parameter of type 'void *' discards qualifiers"
+    d = written_lend(src, parsed.decls, low.program, line: line)
+    assert !d.is_err()
+    assert d.must().message == "`s.b.ptr()` lends a field of `s` to `fill`, and the header declares that parameter `void *` — C may write through it, and `s` is not a `@` name"

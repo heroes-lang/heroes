@@ -269,7 +269,7 @@ test "the fixpoint: a unit payload silences its own feeding load"
         term: .return_term(value: fail(code: "none", msg: "bare")),
         note: "t"
     )
-    slots: [containers.Slot] = [containers.Slot(name: "r", ty: int_id, kind: .local_slot)]
+    slots: [containers.Slot] = [containers.Slot(name: "r", ty: int_id, kind: .local_slot(mutable: false))]
     f = containers.Function(
         name: "t",
         decl: 0,

@@ -47,17 +47,26 @@ had become loud in both directions (CL-028).
 ## A clang failure that the author's own extern caused
 
 A clang failure is normally exit 2 and says the **compiler** is wrong. One class
-is exit 1 with a diagnostic on the `.hero` line, and it has four members
-(panel 036, widened by panel 048, CL-008):
+is exit 1 with a diagnostic on the `.hero` line, and it has five members
+(panel 036, widened by panel 048, CL-008; the fifth by panel 166):
 
 - a result type the header refutes;
 - a `constant` that is not one;
 - a name the header does not have;
-- a symbol the **linker** cannot find because the group named no `link`.
+- a symbol the **linker** cannot find because the group named no `link`;
+- **a `ptr` lend C would write through, rooted at a name the program may not
+  write** — added 2026-09-19 (panel 166, defect 065). The lend crosses as
+  `const void *` from a `=` binding or a by-value parameter, and clang's own
+  qualifier error against the header's parameter is the verdict;
+  `emit/ffi_lend.hero` reads it into `field_lend_written` on the lend. This is
+  the one member that points at a **call** rather than at a declaration.
 
 **The narrowing is `declaration()`, not whose text it is.** Every class recovers
 a name and asks whether *this program* declared it `extern`, so a symbol nobody
-declared stays exit 2 and the compiler's fault.
+declared stays exit 2 and the compiler's fault. The fifth member recovers the
+lend from the IR at the line clang names, which is the same question asked of
+the call: a qualifier error at a line where no immutable lend is passed to C
+stays exit 2.
 
 ## The instruments
 

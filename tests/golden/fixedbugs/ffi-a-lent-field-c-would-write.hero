@@ -1,0 +1,34 @@
+# fixedbugs, defect 065, 2026-09-19 (panel 165's completeness critic found the
+# defect; panel 166's critic found the route that closes it).
+#
+# SYMPTOM: `t = slot_make()` — no `@` on the binding, none on the parameter,
+# none at the call — then `slot_fill(p: t.nsap.ptr(), n: 8)`, and `t.nsap[0]`
+# read 72 before and 65 after, at exit 0 with every suite green. `spec § 5`'s
+# *"only a declared `@` name can be mutated"* was false for that program, and
+# for an immutable PARAMETER's field as well — a by-value `s: Slot` filled
+# through a lend read back changed inside the callee.
+#
+# CAUSE: `emit/field_lend.hero` wrote every lend as `(void *)`, on a dichotomy
+# its own comment stated — always-const or never-const — where the header
+# decides per call. The fact the emitter needed, whether the root is a cell the
+# author may write, was not in the IR: `SlotKind.local_slot` carried nothing.
+#
+# FIX: the IR carries the binding's mutability; the lend is `(const void *)`
+# from a `=` binding or a by-value parameter and `(void *)` from a `@` cell; the
+# prologue declares the lend's temporary with the same spelling, so the
+# qualifier reaches the call, where clang refuses it against the header's own
+# `void *` with the flag this compiler already shipped. `emit/ffi_lend.hero`
+# reads that refusal into `field_lend_written`, on the lend. The legal shapes
+# beside this one are `tests/golden/run/ffi-a-lent-field-reads-through-const.hero`.
+extern "ffi-a-lent-field-c-would-write.h"
+    record Slot
+        nsap: u8[8]
+        id: i64
+    function slot_make() -> Slot
+    function slot_fill(p: ptr, n: i64)
+    function slot_sum(p: ptr, n: i64) -> i64
+
+function main()
+    t = slot_make()
+    slot_fill(p: t.nsap.ptr(), n: 8)  #~ field_lend_written
+    print(slot_sum(p: t.nsap.ptr(), n: 8))

@@ -31,6 +31,7 @@ use emit/ffi_tag
 use emit/ffi_build
 use emit/ffi_narrowed
 use emit/ffi_mutable
+use emit/ffi_lend
 use cli/pointee_ask
 use parse
 use resolve
@@ -185,6 +186,16 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !writable.is_err()
             found @ ffi_lookup.add_once(found, d: writable.must())
+
+        # The same clang phrase at a CALL's line rather than a probe's: a
+        # `ptr` lend from a name the program may not write, handed to a
+        # parameter the header lets C write through (panel 166, defect 065).
+        # `writable` above asks for an extern declared at the line and finds
+        # none at a call site, so the two never claim one line.
+        lent_w = ffi_lend.written_lend(s, decls, p, line: line)
+
+        if !lent_w.is_err()
+            found @ ffi_lookup.add_once(found, d: lent_w.must())
 
     return found
 

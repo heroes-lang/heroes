@@ -34,8 +34,15 @@ variant SlotKind
     param_slot
         mutable: bool
     # `x = 5` or `v: i64 @ 0` — the surface distinction is the
-    # resolver's, and by here both are cells that hold a value.
+    # resolver's, and by here both are cells that hold a value. **The flag
+    # rides along since panel 166** (2026-09-19): a `ptr` lend of a field
+    # chooses its C cast from the root slot — `(void *)` where the author
+    # may write the cell, `(const void *)` where they may not — so that clang
+    # refuses, against the real header, a C write into a binding the
+    # program declared `=`. Until then this case carried nothing and the
+    # emitter had no way to tell the two apart (defect 065).
     local_slot
+        mutable: bool
     # One lowering invented: a loop index, a branch's join. Its name
     # starts with `$`, a character no Heroes program contains, so it can
     # collide with nothing the author wrote.

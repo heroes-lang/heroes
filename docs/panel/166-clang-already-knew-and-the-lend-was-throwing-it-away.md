@@ -341,3 +341,36 @@ them is its own sitting.
 The conservative resolution — route A alone, +3 real, leaving 063, 066 and the
 immutable parameter open — is recorded above and the author may take it at any
 time.
+
+## ROUTE H LANDS — 2026-09-19, M-declared-extents step 5, written underneath
+
+**The question the section above ends on — what C type does a lend's temporary
+have — is answered: the lend's own.** `emit/field_lend.hero` reports which
+values of a function are const lends and `emit/body.hero`'s prologue declares
+those `const void *`, so the qualifier survives the assignment and reaches the
+call, where clang refuses it against the header's parameter with the flag this
+file names. The honest read from a `=` binding compiles again, which is the
+regression that reverted the first landing. `SlotKind.local_slot` carries
+`mutable: bool` as that section said it could, through one helper at the three
+lowering sites.
+
+**The diagnostic half this file marked unpriced is `emit/ffi_lend.hero`**, and it
+is not a `cli/pointee.hero` row: the refusal is an implicit conversion at an
+argument, which no `_Static_assert` can carry a message for, and the dump that
+would give a marker the header's text is `extern __typeof__(name)`, which no
+macro-named function survives. The reader gates on clang's own `discards
+qualifiers` at the **call's** line — where the IR holds an extern call whose
+argument is a lend from an immutable root — and points at the lend. It is
+`ffi_mutable`'s gate since panel 058, at the other end of the boundary.
+
+**Measured on eleven shapes**, in
+`docs/records/done/2026-09-19-1645-defect-065-closes-and-the-header-decides-per-call.md`:
+three legal roots print their sums, every immutable root handed to a writer is
+refused at the lend, and `--emit-c` writes no artifact for the refused program.
+**And one shape no seat named forced a checker clause**: a lend handed to a
+Heroes function taking `ptr` went from exit 0 to exit 2 under the cast alone,
+clang refusing `const void *` into the wrapper's `void *` at a line no reader
+owns. A `ptr` lend now stands only as an argument of an `extern` call
+(`field_lend_needs_a_header`), which is what route C's declaration on the
+group's parameter requires anyway. **Defect 065 is closed.** Route C and defect
+066 stand as the resolution left them.
