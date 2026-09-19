@@ -32,6 +32,7 @@ use emit/ffi_build
 use emit/ffi_narrowed
 use emit/ffi_mutable
 use emit/ffi_lend
+use emit/ffi_extent
 use cli/pointee_ask
 use parse
 use resolve
@@ -196,6 +197,14 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !lent_w.is_err()
             found @ ffi_lookup.add_once(found, d: lent_w.must())
+
+        # The extent the call stated, above the field's own size — C's verdict
+        # on the assertion `emit/lend_extent.hero` wrote (panel 166's route C,
+        # defect 063). It lands on the NUMBER, which is what is wrong.
+        extent = ffi_extent.overstated_extent(s, line: line)
+
+        if !extent.is_err()
+            found @ ffi_lookup.add_once(found, d: extent.must())
 
     return found
 

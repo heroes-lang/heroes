@@ -166,7 +166,7 @@ function signature(tree: ast.Ast, s: source.Source, name: str, f: ast.FunctionDe
         if param.mutable
             marker @ "@"
         rendered @ rendered.push(
-            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + owned_suffix(s, param.owned) + consumes_suffix(param.consumes) + acquires_suffix(s, param.acquires) + borrows_suffix(param.borrows)
+            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + counted_by_suffix(s, param.counted_by) + owned_suffix(s, param.owned) + consumes_suffix(param.consumes) + acquires_suffix(s, param.acquires) + borrows_suffix(param.borrows)
         )
 
     return out + "(" + rendered.join(", ") + ") -> " + types.render_type(tree, f.result, s) + owned_suffix(s, f.owned_result) + acquires_suffix(s, f.acquires_result) + borrows_suffix(f.borrows_result)
@@ -201,6 +201,16 @@ function acquires_suffix(s: source.Source, mark: token.Span?) -> str
     if mark.is_err()
         return ""
     return " acquires " + source.span_text(s, mark.must())
+
+# ` counted_by n`, or nothing (panel 166's route C). **This dump is what
+# `heroes fmt` compares its own output against**, so the form is owed here the
+# hour it lands, or the formatter's self-check agrees with a formatter that is
+# deleting the mark — which is the paragraph two functions up, describing what
+# happened to `consumes` for a day.
+function counted_by_suffix(s: source.Source, mark: token.Span?) -> str
+    if mark.is_err()
+        return ""
+    return " counted_by " + source.span_text(s, mark.must())
 
 function case_lines(tree: ast.Ast, s: source.Source, one_case: ast.Case) -> str
     out: str @ "    case " + source.span_text(s, one_case.name) + "\n"

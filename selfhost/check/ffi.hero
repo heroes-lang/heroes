@@ -27,6 +27,7 @@ use resolve
 use check/table
 use check/state
 use check/lower
+use check/lend_extent
 use ffi_errors
 
 ## The vocabulary — can a C header spell this at all?
@@ -109,6 +110,12 @@ function ffi_signature(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [
 
     result_may_stand(@c, a, s, decls, f: f, result: result, declared_name: declared_name)
     arguments_may_stand(@c, a, s, decls, f: f, declared_name: declared_name)
+
+    # The extent a `ptr` parameter declares, judged where it is written (panel
+    # 166's route C). It is the signature's question and belongs on this walk,
+    # and it is `check/lend_extent.hero`'s because the same module answers the
+    # other half — which parameter a lend lands on — for `check/lending.hero`.
+    lend_extent.declared_extents(@c, s, f: f, declared_name: declared_name)
 
 # One refusal, and it picks the message by WHERE the refused type is.
 # A callback that is itself fine and carries something that is not gets

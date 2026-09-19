@@ -196,6 +196,56 @@ function field_lend_needs_a_header(span: token.Span) -> diag.Diagnostic
     )
     return d
 
+# A `ptr` lend landing on a parameter that declares no extent (panel 166's
+# route C, ratified 2026-09-19; defect 063; design.md §4.19, §1.12).
+#
+# ABSENCE IS A REFUSAL AND NEVER SILENCE, which is the compiler-engineer's own
+# condition for approving the route: a check that applies only where somebody
+# wrote the mark leaves the corruption standing wherever nobody did, and §1.12
+# asks the compiler to CHECK rather than assume. The number a lend crosses with
+# is the call's word, and the mark is what lets the emitter compare it to the
+# field's own `sizeof` in C.
+function field_lend_uncounted(callee: str, parameter: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "field_lend_uncounted",
+        message: "`.ptr()` lends a field's address to C with an extent this call states, and `" + parameter + "` of `" + callee + "` does not say which argument the extent is — so nothing can check the number against the field",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "declare the relation the header already has: `" + parameter + ": ptr counted_by <the parameter that carries the count>` in the `extern` group. The compiler then compares the number against the field's own size, in C, wherever the call states a constant — an overstated one reads and WRITES past the field, silently, at exit 0"
+    )
+    return d
+
+# An extent stated above the field's own length, read back from clang's verdict
+# on the assertion the emitter wrote (panel 166's route C; defect 063).
+#
+# THE NUMBER COMPARED IS C'S OWN `sizeof` of the field, which is what makes this
+# right where a Heroes-side check is wrong twice: a `partial` record's size is
+# C's and not the field list's, and a group `constant` lowers to a call of its
+# accessor, so a check wanting a literal would refuse the careful reader and
+# accept the careless one.
+#
+# THE FIX IS A `guess` AND THE FIRST DRAFT CERTIFIED IT, which would have been
+# wrong by `.claude/rules/diagnostics-and-goldens.md`'s own rule. Writing the
+# field's length does end the corruption, so it looks like a repair — but it
+# CHANGES WHAT THE PROGRAM ASKS C TO DO, and the author may have meant the
+# longer number and the wrong field. The note offers two repairs for that
+# reason, and a fix `--apply` may take must be the one there is no second
+# candidate for (design.md §4.17's inverse case, panel 071).
+function field_lend_extent(lend: str, callee: str, parameter: str, count: str, stated: str, length: i64, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "field_lend_extent",
+        message: "`" + lend + "` lends a field of " + length.to_str() + " bytes, and `" + count + "` states " + stated + " — `" + parameter + "` of `" + callee + "` is declared `counted_by " + count + "`, and C read the field's own size from the header",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "C reads and writes exactly the bytes this number says, so a larger one reaches past the field into whatever the header put beside it — a sibling of the same record, silently, at exit 0. Write the field's own length, or lend a longer field"
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "state the field's own length, " + length.to_str(), replacement: length.to_str(), span: span, certainty: .guess)
+    )
+    return d
+
 # A `ptr` lend C would write through, rooted at a name the program may not
 # write (panel 166, 2026-09-19; defect 065; design.md §4.4, §4.19).
 #

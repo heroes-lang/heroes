@@ -544,7 +544,7 @@ function signature(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionD
         # program whose string C allocated is never freed, at exit 0 and with
         # no diagnostic. CLAUDE.md §9's list, and the reason it is a list.
         rendered @ rendered.push(
-            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + owned_suffix(s, param.owned) + consumes_suffix(param.consumes) + acquires_suffix(s, param.acquires) + borrows_suffix(param.borrows)
+            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + counted_by_suffix(s, param.counted_by) + owned_suffix(s, param.owned) + consumes_suffix(param.consumes) + acquires_suffix(s, param.acquires) + borrows_suffix(param.borrows)
         )
 
     out @ out + "(" + rendered.join(", ") + ")"
@@ -569,6 +569,16 @@ function acquires_suffix(s: source.Source, mark: token.Span?) -> str
     if mark.is_err()
         return ""
     return " acquires " + source.span_text(s, mark.must())
+
+# ` counted_by n`, or nothing (panel 166's route C). Written in the same commit
+# as the marker, which is what the two paragraphs above were paid to learn: a
+# printer that has not met a form does not error, it DELETES it, and here the
+# deletion would turn a checked extent back into the unchecked one defect 063
+# is about — silently, at exit 0, on a `fmt --in-place`.
+function counted_by_suffix(s: source.Source, mark: token.Span?) -> str
+    if mark.is_err()
+        return ""
+    return " counted_by " + source.span_text(s, mark.must())
 
 function consumes_suffix(consumes: bool) -> str
     if !consumes

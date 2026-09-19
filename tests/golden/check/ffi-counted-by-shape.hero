@@ -1,0 +1,40 @@
+# Panel 166's route C, the declaration half: `counted_by` names the sibling
+# that says how far C reads through a `ptr`, and the mark has a shape.
+#
+# THREE THINGS ARE JUDGED ABOUT THE MARK, each a fact about the declaration in
+# hand: the parameter carrying it is a `ptr`, the name it gives is another
+# parameter of the same signature, and that parameter is an integer C takes by
+# value — not `@`, which is C's out-parameter and carries no count in. One code
+# for the three, `counted_by_shape`, because the class is one: the mark's shape.
+#
+# AND A LEND MUST LAND ON A MARKED PARAMETER. Absence is a refusal, never
+# silence: a check that applies only where somebody wrote the mark would leave
+# defect 063 standing wherever nobody did (panel 166's compiler-engineer's
+# condition for approving the route). `slot_sum`'s `p` below declares no
+# extent, so a lend cannot reach it.
+extern "ffi-counted-by-shape.h"
+    record Slot
+        b: u8[4]
+        id: i64
+    function not_a_pointer(p: i64 counted_by n, n: i64) -> i64  #~ counted_by_shape
+    function no_such_sibling(p: ptr counted_by m, n: i64) -> i64  #~ counted_by_shape
+    function not_an_integer(p: ptr counted_by n, n: f64) -> i64  #~ counted_by_shape
+    function out_parameter(p: ptr counted_by n, @n: i64) -> i64  #~ counted_by_shape
+    function slot_sum(p: ptr, n: i64) -> i64
+    function slot_count(p: ptr counted_by n, n: i64) -> i64
+
+function uncounted(s: Slot) -> i64
+    return slot_sum(p: s.b.ptr(), n: 4)  #~ field_lend_uncounted
+
+function counted(s: Slot) -> i64
+    return slot_count(p: s.b.ptr(), n: 4)
+
+function main()
+    s = Slot(b: [1, 2, 3, 4], id: 0)
+    k: i64 @ 4
+    print(not_a_pointer(p: 0, n: 4).to_str())
+    print(no_such_sibling(p: nullptr, n: 4).to_str())
+    print(not_an_integer(p: nullptr, n: 4.0).to_str())
+    print(out_parameter(p: nullptr, @k).to_str())
+    print(uncounted(s: s).to_str())
+    print(counted(s: s).to_str())

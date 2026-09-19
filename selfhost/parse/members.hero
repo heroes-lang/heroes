@@ -128,6 +128,37 @@ function acquires_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.
         return fail(code: "absent", msg: "the releaser's name is missing")
     return ok(cursor.bump(@c).span)
 
+# `counted_by <sibling>` after a `ptr` parameter: how far C reads or writes
+# through it (panel 166's route C, ratified 2026-09-19; defect 063).
+#
+# IT NAMES A SIBLING AND NOT A NUMBER, which is the whole of the route. The
+# extent a lend crosses with is stated by the CALL, and until this mark nothing
+# related that number to the field: `sl_fill(p: s.name.ptr(), n: 64)` on an
+# `i8[8]` moved the sibling field to `0x41414141` at exit 0. The mark says which
+# argument is the count, so the emitter can write one C assertion against the
+# field's own `sizeof`.
+#
+# THE SPELLING IS C'S OWN. Apple's SDK and the Linux kernel both write
+# `__counted_by(n)` for this relation, and `check/lend_extent.hero` judges the
+# name against the signature in hand. The word is contextual, like `owned`,
+# `consumes`, `acquires` and `borrows`: `in_group` is what keeps it readable
+# after a parameter's type and nowhere else, so a program may still call
+# anything `counted_by`.
+function counted_by_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "counted_by"
+        return fail(code: "absent", msg: "nothing here is counted")
+    keyword = cursor.bump(@c).span
+
+    if !cursor.at(c, .ident)
+        cursor.error(
+            @c,
+            code: "expected_extent",
+            message: "`counted_by` names the parameter beside it that says how far C reads: `read(fd: i32, buf: ptr counted_by n, n: u64)`",
+            span: cursor.here_or(c, keyword)
+        )
+        return fail(code: "absent", msg: "the extent's name is missing")
+    return ok(cursor.bump(@c).span)
+
 function owned_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
     if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "owned"
         return fail(code: "absent", msg: "nothing here is owned")
@@ -176,12 +207,19 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
                 reading @ false
             else
                 ty = type.parse_type(@c, @a, text)
+
+                # `counted_by` comes FIRST of the five, because it is the one
+                # that describes the pointer itself rather than what the call
+                # does with it — `buf: ptr counted_by n owned free` reads as
+                # the header does, the extent beside the type and the ownership
+                # after it. The order is the grammar's, `spec § 13`'s `CParam`.
+                counted_by = counted_by_marker(@c, text, in_group: in_group)
                 owned = owned_marker(@c, text, in_group: in_group)
                 consumes = consumes_marker(@c, text, in_group: in_group)
                 acquires = acquires_marker(@c, text, in_group: in_group)
                 borrows = borrows_marker(@c, text, in_group: in_group)
                 out @ out.push(
-                    ast.Param(name: name, ty: ty, mutable: mutable, owned: owned, consumes: consumes, acquires: acquires, borrows: borrows)
+                    ast.Param(name: name, ty: ty, mutable: mutable, owned: owned, consumes: consumes, acquires: acquires, borrows: borrows, counted_by: counted_by)
                 )
                 cursor.skip_terminators(@c)
 

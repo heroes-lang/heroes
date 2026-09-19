@@ -127,15 +127,17 @@ bb0:
 #line 25 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t4 = INT64_C(8);
 #line 25 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
+    _Static_assert(0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap), "heroes-ffi-extent slot_sum p n 1308 1320 1325 1326 8");
+#line 25 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t5 = slot_sum(t3, t4);
 #line 25 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     return t5;
-#line 133 "ffialentfieldreadsthroughconst.c"
+#line 135 "ffialentfieldreadsthroughconst.c"
 }
 
 #line 27 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 void h_ffialentfieldreadsthroughconst_main(void) {
-#line 138 "ffialentfieldreadsthroughconst.c"
+#line 140 "ffialentfieldreadsthroughconst.c"
     Slot h0_t;
     __attribute__((unused)) Slot h1_u;
     Slot t1;
@@ -166,6 +168,8 @@ bb0:
 #line 30 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t5 = INT64_C(8);
 #line 30 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
+    _Static_assert(0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_t.nsap), "heroes-ffi-extent slot_sum p n 1461 1473 1478 1479 8");
+#line 30 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t6 = slot_sum(t4, t5);
 #line 30 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     hero_print_int(t6);
@@ -188,11 +192,15 @@ bb0:
 #line 36 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t13 = INT64_C(8);
 #line 36 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
+    _Static_assert(0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h1_u.nsap), "heroes-ffi-extent slot_fill p n 1670 1682 1687 1688 8");
+#line 36 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     (void)slot_fill(t12, t13);
 #line 37 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t16 = (void *)(h1_u.nsap);
 #line 37 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t17 = INT64_C(8);
+#line 37 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
+    _Static_assert(0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h1_u.nsap), "heroes-ffi-extent slot_sum p n 1712 1724 1729 1730 8");
 #line 37 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t18 = slot_sum(t16, t17);
 #line 37 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
@@ -203,6 +211,8 @@ bb0:
     t21 = (const void *)(h0_t.nsap);
 #line 40 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t22 = INT64_C(8);
+#line 40 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
+    _Static_assert(0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_t.nsap), "heroes-ffi-extent slot_sum p n 1805 1817 1822 1823 8");
 #line 40 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t23 = slot_sum(t21, t22);
 #line 40 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
@@ -219,7 +229,7 @@ bb0:
     hero_print_end();
 #line 41 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     return;
-#line 222 "ffialentfieldreadsthroughconst.c"
+#line 232 "ffialentfieldreadsthroughconst.c"
 }
 HERO_TU_LOCAL bool h_ffialentfieldreadsthroughconst_Slot_eq(const Slot *a, const Slot *b) {
     if (!((a->nsap[0] == b->nsap[0] && a->nsap[1] == b->nsap[1] && a->nsap[2] == b->nsap[2] && a->nsap[3] == b->nsap[3] && a->nsap[4] == b->nsap[4] && a->nsap[5] == b->nsap[5] && a->nsap[6] == b->nsap[6] && a->nsap[7] == b->nsap[7]))) return false;
