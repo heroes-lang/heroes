@@ -1,9 +1,24 @@
-# The three positions a fixed array may NOT flow through, one file, one row each
+# The FOUR positions a fixed array may NOT flow through, one file, one row each
 # (panel 081 R3). Every one of these was `heroes check` exit 0 before the repair:
 # the first two reached clang and came back as `internal error: compiling the
 # generated C failed` (exit 2, the compiler blaming itself for the author's
 # program, CLAUDE.md §7), and the third reached the runtime as
 # `hero_unreachable` at exit 134.
+#
+# **It said THREE until 2026-09-19**, and the fourth is defect 064: an operand of
+# an operator, found at panel 165 while pricing a route that would have opened
+# this very position. It failed exactly as rows 1 and 2 did — exit 0 from the
+# checker, then clang naming a temporary the emitter never defined — which is the
+# guard's own paragraph in `selfhost/emit/gate.hero` arriving a fifth time. The
+# count is stated here because nothing else counts these rows.
+#
+# WHY `.call` IS NOT A FIFTH ROW, though panel 165's completeness critic named it
+# the unguarded sibling of `.binary`: a fixed array reaching a call is how
+# `f.ptr()` and `f.validated_bytes()` work, so a blanket row on `.call` would
+# refuse the two lends this language ships. What holds the rest of that position
+# shut is `ffi_type` and `fixed_outside_a_group`, which is written here rather
+# than left in the gate — the gate is at its `DECIDED` ceiling and this file has
+# none, and the reason belongs with the rows either way.
 #
 # Cause, one for all three: a `T[N]` has no storage of its own in C —
 # `float t[4]; t = …;` compiles at no optimisation level — so `emit/storageless.rs`
@@ -27,13 +42,23 @@ extern "fixed-array-flow.h"
 
 function main()
     a = Lens(x: 1.0, y: 2.0, reserved: [7, 0, 0, 0])
+
     # 1. Given a name. `use of undeclared identifier 'h1_named'` before the row:
     #    the instruction that would define the local emits nothing, and the store
     #    that follows it still names it.
-    named = a.reserved                       #~ fixed_flow
+    named = a.reserved  #~ fixed_flow
+
     # 2. Copied into another record. This one DID render — as `t.reserved` — and
     #    that spelling is right as a subscript base and wrong as a C initialiser.
-    b = Lens(x: 0.0, y: 0.0, reserved: a.reserved)   #~ fixed_flow
+    b = Lens(x: 0.0, y: 0.0, reserved: a.reserved)  #~ fixed_flow
+
     # 3. As the element of a container: no descriptor, because it has no storage.
-    lenses = [a.reserved]                    #~ fixed_element
-    print(named[0], b.x, len(lenses))
+    lenses = [a.reserved]  #~ fixed_element
+
+    # 4. As an operand of an operator — defect 064, found at panel 165 and added
+    #    2026-09-19. `heroes check` exit 0, then clang: `use of undeclared
+    #    identifier 't6'`, the compiler blaming itself a FIFTH time for the same
+    #    cause. The record's own `==` still works and walks elementwise; what has
+    #    no C value to stand on either side is the field alone.
+    same = a.reserved == b.reserved  #~ fixed_flow
+    print(named[0], b.x, len(lenses), same)

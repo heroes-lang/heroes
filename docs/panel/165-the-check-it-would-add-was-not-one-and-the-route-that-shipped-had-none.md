@@ -214,6 +214,26 @@ never a compromise.
    checked against the field's own extent wherever it is a compile-time constant,
    and `t.name.len()` is priced as the form that removes the literal from the call
    entirely. It closes the hole route 6 was the expensive way of not closing.
+
+   **CORRECTION, 2026-09-19, the same day, by the coordinator who wrote it.**
+   The first half of that sentence is **not implementable as written**, and it
+   was written without being tried. **Nothing declares which argument is the
+   extent**: `sum_n(p: ptr, n: i64)` is two independent parameters, and the
+   compiler has no relation between them to check. Measured by attempting the
+   repair in `selfhost/check/lend_types.hero`, where `f.ptr()` is typed and the
+   extent never appears.
+
+   What survives of route 14 is the ffi-pragmatist's half — `t.name.len()` as a
+   compile-time constant, so the honest call needs no literal — and that is a
+   **widening of a built-in**, `len` today answering *"`len` takes `str`, `[T]`
+   or `{K: V}`, found `i8[8]`"*, which `spec § 11` states and CLAUDE.md § 4
+   therefore sends to a sitting. **So defect 063 is not closed by this
+   resolution.** What closes it is route 13 — declaring on the parameter which
+   sibling carries the extent — and that is a new form at the boundary.
+
+   This correction is the sitting's own rule applied to the sitting: a sentence
+   that was not run is a guess, and four of the six brief errors above were the
+   same shape.
 4. **Route 12 is QUEUED WITH ITS MEASUREMENT ALREADY RUN**, which is the
    difference between this queue and panel 164's. A header `constant` as the
    extent is portable and header-checked, proven in C; what is unpriced is the
