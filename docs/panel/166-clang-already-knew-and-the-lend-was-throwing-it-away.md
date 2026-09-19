@@ -255,6 +255,63 @@ decides it.
   shipped golden's emitted C, two of them §4.19's own `_Static_assert`s going red.
 - **Every run in this sitting is `arm64-apple-darwin`.**
 
+## ROUTE H DOES NOT LAND IN THE SHAPE THIS FILE DESCRIBES — measured 2026-09-19, after ratification
+
+Written underneath rather than rewritten. **The route was implemented far enough
+to run, and it fails at a place no seat and no brief named.**
+
+**What was built.** `SlotKind.local_slot` gained `mutable: bool`, carried from
+`resolved.Local` at the three lowering sites in `ir/flatten.hero` — the fact is
+available there and the language's own *"built with every field, named"* rule
+turned every construction site into a compile error, so nothing was missed. The
+emitter then chose its cast from the lend's root slot: `(void *)` for a `@` cell,
+`(const void *)` for a `=` binding. The compiler built and the fixpoint held.
+
+**Where it fails.** The lend's result is assigned to a **temporary**, and
+`emit/body.hero`'s prologue declares temporaries **by type alone** — `for ty in
+f.values`, one `ctype.c_type` per value. The Heroes type is `ptr` and `ptr` has
+one C spelling, `void *`. So the qualifier dies on the assignment, one line
+before it could reach any call:
+
+```
+t4 = (const void *)(h0_t.name);
+error: assigning to 'void *' from 'const void *' discards qualifiers
+  [-Werror,-Wincompatible-pointer-types-discards-qualifiers]
+```
+
+**And it refuses the honest READ**, which is a regression rather than a repair:
+`r3.hero`, an immutable binding lent to a C function that only reads, stopped
+compiling. The change was reverted for that reason; the documents stand.
+
+**What the route actually costs, now that it is measured.** For the `const` to
+survive to the call site, a lend's result value must carry a **different C
+spelling from the one its Heroes type implies**. That is a design decision — a
+second spelling for a `ptr`-typed temporary, or the cast rendered at the argument
+position rather than at the temporary — and **no seat priced it**. This file
+called the unpriced half *"the checker half and the `cli/pointee.hero` diagnostic
+row"*; the unpriced half is larger than that and it is in `emit/body.hero`, a
+module that today knows nothing about lends.
+
+**This is the third mechanism in this milestone that did not survive being
+tried** — panel 165's route 14, this file's own route H, and in between the
+`len()` widening that turned out to be a `spec § 11` change. The pattern is worth
+more than any of the three: **a sitting can measure that a route's EFFECT is
+right and still be wrong about the machinery, because the seats price what they
+can reach and the coordinator writes the resolution from their reports.** What
+caught all three was the same thing — someone typing the code.
+
+**What survives, and a later session should not re-derive it:**
+
+- the IR *can* carry the binding's mutability cheaply: 3 real lowering sites, and
+  `resolved.Local.mutable` is in hand at each;
+- `ir.Place.root` is the slot index, so the emitter reaches the root slot from a
+  lend with no span threading;
+- the four C crossings behave exactly as the route needs — only
+  `const void *` into `void *` is an error, the other three compile clean;
+- the flag is already shipped and asserted by the net.
+
+The blocker is one question: **what C type does a lend's temporary have?**
+
 ## Author's verdict
 
 **Ratified 2026-09-19, and the author READ the sitting.** Their instruction was
