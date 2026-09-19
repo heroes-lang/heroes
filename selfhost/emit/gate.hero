@@ -177,8 +177,9 @@ function what_the_author_can_do(code: str) -> str
     if code == "unit_parameter"
         return "drop the parameter — `()` carries no value, so a caller has nothing to pass"
 
+    # Two shapes key this code since defect 064, and both routes below were RUN.
     if code == "fixed_flow" || code == "fixed_element"
-        return "write a fixed array out where its record is built — C has no array assignment"
+        return "write a fixed array out where its record is built, and compare the whole record or one element at a time — C has neither array assignment nor array comparison"
 
     if code == "builtin"
         return "call it at a type the built-in accepts"
@@ -377,7 +378,12 @@ function check_fixed_flow(@found: [GateNote], c: state.Checked, f: containers.Fu
                                     span: span
                                 )
                         .inout_arg => continue
-        .lit | .load | .push_owned | .unary | .binary | .cast | .call                           => return
+        # The fifth shape (defect 064); why `.call` is not one is in the golden.
+
+        .binary bin =>
+            if is_fixed_value(c, f, value: bin.left) || is_fixed_value(c, f, value: bin.right)
+                note(@found, code: "fixed_flow", what: "a fixed array as an operand of an operator", span: span)
+        .lit | .load | .push_owned | .unary | .cast | .call                                     => return
         .field | .index | .map_get | .len_of | .tag_of | .payload                               => return
         .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => return
 

@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 2**
 
 - [ ] **063 — an overstated extent on `f.ptr()` corrupts memory at exit 0** | `f.ptr()` lends a field's address and the CALL states the extent, and nothing checks that number against the field: a larger one reads and WRITES past the field, silently | `selfhost/check/lend_types.hero`, `spec § 13`'s `f.ptr()` sentence
 
@@ -52,31 +52,16 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `t.name.len()` as a compile-time constant, so the honest call needs no
     literal at all.
 
-- [ ] **064 — `==` on two fixed byte fields is accepted, then the compiler blames itself** | `check` exits 0 and `build` exits with `internal error: use of undeclared identifier`, so a program the checker admits cannot be emitted | `selfhost/emit/gate.hero`'s `check_fixed_flow`
-
-    **Origin:** panel 165, 2026-09-19, found by the compiler-engineer while
-    pricing route 6; the class widened by the completeness critic.
-
-    **Reproducer**, two `i8[8]` fields:
-
-        print(to_str(t.name == u.name))
-
-        heroes check  -> exit 0
-        heroes build  -> internal error: compiling the generated C failed:
-                         error: use of undeclared identifier 't6'
-                            10 |     t9 = t6 == t8;
-
-    **The class, measured.** Every `.binary` on two fixed fields, `!=` and a
-    comparison inside `if` included. The whole record (`t == u`), a scalar field
-    (`t.id == u.id`) and an indexed element (`t.name[0] == u.name[0]`) all work,
-    so the class is the fixed-array field itself and nothing wider.
-
-    **What is owed.** `check_fixed_flow` leaves `.binary` and `.call` as bare
-    returns and its own comment says the list was built after four such shapes
-    shipped; this is the fifth. The repair is a diagnostic where there is now an
-    internal error, and **the sibling `.call` arm is the one to look at next**,
-    because the critic measured that it is held shut only by
-    `fixed_outside_a_group` and `ffi_type`.
+    **CORRECTION, 2026-09-19, by the session that wrote the line above.** The
+    first sentence is **not implementable as written**, measured by attempting
+    it: **nothing declares which argument is the extent.** `sum_n(p: ptr, n:
+    i64)` is two independent parameters and the compiler has no relation between
+    them to check, so there is no *"the extent argument"* to find. What is
+    actually owed is one of two things, and both are sittings: **route 13**,
+    declaring on the parameter which sibling carries the extent, which is the
+    only form where the number can be checked at all; or the `len()` widening,
+    which removes the literal without checking anything and is a change to
+    `spec § 11`'s built-in.
 
 - [ ] **065 — C writes into an IMMUTABLE binding, with no `@` anywhere** | a field lent with `f.ptr()` from a binding declared `=` is written by C and the program reads the new bytes back, falsifying `spec § 3` and `spec § 5` at exit 0 | `spec § 5`'s `=` sentence, `selfhost/check/lend_types.hero`
 
