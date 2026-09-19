@@ -21,7 +21,27 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 1**
+**OPEN: 2**
+
+- [ ] **panel 166** | the `ptr` lend gains a `const` it already had and throws away, and the extent is checked by a `_Static_assert` the probe can write — ratify, or take the conservative resolution the file records | `docs/panel/166-clang-already-knew-and-the-lend-was-throwing-it-away.md`
+
+    **Origin:** panel 166, 2026-09-19, on defects 063 and 065. **The default the
+    compiler runs on while this is open** is route H plus route C in its
+    C-emitted form, which is what CLAUDE.md § 4 asks for: the most robust
+    resolution, not the cheapest.
+
+    The finding no seat reached: the engineer's objection to refusing an
+    immutable lend was that *the language cannot see whether C writes*. True of
+    the language, false of the toolchain — clang refuses
+    `const void *` into `void *` with a flag this project already ships, and
+    `emit/field_lend.hero` is discarding that `const` today.
+
+    Conservative, recorded in the file: route A alone, **+3 real**, which closes
+    the `=` half of 065 and leaves the immutable parameter, defect 063 and defect
+    066 open.
+
+    **This item supersedes `panel 165`'s resolution 3**, whose route 14 clause
+    was corrected as unimplementable the day it was written.
 
 - [ ] **panel 165** | route 6 is refused on two vetoes and the sitting adopts the repair of three defects instead — ratify, or take the conservative resolution the file records | `docs/panel/165-the-check-it-would-add-was-not-one-and-the-route-that-shipped-had-none.md`
 
