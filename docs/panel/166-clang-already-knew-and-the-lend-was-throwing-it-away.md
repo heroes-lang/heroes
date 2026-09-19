@@ -257,4 +257,30 @@ decides it.
 
 ## Author's verdict
 
-*Pending.* Queued as `panel 166` in `docs/work/DECIDE.md`.
+**Ratified 2026-09-19, and the author READ the sitting.** Their instruction was
+*ratify the decisions*.
+
+**The coordinator first wrote this as a ratification by delegation, in CL-058's
+own words — *"the author has not read this file"* — and the author corrected it
+in the same session: *that is not true, I read it.* The claim was a supposition
+and not a measurement, which is the failure CL-058 exists to prevent, arriving
+from the other side.** CL-058 refuses a reading credited where none happened; it
+equally refuses a delegation recorded where a reading did. The correction is the
+author's own and is dated here rather than quietly applied.
+
+The resolution stands as written: **route H adopted** for defect 065, **route C
+in its C-emitted form** adopted for defect 063, **route G refused on three
+vetoes**, routes A, B, D, E and F not adopted, defect 066 filed and left open,
+and panel 165's resolution 3 superseded.
+
+**What the ratification makes due.** Routes H and C stop being a provisional
+default and become the milestone's work: the lend's `const`, the probe's
+`_Static_assert`, and the two halves this file marked unpriced — the checker side
+of H and the `cli/pointee.hero` diagnostic row, so a reader gets a Heroes sentence
+rather than a clang one. Defect 066 is **not** covered by this ratification: its
+two routes are the shape three seats vetoed for the write direction, and pricing
+them is its own sitting.
+
+The conservative resolution — route A alone, +3 real, leaving 063, 066 and the
+immutable parameter open — is recorded above and the author may take it at any
+time.
