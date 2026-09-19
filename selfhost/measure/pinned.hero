@@ -79,16 +79,16 @@ constant SPEC_DIGEST: str
 # the job of *did this document move and nobody say so*, and it is also the
 # previous level the delta gate subtracts from. One pin, three jobs.
 constant CONTRACT_REAL_TOKENS: i64
-    7558
+    7696
 
 constant CONTRACT_REAL_MODEL: str
     "claude-opus-5"
 
 constant CONTRACT_REAL_TAKEN: str
-    "2026-09-17"
+    "2026-09-19"
 
 constant CONTRACT_TOKENS: i64
-    5675
+    5784
 
 # `--refresh`: ask the reader's own tokeniser and print the record to paste.
 #

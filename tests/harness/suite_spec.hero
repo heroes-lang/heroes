@@ -156,7 +156,7 @@ constant REAL_TAKEN: str
 # staleness detector, the delta gate's previous level, and the movement detector
 # the contract never had.
 constant CONTRACT_REAL_TOKENS: i64
-    7558
+    7696
 
 # **The contract's date is its own, and this constant is why.** `REAL_TAKEN`
 # above judged BOTH documents until 2026-09-13, and it worked for exactly as
@@ -169,10 +169,10 @@ constant CONTRACT_REAL_TOKENS: i64
 # being loosened: two independent documents, two independent refreshes, two
 # dates. A shared constant between them was a coupling nothing had stated.
 constant CONTRACT_REAL_TAKEN: str
-    "2026-09-17"
+    "2026-09-19"
 
 constant CONTRACT_TOKENS: i64
-    5675
+    5784
 
 # The width of one commit's allowed growth, in VENDORED tokens, on both judged
 # documents. §1.6 queued this figure and panel 134 landed it; the reasoning and

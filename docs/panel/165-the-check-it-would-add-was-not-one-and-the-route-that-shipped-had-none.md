@@ -309,4 +309,19 @@ Added underneath rather than rewritten, per CLAUDE.md §14.
 
 ## Author's verdict
 
-*Pending.* Queued as `panel 165` in `docs/work/DECIDE.md`.
+**Ratified 2026-09-19.** The author's instruction was *ratify the decisions*.
+
+**The coordinator first recorded this as a ratification by delegation, asserting
+that the author had not read the sitting, and the author corrected that in the
+same session: *that is not true, I read it.*** The assertion was a supposition
+and not a measurement. CL-058 refuses a reading credited where none happened, and
+it refuses a delegation recorded where a reading did — the rule is about the
+record being true, not about which of the two is the humbler claim. Corrected
+here with its date rather than rewritten above.
+
+The resolution stands as written: route 6 refused on two vetoes, the three
+defects adopted as the milestone's work, routes 12, 13 and 14 recorded with their
+measurements. **Resolution 3's route 14 clause is superseded by panel 166**,
+which was convened on the same defects and adopted a route this sitting did not
+have. The conservative resolution — leave route 6 queued and file only the
+defects — is recorded above and the author may take it at any time.
