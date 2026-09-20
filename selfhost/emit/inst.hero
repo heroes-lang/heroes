@@ -28,6 +28,7 @@ use emit/literal
 use emit/operator
 use emit/ops
 use emit/access
+use emit/func_ref
 use emit/abort
 use emit/construct
 use emit/container
@@ -290,26 +291,10 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
         .field fl   => access.field_read(@w, c, s, decls, f, base: fl.base, at: fl.at, target: target)
         # A function used as a value is the C function designator, which
         # decays on its own — & would make the C say something the
-        # language does not.
+        # language does not. `emit/func_ref.hero` holds it, and says why
+        # naming a function is a question about the declaration.
 
-        .func_ref fr =>
-            match fr.callee
-                .heroes_fn h =>
-                    if !target.is_err()
-                        named: str @ "hero_unreachable"
-
-                        for candidate in p.functions
-                            if candidate.decl == h.decl
-                                named @ mangle.function_name(
-                                    module: source.component_at(s, candidate.span.start),
-                                    name: candidate.name
-                                )
-
-                        writer.line(@w, text: "    " + target.must() + " = " + named + ";")
-                .extern_fn | .builtin_fn | .indirect => writer.line(
-                    @w,
-                    text: "    hero_unreachable(); /* the gate refuses this form */"
-                )
+        .func_ref fr => func_ref.emit(@w, p, s, decls, callee: fr.callee, target: target)
         # s.cstr() is FREE (§4.20's highest-return decision): every
         # Heroes string is NUL-terminated, so handing C the byte pointer
         # is a field read — the borrow is safe for the duration of the
