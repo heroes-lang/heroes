@@ -77,4 +77,31 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     turn, `check` 0, zero diagnostics. Taking it closes the witness and ships the
     class for the third time in one milestone.
 
+    **THE ITEM ASKS TWO THINGS AND THE SECOND WAS INVISIBLE**, found 2026-09-20
+    after the synthesis was committed and written underneath it there. **Which
+    extent** the sentence states is not a detail: it decides whether 066 and 068
+    are one defect or two, and therefore whether the caller-side rule is worth
+    building at all. Under *a lend lives for the call and no longer*, 068's write
+    is legal and C is the one retaining, so 068 **is** 066. Under *a lend lives as
+    long as the binding*, 068 is exactly Rust's `E0506` — and the rule then
+    refuses two sound nine-line programs the critic wrote, one of them the
+    in-and-out buffer loop the R4 veto is built on.
+
+    **The recommendation, and the decision stays yours: state it as *a lend lives
+    for the call and no longer*.** Three measurements carry it. It is what
+    `examples/gallery/13-lease.hero:3` already teaches, so the document catches up
+    with the teaching material rather than inventing a rule. It over-refuses
+    **nothing**: the critic's two programs are legal under it. And it is the only
+    reading under which the ffi seat's veto on withdrawing the field lend stays
+    consistent with the rule the same sitting adopted, because the refill loop is
+    that veto's own idiom.
+
+    **What it costs, said plainly rather than buried**: under this reading the
+    caller-side rule closes nothing, 066 and 068 are one class again, and what
+    closes them is R5 — the author allocates, C frees with the function the author
+    names — plus a mark on the parameter that retains. An unmarked retaining
+    parameter stays a silent wrong answer, which no language in the ten the
+    historian surveyed does better. **What changes is that a program that needs C
+    to keep bytes gets a way to be right, and today it has none.**
+
 *******************************************************************************
