@@ -315,3 +315,41 @@ absorbing sentence alone, +13 real, recorded above in full. Taking it overrides
 two vetoes rather than choosing a cheaper price, and three seats independently
 found that every ecosystem which wrote this rule as prose alone came back later
 for a mechanism.
+
+## ROUTE A'S ALLOCATION HALF HAS AN UNPRICED QUESTION — measured 2026-09-20, after the sitting
+
+Written underneath rather than rewriting the resolution, which stands.
+
+**The resolution adopts a TRAILING header**, on the ffi-pragmatist's measurement
+that a leading one traps the give-away case: `hero_str_held` returns
+`(char *)(h + 1)`, so the pointer C receives is not the allocation base and
+`sqlite3_bind_blob(..., sqlite3_free)` is `SIGABRT, exit 134`. That seat's
+ground for the trailing header being possible is that **a field's length is a
+compile-time constant, so the header is findable**.
+
+**Findable by whom is the question nobody asked.** `hero_held_release(const char
+**slot)` finds the header by subtracting `sizeof(HeroHeldHeader)` from the
+pointer — read today at `runtime/parts/str.c:461`. A trailing header cannot be
+found that way, and **`end_lease(@p)` carries only the cell**: no length, and no
+route from the pointer back to the field it was copied from.
+
+**Two candidate answers, and the tree makes one of them cheap.** A side table
+keyed by pointer — the handle set's shape, which the runtime already has at
+`hero_handle_slot` — costs a lookup and a lock per release. Or the EMITTER
+passes the length, `hero_held_release_n(&p, 8)`, which is free at run time and
+needs the emitter to reach the cell's initialiser: `check/leasing.hero`'s
+`is_lease_cell` already does exactly that walk on the checker's side, through
+`resolved.Local.value`, so the fact exists one pass earlier than the emitter.
+**Whether it survives to the IR is unrun.**
+
+**This is the milestone's own pattern arriving for the fourth time** — panel
+165's route 14, panel 166's route H, the `len()` widening, and now this: *a
+sitting can measure that a route's EFFECT is right and still be wrong about the
+machinery, because the seats price what they can reach and the coordinator
+writes the resolution from their reports.* The three before were caught by
+someone typing the code; this one was caught by reading the runtime the route
+would have to change, which is cheaper and is the reason it is written here
+before anybody types anything.
+
+**What it does not change**: the resolution, the vetoes, and defect 067's repair,
+which landed at `69853b58` and is what route A was to rest on.

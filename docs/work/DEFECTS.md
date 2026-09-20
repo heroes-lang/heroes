@@ -71,6 +71,16 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     type rules widened from `cstr` to `ptr`, without which the lease is not
     sound; this entry closes when that lands.
 
+    **AND ROUTE A HAS AN UNPRICED HALF, measured 2026-09-20 after the sitting.**
+    The trailing header the resolution adopts cannot be found by
+    `hero_held_release`, which subtracts `sizeof(HeroHeldHeader)` from the
+    pointer — and `end_lease(@p)` carries only the cell, with no length and no
+    route back to the field. Two candidates are recorded under the sitting: a
+    pointer-keyed side table (the handle set's shape, already in the runtime) or
+    the emitter passing the length, which is free at run time and needs a fact
+    `check/leasing.hero` holds one pass earlier. **Whether it survives to the IR
+    is unrun**, and it is what the next step measures first.
+
 - [ ] **068 — a record rewritten under C's held address, which no sanitizer can see** | C holds a field's address, the program writes the record, and C reads bytes the program never meant it to — a wrong answer at exit 0 with zero AddressSanitizer reports | `selfhost/check/lending.hero`, `spec § 13`'s lend sentence
 
     **Origin:** panel 167's completeness critic, 2026-09-20, separating defect
