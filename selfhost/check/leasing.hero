@@ -70,7 +70,7 @@ function is_lease_cell(a: ast.Ast, r: resolved.Resolved, local: i64) -> bool
 # lend's sweep rather than from inside it, because `check/lending.hero` is
 # this module's import and a call back would be a cycle. The early exit is
 # the lend's own (panel 122 R8): a file with no lease pays nothing.
-function leases_stay_in_their_cell(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source)
+function leases_stay_in_their_cell(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     if !holds_a_lease(a, r)
         return
     into = lending.argument_of(a)
@@ -81,14 +81,14 @@ function leases_stay_in_their_cell(@c: state.Checker, a: ast.Ast, r: resolved.Re
     at: i64 @ 0
 
     while at < a.exprs.len()
-        lease_name_at(@c, a, r, s, at: at, into: into, written: written)
+        lease_name_at(@c, a, r, s, decls, at: at, into: into, written: written)
         end_lease_at(@c, a, r, at: at)
         at @ at + 1
 
 # One `.name` expression that resolves to a lease cell, judged by where it
 # stands. A function of its own so that every arm that has nothing to say can
 # `return` — the lesson `record_arguments` above paid for.
-function lease_name_at(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, at: i64, into: {i64: i64}, written: {i64: bool})
+function lease_name_at(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, into: {i64: i64}, written: {i64: bool})
     if !is_name(a, at)
         return
     local: i64 @ 0 - 1
@@ -105,7 +105,14 @@ function lease_name_at(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
         state.push_diagnostic(@c, lend_errors.lease_written(name: name, span: a.exprs[at].span))
         return
 
-    if into[at].is_err()
+    # **A RECORD'S CONSTRUCTION KEEPS RATHER THAN READS** (defect 067). The
+    # clause below blesses an argument position because a call reads the bytes
+    # and returns; `Box(p: x)` hands the pointer on inside a value, and
+    # `end_lease(@x)` then empties the cell while the copy goes on pointing at
+    # freed bytes — `check` exit 0, `heap-use-after-free` under the sanitizer.
+    # The predicate is `check/lending.hero`'s, beside `argument_of`, because
+    # the lend has the same door and one rule cannot live in two files.
+    if into[at].is_err() || lending.keeps_its_argument(@c, a, r, decls, into: into, at: at)
         state.push_diagnostic(@c, lend_errors.lease_escapes(name: name, span: a.exprs[at].span))
         return
 
@@ -226,7 +233,7 @@ function swept(text: str) -> i64
         _ = lower.lower_ty(@c, p.tree, out, i)
         i @ i + 1
 
-    leases_stay_in_their_cell(@c, p.tree, out, s)
+    leases_stay_in_their_cell(@c, p.tree, out, s, p.decls)
     return c.out.diagnostics.len()
 
 constant GROUP: str
@@ -243,3 +250,10 @@ test "a write to a lease cell that is not its end_lease is refused"
 
 test "end_lease takes only a lease cell: not a lend cell, not a lease by value"
     assert swept(GROUP + "function f(x: str) -> u64\n    d: cstr @ g()\n    end_lease(@d)\n    c: cstr @ x.lease()\n    end_lease(c)\n    k = n(s: c)\n    end_lease(@c)\n    return k\n") == 2
+
+# Defect 067, 2026-09-20: `end_lease` empties the cell and a copy inside a
+# group's record does not move, so C reads freed bytes at exit 0. The reading
+# call beside it stays quiet, which is what says the clause names a
+# construction rather than every argument.
+test "a lease parked in a group's record is refused, and the call that reads it stays quiet"
+    assert swept("extern \"s.h\"\n    record Box\n        p: cstr\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    c: cstr @ x.lease()\n    b = Box(p: c)\n    end_lease(@c)\n    return n(s: b.p)\n") == 1

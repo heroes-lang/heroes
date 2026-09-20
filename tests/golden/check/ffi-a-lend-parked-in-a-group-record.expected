@@ -1,0 +1,2 @@
+tests/golden/check/ffi-a-lend-parked-in-a-group-record.hero:37:16: error[lease_escapes]: `x` is a lease — a copy of the bytes that C may read until `end_lease(@x)` — and its name may stand only as an argument of a call; here it is copied, and the copy would outlive the release
+tests/golden/check/ffi-a-lend-parked-in-a-group-record.hero:43:19: error[cstr_escapes]: `.cstr()` lends this string to C for the length of one call (§4.19), and a lend may stand only as an argument of a call — here it stands somewhere the pointer outlives the bytes it points into

@@ -87,7 +87,7 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # §4.19's fourth case, the lease, asked at every position the same way and
     # for the same reason: a copy of the pointer anywhere but in its one cell
     # is a use-after-free the moment that cell is emptied (panel 125).
-    leasing.leases_stay_in_their_cell(@c, a, r, s)
+    leasing.leases_stay_in_their_cell(@c, a, r, s, decls)
 
     # §4.16's FILE-WIDE hole exemption, the same one the unused rule
     # takes: a body that is ??? falls off its end by construction — that

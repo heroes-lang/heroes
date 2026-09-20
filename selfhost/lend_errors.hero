@@ -51,6 +51,16 @@ function cstr_escapes(span: token.Span) -> diag.Diagnostic
     d.notes @ d.notes.push(
         "pass it directly as an argument of the call that reads it. The bytes belong to the `str`, and the slot holding one is released when its function returns OR when the same expression runs again, whichever comes first — so a lend kept past its call is reading freed memory by the next iteration. A wrapper that reaches C from another module takes a `str` and lends inside itself"
     )
+
+    # **AND A RECORD'S CONSTRUCTION IS NOT ONE OF THOSE CALLS** (defect 067,
+    # 2026-09-20). The note above says *the call that reads it*, which was the
+    # whole rule until a group's `record` turned out to be an argument position
+    # that KEEPS: `return Box(p: s.cstr())` parks a pointer into a `str` that
+    # dies with the frame, at exit 0. A reader who follows the first note into
+    # that shape needs the second sentence, because the first one blesses it.
+    d.notes @ d.notes.push(
+        "building a `record` of an `extern` group is not such a call: the pointer becomes a field of a value the statement hands on, and it outlives the bytes. Copy the bytes with `x: cstr @ s.lease()` and hold the cell, or hold the `str` and lend at each call"
+    )
     return d
 
 # The same position rule, over a FIELD's lend (panel 164).
@@ -131,6 +141,13 @@ function lease_escapes(name: str, span: token.Span) -> diag.Diagnostic
     )
     d.notes @ d.notes.push(
         "pass `" + name + "` directly to the call that reads it. The release nulls this one cell, so a pointer that lives anywhere else keeps pointing at freed bytes"
+    )
+
+    # Defect 067's own half of the sentence above: a group's `record` is an
+    # argument position that keeps, so `Box(p: x)` puts the pointer somewhere
+    # the release cannot reach and `end_lease` leaves it dangling at exit 0.
+    d.notes @ d.notes.push(
+        "building a `record` of an `extern` group is not such a call: the field keeps the pointer past `end_lease(@" + name + ")`, and C then reads freed bytes. Pass the cell to each call that reads it instead of storing it"
     )
     return d
 

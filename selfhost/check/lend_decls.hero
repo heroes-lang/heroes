@@ -1,0 +1,130 @@
+# What a DECLARATION may say about a lent pointer type — the other half of the
+# lend's rule (design.md §4.19, §4.20; panel 122 R3 and R4; the cut is panel
+# 167's, 2026-09-20).
+#
+# WHY IT IS ITS OWN MODULE, AND THE SEAM IS THE ONE `check/lending.hero` NAMES
+# IN ITS FIRST PARAGRAPH. That file exists because *"the question is about a
+# POSITION, not about a type in hand"*, and these two clauses are not about a
+# position at all: they read a function's declared RESULT and a record's
+# declared FIELD, and they walk the declarations rather than the expressions.
+# They were a guest there for the same reason the typing was before them, and
+# the same seam took the typing out to `check/lend_types.hero` at panel 164.
+#
+# WHAT MADE THE CUT DUE. Defect 067's repair put the host at 331 lines in
+# `suite_layout.hero`'s unit against §11's 300, and `layout` said so. Panel
+# 167's resolution then widens both clauses from `cstr` to `ptr` — without them
+# the field lease it adopts is not sound, which its completeness critic
+# measured — so this is the file that is about to grow, and it grows where a
+# reader looking for *what may a declaration say* will find it.
+#
+# THE TWO CLAUSES CLOSE A TWO-HOP ROUTE NO POSITION RULE CAN SEE.
+# `return pass(c: s.cstr())` puts the lend in an argument position, which the
+# position rule blesses, and returns a CALL RESULT, which no rule about lends
+# can follow. Refusing the SIGNATURE closes the whole route, and it was measured
+# free: every `-> cstr` in this tree is already inside an `extern` group.
+
+use ast
+use source
+use check/state
+use check/table
+use lend_errors
+
+# A function outside an `extern` group may not answer `cstr` (panel 122 R3).
+#
+# WHY THIS AND NOT A FLOW ANALYSIS. `return pass(c: s.cstr())` puts the lend in
+# an argument position, which the rule above blesses, and returns a CALL
+# RESULT, which no rule about lends can see. Both compiling seats at panel 122
+# built it: silent at `check`, heap-use-after-free under the sanitizer. One
+# signature rule closes the whole two-hop route, and it is measured FREE —
+# every `-> cstr` in `selfhost/`, `examples/` and `tests/` is already inside an
+# `extern` group.
+#
+# It has no `written_types` hole, and that was measured rather than assumed: a
+# generic body cannot answer `cstr`, because `function escape<T>(...) -> T`
+# returning a lend is `error[type_mismatch]` at the definition, before
+# `ir/mono.hero` instantiates anything.
+function no_cstr_out_of_heroes(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.is_extern
+                    continue
+                declared = c.out.written_types[fd.value.result]
+
+                if declared.is_err()
+                    continue
+
+                if table.get(c.out.types, declared.must()) == .cstr
+                    state.push_diagnostic(
+                        @c,
+                        lend_errors.cstr_out_of_heroes(source.span_text(s, decl.name), a.types[fd.value.result].span)
+                    )
+            .record_decl | .constant_decl | .variant_decl | .test_decl => continue
+
+# A `cstr` field on a record outside an `extern` group (panel 122 R4).
+#
+# `selfhost/emit/gate.hero` already refuses `cstr` as the element of an array, a
+# map or a `T?`. A record FIELD was the hole, and it was the hole the emitter's
+# own note sent people through: *"hold the pointer in a `record` and make an
+# array of that instead"*. Measured at panel 122: silent at `check`, and the
+# binary writes — heap-use-after-free on read. That note is rewritten in the
+# same commit as this clause, because a diagnostic that prescribes a compile
+# error is worse than one that says nothing.
+#
+# A GROUP'S record is untouched: there the fields are the header's, C owns the
+# bytes, and § FFI says in as many words that a group field may be a `cstr`.
+# Enumerated over the tree at the sitting: no `cstr` field outside a group
+# exists, so the clause costs this corpus nothing.
+function no_cstr_in_a_record(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err()
+                    continue
+
+                for field in rec.fields
+                    declared = c.out.written_types[field.ty]
+
+                    if declared.is_err()
+                        continue
+
+                    if table.get(c.out.types, declared.must()) == .cstr
+                        state.push_diagnostic(
+                            @c,
+                            lend_errors.cstr_in_a_record(holder: source.span_text(s, decl.name), field: source.span_text(s, field.name), span: a.types[field.ty].span)
+                        )
+            .function_decl | .constant_decl | .variant_decl | .test_decl => continue
+
+# **WHETHER THIS RECORD'S OWN FIELDS ARE ALREADY REFUSED** — the question defect
+# 067's clause asks before it fires (2026-09-20).
+#
+# One mistake gets one message. A record of this program holding a `cstr` is
+# refused above, and every construction of it is then refused too: reporting
+# both tells the reader to fix two things where there is one, and the second
+# disappears the moment the first is fixed. `emit/ffi.hero` settled the same
+# shape at defect 062 in the same direction — *"the type error above is the true
+# one, and the count this line would add is unreliable the moment one type is
+# wrong, so it waits for the author to fix the type and run again."*
+#
+# It does NOT reach a record whose fields are legal: `record Box { p: ptr }`
+# checks clean today, so a lend parked in one is refused by the construction
+# clause alone and rightly.
+function holds_a_refused_field(c: state.Checker, decls: [ast.Decl], decl: i64) -> bool
+    match decls[decl].kind
+        .record_decl rec =>
+            if !rec.header.is_err()
+                return false
+
+            for field in rec.fields
+                declared = c.out.written_types[field.ty]
+
+                if declared.is_err()
+                    continue
+
+                if table.get(c.out.types, declared.must()) == .cstr
+                    return true
+
+            return false
+        .function_decl | .constant_decl | .variant_decl | .test_decl => return false
+
+    return false

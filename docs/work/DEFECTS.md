@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 2**
 
 - [ ] **066 — a `ptr` lend has no lifetime rule, so C may keep the address past the frame** | a field's address handed to C outlives the binding it came from, and a later C call reads a dead frame at exit 0 | `selfhost/check/lending.hero`'s `field_lend_escapes`, `spec § 13`'s lease sentences
 
@@ -70,36 +70,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     argued. **Panel 167 adopts route A** — a field lease that copies — with two
     type rules widened from `cstr` to `ptr`, without which the lease is not
     sound; this entry closes when that lands.
-
-- [ ] **067 — a lease pointer parked in a group's record survives its own release** | `end_lease` empties the cell and the copy inside an `extern` record keeps pointing at the freed bytes, which C then reads at exit 0 | `selfhost/check/lending.hero`'s `no_cstr_in_a_record`
-
-    **Origin:** panel 167's completeness critic, 2026-09-20, asking whether the
-    mechanism three seats proposed to replicate for fields is itself sound. It is
-    not. No seat asked.
-
-    **Reproducer**, and the record is a group's:
-
-        x: cstr @ s.lease()
-        b = Box(p: x)              # a record constructor IS a call
-        end_lease(@x)              # the cell is emptied; the copy is not
-        print(to_str(read_it(p: b.p)))
-
-        check   exit 0
-        run     prints 0 where 72 is honest
-        --sanitize: heap-use-after-free
-
-    **Why the door is open.** Panel 122's clause permits a lease name *"as an
-    argument of a call"*, and a record constructor is a call. The other four
-    escape shapes are correctly refused; this one is not. And
-    `cstr_in_a_record`'s own note blesses it — *"a group's `record` may hold a
-    `cstr`, because there the fields are the header's and C owns the bytes"* —
-    which is true of a header's field and **false of a lease**, whose bytes the
-    program owns and frees.
-
-    **What is owed.** The exemption asks the wrong question: it asks whose record
-    it is, and the fact that decides is whose bytes they are. **It is repaired
-    before panel 167's route A lands**, because that route rests on this
-    mechanism.
 
 - [ ] **068 — a record rewritten under C's held address, which no sanitizer can see** | C holds a field's address, the program writes the record, and C reads bytes the program never meant it to — a wrong answer at exit 0 with zero AddressSanitizer reports | `selfhost/check/lending.hero`, `spec § 13`'s lend sentence
 

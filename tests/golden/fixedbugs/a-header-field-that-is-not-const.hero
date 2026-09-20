@@ -44,10 +44,19 @@ extern "pwd.h"
         pw_dir: cstr
 
 function main()
-    # All three shapes: a null field, a lent string, and a record with two
-    # non-const members rather than one, since the repair is per field.
+    # Two shapes: a null field, and a record with two non-const members rather
+    # than one, since the repair is per field.
+    #
+    # **THE THIRD SHAPE WAS A LENT STRING AND IT IS REFUSED SINCE 2026-09-20**
+    # (defect 067). `Passwd(pw_dir: here.cstr())` puts Heroes' OWN bytes into a
+    # group record's field, and a record's construction is the one call whose
+    # argument outlives it — which is that defect's own shape, and the reason
+    # the clause exists. The capability this case is about is untouched: a
+    # `cstr` C GAVE the program still fills the field, because the clause fires
+    # on a lend and a lease name, not on every `cstr`. The refused shape lives
+    # in `tests/golden/check/ffi-a-lend-parked-in-a-group-record.hero` now, and
+    # the emitted cast this case guards is what the two lines below still show.
     empty = Passwd(pw_name: nullptr, pw_dir: nullptr)
     print(empty.pw_name == nullptr)
-    here = "/tmp"
-    filled = Passwd(pw_name: nullptr, pw_dir: here.cstr())
+    filled = Passwd(pw_name: nullptr, pw_dir: nullptr)
     print(filled.pw_dir == nullptr)
