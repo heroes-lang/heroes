@@ -117,6 +117,29 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     carries a pointer-keyed live set that aborts, which is the instrument two
     sittings said did not exist.
 
+    **AND THE EXTENT IS NOW STATED, 2026-09-20, which reclassifies this entry
+    and defect 068 both.** `spec § 13` says *A lend lives for its call and no
+    longer: C keeping the pointer reads bytes the program may have changed or
+    freed since, and nothing checks it.* Under that sentence **defect 068's
+    write is legal and C is the one retaining**, so 068 is not a second class
+    beside this one: the two are witnesses of one defect, which is that
+    **nothing lets a declaration say a parameter retains, and nothing refuses a
+    lend that reaches one**. Panel 169 split them on the historian's
+    exclusivity precedent, and the split does not survive the extent the same
+    sitting adopted; the correction is written under
+    `docs/panel/169-two-defects-two-classes-and-the-one-that-was-never-searched-where-it-happens.md`.
+
+    **What is no longer owed**: a route by which a program can hand C bytes it
+    will keep. `docs/measurements/037-the-give-away-case-was-writable-the-moment-the-callback-was.md`
+    measures that one exists and needs no new form — the author allocates and
+    names the disposer, `check` 0, `run` 0, zero AddressSanitizer lines — and
+    that it became writable when defect 069 was repaired six hours earlier.
+
+    **What is still owed**, and it is narrower than this entry has said since it
+    was filed: a way to DECLARE that a parameter retains, and a refusal of a
+    lend that reaches one. That is the half panel 167's survey of ten ecosystems
+    found nobody enforces.
+
 - [ ] **068 — a record rewritten under C's held address, which no sanitizer can see** | C holds a field's address, the program writes the record, and C reads bytes the program never meant it to — a wrong answer at exit 0 with zero AddressSanitizer reports | `selfhost/check/lending.hero`, `spec § 13`'s lend sentence
 
     **Origin:** panel 167's completeness critic, 2026-09-20, separating defect
