@@ -15,18 +15,21 @@
 # `str` or an `i64` is still one diagnostic rather than two.
 
 extern "stdlib.h"
-    function getenv(name: cstr) -> cstr
+    function getenv(name: cstr lent) -> cstr
 
 function main()
     v = getenv("HOME".cstr())
+
     # Both comparisons are legal, and neither was before.
     if v == nullptr
         print("unset")
     p: ptr @ nullptr
+
     if p == nullptr
         print("also fine")
+
     # And the refusals stay refusals.
-    s: str @ nullptr        #~ type_mismatch
-    n: i64 @ nullptr        #~ type_mismatch
+    s: str @ nullptr  #~ type_mismatch
+    n: i64 @ nullptr  #~ type_mismatch
     print(s)
     print(n)

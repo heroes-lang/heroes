@@ -15,7 +15,7 @@
 # Fixed defect: `docs/panel/053`, 2026-08-14.
 
 extern "string.h"
-    function strstr(haystack: cstr, needle: cstr) -> cstr
+    function strstr(haystack: cstr lent, needle: cstr lent) -> cstr
 
 function main()
     print("before")

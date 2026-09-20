@@ -19,7 +19,7 @@
 # `curl/curl.h` is path-shaped and correct.
 
 extern "stdio.h" link "c"
-    function puts(s: cstr) -> i64
+    function puts(s: cstr lent) -> i64
 
 extern "/opt/foo/include/foo.h"      #~ machine_locked_path
     function foo_a() -> i64

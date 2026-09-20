@@ -29,7 +29,7 @@ extern "netdb.h"
     record Hints tag addrinfo partial
         ai_family: i32
         ai_socktype: i32
-    function getaddrinfo(node: cstr, service: ptr, @hints: Hints, @res: AI acquires freeaddrinfo) -> i32
+    function getaddrinfo(node: cstr lent, service: ptr, @hints: Hints, @res: AI acquires freeaddrinfo) -> i32
     function freeaddrinfo(ai: AI consumes)
 
 function main()

@@ -45,3 +45,16 @@ the cheapest honest wording, is what panel 094 refused under Principle 0.
   `suite_surface` row.
 - Nothing here is refused, and that is the point: the fixture's whole content is
   that this compiles.
+
+## Correction, 2026-09-21 (panel 171)
+
+The two wrappers took `cstr` and forwarded it, which was the sound shape under
+the old rule and is the b10 shape under the new one: a Heroes `cstr` parameter
+can carry no mark, so a lend handed to it is refused with
+`lend_needs_a_header`, and a lend reaches only a parameter declared `lent` on
+an `extern` function. The wrappers now take `str` and lend inside themselves,
+which is the route §4.19 prescribes, and the two `printf` declarations carry
+`lent`. *Eight lines across two files* above counted the old shape; the new
+one is the same eight, and the claim the fixture refutes is untouched: two
+modules still bind one C symbol at two arities, exit 0, `n = 42` and
+`s = forty-two`.

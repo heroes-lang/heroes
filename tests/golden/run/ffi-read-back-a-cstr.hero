@@ -38,7 +38,7 @@ extern "string.h"
     function strerror(code: i32) -> cstr
 
 extern "stdlib.h"
-    function getenv(name: cstr) -> cstr
+    function getenv(name: cstr lent) -> cstr
 
 function main()
     first = strerror(code: 1).validated().must()

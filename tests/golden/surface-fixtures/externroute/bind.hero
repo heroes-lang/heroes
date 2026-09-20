@@ -3,7 +3,7 @@
 # program a surface row can run.
 
 extern "stdlib.h"
-    function system(command: cstr) -> i32
+    function system(command: cstr lent) -> i32
 
 function shell(command: str) -> i32
     return system(command: command.cstr())

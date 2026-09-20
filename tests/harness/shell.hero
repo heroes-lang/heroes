@@ -41,20 +41,24 @@ extern "hero_os.h"
     function hero_run_limit(seconds: i64)
     function hero_run_exe_suffix() -> str
     function hero_os_pid() -> i64
-    function hero_run_go(program: cstr, in_path: cstr, out_path: cstr, err_path: cstr, @status: i64) -> i64
+    # `lent`: each call reads the path while it runs and keeps nothing of it
+    # (panel 171); this is the third of the three trees that bind the runtime,
+    # and forgetting it here stops every suite of the net rather than the
+    # compiler.
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
     function hero_run_discard_path() -> str
-    function hero_fs_exists(path: cstr) -> i64
-    function hero_fs_is_directory(path: cstr) -> i64
-    function hero_fs_mkdir_all(path: cstr) -> i64
-    function hero_fs_remove(path: cstr) -> i64
-    function hero_fs_newer_than(path: cstr, reference: cstr) -> i64
-    function hero_dir_scan(root: cstr, want: i64, recursive: i64) -> i64
+    function hero_fs_exists(path: cstr lent) -> i64
+    function hero_fs_is_directory(path: cstr lent) -> i64
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_fs_remove(path: cstr lent) -> i64
+    function hero_fs_newer_than(path: cstr lent, reference: cstr lent) -> i64
+    function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
     function hero_dir_at(index: i64) -> str
     function hero_dir_release()
-    function hero_dir_remove_tree(path: cstr) -> i64
+    function hero_dir_remove_tree(path: cstr lent) -> i64
 
 extern "stdlib.h"
-    function getenv(name: cstr) -> cstr
+    function getenv(name: cstr lent) -> cstr
 
 # What `hero_dir_scan` is looking for.
 constant DIR_FILES: i64

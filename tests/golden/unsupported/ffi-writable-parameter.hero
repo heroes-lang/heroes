@@ -42,7 +42,7 @@
 # uses the one that fires everywhere.
 
 extern "string.h"
-    function strtok(s1: cstr, s2: cstr) -> cstr   #~ ffi_writable_parameter
+    function strtok(s1: cstr lent, s2: cstr lent) -> cstr  #~ ffi_writable_parameter
 
 function main()
     print(strtok(s1: "a,b".cstr(), s2: ",".cstr()) == nullptr)

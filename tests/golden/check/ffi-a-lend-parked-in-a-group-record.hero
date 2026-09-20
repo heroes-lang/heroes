@@ -30,7 +30,7 @@
 extern "ffi-a-lend-parked-in-a-group-record.h"
     record Box
         p: cstr
-    function read_it(p: cstr) -> i64
+    function read_it(p: cstr lent) -> i64
 
 function parked_lease(s: str) -> i64
     x: cstr @ s.lease()

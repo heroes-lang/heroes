@@ -25,8 +25,8 @@ extern "ffi-a-lent-field-c-would-write.h"
         nsap: u8[8]
         id: i64
     function slot_make() -> Slot
-    function slot_fill(p: ptr counted_by n, n: i64)
-    function slot_sum(p: ptr counted_by n, n: i64) -> i64
+    function slot_fill(p: ptr counted_by n lent, n: i64)
+    function slot_sum(p: ptr counted_by n lent, n: i64) -> i64
 
 function main()
     t = slot_make()

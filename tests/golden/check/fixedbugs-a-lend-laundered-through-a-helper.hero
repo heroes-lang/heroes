@@ -12,6 +12,15 @@
 # FIX: panel 122 R3, the signature rule, which closes the whole route at the
 # declaration instead of chasing the flow. Both functions here are refused,
 # and that is the point: each one answers `cstr` outside a group.
+#
+# AND A THIRD REFUSAL SINCE PANEL 171, 2026-09-20, on the lend itself: a lend
+# reaches only a `lent` parameter of an `extern` function, and `pass` is this
+# program's own, so `lend_needs_a_header` names the laundering at the line it
+# happens on rather than only at the two signatures it flows through. The
+# `strlen` declaration stays unmarked on purpose: what reaches it is `outer`'s
+# RESULT, a name-like value and not a lend, which the rule admits — the pointer
+# a Heroes function hands back is the shape the sitting wrote down as what the
+# flip leaves standing, and R3 is what refuses it here.
 
 extern "string.h"
     function strlen(s: cstr) -> u64
@@ -20,7 +29,7 @@ function pass(c: cstr) -> cstr  #~ cstr_out_of_heroes
     return c
 
 function outer(n: i64) -> cstr  #~ cstr_out_of_heroes
-    return pass(c: ("heap-" + n.to_str()).cstr())
+    return pass(c: ("heap-" + n.to_str()).cstr())  #~ lend_needs_a_header
 
 function main()
     print(strlen(s: outer(n: 7)).to_str())

@@ -24,8 +24,8 @@ extern "ffi-a-lent-field-counted-by-a-constant.h"
         name: u8[8]
     function sl_make() -> Sl
     function both_make() -> Both
-    function sum_n(p: ptr counted_by n, n: i64) -> i64
-    function sl_fill(p: ptr counted_by n, n: i64)
+    function sum_n(p: ptr counted_by n lent, n: i64) -> i64
+    function sl_fill(p: ptr counted_by n lent, n: i64)
 
 function main()
     s: Sl @ sl_make()

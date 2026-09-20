@@ -5,7 +5,7 @@
 # `examples/curl`'s `curl_easy_setopt` is the same shape). `printf` writes to
 # the same stdout the runtime writes to, so the two lines interleave in order.
 extern "stdio.h"
-    function printf(format: cstr, value: i64) -> i32
+    function printf(format: cstr lent, value: i64) -> i32
 
 function main()
     _ = printf(format: "%lld\n".cstr(), value: 42)

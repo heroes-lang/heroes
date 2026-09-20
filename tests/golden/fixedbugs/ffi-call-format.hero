@@ -11,7 +11,7 @@
 # variadic bound at a FIXED arity — `printf(format: cstr, value: i64)` — is
 # legal and stays green (`ffi-variadic-at-a-fixed-arity.hero`, in `run/`).
 extern "stdio.h"
-    function printf(format: cstr) -> i32  #~ ffi_call_shape
+    function printf(format: cstr lent) -> i32  #~ ffi_call_shape
 
 function main()
     greeting = "hi\n"

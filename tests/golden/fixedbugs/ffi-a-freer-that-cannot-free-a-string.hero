@@ -24,7 +24,7 @@ extern "stdio.h"
     function fclose(f: ptr) -> i32
 
 extern "string.h"
-    function strdup(s: cstr) -> cstr owned fclose  #~ ffi_freer_type
+    function strdup(s: cstr lent) -> cstr owned fclose  #~ ffi_freer_type
 
 function main()
     # Answered rather than discarded: a checker error would stop the pipeline

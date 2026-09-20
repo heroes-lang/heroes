@@ -19,7 +19,7 @@
 
 extern "netdb.h"
     record AI tag addrinfo
-    function getaddrinfo(node: cstr, service: ptr, hints: ptr, @res: AI acquires freeaddrinfo) -> i32
+    function getaddrinfo(node: cstr lent, service: ptr, hints: ptr, @res: AI acquires freeaddrinfo) -> i32
     function freeaddrinfo(ai: AI consumes)
 
 function main()

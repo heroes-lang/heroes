@@ -1,0 +1,43 @@
+# fixedbugs, defect 066, panels 166 to 171, closed 2026-09-21.
+#
+# SYMPTOM: `check` exit 0, no diagnostic, and C reads a dead frame at exit 0.
+# `--sanitize` says `stack-use-after-scope` when the retainer is a `static
+# inline` in a header, and says NOTHING against the real `libsqlite3.dylib`,
+# where the program prints the correct value and the instrument masks the
+# defect. `s.cstr()` had the identical hole, `heap-use-after-free`, and it was
+# the half the corpus used: 59 occurrences against `.ptr()`'s 33.
+#
+# CAUSE: nothing in the language related C's retention to the moment the bytes
+# die. A lend lives for its call and no longer, and no declaration could say
+# that a parameter KEEPS what it is handed, so a lend that reached one was
+# admitted like any other and the corruption happened after the call, where no
+# rule about the call could see it.
+#
+# FIX: the default flipped (the author's ruling of 2026-09-20; panel 171). A C
+# parameter is assumed to keep unless declared `lent`, and a lend reaches only
+# one so declared, so both halves of the reproducer are refused at `check`,
+# each with the word to write and the copy to make instead. `later()` is quiet:
+# what C hands back is not a lend, and that shape is written down as what the
+# flip leaves standing.
+
+extern "keeper.h"
+    record Sl2
+        name: u8[8]
+        id: i64
+    function mk() -> Sl2
+    function keep(p: ptr counted_by n, n: i64)
+    function keep_label(s: cstr)
+    function later() -> i64
+
+function lend_and_return()
+    s: Sl2 @ mk()
+    keep(p: s.name.ptr(), n: 8)  #~ lend_kept
+
+function lend_a_string()
+    label = "H" + "payload"
+    keep_label(s: label.cstr())  #~ lend_kept
+
+function main()
+    lend_and_return()
+    lend_a_string()
+    print(later())

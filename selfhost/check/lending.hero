@@ -33,12 +33,18 @@
 # positions, and only an `extern` call is one that reads the bytes and
 # returns.
 #
-# WHY THE EXTERN DISCRIMINATOR IS NOT HERE. It was, and panel 122 removed
-# it on three grounds: two qualified calls that look identical differ in
-# legality by what another file declares (the ergonomist's veto), no
-# language uses which KIND of function is called as a lifetime criterion
-# (the historian found none), and it refused three SOUND sites in the
-# wrapper §4.19 prescribes as the route out of a module.
+# THE EXTERN DISCRIMINATOR IS BACK SINCE PANEL 171, and it was gone for a
+# reason worth keeping. Panel 122 removed it on three grounds: two qualified
+# calls that look identical differ in legality by what another file declares
+# (the ergonomist's veto), no language uses which KIND of function is called
+# as a lifetime criterion (the historian found none), and it refused three
+# SOUND sites in the wrapper §4.19 prescribes as the route out of a module.
+# The author's ruling of 2026-09-20 spends all three: under the pessimistic
+# default the legality of EVERY lend depends on what the declaration says
+# (`lent`), a wrapper's own `cstr` parameter is an unmarked one so the lend
+# stops at it either way, and the historian found D's druntime writing the
+# mark in exactly this shape. So a lend reaches a `lent` parameter of an
+# `extern` function or nowhere, and `check/lend_landing.hero` asks it.
 #
 # THE LEASE IS `check/leasing.hero`'S, since M-held-bytes (panel 124, ratified
 # 2026-09-09; panel 125). It is §4.19's FOURTH case, the mirror of the lend,
@@ -65,9 +71,10 @@ use check/lower
 use resolved
 use inventory
 use check/state
-use check/lend_extent
+use check/lend_landing
 use check/lend_decls
 use lend_errors
+use field_lend_errors
 
 # Whether this expression is a lend: `s.cstr()` or `cstr(s)`. The
 # RESOLVER answers, not the text — a name is only a builtin because the
@@ -183,14 +190,10 @@ function keeps_its_argument(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
         return false
     return !lend_decls.holds_a_refused_field(c, decls, built.must())
 
-# The sweep. A lend may stand only as an argument of a call (panel 122 R2).
-#
-# THE EXTERN DISCRIMINATOR WAS DROPPED AT THAT SITTING, on three grounds: the
-# ergonomist vetoed it because two identical-looking qualified calls differ in
-# legality by what another file declares; the historian could source no
-# language that uses which KIND of function is called as a lifetime criterion;
-# and the engineer measured that it refuses three SOUND sites in the wrapper
-# §4.19 prescribes as the route out of a module.
+# The sweep. A lend may stand only as an argument of a call (panel 122 R2),
+# and since panel 171 only as an argument of an `extern` function whose
+# parameter says `lent` — the module doc above carries why the discriminator
+# left and why it is back.
 function lent_only_into_c(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     lend_decls.no_cstr_out_of_heroes(@c, a, s, decls)
     lend_decls.no_cstr_in_a_record(@c, a, s, decls)
@@ -225,7 +228,7 @@ function lent_only_into_c(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
 
         if into[at].is_err()
             if is_builtin_named(a, r, at, name: "ptr")
-                state.push_diagnostic(@c, lend_errors.field_lend_escapes(a.exprs[at].span))
+                state.push_diagnostic(@c, field_lend_errors.field_lend_escapes(a.exprs[at].span))
 
         # **AND A LENT FIELD MUST NAME A PLACE** (panel 164). The lend hands C
         # the field where it lies so C may write back into it, and that is only
@@ -239,44 +242,40 @@ function lent_only_into_c(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
         # (`.claude/rules/module-shape.md`): a chain of fields rooted at a name.
         if is_builtin_named(a, r, at, name: "ptr")
             if !lends_a_place(a, at)
-                state.push_diagnostic(@c, lend_errors.field_lend_needs_a_place(a.exprs[at].span))
+                state.push_diagnostic(@c, field_lend_errors.field_lend_needs_a_place(a.exprs[at].span))
 
-            # **AND A LENT FIELD REACHES C DIRECTLY** (panel 166, 2026-09-19). The
-            # two questions about a lend are answered by the HEADER and nowhere
-            # else: whether C writes through it — the header's `const`, which
-            # clang checks against the cast the root decides — and how far it
-            # reads, the extent route C declares on the group's parameter. A
-            # Heroes function taking `ptr` carries neither: its parameter is a
-            # plain `void *`, so a lend from an immutable root failed inside
-            # clang at the wrapper's call, exit 2, and a lend from a `@` root
-            # reached C with nothing checked about it. Measured on the route's
-            # landing day, both. The `cstr` lend keeps panel 122's wider rule;
-            # this clause is the field's own, and the wrapper §4.19 prescribes
-            # takes the RECORD and lends inside itself, which stays legal.
-            if !into[at].is_err() && !lend_extent.callee_is_extern(a, r, decls, call: into[at].must())
-                state.push_diagnostic(@c, lend_errors.field_lend_needs_a_header(a.exprs[at].span))
-
-            # **AND THE PARAMETER IT LANDS ON MUST DECLARE THE EXTENT** (panel
-            # 166's route C, ratified 2026-09-19). The number a lend crosses
-            # with is the CALL's word, and `f(p: ptr, n: i64)` relates the two
-            # parameters not at all, so an overstated one read and WROTE past
-            # the field at exit 0 — defect 063. `counted_by n` is the relation,
-            # and absence is a refusal rather than silence: a check that fired
-            # only where somebody wrote the mark would leave the corruption
-            # standing wherever nobody did.
-            #
-            # It is asked AFTER the header question above, so a lend that
-            # reaches no header meets the one message that explains why, and
-            # `check/lend_extent.hero` answers absent for that case rather than
-            # both firing.
-            if !into[at].is_err()
-                uncounted = lend_extent.uncounted_landing(a, r, s, decls, call: into[at].must(), arg: at)
-
-                if !uncounted.is_err()
-                    state.push_diagnostic(
-                        @c,
-                        lend_errors.field_lend_uncounted(callee: uncounted.must().callee, parameter: uncounted.must().parameter, span: a.exprs[at].span)
-                    )
+        # **AND EVERY LEND LANDS ON A HEADER'S PARAMETER THAT SAYS IT LETS GO**
+        # (panel 166 for the field, panel 171 and the author's ruling of
+        # 2026-09-20 for both). Three questions, asked in `check/lend_landing.hero`
+        # in the order a reader meets them, stopping at the first that fails
+        # so one lend gets one message. The HEADER: only a function of an
+        # `extern` group can carry a mark, and only a header says whether C
+        # writes through the pointer — a Heroes function taking `ptr` has a
+        # plain `void *`, and one taking `cstr` forwards to an unmarked
+        # parameter either way. The EXTENT, for a field's address: `f(p: ptr,
+        # n: i64)` relates its two parameters not at all, so an overstated
+        # number read and WROTE past the field at exit 0 (defect 063). The
+        # WORD: an unmarked C parameter is assumed to KEEP what it is handed,
+        # and a lend lives for its call alone (defects 066 and 068). Absence is
+        # a refusal and never silence, for all three.
+        #
+        # A `cstr` lend standing in a record's construction is `cstr_escapes`'s
+        # above, or the field rule's when the record is condemned, and is not
+        # asked again; a `ptr` lend there IS asked, because a constructor is
+        # never an extern call and the header clause is the message that fits
+        # it (the tests say why, one each).
+        if !into[at].is_err() && is_lend(a, r, at)
+            if is_builtin_named(a, r, at, name: "ptr") || constructed_record(a, r, decls, call: into[at].must()).is_err()
+                lend_landing.landed_on_a_header(
+                    @c,
+                    a,
+                    r,
+                    s,
+                    decls,
+                    call: into[at].must(),
+                    at: at,
+                    field: is_builtin_named(a, r, at, name: "ptr")
+                )
         at @ at + 1
 
 # Whether a `ptr` lend's receiver is a place: `s.name`, `s.inner.name`, and
@@ -334,8 +333,26 @@ test "a Heroes function may not answer cstr"
 test "a record outside a group may not hold a cstr"
     assert swept("record H\n    c: cstr\n\nfunction f(h: H) -> H\n    return h\n") == 1
 
-test "the legal shape stays quiet: a lend as an argument, and a group's own record"
-    assert swept("extern \"s.h\"\n    record C\n        name: cstr\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    return n(s: x.cstr())\n") == 0
+test "the legal shape stays quiet: a lend as an argument of a `lent` parameter, and a group's own record"
+    assert swept("extern \"s.h\"\n    record C\n        name: cstr\n    function n(s: cstr lent) -> u64\n\nfunction f(x: str) -> u64\n    return n(s: x.cstr())\n") == 0
+
+# Panel 171: the default is the pessimistic one. A lend at an unmarked `cstr`
+# parameter is refused; a lease name, `nullptr`, a `cstr` C handed back and any
+# name are admitted there, because none of them is bytes that die with the
+# call — and the pointer C hands back is the shape the sitting wrote down as
+# what the flip leaves standing.
+test "a lend at a parameter not marked lent is refused, and what is not a lend stays quiet"
+    assert swept("extern \"s.h\"\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    return n(s: x.cstr())\n") == 1
+    assert swept("extern \"s.h\"\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    l: cstr @ x.lease()\n    k = n(s: l)\n    end_lease(@l)\n    return k\n") == 0
+    assert swept("extern \"s.h\"\n    function n(s: cstr) -> u64\n\nfunction f() -> u64\n    return n(s: nullptr)\n") == 0
+    assert swept("extern \"s.h\"\n    function n(s: cstr) -> u64\n    function g() -> cstr\n\nfunction f() -> u64\n    return n(s: g())\n") == 0
+
+# And a `cstr` lend handed to a function of this program stops there: the
+# wrapper cannot carry the mark, so the lend is made inside it instead, which
+# is the shape §4.19 prescribes and the one panel 122 removed the clause for.
+test "a cstr lend handed to a function of this program is refused, and the wrapper that lends inside itself stays quiet"
+    assert swept("extern \"s.h\"\n    function n(s: cstr lent) -> u64\n\nfunction wrap(s: cstr) -> u64\n    return n(s: s)\n\nfunction f(x: str) -> u64\n    return wrap(s: x.cstr())\n") == 1
+    assert swept("extern \"s.h\"\n    function n(s: cstr lent) -> u64\n\nfunction wrap(x: str) -> u64\n    return n(s: x.cstr())\n\nfunction f(x: str) -> u64\n    return wrap(x: x)\n") == 0
 
 # Panel 164's two clauses, each made to fire and each shown quiet on the shape
 # beside it. The legal case is third on purpose: a rule with no quiet case is a
@@ -344,10 +361,15 @@ test "a lent field kept in a binding is refused"
     assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    k: ptr @ s.b.ptr()\n    return f(p: k, n: 4)\n") == 1
 
 test "a lent field of a value nothing holds is refused"
-    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n, n: i64) -> i64\n    function make() -> S\n\nfunction g() -> i64\n    return f(p: make().b.ptr(), n: 4)\n") == 1
+    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n lent, n: i64) -> i64\n    function make() -> S\n\nfunction g() -> i64\n    return f(p: make().b.ptr(), n: 4)\n") == 1
 
-test "a lent field passed straight into C stays quiet"
-    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    return f(p: s.b.ptr(), n: 4)\n") == 0
+# Panel 171's half for the field: the marked parameter is quiet, the unmarked
+# one is refused, and an uncounted one gets the EXTENT message alone, whose
+# note names both words — one message per lend, whichever word is missing.
+test "a lent field passed straight into C stays quiet, and is refused once where a word is missing"
+    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n lent, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    return f(p: s.b.ptr(), n: 4)\n") == 0
+    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    return f(p: s.b.ptr(), n: 4)\n") == 1
+    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    return f(p: s.b.ptr(), n: 4)\n") == 1
 
 # A field reached through another field is still a place, which is the shape
 # beside the one that provoked the rule (CL-061).
@@ -356,7 +378,7 @@ test "a lent field passed straight into C stays quiet"
 # variant case, an array literal, a map literal and `ok(x)` each refuse already.
 test "a lend parked in a group's record is refused, and the call that reads it stays quiet"
     assert swept("extern \"s.h\"\n    record Box\n        p: cstr\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> Box\n    return Box(p: x.cstr())\n") == 1
-    assert swept("extern \"s.h\"\n    record Box\n        p: cstr\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    return n(s: x.cstr())\n") == 0
+    assert swept("extern \"s.h\"\n    record Box\n        p: cstr\n    function n(s: cstr lent) -> u64\n\nfunction f(x: str) -> u64\n    return n(s: x.cstr())\n") == 0
 
 # A record of THIS program is refused by the FIELD rule, and the construction
 # clause steps aside there: one mistake gets one message, and the second
@@ -373,7 +395,7 @@ test "a lend parked in a record with legal fields is refused, by the clause that
     assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n, n: i64) -> i64\n\nrecord Box\n    p: ptr\n\nfunction g(s: S) -> Box\n    return Box(p: s.b.ptr())\n") == 1
 
 test "a lent field nested one record deep is still a place"
-    assert swept("extern \"s.h\"\n    record I\n        b: u8[4]\n    record S\n        i: I\n    function f(p: ptr counted_by n, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    return f(p: s.i.b.ptr(), n: 4)\n") == 0
+    assert swept("extern \"s.h\"\n    record I\n        b: u8[4]\n    record S\n        i: I\n    function f(p: ptr counted_by n lent, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    return f(p: s.i.b.ptr(), n: 4)\n") == 0
 
 # Panel 166's clause: the callee must be the group's. A wrapper taking `ptr`
 # and a function value are the two ways a lend used to reach C with no header
@@ -383,4 +405,4 @@ test "a lent field handed to a function of this program is refused, through a na
     assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n, n: i64) -> i64\n\nfunction wrap(p: ptr, n: i64) -> i64\n    return f(p: p, n: n)\n\nfunction g(s: S) -> i64\n    h = wrap\n    return h(s.b.ptr(), 4)\n") == 1
 
 test "a wrapper that takes the record and lends inside itself stays quiet"
-    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n, n: i64) -> i64\n\nfunction total(s: S) -> i64\n    return f(p: s.b.ptr(), n: 4)\n\nfunction g(s: S) -> i64\n    return total(s: s)\n") == 0
+    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n lent, n: i64) -> i64\n\nfunction total(s: S) -> i64\n    return f(p: s.b.ptr(), n: 4)\n\nfunction g(s: S) -> i64\n    return total(s: s)\n") == 0

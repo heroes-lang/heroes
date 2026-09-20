@@ -29,7 +29,7 @@
 # relative path was a different file under each of the three configurations.
 
 extern "stdio.h"
-    function fopen(path: cstr, mode: cstr) -> ptr
+    function fopen(path: cstr lent, mode: cstr lent) -> ptr
     function fputc(c: i32, stream: ptr) -> i32
     function fclose(stream: ptr) -> i32
 

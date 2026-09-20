@@ -4,7 +4,7 @@
 # null the one cell the pointer lives in, and these have no such cell.
 
 extern "stdlib.h"
-    function getenv(name: cstr) -> cstr
+    function getenv(name: cstr lent) -> cstr
 
 function main()
     d: cstr @ getenv(name: "HOME".cstr())

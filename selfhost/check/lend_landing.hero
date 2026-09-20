@@ -1,0 +1,238 @@
+# The LANDING of a lend: the `extern` parameter a `s.cstr()` or `f.ptr()`
+# reaches, and the three questions asked of it (design.md §4.19, §1.12; panels
+# 166 and 171; defects 063, 066, 068).
+#
+# WHY IT IS ITS OWN MODULE. `check/lend_extent.hero` judges the two marks
+# WHERE THEY ARE DECLARED — `counted_by` and `lent` on a group's parameter —
+# and this module judges WHERE A LEND LANDS: which declaration a call reaches,
+# at which position, and whether that parameter says what the lend needs. The
+# two were one file until panel 171's third question put it at 306 lines in
+# `suite_layout.hero`'s unit against §11's 300, and the seam is the one the
+# file's own section headings already drew, *The declaration* and *The
+# landing*. `check/lending.hero` owns the POSITION a lend may stand in and
+# calls `landed_on_a_header` for every lend that stands as an argument.
+#
+# THE THREE QUESTIONS, IN THE ORDER A READER MEETS THEM, and one message per
+# lend: the HEADER (only a function of an `extern` group can carry a mark, and
+# only a header says whether C writes through the pointer), the EXTENT for a
+# field's address (`counted_by`, defect 063), the WORD (`lent`, because an
+# unmarked C parameter is assumed to KEEP what it is handed and a lend lives
+# for its call alone — the author's ruling of 2026-09-20, panel 171). Absence
+# is a refusal and never silence, for all three.
+
+use ast
+use source
+use resolved
+use check/state
+use lend_errors
+use field_lend_errors
+use parse
+use resolve
+
+## The landing
+
+# Whether a call names a function of an `extern` group: `f(...)` through its
+# callee, `x.f(...)` through the method name the resolver bound. A function
+# value, a built-in and an unresolved name are not, and neither is a call the
+# AST gains tomorrow, which is the loud direction.
+function callee_is_extern(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], call: i64) -> bool
+    return !extern_callee(a, r, decls, call: call).is_err()
+
+# The declaration index of the extern function a call names, or absent.
+function extern_callee(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], call: i64) -> i64?
+    named = match a.exprs[call].kind
+        .call cl                                                                    => cl.callee
+        .method                                                                     => call
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit  => 0 - 1
+        .null_ptr | .hole | .unary | .binary | .field | .field_name | .index        => 0 - 1
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => 0 - 1
+
+    if named < 0
+        return fail(code: "none", msg: "not a call")
+
+    match r.uses[named]
+        .top t =>
+            match decls[t.at].kind
+                .function_decl fd =>
+                    if fd.value.is_extern
+                        return ok(t.at)
+                    return fail(code: "none", msg: "a function of this program")
+                .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(
+                    code: "none",
+                    msg: "not a function"
+                )
+        .builtin | .local | .module | .unresolved => return fail(code: "none", msg: "not a declared function")
+
+    return fail(code: "none", msg: "unreached")
+
+# The position of an argument in its call, counting from 0. A UFCS receiver is
+# position 0 with the written arguments after it (§4.11); a receiver that is a
+# module name is qualification, not an argument, and the resolver has said so
+# on the receiver itself.
+function argument_position(a: ast.Ast, r: resolved.Resolved, call: i64, arg: i64) -> i64?
+    match a.exprs[call].kind
+        .call cl =>
+            i: i64 @ 0
+
+            for one in cl.args
+                if one.value == arg
+                    return ok(i)
+                i @ i + 1
+        .method m =>
+            qualified = match r.uses[m.receiver]
+                .module                                => true
+                .top | .local | .builtin | .unresolved => false
+
+            if !qualified && m.receiver == arg
+                return ok(0)
+            i: i64 @ 1
+
+            if qualified
+                i @ 0
+
+            for one in m.args
+                if one.value == arg
+                    return ok(i)
+                i @ i + 1
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return fail(
+            code: "none",
+            msg: "not a call"
+        )
+        .null_ptr | .hole | .unary | .binary | .field | .field_name | .index => return fail(
+            code: "none",
+            msg: "not a call"
+        )
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
+            code: "none",
+            msg: "not a call"
+        )
+
+    return fail(code: "none", msg: "not an argument of this call")
+
+# The extern parameter a lend lands on: what it and its function are called,
+# and the two marks the lend's rules read — the sibling that gives its extent,
+# absent when it declares none, and whether it says the call keeps nothing
+# (panel 171). Absent when the question is somebody else's: a callee that is
+# not an extern is the header clause's, and an argument past the signature's
+# end is the arity check's.
+record Landing
+    callee: str
+    parameter: str
+    count: str?
+    lent: bool
+
+function landing_of(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: i64, arg: i64) -> Landing?
+    decl = extern_callee(a, r, decls, call: call)
+
+    if decl.is_err()
+        return fail(code: "none", msg: "not an extern call")
+    position = argument_position(a, r, call: call, arg: arg)
+
+    if position.is_err()
+        return fail(code: "none", msg: "not an argument")
+
+    match decls[decl.must()].kind
+        .function_decl fd =>
+            if position.must() >= fd.value.params.len()
+                return fail(code: "none", msg: "past the signature, which arity refuses")
+            landed = fd.value.params[position.must()]
+            count: str? @ fail(code: "none", msg: "uncounted")
+
+            if !landed.counted_by.is_err()
+                count @ ok(source.span_text(s, landed.counted_by.must()))
+            return ok(
+                Landing(callee: source.span_text(s, decls[decl.must()].name), parameter: source.span_text(s, landed.name), count: count, lent: landed.lent)
+            )
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a function")
+
+    return fail(code: "none", msg: "unreached")
+
+# The three questions a lend asks of where it lands, in the order a reader
+# meets them, stopping at the first that fails so one lend gets one message
+# (panels 166 and 171). It lives HERE and not in the sweep because this module
+# owns the landing and `check/lending.hero` owns the position.
+#
+# FIRST the header: a Heroes function, a function value or a constructor can
+# carry no mark, so the lend stops there with the message that says where to
+# lend instead. THEN, for a field's address, the extent: `counted_by` relates
+# the call's number to the field, and without it nothing can check the number
+# (defect 063). THEN the word: `lent`, because an unmarked C parameter is
+# assumed to KEEP what it is handed and a lend lives for its call alone.
+# Absence is a refusal and never silence, for all three — a check that fires
+# only where somebody wrote a mark leaves the corruption standing wherever
+# nobody did (panel 166's engineer, and the author's ruling at 171).
+function landed_on_a_header(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: i64, at: i64, field: bool)
+    span = a.exprs[at].span
+
+    if !callee_is_extern(a, r, decls, call: call)
+        if field
+            state.push_diagnostic(@c, field_lend_errors.field_lend_needs_a_header(span))
+        else
+            state.push_diagnostic(@c, lend_errors.lend_needs_a_header(span))
+        return
+    landing = landing_of(a, r, s, decls, call: call, arg: at)
+
+    if landing.is_err()
+        return
+    landed = landing.must()
+
+    if field && landed.count.is_err()
+        state.push_diagnostic(
+            @c,
+            field_lend_errors.field_lend_uncounted(callee: landed.callee, parameter: landed.parameter, span: span)
+        )
+        return
+
+    if landed.lent
+        return
+    lend: str @ "`.cstr()`"
+    count: str @ ""
+
+    if field
+        lend @ "`.ptr()`"
+        count @ landed.count.must()
+    state.push_diagnostic(
+        @c,
+        lend_errors.lend_kept(lend: lend, callee: landed.callee, parameter: landed.parameter, count: count, span: span)
+    )
+
+test "the landing: a counted parameter is quiet, an uncounted one is named, an unmarked one is kept, and a Heroes callee is not this question"
+    text = "extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n lent, n: i64) -> i64\n    function g(p: ptr, n: i64) -> i64\n    function k(p: ptr counted_by n, n: i64) -> i64\n\nfunction wrap(p: ptr, n: i64) -> i64\n    return g(p: p, n: n)\n\nfunction h(s: S) -> i64\n    return f(p: s.b.ptr(), n: 4) + g(p: s.b.ptr(), n: 4) + wrap(p: s.b.ptr(), n: 4) + k(p: s.b.ptr(), n: 4)\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    landings: [str] @ []
+    kept: [str] @ []
+    at: i64 @ 0
+
+    while at < p.tree.exprs.len()
+        match p.tree.exprs[at].kind
+            .call cl =>
+                for arg in cl.args
+                    # The LEND alone, which is what the sweep asks about: every
+                    # other argument of an uncounted parameter would answer too,
+                    # and `n: 4` landing on an unmarked `n` is nobody's defect.
+                    # The first draft of this test asked about all of them and
+                    # read `f.n g.p g.n`, which is the instrument watching
+                    # itself rather than the rule (`.claude/rules/
+                    # diagnostics-and-goldens.md`).
+                    if source.span_text(s, p.tree.exprs[arg.value].span) != "s.b.ptr()"
+                        continue
+                    found = landing_of(p.tree, out, s, p.decls, call: at, arg: arg.value)
+
+                    if !found.is_err() && found.must().count.is_err()
+                        landings @ landings.push(found.must().callee + "." + found.must().parameter)
+
+                    if !found.is_err() && !found.must().lent
+                        kept @ kept.push(found.must().callee + "." + found.must().parameter)
+            .method | .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit =>
+                _ = 0
+            .null_ptr | .hole | .unary | .binary | .field | .field_name | .index =>
+                _ = 0
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error =>
+                _ = 0
+
+        at @ at + 1
+
+    assert landings == ["g.p"]
+    assert kept == ["g.p", "k.p"]

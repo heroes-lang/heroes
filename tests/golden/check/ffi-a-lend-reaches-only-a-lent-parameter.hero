@@ -1,0 +1,44 @@
+# A lend reaches only a `lent` parameter of an `extern` function (panel 171;
+# the author's ruling of 2026-09-20; spec § 13).
+#
+# THE DEFAULT IS THE PESSIMISTIC ONE. `s.cstr()` and `f.ptr()` lend bytes to C
+# for one call and no longer, and a C parameter that does not say `lent` is
+# assumed to KEEP what it is handed, so the lend is refused there: `lend_kept`,
+# whose notes name the word to write and the lease to take instead, and say
+# that where C FREES what it is handed neither route works. Into a function of
+# this program, which can carry no mark, the lend is refused with the message
+# that says where to lend instead: `lend_needs_a_header`. And what is NOT a
+# lend is admitted at an unmarked parameter — a lease, `nullptr`, a pointer C
+# handed back, any name — because none of those is bytes that die with the
+# call. A `ptr` lend asks the extent first, so an uncounted parameter gets that
+# message alone, and its note names both words.
+
+extern "keeper.h"
+    record S
+        b: u8[4]
+    function reads(s: cstr lent) -> u64
+    function keeps(s: cstr) -> u64
+    function hands_back() -> cstr
+    function fills(p: ptr counted_by n lent, n: i64) -> i64
+    function parks(p: ptr counted_by n, n: i64) -> i64
+    function bare(p: ptr, n: i64) -> i64
+
+# A Heroes function can carry no mark, so a lend stops at it: the wrapper
+# §4.19 prescribes takes the `str` and lends inside itself instead.
+function wrap(s: cstr) -> u64
+    return keeps(s: s)
+
+function main()
+    x = "payload"
+    s: S @ S(b: [1, 2, 3, 4])
+    print(reads(s: x.cstr()))
+    print(keeps(s: x.cstr()))  #~ lend_kept
+    print(wrap(s: x.cstr()))  #~ lend_needs_a_header
+    print(fills(p: s.b.ptr(), n: 4))
+    print(parks(p: s.b.ptr(), n: 4))  #~ lend_kept
+    print(bare(p: s.b.ptr(), n: 4))  #~ field_lend_uncounted
+    l: cstr @ x.lease()
+    print(keeps(s: l))
+    end_lease(@l)
+    print(keeps(s: nullptr))
+    print(keeps(s: hands_back()))

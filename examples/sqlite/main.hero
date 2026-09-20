@@ -48,7 +48,11 @@ extern "sqlite3.h" link "sqlite3"
     # `Stmt` with `sqlite3_close` is a mistake with a name; `consumes` marks the
     # call that takes it. A handle taken and not given back is a panic at exit
     # saying how many, where before this it was exit 0 and silence.
-    function sqlite3_open(filename: cstr, @out: Db acquires sqlite3_close) -> i64
+    # `lent` says the call reads the string while it runs and keeps nothing
+    # of it, which SQLite's documentation says of `filename` and of `sql`
+    # (it copies what it needs). Without the word the compiler assumes C
+    # keeps the pointer and refuses `s.cstr()` at the call (spec § 13).
+    function sqlite3_open(filename: cstr lent, @out: Db acquires sqlite3_close) -> i64
     function sqlite3_close(db: Db consumes) -> i64
     # The fifth argument is `char **errmsg`, and a non-NULL one makes SQLite
     # allocate a copy of the message that the CALLER must release with
@@ -60,8 +64,8 @@ extern "sqlite3.h" link "sqlite3"
     # because no statement here is ever refused, which is a fact about its SQL
     # and not a defence. Repaired as the class rather than the case
     # (CLAUDE.md §1).
-    function sqlite3_exec(db: Db, sql: cstr, callback: ptr, context: ptr, error: ptr) -> i64
-    function sqlite3_prepare_v2(db: Db, sql: cstr, length: i32, @statement: Stmt acquires sqlite3_finalize, @tail: cstr) -> i64
+    function sqlite3_exec(db: Db, sql: cstr lent, callback: ptr, context: ptr, error: ptr) -> i64
+    function sqlite3_prepare_v2(db: Db, sql: cstr lent, length: i32, @statement: Stmt acquires sqlite3_finalize, @tail: cstr) -> i64
     function sqlite3_step(statement: Stmt) -> i64
     function sqlite3_column_int(statement: Stmt, column: i32) -> i64
     function sqlite3_finalize(statement: Stmt consumes) -> i64
