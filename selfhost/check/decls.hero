@@ -310,13 +310,34 @@ test "a type parameter that appears nowhere in the signature is refused at its l
 # flattened in the parser and no later pass knows the word: two records in two
 # groups over one header are the same mistake, and the header is not compared
 # for the same reason — `sqlite3.h` included twice is one type.
+#
+# **NARROWED AGAIN 2026-09-20, panel 170, at `tag void` ONLY — defect 072.**
+# The ground above is that one tag is one C type, so two Heroes types over it
+# put the checker and clang on opposite sides and the mutant lives. **At
+# `tag void` the rule PRODUCES that shape instead of preventing it.** Two C
+# allocator families that both hand back `void *` — `malloc`/`free` beside
+# `sqlite3_malloc`/`sqlite3_free`, SQLite's own pair — have no tag to differ by,
+# so this rule collapses them onto ONE Heroes type and the crossed free becomes
+# an ordinary call: `check` 0, `build` 0, `run` 0, the arena destroyed, the heap
+# block leaked, **and the live set silent because the count balances**.
+#
+# Admitting a second record over `tag void` gives them two Heroes TYPES, both
+# still `void *` in C, and the crossed call is `error[type_mismatch]` at check —
+# measured by panel 170's completeness critic. So the narrowing does not weaken
+# the rule, **it stops the rule from defeating itself on the one tag where no
+# author can spell the difference.**
+#
+# `void` and no other word, because every other tag is a name the author can
+# vary: `record Arena tag arena_t` beside `record Heap tag heap_t` already works
+# where the header declares both, and the census that opened this found the pair
+# only where the header declares neither.
 function one_tag_one_type(@c: state.Checker, s: source.Source, decls: [ast.Decl])
     seen: {str: str} @ {}
 
     for decl in decls
         match decl.kind
             .record_decl rec =>
-                if !rec.header.is_err() && !rec.tag.is_err()
+                if !rec.header.is_err() && !rec.tag.is_err() && source.span_text(s, rec.tag.must()) != "void"
                     tag = source.span_text(s, rec.tag.must())
                     name = source.span_text(s, decl.name)
                     first = seen[tag_kind(decl, tag: tag)]

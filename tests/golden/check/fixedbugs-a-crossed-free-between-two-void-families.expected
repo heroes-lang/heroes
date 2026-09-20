@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-a-crossed-free-between-two-void-families.hero:32:18: error[type_mismatch]: expected `Heap`, found `Arena`
+tests/golden/check/fixedbugs-a-crossed-free-between-two-void-families.hero:35:19: error[type_mismatch]: expected `Arena`, found `Heap`
