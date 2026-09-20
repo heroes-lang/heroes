@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 1**
+**OPEN: 2**
 
 - [ ] **panel 167** | the lend's lifetime: a field lease that copies is adopted, two type rules are widened from `cstr` to `ptr`, and routes B, C and D are refused — ratify, or take the conservative resolution the sitting recorded | `docs/panel/167-nobody-checks-the-callee-and-the-lease-we-would-copy-is-open.md`
 
@@ -37,5 +37,26 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     no instrument anywhere. Two seats vetoed it — on locality and on the
     absence of any instrument — so taking it overrides two vetoes rather than
     choosing a price.
+
+    **PARTLY OVERTAKEN BY PANEL 168, 2026-09-20.** Its clause 1's allocation half
+    is struck on a veto, and its clause 2 is suspended on three measurements.
+    What is still yours to ratify here is the rest: that a lend gains a sibling
+    that copies. Panel 168 measured that the sibling closes **neither** defect,
+    so a yes no longer buys what this item said it would.
+
+- [ ] **panel 168** | the lease allocation keeps the leading header that ships, panel 167's clause 1 allocation half is struck on a veto and its clause 2 is suspended, and route A is measured to close zero of two defects — ratify, or take the conservative resolution the sitting recorded | `docs/panel/168-the-property-is-not-the-base-and-route-a-closes-zero-of-two.md`
+
+    **Origin:** panel 168, 2026-09-20, the soundness lane, on panel 167 clause
+    1's allocation half. **The default while this is open** is the adopted
+    resolution: the runtime's lease allocation does not change, clause 2 is not
+    built until it is re-argued, and this milestone's remaining question is
+    defects 066 and 068 rather than route A.
+
+    **What conservative would have been**, recorded so it can be taken: adopt the
+    leading header and say nothing about route A's efficacy, leaving defect 066's
+    entry reading *"this entry closes when that lands"*. It is the cheapest thing
+    on the table and it is **false, measured** — it would have the milestone build
+    a feature for two more steps and discover at the close that the list is not
+    clean.
 
 *******************************************************************************
