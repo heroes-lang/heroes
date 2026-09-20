@@ -188,9 +188,9 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t13 = t12.s;
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    (void)slot_close(t13);
-#line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     hero_handle_consumed(t13);
+#line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
+    (void)slot_close(t13);
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t14 = h0_p;
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
@@ -198,9 +198,9 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t16 = t15.s;
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    (void)slot_close(t16);
-#line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     hero_handle_consumed(t16);
+#line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
+    (void)slot_close(t16);
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t17 = HERO_STR_LIT(hero_str_455ecde8);
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"

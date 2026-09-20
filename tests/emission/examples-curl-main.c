@@ -659,9 +659,9 @@ bb18:
 #line 82 "examples/curl/main.hero"
     t73 = h2_handle;
 #line 82 "examples/curl/main.hero"
-    (void)curl_easy_cleanup(t73);
-#line 82 "examples/curl/main.hero"
     hero_handle_consumed(t73);
+#line 82 "examples/curl/main.hero"
+    (void)curl_easy_cleanup(t73);
 #line 666 "main.c"
     h_0opt_f87774a_release(&h0_f0);
 #line 82 "examples/curl/main.hero"

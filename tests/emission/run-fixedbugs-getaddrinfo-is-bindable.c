@@ -141,9 +141,9 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     t8 = h0_res;
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    (void)freeaddrinfo(t8);
-#line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     hero_handle_consumed(t8);
+#line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
+    (void)freeaddrinfo(t8);
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     return;
 #line 150 "fixedbugsgetaddrinfoisbindable.c"

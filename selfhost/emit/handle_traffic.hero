@@ -72,16 +72,51 @@ function for_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls: 
                                 entry: "hero_handle_acquired"
                             )
 
-                        if p.consumes
-                            emit_each(
-                                @w,
-                                c,
-                                s,
-                                decls,
-                                ty: written.must(),
-                                value: arguments[at],
-                                entry: "hero_handle_consumed"
-                            )
+                at @ at + 1
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return
+
+# **`consumes` GOES BEFORE THE CALL, and `acquires` cannot** — defect 071,
+# 2026-09-20. A consumed handle's value exists before the call; an acquired
+# result does not exist until the call returns, and an acquiring `@`
+# out-parameter's cell is not written until then either. So the two ends sit on
+# opposite sides of the line, and the ordering is a fact about when each value
+# exists rather than a preference.
+#
+# WHAT IT COST TO LEARN. Until today both ends were emitted after the call, on
+# the ground that *the counter rides the call it belongs to … so the two are one
+# instruction to read* — a readability reason, and CLAUDE.md § Precedence puts
+# robustness at rank 3 and leaves that at none. Measured: a second `consumes` of
+# the same local reached C first and the process died inside the real
+# deallocator at exit 133 with **no message at all**, while the runtime's own
+# stray report — which names this exact program in three sentences — waited for
+# an exit the program never reached.
+#
+# AND THE CASE THAT WOULD HAVE CAUGHT IT SAID SO IN ITS OWN HEADER.
+# `tests/golden/run/abort-handle-given-back-twice.h`: *"`slot_close`
+# deliberately does nothing, so the second release below does not corrupt
+# anything on this machine and the case can assert the COUNT rather than a
+# crash. Against a real allocator the same program is a double free."* True,
+# written down, and never followed by the case that runs it against one. That
+# case is `fixedbugs-a-real-deallocator-given-the-same-handle-twice`.
+function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str])
+    match decls[decl].kind
+        .function_decl fd =>
+            at: i64 @ 0
+
+            for p in fd.value.params
+                if at < arguments.len() && p.consumes
+                    written = state.written_type(c, p.ty)
+
+                    if !written.is_err()
+                        emit_each(
+                            @w,
+                            c,
+                            s,
+                            decls,
+                            ty: written.must(),
+                            value: arguments[at],
+                            entry: "hero_handle_consumed"
+                        )
                 at @ at + 1
         .constant_decl | .record_decl | .variant_decl | .test_decl => return
 

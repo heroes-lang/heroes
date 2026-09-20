@@ -1,0 +1,51 @@
+# Defect 071, repaired 2026-09-20 at M-declared-extents step 13.
+#
+# SYMPTOM. The same handle given back twice, to a deallocator that really
+# frees: `check` 0, `build` 0, and `run` **133 three of three with nothing on
+# stderr at all**. The runtime holds a three-sentence message naming this exact
+# program and it never printed, because the program died inside C's own `free`
+# before the gate that prints it.
+#
+# CAUSE, and it is an ORDER rather than a missing rule. `emit/ops.hero` wrote
+# `hero_handle_consumed(t)` on the line AFTER the call, on the stated ground
+# that *the counter rides the call it belongs to … so the two are one
+# instruction to read*. That is a readability reason; CLAUDE.md § Precedence
+# puts robustness at rank 3 and leaves readability of the emitted C at none.
+# A guard on the far side of the call it guards can report and never prevent —
+# and here it could not even report.
+#
+# THE REPAIR IS TWO HALVES, because either alone is not enough.
+#   - `consumes` is now emitted BEFORE the call and `acquires` still after, and
+#     that split is a fact rather than a preference: a consumed handle's value
+#     exists before the call, while an acquired result does not exist until the
+#     call returns.
+#   - `hero_handle_consumed` ABORTS at the stray instead of counting it for
+#     exit. The runtime's own comment already gave the reason — *"the stray is
+#     reported first, because it is the one that may already have corrupted
+#     memory"* — and waiting for exit is how that reasoning loses to a program
+#     that never reaches exit. The exit gate keeps its call as defence in depth.
+#
+# AND THE CASE THAT WOULD HAVE CAUGHT IT PREDICTED IT IN PROSE.
+# `abort-handle-given-back-twice.h` says its `slot_close` *"deliberately does
+# nothing, so the second release below does not corrupt anything on this machine
+# and the case can assert the COUNT rather than a crash. Against a real
+# allocator the same program is a double free."* Written 2026-09-15, true, and
+# never followed by this file. That is `.claude/rules/diagnostics-and-goldens.md`
+# § An instrument watches the world: the assertion was watching the accounting,
+# and the world is a deallocator that frees.
+#
+# The one line that differs from its ancestor is the header's `blk_close`, which
+# calls `free`. Everything else is deliberately the same shape, so a reader can
+# diff the two and see that the difference is C's and not Heroes'.
+
+extern "fixedbugs-a-real-deallocator-given-the-same-handle-twice.h"
+    record Blk tag blk
+    function blk_open(n: i64) -> Blk acquires blk_close
+    function blk_close(b: Blk consumes)
+    function blk_value(b: Blk) -> i64
+
+function main()
+    a = blk_open(n: 7)
+    print(blk_value(b: a))
+    blk_close(b: a)
+    blk_close(b: a)

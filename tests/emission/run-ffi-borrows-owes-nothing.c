@@ -150,9 +150,9 @@ bb0:
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t9 = h0_mine;
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    (void)slot_close(t9);
-#line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     hero_handle_consumed(t9);
+#line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
+    (void)slot_close(t9);
 #line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t10 = HERO_STR_LIT(hero_str_2f69e1a4);
 #line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"

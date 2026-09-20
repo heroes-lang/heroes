@@ -184,9 +184,9 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     t14 = t13.s;
 #line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    (void)slot_close(t14);
-#line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     hero_handle_consumed(t14);
+#line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
+    (void)slot_close(t14);
 #line 36 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     t15 = HERO_STR_LIT(hero_str_38da945e);
 #line 36 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"

@@ -132,15 +132,15 @@ bb0:
 #line 28 "tests/golden/run/abort-handle-given-back-twice.hero"
     t5 = h0_a;
 #line 28 "tests/golden/run/abort-handle-given-back-twice.hero"
-    (void)slot_close(t5);
-#line 28 "tests/golden/run/abort-handle-given-back-twice.hero"
     hero_handle_consumed(t5);
+#line 28 "tests/golden/run/abort-handle-given-back-twice.hero"
+    (void)slot_close(t5);
 #line 29 "tests/golden/run/abort-handle-given-back-twice.hero"
     t6 = h0_a;
 #line 29 "tests/golden/run/abort-handle-given-back-twice.hero"
-    (void)slot_close(t6);
-#line 29 "tests/golden/run/abort-handle-given-back-twice.hero"
     hero_handle_consumed(t6);
+#line 29 "tests/golden/run/abort-handle-given-back-twice.hero"
+    (void)slot_close(t6);
 #line 29 "tests/golden/run/abort-handle-given-back-twice.hero"
     return;
 #line 147 "aborthandlegivenbacktwice.c"
