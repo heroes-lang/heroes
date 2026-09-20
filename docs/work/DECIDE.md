@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 3**
 
 - [ ] **panel 167** | the lend's lifetime: a field lease that copies is adopted, two type rules are widened from `cstr` to `ptr`, and routes B, C and D are refused — ratify, or take the conservative resolution the sitting recorded | `docs/panel/167-nobody-checks-the-callee-and-the-lease-we-would-copy-is-open.md`
 
@@ -58,5 +58,23 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     on the table and it is **false, measured** — it would have the milestone build
     a feature for two more steps and discover at the close that the list is not
     clean.
+
+- [ ] **panel 169** | the lend's extent is stated in the spec before any rule enforces it, the caller-side rule is stated over the IR rather than the AST, defect 066 and defect 068 are two classes, and defect 069 becomes the milestone's blocking item — ratify, or take the conservative resolution the sitting recorded | `docs/panel/169-two-defects-two-classes-and-the-one-that-was-never-searched-where-it-happens.md`
+
+    **Origin:** panel 169, 2026-09-20, the full panel, on what closes defects 066
+    and 068. **The default while this is open** is the adopted resolution: nothing
+    of the caller-side rule is built until `spec § 13` says how long a lend is
+    readable, because the ergonomist measured that the same rule closes defect 068
+    under one reading of the extent and closes nothing under the other; defect
+    069's six-line repair lands first; and R5, give the ownership away, is the
+    route for 066.
+
+    **What conservative would have been**, recorded so it can be taken: adopt the
+    caller-side rule as the sitting's own first draft had it, widened to *written*
+    and stated over the AST. It is built, it is measured at 0 of 752 files
+    refused, and the completeness critic **ran the program that shows it leaves
+    defect 068 open one statement kind over** — a re-declaration on a second loop
+    turn, `check` 0, zero diagnostics. Taking it closes the witness and ships the
+    class for the third time in one milestone.
 
 *******************************************************************************
