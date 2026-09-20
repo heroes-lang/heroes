@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 6**
 
 - [ ] **066 — a `ptr` lend has no lifetime rule, so C may keep the address past the frame** | a field's address handed to C outlives the binding it came from, and a later C call reads a dead frame at exit 0 | `selfhost/check/lending.hero`'s `field_lend_escapes`, `spec § 13`'s lease sentences
 
@@ -208,5 +208,59 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     call. **Neither exists**, and panel 168's ffi seat measured that the give-away
     needs the library's own **allocator** rather than any pointer the Heroes
     runtime can hand out.
+
+- [ ] **071 — the `consumes` guard is emitted AFTER the call, so it can never prevent** | a second `consumes` of the same local reaches C first and traps there: `check` 0, `build` 0, run **133 three of three with no message at all** | `selfhost/emit/handle_traffic.hero`, `spec § 13`'s live-set sentence
+
+    **Origin:** panel 169's ffi-pragmatist, 2026-09-20, as the one further rule
+    route R5 needs. Re-run by the coordinator before filing, and it is worse than
+    the seat described: the runtime never speaks.
+
+    **Reproducer**, five lines over any handle pair:
+
+        b = blk_new()          # acquires blk_free
+        blk_free(b: b)
+        blk_free(b: b)
+
+    `check` **exit 0**, `build` **exit 0**, run **133 133 133**, stderr empty.
+    Under `--sanitize`: `double-free`, named at the C line.
+
+    **The cause is the ORDER, read in the emitted C**: `(void)blk_free(t2);` on
+    one line and `hero_handle_consumed(t2);` on the next. The guard runs after
+    the call it is meant to guard, so the second `blk_free` frees again and traps
+    before the guard could refuse. **A guard emitted after the call can report,
+    never prevent** — and here it cannot even report, because C does not survive
+    long enough to let it.
+
+    **And it makes a spec sentence false as measured.** `spec § 13`: *"The live
+    handles are a set, so giving one back twice aborts on its own."* It does not:
+    the process dies inside C with no message. The repair is the order, and the
+    sentence is true again once the guard precedes the call.
+
+- [ ] **072 — two allocator families collapse onto one handle type, and each frees the other's blocks in silence** | `check` 0, `build` 0, run **0**, the arena destroyed and the heap block leaked, and the live set says nothing because the count balances | `selfhost/handles.hero`'s `one_tag_one_type`, `spec § 13`'s handle paragraph
+
+    **Origin:** panel 169's ffi-pragmatist, 2026-09-20, while measuring what caps
+    the handle route. Re-run by the coordinator before filing.
+
+    **It is a hole opened by a refusal**, which is why it is filed rather than
+    folded into defect 029: 029 closed on 2026-09-13 by making a fieldless group
+    `record` a handle, with **two records may not share one tag** as one of its
+    two refusals. Two C allocator families that both hand back `void *` must
+    therefore share one Heroes type, and the type system can no longer tell their
+    blocks apart.
+
+    **Reproducer**, one `record Block tag void` over two pairs:
+
+        a = arena_new()        # acquires arena_free
+        h = heap_new()         # acquires heap_free
+        heap_free(b: a)        # frees the arena
+        arena_free(b: h)       # leaks the heap block
+
+    `check` **exit 0**, `build` **exit 0**, run **exit 0**, and the program
+    prints its own line as if nothing happened. **The live set is balanced** —
+    two acquired, two consumed — so the exit check is silent too.
+
+    **What is owed.** Either `one_tag_one_type` admits a second record over
+    `tag void`, or a handle carries which producer made it. Panel 169 recorded
+    this as one of three caps on the handle route and did not price the repair.
 
 *******************************************************************************
