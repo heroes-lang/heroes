@@ -67,11 +67,11 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 43 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsarealdeallocatorgiventhesamehandletwice_blk_open(int64_t a0) { (void)(blk_open)(a0); }
 #line 44 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsarealdeallocatorgiventhesamehandletwice_blk_close(blk * a0) { (void)(blk_close)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsarealdeallocatorgiventhesamehandletwice_blk_open(int64_t a0) { (void)(blk_open)(a0); }
 #line 45 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsarealdeallocatorgiventhesamehandletwice_blk_close(blk * a0) { (void)(blk_close)(a0); }
+#line 46 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsarealdeallocatorgiventhesamehandletwice_blk_value(blk * a0) { (void)(blk_value)(a0); }
 #line 112 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
@@ -101,7 +101,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsarealdeallocatorgiventhesamehandletwice_main(void);
 
-#line 47 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 48 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
 void h_fixedbugsarealdeallocatorgiventhesamehandletwice_main(void) {
 #line 107 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
     blk * h0_a;
@@ -113,35 +113,35 @@ void h_fixedbugsarealdeallocatorgiventhesamehandletwice_main(void) {
     blk * t6;
     goto bb0;
 bb0:
-#line 48 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t1 = INT64_C(7);
-#line 48 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t2 = blk_open(t1);
-#line 48 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     hero_handle_acquired(t2);
-#line 48 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     h0_a = t2;
-#line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 50 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t3 = h0_a;
-#line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 50 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t4 = blk_value(t3);
-#line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 50 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     hero_print_int(t4);
-#line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 50 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     hero_print_end();
-#line 50 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t5 = h0_a;
-#line 50 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     hero_handle_consumed(t5);
-#line 50 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     (void)blk_close(t5);
-#line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t6 = h0_a;
-#line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     hero_handle_consumed(t6);
-#line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     (void)blk_close(t6);
-#line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     return;
 #line 147 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
 }

@@ -30,9 +30,10 @@
 # nothing, so the second release below does not corrupt anything on this machine
 # and the case can assert the COUNT rather than a crash. Against a real
 # allocator the same program is a double free."* Written 2026-09-15, true, and
-# never followed by this file. That is `.claude/rules/diagnostics-and-goldens.md`
-# § An instrument watches the world: the assertion was watching the accounting,
-# and the world is a deallocator that frees.
+# never followed by this file. That is the rule in
+# `.claude/rules/diagnostics-and-goldens.md` that an instrument watches the
+# world and never the program's current behaviour: the assertion was watching
+# the accounting, and the world is a deallocator that frees.
 #
 # The one line that differs from its ancestor is the header's `blk_close`, which
 # calls `free`. Everything else is deliberately the same shape, so a reader can

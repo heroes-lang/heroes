@@ -366,7 +366,9 @@ reading to its first zero or the whole field, and either fails `not_text`.
 Nothing lends a field to `cstr`, which promises a zero the field does not;
 `f.ptr()` lends a binding's field to a `ptr` parameter declared `counted_by n`,
 naming the sibling that gives the extent, and one past the field is refused.
-C writes back through the lend only where the binding is a `@` name.
+C writes back through the lend only where the binding is a `@` name. A lend
+lives for its call and no longer: C keeping the pointer reads bytes the program
+may have changed or freed since, and nothing checks it.
 `x: cstr @ s.lease()` is a COPY of the bytes that C may read for as long as the
 program says, and `end_lease(@x)` frees it and empties the cell. A lend and a
 lease name stand only as an argument of a call, nothing else writes a lease's
