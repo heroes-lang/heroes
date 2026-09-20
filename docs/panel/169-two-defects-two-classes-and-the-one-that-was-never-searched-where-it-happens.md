@@ -477,6 +477,29 @@ only seat that read the prompt said not to do.
 
 ## Author's verdict
 
+**RATIFIED 2026-09-20, INCLUDING THE EXTENT**
+
+**Ratified by the author on 2026-09-20**, in conversation, in these words: *"I am
+following your recommendations."* Recorded as a ratification given on the
+coordinator's summary and price in `docs/work/DECIDE.md`, not as a reading of
+this file, and **not `by delegation`**.
+
+**The second question this item asked, which was invisible when it was written
+and is named in the correction above, is settled with it: the extent is *a lend
+lives for its call and no longer*.** It landed in `spec § 13` at step 15, before
+the ratification, under CLAUDE.md § 3's rule that a whole milestone asked for in
+one `/step` decides its delegated questions with the recommended resolution as
+the default and says once which way it went. The ratification confirms that
+choice rather than authorising it after the fact, and the distinction is written
+here because the record should not read as permission that was asked for.
+
+**And the consequence the correction names is now the standing position**:
+defects 066 and 068 are **one class**, the caller-side rule closes neither, and
+the sitting's split of them does not survive the extent it adopted.
+
+**What this section said while the sitting was open**, kept because a
+record is not rewritten:
+
 **Pending.** Queued as `panel 169` in `docs/work/DECIDE.md`, and the adopted
 resolution is the default while it stands there.
 

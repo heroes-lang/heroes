@@ -320,6 +320,40 @@ unmarked. It would look like progress on the list and move no number on it.
 
 ## Author's verdict
 
+**RATIFIED 2026-09-20, AND THE DEFAULT IS NOT FLIPPED**
+
+**Ratified by the author on 2026-09-20**, in conversation, in these words: *"I am
+following your recommendations."* Recorded as a ratification given on the
+coordinator's summary and price in `docs/work/DECIDE.md`, not as a reading of
+this file, and **not `by delegation`**.
+
+**The adopted resolution stands in full**, and the one question this sitting said
+no sitting could spend for the author is answered the way it recommended: **the
+default is not flipped.** Not because eight refusals are many, but because no
+measurement exists of what the ninth costs — the corpus is `examples/` and
+`tests/golden/`, and the author's own programs are not in it.
+
+**What that leaves standing, written plainly so a later reader does not have to
+infer it.** Defects **066 and 068 have no route in flight**. Every candidate this
+sitting weighed either closes zero of them or closes them at a price the author
+has now declined for a stated reason. They stay open, and what would move them is
+named rather than left to be rediscovered: **one binding the author cares about,
+written both ways** — with the lend the language admits today, and with the
+pessimistic default that would refuse it. That is a measurement, not a sitting,
+and it is the next thing that can change this answer.
+
+**Defect 070 keeps the route this sitting named and nothing else changes for it.**
+The coordinator measured after the ratification that `consumes` on a `cstr` is
+`error[unread_mark]` today, so giving that word a meaning there is a real change
+and would meet this sitting's own two findings head on: the warden's *the three
+existing marks fail safe when omitted and this one fails unsafe*, and the
+ergonomist's *a mark does not add a check to the unmarked case, it subtracts the
+warning from it*. **A fifth sitting would re-derive them**, which is why none was
+convened.
+
+**What this section said while the sitting was open**, kept because a
+record is not rewritten:
+
 **Pending.** Queued as `panel 170` in `docs/work/DECIDE.md`.
 
 **What a yes settles**: that no one word carries both retention and give-away,

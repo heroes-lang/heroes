@@ -393,6 +393,21 @@ that already ships.
 
 ## Author's verdict
 
+**RATIFIED 2026-09-20**
+
+**Ratified by the author on 2026-09-20**, in conversation, in these words: *"I am
+following your recommendations."* Recorded as a ratification given on the
+coordinator's summary and price in `docs/work/DECIDE.md`, not as a reading of
+this file, and **not `by delegation`**.
+
+The adopted resolution stands in full: the runtime's lease allocation does not
+change, panel 167's clause 1 allocation half is struck on the compiler-engineer's
+veto, its clause 2 is suspended, and route A is recorded as closing zero of two.
+The conservative alternative this file recorded was not taken.
+
+**What this section said while the sitting was open**, kept because a
+record is not rewritten:
+
 **Pending.** Queued as `panel 168` in `docs/work/DECIDE.md`, and the adopted
 resolution is the default while it stands there.
 
