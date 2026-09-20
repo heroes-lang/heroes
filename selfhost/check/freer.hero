@@ -140,9 +140,12 @@ function mark_refusals(a: ast.Ast, s: source.Source, decls: [ast.Decl], at: i64)
                         subject: "`" + source.span_text(s, param.name) + "`",
                         mark: param.owned.must()
                     )
+                    by_value = owned_needs_a_cell(s, param: param, mark: param.owned.must())
 
                     if !wrong.is_err()
                         out @ out.push(wrong.must())
+                    else if !by_value.is_err()
+                        out @ out.push(by_value.must())
                     else
                         found = refusal_for_mark(s, decls, at: at, mark: param.owned.must())
 
@@ -197,6 +200,47 @@ function wrong_owned_type(a: ast.Ast, s: source.Source, ty: i64, subject: str, m
     d.notes @ d.notes.push(
         "`owned <freer>` says C writes a string THROUGH this cell and the compiler frees it with that function, so it belongs on a `@x: cstr` out-parameter or on a `cstr` result. On anything else it says nothing the compiler can act on"
     )
+    return ok(d)
+
+# `owned` on a parameter that is a `cstr` and is NOT a cell, which is the third
+# time this one guard has been found watching the wrong half — defect 073.
+#
+# **The note above has named the rule since the mark shipped**: *it belongs on a
+# `@x: cstr` out-parameter or on a `cstr` result*. `wrong_owned_type` asks the
+# TYPE, so a by-value `cstr` walks straight past it, and then
+# `handed_back_param` retypes the parameter to `str?` anyway. Measured: `check`
+# exit **0**, `build` exit **2**, `internal error: compiling the generated C
+# failed`, clang holding out an optional's struct where the header wants a
+# `const char *` — the compiler blaming itself for a binding the author wrote,
+# which is the failure §4.19's guarantee exists to prevent.
+#
+# **The same code and not a sibling**, because it is one question — *does this
+# mark say anything the compiler can act on?* — and a second name for one
+# question is a panel path (`check/lending.hero`'s own reasoning at defect 067).
+# The code's name records the half it was written for; the note has always
+# covered both.
+#
+# **Every `owned` parameter in this repository is already a cell**, which is the
+# cheapest evidence there was: `examples/ledger/db/sqlite.hero:95` writes
+# `@error: cstr owned sqlite3_free` and `tests/golden/run/ffi-owned-cell-is-freed.hero`
+# writes `@out: cstr owned free`. Nothing in the corpus moves.
+function owned_needs_a_cell(s: source.Source, param: ast.Param, mark: token.Span) -> diag.Diagnostic?
+    if param.mutable
+        return fail(code: "none", msg: "the mark is on a cell")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "owned_needs_cstr",
+        message: "`owned` marks a cell C writes THROUGH, and `" + source.span_text(s, param.name) + "` is passed by value",
+        span: mark
+    )
+    d.notes @ d.notes.push(
+        "`owned <freer>` belongs on a `@x: cstr` out-parameter or on a `cstr` result, because it says the compiler frees what C wrote there. A parameter the caller hands IN is the opposite direction: mark it `consumes` if the call ends that value's life"
+    )
+
+    # NO FIX, deliberately. The repair puts a `@` in front of the parameter's
+    # NAME and this diagnostic points at the MARK, so any replacement here would
+    # land in the wrong place — and `.claude/rules/diagnostics-and-goldens.md`
+    # says a fix that leaves the defect standing is a guess at best. The note
+    # names both routes, which is what §4.17 asks of it.
     return ok(d)
 
 # One mark's verdict: absent when the name is a one-parameter `extern` of the

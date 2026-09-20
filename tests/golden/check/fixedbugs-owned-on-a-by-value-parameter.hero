@@ -1,0 +1,41 @@
+# Defect 073, repaired 2026-09-20 at M-declared-extents step 19.
+#
+# SYMPTOM. `owned <freer>` on a parameter the caller hands IN was `check` exit
+# **0** and `build` exit **2**, `internal error: compiling the generated C
+# failed`, with clang holding out an optional's struct where the header wants a
+# `const char *`. The compiler blaming itself for a binding the author wrote,
+# which is the failure design.md §4.19's guarantee exists to prevent.
+#
+# CAUSE, and it is the third time this one guard has been found watching the
+# wrong half. `spec § 13` has always said `owned` belongs *"after a `cstr`
+# result or a `char **` out-parameter"*, and `wrong_owned_type` asks the TYPE.
+# A by-value `cstr` is a `cstr`, so it walks straight past — and then
+# `handed_back_param` retypes the parameter to `str?` anyway, which is why the
+# argument below has to be an `ok(...)` to reach `check` at all.
+#
+# The guard's own comment records the two earlier rounds of exactly this:
+# `unknown_freer` asked whether the NAME resolves and nothing asked what the
+# mark was ON (2026-09-13), and then it asked the PARAMETER and not the RESULT
+# (2026-09-15, defect 036). Each time the note beside it already named the rule
+# the guard was not asking.
+#
+# THE SAME DIAGNOSTIC CODE and not a sibling, because it is one question — does
+# this mark say anything the compiler can act on? — and `check/lending.hero`'s
+# reasoning at defect 067 is that a second name for one question is a panel
+# path. The code's name records the half it was written for; its note has always
+# covered both.
+#
+# WHAT STILL PASSES, and it is the cheapest evidence the repair is narrow: every
+# `owned` parameter in this repository is already a cell.
+# `examples/ledger/db/sqlite.hero` writes `@error: cstr owned sqlite3_free` and
+# `tests/golden/run/ffi-owned-cell-is-freed.hero` writes `@out: cstr owned free`.
+# Both check at exit 0 after this repair.
+
+extern "stdlib.h"
+    function free(p: ptr)
+
+    #~v owned_needs_cstr
+    function atoi(s: cstr owned free) -> i32
+
+function main()
+    print(to_str(atoi(s: ok("12"))))

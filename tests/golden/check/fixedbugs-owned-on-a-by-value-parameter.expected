@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-owned-on-a-by-value-parameter.hero:38:33: error[owned_needs_cstr]: `owned` marks a cell C writes THROUGH, and `s` is passed by value
