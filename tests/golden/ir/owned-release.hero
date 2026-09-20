@@ -23,7 +23,7 @@ extern "stdlib.h"
     function free(p: ptr)
 
 extern "string.h"
-    function strdup(s: cstr) -> cstr owned free
+    function strdup(s: cstr lent) -> cstr owned free
 
 function copy_of(text: str) -> str
     return strdup(text.cstr()).default("")

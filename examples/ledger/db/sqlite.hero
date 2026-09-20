@@ -21,14 +21,16 @@
 #   which is `nullptr`, means *keep the caller's bytes*, and
 #   `SQLITE_TRANSIENT` means *copy them before returning*. **This program
 #   passes `SQLITE_TRANSIENT`**, so there is no lifetime to reason about at
-#   all: the copy happens inside the call and the lend is over when the call
-#   returns. Until 2026-09-09 it passed `nullptr` with eleven lines above it
-#   explaining why that was safe, and panel 124 measured that the explanation
-#   was subtly wrong — it named the frame, and the thing actually keeping the
-#   bytes alive was the refcount of a record field the loop variable owned.
-#   Both spellings are `const char *` in the header, so **nothing about the
-#   Heroes side can tell them apart**: the fact lives in argument five, which
-#   is why clang can check it and a rule about Heroes cannot.
+#   all: the copy happens inside the call. Until 2026-09-09 it passed `nullptr`
+#   with eleven lines above it explaining why that was safe, and panel 124
+#   measured that the explanation was subtly wrong — it named the frame, and
+#   the thing actually keeping the bytes alive was the refcount of a record
+#   field the loop variable owned. Both spellings are `const char *` in the
+#   header, so **nothing about the Heroes side can tell them apart**: the fact
+#   lives in argument five, which is why clang can check it and a rule about
+#   Heroes cannot — and why, since panel 171, the `text` parameter carries no
+#   `lent` and `bind_text` hands the bytes over as a lease it releases itself,
+#   where the other three string parameters of this group are marked.
 # - `sqlite3_column_text` answers `const unsigned char *`, which is a
 #   `cstr` here, and a `cstr` becomes a `str` only through `validated` —
 #   which can fail, because the bytes are the database's and not this
@@ -72,7 +74,13 @@ extern "sqlite3.h" link "sqlite3"
     # `sqlite3_next_stmt` and `sqlite3_db_handle` are the counter-examples and
     # this binding declares neither: both hand back a handle SQLite keeps, and
     # the day one of them is bound it says `borrows` rather than nothing.
-    function sqlite3_open(filename: cstr, @out: CDb acquires sqlite3_close) -> i64
+    # `lent` on `filename` and on the two `sql` parameters: SQLite reads the
+    # string during the call and copies what it keeps, which the ffi seat of
+    # panel 171 measured by handing each a freed argument under the sanitizer.
+    # Without the word the compiler assumes C keeps the pointer and refuses
+    # the lend (spec § 13). `sqlite3_bind_text` below carries no word, and
+    # `bind_text` says why.
+    function sqlite3_open(filename: cstr lent, @out: CDb acquires sqlite3_close) -> i64
     function sqlite3_close(db: CDb consumes) -> i64
     # **The fifth argument is `char **errmsg`, and this program asks for it
     # again** — panel 109's condition 8, the program the whole milestone was
@@ -92,13 +100,13 @@ extern "sqlite3.h" link "sqlite3"
     # then measured three ways: **a caller-owned C string could be freed or
     # read, never both**, so the program that reads the message and frees it
     # could not be written in this language at all. It can now, and this is it.
-    function sqlite3_exec(db: CDb, sql: cstr, callback: ptr, context: ptr, @error: cstr owned sqlite3_free) -> i64
+    function sqlite3_exec(db: CDb, sql: cstr lent, callback: ptr, context: ptr, @error: cstr owned sqlite3_free) -> i64
     # The freer the mark names. It is declared and never called: calling it is
     # a compile error precisely because the compiler already does.
     function sqlite3_free(p: ptr)
     function sqlite3_errmsg(db: CDb) -> cstr
     function sqlite3_changes(db: CDb) -> i32
-    function sqlite3_prepare_v2(db: CDb, sql: cstr, length: i32, @statement: CStmt acquires sqlite3_finalize, @tail: cstr) -> i64
+    function sqlite3_prepare_v2(db: CDb, sql: cstr lent, length: i32, @statement: CStmt acquires sqlite3_finalize, @tail: cstr) -> i64
     function sqlite3_step(statement: CStmt) -> i64
     function sqlite3_reset(statement: CStmt) -> i64
     function sqlite3_finalize(statement: CStmt consumes) -> i64
@@ -335,11 +343,26 @@ function bind_float(statement: Statement, at: i64, value: f64) -> ()?
         return fail(code: "cannot_bind", msg: "sqlite refused a float at " + at.to_str())
     return ok()
 
-# `SQLITE_TRANSIENT` asks SQLite to copy the bytes before it returns, so this
-# binding has no lifetime rule and no caller obligation: a rearrangement that
-# moves the `step` cannot break it (panel 124, ratified 2026-09-09).
+# `sqlite3_bind_text` keeps or copies by its FIFTH argument, so no one word is
+# true of its `text` parameter and the declaration above carries none (panel
+# 171): with `SQLITE_STATIC` it keeps the pointer, with `SQLITE_TRANSIENT` it
+# copies before returning. An unmarked parameter is assumed to keep, so a lend
+# is refused there and the bytes go over as a LEASE, a copy this function owns
+# and releases the moment the call is back. `SQLITE_TRANSIENT` makes that
+# release safe: SQLite has its own copy by then, so a rearrangement that moves
+# the `step` cannot break it (panel 124, ratified 2026-09-09).
 function bind_text(statement: Statement, at: i64, text: str) -> ()?
-    if sqlite3_bind_text(statement: statement.handle, column: to_i32(at).must(), text: text.cstr(), length: -1, destructor: SQLITE_TRANSIENT) != SQLITE_OK
+    held: cstr @ text.lease()
+    rc = sqlite3_bind_text(
+        statement: statement.handle,
+        column: to_i32(at).must(),
+        text: held,
+        length: -1,
+        destructor: SQLITE_TRANSIENT
+    )
+    end_lease(@held)
+
+    if rc != SQLITE_OK
         return fail(code: "cannot_bind", msg: "sqlite refused text at " + at.to_str())
     return ok()
 

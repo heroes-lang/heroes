@@ -35,8 +35,8 @@ extern "ffi-a-byte-field-crosses-to-c.h"
         nsap: u8[8]
         tag: i8[4]
         id: i64
-    function slot_sum(p: ptr counted_by n, n: i64) -> i64
-    function slot_fill(p: ptr counted_by n, n: i64)
+    function slot_sum(p: ptr counted_by n lent, n: i64) -> i64
+    function slot_fill(p: ptr counted_by n lent, n: i64)
 
 function main()
     s: Slot @ Slot(nsap: [1, 0, 3, 0, 5, 0, 7, 0], tag: [9, 8, 7, 6], id: 0)

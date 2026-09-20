@@ -28,7 +28,7 @@
 # `a_misspelled_extern_name_says_the_header_has_no_such_name`.
 
 extern "sqlite3.h" link "sqlite3"
-    function sqlite3_openn(path: cstr, @out: ptr) -> i64  #~ ffi_unknown_name
+    function sqlite3_openn(path: cstr lent, @out: ptr) -> i64  #~ ffi_unknown_name
 
 function main()
     db: ptr @ nullptr

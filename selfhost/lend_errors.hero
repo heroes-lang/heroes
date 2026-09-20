@@ -1,13 +1,21 @@
-# The diagnostics of the BORROWING family: the lend, the field lend and the
-# lease (design.md §4.19, §4.20; panels 121, 122, 124, 164).
+# The diagnostics of the `cstr` LEND, and of the landing every lend shares
+# (design.md §4.19, §4.20; panels 121, 122, 171).
 #
 # WHY IT IS ITS OWN MODULE. `ffi_errors.hero` answers one question — what may
-# CROSS the boundary — and these five answer a different one: what a pointer
+# CROSS the boundary — and these answer a different one: what a pointer
 # already across may DO, and where it may stand. The checker has carried that
 # seam since panel 124 (`check/lending.hero` and `check/leasing.hero`, and
 # `check/lend_types.hero` since panel 164) and the diagnostics had not followed.
 # Panel 164's two new codes pushed the host past §11's 300 lines — `layout` said
 # 302 — and this is the cut, rather than a raised ceiling.
+#
+# AND IT WAS CUT TWICE MORE AT PANEL 171, along the checker's own seams. The
+# lease's three are `lease_errors.hero` (`check/leasing.hero` asks where a LEASE
+# may stand); the field lend's six are `field_lend_errors.hero` (an ADDRESS into
+# a record has a place rule, a header rule, an extent rule and a write rule a
+# `str`'s lend does not). What stays here is the `cstr` lend's three positions
+# and the two refusals every lend meets where it lands, `lend_needs_a_header`
+# and `lend_kept`, which `check/lend_landing.hero` asks.
 #
 # NO `Fix` ANYWHERE IN THIS FILE, and that is a decision rather than an
 # omission: every repair here is a different SHAPE of program — bind the record
@@ -63,25 +71,6 @@ function cstr_escapes(span: token.Span) -> diag.Diagnostic
     )
     return d
 
-# The same position rule, over a FIELD's lend (panel 164).
-#
-# IT IS A SECOND DIAGNOSTIC AND NOT A WIDENING OF THE ONE ABOVE, because that
-# one says `str` four times and every sentence of it would be false here. A
-# field's bytes belong to the RECORD, not to a `str`, and they die when the
-# record's slot does rather than when a runtime string is released — so the
-# repair a reader needs is a different sentence, and §4.17 asks a diagnostic to
-# carry what fixes the program without opening another file.
-function field_lend_escapes(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "field_lend_escapes",
-        message: "`.ptr()` lends this field's address to C for the length of one call (§4.19), and a lend may stand only as an argument of a call — here it stands somewhere the pointer outlives the record it points into",
-        span: span
-    )
-    d.notes @ d.notes.push(
-        "pass it directly as an argument of the call that reads or fills it. The bytes belong to the record, which is a value: the slot holding it is released when its function returns, so an address kept past its call points into memory the next statement may reuse. A C function that keeps the pointer needs the bytes copied, which is what `validated_bytes` does for text"
-    )
-    return d
-
 # A Heroes function whose result is `cstr` (panel 122 R3, defect 022).
 #
 # WHY A SIGNATURE AND NOT A FLOW ANALYSIS. `return pass(c: s.cstr())` puts the
@@ -123,170 +112,74 @@ function cstr_in_a_record(holder: str, field: str, span: token.Span) -> diag.Dia
     )
     return d
 
-# A lease cell's name where it may not stand (M-held-bytes, panel 124 R2 to R4
-# and panel 125's soundness lane).
+# A `cstr` lend handed to anything but a function of an `extern` group (panel
+# 171, 2026-09-20; design.md §4.19).
 #
-# A lease is `x: cstr @ s.lease()`: a COPY of the bytes that the program owns
-# and C may read until `end_lease(@x)` frees it. What makes a second release
-# impossible is that the release nulls the CELL, so the pointer may live only
-# in that one cell: a copy of it — `g = x`, `g: cstr @ x`, a field, a return —
-# would go on pointing at the bytes after the cell was nulled, and reading it
-# through C is a use-after-free `check` could not see. So the name of a lease
-# cell may stand only as an argument of a call, exactly where a lend may.
-function lease_escapes(name: str, span: token.Span) -> diag.Diagnostic
+# PANEL 122 DROPPED THIS DISCRIMINATOR FOR THE `cstr` LEND, on three grounds,
+# and the flip spends all three. It refused the wrapper §4.19 prescribes —
+# under the pessimistic default that wrapper's own `cstr` parameter is an
+# unmarked one, so the lend stops at it either way, and only THIS message can
+# carry the repair `lend_kept` cannot: take the `str` and lend inside the
+# wrapper, where a header is asked. It made legality depend on what another
+# file declares — under the flip that is true of every lend, because the mark
+# lives on the declaration. And it was the soundness clause the engineer's
+# veto turned on: `wrap(s: cstr)` forwarding to an unmarked C parameter,
+# called with `"12".cstr()`, hands C a kept pointer through a route no rule
+# reading the extern's parameter alone can see.
+function lend_needs_a_header(span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "lease_escapes",
-        message: "`" + name + "` is a lease — a copy of the bytes that C may read until `end_lease(@" + name + ")` — and its name may stand only as an argument of a call; here it is copied, and the copy would outlive the release",
+        code: "lend_needs_a_header",
+        message: "`.cstr()` lends a `str` to C for one call, and it may stand only as an argument of a function declared in an `extern` group — here the callee is this program's own, and no declaration of this program can say what becomes of the pointer",
         span: span
     )
     d.notes @ d.notes.push(
-        "pass `" + name + "` directly to the call that reads it. The release nulls this one cell, so a pointer that lives anywhere else keeps pointing at freed bytes"
-    )
-
-    # Defect 067's own half of the sentence above: a group's `record` is an
-    # argument position that keeps, so `Box(p: x)` puts the pointer somewhere
-    # the release cannot reach and `end_lease` leaves it dangling at exit 0.
-    d.notes @ d.notes.push(
-        "building a `record` of an `extern` group is not such a call: the field keeps the pointer past `end_lease(@" + name + ")`, and C then reads freed bytes. Pass the cell to each call that reads it instead of storing it"
+        "lend at the call that reaches C: a wrapper takes the `str` and lends inside itself — `function say(text: str) -> i32` returning `puts(s: text.cstr())` — which is the shape §4.19 prescribes as the route out of a module, and the header is asked where the lend is made"
     )
     return d
 
-# A write to a lease cell that is not its own `end_lease`.
-function lease_written(name: str, span: token.Span) -> diag.Diagnostic
+# A lend landing on a C parameter whose declaration does not say it lets go
+# (panel 171; the author's ruling of 2026-09-20; design.md §1.12, §4.19).
+#
+# THE DEFAULT IS THE PESSIMISTIC ONE. A C pointer parameter is assumed to KEEP
+# what it is handed unless its declaration says `lent`, so the unmarked
+# parameter is refused and the marked one admitted — Swift's choice at its own
+# C boundary since SE-0103, never withdrawn, and D's `scope` on `getenv(scope
+# const char* name)` in exactly this shape. The author's condition was the
+# cost, measured before the ruling: a copy at every unmarked call is 33 ns at
+# worst and the mark costs nothing (`docs/measurements/038`).
+#
+# NO `Fix`, AND BOTH NOTES ARE A GUESS. Adding the word is a claim about C
+# the compiler cannot check — D's own WASI binding says `scope` about a
+# `putenv` that keeps — and a lease is wrong where C FREES what it is handed
+# (defect 070). So each note carries that last sentence, because a reader who
+# follows the first note onto a freeing callee gets `check` 0 and exit 134
+# with an empty stderr, which is the shape the sitting's critic measured.
+#
+# THE NOTES ARE SHAPED BY THE LEND. A `cstr` lend has a lease beside it; a
+# field's address has none — there is no lease of a field — and its mark is
+# spelled after the `counted_by` it already carries, since the extent question
+# is asked first. A note that offered `s.lease()` for `.ptr()` would send the
+# reader to a form that does not exist (the critic's gap 3).
+function lend_kept(lend: str, callee: str, parameter: str, count: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "lease_written",
-        message: "`" + name + "` is a lease, and the only write a lease cell takes after its declaration is `end_lease(@" + name + ")` — a value stored over it would leak the bytes it held, or free bytes nobody leased",
+        code: "lend_kept",
+        message: lend + " lends bytes to C for this call and no longer, and `" + parameter + "` of `" + callee + "` is not declared to let them go — a C parameter without `lent` is assumed to keep what it is handed, and bytes kept past the call are read after the program has changed or freed them",
         span: span
     )
-    d.notes @ d.notes.push(
-        "declare a second cell for the second lease. One cell, one `.lease()`, one `end_lease`"
-    )
-    return d
+    spelling: str @ "`" + parameter + ": cstr lent`"
 
-# `end_lease` on something that is not a lease cell.
-function end_lease_of_no_lease(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "end_lease_of_no_lease",
-        message: "`end_lease` frees what `.lease()` made, and it takes the cell that holds it: `end_lease(@x)` where `x: cstr @ s.lease()` — this argument is not such a cell",
-        span: span
-    )
+    if count != ""
+        spelling @ "`" + parameter + ": ptr counted_by " + count + " lent`"
     d.notes @ d.notes.push(
-        "a lend (`.cstr()`), a pointer from C and a literal are freed by whoever owns them, and this program does not; a lease copied into another cell cannot be released from there, because the release must null the one cell the pointer lives in"
+        "if the header's function only reads or fills through the pointer while it runs, say so where it is declared: " + spelling + " — a claim about C that nothing here can check, which is why it is not written for you. If C FREES what it is handed, no mark and no lease makes the call sound, and nothing in the language yet declares that parameter"
     )
-    return d
 
-# A `ptr` lend whose receiver is not a place (panel 164).
-#
-# THE LEND EXISTS SO C MAY WRITE BACK, which is what separates it from
-# `validated_bytes` beside it: that one copies the bytes out and the copy is the
-# answer, this one hands over the field itself. So the field has to still be
-# somewhere the program can see when C returns, and a returned temporary is not.
-function field_lend_needs_a_place(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "field_lend_needs_a_place",
-        message: "`.ptr()` lends a field's address to C, so the field must be one this program can still name — here the bytes belong to a value nothing holds",
-        span: span
-    )
-    d.notes @ d.notes.push(
-        "bind the record first and lend the field of the binding: `s = make()` and then `s.name.ptr()`. C may write through this pointer, and a write into a value nothing holds lands in storage the next statement reuses. To READ a field's text without holding the record, `validated_bytes` copies the bytes out and needs no place"
-    )
-    return d
-
-# A `ptr` lend handed to anything but a function of an `extern` group (panel
-# 166, 2026-09-19; design.md §4.19).
-#
-# THE HEADER IS THE ONLY PLACE THE TWO QUESTIONS ABOUT A LEND ARE ANSWERED:
-# whether C writes through it — the header's `const`, which clang checks against
-# the cast the root decides — and how far it reads, the extent route C declares
-# on the group's parameter. A Heroes function taking `ptr` can carry neither:
-# its parameter is a plain `void *`, so a lend from an immutable root failed
-# inside clang at the wrapper's call at exit 2 (measured on the route's landing
-# day), and a lend from a `@` root reached C with nothing checked about it.
-function field_lend_needs_a_header(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "field_lend_needs_a_header",
-        message: "`.ptr()` lends a field's address to C, and it may stand only as an argument of a function declared in an `extern` group — here the callee is this program's own, and no header says whether it writes through the pointer or how far it reads",
-        span: span
-    )
-    d.notes @ d.notes.push(
-        "lend at the call that reaches C. A wrapper takes the record by value, or as `@`, and lends the field inside itself — `function total(s: Slot) -> i64` returning `slot_sum(p: s.nsap.ptr(), n: 8)` — which is the shape §4.19 prescribes as the route out of a module, and the header is asked where the lend is made"
-    )
-    return d
-
-# A `ptr` lend landing on a parameter that declares no extent (panel 166's
-# route C, ratified 2026-09-19; defect 063; design.md §4.19, §1.12).
-#
-# ABSENCE IS A REFUSAL AND NEVER SILENCE, which is the compiler-engineer's own
-# condition for approving the route: a check that applies only where somebody
-# wrote the mark leaves the corruption standing wherever nobody did, and §1.12
-# asks the compiler to CHECK rather than assume. The number a lend crosses with
-# is the call's word, and the mark is what lets the emitter compare it to the
-# field's own `sizeof` in C.
-function field_lend_uncounted(callee: str, parameter: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "field_lend_uncounted",
-        message: "`.ptr()` lends a field's address to C with an extent this call states, and `" + parameter + "` of `" + callee + "` does not say which argument the extent is — so nothing can check the number against the field",
-        span: span
-    )
-    d.notes @ d.notes.push(
-        "declare the relation the header already has: `" + parameter + ": ptr counted_by <the parameter that carries the count>` in the `extern` group. The compiler then compares the number against the field's own size, in C, wherever the call states a constant — an overstated one reads and WRITES past the field, silently, at exit 0"
-    )
-    return d
-
-# An extent stated above the field's own length, read back from clang's verdict
-# on the assertion the emitter wrote (panel 166's route C; defect 063).
-#
-# THE NUMBER COMPARED IS C'S OWN `sizeof` of the field, which is what makes this
-# right where a Heroes-side check is wrong twice: a `partial` record's size is
-# C's and not the field list's, and a group `constant` lowers to a call of its
-# accessor, so a check wanting a literal would refuse the careful reader and
-# accept the careless one.
-#
-# THE FIX IS A `guess` AND THE FIRST DRAFT CERTIFIED IT, which would have been
-# wrong by `.claude/rules/diagnostics-and-goldens.md`'s own rule. Writing the
-# field's length does end the corruption, so it looks like a repair — but it
-# CHANGES WHAT THE PROGRAM ASKS C TO DO, and the author may have meant the
-# longer number and the wrong field. The note offers two repairs for that
-# reason, and a fix `--apply` may take must be the one there is no second
-# candidate for (design.md §4.17's inverse case, panel 071).
-function field_lend_extent(lend: str, callee: str, parameter: str, count: str, stated: str, length: i64, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "field_lend_extent",
-        message: "`" + lend + "` lends a field of " + length.to_str() + " bytes, and `" + count + "` states " + stated + " — `" + parameter + "` of `" + callee + "` is declared `counted_by " + count + "`, and C read the field's own size from the header",
-        span: span
-    )
-    d.notes @ d.notes.push(
-        "C reads and writes exactly the bytes this number says, so a larger one reaches past the field into whatever the header put beside it — a sibling of the same record, silently, at exit 0. Write the field's own length, or lend a longer field"
-    )
-    d.fixes @ d.fixes.push(
-        diag.Fix(title: "state the field's own length, " + length.to_str(), replacement: length.to_str(), span: span, certainty: .guess)
-    )
-    return d
-
-# A `ptr` lend C would write through, rooted at a name the program may not
-# write (panel 166, 2026-09-19; defect 065; design.md §4.4, §4.19).
-#
-# THE HEADER DECIDES, PER CALL, and this compiler only carries the answer. A
-# lend rooted at a `=` binding or a by-value parameter crosses as
-# `const void *`; a parameter the header spells without `const` is one C may
-# write through; and clang refuses the two together, against the real header,
-# with a flag this compiler has shipped since panel 103. `emit/ffi_lend.hero`
-# reads that refusal into this sentence. Before that sitting the lend crossed as
-# `void *` from every root, and `t = make()` followed by a C fill read back
-# changed at exit 0 — `spec § 5`'s *only a declared `@` name can be mutated*,
-# false for that program.
-#
-# THE REPAIR IS A `@`, AND STILL NO `Fix`: declaring the name mutable changes
-# what every other line may do to it, and whether the author meant to WRITE or
-# only meant to READ through a parameter the header should have marked `const`
-# is theirs to say. The note names both roads.
-function field_lend_written(lend: str, root: str, callee: str, c_type: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "field_lend_written",
-        message: "`" + lend + "` lends a field of `" + root + "` to `" + callee + "`, and the header declares that parameter `" + c_type + "` — C may write through it, and `" + root + "` is not a `@` name",
-        span: span
-    )
-    d.notes @ d.notes.push(
-        "§4.4: only a declared `@` name can be mutated, and a C write is a mutation. Declare `" + root + "` with `@` — a `@` cell, or a `@` parameter — and the bytes C writes land where this program reads them back. To only READ the field, lend it to a parameter the header declares `const`"
-    )
+    if count != ""
+        d.notes @ d.notes.push(
+            "if C does keep the address, a field has no lease: hand C memory it owns — allocate through the header's own allocator, copy the bytes in, and let C dispose of it — because the field dies with its record and nothing extends that. And if C frees what it is handed, neither route works"
+        )
+    else
+        d.notes @ d.notes.push(
+            "if C does keep the pointer, hand it bytes that outlive the call: `x: cstr @ s.lease()`, and `end_lease(@x)` once C is done with them. And if C frees what it is handed, neither route works: a lease is freed by `end_lease` and nothing else"
+        )
     return d

@@ -172,7 +172,7 @@ bb0:
 #line 34 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t5 = INT64_C(8);
 #line 34 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.name), "heroes-ffi-extent sum_n p n 1578 1590 1595 1596 8");
+    _Static_assert(0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.name), "heroes-ffi-extent sum_n p n 1588 1600 1605 1606 8");
 #line 34 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t6 = sum_n(t4, t5);
 #line 34 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
@@ -184,7 +184,7 @@ bb0:
 #line 35 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t10 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN();
 #line 35 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h0_s.name), "heroes-ffi-extent sum_n p n 1618 1630 1635 1646 8");
+    _Static_assert(0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h0_s.name), "heroes-ffi-extent sum_n p n 1628 1640 1645 1656 8");
 #line 35 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t11 = sum_n(t9, t10);
 #line 35 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
@@ -200,7 +200,7 @@ bb0:
 #line 36 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     if (__builtin_sub_overflow(t15, t16, &t17)) hero_panic_overflow();
 #line 36 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(0 <= (int64_t)((SL_NAME_LEN - INT64_C(4))) && (int64_t)((SL_NAME_LEN - INT64_C(4))) <= (int64_t)sizeof(h0_s.name), "heroes-ffi-extent sum_n p n 1668 1680 1685 1700 8");
+    _Static_assert(0 <= (int64_t)((SL_NAME_LEN - INT64_C(4))) && (int64_t)((SL_NAME_LEN - INT64_C(4))) <= (int64_t)sizeof(h0_s.name), "heroes-ffi-extent sum_n p n 1678 1690 1695 1710 8");
 #line 36 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t18 = sum_n(t14, t17);
 #line 36 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
@@ -228,7 +228,7 @@ bb0:
 #line 43 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t28 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN();
 #line 43 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h0_s.name), "heroes-ffi-extent sl_fill p n 1906 1918 1923 1934 8");
+    _Static_assert(0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h0_s.name), "heroes-ffi-extent sl_fill p n 1916 1928 1933 1944 8");
 #line 43 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     (void)sl_fill(t27, t28);
 #line 44 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
@@ -236,7 +236,7 @@ bb0:
 #line 44 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t32 = INT64_C(8);
 #line 44 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.name), "heroes-ffi-extent sum_n p n 1955 1967 1972 1973 8");
+    _Static_assert(0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.name), "heroes-ffi-extent sum_n p n 1965 1977 1982 1983 8");
 #line 44 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t33 = sum_n(t31, t32);
 #line 44 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
@@ -260,7 +260,7 @@ bb0:
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t40 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN();
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h2_b.name), "heroes-ffi-extent sum_n p n 2111 2123 2128 2139 8");
+    _Static_assert(0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h2_b.name), "heroes-ffi-extent sum_n p n 2121 2133 2138 2149 8");
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t41 = sum_n(t39, t40);
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"

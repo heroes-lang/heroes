@@ -18,7 +18,7 @@
 # non-literal format string — at the probe's declaration line, and the
 # refusal is `ffi_call_shape` on this line, naming both counts.
 extern "string.h"
-    function strtok(target: cstr, sep: cstr, pad: cstr) -> cstr  #~ ffi_call_shape
+    function strtok(target: cstr lent, sep: cstr lent, pad: cstr lent) -> cstr  #~ ffi_call_shape
 
 function main()
     print(strtok(target: "a,b".cstr(), sep: ",".cstr(), pad: "".cstr()) == nullptr)

@@ -1,8 +1,9 @@
-# Both arities, one program, one C symbol.
+# Both arities, one program, one C symbol. The strings cross as `str` and
+# each module lends them at its own call, where the header is asked.
 
 use as_int
 use as_text
 
 function main()
-    _ = as_int.say(format: "n = %d\n".cstr(), value: 42)
-    _ = as_text.say(format: "s = %s\n".cstr(), value: "forty-two".cstr())
+    _ = as_int.say(format: "n = %d\n", value: 42)
+    _ = as_text.say(format: "s = %s\n", value: "forty-two")

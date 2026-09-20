@@ -338,7 +338,7 @@ points at is held to the same width and sign — `@n: u64` where it says
 extern "sqlite3.h" link "sqlite3"
     constant SQLITE_OK: i64
     record Db tag sqlite3
-    function sqlite3_open(path: cstr, @out: Db acquires sqlite3_close) -> i64
+    function sqlite3_open(path: cstr lent, @out: Db acquires sqlite3_close) -> i64
     function sqlite3_close(db: Db consumes) -> i64
 ```
 A callback is a **parameter**, never a result; its parameters follow the same rule
@@ -367,8 +367,8 @@ Nothing lends a field to `cstr`, which promises a zero the field does not;
 `f.ptr()` lends a binding's field to a `ptr` parameter declared `counted_by n`,
 naming the sibling that gives the extent, and one past the field is refused.
 C writes back through the lend only where the binding is a `@` name. A lend
-lives for its call and no longer: C keeping the pointer reads bytes the program
-may have changed or freed since, and nothing checks it.
+lives for its call and no longer: a parameter is taken to keep what it is
+handed unless declared `lent`, and a lend reaches only one so declared.
 `x: cstr @ s.lease()` is a COPY of the bytes that C may read for as long as the
 program says, and `end_lease(@x)` frees it and empties the cell. A lend and a
 lease name stand only as an argument of a call, nothing else writes a lease's
@@ -396,5 +396,5 @@ naming what it said.
                [ "->" Type [ "owned" ident ] [ "acquires" ident | "borrows" ] ] NEWLINE
            | "constant" ident ":" Type NEWLINE
            | "record" ident [ "tag" ident ] [ "partial" ] ( Fields | NEWLINE ) .
-    CParam = [ "@" ] ident ":" Type [ "counted_by" ident ] [ "owned" ident ]
-             [ "consumes" | "acquires" ident | "borrows" ] .
+    CParam = [ "@" ] ident ":" Type [ "counted_by" ident ] [ "lent" ]
+             [ "owned" ident ] [ "consumes" | "acquires" ident | "borrows" ] .

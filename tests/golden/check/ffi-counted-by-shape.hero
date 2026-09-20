@@ -21,7 +21,7 @@ extern "ffi-counted-by-shape.h"
     function not_an_integer(p: ptr counted_by n, n: f64) -> i64  #~ counted_by_shape
     function out_parameter(p: ptr counted_by n, @n: i64) -> i64  #~ counted_by_shape
     function slot_sum(p: ptr, n: i64) -> i64
-    function slot_count(p: ptr counted_by n, n: i64) -> i64
+    function slot_count(p: ptr counted_by n lent, n: i64) -> i64
 
 function uncounted(s: Slot) -> i64
     return slot_sum(p: s.b.ptr(), n: 4)  #~ field_lend_uncounted

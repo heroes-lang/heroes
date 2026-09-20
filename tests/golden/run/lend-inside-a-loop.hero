@@ -7,7 +7,7 @@
 # leak gate is green at exit because the site's last value dies with the frame.
 
 extern "string.h"
-    function strlen(s: cstr) -> u64
+    function strlen(s: cstr lent) -> u64
 
 function main()
     at: i64 @ 0

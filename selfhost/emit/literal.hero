@@ -39,7 +39,7 @@ use ir
 use emit/mangle
 
 extern "stdlib.h"
-    function atof(text: cstr) -> f64
+    function atof(text: cstr lent) -> f64
 
 # A constant, in the C spelling its own width asks for. The width comes
 # from the caller (the instruction's own type, which the checker

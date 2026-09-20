@@ -17,8 +17,8 @@ extern "ffi-a-lent-field-reads-through-const.h"
         nsap: u8[8]
         id: i64
     function slot_make() -> Slot
-    function slot_sum(p: ptr counted_by n, n: i64) -> i64
-    function slot_fill(p: ptr counted_by n, n: i64)
+    function slot_sum(p: ptr counted_by n lent, n: i64) -> i64
+    function slot_fill(p: ptr counted_by n lent, n: i64)
 
 # A by-value parameter is not a `@` name, and C only reads: legal.
 function total(s: Slot) -> i64

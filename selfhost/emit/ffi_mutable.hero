@@ -129,7 +129,7 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
 ## Tests
 
 test "a writable char * names the lent parameter and the owning repair"
-    text = "extern \"string.h\"\n    function strtok(target: cstr, sep: cstr) -> cstr\n\nfunction main()\n    _ = strtok(target: \"a,b\".cstr(), sep: \",\".cstr())\n"
+    text = "extern \"string.h\"\n    function strtok(target: cstr lent, sep: cstr lent) -> cstr\n\nfunction main()\n    _ = strtok(target: \"a,b\".cstr(), sep: \",\".cstr())\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)

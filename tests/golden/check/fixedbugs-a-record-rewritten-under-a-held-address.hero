@@ -1,0 +1,35 @@
+# fixedbugs, defect 068, panels 167 to 171, closed 2026-09-21.
+#
+# SYMPTOM: a wrong answer at exit 0 with ZERO AddressSanitizer reports, on any
+# platform. C holds a field's address, the program rewrites the record two
+# lines below, and C reads bytes the program never meant it to: 72, then 1. No
+# memory rule is broken — the storage is alive and its contents changed — so no
+# sanitizer can ever see it; only the program's meaning is wrong.
+#
+# CAUSE: defect 066's. Nothing related C's retention to the bytes' life, and
+# the lend into `k_register` was admitted although C keeps the address. Panel
+# 168's completeness critic found the corrupting action is a HEROES assignment,
+# in the same function, to the very binding whose field was lent — caller-side,
+# where static enforcement exists everywhere — which is why the two defects
+# were one class after all.
+#
+# FIX: panel 171's default. `k_register` does not say `lent`, so the lend is
+# refused where it is made, before the assignment that would have corrupted
+# it. A binding whose field was lent to a `lent` parameter may be rewritten
+# freely afterwards, because C kept nothing: `k_sum` below is quiet.
+
+extern "keeper.h"
+    record KSlot
+        name: u8[8]
+        id: i64
+    function k_register(p: ptr counted_by n, n: i64)
+    function k_read_later() -> i64
+    function k_sum(p: ptr counted_by n lent, n: i64) -> i64
+
+function main()
+    s: KSlot @ KSlot(name: [72, 0, 0, 0, 0, 0, 0, 0], id: 0)
+    k_register(p: s.name.ptr(), n: 8)  #~ lend_kept
+    print(k_read_later())
+    s @ KSlot(name: [1, 0, 0, 0, 0, 0, 0, 0], id: 1)
+    print(k_read_later())
+    print(k_sum(p: s.name.ptr(), n: 8))

@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-a-record-rewritten-under-a-held-address.hero:31:19: error[lend_kept]: `.ptr()` lends bytes to C for this call and no longer, and `p` of `k_register` is not declared to let them go — a C parameter without `lent` is assumed to keep what it is handed, and bytes kept past the call are read after the program has changed or freed them

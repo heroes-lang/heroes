@@ -16,11 +16,25 @@
 # landing was run and breaks at `selfhost/cli/process.hero:42:40` with no binary.
 # So a `lent` on a `cstr` below is quiet here: read by the parser, unread by any
 # rule yet, and deliberately not refused, or the next commit could not be built.
+#
+# CORRECTION, 2026-09-21, the next commit: the rule's half landed. A `lent` on
+# a `cstr` or a counted `ptr` is now READ — a lend reaches only such a
+# parameter, `lend_kept` refuses it anywhere else — so the two quiet shapes
+# above are quiet because the word is true of them, not because nothing looked.
+# And the sitting's completeness critic named a fourth dead shape the first
+# commit accepted silently: a `ptr` that declares no extent, which no `ptr`
+# lend can ever reach (`field_lend_uncounted` refuses it first), so the word
+# there says nothing and is refused like the three below.
 
 extern "lent.h"
     # The two shapes that carry it, quiet.
     function strlen(s: cstr lent) -> u64
     function read(fd: i32, buf: ptr counted_by n lent, n: u64) -> i64
+
+    # A `ptr` with no extent: a lend never lands here, so the word is dead
+    # text, and the message says which two words the parameter wants.
+    #~v lent_shape
+    function fill(buf: ptr lent, n: u64) -> i64
 
     # An `@` out-parameter: C writes into the program's own cell, and no lend
     # can stand in an `@` position, so there is nothing for the word to admit.

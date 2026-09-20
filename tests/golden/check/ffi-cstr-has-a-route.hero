@@ -18,8 +18,8 @@
 # not have. A `Fix` with a span and no text would be worse than none (CLAUDE.md §8).
 
 extern "stdlib.h"
-    function getenv(name: cstr) -> cstr
+    function getenv(name: cstr lent) -> cstr
 
 function main()
     v = getenv(name: "HOME".cstr())
-    print(v)   #~ bad_operand
+    print(v)  #~ bad_operand

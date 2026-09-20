@@ -3,11 +3,18 @@
 # The header is `<stdio.h>` and the C symbol is `printf` — the same
 # symbol `as_text.hero` binds, at a different signature. That is the
 # whole point of this fixture: it is legal, it links, and it runs.
+#
+# `lent`, since panel 171: `printf` reads its format while it runs and
+# keeps nothing of it, and without the word a lend at the call is refused,
+# because an unmarked C parameter is assumed to keep what it is handed.
 
 extern "stdio.h"
-    function printf(format: cstr, value: i64) -> i32
+    function printf(format: cstr lent, value: i64) -> i32
 
 # The route out of the module, because an `extern` is never callable
-# across a module boundary (acceptance row 1, panel 033 R5).
-function say(format: cstr, value: i64) -> i32
-    return printf(format: format, value: value)
+# across a module boundary (acceptance row 1, panel 033 R5). It takes the
+# `str` and lends inside itself, which is the shape §4.19 prescribes: a
+# wrapper taking `cstr` is a Heroes parameter no mark can reach, and panel
+# 171's rule stops a lend there with `lend_needs_a_header`.
+function say(format: str, value: i64) -> i32
+    return printf(format: format.cstr(), value: value)

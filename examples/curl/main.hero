@@ -66,7 +66,17 @@ function main()
     # one enum, and both are what the header says. This line said `option:
     # i32` and passed the constant straight through until the day when
     # panel 092's repair to the probe made clang able to see it at last.
-    rc = curl_easy_setopt(handle, CURLOPT_URL.to_u32().must(), "https://example.invalid/".cstr())
+    #
+    # And the string goes over as a LEASE rather than a lend, for the same
+    # reason: whether `curl_easy_setopt` keeps the pointer is a fact about the
+    # option, not the function. libcurl copies every string option but
+    # `CURLOPT_POSTFIELDS`, so no one word is true of `value` and the
+    # declaration carries none; an unmarked parameter is assumed to keep, so
+    # the lend is refused and this copy, released right after the call, is
+    # right under either option (spec § 13, panel 171).
+    url: cstr @ "https://example.invalid/".lease()
+    rc = curl_easy_setopt(handle, CURLOPT_URL.to_u32().must(), url)
+    end_lease(@url)
 
     if rc == CURLE_OK
         print("the url was accepted")

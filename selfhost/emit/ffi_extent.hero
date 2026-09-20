@@ -13,7 +13,7 @@ use token
 use source
 use diag
 use emit/ffi_lookup
-use lend_errors
+use field_lend_errors
 
 constant MARKER: str
     "heroes-ffi-extent "
@@ -43,7 +43,7 @@ function overstated_extent(s: source.Source, line: str) -> diag.Diagnostic?
     lend = token.Span(start: lend_start.must(), end: lend_end.must())
     extent = token.Span(start: extent_start.must(), end: extent_end.must())
     return ok(
-        lend_errors.field_lend_extent(lend: source.span_text(s, lend), callee: parts[0], parameter: parts[1], count: parts[2], stated: source.span_text(s, extent), length: length.must(), span: extent)
+        field_lend_errors.field_lend_extent(lend: source.span_text(s, lend), callee: parts[0], parameter: parts[1], count: parts[2], stated: source.span_text(s, extent), length: length.must(), span: extent)
     )
 
 # clang ends the line with the message's closing quote on some platforms and

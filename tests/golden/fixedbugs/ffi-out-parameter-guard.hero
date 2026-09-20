@@ -32,8 +32,8 @@
 
 extern "sqlite3.h" link "sqlite3"
     constant SQLITE_OK: i64
-    function sqlite3_open(path: cstr, @db: ptr) -> i64
-    function sqlite3_prepare_v2(db: ptr, sql: cstr, n: i32, @stmt: ptr, @tail: cstr) -> i64
+    function sqlite3_open(path: cstr lent, @db: ptr) -> i64
+    function sqlite3_prepare_v2(db: ptr, sql: cstr lent, n: i32, @stmt: ptr, @tail: cstr) -> i64
 
 function main()
     db: ptr @ nullptr

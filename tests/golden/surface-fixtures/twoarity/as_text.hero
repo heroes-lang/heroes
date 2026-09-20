@@ -4,10 +4,13 @@
 # groups in two modules naming one symbol is not a collision: the probes
 # are mangled per module (panel 053), and the call goes through the
 # header's own prototype, so C sees one function and Heroes sees two
-# bindings.
+# bindings. Both parameters say `lent` (panel 171): `printf` reads them
+# while it runs and keeps neither.
 
 extern "stdio.h"
-    function printf(format: cstr, value: cstr) -> i32
+    function printf(format: cstr lent, value: cstr lent) -> i32
 
-function say(format: cstr, value: cstr) -> i32
-    return printf(format: format, value: value)
+# The wrapper takes two `str` and lends both inside itself, as `as_int.hero`
+# says why.
+function say(format: str, value: str) -> i32
+    return printf(format: format.cstr(), value: value.cstr())

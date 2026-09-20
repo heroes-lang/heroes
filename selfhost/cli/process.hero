@@ -39,18 +39,24 @@ extern "hero_os.h"
     function hero_run_exe_suffix() -> str
     function hero_run_reset()
     function hero_run_arg(word: str)
-    function hero_run_go(program: cstr, in_path: cstr, out_path: cstr, err_path: cstr, @status: i64) -> i64
-    function hero_fs_exists(path: cstr) -> i64
-    function hero_fs_is_directory(path: cstr) -> i64
-    function hero_fs_mkdir_all(path: cstr) -> i64
-    function hero_fs_remove(path: cstr) -> i64
-    function hero_fs_rename(from: cstr, to: cstr) -> i64
+    # `lent`: each call reads the path while it runs and keeps nothing of it
+    # (panel 171). Without the word a lend is refused, because a C parameter
+    # is assumed to keep what it is handed. `runtime/parts/os.c` is the C.
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_fs_exists(path: cstr lent) -> i64
+    function hero_fs_is_directory(path: cstr lent) -> i64
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_fs_remove(path: cstr lent) -> i64
+    function hero_fs_rename(from: cstr lent, to: cstr lent) -> i64
 
 extern "stdlib.h"
-    function hero_dir_scan(root: cstr, want: i64, recursive: i64) -> i64
+    function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
     function hero_dir_at(index: i64) -> str
     function hero_dir_release()
-    function getenv(name: cstr) -> cstr
+    # C11 says `keeps` in words wherever a function keeps and says nothing
+    # where it does not; `getenv`'s `name` is *the string to match*, and the
+    # ffi seat measured that it does not alias it (panel 171).
+    function getenv(name: cstr lent) -> cstr
 
 # What a finished program answered.
 #

@@ -37,7 +37,7 @@ use ir/containers
 use emit/ffi_lookup
 use emit/ffi_site
 use emit/field_lend
-use lend_errors
+use field_lend_errors
 use parse
 use resolve
 use checker
@@ -71,7 +71,7 @@ function written_lend(s: source.Source, decls: [ast.Decl], p: containers.Program
     if found.is_err()
         return fail(code: "none", msg: "no immutable lend is passed to C at that line")
     return ok(
-        lend_errors.field_lend_written(lend: source.span_text(s, found.must().lend), root: found.must().root, callee: found.must().callee, c_type: c_type.must(), span: found.must().lend)
+        field_lend_errors.field_lend_written(lend: source.span_text(s, found.must().lend), root: found.must().root, callee: found.must().callee, c_type: c_type.must(), span: found.must().lend)
     )
 
 # The first extern call at this file and line whose arguments carry a lend
@@ -118,7 +118,7 @@ function argument_lend(f: containers.Function, arg: ir.Arg) -> field_lend.Lend?
 # points at the lend the author wrote — never at the extern's declaration,
 # which is where every other qualifier reader points.
 test "a write through a lend from a `=` binding names the lend, its root, the callee and the header's type"
-    text = "extern \"s.h\"\n    record S\n        b: u8[4]\n    function fill(p: ptr counted_by n, n: i64)\n    function mk() -> S\n\nfunction main()\n    t = mk()\n    fill(p: t.b.ptr(), n: 4)\n"
+    text = "extern \"s.h\"\n    record S\n        b: u8[4]\n    function fill(p: ptr counted_by n lent, n: i64)\n    function mk() -> S\n\nfunction main()\n    t = mk()\n    fill(p: t.b.ptr(), n: 4)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
@@ -143,7 +143,7 @@ test "a write through a lend from a `=` binding names the lend, its root, the ca
 # The shape beside it (CL-061): a lend from a `@` cell is never `const`, so a
 # qualifier line at ITS call is somebody else's and this reader steps aside.
 test "a lend from a `@` cell is not this class, whatever the line says"
-    text = "extern \"s.h\"\n    record S\n        b: u8[4]\n    function fill(p: ptr counted_by n, n: i64)\n    function mk() -> S\n\nfunction main()\n    t: S @ mk()\n    fill(p: t.b.ptr(), n: 4)\n"
+    text = "extern \"s.h\"\n    record S\n        b: u8[4]\n    function fill(p: ptr counted_by n lent, n: i64)\n    function mk() -> S\n\nfunction main()\n    t: S @ mk()\n    fill(p: t.b.ptr(), n: 4)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
@@ -156,7 +156,7 @@ test "a lend from a `@` cell is not this class, whatever the line says"
 # And a by-value parameter is an immutable root too — the half defect 065's
 # first entry did not know (panel 166's spec-warden and critic).
 test "a lend from a by-value parameter is this class, and the root is the parameter's name"
-    text = "extern \"s.h\"\n    record S\n        b: u8[4]\n    function fill(p: ptr counted_by n, n: i64)\n\nfunction via(s: S)\n    fill(p: s.b.ptr(), n: 4)\n\nfunction main()\n    via(s: S(b: [1, 2, 3, 4]))\n"
+    text = "extern \"s.h\"\n    record S\n        b: u8[4]\n    function fill(p: ptr counted_by n lent, n: i64)\n\nfunction via(s: S)\n    fill(p: s.b.ptr(), n: 4)\n\nfunction main()\n    via(s: S(b: [1, 2, 3, 4]))\n"
     parsed = parse.parse(text)
     src = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, src, parsed.decls, parsed.uses)
