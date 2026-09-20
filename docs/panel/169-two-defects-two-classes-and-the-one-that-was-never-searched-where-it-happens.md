@@ -496,3 +496,45 @@ something no sitting has seen.
 **And M-DECLARED-EXTENTS CANNOT CLOSE ON THIS SITTING.** Six defects are open,
 each now has a route, and one of the six — 069 — can land immediately. The rest
 wait on the sentence this sitting adopted and on the layer it moved the rule to.
+
+## THE SPLIT DEPENDS ON THE EXTENT, AND THIS SITTING DID NOT NOTICE — written underneath, 2026-09-20, after the synthesis was committed
+
+Written under rather than into the text above, which stands.
+
+**The sitting's headline is that 066 and 068 are two classes.** It rests on the
+historian's finding that 068 is *exclusivity*, which ships caller-side in five
+languages, and on Java FFM drawing the same line. Read again with this sitting's
+own adopted question in hand — *how long is a lend readable?* — **the split is
+not independent of the answer**:
+
+- under **a lend lives for the call and no longer**, defect 068's write happens
+  after the lend's extent has ended, so **the program is right and C is the one
+  retaining**. 068 is then the same class as 066, the caller-side rule closes
+  nothing, and Rust's `E0506` and Swift's SE-0176 do **not** apply, because in
+  both of those the reference's extent is known to the compiler and here it is
+  the thing being defined;
+- under **a lend lives as long as the binding**, 068 is exactly exclusivity, the
+  precedent applies in full, **and the rule refuses the two sound programs the
+  completeness critic wrote in nine lines each.**
+
+So the resolution's items 1 and 3 are more entangled than it says: **the layer
+question (R6) is independent of the extent, and the split is not.**
+
+**And one precedent is overstated, which is the coordinator's error rather than
+the historian's.** The historian wrote that *defect 068 is FFM's
+`IllegalStateException` case*. FFM raises that exception when Java accesses a
+segment **after its own arena has closed** — the program touching something whose
+lifetime it controls and has ended. Defect 068 closes nothing and ends nothing:
+the program rewrites its own record while native code holds a pointer into it,
+and **FFM does not catch that shape**, because a `MemorySegment` is off-heap and
+has no Heroes-style reassignment. The sentence should have gone out as a
+question. What survives of it is the weaker and still useful half: FFM enforces a
+caller-side temporal rule at run time and refuses the foreign half outright, in
+its own javadoc.
+
+**What this changes for the author's decision.** The queued item asks for a yes
+on the extent's being stated first. It should be read as asking for two things,
+and the second was invisible: **which extent**, because the answer decides
+whether 066 and 068 are one defect or two, and therefore whether the caller-side
+rule is worth building at all. The coordinator's recommendation, with its reason
+and its cost, is in `docs/work/DECIDE.md` under `panel 169`.
