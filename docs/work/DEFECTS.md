@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 6**
+**OPEN: 5**
 
 - [ ] **066 — a `ptr` lend has no lifetime rule, so C may keep the address past the frame** | a field's address handed to C outlives the binding it came from, and a later C call reads a dead frame at exit 0 | `selfhost/check/lending.hero`'s `field_lend_escapes`, `spec § 13`'s lease sentences
 
@@ -147,38 +147,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     happens**, and *"nothing decides this one from a declaration, a header or an
     argument"* above is an argument about the C side of a line the Heroes side
     writes.
-
-- [ ] **069 — a C function name passed as a callback builds and then aborts, blaming the compiler** | `check` 0, `build` 0, `run` 134 with *"entered unreachable code — this is a compiler bug"*, and the emitted C calls through an uninitialised temporary | `selfhost/emit/inst.hero:311`, design.md §4.19's thesis
-
-    **Origin:** panel 168's ffi-pragmatist, 2026-09-20, reproduced by the
-    completeness critic and again by the coordinator before filing.
-
-    **Reproducer**, and it is the ordinary way every C library takes a callback:
-
-        extern "cb.h"
-            function cb_free_it(p: ptr)
-            function cb_take(p: ptr counted_by n, d: (function(ptr) -> ()), n: i64)
-
-        function main()
-            b: ptr @ malloc(size: 8)
-            cb_take(p: b, d: cb_free_it, n: 8)
-
-    `check` **exit 0**, `build` **exit 0**, `run` **134 three of three**. In the
-    emitted C, `hero_unreachable(); /* the gate refuses this form */` and then
-    `(void)cb_take(t3, t4, t5);` four lines later, with `t4` never assigned.
-
-    **Why it is a defect and not a missing feature.** design.md §4.19's central
-    promise is that a wrong FFI form is a **compile** error; this one is a
-    run-time abort whose message accuses the compiler of a bug while the compiler
-    is doing what its own gate says. §1.12 is kept, because `hero_unreachable`
-    fires before anything reaches C, so this is a diagnostics defect rather than
-    a robustness one and what is owed is a diagnostic on the `.hero` line naming
-    the form.
-
-    **It is load-bearing for 066 and 068 rather than incidental.** A destructor
-    callback is the one mechanism every real C library offers for exactly the
-    retention problem those two are about — `SQLITE_TRANSIENT`, `sqlite3_free`,
-    `curl_easy_setopt`'s write callbacks — and Heroes cannot pass one.
 
 - [ ] **070 — a lease handed to a C function that frees it dies with an empty stderr and an unstable exit code** | `check` 0, `build` 0, and the program aborts saying nothing at all, 133 nine times and 134 once in ten runs | `spec § 13`'s lease sentences, design.md §4.17
 

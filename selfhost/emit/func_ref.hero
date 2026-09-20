@@ -1,0 +1,78 @@
+# A function used as a VALUE, which is the one place where the two kinds of
+# callee stop being interchangeable (design.md §4.13; spec § 13's callback
+# sentence, *"a callback is a parameter, never a result"*).
+#
+# WHY IT IS ITS OWN FILE. It left `emit/inst.hero` at defect 069's repair, and
+# not for length alone: naming a function is a question about the DECLARATION,
+# while everything else in that file's dispatch is a question about the
+# instruction's operands. The seam is the same one `emit/access.hero` sits on.
+#
+# WHAT THE ARM GOT WRONG, AND IT IS THE SHAPE CLAUDE.md § RUN IT WARNS ABOUT.
+# Until 2026-09-20 the `extern_fn` case wrote `hero_unreachable(); /* the gate
+# refuses this form */` and the emitter then went on to emit the CALL four lines
+# later, passing a temporary nothing had assigned. So `check` was 0, `build` was
+# 0 and the program aborted at run time saying *"this is a compiler bug, please
+# report it"* — a true sentence pointing at the wrong line, for a form the
+# checker admits and the spec's own §4.19 promises is a compile-time question.
+# A gate that refuses a form and then emits it anyway is not a gate.
+#
+# WHY UNMANGLED (CLAUDE.md §7, and `emit/ops.hero`'s own `.extern_fn` arm says
+# it for the call): the name in the `.hero` file IS the C function's name, and
+# the `#include` is what declares it. Clang then checks the assignment against
+# the real header's prototype — a mismatched function pointer is
+# `incompatible function pointer types`, exit 1, which is the fifth
+# clang-failure class of `.claude/rules/c-boundary.md` arriving at an
+# assignment instead of at a call.
+
+use ir
+use ir/containers
+use source
+use ast
+use emit/mangle
+use emit/writer
+
+# The name a callee has when it stands as a value, or an error where the form
+# has none. `.builtin_fn` has no C designator at all — a built-in is a shape the
+# emitter expands, not a symbol — and `.indirect` is already a pointer in a
+# temporary, so its reference would be the address of an address, which
+# `ir.hero`'s own comment refuses.
+function designator(p: containers.Program, s: source.Source, decls: [ast.Decl], callee: ir.Callee) -> str?
+    match callee
+        .heroes_fn h =>
+            for candidate in p.functions
+                if candidate.decl == h.decl
+                    return ok(
+                        mangle.function_name(module: source.component_at(s, candidate.span.start), name: candidate.name)
+                    )
+
+            return fail(code: "no_function", msg: "a Heroes function the parse does not hold")
+        .extern_fn e  => return ok(source.span_text(s, decls[e.decl].name))
+        .builtin_fn _ => return fail(code: "builtin", msg: "a built-in is expanded, never named")
+        .indirect _   => return fail(code: "indirect", msg: "the address of an address")
+
+# The assignment itself. A target the caller does not have means the value is
+# discarded, and a function designator has no side effect, so nothing is
+# written — the same reasoning `emit/unread.hero` applies everywhere else.
+function emit(@w: writer.Writer, p: containers.Program, s: source.Source, decls: [ast.Decl], callee: ir.Callee, target: str?)
+    if target.is_err()
+        return
+    named = designator(p, s, decls, callee: callee)
+
+    if named.is_err()
+        writer.line(@w, text: "    hero_unreachable(); /* a function value with no C name */")
+        return
+    writer.line(@w, text: "    " + target.must() + " = " + named.must() + ";")
+
+## Tests
+
+test "a Heroes function is mangled and an extern is not"
+    assert designator_kind(.builtin_fn(at: 0)) == "none"
+    assert designator_kind(.indirect(value: 0)) == "none"
+
+# The two cases a unit test can reach without a parse: the two that have no
+# name. The named cases are judged by the goldens, because the name comes from
+# the source and a fabricated span would be the instrument watching itself.
+function designator_kind(callee: ir.Callee) -> str
+    match callee
+        .heroes_fn _ | .extern_fn _ => return "named"
+        .builtin_fn _ | .indirect _ => return "none"
