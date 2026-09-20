@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 4**
 
 - [ ] **panel 167** | the lend's lifetime: a field lease that copies is adopted, two type rules are widened from `cstr` to `ptr`, and routes B, C and D are refused — ratify, or take the conservative resolution the sitting recorded | `docs/panel/167-nobody-checks-the-callee-and-the-lease-we-would-copy-is-open.md`
 
@@ -103,5 +103,43 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     parameter stays a silent wrong answer, which no language in the ten the
     historian surveyed does better. **What changes is that a program that needs C
     to keep bytes gets a way to be right, and today it has none.**
+
+- [ ] **panel 170** | no one word carries both retention and give-away, `one_tag_one_type` is narrowed at `tag void` and closes defect 072, and the DEFAULT FLIP — the only route measured to close 066 and 068 — refuses eight correct programs in `examples/` and is not taken | `docs/panel/170-the-mark-is-refused-and-the-only-thing-that-closes-a-defect-today-is-a-narrowing.md`
+
+    **Origin:** panel 170, 2026-09-20, the full panel, on the mark that says a C
+    parameter retains. **All five seats came back against the proposal**, on two
+    vetoes and three objections, each with a measurement under it. **The default
+    while this is open** is the adopted resolution: the narrowing lands, no mark
+    is built, and defect 070's route is named rather than taken.
+
+    **THE ONE THING THAT IS YOURS AND THAT NO SITTING CAN SPEND FOR YOU.** The
+    historian's default flip — a foreign pointer parameter is assumed to retain
+    unless the declaration says otherwise, which is what Swift chose at its own C
+    boundary — is **the only candidate measured to close 066 and 068**, and it
+    needs no author action on any correct program. Its price, measured by the
+    completeness critic because no seat was assigned it: **eight lend call sites
+    in `examples/`, in four files, and all eight are correct today** —
+    `sqlite3_open` twice, `exec` twice, `prepare_v2`, `bind_text` with
+    `SQLITE_TRANSIENT`, `curl_easy_setopt` with a URL. **Eight refusals of eight
+    correct programs.**
+
+    **What it is weighed against**: the historian's `[[carries_dependency]]`
+    finding. An annotation that pays off only when written on every link loses its
+    guarantee at the first unannotated boundary, and then nobody writes it.
+    Standardised in C++11, discouraged in 2016 because it *"requires numerous
+    annotations throughout code"* with no benefit, and **removed from Clang on
+    2026-09-01, nineteen days before this sitting**.
+
+    **The recommendation, and the decision stays yours: do not flip it yet.** Not
+    because eight is many, but because the sitting has no measurement of what the
+    ninth costs — the corpus is `examples/` and `tests/golden/`, and the author's
+    real programs are not in it. **What would settle it is one binding the author
+    cares about, written both ways.**
+
+    **What conservative would have been**, recorded so it can be taken: adopt the
+    ffi seat's weak mark now, one word meaning *a lend is refused here*. It costs
+    +82 real, breaks nothing, and **the critic measured that it closes zero of
+    four**, because every reproducer is unmarked. It would look like progress on
+    the list and move no number on it.
 
 *******************************************************************************

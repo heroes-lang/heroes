@@ -99,6 +99,37 @@ declaration to the author's argument. What the milestone delivered instead is
 the relation declared where C can check it.
 
 *******************************************************************************
-**OPEN: 0**
+**OPEN: 2**
+
+- [ ] **M-declared-extents** | one Heroes declaration cannot reach all three of `sqlite3_bind_text`'s retention modes, so the shipped ledger and measurement 037 declare the same C function two incompatible ways | panel 170's completeness critic, `examples/ledger/db/sqlite.hero`
+
+    **Origin:** panel 170's completeness critic, 2026-09-20, re-run by the
+    coordinator before filing. **It is not a defect and is filed here rather than
+    in `docs/work/DEFECTS.md`**, because both directions are LOUD: `d: ptr` takes
+    `nullptr` and refuses a function name at `check`, and the null that reaches C
+    where C calls it back is a named runtime panic; `d: (function(ptr) -> ())`
+    takes the function name and refuses `nullptr` with `error[type_mismatch]` at
+    `check`. Nothing is silent and nothing corrupts.
+
+    **What it is** is an expressiveness gap at design.md §1.11's own boundary: a
+    real C parameter whose argument may legitimately be a null OR a function has
+    no single Heroes spelling, so a binding author must pick one mode and lose the
+    other. `SQLITE_STATIC` is a null function pointer, which is why the canonical
+    keeps-the-pointer call and the give-away call cannot be written against one
+    declaration.
+
+- [ ] **M-declared-extents** | `/panel`'s working rules do not say that a seat's tree copy is its own, and two seats shared one scratchpad in one sitting | `.claude/skills/panel/SKILL.md`, `.claude/rules/verification.md`
+
+    **Origin:** panel 170's completeness critic, 2026-09-20. **Filed rather than
+    fixed, because CLAUDE.md § 4 says the skills are amended by author
+    instruction and not by a panel.**
+
+    Two seats shared one scratchpad and one rebuilt the other's compiler
+    underneath it, which produced an emission divergence a seat reported as a
+    question and the critic then traced to a stale binary. Independently, the
+    compiler-engineer found its own first copy six commits behind and re-ran
+    everything. **Twice in one sitting**, and it is
+    `.claude/rules/verification.md` § *The compiler that judges is a build
+    artifact* arriving inside a sitting rather than in a gate.
 
 *******************************************************************************
