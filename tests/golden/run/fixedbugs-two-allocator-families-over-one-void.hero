@@ -1,0 +1,46 @@
+# Defect 072, closed 2026-09-20 at M-declared-extents step 18, on panel 170's
+# narrowing of `one_tag_one_type` at `tag void`.
+#
+# SYMPTOM. Two C allocator families that both hand back `void *` had no tag to
+# differ by, so `one_tag_one_type` collapsed them onto ONE Heroes type and the
+# crossed free became an ordinary call: `check` 0, `build` 0, `run` 0, the arena
+# destroyed and the heap block leaked, and the handle live set silent because
+# the count balanced — two acquired, two consumed.
+#
+# CAUSE, and it is the rule defeating its own ground. `one_tag_one_type` exists
+# because two Heroes types over one tag would put the checker and clang on
+# opposite sides and *"the mutant survives every instrument the language has"*
+# (defect 029, panel 145). **At `tag void` the rule PRODUCES that shape instead
+# of preventing it**: it forces one type where the author needs two, and the
+# swap it exists to kill becomes legal.
+#
+# THE REPAIR is one condition, and it names `void` and no other word, because
+# every other tag is a name the author can vary — `record Arena tag arena_t`
+# beside `record Heap tag heap_t` already works where the header declares both,
+# and the census that opened this found the pair only where the header declares
+# neither.
+#
+# WHAT STAYS REFUSED, and this case's sibling asserts it:
+# `tests/golden/check/` still refuses two handles over a real tag with
+# `error[duplicate_tag]`. The rule is intact where it has a tag to work with.
+#
+# This case is the MATCHED program — each block freed by its own family's
+# deallocator — because that is what the narrowing makes writable. The crossed
+# program is the check-tree case beside it.
+
+extern "fixedbugs-two-allocator-families-over-one-void.h"
+    record Arena tag void
+    record Heap tag void
+    function arena_new() -> Arena acquires arena_free
+    function arena_free(b: Arena consumes)
+    function heap_new() -> Heap acquires heap_free
+    function heap_free(b: Heap consumes)
+
+function main()
+    a = arena_new()
+    h = heap_new()
+
+    # Each to its own, which is the program the author meant and could not
+    # write: before the narrowing these two were one type.
+    arena_free(b: a)
+    heap_free(b: h)
