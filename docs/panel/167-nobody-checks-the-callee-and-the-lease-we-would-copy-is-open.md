@@ -289,6 +289,38 @@ table.
 
 ## Author's verdict
 
+**RATIFIED 2026-09-20, AND OVERTAKEN IN THREE OF ITS CLAUSES**
+
+**Ratified by the author on 2026-09-20**, in conversation, in these words: *"I am
+following your recommendations."* The recommendation was the coordinator's, and
+it rests on the measurements of panels 168, 169 and 170 rather than on this
+sitting's own reasoning. **Not `by delegation`** — the author's standing
+instruction of 2026-09-19 is that they read — and not recorded as a reading of
+this file either, because what was put to them was the summary and the price in
+`docs/work/DECIDE.md`.
+
+**What the yes settles**: that a lend gains a sibling that copies, as a form.
+
+**What it no longer buys, and the author was told so before answering.** Three of
+this sitting's clauses were overtaken between its writing and its ratification,
+each by a measurement:
+
+- **clause 1's allocation half is struck** (panel 168): the trailing header does
+  not make the give-away case work, and at 64 KiB and 1 MiB it creates a silent
+  double free the leading header does not have;
+- **clause 2 is suspended** (panel 168, confirmed by 170): the position rule
+  already refuses every unsafe shape at check, what clause 2 would newly refuse
+  is safe, and it is bypassed in one line by the idiom the compiler's own note
+  recommends;
+- **clause 8 is false**: route A closes **zero** of two, which this sitting's own
+  spec-warden predicted and panel 168 scored.
+
+**So the field lease is not built.** The sitting stands as the record of what was
+decided on 2026-09-20 morning and of why it did not survive the afternoon.
+
+**What this section said while the sitting was open**, kept because a
+record is not rewritten:
+
 **Pending.** Queued as `panel 167` in `docs/work/DECIDE.md`, and the adopted
 resolution is the default while it stands there: the field lease is built,
 defect 067 is repaired first because the lease rests on its mechanism, and

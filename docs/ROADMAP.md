@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 3 defects · 4 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 3 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -24,7 +24,7 @@ against a banner reading 3.
 | The spec | **6159** on the vendored ranks and **8201** on the reader's own, against a ceiling of **10240**. Panel 169's row is **+33 vendored and +47 real**, the sentence two seats with isolated inputs found missing: *a lend lives for its call and no longer*. It is paid by five registered predictions, one per seat. **2039 free** and 1979 net of the FFI floor |
 | The contract | **7449** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-15 with the wakeup instruction: of the 36 vendored tokens the pin was behind, 14 predate that session and no commit had named them |
 | Records | sittings **162** · journals **61** · milestone files **50** · measurements **35** · entries: `docs/records/log/` **681**, `docs/records/done/` **560**, `docs/records/book/beats/` **127** |
-| Waiting on the author | **nothing.** Panels 155 to 159 were ratified on 2026-09-16 and **panel 161 on 2026-09-18**, all of them **by delegation and not by reading**, under instructions of those days, and every file says so in those words rather than crediting a reading that did not happen. What each leaves owed is named with its trigger: panel 155's `float_map_key` through a generic, which waits under Principle 0; panel 156's two refused spec merges; panel 157's R4 instrument, filed with its price in `docs/work/milestones/M-package-manager.md`; panel 159's refused route, defining `<` on `str`; and panel 161's two unpriced routes. **Panel 164 was ratified the same way on 2026-09-18**, and the gap panel 161 found — that no route leads from a `char[N]` field to C — is closed in both directions; what it leaves owed is its route 6, scheduled as **M-declared-extents** behind the one measurement that decides it |
+| Waiting on the author | **nothing.** **Panels 167, 168, 169 and 170 were ratified on 2026-09-20 in one act**, in conversation, on the coordinator's summary and price in each queued item — recorded as that and **not as a reading of the four files**, and **not `by delegation`**, because the coordinator does not know which is true and CL-058 says the record states what it knows. What the four yeses leave standing is one sentence: **defects 066 and 068 have no route in flight**, the default flip being the only candidate measured to close them and its price eight refusals of eight correct programs in `examples/`, declined for a stated reason. What would move them is **one binding the author cares about, written both ways** — a measurement, not a sitting. Defect 070 keeps panel 170's named route, which the same sitting's own two findings argue against. Before these four: panels 155 to 159 and 161 on 2026-09-16 and 2026-09-18, and 164 on 2026-09-18, all **by delegation and not by reading**, under instructions of those days |
 
 **Re-measured 2026-09-18, the full net on a compiler built from the regenerated
 seed, which is CI's own configuration.** `check` **127**, `run` **127**,
