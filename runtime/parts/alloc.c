@@ -170,6 +170,30 @@ static const void *hero_handle_first_stray = NULL;
 
 int64_t hero_runtime_live(void) { return hero_live_blocks; }
 
+/* THE STRAY MESSAGE, WRITTEN ONCE AND CALLED FROM TWO PLACES — defect 071,
+ * 2026-09-20. It is raised at the moment of detection, inside
+ * `hero_handle_consumed`, and the exit gate keeps its own call as defence in
+ * depth: an emitter that failed to tell the set before the call would leave a
+ * stray standing, and that must not become silence.
+ *
+ * THE ADDRESS GOES LAST, and that is not a style choice. A golden asserts a
+ * SUBSTRING of this message, so an address in the middle splits the one stable
+ * sentence in two and no case can assert it — measured 2026-09-15, when three
+ * shipped goldens went red on a message that was right. Last, the sentence a
+ * case asserts is contiguous and the address a reader needs is still here. */
+static void hero_handle_report_stray(size_t strays, const void *first_stray) {
+    fflush(stdout);
+    fprintf(stderr, "panic: %llu C handle(s) given back that were never taken — "
+                    "the set of live handles did not hold that address when a "
+                    "call marked `consumes` ran. Two things do this: the same "
+                    "handle given back TWICE, which is a double release and "
+                    "may already have corrupted memory; or a value acquired "
+                    "WHOLE and released part by part, since one mark is one "
+                    "obligation on the whole value. The first is at %p\n",
+            (unsigned long long)strays, first_stray);
+    abort();
+}
+
 /* EACH COUNTER IS READ ONCE, into a local, and the message prints that local.
  * The plain `hero_live_blocks != 0` followed by a second read inside the
  * `fprintf` was two loads of one atomic object: correct while nothing else could
@@ -280,24 +304,12 @@ void hero_runtime_check_leaks(void) {
         if (hero_handle_set[i] != NULL) first_live = hero_handle_set[i];
     hero_handle_lock_drop(&hero_handle_lock);
 
-    if (strays > 0) {
-        fflush(stdout);
-        /* THE ADDRESS GOES LAST, and that is not a style choice. A golden
-         * asserts a SUBSTRING of this message, so an address in the middle
-         * splits the one stable sentence in two and no case can assert it —
-         * measured 2026-09-15, when three shipped goldens went red on a message
-         * that was right. Last, the sentence a case asserts is contiguous and
-         * the address a reader needs is still here. */
-        fprintf(stderr, "panic: %llu C handle(s) given back that were never taken — "
-                        "the set of live handles did not hold that address when a "
-                        "call marked `consumes` ran. Two things do this: the same "
-                        "handle given back TWICE, which is a double release and "
-                        "may already have corrupted memory; or a value acquired "
-                        "WHOLE and released part by part, since one mark is one "
-                        "obligation on the whole value. The first is at %p\n",
-                (unsigned long long)strays, first_stray);
-        abort();
-    }
+    /* DEFENCE IN DEPTH SINCE defect 071: `hero_handle_consumed` raises this at
+     * the moment of detection, so in an emitted program this branch is now
+     * unreachable. It stays because an emitter that stopped telling the set
+     * before the call would otherwise turn a corruption into silence, and the
+     * message is the same one, written once above. */
+    if (strays > 0) hero_handle_report_stray(strays, first_stray);
     if (live > 0) {
         fflush(stdout);
         fprintf(stderr, "panic: %llu C handle(s) never given back — every call "
@@ -424,11 +436,22 @@ void hero_handle_consumed(const void *h) {
     if (hero_handle_set[i] != h) {
         /* Given back while the set did not hold it: the second of a double
          * release, or a part of something acquired whole. The old counter could
-         * only go negative and offer a list of causes. */
+         * only go negative and offer a list of causes.
+         *
+         * IT ABORTS HERE RATHER THAN AT EXIT — defect 071, 2026-09-20. The
+         * report below used to wait for `hero_runtime_check_handles`, and the
+         * comment beside it already gave the reason that makes waiting wrong:
+         * "the stray is reported first, because it is the one that may already
+         * have corrupted memory". Against a deallocator that actually frees,
+         * the program never reaches exit — measured, exit 133 inside the real
+         * `free` with nothing on stderr, while this message sat waiting. The
+         * emitter now tells the set BEFORE the call (`emit/handle_traffic.hero`),
+         * so this is the last moment at which the double release has not
+         * happened yet. */
         hero_handle_strays++;
         if (hero_handle_first_stray == NULL) hero_handle_first_stray = h;
         hero_handle_lock_drop(&hero_handle_lock);
-        return;
+        hero_handle_report_stray(1, h);
     }
     /* Backward-shift deletion, because linear probing cannot tombstone without
      * the table filling with tombstones on a long-running program. */

@@ -129,9 +129,9 @@ bb0:
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     t5 = h0_a;
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
-    (void)slot_close(t5);
-#line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     hero_handle_consumed(t5);
+#line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
+    (void)slot_close(t5);
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     return;
 #line 138 "aborthandleborrowsthatgivesaway.c"

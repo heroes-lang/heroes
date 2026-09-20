@@ -163,9 +163,9 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t10 = h1_r;
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    (void)freeaddrinfo(t10);
-#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     hero_handle_consumed(t10);
+#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+    (void)freeaddrinfo(t10);
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     return;
 #line 172 "fixedbugsatagnamesahandleandarecord.c"

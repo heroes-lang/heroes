@@ -163,15 +163,15 @@ bb0:
 #line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t10 = h0_p;
 #line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    (void)probe_close(t10);
-#line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     hero_handle_consumed(t10);
+#line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+    (void)probe_close(t10);
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t11 = h1_g;
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    (void)gauge_close(t11);
-#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     hero_handle_consumed(t11);
+#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+    (void)gauge_close(t11);
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     return;
 #line 178 "fixedbugsatagthatneedsstruct.c"

@@ -151,9 +151,9 @@ bb0:
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     t10 = h0_a;
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
-    (void)slot_close(t10);
-#line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     hero_handle_consumed(t10);
+#line 24 "tests/golden/run/abort-handle-never-given-back.hero"
+    (void)slot_close(t10);
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     return;
 #line 160 "aborthandlenevergivenback.c"

@@ -171,6 +171,12 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
             if assign.len() == 0
                 cast @ "(void)"
 
+            # `consumes` is told BEFORE the call, because a handle given back
+            # twice must be caught while the second call has not run yet —
+            # defect 071. `handle_traffic.hero` carries why the other end
+            # cannot move with it.
+            handle_traffic.before_call(@w, c, s, decls: decls, decl: e.decl, arguments: guarded)
+
             for candidate in p.functions
                 if candidate.decl == e.decl && assign.len() > 0
                     match table.get(c.types, candidate.result)

@@ -1,0 +1,2 @@
+7
+!panic: 1 C handle(s) given back that were never taken — the set of live handles did not hold that address when a call marked `consumes` ran. Two things do this: the same handle given back TWICE, which is a double release and may already have corrupted memory; or a value acquired WHOLE and released part by part, since one mark is one obligation on the whole value

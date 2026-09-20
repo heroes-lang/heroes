@@ -277,9 +277,9 @@ bb4:
 #line 93 "examples/sqlite/main.hero"
     t24 = h2_statement;
 #line 93 "examples/sqlite/main.hero"
-    (void)sqlite3_finalize(t24);
-#line 93 "examples/sqlite/main.hero"
     hero_handle_consumed(t24);
+#line 93 "examples/sqlite/main.hero"
+    (void)sqlite3_finalize(t24);
 #line 94 "examples/sqlite/main.hero"
     t26 = h5_value;
 #line 94 "examples/sqlite/main.hero"
@@ -393,9 +393,9 @@ bb1:
 #line 115 "examples/sqlite/main.hero"
     t24 = h0_db;
 #line 115 "examples/sqlite/main.hero"
-    (void)sqlite3_close(t24);
-#line 115 "examples/sqlite/main.hero"
     hero_handle_consumed(t24);
+#line 115 "examples/sqlite/main.hero"
+    (void)sqlite3_close(t24);
 #line 115 "examples/sqlite/main.hero"
     return;
 #line 115 "examples/sqlite/main.hero"
@@ -409,9 +409,9 @@ bb2:
 #line 109 "examples/sqlite/main.hero"
     t8 = h0_db;
 #line 109 "examples/sqlite/main.hero"
-    (void)sqlite3_close(t8);
-#line 109 "examples/sqlite/main.hero"
     hero_handle_consumed(t8);
+#line 109 "examples/sqlite/main.hero"
+    (void)sqlite3_close(t8);
 #line 109 "examples/sqlite/main.hero"
     return;
 #line 109 "examples/sqlite/main.hero"
