@@ -351,6 +351,20 @@ ergonomist's *a mark does not add a check to the unmarked case, it subtracts the
 warning from it*. **A fifth sitting would re-derive them**, which is why none was
 convened.
 
+**AND THE DEFAULT IS FLIPPED AFTER ALL — the author's ruling, 2026-09-20, the
+same evening, written underneath because the ratification above was true when
+it was given.** After the ratification the author reasoned aloud and ruled: the
+language is young, nobody is using it yet, the examples are declared under
+construction and may be rewritten, there are no real applications yet whose
+ninth refusal could be counted, **and robustness is a principle rather than a
+price**. They made one condition — that the performance cost be measured — and
+`docs/measurements/038-the-copy-costs-thirty-three-nanoseconds-and-the-mark-costs-nothing.md`
+met it: **33.5 ns a call in the worst case and zero where the mark is written.**
+So the resolution's item 3 is overturned by the author, on a better answer than
+the recommendation had: the coordinator was weighing a cost the author knows to
+be zero. The direction is theirs; **the word and the exact rule are the next
+sitting's**, bound by this sitting's item 7.
+
 **What this section said while the sitting was open**, kept because a
 record is not rewritten:
 
