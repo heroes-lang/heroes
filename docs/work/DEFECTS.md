@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 5**
 
 - [ ] **066 — a `ptr` lend has no lifetime rule, so C may keep the address past the frame** | a field's address handed to C outlives the binding it came from, and a later C call reads a dead frame at exit 0 | `selfhost/check/lending.hero`'s `field_lend_escapes`, `spec § 13`'s lease sentences
 
@@ -200,7 +200,25 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     needs the library's own **allocator** rather than any pointer the Heroes
     runtime can hand out.
 
-- [ ] **072 — two allocator families collapse onto one handle type, and each frees the other's blocks in silence** | `check` 0, `build` 0, run **0**, the arena destroyed and the heap block leaked, and the live set says nothing because the count balances | `selfhost/handles.hero`'s `one_tag_one_type`, `spec § 13`'s handle paragraph
+    **A FOURTH SHAPE, panel 170's compiler-engineer, 2026-09-20**: a plain
+    `.cstr()` lend into a freeing callee, with no lease anywhere — `check` 0,
+    exit **134**, stderr **0 bytes**. It is the same class and it is named here
+    rather than given a number, because a repair is owed at the class.
+
+    **AND THE EMPTY STDERR IS THE LANGUAGE'S OWN REPORT BEING PRE-EMPTED**, which
+    the same seat measured against a control: the control prints
+    `panic: 1 lease(s) never ended`, **111 bytes**, and this prints zero because
+    C's `free` aborts before `main` returns. **The run-time instrument works and
+    the corruption outruns it.**
+
+    **What panel 170 settled about the repair.** No mark can carry it together
+    with retention: **retention must ADMIT a lease and give-away must REFUSE
+    one**, which is the compiler-engineer's veto ground. The route named for the
+    next sitting is a MEANING for a word that already parses — `borrows` and
+    `consumes` both parse on a `cstr` today and are thrown away by
+    `check/marks.hero`'s handle-only sweep.
+
+- [ ] **072 — two allocator families collapse onto one handle type, and each frees the other's blocks in silence** | `check` 0, `build` 0, run **0**, the arena destroyed and the heap block leaked, and the live set says nothing because the count balances | `selfhost/check/decls.hero:313`'s `one_tag_one_type`, `spec § 13`'s handle paragraph
 
     **Origin:** panel 169's ffi-pragmatist, 2026-09-20, while measuring what caps
     the handle route. Re-run by the coordinator before filing.
@@ -226,5 +244,47 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **What is owed.** Either `one_tag_one_type` admits a second record over
     `tag void`, or a handle carries which producer made it. Panel 169 recorded
     this as one of three caps on the handle route and did not price the repair.
+
+    **PANEL 170 PRICED IT AND ADOPTED THE FIRST**, 2026-09-20. `one_tag_one_type`
+    is narrowed at `tag void`: the rule's own stated reason is written about
+    `struct s *`, where clang is a second judge of the spelling, and **at
+    `void *` no second judge can exist**, so the rule buys nothing there and
+    costs this defect. Its own claim that the mutant survives every instrument is
+    **falsified by a run**: with two distinct tags the crossed program is
+    `error[type_mismatch]` at **check, exit 1**. The sitting's completeness critic
+    settled the matrix that two seats each had half of — two tags are declarable
+    today only through a shim header, so the narrowing is a real change and not a
+    discovery.
+
+- [ ] **073 — `owned <fn>` on an INPUT parameter is admitted by the grammar and crashes the backend** | `check` 0, `build` **2**, `internal error: compiling the generated C failed`, and the emitted C passes an optional struct where C wants a `const char *` | `spec § 13`'s `CParam` production, `selfhost/emit/ops.hero`
+
+    **Origin:** panel 170's spec-warden, 2026-09-20, reproduced by that sitting's
+    completeness critic and again by the coordinator before filing.
+
+    **Reproducer**, five lines:
+
+        extern "stdlib.h"
+            function free(p: ptr)
+            function atoi(s: cstr owned free) -> i32
+
+        function main()
+            print(to_str(atoi(s: ok("12"))))
+
+    `check` **exit 0**, `build` **exit 2**, and clang says
+    *"passing 'h_0opt_f87774a' (aka 'struct h_0opt_f87774a') to parameter of
+    incompatible type 'const char *'"*.
+
+    **What it actually is.** `owned` is a RESULT mark: *the compiler frees that
+    string with that function and hands it over as a `str?`*. Written on an input
+    parameter the checker applies the result semantics anyway — the parameter's
+    Heroes type becomes `str?`, which is why the argument must be `ok("12")` to
+    get past `check` at all — and the emitter then hands C the optional's struct.
+    **The grammar admits it, the prose never defines it, and clang is the only
+    thing that notices.**
+
+    **It is load-bearing rather than incidental.** `.claude/rules/c-boundary.md`
+    lists the five clang failures that are the AUTHOR's fault and exit 1; this is
+    exit 2 and says the compiler is wrong, which it is. And **two of panel 170's
+    candidate routes wanted to build on that slot.**
 
 *******************************************************************************
