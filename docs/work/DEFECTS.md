@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 3**
 
 - [ ] **066 — a `ptr` lend has no lifetime rule, so C may keep the address past the frame** | a field's address handed to C outlives the binding it came from, and a later C call reads a dead frame at exit 0 | `selfhost/check/lending.hero`'s `field_lend_escapes`, `spec § 13`'s lease sentences
 
@@ -217,36 +217,5 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     next sitting is a MEANING for a word that already parses — `borrows` and
     `consumes` both parse on a `cstr` today and are thrown away by
     `check/marks.hero`'s handle-only sweep.
-
-- [ ] **073 — `owned <fn>` on an INPUT parameter is admitted by the grammar and crashes the backend** | `check` 0, `build` **2**, `internal error: compiling the generated C failed`, and the emitted C passes an optional struct where C wants a `const char *` | `spec § 13`'s `CParam` production, `selfhost/emit/ops.hero`
-
-    **Origin:** panel 170's spec-warden, 2026-09-20, reproduced by that sitting's
-    completeness critic and again by the coordinator before filing.
-
-    **Reproducer**, five lines:
-
-        extern "stdlib.h"
-            function free(p: ptr)
-            function atoi(s: cstr owned free) -> i32
-
-        function main()
-            print(to_str(atoi(s: ok("12"))))
-
-    `check` **exit 0**, `build` **exit 2**, and clang says
-    *"passing 'h_0opt_f87774a' (aka 'struct h_0opt_f87774a') to parameter of
-    incompatible type 'const char *'"*.
-
-    **What it actually is.** `owned` is a RESULT mark: *the compiler frees that
-    string with that function and hands it over as a `str?`*. Written on an input
-    parameter the checker applies the result semantics anyway — the parameter's
-    Heroes type becomes `str?`, which is why the argument must be `ok("12")` to
-    get past `check` at all — and the emitter then hands C the optional's struct.
-    **The grammar admits it, the prose never defines it, and clang is the only
-    thing that notices.**
-
-    **It is load-bearing rather than incidental.** `.claude/rules/c-boundary.md`
-    lists the five clang failures that are the AUTHOR's fault and exit 1; this is
-    exit 2 and says the compiler is wrong, which it is. And **two of panel 170's
-    candidate routes wanted to build on that slot.**
 
 *******************************************************************************
