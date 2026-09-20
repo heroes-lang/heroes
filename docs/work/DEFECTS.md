@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 4**
 
 - [ ] **066 — a `ptr` lend has no lifetime rule, so C may keep the address past the frame** | a field's address handed to C outlives the binding it came from, and a later C call reads a dead frame at exit 0 | `selfhost/check/lending.hero`'s `field_lend_escapes`, `spec § 13`'s lease sentences
 
@@ -81,6 +81,42 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `check/leasing.hero` holds one pass earlier. **Whether it survives to the IR
     is unrun**, and it is what the next step measures first.
 
+    **IT IS RUN, 2026-09-20, AND THE QUESTION WAS THE WRONG ONE.** The length
+    does not survive: `call builtin end_lease(@c)` carries the slot alone, and
+    with a loop between them the lease is in `bb0` and the release in `bb3`.
+    But with the CORRECT length in hand a trailing header still reads freed
+    memory, because C has already freed the block. Panel 168 struck the trailing
+    header on the engineer's veto: at 64 KiB and 1 MiB the magic word **survives**
+    C's free, so the release's check passes and it frees a block it no longer
+    owns. The allocation half of panel 167 clause 1 is gone and route A, if
+    built, is built on the leading header that ships.
+
+    **AND THE CLASS IS WIDER STILL, for the second time — panel 168's
+    completeness critic, 2026-09-20.** This entry was corrected from *field lend*
+    to *lend* this morning. It is corrected again to **lend AND LEASE**, measured
+    on this repository's own shipped example: `examples/gallery/13-lease.hero`
+    with the print moved two lines down, after `end_lease` instead of before it,
+    is `check` **exit 0**, `run` **exit 0** five of five, prints **0 where 13 is
+    honest**, and `--sanitize` says `heap-use-after-free` at
+    `13-lease.h:7 in kept_label_length`. The file is committed as
+    `docs/panel/168-briefs/gallery-example-reordered.hero`.
+
+    **So route A closes NOTHING, and the sentence above that says this entry
+    closes when it lands is FALSE.** A copy moves the moment the bytes die from
+    *the frame returns* to *`end_lease` runs*, and both are Heroes-side events:
+    C's retention is unrelated to either, and copying does not relate them. The
+    class this entry names is **nothing in the language relates C's retention to
+    the moment the bytes die**. Panel 167's own spec-warden predicted it in those
+    terms — *"routes A, B and C each close zero of two reproductions when landed
+    alone"* — and panel 168 scores that prediction CORRECT rather than waiting for
+    the close. What is owed is named in
+    `docs/panel/168-the-property-is-not-the-base-and-route-a-closes-zero-of-two.md`
+    § The routes nobody
+    listed, and the nearest one is that the language already ships a retention
+    vocabulary: `borrows` says a call keeps what it is handed, and `acquires`
+    carries a pointer-keyed live set that aborts, which is the instrument two
+    sittings said did not exist.
+
 - [ ] **068 — a record rewritten under C's held address, which no sanitizer can see** | C holds a field's address, the program writes the record, and C reads bytes the program never meant it to — a wrong answer at exit 0 with zero AddressSanitizer reports | `selfhost/check/lending.hero`, `spec § 13`'s lend sentence
 
     **Origin:** panel 167's completeness critic, 2026-09-20, separating defect
@@ -96,5 +132,81 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     argument: panel 167 measured that retention is per-call and that a run-time
     `bool` can pick it. It is filed so that the route adopted for 066 is judged
     against it too, and so that a later sitting does not discover it as new.
+
+    **THE LAYER WAS WRONG, and panel 168's completeness critic found it**,
+    2026-09-20. This entry files 068 with 066 as *foreign retention*, where panel
+    167's historian proved static enforcement exists in none of ten ecosystems.
+    That is true of 066 and **false of 068**: in the reproducer the wrong answer
+    is produced by a **Heroes assignment**, two lines below the lend, in the same
+    function, to the very binding whose field's address was lent. No C code
+    participates in the corruption; C only observes it. That is **caller-side**,
+    which is exactly where the historian found static enforcement does exist
+    everywhere, and `field_lend_escapes` and `field_lend_needs_a_place`
+    (`selfhost/check/lending.hero:218-228`) already relate a lend to its root
+    binding. **068 has never been searched at the layer where its defect
+    happens**, and *"nothing decides this one from a declaration, a header or an
+    argument"* above is an argument about the C side of a line the Heroes side
+    writes.
+
+- [ ] **069 — a C function name passed as a callback builds and then aborts, blaming the compiler** | `check` 0, `build` 0, `run` 134 with *"entered unreachable code — this is a compiler bug"*, and the emitted C calls through an uninitialised temporary | `selfhost/emit/inst.hero:311`, design.md §4.19's thesis
+
+    **Origin:** panel 168's ffi-pragmatist, 2026-09-20, reproduced by the
+    completeness critic and again by the coordinator before filing.
+
+    **Reproducer**, and it is the ordinary way every C library takes a callback:
+
+        extern "cb.h"
+            function cb_free_it(p: ptr)
+            function cb_take(p: ptr counted_by n, d: (function(ptr) -> ()), n: i64)
+
+        function main()
+            b: ptr @ malloc(size: 8)
+            cb_take(p: b, d: cb_free_it, n: 8)
+
+    `check` **exit 0**, `build` **exit 0**, `run` **134 three of three**. In the
+    emitted C, `hero_unreachable(); /* the gate refuses this form */` and then
+    `(void)cb_take(t3, t4, t5);` four lines later, with `t4` never assigned.
+
+    **Why it is a defect and not a missing feature.** design.md §4.19's central
+    promise is that a wrong FFI form is a **compile** error; this one is a
+    run-time abort whose message accuses the compiler of a bug while the compiler
+    is doing what its own gate says. §1.12 is kept, because `hero_unreachable`
+    fires before anything reaches C, so this is a diagnostics defect rather than
+    a robustness one and what is owed is a diagnostic on the `.hero` line naming
+    the form.
+
+    **It is load-bearing for 066 and 068 rather than incidental.** A destructor
+    callback is the one mechanism every real C library offers for exactly the
+    retention problem those two are about — `SQLITE_TRANSIENT`, `sqlite3_free`,
+    `curl_easy_setopt`'s write callbacks — and Heroes cannot pass one.
+
+- [ ] **070 — a lease handed to a C function that frees it dies with an empty stderr and an unstable exit code** | `check` 0, `build` 0, and the program aborts saying nothing at all, 133 nine times and 134 once in ten runs | `spec § 13`'s lease sentences, design.md §4.17
+
+    **Origin:** panel 168's compiler-engineer, 2026-09-20, reproduced by the
+    coordinator before filing.
+
+    **Reproducer**, six lines, and the C side is one:
+
+        extern "giveaway.h"                  # static inline void eat(const char *s)
+            function eat(s: cstr)            # { free((void *)(uintptr_t)s); }
+
+        function main()
+            x = "payload"
+            c: cstr @ x.lease()
+            eat(s: c)
+            end_lease(@c)
+
+    `check` **exit 0**, `build` **exit 0**, ten runs: **133 133 133 133 133 133
+    133 133 133 134**, and **stderr is empty every time**. Under `--sanitize`:
+    `bad-free`, named at the program's own C line.
+
+    **What is owed.** design.md §4.17 asks a diagnostic to carry everything needed
+    to fix the program; this carries nothing, not even a stable exit code. The
+    repair is not a header layout — panel 168 measured that both layouts abort and
+    that the trailing one produces a message blaming the compiler. It is §4.19's
+    third reserved case, *a buffer that C takes ownership of*, or a rule about the
+    call. **Neither exists**, and panel 168's ffi seat measured that the give-away
+    needs the library's own **allocator** rather than any pointer the Heroes
+    runtime can hand out.
 
 *******************************************************************************
