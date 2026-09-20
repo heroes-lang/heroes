@@ -35,5 +35,11 @@ extern "ffi-a-cstr-field-blames-the-field.h"
     function tagged_id(t: Tagged) -> i32
 
 function main()
-    t = Tagged(name: "x".cstr(), id: 7)
+    # `nullptr` rather than a lend, since 2026-09-20: a record's construction is
+    # the one call whose argument outlives it, so `Tagged(name: "x".cstr(), ...)`
+    # is now `cstr_escapes` at CHECK time — which would preempt the very
+    # diagnostic this case exists to prove, because that one comes from clang at
+    # build time. The case's subject is the FIELD disagreeing with the header,
+    # and a null field reaches it unchanged (defect 067).
+    t = Tagged(name: nullptr, id: 7)
     print(t.tagged_id().to_i64().must())

@@ -65,8 +65,8 @@ use check/lower
 use resolved
 use inventory
 use check/state
-use check/table
 use check/lend_extent
+use check/lend_decls
 use lend_errors
 
 # Whether this expression is a lend: `s.cstr()` or `cstr(s)`. The
@@ -125,71 +125,63 @@ function argument_of(a: ast.Ast) -> {i64: i64}
 
     return into
 
-# A function outside an `extern` group may not answer `cstr` (panel 122 R3).
+# **A RECORD'S CONSTRUCTION IS THE ONE CALL WHOSE ARGUMENT OUTLIVES IT** (defect
+# 067, panel 167's completeness critic, 2026-09-20). The position rule above
+# blesses an argument position because a call READS the bytes and returns;
+# `Box(p: x)` does not return, it KEEPS — the pointer is a field of a value the
+# statement hands on, and `end_lease` or the frame's end then leaves it dangling.
 #
-# WHY THIS AND NOT A FLOW ANALYSIS. `return pass(c: s.cstr())` puts the lend in
-# an argument position, which the rule above blesses, and returns a CALL
-# RESULT, which no rule about lends can see. Both compiling seats at panel 122
-# built it: silent at `check`, heap-use-after-free under the sanitizer. One
-# signature rule closes the whole two-hop route, and it is measured FREE —
-# every `-> cstr` in `selfhost/`, `examples/` and `tests/` is already inside an
-# `extern` group.
+# BOTH DIRECTIONS REACH IT AND THE DEFECT WAS FILED AS ONE. A lease name:
+# `end_lease(@x)` empties the cell and the copy inside the record does not move,
+# so C reads freed bytes at exit 0. A lend: `return Box(p: s.cstr())` parks a
+# pointer into a `str` that dies with the frame — `check` exit 0, the honest 72
+# read back as 0, `heap-use-after-free` under the sanitizer. This module's own
+# doc claims it closes `Rec(field: s.cstr())`, and it does — for a record
+# OUTSIDE a group, through `no_cstr_in_a_record`. Inside a group that clause
+# steps aside on a premise that is true of a header's field and false of a lend:
+# *there C owns the bytes*.
 #
-# It has no `written_types` hole, and that was measured rather than assumed: a
-# generic body cannot answer `cstr`, because `function escape<T>(...) -> T`
-# returning a lend is `error[type_mismatch]` at the definition, before
-# `ir/mono.hero` instantiates anything.
-function no_cstr_out_of_heroes(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
-    for decl in decls
-        match decl.kind
-            .function_decl fd =>
-                if fd.value.is_extern
-                    continue
-                declared = c.out.written_types[fd.value.result]
-
-                if declared.is_err()
-                    continue
-
-                if table.get(c.out.types, declared.must()) == .cstr
-                    state.push_diagnostic(
-                        @c,
-                        lend_errors.cstr_out_of_heroes(source.span_text(s, decl.name), a.types[fd.value.result].span)
-                    )
-            .record_decl | .constant_decl | .variant_decl | .test_decl => continue
-
-# A `cstr` field on a record outside an `extern` group (panel 122 R4).
+# THE FOUR SHAPES BESIDE IT ARE ALREADY REFUSED, measured before this clause was
+# written: a variant case, an array literal, a map literal and `ok(x)` each
+# refuse a lease name today. The record constructor was the one door, which is
+# why the rule names that shape rather than widening to every construction.
 #
-# `selfhost/emit/gate.hero` already refuses `cstr` as the element of an array, a
-# map or a `T?`. A record FIELD was the hole, and it was the hole the emitter's
-# own note sent people through: *"hold the pointer in a `record` and make an
-# array of that instead"*. Measured at panel 122: silent at `check`, and the
-# binary writes — heap-use-after-free on read. That note is rewritten in the
-# same commit as this clause, because a diagnostic that prescribes a compile
-# error is worse than one that says nothing.
-#
-# A GROUP'S record is untouched: there the fields are the header's, C owns the
-# bytes, and § FFI says in as many words that a group field may be a `cstr`.
-# Enumerated over the tree at the sitting: no `cstr` field outside a group
-# exists, so the clause costs this corpus nothing.
-function no_cstr_in_a_record(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
-    for decl in decls
-        match decl.kind
-            .record_decl rec =>
-                if !rec.header.is_err()
-                    continue
+# IT ASKS THE VALUE AND NOT THE WORLD: the callee's own declaration is read, so
+# a construction form the AST gains tomorrow is refused by default rather than
+# admitted in silence.
+function constructed_record(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], call: i64) -> i64?
+    named = match a.exprs[call].kind
+        .call cl                                                                    => cl.callee
+        .method                                                                     => 0 - 1
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit  => 0 - 1
+        .null_ptr | .hole | .unary | .binary | .field | .field_name | .index        => 0 - 1
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => 0 - 1
 
-                for field in rec.fields
-                    declared = c.out.written_types[field.ty]
+    if named < 0
+        return fail(code: "none", msg: "not a call")
 
-                    if declared.is_err()
-                        continue
+    match r.uses[named]
+        .top t =>
+            match decls[t.at].kind
+                .record_decl => return ok(t.at)
+                .function_decl | .constant_decl | .variant_decl | .test_decl => return fail(
+                    code: "none",
+                    msg: "not a record"
+                )
+        .builtin | .local | .module | .unresolved => return fail(code: "none", msg: "not a declared name")
 
-                    if table.get(c.out.types, declared.must()) == .cstr
-                        state.push_diagnostic(
-                            @c,
-                            lend_errors.cstr_in_a_record(holder: source.span_text(s, decl.name), field: source.span_text(s, field.name), span: a.types[field.ty].span)
-                        )
-            .function_decl | .constant_decl | .variant_decl | .test_decl => continue
+    return fail(code: "none", msg: "unreached")
+
+# The clause as the two sweeps ask it: a construction that KEEPS, and whose
+# record is not already condemned by its own fields.
+function keeps_its_argument(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], into: {i64: i64}, at: i64) -> bool
+    if into[at].is_err()
+        return false
+    built = constructed_record(a, r, decls, call: into[at].must())
+
+    if built.is_err()
+        return false
+    return !lend_decls.holds_a_refused_field(c, decls, built.must())
 
 # The sweep. A lend may stand only as an argument of a call (panel 122 R2).
 #
@@ -200,8 +192,8 @@ function no_cstr_in_a_record(@c: state.Checker, a: ast.Ast, s: source.Source, de
 # and the engineer measured that it refuses three SOUND sites in the wrapper
 # §4.19 prescribes as the route out of a module.
 function lent_only_into_c(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
-    no_cstr_out_of_heroes(@c, a, s, decls)
-    no_cstr_in_a_record(@c, a, s, decls)
+    lend_decls.no_cstr_out_of_heroes(@c, a, s, decls)
+    lend_decls.no_cstr_in_a_record(@c, a, s, decls)
 
     # The early exit panel 122 R8 asks for: 637 of 638 files in this tree hold
     # no lend at all, and building a parent map over every expression of every
@@ -212,10 +204,26 @@ function lent_only_into_c(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
     at: i64 @ 0
 
     while at < a.exprs.len()
-        if into[at].is_err()
+        # A record's construction is an argument position that KEEPS (defect
+        # 067), so a `cstr` lend standing there escapes exactly as one standing
+        # nowhere does, and gets the same code: the class is one — a pointer
+        # outliving the bytes — and a second name for one question is a panel
+        # path (`ffi_parameter_position`'s own reasoning, one module over).
+        #
+        # **AND IT IS THE `cstr` LEND'S ALONE, measured rather than assumed.** A
+        # `ptr` lend stands only as an argument of an EXTERN call since panel
+        # 166's clause landed, and a record's constructor is never one — so the
+        # header clause below already refuses every construction. Applying this
+        # one too put two messages on one span, which is the thing it exists to
+        # avoid: `10:19 field_lend_escapes` and `10:19 field_lend_needs_a_header`
+        # for the same mistake.
+        kept = keeps_its_argument(@c, a, r, decls, into: into, at: at)
+
+        if into[at].is_err() || kept
             if is_builtin_named(a, r, at, name: "cstr")
                 state.push_diagnostic(@c, lend_errors.cstr_escapes(a.exprs[at].span))
 
+        if into[at].is_err()
             if is_builtin_named(a, r, at, name: "ptr")
                 state.push_diagnostic(@c, lend_errors.field_lend_escapes(a.exprs[at].span))
 
@@ -343,6 +351,27 @@ test "a lent field passed straight into C stays quiet"
 
 # A field reached through another field is still a place, which is the shape
 # beside the one that provoked the rule (CL-061).
+# Defect 067: a group's record CONSTRUCTION is an argument position that keeps,
+# and the four shapes beside it were run before this clause was written — a
+# variant case, an array literal, a map literal and `ok(x)` each refuse already.
+test "a lend parked in a group's record is refused, and the call that reads it stays quiet"
+    assert swept("extern \"s.h\"\n    record Box\n        p: cstr\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> Box\n    return Box(p: x.cstr())\n") == 1
+    assert swept("extern \"s.h\"\n    record Box\n        p: cstr\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    return n(s: x.cstr())\n") == 0
+
+# A record of THIS program is refused by the FIELD rule, and the construction
+# clause steps aside there: one mistake gets one message, and the second
+# disappears the moment the first is fixed (defect 062's direction).
+test "a lend parked in a record of this program gets ONE message, the field's"
+    assert swept("record Box\n    p: cstr\n\nfunction f(x: str) -> Box\n    return Box(p: x.cstr())\n") == 1
+
+# And a record whose fields are LEGAL is refused too, which is what says the
+# stepping-aside is about a CONDEMNED record and not about whose record it is.
+# The `ptr` lend gets the header clause's message rather than this one, because
+# a constructor is never an extern call — measured, and the reason the clause
+# above is the `cstr` lend's alone.
+test "a lend parked in a record with legal fields is refused, by the clause that fits it"
+    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n, n: i64) -> i64\n\nrecord Box\n    p: ptr\n\nfunction g(s: S) -> Box\n    return Box(p: s.b.ptr())\n") == 1
+
 test "a lent field nested one record deep is still a place"
     assert swept("extern \"s.h\"\n    record I\n        b: u8[4]\n    record S\n        i: I\n    function f(p: ptr counted_by n, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    return f(p: s.i.b.ptr(), n: 4)\n") == 0
 

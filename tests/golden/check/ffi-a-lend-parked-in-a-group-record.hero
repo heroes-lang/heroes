@@ -1,0 +1,56 @@
+# fixedbugs, defect 067, 2026-09-20 (panel 167's completeness critic, asking
+# whether the mechanism three seats proposed to replicate is itself sound).
+#
+# SYMPTOM: a pointer handed to a group's `record` constructor outlives the bytes
+# it points into, at exit 0. Two shapes, one class:
+#
+#   x: cstr @ s.lease()          b = Box(p: x)        end_lease(@x)
+#     -> check 0, prints 0 where 72 is honest, heap-use-after-free under ASan
+#
+#   return Box(p: s.cstr())      from a function whose `str` dies with the frame
+#     -> check 0, prints 0 where 72 is honest, heap-use-after-free under ASan
+#
+# CAUSE: panel 122's clause permits a lend and a lease name *"as an argument of
+# a call"*, because a call READS the bytes and returns — and a record's
+# construction does not return, it KEEPS. `check/lending.hero`'s own doc claimed
+# it closed `Rec(field: s.cstr())`, and it did for a record OUTSIDE a group,
+# through the clause that refuses a `cstr` field there. Inside a group that
+# clause steps aside on a premise that is true of a header's field and false of
+# a lend: *there C owns the bytes*.
+#
+# FIX: `constructs_a_record` beside `argument_of`, read by both sweeps, because
+# both directions reach the same door. The code is not new — the class is one, a
+# pointer outliving its bytes — and both diagnostics gained a second note,
+# because the first one blesses the very shape this refuses.
+#
+# THE FOUR SHAPES BESIDE IT WERE RUN BEFORE THE CLAUSE WAS WRITTEN and are all
+# refused already: a variant case, an array literal, a map literal and `ok(x)`.
+# The record constructor was the one door, which is why the rule names that
+# shape rather than every construction.
+extern "ffi-a-lend-parked-in-a-group-record.h"
+    record Box
+        p: cstr
+    function read_it(p: cstr) -> i64
+
+function parked_lease(s: str) -> i64
+    x: cstr @ s.lease()
+    b = Box(p: x)  #~ lease_escapes
+    end_lease(@x)
+    return read_it(p: b.p)
+
+function parked_lend() -> Box
+    s = "Hi" + " there"
+    return Box(p: s.cstr())  #~ cstr_escapes
+
+# The legal shapes beside them, which must stay quiet: a lend and a lease name
+# each handed to the call that READS and returns.
+function reads_it(s: str) -> i64
+    x: cstr @ s.lease()
+    k = read_it(p: x)
+    end_lease(@x)
+    return k + read_it(p: s.cstr())
+
+function main()
+    print(parked_lease(s: "Hi").to_str())
+    print(read_it(p: parked_lend().p).to_str())
+    print(reads_it(s: "Hi").to_str())
