@@ -90,8 +90,12 @@ function generics(@c: cursor.Cursor, text: str) -> [token.Span]
 # the PROGRAM handed over. Opposite directions, so one word would mean two
 # things decided by the parameter's type — which is exactly the confusion that
 # made `ptr owned f` parse and come back as a diagnostic about a string.
-function consumes_marker(@c: cursor.Cursor, text: str, in_group: bool) -> bool
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "consumes"
+#
+# `lent` (panel 171) says the call KEEPS NOTHING of what it is handed, so a lend
+# may land there; its own slot beside `counted_by`, never inside the handle
+# alternation `check/marks.hero` sweeps. One reader for the three bare words.
+function bare_marker(@c: cursor.Cursor, text: str, in_group: bool, word: str) -> bool
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != word
         return false
     _ = cursor.bump(@c)
     return true
@@ -107,12 +111,6 @@ function consumes_marker(@c: cursor.Cursor, text: str, in_group: bool) -> bool
 # bare mark cannot see: closing a `CStmt` with `sqlite3_close`.
 # `borrows`, the third mark and the one that says NOTHING is owed. It carries no
 # name because there is no releaser to name.
-function borrows_marker(@c: cursor.Cursor, text: str, in_group: bool) -> bool
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "borrows"
-        return false
-    _ = cursor.bump(@c)
-    return true
-
 function acquires_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
     if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "acquires"
         return fail(code: "absent", msg: "nothing here is acquired")
@@ -214,12 +212,13 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
                 # the header does, the extent beside the type and the ownership
                 # after it. The order is the grammar's, `spec § 13`'s `CParam`.
                 counted_by = counted_by_marker(@c, text, in_group: in_group)
+                lent = bare_marker(@c, text: text, in_group: in_group, word: "lent")
                 owned = owned_marker(@c, text, in_group: in_group)
-                consumes = consumes_marker(@c, text, in_group: in_group)
+                consumes = bare_marker(@c, text: text, in_group: in_group, word: "consumes")
                 acquires = acquires_marker(@c, text, in_group: in_group)
-                borrows = borrows_marker(@c, text, in_group: in_group)
+                borrows = bare_marker(@c, text: text, in_group: in_group, word: "borrows")
                 out @ out.push(
-                    ast.Param(name: name, ty: ty, mutable: mutable, owned: owned, consumes: consumes, acquires: acquires, borrows: borrows, counted_by: counted_by)
+                    ast.Param(name: name, ty: ty, mutable: mutable, owned: owned, consumes: consumes, acquires: acquires, borrows: borrows, counted_by: counted_by, lent: lent)
                 )
                 cursor.skip_terminators(@c)
 

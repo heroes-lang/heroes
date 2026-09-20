@@ -144,7 +144,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
         result @ type.parse_type(@c, @a, text)
         owned_result @ parse_members.owned_marker(@c, text, in_group: is_extern)
         acquires_result @ parse_members.acquires_marker(@c, text, in_group: is_extern)
-        borrows_result @ parse_members.borrows_marker(@c, text, in_group: is_extern)
+        borrows_result @ parse_members.bare_marker(@c, text: text, in_group: is_extern, word: "borrows")
     else
         here = cursor.current_span(c)
         result @ ast.push_type(
