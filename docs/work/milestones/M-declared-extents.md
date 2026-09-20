@@ -99,7 +99,23 @@ declaration to the author's argument. What the milestone delivered instead is
 the relation declared where C can check it.
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 3**
+
+- [ ] **M-declared-extents** | two modules may declare one C function with contradictory retention marks, and the compiler accepts both at `check` 0 | panel 171's completeness critic, the historian's B.4, `selfhost/check/marks.hero`
+
+    **Origin:** panel 171's completeness critic, 2026-09-20, attacking the
+    `lent` rule at the shapes beside it. **Filed rather than fixed**, because it
+    needs a rule ACROSS modules that no sitting has priced, and because the mark
+    it concerns lands in commit A of the flip and does not exist yet.
+
+    **What it is.** Module one declares `function keep(s: cstr lent)`, module two
+    declares `function keep(s: cstr)`, both against the same header. Each is
+    internally consistent, the two disagree about C, and nothing compares them.
+    **This is the exact shape that broke upstream Clang's `noescape` on its first
+    day** (2017-09-19): a third-party re-declaration disagreed with the SDK
+    header's mark and the build failed. Heroes has no header to disagree with,
+    only two `.hero` files, so the disagreement is silent.
+
 
 - [ ] **M-declared-extents** | one Heroes declaration cannot reach all three of `sqlite3_bind_text`'s retention modes, so the shipped ledger and measurement 037 declare the same C function two incompatible ways | panel 170's completeness critic, `examples/ledger/db/sqlite.hero`
 
