@@ -544,14 +544,14 @@ function signature(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionD
         # program whose string C allocated is never freed, at exit 0 and with
         # no diagnostic. CLAUDE.md §9's list, and the reason it is a list.
         rendered @ rendered.push(
-            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + counted_by_suffix(s, param.counted_by) + owned_suffix(s, param.owned) + consumes_suffix(param.consumes) + acquires_suffix(s, param.acquires) + borrows_suffix(param.borrows)
+            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + counted_by_suffix(s, param.counted_by) + bare_suffix(param.lent, word: "lent") + owned_suffix(s, param.owned) + bare_suffix(param.consumes, word: "consumes") + acquires_suffix(s, param.acquires) + bare_suffix(param.borrows, word: "borrows")
         )
 
     out @ out + "(" + rendered.join(", ") + ")"
     result = types.render_type(tree, fd.result, s)
 
     if result != "()"
-        out @ out + " -> " + result + owned_suffix(s, fd.owned_result) + acquires_suffix(s, fd.acquires_result) + borrows_suffix(fd.borrows_result)
+        out @ out + " -> " + result + owned_suffix(s, fd.owned_result) + acquires_suffix(s, fd.acquires_result) + bare_suffix(fd.borrows_result, word: "borrows")
     return out
 
 # ` consumes`, or nothing. Printed because a formatter that has not learned a
@@ -560,10 +560,12 @@ function signature(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionD
 # because the unwritten version was MEASURED dropping the word at panel 148's
 # pricing: `@out: Db acquires` came back as `@out: Db`, exit 0, no diagnostic
 # (CL-036).
-function borrows_suffix(borrows: bool) -> str
-    if !borrows
+# ` lent`, ` consumes`, ` borrows`, or nothing: the three bare words, one
+# printer, so a fourth cannot be forgotten in one of three copies (panel 171).
+function bare_suffix(on: bool, word: str) -> str
+    if !on
         return ""
-    return " borrows"
+    return " " + word
 
 function acquires_suffix(s: source.Source, mark: token.Span?) -> str
     if mark.is_err()
@@ -579,11 +581,6 @@ function counted_by_suffix(s: source.Source, mark: token.Span?) -> str
     if mark.is_err()
         return ""
     return " counted_by " + source.span_text(s, mark.must())
-
-function consumes_suffix(consumes: bool) -> str
-    if !consumes
-        return ""
-    return " consumes"
 
 # ` owned sqlite3_free`, or nothing. Written once and read from both
 # positions, so the two cannot learn the form apart (§4.19, panel 109).
@@ -1531,7 +1528,7 @@ test "fmt keeps `owned`, at both positions and beside the shapes that carry none
     # non-`@` parameter carrying it (the formatter runs before the checker and
     # prints what it was given), and `owned` as an ordinary name outside a
     # group, which is the whole reason it is a contextual word.
-    for text in ["extern \"string.h\"\n    function strdup(s: cstr) -> cstr owned free\n\nfunction main()\n    print(0)\n", "extern \"sqlite3.h\"\n    function run(db: ptr, @error: cstr owned sqlite3_free) -> i32\n\nfunction main()\n    print(0)\n", "extern \"x.h\"\n    function both(@slot: cstr owned release) -> cstr owned release\n\nfunction main()\n    print(0)\n", "extern \"string.h\"\n    function plain(s: cstr) -> cstr\n\nfunction main()\n    print(0)\n", "extern \"x.h\"\n    function borrowed(name: cstr owned free) -> i32\n\nfunction main()\n    print(0)\n", "function owned(n: i64) -> i64\n    return n + 1\n\nfunction main()\n    print(owned(2))\n"]
+    for text in ["extern \"string.h\"\n    function strdup(s: cstr) -> cstr owned free\n\nfunction main()\n    print(0)\n", "extern \"sqlite3.h\"\n    function run(db: ptr, @error: cstr owned sqlite3_free) -> i32\n\nfunction main()\n    print(0)\n", "extern \"string.h\"\n    function strlen(s: cstr lent) -> u64\n    function read(fd: i32, buf: ptr counted_by n lent, n: u64) -> i64\n\nfunction main()\n    print(0)\n", "function lent(n: i64) -> i64\n    return n\n\nfunction main()\n    print(lent(2))\n", "extern \"x.h\"\n    function both(@slot: cstr owned release) -> cstr owned release\n\nfunction main()\n    print(0)\n", "extern \"string.h\"\n    function plain(s: cstr) -> cstr\n\nfunction main()\n    print(0)\n", "extern \"x.h\"\n    function borrowed(name: cstr owned free) -> i32\n\nfunction main()\n    print(0)\n", "function owned(n: i64) -> i64\n    return n + 1\n\nfunction main()\n    print(owned(2))\n"]
         parsed = parse.parse(text)
         assert parsed.diagnostics.len() == 0
         s = source.new_source(name: "t.hero", text: text)

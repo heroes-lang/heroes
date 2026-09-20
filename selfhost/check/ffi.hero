@@ -116,6 +116,7 @@ function ffi_signature(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [
     # and it is `check/lend_extent.hero`'s because the same module answers the
     # other half — which parameter a lend lands on — for `check/lending.hero`.
     lend_extent.declared_extents(@c, s, f: f, declared_name: declared_name)
+    lend_extent.declared_lends(@c, s, f: f, declared_name: declared_name)
 
 # One refusal, and it picks the message by WHERE the refused type is.
 # A callback that is itself fine and carries something that is not gets

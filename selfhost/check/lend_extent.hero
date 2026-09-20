@@ -90,6 +90,42 @@ function is_ptr(c: state.Checker, ty: i64) -> bool
         return false
     return table.get(c.out.types, written.must()) == .ptr
 
+function is_cstr(c: state.Checker, ty: i64) -> bool
+    written = state.written_type(c.out, ty)
+
+    if written.is_err()
+        return false
+    return table.get(c.out.types, written.must()) == .cstr
+
+# Every `lent` in an extern signature, judged where it is written (panel 171).
+# The word is read on a by-value `cstr` or `ptr` — the two types a lend
+# produces — and nowhere else: in an `@` position no lend can stand, and on a
+# handle or a number nothing is lent. Unread, it is refused, which is
+# `check/marks.hero`'s rule for the handle words applied to this one.
+#
+# **This is the word's half of the flip, and the rule's half is not here yet.**
+# Landed alone, so the seed compiler that builds the next commit can PARSE the
+# marks that commit writes on the compiler's own bindings: `seed/README.md`'s
+# chain, where the rung before must build the rung after. A one-commit landing
+# was run and breaks at `selfhost/cli/process.hero:42:40` with no binary.
+function declared_lends(@c: state.Checker, s: source.Source, f: ast.FunctionDecl, declared_name: token.Span)
+    for param in f.params
+        if !param.lent
+            continue
+        param_name = source.span_text(s, param.name)
+        why: str @ ""
+
+        if param.mutable
+            why @ "`" + param_name + "` is an `@` out-parameter, and no lend can stand in an `@` position"
+        else if !is_ptr(c, param.ty) && !is_cstr(c, param.ty)
+            why @ "`" + param_name + "` is not a `cstr` or a `ptr`, and only those two are ever lent"
+
+        if why != ""
+            state.push_diagnostic(
+                @c,
+                ffi_errors.lent_shape(parameter: param_name, function_name: source.span_text(s, declared_name), why: why, span: param.name)
+            )
+
 # An integer the header takes by value: not `@`, and an `int_ty`. A float, a
 # `bool` and a pointer are refused as extents; so is `@n`, which is C's
 # out-parameter and holds no count on the way in.

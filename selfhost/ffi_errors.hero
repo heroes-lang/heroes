@@ -120,6 +120,22 @@ function counted_by_shape(parameter: str, function_name: str, why: str, span: to
     )
     return d
 
+# `lent` on a parameter nothing lends to (panel 171): one code, and `why`
+# carries which shape, as `counted_by_shape` does one function up. The word is
+# read on a by-value `cstr` or `ptr` — the two types a lend produces — and
+# nowhere else; unread, it is refused, which is `check/marks.hero`'s rule for
+# the handle words applied to this one.
+function lent_shape(parameter: str, function_name: str, why: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "lent_shape",
+        message: "`lent` on `" + parameter + "` of `" + function_name + "` is a word nothing reads — " + why,
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "`lent` says the call keeps nothing of what it is handed, so a lend — `s.cstr()`, `f.ptr()` — may land on the parameter. It is read on a by-value `cstr` or `ptr` and nowhere else"
+    )
+    return d
+
 function ffi_field_type(name: str, why: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_field_type",

@@ -405,6 +405,18 @@ constant CEILING: i64
 # `selfhost/check/builtins.hero 378`"* before building anything, which is the
 # shape a ratified exception should move in: a number somebody committed to in
 # advance, not one discovered when the check went red.
+#
+# **One moved on 2026-09-20, by two lines, and again the seat named the number
+# first.** `ast.hero` 525 -> **527**: panel 171's `lent`, the word for a C
+# parameter that keeps nothing, is one `bool` on `record Param` and the two
+# comment lines that say what it means — the same shape `counted_by` took at
+# panel 166, on a file that was already `DECIDED` and has no seam the language
+# allows (its module doc names the knot). The sitting's compiler-engineer wrote
+# *"`DECIDED` reads `selfhost/ast.hero 527` (±1)"* before anything was built,
+# measured it in its copy, and the landing reads exactly that. The word's other
+# files pay for themselves: `parse/members.hero` and `print/fmt.hero` each
+# collapsed two identical five-line marker functions into one, so the third bare
+# word costs them a line each rather than five.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1870"
@@ -412,7 +424,7 @@ constant DECIDED: [str]
         "selfhost/ir/flatten.hero 1150"
         "selfhost/grammar_expr.hero 1085"
         "selfhost/ir/print.hero 470"
-        "selfhost/ast.hero 525"
+        "selfhost/ast.hero 527"
         "selfhost/check/table.hero 389"
         "selfhost/check/builtins.hero 378"
         "selfhost/ir/mono.hero 380"

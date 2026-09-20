@@ -1,0 +1,40 @@
+# `lent`, the word for a C parameter that keeps nothing of what it is handed
+# (panel 171, 2026-09-20), refused where nothing reads it.
+#
+# THE SHAPE RULE, and it is `check/marks.hero`'s own rule for the handle words
+# applied to this one: a word nothing reads is refused rather than ignored,
+# because a mark the compiler swallows is a claim the author believes is checked
+# and is not. `lent` is read on a by-value `cstr` or `ptr` — the two types a lend
+# produces — and nowhere else. An `@` position can hold no lend, and nothing is
+# ever lent to a number or a handle.
+#
+# THIS IS THE WORD'S HALF OF THE FLIP AND NOT THE RULE'S. In this commit the
+# parser, the printers and this shape check know the word; the rule that refuses
+# a lend at an UNMARKED parameter lands in the next commit, with the marks on the
+# compiler's own bindings that it forces. Two commits, because the seed compiler
+# that builds the next one has to parse the marks that one writes — the one-commit
+# landing was run and breaks at `selfhost/cli/process.hero:42:40` with no binary.
+# So a `lent` on a `cstr` below is quiet here: read by the parser, unread by any
+# rule yet, and deliberately not refused, or the next commit could not be built.
+
+extern "lent.h"
+    # The two shapes that carry it, quiet.
+    function strlen(s: cstr lent) -> u64
+    function read(fd: i32, buf: ptr counted_by n lent, n: u64) -> i64
+
+    # An `@` out-parameter: C writes into the program's own cell, and no lend
+    # can stand in an `@` position, so there is nothing for the word to admit.
+    #~v lent_shape
+    function grab(@out: cstr lent) -> i32
+
+    # A number is never lent.
+    #~v lent_shape
+    function bump(n: i64 lent) -> i64
+
+    # A handle has its own three words, and this is not one of them.
+    record Db tag sqlite3
+    #~v lent_shape
+    function close(db: Db lent) -> i32
+
+function main()
+    print(0)

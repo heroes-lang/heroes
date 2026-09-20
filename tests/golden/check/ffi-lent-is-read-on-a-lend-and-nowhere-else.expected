@@ -1,0 +1,3 @@
+tests/golden/check/ffi-lent-is-read-on-a-lend-and-nowhere-else.hero:28:20: error[lent_shape]: `lent` on `out` of `grab` is a word nothing reads — `out` is an `@` out-parameter, and no lend can stand in an `@` position
+tests/golden/check/ffi-lent-is-read-on-a-lend-and-nowhere-else.hero:32:19: error[lent_shape]: `lent` on `n` of `bump` is a word nothing reads — `n` is not a `cstr` or a `ptr`, and only those two are ever lent
+tests/golden/check/ffi-lent-is-read-on-a-lend-and-nowhere-else.hero:37:20: error[lent_shape]: `lent` on `db` of `close` is a word nothing reads — `db` is not a `cstr` or a `ptr`, and only those two are ever lent
