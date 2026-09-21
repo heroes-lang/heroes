@@ -1,0 +1,11 @@
+# Panel 173 q3: a lease freed through SQLite's own allocator, by the stash route.
+extern "beside_sqlite.h" link "sqlite3"
+    function sql_stash(s: cstr)
+    function sql_later_free()
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    sql_stash(s: c)
+    sql_later_free()
+    end_lease(@c)

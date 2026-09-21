@@ -1,0 +1,12 @@
+# Panel 173 q5: SIGABRT arrives from `raise`, which is what `kill -ABRT` from
+# outside looks like to the handler, while a lease is live.
+extern "signal.h"
+    constant SIGABRT: i32
+    function raise(sig: i32) -> i32
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    r = raise(sig: SIGABRT)
+    print(to_str(r))
+    end_lease(@c)

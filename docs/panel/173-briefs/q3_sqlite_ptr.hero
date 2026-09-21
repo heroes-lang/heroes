@@ -1,0 +1,10 @@
+# Panel 173 q3: a real library frees the lease. `sqlite3_free(void *)` against a
+# `cstr` lease, spelled `ptr` as the brief asks.
+extern "sqlite3.h" link "sqlite3"
+    function sqlite3_free(p: ptr)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    sqlite3_free(p: c)
+    end_lease(@c)

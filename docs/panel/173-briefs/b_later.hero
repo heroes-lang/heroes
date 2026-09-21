@@ -1,0 +1,14 @@
+# Panel 172's `b_later`: C frees the lease on a call that takes no pointer at
+# all, so no word on a parameter can ever reach it. `check` 0 under both
+# compilers at that sitting; exit 133 or 134 (two allocator paths) with zero
+# bytes on the stock runtime, measured by the coordinator on 2026-09-21.
+extern "beside.h"
+    function stash(s: cstr)
+    function later_free()
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    stash(s: c)
+    later_free()
+    end_lease(@c)

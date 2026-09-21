@@ -1,0 +1,10 @@
+# Panel 173 q5: a C library aborts on its own (an assert) while a lease is live.
+# Nothing freed anything.
+extern "libabrt.h"
+    function lib_abort()
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    lib_abort()
+    end_lease(@c)

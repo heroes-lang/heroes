@@ -1,0 +1,291 @@
+diff --git a/runtime/parts/alloc.c b/runtime/parts/alloc.c
+index 6fc350c9..c863c432 100644
+--- a/runtime/parts/alloc.c
++++ b/runtime/parts/alloc.c
+@@ -191,7 +191,7 @@ static void hero_handle_report_stray(size_t strays, const void *first_stray) {
+                     "WHOLE and released part by part, since one mark is one "
+                     "obligation on the whole value. The first is at %p\n",
+             (unsigned long long)strays, first_stray);
+-    abort();
++    hero_abort();
+ }
+ 
+ /* EACH COUNTER IS READ ONCE, into a local, and the message prints that local.
+@@ -207,7 +207,7 @@ void hero_runtime_check_leaks(void) {
+         fprintf(stderr, "panic: %lld heap blocks still live at exit "
+                         "(a missing decref) — this is a compiler bug\n",
+                 (long long)blocks);
+-        abort();
++        hero_abort();
+     }
+     int64_t scratch = hero_live_scratch;
+     if (scratch != 0) {
+@@ -216,7 +216,7 @@ void hero_runtime_check_leaks(void) {
+                         "(a runtime call kept what it borrowed) — this is a "
+                         "runtime bug\n",
+                 (long long)scratch);
+-        abort();
++        hero_abort();
+     }
+     /* THIRD, AND IT ACCUSES THE PROGRAM RATHER THAN THIS COMPILER. Held bytes
+      * are the one allocation a Heroes program asks for by name, so a leak of
+@@ -228,7 +228,7 @@ void hero_runtime_check_leaks(void) {
+                         "one `end_lease`, and this program is missing that "
+                         "many\n",
+                 (long long)held);
+-        abort();
++        hero_abort();
+     }
+     /* TWO DIRECTIONS, AND THEY ARE TWO DIFFERENT FAULTS. Positive is the
+      * PROGRAM's: a handle it was given and never gave back. NEGATIVE is the
+@@ -316,7 +316,7 @@ void hero_runtime_check_leaks(void) {
+                         "marked `acquires` owes one marked `consumes`, and this "
+                         "program is missing that many. The first is at %p\n",
+                 (unsigned long long)live, first_live);
+-        abort();
++        hero_abort();
+     }
+ }
+ 
+diff --git a/runtime/parts/failure.c b/runtime/parts/failure.c
+index bb4590de..4331e3b0 100644
+--- a/runtime/parts/failure.c
++++ b/runtime/parts/failure.c
+@@ -114,7 +114,7 @@ _Noreturn void hero_panic_must(HeroFailure f) {
+     fflush(stdout);
+     fprintf(stderr, "panic: .must() on an error: %s: %s\n",
+             hero_str_cstr(f.code), hero_str_cstr(f.msg));
+-    abort();
++    hero_abort();
+ }
+ 
+ /* -- `assert` (§4.18, spec § 12 Tests and holes) ---------------------------------------
+@@ -133,7 +133,7 @@ _Noreturn void hero_panic_assert(HeroStr text) {
+     hero_str_require(text);
+     fflush(stdout);
+     fprintf(stderr, "assert failed: %s\n", hero_str_cstr(text));
+-    abort();
++    hero_abort();
+ }
+ 
+ _Noreturn void hero_panic_assert_sides(HeroStr text, HeroStr left, HeroStr right) {
+@@ -143,5 +143,5 @@ _Noreturn void hero_panic_assert_sides(HeroStr text, HeroStr left, HeroStr right
+     fflush(stdout);
+     fprintf(stderr, "assert failed: %s\n  left:  %s\n  right: %s\n",
+             hero_str_cstr(text), hero_str_cstr(left), hero_str_cstr(right));
+-    abort();
++    hero_abort();
+ }
+diff --git a/runtime/parts/os.c b/runtime/parts/os.c
+index 4417e5e9..ccf0f545 100644
+--- a/runtime/parts/os.c
++++ b/runtime/parts/os.c
+@@ -131,6 +131,105 @@ static void hero_streams_survive_abort(void) {
+ static int hero_argc = 0;
+ static char **hero_argv = NULL;
+ 
++/* ---- The runtime names the lease at the crash (panel 172 R1, judged by 173) --
++ *
++ * When a C function frees the bytes of a live `.lease()`, the platform
++ * allocator refuses the free and kills the process: SIGTRAP from Darwin's
++ * allocator (exit 133, and one run in ten SIGABRT, 134), SIGABRT from glibc's
++ * `free(): invalid pointer`. Nothing in the checker or the emitted C sees it,
++ * and stderr is empty — the one shape design.md §1.12 forbids by name. This
++ * handler turns it into a `panic:` line naming the live lease count and the
++ * Heroes function that made the call.
++ *
++ * THREE THINGS IT MUST NOT DO, each a measurement from panel 173:
++ *
++ * - SPEAK AFTER THE RUNTIME HAS. Every runtime-initiated death is a line and
++ *   then `hero_abort()` (parts/panic.c), which is SIGABRT, which is this
++ *   handler. A flag on one of the fifteen sites left a second, false line under
++ *   an index panic, a stack exhaustion and a failed `assert` with a lease live
++ *   (282, 289, 300 bytes of stderr). `hero_runtime_spoke` is set in the funnel.
++ * - SPEAK UNDER THE SANITIZER. ASan intercepts `free` before the allocator,
++ *   reports `bad-free` with the `.hero` line and aborts; a line appended under
++ *   its report (1324 bytes, measured) is redundant when right and false when
++ *   ASan's reason was not the free. Yielded at compile time, on stack.c's switch.
++ * - DROP THE DISPOSITION IT FOUND. A handler that was there before us is called
++ *   first, as `hero_stack_pass_on` does for SIGSEGV; then the default is
++ *   restored and the signal re-raised, so the process dies with the status it
++ *   always had rather than one this file chose.
++ *
++ * WHAT IT CAN AND CANNOT NAME. The Heroes function comes from stack.c's frame
++ * walk over the interrupted context — intact, since this runs on the alternate
++ * stack — and `abort` → `free` → the C callee → `h_<module>_<name>` is a few
++ * frames up. WHICH lease is not recorded: `hero_live_held` is a counter, and a
++ * name per lease is a pointer per `.lease()`, priced at panel 173 and not built.
++ *
++ * WINDOWS is a stub: heap corruption there is a fail-fast exception
++ * (STATUS_HEAP_CORRUPTION), not a signal, so the analogue belongs beside
++ * stack.c's vectored handler and is UNRUN on the box. */
++#if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN) || defined(_WIN32)
++static void hero_lease_crash_install(void) {}
++#else
++static struct sigaction hero_lease_prev_trap;
++static struct sigaction hero_lease_prev_abrt;
++
++static void hero_lease_say_count(long long v) {
++    char buf[24];
++    int at = (int)sizeof buf;
++    buf[--at] = '\0';
++    if (v == 0) buf[--at] = '0';
++    while (v > 0 && at > 0) {
++        buf[--at] = (char)('0' + (v % 10));
++        v /= 10;
++    }
++    hero_stack_say(buf + at);
++}
++
++static void hero_lease_crash(int signum, siginfo_t *si, void *ctx) {
++    int64_t held = hero_live_held;
++    if (!hero_runtime_spoke && held > 0) {
++        uintptr_t pc, fp, sp, lr;
++        hero_stack_regs(ctx, &pc, &fp, &sp, &lr);
++        const char *who = hero_stack_blame(pc, fp, lr);
++        hero_stack_say("panic: a C function freed bytes this program still leases — ");
++        hero_lease_say_count((long long)held);
++        hero_stack_say(" lease(s) were live when the allocator refused the free");
++        if (who != NULL) {
++            hero_stack_say(", called from ");
++            hero_stack_say_heroes_name(who);
++        }
++        hero_stack_say("\n  the bytes of a `.lease()` are the program's, freed by `end_lease`,\n"
++                       "  and the callee that was handed one frees what it is handed\n");
++    }
++    struct sigaction *prev = signum == SIGTRAP ? &hero_lease_prev_trap : &hero_lease_prev_abrt;
++    if ((prev->sa_flags & SA_SIGINFO) != 0 && prev->sa_sigaction != NULL) {
++        prev->sa_sigaction(signum, si, ctx);
++    } else if (prev->sa_handler != SIG_DFL && prev->sa_handler != SIG_IGN && prev->sa_handler != NULL) {
++        prev->sa_handler(signum);
++    }
++    struct sigaction dfl;
++    memset(&dfl, 0, sizeof dfl);
++    dfl.sa_handler = SIG_DFL;
++    sigaction(signum, &dfl, NULL);
++    raise(signum);
++}
++
++/* Two `sigaction` calls, once per process, after the stack guard so the
++ * alternate stack they run on exists: the disposition is the process's and the
++ * stack is the thread's (stack.c, "ONCE PER PROCESS"). */
++static void hero_lease_crash_install(void) {
++    static int done = 0;
++    if (done) return;
++    done = 1;
++    struct sigaction sa;
++    memset(&sa, 0, sizeof sa);
++    sa.sa_sigaction = hero_lease_crash;
++    sa.sa_flags = SA_SIGINFO | SA_ONSTACK;
++    sigemptyset(&sa.sa_mask);
++    if (sigaction(SIGTRAP, &sa, &hero_lease_prev_trap) != 0) return;
++    if (sigaction(SIGABRT, &sa, &hero_lease_prev_abrt) != 0) return;
++}
++#endif
++
+ void hero_args_set(int argc, char **argv) {
+     hero_stdout_is_bytes();
+     hero_streams_survive_abort();
+@@ -138,6 +237,9 @@ void hero_args_set(int argc, char **argv) {
+      * this is the one call every generated `main` makes first — so the
+      * emitted C and the ABI stamp are untouched (panel 104). */
+     hero_stack_guard_install();
++    /* And the lease handler, after the guard whose alternate stack it runs on
++     * (panel 172 R1; the mechanism panel 173 judged). */
++    hero_lease_crash_install();
+     /* And the thread itself, for the same reason and by the same precedent
+      * (panel 111 R9): this is the thread a Heroes program owns, so a callback
+      * entered from any other one is C calling back from a thread of its own. */
+diff --git a/runtime/parts/panic.c b/runtime/parts/panic.c
+index 0a2be317..945a7cac 100644
+--- a/runtime/parts/panic.c
++++ b/runtime/parts/panic.c
+@@ -17,10 +17,29 @@
+  * design.md §4.14 (arithmetic edges abort), §4.20.
+  */
+ 
++#include <signal.h>
++
++/* THE RUNTIME HAS SPOKEN, and this is the one bit that says so. Every death
++ * the runtime initiates is a line on stderr followed by `hero_abort()`, which
++ * is SIGABRT, which reaches the lease handler in parts/os.c. That handler
++ * reports a C `free` of live leased bytes, and it must stay silent when the
++ * death is ours: panel 173 measured a second, false `panic:` line under an
++ * out-of-range index, a stack exhaustion and a failed `assert` while a lease
++ * was live. Fifteen sites in five files aborted directly; they are one funnel
++ * now, so the flag cannot be forgotten at the sixteenth. `sig_atomic_t` and
++ * `abort()` are both on the async-signal-safe list, and stack.c's handler is
++ * one of the callers. */
++static volatile sig_atomic_t hero_runtime_spoke = 0;
++
++static _Noreturn void hero_abort(void) {
++    hero_runtime_spoke = 1;
++    abort();
++}
++
+ _Noreturn void hero_panic(const char *msg) {
+     fflush(stdout);
+     fprintf(stderr, "panic: %s\n", msg);
+-    abort();
++    hero_abort();
+ }
+ _Noreturn void hero_panic_overflow(void) { hero_panic("integer overflow"); }
+ _Noreturn void hero_unreachable(void) {
+diff --git a/runtime/parts/stack.c b/runtime/parts/stack.c
+index fca7e65c..48f5b46c 100644
+--- a/runtime/parts/stack.c
++++ b/runtime/parts/stack.c
+@@ -403,7 +403,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
+             hero_stack_say_heroes_name(who);
+         }
+         hero_stack_say("\n");
+-        abort();
++        hero_abort();
+     }
+ 
+     /* A CALL THROUGH A NULL FUNCTION POINTER, and its witness is the PC itself
+@@ -438,7 +438,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
+      * name here would point at the wrong file more often than the right one. */
+     if (pc == 0) {
+         hero_stack_say("panic: a null function pointer was called — a `ptr` holding `nullptr` reached C where C calls it back\n");
+-        abort();
++        hero_abort();
+     }
+ 
+     /* A READ OR WRITE THROUGH A NULL POINTER, and it is defect 013's own
+@@ -508,7 +508,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
+             hero_stack_say_heroes_name(who);
+         }
+         hero_stack_say("\n");
+-        abort();
++        hero_abort();
+     }
+     hero_stack_pass_on(signum, si, ctx);
+ }
+@@ -611,7 +611,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
+     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
+         const char *line = "panic: stack exhausted\n";
+         _write(2, line, (unsigned int)strlen(line));
+-        abort();
++        hero_abort();
+     }
+     /* THE POSIX HALF'S WITNESS, IN WINDOWS' OWN VOCABULARY (defect 013,
+      * 2026-09-05). `ExceptionAddress` is where the program was EXECUTING,
+@@ -628,7 +628,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
+         && (uintptr_t)ep->ExceptionRecord->ExceptionAddress == 0) {
+         const char *line = "panic: a null function pointer was called \xe2\x80\x94 a `ptr` holding `nullptr` reached C where C calls it back\n";
+         _write(2, line, (unsigned int)strlen(line));
+-        abort();
++        hero_abort();
+     }
+ 
+     /* THE OTHER POSIX WITNESS, AND WINDOWS HAD NO ARM FOR IT UNTIL 2026-09-16
+@@ -681,7 +681,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
+         }
+         buf[at++] = '\n';
+         _write(2, buf, (unsigned int)at);
+-        abort();
++        hero_abort();
+     }
+     return EXCEPTION_CONTINUE_SEARCH;
+ }

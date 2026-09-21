@@ -1,0 +1,10 @@
+extern "giveaway.h"
+    function look(s: cstr lent)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    look(s: c)
+    a = [1, 2, 3]
+    print(to_str(a[9]))
+    end_lease(@c)
