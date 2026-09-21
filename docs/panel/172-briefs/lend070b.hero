@@ -1,0 +1,5 @@
+extern "giveaway.h"
+    function eat(s: cstr)
+
+function main()
+    eat(s: "payload".cstr())

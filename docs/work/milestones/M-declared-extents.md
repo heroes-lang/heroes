@@ -99,7 +99,20 @@ declaration to the author's argument. What the milestone delivered instead is
 the relation declared where C can check it.
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 4**
+
+- [ ] **M-declared-extents** | a pointer C made, handed twice to a C function that frees it, is `check` 0 and dies at run time saying nothing, and nothing in § 13 says a pointer C made is C's to free once | panel 172's compiler-engineer and completeness critic, `spec § 13`
+
+    **Origin:** panel 172, 2026-09-21. The compiler-engineer measured it as the
+    shape beside the double give-away of a lease (`p10`: `p = make()`,
+    `release(p: p)` twice, exit 0 at `check` under both compilers) and the
+    critic as `b_out`, an `@out: cstr` C fills and frees and the program then
+    frees. **Not this sitting's**, both said, and filed here so it is not
+    discovered as new: the runtime's report adopted at 172 covers the LEASE
+    class and is silent here, because no lease is live and the pointer is C's.
+    Whether the document owes the sentence that a pointer C made is C's to free
+    once, whether that is design.md §1.12's business or C's, and whether the
+    runtime's handler can reach it, are unmeasured.
 
 - [ ] **M-declared-extents** | two modules may declare one C function with contradictory retention marks, and the compiler accepts both at `check` 0 | panel 171's completeness critic, the historian's B.4, `selfhost/check/marks.hero`
 

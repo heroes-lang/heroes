@@ -1,0 +1,8 @@
+extern "giveaway.h"
+    function eat(s: cstr consumes)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    eat(s: c)
+    end_lease(@c)
