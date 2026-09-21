@@ -373,7 +373,9 @@ handed unless declared `lent`, and a lend reaches only one so declared.
 program says, and `end_lease(@x)` frees it and empties the cell. A lend and a
 lease name stand only as an argument of a call, nothing else writes a lease's
 cell, and a lease nobody ends, like a handle nobody consumes, aborts when
-`main` returns, saying how many.
+`main` returns, saying how many. No word says C frees what it is handed; one
+that frees a lease kills the process, naming the leases live. Bytes C owns come
+from its own allocator, with their disposer.
 `owned sqlite3_free` after a `cstr` result or a `char **` out-parameter: the
 compiler frees that string with that function, hands it over as a `str?` (the
 `@` cell is only written), and refuses your own call of it. `consumes` after a

@@ -114,7 +114,7 @@ _Noreturn void hero_panic_must(HeroFailure f) {
     fflush(stdout);
     fprintf(stderr, "panic: .must() on an error: %s: %s\n",
             hero_str_cstr(f.code), hero_str_cstr(f.msg));
-    abort();
+    hero_abort();
 }
 
 /* -- `assert` (§4.18, spec § 12 Tests and holes) ---------------------------------------
@@ -133,7 +133,7 @@ _Noreturn void hero_panic_assert(HeroStr text) {
     hero_str_require(text);
     fflush(stdout);
     fprintf(stderr, "assert failed: %s\n", hero_str_cstr(text));
-    abort();
+    hero_abort();
 }
 
 _Noreturn void hero_panic_assert_sides(HeroStr text, HeroStr left, HeroStr right) {
@@ -143,5 +143,5 @@ _Noreturn void hero_panic_assert_sides(HeroStr text, HeroStr left, HeroStr right
     fflush(stdout);
     fprintf(stderr, "assert failed: %s\n  left:  %s\n  right: %s\n",
             hero_str_cstr(text), hero_str_cstr(left), hero_str_cstr(right));
-    abort();
+    hero_abort();
 }

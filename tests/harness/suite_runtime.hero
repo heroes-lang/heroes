@@ -198,6 +198,9 @@ constant SHARED_BY_DECISION: [str]
         "runtime/parts/stack.c hero_stack_prev_bus | the same, for SIGBUS"
         "runtime/parts/alloc.c hero_handle_set | the set of live C handle addresses, shared on purpose and guarded by a lock — the second object in this runtime of `hero_spawn_slots`'s kind, and for the same reason one level up. It cannot be `_Thread_local`: panel 111 R5 measured that making the LEAK COUNTERS thread-local left the instrument silent, because `hero_runtime_check_leaks()` runs on the main thread and would read the main thread's own balance. It cannot be `_Atomic`: inserting is a probe-then-write over a table, which is the shape an atomic cannot make single. It replaced an `_Atomic int64_t` on 2026-09-15 (panel 150), so the lock is what keeps the safety that was already there rather than adding any"
         "runtime/parts/alloc.c hero_handle_lock | the lock that guards the set above, one per platform arm — `pthread_mutex_t` on POSIX, `SRWLOCK` on Windows, which has no pthreads at all. Being shared is what a lock IS, and the platform owns its safety. Both spellings are statically initialisable, which is what keeps this twenty lines rather than the kept buffer's hundred"
+        "runtime/parts/os.c hero_lease_prev_trap | the SIGTRAP disposition installed before this runtime's, so a trap it does not own is passed on before the default is restored. `hero_stack_prev_segv`'s entry three above is the same object at a different signal, and the same kernel fact decides it: `sigaction` is the process's, `sigaltstack` and the bounds are the thread's. Measured at panel 173 rather than reasoned: a C library that installs its own handler from a constructor stops being called the moment this one drops what it saved, exit 77 becoming 133 ten runs of ten on two platforms, and chaining returns it"
+        "runtime/parts/os.c hero_lease_prev_abrt | the same, for SIGABRT, which is the signal glibc's allocator raises and the one every `abort()` in this runtime reaches"
+        "runtime/parts/panic.c hero_runtime_spoke | the flag that says THIS RUNTIME has already printed its reason, set in `hero_abort` — the one funnel every runtime-initiated death passes through — and read by the lease handler so it does not print a second line under a panic the runtime itself wrote. Process-wide by nature, like the dispositions above: a death ends the process, so a per-thread copy would be read on the wrong thread, and `_Atomic` buys nothing against a handler that runs on the thread that died. It is `volatile sig_atomic_t` because C11 7.14.1.1p5 allows a handler to touch nothing else, which is the same reason `stack.c` writes with `write(2)` alone"
         "runtime/parts/alloc.c hero_handle_cap | the set's capacity, read and written only under that lock, so it is the lock's own state and not a second shared thing to make safe"
         "runtime/parts/alloc.c hero_handle_live | how many addresses the set holds, under the same lock and for the same reason. It is deliberately NOT `_Atomic`: an atomic count beside a locked table would be a second answer to one question, which is the drift this file exists to catch"
         "runtime/parts/alloc.c hero_handle_strays | handles given back that the set did not hold — a double release, or a part of something acquired whole. Under the same lock, and process-wide for `hero_live_blocks`' reason: the gate that reads it runs on the main thread at exit"
@@ -214,7 +217,7 @@ constant SHARED_BY_DECISION: [str]
 # watches: the floor was written when 28 were found and set below them, and the
 # tree has since put fifteen more between calls.
 constant LEAST_SHARED_STATE: i64
-    39
+    49
 
 function run_all(scratch: str) -> report.Report?
     nothing: [str] = []

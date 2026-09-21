@@ -28,7 +28,12 @@
 # A sanitiser's own words are checked separately from the expectation:
 # ASan and UBSan report on stderr and can leave the exit status alone, so
 # a program can print exactly the right thing while UBSan is saying
-# `runtime error:` underneath. Both spellings are refused.
+# `runtime error:` underneath. Both spellings are refused — UNLESS the case
+# asks for one, which since panel 173 it may: `!sanitizer: <needle>` in the
+# `.expected` turns the report from the failure into the artifact, for a
+# case whose subject is a program C corrupts and where a silent sanitiser
+# would be the defect. `expectation.hero` carries the reasoning and the
+# two things the line does not do.
 
 use cases
 use expectation
@@ -70,7 +75,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
                 report.keep_failure(
                     @r,
                     label: "run/" + item.name,
-                    detail: "  " + item.expected + " is not a readable expectation — an ending must be `!panic: <message>` or `!exit: <code>`"
+                    detail: "  " + item.expected + " is not a readable expectation — an ending must be `!panic: <message>` or `!exit: <code>`, and a sanitiser line before it must be `!sanitizer: <text it must say>`"
                 )
             else
                 took = one_case(
@@ -141,6 +146,30 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
 
     if sanitised.is_err()
         report.keep_failure(@r, label: "run/" + item.name, detail: "  cannot run the compiler on " + item.source)
+        return false
+
+    # **A CASE MAY DECLARE THAT THE SANITISER SPEAKS** (panel 173): its
+    # `.expected` carries `!sanitizer: <needle>`, and then the report is the
+    # artifact rather than the failure. Three of defect 070's cases are
+    # programs C corrupts — the bytes of a `.lease()` freed by a C function —
+    # and for them a silent sanitiser is the defect. Measured at that sitting:
+    # without this, `run` goes 132 passed to 133 passed and 4 failed, every one
+    # `tripped a sanitiser`, whatever the `.expected` says.
+    #
+    # The waiver and the assertion are one line on purpose: a case that stops
+    # provoking the sanitiser goes red. And the ending is still judged at `-O0`
+    # and `-O2` above, so the runtime's own report stays pinned where it prints.
+    if !want.sanitizer.is_err()
+        missing = expectation.sanitizer_unmet(want, err: sanitised.must().err)
+
+        if !missing.is_err()
+            report.keep_failure(
+                @r,
+                label: "run/" + item.name + " at --sanitize",
+                detail: "  " + item.source + " " + missing.must()
+            )
+            return false
+        report.keep_pass(@r)
         return false
 
     if strings.contains(text: sanitised.must().err, needle: "AddressSanitizer") || strings.contains(text: sanitised.must().err, needle: "runtime error:")

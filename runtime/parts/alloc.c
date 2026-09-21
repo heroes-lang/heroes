@@ -191,7 +191,7 @@ static void hero_handle_report_stray(size_t strays, const void *first_stray) {
                     "WHOLE and released part by part, since one mark is one "
                     "obligation on the whole value. The first is at %p\n",
             (unsigned long long)strays, first_stray);
-    abort();
+    hero_abort();
 }
 
 /* EACH COUNTER IS READ ONCE, into a local, and the message prints that local.
@@ -207,7 +207,7 @@ void hero_runtime_check_leaks(void) {
         fprintf(stderr, "panic: %lld heap blocks still live at exit "
                         "(a missing decref) — this is a compiler bug\n",
                 (long long)blocks);
-        abort();
+        hero_abort();
     }
     int64_t scratch = hero_live_scratch;
     if (scratch != 0) {
@@ -216,7 +216,7 @@ void hero_runtime_check_leaks(void) {
                         "(a runtime call kept what it borrowed) — this is a "
                         "runtime bug\n",
                 (long long)scratch);
-        abort();
+        hero_abort();
     }
     /* THIRD, AND IT ACCUSES THE PROGRAM RATHER THAN THIS COMPILER. Held bytes
      * are the one allocation a Heroes program asks for by name, so a leak of
@@ -228,7 +228,7 @@ void hero_runtime_check_leaks(void) {
                         "one `end_lease`, and this program is missing that "
                         "many\n",
                 (long long)held);
-        abort();
+        hero_abort();
     }
     /* TWO DIRECTIONS, AND THEY ARE TWO DIFFERENT FAULTS. Positive is the
      * PROGRAM's: a handle it was given and never gave back. NEGATIVE is the
@@ -316,7 +316,7 @@ void hero_runtime_check_leaks(void) {
                         "marked `acquires` owes one marked `consumes`, and this "
                         "program is missing that many. The first is at %p\n",
                 (unsigned long long)live, first_live);
-        abort();
+        hero_abort();
     }
 }
 

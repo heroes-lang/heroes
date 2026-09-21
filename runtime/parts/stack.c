@@ -403,7 +403,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
             hero_stack_say_heroes_name(who);
         }
         hero_stack_say("\n");
-        abort();
+        hero_abort();
     }
 
     /* A CALL THROUGH A NULL FUNCTION POINTER, and its witness is the PC itself
@@ -438,7 +438,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      * name here would point at the wrong file more often than the right one. */
     if (pc == 0) {
         hero_stack_say("panic: a null function pointer was called — a `ptr` holding `nullptr` reached C where C calls it back\n");
-        abort();
+        hero_abort();
     }
 
     /* A READ OR WRITE THROUGH A NULL POINTER, and it is defect 013's own
@@ -508,7 +508,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
             hero_stack_say_heroes_name(who);
         }
         hero_stack_say("\n");
-        abort();
+        hero_abort();
     }
     hero_stack_pass_on(signum, si, ctx);
 }
@@ -611,7 +611,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
         const char *line = "panic: stack exhausted\n";
         _write(2, line, (unsigned int)strlen(line));
-        abort();
+        hero_abort();
     }
     /* THE POSIX HALF'S WITNESS, IN WINDOWS' OWN VOCABULARY (defect 013,
      * 2026-09-05). `ExceptionAddress` is where the program was EXECUTING,
@@ -628,7 +628,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
         && (uintptr_t)ep->ExceptionRecord->ExceptionAddress == 0) {
         const char *line = "panic: a null function pointer was called \xe2\x80\x94 a `ptr` holding `nullptr` reached C where C calls it back\n";
         _write(2, line, (unsigned int)strlen(line));
-        abort();
+        hero_abort();
     }
 
     /* THE OTHER POSIX WITNESS, AND WINDOWS HAD NO ARM FOR IT UNTIL 2026-09-16
@@ -681,7 +681,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
         }
         buf[at++] = '\n';
         _write(2, buf, (unsigned int)at);
-        abort();
+        hero_abort();
     }
     return EXCEPTION_CONTINUE_SEARCH;
 }
