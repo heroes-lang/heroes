@@ -148,18 +148,18 @@
   <p>
     Many C libraries hand you a <b>handle</b>: a pointer to something the library keeps for itself, a database connection, a prepared query, and that sooner or later you will have to give back. So far that would be a <code>ptr</code>, an address you know nothing about. Inside a group you can instead give it the name the library itself uses: a <code>record</code> with no fields, a <code>tag</code> and the name of the C type is the pointer to that type. Clang checks the name against the header, a <code>CDb</code> cannot be handed where a <code>CStmt</code> belongs, and <code>nullptr</code> is its empty value.
   </p>
-  <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="62-63">
+  <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="64-65">
 <pre><code>    <span class="k">record</span> CDb tag sqlite3
     <span class="k">record</span> CStmt tag sqlite3_stmt</code></pre>
-    <figcaption>examples/ledger/db/sqlite.hero, lines 62&ndash;63</figcaption>
+    <figcaption>examples/ledger/db/sqlite.hero, lines 64&ndash;65</figcaption>
   </figure>
   <p>
     Then every declaration that touches a handle says what it does, with one of three words. <code>acquires</code> and a name: the call hands you one, and that name is the function that takes it back. <code>consumes</code>: the call takes one back and ends its life. <code>borrows</code>: the call shows you one the library goes on keeping, and you owe nothing. None of the three is guessed by the compiler, because two functions with the same signature can do the first thing and the third: you write it.
   </p>
-  <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="75-76">
-<pre><code>    <span class="k">function</span> sqlite3_open(filename: <span class="t">cstr</span>, @out: CDb acquires sqlite3_close) -&gt; <span class="t">i64</span>
+  <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="83-84">
+<pre><code>    <span class="k">function</span> sqlite3_open(filename: <span class="t">cstr</span> lent, @out: CDb acquires sqlite3_close) -&gt; <span class="t">i64</span>
     <span class="k">function</span> sqlite3_close(db: CDb consumes) -&gt; <span class="t">i64</span></code></pre>
-    <figcaption>examples/ledger/db/sqlite.hero, lines 75&ndash;76</figcaption>
+    <figcaption>examples/ledger/db/sqlite.hero, lines 83&ndash;84</figcaption>
   </figure>
   <p>
     Two checks follow from those words. The first happens before the program runs. A parameter written without <code>@</code> is borrowed: the caller keeps the value and reads it again afterwards. Handing it to a call that closes it would leave them holding an address C has already taken back, so the compiler refuses the line, and the repair is to write <code>@</code> on the parameter and at the call. Here <code>shut</code> receives the connection on loan and tries to close it:
