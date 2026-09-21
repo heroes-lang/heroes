@@ -103,7 +103,7 @@ Write-Host ("Windows: " + (Get-CimInstance Win32_OperatingSystem).Caption + `
 Write-Host ("CPUs: " + $env:NUMBER_OF_PROCESSORS + `
             "   RAM: " + [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB, 1) + " GB")
 
-# ---------------------------------------------------------------- 1. the key
+# ---------------------------------------------------------------- the key
 Step 'The key the Mac will open this machine with'
 
 if (-not $AuthorizedKey) {
@@ -117,12 +117,55 @@ if ($AuthorizedKey -notmatch '^(ssh-ed25519|ssh-rsa|ecdsa-sha2-\S+) \S+') {
 }
 Good ('key accepted: ' + $AuthorizedKey.Split(' ')[0] + ' ...' + $AuthorizedKey.Substring($AuthorizedKey.Length - 12))
 
-# --------------------------------------------------------------- 2. the root
+# --------------------------------------------------------------- the root
 Step "The work directory, $Root"
 if (-not (Test-Path $Root)) { New-Item -ItemType Directory -Path $Root | Out-Null }
 Good "$Root is there"
 
-# ------------------------------------------------------------- 3. the server
+# ----------------------------------------------------------- the keyboard
+Step 'The Italian keyboard, because a person types on this machine'
+
+# The one step in this file that serves the human rather than the compiler.
+# Provisioning happens over a remote desktop with an Italian keyboard in front
+# of it, and a US layout turns every backslash, brace and at sign into a hunt
+# --- on a box whose whole purpose is to type paths like /c/w/heroes and flags
+# like -Wl,/STACK:. It is a convenience and not a dependency, so it is wrapped:
+# a failure here reports and the rest of the script stands.
+$itTag = 'it-IT'
+$itTip = '0410:00000410'   # Italian language, Italian (Italy) keyboard layout
+try {
+    $list = Get-WinUserLanguageList
+    if (-not ($list | Where-Object { $_.LanguageTag -eq $itTag })) {
+        $list.Add($itTag)
+        # The existing language is KEPT and Italian added beside it. Replacing
+        # the list would take the machine's own language away from it, and
+        # nothing here needs that: what is wanted is a layout, not a new
+        # Windows display language.
+        Set-WinUserLanguageList -LanguageList $list -Force
+        Good "$itTag added beside the layouts already there"
+    } else {
+        Good "$itTag was already in the user's language list"
+    }
+    Set-WinDefaultInputMethodOverride -InputTip $itTip
+    Good "default input method is now $itTip"
+
+    # Carry it to the sign-in screen and to accounts made later, so the NEXT
+    # session does not open on a US layout again. The cmdlet is Windows 11 and
+    # Server 2022 upwards; older Windows skips this rather than failing, and
+    # the per-user setting above still stands.
+    if (Get-Command Copy-UserInternationalSettingsToSystem -ErrorAction SilentlyContinue) {
+        Copy-UserInternationalSettingsToSystem -WelcomeScreen $true -NewUser $true
+        Good 'copied to the welcome screen and to new accounts'
+    } else {
+        Note 'Copy-UserInternationalSettingsToSystem is not on this Windows --- this user only'
+    }
+    Caution 'A desktop session already open picks the layout up after a sign-out and back in.'
+} catch {
+    Caution "the keyboard step did not complete: $($_.Exception.Message)"
+    Caution 'a convenience and not a dependency --- everything below is unaffected'
+}
+
+# ------------------------------------------------------------- the server
 Step 'OpenSSH server: installed, automatic, running, and through the firewall'
 
 $sshd = Get-Service -Name sshd -ErrorAction SilentlyContinue
@@ -149,7 +192,7 @@ if (-not (Get-NetFirewallRule -Name 'heroes-sshd' -ErrorAction SilentlyContinue)
     Good 'a firewall rule for sshd already exists'
 }
 
-# ---------------------------------------------------------- 4. the key, filed
+# ---------------------------------------------------------- the key, filed
 Step 'The key in the file Windows actually reads for an administrator'
 
 # For a member of the Administrators group, the stock sshd_config carries a
@@ -171,7 +214,7 @@ if ($existing -notmatch [regex]::Escape($AuthorizedKey.Split(' ')[1])) {
 & icacls $keyFile /inheritance:r /grant 'Administrators:F' /grant 'SYSTEM:F' | Out-Null
 Good 'permissions restricted to SYSTEM and Administrators'
 
-# ------------------------------------------------------------- 5. the tools
+# ------------------------------------------------------------- the tools
 Step 'The toolchain, by winget'
 
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
@@ -188,7 +231,7 @@ Install-Winget-Package 'LLVM.LLVM'           'LLVM and clang'
 Install-Winget-Package 'GitHub.cli'          'GitHub CLI'
 Install-Winget-Package 'tailscale.tailscale' 'Tailscale'
 
-# ------------------------------------------------- 6. the shell SSH lands in
+# ------------------------------------------------- the shell SSH lands in
 Step 'Git Bash as the default SSH shell'
 
 # Not cosmetic. Under cmd.exe, git-over-SSH fails: git wraps the repository
@@ -206,7 +249,7 @@ Good "DefaultShell = $bash"
 Restart-Service sshd
 Good 'sshd restarted so the new shell takes effect'
 
-# --------------------------------------------------------------- 7. .bashrc
+# --------------------------------------------------------------- .bashrc
 Step 'What ~/.bashrc must add, and why each line is load-bearing'
 
 # Non-interactive SSH reads .bashrc and NOT .bash_profile --- measured
@@ -240,7 +283,7 @@ if ($current -notmatch '--- Heroes:') {
     Good "$bashrc already carries the Heroes block"
 }
 
-# ------------------------------------------------------- 8. the repositories
+# ------------------------------------------------------- the repositories
 Step 'The bare repository the Mac pushes to, and the checkout beside it'
 
 Sync-Path
@@ -271,7 +314,7 @@ if (-not (Test-Path $workRepo)) {
 & $git -C $workRepo config core.fileMode false
 Good 'autocrlf off --- the golden harness compares bytes, and CRLF would rewrite them'
 
-# ------------------------------------------------------------ 9. MSVC's CRT
+# ------------------------------------------------------------ MSVC's CRT
 Step 'The MSVC toolset, which is what clang links against here'
 
 # clang targets x86_64-pc-windows-msvc on this platform --- the same triple CI
@@ -307,7 +350,7 @@ if ($SkipBuildTools) {
     Good ('installed: ' + ((Get-ChildItem $msvcRoot | Select-Object -First 1).Name))
 }
 
-# ------------------------------------------------------------ 10. the tailnet
+# ------------------------------------------------------------ the tailnet
 Step 'Joining the tailnet'
 
 $ts = 'C:\Program Files\Tailscale\tailscale.exe'
@@ -335,7 +378,7 @@ if ($state -and $state.BackendState -eq 'Running') {
     Good 'tailnet joined'
 }
 
-# ------------------------------------------------------------ 11. the checks
+# ------------------------------------------------------------ the checks
 Step 'What was actually installed --- run, not assumed'
 
 Sync-Path
@@ -375,7 +418,7 @@ try {
     Good 'clang compiled, lld-link linked, the binary ran: the toolchain is real'
 } finally { Pop-Location }
 
-# ------------------------------------------------------------- 12. the seed
+# ------------------------------------------------------------- the seed
 Step 'The Heroes compiler, built from the seed'
 
 Push-Location $workRepo
