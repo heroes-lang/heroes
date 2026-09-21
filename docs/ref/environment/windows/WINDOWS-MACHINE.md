@@ -87,10 +87,24 @@ rather than described.
    [IO.File]::WriteAllText($f, $k.Trim() + "`n", (New-Object Text.UTF8Encoding $false))
    icacls $f /inheritance:r /grant 'Administrators:F' /grant 'SYSTEM:F'
 
-   # the tailnet
-   winget install --id tailscale.tailscale --exact --silent `
+   # the tailnet. The id is CASE SENSITIVE under --exact: see below.
+   winget install --id Tailscale.Tailscale --exact --silent `
        --accept-source-agreements --accept-package-agreements
    & 'C:\Program Files\Tailscale\tailscale.exe' up --hostname apponfly-vps --unattended
+   ```
+
+   **`--exact` matches the id case sensitively**, learned here on 2026-09-21
+   when this block said `tailscale.tailscale` and winget answered *No package
+   found matching input criteria* — then `tailscale.exe` was not found either,
+   which is the second error reporting the first. Confirmed against
+   `microsoft/winget-pkgs`: `manifests/t/Tailscale/Tailscale` is a directory
+   and the same path in lowercase is a 404. If winget refuses it anyway, the
+   installer is a download:
+
+   ```powershell
+   Invoke-WebRequest https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi `
+       -OutFile "$env:TEMP\tailscale.msi"
+   Start-Process msiexec.exe -ArgumentList '/i', "$env:TEMP\tailscale.msi", '/quiet', '/norestart' -Wait
    ```
 
    Three details are not decoration. The file is `administrators_authorized_keys`
