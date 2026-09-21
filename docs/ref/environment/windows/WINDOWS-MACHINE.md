@@ -1,5 +1,16 @@
 # The Windows machine — a real one, reachable in seconds
 
+**The box of 2026-08-31 is dead and a second one replaces it (2026-09-21).**
+The provider's hour ran out, the VPS went with it, and everything below that
+describes a VALUE rather than a shape was describing a machine that no longer
+exists. What that cost is the reason § Rebuilding the box now exists: the first
+box was provisioned by hand and **nothing wrote down how**, while the Linux
+machine next door has been a `Dockerfile` anybody can re-run since the day it
+was needed. The Windows equivalent is
+`docs/ref/environment/windows/provision.ps1`, written the day the first box
+died and **not yet run on a Windows machine** — that is stated here rather than
+implied, because until it has been run it is a plan and not a measurement.
+
 **There is a real Windows box for this project, and it is not the CI.** Until
 2026-08-31 every Windows fact in this repository was learned through a seven-minute
 GitHub Actions run, one question per round. This machine answers the same question
@@ -32,6 +43,82 @@ machine-free parts of the work while waiting.
   session survives: treat every visit as arriving on a machine that may have been
   rebooted since the last one. Everything below is re-checkable in one command.
 
+## Rebuilding the box
+
+Written 2026-09-21, the day the first one died. The work splits in two at one
+line: **until the Mac's key opens an SSH session, only the author can act;
+after it, everything is a command from the Mac.** So the manual half is kept
+as short as that line allows, and the automatic half is written out in full
+rather than described.
+
+### The manual half — six things only the author can do
+
+1. **Create the VPS** in the provider's console and note the administrator
+   password. Windows Server 2025 is what the first box ran and what
+   `provision.ps1` expects; a different Windows works, and the script's version
+   banner is what says which one it met.
+2. **Delete the dead node** in the Tailscale admin console, before the new
+   machine joins. The name is what the SSH alias resolves, and the console will
+   not hand out a name it still holds.
+3. **Open a desktop session** (RDP, or the provider's web console) and start
+   **PowerShell as administrator**.
+4. **Put the script on the machine.** Either paste it into Notepad and save it
+   as `C:\w\provision.ps1`, or — since the repository has been public since
+   2026-09-08 — fetch it in one line:
+   ```powershell
+   mkdir C:\w -Force; irm https://raw.githubusercontent.com/heroes-lang/heroes/main/docs/ref/environment/windows/provision.ps1 -OutFile C:\w\provision.ps1
+   ```
+5. **Run it**, and paste the Mac's public key when it asks:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File C:\w\provision.ps1
+   ```
+   `cat ~/.ssh/id_ed25519.pub` on the Mac is the line it wants. Tailscale then
+   prints a URL to approve in a browser, unless a `tskey-auth-…` was passed as
+   `-TailscaleAuthKey`, in which case nothing is asked at all.
+6. **Read back the two lines the script ends with**, the tailnet name and the
+   tailnet addresses. Nothing else is owed by hand.
+
+The script is re-runnable: every step looks at the world before changing it, so
+a run cut short by a reboot is finished by running it again. What it installs
+and why each line is load-bearing is in the file itself, and every reason in it
+is a fact this document paid for once already.
+
+### The automatic half — the Mac, once SSH answers
+
+```sh
+# 1. the alias. HostName is the tailnet NAME, so the next box inherits it.
+#    ~/.ssh/config:  Host win apponfly / HostName apponfly-vps / User Administrator
+#                    IdentityFile ~/.ssh/id_ed25519 / IdentitiesOnly yes
+#                    StrictHostKeyChecking accept-new
+ssh win 'uname -a; git --version; clang --version | head -1'
+
+# 2. the toolchain, asked rather than assumed
+ssh win 'ls -d "/c/Program Files/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/"*/'
+ssh win 'echo $PATH | tr : "\n" | grep -i llvm'
+
+# 3. the code. The bare repository is cloned from GitHub by the script, so this
+#    push carries only what the Mac has and GitHub does not.
+git push win main:main
+ssh win 'cd /c/w/heroes && git fetch -q origin && git reset --hard -q origin/main && git log --oneline -1'
+
+# 4. the compiler, by seed/README.md's own Windows line
+ssh win 'cd /c/w/heroes && time clang -I runtime seed/heroes.c runtime/runtime.c -Wl,/STACK:67108864 -o heroes.exe && ./heroes.exe --version'
+
+# 5. the two checks that decide whether the box is a faithful instrument
+ssh win 'cd /c/w/heroes && ./heroes.exe test selfhost/main.hero'
+ssh win 'cd /c/w/heroes && ./heroes.exe run tests/harness/main.hero -- ./heroes.exe'
+```
+
+**Step 5's second line is the slow one** — roughly twelve minutes cold on the
+first box — and Windows sshd kills every process of a session when the session
+closes, so it is started from a session that stays connected (§ Two lessons
+about sessions). An uncommitted file still goes by `scp` with a `C:/` path, for
+the reason § How the code gets there gives.
+
+**What this half is NOT allowed to conclude.** A green net here is evidence and
+the CI leg is the judge, which was true of the first box and is true of this
+one. And a timing taken here is not comparable to a timing taken on the Mac.
+
 ## How to reach it
 
 Measured 2026-08-31, from the author's Mac.
@@ -53,7 +140,18 @@ alias below already sends you.
 | User | the box's administrator account |
 | Key | an ed25519 key on the Mac, no passphrase in the loop |
 | OS | Windows Server 2025 |
-| Machine | **2 logical CPUs, 2.1 GB RAM, 85.6 GB free** |
+| Machine | **2 logical CPUs, 2.1 GB RAM, 85.6 GB free** — the box of 2026-08-31; the replacement's own figures are unmeasured until it is up |
+
+**`HostName` is the tailnet NAME and not the tailnet address, since 2026-09-21.**
+It was the address, and the address is the one property of the machine that
+does not survive the machine: when the first box died the alias `win` pointed
+at `100.88.88.100` and nothing on this Mac could be told the truth without a
+hand edit. MagicDNS is enabled tailnet-wide, so the name resolves, and a
+replacement that joins under the same hostname inherits the alias with no edit
+at all. That is why § Rebuilding the box's first manual step is **delete the
+dead node in the Tailscale admin console**: a second machine asking for a name
+the console still holds is given `<name>-1` instead, silently, and the alias
+then points at nothing.
 
 The size matters and is stated rather than discovered: this is a small box. One
 seed build and one module through one stage is what it is good at. The whole net
