@@ -7,9 +7,14 @@ exists. What that cost is the reason § Rebuilding the box now exists: the first
 box was provisioned by hand and **nothing wrote down how**, while the Linux
 machine next door has been a `Dockerfile` anybody can re-run since the day it
 was needed. The Windows equivalent is
-`docs/ref/environment/windows/provision.ps1`, written the day the first box
-died and **not yet run on a Windows machine** — that is stated here rather than
-implied, because until it has been run it is a plan and not a measurement.
+`docs/ref/environment/windows/provision.ps1`.
+
+**It has been run, on the second box, the same day** — every step but one, and
+that one is the entry below on where the MSVC toolset lands. What the run found
+is in the file, beside the line each finding corrects. The second box was
+building the compiler from the seed **within the hour**, and the numbers in
+§ What is installed and § The one line that builds the compiler here are its
+own.
 
 **There is a real Windows box for this project, and it is not the CI.** Until
 2026-08-31 every Windows fact in this repository was learned through a seven-minute
@@ -66,6 +71,23 @@ rather than described.
    is any way in at all, and it is the one step in this list that no script
    could ever take over: it is performed on the provider's side of the machine
    rather than inside it. Everything below assumes it is done.
+
+   **Two settings on that panel, and both are the tailnet rather than the
+   provider** (author instruction, 2026-09-21, having just used them):
+
+   - **`RDP access allowed from IP address` is the MAC's TAILNET ADDRESS**, the
+     `100.x` this Mac carries, not a public one. The panel is asking who may
+     knock, and the answer is one machine on a private network.
+   - **Connect to the machine's own tailnet address on the DEFAULT port**, not
+     to the `rdp.apponfly.com:<five digits>` the panel offers. The provider's
+     host and port are a gateway that can change with the machine; the tailnet
+     address and 3389 are the machine itself. Measured on 2026-09-21: RDP over
+     the tailnet works, the same day the provider's route did not.
+
+   The panel also carries **`Auto shutdown after`**, set to 4h 0m, which is
+   the hourly billing expressing itself as a timer. It is why § It is billed by
+   the hour says the resting state is off: the machine turns itself off even
+   when nobody remembers to.
 4. **Open the desktop session** and start **PowerShell as administrator**.
 5. **Open the door, by hand, with the block below.** It is the smallest thing
    that has to be typed on a machine nothing can reach yet: an SSH server, the
@@ -198,7 +220,8 @@ alias below already sends you.
 | User | the box's administrator account |
 | Key | an ed25519 key on the Mac, no passphrase in the loop |
 | OS | Windows Server 2025 |
-| Machine | **2 logical CPUs, 2.1 GB RAM, 85.6 GB free** — the box of 2026-08-31; the replacement's own figures are unmeasured until it is up |
+| Machine | **2 logical CPUs, 2.1 GB RAM, 85.6 GB free** — the box of 2026-08-31 |
+| Machine, the second box | **2 logical CPUs, 3.3 GB RAM, 76 GB free**, measured 2026-09-21 |
 
 **`HostName` is the tailnet NAME and not the tailnet address, since 2026-09-21.**
 It was the address, and the address is the one property of the machine that
@@ -228,6 +251,21 @@ So `ssh win '<any bash>'` works directly — no `cmd`, no PowerShell, no
 `cmd.exe` git-over-SSH fails, because git wraps the repository path in single
 quotes and `cmd` does not strip them (`fatal: ''C:/w/heroes.git'' does not appear
 to be a git repository`, measured). Deleting those two registry values reverts it.
+
+**The two values take effect on the NEXT connection, with no service restart**,
+measured on the second box 2026-09-21. They were written from an SSH session
+landing in `cmd`, and the very next `ssh win 'echo A; echo B'` printed two lines
+where `cmd` had echoed the whole string back; `uname -s` then said
+`MINGW64_NT-10.0-26100`. sshd reads them when it spawns a session. So
+`provision.ps1` does **not** restart sshd: the restart bought nothing and would
+cost that script its own session on the day it is run over SSH, which is now
+the normal way to run it.
+
+**And that makes the order of the rebuild what it is.** Git is installed first,
+through `cmd`, because Git is what brings `bash`; then these two values go in;
+and from the next connection onward the Mac has a real shell on the box and
+everything else is ordinary scripting. Author's suggestion, 2026-09-21, and it
+is what turned the second rebuild from a desktop exercise into an SSH one.
 
 For anything longer than one line, **pipe a script over stdin** —
 `ssh win 'bash -s' < script.sh`. Escaping `$?` through two shells is how a probe
@@ -293,6 +331,54 @@ Measured 2026-08-31, all via `winget`:
 | GitHub CLI | 2.98.0 | present, not logged in |
 | Windows SDK | 10.0.26100.0 | `Program Files (x86)\Windows Kits\10` |
 | MSVC toolset | 14.44.35207 | confirmed 2026-08-31: `clang t.c -o t.exe` links and the binary runs |
+
+**The second box, measured 2026-09-21**, all four through `winget` from
+`provision.ps1`. Windows is 10.0.26100 on both.
+
+| Tool | Version | Note |
+|---|---|---|
+| Git for Windows | 2.55.0.windows.3 | the same version, by coincidence rather than by a pin |
+| LLVM / clang | **23.1.1** | a MAJOR version above the first box; target `x86_64-pc-windows-msvc`, unchanged |
+| GitHub CLI | 2.101.0 | present, not logged in |
+| Windows SDK | 10.0.26100.0 | arrived with the VC tools workload |
+| MSVC toolset | 14.44.35207 | **under `C:\Program Files (x86)\…`, see below**; `clang t.c -o t.exe` links and the binary prints `ok` |
+| Tailscale | 1.102.4 | |
+
+**clang 23 is the reason the pinned ASan path had to go.** § What `~/.bashrc`
+adds carried `/c/Program Files/LLVM/lib/clang/22/lib/windows` with a note that
+a clang upgrade must update the line. The upgrade arrived one box later. The
+line is now a glob over whatever versions are there, which resolved to
+`…/clang/23/lib/windows` here without anybody editing anything, and was run
+under bash at the three shapes beside it before it was trusted: one clang, two
+clangs side by side, and none, where the unexpanded glob must not leak into
+`PATH`.
+
+## Where the MSVC toolset lands is asked, never assumed
+
+`C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC`
+on the second box, where the table above records `C:\Program Files\…` for the
+first. That difference cost an hour on 2026-09-21 and it is the most
+instructive thing the rebuild found.
+
+The check said the toolset was MISSING. It had in fact installed perfectly:
+the bootstrapper's own log ended `VS setup process exited with code 0` and
+`Bootstrapper Successfully completed`. **A run that succeeded read as a run
+that died**, because the question being asked was *is it at this path* rather
+than *is it installed*, and the next move would have been to reinstall
+gigabytes that were already on the disk.
+
+`vswhere.exe` exists for exactly this question and **its own location is the
+one Microsoft guarantees**:
+
+```powershell
+& "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
+    -products * -latest -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+    -property installationPath
+```
+
+So the one-line check further down this file, which greps a fixed path, is
+kept for the first box's record and is **not** what `provision.ps1` uses. Ask
+`vswhere`; believe `vswhere`.
 
 **The MSVC toolset row above was `NOT CONFIRMED` for half a day**, because the
 first install was cut short when the machine went offline mid-run. The second
@@ -401,8 +487,18 @@ function — `SymFromAddr` needs dbghelp initialised before the fault and a PDB
 beside the binary, neither measured on this box yet — where the Mac and Linux
 say `… in main.down`.
 
-**Seed build time here: 7.7 s**, measured 2026-08-31 (`real 0m7.715s`, first
-build after a clone) against 3.5 s on the Mac. A full cold net run is roughly
+**Seed build time on the second box: 7.168 s**, measured 2026-09-21
+(`real 0m7.168s`, first build after a clone, at commit `43115d67`), against
+4.50 s on the Mac the same day. The compiler printed `heroes 0.2.0` and its own
+tests read **675 tests, all passed** in `2m46.981s`. Two `getenv` deprecation
+warnings come out of the UCRT header on the way — `_CRT_INSECURE_DEPRECATE`,
+three instances, all in the seed and `selfhost/cli/process.hero`. They are
+warnings and the build is clean of errors; **whether they are new is unrun**,
+because nothing in this file recorded the first box's warning output to compare
+against.
+
+**Seed build time on the first box: 7.7 s**, measured 2026-08-31
+(`real 0m7.715s`, first build after a clone) against 3.5 s on the Mac. A full cold net run is roughly
 12 minutes. The sync loop that matters: a delta `git push win main:main` from
 the Mac is ~9–14 s once the bare repository has refs — the first 80 MiB push is
 the only slow one.
