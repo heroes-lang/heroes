@@ -1,0 +1,5 @@
+extern "giveaway.h"
+    function eat_lent(s: cstr lent)
+
+function main()
+    eat_lent(s: "payload".cstr())

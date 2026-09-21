@@ -67,4 +67,24 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `consumes` both parse on a `cstr` today and are thrown away by
     `check/marks.hero`'s handle-only sweep.
 
+    **CORRECTED THREE WAYS BY PANEL 172, 2026-09-21, and the route named above
+    was built and measured not to close it.** First, the title's *unstable exit
+    code* is two platform paths and not randomness: 133 is SIGTRAP and 134 is
+    SIGABRT, the critic measured on five bad-free shapes in plain C. Second, the
+    *empty stderr* is not the language's report being pre-empted by an
+    allocator message: on Darwin 25.6.0 the allocator writes **nothing** for any
+    bad free, under every `Malloc*` knob, and no crash report is written either;
+    what is pre-empted is only the exit sweep's own `panic: 1 lease(s) never
+    ended`. Third, the class is **seven shapes and not four**: a callback C
+    invokes with the leased pointer, a LATER call that frees what an earlier one
+    stashed, and an `@out: cstr` C fills and frees are all `check` 0 and
+    133/0, and the second has **no pointer parameter at all**, so no word
+    written on a parameter can ever reach it. The compiler-engineer built the
+    `consumes` route and measured that the reproducer above, whose callee
+    carries no word, is `check` 0 before and after it. **What closes this
+    entry** is the sitting's resolution: the runtime names the live lease from
+    the signal handler it already installs, 0 to 250 bytes on the reproducer,
+    landing after panel 173 judges the fifty lines in the soundness lane.
+    `docs/panel/172-the-report-comes-from-the-crash-and-not-from-the-declaration.md`.
+
 *******************************************************************************
