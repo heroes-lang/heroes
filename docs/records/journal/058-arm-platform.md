@@ -134,6 +134,13 @@ a run are written as unrun rather than implied: that the label is accepted for
 this repository, and which release `ubuntu-latest` resolves to, which decides
 whether the two Linux legs are one axis apart or two.
 
+**BOTH WERE RUN, and the answer is recorded here 2026-09-21** rather than left
+in `docs/ROADMAP.md`, where it sat until that section reached its ceiling at
+M-declared-extents's close. **The fourth leg was green in CI on its first
+push**, all four jobs: the `ubuntu-24.04-arm` label is accepted for this
+repository, and the leg passes the whole net rather than only the container at
+home.
+
 **The registered prediction is scored and its cause is corrected.** Plain `char`
 is unsigned on the new leg and signed on the other three, Darwin included, so
 the divergence belongs to the platform's ABI and not to the architecture. AAPCS64

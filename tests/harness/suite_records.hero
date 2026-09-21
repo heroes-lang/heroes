@@ -529,7 +529,7 @@ constant REFUSED: [str]
 # mechanism a sitting has yet to choose, the second describes only half of what
 # the row closes, the other half being a fixed-array literal of 256 elements.
 constant ROWS: i64
-    85
+    86
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose

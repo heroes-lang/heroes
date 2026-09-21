@@ -83,6 +83,16 @@ because a table that is behind is better than one that is behind and quiet.
 
 | 046 | [the positional call](046-positional-values.md) | M-positional-values — a call through a function value is positional, said and enforced, and the inversion it still admits measured at 50% and left open | 2026-09-11 | untagged |
 
+**THE TABLE ABOVE STOPS AT 046 AND IS NOT MAINTAINED**, noticed 2026-09-21 at
+M-declared-extents's close, which would have been row 060. It drifted fourteen
+journals without anything going red, because nothing reads it — and that is the
+shape `.claude/rules/records.md` § A rotated record names in its own words:
+*no directory index, because an index is a second place where truth lives and
+the only tabulated one here drifted for nine closes in silence.* So the rows
+are not backfilled and none is added: **the directory is the list**, its file
+names carry the numbers, and this paragraph is what a reader meets instead of a
+table that lies by being fourteen short.
+
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what
 `M-journey-book` is written from.
