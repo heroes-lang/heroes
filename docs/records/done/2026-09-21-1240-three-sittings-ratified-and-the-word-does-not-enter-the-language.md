@@ -31,3 +31,21 @@
     **`docs/work/DECIDE.md` returns to zero and `docs/work/DEFECTS.md` is at
     zero**, which is the first time both have been empty in this milestone, and
     it is what `records/tagged` reads before a tag may be written.
+
+    ## CORRECTION, 2026-09-21, by the author, within the hour
+
+    **The author read the three files.** In their words: *change the
+    ratification, I read them — why do you think I do not read them, take for
+    granted that by default I read them.* So the paragraph above is wrong where
+    it says *not as a reading*, and the three sittings' own verdict sections are
+    corrected the same way, underneath, with this date.
+
+    **The contract already said so and named the trap the coordinator fell
+    into.** CLAUDE.md § 4: *the author READS the sittings — their instruction,
+    2026-09-19, in those words: write down that I always read. So a ratification
+    is recorded as a reading* — and then, in the same paragraph, *CL-058 is about
+    the record being TRUE, not about which claim is humbler.* The coordinator
+    read CL-058 as a rule about humility, which is the one reading that sentence
+    exists to forbid, and wrote a hedge where the rule asks for a fact. The
+    default is that the author reads; a sitting they did not read is the thing
+    that would need saying, and only they can say it.
