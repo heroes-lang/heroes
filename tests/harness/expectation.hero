@@ -20,6 +20,37 @@
 # — it prints a wrapped number at exit 0. That is only a golden if the
 # harness can spell it. A case with no last line still has to exit 0, so
 # a program that starts exiting by accident is still a failure.
+#
+# AND ONE LINE MAY COME BEFORE THAT ENDING, since panel 173 (2026-09-21):
+#
+#   !sanitizer: <needle>   under `--sanitize` the sanitiser MUST report,
+#                          and its report must carry this text
+#
+# `suite_run.hero` runs every case a third time under `--sanitize` and
+# fails any case whose stderr says `AddressSanitizer`, which is right for
+# every case that is a correct program: a sanitiser speaking there is the
+# defect the third run exists to find. It is wrong for a case whose whole
+# subject is a program C corrupts — defect 070's, where the bytes of a
+# `.lease()` are freed by a C function and the sanitiser's `bad-free` is
+# not an accident but the evidence. Three such cases could not enter
+# `tests/golden/run/` at all, measured at panel 173: `run` went 132 passed
+# to 133 passed and 4 failed, every one *tripped a sanitiser*, whatever
+# the `.expected` said.
+#
+# So the line does two things at once and that is the point: it WAIVES the
+# refusal and REPLACES it with an assertion, so the sanitiser's verdict
+# becomes an artifact the case pins rather than a thing the case tolerates.
+# A case that stops provoking it goes red, which is the direction that
+# matters — `.claude/rules/diagnostics-and-goldens.md`, an instrument
+# watches the world and not the program's current behaviour.
+#
+# TWO THINGS IT DOES NOT DO. It does not relax the plain runs: `-O0` and
+# `-O2` are judged by the ending as before, so the runtime's own report is
+# still pinned where it prints. And it does not assert an exit code under
+# the sanitiser, because there is none to assert: ASan aborts on Darwin
+# (134) and calls `_exit(1)` on Linux, measured at panel 173, and the
+# runtime's handler yields to it at compile time so our own line is absent
+# there on both.
 
 use strings
 
@@ -34,6 +65,10 @@ variant Ending
 record Expectation
     stdout: str
     ending: Ending
+    # The text the sanitiser's report must carry, when the case declares one
+    # with `!sanitizer:` (panel 173). Absent is the ordinary case, where a
+    # sanitiser that speaks at all is a failure.
+    sanitizer: str?
 
 # Splits an expectation file into the stdout it promises and how it ends.
 #
@@ -59,11 +94,30 @@ function split(text: str) -> Expectation?
                 return fail(code: "bad_expectation", msg: "`" + last + "` is not an exit code")
             ending @ .exits(code: code.must())
             kept @ rows.slice(from: 0, to: rows.len() - 1)
+
+    # The sanitiser line sits BEFORE the ending, so it is read after the
+    # ending has been taken off: a case declares both, and the two judge
+    # different runs (panel 173).
+    sanitizer: str? @ fail(code: "none", msg: "no sanitiser line")
+
+    if kept.len() > 0
+        before = kept[kept.len() - 1]
+
+        if strings.starts_with(text: before, prefix: "!sanitizer: ")
+            needle = strings.trimmed(strings.without_prefix(text: before, prefix: "!sanitizer: "))
+
+            if needle.len() == 0
+                return fail(
+                    code: "bad_expectation",
+                    msg: "`" + before + "` names no text the sanitiser must say — a waiver with nothing to assert is the refusal removed and nothing put in its place"
+                )
+            sanitizer @ ok(needle)
+            kept @ kept.slice(from: 0, to: kept.len() - 1)
     out: str @ kept.join("\n")
 
     if out.len() > 0
         out @ out + "\n"
-    return ok(Expectation(stdout: out, ending: ending))
+    return ok(Expectation(stdout: out, ending: ending, sanitizer: sanitizer))
 
 # What a run must satisfy, as one verdict. `where` names the
 # configuration, so a failure says which of the three disagreed with the
@@ -96,6 +150,24 @@ function unmet(e: Expectation, out: str, err: str, code: i64) -> str?
                 )
 
     return fail(code: "met", msg: "the run matched its expectation")
+
+# What the `--sanitize` run must satisfy, for a case that declares one.
+# Answers the failure, so the caller reads it the way it reads `unmet`.
+#
+# It asks for the text and nothing else. The exit code is deliberately
+# unasserted: ASan aborts on Darwin and `_exit(1)`s on Linux, both measured
+# at panel 173, and a case that pinned either would be red on the other
+# platform for a reason that is not about the program.
+function sanitizer_unmet(e: Expectation, err: str) -> str?
+    if e.sanitizer.is_err()
+        return fail(code: "none", msg: "this case declares no sanitiser report")
+
+    if !strings.contains(text: err, needle: e.sanitizer.must())
+        return ok(
+            "must be caught by the sanitiser saying `" + e.sanitizer.must() + "`, and it said:\n" + err
+        )
+
+    return fail(code: "met", msg: "the sanitiser said what the case demands")
 
 test "an expectation with no ending is stdout and exit 0"
     e = split("one\ntwo\n").must()
@@ -134,3 +206,38 @@ test "a malformed ending is a broken case, not a silent one"
 
     # `!exit` without the space is ordinary output, not an ending.
     assert split("x\n!exit:3\n").must().ending == .silent
+
+# Panel 173's line, and the three things it has to get right: it comes off
+# the stdout, it sits BEFORE the ending so a case may declare both, and an
+# ordinary case is untouched by it.
+test "!sanitizer takes its needle off the stdout and sits before the ending"
+    e = split("1\n!sanitizer: bad-free\n!panic: still live\n").must()
+    assert e.stdout == "1\n"
+    assert e.ending == .panics(message: "still live")
+    assert !e.sanitizer.is_err()
+    assert e.sanitizer.must() == "bad-free"
+
+    # A case may declare the sanitiser with no ending at all.
+    only = split("1\n!sanitizer: heap-use-after-free\n").must()
+    assert only.stdout == "1\n"
+    assert only.ending == .silent
+    assert only.sanitizer.must() == "heap-use-after-free"
+
+    # And an ordinary case declares none, which is what keeps the refusal
+    # in place everywhere it belongs.
+    assert split("1\n!panic: still live\n").must().sanitizer.is_err()
+    assert split("one\ntwo\n").must().sanitizer.is_err()
+
+test "a sanitiser line with nothing to assert is a broken case"
+    assert split("x\n!sanitizer: \n").is_err()
+    assert split("x\n!sanitizer:\n").must().sanitizer.is_err()
+
+test "the sanitiser verdict asks for the text and says nothing about the code"
+    e = split("1\n!sanitizer: bad-free\n!panic: still live\n").must()
+
+    # Darwin aborts, Linux exits 1: neither is asserted, and the text is.
+    assert sanitizer_unmet(e, err: "SUMMARY: AddressSanitizer: bad-free giveaway.h:3").is_err()
+    assert !sanitizer_unmet(e, err: "AddressSanitizer: heap-use-after-free").is_err()
+
+    # A case that declares nothing is not judged this way at all.
+    assert sanitizer_unmet(split("1\n").must(), err: "anything").is_err()

@@ -131,6 +131,116 @@ static void hero_streams_survive_abort(void) {
 static int hero_argc = 0;
 static char **hero_argv = NULL;
 
+/* ---- The runtime names the live leases at the crash (panel 172 R1, 173) -----
+ *
+ * When a C function frees the bytes of a live `.lease()`, the platform
+ * allocator refuses the free and kills the process: SIGTRAP from Darwin's small
+ * allocator (exit 133) or SIGABRT from its large one and from glibc, whose line
+ * is `munmap_chunk(): invalid pointer` for this shape. Nothing in the checker
+ * or the emitted C sees it, and stderr was empty — the one shape design.md
+ * §1.12 forbids by name, and defect 070.
+ *
+ * IT SAYS WHAT IT SAW AND NOT WHY, which is the clause both seats of panel 173
+ * vetoed the first draft on. The draft asserted *a C function freed bytes this
+ * program still leases*, and that is FALSE on six of nine measured paths: a C
+ * library's own `abort()`, its failed `assert`, its double free of its own
+ * pointer, its `__builtin_trap()`. `siginfo_t` cannot tell any of them from the
+ * true case — byte-identical on Darwin, `si_code` -6 for every self-raised
+ * SIGABRT on Linux — and a SIGTRAP-only report would be sound here and lose 24%
+ * of the true cases (152 of 200 at 133) and all of them on Linux. So the line
+ * states the two facts the runtime holds, the count and the Heroes frame, and
+ * names the C free as a condition the reader checks. §4.17's `guess` register.
+ *
+ * THREE THINGS IT MUST NOT DO, each a measurement from panel 173:
+ *
+ * - SPEAK AFTER THE RUNTIME HAS. Every runtime-initiated death is a line and
+ *   then `hero_abort()` (parts/panic.c), which is SIGABRT, which is this
+ *   handler. A flag on one of the fifteen sites left a second, false line under
+ *   an index panic, a stack exhaustion and a failed `assert` with a lease live
+ *   (282, 289, 300 bytes of stderr). `hero_runtime_spoke` is set in the funnel.
+ * - SPEAK UNDER THE SANITIZER. ASan intercepts `free` before the allocator,
+ *   reports `bad-free` with the `.hero` line and aborts; a line appended under
+ *   its report (1324 bytes, measured) is redundant when right and false when
+ *   ASan's reason was not the free. Yielded at compile time, on stack.c's switch.
+ * - DROP THE DISPOSITION IT FOUND. A handler that was there before us is called
+ *   first, as `hero_stack_pass_on` does for SIGSEGV; then the default is
+ *   restored and the signal re-raised, so the process dies with the status it
+ *   always had rather than one this file chose.
+ *
+ * WHAT IT CAN AND CANNOT NAME. The Heroes function comes from stack.c's frame
+ * walk over the interrupted context — intact, since this runs on the alternate
+ * stack — and `abort` → `free` → the C callee → `h_<module>_<name>` is a few
+ * frames up. WHICH lease is not recorded: `hero_live_held` is a counter, and a
+ * name per lease is a pointer per `.lease()`, priced at panel 173 and not built.
+ *
+ * WINDOWS is a stub: heap corruption there is a fail-fast exception
+ * (STATUS_HEAP_CORRUPTION), not a signal, so the analogue belongs beside
+ * stack.c's vectored handler and is UNRUN on the box. */
+#if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN) || defined(_WIN32)
+static void hero_lease_crash_install(void) {}
+#else
+static struct sigaction hero_lease_prev_trap;
+static struct sigaction hero_lease_prev_abrt;
+
+static void hero_lease_say_count(long long v) {
+    char buf[24];
+    int at = (int)sizeof buf;
+    buf[--at] = '\0';
+    if (v == 0) buf[--at] = '0';
+    while (v > 0 && at > 0) {
+        buf[--at] = (char)('0' + (v % 10));
+        v /= 10;
+    }
+    hero_stack_say(buf + at);
+}
+
+static void hero_lease_crash(int signum, siginfo_t *si, void *ctx) {
+    int64_t held = hero_live_held;
+    if (!hero_runtime_spoke && held > 0) {
+        uintptr_t pc, fp, sp, lr;
+        hero_stack_regs(ctx, &pc, &fp, &sp, &lr);
+        const char *who = hero_stack_blame(pc, fp, lr);
+        hero_stack_say("panic: the process died with ");
+        hero_lease_say_count((long long)held);
+        hero_stack_say(" lease(s) still live");
+        if (who != NULL) {
+            hero_stack_say(", in ");
+            hero_stack_say_heroes_name(who);
+        }
+        hero_stack_say("\n  `end_lease` is the only thing that may free a `.lease()`. If one reached a C\n"
+                       "  function that frees what it is handed, that is this death; if not, this says\n"
+                       "  only what was live when the process ended.\n");
+    }
+    struct sigaction *prev = signum == SIGTRAP ? &hero_lease_prev_trap : &hero_lease_prev_abrt;
+    if ((prev->sa_flags & SA_SIGINFO) != 0 && prev->sa_sigaction != NULL) {
+        prev->sa_sigaction(signum, si, ctx);
+    } else if (prev->sa_handler != SIG_DFL && prev->sa_handler != SIG_IGN && prev->sa_handler != NULL) {
+        prev->sa_handler(signum);
+    }
+    struct sigaction dfl;
+    memset(&dfl, 0, sizeof dfl);
+    dfl.sa_handler = SIG_DFL;
+    sigaction(signum, &dfl, NULL);
+    raise(signum);
+}
+
+/* Two `sigaction` calls, once per process, after the stack guard so the
+ * alternate stack they run on exists: the disposition is the process's and the
+ * stack is the thread's (stack.c, "ONCE PER PROCESS"). */
+static void hero_lease_crash_install(void) {
+    static int done = 0;
+    if (done) return;
+    done = 1;
+    struct sigaction sa;
+    memset(&sa, 0, sizeof sa);
+    sa.sa_sigaction = hero_lease_crash;
+    sa.sa_flags = SA_SIGINFO | SA_ONSTACK;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGTRAP, &sa, &hero_lease_prev_trap) != 0) return;
+    if (sigaction(SIGABRT, &sa, &hero_lease_prev_abrt) != 0) return;
+}
+#endif
+
 void hero_args_set(int argc, char **argv) {
     hero_stdout_is_bytes();
     hero_streams_survive_abort();
@@ -138,6 +248,9 @@ void hero_args_set(int argc, char **argv) {
      * this is the one call every generated `main` makes first — so the
      * emitted C and the ABI stamp are untouched (panel 104). */
     hero_stack_guard_install();
+    /* And the lease handler, after the guard whose alternate stack it runs on
+     * (panel 172 R1; the mechanism panel 173 judged). */
+    hero_lease_crash_install();
     /* And the thread itself, for the same reason and by the same precedent
      * (panel 111 R9): this is the thread a Heroes program owns, so a callback
      * entered from any other one is C calling back from a thread of its own. */

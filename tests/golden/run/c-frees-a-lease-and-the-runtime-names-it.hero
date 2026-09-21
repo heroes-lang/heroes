@@ -1,0 +1,31 @@
+# fixedbugs, defect 070, panels 168 to 173, closed 2026-09-21.
+#
+# SYMPTOM: `check` 0, `build` 0, and the program died inside `eat` with an
+# EMPTY stderr and an exit code that was 133 on one run and 134 on another.
+# The language's own report, `panic: 1 lease(s) never ended`, never printed,
+# because C's `free` killed the process before `main` returned.
+#
+# CAUSE: a lease is a copy the program owns and `end_lease` frees; a C
+# function that frees it frees the program's bytes through a pointer that was
+# never `malloc`'s, and on this platform the allocator says nothing for any bad
+# free (panel 172's completeness critic, five shapes in plain C, zero bytes).
+# No word on a parameter could have said so here or anywhere: three of the
+# defect's seven shapes free the lease through a function with no pointer
+# parameter at all.
+#
+# FIX: the runtime names the live lease from the signal handler it already
+# installs for stack exhaustion, reading the live-lease balance it already
+# keeps (panel 172, resolution item 1; panel 173 judged the mechanism). The
+# program still dies, because C freed memory it did not own; it dies saying so.
+# 133 and 134 are two allocator paths (SIGTRAP, SIGABRT), so the expectation
+# below pins the message and not the code.
+
+extern "c-frees-a-lease-and-the-runtime-names-it.h"
+    function eat(s: cstr)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    print(1)
+    eat(s: c)
+    end_lease(@c)

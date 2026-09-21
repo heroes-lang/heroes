@@ -17,10 +17,29 @@
  * design.md §4.14 (arithmetic edges abort), §4.20.
  */
 
+#include <signal.h>
+
+/* THE RUNTIME HAS SPOKEN, and this is the one bit that says so. Every death
+ * the runtime initiates is a line on stderr followed by `hero_abort()`, which
+ * is SIGABRT, which reaches the lease handler in parts/os.c. That handler
+ * reports a C `free` of live leased bytes, and it must stay silent when the
+ * death is ours: panel 173 measured a second, false `panic:` line under an
+ * out-of-range index, a stack exhaustion and a failed `assert` while a lease
+ * was live. Fifteen sites in five files aborted directly; they are one funnel
+ * now, so the flag cannot be forgotten at the sixteenth. `sig_atomic_t` and
+ * `abort()` are both on the async-signal-safe list, and stack.c's handler is
+ * one of the callers. */
+static volatile sig_atomic_t hero_runtime_spoke = 0;
+
+static _Noreturn void hero_abort(void) {
+    hero_runtime_spoke = 1;
+    abort();
+}
+
 _Noreturn void hero_panic(const char *msg) {
     fflush(stdout);
     fprintf(stderr, "panic: %s\n", msg);
-    abort();
+    hero_abort();
 }
 _Noreturn void hero_panic_overflow(void) { hero_panic("integer overflow"); }
 _Noreturn void hero_unreachable(void) {

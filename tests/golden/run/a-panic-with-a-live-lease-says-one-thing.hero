@@ -1,0 +1,16 @@
+# The exception panel 172's critic measured in its own fifty lines
+# (2026-09-21): a Heroes panic while a lease is live reached the same SIGABRT
+# handler and printed a second, false line saying a C function freed the lease.
+# Panel 173 judged the fix; this golden pins that a runtime-initiated abort
+# says one thing, the true one, and nothing about C.
+
+extern "a-panic-with-a-live-lease-says-one-thing.h"
+    function look(s: cstr lent)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    look(s: c)
+    a = [1, 2, 3]
+    print(to_str(a[9]))
+    end_lease(@c)
