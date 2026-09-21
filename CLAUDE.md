@@ -182,7 +182,9 @@ author READS the sittings** — their instruction, 2026-09-19, in those words:
 `by delegation` is written only where the author says so. Five ratifications
 before that date say `by delegation` on the coordinator's assumption, never put
 to them; they stand at their dates. CL-058 is about the record being TRUE, not
-about which claim is humbler. **Ask once
+about which claim is humbler — **said again by the author 2026-09-21**, on a
+ratification recorded as *not a reading*: take the reading for granted. **Ask
+once
 per milestone, then convene without asking again**, choosing only the seats whose
 input differs (CL-023). Briefs keep every command short and grep design.md,
 `docs/panel/` and `DESIGN-LOG.md` first (CL-027). No design change lands without

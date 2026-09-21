@@ -374,6 +374,13 @@ carrying its own falsifier. The conservative option this sitting recorded —
 route C alone, the limit written and no runtime change, with the filed
 reproducer still dying in silence — was **not** taken.
 
+**CORRECTION, 2026-09-21, by the author, within the hour.** The author read
+this file. The paragraph above is wrong where it says *not as a reading*:
+CLAUDE.md § 4's default is that the author reads every sitting, and a
+ratification is recorded as a reading unless they say otherwise. The
+coordinator read CL-058 as a rule about humility, which is the reading that
+paragraph exists to forbid.
+
 What this section said while the item was open, kept because a record is never
 rewritten: *Pending: `docs/work/DECIDE.md` carried this sitting as `panel 172`.
 The direction — a run-time report rather than a word, the word left refused,
