@@ -299,6 +299,20 @@ void hero_run_limit(int64_t seconds) {
     hero_run_limit_seconds = seconds > 0 ? seconds : 0;
 }
 
+/* A number no other call in this process will answer, for a caller that needs
+ * a FILE NAME nothing else will reuse.
+ *
+ * **It is here because the language has no mutable global** (spec § 2: *"There
+ * are no mutable globals"*), so a Heroes caller cannot keep a counter of its
+ * own; and it is `_Atomic` rather than `_Thread_local` because two threads
+ * sharing one directory must not both be handed 1. `alloc.c`'s live-block
+ * counters are the precedent (panel 174, route B). */
+static _Atomic int64_t hero_run_serial_next = 0;
+
+int64_t hero_run_serial(void) {
+    return ++hero_run_serial_next;
+}
+
 /* The operating system's reason for the last refusal to start a child, held
  * until the next `hero_run_go` clears it. `hero_os.h` carries what it is for;
  * what it is NOT is a second status: 0 here means either that the child started
@@ -342,14 +356,29 @@ int64_t hero_run_go(const char *program, const char *in_path,
     inherit.lpSecurityDescriptor = NULL;
     inherit.bInheritHandle = TRUE;
 
+    /* **`FILE_SHARE_DELETE` and NOT `FILE_SHARE_WRITE`, and the difference is
+     * the whole of panel 174.**
+     *
+     * DELETE lets a directory holding one of these files be removed while a
+     * descendant still holds it: without it `hero_dir_remove_tree` fails,
+     * `tests/harness/main.hero` exits 2 after printing a green line, and that
+     * is the failure `tests/harness/shell.hero` recorded in August. Measured at
+     * the sitting: `RemoveDirectory` refused, error 145.
+     *
+     * WRITE is vetoed. It would let the reopen succeed under a live writer, so
+     * `CREATE_ALWAYS` truncates while an orphan keeps its own file offset and
+     * that orphan's later bytes land in the capture a DIFFERENT case is judged
+     * on — measured at 150 bytes where 17 were owed, on Windows, Darwin and
+     * Linux alike. A loud `ERROR_SHARING_VIOLATION` traded for a silent wrong
+     * answer, which design.md §1.12 refuses. */
     HANDLE out = hero_run_inherits(out_path)
         ? GetStdHandle(STD_OUTPUT_HANDLE)
-        : CreateFileA(out_path, GENERIC_WRITE, FILE_SHARE_READ, &inherit,
-                      CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        : CreateFileA(out_path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE,
+                      &inherit, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     HANDLE err = hero_run_inherits(err_path)
         ? GetStdHandle(STD_ERROR_HANDLE)
-        : CreateFileA(err_path, GENERIC_WRITE, FILE_SHARE_READ, &inherit,
-                      CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        : CreateFileA(err_path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE,
+                      &inherit, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (out == INVALID_HANDLE_VALUE || err == INVALID_HANDLE_VALUE) {
         /* Asked BEFORE the CloseHandle calls below, which would overwrite it. */
         hero_run_why_code = (int64_t)GetLastError();

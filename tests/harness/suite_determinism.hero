@@ -56,7 +56,11 @@ function run_all(scratch: str, compiler: str) -> report.Report?
         second = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--dump-ir", into: "")
 
         if first.is_err() || second.is_err()
-            report.keep_failure(@r, label: "determinism/ir/" + item.name, detail: "  cannot dump " + item.source)
+            report.keep_failure(
+                @r,
+                label: "determinism/ir/" + item.name,
+                detail: "  cannot dump " + item.source + ":\n    " + last_error(first) + last_error(second)
+            )
         else if first.must() != second.must()
             report.keep_failure(
                 @r,
@@ -75,13 +79,13 @@ function run_all(scratch: str, compiler: str) -> report.Report?
                 # A case this machine cannot emit because a header is
                 # missing is the machine's answer, not the compiler's —
                 # the same rule the other suites carry, and floored below.
-                if shell.machine_lacks_the_library(last_error(scratch))
+                if shell.machine_lacks_the_library(last_error(first))
                     skipped @ skipped + 1
                 else
                     report.keep_failure(
                         @r,
                         label: "determinism/c/" + item.name,
-                        detail: "  cannot emit " + item.source + ":\n" + last_error(scratch)
+                        detail: "  cannot emit " + item.source + ":\n" + last_error(first)
                     )
                 continue
             second = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--emit-c", into: "")
@@ -143,15 +147,18 @@ function dumped(scratch: str, compiler: str, item: cases.Case, flag: str, into: 
         return fail(code: "cannot_emit", msg: said.err)
     return ok(said.out)
 
-# The stderr of the last command `shell.run` executed. It is read from the
-# capture file rather than carried, because the failure above threw the
-# `Run` away — and a skip decision needs the compiler's own words.
-function last_error(scratch: str) -> str
-    got = read_file(scratch + "/stderr")
-
-    if got.is_err()
-        return ""
-    return got.must()
+# The compiler's own words about the emission that failed, "" where it did not.
+#
+# **It used to read `scratch + "/stderr"` by name**, which was the one
+# dependency on that path outside `shell.hero` — and it was reading whatever
+# process had written there last rather than this case's. A skip decision rests
+# on it (`machine_lacks_the_library`), so the wrong words there turn a failure
+# into a SKIP. `dumped` already carries the stderr in its own failure message,
+# so the answer is in the value the caller is holding (panel 174, route B).
+function last_error(got: str?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
 
 test "the determinism suite passes identical emissions and catches a wobbling one"
     # POSIX is this case's subject, and this machine answers for itself

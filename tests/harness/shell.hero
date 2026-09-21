@@ -47,6 +47,7 @@ extern "hero_os.h"
     # compiler.
     function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
     function hero_run_why() -> i64
+    function hero_run_serial() -> i64
     function hero_run_discard_path() -> str
     function hero_fs_exists(path: cstr lent) -> i64
     function hero_fs_is_directory(path: cstr lent) -> i64
@@ -203,8 +204,27 @@ function spawned(scratch: str, program: str, words: [str], in_path: str) -> Run?
     # test's side effect passes for the wrong reason, and 28 call sites share
     # that directory — so the fix is the one place none of them can forget.
     mkdir_all(scratch)?
-    out_path = scratch + "/stdout"
-    err_path = scratch + "/stderr"
+
+    # **A NAME NO EARLIER CALL CAN STILL BE HOLDING OPEN**, which is what this
+    # serial buys and the reason panel 174 made it load-bearing.
+    #
+    # These two paths were `scratch + "/stdout"` and `scratch + "/stderr"` for
+    # every one of the net's spawns. A descendant that outlives its parent keeps
+    # the descriptor it inherited, and then the two platforms fail differently:
+    # Windows refuses the next open with ERROR_SHARING_VIOLATION, so every later
+    # spawn reports `started: false` with an empty stderr — 101 of 136 `run/`
+    # cases and 19 of the annotation groups, CI run 35651518558, each printing
+    # `the operating system's own reason is 32`. POSIX refuses NOTHING, and the
+    # orphan's bytes land in the file a LATER case is judged on: measured on
+    # Darwin at 497a048f, a 17-byte capture arriving as 150 bytes, 58 of them
+    # NUL and three lines of them written by another case's process.
+    #
+    # A serial makes the second impossible rather than loud, and the first
+    # impossible too: an orphan holds a name nobody will ask for again. It comes
+    # from the runtime because this language has no mutable global (spec § 2).
+    serial = hero_run_serial().to_str()
+    out_path = scratch + "/stdout-" + serial
+    err_path = scratch + "/stderr-" + serial
     hero_run_reset()
 
     # **Every call is guarded, and there is no way to ask for less.** The old
@@ -241,6 +261,14 @@ function spawned(scratch: str, program: str, words: [str], in_path: str) -> Run?
 
     if err.is_err()
         return fail(code: "cannot_run", msg: "cannot read the captured stderr at " + err_path)
+
+    # Read, so the names are free. **The answer is deliberately not checked**:
+    # on Windows a file a descendant still holds cannot be deleted, and that is
+    # precisely the case this scheme exists to survive — the next spawn asks
+    # for a name nobody is holding. Refusing here would turn the thing that
+    # was repaired back into a failure.
+    _ = hero_fs_remove(path: out_path.cstr())
+    _ = hero_fs_remove(path: err_path.cstr())
     return ok(Run(code: code, out: out.must(), err: err.must(), started: true, why: 0))
 
 # The names `hero_dir_scan` just found, as a list — and the listing is
@@ -690,8 +718,51 @@ test "a command's two streams come back apart, with its status"
     )
     assert !said.is_err()
     assert said.must().out == "to out"
+
     assert said.must().err == "to err"
     assert said.must().code == 3
+
+# **THE CAPTURES DO NOT PILE UP, and this is the instrument that says so.**
+#
+# Author instruction 2026-09-22, in their own words: *avoid like death errors
+# that go and fill the disk with useless files.* Panel 174 gave every spawn its
+# own pair of capture files, which is what closed defect 074 — and it moved the
+# cost from a name collision to a file count. The net starts thousands of
+# processes in one run, so a removal that quietly stops working turns two files
+# into tens of thousands and nothing else in the tree would notice.
+#
+# It watches the WORLD and not this module's own bookkeeping: it runs real
+# programs through the real `run`, then asks the directory what is in it. What
+# would still pass if the removal were broken? Nothing — the count is the
+# subject.
+#
+# The ceiling is 2 rather than 0 because a capture is alive between its
+# `CreateFileA` and its read, and a self-test is free to be the call that is
+# in flight. Anything above that is accumulation.
+test "the captures are removed, so a run cannot fill the disk with them"
+    if !can_run_scripts()
+        return
+    scratch = "build/harness-captures"
+    assert !remove_tree(scratch).is_err()
+    assert !mkdir_all(scratch).is_err()
+
+    for _ in range(from: 0, to: 12)
+        said = run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", "exit 0"])
+        assert !said.is_err()
+
+    listed = list_entries(scratch: scratch, dir: scratch)
+    assert !listed.is_err()
+    left: i64 @ 0
+
+    for name in listed.must()
+        if strings.starts_with(text: name, prefix: "stdout-") || strings.starts_with(text: name, prefix: "stderr-")
+            left @ left + 1
+
+    # Twelve spawns wrote twenty-four capture files. If the removal works the
+    # directory holds none of them; if it does not, it holds twenty-four and a
+    # real run holds thousands.
+    assert left <= 2
+    assert !remove_tree(scratch).is_err()
 
 test "the directory walk keeps a filename that contains a newline"
     # POSIX is this case's subject, and this machine answers for itself
