@@ -283,6 +283,13 @@ enter `tests/golden/run/` as cases rather than as a relaxed rule. The
 conservative option this sitting recorded — report only on SIGTRAP — was **not**
 taken.
 
+**CORRECTION, 2026-09-21, by the author, within the hour.** The author read
+this file. The paragraph above is wrong where it says *not as a reading*:
+CLAUDE.md § 4's default is that the author reads every sitting, and a
+ratification is recorded as a reading unless they say otherwise. The
+coordinator read CL-058 as a rule about humility, which is the reading that
+paragraph exists to forbid.
+
 What this section said while the item was open, kept because a record is never
 rewritten: *Pending: `docs/work/DECIDE.md` carried this sitting as `panel 173`.
 Work proceeded on the resolution: the landing commit, then defect 070 closes,
@@ -290,8 +297,24 @@ then the milestone's close checklist.*
 
 ## Unrun, and named
 
-Windows: the box is off; the mechanism's `#else` stub means no report there,
-and whether `stack.c`'s vectored-exception handler admits an analogue is unrun.
+**WINDOWS IS NO LONGER UNRUN, 2026-09-21, after the sitting and at the
+landing.** The author powered the box, and what this section called a question
+was measured in three commands. A twenty-line probe read the exception a bad
+free raises there: **`0xC0000374`, `STATUS_HEAP_CORRUPTION`, flags `0x81`**,
+and a vectored handler **does** see it. So the analogue this paragraph placed
+beside `stack.c`'s handler was written there, in that file's own shape, and
+measured: the three programs that die with the report on Darwin and Linux went
+from **zero bytes to 254** on Windows, three runs of three, with the panic path
+still saying one true line. Before it they were silent, and the three goldens
+that pin the report were **red on that leg**, which is what sent somebody to
+look. The remaining Windows unknown is narrower and named: the line there
+carries the count and not the Heroes function, because `stack.c`'s Windows arm
+has no frame walk either and says why.
+
+What was unrun when this sitting closed, kept as written:
+
+> Windows: the box is off; the mechanism's `#else` stub means no report there,
+> and whether `stack.c`'s vectored-exception handler admits an analogue is unrun.
 Linux x86-64: everything measured is arm64. An externally delivered SIGABRT:
 `raise` is a reserved word and the seat's program would not build. The
 chaining branch under `--sanitize`: compiled out, so the question does not
