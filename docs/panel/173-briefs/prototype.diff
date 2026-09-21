@@ -1,0 +1,76 @@
+diff --git a/runtime/parts/alloc.c b/runtime/parts/alloc.c
+index 6fc350c9..2cf6ba37 100644
+--- a/runtime/parts/alloc.c
++++ b/runtime/parts/alloc.c
+@@ -200,7 +200,9 @@ static void hero_handle_report_stray(size_t strays, const void *first_stray) {
+  * be running, and a message that names a number the test never saw the moment
+  * something can. The gate is the last thing a program does, so this costs one
+  * load and removes a whole class of confusing report. */
++volatile sig_atomic_t hero_exit_sweep_running = 0; /* CRITIC-172 PROTOTYPE */
+ void hero_runtime_check_leaks(void) {
++    hero_exit_sweep_running = 1; /* CRITIC-172 PROTOTYPE */
+     int64_t blocks = hero_live_blocks;
+     if (blocks != 0) {
+         fflush(stdout);
+diff --git a/runtime/parts/os.c b/runtime/parts/os.c
+index 4417e5e9..b3962757 100644
+--- a/runtime/parts/os.c
++++ b/runtime/parts/os.c
+@@ -131,9 +131,57 @@ static void hero_streams_survive_abort(void) {
+ static int hero_argc = 0;
+ static char **hero_argv = NULL;
+ 
++/* ---- CRITIC-172 PROTOTYPE: the runtime speaks when C frees a leased block ----
++ * Not a proposal, a measurement: it exists only to answer whether exit 133 with
++ * zero bytes of stderr can be turned into a named report from inside the
++ * runtime, without any vocabulary change. Written with write(2) only, like
++ * stack.c's handler, because a signal handler may not call fprintf. */
++#if !defined(_WIN32)
++#include <signal.h>
++static struct sigaction hero_lease_prev_trap;
++static struct sigaction hero_lease_prev_abrt;
++static void hero_lease_say(const char *s) {
++    size_t n = strlen(s);
++    while (n > 0) { ssize_t put = write(2, s, n); if (put <= 0) return; s += (size_t)put; n -= (size_t)put; }
++}
++static void hero_lease_say_num(long long v) {
++    char buf[24]; int at = 24;
++    if (v == 0) buf[--at] = '0';
++    while (v > 0) { buf[--at] = (char)('0' + (v % 10)); v /= 10; }
++    while (at < 24) { char c = buf[at++]; if (write(2, &c, 1) <= 0) return; }
++}
++static void hero_lease_crash(int signum, siginfo_t *si, void *ctx) {
++    (void)si; (void)ctx;
++    if (!hero_exit_sweep_running && hero_live_held > 0) {
++        hero_lease_say("panic: a C function freed bytes this program still leases — ");
++        hero_lease_say_num((long long)hero_live_held);
++        hero_lease_say(" lease(s) were live when the allocator refused the free.\n"
++                       "  the bytes of a `.lease()` are the program's, freed by `end_lease`,\n"
++                       "  and the callee that was handed one frees what it is handed\n");
++    }
++    struct sigaction dfl;
++    memset(&dfl, 0, sizeof dfl);
++    dfl.sa_handler = SIG_DFL;
++    sigaction(signum, &dfl, NULL);
++    raise(signum);
++}
++static void hero_lease_crash_install(void) {
++    struct sigaction sa;
++    memset(&sa, 0, sizeof sa);
++    sa.sa_sigaction = hero_lease_crash;
++    sa.sa_flags = SA_SIGINFO | SA_ONSTACK;
++    sigemptyset(&sa.sa_mask);
++    sigaction(SIGTRAP, &sa, &hero_lease_prev_trap);
++    sigaction(SIGABRT, &sa, &hero_lease_prev_abrt);
++}
++#else
++static void hero_lease_crash_install(void) {}
++#endif
++
+ void hero_args_set(int argc, char **argv) {
+     hero_stdout_is_bytes();
+     hero_streams_survive_abort();
++    hero_lease_crash_install(); /* CRITIC-172 PROTOTYPE */
+     /* The stack guard goes up here, before a program's first line, because
+      * this is the one call every generated `main` makes first — so the
+      * emitted C and the ABI stamp are untouched (panel 104). */

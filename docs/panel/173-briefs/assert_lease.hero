@@ -1,0 +1,9 @@
+extern "giveaway.h"
+    function look(s: cstr lent)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    look(s: c)
+    assert x.len() == 3
+    end_lease(@c)

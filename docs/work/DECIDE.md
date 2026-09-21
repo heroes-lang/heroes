@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 3**
 
 - [ ] **panel 171** | the word is `lent`, in its own slot beside `counted_by`; a lend reaches only a `lent` parameter of an `extern` function; the spec sentence is the warden's merged draft at +13 real and promises nothing about a pointer C hands back; the landing is two commits with 27 marks on 19 functions across three trees — ratify the word, the rule and the landing, or take the conservative sentence the sitting recorded | `docs/panel/171-lent-and-the-pointer-c-hands-back.md`
 
@@ -64,5 +64,27 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     lines of C, and the filed reproducer still dies at 133 saying nothing. The
     sitting took the runtime report because it is measured, reaches the shapes
     no sentence reaches, and turns a silence into a report.
+
+- [ ] **panel 173** | the soundness lane on panel 172's mechanism: both seats VETO the sentence, which asserts that a C function freed the lease and is measured FALSE on six of nine paths (a C library's own `abort`, its failed `assert`, its double free), with `siginfo_t` unable to tell them apart on either platform; the repair is to say what the runtime observed, at zero net lines; the funnel, the sanitizer yield, the chaining and the frame-walk name are endorsed twice; and the goldens panel 172 promised cannot enter `tests/golden/run/` until the harness admits a case that is supposed to provoke the sanitiser — ratify, or take the conservative option the sitting recorded | `docs/panel/173-the-runtime-may-say-what-it-saw-and-not-why.md`
+
+    **Origin:** panel 173, 2026-09-21, the soundness lane (`compiler-engineer`
+    and `ffi-pragmatist`), convened by panel 172's own resolution item 1 before
+    the mechanism lands. **The default while this is open** is the adopted
+    resolution, and work proceeds on it: the landing commit, then defect 070
+    closes.
+
+    **What the sitting measured that neither seat could see alone**: the ffi
+    seat judged the fifty-line prototype and found it destroys a C library's
+    SIGABRT disposition, 10/10 on two platforms; the engineer's build already
+    chained to it and marked that branch unrun. The coordinator ran the ffi
+    seat's own program against the engineer's build: the library's handler
+    returns, 77 ten times of ten, with the report still printing.
+
+    **What conservative would have been**, recorded so it can be taken: report
+    only on SIGTRAP, where the assertion is measured sound on Darwin. Refused
+    because it drops 24% of the true cases there (152 of 200 at 133, 48 at 134)
+    and all of them on Linux, where the allocator raises SIGABRT alone: it
+    trades a false sentence for a missing one, and the missing one is the
+    defect.
 
 *******************************************************************************

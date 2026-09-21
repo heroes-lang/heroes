@@ -1,0 +1,10 @@
+# Panel 173 q5: a C library frees an interior pointer of its OWN block while a
+# lease is live. Same allocator path as lease070, different bytes.
+extern "libabrt.h"
+    function lib_interior_own()
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    lib_interior_own()
+    end_lease(@c)

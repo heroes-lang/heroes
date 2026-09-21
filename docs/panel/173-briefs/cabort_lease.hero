@@ -1,0 +1,10 @@
+extern "beside2.h"
+    function look2(s: cstr lent)
+    function boom()
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    look2(s: c)
+    boom()
+    end_lease(@c)
