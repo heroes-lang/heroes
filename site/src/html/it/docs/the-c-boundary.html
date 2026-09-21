@@ -148,18 +148,18 @@
   <p>
     Molte librerie C ti consegnano un <b>handle</b>: un puntatore a qualcosa che la libreria tiene per sé, una connessione a un database, una query preparata, e che prima o poi dovrai restituirle. Fin qui sarebbe un <code>ptr</code>, un indirizzo di cui non sai niente. Dentro un gruppo puoi invece dargli il nome che la libreria stessa usa: un <code>record</code> senza campi, con <code>tag</code> e il nome del tipo C, è il puntatore a quel tipo. Clang controlla il nome sull&rsquo;header, un <code>CDb</code> non passa dove serve un <code>CStmt</code>, e <code>nullptr</code> è il suo valore vuoto.
   </p>
-  <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="62-63">
+  <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="64-65">
 <pre><code>    <span class="k">record</span> CDb tag sqlite3
     <span class="k">record</span> CStmt tag sqlite3_stmt</code></pre>
-    <figcaption>examples/ledger/db/sqlite.hero, righe 62&ndash;63</figcaption>
+    <figcaption>examples/ledger/db/sqlite.hero, righe 64&ndash;65</figcaption>
   </figure>
   <p>
     Poi ogni dichiarazione che tocca un handle dice che cosa fa, con una di tre parole. <code>acquires</code> e un nome: la chiamata te ne consegna uno, e quel nome è la funzione che lo riprende. <code>consumes</code>: la chiamata ne riprende uno e ne chiude la vita. <code>borrows</code>: la chiamata te ne mostra uno che la libreria continua a tenere, e tu non devi restituire niente. Nessuna delle tre viene indovinata dal compilatore, perché due funzioni con la stessa firma possono fare l&rsquo;una la prima cosa e l&rsquo;altra la terza: si scrive.
   </p>
-  <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="75-76">
-<pre><code>    <span class="k">function</span> sqlite3_open(filename: <span class="t">cstr</span>, @out: CDb acquires sqlite3_close) -&gt; <span class="t">i64</span>
+  <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="83-84">
+<pre><code>    <span class="k">function</span> sqlite3_open(filename: <span class="t">cstr</span> lent, @out: CDb acquires sqlite3_close) -&gt; <span class="t">i64</span>
     <span class="k">function</span> sqlite3_close(db: CDb consumes) -&gt; <span class="t">i64</span></code></pre>
-    <figcaption>examples/ledger/db/sqlite.hero, righe 75&ndash;76</figcaption>
+    <figcaption>examples/ledger/db/sqlite.hero, righe 83&ndash;84</figcaption>
   </figure>
   <p>
     Da quelle parole vengono due controlli. Il primo avviene prima che il programma giri. Un parametro scritto senza <code>@</code> è in prestito: chi chiama tiene il valore e lo rilegge dopo. Passarlo a una chiamata che lo chiude lo lascerebbe con un indirizzo che il C ha già ripreso, quindi il compilatore rifiuta la riga, e la riparazione è scrivere <code>@</code> sul parametro e sulla chiamata. Qui <code>shut</code> riceve la connessione in prestito e prova a chiuderla:
