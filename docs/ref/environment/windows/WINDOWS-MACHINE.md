@@ -62,19 +62,58 @@ rather than described.
    not hand out a name it still holds.
 3. **Open a desktop session** (RDP, or the provider's web console) and start
    **PowerShell as administrator**.
-4. **Put the script on the machine.** Either paste it into Notepad and save it
-   as `C:\w\provision.ps1`, or — since the repository has been public since
-   2026-09-08 — fetch it in one line:
+4. **Open the door, by hand, with the block below.** It is the smallest thing
+   that has to be typed on a machine nothing can reach yet: an SSH server, the
+   Mac's key in the file an administrator's key is actually read from, and the
+   tailnet. Everything else arrives over the door it opens.
+
    ```powershell
-   mkdir C:\w -Force; irm https://raw.githubusercontent.com/heroes-lang/heroes/main/docs/ref/environment/windows/provision.ps1 -OutFile C:\w\provision.ps1
+   # the server
+   if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
+       Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+   }
+   Set-Service sshd -StartupType Automatic; Start-Service sshd
+   New-NetFirewallRule -Name heroes-sshd -DisplayName 'OpenSSH Server (sshd)' `
+       -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+
+   # the key --- one line, from `cat ~/.ssh/id_ed25519.pub` on the Mac
+   $k = Read-Host 'the Mac public key'
+   $f = "$env:ProgramData\ssh\administrators_authorized_keys"
+   [IO.File]::WriteAllText($f, $k.Trim() + "`n", (New-Object Text.UTF8Encoding $false))
+   icacls $f /inheritance:r /grant 'Administrators:F' /grant 'SYSTEM:F'
+
+   # the tailnet
+   winget install --id tailscale.tailscale --exact --silent `
+       --accept-source-agreements --accept-package-agreements
+   & 'C:\Program Files\Tailscale\tailscale.exe' up --hostname apponfly-vps --unattended
    ```
-5. **Run it**, and paste the Mac's public key when it asks:
+
+   Three details are not decoration. The file is `administrators_authorized_keys`
+   and not `~/.ssh/authorized_keys`, because the stock `sshd_config` carries a
+   `Match Group administrators` block that reads the first and ignores the
+   second. It is written **without a byte-order mark**, which is why it goes
+   through `[IO.File]::WriteAllText` and not `Set-Content`: a BOM makes sshd read
+   the first key as rubbish and the failure looks like a rejected key. And
+   `icacls` is not hardening — sshd's `StrictModes` refuses the file outright if
+   anyone but SYSTEM and the administrators can write it.
+
+5. **Say the word.** The assistant copies `provision.ps1` over with `scp` and
+   checks the door works. Then one line in the desktop session finishes the
+   machine:
    ```powershell
    powershell -ExecutionPolicy Bypass -File C:\w\provision.ps1
    ```
-   `cat ~/.ssh/id_ed25519.pub` on the Mac is the line it wants. Tailscale then
-   prints a URL to approve in a browser, unless a `tskey-auth-…` was passed as
-   `-TailscaleAuthKey`, in which case nothing is asked at all.
+   **It is run from the desktop and not over SSH on purpose**: the Build Tools
+   installer is the long step, and Windows sshd kills every process of a session
+   when the session closes (§ Two lessons about sessions). A console nobody is
+   holding open is the safer place for it.
+
+   Once the repository is pushed, step 5 can fetch the script itself and step 4's
+   only remaining job is the door:
+   ```powershell
+   mkdir C:\w -Force; irm https://raw.githubusercontent.com/heroes-lang/heroes/main/docs/ref/environment/windows/provision.ps1 -OutFile C:\w\provision.ps1
+   ```
+
 6. **Read back the two lines the script ends with**, the tailnet name and the
    tailnet addresses. Nothing else is owed by hand.
 
