@@ -267,9 +267,26 @@ and the missing one is the defect.
 
 ## Author's verdict
 
-Pending: `docs/work/DECIDE.md` carries this sitting as `panel 173`. Work
-proceeds on the resolution: the landing commit, then defect 070 closes, then
-the milestone's close checklist.
+**RATIFIED 2026-09-21**, in one act with panels 171 and 172, in the author's
+words: *then ratify all the DECIDE items.* Recorded as a ratification given in
+conversation on the coordinator's summaries in that session, not as a reading
+of this file, and **not `by delegation`** (CL-058).
+
+**The veto was answered before the ratification reached it**, at step 28: the
+sentence states the two facts the runtime holds and names the C free as a
+condition — measured true on all nine paths, including the two programs whose
+C side frees nothing; `runtime/parts/panic.c` carries the `<signal.h>` the
+Linux `--sanitize` build needs, run in the container; `tests/harness/suite_runtime.hero`
+gained the three `SHARED_BY_DECISION` entries and the raised floor; and the
+harness gained `!sanitizer:`, so the three cases that close defect 070 could
+enter `tests/golden/run/` as cases rather than as a relaxed rule. The
+conservative option this sitting recorded — report only on SIGTRAP — was **not**
+taken.
+
+What this section said while the item was open, kept because a record is never
+rewritten: *Pending: `docs/work/DECIDE.md` carried this sitting as `panel 173`.
+Work proceeded on the resolution: the landing commit, then defect 070 closes,
+then the milestone's close checklist.*
 
 ## Unrun, and named
 

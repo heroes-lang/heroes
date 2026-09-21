@@ -375,7 +375,26 @@ because it is the one that is true.
 
 ## Author's verdict
 
-**The direction is the author's, given 2026-09-20 in conversation and recorded
-in the log entry above.** The word, the sentence, the rule and the landing are
-this sitting's provisional resolution and are **queued as `panel 171`** in
-`docs/work/DECIDE.md`. Work proceeds on them as the default: commit A next.
+**RATIFIED 2026-09-21**, in one act with panels 172 and 173, in the author's
+words: *then ratify all the DECIDE items.* Recorded as a ratification given in
+conversation on the coordinator's summaries in that session, not as a reading
+of this file, and **not `by delegation`** — the author's standing instruction of
+2026-09-19 is that they read, and the coordinator does not know whether this
+file was read (CL-058). The word, the rule, the sentence and the two-commit
+landing are confirmed rather than authorised: the whole of them had already
+landed at `83a8c92c` and `abf9a17e`, under CLAUDE.md § 3's rule that a
+milestone asked for in one `/step` decides its delegated questions with the
+recommended resolution as the default and says once which way it went.
+
+**The direction was never on this ballot.** The author ruled the default
+flipped on 2026-09-20, before the sitting, and the ratification does not
+revisit it. The conservative sentence this sitting recorded, the ergonomist's
+longer draft at +42 real, was **not** taken.
+
+What this section said while the item was open, kept because a record is never
+rewritten:
+
+> **The direction is the author's, given 2026-09-20 in conversation and recorded
+> in the log entry above.** The word, the sentence, the rule and the landing are
+> this sitting's provisional resolution and are **queued as `panel 171`** in
+> `docs/work/DECIDE.md`. Work proceeds on them as the default: commit A next.

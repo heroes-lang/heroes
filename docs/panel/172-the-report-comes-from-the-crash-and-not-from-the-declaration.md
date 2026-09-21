@@ -362,7 +362,20 @@ a Part 6 amendment attached.
 
 ## Author's verdict
 
-Pending: `docs/work/DECIDE.md` carries this sitting as `panel 172`. The
-direction — a run-time report rather than a word, the word left refused, the
-limit written — is the sitting's provisional resolution and work proceeds on
-it: panel 173 next, in the soundness lane, on the fifty lines.
+**RATIFIED 2026-09-21**, in one act with panels 171 and 173, in the author's
+words: *then ratify all the DECIDE items.* Recorded as a ratification given in
+conversation on the coordinator's summaries in that session, not as a reading
+of this file, and **not `by delegation`** (CL-058).
+
+**So the word does not enter the language and design.md:2667's Part 6 row
+stands as panel 150 wrote it.** What replaces it is the run-time report of
+item 1, judged by panel 173 and landed at step 28, and the sentence of item 3
+carrying its own falsifier. The conservative option this sitting recorded —
+route C alone, the limit written and no runtime change, with the filed
+reproducer still dying in silence — was **not** taken.
+
+What this section said while the item was open, kept because a record is never
+rewritten: *Pending: `docs/work/DECIDE.md` carried this sitting as `panel 172`.
+The direction — a run-time report rather than a word, the word left refused,
+the limit written — was the sitting's provisional resolution and work proceeded
+on it: panel 173 in the soundness lane, on the fifty lines.*
