@@ -81,19 +81,50 @@ function Sync-Path {
     $env:Path = "$machine;$user"
 }
 
-# $ErrorActionPreference does not trap a native program's exit code, so every
-# winget call is judged here. 0x8A15002B and 0x8A150061 are "already installed"
-# and "no applicable upgrade": both are success for our purposes.
-function Install-Winget-Package([string] $id, [string] $human) {
-    $already = @(-1978335189, -1978335135, -1978335212)
+# Is the thing on the disk? A path is tested as a path and a bare word as a
+# command, and the PATH is refreshed first because winget writes it into the
+# registry and the running session keeps the one it started with.
+function Probe-Present([string] $probe) {
+    Sync-Path
+    if ($probe -match '[\\/]') { return (Test-Path -LiteralPath $probe) }
+    return [bool](Get-Command $probe -ErrorAction SilentlyContinue)
+}
+
+# Two things this function refuses to take on trust, both learned on
+# 2026-09-21 while the second box was being built.
+#
+# **`--exact` matches the id CASE SENSITIVELY.** `tailscale.tailscale` answers
+# "No package found matching input criteria" where `Tailscale.Tailscale`
+# installs. Confirmed against microsoft/winget-pkgs itself, where
+# `manifests/t/Tailscale/Tailscale` is a directory and the lowercase spelling
+# of the same path is a 404. The other three ids in this file were checked the
+# same way rather than left to luck.
+#
+# **And an exit code is not a measurement of the world.** The version of this
+# function that shipped an hour earlier read winget's codes from a table
+# written from memory, and the code for *no package found* sat in the list of
+# codes meaning *already installed*: a package that does not exist would have
+# been reported as present, and the run would have gone green having installed
+# nothing. So the code is not consulted at all. The question asked is whether
+# the program is on the disk afterwards.
+function Install-Winget-Package([string] $id, [string] $human, [string] $probe) {
+    if (Probe-Present $probe) { Good "$human was already there"; return }
+
     Note "winget install $id"
     & winget install --id $id --exact --silent --disable-interactivity `
         --accept-source-agreements --accept-package-agreements 2>&1 | Out-String | Write-Host
-    $code = $LASTEXITCODE
-    Sync-Path
-    if ($code -eq 0)            { Good "$human installed" }
-    elseif ($already -contains $code) { Good "$human was already there" }
-    else { throw "winget failed for $id with exit code $code ($('0x{0:X}' -f $code))" }
+    if (Probe-Present $probe) { Good "$human installed"; return }
+
+    # Second attempt without --exact, which is case insensitive and matches on
+    # name and moniker too. A fallback and never the default, because a loose
+    # match can install the wrong package; it runs only after the precise id
+    # has failed AND the probe has already said the program is not there.
+    Caution "the exact id did not put $human on the disk --- retrying without --exact"
+    & winget install --id $id --silent --disable-interactivity `
+        --accept-source-agreements --accept-package-agreements 2>&1 | Out-String | Write-Host
+    if (Probe-Present $probe) { Good "$human installed on the second attempt"; return }
+
+    throw "$human is still not at '$probe' after two winget attempts (id: $id)"
 }
 
 Write-Host ''
@@ -226,10 +257,10 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
     throw 'winget missing'
 }
 
-Install-Winget-Package 'Git.Git'             'Git for Windows'
-Install-Winget-Package 'LLVM.LLVM'           'LLVM and clang'
-Install-Winget-Package 'GitHub.cli'          'GitHub CLI'
-Install-Winget-Package 'tailscale.tailscale' 'Tailscale'
+Install-Winget-Package 'Git.Git'             'Git for Windows' 'C:\Program Files\Git\bin\bash.exe'
+Install-Winget-Package 'LLVM.LLVM'           'LLVM and clang'  'C:\Program Files\LLVM\bin\clang.exe'
+Install-Winget-Package 'GitHub.cli'          'GitHub CLI'      'gh'
+Install-Winget-Package 'Tailscale.Tailscale' 'Tailscale'       'C:\Program Files\Tailscale\tailscale.exe'
 
 # ------------------------------------------------- the shell SSH lands in
 Step 'Git Bash as the default SSH shell'
