@@ -277,8 +277,15 @@ New-ItemProperty -Path $openssh -Name DefaultShell `
 New-ItemProperty -Path $openssh -Name DefaultShellCommandOption `
     -Value '-c' -PropertyType String -Force | Out-Null
 Good "DefaultShell = $bash"
-Restart-Service sshd
-Good 'sshd restarted so the new shell takes effect'
+# **sshd is NOT restarted, and that is measured rather than assumed.** It was,
+# in the version of this file written before the second box existed. Then the
+# two registry values were written from an SSH session on that box and the very
+# next connection landed in bash: `echo A; echo B` printed two lines where cmd
+# had echoed the whole string back, and `uname -s` said MINGW64_NT-10.0-26100.
+# sshd reads these values when it spawns a session, so a new connection gets
+# the new shell and an open one keeps the old. The restart bought nothing and
+# would cost this script its own session on the day it is run over SSH.
+Note 'not restarting sshd: the value is read per session, so the next connection has it'
 
 # --------------------------------------------------------------- .bashrc
 Step 'What ~/.bashrc must add, and why each line is load-bearing'
@@ -352,33 +359,81 @@ Step 'The MSVC toolset, which is what clang links against here'
 # uses, which is what makes this box a faithful instrument. It therefore needs
 # the MSVC CRT: without it every link dies with
 #     lld-link: error: could not open 'libcmt.lib': no such file or directory
-$msvcRoot = 'C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC'
+#
+# **WHERE the toolset lands is asked and never assumed, and that cost an hour
+# on 2026-09-21.** This line held the path WINDOWS-MACHINE.md records for the
+# first box, `C:\Program Files\Microsoft Visual Studio\...`. The Build Tools
+# put themselves under `C:\Program Files (x86)\...` here, so the check said
+# MISSING while the bootstrapper's own log said `VS setup process exited with
+# code 0` and `Bootstrapper Successfully completed`. A run that succeeded read
+# as a run that died, and the next move would have been to reinstall a toolset
+# that was already on the disk.
+#
+# `vswhere.exe` is Microsoft's answer to this question and its own location IS
+# fixed --- that is what it is for. So the path comes from the machine, and the
+# only thing pinned here is the one path Microsoft guarantees.
+function Find-MsvcToolsetRoot {
+    $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+    if (-not (Test-Path $vswhere)) { return $null }
+    $install = & $vswhere -products '*' -latest `
+        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+        -property installationPath 2>$null | Select-Object -First 1
+    if (-not $install) { return $null }
+    $root = Join-Path $install 'VC\Tools\MSVC'
+    if (Test-Path $root) { return $root }
+    return $null
+}
+$msvcRoot = Find-MsvcToolsetRoot
 if ($SkipBuildTools) {
     Caution 'skipped by -SkipBuildTools'
-} elseif (Test-Path $msvcRoot) {
-    Good ('already installed: ' + ((Get-ChildItem $msvcRoot | Select-Object -First 1).Name))
+} elseif ($msvcRoot) {
+    Good ("already installed: $msvcRoot -> " + ((Get-ChildItem $msvcRoot | Select-Object -First 1).Name))
 } else {
     $boot = Join-Path $Root 'vs_BuildTools.exe'
     if (-not (Test-Path $boot)) {
         Note 'downloading the Build Tools bootstrapper'
         Invoke-WebRequest -Uri 'https://aka.ms/vs/17/release/vs_BuildTools.exe' -OutFile $boot
     }
-    Note 'installing the VC tools workload --- gigabytes, several minutes, no output until it ends'
+    Note 'installing the VC tools workload --- gigabytes, several minutes'
     # Two traps met on 2026-08-31, both worth not meeting twice: winget's
     # --override string is split when passed through PowerShell's
     # -ArgumentList, so winget prints its own help and installs nothing; and
-    # the installer outlives an SSH session, so over SSH it must be detached.
-    # Here it runs from the console, where -Wait is what we want.
+    # **the installer must be DETACHED**, because Windows sshd kills every
+    # process of a session when the session closes and this one outlives the
+    # command that starts it.
+    #
+    # So it is launched detached and then WAITED FOR BY THE WORLD --- the poll
+    # below asks whether the toolset is on the disk yet. That is the one shape
+    # that is correct from a desktop console and over SSH both, where
+    # `-Wait` is correct from a console and fatal over SSH. The same choice as
+    # Install-Winget-Package's: the question asked is about the disk and never
+    # about a process's report of itself.
     $btArgs = @('--quiet', '--wait', '--norestart', '--nocache',
                 '--add', 'Microsoft.VisualStudio.Workload.VCTools',
                 '--includeRecommended')
-    $p = Start-Process -FilePath $boot -ArgumentList $btArgs -Wait -PassThru
-    # 3010 is "success, a reboot is pending" and is not a failure.
-    if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) {
-        throw "vs_BuildTools exited $($p.ExitCode)"
+    Start-Process -FilePath $boot -ArgumentList $btArgs | Out-Null
+
+    # The toolset root is re-asked on EVERY turn and not computed once before
+    # the loop: vswhere itself does not exist until the installer has extracted
+    # it, so a path resolved before the install is $null for reasons that say
+    # nothing about the outcome.
+    $deadline = (Get-Date).AddMinutes(45)
+    $spent = 0
+    while (-not $msvcRoot -and (Get-Date) -lt $deadline) {
+        Start-Sleep -Seconds 30
+        $spent += 30
+        $running = @(Get-Process -Name 'vs_bootstrapper*', 'vs_installer*', 'setup' -ErrorAction SilentlyContinue).Count
+        $msvcRoot = Find-MsvcToolsetRoot
+        Note ("  {0,4}s --- installer processes: {1}" -f $spent, $running)
+        if (-not $running -and $spent -ge 120 -and -not $msvcRoot) {
+            throw ("no installer is running any more and vswhere reports no VC toolset. " +
+                   "Read the bootstrapper's own log: the newest dd_bootstrapper_*.log in " +
+                   $env:TEMP + " ends with either 'Bootstrapper Successfully completed' " +
+                   "or the reason it did not.")
+        }
     }
-    if (-not (Test-Path $msvcRoot)) { throw 'Build Tools reported success and installed no MSVC toolset' }
-    Good ('installed: ' + ((Get-ChildItem $msvcRoot | Select-Object -First 1).Name))
+    if (-not $msvcRoot) { throw 'the Build Tools did not produce a VC toolset within 45 minutes' }
+    Good ("installed: $msvcRoot -> " + ((Get-ChildItem $msvcRoot | Select-Object -First 1).Name))
 }
 
 # ------------------------------------------------------------ the tailnet
@@ -422,7 +477,8 @@ Write-Host ('    git        ' + (Version-Of 'git' '--version'))
 Write-Host ('    clang      ' + (Version-Of 'clang' '--version'))
 Write-Host ('    gh         ' + (Version-Of 'gh' '--version') + '   (deliberately NOT logged in)')
 Write-Host ('    tailscale  ' + (Version-Of 'tailscale' 'version'))
-Write-Host ('    MSVC       ' + $(if (Test-Path $msvcRoot) { (Get-ChildItem $msvcRoot | Select-Object -First 1).Name } else { 'MISSING' }))
+$msvcRoot = Find-MsvcToolsetRoot
+Write-Host ('    MSVC       ' + $(if ($msvcRoot) { (Get-ChildItem $msvcRoot | Select-Object -First 1).Name + "   ($msvcRoot)" } else { 'MISSING' }))
 
 Step 'clang compiles, links and runs a C program --- the check that decides'
 
