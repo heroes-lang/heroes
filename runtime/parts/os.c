@@ -173,11 +173,61 @@ static char **hero_argv = NULL;
  * frames up. WHICH lease is not recorded: `hero_live_held` is a counter, and a
  * name per lease is a pointer per `.lease()`, priced at panel 173 and not built.
  *
- * WINDOWS is a stub: heap corruption there is a fail-fast exception
- * (STATUS_HEAP_CORRUPTION), not a signal, so the analogue belongs beside
- * stack.c's vectored handler and is UNRUN on the box. */
-#if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN) || defined(_WIN32)
+ * WINDOWS HAS ITS OWN ARM, and it was a stub with this paragraph saying so
+ * until it was measured on the box (2026-09-21, at the close). Heap corruption
+ * there is not a signal: `free` of an interior pointer raises the fail-fast
+ * exception `STATUS_HEAP_CORRUPTION`, which a probe read as **0xC0000374 with
+ * flags 0x81** — noncontinuable — and which a vectored handler DOES see. So the
+ * arm is `stack.c`'s own shape one file over: catch that code, write the same
+ * line with `_write`, and return `EXCEPTION_CONTINUE_SEARCH` so the process
+ * dies exactly as it did. Without it the three programs defect 070 is about
+ * died on Windows with **zero bytes** while saying their piece on the other
+ * two, and the goldens that pin the report were red on that leg. */
+#if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
 static void hero_lease_crash_install(void) {}
+#elif defined(_WIN32)
+#include <windows.h>
+#include <io.h>
+
+static void hero_lease_say_count_win(long long v) {
+    char buf[24];
+    int at = (int)sizeof buf;
+    if (v == 0) buf[--at] = '0';
+    while (v > 0 && at > 0) {
+        buf[--at] = (char)('0' + (v % 10));
+        v /= 10;
+    }
+    _write(2, buf + at, (unsigned int)((int)sizeof buf - at));
+}
+
+static LONG WINAPI hero_lease_veh(EXCEPTION_POINTERS *ep) {
+    /* 0xC0000374 is `STATUS_HEAP_CORRUPTION`; `winnt.h` does not name it, so
+     * the number is written with what it is beside it, as the file's other
+     * arms write theirs. */
+    if (ep->ExceptionRecord->ExceptionCode == 0xC0000374L && !hero_runtime_spoke && hero_live_held > 0) {
+        const char *head = "panic: the process died with ";
+        const char *tail = " lease(s) still live\n"
+                           "  `end_lease` is the only thing that may free a `.lease()`. If one reached a C\n"
+                           "  function that frees what it is handed, that is this death; if not, this says\n"
+                           "  only what was live when the process ended.\n";
+        _write(2, head, (unsigned int)strlen(head));
+        hero_lease_say_count_win((long long)hero_live_held);
+        _write(2, tail, (unsigned int)strlen(tail));
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+/* Registered LAST, as `stack.c`'s is and for its reason: a library that uses
+ * structured exceptions sees the fault first. It only speaks, so it never
+ * changes what the process does. There is no frame walk here — `stack.c`'s
+ * Windows arm has none either, and its own comment says why — so the Windows
+ * line names the count and not the function. */
+static void hero_lease_crash_install(void) {
+    static int done = 0;
+    if (done) return;
+    done = 1;
+    AddVectoredExceptionHandler(0, hero_lease_veh);
+}
 #else
 static struct sigaction hero_lease_prev_trap;
 static struct sigaction hero_lease_prev_abrt;
