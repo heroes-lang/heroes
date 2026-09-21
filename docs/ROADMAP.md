@@ -16,28 +16,26 @@ against a banner reading 3.
 
 | | |
 |---|---|
-| **Current milestone** | **M-declared-extents**, row 61, opened 2026-09-18 ([its file](../work/milestones/M-declared-extents.md)) — panel 164's route 6, the one row scheduled behind a MEASUREMENT rather than a decision. Step 1 ran it: `docs/measurements/035-not-one-byte-array-is-spelled-the-same-way-on-both.md`. **This cell named `M-core-packages` as the next row until 2026-09-18**, which is row 63; row 61 has been `M-declared-extents` since M-readable-bytes's close entered it |
-| **Last closed** | **M-readable-bytes**, 2026-09-18, `m-readable-bytes` ([059](journal/059-readable-bytes.md)) — a C byte field becomes text, and the second wall it was opened on turned out not to exist · before it **M-arm-platform** ([058](journal/058-arm-platform.md)), the fourth real machine · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **60** of 81 · **60** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **63,035** lines of Heroes in **219** modules (`find selfhost -name '*.hero'`) · the seed **831,603** lines of C, regenerated twice here and the fixpoint verified byte-identical each time — the second regeneration was not optional, because a COMMENT shifts the `#line` directives the emitted C carries |
+| **Current milestone** | **nothing open.** M-declared-extents closed 2026-09-21; the next row of § The chain is opened when somebody opens it, and a close that opens nothing leaves it `scheduled` |
+| **Last closed** | **M-declared-extents**, 2026-09-21, `m-declared-extents` ([060](journal/060-declared-extents.md)) — the extent a lend crosses with, the word it needs, and the report no word could carry · before it **M-readable-bytes** ([059](journal/059-readable-bytes.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **61** of 81 · **61** tags matching `m*`, the legacy `m0`-`m8` included |
+| The compiler | **65,013** lines of Heroes in **228** modules (`find selfhost -name '*.hero'`) · the seed **862,422** lines of C, regenerated four times in this milestone and the fixpoint verified byte-identical each time |
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
-| The spec | **6159** on the vendored ranks and **8201** on the reader's own, against a ceiling of **10240**. Panel 169's row is **+33 vendored and +47 real**, the sentence two seats with isolated inputs found missing: *a lend lives for its call and no longer*. It is paid by five registered predictions, one per seat. **2039 free** and 1979 net of the FFI floor |
-| The contract | **7449** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-15 with the wakeup instruction: of the 36 vendored tokens the pin was behind, 14 predate that session and no commit had named them |
-| Records | sittings **162** · journals **61** · milestone files **50** · measurements **35** · entries: `docs/records/log/` **681**, `docs/records/done/` **560**, `docs/records/book/beats/` **127** |
-| Waiting on the author | **nothing.** **Panels 167, 168, 169 and 170 were ratified on 2026-09-20 in one act**, in conversation, on the coordinator's summary and price in each queued item — recorded as that and **not as a reading of the four files**, and **not `by delegation`**, because the coordinator does not know which is true and CL-058 says the record states what it knows. What the four yeses leave standing is one sentence: **defects 066 and 068 have no route in flight**, the default flip being the only candidate measured to close them and its price eight refusals of eight correct programs in `examples/`, declined for a stated reason. What would move them is **one binding the author cares about, written both ways** — a measurement, not a sitting. Defect 070 keeps panel 170's named route, which the same sitting's own two findings argue against. Before these four: panels 155 to 159 and 161 on 2026-09-16 and 2026-09-18, and 164 on 2026-09-18, all **by delegation and not by reading**, under instructions of those days |
+| The spec | **6212** on the vendored ranks and **8270** on the reader's own, against a ceiling of **10240**. This milestone spent three rows: panel 169's *a lend lives for its call and no longer*, panel 171's rewriting of it for the flipped default, and panel 173's limit — *no word says C frees what it is handed*, the sentence that carries its own falsifier because the runtime reports what no declaration can state. **1970 free** and 1910 net of the FFI floor |
+| The contract | **7737** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-21 when § 4 gained the author's second telling that they read every sitting |
+| Records | sittings **171** · journals **62** · milestone files **50** · measurements **37** · entries: `docs/records/log/` **697**, `docs/records/done/` **577**, `docs/records/book/beats/` **128** |
+| Waiting on the author | **the push.** Nothing else: `docs/work/DEFECTS.md` and `docs/work/DECIDE.md` are both at **OPEN: 0**, the first time in this milestone, and the tag `m-declared-extents` is written locally. **Panels 171, 172 and 173 were ratified 2026-09-21 in one act**, in conversation, and recorded as a **reading** — the author corrected the first draft of that record within the hour, which is CLAUDE.md § 4's default and its second telling |
 
-**Re-measured 2026-09-18, the full net on a compiler built from the regenerated
-seed, which is CI's own configuration.** `check` **127**, `run` **127**,
-`emission` **462**, `determinism` **156**, `descriptors` **218**, `surface`
-**109**, `warnings` **187**, `lines` **128**, `annotations` **166**, `records`
-**24**, `spec` **20**, `corpus` **55**, `canonical` **2**, `layout` **2**,
-`runtime` **8**, `fixes` **25**, `unsupported` **15**, the compiler's own **659**
-and the net's own **158**. **The net reads 1891 passed, 0 failed.**
+**Re-measured 2026-09-21, the full net on a compiler built from the regenerated
+seed, which is CI's own configuration: 1980 passed, 0 failed**, over 24 suites,
+plus the compiler's own 675 and the net's own 161. The per-suite counts and what
+moved them are [060](journal/060-declared-extents.md).
 
-**The fourth leg was green in CI on its first push**, all four jobs, which
-settles the two things M-arm-platform wrote down as unrun: the
-`ubuntu-24.04-arm` label is accepted for this repository, and the leg passes the
-whole net rather than only the container at home.
+**And the mechanism that milestone landed was measured on each platform rather
+than inferred from this Mac**: a signal on Darwin and on Linux arm64, where
+glibc raises SIGABRT on every path Darwin splits between SIGTRAP and SIGABRT,
+and on Windows a vectored handler catching `STATUS_HEAP_CORRUPTION`, written at
+the close because three goldens were red on that leg without it.
 
 ---
 
@@ -142,27 +140,28 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 58 | **M-check-completeness** | done 2026-09-17 | `m-check-completeness` | [057](journal/057-check-completeness.md) | ten defects the hunt turned up, closed — and three were not what their own entry said · scheduled, no warrant |
 | 59 | **M-arm-platform** | done 2026-09-18 | `m-arm-platform` | [058](journal/058-arm-platform.md) | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
 | 60 | **M-readable-bytes** | done 2026-09-18 | `m-readable-bytes` | [059](journal/059-readable-bytes.md) | a C byte buffer becomes text a program can print: the inbound direction `str` has never had · **§1.11** |
-| 61 | **M-declared-extents** | **OPEN** | — | — | panel 164's route 6: a C header spells a parameter as an array, `function arr_len(s: i8[8])`, and it is the only route where the compiler CHECKS the extent instead of trusting the author or the callee. Its whole value is a number nobody has measured — how many real headers spell a parameter that way |
-| 62 | **M-buildable-structs** | scheduled | — | — | a real five-field `utsname` needs 1280 literal zeros, 4312 bytes for a nine-line program, measured and RUN at panel 164. Not a defect, because nothing is broken: what is missing is a way to write *the rest are zero* |
-| 63 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
-| 64 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 65 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
-| 66 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
-| 67 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
-| 68 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
-| 69 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
-| 70 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
-| 71 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
-| 72 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 73 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
-| 74 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
-| 75 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
-| 76 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
-| 77 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
-| 78 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
-| 79 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
-| 80 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 81 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 61 | **M-declared-extents** | done 2026-09-21 | `m-declared-extents` | [060](journal/060-declared-extents.md) | how far C may read through a lent address, and what becomes of the pointer afterwards: `counted_by` declares the extent and the emitter checks it against the field's own `sizeof` in C; then the author flipped the default, so a C parameter is taken to KEEP what it is handed and a lend reaches only one declared `lent`; and where no word can reach — C frees the bytes from a callback, or from a later call with no pointer at all — the runtime names the leases that were live. **Seven defects, all closed** · **§1.12**, **§4.19** |
+| 62 | **M-agreed-retention** | scheduled | — | — | one C function, one story about who frees what it is handed: two modules may declare it with contradictory retention marks and the compiler takes both; one declaration cannot carry a contract chosen per call, which is `sqlite3_bind_text`'s three modes; and nothing says a pointer C made is C's to free once. Opened at M-declared-extents's close, because its four carried items had no home a reader would look in · **§1.11**, **§4.19** |
+| 63 | **M-buildable-structs** | scheduled | — | — | a real five-field `utsname` needs 1280 literal zeros, 4312 bytes for a nine-line program, measured and RUN at panel 164. Not a defect, because nothing is broken: what is missing is a way to write *the rest are zero* |
+| 64 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
+| 65 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
+| 66 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
+| 67 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
+| 68 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
+| 69 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
+| 70 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
+| 71 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
+| 72 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
+| 73 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 74 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
+| 75 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
+| 76 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 77 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
+| 78 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 79 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
+| 80 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
+| 81 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 82 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
