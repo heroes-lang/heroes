@@ -51,7 +51,7 @@ after it, everything is a command from the Mac.** So the manual half is kept
 as short as that line allows, and the automatic half is written out in full
 rather than described.
 
-### The manual half — six things only the author can do
+### The manual half — seven things only the author can do
 
 1. **Create the VPS** in the provider's console and note the administrator
    password. Windows Server 2025 is what the first box ran and what
@@ -60,9 +60,14 @@ rather than described.
 2. **Delete the dead node** in the Tailscale admin console, before the new
    machine joins. The name is what the SSH alias resolves, and the console will
    not hand out a name it still holds.
-3. **Open a desktop session** (RDP, or the provider's web console) and start
-   **PowerShell as administrator**.
-4. **Open the door, by hand, with the block below.** It is the smallest thing
+3. **Turn RDP on, from the provider's own web console.** A fresh appOnFly VPS
+   does not accept a remote desktop until it is enabled there, in the console's
+   **Connect** interface — so this is the step that has to happen before there
+   is any way in at all, and it is the one step in this list that no script
+   could ever take over: it is performed on the provider's side of the machine
+   rather than inside it. Everything below assumes it is done.
+4. **Open the desktop session** and start **PowerShell as administrator**.
+5. **Open the door, by hand, with the block below.** It is the smallest thing
    that has to be typed on a machine nothing can reach yet: an SSH server, the
    Mac's key in the file an administrator's key is actually read from, and the
    tailnet. Everything else arrives over the door it opens.
@@ -97,7 +102,7 @@ rather than described.
    `icacls` is not hardening — sshd's `StrictModes` refuses the file outright if
    anyone but SYSTEM and the administrators can write it.
 
-5. **Say the word.** The assistant copies `provision.ps1` over with `scp` and
+6. **Say the word.** The assistant copies `provision.ps1` over with `scp` and
    checks the door works. Then one line in the desktop session finishes the
    machine:
    ```powershell
@@ -108,13 +113,13 @@ rather than described.
    when the session closes (§ Two lessons about sessions). A console nobody is
    holding open is the safer place for it.
 
-   Once the repository is pushed, step 5 can fetch the script itself and step 4's
-   only remaining job is the door:
+   Once the repository is pushed, this step can fetch the script itself and the
+   block above is left with nothing to do but the door:
    ```powershell
    mkdir C:\w -Force; irm https://raw.githubusercontent.com/heroes-lang/heroes/main/docs/ref/environment/windows/provision.ps1 -OutFile C:\w\provision.ps1
    ```
 
-6. **Read back the two lines the script ends with**, the tailnet name and the
+7. **Read back the two lines the script ends with**, the tailnet name and the
    tailnet addresses. Nothing else is owed by hand.
 
 The script is re-runnable: every step looks at the world before changing it, so
@@ -187,7 +192,7 @@ does not survive the machine: when the first box died the alias `win` pointed
 at `100.88.88.100` and nothing on this Mac could be told the truth without a
 hand edit. MagicDNS is enabled tailnet-wide, so the name resolves, and a
 replacement that joins under the same hostname inherits the alias with no edit
-at all. That is why § Rebuilding the box's first manual step is **delete the
+at all. That is why § Rebuilding the box asks, before anything else, to **delete the
 dead node in the Tailscale admin console**: a second machine asking for a name
 the console still holds is given `<name>-1` instead, silently, and the alias
 then points at nothing.
