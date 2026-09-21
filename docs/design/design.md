@@ -2352,6 +2352,23 @@ the one cell the release empties, so the cell's name stands only as an argument 
 no other write; and a lease nobody ends is a panic that accuses the **program**, on its own counter,
 because the block counter's message says *this is a compiler bug* and here it would not be.
 
+**A FIFTH SHAPE, 2026-09-21, panel 172, and the third reserved case does not cover it.** *A buffer
+that C takes ownership of* is, by the gloss above, a pointer **C** made; defect 070 is the fourth
+case's memory reaching the third case's word — **bytes Heroes made, handed to a C function that
+frees them**. Measured: `check` 0, `build` 0, the program dies inside the call with an empty stderr
+and an exit code that is SIGTRAP or SIGABRT by the allocator's path, and `--sanitize` says
+*attempting free on address which was not `malloc()`-ed*. The language's own report, *panic: 1
+lease(s) never ended*, is correct and never prints, because C's `free` aborts before `main`
+returns. The sitting measured that no word on a parameter reaches it — three of its seven shapes
+free the lease through a function with no pointer parameter — and that the runtime can: a signal
+handler on the mechanism `runtime/parts/stack.c` already installs, reading the live-lease balance
+`runtime/parts/alloc.c` already keeps, names the lease at the crash, 0 to 250 bytes on the filed
+reproducer. So the fifth shape's instrument is the RUNTIME's report and not a declaration, Part 6's
+row on a mark no handle reaches stands, and the correct spelling when C must own the bytes is the
+one `docs/measurements/037-the-give-away-case-was-writable-the-moment-the-callback-was.md` measured:
+the program allocates through the header's own allocator and hands the disposer over.
+`docs/panel/172-the-report-comes-from-the-crash-and-not-from-the-declaration.md`.
+
 **FFI callbacks are `ptr` until a C-width type vocabulary exists** (panel 013, verified by
 compiling against the real headers). §4.13's function type is a Heroes-internal feature and must
 never be presented as the FFI callback spelling: Heroes' `i64` is `int64_t` while every real
