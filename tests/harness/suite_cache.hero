@@ -257,7 +257,7 @@ function a_header_edit_is_not_invisible(@r: report.Report, scratch: str, compile
 
         if said.is_err() || said.must().code != 0
             wrong @ wrong.push(
-                "    the header said " + value + " and the build did not run: " + said.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).err
+                "    the header said " + value + " and the build did not run: " + shell.complaint(said)
             )
             continue
 
@@ -404,7 +404,7 @@ function a_reordered_variant_is_not_served_warm(@r: report.Report, scratch: str,
 
         if said.is_err() || said.must().code != 0
             wrong @ wrong.push(
-                "    with the cases in the order " + order.join(", ") + " the build did not run: " + said.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).err
+                "    with the cases in the order " + order.join(", ") + " the build did not run: " + shell.complaint(said)
             )
             continue
 
@@ -488,7 +488,7 @@ function a_warm_cache_never_turns_a_failure_into_a_pass(@r: report.Report, scrat
 
     if fixed.is_err() || fixed.must().code != 0 || fixed.must().out != "4.0\n"
         wrong @ wrong.push(
-            "    the repaired program did not run: exit " + fixed.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).code.to_str() + ", printed " + strings.trimmed(fixed.default(shell.Run(code: -1, out: "", err: "", started: false)).out) + " where `sqrt` of 16.0 is 4.0\n    Without this the case would pass by refusing every program forever."
+            "    the repaired program did not run: exit " + fixed.default(shell.Run(code: -1, out: "", err: "", started: false, why: 0)).code.to_str() + ", printed " + strings.trimmed(fixed.default(shell.Run(code: -1, out: "", err: "", started: false, why: 0)).out) + " where `sqrt` of 16.0 is 4.0" + shell.refusal(fixed) + "\n    Without this the case would pass by refusing every program forever."
         )
 
     if wrong.len() > 0
@@ -533,7 +533,7 @@ function objects_newer_than(scratch: str, marker: str, words: [str]) -> [str]?
     if ran.is_err() || ran.must().code != 0
         return fail(
             code: "cannot_run",
-            msg: "the build did not run: " + ran.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).err
+            msg: "the build did not run: " + shell.complaint(ran)
         )
     listed = shell.found_under(dir: "build", suffix: ".o", reference: marker)
 

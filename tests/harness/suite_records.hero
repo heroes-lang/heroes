@@ -2757,7 +2757,9 @@ function ignored_by_git(scratch: str, tokens: [str]) -> {str: bool}
             taken @ taken + 1
             at @ at + 1
 
-        ran = shell.run(scratch: scratch, program: "git", words: words)
+        # `attempted`, because the sentence below is about a git that is not
+        # there and `run` would turn that into a refusal this loop cannot read.
+        ran = shell.attempted(scratch: scratch, program: "git", words: words)
 
         # **Exit 1 here means *nothing matched*, not *the command failed*.** So
         # the code is not read: only the output is, and a git that could not

@@ -76,7 +76,7 @@ function built_binary_runs(@r: report.Report, scratch: str, compiler: str)
         report.keep_failure(
             @r,
             label: "special/build says where",
-            detail: "  the binary it named does not print 20:\n" + ran.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).out
+            detail: "  the binary it named does not print 20:\n" + ran.default(shell.Run(code: -1, out: "", err: "", started: false, why: 0)).out + shell.refusal(ran)
         )
         return
     report.keep_pass(@r)
@@ -537,7 +537,13 @@ function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch
     # subject rather than an accident. On a machine without one the case
     # reports `started: false` instead of a wrong answer.
     bad_args = "$(printf '\\377\\376')"
-    checked = shell.run(
+
+    # **`attempted` and not `run`, because the absent shell is this case's
+    # own subject.** `run` refuses a program that never started, which is
+    # right for every case whose subject is a Heroes program and wrong here:
+    # the paragraph above promises that a machine without `/bin/sh` makes the
+    # case step aside, and only the record `attempted` hands back can say so.
+    checked = shell.attempted(
         scratch: scratch,
         program: "/bin/sh",
         words: ["/bin/sh", "-c", dir + "/checked one " + bad_args + " three"]

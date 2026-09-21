@@ -230,6 +230,19 @@ int64_t hero_run_go(const char *program, const char *in_path,
                     const char *out_path,
                     const char *err_path, int64_t *status);
 
+/* The operating system's OWN number for why the last `hero_run_go` could not
+ * start a child: `GetLastError()` on Windows, `errno` on POSIX. It is 0 after a
+ * call that started one, so it is read only where `*status` is not HERO_OS_OK.
+ *
+ * It exists because the number was being thrown away at the one place it was
+ * the whole answer. On 2026-09-21 the Windows CI leg reported 101 of 136 `run`
+ * cases as `did not build (exit -1)` with an empty stderr; -1 is the harness's
+ * sentinel for a child that never started, and the runtime had held
+ * `GetLastError()` in its hand at that exact point and returned without asking
+ * it. A sharing violation, an out-of-memory and a missing file are three
+ * different repairs and they were one silence. */
+int64_t hero_run_why(void);
+
 /* -- threads (design.md Part 7.13; panels 111, 113 and 114) ------------------
  *
  * A FOURTH EDGE, and the header's opening line names three. It is here rather

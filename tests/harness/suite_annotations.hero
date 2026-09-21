@@ -279,7 +279,16 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
         marks = claimed_by(text.must())
 
         if strings.contains(text: text.must(), needle: "function main")
-            out = provoked(scratch: scratch, compiler: compiler, path: path)
+            asked = provoked(scratch: scratch, compiler: compiler, path: path)
+
+            if asked.is_err()
+                report.keep_failure(
+                    @r,
+                    label: label,
+                    detail: "  the compiler never ran on " + path + ":\n    " + why_not(asked)
+                )
+                return 0
+            out = asked.must()
 
             # **A file this machine cannot ask steps aside, marks and all.**
             # `ffi-a-field-the-header-has-as-an-array.hero` binds `dirent.h`,
@@ -346,19 +355,29 @@ function holds_mark(marks: [str], code: str) -> bool
 # What the compiler says about one program: `check` first, and `build`
 # when check is silent, because an FFI diagnostic only reaches clang on a
 # build. Measured over all fourteen annotated files at the close.
-function provoked(scratch: str, compiler: str, path: str) -> str
-    checked = shell.run_guarded(scratch: scratch, words: [compiler, "check", path])
+#
+# **IT RETURNS A RESULT BECAUSE SILENCE AND ABSENCE ARE NOT THE SAME THING.**
+# It answered `""` for both until 2026-09-21, and on the Windows CI leg that
+# day five groups reported `the annotations and the diagnostics disagree` with
+# an empty `reported:` line — which reads as *the compiler said nothing about
+# this program* and was in fact *the compiler never ran*. `shell.run` refuses a
+# non-start now, so the `?` below carries that apart from a compiler that ran
+# and had nothing to say.
+function provoked(scratch: str, compiler: str, path: str) -> str?
+    checked = shell.run_guarded(scratch: scratch, words: [compiler, "check", path])?
 
-    if !checked.is_err() && checked.must().code == 1
-        return checked.must().err
-    built = shell.run_guarded(
-        scratch: scratch,
-        words: [compiler, "build", path, "-o", scratch + "/annotated.bin"]
-    )
+    if checked.code == 1
+        return ok(checked.err)
+    built = shell.run_guarded(scratch: scratch, words: [compiler, "build", path, "-o", scratch + "/annotated.bin"])?
 
-    if built.is_err()
-        return ""
-    return built.must().err
+    return ok(built.err)
+
+# Why `provoked` had nothing to hand back, "" where it had. The shape
+# `suite_units.hero`'s `why` uses, over this module's own result type.
+function why_not(got: str?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
 
 # Every diagnostic in real compiler output, as `<file>:<line>:<code>`.
 # The rich form only: this reads what the compiler prints by default, and

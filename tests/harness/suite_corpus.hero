@@ -226,7 +226,7 @@ function prints(scratch: str, compiler: str, binaries: str, dir: str, @r: report
         report.keep_failure(
             @r,
             label: "corpus/" + name,
-            detail: "  did not build:\n" + built.default(shell.Run(code: -1, out: "", err: "cannot run the compiler", started: false)).err
+            detail: "  did not build:\n" + shell.complaint(built)
         )
         return
     at_o0 = ran(scratch: scratch, dir: dir, words: shell.both(first: [binary], second: passed))
