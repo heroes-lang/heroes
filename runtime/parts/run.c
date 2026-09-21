@@ -299,6 +299,17 @@ void hero_run_limit(int64_t seconds) {
     hero_run_limit_seconds = seconds > 0 ? seconds : 0;
 }
 
+/* The operating system's reason for the last refusal to start a child, held
+ * until the next `hero_run_go` clears it. `hero_os.h` carries what it is for;
+ * what it is NOT is a second status: 0 here means either that the child started
+ * or that the failure was this runtime's own, and `*status` is what separates
+ * those two. Thread-local for the same reason the limit is. */
+static _Thread_local int64_t hero_run_why_code = 0;
+
+int64_t hero_run_why(void) {
+    return hero_run_why_code;
+}
+
 /* Run the program with the words pushed so far, `hero_run_words[0]` included as
  * argv[0] by convention. Returns the exit code; `*status` is HERO_OS_OK when the
  * program ran at all, HERO_OS_NOT_FOUND when it could not be started, and
@@ -310,6 +321,10 @@ void hero_run_limit(int64_t seconds) {
 int64_t hero_run_go(const char *program, const char *in_path,
                     const char *out_path, const char *err_path,
                     int64_t *status) {
+    /* Cleared on the way in, so a reader of `hero_run_why` after a successful
+     * call sees 0 rather than the last refusal of an hour ago. */
+    hero_run_why_code = 0;
+
     if (hero_run_count == 0) {
         *status = HERO_OS_FAILED;
         return -1;
@@ -336,6 +351,8 @@ int64_t hero_run_go(const char *program, const char *in_path,
         : CreateFileA(err_path, GENERIC_WRITE, FILE_SHARE_READ, &inherit,
                       CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (out == INVALID_HANDLE_VALUE || err == INVALID_HANDLE_VALUE) {
+        /* Asked BEFORE the CloseHandle calls below, which would overwrite it. */
+        hero_run_why_code = (int64_t)GetLastError();
         if (out != INVALID_HANDLE_VALUE && !hero_run_inherits(out_path)) CloseHandle(out);
         if (err != INVALID_HANDLE_VALUE && !hero_run_inherits(err_path)) CloseHandle(err);
         hero_str_decref(line);
@@ -364,6 +381,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
         file_in = CreateFileA(in_path, GENERIC_READ, FILE_SHARE_READ, &inherit,
                               OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
         if (file_in == INVALID_HANDLE_VALUE) {
+            hero_run_why_code = (int64_t)GetLastError();
             if (!hero_run_inherits(out_path)) CloseHandle(out);
             if (!hero_run_inherits(err_path)) CloseHandle(err);
             hero_str_decref(line);
@@ -409,6 +427,12 @@ int64_t hero_run_go(const char *program, const char *in_path,
     (void)program;
     BOOL started = CreateProcessA(NULL, (char *)line.ptr, NULL, NULL, TRUE,
                                   0, NULL, NULL, &startup, &child);
+    /* **Read on the very next line, because every call below resets it.**
+     * `CloseHandle` succeeding sets the thread's last error to 0 on some
+     * Windows versions, so a `GetLastError` after the cleanup answers about the
+     * cleanup. This is the number the caller wants and the only place it is
+     * still true. */
+    if (!started) hero_run_why_code = (int64_t)GetLastError();
     if (!hero_run_inherits(out_path)) CloseHandle(out);
     if (!hero_run_inherits(err_path)) CloseHandle(err);
     if (nul_in != INVALID_HANDLE_VALUE) CloseHandle(nul_in);
@@ -441,10 +465,13 @@ int64_t hero_run_go(const char *program, const char *in_path,
 #else
     int report[2];
     if (pipe(report) != 0) {
+        hero_run_why_code = (int64_t)errno;
         *status = HERO_OS_FAILED;
         return -1;
     }
     if (fcntl(report[1], F_SETFD, FD_CLOEXEC) != 0) {
+        /* Before the closes, which are free to set `errno` themselves. */
+        hero_run_why_code = (int64_t)errno;
         close(report[0]);
         close(report[1]);
         *status = HERO_OS_FAILED;
@@ -453,6 +480,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
 
     pid_t child = fork();
     if (child < 0) {
+        hero_run_why_code = (int64_t)errno;
         close(report[0]);
         close(report[1]);
         *status = HERO_OS_FAILED;
@@ -496,6 +524,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
             pid_t seen = waitpid(child, &wait_status, WNOHANG);
             if (seen == child) break;
             if (seen < 0 && errno != EINTR) {
+                hero_run_why_code = (int64_t)errno;
                 *status = HERO_OS_FAILED;
                 return -1;
             }
@@ -515,6 +544,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
     } else {
         while (waitpid(child, &wait_status, 0) < 0) {
             if (errno != EINTR) {
+                hero_run_why_code = (int64_t)errno;
                 *status = HERO_OS_FAILED;
                 return -1;
             }
@@ -527,6 +557,11 @@ int64_t hero_run_go(const char *program, const char *in_path,
     }
 
     if (got == (ssize_t)sizeof failure) {
+        /* `failure` IS the child's `errno` at the failed `execv`, written down
+         * the report pipe before `_exit`. It is the POSIX half of what
+         * `GetLastError` gives the Windows arm, and it was already being read
+         * here to decide NOT_FOUND while its value was thrown away. */
+        hero_run_why_code = (int64_t)failure;
         *status = HERO_OS_NOT_FOUND;
         return -1;
     }

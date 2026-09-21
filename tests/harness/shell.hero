@@ -46,6 +46,7 @@ extern "hero_os.h"
     # and forgetting it here stops every suite of the net rather than the
     # compiler.
     function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_run_why() -> i64
     function hero_run_discard_path() -> str
     function hero_fs_exists(path: cstr lent) -> i64
     function hero_fs_is_directory(path: cstr lent) -> i64
@@ -72,11 +73,26 @@ constant DIR_DIRECTORIES: i64
 # `started` is separate from `code` and must be read first. A program
 # that never ran has no exit code, and the number that used to stand in
 # for one — 127 — is also a code a program can legitimately exit with.
+#
+# **THAT SENTENCE WAS A COMMENT AND NOTHING PERFORMED IT**, which is why
+# `run` below now refuses instead of asking. Measured 2026-09-21: thirteen
+# of the net's twenty-four suites read `.code` and none of them read
+# `.started`, 68 reads in all, while the compiler's own `Ran` is asked in
+# ten places. The Windows CI leg that day reported 101 cases as
+# `did not build (exit -1)` and five annotation groups as
+# `the annotations and the diagnostics disagree` — two false sentences
+# about one silence, because `-1` is this record's way of saying *there is
+# no exit code* and both readers took it for one.
+#
+# `why` is the operating system's own number for the refusal, 0 where the
+# program started. It is the answer the runtime always had and never handed
+# over (`hero_os.h`, `hero_run_why`).
 record Run
     code: i64
     out: str
     err: str
     started: bool
+    why: i64
 
 # Run `program` with `words` (its own name first), both streams captured
 # to files under `scratch`, and read them back.
@@ -108,10 +124,70 @@ record Run
 # one file handle in `hero_run_child` on POSIX and one `CreateFileA` on the
 # Windows arm, where the inherited handle already had a probe around it.
 function run_fed(scratch: str, program: str, words: [str], stdin_path: str) -> Run?
-    return spawned(scratch: scratch, program: program, words: words, in_path: stdin_path)
+    return insisted(
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path)?,
+        program: program
+    )
 
 function run(scratch: str, program: str, words: [str]) -> Run?
+    return insisted(ran: spawned(scratch: scratch, program: program, words: words, in_path: "")?, program: program)
+
+# **The same call for the places that ASK whether a program is there.**
+# Five of them, and each is a case whose SUBJECT is the machine: `git` that
+# a record check needs, `/bin/sh` that Windows does not have, and the test
+# below that names a program on purpose nobody has. They read `.started`
+# and they are the reason `run` cannot simply always refuse.
+#
+# It is deliberately the longer name. A caller that wants the ordinary
+# thing types the short one and gets the refusal; a caller that wants the
+# machine's answer has to say so at the call, which is where a reader of
+# the case will look for it.
+function attempted(scratch: str, program: str, words: [str]) -> Run?
     return spawned(scratch: scratch, program: program, words: words, in_path: "")
+
+# Why a `run` came back with no program verdict, for a caller about to print
+# one. "" where it came back with one.
+#
+# The text is `insisted`'s, so it names the program and the operating system's
+# own number: the pair design.md §4.17 asks a diagnostic to carry, which is
+# `report.hero`'s rule for a test as much as the compiler's for a program.
+# `suite_units.hero`'s `why` is the same shape over its own result type.
+function refusal(got: Run?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# What the program complained, or why there was no program to complain.
+#
+# **The sibling of `refusal`, and it exists because a THIRD way of lying was
+# found the same day.** Seven call sites built their failure message out of
+# `said.default(Run(err: "cannot run", …)).err`, which substitutes a fixed
+# string for whatever actually went wrong — so a compiler that could not be
+# started and a compiler that wrote three pages of diagnostics both printed
+# `cannot run`. Measured 2026-09-21 by pointing the net at a file that exists
+# and is not executable: `suite_units` said `cannot runcannot run` where the
+# repaired `suite_run` said the path, the sentence and the number 13.
+function complaint(got: Run?) -> str
+    return match got
+        .ok r  => r.err
+        .err e => e.msg
+
+# A `Run` that started, or the reason there is none.
+#
+# **This is the executor for the sentence on `Run` above**, and the whole
+# point is that it stands between the runtime and every caller rather than
+# being a rule each caller remembers. What it costs is that a machine
+# problem now stops a case instead of being reported as the program's own
+# verdict, which is the trade the 2026-09-21 Windows leg priced: 106 red
+# lines, not one of which named the machine.
+function insisted(ran: Run, program: str) -> Run?
+    if ran.started
+        return ok(ran)
+
+    return fail(
+        code: "not_started",
+        msg: program + " could not be started, so it has no exit code; the operating system's own reason is " + ran.why.to_str()
+    )
 
 function spawned(scratch: str, program: str, words: [str], in_path: str) -> Run?
     # **The scratch directory is this function's to make, not its caller's.**
@@ -151,7 +227,12 @@ function spawned(scratch: str, program: str, words: [str], in_path: str) -> Run?
     hero_run_reset()
 
     if status != 0
-        return ok(Run(code: -1, out: "", err: "", started: false))
+        # `-1` is not an exit code and never was: it is this record saying
+        # there is none, which is what `started: false` beside it means. The
+        # operating system's own reason rides along rather than being asked
+        # for later, because `hero_run_why` answers about the LAST call and a
+        # caller that holds a `Run` may have made others since.
+        return ok(Run(code: -1, out: "", err: "", started: false, why: hero_run_why()))
     out = read_file(out_path)
 
     if out.is_err()
@@ -160,7 +241,7 @@ function spawned(scratch: str, program: str, words: [str], in_path: str) -> Run?
 
     if err.is_err()
         return fail(code: "cannot_run", msg: "cannot read the captured stderr at " + err_path)
-    return ok(Run(code: code, out: out.must(), err: err.must(), started: true))
+    return ok(Run(code: code, out: out.must(), err: err.must(), started: true, why: 0))
 
 # The names `hero_dir_scan` just found, as a list — and the listing is
 # let go on the way out. The runtime holds those names in memory it
@@ -239,7 +320,7 @@ function list_directories(scratch: str, dir: str) -> [str]?
 # Paths come back WITHOUT a leading `./`, unlike `list_tree`.
 function project_files(scratch: str) -> [str]?
     listing = scratch + "/listing-project"
-    ran = run(scratch: scratch, program: "git", words: ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"])?
+    ran = attempted(scratch: scratch, program: "git", words: ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"])?
 
     if !ran.started
         return fail(
@@ -369,7 +450,7 @@ function exe_suffix() -> str
 # asks this and steps aside where the answer is no; the net's own suites
 # never call it, so nothing the compiler is judged on can hide behind it.
 function can_run_scripts() -> bool
-    said = run(scratch: "build/harness-selftest", program: "/bin/sh", words: ["/bin/sh", "-c", "exit 0"])
+    said = attempted(scratch: "build/harness-selftest", program: "/bin/sh", words: ["/bin/sh", "-c", "exit 0"])
 
     if said.is_err()
         return false
@@ -563,13 +644,28 @@ test "a status is decoded the way a shell prints it"
     assert !angry.is_err()
     assert angry.must().code == 2
 
-    absent = run(
+    absent = attempted(
         scratch: "build/harness-selftest",
         program: "heroes-no-such-program",
         words: ["heroes-no-such-program"]
     )
     assert !absent.is_err()
     assert !absent.must().started
+
+    # **The operating system says WHY, and this is the assertion that keeps
+    # it saying so.** The number itself differs by platform — POSIX answers
+    # `ENOENT`, Windows `ERROR_FILE_NOT_FOUND` — so what is asserted is that
+    # there IS one, which is the property the 2026-09-21 Windows leg lacked.
+    assert absent.must().why != 0
+
+    # And the ordinary `run` refuses the same program rather than handing
+    # back a record whose `code` means nothing.
+    refused = run(
+        scratch: "build/harness-selftest",
+        program: "heroes-no-such-program",
+        words: ["heroes-no-such-program"]
+    )
+    assert refused.is_err()
 
 test "a command's two streams come back apart, with its status"
     # POSIX is this case's subject, and this machine answers for itself

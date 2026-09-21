@@ -113,8 +113,18 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
         words: [compiler, "build", item.source, "-o", binary]
     )
 
+    # **The machine, before the program.** A compiler that never started has no
+    # verdict on this case, and until 2026-09-21 this branch said only that it
+    # could not run while the branch BELOW reported `did not build (exit -1)` —
+    # a number no process produced. `shell.run` now refuses a non-start, so the
+    # two are separated by construction and the operating system's own reason
+    # rides in the message.
     if built.is_err()
-        report.keep_failure(@r, label: "run/" + item.name, detail: "  cannot run the compiler on " + item.source)
+        report.keep_failure(
+            @r,
+            label: "run/" + item.name,
+            detail: "  the compiler never ran on " + item.source + ":\n    " + shell.refusal(built)
+        )
         return false
 
     # The machine's own answer, before the case's: a runner with no
