@@ -76,7 +76,15 @@ function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
 # the whole point of the flag set: a warning nobody sees cannot
 # falsify anything.
 function run_clang(line: [str], what: str, err_path: str) -> ()?
-    ran = process.run(program: "clang", words: line, out: "", err: err_path)
+    # **`discard()` and not `""`, because the empty path INHERITS.** clang
+    # writes its artifact through `-o` and says nothing on stdout, so this
+    # is the stream nobody reads; the reason it may not be inherited is the
+    # harness. Under the net this compiler is itself a child whose stdout is
+    # a capture file the harness reopens for every case, and a clang that
+    # outlives its parent goes on holding it: Windows then refuses the next
+    # `CreateFileA` with ERROR_SHARING_VIOLATION and 120 cases report a
+    # compiler that never started (defect 074, panel 174 route F).
+    ran = process.run(program: "clang", words: line, out: process.discard(), err: err_path)
     noise: str @ ""
     captured = read_file(err_path)
 
@@ -97,10 +105,19 @@ function run_clang(line: [str], what: str, err_path: str) -> ()?
     # answers 127 for a missing program and for one that exits 127
     # alike, so a machine with no clang was reported as the compiler's
     # own bug — *"internal error: the runtime did not compile"*.
+    # **AND "NOT STARTED" IS NOT THE SAME AS "NOT THERE", which is the same
+    # mistake one layer down.** This line named the PATH for every refusal the
+    # operating system makes, and on 2026-09-21 the refusal was
+    # ERROR_SHARING_VIOLATION — a file a descendant still held — on a machine
+    # whose clang was exactly where it had always been. The number the runtime
+    # holds is what separates the two, and it is now carried
+    # (`hero_run_why`, panel 174 route G). The PATH sentence stays for the case
+    # it was written for, and the number goes beside it so no reader has to
+    # trust it.
     if !ran.started
         return fail(
             code: "clang",
-            msg: "clang is not on this machine's PATH, so " + what + " could not run.\n  `heroes doctor` says what this machine has"
+            msg: "clang could not be started, so " + what + " did not run; the operating system's own reason is " + ran.why.to_str() + ".\n  If it is 2 the program is not on this machine's PATH and `heroes doctor` says what is; any other number is the machine refusing for its own reason"
         )
 
     if ran.code == 0

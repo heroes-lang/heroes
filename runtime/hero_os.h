@@ -243,6 +243,11 @@ int64_t hero_run_go(const char *program, const char *in_path,
  * different repairs and they were one silence. */
 int64_t hero_run_why(void);
 
+/* A number this process has not answered before, so a caller can name a file
+ * that no earlier call can still be holding open. `parts/run.c` carries why it
+ * is here rather than in the language (panel 174, route B). */
+int64_t hero_run_serial(void);
+
 /* -- threads (design.md Part 7.13; panels 111, 113 and 114) ------------------
  *
  * A FOURTH EDGE, and the header's opening line names three. It is here rather

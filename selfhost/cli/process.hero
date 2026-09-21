@@ -43,6 +43,7 @@ extern "hero_os.h"
     # (panel 171). Without the word a lend is refused, because a C parameter
     # is assumed to keep what it is handed. `runtime/parts/os.c` is the C.
     function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_run_why() -> i64
     function hero_fs_exists(path: cstr lent) -> i64
     function hero_fs_is_directory(path: cstr lent) -> i64
     function hero_fs_mkdir_all(path: cstr lent) -> i64
@@ -67,6 +68,7 @@ extern "stdlib.h"
 record Ran
     code: i64
     started: bool
+    why: i64
 
 # The runtime's status words. `0` is OK; `1` is "could not be started".
 constant RUN_OK: i64
@@ -75,9 +77,21 @@ constant RUN_OK: i64
 # Run `program` with `words`, which must include the program's own name
 # as its first word — argv[0] is a word like any other.
 #
-# An empty `out` or `err` discards that stream. The spelling of
-# "discard" lives in the runtime, because `/dev/null` is a platform
-# word and this file is not allowed to know what platform it is on.
+# **An empty `out` or `err` INHERITS that stream**, so the child writes
+# where this process writes. To throw a stream away, pass `discard()`
+# below — the spelling of `/dev/null` lives in the runtime, because it is
+# a platform word and this file is not allowed to know what platform it
+# is on.
+#
+# **This paragraph said `discards` until 2026-09-21**, twenty-five lines
+# above a second one that said the opposite and was right
+# (`hero_run_inherits` in `runtime/parts/run.c` treats the empty path as
+# inherit). `run_clang` passed `out: ""` for it, so clang inherited the
+# TEST HARNESS's own capture handle whenever the compiler ran under the
+# net — and a clang that outlived its parent then held that file, which
+# is defect 074 and which `tests/harness/shell.hero` had recorded as an
+# orphan `clang.exe` a month earlier without anybody connecting the two
+# (panel 174, route F).
 function run(program: str, words: [str], out: str, err: str) -> Ran
     hero_run_reset()
 
@@ -94,7 +108,7 @@ function run(program: str, words: [str], out: str, err: str) -> Ran
     )
     hero_run_reset()
 
-    return Ran(code: code, started: status == RUN_OK)
+    return Ran(code: code, started: status == RUN_OK, why: hero_run_why())
 
 # Where a stream goes to be thrown away, spelled the way this machine
 # spells it. Asked of the runtime rather than written here, because
