@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 1 defect · 0 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 0 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -24,7 +24,7 @@ against a banner reading 3.
 | The spec | **6212** on the vendored ranks and **8270** on the reader's own, against a ceiling of **10240**. This milestone spent three rows: panel 169's *a lend lives for its call and no longer*, panel 171's rewriting of it for the flipped default, and panel 173's limit — *no word says C frees what it is handed*, the sentence that carries its own falsifier because the runtime reports what no declaration can state. **1970 free** and 1910 net of the FFI floor |
 | The contract | **7737** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-21 when § 4 gained the author's second telling that they read every sitting |
 | Records | sittings **171** · journals **62** · milestone files **50** · measurements **37** · entries: `docs/records/log/` **697**, `docs/records/done/` **577**, `docs/records/book/beats/` **128** |
-| Waiting on the author | **nothing.** The push landed 2026-09-21 and carried the tag `m-declared-extents`. `docs/work/DECIDE.md` is at **OPEN: 0**; `docs/work/DEFECTS.md` is at **OPEN: 1**, opened after the tag by the Windows leg of that very push — defect 074, a window on `windows-latest` in which no child process starts, green on a re-run of the same commit. **Panels 171, 172 and 173 were ratified 2026-09-21 in one act**, in conversation, and recorded as a **reading** — the author corrected the first draft of that record within the hour, which is CLAUDE.md § 4's default and its second telling |
+| Waiting on the author | **nothing**, and both lists are at **OPEN: 0**. Defect 074 was opened by the Windows leg of the push that carried `m-declared-extents` and closed 2026-09-22 by panel 174: the net had been sharing two redirect files between every process it starts, and one holder refused every later spawn. Run **35693306661** is green on all four legs and its Windows leg reads **zero** lines carrying `the operating system's own reason is 32`. **Panel 174 was ratified the day it sat, as a reading**, which is CLAUDE.md § 4's default and the author's third telling of it |
 
 **Re-measured 2026-09-21, the full net on a compiler built from the regenerated
 seed, which is CI's own configuration: 1980 passed, 0 failed**, over 24 suites,
