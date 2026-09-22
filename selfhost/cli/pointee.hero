@@ -65,6 +65,7 @@ use parse
 use resolve
 use checker
 use ir/lower
+use cli/strings
 
 ## What is asked
 
@@ -271,16 +272,16 @@ function with_search(line: [str], search_include: [str], package_flags: [str], r
     out: [str] @ line
 
     for one in search_include
-        out @ toolchain.with_all(list: out, more: ["-I", one])
+        out @ strings.with_all(list: out, more: ["-I", one])
 
     for flag in package_flags
-        if toolchain.starts_with(text: flag, prefix: "-I")
+        if strings.starts_with(text: flag, prefix: "-I")
             out @ out.push(flag)
 
-    out @ toolchain.with_all(list: out, more: ["-I", runtime])
+    out @ strings.with_all(list: out, more: ["-I", runtime])
 
     if source_dir.len() > 0
-        out @ toolchain.with_all(list: out, more: ["-I", source_dir])
+        out @ strings.with_all(list: out, more: ["-I", source_dir])
 
     return out
 

@@ -42,6 +42,7 @@ use cli/digest
 use cli/flags
 use cli/process
 use cli/toolchain
+use cli/strings
 
 # The distinct components of a compilation, in file-table order: the
 # root first, then each `use`d module, then the library. The order is
@@ -139,23 +140,23 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # `-MT dep` names the listing's target a word rather than a path,
     # so the reader cuts at the first `:` on a fact it chose. The
     # listing rides this compile; no second clang invocation exists.
-    line: [str] @ toolchain.with_all(list: ["clang"], more: flags.flags())
+    line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
     line @ line.push(level)
-    line @ toolchain.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
-    line @ toolchain.with_all(list: line, more: ["-c", "-MD", "-MT", "dep", "-MF", depfile])
+    line @ strings.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
+    line @ strings.with_all(list: line, more: ["-c", "-MD", "-MT", "dep", "-MF", depfile])
 
     for one in search_include
-        line @ toolchain.with_all(list: line, more: ["-I", one])
+        line @ strings.with_all(list: line, more: ["-I", one])
 
     for flag in package_flags
-        if toolchain.starts_with(text: flag, prefix: "-I")
+        if strings.starts_with(text: flag, prefix: "-I")
             line @ line.push(flag)
 
-    line @ toolchain.with_all(list: line, more: [c_file, "-I", t.runtime])
+    line @ strings.with_all(list: line, more: [c_file, "-I", t.runtime])
 
     if source_dir.len() > 0
-        line @ toolchain.with_all(list: line, more: ["-I", source_dir])
-    line @ toolchain.with_all(list: line, more: ["-o", staged])
+        line @ strings.with_all(list: line, more: ["-I", source_dir])
+    line @ strings.with_all(list: line, more: ["-o", staged])
     compiled = toolchain.run_clang(line: line, what: "compiling the generated C", err_path: err_path)
 
     if compiled.is_err()
@@ -226,20 +227,20 @@ function link_objects(t: toolchain.Toolchain, objects: [str], binary: str, level
     # `heroes` processes in one tree. The digest keeps the name inside
     # `build/` rather than beside the author's `-o`, which may be anywhere.
     err_path = t.build + "/link-" + digest.digest(binary) + "-clang-stderr.txt"
-    line: [str] @ toolchain.with_all(list: ["clang"], more: flags.flags())
+    line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
     line @ line.push(level)
-    line @ toolchain.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
+    line @ strings.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
 
     # The link's own flags, which on Windows is the stack reserve a
     # recursive frontend needs (flags.link_flags carries the
     # measurement). Empty everywhere else.
-    line @ toolchain.with_all(list: line, more: flags.link_flags())
+    line @ strings.with_all(list: line, more: flags.link_flags())
 
     for dir in search_include
-        line @ toolchain.with_all(list: line, more: ["-I", dir])
+        line @ strings.with_all(list: line, more: ["-I", dir])
 
     for dir in search_library
-        line @ toolchain.with_all(list: line, more: ["-L", dir])
+        line @ strings.with_all(list: line, more: ["-L", dir])
 
     for object in objects
         line @ line.push(object)
@@ -251,7 +252,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], binary: str, level
         line @ line.push("-l" + name)
 
     staged = binary + ".tmp"
-    line @ toolchain.with_all(list: line, more: ["-o", staged])
+    line @ strings.with_all(list: line, more: ["-o", staged])
     linked = toolchain.run_clang(line: line, what: "linking", err_path: err_path)
 
     if linked.is_err()
