@@ -18,8 +18,8 @@
 # redirected to a file under build/, and the package name reaches the
 # line only through sq() — one quoted word, never a second command.
 
-use cli/toolchain
 use cli/process
+use cli/strings
 
 # Whether this platform's C runtime already contains a library, so
 # naming it is correct and passing it on would be an error (Zig's
@@ -192,7 +192,7 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
             captured = read_file(err_path)
 
             if !captured.is_err()
-                said @ toolchain.trimmed(captured.must())
+                said @ strings.trimmed(captured.must())
             return fail(
                 code: "failed",
                 msg: "heroes-ffi-package `" + package + "` is not installed on this machine\n  pkg-config said: " + said + "\n  install its development files, or name the library directly with `link`"

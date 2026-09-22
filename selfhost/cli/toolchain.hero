@@ -33,6 +33,7 @@ use cli/digest
 use cli/flags
 use cli/process
 use cli/runtime_key
+use cli/strings
 
 record Toolchain
     runtime: str
@@ -76,14 +77,10 @@ function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
 # the whole point of the flag set: a warning nobody sees cannot
 # falsify anything.
 function run_clang(line: [str], what: str, err_path: str) -> ()?
-    # **`discard()` and not `""`, because the empty path INHERITS.** clang
-    # writes its artifact through `-o` and says nothing on stdout, so this
-    # is the stream nobody reads; the reason it may not be inherited is the
-    # harness. Under the net this compiler is itself a child whose stdout is
-    # a capture file the harness reopens for every case, and a clang that
-    # outlives its parent goes on holding it: Windows then refuses the next
-    # `CreateFileA` with ERROR_SHARING_VIOLATION and 120 cases report a
-    # compiler that never started (defect 074, panel 174 route F).
+    # **`discard()` and not `""`, because the empty path INHERITS.** Under the
+    # net this compiler is a child whose stdout is a capture file, and a clang
+    # that outlives it goes on holding that file: `docs/panel/174` route F, and
+    # defect 074 is what it cost.
     ran = process.run(program: "clang", words: line, out: process.discard(), err: err_path)
     noise: str @ ""
     captured = read_file(err_path)
@@ -98,22 +95,17 @@ function run_clang(line: [str], what: str, err_path: str) -> ()?
         # message), and `heroes-ffi-const`'s marker stopped matching at all,
         # which demoted the author's own error to exit 2. One normalisation
         # here, where the bytes enter, covers every reader after it.
-        noise @ without_returns(captured.must())
+        noise @ strings.without_returns(captured.must())
 
     # **Never started is not the same as ran and failed**, and until
     # M-argv-execution this line could not tell them apart: `system()`
     # answers 127 for a missing program and for one that exits 127
     # alike, so a machine with no clang was reported as the compiler's
     # own bug — *"internal error: the runtime did not compile"*.
-    # **AND "NOT STARTED" IS NOT THE SAME AS "NOT THERE", which is the same
-    # mistake one layer down.** This line named the PATH for every refusal the
-    # operating system makes, and on 2026-09-21 the refusal was
-    # ERROR_SHARING_VIOLATION — a file a descendant still held — on a machine
-    # whose clang was exactly where it had always been. The number the runtime
-    # holds is what separates the two, and it is now carried
-    # (`hero_run_why`, panel 174 route G). The PATH sentence stays for the case
-    # it was written for, and the number goes beside it so no reader has to
-    # trust it.
+    # **AND "NOT STARTED" IS NOT THE SAME AS "NOT THERE."** This line named the
+    # PATH for every refusal the operating system makes, including one about a
+    # file a descendant held, on a machine whose clang had never moved. The
+    # number separates them (`docs/panel/174` route G).
     if !ran.started
         return fail(
             code: "clang",
@@ -121,57 +113,11 @@ function run_clang(line: [str], what: str, err_path: str) -> ()?
         )
 
     if ran.code == 0
-        if trimmed(noise).len() > 0
+        if strings.trimmed(noise).len() > 0
             io.eprint_raw(text: noise)
         return ok()
     return fail(code: "clang", msg: what + " failed:\n" + noise)
 
-# `\r\n` -> `\n`, byte-walked. A lone `\r` (classic Mac, or wire bytes in a
-# diagnostic clang quotes back) is left alone: the poison is the line-ending
-# pair, and rewriting anything else would edit clang's own words.
-function without_returns(text: str) -> str
-    out: str @ ""
-    start: i64 @ 0
-    at: i64 @ 0
-
-    # Whole segments between the pairs, never byte-by-byte: `slice` aborts on
-    # a split character (spec § 10 Strings, arrays, maps), clang's stderr quotes this compiler's own
-    # messages back — em dashes included — and every cut here lands beside an
-    # ASCII `\r` or at a segment edge, which no character can straddle.
-    while at < text.len()
-        if text[at] == 13 && at + 1 < text.len() && text[at + 1] == 10
-            out @ out + text.slice(from: start, to: at)
-            start @ at + 1
-
-        at @ at + 1
-
-    if start == 0
-        return text
-    return out + text.slice(from: start, to: text.len())
-
-function trimmed(text: str) -> str
-    cs = text.chars()
-    head: i64 @ 0
-
-    while head < cs.len() && (cs[head] == " " || cs[head] == "\t" || cs[head] == "\n")
-        head @ head + 1
-
-    tail: i64 @ cs.len()
-
-    while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t" || cs[tail - 1] == "\n")
-        tail @ tail - 1
-
-    return cs.slice(from: head, to: tail).join("")
-
-# Whether a path names anything. It asked `test -e` through a shell
-# until M-argv-execution, because `read_file` refuses a directory and
-# chokes on a binary's bytes; the runtime answers it now, on every
-# platform, without a utility having to exist.
-# Where this program's artifacts live: build/<hash>/. The hash is what
-# makes two files with the same stem, or the same file at two levels,
-# different builds — and the search paths are in it (panel 055,
-# measured: two configurations shared one artifact and the second
-# silently reused the first).
 function dir_for(t: Toolchain, source_name: str, text: str, level_key: str, sanitize: bool, search: str) -> str?
     san: str @ ""
 
@@ -205,7 +151,7 @@ function dir_for(t: Toolchain, source_name: str, text: str, level_key: str, sani
 # hashes every byte of it (CLAUDE.md §1: a repair is attacked at the
 # shapes next to the one that provoked it, before the commit).
 function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
-    key = digest.digest(t.fingerprint + "|" + level + "|" + bool_text(sanitize) + "|" + t.runtime_key)
+    key = digest.digest(t.fingerprint + "|" + level + "|" + strings.bool_text(sanitize) + "|" + t.runtime_key)
     made = process.mkdir_all(t.build)
 
     if made.is_err()
@@ -217,10 +163,10 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
         return ok(object)
     depfile = object + ".d"
     staged = object + ".tmp"
-    line: [str] @ with_all(list: ["clang"], more: flags.flags())
+    line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
     line @ line.push(level)
-    line @ with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
-    line @ with_all(
+    line @ strings.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
+    line @ strings.with_all(
         list: line,
         more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, t.runtime + "/runtime.c", "-I", t.runtime, "-o", staged]
     )
@@ -247,56 +193,29 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
         return fail(code: "failed", msg: "cannot publish " + object)
     return ok(object)
 
-function bool_text(value: bool) -> str
-    if value
-        return "true"
-    return "false"
-
-# One list after another. It replaces `words()`, which quoted every
-# element for a POSIX shell and joined them with spaces — the whole
-# reason a filename with a space in it was ever a question here.
-function with_all(list: [str], more: [str]) -> [str]
-    out: [str] @ list
-
-    for one in more
-        out @ out.push(one)
-
-    return out
-
-# Compile one generated unit and link it with the runtime. The unit is
-# compiled to an object THAT SURVIVES (the Darwin N_OSO repair: the
-# DWARF lives in the object, and one compile-and-link invocation left
-# the debug info in clang's temporary directory). include ordering:
-# the author's own search paths first, then the package flags, then
-# the runtime's -I, then the source's directory — a source directory
-# holding a stray heroes_runtime.h must not win over the real one.
-# Libraries are NAMES, not flags: -l is prefixed here, so no .hero
-# file can hand clang an arbitrary argument. Package resolution is the
-# caller's (cli_libraries, the next crossing): what arrives here is
-# already flags.
 function link(t: Toolchain, c_file: str, object: str, binary: str, level: str, sanitize: bool, source_dir: str, search_include: [str], search_library: [str], package_flags: [str], link_names: [str]) -> ()?
     # Beside the C it compiles: `units.tu_object` (057). The two invocations
     # below share it and are sequential; no other build in the tree writes it.
     err_path = c_file + ".clang-stderr.txt"
     unit_object = c_file + ".o"
     staged_object = unit_object + ".tmp"
-    compile_line: [str] @ with_all(list: ["clang"], more: flags.flags())
+    compile_line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
     compile_line @ compile_line.push(level)
-    compile_line @ with_all(list: compile_line, more: flags.sanitizers(sanitize: sanitize))
+    compile_line @ strings.with_all(list: compile_line, more: flags.sanitizers(sanitize: sanitize))
     compile_line @ compile_line.push("-c")
 
     for dir in search_include
-        compile_line @ with_all(list: compile_line, more: ["-I", dir])
+        compile_line @ strings.with_all(list: compile_line, more: ["-I", dir])
 
     for flag in package_flags
-        if starts_with(text: flag, prefix: "-I")
+        if strings.starts_with(text: flag, prefix: "-I")
             compile_line @ compile_line.push(flag)
 
-    compile_line @ with_all(list: compile_line, more: [c_file, "-I", t.runtime])
+    compile_line @ strings.with_all(list: compile_line, more: [c_file, "-I", t.runtime])
 
     if source_dir.len() > 0
-        compile_line @ with_all(list: compile_line, more: ["-I", source_dir])
-    compile_line @ with_all(list: compile_line, more: ["-o", staged_object])
+        compile_line @ strings.with_all(list: compile_line, more: ["-I", source_dir])
+    compile_line @ strings.with_all(list: compile_line, more: ["-o", staged_object])
     compiled = run_clang(line: compile_line, what: "compiling the generated C", err_path: err_path)
 
     if compiled.is_err()
@@ -304,18 +223,18 @@ function link(t: Toolchain, c_file: str, object: str, binary: str, level: str, s
 
     if process.rename_over(from: staged_object, to: unit_object).is_err()
         return fail(code: "failed", msg: "cannot publish " + unit_object)
-    link_line: [str] @ with_all(list: ["clang"], more: flags.flags())
+    link_line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
     link_line @ link_line.push(level)
-    link_line @ with_all(list: link_line, more: flags.sanitizers(sanitize: sanitize))
-    link_line @ with_all(list: link_line, more: flags.link_flags())
+    link_line @ strings.with_all(list: link_line, more: flags.sanitizers(sanitize: sanitize))
+    link_line @ strings.with_all(list: link_line, more: flags.link_flags())
 
     for dir in search_include
-        link_line @ with_all(list: link_line, more: ["-I", dir])
+        link_line @ strings.with_all(list: link_line, more: ["-I", dir])
 
     for dir in search_library
-        link_line @ with_all(list: link_line, more: ["-L", dir])
+        link_line @ strings.with_all(list: link_line, more: ["-L", dir])
 
-    link_line @ with_all(list: link_line, more: [unit_object, object])
+    link_line @ strings.with_all(list: link_line, more: [unit_object, object])
 
     for flag in package_flags
         link_line @ link_line.push(flag)
@@ -324,7 +243,7 @@ function link(t: Toolchain, c_file: str, object: str, binary: str, level: str, s
         link_line @ link_line.push("-l" + name)
 
     staged = binary + ".tmp"
-    link_line @ with_all(list: link_line, more: ["-o", staged])
+    link_line @ strings.with_all(list: link_line, more: ["-o", staged])
     linked = run_clang(line: link_line, what: "linking", err_path: err_path)
 
     if linked.is_err()
@@ -334,26 +253,9 @@ function link(t: Toolchain, c_file: str, object: str, binary: str, level: str, s
         return fail(code: "failed", msg: "cannot publish " + binary)
     return ok()
 
-function starts_with(text: str, prefix: str) -> bool
-    cs = text.chars()
-    ps = prefix.chars()
-
-    if ps.len() > cs.len()
-        return false
-    index: i64 @ 0
-
-    for p in ps
-        if cs[index] != p
-            return false
-        index @ index + 1
-
-    return true
-
 ## Tests
 
 test "digesting and probing — the shell spoken safely"
-    assert starts_with(text: "-I/opt", prefix: "-I")
-    assert !starts_with(text: "-L/opt", prefix: "-I")
     assert process.is_directory(path: "runtime")
     assert !process.is_directory(path: "runtime/runtime.c")
     assert process.path_exists(path: "runtime/heroes_runtime.h")
@@ -421,13 +323,3 @@ function has_text(text: str, needle: str) -> bool
         start @ start + 1
 
     return false
-
-test "clang's CRLF is normalised, and a multibyte character survives the walk"
-    # The pair goes, the lone \r stays (it is clang's own byte, not a line
-    # ending), and the em dash — three bytes, the exact shape that aborts a
-    # byte-indexed slice — comes through whole.
-    assert without_returns("a\r\nb\r\nc") == "a\nb\nc"
-    assert without_returns("does not return `i64` — said\r\n") == "does not return `i64` — said\n"
-    assert without_returns("wire\rbyte") == "wire\rbyte"
-    assert without_returns("") == ""
-    assert without_returns("clean\nalready") == "clean\nalready"

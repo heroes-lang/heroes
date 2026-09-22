@@ -35,6 +35,7 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <sys/types.h>
 #include <time.h>
 #endif
 
@@ -209,9 +210,130 @@ static HeroStr hero_run_win_command_line(void) {
 #if !defined(_WIN32)
 /* The child half of the POSIX arm: redirect, exec, and if the exec fails say so
  * down the pipe before dying. Never returns. */
-static void hero_run_child(const char *program, int report,
+/* **THE CHILD ALWAYS GETS A GROUP, AND WHERE THERE IS A TERMINAL IT GETS THAT
+ * TOO.**
+ *
+ * A group is what makes the whole tree killable, and it is the POSIX answer to
+ * the job object on the Windows arm. It has one cost and it is not theoretical:
+ * a program in a BACKGROUND process group that READS the controlling terminal
+ * is stopped with SIGTTIN and never exits, so the caller waits out the whole
+ * watchdog. Measured at panel 174 on Darwin and on Linux, same program, same
+ * answer — `Stopped (tty input)`, signal 21.
+ *
+ * **The first repair made the group CONDITIONAL — no group where stdin was the
+ * terminal — and the author refused it** (2026-09-22, in their words: *avoid
+ * these compromises, make things more robust; if you have to handle it
+ * differently, handle it differently and make it more robust*). They were
+ * right: skipping the group leaves `heroes run` on a program that reads the
+ * keyboard with exactly the orphan this file is about. It is a case left out
+ * rather than solved.
+ *
+ * What solves it is what every shell has done for forty years: make the child's
+ * group the FOREGROUND one while it runs, and take the terminal back
+ * afterwards. Then no case is left out —
+ *
+ *   stdin is a file            no SIGTTIN is possible; group, nothing else
+ *   stdin inherited, not a tty no SIGTTIN is possible; group, nothing else
+ *   stdin IS the terminal
+ *     and we hold it           group, and the child is handed the terminal
+ *     and we do not            group; the child would have been background
+ *                              today as well, so nothing changes for it
+ *
+ * That last row is what keeps this a fact about the VALUE rather than a premise
+ * about the world (`.claude/rules/module-shape.md`): the question is whether
+ * THIS process holds the terminal, never whether a terminal exists somewhere.
+ *
+ * -1 means there is nothing to hand over; otherwise it is the group that holds
+ * the terminal now and must get it back. */
+static pid_t hero_run_tty_holder(void) {
+    if (!isatty(0)) return -1;
+
+    pid_t mine = getpgrp();
+    pid_t holder = tcgetpgrp(0);
+
+    /* Only a process that HOLDS the terminal may hand it on. Taking it while
+     * background would steal it from whoever has it. */
+    if (mine == -1 || holder == -1 || holder != mine) return -1;
+    return holder;
+}
+
+/* Hand the terminal to `group` — or take it back, when `group` is the holder
+ * saved before the child started.
+ *
+ * **SIGTTOU IS IGNORED ACROSS THE CALL, AND THE SECOND CALL IS WHY.** By the
+ * time the terminal is taken back, this process is itself in a background group
+ * — the child's group holds it — and `tcsetpgrp` from a background process
+ * raises SIGTTOU, whose default action would STOP this very process. A guard
+ * against one program hanging must not hang the program running it. The
+ * disposition is restored, so nothing a later program does inherits our
+ * choice. */
+static void hero_run_tty_give(pid_t group) {
+    struct sigaction ignore;
+    struct sigaction saved;
+    memset(&ignore, 0, sizeof ignore);
+    ignore.sa_handler = SIG_IGN;
+    sigemptyset(&ignore.sa_mask);
+
+    if (sigaction(SIGTTOU, &ignore, &saved) != 0) return;
+    (void)tcsetpgrp(0, group);
+    (void)sigaction(SIGTTOU, &saved, NULL);
+}
+
+/* **THE TERMINAL COMES BACK ON EVERY EXIT, AND NOT BECAUSE ANYBODY REMEMBERED
+ * TO WRITE IT FIVE TIMES.**
+ *
+ * The POSIX arm below leaves through five returns — two `waitpid` failures, the
+ * watchdog's 124, a child that never exec'd, and the ordinary answer — and a
+ * `heroes run` that took any of them must not leave the author's shell without
+ * its terminal. Five call sites is five chances to forget one, and the one
+ * forgotten is the one nobody runs.
+ *
+ * So it is a destructor instead. `__attribute__((cleanup))` runs when the
+ * variable leaves scope, early returns included; it is a GNU extension and
+ * `-std=gnu11` is what this project names rather than inherits
+ * (`.claude/rules/generated-c.md`). The Windows arm never reaches here. */
+static void hero_run_tty_restore(pid_t *holder) {
+    if (*holder != -1) hero_run_tty_give(*holder);
+}
+
+/* Wait for the child, and sweep its group before its pid can be reused.
+ *
+ * **WNOWAIT IS THE WHOLE POINT.** `waitid` reports the exit without reaping, so
+ * the child stays a zombie and its pid — which is also its GROUP id — is pinned
+ * by the kernel. Reap first and `kill(-pgid)` afterwards and this runtime is
+ * signalling a group number somebody else may already own, which is a
+ * corruption class rather than a leak (design.md §1.12).
+ *
+ * `si_pid` is zeroed first because POSIX leaves it unspecified when WNOHANG
+ * finds nothing; zero is then the documented way to tell "not yet" from "here
+ * it is". */
+static pid_t hero_run_reap(pid_t child, int *wait_status, int nohang) {
+    siginfo_t seen;
+    memset(&seen, 0, sizeof seen);
+    int flags = WEXITED | WNOWAIT | (nohang ? WNOHANG : 0);
+    if (waitid(P_PID, (id_t)child, &seen, flags) != 0) return -1;
+    if (seen.si_pid == 0) return 0;
+
+    /* Anything the child left behind dies here, on the ORDINARY exit as well as
+     * on the timeout: the recorded holder was left by a compiler driver whose
+     * parent had finished. */
+    kill(-child, SIGKILL);
+    return waitpid(child, wait_status, 0);
+}
+
+static void hero_run_child(const char *program, int report, int tty,
                            const char *in_path, const char *out_path,
                            const char *err_path) {
+    /* Between fork and exec is the only place this can go. The parent cannot
+     * know the pid soon enough to win the race against the child's own first
+     * spawn, so both sides set it and whichever runs first wins — the
+     * documented way to close it. */
+    setpgid(0, 0);
+
+    /* And the same race for the terminal: the child may reach its first read
+     * before the parent's `tcsetpgrp` lands. */
+    if (tty) hero_run_tty_give(getpid());
+
     /* An empty path leaves the stream alone, so the child reads and writes
      * whatever this process was reading and writing.
      *
@@ -454,14 +576,84 @@ int64_t hero_run_go(const char *program, const char *in_path,
      * `hero_run_win_command_line` already puts the program first, because
      * argv[0] is a pushed word like every other. */
     (void)program;
+
+    /* **THE CHILD IS PUT IN A JOB, AND THE JOB IS WHAT DIES.**
+     *
+     * `TerminateProcess` kills one process and not its descendants — measured
+     * on the author's Windows box at panel 174, where a terminated middle
+     * process left its own child STILL_ACTIVE with the heartbeat still growing,
+     * and the next `CreateFileA` on the redirect path answered
+     * ERROR_SHARING_VIOLATION. That is defect 074's signature end to end, and
+     * `tests/harness/shell.hero` had recorded the holder a month before
+     * anybody measured it: a `clang.exe` under a `heroes.exe`.
+     *
+     * A job object closes it, because a process created by a process in a job
+     * joins that job by default: the grandchild was measured inside ours
+     * without ever being named. `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE` then makes
+     * the last handle's close a kill, so no path out of this function can leave
+     * the tree running.
+     *
+     * `CREATE_SUSPENDED` is not decoration. Assigning after the child is
+     * running leaves a window in which it can spawn a grandchild OUTSIDE the
+     * job, and the grandchild is the holder.
+     *
+     * A failure to make the job is not a failure to run the program: the job is
+     * a guard, so `job == NULL` falls back to exactly what this function did
+     * before. */
+    HANDLE job = CreateJobObjectA(NULL, NULL);
+    if (job != NULL) {
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits;
+        memset(&limits, 0, sizeof limits);
+        limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+        if (!SetInformationJobObject(job, JobObjectExtendedLimitInformation,
+                                     &limits, sizeof limits)) {
+            CloseHandle(job);
+            job = NULL;
+        }
+    }
+
     BOOL started = CreateProcessA(NULL, (char *)line.ptr, NULL, NULL, TRUE,
-                                  0, NULL, NULL, &startup, &child);
+                                  job != NULL ? CREATE_SUSPENDED : 0,
+                                  NULL, NULL, &startup, &child);
     /* **Read on the very next line, because every call below resets it.**
      * `CloseHandle` succeeding sets the thread's last error to 0 on some
      * Windows versions, so a `GetLastError` after the cleanup answers about the
      * cleanup. This is the number the caller wants and the only place it is
      * still true. */
     if (!started) hero_run_why_code = (int64_t)GetLastError();
+    if (started && job != NULL) {
+        /* If the assignment is refused the child is still suspended, so it is
+         * resumed unguarded rather than left frozen for ever. */
+        if (!AssignProcessToJobObject(job, child.hProcess)) {
+            CloseHandle(job);
+            job = NULL;
+        }
+
+        /* **AND IF THE RESUME ITSELF FAILS THE CHILD IS KILLED, not waited
+         * for.** A thread that never resumes never exits, so the wait below
+         * would hang this process and the 120 s limit would only shorten it. A
+         * launch we cannot complete is a launch that did not happen, and the
+         * caller is told so in the one vocabulary it has. */
+        if (ResumeThread(child.hThread) == (DWORD)-1) {
+            hero_run_why_code = (int64_t)GetLastError();
+
+            if (job != NULL) {
+                TerminateJobObject(job, 1);
+                CloseHandle(job);
+                /* NULLed, because the `!started` line below closes it again
+                 * otherwise — a double CloseHandle, which is the one thing a
+                 * guard against a hang must not introduce. */
+                job = NULL;
+            } else {
+                TerminateProcess(child.hProcess, 1);
+            }
+            CloseHandle(child.hProcess);
+            CloseHandle(child.hThread);
+            started = FALSE;
+        }
+    }
+
+    if (!started && job != NULL) CloseHandle(job);
     if (!hero_run_inherits(out_path)) CloseHandle(out);
     if (!hero_run_inherits(err_path)) CloseHandle(err);
     if (nul_in != INVALID_HANDLE_VALUE) CloseHandle(nul_in);
@@ -478,8 +670,10 @@ int64_t hero_run_go(const char *program, const char *in_path,
     if (waited == WAIT_TIMEOUT) {
         /* 124 is what the caller is told, whatever the kill reports: the child
          * is gone by our hand, so its own code would be a fiction. */
-        TerminateProcess(child.hProcess, 124);
+        if (job != NULL) TerminateJobObject(job, 124);
+        else TerminateProcess(child.hProcess, 124);
         WaitForSingleObject(child.hProcess, 5000);
+        if (job != NULL) CloseHandle(job);
         CloseHandle(child.hProcess);
         CloseHandle(child.hThread);
         *status = HERO_OS_OK;
@@ -487,6 +681,17 @@ int64_t hero_run_go(const char *program, const char *in_path,
     }
     DWORD code = 0;
     GetExitCodeProcess(child.hProcess, &code);
+
+    /* **THE SWEEP RUNS ON THE ORDINARY EXIT TOO, and that is the point.** The
+     * recorded holder was left by a `heroes.exe` that FINISHED; no watchdog was
+     * involved, and the timestamps of the failing CI run exclude one — the
+     * whole 136-case `run` suite took 65 s against a 120 s limit. A
+     * `hero_run_go` call means "run this and give me its exit code", so a
+     * descendant outliving the call is the defect rather than a feature. */
+    if (job != NULL) {
+        TerminateJobObject(job, 0);
+        CloseHandle(job);
+    }
     CloseHandle(child.hProcess);
     CloseHandle(child.hThread);
     *status = HERO_OS_OK;
@@ -507,6 +712,9 @@ int64_t hero_run_go(const char *program, const char *in_path,
         return -1;
     }
 
+    pid_t tty_holder __attribute__((cleanup(hero_run_tty_restore))) =
+        hero_run_tty_holder();
+
     pid_t child = fork();
     if (child < 0) {
         hero_run_why_code = (int64_t)errno;
@@ -517,8 +725,14 @@ int64_t hero_run_go(const char *program, const char *in_path,
     }
     if (child == 0) {
         close(report[0]);
-        hero_run_child(program, report[1], in_path, out_path, err_path);
+        hero_run_child(program, report[1], tty_holder != -1, in_path, out_path, err_path);
     }
+
+    /* The other half of the race: EACCES here means the child has already
+     * exec'd, having set it itself, which is the outcome we wanted. */
+    setpgid(child, child);
+
+    if (tty_holder != -1) hero_run_tty_give(child);
 
     close(report[1]);
     int failure = 0;
@@ -550,7 +764,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
         int64_t step_ms = 1;
         int64_t limit_ms = hero_run_limit_seconds * 1000;
         for (;;) {
-            pid_t seen = waitpid(child, &wait_status, WNOHANG);
+            pid_t seen = hero_run_reap(child, &wait_status, 1);
             if (seen == child) break;
             if (seen < 0 && errno != EINTR) {
                 hero_run_why_code = (int64_t)errno;
@@ -558,7 +772,9 @@ int64_t hero_run_go(const char *program, const char *in_path,
                 return -1;
             }
             if (slept_ms >= limit_ms) {
-                kill(child, SIGKILL);
+                /* The negative pid is the group, and the child is still alive,
+                 * so its pid is its own and cannot be anybody else's. */
+                kill(-child, SIGKILL);
                 while (waitpid(child, &wait_status, 0) < 0 && errno == EINTR) { }
                 killed = 1;
                 break;
@@ -571,7 +787,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
             if (step_ms < 50) step_ms *= 2;
         }
     } else {
-        while (waitpid(child, &wait_status, 0) < 0) {
+        while (hero_run_reap(child, &wait_status, 0) < 0) {
             if (errno != EINTR) {
                 hero_run_why_code = (int64_t)errno;
                 *status = HERO_OS_FAILED;

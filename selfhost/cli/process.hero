@@ -188,7 +188,7 @@ function env(name: str) -> str
 ## Tests
 
 # Whether `text` holds `needle` anywhere. **Written here rather than imported,
-# and the reason is the language.** `toolchain.has_text` is the same
+# and the reason is the language.** `strings.has_text` is the same
 # predicate, and `cli_toolchain` imports THIS module — so `use cli_toolchain`
 # here is `module_cycle`, whatever the edge carries (CLAUDE.md §11's knot
 # clause). Six lines in a test section is the cheaper half of that trade.

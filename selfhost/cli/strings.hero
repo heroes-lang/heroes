@@ -1,0 +1,123 @@
+# The text and list helpers the CLI shares, which have nothing to do with a
+# toolchain.
+#
+# **They lived in `cli/toolchain.hero` until 2026-09-22, and four other modules
+# reached across for them** — `cli/units.hero` and `cli/pointee.hero` for
+# `starts_with` and `with_all`, `cli/libraries.hero` for `trimmed`,
+# `cli/process.hero` for `has_text`. A module four of its neighbours import
+# non-toolchain verbs from is a module carrying two concerns, and the imports
+# are the evidence rather than the line count: `.claude/rules/module-shape.md`
+# asks for a seam that names one, and this is that seam.
+#
+# What made it visible was §11's ~300, which `cli/toolchain.hero` sat exactly
+# at — so panel 174's two sentences about why clang may not inherit a stream
+# could not be written without going over. The ceiling did its job: it did not
+# say "write less", it said "this file is two files".
+#
+# Nothing here knows about clang, the cache, or a path. Each function reads its
+# argument and answers; none of them can fail.
+
+# `\r\n` -> `\n`, byte-walked. A lone `\r` (classic Mac, or wire bytes in a
+# diagnostic clang quotes back) is left alone: the poison is the line-ending
+# pair, and rewriting anything else would edit clang's own words.
+function without_returns(text: str) -> str
+    out: str @ ""
+    start: i64 @ 0
+    at: i64 @ 0
+
+    # Whole segments between the pairs, never byte-by-byte: `slice` aborts on
+    # a split character (spec § 10 Strings, arrays, maps), clang's stderr quotes this compiler's own
+    # messages back — em dashes included — and every cut here lands beside an
+    # ASCII `\r` or at a segment edge, which no character can straddle.
+    while at < text.len()
+        if text[at] == 13 && at + 1 < text.len() && text[at + 1] == 10
+            out @ out + text.slice(from: start, to: at)
+            start @ at + 1
+
+        at @ at + 1
+
+    if start == 0
+        return text
+    return out + text.slice(from: start, to: text.len())
+
+function trimmed(text: str) -> str
+    cs = text.chars()
+    head: i64 @ 0
+
+    while head < cs.len() && (cs[head] == " " || cs[head] == "\t" || cs[head] == "\n")
+        head @ head + 1
+
+    tail: i64 @ cs.len()
+
+    while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t" || cs[tail - 1] == "\n")
+        tail @ tail - 1
+
+    return cs.slice(from: head, to: tail).join("")
+
+# Whether a path names anything. It asked `test -e` through a shell
+# until M-argv-execution, because `read_file` refuses a directory and
+# chokes on a binary's bytes; the runtime answers it now, on every
+# platform, without a utility having to exist.
+# Where this program's artifacts live: build/<hash>/. The hash is what
+# makes two files with the same stem, or the same file at two levels,
+# different builds — and the search paths are in it (panel 055,
+# measured: two configurations shared one artifact and the second
+# silently reused the first).
+
+function bool_text(value: bool) -> str
+    if value
+        return "true"
+    return "false"
+
+# One list after another. It replaces `words()`, which quoted every
+# element for a POSIX shell and joined them with spaces — the whole
+# reason a filename with a space in it was ever a question here.
+function with_all(list: [str], more: [str]) -> [str]
+    out: [str] @ list
+
+    for one in more
+        out @ out.push(one)
+
+    return out
+
+# Compile one generated unit and link it with the runtime. The unit is
+# compiled to an object THAT SURVIVES (the Darwin N_OSO repair: the
+# DWARF lives in the object, and one compile-and-link invocation left
+# the debug info in clang's temporary directory). include ordering:
+# the author's own search paths first, then the package flags, then
+# the runtime's -I, then the source's directory — a source directory
+# holding a stray heroes_runtime.h must not win over the real one.
+# Libraries are NAMES, not flags: -l is prefixed here, so no .hero
+# file can hand clang an arbitrary argument. Package resolution is the
+# caller's (cli_libraries, the next crossing): what arrives here is
+# already flags.
+
+function starts_with(text: str, prefix: str) -> bool
+    cs = text.chars()
+    ps = prefix.chars()
+
+    if ps.len() > cs.len()
+        return false
+    index: i64 @ 0
+
+    for p in ps
+        if cs[index] != p
+            return false
+        index @ index + 1
+
+    return true
+
+## Tests
+
+test "clang's CRLF is normalised, and a multibyte character survives the walk"
+    assert starts_with(text: "-I/opt", prefix: "-I")
+    assert !starts_with(text: "-L/opt", prefix: "-I")
+
+    # The pair goes, the lone \r stays (it is clang's own byte, not a line
+    # ending), and the em dash — three bytes, the exact shape that aborts a
+    # byte-indexed slice — comes through whole.
+    assert without_returns("a\r\nb\r\nc") == "a\nb\nc"
+    assert without_returns("does not return `i64` — said\r\n") == "does not return `i64` — said\n"
+    assert without_returns("wire\rbyte") == "wire\rbyte"
+    assert without_returns("") == ""
+    assert without_returns("clean\nalready") == "clean\nalready"
