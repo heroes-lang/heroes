@@ -1,0 +1,69 @@
+build/tu-46fc54f42d1a07d9/popendarwin.c:28:45: error: must use 'struct' tag to refer to type '__sFILE'
+   28 | _Static_assert(HERO_RET_RECORD(popen(0, 0), __sFILE *), "heroes-ffi-return popen File");
+      |                                             ^
+      |                                             struct 
+build/tu-46fc54f42d1a07d9/popendarwin.c:27:75: note: expanded from macro 'HERO_RET_RECORD'
+   27 | #define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)
+      |                                                                           ^
+build/tu-46fc54f42d1a07d9/popendarwin.c:29:37: error: use of undeclared identifier '__sFILE'
+   29 | _Static_assert(HERO_RET_I32(pclose((__sFILE *){0})), "heroes-ffi-return pclose i32");
+      |                                     ^~~~~~~
+build/tu-46fc54f42d1a07d9/popendarwin.c:29:46: error: expected expression
+   29 | _Static_assert(HERO_RET_I32(pclose((__sFILE *){0})), "heroes-ffi-return pclose i32");
+      |                                              ^
+build/tu-46fc54f42d1a07d9/popendarwin.c:29:37: error: use of undeclared identifier '__sFILE'
+   29 | _Static_assert(HERO_RET_I32(pclose((__sFILE *){0})), "heroes-ffi-return pclose i32");
+      |                                     ^~~~~~~
+build/tu-46fc54f42d1a07d9/popendarwin.c:29:46: error: expected expression
+   29 | _Static_assert(HERO_RET_I32(pclose((__sFILE *){0})), "heroes-ffi-return pclose i32");
+      |                                              ^
+build/tu-46fc54f42d1a07d9/popendarwin.c:29:37: error: use of undeclared identifier '__sFILE'
+   29 | _Static_assert(HERO_RET_I32(pclose((__sFILE *){0})), "heroes-ffi-return pclose i32");
+      |                                     ^~~~~~~
+build/tu-46fc54f42d1a07d9/popendarwin.c:29:46: error: expected expression
+   29 | _Static_assert(HERO_RET_I32(pclose((__sFILE *){0})), "heroes-ffi-return pclose i32");
+      |                                              ^
+build/tu-46fc54f42d1a07d9/popendarwin.c:30:37: error: use of undeclared identifier '__sFILE'
+   30 | _Static_assert(HERO_RET_I32(fclose((__sFILE *){0})), "heroes-ffi-return fclose i32");
+      |                                     ^~~~~~~
+build/tu-46fc54f42d1a07d9/popendarwin.c:30:46: error: expected expression
+   30 | _Static_assert(HERO_RET_I32(fclose((__sFILE *){0})), "heroes-ffi-return fclose i32");
+      |                                              ^
+build/tu-46fc54f42d1a07d9/popendarwin.c:30:37: error: use of undeclared identifier '__sFILE'
+   30 | _Static_assert(HERO_RET_I32(fclose((__sFILE *){0})), "heroes-ffi-return fclose i32");
+      |                                     ^~~~~~~
+build/tu-46fc54f42d1a07d9/popendarwin.c:30:46: error: expected expression
+   30 | _Static_assert(HERO_RET_I32(fclose((__sFILE *){0})), "heroes-ffi-return fclose i32");
+      |                                              ^
+build/tu-46fc54f42d1a07d9/popendarwin.c:30:37: error: use of undeclared identifier '__sFILE'
+   30 | _Static_assert(HERO_RET_I32(fclose((__sFILE *){0})), "heroes-ffi-return fclose i32");
+      |                                     ^~~~~~~
+build/tu-46fc54f42d1a07d9/popendarwin.c:30:46: error: expected expression
+   30 | _Static_assert(HERO_RET_I32(fclose((__sFILE *){0})), "heroes-ffi-return fclose i32");
+      |                                              ^
+popen_darwin.hero:4:73: error: must use 'struct' tag to refer to type '__sFILE'
+    4 | __attribute__((unused)) static void hero_ffi_probe_h_popendarwin_pclose(__sFILE * a0) { (void)(pclose)(a0); }
+      |                                                                         ^
+      |                                                                         struct 
+popen_darwin.hero:5:73: error: must use 'struct' tag to refer to type '__sFILE'
+    5 | __attribute__((unused)) static void hero_ffi_probe_h_popendarwin_fclose(__sFILE * a0) { (void)(fclose)(a0); }
+      |                                                                         ^
+      |                                                                         struct 
+popendarwin.c:51:42: error: must use 'struct' tag to refer to type '__sFILE'
+   51 | HERO_TU_LOCAL bool h_popendarwin_File_eq(__sFILE * const *a, __sFILE * const *b);
+      |                                          ^
+      |                                          struct 
+popendarwin.c:51:62: error: must use 'struct' tag to refer to type '__sFILE'
+   51 | HERO_TU_LOCAL bool h_popendarwin_File_eq(__sFILE * const *a, __sFILE * const *b);
+      |                                                              ^
+      |                                                              struct 
+popendarwin.c:59:5: error: must use 'struct' tag to refer to type '__sFILE'
+   59 |     __sFILE * h0_f;
+      |     ^
+      |     struct 
+popendarwin.c:65:5: error: must use 'struct' tag to refer to type '__sFILE'
+   65 |     __sFILE * t5;
+      |     ^
+      |     struct 
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.

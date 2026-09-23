@@ -1,0 +1,10 @@
+extern "stdlib.h"
+    function free(p: ptr)
+
+extern "r1.h"
+    function fill(@out: cstr owned free)
+
+function main()
+    s: str? @ fail(code: "none", msg: "nothing yet")
+    fill(out: @s)
+    print(s.default("<nothing>"))

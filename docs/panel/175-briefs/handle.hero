@@ -1,0 +1,10 @@
+extern "r1.h"
+    record Box tag box
+    function box_open() -> Box acquires box_close
+    function box_close(b: Box consumes)
+
+function main()
+    b = box_open()
+    box_close(b: b)
+    box_close(b: b)
+    print("after")

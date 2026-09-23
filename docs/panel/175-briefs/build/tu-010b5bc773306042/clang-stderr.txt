@@ -1,0 +1,17 @@
+In file included from build/tu-010b5bc773306042/handle.c:5:
+./r1.h:8:40: warning: unused function 'make' [-Wunused-function]
+    8 | static __attribute__((noinline)) void *make(void) { return malloc(16); }
+      |                                        ^~~~
+./r1.h:9:39: warning: unused function 'release' [-Wunused-function]
+    9 | static __attribute__((noinline)) void release(void *p) { free(p); }
+      |                                       ^~~~~~~
+./r1.h:10:39: warning: unused function 'fill' [-Wunused-function]
+   10 | static __attribute__((noinline)) void fill(char **out) { char *s = strdup("x"); *out = s; free(s); }
+      |                                       ^~~~
+./r1.h:13:39: warning: unused function 'fill_out' [-Wunused-function]
+   13 | static __attribute__((noinline)) void fill_out(const char **out) { *out = (const char *)malloc(8); }
+      |                                       ^~~~~~~~
+./r1.h:14:39: warning: unused function 'free_out' [-Wunused-function]
+   14 | static __attribute__((noinline)) void free_out(const char *p) { free((void *)(uintptr_t)p); }
+      |                                       ^~~~~~~~
+5 warnings generated.

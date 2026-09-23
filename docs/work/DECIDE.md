@@ -21,6 +21,17 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 0**
+**OPEN: 1**
+
+- [ ] **panel 175** | ratify panel 175: a consuming call is three things, so route A lands only with a vocabulary 176 decides; route E lands now as the composite; § 13 lands its true sentences in full; the blind seat gets a copy of the spec outside the tree | `docs/panel/175-a-consuming-call-is-three-things-and-the-runtime-speaks-after-it-listens.md`
+
+    **Origin:** panel 175, 2026-09-23, M-agreed-retention. **The default the
+    compiler runs on meanwhile** is the provisional resolution: items 3 to 6
+    land, defect 075 and 079 stay open until panel 176, and `/panel` keeps
+    reading the spec from inside the tree until the author says otherwise, since
+    CLAUDE.md § 4 leaves the skills to the author's instruction. **What
+    conservative would have been**: route A now, keyed on one name, at the price
+    of three correct transfer programs over real libraries and a correct
+    `sqlite3_close_v2`.
 
 *******************************************************************************

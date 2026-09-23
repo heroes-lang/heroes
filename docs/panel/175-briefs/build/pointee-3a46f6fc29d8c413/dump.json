@@ -1,0 +1,164 @@
+{
+  "id": "0x710f07528",
+  "kind": "FunctionDecl",
+  "loc": {
+    "offset": 117,
+    "file": "build/pointee-3a46f6fc29d8c413/dump.c",
+    "line": 5,
+    "col": 35,
+    "tokLen": 22
+  },
+  "range": {
+    "begin": {
+      "offset": 83,
+      "col": 1,
+      "tokLen": 6
+    },
+    "end": {
+      "offset": 117,
+      "col": 35,
+      "tokLen": 22
+    }
+  },
+  "name": "hero_ty_hero_file_read",
+  "mangledName": "_hero_ty_hero_file_read",
+  "type": {
+    "desugaredQualType": "HeroStr (const char *, int64_t *)",
+    "qualType": "typeof (hero_file_read)"
+  },
+  "storageClass": "extern",
+  "inner": [
+    {
+      "id": "0x710f075e8",
+      "kind": "ParmVarDecl",
+      "loc": {
+        "offset": 117,
+        "col": 35,
+        "tokLen": 22
+      },
+      "range": {
+        "begin": {
+          "offset": 117,
+          "col": 35,
+          "tokLen": 22
+        },
+        "end": {
+          "offset": 117,
+          "col": 35,
+          "tokLen": 22
+        }
+      },
+      "isImplicit": true,
+      "type": {
+        "qualType": "const char *"
+      }
+    },
+    {
+      "id": "0x710f07668",
+      "kind": "ParmVarDecl",
+      "loc": {
+        "offset": 117,
+        "col": 35,
+        "tokLen": 22
+      },
+      "range": {
+        "begin": {
+          "offset": 117,
+          "col": 35,
+          "tokLen": 22
+        },
+        "end": {
+          "offset": 117,
+          "col": 35,
+          "tokLen": 22
+        }
+      },
+      "isImplicit": true,
+      "type": {
+        "qualType": "int64_t *"
+      }
+    }
+  ]
+}
+{
+  "id": "0x710f07768",
+  "kind": "FunctionDecl",
+  "loc": {
+    "offset": 183,
+    "file": "build/pointee-3a46f6fc29d8c413/dump.c",
+    "line": 6,
+    "col": 43,
+    "tokLen": 30
+  },
+  "range": {
+    "begin": {
+      "offset": 141,
+      "col": 1,
+      "tokLen": 6
+    },
+    "end": {
+      "offset": 183,
+      "col": 43,
+      "tokLen": 30
+    }
+  },
+  "name": "hero_ty_hero_str_try_from_cstr",
+  "mangledName": "_hero_ty_hero_str_try_from_cstr",
+  "type": {
+    "desugaredQualType": "HeroStr (const char *, int64_t *)",
+    "qualType": "typeof (hero_str_try_from_cstr)"
+  },
+  "storageClass": "extern",
+  "inner": [
+    {
+      "id": "0x710f07828",
+      "kind": "ParmVarDecl",
+      "loc": {
+        "offset": 183,
+        "col": 43,
+        "tokLen": 30
+      },
+      "range": {
+        "begin": {
+          "offset": 183,
+          "col": 43,
+          "tokLen": 30
+        },
+        "end": {
+          "offset": 183,
+          "col": 43,
+          "tokLen": 30
+        }
+      },
+      "isImplicit": true,
+      "type": {
+        "qualType": "const char *"
+      }
+    },
+    {
+      "id": "0x710f078a8",
+      "kind": "ParmVarDecl",
+      "loc": {
+        "offset": 183,
+        "col": 43,
+        "tokLen": 30
+      },
+      "range": {
+        "begin": {
+          "offset": 183,
+          "col": 43,
+          "tokLen": 30
+        },
+        "end": {
+          "offset": 183,
+          "col": 43,
+          "tokLen": 30
+        }
+      },
+      "isImplicit": true,
+      "type": {
+        "qualType": "int64_t *"
+      }
+    }
+  ]
+}

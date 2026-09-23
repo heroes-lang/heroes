@@ -1,0 +1,23 @@
+In file included from build/tu-42406d703e4dc5f5/alt.c:5:
+./../i2.h:7:38: warning: unused function 'keep' [-Wunused-function]
+    7 | static __attribute__((noinline)) int keep(const char *s) { kept = s; return 7; }
+      |                                      ^~~~
+./../i2.h:11:38: warning: unused function 'h_peek' [-Wunused-function]
+   11 | static __attribute__((noinline)) hh *h_peek(hh *x) { return x; }
+      |                                      ^~~~~~
+./../i2.h:12:40: warning: unused function 'make_text' [-Wunused-function]
+   12 | static __attribute__((noinline)) char *make_text(void) { char *p = malloc(4); p[0] = 'h'; p[1] = 'i'; p[2] = 0; return p; }
+      |                                        ^~~~~~~~~
+./../i2.h:13:39: warning: unused function 'my_free' [-Wunused-function]
+   13 | static __attribute__((noinline)) void my_free(void *p) { free(p); }
+      |                                       ^~~~~~~
+./../i2.h:14:39: warning: unused function 'other_free' [-Wunused-function]
+   14 | static __attribute__((noinline)) void other_free(void *p) { (void)p; }
+      |                                       ^~~~~~~~~~
+./../i2.h:15:38: warning: unused function 'fill' [-Wunused-function]
+   15 | static __attribute__((noinline)) int fill(const void *b, uint64_t n) { (void)b; return (int)n; }
+      |                                      ^~~~
+./../i2.h:16:39: warning: unused function 'h_open_out' [-Wunused-function]
+   16 | static __attribute__((noinline)) void h_open_out(hh **out) { *out = (hh *)malloc(8); }
+      |                                       ^~~~~~~~~~
+7 warnings generated.
