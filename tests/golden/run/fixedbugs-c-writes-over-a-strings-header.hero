@@ -1,0 +1,27 @@
+# DEFECT 076, the string's half: a runtime line that blamed the wrong thing
+# (M-agreed-retention, 2026-09-23).
+#
+# `clobber_before` writes over the eight bytes before the text it is lent, which
+# is where a `str`'s block keeps its mark. The program prints the word, and the
+# check that runs when the word's last reference goes finds the mark gone.
+#
+# **The line it printed until this case was written was false.** It said *a str
+# was fabricated from a foreign pointer; use hero_str_from_bytes*: one cause,
+# stated as the only one, and a runtime function no Heroes program can call.
+# Nothing here was fabricated. The same check was reached 8 runs in 10 on
+# Darwin and 5 in 5 on Linux x86-64 by a false `owned` on a cell C had already
+# freed, which is the shape that found the defect; that one depends on the heap
+# and cannot pin anything, so this case pins the class with a writer that
+# reaches the check on every run.
+#
+# **What the case asserts** is the first sentence of the new line, the fact the
+# runtime holds: the mark is gone. The causes follow it as causes, which is
+# panel 173 R1's rule, *no path prints a sentence measured false*.
+
+extern "fixedbugs-c-writes-over-a-strings-header.h"
+    function clobber_before(s: cstr lent)
+
+function main()
+    word = repeat("ab", 4)
+    clobber_before(s: word.cstr())
+    print(word)

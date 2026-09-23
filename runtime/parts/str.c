@@ -60,12 +60,28 @@ static HeroStr hero_str_alloc(int64_t len) {
     return (HeroStr){b, len};
 }
 
-/* One place where a str block is validated. */
+/* One place where a str block is validated.
+ *
+ * WHAT IT SEES, AND ONLY THAT — defect 076, 2026-09-23. The magic was put here
+ * for one cause, a `HeroStr` built by hand in C (the tag's own comment in
+ * heroes_runtime.h), and the message named that cause as the only one. It is
+ * not: a C function that writes over the eight bytes before a string's text,
+ * or frees a block this program still holds and lets it be reused, reaches the
+ * same check. Measured — a C writer over a lent `.cstr()` panics here on every
+ * run and under ASan, and a false `owned` on a cell C had already freed did so
+ * 8 runs in 10 on Darwin and 5 in 5 on Linux x86-64, while the line said *a
+ * str was fabricated*. So it states the fact, that the mark is gone, and names
+ * the three causes as causes, worst first; panel 173 R1 is the standard. */
 static HeroStrHeader *hero_str_hdr_checked(HeroStr s) {
     HeroStrHeader *h = hero_str_hdr(s);
     if (h->magic != HERO_STR_MAGIC) {
-        hero_panic("not a Heroes string block — a str was fabricated from a "
-                   "foreign pointer; use hero_str_from_bytes");
+        hero_panic("a str's block has lost its mark: the bytes just before its text "
+                   "were overwritten, or the block was freed, or it never was a string "
+                   "block. Three things do this: C writing or freeing memory this program "
+                   "still holds, which an `extern` mark that is not true of its function "
+                   "lets happen (`owned`, `consumes`, `lent`); a `HeroStr` built by hand "
+                   "in C rather than by `hero_str_from_bytes`; or a compiler bug, which is "
+                   "worth reporting");
     }
     return h;
 }
@@ -441,13 +457,21 @@ const char *hero_str_held(HeroStr s) {
  * and this function nulls the cell on the way out. In an accepted program the
  * pointer here is therefore either NULL, which is the second release and is
  * caught before any read, or a live block this runtime made — in-bounds by
- * construction. The magic check below is defence in depth against an EMITTER
- * bug, never the guard against a program, and it says so.
+ * construction.
  *
- * TWO refusals, not three: a null cell, and a block this runtime did not make.
- * A first draft claimed a third, "already released", from a zeroed magic in
- * freed memory; five runs printed the wrong message five times, because freed
- * memory owes nobody its contents. */
+ * TWO refusals, not three: a null cell, and a block whose mark is gone. A first
+ * draft claimed a third, "already released", from a zeroed magic in freed
+ * memory; five runs printed the wrong message five times, because freed memory
+ * owes nobody its contents.
+ *
+ * AND THE SECOND REFUSAL IS REACHED BY A PROGRAM, not only by an emitter bug —
+ * defect 076, 2026-09-23. This comment said the magic check was *"never the
+ * guard against a program"* and the message blamed the compiler. A C function
+ * handed the lease that writes over the sixteen bytes before its pointer
+ * reaches it, deterministically, on every run and under ASan too, because the
+ * write stays inside this runtime's own block. So the line says what was SEEN,
+ * that the mark is gone, and names the causes as causes; panel 173 R1's rule,
+ * *no path prints a sentence measured false*, is the standard. */
 void hero_held_release(const char **slot) {
     if (slot == NULL) {
         hero_panic("release with no cell — this is a compiler bug, please report it");
@@ -460,9 +484,11 @@ void hero_held_release(const char **slot) {
     HeroHeldHeader *h =
         (HeroHeldHeader *)(void *)((char *)(void *)(uintptr_t)p - sizeof(HeroHeldHeader));
     if (h->magic != HERO_HELD_MAGIC) {
-        hero_panic("end_lease of a pointer no `.lease()` made — the checker admits "
-                   "`end_lease` only on a lease cell, so this is a compiler bug, please "
-                   "report it");
+        hero_panic("end_lease found a lease whose block has lost its mark: the bytes "
+                   "just before what C was lent were overwritten, or the block was freed. "
+                   "Two things do this: a C function that writes before the pointer it "
+                   "is handed, or frees what it is handed, which no word can declare; or "
+                   "a compiler bug, which is worth reporting");
     }
     h->magic = 0;
     *slot = NULL;
