@@ -353,10 +353,11 @@ elements as the type says.
 `record Font partial` names only some, and then comparing it and using it as a
 map key are compile errors — for it and for any value holding it. Its size stays
 C's, not the field list's. One with a `tag` and no fields is a **handle**, C's
-pointer to that type: `record Db tag sqlite3` is `sqlite3 *`.
+pointer to that type: `record Db tag sqlite3` is `sqlite3 *`, and `tag void` is
+`void *`: a `void *` C hands out for the program to give back is declared as one.
 `nullptr` is its null and `==` compares the address; a map key is an error. A
 parameter declared with it takes no other handle, and two records may not name
-one tag.
+one tag but `void`.
 A group's `constant` has no body: the header holds the value.
 
 `s.cstr()` lends a `str` to C; outside a group nothing answers `cstr` and no
@@ -383,10 +384,12 @@ parameter says the call ends that value's
 life, so passing one the function borrowed is an error: mark the parameter `@`
 and the value does not survive the call. `acquires sqlite3_finalize` after a result
 or `@` out-parameter reaching a handle says the call begins that handle's life and names
-the one that ends it, which the program owes it. The live handles are a set, so
-giving one back twice aborts on its own. `borrows` says the call hands
+the one that ends it, which the program owes it. Giving one back twice aborts,
+unless C has since reused its address. `borrows` says the call hands
 back one it keeps, and where any `extern` consumes a handle type every call handing
-one back says which it is.
+one back says which it is. `consumes`, `acquires` and `borrows` mark only a value
+that reaches a handle, as itself or through a field or an array element; anywhere
+else they are errors.
 A group may name a **package** instead of a library: `extern "raylib.h" package "raylib"`
 asks the system where its headers and libraries are and what else it needs. A
 package answering with anything this compiler does not pass on is refused,
