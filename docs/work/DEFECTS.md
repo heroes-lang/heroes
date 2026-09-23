@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 1**
 
 - [ ] **075 — `acquires` names the call that ends a handle's life, and a program that ends it with another is `check` 0 and `run` 0** | the named releaser is read for existence and never at the call that gives the handle back, and the live set keeps an address and nothing else | `selfhost/check/acquiring.hero` · `runtime/heroes_runtime.h:205` · `spec § 13`
 
@@ -59,48 +59,5 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     because the bare word *leaves the mismatched-deallocator class open* (its
     `What conservative would have been`). Measured today, the named form leaves
     it open too.
-
-- [ ] **076 — a runtime panic blames a fabricated `str` for a heap a C function corrupted** | the magic check on a string block names ONE cause, and on a C double free that cause is false while the sentence reads as certain | `runtime/parts/str.c:64` · `docs/panel/173-the-runtime-may-say-what-it-saw-and-not-why.md`
-
-    **Origin:** 2026-09-23, M-agreed-retention step 1, measuring the milestone's
-    first item at the shape beside panel 172's `b_out`: a result mark that says
-    the program frees what C has already freed.
-
-    **The reproducer.** `fill` writes a `strdup` into the cell and frees it
-    before returning, so the `owned free` below is a false claim about C:
-
-        extern "stdlib.h"
-            function free(p: ptr)
-
-        extern "r1.h"
-            function fill(@out: cstr owned free)
-
-        function main()
-            s: str? @ fail(code: "none", msg: "nothing yet")
-            fill(out: @s)
-            print(s.default("<nothing>"))
-
-    `check` 0. Run, `-O0` and `-O2`, the C side `noinline` so that clang cannot
-    delete the allocation: **Darwin arm64** 8 of 10 exit 134 printing
-    `panic: not a Heroes string block — a str was fabricated from a foreign
-    pointer; use hero_str_from_bytes`, 2 of 10 exit 133 with zero bytes; **Linux
-    x86-64** 5 of 5 the same sentence; **Linux arm64** 5 of 5 glibc's own
-    `free(): double free detected in tcache 2`; **Windows x86-64** 5 of 5
-    `0xC0000374`, STATUS_HEAP_CORRUPTION, zero bytes. Under `--sanitize` on
-    Darwin the truth is `heap-use-after-free`.
-
-    **Why it is a defect and not a limit of the FFI.** The false `owned` is the
-    program's; the false SENTENCE is the runtime's. Nothing was fabricated: the
-    check saw a string block whose header was not a string block's, and a C
-    function writing through a pointer it had already freed is a second way to
-    get there. Panel 173 held the signal handler to *no path prints a sentence
-    this sitting measured false*, and `hero_held_release`'s own comment in the
-    same file, `str.c:447`, records the rule this breaks: *freed memory owes
-    nobody its contents*. `hero_str_from_bytes` is also a runtime function no Heroes
-    program can call, so the advice sends the reader nowhere (design.md §4.17).
-
-    **The shape beside it, UNRUN.** `str.c:462`'s held-block check says *this is
-    a compiler bug* on a bad magic, which is the same claim of one cause; no
-    probe corrupting a lease header has been written.
 
 *******************************************************************************
