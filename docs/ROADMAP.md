@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 0 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 2 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -16,15 +16,15 @@ against a banner reading 3.
 
 | | |
 |---|---|
-| **Current milestone** | **nothing open.** M-declared-extents closed 2026-09-21; the next row of § The chain is opened when somebody opens it, and a close that opens nothing leaves it `scheduled` |
+| **Current milestone** | **M-agreed-retention**, row 62, opened 2026-09-23 ([its file](work/milestones/M-agreed-retention.md)) — one C function, one story about who frees what it is handed. Step 1 measured its four items on all four platforms and found two defects under them: a handle ended by a releaser its `acquires` did not name is silent everywhere (075), and a C double free can print a runtime sentence that is false (076) |
 | **Last closed** | **M-declared-extents**, 2026-09-21, `m-declared-extents` ([060](journal/060-declared-extents.md)) — the extent a lend crosses with, the word it needs, and the report no word could carry · before it **M-readable-bytes** ([059](journal/059-readable-bytes.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **61** of 81 · **61** tags matching `m*`, the legacy `m0`-`m8` included |
+| Milestones closed | **61** of 82 · **61** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **65,013** lines of Heroes in **228** modules (`find selfhost -name '*.hero'`) · the seed **862,422** lines of C, regenerated four times in this milestone and the fixpoint verified byte-identical each time |
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
 | The spec | **6212** on the vendored ranks and **8270** on the reader's own, against a ceiling of **10240**. This milestone spent three rows: panel 169's *a lend lives for its call and no longer*, panel 171's rewriting of it for the flipped default, and panel 173's limit — *no word says C frees what it is handed*, the sentence that carries its own falsifier because the runtime reports what no declaration can state. **1970 free** and 1910 net of the FFI floor |
 | The contract | **7737** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-21 when § 4 gained the author's second telling that they read every sitting |
-| Records | sittings **171** · journals **62** · milestone files **50** · measurements **37** · entries: `docs/records/log/` **697**, `docs/records/done/` **577**, `docs/records/book/beats/` **128** |
-| Waiting on the author | **nothing**, and both lists are at **OPEN: 0**. Defect 074 was opened by the Windows leg of the push that carried `m-declared-extents` and closed 2026-09-22 by panel 174: the net had been sharing two redirect files between every process it starts, and one holder refused every later spawn. Run **35693306661** is green on all four legs and its Windows leg reads **zero** lines carrying `the operating system's own reason is 32`. **Panel 174 was ratified the day it sat, as a reading**, which is CLAUDE.md § 4's default and the author's third telling of it |
+| Records | sittings **172** · journals **61**, numbered files only (the 62 this cell read counted `README.md`) · milestone files **51** · measurements **37** · entries: `docs/records/log/` **699**, `docs/records/done/` **579**, `docs/records/book/beats/` **128** |
+| Waiting on the author | **nothing on a list**: `DECIDE.md` is at **OPEN: 0**, and the two open defects are this milestone's to repair. The milestone's fourth item is an amendment to `/panel`, which CLAUDE.md § 4 leaves to the author's instruction |
 
 **Re-measured 2026-09-21, the full net on a compiler built from the regenerated
 seed, which is CI's own configuration: 1980 passed, 0 failed**, over 24 suites,
@@ -41,8 +41,8 @@ the close because three goldens were red on that leg without it.
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–60
-are done, in the order they closed, and rows 61–81 are what is next, in the order
+One table, one row per milestone, **closed first and scheduled after**: rows 1–61
+are done, in the order they closed, and rows 62–82 are what is next, in the order
 they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
@@ -67,7 +67,11 @@ and the OPENING of row 61 on 2026-09-18 found it**: the same close entered
 `M-declared-extents` at 61 and `M-buildable-structs` at 62, both out of panel
 164, so it opened two rows rather than none, **the table is 81 long**, and the
 scheduled block is 61–81. The sentence restated a length it had not recounted,
-which is the one thing this paragraph exists to prevent. It is the
+which is the one thing this paragraph exists to prevent. Then 1–60 and 61–81
+until 2026-09-23: M-declared-extents's close ticked row 61 and entered
+`M-agreed-retention` at 62, so **the table is 82 long** and the scheduled block
+is 62–82, and that close restated neither this sentence nor *61 of 81* in § Where
+we are; the OPENING of row 62 found both. It is the
 one number in this file that no instrument reads, so it is
 restated here and re-read at every close with § Where we are — and at every
 OPENING too, which is what moved it twice on one day, what caught it at row 59,
@@ -141,7 +145,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 59 | **M-arm-platform** | done 2026-09-18 | `m-arm-platform` | [058](journal/058-arm-platform.md) | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
 | 60 | **M-readable-bytes** | done 2026-09-18 | `m-readable-bytes` | [059](journal/059-readable-bytes.md) | a C byte buffer becomes text a program can print: the inbound direction `str` has never had · **§1.11** |
 | 61 | **M-declared-extents** | done 2026-09-21 | `m-declared-extents` | [060](journal/060-declared-extents.md) | how far C may read through a lent address, and what becomes of the pointer afterwards: `counted_by` declares the extent and the emitter checks it against the field's own `sizeof` in C; then the author flipped the default, so a C parameter is taken to KEEP what it is handed and a lend reaches only one declared `lent`; and where no word can reach — C frees the bytes from a callback, or from a later call with no pointer at all — the runtime names the leases that were live. **Seven defects, all closed** · **§1.12**, **§4.19** |
-| 62 | **M-agreed-retention** | scheduled | — | — | one C function, one story about who frees what it is handed: two modules may declare it with contradictory retention marks and the compiler takes both; one declaration cannot carry a contract chosen per call, which is `sqlite3_bind_text`'s three modes; and nothing says a pointer C made is C's to free once. Opened at M-declared-extents's close, because its four carried items had no home a reader would look in · **§1.11**, **§4.19** |
+| 62 | **M-agreed-retention** | **OPEN** | — | — | one C function, one story about who frees what it is handed: two modules may declare it with contradictory retention marks and the compiler takes both; one declaration cannot carry a contract chosen per call, which is `sqlite3_bind_text`'s three modes; and nothing says a pointer C made is C's to free once. Opened at M-declared-extents's close, because its four carried items had no home a reader would look in · **§1.11**, **§4.19** |
 | 63 | **M-buildable-structs** | scheduled | — | — | a real five-field `utsname` needs 1280 literal zeros, 4312 bytes for a nine-line program, measured and RUN at panel 164. Not a defect, because nothing is broken: what is missing is a way to write *the rest are zero* |
 | 64 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
 | 65 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
