@@ -24,7 +24,7 @@ against a banner reading 3.
 | The spec | **6212** on the vendored ranks and **8270** on the reader's own, against a ceiling of **10240**. This milestone spent three rows: panel 169's *a lend lives for its call and no longer*, panel 171's rewriting of it for the flipped default, and panel 173's limit — *no word says C frees what it is handed*, the sentence that carries its own falsifier because the runtime reports what no declaration can state. **1970 free** and 1910 net of the FFI floor |
 | The contract | **7737** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-21 when § 4 gained the author's second telling that they read every sitting |
 | Records | sittings **172** · journals **61**, numbered files only (the 62 this cell read counted `README.md`) · milestone files **51** · measurements **37** · entries: `docs/records/log/` **699**, `docs/records/done/` **579**, `docs/records/book/beats/` **128** |
-| Waiting on the author | **nothing on a list**: `DECIDE.md` is at **OPEN: 0**, and the two open defects are this milestone's to repair. The milestone's fourth item is an amendment to `/panel`, which CLAUDE.md § 4 leaves to the author's instruction |
+| Waiting on the author | **nothing**: `DECIDE.md` is at **OPEN: 0**, and the two open defects are this milestone's to repair. The author said yes on 2026-09-23 to both questions of the milestone's panel gate: two sittings, 175 on defect 075 with the first item and 176 on the second and third items together, and the `/panel` amendment the fourth item asked for, which has landed |
 
 **Re-measured 2026-09-21, the full net on a compiler built from the regenerated
 seed, which is CI's own configuration: 1980 passed, 0 failed**, over 24 suites,

@@ -25,7 +25,7 @@ fourth is a process rule that the closed file could not keep, parked here with
 its reason rather than lost.
 
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 3**
 
 - [ ] **M-agreed-retention** | a pointer C made, handed twice to a C function that frees it, is `check` 0 and dies at run time saying nothing, and nothing in § 13 says a pointer C made is C's to free once | panel 172's compiler-engineer and completeness critic, `spec § 13`
 
@@ -137,26 +137,5 @@ its reason rather than lost.
     the box has no `sqlite3.h`. So the one declaration an author is likeliest to
     write for the common mode is a wrong answer at exit 0 in the other, and the
     shipped ledger avoids it only by leaving `text` unmarked and paying a lease.
-
-- [ ] **M-agreed-retention** | `/panel`'s working rules do not say that a seat's tree copy is its own, and two seats shared one scratchpad in one sitting | `.claude/skills/panel/SKILL.md`, `.claude/rules/verification.md`
-
-    **Origin:** panel 170's completeness critic, 2026-09-20. **Filed rather than
-    fixed, because CLAUDE.md § 4 says the skills are amended by author
-    instruction and not by a panel.**
-
-    Two seats shared one scratchpad and one rebuilt the other's compiler
-    underneath it, which produced an emission divergence a seat reported as a
-    question and the critic then traced to a stale binary. Independently, the
-    compiler-engineer found its own first copy six commits behind and re-ran
-    everything. **Twice in one sitting**, and it is
-    `.claude/rules/verification.md` § *The compiler that judges is a build
-    artifact* arriving inside a sitting rather than in a gate.
-
-    **Read 2026-09-23, step 1.** `.claude/skills/panel/SKILL.md` § 3 names one
-    location, *`cp -r` the tree to the scratchpad and work there*, and no line
-    gives each seat a directory of its own or says the copy is built from HEAD.
-    Whether a subagent's scratchpad IS the coordinator's is not measured here;
-    panel 170's two seats sharing one is the evidence that it was. The
-    amendment is still the author's to give.
 
 *******************************************************************************

@@ -145,6 +145,22 @@ is a full panel.
    scratch — which is the only reason it is known rather than a wrong number in a
    verdict.
 
+   **And a copy is one seat's, never two** (author instruction 2026-09-23, on
+   panel 170's completeness critic). *The scratchpad* is one place, and this
+   paragraph said no more than that until then. At panel 170 two seats worked in
+   one copy and one rebuilt the other's compiler underneath it, which produced an
+   emission divergence a seat reported as a question and the critic traced to a
+   stale binary; in the same sitting the compiler-engineer found its own first
+   copy six commits behind and re-ran everything. So **every brief names the
+   seat's own directory, `<scratchpad>/<NNN>-<seat>/`**, copied from the frozen
+   tree after the coordinator has read `git status` clean and `git log -1` at
+   the HEAD the briefs name; **the seat builds its own compiler inside it from
+   the seed**, `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`,
+   three seconds, and never uses the trunk's `./heroes` or another seat's; and
+   **no seat reads, builds or runs inside another seat's directory**. It is
+   `.claude/rules/verification.md` § *The compiler that judges is a build
+   artifact*, which a gate had learned and a sitting had not.
+
    **And the rule binds the coordinator during a sitting.** In panel 056 the
    coordinator put `-Werror=missing-include-dirs` into `FLAGS` between 23:37 and
    23:45 while judges were measuring, and one of them observed the effect from
