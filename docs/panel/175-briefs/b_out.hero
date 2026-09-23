@@ -1,0 +1,10 @@
+extern "r1.h"
+    function fill_out(@out: cstr)
+    function free_out(p: cstr)
+
+function main()
+    p: cstr @ nullptr
+    fill_out(@p)
+    free_out(p: p)
+    free_out(p: p)
+    print("after")

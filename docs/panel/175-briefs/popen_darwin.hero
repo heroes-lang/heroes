@@ -1,0 +1,10 @@
+extern "stdio.h"
+    record File tag __sFILE
+    function popen(command: cstr lent, mode: cstr lent) -> File acquires pclose
+    function pclose(stream: File consumes) -> i32
+    function fclose(stream: File consumes) -> i32
+
+function main()
+    f = popen(command: "true".cstr(), mode: "r".cstr())
+    rc = fclose(stream: f)
+    print("fclose on a popen stream: ", rc)

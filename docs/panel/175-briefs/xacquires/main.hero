@@ -1,0 +1,10 @@
+use alt
+
+extern "../i2.h"
+    function h_open() -> alt.H acquires h_close2
+    function h_close2(x: alt.H consumes)
+
+function main()
+    alt.run()
+    h = h_open()
+    h_close2(x: h)

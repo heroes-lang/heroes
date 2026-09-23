@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 2 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 2 defects · 1 decision.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -24,7 +24,7 @@ against a banner reading 3.
 | The spec | **6212** on the vendored ranks and **8270** on the reader's own, against a ceiling of **10240**. This milestone spent three rows: panel 169's *a lend lives for its call and no longer*, panel 171's rewriting of it for the flipped default, and panel 173's limit — *no word says C frees what it is handed*, the sentence that carries its own falsifier because the runtime reports what no declaration can state. **1970 free** and 1910 net of the FFI floor |
 | The contract | **7737** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-21 when § 4 gained the author's second telling that they read every sitting |
 | Records | sittings **172** · journals **61**, numbered files only (the 62 this cell read counted `README.md`) · milestone files **51** · measurements **37** · entries: `docs/records/log/` **699**, `docs/records/done/` **579**, `docs/records/book/beats/` **128** |
-| Waiting on the author | **nothing**: `DECIDE.md` is at **OPEN: 0**, and the two open defects are this milestone's to repair. The author said yes on 2026-09-23 to both questions of the milestone's panel gate: two sittings, 175 on defect 075 with the first item and 176 on the second and third items together, and the `/panel` amendment the fourth item asked for, which has landed |
+| Waiting on the author | **panel 175's ratification**, the one item in `DECIDE.md`, which carries a `/panel` amendment only the author can give: the blind seat reads the spec from inside the tree and rule files load into it. Work proceeds on the provisional resolution meanwhile. The open defects are this milestone's to repair |
 
 **Re-measured 2026-09-21, the full net on a compiler built from the regenerated
 seed, which is CI's own configuration: 1980 passed, 0 failed**, over 24 suites,
