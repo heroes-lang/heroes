@@ -76,6 +76,20 @@ function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: 
         asked = one.asked
         lines @ lines.push("#line " + asked.line.to_str() + " \"" + asked.file + "\"")
 
+        # **A depth ask is one line and its own marker** (defect 083). The
+        # guard against `void` is folded in, because `*(void *)0` is only a
+        # warning on clang and the guard fails first as the marker line; the
+        # second operand is C11 arithmetic on the header's own pointee —
+        # `__builtin_classify_type` reads 5 for a pointer, 1 for an integer,
+        # 8 for a real, 12 for a struct, measured on clang 21 and 22 — so a
+        # header that takes one pointer where the program hands the address
+        # of its cell fails here, at the author's line, and never reaches C.
+        if asked.depth
+            lines @ lines.push(
+                "_Static_assert(!__builtin_types_compatible_p(" + header_type + ", void) && __builtin_classify_type(*(" + header_type + " *)0) == 5, \"" + ffi_pointee.DEPTH_MARKER + asked.name + " " + asked.param + " " + asked.declared + " " + header_type + "\");"
+            )
+            continue
+
         # **The guard comes first, and it exists because `sizeof(void)` is not
         # an assertion failure** (defect 010, 2026-09-04). `@value: i32`
         # against `void *optval` made the width line below a hard error —
@@ -250,17 +264,21 @@ test "what is pointed at: the text before the last star, restrict gone, by-value
 
 test "the check unit asserts width and sign at the author's line, with the marker"
     wanted: [pointee_ask.Pointee] = [
-        pointee_ask.Pointee(name: "getline", param: "n", index: 1, declared: "int32_t", file: "t.hero", line: 2)
-        pointee_ask.Pointee(name: "frexp", param: "e", index: 1, declared: "int32_t", file: "t.hero", line: 3)
+        pointee_ask.Pointee(name: "getline", param: "n", index: 1, declared: "int32_t", file: "t.hero", line: 2, depth: false)
+        pointee_ask.Pointee(name: "frexp", param: "e", index: 1, declared: "int32_t", file: "t.hero", line: 3, depth: false)
+        pointee_ask.Pointee(name: "eat", param: "p", index: 0, declared: "handle", file: "t.hero", line: 4, depth: true)
     ]
     types: {str: [str]} @ {}
     types["getline"] @ ["char **restrict", "size_t *restrict", "FILE *restrict"]
     types["frexp"] @ ["double", "int *"]
+    types["eat"] @ ["void *"]
     headers: [str] = ["stdio.h", "math.h"]
     unit = check_unit(headers, wanted, types)
     assert unit.slice(from: 0, to: 18) == "#include <stdio.h>"
     assert locate_text(text: unit, needle: "#line 2 \"t.hero\"", from: 0).must() > 0
     assert locate_text(text: unit, needle: "_Static_assert(sizeof(size_t) == sizeof(int32_t) && (((size_t)-1 > 0) == ((int32_t)-1 > 0)), \"heroes-ffi-pointee getline n int32_t size_t\");", from: 0).must() > 0
     assert locate_text(text: unit, needle: "heroes-ffi-pointee frexp e int32_t int\"", from: 0).must() > 0
+    assert locate_text(text: unit, needle: "_Static_assert(!__builtin_types_compatible_p(void, void) && __builtin_classify_type(*(void *)0) == 5, \"heroes-ffi-pointee-depth eat p handle void\");", from: 0).must() > 0
+    assert locate_text(text: unit, needle: "sizeof(handle)", from: 0).is_err()
     dumped = dump_unit(headers, wanted)
     assert locate_text(text: dumped, needle: "extern __typeof__(getline) hero_ty_getline;", from: 0).must() > 0
