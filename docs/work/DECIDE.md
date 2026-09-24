@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 3**
 
 - [ ] **panel 175** | ratify panel 175: a consuming call is three things, so route A lands only with a vocabulary 176 decides; route E lands now as the composite; § 13 lands its true sentences in full; the blind seat gets a copy of the spec outside the tree | `docs/panel/175-a-consuming-call-is-three-things-and-the-runtime-speaks-after-it-listens.md`
 
@@ -44,5 +44,18 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     the prototype as built, with an unchecked `transfers` and the call-site
     rule, refused because the critic measured it silencing defect 075 on three
     platforms and refusing a correct module checked alone.
+
+- [ ] **panel 177** | ratify panel 177: a dead handle is poisoned where it lay (P) and its address remembered (T), with every crossing into C checked; the compile-time half is route M on every path, inside one function; R and S are refused on the ffi seat's vetoes; the success clause is on the result and governs every end; a transfer needs a receiver | `docs/panel/177-a-dead-handle-is-poisoned-where-it-lay-and-remembered-where-it-was.md`
+
+    **Origin:** panel 177, 2026-09-24, M-agreed-retention. **The default the
+    compiler runs on meanwhile** is today's: nothing of it has landed, and
+    defects 077 and 088 stay open until the landing measures the five
+    conditions in its item 10. **What conservative would have been**: P alone,
+    refused because it misses every copy and, with callback results
+    unchecked, hides a use-after-free ASan catches today. **And one thing only
+    the author can change**: `.claude/skills/panel/SKILL.md` step 2 says a
+    rebuild from `selfhost/` is about twenty minutes, and the
+    compiler-engineer measured 67-72 s from a seed built at `-O2`; the skills
+    are amended by author instruction, so the number waits for yours.
 
 *******************************************************************************

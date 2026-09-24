@@ -1,0 +1,12 @@
+extern "shapes.h"
+    record H tag hh
+    function f_open() -> H acquires f_close
+    function f_close(x: H consumes)
+
+function main()
+    a = f_open()
+    f_close(x: a)
+    b = f_open()
+    print(a == b)
+    f_close(x: a)
+    print("a given back twice, and nothing said")
