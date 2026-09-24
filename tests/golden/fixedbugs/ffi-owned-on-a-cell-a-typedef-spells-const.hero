@@ -1,0 +1,13 @@
+# DEFECT 078, the shape beside it: the const hidden behind a typedef,
+# `typedef const char *cstring_t; void fill_t(cstring_t *out)`. Panel 176's
+# critic measured the repair holding on three such spellings, because the type
+# the compiler compares is the one clang prints, and clang prints the canonical
+# `const char **`. This case keeps that measurement.
+extern "ffi-owned-on-a-cell-a-typedef-spells-const.h"
+    function fill_t(@out: cstr owned free_out)  #~ ffi_owned_const_cell
+    function free_out(p: cstr)
+
+function main()
+    s: str? @ fail(code: "none", msg: "nothing yet")
+    fill_t(out: @s)
+    print("after")
