@@ -1,0 +1,19 @@
+# DEFECT 081: on Linux x86-64 a C trap with a lease live died at 132 with
+# nothing on stderr (panel 175's ffi-pragmatist, 2026-09-23).
+#
+# Panel 173's handler took SIGTRAP and SIGABRT, and `__builtin_trap()` is SIGTRAP
+# on arm64 and SIGILL on x86-64, so the same program named its lease on Darwin
+# and Linux arm64 and said nothing on the x86-64 leg. The handler now takes
+# SIGILL too. The case asserts the lease line, which is the same text on every
+# architecture; under `--sanitize` it is said too, since ASan reports nothing
+# for a trap and its death callback never runs.
+
+extern "fixedbugs-c-traps-with-a-lease-live-on-every-architecture.h"
+    function c_trap(s: cstr)
+
+function main()
+    word = repeat("ab", 4)
+    held: cstr @ word.lease()
+    c_trap(s: held)
+    end_lease(@held)
+    print("not reached")

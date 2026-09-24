@@ -134,17 +134,14 @@
 #define HERO_NULL_WINDOW 65536ULL
 #endif
 
-#if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
-
-/* ASan owns the signal; its report is the better one. All three doors are empty
- * here, and all three exist, because `parts/spawn.c` calls two of them on every
- * thread it starts and a build configuration is not a place to discover that a
- * function is missing. */
-static void hero_stack_guard_install(void) {}
-static void hero_stack_guard_enter(void) {}
-static void hero_stack_guard_leave(void) {}
-
-#elif !defined(_WIN32)
+/* THE HELPERS, compiled on every POSIX build, under the sanitizer too (panel
+ * 175). `parts/os.c`'s crash handler writes with them and asks them which Heroes
+ * frame it is under, and since panel 175 that handler stays in a `--sanitize`
+ * build, silenced only once the sanitizer has spoken. Under the sanitizer the
+ * guard below yields and never measures the bounds, so `lo` and `hi` stay zero
+ * and `hero_stack_blame`'s walk stops at its first check: it can name the pc's
+ * own frame or the link register's, and never reads a frame it cannot bound. */
+#if !defined(_WIN32)
 
 #include <signal.h>
 #include <string.h>
@@ -175,43 +172,9 @@ static void hero_stack_guard_leave(void) {}
 static _Thread_local uintptr_t hero_stack_lo = 0;
 static _Thread_local uintptr_t hero_stack_hi = 0;
 
-/* The alternate stack this thread holds, kept so the thread can give it back.
- * A signal stack is per thread by the kernel's own definition — `sigaltstack`
- * sets it for the calling thread and for nobody else — and that is the OTHER
- * half of why the guard could not speak on a worker: even with the bounds
- * right, the handler had nowhere to run that was not the stack which had just
- * run out. */
-static _Thread_local void *hero_stack_alt = NULL;
-static _Thread_local size_t hero_stack_alt_size = 0;
-
-
-/* What was installed before us, for SIGSEGV and SIGBUS. */
-static struct sigaction hero_stack_prev_segv;
-static struct sigaction hero_stack_prev_bus;
-
 /* How far below `lo` a fault still counts as exhaustion: clang emits no stack
  * probes on Darwin, so a frame larger than the guard page can land past it. */
 #define HERO_STACK_WINDOW ((uintptr_t)1 << 20)
-
-static void hero_stack_bounds(void) {
-#if defined(__APPLE__)
-    pthread_t self = pthread_self();
-    uintptr_t top = (uintptr_t)pthread_get_stackaddr_np(self);
-    size_t size = pthread_get_stacksize_np(self);
-    hero_stack_hi = top;
-    hero_stack_lo = top - size;
-#else
-    pthread_attr_t attr;
-    void *addr = NULL;
-    size_t size = 0;
-    if (pthread_getattr_np(pthread_self(), &attr) == 0) {
-        pthread_attr_getstack(&attr, &addr, &size);
-        pthread_attr_destroy(&attr);
-    }
-    hero_stack_lo = (uintptr_t)addr;
-    hero_stack_hi = (uintptr_t)addr + size;
-#endif
-}
 
 /* `write(2)` and nothing else: inside a signal handler, `fprintf` is not ours
  * to call (the faulting thread may hold stdout's lock). */
@@ -223,30 +186,6 @@ static void hero_stack_say(const char *s) {
         s += (size_t)put;
         n -= (size_t)put;
     }
-}
-
-/* An address as `0x…`, written with `write(2)` like everything else here: a
- * signal handler may not call `snprintf`, which is why this exists at all. The
- * offset is in the message because the null-page window is the platform's own
- * floor and not one page — 4 GiB on Darwin — so a reader has to be able to tell
- * a null plus a field offset from a small wild pointer, and the number is the
- * only thing that says which (defect 045). */
-static void hero_stack_say_hex(uintptr_t v) {
-    char buf[2 + 16 + 1];
-    const char *digits = "0123456789abcdef";
-    int at = 0;
-    buf[at++] = '0';
-    buf[at++] = 'x';
-    int started = 0;
-    for (int shift = 60; shift >= 0; shift -= 4) {
-        unsigned nibble = (unsigned)((v >> shift) & 0xf);
-        if (nibble != 0 || started || shift == 0) {
-            buf[at++] = digits[nibble];
-            started = 1;
-        }
-    }
-    buf[at] = '\0';
-    hero_stack_say(buf);
 }
 
 static int hero_stack_is_heroes(const char *sym) {
@@ -354,6 +293,78 @@ static const char *hero_stack_blame(uintptr_t pc, uintptr_t fp, uintptr_t lr) {
         fp = next_fp;
     }
     return first;
+}
+
+#endif
+
+#if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
+
+/* ASan owns the signal; its report is the better one. All three doors are empty
+ * here, and all three exist, because `parts/spawn.c` calls two of them on every
+ * thread it starts and a build configuration is not a place to discover that a
+ * function is missing. */
+static void hero_stack_guard_install(void) {}
+static void hero_stack_guard_enter(void) {}
+static void hero_stack_guard_leave(void) {}
+
+#elif !defined(_WIN32)
+
+/* The alternate stack this thread holds, kept so the thread can give it back.
+ * A signal stack is per thread by the kernel's own definition — `sigaltstack`
+ * sets it for the calling thread and for nobody else — and that is the OTHER
+ * half of why the guard could not speak on a worker: even with the bounds
+ * right, the handler had nowhere to run that was not the stack which had just
+ * run out. */
+static _Thread_local void *hero_stack_alt = NULL;
+static _Thread_local size_t hero_stack_alt_size = 0;
+
+
+/* What was installed before us, for SIGSEGV and SIGBUS. */
+static struct sigaction hero_stack_prev_segv;
+static struct sigaction hero_stack_prev_bus;
+
+static void hero_stack_bounds(void) {
+#if defined(__APPLE__)
+    pthread_t self = pthread_self();
+    uintptr_t top = (uintptr_t)pthread_get_stackaddr_np(self);
+    size_t size = pthread_get_stacksize_np(self);
+    hero_stack_hi = top;
+    hero_stack_lo = top - size;
+#else
+    pthread_attr_t attr;
+    void *addr = NULL;
+    size_t size = 0;
+    if (pthread_getattr_np(pthread_self(), &attr) == 0) {
+        pthread_attr_getstack(&attr, &addr, &size);
+        pthread_attr_destroy(&attr);
+    }
+    hero_stack_lo = (uintptr_t)addr;
+    hero_stack_hi = (uintptr_t)addr + size;
+#endif
+}
+
+/* An address as `0x…`, written with `write(2)` like everything else here: a
+ * signal handler may not call `snprintf`, which is why this exists at all. The
+ * offset is in the message because the null-page window is the platform's own
+ * floor and not one page — 4 GiB on Darwin — so a reader has to be able to tell
+ * a null plus a field offset from a small wild pointer, and the number is the
+ * only thing that says which (defect 045). */
+static void hero_stack_say_hex(uintptr_t v) {
+    char buf[2 + 16 + 1];
+    const char *digits = "0123456789abcdef";
+    int at = 0;
+    buf[at++] = '0';
+    buf[at++] = 'x';
+    int started = 0;
+    for (int shift = 60; shift >= 0; shift -= 4) {
+        unsigned nibble = (unsigned)((v >> shift) & 0xf);
+        if (nibble != 0 || started || shift == 0) {
+            buf[at++] = digits[nibble];
+            started = 1;
+        }
+    }
+    buf[at] = '\0';
+    hero_stack_say(buf);
 }
 
 /* A fault that is not ours goes to whoever was there before us — chained with

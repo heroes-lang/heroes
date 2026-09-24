@@ -200,6 +200,9 @@ constant SHARED_BY_DECISION: [str]
         "runtime/parts/alloc.c hero_handle_lock | the lock that guards the set above, one per platform arm — `pthread_mutex_t` on POSIX, `SRWLOCK` on Windows, which has no pthreads at all. Being shared is what a lock IS, and the platform owns its safety. Both spellings are statically initialisable, which is what keeps this twenty lines rather than the kept buffer's hundred"
         "runtime/parts/os.c hero_lease_prev_trap | the SIGTRAP disposition installed before this runtime's, so a trap it does not own is passed on before the default is restored. `hero_stack_prev_segv`'s entry three above is the same object at a different signal, and the same kernel fact decides it: `sigaction` is the process's, `sigaltstack` and the bounds are the thread's. Measured at panel 173 rather than reasoned: a C library that installs its own handler from a constructor stops being called the moment this one drops what it saved, exit 77 becoming 133 ten runs of ten on two platforms, and chaining returns it"
         "runtime/parts/os.c hero_lease_prev_abrt | the same, for SIGABRT, which is the signal glibc's allocator raises and the one every `abort()` in this runtime reaches"
+        "runtime/parts/os.c hero_lease_prev_ill | the same, for SIGILL, since panel 175 (defect 081): `__builtin_trap()` is `ud2` on x86-64 and that is SIGILL, so a C trap with a lease live died at 132 with nothing on the x86-64 leg while arm64 named the lease"
+        "runtime/parts/os.c hero_lease_prev_abrt_win | the SIGABRT disposition Windows' `signal` found before this runtime's, called first as the POSIX arm calls its own (defect 082's order). Written once, in `main`, before a program's first thread; `signal` itself is the process's on this platform, which is the POSIX arm's kernel fact in the UCRT's words"
+        "runtime/parts/os.c hero_lease_prev_filter | the filter of last resort found before this runtime's, called first so a C library's own verdict on an unhandled exception stands. `SetUnhandledExceptionFilter` is the process's, one filter for every thread, and this is written once, in `main`, before a program's first thread"
         "runtime/parts/panic.c hero_runtime_spoke | the flag that says THIS RUNTIME has already printed its reason, set in `hero_abort` — the one funnel every runtime-initiated death passes through — and read by the lease handler so it does not print a second line under a panic the runtime itself wrote. Process-wide by nature, like the dispositions above: a death ends the process, so a per-thread copy would be read on the wrong thread, and `_Atomic` buys nothing against a handler that runs on the thread that died. It is `volatile sig_atomic_t` because C11 7.14.1.1p5 allows a handler to touch nothing else, which is the same reason `stack.c` writes with `write(2)` alone"
         "runtime/parts/alloc.c hero_handle_cap | the set's capacity, read and written only under that lock, so it is the lock's own state and not a second shared thing to make safe"
         "runtime/parts/alloc.c hero_handle_live | how many addresses the set holds, under the same lock and for the same reason. It is deliberately NOT `_Atomic`: an atomic count beside a locked table would be a second answer to one question, which is the drift this file exists to catch"
@@ -413,6 +416,20 @@ function keep_shared_state(@r: report.Report, sources: [str])
 # would be an object this reads as a function and skips. There are none
 # on 2026-09-06, measured; the day one arrives, this sentence is what is
 # wrong, and the `LEAST_SHARED_STATE` floor is what will not notice.
+#
+# **The day arrived on 2026-09-24**, at panel 175's landing, and the sentence
+# did its job only because the object beside it was caught: route E's Windows
+# arm keeps the SIGABRT handler it found in
+# `static void (__cdecl *hero_lease_prev_abrt_win)(int) = SIG_DFL;`, and this
+# sweep reported the typedef'd filter one line below it and walked past it.
+#
+# So both questions are now asked of the DECLARATOR, the row before any `=`,
+# and not of the row. The initialiser was answering for it twice: a `(` in it
+# made an object a function (`static int64_t x = (1 + 2);`), and a `*` in it
+# cancelled the `const` narrowing below (`static const int64_t x = 2 * 8;`,
+# which is a constant) — none of either shape on that day, measured, and the
+# same hole as the pointer. A declarator holding a `(` is still a function
+# unless it opens a function pointer, `pointed_function_name`.
 function declares_object(row: str) -> bool
     if !strings.starts_with(text: row, prefix: "static")
         return false
@@ -437,16 +454,106 @@ function declares_object(row: str) -> bool
     # The narrowing now asks the row in hand rather than the word: a declaration
     # with no `*` at all cannot be a pointer, so its `const` is the object's.
     # A `T *const p` is caught instead of skipped, which is the loud direction.
-    if names_word(code: row, name: "const") && !strings.contains(text: row, needle: "*")
+    decl = declarator(row)
+
+    if names_word(code: decl, name: "const") && !strings.contains(text: decl, needle: "*")
         return false
 
-    return !strings.contains(text: row, needle: "(")
+    if !strings.contains(text: decl, needle: "(")
+        return true
+
+    return pointed_function_name(decl) != ""
+
+# The row before its first `=`, or the whole row when it has none: what the
+# declaration declares, without what it is initialised to.
+function declarator(row: str) -> str
+    eq = strings.index_of(text: row, needle: "=")
+
+    if eq.is_err()
+        return row
+
+    return row.slice(from: 0, to: eq.must())
+
+# The name a function-POINTER declarator declares, or "" when the row is not
+# one. The declarator is `(`, any calling-convention words, one or more `*` with
+# their qualifiers, the name, an optional `[...]`, `)`, and then the parameter
+# list's own `(`: `(*f)(int)`, `(__cdecl *f)(int)`, `(*const f)(void)`,
+# `(*table[4])(int)`. **That last `(` is what tells it from a prototype**, and
+# the first draft of this function did without it and read
+# `static void hero_drop_array(void *elem);` as an object named `elem` — its
+# parameter list is `(`, a type, `*`, a name, `)`, and then `;`. A function that
+# RETURNS a function pointer, `void (*f(int))(int);`, has a `(` straight after
+# the name, and one whose first parameter is a function pointer has a `(` where
+# the `*` would be; both stay functions.
+function pointed_function_name(row: str) -> str
+    open = strings.index_of(text: row, needle: "(")
+
+    if open.is_err()
+        return ""
+
+    cs = row.chars()
+    at: i64 @ open.must() + 1
+
+    while at < cs.len() && (cs[at] == " " || word_byte(cs[at][0]))
+        at @ at + 1
+
+    if at >= cs.len() || cs[at] != "*"
+        return ""
+
+    name: str @ ""
+
+    while at < cs.len() && name == ""
+        while at < cs.len() && (cs[at] == "*" || cs[at] == " ")
+            at @ at + 1
+
+        from = at
+
+        while at < cs.len() && word_byte(cs[at][0])
+            at @ at + 1
+
+        if at == from
+            return ""
+
+        word = cs.slice(from: from, to: at).join("")
+
+        if word != "const" && word != "volatile"
+            name @ word
+
+    while at < cs.len() && cs[at] == " "
+        at @ at + 1
+
+    if at < cs.len() && cs[at] == "["
+        while at < cs.len() && cs[at] != "]"
+            at @ at + 1
+
+        at @ at + 1
+
+        while at < cs.len() && cs[at] == " "
+            at @ at + 1
+
+    if at >= cs.len() || cs[at] != ")"
+        return ""
+
+    at @ at + 1
+
+    while at < cs.len() && cs[at] == " "
+        at @ at + 1
+
+    if at < cs.len() && cs[at] == "("
+        return name
+
+    return ""
 
 # The declared name: the last identifier before whatever ends the
 # declarator — `=`, `[` or the `;` itself. Walking back from there is
 # what gets `hero_dir_names` out of `static char **hero_dir_names` and
 # `hero_run_words` out of an array declaration.
 function object_name(row: str) -> str
+    pointed = pointed_function_name(row)
+
+    if pointed != ""
+        return pointed
+
     cs = row.chars()
     stop: i64 @ cs.len()
     at: i64 @ 0
@@ -726,6 +833,24 @@ test "an object that survives between calls is one, and a function is not"
     # And a word that merely starts with the six letters is not the keyword.
     assert !declares_object("staticky_thing = 0;")
 
+test "a function pointer is an object, and a function that takes or returns one is not"
+    # Route E's Windows arm, 2026-09-24: the object the sweep walked past.
+    assert declares_object("static void (__cdecl *hero_lease_prev_abrt_win)(int) = SIG_DFL;")
+    assert declares_object("static void (*hero_table[4])(int);")
+
+    # A `const` pointer is still caught, the loud direction the narrowing chose.
+    assert declares_object("static int64_t (*const hero_fixed)(void) = NULL;")
+
+    # What the first draft got wrong: `(`, a type, `*`, a name, `)` — and `;`.
+    assert !declares_object("static void hero_drop_array(void *elem);")
+    assert !declares_object("static int64_t hero_spawn(int64_t (*body)(int64_t), int64_t arg);")
+    assert !declares_object("static void (*hero_handler_for(int sig))(int);")
+
+test "the initialiser neither makes an object a function nor a constant a variable"
+    assert declares_object("static int64_t hero_folded = (1 + 2);")
+    assert !declares_object("static const int64_t HERO_TWICE = 2 * 8;")
+    assert !declares_object("static const HeroDesc hero_desc_array = {sizeof(HeroArrayHeader *)};")
+
 test "the swept object is found inside a function body too"
     # The half every count in this project had missed. `f64.c`'s cached
     # locale is this shape, and it is reached by printing a float.
@@ -734,6 +859,9 @@ test "the swept object is found inside a function body too"
 
 test "the name is the last identifier before what ends the declarator"
     assert object_name("static int64_t hero_live_blocks = 0;") == "hero_live_blocks"
+    assert object_name("static void (__cdecl *hero_lease_prev_abrt_win)(int) = SIG_DFL;") == "hero_lease_prev_abrt_win"
+    assert object_name("static void (*hero_table[4])(int);") == "hero_table"
+    assert object_name("static int64_t hero_folded = (1 + 2);") == "hero_folded"
     assert object_name("static char **hero_dir_names = NULL;") == "hero_dir_names"
     assert object_name("static char *hero_run_words[HERO_RUN_MAX_ARGS + 1];") == "hero_run_words"
     assert object_name("static struct sigaction hero_stack_prev_segv;") == "hero_stack_prev_segv"

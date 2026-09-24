@@ -1,0 +1,29 @@
+# M-AGREED-RETENTION'S FIRST ITEM, and panel 175's route E: a pointer C made,
+# handed twice to a C function that frees it (2026-09-23).
+#
+# `consumes` on a `ptr` is refused (`unread_mark`), so this is the one spelling,
+# and nothing in Heroes tracks it. Until panel 175 it died with ZERO bytes on
+# Darwin, where libmalloc writes its reason only into a crash report, and on
+# Windows, where the heap manager raises 0xC0000374; on Linux glibc printed its
+# own line and Heroes nothing. The crash handler now says what it saw with no
+# lease live: the signal, who raised it, and that this runtime did not.
+#
+# **What the case asserts is the one clause true on every platform**, that this
+# runtime did not raise it. It does not pin the signal, which libmalloc splits
+# between SIGTRAP and SIGABRT for one binary (the critic measured sixteen and
+# four in twenty), nor the Heroes frame, which the walk cannot always find.
+# Under `--sanitize` the report is ASan's `double-free` and ours is silent,
+# because ASan's death callback raises the runtime's own flag.
+#
+# The same program over a handle is caught before C runs; that is the route a
+# pointer the program must give back can take, `record Mem tag void`.
+
+extern "fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.h"
+    function make() -> ptr
+    function release(p: ptr)
+
+function main()
+    p = make()
+    release(p: p)
+    release(p: p)
+    print("not reached")
