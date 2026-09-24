@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 7**
+**OPEN: 6**
 
 - [ ] **075 — `acquires` names the call that ends a handle's life, and a program that ends it with another is `check` 0 and `run` 0** | the named releaser is read for existence and never at the call that gives the handle back, and the live set keeps an address and nothing else | `selfhost/check/acquiring.hero` · `runtime/heroes_runtime.h:205` · `spec § 13`
 
@@ -116,38 +116,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     dangling, it names a live handle, so no check on the address alone can tell
     them apart. The spec sentence `a747e5a2` landed, *unless C has since reused
     its address*, states that limit; §1.12 is why it cannot be the answer.
-
-- [ ] **078 — `owned` on an out-parameter the header spells `const char **` stops the build with `internal error`, exit 2, instead of an `ffi_` diagnostic** | the author's binding disagrees with the header on one qualifier, and the compiler reports itself as broken | `selfhost/emit/` · `.claude/rules/c-boundary.md`
-
-    **Origin:** panel 175's spec-warden, 2026-09-23 (its F4), reproduced by the
-    coordinator the same day before filing.
-
-    **The reproducer**, over `r1.h`'s `fill_out(const char **out)` and
-    `free_out(const char *p)`:
-
-        extern "r1.h"
-            function fill_out(@out: cstr owned free_out)
-            function free_out(p: cstr)
-
-        function main()
-            s: str? @ fail(code: "none", msg: "nothing yet")
-            fill_out(out: @s)
-            print("after")
-
-    `check` 0; `build -O0` exit **2**, `internal error: compiling the generated
-    C failed`, and inside it clang's own sentence, *passing 'char **' to
-    parameter of type 'const char **' discards qualifiers in nested pointer
-    types*, pointing at `hero_ffi_probe_h_s4cstrowned_fill_out`. The same cell
-    without `owned` builds (panel 172's `b_out`).
-
-    **Why it is a defect.** `.claude/rules/c-boundary.md` names the one class of
-    clang failure that is the author's and not the compiler's, the author's own
-    `extern`, and this is that class reported as the other. design.md §4.17 asks
-    for a diagnostic that says what to change without opening another file.
-
-    **Linux, run by the coordinator:** the same `internal error`, exit 2, on
-    arm64 and x86-64. **Unrun:** Windows; whether a `const char **` cell can be
-    `owned` at all, which is the question the diagnostic has to answer.
 
 - [ ] **079 — a reference-counted C handle aborts a correct program whichever way its extra reference is declared** | the live set holds one life per address, so a second reference to one object has nowhere to live, and its correct release is reported as a release of something never taken | `runtime/parts/alloc.c:411` · `spec § 13`
 
