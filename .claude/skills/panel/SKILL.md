@@ -111,9 +111,20 @@ is a full panel.
      tree is `archive/bootstrap-rs/`, nothing builds it, and a seat sent there
      measures a compiler that no longer ships. Give it the cheap route in the
      brief too — the seed builds in 3.4 s (`clang -I runtime seed/heroes.c
-     runtime/runtime.c -o heroes`), while rebuilding from `selfhost/` is ~20
-     minutes and kills a seat on the watchdog, which is what happened to four of
+     runtime/runtime.c -o heroes`), while rebuilding from `selfhost/` was ~20
+     minutes and killed a seat on the watchdog, which is what happened to four of
      five at panel 087.
+
+     **That number is stale, measured again 2026-09-24 on the author's
+     instruction** (panel 177's compiler-engineer found it, and the brief had
+     carried it). From the plain seed, `./heroes build selfhost/main.hero -o
+     heroes-next` reads **real 60.97 s**; from a seed built with `-O2`
+     (`clang -O2 -I runtime seed/heroes.c runtime/runtime.c -o heroes-o2`, 19.22
+     s), the same rebuild reads **31.57 s**; the plain seed itself read 3.34 s,
+     each with `real` equal to `user` plus `sys`. So a seat that must prototype
+     in `selfhost/` can afford to, and the brief says so rather than steering it
+     away: two of panel 177's seats built edited compilers this way and the
+     sitting's resolution rests on what they ran.
    - `llm-ergonomist` ← ONLY `spec/heroes-spec.md`, the proposal as a spec
      diff, and 1–3 concrete tasks. **Never design.md, never the repo.** Where
      a status-quo-vs-proposal comparison is possible, present the two variants
