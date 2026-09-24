@@ -88,6 +88,13 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
         if !void_p.is_err()
             found @ ffi_lookup.add_once(found, d: void_p.must())
 
+        # An opaque `@` whose header takes one pointer (defect 083): its own
+        # marker line, read before the width reader like the void one.
+        depth = ffi_pointee.pointee_depth(s, decls, tree, line: line)
+
+        if !depth.is_err()
+            found @ ffi_lookup.add_once(found, d: depth.must())
+
         for opaque in ffi_pointee.pointee_unsized(s, decls, tree, answered, line: line)
             found @ ffi_lookup.add_once(found, d: opaque)
 

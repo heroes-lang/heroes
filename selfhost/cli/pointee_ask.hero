@@ -12,6 +12,7 @@ record Pointee
     declared: str
     file: str
     line: i64
+    depth: bool
 
 # The same ask once the header has answered: what its parameter points at,
 # as the header's own type text (`size_t`, `void`, `struct opaque`). Built by
