@@ -1,0 +1,30 @@
+# DEFECT 082: the lease line said the process died, and then the handler it
+# found let the process live and exit 0 (panel 175's compiler-engineer,
+# 2026-09-23).
+#
+# Panel 173's handler wrote its line and THEN called the handler that was there
+# before it, so a C library that recovers from its own `abort` left
+# `the process died with 1 lease(s) still live` above a run that printed its
+# answer and exited 0: 277 bytes, three of three, on all three POSIX legs. The
+# handler now calls the earlier one first and speaks only if control comes back.
+#
+# **This case needed the harness to keep a promise it had been making.** A case
+# with no ending line must exit 0 with nothing on stderr, and until this landing
+# `expectation.hero` checked the exit code alone, so the defect's own shape
+# would have passed. It checks stderr now; `run` and `corpus` read the same
+# counts with it.
+
+#
+# **And it recovers from a trap too, on every platform**, since the landing gave
+# Windows a handler for each death: a `signal` handler for `abort` and a filter
+# of last resort for a trap, each of which must find the recovery first.
+
+extern "fixedbugs-a-c-handler-that-recovers-leaves-no-line.h"
+    function try_abort() -> i32
+    function try_trap() -> i32
+
+function main()
+    word = repeat("ab", 4)
+    held: cstr @ word.lease()
+    print("recovered: ", try_abort() + try_trap())
+    end_lease(@held)

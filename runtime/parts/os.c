@@ -158,10 +158,16 @@ static char **hero_argv = NULL;
  *   handler. A flag on one of the fifteen sites left a second, false line under
  *   an index panic, a stack exhaustion and a failed `assert` with a lease live
  *   (282, 289, 300 bytes of stderr). `hero_runtime_spoke` is set in the funnel.
- * - SPEAK UNDER THE SANITIZER. ASan intercepts `free` before the allocator,
- *   reports `bad-free` with the `.hero` line and aborts; a line appended under
- *   its report (1324 bytes, measured) is redundant when right and false when
- *   ASan's reason was not the free. Yielded at compile time, on stack.c's switch.
+ * - SPEAK UNDER THE SANITIZER'S REPORT. ASan intercepts `free` before the
+ *   allocator, reports `bad-free` with the `.hero` line and aborts; a line
+ *   appended under its report (1324 bytes, measured) is redundant when right and
+ *   false when ASan's reason was not the free. Yielded at compile time until
+ *   panel 175, which moved the yield to run time: the sanitizer's death
+ *   callback raises `hero_runtime_spoke`, so the line is still said where ASan
+ *   has nothing to say (see `hero_lease_sanitizer_spoke`). On POSIX first; the
+ *   Windows arm kept its compile-time yield until the box ran it on 2026-09-24,
+ *   where the same callback silences it under ASan's `double-free` report and it
+ *   speaks for an `abort` and a trap, which ASan does not report.
  * - DROP THE DISPOSITION IT FOUND. A handler that was there before us is called
  *   first, as `hero_stack_pass_on` does for SIGSEGV; then the default is
  *   restored and the signal re-raised, so the process dies with the status it
@@ -183,9 +189,7 @@ static char **hero_argv = NULL;
  * dies exactly as it did. Without it the three programs defect 070 is about
  * died on Windows with **zero bytes** while saying their piece on the other
  * two, and the goldens that pin the report were red on that leg. */
-#if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
-static void hero_lease_crash_install(void) {}
-#elif defined(_WIN32)
+#if defined(_WIN32)
 #include <windows.h>
 #include <io.h>
 
@@ -200,37 +204,143 @@ static void hero_lease_say_count_win(long long v) {
     _write(2, buf + at, (unsigned int)((int)sizeof buf - at));
 }
 
+static void hero_lease_say_win(const char *s) { _write(2, s, (unsigned int)strlen(s)); }
+
+/* The lease line, one text for the three ways this arm is reached. */
+static void hero_lease_say_leases_win(void) {
+    hero_lease_say_win("panic: the process died with ");
+    hero_lease_say_count_win((long long)hero_live_held);
+    hero_lease_say_win(" lease(s) still live\n"
+                       "  `end_lease` is the only thing that may free a `.lease()`. If one reached a C\n"
+                       "  function that frees what it is handed, that is this death; if not, this says\n"
+                       "  only what was live when the process ended.\n");
+}
+
 static LONG WINAPI hero_lease_veh(EXCEPTION_POINTERS *ep) {
     /* 0xC0000374 is `STATUS_HEAP_CORRUPTION`; `winnt.h` does not name it, so
      * the number is written with what it is beside it, as the file's other
      * arms write theirs. */
     if (ep->ExceptionRecord->ExceptionCode == 0xC0000374L && !hero_runtime_spoke && hero_live_held > 0) {
-        const char *head = "panic: the process died with ";
-        const char *tail = " lease(s) still live\n"
-                           "  `end_lease` is the only thing that may free a `.lease()`. If one reached a C\n"
-                           "  function that frees what it is handed, that is this death; if not, this says\n"
-                           "  only what was live when the process ended.\n";
-        _write(2, head, (unsigned int)strlen(head));
-        hero_lease_say_count_win((long long)hero_live_held);
-        _write(2, tail, (unsigned int)strlen(tail));
+        hero_lease_say_leases_win();
+    } else if (ep->ExceptionRecord->ExceptionCode == 0xC0000374L && !hero_runtime_spoke) {
+        /* With no lease live, and still a line (panel 175): a pointer C made and
+         * gave back twice died here with zero bytes. The exception is
+         * noncontinuable, so no later handler can recover it and saying it at
+         * the first chance cannot be said above a process that lives on. */
+        hero_lease_say_win("panic: the process is dying of exception 0xC0000374, the heap manager's report\n"
+                           "  of a corrupted heap, and this runtime did not raise it. Memory given back twice\n"
+                           "  is one way to get here; a reason C printed above, if any, is its own.\n");
     }
     return EXCEPTION_CONTINUE_SEARCH;
 }
 
-/* Registered LAST, as `stack.c`'s is and for its reason: a library that uses
- * structured exceptions sees the fault first. It only speaks, so it never
- * changes what the process does. There is no frame walk here — `stack.c`'s
- * Windows arm has none either, and its own comment says why — so the Windows
- * line names the count and not the function. */
+/* THE TWO DEATHS THE HEAP EXCEPTION IS NOT, added at panel 175's landing when
+ * the run suite on the box read 134 and 2: a C `abort()` and a C trap, each
+ * with the POSIX arms saying their line and this one saying nothing.
+ *
+ * `abort()` IS NOT AN EXCEPTION HERE. The UCRT's `abort` calls `raise(SIGABRT)`
+ * only when a handler is installed, and then `__fastfail`, which no exception
+ * handler of any kind is shown. So the handler is `signal`'s, and it ends by
+ * calling `abort` again with the disposition back at `SIG_DFL`, which is the
+ * fail-fast the process always died of. `signal` resets the disposition before
+ * calling the handler, where `sigaction` does not, so the handler puts itself
+ * back first: a C library that recovers from one abort is not left with a
+ * second one that says nothing.
+ *
+ * A TRAP IS AN EXCEPTION, AND A CONTINUABLE ONE. `__builtin_trap()` is `ud2`,
+ * `STATUS_ILLEGAL_INSTRUCTION`, and a `__try` in C can recover from it. A
+ * vectored handler runs before any `__try` does, so it would say *dying* above a
+ * process that goes on; the filter of last resort runs only when nothing did,
+ * and it calls the filter it found first, as the POSIX arm calls the handler it
+ * found. The three codes are the POSIX arm's SIGILL and SIGTRAP. */
+static void (__cdecl *hero_lease_prev_abrt_win)(int) = SIG_DFL;
+static LPTOP_LEVEL_EXCEPTION_FILTER hero_lease_prev_filter = NULL;
+
+static void __cdecl hero_lease_abrt_win(int signum) {
+    signal(SIGABRT, hero_lease_abrt_win);
+    void (__cdecl *prev)(int) = hero_lease_prev_abrt_win;
+    if (prev != SIG_DFL && prev != SIG_IGN && prev != SIG_ERR && prev != NULL) prev(signum);
+    if (!hero_runtime_spoke && hero_live_held > 0) {
+        hero_lease_say_leases_win();
+    } else if (!hero_runtime_spoke) {
+        /* Raised by this process, always: a signal on this platform never comes
+         * from another one. */
+        hero_lease_say_win("panic: the process is dying of SIGABRT, raised by this process, and this runtime did not raise it.\n"
+                           "  A C library ends a program this way when it catches misuse, memory given back\n"
+                           "  twice among them; a reason C printed above, if any, is its own.\n");
+    }
+    signal(SIGABRT, SIG_DFL);
+    abort();
+}
+
+static const char *hero_lease_trap_name_win(DWORD code) {
+    if (code == 0xC000001DUL) return "exception 0xC000001D, an illegal instruction";
+    if (code == 0xC0000096UL) return "exception 0xC0000096, a privileged instruction";
+    if (code == 0x80000003UL) return "exception 0x80000003, a breakpoint";
+    return NULL;
+}
+
+static LONG WINAPI hero_lease_last_chance(EXCEPTION_POINTERS *ep) {
+    LONG verdict = EXCEPTION_CONTINUE_SEARCH;
+    if (hero_lease_prev_filter != NULL) verdict = hero_lease_prev_filter(ep);
+    if (verdict == EXCEPTION_CONTINUE_EXECUTION) return verdict;
+    const char *what = hero_lease_trap_name_win(ep->ExceptionRecord->ExceptionCode);
+    if (what != NULL && !hero_runtime_spoke && hero_live_held > 0) {
+        hero_lease_say_leases_win();
+    } else if (what != NULL && !hero_runtime_spoke) {
+        hero_lease_say_win("panic: the process is dying of ");
+        hero_lease_say_win(what);
+        hero_lease_say_win(", and this runtime did not raise it.\n"
+                           "  A C library ends a program this way when it catches misuse, memory given back\n"
+                           "  twice among them; a reason C printed above, if any, is its own.\n");
+    }
+    return verdict;
+}
+
+/* The vectored handler is registered LAST, as `stack.c`'s is and for its
+ * reason: a library that uses structured exceptions sees the fault first. None
+ * of the three changes what the process does. There is no frame walk here —
+ * `stack.c`'s Windows arm has none either, and its own comment says why — so the
+ * Windows line names the count and not the function. An ignored SIGABRT stays
+ * ignored, for the POSIX arm's reason (defect 089). */
+#if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
+#include <sanitizer/common_interface_defs.h>
+static void hero_lease_sanitizer_spoke_win(void) { hero_runtime_spoke = 1; }
+#endif
+
 static void hero_lease_crash_install(void) {
     static int done = 0;
     if (done) return;
     done = 1;
+#if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
+    __sanitizer_set_death_callback(hero_lease_sanitizer_spoke_win);
+#endif
     AddVectoredExceptionHandler(0, hero_lease_veh);
+    hero_lease_prev_filter = SetUnhandledExceptionFilter(hero_lease_last_chance);
+    hero_lease_prev_abrt_win = signal(SIGABRT, hero_lease_abrt_win);
+    if (hero_lease_prev_abrt_win == SIG_IGN) signal(SIGABRT, SIG_IGN);
 }
 #else
+/* One saved disposition per signal this handler takes. SIGILL joined SIGTRAP
+ * and SIGABRT at panel 175 (defect 081): `__builtin_trap()` is `brk` on arm64,
+ * which is SIGTRAP, and `ud2` on x86-64, which is SIGILL, so a C trap with a
+ * lease live died at 132 with nothing on the x86-64 leg while the arm64 leg
+ * named the lease. */
 static struct sigaction hero_lease_prev_trap;
 static struct sigaction hero_lease_prev_abrt;
+static struct sigaction hero_lease_prev_ill;
+
+static struct sigaction *hero_lease_prev_for(int signum) {
+    if (signum == SIGTRAP) return &hero_lease_prev_trap;
+    if (signum == SIGILL) return &hero_lease_prev_ill;
+    return &hero_lease_prev_abrt;
+}
+
+static const char *hero_lease_signal_name(int signum) {
+    if (signum == SIGTRAP) return "SIGTRAP";
+    if (signum == SIGILL) return "SIGILL";
+    return "SIGABRT";
+}
 
 static void hero_lease_say_count(long long v) {
     char buf[24];
@@ -244,28 +354,85 @@ static void hero_lease_say_count(long long v) {
     hero_stack_say(buf + at);
 }
 
-static void hero_lease_crash(int signum, siginfo_t *si, void *ctx) {
-    int64_t held = hero_live_held;
-    if (!hero_runtime_spoke && held > 0) {
-        uintptr_t pc, fp, sp, lr;
-        hero_stack_regs(ctx, &pc, &fp, &sp, &lr);
-        const char *who = hero_stack_blame(pc, fp, lr);
-        hero_stack_say("panic: the process died with ");
-        hero_lease_say_count((long long)held);
-        hero_stack_say(" lease(s) still live");
-        if (who != NULL) {
-            hero_stack_say(", in ");
-            hero_stack_say_heroes_name(who);
-        }
-        hero_stack_say("\n  `end_lease` is the only thing that may free a `.lease()`. If one reached a C\n"
-                       "  function that frees what it is handed, that is this death; if not, this says\n"
-                       "  only what was live when the process ended.\n");
+/* Who raised the signal, from `siginfo_t` and nothing else. `si_code <= 0` is a
+ * signal sent by a process — `abort`, `raise` and `kill` all land here — and
+ * then `si_pid` says which; `si_code > 0` is the kernel's, a trap instruction,
+ * and `si_pid` then overlays `si_addr` and means nothing, which panel 175's
+ * ffi seat measured reading -1118630236 on Linux. */
+static void hero_lease_say_origin(int signum, const siginfo_t *si) {
+    hero_stack_say(hero_lease_signal_name(signum));
+    if (si == NULL) return;
+    if (si->si_code <= 0 && si->si_pid == getpid()) {
+        hero_stack_say(", raised by this process");
+    } else if (si->si_code <= 0 && si->si_pid != 0) {
+        hero_stack_say(", sent by process ");
+        hero_lease_say_count((long long)si->si_pid);
+    } else if (si->si_code > 0) {
+        hero_stack_say(", at a trap instruction");
     }
-    struct sigaction *prev = signum == SIGTRAP ? &hero_lease_prev_trap : &hero_lease_prev_abrt;
+}
+
+/* PANEL 175 CHANGED THE ORDER AND THE WORD, and each change is a defect that
+ * shipped in panel 173's line.
+ *
+ * - THE HANDLER FOUND BEFORE US RUNS FIRST (defect 082). This used to speak and
+ *   then chain, so a C library that recovers from its own signal — a
+ *   `siglongjmp` out of `abort` — left *the process died* above a process that
+ *   went on and exited 0, measured on all three POSIX legs. Now the line is
+ *   written only once that handler has RETURNED, and a handler that recovers
+ *   never comes back here. What this gives up is a handler that ends the
+ *   process itself with `_exit`: then nothing is said, which is silence and not
+ *   a falsehood.
+ * - IT SAYS *UNDER*, NEVER *IN* (defect 080). The frame walk names the nearest
+ *   Heroes frame on the stack, and a noreturn call inside an optimised C library
+ *   saves no return address, so the walk skips the direct caller: the line said
+ *   *in e.main* for a lease and a call in `e.run`, on Darwin and Linux arm64.
+ *   The named function is on the stack; that it made the call is not known.
+ * - IT SPEAKS WITH NO LEASE LIVE (the milestone's first item). A pointer C made
+ *   and freed twice through a `ptr` died with zero bytes on Darwin, where
+ *   libmalloc writes its reason only into a crash report, and on Windows. The
+ *   line states the signal, who raised it and that this runtime did not, and
+ *   names C's usual reasons as usual. It never names a cause, and it never
+ *   repeats E2's third sentence, which F1 and F3 measured false. */
+static void hero_lease_crash(int signum, siginfo_t *si, void *ctx) {
+    struct sigaction *prev = hero_lease_prev_for(signum);
     if ((prev->sa_flags & SA_SIGINFO) != 0 && prev->sa_sigaction != NULL) {
         prev->sa_sigaction(signum, si, ctx);
     } else if (prev->sa_handler != SIG_DFL && prev->sa_handler != SIG_IGN && prev->sa_handler != NULL) {
         prev->sa_handler(signum);
+    }
+    if (!hero_runtime_spoke) {
+        int64_t held = hero_live_held;
+        uintptr_t pc, fp, sp, lr;
+        hero_stack_regs(ctx, &pc, &fp, &sp, &lr);
+        const char *who = hero_stack_blame(pc, fp, lr);
+        /* Only a HEROES frame is named. When the walk finds none it hands back
+         * the symbol the signal arrived in, which serves stack.c's own report
+         * and would here present `kill` as if the program had a function by that
+         * name — measured on Linux x86-64 at panel 175's landing. */
+        if (who != NULL && !hero_stack_is_heroes(who)) who = NULL;
+        if (held > 0) {
+            hero_stack_say("panic: the process died with ");
+            hero_lease_say_count((long long)held);
+            hero_stack_say(" lease(s) still live");
+            if (who != NULL) {
+                hero_stack_say(", under ");
+                hero_stack_say_heroes_name(who);
+            }
+            hero_stack_say("\n  `end_lease` is the only thing that may free a `.lease()`. If one reached a C\n"
+                           "  function that frees what it is handed, that is this death; if not, this says\n"
+                           "  only what was live when the process ended.\n");
+        } else {
+            hero_stack_say("panic: the process is dying of ");
+            hero_lease_say_origin(signum, si);
+            if (who != NULL) {
+                hero_stack_say(", under ");
+                hero_stack_say_heroes_name(who);
+            }
+            hero_stack_say(", and this runtime did not raise it.\n"
+                           "  A C library ends a program this way when it catches misuse, memory given back\n"
+                           "  twice among them; a reason C printed above, if any, is its own.\n");
+        }
     }
     struct sigaction dfl;
     memset(&dfl, 0, sizeof dfl);
@@ -274,20 +441,55 @@ static void hero_lease_crash(int signum, siginfo_t *si, void *ctx) {
     raise(signum);
 }
 
-/* Two `sigaction` calls, once per process, after the stack guard so the
+/* UNDER THE SANITIZER THE HANDLER STAYS, AND IS SILENCED ONCE ASAN HAS SPOKEN
+ * (panel 175, item 4). Until then it was compiled out, for panel 173's reason: a
+ * line appended under ASan's own report is redundant when right and false when
+ * ASan's reason was not a free. But compiled out, it was silent exactly where
+ * ASan is silent too — a C `abort`, a failed C `assert`, a trap — so no golden
+ * could pin those deaths at `--sanitize` on any platform (panel 175's critic,
+ * five of seven cases red). ASan calls its death callback before it ends the
+ * process, and this one raises the runtime's own flag, so nothing is said after
+ * a report. Measured: Darwin runs the callback and then aborts into this
+ * handler, which stays silent; both Linux legs `_exit(1)` after a report and
+ * never reach it; with no report, all three say their line. Setting ASan's
+ * `handle_abort` instead was measured wrong: every runtime panic is SIGABRT, and
+ * a plain index panic gained 1807 bytes of ASan report. One callback per
+ * process is ASan's rule, so C that installs its own after this one wins. */
+#if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
+#include <sanitizer/common_interface_defs.h>
+static void hero_lease_sanitizer_spoke(void) { hero_runtime_spoke = 1; }
+#endif
+
+/* AN IGNORED SIGNAL STAYS IGNORED (defect 089). Panel 173's install took the
+ * three signals whatever it found, so a C library that had set SIGABRT to be
+ * ignored and then raised it — a program that goes on, exit 0 — was killed at
+ * 134 under a false lease line, on every platform since that handler shipped. A
+ * signal found ignored is put back and not taken: `abort` still ends the
+ * process, since it overrides an ignore, and says nothing, which is silence and
+ * not a falsehood. */
+static void hero_lease_take(int signum, const struct sigaction *sa, struct sigaction *prev) {
+    if (sigaction(signum, sa, prev) != 0) return;
+    if ((prev->sa_flags & SA_SIGINFO) == 0 && prev->sa_handler == SIG_IGN) sigaction(signum, prev, NULL);
+}
+
+/* Three `sigaction` calls, once per process, after the stack guard so the
  * alternate stack they run on exists: the disposition is the process's and the
  * stack is the thread's (stack.c, "ONCE PER PROCESS"). */
 static void hero_lease_crash_install(void) {
     static int done = 0;
     if (done) return;
     done = 1;
+#if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
+    __sanitizer_set_death_callback(hero_lease_sanitizer_spoke);
+#endif
     struct sigaction sa;
     memset(&sa, 0, sizeof sa);
     sa.sa_sigaction = hero_lease_crash;
     sa.sa_flags = SA_SIGINFO | SA_ONSTACK;
     sigemptyset(&sa.sa_mask);
-    if (sigaction(SIGTRAP, &sa, &hero_lease_prev_trap) != 0) return;
-    if (sigaction(SIGABRT, &sa, &hero_lease_prev_abrt) != 0) return;
+    hero_lease_take(SIGTRAP, &sa, &hero_lease_prev_trap);
+    hero_lease_take(SIGABRT, &sa, &hero_lease_prev_abrt);
+    hero_lease_take(SIGILL, &sa, &hero_lease_prev_ill);
 }
 #endif
 

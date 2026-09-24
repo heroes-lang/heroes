@@ -48,9 +48,17 @@
 # `-O2` are judged by the ending as before, so the runtime's own report is
 # still pinned where it prints. And it does not assert an exit code under
 # the sanitiser, because there is none to assert: ASan aborts on Darwin
-# (134) and calls `_exit(1)` on Linux, measured at panel 173, and the
-# runtime's handler yields to it at compile time so our own line is absent
-# there on both.
+# (134) and calls `_exit(1)` on Linux, measured at panel 173. The runtime's
+# handler yielded to it at compile time until panel 175; since then it yields
+# at run time, through ASan's death callback, so our own line is absent under
+# a sanitiser's report and present where the sanitiser had nothing to say.
+#
+# AND A SILENT ENDING IS SILENT ON STDERR TOO, since panel 175's landing
+# (2026-09-23). This header said so from the day it was ported, *exit 0 with
+# a silent stderr*, and `unmet` checked the exit code alone, so a program that
+# said `the process died` and then exited 0 — defect 082's shape — passed.
+# Tightened, `run` read 138 passed and 0 failed and `corpus` 55 and 0: no
+# case in the tree had been leaning on the gap.
 
 use strings
 
@@ -135,6 +143,9 @@ function unmet(e: Expectation, out: str, err: str, code: i64) -> str?
         .silent =>
             if code != 0
                 return ok("must exit 0, and exited " + code.to_str() + "\n  its stderr was:\n" + err)
+
+            if err.len() > 0
+                return ok("must exit 0 with nothing on stderr, and wrote:\n" + err)
         .exits x =>
             if code != x.code
                 return ok(
@@ -176,6 +187,11 @@ test "an expectation with no ending is stdout and exit 0"
     assert unmet(e, out: "one\ntwo\n", err: "", code: 0).is_err()
     assert !unmet(e, out: "one\ntwo\n", err: "", code: 1).is_err()
     assert !unmet(e, out: "one\n", err: "", code: 0).is_err()
+
+test "a silent ending refuses a word on stderr, which is defect 082's shape"
+    e = split("recovered: 1\n").must()
+    assert unmet(e, out: "recovered: 1\n", err: "", code: 0).is_err()
+    assert !unmet(e, out: "recovered: 1\n", err: "panic: the process died with 1 lease(s) still live\n", code: 0).is_err()
 
 test "an empty expectation promises no output at all"
     e = split("").must()
