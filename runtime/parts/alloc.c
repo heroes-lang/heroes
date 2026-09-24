@@ -425,11 +425,19 @@ void hero_handle_consumed(const void *h) {
     if (h == NULL) return;
     hero_handle_lock_take(&hero_handle_lock);
 
+    /* AN EMPTY SET HOLDS NOTHING, SO THIS IS A STRAY TOO, AND IT IS STOPPED LIKE
+     * ONE (defect 086, 2026-09-24). This branch counted and returned, which was
+     * right before defect 071 moved the report to the call; afterwards it left a
+     * program that had acquired nothing yet — every producer `borrows` — to reach
+     * C with its double release, 133 and zero bytes, while the same program after
+     * one acquisition was stopped before C with the line below. A promise about
+     * a call must not depend on the program's history. */
     if (hero_handle_cap == 0) {
         hero_handle_strays++;
         if (hero_handle_first_stray == NULL) hero_handle_first_stray = h;
         hero_handle_lock_drop(&hero_handle_lock);
-        return;
+        hero_handle_report_stray(1, h);
+        return; /* not reached: the report aborts; the table below has no slots */
     }
     size_t i = hero_handle_slot(hero_handle_set, hero_handle_cap, h);
 
