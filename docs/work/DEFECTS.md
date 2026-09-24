@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 10**
+**OPEN: 9**
 
 - [ ] **075 — `acquires` names the call that ends a handle's life, and a program that ends it with another is `check` 0 and `run` 0** | the named releaser is read for existence and never at the call that gives the handle back, and the live set keeps an address and nothing else | `selfhost/check/acquiring.hero` · `runtime/heroes_runtime.h:205` · `spec § 13`
 
@@ -262,21 +262,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     repair's question: the per-module reading is what the message and
     `check/acquiring.hero`'s own note say, and the program-wide one is what lets
     a libcrypto BIO mark name libssl's calls today (the seat's § 2c).
-
-- [ ] **087 — `heroes grammar` says the language has six contextual words, and the parser reads eleven** | the sentence lists `as`, `link`, `package`, `tag`, `partial`, `owned`, and `parse/members.hero` and `parse/tails.hero` also read `acquires`, `borrows`, `consumes`, `counted_by` and `lent` | `selfhost/cli/grammar.hero` · `selfhost/parse/members.hero:115`
-
-    **Origin:** panel 176's compiler-engineer, 2026-09-23 (its § 9); reproduced
-    by the coordinator the same day: `./heroes grammar` prints *"the six
-    contextual words — `as`, `link`, `package`, `tag`, `partial`, `owned` —
-    which are ordinary identifiers everywhere except the one position each is
-    read in"*, and `grep` over the two parser files finds the other five read
-    as markers.
-
-    **Why it is a defect.** A tool that prints the language's own grammar states
-    a count that is false by five, and panel 176's resolution would make it
-    false by seven. A literal list of the words the parser owns is a premise
-    that expires in silence; the seat priced deriving it from one table at
-    about twelve lines.
 
 - [ ] **088 — a handle handed to a call after the call that ended its life is `check` 0 and `run` 0, and C is handed freed memory** | § 13 says a `consumes` call ends the value's life, and nothing reads the value as dead afterwards: the checker does not, and the live set is asked only by a consuming call | `spec § 13` · `selfhost/emit/handle_traffic.hero` · `runtime/parts/alloc.c`
 
