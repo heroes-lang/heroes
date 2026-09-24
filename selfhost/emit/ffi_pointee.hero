@@ -38,6 +38,12 @@ constant MARKER: str
 constant VOID_MARKER: str
     "heroes-ffi-pointee-void "
 
+# The depth assertion's marker, for an opaque `@` — a `ptr` or a handle —
+# whose header parameter must point at a POINTER (defect 083). Like the void
+# marker, `MARKER` is not a prefix of it.
+constant DEPTH_MARKER: str
+    "heroes-ffi-pointee-depth "
+
 # The parameter's two spans in the author's declaration: its name, and
 # the type written after the colon — the fix replaces the type.
 record ParamSpans
@@ -164,6 +170,73 @@ function pointee_void(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: 
         header_type: trim_quote(tail.join(" ")),
         why: "which has no width — nothing can be written back into a cell the header describes as sizeless"
     )
+
+# An opaque `@` whose header takes ONE pointer (defect 083, 2026-09-24). The
+# program's `@p: Mem` over `record Mem tag void` is `void **` at the call,
+# and a header's `void *p` takes it in silence: C converts any object
+# pointer to `void *`, so C is handed the address of the program's own cell
+# and reads it as the handle — `eat` freed a stack address, 134, and `wipe`
+# wrote eight zero bytes into the cell at exit 0, measured before the repair.
+# The assertion `cli/header_types.hero` writes fails as a marker line when
+# the header's pointee is `void` or is not itself a pointer; this reads it
+# back onto the parameter. The repair is a `guess`, because two bindings are
+# correct and the header cannot say which: drop the `@` and hand C the handle,
+# which is what a `void *` parameter takes; or, if the header really writes a
+# pointer back, it is the header that is wrong by one star.
+function pointee_depth(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+        return fail(code: "none", msg: "not an assertion failure")
+    rest = ffi_lookup.after(text: line, marker: DEPTH_MARKER)
+
+    if rest.is_err()
+        return fail(code: "none", msg: "not a depth assertion")
+    parts = ffi_lookup.words(text: rest.must())
+
+    if parts.len() < 4
+        return fail(code: "none", msg: "the marker's tail is not ours")
+    name = parts[0]
+    param = parts[1]
+    tail: [str] @ []
+    index: i64 @ 3
+
+    while index < parts.len()
+        tail @ tail.push(parts[index])
+        index @ index + 1
+
+    header_type = trim_quote(tail.join(" "))
+    found = ffi_lookup.declaration(s, decls, name: name)
+
+    if found.is_err()
+        return fail(code: "none", msg: "no group declares this name")
+    spans = parameter_spans(s, decls, tree, name: name, param: param)
+    at: token.Span @ found.must().span
+    written: str @ "with `@`"
+
+    if !spans.is_err()
+        at @ spans.must().name
+        written @ "`@" + param + ": " + source.span_text(s, spans.must().ty) + "`"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_parameter_type",
+        message: "`" + param + "` of `" + name + "` is declared " + written + ", so C is handed the address of the program's cell, and the header's `" + header_type + " *` points at `" + header_type + "` — one pointer, which C reads as the handle itself, never as a cell to write one into",
+        span: at
+    )
+    d.notes @ d.notes.push(
+        "§4.19: `@` on a handle or a `ptr` is for a parameter the header spells `T **`, one that writes a pointer back into the cell; a parameter spelled `" + header_type + " *` takes the handle, so pass it without `@`"
+    )
+    d.notes @ d.notes.push(
+        "if the header does write a pointer back, it is the header that is short by one `*`, and the binding is right — say so beside the declaration and change the header, never the mark"
+    )
+
+    if spans.is_err()
+        return ok(d)
+    marker = at_marker_before(s, spans.must().name)
+
+    if marker.is_err()
+        return ok(d)
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "pass `" + param + "` without `@`: `" + param + ": " + source.span_text(s, spans.must().ty) + "`", replacement: "", span: token.Span(start: marker.must(), end: spans.must().name.start), certainty: .guess)
+    )
+    return ok(d)
 
 # The other shape of the same defect, and the one no assertion can turn into
 # a marker line: `invalid application of 'sizeof' to an incomplete type
@@ -314,8 +387,8 @@ test "an incomplete pointee is found from the type clang names, through what the
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     _ = checker.check(parsed.tree, out, s, parsed.decls)
     answered: [pointee_ask.Answered] = [
-        pointee_ask.Answered(asked: pointee_ask.Pointee(name: "fill", param: "out", index: 0, declared: "int64_t", file: "t.hero", line: 2), header_type: "struct opaque")
-        pointee_ask.Answered(asked: pointee_ask.Pointee(name: "other", param: "n", index: 0, declared: "int32_t", file: "t.hero", line: 3), header_type: "int")
+        pointee_ask.Answered(asked: pointee_ask.Pointee(name: "fill", param: "out", index: 0, declared: "int64_t", file: "t.hero", line: 2, depth: false), header_type: "struct opaque")
+        pointee_ask.Answered(asked: pointee_ask.Pointee(name: "other", param: "n", index: 0, declared: "int32_t", file: "t.hero", line: 3, depth: false), header_type: "int")
     ]
     line = "t.hero:2:5: error: invalid application of 'sizeof' to an incomplete type 'struct opaque'"
     found = pointee_unsized(s, parsed.decls, parsed.tree, answered, line: line)
