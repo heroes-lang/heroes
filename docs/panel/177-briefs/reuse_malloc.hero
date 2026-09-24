@@ -1,0 +1,12 @@
+extern "node.h"
+    record Node tag node
+    function node_new() -> Node acquires node_free
+    function node_free(n: Node consumes)
+
+function main()
+    a = node_new()
+    node_free(n: a)
+    b = node_new()
+    print("same address: ", a == b)
+    node_free(n: a)
+    print("the stale one was given back, and nothing said")
