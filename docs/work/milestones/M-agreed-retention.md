@@ -25,40 +25,7 @@ fourth is a process rule that the closed file could not keep, parked here with
 its reason rather than lost.
 
 *******************************************************************************
-**OPEN: 3**
-
-- [ ] **M-agreed-retention** | a pointer C made, handed twice to a C function that frees it, is `check` 0 and dies at run time saying nothing, and nothing in § 13 says a pointer C made is C's to free once | panel 172's compiler-engineer and completeness critic, `spec § 13`
-
-    **Origin:** panel 172, 2026-09-21. The compiler-engineer measured it as the
-    shape beside the double give-away of a lease (`p10`: `p = make()`,
-    `release(p: p)` twice, exit 0 at `check` under both compilers) and the
-    critic as `b_out`, an `@out: cstr` C fills and frees and the program then
-    frees. **Not this sitting's**, both said, and filed here so it is not
-    discovered as new: the runtime's report adopted at 172 covers the LEASE
-    class and is silent here, because no lease is live and the pointer is C's.
-    Whether the document owes the sentence that a pointer C made is C's to free
-    once, whether that is design.md §1.12's business or C's, and whether the
-    runtime's handler can reach it, are unmeasured.
-
-    **Measured 2026-09-23, step 1, on all four platforms**, the C side
-    `noinline`, five runs at each of `-O0` and `-O2` on Darwin and five at
-    `-O0` on the other three:
-
-    | shape | `check` | Darwin arm64 | Linux arm64 and x86-64 | Windows x86-64 |
-    |---|---|---|---|---|
-    | `p10`: a `ptr` C made, handed twice to a call that frees it | 0 | 133, **zero bytes**, 10 of 10 | 134, glibc's `free(): double free detected in tcache 2` | `0xC0000374`, **zero bytes** |
-    | `b_out`, panel 172's: the same with a `cstr` C filled | 0 | the same | the same | the same |
-    | the same program over a **handle**, `acquires` and `consumes` | 0 | 134, the runtime names the double release, 396 bytes | 134, 399 bytes | the runtime names it, 401 bytes |
-
-    So the silence is Darwin's and Windows's; on Linux the C library speaks and
-    Heroes still does not. **The handle route already catches the identical
-    program on every platform**, which makes this item a question about the
-    `ptr` that could have been a handle, not about a missing mechanism. The shape
-    beside it, a false `owned` on a cell C has already freed, prints a runtime
-    sentence that is FALSE and is defect 076. And a probe of this item must keep
-    the C side out of the optimiser's sight: a `static inline` malloc and two
-    frees are deleted whole at `-O2` and the program exits 0 printing its last
-    line, which is what `heroes run`'s default level did to the first probe.
+**OPEN: 2**
 
 - [ ] **M-agreed-retention** | two modules may declare one C function with contradictory retention marks, and the compiler accepts both at `check` 0 | panel 171's completeness critic, the historian's B.4, `selfhost/check/marks.hero`
 
@@ -100,7 +67,6 @@ its reason rather than lost.
     natural route is exactly panel 094's: one module per retention mode. And it has a place to stand: `checker.hero` checks one resolved
     program, and `one_tag_one_type` (`selfhost/check/decls.hero:334`) is already
     program-wide.
-
 
 - [ ] **M-agreed-retention** | one Heroes declaration cannot reach all three of `sqlite3_bind_text`'s retention modes, so the shipped ledger and measurement 037 declare the same C function two incompatible ways | panel 170's completeness critic, `examples/ledger/db/sqlite.hero`
 

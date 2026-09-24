@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 15**
+**OPEN: 11**
 
 - [ ] **075 — `acquires` names the call that ends a handle's life, and a program that ends it with another is `check` 0 and `run` 0** | the named releaser is read for existence and never at the call that gives the handle back, and the live set keeps an address and nothing else | `selfhost/check/acquiring.hero` · `runtime/heroes_runtime.h:205` · `spec § 13`
 
@@ -187,78 +187,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Unrun by the coordinator:** Linux and Windows.
 
-- [ ] **080 — the crash handler's lease line names the Heroes function that called the caller, not the one that called C** | the frame walk skips the direct caller when the C function that died was a noreturn call in an optimised library, so the line says `in e.main` for a death inside `e.run` | `runtime/parts/os.c:249` · `runtime/parts/stack.c`
-
-    **Origin:** panel 175's ffi-pragmatist, 2026-09-23, prototyping route E;
-    reproduced by the coordinator the same day before filing.
-
-    **The reproducer.** A shared C library built `-O2 -fomit-frame-pointer`
-    whose `lib_assert(x)` fails `assert(x == 42)`, called with a lease live from
-    a Heroes function `run` that `main` calls:
-
-        function run(what: str)
-            if what == "assert_lease"
-                y = "payload"
-                d: cstr @ y.lease()
-                lib_assert(x: 7)
-                end_lease(@d)
-
-    `run` 134, three of three, and the line reads *the process died with 1
-    lease(s) still live, **in e.main***: on Darwin arm64 and on Linux arm64. The
-    lease and the call are in `e.run`. On Linux x86-64 the walk finds no frame
-    and the line names none, which is not false.
-
-    **Why it is a defect.** Panel 173 R1: no path prints a sentence measured
-    false. *In* claims the frame that called C, and a noreturn call does not save
-    the return address the walk reads. The seat measured *under* true in every
-    case it ran, because the named function IS on the stack.
-
-- [ ] **081 — on Linux x86-64 a C trap with a lease live dies at 132 with nothing on stderr** | the lease handler installs SIGTRAP and SIGABRT, and `__builtin_trap` on x86-64 is `ud2`, which is SIGILL | `runtime/parts/os.c:289`
-
-    **Origin:** panel 175's ffi-pragmatist, 2026-09-23; reproduced by the
-    coordinator the same day before filing.
-
-    **The reproducer** is 080's library and program, case `trap_lease`: a lease
-    live, then `lib_trap()`, which is `__builtin_trap()`. **Linux x86-64: 132,
-    zero bytes, three of three.** Linux arm64, the same program: 133 and the
-    runtime's lease line, 264 bytes. Darwin, measured by the seat: 133 and the
-    line.
-
-    **Why it is a defect.** Defect 070 closed on the report that names the live
-    leases when C kills the process; on one of the four platforms, for one of
-    the ways C kills it, the report is not there. The seat measured the line
-    printing with SIGILL added, 265 bytes. Darwin x86-64 is UNRUN, since there is
-    no Intel Mac here, and libmalloc's own trap would be `ud2` there too.
-
-- [ ] **082 — the lease line says the process died, and then the handler it found lets the process live and exit 0** | the line is written before the previous disposition is called, so a C library that recovers from its own signal leaves a false sentence above a successful run | `runtime/parts/os.c:249` · `:264`
-
-    **Origin:** panel 175's compiler-engineer, 2026-09-23, prototyping route E,
-    who reported it and did not file it; reproduced by the coordinator the same
-    day before filing.
-
-    **The reproducer.** A header whose constructor installs, before `main`, a
-    SIGABRT handler that `siglongjmp`s back, and a function that `abort()`s
-    inside a `sigsetjmp`:
-
-        extern "e.h"
-            function e_try_abort() -> i32
-
-        function main()
-            x = "payload"
-            c: cstr @ x.lease()
-            print("recovered: ", e_try_abort())
-            end_lease(@c)
-
-    With `E_CTOR=1`: **exit 0**, stdout `recovered: 1`, and 277 bytes on stderr
-    beginning *panic: the process died with 1 lease(s) still live*, three of
-    three on Darwin arm64, Linux arm64 and Linux x86-64.
-
-    **Why it is a defect.** Panel 173 R1, *no path prints a sentence measured
-    false*, and panel 173 R2 kept the chaining that makes this path reachable.
-    The seat measured its E2 ordering — say the line only after the previous
-    disposition has been called and has not returned control — at 0 bytes here
-    and unchanged everywhere else.
-
 - [ ] **083 — an `@` cell holding a pointer is accepted against a header parameter that takes `void *`, and C is handed the address of the program's own cell** | C converts `void **` to `void *` in silence, and the width check an `@` cell gets exists for numbers only | `selfhost/emit/extern_probe.hero:172` · `selfhost/cli/pointee.hero`
 
     **Origin:** panel 176's llm-ergonomist, 2026-09-23, reading nothing but the
@@ -421,33 +349,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the cheapest, and what it does to a `borrows` handle that was never in the
     set, is panel 177's question. The author can disagree and close it on the
     wart, as panel 153 put it.
-
-- [ ] **089 — a C library that ignores SIGABRT and then raises it is killed by the runtime, under a false lease line** | panel 173's lease handler takes SIGTRAP, SIGABRT and SIGILL whatever disposition it finds, so a signal the program set to be ignored reaches the handler, which speaks and re-raises it at its default | `runtime/parts/os.c` (`hero_lease_crash_install`)
-
-    **Origin:** the coordinator, 2026-09-23, at panel 175's landing, attacking
-    the Windows arm being written at the shape beside the recovering handler of
-    defect 082: a handler that recovers was covered, a disposition that ignores
-    was not.
-
-    **The reproducer.** A C constructor sets SIGABRT and SIGILL to `SIG_IGN`; a
-    C function raises both and returns 1; the program holds a lease across the
-    call and prints what it returned. The right answer is `ignored: 1` and exit
-    0. **On the trunk at `a747e5a2`: 134, three of three, on Darwin arm64, Linux
-    x86-64 and Linux arm64**, with *the process died with 1 lease(s) still
-    live* (300 bytes on Darwin and Linux arm64, 254 on Linux x86-64). Windows
-    unrun on the trunk, where no SIGABRT handler is installed, so the shape is a
-    question there rather than a premise.
-
-    **SIGTRAP is not in the reproducer, and why.** Under Rosetta, the Linux
-    x86-64 leg on this Mac, a C program with no Heroes in it that ignores
-    SIGTRAP and raises it dies at 133, where the same program exits 0 on Linux
-    arm64 (measured 2026-09-24); SIGABRT and SIGILL are honoured there. A case
-    raising SIGTRAP would be red on that leg for the emulator's reason.
-
-    **Why it is a defect.** The handler's own comment says it never changes what
-    the process does, and here it turns a program that goes on into a death, and
-    names a cause for it. The repair is in route E's lane: a signal found
-    ignored is put back and not taken, on the POSIX arm and on Windows' `signal`.
 
 - [ ] **090 — a use-after-free inside C, reached through a stale copy of a handle, is reported as a null handle reaching C** | the stack guard reads any fault below its null window as *a handle or `ptr` holding `nullptr` reached C*, and a freed object whose field C reads as null faults there too | `runtime/parts/stack.c:502`
 
