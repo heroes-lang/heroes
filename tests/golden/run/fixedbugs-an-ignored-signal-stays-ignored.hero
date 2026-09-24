@@ -1,0 +1,19 @@
+# DEFECT 089: a C library that ignores SIGABRT and then raises it goes on, and
+# the runtime killed it (found at panel 175's landing, 2026-09-23).
+#
+# Panel 173's install took SIGTRAP, SIGABRT and SIGILL whatever it found, so a
+# signal the program had set to be ignored reached the lease handler instead:
+# exit 134 under `the process died with 1 lease(s) still live`, measured on the
+# trunk at `a747e5a2`, for a program whose right answer is to print and exit 0.
+# The handler changed what the process does, which is the one thing its own
+# comment says it never does. An ignored signal is now put back and not taken,
+# on the POSIX arms and on Windows' `signal`.
+
+extern "fixedbugs-an-ignored-signal-stays-ignored.h"
+    function raise_ignored() -> i32
+
+function main()
+    word = repeat("ab", 4)
+    held: cstr @ word.lease()
+    print("ignored: ", raise_ignored())
+    end_lease(@held)
