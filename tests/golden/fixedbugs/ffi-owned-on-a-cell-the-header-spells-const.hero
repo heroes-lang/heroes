@@ -1,0 +1,26 @@
+# DEFECT 078: `owned` on an out-parameter the header spells `const char **`
+# stopped the build with `internal error`, exit 2 (panel 175's spec-warden,
+# 2026-09-23).
+#
+# SYMPTOM: `check` 0, then `internal error: compiling the generated C failed`
+# around clang's own sentence, *passing 'char **' to parameter of type 'const
+# char **' discards qualifiers in nested pointer types* — the compiler blaming
+# itself for the author's declaration, on Darwin and both Linux legs.
+#
+# CAUSE: the `char **` carve-out in `emit/ffi_mutable.hero` stepped aside for
+# every `owned` cell, so clang's refusal of the const one reached nobody who
+# could read it.
+#
+# FIX (panel 176, question 4, its resolution's item 8): the carve-out steps
+# aside for a header that says `char **` and reports `ffi_owned_const_cell`
+# for one that says `const char **`. The header's const says C lends; the mark
+# says C gives; only the author can say which is true, so the note offers both
+# repairs and no fix is `certain`.
+extern "ffi-owned-on-a-cell-the-header-spells-const.h"
+    function fill_out(@out: cstr owned free_out)  #~ ffi_owned_const_cell
+    function free_out(p: cstr)
+
+function main()
+    s: str? @ fail(code: "none", msg: "nothing yet")
+    fill_out(out: @s)
+    print("after")
