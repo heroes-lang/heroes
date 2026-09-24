@@ -52,10 +52,6 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     defects 077 and 088 stay open until the landing measures the five
     conditions in its item 10. **What conservative would have been**: P alone,
     refused because it misses every copy and, with callback results
-    unchecked, hides a use-after-free ASan catches today. **And one thing only
-    the author can change**: `.claude/skills/panel/SKILL.md` step 2 says a
-    rebuild from `selfhost/` is about twenty minutes, and the
-    compiler-engineer measured 67-72 s from a seed built at `-O2`; the skills
-    are amended by author instruction, so the number waits for yours.
+    unchecked, hides a use-after-free ASan catches today.
 
 *******************************************************************************
