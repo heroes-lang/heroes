@@ -29,6 +29,7 @@ use diag
 use text_lines
 use cursor
 use ast
+use keywords
 
 ## The declaration
 
@@ -127,7 +128,7 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
     # fields as its header does, so an unmeasured platform could have one.
     binding: token.Span @ last
 
-    if cursor.at(c, .ident) && cursor.slice_of(text, cursor.current_span(c)) == "as"
+    if cursor.at(c, .ident) && cursor.slice_of(text, cursor.current_span(c)) == keywords.WORD_AS
         word = cursor.current_span(c)
         _ = cursor.bump(@c)
 

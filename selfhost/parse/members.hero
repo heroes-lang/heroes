@@ -15,6 +15,7 @@
 use token
 use cursor
 use ast
+use keywords
 use parse/type
 
 ## Type parameters
@@ -112,7 +113,7 @@ function bare_marker(@c: cursor.Cursor, text: str, in_group: bool, word: str) ->
 # `borrows`, the third mark and the one that says NOTHING is owed. It carries no
 # name because there is no releaser to name.
 function acquires_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "acquires"
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_ACQUIRES
         return fail(code: "absent", msg: "nothing here is acquired")
     keyword = cursor.bump(@c).span
 
@@ -143,7 +144,7 @@ function acquires_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.
 # after a parameter's type and nowhere else, so a program may still call
 # anything `counted_by`.
 function counted_by_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "counted_by"
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_COUNTED_BY
         return fail(code: "absent", msg: "nothing here is counted")
     keyword = cursor.bump(@c).span
 
@@ -158,7 +159,7 @@ function counted_by_marker(@c: cursor.Cursor, text: str, in_group: bool) -> toke
     return ok(cursor.bump(@c).span)
 
 function owned_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "owned"
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_OWNED
         return fail(code: "absent", msg: "nothing here is owned")
     keyword = cursor.bump(@c).span
 
@@ -212,11 +213,11 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
                 # the header does, the extent beside the type and the ownership
                 # after it. The order is the grammar's, `spec § 13`'s `CParam`.
                 counted_by = counted_by_marker(@c, text, in_group: in_group)
-                lent = bare_marker(@c, text: text, in_group: in_group, word: "lent")
+                lent = bare_marker(@c, text: text, in_group: in_group, word: keywords.WORD_LENT)
                 owned = owned_marker(@c, text, in_group: in_group)
-                consumes = bare_marker(@c, text: text, in_group: in_group, word: "consumes")
+                consumes = bare_marker(@c, text: text, in_group: in_group, word: keywords.WORD_CONSUMES)
                 acquires = acquires_marker(@c, text, in_group: in_group)
-                borrows = bare_marker(@c, text: text, in_group: in_group, word: "borrows")
+                borrows = bare_marker(@c, text: text, in_group: in_group, word: keywords.WORD_BORROWS)
                 out @ out.push(
                     ast.Param(name: name, ty: ty, mutable: mutable, owned: owned, consumes: consumes, acquires: acquires, borrows: borrows, counted_by: counted_by, lent: lent)
                 )

@@ -68,6 +68,69 @@ function keywords() -> [str]
         "fail"
     ]
 
+## The contextual words
+
+# A word the parser reads in ONE position and nowhere else, so a program may
+# still call anything `owned` or `tag`. There were eleven of them and `heroes
+# grammar` printed six (defect 087, panel 176's compiler-engineer): the words
+# were literals at eleven sites in four parser files, and the command had no
+# table to print, so its sentence was a count somebody had kept up to date until
+# the day they had not. Each word is a constant here and the parser reads the
+# constant, never a literal, so this file is the one spelling; `contextual()`
+# lists them in declaration order for the command to print, and the `grammar`
+# suite reads these declarations as text, holds the printed list to them, and
+# holds `selfhost/parse/` to reading each one — the direction a comment could
+# never hold.
+constant WORD_AS: str
+    "as"
+
+constant WORD_LINK: str
+    "link"
+
+constant WORD_PACKAGE: str
+    "package"
+
+constant WORD_TAG: str
+    "tag"
+
+constant WORD_PARTIAL: str
+    "partial"
+
+constant WORD_OWNED: str
+    "owned"
+
+constant WORD_COUNTED_BY: str
+    "counted_by"
+
+constant WORD_LENT: str
+    "lent"
+
+constant WORD_CONSUMES: str
+    "consumes"
+
+constant WORD_ACQUIRES: str
+    "acquires"
+
+constant WORD_BORROWS: str
+    "borrows"
+
+# In declaration order, which is the order the command prints and the suite
+# compares as a sequence.
+function contextual() -> [str]
+    return [
+        WORD_AS
+        WORD_LINK
+        WORD_PACKAGE
+        WORD_TAG
+        WORD_PARTIAL
+        WORD_OWNED
+        WORD_COUNTED_BY
+        WORD_LENT
+        WORD_CONSUMES
+        WORD_ACQUIRES
+        WORD_BORROWS
+    ]
+
 # The closed list. A miss means the word is an ordinary identifier.
 function keyword(text: str) -> token.TokenKind?
     return match text
@@ -247,6 +310,24 @@ test "every keyword resolves and an identifier does not"
     # loop above in silence. Twenty-one since the language reached its fixpoint;
     # it moves in the commit that adds or removes a keyword, never on its own.
     assert keywords().len() == 21
+
+test "a contextual word is never a keyword, and each is listed once"
+    words = contextual()
+    assert words.len() == 11
+
+    for word in words
+        assert keyword(word).is_err()
+
+    i: i64 @ 0
+
+    while i < words.len()
+        j: i64 @ i + 1
+
+        while j < words.len()
+            assert words[i] != words[j]
+            j @ j + 1
+
+        i @ i + 1
 
 test "a foreign word arrives with its repair"
     fw = foreign_word(text: "int", called: false).must()
