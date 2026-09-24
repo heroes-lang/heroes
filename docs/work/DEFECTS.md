@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 7**
+**OPEN: 14**
 
 - [ ] **075 — `acquires` names the call that ends a handle's life, and a program that ends it with another is `check` 0 and `run` 0** | the named releaser is read for existence and never at the call that gives the handle back, and the live set keeps an address and nothing else | `selfhost/check/acquiring.hero` · `runtime/heroes_runtime.h:205` · `spec § 13`
 
@@ -251,5 +251,177 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     The seat measured its E2 ordering — say the line only after the previous
     disposition has been called and has not returned control — at 0 bytes here
     and unchanged everywhere else.
+
+- [ ] **083 — an `@` cell holding a pointer is accepted against a header parameter that takes `void *`, and C is handed the address of the program's own cell** | C converts `void **` to `void *` in silence, and the width check an `@` cell gets exists for numbers only | `selfhost/emit/extern_probe.hero:172` · `selfhost/cli/pointee.hero`
+
+    **Origin:** panel 176's llm-ergonomist, 2026-09-23, reading nothing but the
+    specification: *"mark the parameter `@`" reads as the extern's own
+    parameter; on a `void *` handle that becomes `void **`, which C converts
+    silently*. Reproduced by the coordinator the same day before filing.
+
+    **The reproducers**, over `void eat(void *p)` that prints what it got and
+    frees it, and `void wipe(void *p)` that writes eight zero bytes through it:
+
+        extern "v.h"
+            record Mem tag void
+            function make() -> Mem acquires eat
+            function eat(@p: Mem borrows)
+
+        function main()
+            m: Mem @ make()
+            eat(@m)
+
+    `check` 0, `build` 0; C prints `made 0x1056b9d70` then `eat got
+    0x16af42478`, a stack address, and frees it: 134, three of three, Darwin
+    arm64. The same over `record Box tag box` is `error[ffi_parameter_type]` at
+    exit 1, because `box **` against `box *` is a type clang refuses. And
+    `wipe(@p: ptr)` against `wipe(void *)`: `check` 0, `build` 0, **run 0**, C
+    handed the cell and writing into it; `wipe(@n: i64)` against the same header
+    is refused, `ffi_parameter_type`.
+
+    **The shape it came from.** The checker asks `@p: Mem consumes` for a
+    producer mark (`unmarked_handle_producer`, whose note offers `borrows`), and
+    the grammar allows one of `consumes`, `acquires`, `borrows`, so following the
+    note writes the shape above.
+
+    **Why it is a defect.** design.md §4.19: a wrong binding is a compile error.
+    The probe casts an opaque or numeric `@` argument to `void *` on purpose and
+    says what the cast gives up is checked in `cli/pointee.hero` by width and
+    sign, which exists for numeric cells; an opaque cell, a `ptr` or a `tag void`
+    handle, has nothing that checks the header takes a pointer to a pointer.
+    **Unrun:** Linux and Windows; a C function writing more than the cell's eight
+    bytes, which would be stack corruption at exit 0.
+
+- [ ] **084 — one handle given to two consuming parameters of one call aborts a correct program, and the message calls it a double release** | the live set takes the handle back once per marked parameter, so `SSL_set_bio(s, b, b)`, OpenSSL's socket-BIO idiom, is refused although its C is correct | `selfhost/emit/handle_traffic.hero:101` · `runtime/parts/alloc.c:422`
+
+    **Origin:** panel 176's ffi-pragmatist, 2026-09-23 (its § 5 item 1);
+    reproduced by the coordinator the same day before filing.
+
+    **The reproducer**, against Homebrew's OpenSSL 3 (`--include
+    /opt/homebrew/opt/openssl@3/include --library /opt/homebrew/opt/openssl@3/lib`):
+    `SSL_new`, then `b = BIO_new(type: BIO_s_mem())`, then
+    `SSL_set_bio(s: s, rbio: b, wbio: b)` with both BIO parameters `consumes`,
+    then `SSL_free(ssl: s)`. `build` 0; **run 134, three of three**, *1 C
+    handle(s) given back that were never taken*. OpenSSL's own page says *"If
+    the rbio and wbio parameters are the same … then one reference is
+    consumed"*, and the seat measured the same C clean under ASan with 0 leaks.
+
+    **Why it is a defect.** A correct program is refused and the message names a
+    double release that did not happen: defect 079's class, over the most common
+    OpenSSL call there is. The seat measured every route panel 176 weighs
+    leaving it at 134, so the repair is owed whatever vocabulary lands.
+
+- [ ] **085 — `unread_releaser` answers 1 for a module checked alone and 0 for the same module checked inside its program** | the rule's message says *no `extern` of this module declares it* and its lookup resolves over the whole program, so the verdict depends on which file is handed to `check` | `selfhost/check/acquiring.hero:269`
+
+    **Origin:** panel 176's ffi-pragmatist, 2026-09-23 (its § 5 item 4);
+    reproduced by the coordinator the same day before filing.
+
+    **The reproducer.** `bio.hero` declares `h_open() -> H acquires h_close2`
+    and only `main.hero` declares `h_close2`; `main.hero` uses `bio`.
+    `heroes check bio.hero`: **exit 1**, `error[unread_releaser]`.
+    `heroes check main.hero`: **exit 0**, and the seat measured `build` and `run`
+    at 0 too.
+
+    **Why it is a defect.** One program, two verdicts, and the message states
+    the rule the lookup does not apply. Which of the two is right is the
+    repair's question: the per-module reading is what the message and
+    `check/acquiring.hero`'s own note say, and the program-wide one is what lets
+    a libcrypto BIO mark name libssl's calls today (the seat's § 2c).
+
+- [ ] **086 — a handle given back twice before the program has acquired any dies at 133 with nothing on stderr** | while the live set is still empty, `hero_handle_consumed` counts the stray and returns, so the double release reaches C, where after one acquisition the same program is stopped before C with the runtime's line | `runtime/parts/alloc.c:428`
+
+    **Origin:** panel 176's compiler-engineer, 2026-09-23 (its § 9); reproduced
+    by the coordinator the same day before filing.
+
+    **The reproducer.** A producer marked `borrows`, so nothing is ever
+    acquired, and its handle given to a consuming `g_close` twice:
+    `a = g_open()`, `g_close(x: a)`, `g_close(x: a)`. **133, zero bytes, three
+    of three**, Darwin arm64. The same double release after one acquisition has
+    allocated the set (`cap1.hero`): **134, 396 bytes, three of three**, before C.
+
+    **Why it is a defect.** Defect 071 moved the stray report before the C call
+    so that a double release is stopped before it happens; that promise now
+    depends on the program's history. The seat measured the one-line repair —
+    report instead of return at `alloc.c:432` — at 134 and 396 bytes for both.
+
+- [ ] **087 — `heroes grammar` says the language has six contextual words, and the parser reads eleven** | the sentence lists `as`, `link`, `package`, `tag`, `partial`, `owned`, and `parse/members.hero` and `parse/tails.hero` also read `acquires`, `borrows`, `consumes`, `counted_by` and `lent` | `selfhost/cli/grammar.hero` · `selfhost/parse/members.hero:115`
+
+    **Origin:** panel 176's compiler-engineer, 2026-09-23 (its § 9); reproduced
+    by the coordinator the same day: `./heroes grammar` prints *"the six
+    contextual words — `as`, `link`, `package`, `tag`, `partial`, `owned` —
+    which are ordinary identifiers everywhere except the one position each is
+    read in"*, and `grep` over the two parser files finds the other five read
+    as markers.
+
+    **Why it is a defect.** A tool that prints the language's own grammar states
+    a count that is false by five, and panel 176's resolution would make it
+    false by seven. A literal list of the words the parser owns is a premise
+    that expires in silence; the seat priced deriving it from one table at
+    about twelve lines.
+
+- [ ] **088 — a handle handed to a call after the call that ended its life is `check` 0 and `run` 0, and C is handed freed memory** | § 13 says a `consumes` call ends the value's life, and nothing reads the value as dead afterwards: the checker does not, and the live set is asked only by a consuming call | `spec § 13` · `selfhost/emit/handle_traffic.hero` · `runtime/parts/alloc.c`
+
+    **Origin:** panel 176's completeness critic, 2026-09-23 (its § 7), which
+    searched this file for `use.after`, `survive` and `after consum` and found
+    nothing. Reproduced by the coordinator on 2026-09-24 before filing, from the
+    critic's own files copied out of its directory.
+
+    **The reproducer**, over a three-function cJSON in miniature (`CreateObject`,
+    `AddItemToObject` that links `item` under `object`, `Delete` that frees a
+    node and its children), declared with `acquires cJSON_Delete` on the
+    creator, `item: Json consumes` on the adder and `item: Json consumes` on
+    `Delete`:
+
+        b = cJSON_CreateObject()
+        cJSON_Delete(item: b)
+        c = cJSON_CreateObject()
+        _ = cJSON_AddItemToObject(object: b, string: "c".cstr(), item: c)
+        print("wrote into a deleted object")
+
+    `check` 0; **run 0, three of three, on Darwin arm64, Linux x86-64 and Linux
+    arm64**, printing its line after C wrote into freed memory; with
+    `--sanitize`, `heap-use-after-free` on all three (134 on Darwin, 1 on
+    Linux). Windows unrun: the box was off.
+
+    **The shapes beside it, and why they are not this defect.** The same dead
+    handle given to a CONSUMING parameter is stopped before C on all three
+    legs, 134 with the runtime's *given back that were never taken* — a true
+    line, since the address left the set at the first release. And through a
+    helper, `finish(@b)` releasing it and the caller reusing `b` as `item`, the
+    same 134. So the silence is exactly where the handle reaches a parameter
+    that does not consume: no check reads it there.
+
+    **Why it is a defect.** design.md §1.12: a Heroes program must not corrupt
+    memory, and this one does at exit 0 with no C in it but the library's own.
+    It belongs with defect 077, the other shape where the live set cannot tell
+    a handle that is over from one that is not, which is why panel 177 takes
+    both.
+
+- [ ] **089 — a C library that ignores SIGABRT and then raises it is killed by the runtime, under a false lease line** | panel 173's lease handler takes SIGTRAP, SIGABRT and SIGILL whatever disposition it finds, so a signal the program set to be ignored reaches the handler, which speaks and re-raises it at its default | `runtime/parts/os.c` (`hero_lease_crash_install`)
+
+    **Origin:** the coordinator, 2026-09-23, at panel 175's landing, attacking
+    the Windows arm being written at the shape beside the recovering handler of
+    defect 082: a handler that recovers was covered, a disposition that ignores
+    was not.
+
+    **The reproducer.** A C constructor sets SIGABRT and SIGILL to `SIG_IGN`; a
+    C function raises both and returns 1; the program holds a lease across the
+    call and prints what it returned. The right answer is `ignored: 1` and exit
+    0. **On the trunk at `a747e5a2`: 134, three of three, on Darwin arm64, Linux
+    x86-64 and Linux arm64**, with *the process died with 1 lease(s) still
+    live* (300 bytes on Darwin and Linux arm64, 254 on Linux x86-64). Windows
+    unrun on the trunk, where no SIGABRT handler is installed, so the shape is a
+    question there rather than a premise.
+
+    **SIGTRAP is not in the reproducer, and why.** Under Rosetta, the Linux
+    x86-64 leg on this Mac, a C program with no Heroes in it that ignores
+    SIGTRAP and raises it dies at 133, where the same program exits 0 on Linux
+    arm64 (measured 2026-09-24); SIGABRT and SIGILL are honoured there. A case
+    raising SIGTRAP would be red on that leg for the emulator's reason.
+
+    **Why it is a defect.** The handler's own comment says it never changes what
+    the process does, and here it turns a program that goes on into a death, and
+    names a cause for it. The repair is in route E's lane: a signal found
+    ignored is put back and not taken, on the POSIX arm and on Windows' `signal`.
 
 *******************************************************************************
