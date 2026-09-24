@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 9**
+**OPEN: 8**
 
 - [ ] **075 — `acquires` names the call that ends a handle's life, and a program that ends it with another is `check` 0 and `run` 0** | the named releaser is read for existence and never at the call that gives the handle back, and the live set keeps an address and nothing else | `selfhost/check/acquiring.hero` · `runtime/heroes_runtime.h:205` · `spec § 13`
 
@@ -186,46 +186,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the seat and not yet by the coordinator.
 
     **Unrun by the coordinator:** Linux and Windows.
-
-- [ ] **083 — an `@` cell holding a pointer is accepted against a header parameter that takes `void *`, and C is handed the address of the program's own cell** | C converts `void **` to `void *` in silence, and the width check an `@` cell gets exists for numbers only | `selfhost/emit/extern_probe.hero:172` · `selfhost/cli/pointee.hero`
-
-    **Origin:** panel 176's llm-ergonomist, 2026-09-23, reading nothing but the
-    specification: *"mark the parameter `@`" reads as the extern's own
-    parameter; on a `void *` handle that becomes `void **`, which C converts
-    silently*. Reproduced by the coordinator the same day before filing.
-
-    **The reproducers**, over `void eat(void *p)` that prints what it got and
-    frees it, and `void wipe(void *p)` that writes eight zero bytes through it:
-
-        extern "v.h"
-            record Mem tag void
-            function make() -> Mem acquires eat
-            function eat(@p: Mem borrows)
-
-        function main()
-            m: Mem @ make()
-            eat(@m)
-
-    `check` 0, `build` 0; C prints `made 0x1056b9d70` then `eat got
-    0x16af42478`, a stack address, and frees it: 134, three of three, Darwin
-    arm64. The same over `record Box tag box` is `error[ffi_parameter_type]` at
-    exit 1, because `box **` against `box *` is a type clang refuses. And
-    `wipe(@p: ptr)` against `wipe(void *)`: `check` 0, `build` 0, **run 0**, C
-    handed the cell and writing into it; `wipe(@n: i64)` against the same header
-    is refused, `ffi_parameter_type`.
-
-    **The shape it came from.** The checker asks `@p: Mem consumes` for a
-    producer mark (`unmarked_handle_producer`, whose note offers `borrows`), and
-    the grammar allows one of `consumes`, `acquires`, `borrows`, so following the
-    note writes the shape above.
-
-    **Why it is a defect.** design.md §4.19: a wrong binding is a compile error.
-    The probe casts an opaque or numeric `@` argument to `void *` on purpose and
-    says what the cast gives up is checked in `cli/pointee.hero` by width and
-    sign, which exists for numeric cells; an opaque cell, a `ptr` or a `tag void`
-    handle, has nothing that checks the header takes a pointer to a pointer.
-    **Unrun:** Linux and Windows; a C function writing more than the cell's eight
-    bytes, which would be stack corruption at exit 0.
 
 - [ ] **084 — one handle given to two consuming parameters of one call aborts a correct program, and the message calls it a double release** | the live set takes the handle back once per marked parameter, so `SSL_set_bio(s, b, b)`, OpenSSL's socket-BIO idiom, is refused although its C is correct | `selfhost/emit/handle_traffic.hero:101` · `runtime/parts/alloc.c:422`
 
