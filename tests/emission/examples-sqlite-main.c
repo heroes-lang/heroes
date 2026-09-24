@@ -5,7 +5,7 @@
 #include <sqlite3.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 22, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -227,7 +227,7 @@ bb0:
 #line 83 "examples/sqlite/main.hero"
     t7 = sqlite3_prepare_v2(t3, hero_cstr_nonnull(t5), t6, &h2_statement, &h3_tail);
 #line 83 "examples/sqlite/main.hero"
-    hero_handle_acquired(h2_statement);
+    hero_handle_acquired(h2_statement, "sqlite3_finalize");
 #line 83 "examples/sqlite/main.hero"
     h4_rc = t7;
 #line 91 "examples/sqlite/main.hero"
@@ -277,7 +277,7 @@ bb4:
 #line 97 "examples/sqlite/main.hero"
     t24 = h2_statement;
 #line 97 "examples/sqlite/main.hero"
-    hero_handle_consumed(t24);
+    hero_handle_consumed(t24, "sqlite3_finalize", NULL);
 #line 97 "examples/sqlite/main.hero"
     (void)sqlite3_finalize(t24);
 #line 98 "examples/sqlite/main.hero"
@@ -341,7 +341,7 @@ bb0:
 #line 103 "examples/sqlite/main.hero"
     t4 = sqlite3_open(hero_cstr_nonnull(t3), &h0_db);
 #line 103 "examples/sqlite/main.hero"
-    hero_handle_acquired(h0_db);
+    hero_handle_acquired(h0_db, "sqlite3_close");
 #line 103 "examples/sqlite/main.hero"
     t5 = h_main_SQLITE_OK();
 #line 103 "examples/sqlite/main.hero"
@@ -393,7 +393,7 @@ bb1:
 #line 119 "examples/sqlite/main.hero"
     t24 = h0_db;
 #line 119 "examples/sqlite/main.hero"
-    hero_handle_consumed(t24);
+    hero_handle_consumed(t24, "sqlite3_close", NULL);
 #line 119 "examples/sqlite/main.hero"
     (void)sqlite3_close(t24);
 #line 119 "examples/sqlite/main.hero"
@@ -409,7 +409,7 @@ bb2:
 #line 113 "examples/sqlite/main.hero"
     t8 = h0_db;
 #line 113 "examples/sqlite/main.hero"
-    hero_handle_consumed(t8);
+    hero_handle_consumed(t8, "sqlite3_close", NULL);
 #line 113 "examples/sqlite/main.hero"
     (void)sqlite3_close(t8);
 #line 113 "examples/sqlite/main.hero"

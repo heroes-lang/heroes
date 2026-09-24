@@ -5,7 +5,7 @@
 #include <fixedbugs-the-unacquired-sibling-leaks-loudly.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 22, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -150,9 +150,9 @@ bb0:
 #line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     t2 = pair_open(t1);
 #line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_handle_acquired(t2.a.s);
+    hero_handle_acquired(t2.a.s, "slot_close");
 #line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_handle_acquired(t2.b.s);
+    hero_handle_acquired(t2.b.s, "slot_close");
 #line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     h0_p = t2;
 #line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
@@ -184,7 +184,7 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     t14 = t13.s;
 #line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_handle_consumed(t14);
+    hero_handle_consumed(t14, "slot_close", NULL);
 #line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     (void)slot_close(t14);
 #line 36 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"

@@ -384,8 +384,10 @@ parameter says the call ends that value's
 life, so passing one the function borrowed is an error: mark the parameter `@`
 and the value does not survive the call. `acquires sqlite3_finalize` after a result
 or `@` out-parameter reaching a handle says the call begins that handle's life and names
-the one that ends it, which the program owes it. Giving one back twice aborts,
-unless C has since reused its address. `borrows` says the call hands
+the one that ends it, which the program owes it. It may name several,
+`acquires sqlite3_close | sqlite3_close_v2`, and any one of them ends the life;
+giving the handle to a `consumes` call the mark did not name aborts before C
+runs. Giving one back twice aborts, unless C has since reused its address. `borrows` says the call hands
 back one it keeps, and where any `extern` consumes a handle type every call handing
 one back says which it is. `consumes`, `acquires` and `borrows` mark only a value
 that reaches a handle, as itself or through a field or an array element; anywhere
@@ -398,8 +400,8 @@ naming what it said.
     Extern = "extern" string [ ( "link" | "package" ) string ] NEWLINE
              INDENT { Member } DEDENT .
     Member = "function" ident "(" [ CParam { "," CParam } ] ")"
-               [ "->" Type [ "owned" ident ] [ "acquires" ident | "borrows" ] ] NEWLINE
+               [ "->" Type [ "owned" ident ] [ "acquires" ident { "|" ident } | "borrows" ] ] NEWLINE
            | "constant" ident ":" Type NEWLINE
            | "record" ident [ "tag" ident ] [ "partial" ] ( Fields | NEWLINE ) .
     CParam = [ "@" ] ident ":" Type [ "counted_by" ident ] [ "lent" ]
-             [ "owned" ident ] [ "consumes" | "acquires" ident | "borrows" ] .
+             [ "owned" ident ] [ "consumes" | "acquires" ident { "|" ident } | "borrows" ] .

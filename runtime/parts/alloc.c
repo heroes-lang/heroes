@@ -159,7 +159,17 @@ typedef pthread_mutex_t hero_handle_mutex;
 
 #define HERO_HANDLES_MIN 16
 static hero_handle_mutex hero_handle_lock = HERO_HANDLE_MUTEX_INIT;
-static const void **hero_handle_set = NULL;
+/* One entry per live address, and beside it the RELEASERS its acquiring mark
+ * named, `a|b` (panel 175's route A, landed at panel 176's item 1; defect 075).
+ * Compared by CONTENT, token by token: each module is its own translation
+ * unit, so neither a literal's address nor a header's static function is one
+ * identity across them. A NULL `by` admits any consumer, which is what a
+ * handle acquired before this ABI would have carried. */
+typedef struct {
+    const void *h;
+    const char *by;
+} hero_handle_entry;
+static hero_handle_entry *hero_handle_set = NULL;
 static size_t hero_handle_cap = 0;
 static size_t hero_handle_live = 0;
 /* Released while the set did not hold it: a double release, or a part of
@@ -301,7 +311,7 @@ void hero_runtime_check_leaks(void) {
     const void *first_live = NULL;
 
     for (size_t i = 0; i < hero_handle_cap && first_live == NULL; i++)
-        if (hero_handle_set[i] != NULL) first_live = hero_handle_set[i];
+        if (hero_handle_set[i].h != NULL) first_live = hero_handle_set[i].h;
     hero_handle_lock_drop(&hero_handle_lock);
 
     /* DEFENCE IN DEPTH SINCE defect 071: `hero_handle_consumed` raises this at
@@ -377,10 +387,44 @@ static void hero_release_held(void *p) {
  * The mix is Fibonacci hashing on the pointer's own bits. An address is already
  * well distributed in its middle bits and poorly in its low ones, which are
  * alignment, so the shift is what a naive mask would throw away. */
-static size_t hero_handle_slot(const void **table, size_t cap, const void *h) {
+static size_t hero_handle_slot(const hero_handle_entry *table, size_t cap, const void *h) {
     size_t i = (size_t)(((uintptr_t)h * (uintptr_t)0x9E3779B97F4A7C15u) >> 32) & (cap - 1);
-    while (table[i] != NULL && table[i] != h) i = (i + 1) & (cap - 1);
+    while (table[i].h != NULL && table[i].h != h) i = (i + 1) & (cap - 1);
     return i;
+}
+
+/* Is `name` one of the `|`-separated tokens of `set`? Whole tokens only, so
+ * `close` never passes for `close_v2`. */
+static int hero_handle_named(const char *set, const char *name) {
+    if (set == NULL || name == NULL) return 0;
+    size_t n = strlen(name);
+    const char *at = set;
+    for (;;) {
+        const char *bar = strchr(at, '|');
+        size_t len = bar == NULL ? strlen(at) : (size_t)(bar - at);
+        if (len == n && memcmp(at, name, n) == 0) return 1;
+        if (bar == NULL) return 0;
+        at = bar + 1;
+    }
+}
+
+/* Do two sets share a token? A consumer that also acquires may pay what its
+ * own releasers are owed: `freopen` takes back an `fopen` stream. */
+static int hero_handle_sets_share(const char *set, const char *other) {
+    if (set == NULL || other == NULL) return 0;
+    const char *at = other;
+    for (;;) {
+        const char *bar = strchr(at, '|');
+        size_t len = bar == NULL ? strlen(at) : (size_t)(bar - at);
+        char name[128];
+        if (len < sizeof name) {
+            memcpy(name, at, len);
+            name[len] = 0;
+            if (hero_handle_named(set, name)) return 1;
+        }
+        if (bar == NULL) return 0;
+        at = bar + 1;
+    }
 }
 
 /* Grown in place, never shrunk, and the old table is freed: that is what makes
@@ -388,18 +432,35 @@ static size_t hero_handle_slot(const void **table, size_t cap, const void *h) {
  * held. */
 static void hero_handle_grow(void) {
     size_t cap = hero_handle_cap == 0 ? (size_t)HERO_HANDLES_MIN : hero_handle_cap * 2;
-    const void **fresh = (const void **)hero_malloc_raw(cap * sizeof(const void *));
-    for (size_t i = 0; i < cap; i++) fresh[i] = NULL;
+    hero_handle_entry *fresh = (hero_handle_entry *)hero_malloc_raw(cap * sizeof(hero_handle_entry));
+    for (size_t i = 0; i < cap; i++) {
+        fresh[i].h = NULL;
+        fresh[i].by = NULL;
+    }
     for (size_t i = 0; i < hero_handle_cap; i++) {
-        if (hero_handle_set[i] != NULL)
-            fresh[hero_handle_slot(fresh, cap, hero_handle_set[i])] = hero_handle_set[i];
+        if (hero_handle_set[i].h != NULL)
+            fresh[hero_handle_slot(fresh, cap, hero_handle_set[i].h)] = hero_handle_set[i];
     }
     free(hero_handle_set);
     hero_handle_set = fresh;
     hero_handle_cap = cap;
 }
 
-void hero_handle_acquired(const void *h) {
+/* THE CROSSING: the address IS live, and the call giving it back is not one
+ * its mark named (defect 075: `popen`, then `fclose`, was check 0 and run 0 on
+ * four platforms, and the child was never waited for). Raised before C runs,
+ * like the stray, and it says what the two declarations say and nothing about
+ * why they disagree. */
+static void hero_handle_report_crossed(const void *h, const char *owed, const char *by) {
+    fflush(stdout);
+    fprintf(stderr, "panic: a C handle was given back to `%s`, and the call that handed it over "
+                    "is marked `acquires %s` — the mark names the calls that may end this "
+                    "handle's life, and `%s` is not one of them. The handle is at %p\n",
+            by, owed, by, h);
+    hero_abort();
+}
+
+void hero_handle_acquired(const void *h, const char *by) {
     /* A producer that failed handed back nothing. Counting it is what killed the
      * correct failure path, and the failure path is the one C programs take. */
     if (h == NULL) return;
@@ -412,14 +473,17 @@ void hero_handle_acquired(const void *h) {
      * the address out again. The set holds one entry per ADDRESS, so the earlier
      * life is lost here rather than double-counted — and it is lost either way,
      * since nothing can now tell the two apart. */
-    if (hero_handle_set[i] == NULL) {
-        hero_handle_set[i] = h;
+    if (hero_handle_set[i].h == NULL) {
+        hero_handle_set[i].h = h;
         hero_handle_live++;
     }
+    /* The NEWEST mark wins: an address C hands out again belongs to the life
+     * that just began, whatever ended the last one out of sight. */
+    hero_handle_set[i].by = by;
     hero_handle_lock_drop(&hero_handle_lock);
 }
 
-void hero_handle_consumed(const void *h) {
+void hero_handle_consumed(const void *h, const char *by, const char *pays) {
     /* Releasing a null discharges nothing. C lets a program free NULL and this
      * lets it too; what it must not do is let that pay off a real obligation. */
     if (h == NULL) return;
@@ -441,7 +505,7 @@ void hero_handle_consumed(const void *h) {
     }
     size_t i = hero_handle_slot(hero_handle_set, hero_handle_cap, h);
 
-    if (hero_handle_set[i] != h) {
+    if (hero_handle_set[i].h != h) {
         /* Given back while the set did not hold it: the second of a double
          * release, or a part of something acquired whole. The old counter could
          * only go negative and offer a list of causes.
@@ -461,20 +525,27 @@ void hero_handle_consumed(const void *h) {
         hero_handle_lock_drop(&hero_handle_lock);
         hero_handle_report_stray(1, h);
     }
+    const char *owed = hero_handle_set[i].by;
+    if (owed != NULL && by != NULL && !hero_handle_named(owed, by) && !hero_handle_sets_share(owed, pays)) {
+        hero_handle_lock_drop(&hero_handle_lock);
+        hero_handle_report_crossed(h, owed, by);
+    }
     /* Backward-shift deletion, because linear probing cannot tombstone without
      * the table filling with tombstones on a long-running program. */
     size_t hole = i;
     size_t scan = (i + 1) & (hero_handle_cap - 1);
-    hero_handle_set[hole] = NULL;
+    hero_handle_set[hole].h = NULL;
+    hero_handle_set[hole].by = NULL;
 
-    while (hero_handle_set[scan] != NULL) {
-        size_t home = (size_t)(((uintptr_t)hero_handle_set[scan] * (uintptr_t)0x9E3779B97F4A7C15u) >> 32) & (hero_handle_cap - 1);
+    while (hero_handle_set[scan].h != NULL) {
+        size_t home = (size_t)(((uintptr_t)hero_handle_set[scan].h * (uintptr_t)0x9E3779B97F4A7C15u) >> 32) & (hero_handle_cap - 1);
         size_t from_hole = (scan - hole) & (hero_handle_cap - 1);
         size_t from_home = (scan - home) & (hero_handle_cap - 1);
 
         if (from_home >= from_hole) {
             hero_handle_set[hole] = hero_handle_set[scan];
-            hero_handle_set[scan] = NULL;
+            hero_handle_set[scan].h = NULL;
+            hero_handle_set[scan].by = NULL;
             hole = scan;
         }
         scan = (scan + 1) & (hero_handle_cap - 1);

@@ -5,7 +5,7 @@
 #include <fixedbugs-sibling-fields-of-one-record-type.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 22, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -152,9 +152,9 @@ bb0:
 #line 43 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t2 = pair_open(t1);
 #line 43 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_handle_acquired(t2.a.s);
+    hero_handle_acquired(t2.a.s, "slot_close");
 #line 43 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_handle_acquired(t2.b.s);
+    hero_handle_acquired(t2.b.s, "slot_close");
 #line 43 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     h0_p = t2;
 #line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
@@ -188,7 +188,7 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t13 = t12.s;
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_handle_consumed(t13);
+    hero_handle_consumed(t13, "slot_close", NULL);
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     (void)slot_close(t13);
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
@@ -198,7 +198,7 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t16 = t15.s;
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_handle_consumed(t16);
+    hero_handle_consumed(t16, "slot_close", NULL);
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     (void)slot_close(t16);
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
