@@ -1,0 +1,9 @@
+use alt
+
+extern "../i2.h"
+    function other_free(p: ptr)
+    function make_text() -> cstr owned other_free
+
+function main()
+    alt.run()
+    print(make_text().default("?"))

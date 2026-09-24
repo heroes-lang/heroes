@@ -1,0 +1,25 @@
+extern "stdlib.h"
+    function malloc(size: u64) -> ptr
+    function free(p: ptr)
+
+extern "sqlite3.h" link "sqlite3"
+    constant SQLITE_TRANSIENT: ptr
+    record CDb tag sqlite3
+    record CStmt tag sqlite3_stmt
+    function sqlite3_open(path: cstr lent, @out: CDb acquires sqlite3_close) -> i32
+    function sqlite3_close(db: CDb consumes) -> i32
+    function sqlite3_prepare_v2(db: CDb, sql: cstr lent, length: i32, @out: CStmt acquires sqlite3_finalize, tail: ptr) -> i32
+    function sqlite3_finalize(statement: CStmt consumes) -> i32
+    function sqlite3_step(statement: CStmt) -> i32
+    function sqlite3_bind_text(statement: CStmt, column: i32, text: ptr, length: i32, destructor: (function(ptr) -> ())) -> i32
+
+function main()
+    db: CDb @ nullptr
+    _ = sqlite3_open(path: ":memory:".cstr(), @db)
+    st: CStmt @ nullptr
+    _ = sqlite3_prepare_v2(db: db, sql: "select ?".cstr(), length: -1, @st, tail: nullptr)
+    b = malloc(size: 3)
+    _ = sqlite3_bind_text(statement: st, column: 1, text: b, length: 0, destructor: free)
+    _ = sqlite3_step(statement: st)
+    _ = sqlite3_finalize(statement: st)
+    _ = sqlite3_close(db: db)

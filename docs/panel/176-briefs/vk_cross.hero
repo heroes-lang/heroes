@@ -1,0 +1,15 @@
+extern "vk.h"
+    record Dev tag dev
+    record Buf tag buf
+    function dev_open() -> Dev acquires dev_close
+    function dev_close(d: Dev consumes)
+    function buf_make(d: Dev) -> Buf acquires buf_destroy
+    function buf_destroy(d: Dev, b: Buf consumes)
+    function buf_destroy_pooled(d: Dev, b: Buf consumes)
+
+function main()
+    d = dev_open()
+    b = buf_make(d: d)
+    buf_destroy_pooled(d: d, b: b)
+    dev_close(d: d)
+    print("crossed")
