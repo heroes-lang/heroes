@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 8**
+**OPEN: 7**
 
 - [ ] **075 — `acquires` names the call that ends a handle's life, and a program that ends it with another is `check` 0 and `run` 0** | the named releaser is read for existence and never at the call that gives the handle back, and the live set keeps an address and nothing else | `selfhost/check/acquiring.hero` · `runtime/heroes_runtime.h:205` · `spec § 13`
 
@@ -278,31 +278,5 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the cheapest, and what it does to a `borrows` handle that was never in the
     set, is panel 177's question. The author can disagree and close it on the
     wart, as panel 153 put it.
-
-- [ ] **090 — a use-after-free inside C, reached through a stale copy of a handle, is reported as a null handle reaching C** | the stack guard reads any fault below its null window as *a handle or `ptr` holding `nullptr` reached C*, and a freed object whose field C reads as null faults there too | `runtime/parts/stack.c:502`
-
-    **Origin:** panel 177's ffi-pragmatist, 2026-09-24 (its *Found in what
-    ships*, item 1); reproduced by the coordinator the same day before filing,
-    from the seat's `ossl_alias_null.hero` copied out of its directory.
-
-    **The reproducer**, against Homebrew's OpenSSL 3.6.4 on Darwin and Debian's
-    3.5.7 on Linux: `bio = BIO_new(…)`, a copy `mine = bio`, then
-    `SSL_set0_rbio(s: ssl, rbio: bio)` hands the BIO to the connection and
-    `SSL_free(ssl)` frees both; the program then prints `mine == nullptr` and
-    writes through `mine`. **Darwin arm64: 134, three of three**, after
-    printing `mine is null: false`, with *panic: a null pointer was read
-    through — a handle or `ptr` holding `nullptr` reached C where C
-    dereferences it, at offset 0x210, called from osslaliasnull.main* (0x240 on
-    one run). **Linux arm64 and x86-64: 139, zero bytes, three of three.**
-    Under `--sanitize`: *SEGV on unknown address* inside `libcrypto` on Darwin
-    (134) and Linux arm64 (1), never a use-after-free, because the library is
-    not instrumented.
-
-    **Why it is a defect.** The line states a cause, and the cause is false: the
-    program had just printed that the handle was not null. Panel 173's rule for
-    the lease line — *it says what it saw and not why* — is the rule this line
-    breaks. The shape that produces the fault is design.md Part 8 wart 20's
-    class, a copy made before the call; the defect is the message, which sends
-    the reader to look for a `nullptr` that is not there. **Unrun:** Windows.
 
 *******************************************************************************
