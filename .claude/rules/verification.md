@@ -26,11 +26,17 @@ rather than trusting the table:
 # the twenty suite names the net registers, which are what `-- <compiler> <name>` takes
 grep -oE '"[a-z_]+"' tests/harness/main.hero | sort -u
 
-# what each suite file walks, from its own constants
+# what each suite file walks, from its own constants — the literal paths, and
+# the bare group names of a suite that builds `"tests/golden/" + group`
 for f in tests/harness/suite_*.hero; do
   printf "%-14s " "$(basename $f .hero | sed 's/^suite_//')"
-  grep -ohE '"(tests/golden/[a-z-]+|examples|selfhost|spec/[a-z-]+\.md|docs/[a-z/]+)"' "$f" \
-    | sort -u | tr '\n' ' '; echo
+  { grep -ohE '"(tests/golden/[a-z-]+|examples|selfhost|spec/[a-z-]+\.md|docs/[a-z/]+)"' "$f"
+    if grep -q '"tests/golden/" +' "$f"; then
+      for d in $(ls tests/golden); do
+        grep -qE "^[[:space:]]*\"$d\"[[:space:]]*$" "$f" && echo "\"tests/golden/$d\""
+      done
+    fi
+  } | sort -u | tr '\n' ' '; echo
 done
 ```
 
@@ -50,9 +56,9 @@ happened here first.
 | `tests/golden/check/**` | **`check`** `annotations` `canonical` `fixes` |
 | `tests/golden/fixedbugs/**` | `annotations` `canonical` **`emission`** |
 | `tests/golden/unsupported/**` | **`unsupported`** `annotations` `canonical` |
-| `tests/golden/run/**` | `canonical` `determinism` `lines` `run` `warnings` |
-| `tests/golden/emit/**` | **`emit`** `canonical` `determinism` `warnings` |
-| `tests/golden/ir/**` | **`ir`** `canonical` `determinism` |
+| `tests/golden/run/**` | `canonical` `determinism` **`emission`** `lines` `run` `warnings` |
+| `tests/golden/emit/**` | **`emit`** `canonical` `determinism` **`emission`** `warnings` |
+| `tests/golden/ir/**` | **`ir`** `canonical` `determinism` **`emission`** |
 | `tests/golden/surface-fixtures/**` | `annotations` `fixes` |
 | `examples/**` | `canonical` `corpus` `emission` `warnings` |
 | `spec/heroes-spec.md` | `spec` `special` **`grammar`** |
@@ -73,6 +79,18 @@ nothing is a green run that tested nothing* — and so does the shape it keeps
 finding: **the map is a premise about the world, and it expires in silence.**
 The commands at the top of this file are the instrument; the table is only their
 last answer.
+
+**`emission` was missing from three rows until 2026-09-24, and so was it from
+the command that makes them.** `suite_emission.hero` walks `"tests/golden/" +
+group` over a constant list, `emit`, `fixedbugs`, `ir`, `run`, so the grep for
+literal paths saw it read `examples` and nothing else, and the table said the
+same. What it cost: the lane that closed defect 076 added two `run` goldens,
+gated them by this row, and merged them with no blessed emission; the trunk's
+`emission` read 486 and 2 until panel 176's compiler-engineer found it. The
+coordinator trusted the table instead of running `emission`, which is this
+file's first warning in so many words. The command now also prints the bare
+group names of any suite that concatenates the golden root, and on that day it
+printed the four groups above and changed no other row.
 
 **A NEW CHECKER RULE is not a `selfhost/**` change, and the row above says it
 is.** Added 2026-09-14, at the M-marked-acquisition close, and it cost six red
