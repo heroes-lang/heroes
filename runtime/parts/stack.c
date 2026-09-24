@@ -134,6 +134,21 @@
 #define HERO_NULL_WINDOW 65536ULL
 #endif
 
+/* WHAT A READ NEAR ZERO SAYS, and it is one string for both arms so they cannot
+ * drift (defect 090, panel 177's ffi-pragmatist, 2026-09-24). The line used to
+ * name ONE cause — *a handle or `ptr` holding `nullptr` reached C* — and it was
+ * false under a program that had just printed `mine is null: false`: a C object
+ * given back, cleansed to zero as OpenSSL cleanses, and read again through a
+ * copy of its handle the program kept faults at the same small offset a null
+ * handle would, since its fields now read as zero. Panel 173's rule for the
+ * lease line binds here too: say what was seen — the offset and the frame —
+ * and name the shapes that produce it, never the one that did. */
+#define HERO_NULL_READ_TAIL \
+    "  Two things put a null where C read it: a handle or `ptr` holding `nullptr` handed to a\n" \
+    "  C function that reads through it; or a C object already given back, read again through\n" \
+    "  a copy of its handle the program kept, since a freed object's fields read as zero. This\n" \
+    "  runtime raised neither.\n"
+
 /* THE HELPERS, compiled on every POSIX build, under the sanitizer too (panel
  * 175). `parts/os.c`'s crash handler writes with them and asks them which Heroes
  * frame it is under, and since panel 175 that handler stays in a `--sanitize`
@@ -512,13 +527,13 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      * installs its own handler and reports `SEGV on unknown address` itself. */
     if ((unsigned long long)addr < HERO_NULL_WINDOW) {
         const char *who = hero_stack_blame(pc, fp, lr);
-        hero_stack_say("panic: a null pointer was read through — a handle or `ptr` holding `nullptr` reached C where C dereferences it, at offset ");
+        hero_stack_say("panic: a null pointer was read through, at offset ");
         hero_stack_say_hex(addr);
         if (who != NULL) {
             hero_stack_say(", called from ");
             hero_stack_say_heroes_name(who);
         }
-        hero_stack_say("\n");
+        hero_stack_say("\n" HERO_NULL_READ_TAIL);
         hero_abort();
     }
     hero_stack_pass_on(signum, si, ctx);
@@ -668,7 +683,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && ep->ExceptionRecord->NumberParameters >= 2
         && (unsigned long long)ep->ExceptionRecord->ExceptionInformation[1] < HERO_NULL_WINDOW) {
-        const char *line = "panic: a null pointer was read through \xe2\x80\x94 a handle or `ptr` holding `nullptr` reached C where C dereferences it, at offset ";
+        const char *line = "panic: a null pointer was read through, at offset ";
         _write(2, line, (unsigned int)strlen(line));
         /* The offset is half the contract (panel 156 R1: the sentence and the
          * offset are what a reader may rely on, and `called from` is best
@@ -692,6 +707,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
         }
         buf[at++] = '\n';
         _write(2, buf, (unsigned int)at);
+        _write(2, HERO_NULL_READ_TAIL, (unsigned int)strlen(HERO_NULL_READ_TAIL));
         hero_abort();
     }
     return EXCEPTION_CONTINUE_SEARCH;

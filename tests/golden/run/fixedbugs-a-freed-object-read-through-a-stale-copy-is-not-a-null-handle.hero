@@ -1,0 +1,34 @@
+# DEFECT 090: a use-after-free inside C, reached through a stale copy of a
+# handle, was reported as a null handle reaching C (panel 177's
+# ffi-pragmatist, 2026-09-24, over real OpenSSL; this is the shape in a header
+# of its own, so it fires on every platform).
+#
+# The program keeps a copy of a handle, gives the original back, and reads
+# through the copy. C cleanses the object to zero before freeing it, as
+# OpenSSL does, so the read lands on a null field inside freed memory: a fault
+# at a small offset, exactly where a null handle's fault would be. The runtime
+# said `a handle or `ptr` holding `nullptr` reached C`, one line under the
+# program's own `null: false`. Panel 173's rule for the lease line — it says
+# what it saw and not why — is the rule that line broke. It now says what it
+# saw, the offset and the frame, and names the two things that put a null
+# where C read it, one of which is this program.
+#
+# The object lives in a C pool and is cleansed rather than freed, because over
+# `malloc` the freed block was handed out again before the stale read on the
+# Linux and Windows legs and the case printed a heap address at exit 0 (the
+# header says so, with the measurement). Under `--sanitize` the runtime is
+# silent and ASan reports the fault itself, which the case's `!sanitizer:`
+# line pins with the words the three platforms share.
+extern "fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.h"
+    record Outer tag outer
+    function make() -> Outer acquires release
+    function release(o: Outer consumes)
+    function value(o: Outer) -> i64
+
+function main()
+    a = make()
+    kept = a
+    print("before: ", value(o: a))
+    release(o: a)
+    print("null: ", kept == nullptr)
+    print("after: ", value(o: kept))
