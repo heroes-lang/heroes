@@ -19,6 +19,7 @@
 
 use ast
 use source
+use token
 use diag
 use check/state
 use check/freer as freer
@@ -98,7 +99,9 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
     for column in columns
         if column == at.must().col && index < f.params.len()
             if freer.owned_parameter(decls, at: f.decl, index: index)
-                return fail(code: "none", msg: "a marked `@cstr` owns what C writes there")
+                if c_type.must() != "const char **"
+                    return fail(code: "none", msg: "a marked `@cstr` owns what C writes there")
+                return ok(owned_const(name: name, param: f.slots[f.params[index]].name, span: decls[f.decl].span))
             which @ "`" + f.slots[f.params[index]].name + "`"
             none: [str] = []
             declared @ render.render_ty(c.types, s, decls, f.slots[f.params[index]].ty, none)
@@ -125,6 +128,31 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
     d.notes @ d.notes.push("declare it `ptr` and give `" + name + "` a buffer C owns, then read the result back")
     d.fixes @ d.fixes.push(diag.Fix(title: "declare it `ptr`", replacement: "ptr", span: span, certainty: .guess))
     return ok(d)
+
+# DEFECT 078 (panel 176, question 4; landed 2026-09-24 on the sitting's
+# provisional resolution, item 8). `owned` on an `@cstr` cell is emitted as
+# `char **`, the carve-out above, because the mark says the bytes C writes are
+# the program's to free. A header that spells the cell `const char **` says the
+# opposite: C hands back bytes it asks the caller not to change, which is how C
+# lends (`sqlite3_prepare_v2`'s `pzTail`, and 589 such parameters across the
+# headers the ffi seat counted, one of which documents that the caller frees).
+# The author's word and the header's disagree, and that is
+# `.claude/rules/c-boundary.md`'s class: exit 1, on the declaration, never
+# `internal error` at exit 2, which is what clang's `discards qualifiers in
+# nested pointer types` became before this. The comparison is on the type text
+# clang prints, which is the canonical spelling — a typedef such as
+# `cstring_t *` or `const gchar **` arrives here as `const char **`, measured
+# on the three spellings panel 176's critic wrote.
+function owned_const(name: str, param: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_owned_const_cell",
+        message: "`" + param + "` of `" + name + "` is marked `owned`, and the header says `const char **` — C hands back bytes it asks the caller not to change, which is how a C function lends a string, not how it gives one",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "if the library keeps the string, drop `owned` and read the `cstr` while it is valid; if its documentation says the caller frees it anyway, drop `owned` and call the freer yourself on the `cstr` the cell holds"
+    )
+    return d
 
 ## Tests
 
