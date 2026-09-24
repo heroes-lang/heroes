@@ -110,6 +110,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     freed address straight back, so `c` gets a different one and the stale `b`
     is a stray. **Unrun:** Windows.
 
+    **Added 2026-09-24, with defect 088's correction:** the stale `b` is the
+    copy design.md Part 8 wart 20 says outlives a consuming call, and what this
+    defect adds to the wart's class is the reuse — the copy is not merely
+    dangling, it names a live handle, so no check on the address alone can tell
+    them apart. The spec sentence `a747e5a2` landed, *unless C has since reused
+    its address*, states that limit; §1.12 is why it cannot be the answer.
+
 - [ ] **078 — `owned` on an out-parameter the header spells `const char **` stops the build with `internal error`, exit 2, instead of an `ffi_` diagnostic** | the author's binding disagrees with the header on one qualifier, and the compiler reports itself as broken | `selfhost/emit/` · `.claude/rules/c-boundary.md`
 
     **Origin:** panel 175's spec-warden, 2026-09-23 (its F4), reproduced by the
@@ -396,6 +403,24 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     It belongs with defect 077, the other shape where the live set cannot tell
     a handle that is over from one that is not, which is why panel 177 takes
     both.
+
+    **Corrected 2026-09-24, before panel 177 sat: this shape is inside a class
+    design.md already states, and the filing missed it.** Part 8 wart 20 — *one
+    copy of a value holding a `ptr` can free what every other copy holds, at
+    exit 0* — says the half `consumes` does not reach is *a copy made BEFORE
+    the call still holds the freed address*, and that the class is the affine
+    handle, which Part 6's borrow-checker row refuses on COST since 2026-09-13.
+    `b` above is that copy. The critic searched this file and the coordinator
+    searched nothing else; `grep -n "wart 20\|affine" docs/design/design.md`
+    finds it, and panel 153 had declined to file a shape of the same class on
+    that ground and said so. **It stays filed, and this is why**: the wart
+    admits the class *only while the cheapest guard is being built rather than
+    argued about*, and the live set that panel 150 added since gives this
+    shape a guard the wart could not name — the dead handle is not in the set
+    when it reaches a parameter that does not consume. Whether that guard is
+    the cheapest, and what it does to a `borrows` handle that was never in the
+    set, is panel 177's question. The author can disagree and close it on the
+    wart, as panel 153 put it.
 
 - [ ] **089 — a C library that ignores SIGABRT and then raises it is killed by the runtime, under a false lease line** | panel 173's lease handler takes SIGTRAP, SIGABRT and SIGILL whatever disposition it finds, so a signal the program set to be ignored reaches the handler, which speaks and re-raises it at its default | `runtime/parts/os.c` (`hero_lease_crash_install`)
 
