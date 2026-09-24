@@ -1,0 +1,24 @@
+extern "openssl/ssl.h" link "ssl"
+    record Ctx tag ssl_ctx_st
+    record Ssl tag ssl_st
+    function TLS_method() -> ptr
+    function SSL_CTX_new(meth: ptr) -> Ctx acquires SSL_CTX_free
+    function SSL_CTX_free(ctx: Ctx consumes)
+    function SSL_new(ctx: Ctx) -> Ssl acquires SSL_free
+    function SSL_free(ssl: Ssl consumes)
+    function SSL_set0_rbio(s: Ssl, rbio: Bio consumes)
+
+extern "openssl/bio.h" link "crypto"
+    record Bio tag bio_st
+    function BIO_s_mem() -> ptr
+    function BIO_new(type: ptr) -> Bio acquires BIO_free
+    function BIO_free(a: Bio consumes) -> i32
+
+function main()
+    ctx = SSL_CTX_new(meth: TLS_method())
+    s = SSL_new(ctx: ctx)
+    b = BIO_new(type: BIO_s_mem())
+    SSL_set0_rbio(s: s, rbio: b)
+    SSL_free(ssl: s)
+    SSL_CTX_free(ctx: ctx)
+    print("the BIO went to the SSL and was freed with it")

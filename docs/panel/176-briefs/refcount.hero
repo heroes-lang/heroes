@@ -1,0 +1,12 @@
+extern "rc.h"
+    record Obj tag obj
+    function obj_new() -> Obj acquires obj_unref
+    function obj_ref(o: Obj) -> Obj acquires obj_unref
+    function obj_unref(o: Obj consumes)
+
+function main()
+    a = obj_new()
+    b = obj_ref(o: a)
+    obj_unref(o: a)
+    obj_unref(o: b)
+    print("both references given back")

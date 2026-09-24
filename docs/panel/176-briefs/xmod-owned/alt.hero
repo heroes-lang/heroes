@@ -1,0 +1,6 @@
+extern "../i2.h"
+    function my_free(p: ptr)
+    function make_text() -> cstr owned my_free
+
+function run()
+    print(make_text().default("?"))

@@ -1,0 +1,11 @@
+use alt
+
+extern "../i2.h"
+    function keep(s: cstr) -> i32
+
+function main()
+    alt.run()
+    y = "other"
+    c: cstr @ y.lease()
+    print(to_str(keep(s: c)))
+    end_lease(@c)
