@@ -5,7 +5,7 @@
 #include <ffi-borrows-owes-nothing.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 22, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -126,7 +126,7 @@ bb0:
 #line 25 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t2 = slot_open(t1);
 #line 25 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_handle_acquired(t2);
+    hero_handle_acquired(t2, "slot_close");
 #line 25 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     h0_mine = t2;
 #line 26 "tests/golden/run/ffi-borrows-owes-nothing.hero"
@@ -150,7 +150,7 @@ bb0:
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t9 = h0_mine;
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_handle_consumed(t9);
+    hero_handle_consumed(t9, "slot_close", NULL);
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     (void)slot_close(t9);
 #line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"

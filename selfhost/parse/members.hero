@@ -16,6 +16,7 @@ use token
 use cursor
 use ast
 use keywords
+use parse/marks as parse_marks
 use parse/type
 
 ## Type parameters
@@ -57,122 +58,6 @@ function generics(@c: cursor.Cursor, text: str) -> [token.Span]
 
 ## Value parameters
 
-# `owned <C function>` after a `cstr`, if it is there (§4.19, panel 109): the
-# C function that frees the string this signature hands the program.
-#
-# **A contextual word and never a keyword**, the choice `tag` and `partial`
-# already made and here for a stronger reason than either: `owned` is an
-# ordinary identifier at 22 sites in `selfhost/` today, so reserving it would
-# refuse the compiler's own source. It is consumed only in the two positions
-# that can carry it — after a result type and after a parameter's type — and is
-# an ordinary name everywhere else in the language.
-#
-# **Only inside a group.** The mark names a C function; a declaration with no
-# header behind it has no C function to name, so outside a group the word is
-# left alone and whatever follows is read as it always was.
-#
-# What comes back is the freer's NAME as a span, not its text: a diagnostic
-# about the freer has to point at the word the author wrote, and the text is
-# read from the source like every other name.
-#
-# **It lives here and not beside `tag` and `partial` in `parse/tails.hero`,
-# and that is the cycle rule rather than a preference**: this marker is read
-# in two places, one of them inside `params` below, and `tails` already uses
-# this module — so putting it there would close the ring Heroes refuses.
-# `consumes` after a group parameter's type, if it is there: the call ENDS the
-# life of what is passed (panel 145, defect 031).
-#
-# **A contextual keyword and not a reserved word**, read only here, in the one
-# position where it can stand — so `consumes` stays an ordinary identifier
-# everywhere else in the language, as `tag` and `partial` do.
-#
-# **And it is not `owned`, deliberately.** `owned <freer>` says C hands the
-# program a string and the COMPILER frees it; this says the C call frees what
-# the PROGRAM handed over. Opposite directions, so one word would mean two
-# things decided by the parameter's type — which is exactly the confusion that
-# made `ptr owned f` parse and come back as a diagnostic about a string.
-#
-# `lent` (panel 171) says the call KEEPS NOTHING of what it is handed, so a lend
-# may land there; its own slot beside `counted_by`, never inside the handle
-# alternation `check/marks.hero` sweeps. One reader for the three bare words.
-function bare_marker(@c: cursor.Cursor, text: str, in_group: bool, word: str) -> bool
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != word
-        return false
-    _ = cursor.bump(@c)
-    return true
-
-# `acquires <releaser>` after a handle result or `@` out-parameter: the call
-# BEGINS that handle's life and names the one that ends it (panel 148 R2).
-#
-# **It is `owned`'s shape and not `consumes`'s, and that is the sitting's
-# finding.** A bare word was the cheaper draft and the named one measured
-# CHEAPER still — +66 vendored against +70 — because naming the releaser is
-# what this repository already does one line away, at `owned sqlite3_free`, and
-# what GCC does at `__attribute__((malloc (fclose, 1)))`. It buys the class a
-# bare mark cannot see: closing a `CStmt` with `sqlite3_close`.
-# `borrows`, the third mark and the one that says NOTHING is owed. It carries no
-# name because there is no releaser to name.
-function acquires_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_ACQUIRES
-        return fail(code: "absent", msg: "nothing here is acquired")
-    keyword = cursor.bump(@c).span
-
-    if !cursor.at(c, .ident)
-        cursor.error(
-            @c,
-            code: "expected_releaser",
-            message: "`acquires` names the C function that gives this handle back: `-> Curl acquires curl_easy_cleanup`",
-            span: cursor.here_or(c, keyword)
-        )
-        return fail(code: "absent", msg: "the releaser's name is missing")
-    return ok(cursor.bump(@c).span)
-
-# `counted_by <sibling>` after a `ptr` parameter: how far C reads or writes
-# through it (panel 166's route C, ratified 2026-09-19; defect 063).
-#
-# IT NAMES A SIBLING AND NOT A NUMBER, which is the whole of the route. The
-# extent a lend crosses with is stated by the CALL, and until this mark nothing
-# related that number to the field: `sl_fill(p: s.name.ptr(), n: 64)` on an
-# `i8[8]` moved the sibling field to `0x41414141` at exit 0. The mark says which
-# argument is the count, so the emitter can write one C assertion against the
-# field's own `sizeof`.
-#
-# THE SPELLING IS C'S OWN. Apple's SDK and the Linux kernel both write
-# `__counted_by(n)` for this relation, and `check/lend_extent.hero` judges the
-# name against the signature in hand. The word is contextual, like `owned`,
-# `consumes`, `acquires` and `borrows`: `in_group` is what keeps it readable
-# after a parameter's type and nowhere else, so a program may still call
-# anything `counted_by`.
-function counted_by_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_COUNTED_BY
-        return fail(code: "absent", msg: "nothing here is counted")
-    keyword = cursor.bump(@c).span
-
-    if !cursor.at(c, .ident)
-        cursor.error(
-            @c,
-            code: "expected_extent",
-            message: "`counted_by` names the parameter beside it that says how far C reads: `read(fd: i32, buf: ptr counted_by n, n: u64)`",
-            span: cursor.here_or(c, keyword)
-        )
-        return fail(code: "absent", msg: "the extent's name is missing")
-    return ok(cursor.bump(@c).span)
-
-function owned_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_OWNED
-        return fail(code: "absent", msg: "nothing here is owned")
-    keyword = cursor.bump(@c).span
-
-    if !cursor.at(c, .ident)
-        cursor.error(
-            @c,
-            code: "expected_freer",
-            message: "`owned` names the C function that frees this string: `-> cstr owned sqlite3_free`",
-            span: cursor.here_or(c, keyword)
-        )
-        return fail(code: "absent", msg: "the freer's name is missing")
-    return ok(cursor.bump(@c).span)
-
 # `(a: i64, @l: Lex)` — always parenthesised, `()` when empty. `in_group` is
 # what lets `owned` be read after a parameter's type and nowhere else.
 function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [ast.Param]
@@ -212,12 +97,12 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
                 # does with it — `buf: ptr counted_by n owned free` reads as
                 # the header does, the extent beside the type and the ownership
                 # after it. The order is the grammar's, `spec § 13`'s `CParam`.
-                counted_by = counted_by_marker(@c, text, in_group: in_group)
-                lent = bare_marker(@c, text: text, in_group: in_group, word: keywords.WORD_LENT)
-                owned = owned_marker(@c, text, in_group: in_group)
-                consumes = bare_marker(@c, text: text, in_group: in_group, word: keywords.WORD_CONSUMES)
-                acquires = acquires_marker(@c, text, in_group: in_group)
-                borrows = bare_marker(@c, text: text, in_group: in_group, word: keywords.WORD_BORROWS)
+                counted_by = parse_marks.counted_by_marker(@c, text, in_group: in_group)
+                lent = parse_marks.bare_marker(@c, text: text, in_group: in_group, word: keywords.WORD_LENT)
+                owned = parse_marks.owned_marker(@c, text, in_group: in_group)
+                consumes = parse_marks.bare_marker(@c, text: text, in_group: in_group, word: keywords.WORD_CONSUMES)
+                acquires = parse_marks.acquires_marker(@c, text, in_group: in_group)
+                borrows = parse_marks.bare_marker(@c, text: text, in_group: in_group, word: keywords.WORD_BORROWS)
                 out @ out.push(
                     ast.Param(name: name, ty: ty, mutable: mutable, owned: owned, consumes: consumes, acquires: acquires, borrows: borrows, counted_by: counted_by, lent: lent)
                 )

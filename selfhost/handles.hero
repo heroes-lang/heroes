@@ -180,6 +180,75 @@ function handle_map_key(key: str, reached: str, span: token.Span) -> diag.Diagno
     )
     return d
 
+## The releaser set
+
+# `acquires a | b`: the names a mark carries, in order, with the spaces around
+# each dropped (defect 075; panel 175's route A, panel 176's item 1). ONE home
+# for four readers — the parser hands over one span for the whole set, the
+# checker looks up each name, the two printers spell it back `a | b`, and the
+# emitter hands the runtime `a|b` as a C string — so the four cannot disagree on
+# where one name ends. A name is an identifier, so a byte is a character here.
+function releasers(text: str) -> [str]
+    out: [str] @ []
+    word: str @ ""
+    i: i64 @ 0
+
+    while i < text.len()
+        if text[i] == '|'
+            if word.len() > 0
+                out @ out.push(word)
+            word @ ""
+        else if text[i] != ' '
+            word @ word + text.slice(from: i, to: i + 1)
+        i @ i + 1
+
+    if word.len() > 0
+        out @ out.push(word)
+
+    return out
+
+# Each name's own span inside the set's span, for a diagnostic that points at
+# the one name that does not resolve rather than at the whole set.
+function releaser_spans(text: str, at: token.Span) -> [token.Span]
+    out: [token.Span] @ []
+    from: i64 @ -1
+    i: i64 @ 0
+
+    while i < text.len()
+        if text[i] == '|' || text[i] == ' '
+            if from >= 0
+                out @ out.push(token.Span(start: at.start + from, end: at.start + i))
+            from @ -1
+        else if from < 0
+            from @ i
+        i @ i + 1
+
+    if from >= 0
+        out @ out.push(token.Span(start: at.start + from, end: at.start + text.len()))
+
+    return out
+
+# The canonical spelling, ` | ` between names, which is what the formatter
+# writes back whatever the author typed.
+function releasers_spelled(text: str) -> str
+    return releasers(text).join(" | ")
+
+# The runtime's spelling, `|` with no spaces: one C string literal the set
+# compares by content, token by token.
+function releasers_c(text: str) -> str
+    return releasers(text).join("|")
+
+test "a releaser set is split on `|`, spaces dropped, and spelled back canonically"
+    assert releasers("sqlite3_close") == ["sqlite3_close"]
+    assert releasers("sqlite3_close | sqlite3_close_v2") == ["sqlite3_close", "sqlite3_close_v2"]
+    assert releasers("a|b|c") == ["a", "b", "c"]
+    assert releasers_spelled("a|b") == "a | b"
+    assert releasers_c(" a | b ") == "a|b"
+    spans = releaser_spans("a | bc", at: token.Span(start: 10, end: 16))
+    assert spans.len() == 2
+    assert spans[0].start == 10 && spans[0].end == 11
+    assert spans[1].start == 14 && spans[1].end == 16
+
 test "all three clauses are load-bearing, and a record with fields is never a handle"
     header: token.Span? = ok(token.Span(start: 0, end: 1))
     tag: token.Span? = ok(token.Span(start: 2, end: 3))

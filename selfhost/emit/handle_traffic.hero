@@ -15,6 +15,7 @@
 
 use ast
 use source
+use handles
 use check/state
 use check/reaches
 use emit/writer
@@ -52,7 +53,8 @@ function for_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls: 
                             decls,
                             ty: written.must(),
                             value: target.must(),
-                            entry: "hero_handle_acquired"
+                            entry: "hero_handle_acquired",
+                            by: quoted(handles.releasers_c(source.span_text(s, fd.value.acquires_result.must())))
                         )
             at: i64 @ 0
 
@@ -69,7 +71,8 @@ function for_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls: 
                                 decls,
                                 ty: written.must(),
                                 value: cell_of(arguments[at]),
-                                entry: "hero_handle_acquired"
+                                entry: "hero_handle_acquired",
+                                by: quoted(handles.releasers_c(source.span_text(s, p.acquires.must())))
                             )
 
                 at @ at + 1
@@ -102,6 +105,7 @@ function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decl
     match decls[decl].kind
         .function_decl fd =>
             at: i64 @ 0
+            by = consumer(s, fd.value, name: source.span_text(s, decls[decl].name))
 
             for p in fd.value.params
                 if at < arguments.len() && p.consumes
@@ -115,7 +119,8 @@ function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decl
                             decls,
                             ty: written.must(),
                             value: arguments[at],
-                            entry: "hero_handle_consumed"
+                            entry: "hero_handle_consumed",
+                            by: by
                         )
                 at @ at + 1
         .constant_decl | .record_decl | .variant_decl | .test_decl => return
@@ -123,7 +128,7 @@ function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decl
 # One line per handle the value reaches. None at all is a comment and not
 # silence: a marked declaration whose type reaches nothing is a binding the
 # checker should already have refused, so if one arrives here the C says so.
-function emit_each(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, value: str, entry: str)
+function emit_each(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, value: str, entry: str, by: str)
     suffixes = reaches.handle_suffixes(c, s, decls, ty: ty)
 
     if suffixes.len() == 0
@@ -131,7 +136,33 @@ function emit_each(@w: writer.Writer, c: state.Checked, s: source.Source, decls:
         return
 
     for suffix in suffixes
-        writer.line(@w, text: "    " + entry + "(" + value + suffix + ");")
+        writer.line(@w, text: "    " + entry + "(" + value + suffix + ", " + by + ");")
+
+# The releaser set as a C string the runtime compares by CONTENT (panel 175's
+# route A, landed at panel 176's item 1): each module is its own translation
+# unit, so neither a literal's address nor a header's static function is one
+# identity across them, and the name is. An extern's Heroes name is its C
+# symbol (spec § 13's `Member` has no rename), so the text is the same
+# everywhere.
+function quoted(text: str) -> str
+    return "\"" + text + "\""
+
+# Who is giving the handle back, and what its own mark would let it pay. A
+# call that also ACQUIRES is a transfer of the old kind — `realloc`, `freopen` —
+# ending one life and beginning the next owed to its own releasers, so it may
+# take back a handle whose set shares a name with its own: `freopen` of an
+# `fopen` stream, never of a `popen` one. Panel 176's `transfers` is the
+# spelling that names this on purpose; until it lands, this is what the
+# runtime is told.
+function consumer(s: source.Source, fd: ast.FunctionDecl, name: str) -> str
+    if !fd.acquires_result.is_err()
+        return quoted(name) + ", " + quoted(handles.releasers_c(source.span_text(s, fd.acquires_result.must())))
+
+    for p in fd.params
+        if !p.acquires.is_err()
+            return quoted(name) + ", " + quoted(handles.releasers_c(source.span_text(s, p.acquires.must())))
+
+    return quoted(name) + ", NULL"
 
 # The cell behind `&cell`. An `@` parameter is emitted as an address-of, so this
 # reads the one character off the front; anything else is handed back whole,

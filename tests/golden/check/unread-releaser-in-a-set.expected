@@ -1,0 +1,1 @@
+tests/golden/check/unread-releaser-in-a-set.hero:6:47: error[unread_releaser]: `nothere` does not end a `H`'s life: no `extern` of this module declares it taking one back with `consumes`
