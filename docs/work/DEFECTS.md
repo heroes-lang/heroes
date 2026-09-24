@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 11**
+**OPEN: 10**
 
 - [ ] **075 — `acquires` names the call that ends a handle's life, and a program that ends it with another is `check` 0 and `run` 0** | the named releaser is read for existence and never at the call that gives the handle back, and the live set keeps an address and nothing else | `selfhost/check/acquiring.hero` · `runtime/heroes_runtime.h:205` · `spec § 13`
 
@@ -262,22 +262,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     repair's question: the per-module reading is what the message and
     `check/acquiring.hero`'s own note say, and the program-wide one is what lets
     a libcrypto BIO mark name libssl's calls today (the seat's § 2c).
-
-- [ ] **086 — a handle given back twice before the program has acquired any dies at 133 with nothing on stderr** | while the live set is still empty, `hero_handle_consumed` counts the stray and returns, so the double release reaches C, where after one acquisition the same program is stopped before C with the runtime's line | `runtime/parts/alloc.c:428`
-
-    **Origin:** panel 176's compiler-engineer, 2026-09-23 (its § 9); reproduced
-    by the coordinator the same day before filing.
-
-    **The reproducer.** A producer marked `borrows`, so nothing is ever
-    acquired, and its handle given to a consuming `g_close` twice:
-    `a = g_open()`, `g_close(x: a)`, `g_close(x: a)`. **133, zero bytes, three
-    of three**, Darwin arm64. The same double release after one acquisition has
-    allocated the set (`cap1.hero`): **134, 396 bytes, three of three**, before C.
-
-    **Why it is a defect.** Defect 071 moved the stray report before the C call
-    so that a double release is stopped before it happens; that promise now
-    depends on the program's history. The seat measured the one-line repair —
-    report instead of return at `alloc.c:432` — at 134 and 396 bytes for both.
 
 - [ ] **087 — `heroes grammar` says the language has six contextual words, and the parser reads eleven** | the sentence lists `as`, `link`, `package`, `tag`, `partial`, `owned`, and `parse/members.hero` and `parse/tails.hero` also read `acquires`, `borrows`, `consumes`, `counted_by` and `lent` | `selfhost/cli/grammar.hero` · `selfhost/parse/members.hero:115`
 
