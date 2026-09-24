@@ -5,7 +5,7 @@
 #include <fixedbugs-a-real-deallocator-given-the-same-handle-twice.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 22, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -118,7 +118,7 @@ bb0:
 #line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t2 = blk_open(t1);
 #line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
-    hero_handle_acquired(t2);
+    hero_handle_acquired(t2, "blk_close");
 #line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     h0_a = t2;
 #line 50 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
@@ -132,13 +132,13 @@ bb0:
 #line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t5 = h0_a;
 #line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
-    hero_handle_consumed(t5);
+    hero_handle_consumed(t5, "blk_close", NULL);
 #line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     (void)blk_close(t5);
 #line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t6 = h0_a;
 #line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
-    hero_handle_consumed(t6);
+    hero_handle_consumed(t6, "blk_close", NULL);
 #line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     (void)blk_close(t6);
 #line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"

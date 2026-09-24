@@ -5,7 +5,7 @@
 #include <sqlite3.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 22, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -14734,7 +14734,7 @@ bb0:
 #line 234 "examples/ledger/db/sqlite.hero"
     t4 = sqlite3_open(hero_cstr_nonnull(t3), &h0_db);
 #line 234 "examples/ledger/db/sqlite.hero"
-    hero_handle_acquired(h0_db);
+    hero_handle_acquired(h0_db, "sqlite3_close");
 #line 234 "examples/ledger/db/sqlite.hero"
     t5 = h_dbsqlite_SQLITE_OK();
 #line 234 "examples/ledger/db/sqlite.hero"
@@ -14795,7 +14795,7 @@ bb2:
 #line 249 "examples/ledger/db/sqlite.hero"
     t10 = h0_db;
 #line 249 "examples/ledger/db/sqlite.hero"
-    hero_handle_consumed(t10);
+    hero_handle_consumed(t10, "sqlite3_close", NULL);
 #line 249 "examples/ledger/db/sqlite.hero"
     (void)sqlite3_close(t10);
 #line 250 "examples/ledger/db/sqlite.hero"
@@ -14850,7 +14850,7 @@ bb0:
 #line 254 "examples/ledger/db/sqlite.hero"
     t2 = t1.f_handle;
 #line 254 "examples/ledger/db/sqlite.hero"
-    hero_handle_consumed(t2);
+    hero_handle_consumed(t2, "sqlite3_close", NULL);
 #line 254 "examples/ledger/db/sqlite.hero"
     t3 = sqlite3_close(t2);
 #line 14857 "main.c"
@@ -15348,7 +15348,7 @@ bb0:
 #line 294 "examples/ledger/db/sqlite.hero"
     t8 = sqlite3_prepare_v2(t4, hero_cstr_nonnull(t6), t7, &h2_statement, &h3_tail);
 #line 294 "examples/ledger/db/sqlite.hero"
-    hero_handle_acquired(h2_statement);
+    hero_handle_acquired(h2_statement, "sqlite3_finalize");
 #line 294 "examples/ledger/db/sqlite.hero"
     t9 = h_dbsqlite_SQLITE_OK();
 #line 294 "examples/ledger/db/sqlite.hero"
@@ -15473,7 +15473,7 @@ bb0:
 #line 299 "examples/ledger/db/sqlite.hero"
     t2 = t1.f_handle;
 #line 299 "examples/ledger/db/sqlite.hero"
-    hero_handle_consumed(t2);
+    hero_handle_consumed(t2, "sqlite3_finalize", NULL);
 #line 299 "examples/ledger/db/sqlite.hero"
     t3 = sqlite3_finalize(t2);
 #line 15480 "main.c"

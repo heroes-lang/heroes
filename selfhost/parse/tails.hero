@@ -32,6 +32,7 @@ use handles
 use keywords
 use parse/type
 use parse/members as parse_members
+use parse/marks as parse_marks
 use grammar_expr
 
 ## Linkage — where a declaration's implementation comes from
@@ -143,9 +144,9 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
 
     if cursor.eat(@c, .arrow)
         result @ type.parse_type(@c, @a, text)
-        owned_result @ parse_members.owned_marker(@c, text, in_group: is_extern)
-        acquires_result @ parse_members.acquires_marker(@c, text, in_group: is_extern)
-        borrows_result @ parse_members.bare_marker(@c, text: text, in_group: is_extern, word: keywords.WORD_BORROWS)
+        owned_result @ parse_marks.owned_marker(@c, text, in_group: is_extern)
+        acquires_result @ parse_marks.acquires_marker(@c, text, in_group: is_extern)
+        borrows_result @ parse_marks.bare_marker(@c, text: text, in_group: is_extern, word: keywords.WORD_BORROWS)
     else
         here = cursor.current_span(c)
         result @ ast.push_type(

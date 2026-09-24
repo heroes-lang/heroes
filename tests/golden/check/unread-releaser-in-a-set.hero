@@ -1,0 +1,11 @@
+# A set is checked one name at a time (defect 075's repair): `h_close` ends an
+# `H` and `nothere` is declared by no `extern` of this module, so the refusal
+# points at the one name that does not resolve and the other still counts.
+extern "unread-releaser-in-a-set.h"
+    record H tag hh
+    function h_open() -> H acquires h_close | nothere  #~ unread_releaser
+    function h_close(x: H consumes)
+
+function main()
+    a = h_open()
+    h_close(x: a)

@@ -1,0 +1,20 @@
+# DEFECT 075: `acquires pclose` on `popen`, then `fclose`, was `check` 0 and
+# `run` 0 on four platforms, and the child was never waited for
+# (M-agreed-retention step 1, 2026-09-23). The named releaser was read for
+# existence and never at the call that gave the handle back.
+#
+# The set now travels with the address: `p_open`'s mark says `p_close`, and a
+# `consumes` call the mark did not name is stopped before C runs, which is why
+# `C ran` never prints. The message says what the two declarations say and
+# nothing about why they disagree.
+extern "fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.h"
+    record H tag hh
+    function p_open() -> H acquires p_close
+    function p_close(x: H consumes)
+    function h_close(x: H consumes)
+
+function main()
+    a = p_open()
+    print("opened")
+    h_close(x: a)
+    print("not reached")

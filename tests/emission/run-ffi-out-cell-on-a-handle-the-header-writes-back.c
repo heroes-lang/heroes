@@ -5,7 +5,7 @@
 #include <ffi-out-cell-on-a-handle-the-header-writes-back.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 22, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -128,11 +128,11 @@ bb0:
 #line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     t3 = make_into(&h0_a);
 #line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_handle_acquired(h0_a);
+    hero_handle_acquired(h0_a, "eat");
 #line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     t4 = make_typedef(&h1_b);
 #line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_handle_acquired(h1_b);
+    hero_handle_acquired(h1_b, "eat");
 #line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow();
 #line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
@@ -142,13 +142,13 @@ bb0:
 #line 17 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     t6 = h0_a;
 #line 17 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_handle_consumed(t6);
+    hero_handle_consumed(t6, "eat", NULL);
 #line 17 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     (void)eat(t6);
 #line 18 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     t7 = h1_b;
 #line 18 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_handle_consumed(t7);
+    hero_handle_consumed(t7, "eat", NULL);
 #line 18 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     (void)eat(t7);
 #line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
