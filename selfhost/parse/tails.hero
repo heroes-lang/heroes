@@ -29,6 +29,7 @@ use token
 use cursor
 use ast
 use handles
+use keywords
 use parse/type
 use parse/members as parse_members
 use grammar_expr
@@ -144,7 +145,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
         result @ type.parse_type(@c, @a, text)
         owned_result @ parse_members.owned_marker(@c, text, in_group: is_extern)
         acquires_result @ parse_members.acquires_marker(@c, text, in_group: is_extern)
-        borrows_result @ parse_members.bare_marker(@c, text: text, in_group: is_extern, word: "borrows")
+        borrows_result @ parse_members.bare_marker(@c, text: text, in_group: is_extern, word: keywords.WORD_BORROWS)
     else
         here = cursor.current_span(c)
         result @ ast.push_type(
@@ -215,7 +216,7 @@ function record_with_doc(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], tex
 # **Order is `tag <name>` then `partial`**, and the other order is a parse
 # error on purpose: one order that parses is one order to learn.
 function tag_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "tag"
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_TAG
         return fail(code: "absent", msg: "no tag clause")
     keyword = cursor.bump(@c).span
 
@@ -237,7 +238,7 @@ function tag_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
 # **Only inside a group**: an ordinary `record` has no header behind it, so
 # there is no struct for its field list to be a subset OF.
 function partial_marker(@c: cursor.Cursor, text: str, in_group: bool) -> bool
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "partial"
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_PARTIAL
         return false
     _ = cursor.bump(@c)
     return true

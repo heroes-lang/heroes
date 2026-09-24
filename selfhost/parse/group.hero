@@ -25,6 +25,7 @@
 use token
 use cursor
 use ast
+use keywords
 use parse/use_line
 use parse/tails
 
@@ -164,8 +165,8 @@ function library_clause(@c: cursor.Cursor, text: str) -> ast.Library?
 
 function library_word(l: ast.Library) -> str
     return match l
-        .link    => "link"
-        .package => "package"
+        .link    => keywords.WORD_LINK
+        .package => keywords.WORD_PACKAGE
 
 function library_name_span(l: ast.Library) -> token.Span
     return match l
@@ -177,9 +178,9 @@ function one_library(@c: cursor.Cursor, text: str) -> ast.Library?
         return fail(code: "absent", msg: "no library clause")
     word = cursor.slice_of(text, cursor.current_span(c))
 
-    if word != "link" && word != "package"
+    if word != keywords.WORD_LINK && word != keywords.WORD_PACKAGE
         return fail(code: "absent", msg: "no library clause")
-    is_package = word == "package"
+    is_package = word == keywords.WORD_PACKAGE
     _ = cursor.bump(@c)
 
     if !cursor.at(c, .str_lit)
