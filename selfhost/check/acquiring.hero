@@ -70,6 +70,7 @@ use ast
 use source
 use token
 use diag
+use handles
 use check/state
 use check/reaches
 
@@ -194,8 +195,27 @@ function bindings_say_which(@c: state.Checker, s: source.Source, decls: [ast.Dec
 function releaser_reads(@c: state.Checker, s: source.Source, decls: [ast.Decl], mark: token.Span?, reached: reaches.Reached)
     if mark.is_err()
         return
-    named = source.span_text(s, mark.must())
+    text = source.span_text(s, mark.must())
+    names = handles.releasers(text)
+    spans = handles.releaser_spans(text, at: mark.must())
+    index: i64 @ 0
 
+    # Every name of the set, one at a time (defect 075): the diagnostic points
+    # at the one that does not resolve, and the others still count.
+    for named in names
+        if !ends_a_life(c, s, decls, named: named, reached: reached)
+            state.push_diagnostic(
+                @c,
+                unread_releaser(named: named, handle: source.span_text(s, decls[reached.decl].name), span: spans[index])
+            )
+        index @ index + 1
+
+# Does an `extern` of this module by that name take the handle back with
+# `consumes`? The per-module reading is the message's own words, and it is the
+# local one: a verdict that read the whole program moved with a declaration in
+# another file (defect 085's shape, and the ground panel 176 refused the
+# call-site rule on).
+function ends_a_life(c: state.Checker, s: source.Source, decls: [ast.Decl], named: str, reached: reaches.Reached) -> bool
     for decl in decls
         match decl.kind
             .function_decl fd =>
@@ -205,13 +225,10 @@ function releaser_reads(@c: state.Checker, s: source.Source, decls: [ast.Decl], 
                             behind = handle_behind(c, s, decls, node: p.ty)
 
                             if !behind.is_err() && behind.must().decl == reached.decl
-                                return
+                                return true
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
-    state.push_diagnostic(
-        @c,
-        unread_releaser(named: named, handle: source.span_text(s, decls[reached.decl].name), span: mark.must())
-    )
+    return false
 
 # The refusal. It names the handle, the call that takes one back, and the two
 # words that answer it — because §4.17 asks that an error carry everything

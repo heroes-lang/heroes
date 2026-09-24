@@ -5,7 +5,7 @@
 #include <curl/curl.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 22, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -339,7 +339,7 @@ bb3:
 #line 57 "examples/curl/main.hero"
     t12 = curl_easy_init();
 #line 57 "examples/curl/main.hero"
-    hero_handle_acquired(t12);
+    hero_handle_acquired(t12, "curl_easy_cleanup");
 #line 57 "examples/curl/main.hero"
     h2_handle = t12;
 #line 77 "examples/curl/main.hero"
@@ -667,7 +667,7 @@ bb18:
 #line 92 "examples/curl/main.hero"
     t74 = h2_handle;
 #line 92 "examples/curl/main.hero"
-    hero_handle_consumed(t74);
+    hero_handle_consumed(t74, "curl_easy_cleanup", NULL);
 #line 92 "examples/curl/main.hero"
     (void)curl_easy_cleanup(t74);
 #line 674 "main.c"

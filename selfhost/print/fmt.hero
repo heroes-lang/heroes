@@ -57,6 +57,7 @@
 use token
 use ast
 use source
+use handles
 use digits
 use print/types
 use print/bodies
@@ -570,7 +571,7 @@ function bare_suffix(on: bool, word: str) -> str
 function acquires_suffix(s: source.Source, mark: token.Span?) -> str
     if mark.is_err()
         return ""
-    return " acquires " + source.span_text(s, mark.must())
+    return " acquires " + handles.releasers_spelled(source.span_text(s, mark.must()))
 
 # ` counted_by n`, or nothing (panel 166's route C). Written in the same commit
 # as the marker, which is what the two paragraphs above were paid to learn: a

@@ -31,6 +31,7 @@
 use token
 use ast
 use source
+use handles
 use print/types
 use print/bodies
 use parse
@@ -196,7 +197,7 @@ function bare_suffix(on: bool, word: str) -> str
 function acquires_suffix(s: source.Source, mark: token.Span?) -> str
     if mark.is_err()
         return ""
-    return " acquires " + source.span_text(s, mark.must())
+    return " acquires " + handles.releasers_spelled(source.span_text(s, mark.must()))
 
 # ` counted_by n`, or nothing (panel 166's route C). **This dump is what
 # `heroes fmt` compares its own output against**, so the form is owed here the

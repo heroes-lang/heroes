@@ -5,7 +5,7 @@
 #include <abort-handle-given-back-twice.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 22, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -118,7 +118,7 @@ bb0:
 #line 26 "tests/golden/run/abort-handle-given-back-twice.hero"
     t2 = slot_open(t1);
 #line 26 "tests/golden/run/abort-handle-given-back-twice.hero"
-    hero_handle_acquired(t2);
+    hero_handle_acquired(t2, "slot_close");
 #line 26 "tests/golden/run/abort-handle-given-back-twice.hero"
     h0_a = t2;
 #line 27 "tests/golden/run/abort-handle-given-back-twice.hero"
@@ -132,13 +132,13 @@ bb0:
 #line 28 "tests/golden/run/abort-handle-given-back-twice.hero"
     t5 = h0_a;
 #line 28 "tests/golden/run/abort-handle-given-back-twice.hero"
-    hero_handle_consumed(t5);
+    hero_handle_consumed(t5, "slot_close", NULL);
 #line 28 "tests/golden/run/abort-handle-given-back-twice.hero"
     (void)slot_close(t5);
 #line 29 "tests/golden/run/abort-handle-given-back-twice.hero"
     t6 = h0_a;
 #line 29 "tests/golden/run/abort-handle-given-back-twice.hero"
-    hero_handle_consumed(t6);
+    hero_handle_consumed(t6, "slot_close", NULL);
 #line 29 "tests/golden/run/abort-handle-given-back-twice.hero"
     (void)slot_close(t6);
 #line 29 "tests/golden/run/abort-handle-given-back-twice.hero"

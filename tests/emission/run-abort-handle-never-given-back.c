@@ -5,7 +5,7 @@
 #include <abort-handle-never-given-back.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 22, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -123,7 +123,7 @@ bb0:
 #line 21 "tests/golden/run/abort-handle-never-given-back.hero"
     t2 = slot_open(t1);
 #line 21 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_acquired(t2);
+    hero_handle_acquired(t2, "slot_close");
 #line 21 "tests/golden/run/abort-handle-never-given-back.hero"
     h0_a = t2;
 #line 22 "tests/golden/run/abort-handle-never-given-back.hero"
@@ -131,7 +131,7 @@ bb0:
 #line 22 "tests/golden/run/abort-handle-never-given-back.hero"
     t4 = slot_open(t3);
 #line 22 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_acquired(t4);
+    hero_handle_acquired(t4, "slot_close");
 #line 22 "tests/golden/run/abort-handle-never-given-back.hero"
     h1_b = t4;
 #line 23 "tests/golden/run/abort-handle-never-given-back.hero"
@@ -151,7 +151,7 @@ bb0:
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     t10 = h0_a;
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_consumed(t10);
+    hero_handle_consumed(t10, "slot_close", NULL);
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     (void)slot_close(t10);
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"

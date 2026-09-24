@@ -5,7 +5,7 @@
 #include <netdb.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 22, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -151,7 +151,7 @@ bb0:
 #line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t8 = getaddrinfo(hero_cstr_nonnull(t6), t7, &h0_h, &h1_r);
 #line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_handle_acquired(h1_r);
+    hero_handle_acquired(h1_r, "freeaddrinfo");
 #line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     h2_rc = t8;
 #line 39 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
@@ -163,7 +163,7 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t10 = h1_r;
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_handle_consumed(t10);
+    hero_handle_consumed(t10, "freeaddrinfo", NULL);
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     (void)freeaddrinfo(t10);
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
