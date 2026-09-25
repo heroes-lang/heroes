@@ -26,8 +26,12 @@
 # declaration's INITIALISER being the lease call, through the resolver — a fact
 # about the cell in hand. `h: cstr @ grab()` and `h: cstr @ s.lease()` are the
 # same type and different origins, and origin is what `end_lease` may act on.
-# No flow analysis: `is_builtin_named` is fourteen lines and `argument_of` is
-# the lend's own parent map, both borrowed from `check/lending.hero`.
+# No flow analysis here: `is_builtin_named` is fourteen lines and `argument_of`
+# is the lend's own parent map, both borrowed from `check/lending.hero`. The
+# checker's one flow analysis is `check/moved.hero` (panel 177's item 3, since
+# 2026-09-25), which asks whether a HANDLE is read after the call that ended it
+# on every path; a lease's cell is emptied by the runtime, so this rule never
+# needed that question.
 #
 # WHY THE RUNTIME GUARD IS NOT THE RULE. The first version of this feature
 # validated the pointer with a magic word read eight bytes before it, and

@@ -1,0 +1,51 @@
+# A CONSUMED PART IS DEAD FOR ITS OWN READS AND FOR THE WHOLE CROSSING INTO
+# C, AND ALIVE BESIDE IT (panel 177's item 3, route M (must), 2026-09-25). A
+# handle is what a type REACHES (panel 149): a record's field, a fixed
+# array's element. Giving back `f.texture` ends that field and nothing else,
+# so a read of the field beside it stays quiet, a read of the field itself is
+# refused, and handing the whole record to C is refused, since C would read
+# the dead part.
+#
+# An element is the shape beside the field, and it has two spellings. A
+# literal index names one element, so `s.page[0]` given back makes `s.page[0]`
+# dead and `s.page[1]` alive. An index only the run can know, `s.page[i]`,
+# names none of them for certain: nothing read through it is refused, because
+# a refusal here is a fact about the program's shape and never a guess about a
+# value, and the whole sheet handed to C is refused, since one of its pages is
+# dead whichever `i` was. What this leaves alive the runtime checks before C.
+extern "handle-a-consumed-part-is-dead-for-its-reads-and-the-whole-crossing.h"
+    record Tex tag tex
+    record Font tag font
+        texture: Tex
+        atlas: Tex
+    record Sheet tag sheet
+        page: Tex[4]
+    function tex_new() -> Tex acquires tex_free
+    function tex_free(t: Tex consumes)
+    function tex_width(t: Tex) -> i64
+    function font_area(f: Font) -> i64
+    function sheet_new() -> Sheet acquires tex_free
+    function sheet_total(s: Sheet) -> i64
+
+function fields()
+    f = Font(texture: tex_new(), atlas: tex_new())
+    tex_free(t: f.texture)
+    print(tex_width(t: f.atlas))
+    print(tex_width(t: f.texture))  #~ handle_used_after_end
+    print(font_area(f: f))  #~ handle_used_after_end
+    tex_free(t: f.atlas)
+
+function elements(i: i64)
+    s = sheet_new()
+    tex_free(t: s.page[0])
+    print(tex_width(t: s.page[1]))
+    print(tex_width(t: s.page[0]))  #~ handle_used_after_end
+    print(tex_width(t: s.page[i]))
+    print(sheet_total(s: s))  #~ handle_used_after_end
+    tex_free(t: s.page[i])
+    print(tex_width(t: s.page[1]))
+    print(sheet_total(s: s))  #~ handle_used_after_end
+
+function main()
+    fields()
+    elements(2)

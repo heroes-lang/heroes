@@ -36,6 +36,7 @@ use check/marks
 use check/acquiring
 use check/releasers
 use check/contracts
+use check/moved
 use check/lending
 use check/leasing
 use check/counted
@@ -88,6 +89,15 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # `one_tag_one_type`, and after the rules above so a declaration's own
     # marks are judged before two declarations are compared.
     contracts.agree(@c, s, decls)
+
+    # Panel 177's item 3, route M (must): a handle read after the call that
+    # ended its life, on every path to the read, is refused at the read. The
+    # checker's one flow analysis, and it runs after the mark rules because
+    # the marks are what it reads: a `consumes` or `transfers` position ends
+    # a life, a `retains` keeps one, and `when` makes an end conditional.
+    # Decided one function at a time; what it cannot see the runtime stops
+    # before C.
+    moved.not_read_after_its_end(@c, a, r, s, decls)
 
     # §4.20's lend, asked at every position rather than at the one call
     # site that types it: defect 022 was a `cstr` RETURNED, and a rule

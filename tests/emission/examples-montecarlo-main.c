@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -104,10 +104,17 @@ int64_t h_main_next_of(int64_t h0_x);
 int64_t h_main_inside_for(int64_t h0_seed);
 double h_main_estimate(void);
 void h_main_main(void);
+int64_t h_main_inside_for(int64_t h0_seed);
+int64_t h_0cb_main_inside_for(int64_t h0_seed);
+__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    if (f == (void (*)(void))h_main_inside_for) return (void (*)(void))h_0cb_main_inside_for;
+    return f;
+}
+
 
 #line 26 "examples/montecarlo/main.hero"
 int64_t h_main_THREADS(void) {
-#line 111 "main.c"
+#line 118 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -115,12 +122,12 @@ bb0:
     t1 = INT64_C(8);
 #line 27 "examples/montecarlo/main.hero"
     return t1;
-#line 119 "main.c"
+#line 126 "main.c"
 }
 
 #line 29 "examples/montecarlo/main.hero"
 int64_t h_main_DARTS(void) {
-#line 124 "main.c"
+#line 131 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -128,12 +135,12 @@ bb0:
     t1 = INT64_C(20000);
 #line 30 "examples/montecarlo/main.hero"
     return t1;
-#line 132 "main.c"
+#line 139 "main.c"
 }
 
 #line 33 "examples/montecarlo/main.hero"
 int64_t h_main_SIDE(void) {
-#line 137 "main.c"
+#line 144 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -141,12 +148,12 @@ bb0:
     t1 = INT64_C(46340);
 #line 34 "examples/montecarlo/main.hero"
     return t1;
-#line 145 "main.c"
+#line 152 "main.c"
 }
 
 #line 36 "examples/montecarlo/main.hero"
 int64_t h_main_next_of(int64_t h0_x) {
-#line 150 "main.c"
+#line 157 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -170,12 +177,12 @@ bb0:
     t5 = t3 % t4;
 #line 37 "examples/montecarlo/main.hero"
     return t5;
-#line 174 "main.c"
+#line 181 "main.c"
 }
 
 #line 41 "examples/montecarlo/main.hero"
 int64_t h_main_inside_for(int64_t h0_seed) {
-#line 179 "main.c"
+#line 186 "main.c"
     hero_thread_guard("main.inside_for");
     int64_t h1_hits;
     int64_t h2_x;
@@ -350,12 +357,17 @@ bb5:
 bb6:
 #line 53 "examples/montecarlo/main.hero"
     goto bb4;
-#line 354 "main.c"
+#line 361 "main.c"
+}
+
+int64_t h_0cb_main_inside_for(int64_t h0_seed) {
+    int64_t hero_result = h_main_inside_for(h0_seed);
+    return hero_result;
 }
 
 #line 58 "examples/montecarlo/main.hero"
 double h_main_estimate(void) {
-#line 359 "main.c"
+#line 371 "main.c"
     HeroArrayHeader * h0_handles = {0};
     int64_t h1_i;
     int64_t h2_hits;
@@ -411,15 +423,15 @@ bb0:
     t40 = h6_own6;
 #line 59 "examples/montecarlo/main.hero"
     h6_own6 = t1;
-#line 415 "main.c"
+#line 427 "main.c"
     hero_array_decref(t40);
 #line 59 "examples/montecarlo/main.hero"
     t41 = h0_handles;
-#line 419 "main.c"
+#line 431 "main.c"
     hero_array_incref(t1);
 #line 59 "examples/montecarlo/main.hero"
     h0_handles = t1;
-#line 423 "main.c"
+#line 435 "main.c"
     hero_array_decref(t41);
 #line 60 "examples/montecarlo/main.hero"
     t2 = INT64_C(0);
@@ -444,7 +456,7 @@ bb2:
 #line 63 "examples/montecarlo/main.hero"
     t8 = h1_i;
 #line 63 "examples/montecarlo/main.hero"
-    t9 = hero_thread_spawn(t7, t8);
+    t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8);
 #line 63 "examples/montecarlo/main.hero"
     hero_array_push_owned(&h0_handles, &t9);
 #line 64 "examples/montecarlo/main.hero"
@@ -467,11 +479,11 @@ bb3:
     t15 = h0_handles;
 #line 68 "examples/montecarlo/main.hero"
     t42 = h3_xs0;
-#line 471 "main.c"
+#line 483 "main.c"
     hero_array_incref(t15);
 #line 68 "examples/montecarlo/main.hero"
     h3_xs0 = t15;
-#line 475 "main.c"
+#line 487 "main.c"
     hero_array_decref(t42);
 #line 68 "examples/montecarlo/main.hero"
     t16 = INT64_C(0);
@@ -545,20 +557,20 @@ bb7:
     t38 = hero_int_to_f64(t37);
 #line 71 "examples/montecarlo/main.hero"
     t39 = t34 / t38;
-#line 549 "main.c"
+#line 561 "main.c"
     hero_array_decref(h0_handles);
 #line 71 "examples/montecarlo/main.hero"
-#line 552 "main.c"
+#line 564 "main.c"
     hero_array_decref(h3_xs0);
 #line 71 "examples/montecarlo/main.hero"
-#line 555 "main.c"
+#line 567 "main.c"
     hero_array_decref(h6_own6);
     return t39;
 }
 
 #line 73 "examples/montecarlo/main.hero"
 void h_main_main(void) {
-#line 562 "main.c"
+#line 574 "main.c"
     HeroStr t1 = {0};
     int64_t t2;
     int64_t t3;
@@ -601,7 +613,7 @@ bb0:
     hero_print_end();
 #line 74 "examples/montecarlo/main.hero"
     return;
-#line 605 "main.c"
+#line 617 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

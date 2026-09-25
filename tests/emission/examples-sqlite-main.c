@@ -5,7 +5,7 @@
 #include <sqlite3.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -168,15 +168,17 @@ bb0:
 #line 77 "examples/sqlite/main.hero"
     t6 = ((void *)0);
 #line 77 "examples/sqlite/main.hero"
+    hero_handle_alive(t1, "the argument `db` of `sqlite3_exec`");
+#line 77 "examples/sqlite/main.hero"
     t7 = sqlite3_exec(t1, hero_cstr_nonnull(t3), t4, t5, t6);
 #line 77 "examples/sqlite/main.hero"
     return t7;
-#line 175 "main.c"
+#line 177 "main.c"
 }
 
 #line 80 "examples/sqlite/main.hero"
 int64_t h_main_first_int(sqlite3 * h0_db, HeroStr h1_sql) {
-#line 180 "main.c"
+#line 182 "main.c"
     sqlite3_stmt * h2_statement;
     __attribute__((unused)) const char * h3_tail;
     int64_t h4_rc;
@@ -225,6 +227,8 @@ bb0:
 #line 86 "examples/sqlite/main.hero"
     t6 = INT64_C(-1);
 #line 83 "examples/sqlite/main.hero"
+    hero_handle_alive(t3, "the argument `db` of `sqlite3_prepare_v2`");
+#line 83 "examples/sqlite/main.hero"
     t7 = sqlite3_prepare_v2(t3, hero_cstr_nonnull(t5), t6, &h2_statement, &h3_tail);
 #line 83 "examples/sqlite/main.hero"
     hero_handle_acquired(h2_statement, "sqlite3_finalize");
@@ -250,6 +254,8 @@ bb1:
     h5_value = t16;
 #line 95 "examples/sqlite/main.hero"
     t17 = h2_statement;
+#line 95 "examples/sqlite/main.hero"
+    hero_handle_alive(t17, "the argument `statement` of `sqlite3_step`");
 #line 95 "examples/sqlite/main.hero"
     t18 = sqlite3_step(t17);
 #line 95 "examples/sqlite/main.hero"
@@ -277,11 +283,17 @@ bb4:
 #line 97 "examples/sqlite/main.hero"
     t24 = h2_statement;
 #line 97 "examples/sqlite/main.hero"
-    hero_handle_ending(t24, "sqlite3_finalize", NULL);
+    {
+#line 97 "examples/sqlite/main.hero"
+    hero_handle_alive(t24, "the argument `statement` of `sqlite3_finalize`");
+#line 97 "examples/sqlite/main.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t24, "sqlite3_finalize", NULL);
 #line 97 "examples/sqlite/main.hero"
     (void)sqlite3_finalize(t24);
 #line 97 "examples/sqlite/main.hero"
-    hero_handle_ended(t24);
+    if (hero_handle_ended(t24, hero_life_0_0) && h2_statement == t24) h2_statement = hero_handle_dead();
+#line 97 "examples/sqlite/main.hero"
+    }
 #line 98 "examples/sqlite/main.hero"
     t26 = h5_value;
 #line 98 "examples/sqlite/main.hero"
@@ -293,6 +305,8 @@ bb5:
 #line 96 "examples/sqlite/main.hero"
     t22 = INT64_C(0);
 #line 96 "examples/sqlite/main.hero"
+    hero_handle_alive(t21, "the argument `statement` of `sqlite3_column_int`");
+#line 96 "examples/sqlite/main.hero"
     t23 = sqlite3_column_int(t21, t22);
 #line 96 "examples/sqlite/main.hero"
     h5_value = t23;
@@ -302,12 +316,12 @@ bb5:
 bb6:
 #line 96 "examples/sqlite/main.hero"
     goto bb4;
-#line 306 "main.c"
+#line 320 "main.c"
 }
 
 #line 100 "examples/sqlite/main.hero"
 void h_main_main(void) {
-#line 311 "main.c"
+#line 325 "main.c"
     sqlite3 * h0_db;
     sqlite3 * t1;
     HeroStr t2 = {0};
@@ -395,11 +409,17 @@ bb1:
 #line 119 "examples/sqlite/main.hero"
     t24 = h0_db;
 #line 119 "examples/sqlite/main.hero"
-    hero_handle_ending(t24, "sqlite3_close", NULL);
+    {
+#line 119 "examples/sqlite/main.hero"
+    hero_handle_alive(t24, "the argument `db` of `sqlite3_close`");
+#line 119 "examples/sqlite/main.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t24, "sqlite3_close", NULL);
 #line 119 "examples/sqlite/main.hero"
     (void)sqlite3_close(t24);
 #line 119 "examples/sqlite/main.hero"
-    hero_handle_ended(t24);
+    if (hero_handle_ended(t24, hero_life_0_0) && h0_db == t24) h0_db = hero_handle_dead();
+#line 119 "examples/sqlite/main.hero"
+    }
 #line 119 "examples/sqlite/main.hero"
     return;
 #line 119 "examples/sqlite/main.hero"
@@ -413,21 +433,27 @@ bb2:
 #line 113 "examples/sqlite/main.hero"
     t8 = h0_db;
 #line 113 "examples/sqlite/main.hero"
-    hero_handle_ending(t8, "sqlite3_close", NULL);
+    {
+#line 113 "examples/sqlite/main.hero"
+    hero_handle_alive(t8, "the argument `db` of `sqlite3_close`");
+#line 113 "examples/sqlite/main.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t8, "sqlite3_close", NULL);
 #line 113 "examples/sqlite/main.hero"
     (void)sqlite3_close(t8);
 #line 113 "examples/sqlite/main.hero"
-    hero_handle_ended(t8);
+    if (hero_handle_ended(t8, hero_life_0_0) && h0_db == t8) h0_db = hero_handle_dead();
+#line 113 "examples/sqlite/main.hero"
+    }
 #line 113 "examples/sqlite/main.hero"
     return;
 #line 113 "examples/sqlite/main.hero"
 bb3:
 #line 113 "examples/sqlite/main.hero"
     goto bb1;
-#line 428 "main.c"
+#line 454 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Db_eq(sqlite3 * const *a, sqlite3 * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_main_Db_hash(const void *elem) {
@@ -438,7 +464,7 @@ HERO_TU_LOCAL uint64_t h_main_Db_hash(const void *elem) {
 }
 
 HERO_TU_LOCAL bool h_main_Stmt_eq(sqlite3_stmt * const *a, sqlite3_stmt * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_main_Stmt_hash(const void *elem) {

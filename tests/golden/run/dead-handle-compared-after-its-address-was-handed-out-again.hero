@@ -1,0 +1,27 @@
+# DEFECT 077, the allocator-free shape (panel 175's critic, `u1_static`): a
+# handle given back, the same address handed out again, and the stale name
+# read. Before panel 177 this printed `true` and then gave `a` back a second
+# time in silence, exit 0, three of three: the live set keys on the address,
+# and the stale `a` equalled the live `b`.
+#
+# Under item 1 a dead value is not read in Heroes either: `==` on one aborts,
+# because a poisoned binding no longer holds its address, so two dead handles
+# would read equal and a dead one unequal to its own earlier copy (the
+# compiler-engineer's E6). The life ends inside `closed(@a)`, a helper the
+# checker's half (item 3) does not see into, so the read reaches the runtime.
+
+extern "dead-handle-compared-after-its-address-was-handed-out-again.h"
+    record H tag hh
+    function f_open() -> H acquires f_close
+    function f_close(x: H consumes)
+
+function closed(@x: H)
+    f_close(x: x)
+
+function main()
+    a: H @ f_open()
+    closed(@a)
+    b = f_open()
+    print(a == b)
+    f_close(x: a)
+    print("a given back twice, and nothing said")

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -106,10 +106,17 @@ int64_t h_main_band(int64_t h0_index);
 int64_t h_main_together(void);
 int64_t h_main_alone(void);
 void h_main_main(void);
+int64_t h_main_band(int64_t h0_index);
+int64_t h_0cb_main_band(int64_t h0_index);
+__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    if (f == (void (*)(void))h_main_band) return (void (*)(void))h_0cb_main_band;
+    return f;
+}
+
 
 #line 20 "examples/matmul/main.hero"
 int64_t h_main_SIZE(void) {
-#line 113 "main.c"
+#line 120 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -117,12 +124,12 @@ bb0:
     t1 = INT64_C(48);
 #line 21 "examples/matmul/main.hero"
     return t1;
-#line 121 "main.c"
+#line 128 "main.c"
 }
 
 #line 23 "examples/matmul/main.hero"
 int64_t h_main_BANDS(void) {
-#line 126 "main.c"
+#line 133 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -130,12 +137,12 @@ bb0:
     t1 = INT64_C(6);
 #line 24 "examples/matmul/main.hero"
     return t1;
-#line 134 "main.c"
+#line 141 "main.c"
 }
 
 #line 27 "examples/matmul/main.hero"
 int64_t h_main_left_at(int64_t h0_row, int64_t h1_col) {
-#line 139 "main.c"
+#line 146 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -171,12 +178,12 @@ bb0:
     t9 = t7 % t8;
 #line 28 "examples/matmul/main.hero"
     return t9;
-#line 175 "main.c"
+#line 182 "main.c"
 }
 
 #line 30 "examples/matmul/main.hero"
 int64_t h_main_right_at(int64_t h0_row, int64_t h1_col) {
-#line 180 "main.c"
+#line 187 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -212,12 +219,12 @@ bb0:
     t9 = t7 % t8;
 #line 31 "examples/matmul/main.hero"
     return t9;
-#line 216 "main.c"
+#line 223 "main.c"
 }
 
 #line 34 "examples/matmul/main.hero"
 HeroArrayHeader * h_main_product_row(int64_t h0_row) {
-#line 221 "main.c"
+#line 228 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_col;
     int64_t h3_total;
@@ -260,15 +267,15 @@ bb0:
     t30 = h5_own5;
 #line 35 "examples/matmul/main.hero"
     h5_own5 = t1;
-#line 264 "main.c"
+#line 271 "main.c"
     hero_array_decref(t30);
 #line 35 "examples/matmul/main.hero"
     t31 = h1_out;
-#line 268 "main.c"
+#line 275 "main.c"
     hero_array_incref(t1);
 #line 35 "examples/matmul/main.hero"
     h1_out = t1;
-#line 272 "main.c"
+#line 279 "main.c"
     hero_array_decref(t31);
 #line 36 "examples/matmul/main.hero"
     t2 = INT64_C(0);
@@ -302,13 +309,13 @@ bb2:
 bb3:
 #line 49 "examples/matmul/main.hero"
     t29 = h1_out;
-#line 306 "main.c"
+#line 313 "main.c"
     hero_array_incref(t29);
 #line 49 "examples/matmul/main.hero"
-#line 309 "main.c"
+#line 316 "main.c"
     hero_array_decref(h1_out);
 #line 49 "examples/matmul/main.hero"
-#line 312 "main.c"
+#line 319 "main.c"
     hero_array_decref(h5_own5);
     return t29;
 bb4:
@@ -368,12 +375,12 @@ bb6:
     h2_col = t28;
 #line 47 "examples/matmul/main.hero"
     goto bb1;
-#line 372 "main.c"
+#line 379 "main.c"
 }
 
 #line 53 "examples/matmul/main.hero"
 int64_t h_main_band(int64_t h0_index) {
-#line 377 "main.c"
+#line 384 "main.c"
     hero_thread_guard("main.band");
     HeroArrayHeader * h1_rows = {0};
     int64_t h2_row;
@@ -451,15 +458,15 @@ bb0:
     t54 = h10_own10;
 #line 54 "examples/matmul/main.hero"
     h10_own10 = t1;
-#line 455 "main.c"
+#line 462 "main.c"
     hero_array_decref(t54);
 #line 54 "examples/matmul/main.hero"
     t55 = h1_rows;
-#line 459 "main.c"
+#line 466 "main.c"
     hero_array_incref(t1);
 #line 54 "examples/matmul/main.hero"
     h1_rows = t1;
-#line 463 "main.c"
+#line 470 "main.c"
     hero_array_decref(t55);
 #line 55 "examples/matmul/main.hero"
     t2 = h0_index;
@@ -523,7 +530,7 @@ bb2:
     t56 = h11_own11;
 #line 58 "examples/matmul/main.hero"
     h11_own11 = t20;
-#line 527 "main.c"
+#line 534 "main.c"
     hero_array_decref(t56);
 #line 58 "examples/matmul/main.hero"
     hero_array_push_owned(&h1_rows, &t20);
@@ -547,11 +554,11 @@ bb3:
     t26 = h1_rows;
 #line 63 "examples/matmul/main.hero"
     t57 = h4_xs0;
-#line 551 "main.c"
+#line 558 "main.c"
     hero_array_incref(t26);
 #line 63 "examples/matmul/main.hero"
     h4_xs0 = t26;
-#line 555 "main.c"
+#line 562 "main.c"
     hero_array_decref(t57);
 #line 63 "examples/matmul/main.hero"
     t27 = INT64_C(0);
@@ -581,21 +588,21 @@ bb5:
     t34 = *(HeroArrayHeader * const *)hero_array_at(t32, t33);
 #line 63 "examples/matmul/main.hero"
     t58 = h6_r;
-#line 585 "main.c"
+#line 592 "main.c"
     hero_array_incref(t34);
 #line 63 "examples/matmul/main.hero"
     h6_r = t34;
-#line 589 "main.c"
+#line 596 "main.c"
     hero_array_decref(t58);
 #line 64 "examples/matmul/main.hero"
     t35 = h6_r;
 #line 64 "examples/matmul/main.hero"
     t59 = h7_xs1;
-#line 595 "main.c"
+#line 602 "main.c"
     hero_array_incref(t35);
 #line 64 "examples/matmul/main.hero"
     h7_xs1 = t35;
-#line 599 "main.c"
+#line 606 "main.c"
     hero_array_decref(t59);
 #line 64 "examples/matmul/main.hero"
     t36 = INT64_C(0);
@@ -619,22 +626,22 @@ bb6:
 bb7:
 #line 67 "examples/matmul/main.hero"
     t53 = h3_total;
-#line 623 "main.c"
+#line 630 "main.c"
     hero_array_decref(h1_rows);
 #line 67 "examples/matmul/main.hero"
-#line 626 "main.c"
+#line 633 "main.c"
     hero_array_decref(h4_xs0);
 #line 67 "examples/matmul/main.hero"
-#line 629 "main.c"
+#line 636 "main.c"
     hero_array_decref(h6_r);
 #line 67 "examples/matmul/main.hero"
-#line 632 "main.c"
+#line 639 "main.c"
     hero_array_decref(h7_xs1);
 #line 67 "examples/matmul/main.hero"
-#line 635 "main.c"
+#line 642 "main.c"
     hero_array_decref(h10_own10);
 #line 67 "examples/matmul/main.hero"
-#line 638 "main.c"
+#line 645 "main.c"
     hero_array_decref(h11_own11);
     return t53;
 bb8:
@@ -684,12 +691,17 @@ bb10:
 bb11:
 #line 64 "examples/matmul/main.hero"
     goto bb6;
-#line 688 "main.c"
+#line 695 "main.c"
+}
+
+int64_t h_0cb_main_band(int64_t h0_index) {
+    int64_t hero_result = h_main_band(h0_index);
+    return hero_result;
 }
 
 #line 69 "examples/matmul/main.hero"
 int64_t h_main_together(void) {
-#line 693 "main.c"
+#line 705 "main.c"
     HeroArrayHeader * h0_handles = {0};
     int64_t h1_i;
     int64_t h2_total;
@@ -737,15 +749,15 @@ bb0:
     t32 = h6_own6;
 #line 70 "examples/matmul/main.hero"
     h6_own6 = t1;
-#line 741 "main.c"
+#line 753 "main.c"
     hero_array_decref(t32);
 #line 70 "examples/matmul/main.hero"
     t33 = h0_handles;
-#line 745 "main.c"
+#line 757 "main.c"
     hero_array_incref(t1);
 #line 70 "examples/matmul/main.hero"
     h0_handles = t1;
-#line 749 "main.c"
+#line 761 "main.c"
     hero_array_decref(t33);
 #line 71 "examples/matmul/main.hero"
     t2 = INT64_C(0);
@@ -770,7 +782,7 @@ bb2:
 #line 74 "examples/matmul/main.hero"
     t8 = h1_i;
 #line 74 "examples/matmul/main.hero"
-    t9 = hero_thread_spawn(t7, t8);
+    t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8);
 #line 74 "examples/matmul/main.hero"
     hero_array_push_owned(&h0_handles, &t9);
 #line 75 "examples/matmul/main.hero"
@@ -793,11 +805,11 @@ bb3:
     t15 = h0_handles;
 #line 79 "examples/matmul/main.hero"
     t34 = h3_xs0;
-#line 797 "main.c"
+#line 809 "main.c"
     hero_array_incref(t15);
 #line 79 "examples/matmul/main.hero"
     h3_xs0 = t15;
-#line 801 "main.c"
+#line 813 "main.c"
     hero_array_decref(t34);
 #line 79 "examples/matmul/main.hero"
     t16 = INT64_C(0);
@@ -855,20 +867,20 @@ bb6:
 bb7:
 #line 82 "examples/matmul/main.hero"
     t31 = h2_total;
-#line 859 "main.c"
+#line 871 "main.c"
     hero_array_decref(h0_handles);
 #line 82 "examples/matmul/main.hero"
-#line 862 "main.c"
+#line 874 "main.c"
     hero_array_decref(h3_xs0);
 #line 82 "examples/matmul/main.hero"
-#line 865 "main.c"
+#line 877 "main.c"
     hero_array_decref(h6_own6);
     return t31;
 }
 
 #line 84 "examples/matmul/main.hero"
 int64_t h_main_alone(void) {
-#line 872 "main.c"
+#line 884 "main.c"
     int64_t h0_total;
     int64_t h1_row;
     HeroArrayHeader * h2_xs0 = {0};
@@ -934,15 +946,15 @@ bb2:
     t26 = h5_own5;
 #line 89 "examples/matmul/main.hero"
     h5_own5 = t7;
-#line 938 "main.c"
+#line 950 "main.c"
     hero_array_decref(t26);
 #line 89 "examples/matmul/main.hero"
     t27 = h2_xs0;
-#line 942 "main.c"
+#line 954 "main.c"
     hero_array_incref(t7);
 #line 89 "examples/matmul/main.hero"
     h2_xs0 = t7;
-#line 946 "main.c"
+#line 958 "main.c"
     hero_array_decref(t27);
 #line 89 "examples/matmul/main.hero"
     t8 = INT64_C(0);
@@ -954,10 +966,10 @@ bb2:
 bb3:
 #line 94 "examples/matmul/main.hero"
     t25 = h0_total;
-#line 958 "main.c"
+#line 970 "main.c"
     hero_array_decref(h2_xs0);
 #line 94 "examples/matmul/main.hero"
-#line 961 "main.c"
+#line 973 "main.c"
     hero_array_decref(h5_own5);
     return t25;
 bb4:
@@ -1015,12 +1027,12 @@ bb7:
     h1_row = t24;
 #line 92 "examples/matmul/main.hero"
     goto bb1;
-#line 1019 "main.c"
+#line 1031 "main.c"
 }
 
 #line 96 "examples/matmul/main.hero"
 void h_main_main(void) {
-#line 1024 "main.c"
+#line 1036 "main.c"
     HeroStr t1 = {0};
     int64_t t2;
     HeroStr t3 = {0};
@@ -1057,7 +1069,7 @@ bb0:
     hero_print_end();
 #line 97 "examples/matmul/main.hero"
     return;
-#line 1061 "main.c"
+#line 1073 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

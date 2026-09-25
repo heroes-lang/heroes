@@ -1,0 +1,31 @@
+# CORRECT, and the landing refused it (its skeptic, probe `a2e`,
+# 2026-09-25). `cert` is given back, which empties the cell, and the cell is
+# then reused for a getter that hands a reference OUT into it: C writes the
+# cell and never reads what it held. The crossing check asked every `@` cell
+# not marked `acquires` or `borrows`, so it read the dead value left in the
+# cell and aborted before a call that was never going to read it.
+#
+# An `@` cell marked `retains` is a cell a reference comes out through, like
+# `acquires`: the emitter tells the set `hero_handle_retained` on the cell
+# after the call, and a C function that READS a handle and adds a reference
+# is spelled `retains` on a parameter without `@`, where it is asked.
+# `emit/handle_before.hero`'s `reads_cell` holds the rule. The give-back
+# sits under an `if` on a value C returns, so the checker's half (panel
+# 177's item 3) lets the program reach the runtime.
+
+extern "dead-handle-reused-as-a-retains-out-cell.h"
+    record X509 tag ob
+    function ob_new() -> X509 acquires ob_put
+    function ob_get_shared(@out: X509 retains ob_put) -> i32 when 1
+    function ob_put(a: X509 consumes)
+    function ob_refs(a: X509) -> i64
+    function one() -> i64
+
+function main()
+    cert: X509 @ ob_new()
+
+    if one() == 1
+        ob_put(a: cert)
+    assert ob_get_shared(out: @cert) == 1
+    print("references held: ", ob_refs(a: cert))
+    ob_put(a: cert)

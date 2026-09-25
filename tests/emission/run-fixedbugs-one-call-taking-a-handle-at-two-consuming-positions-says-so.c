@@ -5,7 +5,7 @@
 #include <fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -148,23 +148,39 @@ bb0:
 #line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     t6 = h1_b;
 #line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
-    hero_handle_transferring(t5, "bio_free");
+    {
 #line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
-    hero_handle_transferring(t6, "bio_free");
+    hero_handle_alive(t4, "the argument `s` of `ssl_set_bio`");
+#line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
+    hero_handle_alive(t5, "the argument `rbio` of `ssl_set_bio`");
+#line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
+    hero_handle_alive(t6, "the argument `wbio` of `ssl_set_bio`");
+#line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
+    uint64_t hero_life_1_0 = hero_handle_transferring(t5, "bio_free");
+#line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
+    uint64_t hero_life_2_0 = hero_handle_transferring(t6, "bio_free");
 #line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     (void)ssl_set_bio(t4, t5, t6);
 #line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
-    hero_handle_ended(t5);
+    if (hero_handle_ended(t5, hero_life_1_0) && h1_b == t5) h1_b = hero_handle_dead();
 #line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
-    hero_handle_ended(t6);
+    if (hero_handle_ended(t6, hero_life_2_0) && h1_b == t6) h1_b = hero_handle_dead();
+#line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
+    }
 #line 26 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     t7 = h0_s;
 #line 26 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
-    hero_handle_ending(t7, "ssl_free", NULL);
+    {
+#line 26 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
+    hero_handle_alive(t7, "the argument `s` of `ssl_free`");
+#line 26 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t7, "ssl_free", NULL);
 #line 26 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     (void)ssl_free(t7);
 #line 26 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
-    hero_handle_ended(t7);
+    if (hero_handle_ended(t7, hero_life_0_0) && h0_s == t7) h0_s = hero_handle_dead();
+#line 26 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
+    }
 #line 27 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     t8 = HERO_STR_LIT(hero_str_4414937d);
 #line 27 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
@@ -173,10 +189,10 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     return;
-#line 177 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
+#line 193 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_Bio_eq(bio * const *a, bio * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_Bio_hash(const void *elem) {
@@ -187,7 +203,7 @@ HERO_TU_LOCAL uint64_t h_fixedbugsonecalltakingahandleattwoconsumingpositionssay
 }
 
 HERO_TU_LOCAL bool h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_Ssl_eq(ssl * const *a, ssl * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_Ssl_hash(const void *elem) {

@@ -1,0 +1,35 @@
+# Defect 097's write at an index nobody can read off the page, in the two
+# places a fixed array can be written from: a local cell and an `@` parameter.
+#
+# The index is COMPUTED, so the checker cannot judge it and the bound is checked
+# where it runs: `fixed_subscript` in `selfhost/emit/container.hero`, the same
+# text the read of `q.a[i]` goes through. Every index below is in range, and
+# `abort-a-fixed-array-element-written-past-its-length.hero` is the one past it.
+#
+# `after` sits behind the array so a write that strayed off its last element
+# would land in it, and the C sum, which reads both, would disagree with the
+# Heroes print that reads the elements alone.
+#
+# The `@` parameter is copy in, copy out (spec § 9): the element is written into
+# the callee's copy and the whole record comes back, so the caller sees it.
+
+extern "fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.h"
+    record Quad tag quad
+        a: i32[4]
+        after: i64
+    function quad_sum(q: Quad) -> i64
+
+function bump(@q: Quad, at: i64)
+    q.a[at] @ q.a[at] + 100
+    q.a[0] @ q.a[0] + 1
+
+function main()
+    q: Quad @ Quad(a: [1, 2, 3, 4], after: 1000)
+
+    for i in range(from: 0, to: 4)
+        q.a[i] @ q.a[i] * 10
+
+    print(q.a[0], " ", q.a[1], " ", q.a[2], " ", q.a[3], " sum: ", quad_sum(q: q))
+    last: i64 @ len(args()) + 3
+    bump(@q, at: last)
+    print(q.a[0], " ", q.a[3], " after: ", q.after, " sum: ", quad_sum(q: q))

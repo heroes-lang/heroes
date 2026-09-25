@@ -1,0 +1,29 @@
+# FIXED DEFECT 097, 2026-09-25: writing one element of a fixed array inside a
+# group record passed `check` and aborted at run time as a compiler bug.
+#
+# SYMPTOM: this program, `check` 0, ran to exit 134 with *panic: entered
+# unreachable code — this is a compiler bug*, on Darwin arm64 and Linux x86-64,
+# and its C carried `warning: variable 't7' set but not used`: the index and the
+# value were computed and then nothing wrote them. Reading `n.a[0]` worked, and
+# so did writing the whole record.
+#
+# CAUSE: a store whose place holds an index goes to `write_element` in
+# `selfhost/emit/container.hero`, which knew a `[T]` and a map and read a
+# `T[N]` as "not a container step". The failure came back to
+# `selfhost/emit/inst.hero`, which spelled it `hero_unreachable()`.
+#
+# FIX: a fixed-array step writes the element where it lies, as a field step
+# does, through `fixed_subscript`: the one spelling of the bound check, which
+# the read of `n.a[i]` goes through too, so the two cannot disagree. The index
+# here is a literal and in range, so the check refuses nothing; the computed
+# index and the one past the end have cases of their own.
+
+extern "fixedbugs-a-fixed-array-element-is-written-in-place.h"
+    record Nums tag nums
+        a: i64[4]
+    function nums_sum(n: Nums) -> i64
+
+function main()
+    n: Nums @ Nums(a: [1, 2, 3, 4])
+    n.a[0] @ 9
+    print("sum: ", nums_sum(n: n))
