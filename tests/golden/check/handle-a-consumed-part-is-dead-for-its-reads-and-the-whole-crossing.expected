@@ -1,0 +1,5 @@
+tests/golden/check/handle-a-consumed-part-is-dead-for-its-reads-and-the-whole-crossing.hero:34:24: error[handle_used_after_end]: `f.texture` was given to `tex_free` at line 32, which ended its life, and this reads it again
+tests/golden/check/handle-a-consumed-part-is-dead-for-its-reads-and-the-whole-crossing.hero:35:24: error[handle_used_after_end]: `f` is handed to C whole here, and its `f.texture` was given to `tex_free` at line 32, which ended its life
+tests/golden/check/handle-a-consumed-part-is-dead-for-its-reads-and-the-whole-crossing.hero:42:24: error[handle_used_after_end]: `s.page[0]` was given to `tex_free` at line 40, which ended its life, and this reads it again
+tests/golden/check/handle-a-consumed-part-is-dead-for-its-reads-and-the-whole-crossing.hero:44:26: error[handle_used_after_end]: `s` is handed to C whole here, and its `s.page[0]` was given to `tex_free` at line 40, which ended its life
+tests/golden/check/handle-a-consumed-part-is-dead-for-its-reads-and-the-whole-crossing.hero:47:26: error[handle_used_after_end]: `s` is handed to C whole here, and its `s.page[0]` was given to `tex_free` at line 40, which ended its life

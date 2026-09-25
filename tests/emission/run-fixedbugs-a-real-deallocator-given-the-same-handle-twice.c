@@ -67,11 +67,11 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 44 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsarealdeallocatorgiventhesamehandletwice_blk_open(int64_t a0) { (void)(blk_open)(a0); }
-#line 45 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 53 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsarealdeallocatorgiventhesamehandletwice_blk_close(blk * a0) { (void)(blk_close)(a0); }
-#line 46 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 54 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsarealdeallocatorgiventhesamehandletwice_blk_value(blk * a0) { (void)(blk_value)(a0); }
 #line 112 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
@@ -101,53 +101,59 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsarealdeallocatorgiventhesamehandletwice_main(void);
 
-#line 48 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 56 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
 void h_fixedbugsarealdeallocatorgiventhesamehandletwice_main(void) {
 #line 107 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
     blk * h0_a;
+    blk * h1_twice;
     int64_t t1;
     blk * t2;
     blk * t3;
     int64_t t4;
     blk * t5;
     blk * t6;
+    blk * t7;
     goto bb0;
 bb0:
-#line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 57 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t1 = INT64_C(7);
-#line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 57 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t2 = blk_open(t1);
-#line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 57 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     hero_handle_acquired(t2, "blk_close");
-#line 49 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 57 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     h0_a = t2;
-#line 50 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 58 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t3 = h0_a;
-#line 50 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 58 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t4 = blk_value(t3);
-#line 50 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 58 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     hero_print_int(t4);
-#line 50 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 58 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     hero_print_end();
-#line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 59 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t5 = h0_a;
-#line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
-    hero_handle_ending(t5, "blk_close", NULL);
-#line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
-    (void)blk_close(t5);
-#line 51 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
-    hero_handle_ended(t5);
-#line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 59 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+    h1_twice = t5;
+#line 60 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t6 = h0_a;
-#line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 60 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     hero_handle_ending(t6, "blk_close", NULL);
-#line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 60 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     (void)blk_close(t6);
-#line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 60 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     hero_handle_ended(t6);
-#line 52 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+#line 61 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+    t7 = h1_twice;
+#line 61 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+    hero_handle_ending(t7, "blk_close", NULL);
+#line 61 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+    (void)blk_close(t7);
+#line 61 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+    hero_handle_ended(t7);
+#line 61 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     return;
-#line 151 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
+#line 157 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsarealdeallocatorgiventhesamehandletwice_Blk_eq(blk * const *a, blk * const *b) {
     return *a == *b;

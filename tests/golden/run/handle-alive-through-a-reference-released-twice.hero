@@ -1,0 +1,22 @@
+# THE ERGONOMIST'S A3 UNDER M-MUST (panel 177's items 3, 8 and 10,
+# 2026-09-25): a second reference taken through one name, `X509_up_ref`'s
+# shape, then two releases through that same name. The sitting's rule II
+# refused the last line as a double release, its H9; this rule does not,
+# because a `retains` position keeps the name alive for the rest of the body:
+# the count is above one and only the run knows by how much. Exit 0, and the
+# count reads as C expects at each step.
+extern "handle-alive-through-a-reference-released-twice.h"
+    record Cert tag x509
+    function cert_new() -> Cert acquires cert_free
+    function cert_up_ref(a: Cert retains cert_free) -> i32 when 1
+    function cert_free(a: Cert consumes)
+    function cert_refs(a: Cert) -> i64
+
+function main()
+    cert = cert_new()
+    rc = cert_up_ref(a: cert)
+    print("up_ref: ", rc, " refs: ", cert_refs(a: cert))
+    cert_free(a: cert)
+    print("refs: ", cert_refs(a: cert))
+    cert_free(a: cert)
+    print("released twice, as C expects")

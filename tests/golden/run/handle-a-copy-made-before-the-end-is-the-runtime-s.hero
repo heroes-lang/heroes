@@ -1,0 +1,20 @@
+# THE COPY MADE BEFORE THE END IS THE RUNTIME'S (panel 177's items 1, 3 and
+# 4, 2026-09-25). `keep = a` is a second name for the same address, and the
+# checker's rule tracks the NAME the ending call was handed: `keep` was handed
+# to nothing, so nothing at check time is dead, `check` 0. This is the class
+# design.md Part 8 wart 20 states, the compiler-engineer's E13, and it is why
+# the compile-time half is a half: the runtime stops the copy before C,
+# here as a handle given back that the set no longer holds.
+extern "handle-a-copy-made-before-the-end-is-the-runtime-s.h"
+    record Node tag node
+    function node_new(v: i64) -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_peek(n: Node) -> i64
+
+function main()
+    a = node_new(v: 5)
+    keep = a
+    print("through the copy: ", node_peek(n: keep))
+    node_free(n: a)
+    node_free(n: keep)
+    print("not reached")
