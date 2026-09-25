@@ -1,0 +1,165 @@
+# How a character the language refuses is named in its diagnostic (defect
+# 102). A diagnostic carries everything needed to fix the program without
+# opening another file (design.md §4.17), and a character written between two
+# backquotes is only that when it can be seen: a stray 0x01 was printed raw,
+# and the reader of *`` is not part of the language's syntax* had nothing to
+# look for.
+#
+# Three kinds, and the line between them is the code point, a fact about the
+# character in hand. A visible ASCII character is shown as itself, as it
+# always was. A control character, below 0x20 or 0x7f, is named by its code
+# alone, because showing it would send the raw byte to the reader's terminal.
+# A character above ASCII is shown as itself AND by its code, because some of
+# those cannot be seen either (a zero-width space, a no-break space, a
+# bidirectional override that reorders what the terminal shows) and a code is
+# what an editor's search finds.
+
+# The name, ready to open the diagnostic's sentence.
+function named(ch: str) -> str
+    code = code_point(ch)
+
+    if code < 32 || code >= 127 && code < 160
+        return "the control character " + u_plus(code)
+
+    if code < 128
+        return "`" + ch + "`"
+
+    if unseen(code)
+        return "the invisible character " + u_plus(code)
+    return "`" + ch + "` (" + u_plus(code) + ")"
+
+# The characters above ASCII a terminal shows as nothing, or that change how
+# it shows what follows, so writing one between backquotes shows the reader an
+# empty pair or reorders the rest of the diagnostic's line: the spaces other
+# than the space, the zero-width characters, the bidirectional marks,
+# embeddings, overrides and isolates, the invisible operators, the
+# variation selectors, the byte order mark and the tag characters. Unicode's
+# own lists of default-ignorable and bidirectional control code points, as
+# ranges, first and last included.
+constant UNSEEN: [i64]
+    [
+        160
+        160
+        173
+        173
+        847
+        847
+        1564
+        1564
+        4447
+        4448
+        6068
+        6069
+        6155
+        6158
+        8192
+        8207
+        8232
+        8239
+        8287
+        8303
+        12288
+        12288
+        12644
+        12644
+        65024
+        65039
+        65279
+        65279
+        65440
+        65440
+        65520
+        65531
+        119155
+        119162
+        917504
+        917631
+        917760
+        917999
+    ]
+
+function unseen(code: i64) -> bool
+    at: i64 @ 0
+
+    while at + 1 < UNSEEN.len()
+        if code >= UNSEEN[at] && code <= UNSEEN[at + 1]
+            return true
+        at @ at + 2
+
+    return false
+
+# The code point of the first character of `ch`, read from its UTF-8 bytes. A
+# `str` is well-formed UTF-8 (spec § 3), so a lead byte is always followed by
+# its continuation bytes; a continuation byte in the lead position cannot
+# arrive, and it is answered as itself rather than trusted to be absent.
+function code_point(ch: str) -> i64
+    if ch.len() == 0
+        return 0
+    lead = to_i64(ch[0]).must()
+
+    # ASCII is itself, and 0x80 to 0xbf is a continuation byte, which cannot
+    # lead: both answer the byte.
+    if lead < 192
+        return lead
+
+    if lead >= 240 && ch.len() >= 4
+        return (lead - 240) * 262144 + continued(ch, at: 1) * 4096 + continued(ch, at: 2) * 64 + continued(ch, at: 3)
+
+    if lead >= 224 && ch.len() >= 3
+        return (lead - 224) * 4096 + continued(ch, at: 1) * 64 + continued(ch, at: 2)
+
+    if ch.len() >= 2
+        return (lead - 192) * 64 + continued(ch, at: 1)
+    return lead
+
+# The six bits a continuation byte carries.
+function continued(ch: str, at: i64) -> i64
+    return to_i64(ch[at]).must() - 128
+
+# `U+` and the code in upper-case hexadecimal, at least four digits, which is
+# how Unicode itself writes one.
+function u_plus(code: i64) -> str
+    digits = "0123456789ABCDEF"
+    out: str @ ""
+    left: i64 @ code
+
+    while left > 0
+        out @ digits.slice(from: left % 16, to: left % 16 + 1) + out
+        left @ left / 16
+
+    while out.len() < 4
+        out @ "0" + out
+
+    return "U+" + out
+
+## Tests
+
+test "a visible ASCII character is itself, as the message always showed it"
+    assert named(";") == "`;`"
+    assert named("&") == "`&`"
+
+test "a character above ASCII is itself and its code, since some cannot be seen"
+    assert named("€") == "`€` (U+20AC)"
+    assert named("é") == "`é` (U+00E9)"
+    assert named("😀") == "`😀` (U+1F600)"
+
+test "a character a terminal shows as nothing, or that reorders the line, is its code alone"
+    assert unseen(8203)
+    assert unseen(8238)
+    assert unseen(65279)
+    assert unseen(160)
+    assert unseen(917505)
+    assert !unseen(8364)
+    assert !unseen(233)
+    assert !unseen(8191)
+    assert !unseen(8208)
+    assert UNSEEN.len() % 2 == 0
+
+test "the code is read from every length of UTF-8"
+    assert code_point("A") == 65
+    assert code_point("é") == 233
+    assert code_point("€") == 8364
+    assert code_point("😀") == 128512
+    assert u_plus(1) == "U+0001"
+    assert u_plus(127) == "U+007F"
+    assert u_plus(128512) == "U+1F600"
