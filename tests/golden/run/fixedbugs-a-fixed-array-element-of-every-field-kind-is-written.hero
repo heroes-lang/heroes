@@ -1,0 +1,39 @@
+# Defect 097's write over every element kind a group field may hold besides a
+# record and a handle, which have cases of their own: a byte, a `bool`, a
+# narrow float, a `ptr`, a `cstr` from C, and a narrow signed integer.
+#
+# The write is one assignment where the element lies, so what this pins is that
+# each kind has a C spelling on both sides of it, with zero warnings, and reads
+# back on the C side as it was written. `kinds_check` weights each element so
+# every one shows in the single number it returns: 65 for the byte, 1000 for the
+# flag, 25 for 2.5, 20000 for the pointer, 300000 for the label, -3 for the
+# signed element.
+
+extern "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.h"
+    record Kinds tag kinds
+        name: u8[8]
+        flags: bool[2]
+        xs: f32[2]
+        ps: ptr[2]
+        labels: cstr[2]
+        small: i16[3]
+    function kinds_label() -> cstr
+    function kinds_pointer() -> ptr
+    function kinds_check(k: Kinds) -> i64
+
+function main()
+    k: Kinds @ Kinds(
+        name: [0, 0, 0, 0, 0, 0, 0, 0],
+        flags: [false, false],
+        xs: [0.0, 0.0],
+        ps: [nullptr, nullptr],
+        labels: [nullptr, nullptr],
+        small: [0, 0, 0]
+    )
+    k.name[0] @ 65
+    k.flags[1] @ true
+    k.xs[1] @ 2.5
+    k.ps[0] @ kinds_pointer()
+    k.labels[1] @ kinds_label()
+    k.small[2] @ -3
+    print(kinds_check(k: k))

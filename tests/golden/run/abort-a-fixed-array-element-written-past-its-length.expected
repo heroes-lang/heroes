@@ -1,0 +1,6 @@
+after: 99 writing 0
+after: 99 writing 1
+after: 99 writing 2
+after: 99 writing 3
+after: 99 writing 4
+!panic: index out of range for a fixed array

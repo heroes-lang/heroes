@@ -1,0 +1,55 @@
+# Defect 097's write at every depth a place can reach a fixed array, and with
+# steps after the element as well as before it.
+#
+# The walk is `write_element` in `selfhost/emit/container.hero`. A field and a
+# fixed-array step are both inline in the record, so neither unshares, and each
+# extends the C lvalue it is given; a `[T]` step is an indirection, so it
+# unshares its level and descends through the runtime. What each row below
+# pins:
+#
+# 1. `o.rows[1].a[2]`: a fixed array inside a record inside a fixed array, a
+#    field and a subscript twice over. Its neighbour `o.rows[0]` is written
+#    whole, and `tail` after the array must survive both.
+# 2. `r.xs[1].v`: a fixed array of records, written one field of one element
+#    at a time, with a literal index and a computed one.
+# 3. `xs[1].a[k]`: a Heroes array of group records, which puts copy on write
+#    ABOVE the fixed array. `ys` shares the block when the write comes, so the
+#    write must unshare it first and `ys` must still read the old element.
+#
+# C reads rows 1 and 2 back, because a write that landed in a copy would leave
+# Heroes printing the right number from the wrong storage.
+
+extern "fixedbugs-a-fixed-array-element-is-written-at-any-depth.h"
+    record Row tag row
+        a: i64[3]
+    record Outer tag outer
+        rows: Row[2]
+        tail: i32
+    record Cell tag cell
+        v: i64
+        w: i64
+    record Holder tag holder
+        xs: Cell[3]
+    record Nums tag nums
+        a: i64[4]
+    function outer_sum(o: Outer) -> i64
+    function holder_sum(h: Holder) -> i64
+
+function main()
+    k: i64 @ len(args()) + 2
+
+    o: Outer @ Outer(rows: [Row(a: [1, 2, 3]), Row(a: [4, 5, 6])], tail: 7)
+    o.rows[1].a[2] @ 60
+    o.rows[0] @ Row(a: [10, 20, 30])
+    o.rows[k - 1].a[k - 2] @ 40
+    print(o.rows[0].a[0], " ", o.rows[1].a[0], " ", o.rows[1].a[2], " ", o.tail, " sum: ", outer_sum(o: o))
+
+    r: Holder @ Holder(xs: [Cell(v: 1, w: 2), Cell(v: 3, w: 4), Cell(v: 5, w: 6)])
+    r.xs[1].v @ 33
+    r.xs[k].w @ 66
+    print(r.xs[1].v, " ", r.xs[1].w, " ", r.xs[2].w, " sum: ", holder_sum(h: r))
+
+    xs: [Nums] @ [Nums(a: [1, 2, 3, 4]), Nums(a: [5, 6, 7, 8])]
+    ys = xs
+    xs[1].a[k] @ 70
+    print(xs[1].a[2], " ", ys[1].a[2], " ", xs[0].a[2])
