@@ -1,0 +1,343 @@
+# The walk route M (must) makes over one body (panel 177's item 3):
+# statements in order, expressions as reads, calls as what
+# `check/moved_calls.hero` says they end and keep, and the state of
+# `check/flow.hero` copied where control splits and met where it joins.
+# `check/moved.hero` is the rule and its reasons; this is the machinery, cut
+# from it along that seam because the two are read for different questions,
+# what is decided and how. One knot: a statement holds expressions, an `if`
+# holds blocks, a block holds statements, so no module boundary passes
+# between them (`grammar_expr.hero`).
+
+use token
+use ast
+use source
+use diag
+use resolved
+use check/flow
+use check/moved_calls as calls
+use check/moved_errors as errors
+
+record Frame
+    breaks: flow.Flow
+    continues: flow.Flow
+
+record Pass
+    head: flow.Flow
+    flow: flow.Flow
+    continues: flow.Flow
+    breaks: flow.Flow
+
+record Walk
+    flow: flow.Flow
+    frames: [Frame]
+    loud: bool
+    by_start: {i64: i64}
+    found: [diag.Diagnostic]
+
+# One body, from an empty state, aloud: what it refuses.
+function run(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block, by_start: {i64: i64}) -> [diag.Diagnostic]
+    frames: [Frame] = []
+    found: [diag.Diagnostic] = []
+    w: Walk @ Walk(flow: flow.start(), frames: frames, loud: true, by_start: by_start, found: found)
+    block(@w, a, r, s, decls, body: body)
+    return w.found
+
+## Statements
+
+function block(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block)
+    for id in body.stmts
+        statement(@w, a, r, s, decls, id: id)
+
+function statement(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64)
+    match a.stmts[id].kind
+        .bind b =>
+            expr(@w, a, r, s, decls, id: b.value)
+            revive(@w, name: b.name)
+        .declare d =>
+            expr(@w, a, r, s, decls, id: d.value)
+            revive(@w, name: d.name)
+        .mutate m =>
+            expr(@w, a, r, s, decls, id: m.value)
+            write(@w, a, r, s, decls, id: m.place)
+        .return_stmt rv =>
+            if !rv.value.is_err()
+                expr(@w, a, r, s, decls, id: rv.value.must())
+            w.flow @ flow.unreachable()
+        .assert_stmt v => expr(@w, a, r, s, decls, id: v.value)
+        .expr_stmt v   => expr(@w, a, r, s, decls, id: v.value)
+        .break_stmt =>
+            if w.frames.len() > 0
+                top = w.frames.len() - 1
+                w.frames[top].breaks @ flow.meet(one: w.frames[top].breaks, two: w.flow)
+            w.flow @ flow.unreachable()
+        .continue_stmt =>
+            if w.frames.len() > 0
+                top = w.frames.len() - 1
+                w.frames[top].continues @ flow.meet(one: w.frames[top].continues, two: w.flow)
+            w.flow @ flow.unreachable()
+        .while_stmt l => looped(
+            @w,
+            a,
+            r,
+            s,
+            decls,
+            cond: ok(l.cond),
+            body: l.block,
+            bound: fail(code: "none", msg: "no variable")
+        )
+        .for_in f =>
+            expr(@w, a, r, s, decls, id: f.iterable)
+            looped(@w, a, r, s, decls, cond: fail(code: "none", msg: "no condition"), body: f.block, bound: ok(f.name))
+        .error => return
+
+# Twice: once in silence to learn what a turn of the body leaves, then from
+# the entry met with that, aloud. Two turns reach the fixpoint because each
+# place's fate through the body is one of three monotone functions of its
+# fate at the head: always ended, always alive, or unchanged.
+function looped(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], cond: i64?, body: ast.Block, bound: token.Span?)
+    entry = w.flow
+    loud = w.loud
+    w.loud @ false
+    once = pass(@w, a, r, s, decls, cond: cond, body: body, bound: bound)
+    w.loud @ loud
+    w.flow @ flow.meet(one: entry, two: flow.meet(one: once.flow, two: once.continues))
+    last = pass(@w, a, r, s, decls, cond: cond, body: body, bound: bound)
+    w.flow @ flow.meet(one: last.head, two: last.breaks)
+
+function pass(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], cond: i64?, body: ast.Block, bound: token.Span?) -> Pass
+    if !cond.is_err()
+        expr(@w, a, r, s, decls, id: cond.must())
+
+    if !bound.is_err()
+        revive(@w, name: bound.must())
+    head = w.flow
+    w.frames @ w.frames.push(Frame(breaks: flow.unreachable(), continues: flow.unreachable()))
+    block(@w, a, r, s, decls, body: body)
+    top = w.frames[w.frames.len() - 1]
+    w.frames @ w.frames.slice(from: 0, to: w.frames.len() - 1)
+    return Pass(head: head, flow: w.flow, continues: top.continues, breaks: top.breaks)
+
+# A binding declared here holds a new value: on a loop's next turn, the one
+# it held before is gone.
+function revive(@w: Walk, name: token.Span)
+    local = w.by_start[name.start]
+
+    if !local.is_err()
+        one: [str] = [local.must().to_str()]
+        flow.written(@w.flow, path: one)
+
+# The left of `@`, or an `@` argument: whatever it names holds a new value.
+function write(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64)
+    indices(@w, a, r, s, decls, id: id)
+    path = calls.place_of(a, r, s, id: id)
+
+    if !path.is_err()
+        flow.written(@w.flow, path: path.must())
+
+## Expressions
+
+function expr(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64)
+    match a.exprs[id].kind
+        .name | .field | .index => place_read(@w, a, r, s, decls, id: id)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr | .hole | .error | .field_name => return
+        .interp ip =>
+            for h in ip.holes
+                expr(@w, a, r, s, decls, id: h)
+        .unary u => expr(@w, a, r, s, decls, id: u.operand)
+        .binary b =>
+            expr(@w, a, r, s, decls, id: b.left)
+            before = w.flow
+            expr(@w, a, r, s, decls, id: b.right)
+
+            # The right side of `&&` and `||` runs on one path and not the other.
+            match b.op
+                .and | .or                                                           => w.flow @ flow.meet(
+                    one: before,
+                    two: w.flow
+                )
+                .add | .sub | .mul | .div | .rem | .eq | .ne | .lt | .le | .gt | .ge => return
+                .bit_and | .bit_or | .bit_xor | .shl | .shr                          => return
+        .call c         => call(@w, a, r, s, decls, id: id, callee: c.callee, given: c.args)
+        .method m       => method(@w, a, r, s, decls, id: id, receiver: m.receiver, given: m.args)
+        .variant_case v => arguments(@w, a, r, s, decls, given: v.args)
+        .array el =>
+            for e in el.elements
+                expr(@w, a, r, s, decls, id: e)
+        .map en =>
+            for e in en.entries
+                expr(@w, a, r, s, decls, id: e.key)
+                expr(@w, a, r, s, decls, id: e.value)
+        .try_expr t   => expr(@w, a, r, s, decls, id: t.value)
+        .if_expr br   => branches(@w, a, r, s, decls, arms: br.branches, otherwise: br.otherwise)
+        .match_expr m => matched(@w, a, r, s, decls, scrutinee: m.scrutinee, arms: m.arms)
+
+# A place rooted at a local is one read, however many fields and elements
+# deep; anything else is read part by part.
+function place_read(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64)
+    path = calls.place_of(a, r, s, id: id)
+
+    if path.is_err()
+        parts(@w, a, r, s, decls, id: id)
+        return
+    indices(@w, a, r, s, decls, id: id)
+    refuse_if_dead(@w, a, s, id: id, path: path.must(), crossing: false)
+
+function parts(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64)
+    match a.exprs[id].kind
+        .field f =>
+            match r.uses[f.base]
+                .module                                => return
+                .local | .top | .builtin | .unresolved => expr(@w, a, r, s, decls, id: f.base)
+        .index i =>
+            expr(@w, a, r, s, decls, id: i.base)
+            expr(@w, a, r, s, decls, id: i.index)
+        .name | .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr | .hole | .error => return
+        .field_name | .interp | .unary | .binary | .call | .method | .variant_case | .array | .map    => return
+        .try_expr | .if_expr | .match_expr                                                            => return
+
+# The index expressions inside a place are reads of their own.
+function indices(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64)
+    match a.exprs[id].kind
+        .field f => indices(@w, a, r, s, decls, id: f.base)
+        .index i =>
+            expr(@w, a, r, s, decls, id: i.index)
+            indices(@w, a, r, s, decls, id: i.base)
+        .name | .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr | .hole | .error => return
+        .field_name | .interp | .unary | .binary | .call | .method | .variant_case | .array | .map    => return
+        .try_expr | .if_expr | .match_expr                                                            => return
+
+function refuse_if_dead(@w: Walk, a: ast.Ast, s: source.Source, id: i64, path: [str], crossing: bool)
+    if !w.loud || !w.flow.live
+        return
+
+    found = if crossing
+        flow.dead_crossing(w.flow, path: path)
+    else
+        flow.dead_read(w.flow, path: path)
+
+    if found.is_err()
+        return
+    span = a.exprs[id].span
+    whole = found.must().path.len() > path.len()
+    w.found @ w.found.push(
+        errors.used_after_end(s, read: span, shown: source.span_text(s, span), ended: found.must(), whole: whole)
+    )
+
+function arguments(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], given: [ast.Arg])
+    for arg in given
+        if arg.mutable
+            write(@w, a, r, s, decls, id: arg.value)
+        else
+            expr(@w, a, r, s, decls, id: arg.value)
+
+## Calls
+
+function call(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, callee: i64, given: [ast.Arg])
+    none: i64? = fail(code: "none", msg: "no receiver")
+
+    match r.uses[callee]
+        .top t => named(@w, a, r, s, decls, at: t.at, receiver: none, given: given, span: a.exprs[id].span)
+        .local | .builtin | .module | .unresolved =>
+            expr(@w, a, r, s, decls, id: callee)
+            arguments(@w, a, r, s, decls, given: given)
+
+# UFCS: the receiver is the first argument (§4.11), unless it is a module.
+function method(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, receiver: i64, given: [ast.Arg])
+    qualified = match r.uses[receiver]
+        .module                                => true
+        .local | .top | .builtin | .unresolved => false
+
+    match r.uses[id]
+        .top t =>
+            if qualified
+                named(
+                    @w,
+                    a,
+                    r,
+                    s,
+                    decls,
+                    at: t.at,
+                    receiver: fail(code: "none", msg: "no receiver"),
+                    given: given,
+                    span: a.exprs[id].span
+                )
+            else
+                named(@w, a, r, s, decls, at: t.at, receiver: ok(receiver), given: given, span: a.exprs[id].span)
+        .local | .builtin | .module | .unresolved =>
+            if !qualified
+                expr(@w, a, r, s, decls, id: receiver)
+            arguments(@w, a, r, s, decls, given: given)
+
+# A call to a declaration. Reads first, against the state before the call;
+# then what the call ends and keeps; then the `@` arguments, which hold
+# whatever the callee left in them.
+function named(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, receiver: i64?, given: [ast.Arg], span: token.Span)
+    handed = calls.all_arguments(receiver, given: given)
+
+    match decls[at].kind
+        .function_decl fd =>
+            for arg in handed
+                if arg.mutable
+                    indices(@w, a, r, s, decls, id: arg.value)
+                else if fd.value.is_extern
+                    crossed(@w, a, r, s, decls, id: arg.value)
+                else
+                    expr(@w, a, r, s, decls, id: arg.value)
+
+            if fd.value.is_extern
+                calls.ends(@w.flow, a, r, s, fd: fd.value, handed: handed, callee: decls[at].name, span: span)
+
+            for arg in handed
+                if arg.mutable
+                    write(@w, a, r, s, decls, id: arg.value)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => arguments(@w, a, r, s, decls, given: handed)
+
+# An argument crossing into C, whole: a dead part of it is a dead crossing.
+function crossed(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64)
+    path = calls.place_of(a, r, s, id: id)
+
+    if path.is_err()
+        expr(@w, a, r, s, decls, id: id)
+        return
+    indices(@w, a, r, s, decls, id: id)
+    refuse_if_dead(@w, a, s, id: id, path: path.must(), crossing: true)
+
+## Where control splits
+
+function branches(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], arms: [ast.Branch], otherwise: ast.Block?)
+    out: flow.Flow @ flow.unreachable()
+
+    for one in arms
+        expr(@w, a, r, s, decls, id: one.cond)
+        tested = w.flow
+        block(@w, a, r, s, decls, body: one.block)
+        out @ flow.meet(one: out, two: w.flow)
+        w.flow @ tested
+
+    if !otherwise.is_err()
+        block(@w, a, r, s, decls, body: otherwise.must())
+    w.flow @ flow.meet(one: out, two: w.flow)
+
+function matched(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], scrutinee: i64, arms: [ast.Arm])
+    expr(@w, a, r, s, decls, id: scrutinee)
+    entry = w.flow
+    out: flow.Flow @ flow.unreachable()
+
+    for arm in arms
+        w.flow @ entry
+
+        for pattern in arm.patterns
+            match pattern.kind
+                .variant_case vc =>
+                    if !vc.binding.is_err()
+                        revive(@w, name: vc.binding.must())
+                .literal l         => expr(@w, a, r, s, decls, id: l.value)
+                .wildcard | .error => continue
+
+        match arm.body
+            .one_stmt one => statement(@w, a, r, s, decls, id: one.at)
+            .block bb     => block(@w, a, r, s, decls, body: bb.block)
+
+        out @ flow.meet(one: out, two: w.flow)
+
+    w.flow @ out

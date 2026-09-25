@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-a-handle-read-after-the-call-that-ended-it.hero:27:68: error[handle_used_after_end]: `b` was given to `cJSON_Delete` at line 26, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-a-handle-read-after-the-call-that-ended-it.hero:36:39: error[handle_used_after_end]: `b` was given to `cJSON_Delete` at line 34, which ended its life, and this reads it again

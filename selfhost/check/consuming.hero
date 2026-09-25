@@ -19,8 +19,11 @@
 # parameter is BORROWED (Part 5): the caller keeps the value and sees it again
 # after the call. Handing such a value to a call that frees it is a promise the
 # signature cannot keep, and it is decided by the argument's place root and the
-# enclosing function's parameter list — two facts on the page, no flow analysis
-# (`check/leasing.hero` states that the checker has none).
+# enclosing function's parameter list — two facts on the page, no flow analysis.
+# The checker has exactly one, `check/moved.hero` (panel 177's item 3, since
+# 2026-09-25), and it is the rule BESIDE this one: this refuses handing a
+# borrowed value to the call that ends it, that refuses reading a value after
+# the call that ended it, and neither needs the other's question.
 #
 # **What it does NOT close, said here rather than discovered later.** Repaired
 # to `closed(@h: Holder)`, the program compiles again and `h` is copied out, so

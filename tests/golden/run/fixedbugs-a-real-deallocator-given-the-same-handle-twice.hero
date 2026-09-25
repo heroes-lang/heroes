@@ -38,6 +38,14 @@
 # The one line that differs from its ancestor is the header's `blk_close`, which
 # calls `free`. Everything else is deliberately the same shape, so a reader can
 # diff the two and see that the difference is C's and not Heroes'.
+#
+# **Since 2026-09-25 the second release goes through a copy**, in this case
+# and in its ancestor alike (panel 177's item 3, route M (must)):
+# `blk_close(b: a)` twice through one name is refused at check time,
+# `handle_used_after_end`, and the copy is the shape the checker cannot see
+# (design.md Part 8 wart 20). What this case pins, the guard speaking BEFORE
+# the second call reaches a real `free`, is unchanged, because the copy
+# reaches that call exactly as the name did.
 
 extern "fixedbugs-a-real-deallocator-given-the-same-handle-twice.h"
     record Blk tag blk
@@ -48,5 +56,6 @@ extern "fixedbugs-a-real-deallocator-given-the-same-handle-twice.h"
 function main()
     a = blk_open(n: 7)
     print(blk_value(b: a))
+    twice = a
     blk_close(b: a)
-    blk_close(b: a)
+    blk_close(b: twice)

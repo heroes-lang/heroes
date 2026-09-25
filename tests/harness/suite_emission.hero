@@ -123,8 +123,13 @@ constant ENTRIES: [str]
 # actually drifts at and the reason it is re-based at a close rather than when
 # somebody notices. Found while repairing what the full net caught before the
 # push: three of the eight are that repair's own cases.
+#
+# **295 on 2026-09-25** — emit 7 · fixedbugs 38 · ir 23 · run 172, and 55
+# example programs. Raised at panel 177's item 3 landing because the seven
+# `run` cases its check-time rule owes for the shapes it must leave alive took
+# the count past the 25 % slack `floors.check` allows, and the suite said so.
 constant LEAST: i64
-    233
+    295
 
 # One program and the bytes it was blessed to emit.
 record Program

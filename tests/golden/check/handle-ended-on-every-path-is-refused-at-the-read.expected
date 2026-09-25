@@ -1,0 +1,6 @@
+tests/golden/check/handle-ended-on-every-path-is-refused-at-the-read.hero:31:24: error[handle_used_after_end]: `n` was given to `node_free` at line 28, which ended its life, and this reads it again
+tests/golden/check/handle-ended-on-every-path-is-refused-at-the-read.hero:41:24: error[handle_used_after_end]: `n` was given to `node_free` at line 38, which ended its life, and this reads it again
+tests/golden/check/handle-ended-on-every-path-is-refused-at-the-read.hero:50:28: error[handle_used_after_end]: `n` was given to `node_free` at line 46, which ended its life, and this reads it again
+tests/golden/check/handle-ended-on-every-path-is-refused-at-the-read.hero:60:28: error[handle_used_after_end]: `n` was given to `node_free` at line 59, which ended its life, and this reads it again
+tests/golden/check/handle-ended-on-every-path-is-refused-at-the-read.hero:70:26: error[handle_used_after_end]: `n` was given to `node_free` at line 67, which ended its life, and this reads it again
+tests/golden/check/handle-ended-on-every-path-is-refused-at-the-read.hero:82:18: error[handle_used_after_end]: `n` was given to `node_free` at line 81, which ended its life, and this reads it again
