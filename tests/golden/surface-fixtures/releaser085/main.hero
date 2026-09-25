@@ -1,0 +1,11 @@
+# Declares the releaser `bio.hero`'s mark names. That does not make the mark
+# true where it is written: a binding's promise is read in its own module.
+use bio
+
+extern "h.h"
+    function h_close2(h: bio.H consumes)
+
+function main()
+    x = bio.open()
+    h_close2(h: x)
+    print(0)

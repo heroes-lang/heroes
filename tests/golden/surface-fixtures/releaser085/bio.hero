@@ -1,0 +1,10 @@
+# The mark names `h_close2`, and no `extern` of THIS module declares it: only
+# `main.hero` does. Defect 085: checked alone this file was refused, checked
+# inside its program it passed, because the lookup read the whole program while
+# the message said "of this module". The verdict is now the module's own.
+extern "h.h"
+    record H tag h
+    function h_open() -> H acquires h_close2  #~ unread_releaser
+
+function open() -> H
+    return h_open()

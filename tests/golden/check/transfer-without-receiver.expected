@@ -1,0 +1,1 @@
+tests/golden/check/transfer-without-receiver.hero:11:42: error[transfer_without_receiver]: `f` of `fl_fclose` is marked `transfers`, and the call has nowhere to hand the life to: no other parameter of `fl_fclose` reaches a handle and its result begins no life

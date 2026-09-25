@@ -1,0 +1,19 @@
+# One handle at a `consumes` position and a `retains` position of one call:
+# the reference is checked against the handle's own set BEFORE the end removes
+# the entry. Told the other way round (the landing review, 2026-09-24) the end
+# emptied the set, the reference began a fresh life owed to `ob_other`, and
+# the mark that never named `ob_other` was never consulted: a wrong release
+# ran at exit 0.
+extern "fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.h"
+    record Ob tag ob
+    function ob_new() -> Ob acquires ob_put | ob_swap
+    function ob_swap(eaten: Ob consumes, kept: Ob retains ob_other) -> i32 when 0
+    function ob_put(o: Ob consumes)
+    function ob_other(o: Ob consumes)
+
+function main()
+    a = ob_new()
+    print("one handle, two positions")
+    _ = ob_swap(eaten: a, kept: a)
+    ob_other(o: a)
+    print("not reached")

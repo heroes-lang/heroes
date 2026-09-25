@@ -1,0 +1,6 @@
+tests/golden/check/repeated-mark.hero:13:34: error[repeated_mark]: `consumes` is written twice on `o`, and a word is written once per position: drop the second
+tests/golden/check/repeated-mark.hero:14:42: error[repeated_mark]: `acquires` is written twice on `o`, and a word is written once per position: one `acquires` names the whole set, `acquires sqlite3_close | sqlite3_close_v2`, so join the releasers with `|` or drop the second
+tests/golden/check/repeated-mark.hero:15:45: error[repeated_mark]: `acquires` is written twice on the result, and a word is written once per position: one `acquires` names the whole set, `acquires sqlite3_close | sqlite3_close_v2`, so join the releasers with `|` or drop the second
+tests/golden/check/repeated-mark.hero:16:39: error[repeated_mark]: `owned` is written twice on `s`, and a word is written once per position: drop the second
+tests/golden/check/repeated-mark.hero:17:43: error[repeated_mark]: `counted_by` is written twice on `buf`, and a word is written once per position: drop the second
+tests/golden/check/repeated-mark.hero:18:51: error[repeated_mark]: `when` is written twice on the result, and a word is written once per position: a result has one success value, so keep the one the header states

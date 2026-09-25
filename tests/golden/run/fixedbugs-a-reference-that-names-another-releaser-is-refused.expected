@@ -1,0 +1,2 @@
+acquired
+!panic: a reference marked `retains ob_drop` was taken to a C handle whose life a mark owed to `ob_put`

@@ -389,7 +389,20 @@ the one that ends it, which the program owes it. It may name several,
 giving the handle to a `consumes` call the mark did not name aborts before C
 runs. Giving one back twice aborts, unless C has since reused its address. `borrows` says the call hands
 back one it keeps, and where any `extern` consumes a handle type every call handing
-one back says which it is. `consumes`, `acquires` and `borrows` mark only a value
+one back says which it is. `transfers fclose` after a parameter hands the life into
+another value of the call that outlives it, a handle parameter the call keeps or
+the handle its result begins or joins, which ends it with that call: one of the
+names must be one the handle's own mark names, or the call aborts before C runs; a
+call with no such receiver is refused, and a transfer into a handle the call hands
+back is not made when that handle is null. `retains json_object_put` after a result
+or a parameter says the call adds a reference to a handle: on one a mark began,
+its life goes on and the mark must share a name with the one that began it; on one
+nothing began, it begins a life owed to the mark; either way the program owes one
+more release. `when 0` after a result names the result that means the call did
+what it was handed, and its `consumes`, `transfers` and `retains` count only then,
+so it needs one of them; the value is an integer within the result's type for an
+integer result, `true` or `false` for a `bool`, and a call returning nothing takes
+no clause. A value takes one of the five words, and they mark only a value
 that reaches a handle, as itself or through a field or an array element; anywhere
 else they are errors.
 A group may name a **package** instead of a library: `extern "raylib.h" package "raylib"`
@@ -400,8 +413,9 @@ naming what it said.
     Extern = "extern" string [ ( "link" | "package" ) string ] NEWLINE
              INDENT { Member } DEDENT .
     Member = "function" ident "(" [ CParam { "," CParam } ] ")"
-               [ "->" Type [ "owned" ident ] [ "acquires" ident { "|" ident } | "borrows" ] ] NEWLINE
+               [ "->" Type [ "owned" ident ] [ ( "acquires" | "retains" ) ident { "|" ident } | "borrows" ]
+                 [ "when" ( integer | "true" | "false" ) ] ] NEWLINE
            | "constant" ident ":" Type NEWLINE
            | "record" ident [ "tag" ident ] [ "partial" ] ( Fields | NEWLINE ) .
     CParam = [ "@" ] ident ":" Type [ "counted_by" ident ] [ "lent" ]
-             [ "owned" ident ] [ "consumes" | "acquires" ident { "|" ident } | "borrows" ] .
+             [ "owned" ident ] [ "consumes" | ( "transfers" | "acquires" | "retains" ) ident { "|" ident } | "borrows" ] .

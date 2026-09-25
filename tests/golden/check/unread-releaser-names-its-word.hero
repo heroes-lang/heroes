@@ -1,0 +1,19 @@
+# A releaser that resolves to nothing is refused under every word that names
+# one (panel 176's items 1, 2 and 4), and the note says which word it was
+# written under: until 2026-09-25 it said `acquires` under `transfers` and
+# `retains` too, and offered `borrows` to a transfer, which is not a repair a
+# transfer can take. `--brief` prints the message only, so what this golden
+# pins is the code at each position; the note's words are the module's own
+# test. `h_wrap` keeps `keep` beside the transfer so the transfer has a
+# receiver and only the name is wrong.
+extern "unread-releaser-names-its-word.h"
+    record H tag hh
+    function h_open() -> H acquires h_close
+    function h_close(x: H consumes)
+    function h_wrap(x: H transfers nothere, keep: H)  #~ unread_releaser
+    function h_ref(x: H retains nothere)  #~ unread_releaser
+    function h_get(x: H) -> H retains nothere  #~ unread_releaser
+
+function main()
+    a = h_open()
+    h_close(x: a)

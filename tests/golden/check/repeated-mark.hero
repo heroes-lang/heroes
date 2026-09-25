@@ -1,0 +1,21 @@
+# A word written twice on one position is refused at the second word, and the
+# first is the one kept (panel 177's landing, finding 1). Until 2026-09-25 the
+# second `consumes` was a generic `)` error that named no rule, because the
+# reader took each word once in the grammar's order. One line per word,
+# because the provoking case (`consumes consumes`) is a witness and not the
+# class: a bare word, a named set on a parameter and on a result, the freer,
+# the extent, and the success clause itself. Two DIFFERENT words on one
+# position are not this diagnostic: they reach the checker's
+# `one_mark_per_position` (marks-in-any-order.hero).
+extern "repeated-mark.h"
+    record Ob tag ob
+    function ob_put(o: Ob consumes) -> i32 when 0
+    function bare(o: Ob consumes consumes)  #~ repeated_mark
+    function named(o: Ob acquires ob_put acquires ob_put)  #~ repeated_mark
+    function result() -> Ob acquires ob_put acquires ob_put  #~ repeated_mark
+    function freed(s: cstr owned free owned free) -> i32  #~ repeated_mark
+    function extent(buf: ptr counted_by n counted_by n, n: u64) -> i64  #~ repeated_mark
+    function clause(o: Ob consumes) -> i32 when 0 when 1  #~ repeated_mark
+
+function main()
+    print(0)

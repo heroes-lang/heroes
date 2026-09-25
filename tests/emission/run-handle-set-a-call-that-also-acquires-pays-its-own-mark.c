@@ -5,7 +5,7 @@
 #include <handle-set-a-call-that-also-acquires-pays-its-own-mark.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -135,9 +135,11 @@ bb0:
 #line 15 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     t4 = INT64_C(5);
 #line 15 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
-    hero_handle_consumed(t3, "h_reopen", "h_close");
+    hero_handle_ending(t3, "h_reopen", "h_close");
 #line 15 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     t5 = h_reopen(t3, t4);
+#line 15 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
+    hero_handle_ended(t3);
 #line 15 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     hero_handle_acquired(t5, "h_close");
 #line 15 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
@@ -153,9 +155,11 @@ bb0:
 #line 17 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     t8 = h1_b;
 #line 17 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
-    hero_handle_consumed(t8, "h_close", NULL);
+    hero_handle_ending(t8, "h_close", NULL);
 #line 17 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     (void)h_close(t8);
+#line 17 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
+    hero_handle_ended(t8);
 #line 18 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     t9 = HERO_STR_LIT(hero_str_524451e);
 #line 18 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
@@ -164,7 +168,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     return;
-#line 168 "handlesetacallthatalsoacquirespaysitsownmark.c"
+#line 172 "handlesetacallthatalsoacquirespaysitsownmark.c"
 }
 HERO_TU_LOCAL bool h_handlesetacallthatalsoacquirespaysitsownmark_H_eq(hh * const *a, hh * const *b) {
     return *a == *b;

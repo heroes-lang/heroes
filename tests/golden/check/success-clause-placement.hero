@@ -1,0 +1,22 @@
+# `when` has one place, after the result, and one shape, an unsigned integer
+# literal, `true` or `false` (panel 177's item 6), and every misplacement is
+# its line's ONLY diagnostic. Until 2026-09-25 a clause with no `->` and a
+# clause on a parameter were generic member and `)` errors that named no rule
+# (findings 2 and 5 of the sitting's landing), a refused literal was left
+# standing and reported a second time as a member the group could not read
+# (finding 3), and a `|` dangling at the end of a releaser set was reported on
+# the NEXT declaration's line, since a trailing bar continues the line
+# (finding 4). The bar is last here because it does continue the line: what
+# follows it is read as the set's next name.
+extern "success-clause-placement.h"
+    record Ob tag ob
+    function ob_put(o: Ob consumes) when 0  #~ success_needs_result
+    function ob_neg(o: Ob consumes) -> i32 when -1  #~ expected_success_value
+    function ob_chr(o: Ob consumes) -> i32 when 'a'  #~ expected_success_value
+    function ob_flt(o: Ob consumes) -> i32 when 1.0  #~ expected_success_value
+    function ob_nam(o: Ob consumes) -> i32 when SQLITE_OK  #~ expected_success_value
+    function ob_par(o: Ob consumes when 0) -> i32  #~ success_on_parameter
+    function ob_new() -> Ob acquires ob_put |  #~ expected_releaser
+
+function main()
+    print(0)

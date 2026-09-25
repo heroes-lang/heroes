@@ -1,0 +1,19 @@
+# One call, two consuming positions, one handle that holds TWO references:
+# each position takes one, and C takes two. Defect 084's refusal is of a call
+# announcing more ends than the address holds, and this call announces
+# exactly as many, so it runs. The shape beside
+# `fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so`.
+extern "handle-two-references-at-two-consuming-positions.h"
+    record Ob tag ob
+    function ob_new() -> Ob acquires ob_put | both_put
+    function ob_get(o: Ob) -> Ob retains ob_put | both_put
+    function ob_put(o: Ob consumes)
+    function both_put(a: Ob consumes, b: Ob consumes)
+    function ob_refs(o: Ob) -> i64
+
+function main()
+    a = ob_new()
+    b = ob_get(o: a)
+    print("refs: ", ob_refs(o: a))
+    both_put(a: a, b: b)
+    print("refs after: ", ob_refs(o: a))

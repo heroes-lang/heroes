@@ -1,5 +1,6 @@
 # What sits *inside* a declaration: type parameters, value parameters, record
-# fields, variant cases (design.md §4.2, §4.8, §4.12).
+# fields, variant cases (design.md §4.2, §4.8, §4.12), and since 2026-09-25 the
+# words after a parameter's or a result's type, read in one loop (`read_marks`).
 # Port of archive/bootstrap-rs/heroes/src/syntax/members.rs.
 #
 # One rule explains most of this file: **the lexer keeps planting terminators
@@ -10,12 +11,14 @@
 #
 # **This file is not in either knot** and ports as its own module: it calls
 # `parse_type` and the cursor, and the declaration grammar calls it — one way,
-# no ring (measurement 009 § the structural finding).
+# no ring (measurement 009 § the structural finding). `tails` reads a result's
+# marks through it for the same one-way reason: it already uses this module.
 
 use token
 use cursor
 use ast
 use keywords
+use lexer
 use parse/marks as parse_marks
 use parse/type
 
@@ -92,19 +95,20 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
             else
                 ty = type.parse_type(@c, @a, text)
 
-                # `counted_by` comes FIRST of the five, because it is the one
-                # that describes the pointer itself rather than what the call
-                # does with it — `buf: ptr counted_by n owned free` reads as
-                # the header does, the extent beside the type and the ownership
-                # after it. The order is the grammar's, `spec § 13`'s `CParam`.
-                counted_by = parse_marks.counted_by_marker(@c, text, in_group: in_group)
-                lent = parse_marks.bare_marker(@c, text: text, in_group: in_group, word: keywords.WORD_LENT)
-                owned = parse_marks.owned_marker(@c, text, in_group: in_group)
-                consumes = parse_marks.bare_marker(@c, text: text, in_group: in_group, word: keywords.WORD_CONSUMES)
-                acquires = parse_marks.acquires_marker(@c, text, in_group: in_group)
-                borrows = parse_marks.bare_marker(@c, text: text, in_group: in_group, word: keywords.WORD_BORROWS)
+                # The words after the type, in whatever order they were
+                # written: `buf: ptr counted_by n owned free` reads as the
+                # header does, the extent beside the type and the ownership
+                # after it, and that order is the PRINTER's (`spec § 13`'s
+                # `CParam`), not the reader's.
+                m = read_marks(
+                    @c,
+                    text: text,
+                    in_group: in_group,
+                    on_result: false,
+                    holder: "`" + cursor.slice_of(text, name) + "`"
+                )
                 out @ out.push(
-                    ast.Param(name: name, ty: ty, mutable: mutable, owned: owned, consumes: consumes, acquires: acquires, borrows: borrows, counted_by: counted_by, lent: lent)
+                    ast.Param(name: name, ty: ty, mutable: mutable, owned: m.owned, consumes: m.consumes, acquires: m.acquires, transfers: m.transfers, retains: m.retains, borrows: m.borrows, counted_by: m.counted_by, lent: m.lent)
                 )
                 cursor.skip_terminators(@c)
 
@@ -119,6 +123,115 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
         # diagnostic).
         cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
     return out
+
+## The words after a type
+
+# Every word one position can carry, as `read_marks` hands it back: a
+# parameter's eight, or a result's five, in one record the callers copy into
+# the tree. A `Span?` is the payload's span where the word carries one (the
+# freer, the extent, the releaser set, the success value) and a `bool` where
+# it is bare, exactly as `ast.Param` and `ast.FunctionDecl` keep them.
+record Marks
+    counted_by: token.Span?
+    lent: bool
+    owned: token.Span?
+    consumes: bool
+    transfers: token.Span?
+    acquires: token.Span?
+    retains: token.Span?
+    borrows: bool
+    when: token.Span?
+
+function no_marks() -> Marks
+    absent: token.Span? = fail(code: "absent", msg: "no mark")
+    return Marks(
+        counted_by: absent,
+        lent: false,
+        owned: absent,
+        consumes: false,
+        transfers: absent,
+        acquires: absent,
+        retains: absent,
+        borrows: false,
+        when: absent
+    )
+
+# The slot as it was if a first writing filled it, else what was read now: the
+# FIRST writing of a word is the one kept, and the second is `repeated`.
+function first_of(slot: token.Span?, got: token.Span?) -> token.Span?
+    if slot.is_err()
+        return got
+    return slot
+
+# The words after a parameter (`on_result` false) or after a result, whichever
+# matches next until none does, each through its own reader in `parse/marks`.
+# Until 2026-09-25 both callers read their words once each in the grammar's
+# order, so `retains ob_put consumes` was a generic `)` error that named no
+# rule while `consumes retains ob_put`, the same two words the other way
+# round, reached the checker (panel 177's landing, finding 1). A word written
+# twice is `repeated_mark`, at the second one, and the second's payload is
+# consumed with it so no `)` or member error follows; two DIFFERENT words on
+# one position both land in the record, and which of them to keep is the
+# checker's `one_mark_per_position`. `holder` names the position in the
+# message, the parameter or the result.
+function read_marks(@c: cursor.Cursor, text: str, in_group: bool, on_result: bool, holder: str) -> Marks
+    m: Marks @ no_marks()
+    reading: bool @ in_group
+
+    while reading
+        if !cursor.at(c, .ident)
+            reading @ false
+            continue
+        keyword = cursor.current_span(c)
+        word = cursor.slice_of(text, keyword)
+        again: bool @ false
+
+        if word == keywords.WORD_COUNTED_BY && !on_result
+            again @ !m.counted_by.is_err()
+            m.counted_by @ first_of(slot: m.counted_by, got: parse_marks.counted_by_marker(@c, text, in_group: true))
+        else if word == keywords.WORD_LENT && !on_result
+            again @ m.lent
+            m.lent @ parse_marks.bare_marker(@c, text: text, in_group: true, word: word)
+        else if word == keywords.WORD_OWNED
+            again @ !m.owned.is_err()
+            m.owned @ first_of(slot: m.owned, got: parse_marks.owned_marker(@c, text, in_group: true))
+        else if word == keywords.WORD_CONSUMES && !on_result
+            again @ m.consumes
+            m.consumes @ parse_marks.bare_marker(@c, text: text, in_group: true, word: word)
+        else if word == keywords.WORD_TRANSFERS && !on_result
+            again @ !m.transfers.is_err()
+            m.transfers @ first_of(
+                slot: m.transfers,
+                got: parse_marks.named_marker(@c, text: text, in_group: true, word: word, example: "`val: Json transfers json_object_put`")
+            )
+        else if word == keywords.WORD_ACQUIRES
+            again @ !m.acquires.is_err()
+            m.acquires @ first_of(
+                slot: m.acquires,
+                got: parse_marks.named_marker(@c, text: text, in_group: true, word: word, example: "`-> Curl acquires curl_easy_cleanup`")
+            )
+        else if word == keywords.WORD_RETAINS
+            again @ !m.retains.is_err()
+            m.retains @ first_of(
+                slot: m.retains,
+                got: parse_marks.named_marker(@c, text: text, in_group: true, word: word, example: "`-> Json retains json_object_put`")
+            )
+        else if word == keywords.WORD_BORROWS
+            again @ m.borrows
+            m.borrows @ parse_marks.bare_marker(@c, text: text, in_group: true, word: word)
+        else if word == keywords.WORD_WHEN && on_result
+            again @ !m.when.is_err()
+            m.when @ first_of(slot: m.when, got: parse_marks.when_marker(@c, text, in_group: true))
+        else if word == keywords.WORD_WHEN
+            parse_marks.success_on_parameter(@c)
+        else
+            reading @ false
+            continue
+
+        if again
+            parse_marks.repeated(@c, word: word, holder: holder, at: keyword)
+
+    return m
 
 ## Fields and cases
 
@@ -221,6 +334,11 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
 function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
     return token.Token(kind: kind, span: token.Span(start: start, end: end))
 
+# The tokens of one line, as the lexer cuts them, for the mark tests: what is
+# at issue there is which WORD comes next, and the lexer's cut is the fact.
+function tokens_of(text: str) -> cursor.Cursor
+    return cursor.new_cursor(lexer.lex_one(text).tokens)
+
 test "generics are names and nothing else"
     stream: [token.Token] = [
         tok(.lt, start: 0, end: 1)
@@ -298,6 +416,78 @@ test "a signature may break across lines because the separator stays the comma"
     a: ast.Ast @ ast.new_ast()
     assert params(@c, @a, "(a: i64,\nb: i64)", in_group: false).len() == 2
     assert c.diagnostics.len() == 0
+
+test "the words are read in the order the author wrote them"
+    # `retains ob_put consumes` was a generic `)` error until 2026-09-25 while
+    # `consumes retains ob_put` reached the checker: the order is not a rule.
+    text = "retains ob_put consumes"
+    c: cursor.Cursor @ tokens_of(text)
+    m = read_marks(@c, text: text, in_group: true, on_result: false, holder: "`o`")
+    assert m.consumes
+    assert cursor.slice_of(text, m.retains.must()) == "ob_put"
+    assert c.diagnostics.len() == 0
+    assert cursor.at(c, .terminator)
+
+    # On a result, the clause before the mark it governs.
+    result = "when 0 acquires ob_put"
+    d: cursor.Cursor @ tokens_of(result)
+    r = read_marks(@d, text: result, in_group: true, on_result: true, holder: "the result")
+    assert cursor.slice_of(result, r.when.must()) == "0"
+    assert cursor.slice_of(result, r.acquires.must()) == "ob_put"
+    assert d.diagnostics.len() == 0
+
+    # A parameter's word on a result is not read, and the loop stops there.
+    stray = keywords.WORD_CONSUMES
+    e: cursor.Cursor @ tokens_of(stray)
+    n = read_marks(@e, text: stray, in_group: true, on_result: true, holder: "the result")
+    assert !n.consumes
+    assert cursor.at(e, .ident)
+
+    # Outside a group nothing is read, and the words stay names.
+    f: cursor.Cursor @ tokens_of(text)
+    o = read_marks(@f, text: text, in_group: false, on_result: false, holder: "`o`")
+    assert !o.consumes && o.retains.is_err()
+    assert cursor.at(f, .ident)
+
+test "a word written twice is repeated_mark at the second, and the first is kept"
+    # Every word the position has, because the provoking case (`consumes
+    # consumes`) is a witness and not the class: bare, named, freer, extent.
+    for text in ["consumes consumes", "acquires a acquires b", "transfers a transfers b", "retains a retains b", "counted_by n counted_by m", "lent lent", "owned free owned free", "borrows borrows"]
+        c: cursor.Cursor @ tokens_of(text)
+        _ = read_marks(@c, text: text, in_group: true, on_result: false, holder: "`o`")
+        assert c.diagnostics.len() == 1
+        assert c.diagnostics[0].code == "repeated_mark"
+        assert cursor.at(c, .terminator)
+
+    text = "acquires a acquires b"
+    c: cursor.Cursor @ tokens_of(text)
+    m = read_marks(@c, text: text, in_group: true, on_result: false, holder: "`o`")
+    assert cursor.slice_of(text, m.acquires.must()) == "a"
+    assert c.diagnostics[0].span.start == 11
+
+    # On a result: the clause twice, and two DIFFERENT words with no
+    # diagnostic here, since that pair is the checker's.
+    twice = "when 0 when 1"
+    d: cursor.Cursor @ tokens_of(twice)
+    r = read_marks(@d, text: twice, in_group: true, on_result: true, holder: "the result")
+    assert cursor.slice_of(twice, r.when.must()) == "0"
+    assert d.diagnostics[0].code == "repeated_mark"
+    pair = "borrows acquires a"
+    e: cursor.Cursor @ tokens_of(pair)
+    p = read_marks(@e, text: pair, in_group: true, on_result: true, holder: "the result")
+    assert p.borrows && !p.acquires.is_err()
+    assert e.diagnostics.len() == 0
+
+test "the success clause after a parameter is refused and the `)` survives"
+    # Finding 5 through the loop: `consumes` is kept, the clause is refused at
+    # its word, and the reader stands on the `)` afterwards.
+    text = "consumes when 0)"
+    c: cursor.Cursor @ tokens_of(text)
+    m = read_marks(@c, text: text, in_group: true, on_result: false, holder: "`o`")
+    assert m.consumes
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "success_on_parameter"
+    assert cursor.at(c, .rparen)
 
 test "a field is one line, and its doc comment is the run above it"
     # indent, "# doc", x: i64, dedent

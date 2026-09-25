@@ -34,7 +34,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 23
+#define HERO_RUNTIME_ABI 24
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -202,12 +202,23 @@ void hero_held_release(const char **slot); /* nulls the cell: the second release
  * 150): a counter could not tell a NULL from a handle, a null release from a
  * real one, or a double release from a part-release, and each of those was a
  * measured defect. `parts/alloc.c` carries what the number cost. */
-/* Since ABI 23 (panel 175's route A, panel 176's item 1) the set also holds
- * the RELEASERS the acquiring mark named, `a|b` as one C string compared by
- * content, and a consuming call says who it is and what its own mark would let
- * it pay: `consumed(h, "freopen", "fclose")`, `consumed(h, "fclose", NULL)`. */
+/* Since ABI 23 (panel 175's route A, panel 176's item 1) the set holds the
+ * RELEASERS the acquiring mark named, `a|b` as one C string compared by
+ * content. Since ABI 24 (panel 176's items 2 and 4, panel 177's item 6) an
+ * entry also carries a COUNT of references, and an end is two calls: the
+ * check before C runs — `ending(h, "fclose", NULL)` names the consumer and
+ * what its own mark would let it pay, `transferring(h, "json_object_put")`
+ * names where the life goes — and `ended(h)` after the call, which a `when`
+ * clause guards, or `kept(h)` when the call said it failed, since the check
+ * counted the end as pending and one call may not announce more ends than the
+ * address holds references (defect 084). `retained(h, "X509_free")` adds a
+ * reference to a live handle or begins a life on one the set does not hold. */
 void hero_handle_acquired(const void *handle, const char *releasers);
-void hero_handle_consumed(const void *handle, const char *by, const char *pays);
+void hero_handle_ending(const void *handle, const char *by, const char *pays);
+void hero_handle_transferring(const void *handle, const char *into);
+void hero_handle_ended(const void *handle);
+void hero_handle_kept(const void *handle);
+void hero_handle_retained(const void *handle, const char *releasers);
 
 /* THE MISSING PRIMITIVE (panel 021). §4.19's ladder step 3 is "open a database,
  * run a query, READ A RESULT, close". sqlite3_column_text hands back a borrowed

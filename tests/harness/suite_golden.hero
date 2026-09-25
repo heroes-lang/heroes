@@ -75,7 +75,7 @@ function shape_check() -> Shape
         flag: "--brief",
         on_stderr: true,
         want_code: 1,
-        least: 112,
+        least: 142,
         watched: true,
         silent_stdout: false,
         library_skip: false

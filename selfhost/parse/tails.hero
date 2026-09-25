@@ -138,21 +138,20 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     # `-> cstr owned sqlite3_free`: the freer rides the RESULT and is read
     # right after its type, which is the only place it can be — a signature
     # with no arrow hands nothing back for anybody to free (§4.19, panel 109).
-    owned_result: token.Span? @ fail(code: "none", msg: "nothing to free")
-    acquires_result: token.Span? @ fail(code: "none", msg: "nothing to give back")
-    borrows_result: bool @ false
+    # The five words come in any order (panel 177's landing, finding 1), and
+    # `when` with no arrow before it is named as such (finding 2).
+    marks: parse_members.Marks @ parse_members.no_marks()
 
     if cursor.eat(@c, .arrow)
         result @ type.parse_type(@c, @a, text)
-        owned_result @ parse_marks.owned_marker(@c, text, in_group: is_extern)
-        acquires_result @ parse_marks.acquires_marker(@c, text, in_group: is_extern)
-        borrows_result @ parse_marks.bare_marker(@c, text: text, in_group: is_extern, word: keywords.WORD_BORROWS)
+        marks @ parse_members.read_marks(@c, text: text, in_group: is_extern, on_result: true, holder: "the result")
     else
         here = cursor.current_span(c)
         result @ ast.push_type(
             @a.types,
             ast.TypeNode(kind: .unit, span: token.Span(start: here.start, end: here.start))
         )
+        parse_marks.success_needs_result(@c, text, in_group: is_extern)
     body: ast.Block? @ fail(code: "absent", msg: "an extern function's code comes from C")
 
     if is_extern
@@ -176,9 +175,11 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
         is_extern: is_extern,
         header: linkage_header(linkage),
         library: linkage_library(linkage),
-        owned_result: owned_result,
-        acquires_result: acquires_result,
-        borrows_result: borrows_result
+        owned_result: marks.owned,
+        acquires_result: marks.acquires,
+        retains_result: marks.retains,
+        borrows_result: marks.borrows,
+        when_result: marks.when
     )
     decls @ decls.push(
         ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .function_decl(value: f))

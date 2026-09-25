@@ -33,7 +33,12 @@ use ast
 use source
 use token
 use diag
+use digits
+use widths
+use parse
 use check/state
+use check/table
+use check/decls as declared
 use check/acquiring
 
 function marks_are_read(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
@@ -44,13 +49,35 @@ function marks_are_read(@c: state.Checker, a: ast.Ast, s: source.Source, decls: 
                     continue
                 name = source.span_text(s, decl.name)
 
-                if !fd.value.acquires_result.is_err() || fd.value.borrows_result
+                result_marks: i64 @ 0
+
+                if !fd.value.acquires_result.is_err()
+                    result_marks @ result_marks + 1
+
+                if !fd.value.retains_result.is_err()
+                    result_marks @ result_marks + 1
+
+                if fd.value.borrows_result
+                    result_marks @ result_marks + 1
+
+                if result_marks > 1
+                    state.push_diagnostic(
+                        @c,
+                        one_mark(holder: "the result of `" + name + "`", span: a.types[fd.value.result].span)
+                    )
+                success_says(@c, s, decls, fd: fd.value, name: name)
+
+                if result_marks > 0
                     word: str @ "borrows"
                     at: token.Span @ a.types[fd.value.result].span
 
                     if !fd.value.acquires_result.is_err()
                         word @ "acquires"
                         at @ fd.value.acquires_result.must()
+
+                    if !fd.value.retains_result.is_err()
+                        word @ "retains"
+                        at @ fd.value.retains_result.must()
                     refuse_unread(
                         @c,
                         s,
@@ -62,17 +89,48 @@ function marks_are_read(@c: state.Checker, a: ast.Ast, s: source.Source, decls: 
                     )
 
                 for p in fd.value.params
-                    if !p.consumes && p.acquires.is_err() && !p.borrows
+                    marks: i64 @ 0
+
+                    if p.consumes
+                        marks @ marks + 1
+
+                    if !p.transfers.is_err()
+                        marks @ marks + 1
+
+                    if !p.acquires.is_err()
+                        marks @ marks + 1
+
+                    if !p.retains.is_err()
+                        marks @ marks + 1
+
+                    if p.borrows
+                        marks @ marks + 1
+
+                    if marks == 0
                         continue
+
+                    if marks > 1
+                        state.push_diagnostic(
+                            @c,
+                            one_mark(holder: "`" + source.span_text(s, p.name) + "`", span: p.name)
+                        )
                     on: str @ "consumes"
                     where: token.Span @ a.types[p.ty].span
 
                     if p.borrows
                         on @ "borrows"
 
+                    if !p.transfers.is_err()
+                        on @ "transfers"
+                        where @ p.transfers.must()
+
                     if !p.acquires.is_err()
                         on @ "acquires"
                         where @ p.acquires.must()
+
+                    if !p.retains.is_err()
+                        on @ "retains"
+                        where @ p.retains.must()
                     refuse_unread(
                         @c,
                         s,
@@ -83,6 +141,125 @@ function marks_are_read(@c: state.Checker, a: ast.Ast, s: source.Source, decls: 
                         at: where
                     )
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+# One word per position (panel 176's vocabulary): a parameter is consumed,
+# transferred, acquired, retained or borrowed, and a result acquired, retained
+# or borrowed. Two words would be two obligations on one value, and the
+# runtime keeps one.
+function one_mark(holder: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "one_mark_per_position",
+        message: holder + " carries two of `consumes`, `transfers`, `acquires`, `retains` and `borrows`, and a value takes one: each says what the call does with the value's life, and a call does one thing with it",
+        span: span
+    )
+
+# `when <literal>` on a result (panel 177's item 6) must have something to
+# govern — an end, a transfer or a reference on the call — and must compare the
+# result with a value of its own type: an integer literal for an integer result,
+# `true` or `false` for a `bool`, and nothing for a call that returns nothing,
+# since there is no value to compare. Real headers state a success value in
+# their `@return` line (json-c 0, OpenSSL 1, `SQLITE_OK`), which is why the
+# clause sits on the result. And the value has to be one the result can HOLD:
+# `-> u8 when 300` checked clean until 2026-09-25, clang warned the comparison
+# is always false, and the program aborted when `main` returned over a handle
+# never given back, because a clause that is never true ends nothing (panel
+# 177's item 6, measured on this build).
+#
+# Only a PARAMETER's mark can be what happens on success. A `retains` result is
+# a handle, and a handle that comes back null is the call's own failure (panel
+# 177's item 6), so every `when` on one is refused as `success_value_type`
+# below; counting it here offered a shape the next rule refuses.
+function success_says(@c: state.Checker, s: source.Source, decls: [ast.Decl], fd: ast.FunctionDecl, name: str)
+    if fd.when_result.is_err()
+        return
+    mark = fd.when_result.must()
+    ends: bool @ false
+
+    for p in fd.params
+        if p.consumes || !p.transfers.is_err() || !p.retains.is_err()
+            ends @ true
+
+    if !ends
+        state.push_diagnostic(
+            @c,
+            success_without_end(name: name, handle_result: !fd.retains_result.is_err() || !fd.acquires_result.is_err(), span: mark)
+        )
+        return
+    literal = source.span_text(s, mark)
+    is_bool = literal == "true" || literal == "false"
+    written = c.out.written_types[fd.result]
+
+    if written.is_err()
+        return
+    kind: str @ "other"
+    width: widths.IntKind? @ fail(code: "none", msg: "the result is not an integer")
+
+    match table.get(c.out.types, written.must())
+        .int_ty ik =>
+            kind @ "int"
+            width @ ok(ik.kind)
+        .bool                                                                       => kind @ "bool"
+        .unit                                                                       => kind @ "unit"
+        .float_ty | .str | .ptr | .cstr | .array | .fixed | .map                    => kind @ "other"
+        .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error => kind @ "other"
+
+    if kind == "unit"
+        state.push_diagnostic(
+            @c,
+            diag.new_diagnostic(code: "when_on_void", message: "`when` compares the result of `" + name + "` with a value, and `" + name + "` returns nothing: a call that cannot say whether it succeeded ends, transfers and retains unconditionally, so drop the clause", span: mark)
+        )
+        return
+
+    if kind == "other" || kind == "int" && is_bool || kind == "bool" && !is_bool
+        state.push_diagnostic(
+            @c,
+            diag.new_diagnostic(code: "success_value_type", message: "`when " + literal + "` compares the result of `" + name + "` with a value of another type: the result is `" + state.show(c, s, decls, written.must()) + "`, and the clause takes an integer literal for an integer result and `true` or `false` for a `bool`", span: mark)
+        )
+        return
+
+    if kind == "int" && !literal_fits(literal, kind: width.must())
+        state.push_diagnostic(@c, success_value_range(literal: literal, name: name, kind: width.must(), span: mark))
+
+# The clause with nothing to govern. Where the result is a handle the note says
+# why that is not what governs it, because the reader who wrote `-> Ob retains
+# ob_put when 0` did name something that happens on success.
+function success_without_end(name: str, handle_result: bool, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "success_without_end",
+        message: "`when` says which result means `" + name + "` did what it was handed, and no parameter of it is marked `consumes`, `transfers` or `retains`: nothing here happens only on success",
+        span: span
+    )
+
+    if handle_result
+        d.notes @ d.notes.push(
+            "the result of `" + name + "` is a handle, and a handle that comes back null is the call's own failure: a `retains` or `acquires` result needs no clause and takes none"
+        )
+    return d
+
+# Whether the success value is one the result can hold. The literal is read
+# with the language's one decoder, so every spelling § 2 admits counts the same
+# (`1_000`, `0x1f`, `0o37`, `0b11`), and a value past `u64` is past every width.
+# The clause takes no sign, so the magnitude is the value.
+function literal_fits(literal: str, kind: widths.IntKind) -> bool
+    value = digits.decode_u64(literal)
+
+    if value.is_err()
+        return false
+    return widths.int_fits(kind, negative: false, magnitude: value.must())
+
+# The refusal names the result's type and its range, so the reader can either
+# write the value the header returns or declare the result at the width the
+# header gives it, without opening anything else (design.md §4.17).
+function success_value_range(literal: str, name: str, kind: widths.IntKind, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "success_value_range",
+        message: "`when " + literal + "` compares the result of `" + name + "` with a value it can never hold: the result is " + widths.int_article_name(kind) + ", which holds " + widths.int_low_text(kind) + " through " + widths.int_high_text(kind),
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a clause that is never true ends, transfers and retains nothing: clang warns that the comparison is always false, every handle the call took stays owed, and the program aborts when `main` returns over a handle never given back. Write the value the header returns, or declare the result at the width the header gives it"
+    )
+    return d
 
 # The one question, asked of the type node the author wrote: does it reach a
 # handle? `acquiring.handle_behind` is the same walk the completeness rule
@@ -113,3 +290,51 @@ function unread_mark(word: str, holder: str, shown: str, span: token.Span) -> di
         "on a handle the word does work: `acquires` must name an `extern` that takes one back with `consumes`, `consumes` refuses a value the caller only borrowed, and a handle nobody gives back aborts when `main` returns, naming its address. On a `ptr` none of that can happen, and a wrong word there was measured to free memory `malloc` never gave"
     )
     return d
+
+## Tests
+
+# The declaration pass, then this module's rule, on one text: what a golden
+# pins from outside, pinned here from inside.
+function driven(text: str) -> state.Checker
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    c: state.Checker @ declared.checked_file(text)
+    marks_are_read(@c, p.tree, s, p.decls)
+    return c
+
+function codes_of(c: state.Checker) -> [str]
+    out: [str] @ []
+
+    for d in c.out.diagnostics
+        out @ out.push(d.code)
+
+    return out
+
+test "the success value is held to the result's width, in every spelling"
+    assert literal_fits("255", kind: .u8)
+    assert !literal_fits("300", kind: .u8)
+    assert literal_fits("0xff", kind: .u8)
+    assert literal_fits("0o377", kind: .u8)
+    assert literal_fits("0b1111_1111", kind: .u8)
+    assert !literal_fits("0b1_0000_0000", kind: .u8)
+    assert literal_fits("2147483647", kind: .i32)
+    assert !literal_fits("2147483648", kind: .i32)
+    assert !literal_fits("99999999999", kind: .i32)
+    assert literal_fits("18446744073709551615", kind: .u64)
+    assert !literal_fits("18446744073709551616", kind: .u64)
+
+test "a success value the result cannot hold is refused naming the range"
+    c = driven(
+        "extern \"m.h\"\n    record Ob tag ob\n    function ob_put(o: Ob consumes)\n    function ob_give(o: Ob consumes) -> u8 when 300\n    function ob_fine(o: Ob consumes) -> u8 when 0xff\n    function ob_wide(o: Ob consumes) -> i32 when 99999999999\n"
+    )
+    assert codes_of(c) == ["success_value_range", "success_value_range"]
+    assert c.out.diagnostics[0].message == "`when 300` compares the result of `ob_give` with a value it can never hold: the result is a `u8`, which holds 0 through 255"
+    assert c.out.diagnostics[1].message == "`when 99999999999` compares the result of `ob_wide` with a value it can never hold: the result is an `i32`, which holds -2147483648 through 2147483647"
+
+test "a retains result is not what a clause governs, and the note says why"
+    c = driven(
+        "extern \"m.h\"\n    record Ob tag ob\n    function ob_put(o: Ob consumes)\n    function ob_get(o: Ob) -> Ob retains ob_put when 0\n    function ob_ref(o: Ob retains ob_put) -> i32 when 1\n"
+    )
+    assert codes_of(c) == ["success_without_end"]
+    assert c.out.diagnostics[0].message == "`when` says which result means `ob_get` did what it was handed, and no parameter of it is marked `consumes`, `transfers` or `retains`: nothing here happens only on success"
+    assert c.out.diagnostics[0].notes[0] == "the result of `ob_get` is a handle, and a handle that comes back null is the call's own failure: a `retains` or `acquires` result needs no clause and takes none"

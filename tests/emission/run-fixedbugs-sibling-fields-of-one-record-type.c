@@ -5,7 +5,7 @@
 #include <fixedbugs-sibling-fields-of-one-record-type.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -188,9 +188,11 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t13 = t12.s;
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_handle_consumed(t13, "slot_close", NULL);
+    hero_handle_ending(t13, "slot_close", NULL);
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     (void)slot_close(t13);
+#line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
+    hero_handle_ended(t13);
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t14 = h0_p;
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
@@ -198,9 +200,11 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t16 = t15.s;
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_handle_consumed(t16, "slot_close", NULL);
+    hero_handle_ending(t16, "slot_close", NULL);
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     (void)slot_close(t16);
+#line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
+    hero_handle_ended(t16);
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t17 = HERO_STR_LIT(hero_str_455ecde8);
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
@@ -209,7 +213,7 @@ bb0:
     hero_print_end();
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     return;
-#line 213 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 217 "fixedbugssiblingfieldsofonerecordtype.c"
 }
 HERO_TU_LOCAL bool h_fixedbugssiblingfieldsofonerecordtype_Slot_eq(Slot * const *a, Slot * const *b) {
     return *a == *b;

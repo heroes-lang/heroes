@@ -1,0 +1,77 @@
+# The words after a parameter or a result, printed ONCE for both printers.
+#
+# `fmt` re-prints a program and `dump` prints the tree `fmt` checks itself
+# against, and until 2026-09-24 each held its own copy of these five
+# functions: a form a printer has not learned is not an error, it is DELETED
+# on `fmt --in-place` (CL-036), and `consumes` was missing from the dump for a
+# day after it landed, so for that day the self-check could not have seen a
+# formatter deleting it. One home, so a sixth word cannot be forgotten in one
+# of two copies — and the `layout` suite's ceiling on `fmt.hero`, which the
+# success clause pushed it past, is the reason the seam was cut today.
+use token
+use source
+use handles
+use digits
+
+# ` owned sqlite3_free`, or nothing. Written once and read from both
+# positions, so the two cannot learn the form apart (§4.19, panel 109).
+function owned_suffix(s: source.Source, mark: token.Span?) -> str
+    if mark.is_err()
+        return ""
+    return " owned " + source.span_text(s, mark.must())
+
+# ` lent`, ` consumes`, ` borrows`, or nothing: the three bare words, one
+# printer, so a fourth cannot be forgotten (panel 171).
+function bare_suffix(on: bool, word: str) -> str
+    if !on
+        return ""
+    return " " + word
+
+# ` acquires a | b`, ` transfers x`, ` retains y`, or nothing: the three words
+# that carry a releaser set, one printer, the set spelled back canonically.
+function named_suffix(s: source.Source, mark: token.Span?, word: str) -> str
+    if mark.is_err()
+        return ""
+    return " " + word + " " + handles.releasers_spelled(source.span_text(s, mark.must()))
+
+# ` when 0`, or nothing (panel 177's item 6), after every other mark of a result.
+#
+# The literal is spelled as `fmt` spells every integer, through
+# `digits.canonical_int`: until 2026-09-25 it was copied verbatim, so `when
+# 0xFF` stayed while the `0xFF` of an expression one line below became `0xff`,
+# two spellings of one value in one canonical file (panel 177's landing,
+# finding 6). `true` and `false` pass through it unchanged.
+function when_suffix(s: source.Source, mark: token.Span?) -> str
+    if mark.is_err()
+        return ""
+    return " when " + digits.canonical_int(source.span_text(s, mark.must()))
+
+# ` counted_by n`, or nothing (panel 166's route C). Written in the same commit
+# as the marker: a printer that has not met a form deletes it, and here the
+# deletion would turn a checked extent back into the unchecked one defect 063
+# is about — silently, at exit 0, on a `fmt --in-place`.
+function counted_by_suffix(s: source.Source, mark: token.Span?) -> str
+    if mark.is_err()
+        return ""
+    return " counted_by " + source.span_text(s, mark.must())
+
+test "every word prints as itself and absence prints nothing"
+    text = "acquires a|b"
+    s = source.new_source(name: "t.hero", text: text)
+    whole = token.Span(start: 9, end: 12)
+    none: token.Span? = fail(code: "none", msg: "absent")
+    assert named_suffix(s, ok(whole), word: "acquires") == " acquires a | b"
+    assert named_suffix(s, none, word: "retains") == ""
+    assert bare_suffix(true, word: "lent") == " lent"
+    assert bare_suffix(false, word: "borrows") == ""
+    assert when_suffix(s, ok(token.Span(start: 9, end: 10))) == " when a"
+    assert owned_suffix(s, none) == ""
+    assert counted_by_suffix(s, ok(token.Span(start: 11, end: 12))) == " counted_by b"
+
+test "the success value is spelled as every integer is"
+    # Finding 6: `when 0xFF` is `when 0xff`, as the same literal in an
+    # expression is; `true` has no digit to lower and comes back as itself.
+    text = "when 0xFF true"
+    s = source.new_source(name: "t.hero", text: text)
+    assert when_suffix(s, ok(token.Span(start: 5, end: 9))) == " when 0xff"
+    assert when_suffix(s, ok(token.Span(start: 10, end: 14))) == " when true"

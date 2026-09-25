@@ -1,0 +1,268 @@
+# The names a mark carries, and whether they say something true.
+#
+# Every releaser set a mark carries names calls that end the life, whatever
+# the word — `acquires`, `transfers` and `retains` all name where the life
+# will end (panel 176's items 1, 2 and 4) — and a transfer names where the
+# life GOES: another handle parameter of the call, or the handle the call
+# acquires as its result (panel 177's item 7). Without one, `fclose(stream:
+# File transfers pclose)` passes every check and `pclose` is never called,
+# which panel 177's llm-ergonomist wrote as a first repair and its critic ran
+# at 0 three of three; with the rule, it is this refusal. `BIO_new_fp`, whose
+# receiver is its acquiring result, stays a transfer.
+#
+# And the receiver must SURVIVE the call, which is what `has_receiver` did not
+# ask until 2026-09-25: it counted ANY other handle parameter, so `fl_merge(a:
+# File transfers fl_close, b: File transfers fl_close)` and `(a: File transfers
+# fl_close, b: File consumes)` checked clean, and at run both lives ended with
+# nobody owing them and `fl_close` never called. A parameter marked `consumes`
+# or `transfers` is gone when the call returns and can keep nothing, so the
+# receiver is another handle parameter with neither word, or the result the
+# call `acquires` or `retains`. The refusal names the sibling it found and why
+# it does not count.
+#
+# Cut out of `check/acquiring.hero` on 2026-09-24 at the `layout` suite's
+# ceiling, along a seam that is a question: that file asks whether a binding
+# SAYS how a handle begins, this one asks whether what it says RESOLVES.
+use ast
+use source
+use token
+use diag
+use parse
+use handles
+use check/state
+use check/reaches
+use check/acquiring
+use check/decls as declared
+
+function sets_name_releasers(@c: state.Checker, s: source.Source, decls: [ast.Decl])
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if !fd.value.is_extern
+                    continue
+                result_handle = acquiring.handle_behind(c, s, decls, node: fd.value.result)
+
+                if !result_handle.is_err()
+                    releaser_reads(
+                        @c,
+                        s,
+                        decls,
+                        word: "acquires",
+                        mark: fd.value.acquires_result,
+                        reached: result_handle.must()
+                    )
+                    releaser_reads(
+                        @c,
+                        s,
+                        decls,
+                        word: "retains",
+                        mark: fd.value.retains_result,
+                        reached: result_handle.must()
+                    )
+                index: i64 @ 0
+
+                for p in fd.value.params
+                    behind = acquiring.handle_behind(c, s, decls, node: p.ty)
+
+                    if !behind.is_err()
+                        releaser_reads(@c, s, decls, word: "acquires", mark: p.acquires, reached: behind.must())
+                        releaser_reads(@c, s, decls, word: "retains", mark: p.retains, reached: behind.must())
+                        releaser_reads(@c, s, decls, word: "transfers", mark: p.transfers, reached: behind.must())
+
+                        if !p.transfers.is_err()
+                            found = receiver(c, s, decls, fd: fd.value, except: index)
+
+                            if !found.survives
+                                state.push_diagnostic(
+                                    @c,
+                                    transfer_without_receiver(param: source.span_text(s, p.name), name: source.span_text(s, decl.name), dying: found.dying, span: p.transfers.must())
+                                )
+                    index @ index + 1
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+# What a transfer found to hand the life to. `dying` lists the other handle
+# parameters that do NOT survive the call, each with its word, so the refusal
+# can say what it saw instead of claiming there was nothing.
+record Receiving
+    survives: bool
+    dying: [str]
+
+# A value the transferred life can go into and that outlives the call: another
+# parameter reaching a handle that is neither `consumes` nor `transfers` (a
+# plain one, a `borrows`, a `retains`, or an `@` cell that `acquires`), or a
+# result that begins or joins a life.
+function receiver(c: state.Checker, s: source.Source, decls: [ast.Decl], fd: ast.FunctionDecl, except: i64) -> Receiving
+    survives: bool @ false
+    dying: [str] @ []
+    index: i64 @ 0
+
+    for p in fd.params
+        if index != except && !acquiring.handle_behind(c, s, decls, node: p.ty).is_err()
+            if p.consumes
+                dying @ dying.push("`" + source.span_text(s, p.name) + "` marked `consumes`")
+            else if !p.transfers.is_err()
+                dying @ dying.push("`" + source.span_text(s, p.name) + "` marked `transfers`")
+            else
+                survives @ true
+        index @ index + 1
+
+    if !survives && (!fd.acquires_result.is_err() || !fd.retains_result.is_err())
+        survives @ !acquiring.handle_behind(c, s, decls, node: fd.result).is_err()
+    return Receiving(survives: survives, dying: dying)
+
+# The refusal says what it found: nothing at all, or a sibling that ends with
+# the call. The two repairs differ, so the note does too.
+function transfer_without_receiver(param: str, name: str, dying: [str], span: token.Span) -> diag.Diagnostic
+    seen: str @ "no other parameter of `" + name + "` reaches a handle and its result begins no life"
+
+    if dying.len() == 1
+        seen @ "the other parameter of `" + name + "` reaching a handle, " + dying[0] + ", does not survive the call, and its result begins no life"
+
+    if dying.len() > 1
+        seen @ "the other parameters of `" + name + "` reaching a handle, " + dying.join(" and ") + ", do not survive the call, and its result begins no life"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "transfer_without_receiver",
+        message: "`" + param + "` of `" + name + "` is marked `transfers`, and the call has nowhere to hand the life to: " + seen,
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a transfer hands a value INTO another value that will end it later — json-c's `json_object_object_add(obj, key, val)` puts `val` under `obj`, OpenSSL's `BIO_new_fp(stream, flags)` keeps `stream` inside the BIO it returns"
+    )
+
+    if dying.len() == 0
+        d.notes @ d.notes.push(
+            "a call with one handle and no acquiring result ENDS the value instead: mark it `consumes`, and if it is one more way to end what a call begins, name it in that call's mark, `acquires <releaser> | " + name + "`"
+        )
+    else
+        d.notes @ d.notes.push(
+            "a receiver survives the call, so the life it took can end later through it; a parameter marked `consumes` or `transfers` is gone when the call returns and keeps nothing. If `" + name + "` ends every handle it is given, mark each `consumes`; if it keeps them inside a value it hands back, mark that result `acquires <releaser>`"
+        )
+    return d
+
+# The word a mark names has to name something, and the something has to END the
+# life the mark BEGINS. Two facts about declarations, neither of them a flow
+# question: the name resolves to an `extern` of this module, and that `extern`
+# consumes a parameter reaching the same handle.
+#
+# `borrows` gets no such check and needs none: it names no function, which is
+# the whole reason it is a bare word. `word` is the one the mark was written
+# with, because the note's repair differs by it.
+function releaser_reads(@c: state.Checker, s: source.Source, decls: [ast.Decl], word: str, mark: token.Span?, reached: reaches.Reached)
+    if mark.is_err()
+        return
+    text = source.span_text(s, mark.must())
+    names = handles.releasers(text)
+    spans = handles.releaser_spans(text, at: mark.must())
+    index: i64 @ 0
+
+    # Every name of the set, one at a time (defect 075): the diagnostic points
+    # at the one that does not resolve, and the others still count.
+    for named in names
+        if !ends_a_life(c, s, decls, named: named, reached: reached, from: mark.must())
+            state.push_diagnostic(
+                @c,
+                unread_releaser(word: word, named: named, handle: source.span_text(s, decls[reached.decl].name), span: spans[index])
+            )
+        index @ index + 1
+
+# Does an `extern` of THIS module by that name take the handle back with
+# `consumes`? The per-module reading is the message's own words, and it is the
+# local one: a verdict that read the whole program moved with a declaration in
+# another file — defect 085, where `check bio.hero` refused the mark and
+# `check main.hero`, which declared the releaser, passed the same file, one
+# program with two verdicts. Panel 176's item 5 refused the non-local reading,
+# so the module is read by the FILE the mark sits in: `decls` is the whole
+# resolved program, and a declaration in another file does not count.
+function ends_a_life(c: state.Checker, s: source.Source, decls: [ast.Decl], named: str, reached: reaches.Reached, from: token.Span) -> bool
+    home = source.file_of(s, from.start)
+
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.is_extern && source.span_text(s, decl.name) == named && source.file_of(s, decl.name.start) == home
+                    for p in fd.value.params
+                        if p.consumes
+                            behind = acquiring.handle_behind(c, s, decls, node: p.ty)
+
+                            if !behind.is_err() && behind.must().decl == reached.decl
+                                return true
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return false
+
+# The second refusal, and it exists because a mandatory word nobody reads is
+# worse than no word: design.md Part 6 calls it *a comment that looks like a
+# guarantee*.
+function unread_releaser(word: str, named: str, handle: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unread_releaser",
+        message: "`" + named + "` does not end a `" + handle + "`'s life: no `extern` of this module declares it taking one back with `consumes`",
+        span: span
+    )
+    d.notes @ d.notes.push(releaser_note(word: word, handle: handle))
+    return d
+
+# The note names the WORD the mark was written with, because the repair differs
+# by it: an acquisition or a reference may turn out to be a borrow, and a
+# transfer may not, since the value that receives the life ends it later and
+# only a call the handle's own set names can (panel 176's item 2). Until
+# 2026-09-25 the note said `acquires` under every word and offered `borrows`
+# to a transfer.
+function releaser_note(word: str, handle: str) -> str
+    declare = "so the name has to be an `extern` in this module with a `" + handle + "` parameter marked `consumes`. Declare it"
+
+    return match word
+        "transfers" => "`transfers` names the call that will END the life this one hands over, " + declare + ": a transfer is not a borrow, because the value that receives the life ends it later, and only a releaser the handle's own set names can"
+        "retains" => "`retains` names the call that ENDS the reference this one adds, " + declare + ", or write `borrows` if the call adds no reference and the program owes nothing"
+        _ => "`acquires` names the call that ENDS what this one begins, " + declare + ", or write `borrows` if the library keeps the handle and the program owes nothing"
+
+## Tests
+
+# The declaration pass, then this module's rule, on one text.
+function driven(text: str) -> state.Checker
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    c: state.Checker @ declared.checked_file(text)
+    sets_name_releasers(@c, s, p.decls)
+    return c
+
+function codes_of(c: state.Checker) -> [str]
+    out: [str] @ []
+
+    for d in c.out.diagnostics
+        out @ out.push(d.code)
+
+    return out
+
+test "a receiver survives the call: a consumed or transferred sibling is not one"
+    c = driven(
+        "extern \"m.h\"\n    record File tag fl\n    function fl_close(f: File consumes)\n    function fl_both(a: File transfers fl_close, b: File transfers fl_close)\n    function fl_gone(a: File transfers fl_close, b: File consumes)\n    function fl_keep(a: File transfers fl_close, b: File)\n    function fl_cell(a: File transfers fl_close, @b: File acquires fl_close)\n"
+    )
+    assert codes_of(c) == ["transfer_without_receiver", "transfer_without_receiver", "transfer_without_receiver"]
+    assert c.out.diagnostics[0].message == "`a` of `fl_both` is marked `transfers`, and the call has nowhere to hand the life to: the other parameter of `fl_both` reaching a handle, `b` marked `transfers`, does not survive the call, and its result begins no life"
+    assert c.out.diagnostics[2].message == "`a` of `fl_gone` is marked `transfers`, and the call has nowhere to hand the life to: the other parameter of `fl_gone` reaching a handle, `b` marked `consumes`, does not survive the call, and its result begins no life"
+
+test "the refusal's words follow what it found"
+    span = token.Span(start: 0, end: 1)
+    none = transfer_without_receiver(param: "f", name: "fl_fclose", dying: [], span: span)
+    assert none.message == "`f` of `fl_fclose` is marked `transfers`, and the call has nowhere to hand the life to: no other parameter of `fl_fclose` reaches a handle and its result begins no life"
+    assert none.notes.len() == 2
+    two = transfer_without_receiver(
+        param: "a",
+        name: "fl_merge",
+        dying: ["`b` marked `consumes`", "`c` marked `transfers`"],
+        span: span
+    )
+    assert two.message == "`a` of `fl_merge` is marked `transfers`, and the call has nowhere to hand the life to: the other parameters of `fl_merge` reaching a handle, `b` marked `consumes` and `c` marked `transfers`, do not survive the call, and its result begins no life"
+    assert two.notes[1] == "a receiver survives the call, so the life it took can end later through it; a parameter marked `consumes` or `transfers` is gone when the call returns and keeps nothing. If `fl_merge` ends every handle it is given, mark each `consumes`; if it keeps them inside a value it hands back, mark that result `acquires <releaser>`"
+
+test "the unread-releaser note names the word it was written under"
+    assert releaser_note(word: "acquires", handle: "H") == "`acquires` names the call that ENDS what this one begins, so the name has to be an `extern` in this module with a `H` parameter marked `consumes`. Declare it, or write `borrows` if the library keeps the handle and the program owes nothing"
+    assert releaser_note(word: "retains", handle: "H") == "`retains` names the call that ENDS the reference this one adds, so the name has to be an `extern` in this module with a `H` parameter marked `consumes`. Declare it, or write `borrows` if the call adds no reference and the program owes nothing"
+    assert releaser_note(word: "transfers", handle: "H") == "`transfers` names the call that will END the life this one hands over, so the name has to be an `extern` in this module with a `H` parameter marked `consumes`. Declare it: a transfer is not a borrow, because the value that receives the life ends it later, and only a releaser the handle's own set names can"
+    c = driven(
+        "extern \"m.h\"\n    record H tag hh\n    function h_close(x: H consumes)\n    function h_wrap(x: H transfers nothere, keep: H)\n    function h_ref(x: H retains nothere)\n"
+    )
+    assert codes_of(c) == ["unread_releaser", "unread_releaser"]
+    assert c.out.diagnostics[0].notes[0] == releaser_note(word: "transfers", handle: "H")
+    assert c.out.diagnostics[1].notes[0] == releaser_note(word: "retains", handle: "H")

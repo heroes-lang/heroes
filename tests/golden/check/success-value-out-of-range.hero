@@ -1,0 +1,23 @@
+# `when <literal>` names a value the result can HOLD (panel 177's item 6). Until
+# 2026-09-25 the clause was held to the result's kind and never to its width:
+# `-> u8 when 300` and `-> i32 when 99999999999` checked clean, clang warned the
+# comparison is always false, and the program aborted when `main` returned
+# over a handle never given back, because a clause that is never true ends
+# nothing. The refusal names the result's type and its range; every spelling
+# § 2 admits is read the same way, so `0xff` on a `u8` is in range and `0o400`
+# is not, and a value past `u64` is past every width.
+extern "success-value-out-of-range.h"
+    record Ob tag ob
+    function ob_new() -> Ob acquires ob_put
+    function ob_put(o: Ob consumes)
+    function ob_narrow(o: Ob consumes) -> u8 when 300  #~ success_value_range
+    function ob_wide(o: Ob consumes) -> i32 when 99999999999  #~ success_value_range
+    function ob_huge(o: Ob consumes) -> u64 when 18446744073709551616  #~ success_value_range
+    function ob_octal(o: Ob consumes) -> u8 when 0o400  #~ success_value_range
+    function ob_signed(o: Ob consumes) -> i8 when 128  #~ success_value_range
+    function ob_hex(o: Ob consumes) -> u8 when 0xff
+    function ob_edge(o: Ob consumes) -> i8 when 0b111_1111
+
+function main()
+    a = ob_new()
+    print(ob_hex(o: a).to_str())
