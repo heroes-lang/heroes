@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 5**
+**OPEN: 4**
 
 - [ ] **096 — inside an `extern` group, a remark followed by a blank line before the next member makes `fmt` refuse the file** | the group printer never emits the blank line for a continuing member, so the remark becomes the next member's doc, the self-check sees a different tree and `fmt` exits 2 on a program `check` accepts | `selfhost/print/fmt.hero` (the group's member walk, the `continues` branch)
 
@@ -131,29 +131,5 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     The repair keeps a trailing comment on the line it trails, a comment
     inside a bracket inside the bracket, and prints a blank line between arms
     only where the source has one.
-
-- [ ] **102 — `lex --dump-tokens --json` and `check --json` write JSON that is not JSON when a token or a message holds a tab or a control byte** | both writers escape a backslash, a quote and a newline and nothing else, so a tab inside a string literal, a carriage return, or any byte below 0x20 goes into the output raw, which JSON forbids; and the text diagnostic for a stray control byte prints the byte itself between its backquotes, which the reader cannot see | `selfhost/cli/lex.hero` (`escape`) · `selfhost/cli/check.hero` (`quote`) · `selfhost/scan.hero:224`
-
-    **Origin:** the skeptic seat over lane g's repair of defects 096 to 101,
-    2026-09-26, as a finding unrelated to that lane; reproduced by the
-    coordinator the same night on the trunk's compiler at `4f52c303`, where
-    the seat's citation of `selfhost/cli/compile.hero:82` turned out to be
-    the loop of `escape` in `selfhost/cli/lex.hero`.
-
-    **The reproducers.** `print("a<TAB>b")` with a real tab inside the
-    literal, a program `check` accepts: `lex --dump-tokens --json` exits 0 and
-    its output holds a raw 0x09, *Invalid control character* to Python's
-    `json.loads`. A stray 0x01 byte in a body: `lex --dump-tokens --json` and
-    `check --json` both write it raw, both invalid JSON, and the text form
-    reads `` `<0x01>` is not part of the language's syntax ``. A CRLF file is
-    valid JSON, because the carriage return is not inside any token's text.
-
-    **Why it is a defect.** A flag that promises JSON (schema 1, for
-    `check`) writes something no JSON reader accepts, at exit 0 for a correct
-    program, and the tools that consume it are exactly the ones that cannot
-    look at the bytes. `selfhost/cli/count_tokens.hero` already escapes every
-    byte below 0x20, so the repair is one escape for all three writers, not a
-    third copy, and a diagnostic that names an invisible character by its
-    code rather than by itself.
 
 *******************************************************************************
