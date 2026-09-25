@@ -1,0 +1,28 @@
+# Defect 097 over an array of handles: `f.a[0] @ ob_new(n: 1)` was `check` 0
+# and died at run time as a compiler bug, exactly as the integers did, because
+# the write that failed never asked what the element was.
+#
+# A handle is a C pointer (spec § 13), so writing one is an assignment where
+# the element lies and nothing is released: the old value is not counted by
+# this program, and `borrows` says the new one is not either. Nothing here
+# begins a life, so no handle-set traffic is involved; the case that does is
+# `fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero`.
+#
+# C reads the four slots back and sums what they point at, so a write into a
+# copy would leave `four_sum` at 0; `f.a[1]` is never written and must still be
+# the `nullptr` the record was built with.
+
+extern "fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.h"
+    record Ob tag ob
+    record Four tag four
+        a: Ob[4]
+    function ob_new(n: i64) -> Ob borrows
+    function four_sum(f: Four) -> i64
+
+function main()
+    f: Four @ Four(a: [nullptr, nullptr, nullptr, nullptr])
+    f.a[0] @ ob_new(n: 1)
+    f.a[3] @ ob_new(n: 20)
+    k: i64 @ len(args()) + 2
+    f.a[k] @ ob_new(n: 300)
+    print("sum: ", four_sum(f: f), " unwritten: ", f.a[1] == nullptr)
