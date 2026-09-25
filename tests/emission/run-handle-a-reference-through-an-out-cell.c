@@ -5,7 +5,7 @@
 #include <handle-a-reference-through-an-out-cell.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -139,6 +139,8 @@ bb0:
 #line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     t3 = h0_a;
 #line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
+    hero_handle_alive(t3, "the argument `o` of `ob_dup`");
+#line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     t4 = ob_dup(t3, &h1_b);
 #line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     hero_handle_retained(h1_b, "ob_put");
@@ -159,6 +161,8 @@ bb0:
 #line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     t8 = h0_a;
 #line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
+    hero_handle_alive(t8, "the argument `o` of `ob_refs`");
+#line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     t9 = ob_refs(t8);
 #line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     hero_print_str(t5);
@@ -173,19 +177,23 @@ bb0:
 #line 18 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     t10 = h1_b;
 #line 18 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
+    hero_handle_alive(t10, "the argument `o` of `ob_put`");
+#line 18 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     hero_handle_ending(t10, "ob_put", NULL);
 #line 18 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     (void)ob_put(t10);
 #line 18 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_handle_ended(t10);
+    if (hero_handle_ended(t10) && h1_b == t10) h1_b = hero_handle_dead();
 #line 19 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     t11 = h0_a;
+#line 19 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
+    hero_handle_alive(t11, "the argument `o` of `ob_put`");
 #line 19 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     hero_handle_ending(t11, "ob_put", NULL);
 #line 19 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     (void)ob_put(t11);
 #line 19 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_handle_ended(t11);
+    if (hero_handle_ended(t11) && h0_a == t11) h0_a = hero_handle_dead();
 #line 20 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     t12 = HERO_STR_LIT(hero_str_455ecde8);
 #line 20 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
@@ -194,10 +202,10 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     return;
-#line 198 "handleareferencethroughanoutcell.c"
+#line 206 "handleareferencethroughanoutcell.c"
 }
 HERO_TU_LOCAL bool h_handleareferencethroughanoutcell_Ob_eq(ob * const *a, ob * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_handleareferencethroughanoutcell_Ob_hash(const void *elem) {

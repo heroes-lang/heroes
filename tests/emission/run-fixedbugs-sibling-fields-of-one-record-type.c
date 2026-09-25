@@ -5,7 +5,7 @@
 #include <fixedbugs-sibling-fields-of-one-record-type.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -164,6 +164,8 @@ bb0:
 #line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t5 = t4.s;
 #line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
+    hero_handle_alive(t5, "the argument `s` of `slot_value`");
+#line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t6 = slot_value(t5);
 #line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     hero_print_int(t6);
@@ -175,6 +177,8 @@ bb0:
     t8 = t7.b;
 #line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t9 = t8.s;
+#line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
+    hero_handle_alive(t9, "the argument `s` of `slot_value`");
 #line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t10 = slot_value(t9);
 #line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
@@ -188,11 +192,13 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t13 = t12.s;
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
+    hero_handle_alive(t13, "the argument `s` of `slot_close`");
+#line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     hero_handle_ending(t13, "slot_close", NULL);
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     (void)slot_close(t13);
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_handle_ended(t13);
+    if (hero_handle_ended(t13) && h0_p.a.s == t13) h0_p.a.s = hero_handle_dead();
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t14 = h0_p;
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
@@ -200,11 +206,13 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t16 = t15.s;
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
+    hero_handle_alive(t16, "the argument `s` of `slot_close`");
+#line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     hero_handle_ending(t16, "slot_close", NULL);
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     (void)slot_close(t16);
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_handle_ended(t16);
+    if (hero_handle_ended(t16) && h0_p.b.s == t16) h0_p.b.s = hero_handle_dead();
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t17 = HERO_STR_LIT(hero_str_455ecde8);
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
@@ -213,10 +221,10 @@ bb0:
     hero_print_end();
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     return;
-#line 217 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 225 "fixedbugssiblingfieldsofonerecordtype.c"
 }
 HERO_TU_LOCAL bool h_fixedbugssiblingfieldsofonerecordtype_Slot_eq(Slot * const *a, Slot * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugssiblingfieldsofonerecordtype_Slot_hash(const void *elem) {

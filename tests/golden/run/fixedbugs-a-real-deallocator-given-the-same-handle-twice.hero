@@ -47,6 +47,17 @@
 # the second call reaches a real `free`, is unchanged, because the copy
 # reaches that call exactly as the name did.
 
+#
+# **The sentence this case asserts moved on 2026-09-25 (panel 177's items 1 to
+# 3, defects 077 and 088).** The second release still stops before C runs, and
+# the check that stops it is the DEAD SET: the first `blk_close` ended the life
+# and poisoned `a`, but the second goes through `twice`, the copy the checker's
+# half routed it through, which still holds the old address, and the runtime
+# remembers that address as ended. The poison's own sentence is pinned by the
+# `dead-handle-*` cases, the one-name shape is refused at check, and the
+# runtime's stray report by
+# `fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c`,
+# whose handle nothing ever emptied.
 extern "fixedbugs-a-real-deallocator-given-the-same-handle-twice.h"
     record Blk tag blk
     function blk_open(n: i64) -> Blk acquires blk_close

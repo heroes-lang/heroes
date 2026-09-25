@@ -1,0 +1,91 @@
+# What one C call's RESULT says about the handle traffic around it. Cut out
+# of `emit/handle_traffic.hero` on 2026-09-25, when panel 177's poison took
+# that module past the `layout` suite's ceiling, along the seam the questions
+# themselves draw: everything here reads the DECLARATION's result and nothing
+# here writes a line of C. `handle_traffic` writes what the runtime is told
+# after the call; `handle_before` what it is told before; this answers, for
+# both, what the result means.
+#
+# Four questions, each asked by one of them: does any parameter hand its life
+# into the call (`transfers_any`), is the result one bare handle NULL can
+# stand for (`nullable_result`), must the C keep a discarded result in a
+# block-local because the traffic reads it (`reads_result`), and what C
+# constant does a `when` clause compare the result with (`success_c`).
+
+use ast
+use source
+use digits
+use widths
+use check/state
+use check/table
+use check/reaches
+
+# Does any parameter hand its life into the call? Without one the NULL guard
+# would be an empty `if`, and the C says nothing it does not need to.
+function transfers_any(fd: ast.FunctionDecl) -> bool
+    for p in fd.params
+        if !p.transfers.is_err()
+            return true
+
+    return false
+
+# A result that begins a life and is one bare handle, so NULL is what C hands
+# back on failure and the C can ask. A record reaching handles is not a
+# pointer, and a result that begins no life has no failure the transfer cares
+# about.
+function nullable_result(c: state.Checked, s: source.Source, decls: [ast.Decl], fd: ast.FunctionDecl) -> bool
+    if fd.acquires_result.is_err()
+        return false
+    written = state.written_type(c, fd.result)
+
+    if written.is_err()
+        return false
+    suffixes = reaches.handle_suffixes(c, s, decls, ty: written.must())
+    return suffixes.len() == 1 && suffixes[0] == ""
+
+# Does the call read its own result after C returns, even where the program
+# discarded it? A result that begins or joins a life is told to the runtime
+# whatever the program does with it, so `_ = ob_get(o: a)` owes its reference
+# and `_ = ob_new()` its release (the landing review, 2026-09-24: both exited
+# 0 with nothing owed, the reference silently short). `ops.hero` then keeps
+# the value in a block-local, as it does for a success clause.
+function reads_result(decls: [ast.Decl], decl: i64) -> bool
+    match decls[decl].kind
+        .function_decl fd => return !fd.value.acquires_result.is_err() || !fd.value.retains_result.is_err()
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+# The C constant `when` compares the result with, or absent: `1` or `0` for a
+# `bool`, and the integer's VALUE in decimal with the suffix of the result's
+# signedness, `0LL` or `255ULL`. Not the text as written: `1_000` is a § 2
+# literal and not a C one, `0o17` is C only on a clang that takes C2y, and a
+# bare `18446744073709551615` draws clang's own warning on the author's line
+# (the landing review, 2026-09-24). The checker holds the value to the
+# result's range, so a literal that does not decode never reaches here.
+function success_c(c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64) -> str?
+    match decls[decl].kind
+        .function_decl fd =>
+            if fd.value.when_result.is_err()
+                return fail(code: "none", msg: "no success clause")
+            text = source.span_text(s, fd.value.when_result.must())
+
+            if text == "true"
+                return ok("1")
+
+            if text == "false"
+                return ok("0")
+            value = digits.decode_u64(text)
+
+            if value.is_err()
+                return ok(text)
+            suffix: str @ "ULL"
+            written = state.written_type(c, fd.value.result)
+
+            if !written.is_err()
+                match table.get(c.types, written.must())
+                    .int_ty ik =>
+                        if widths.int_signed(ik.kind)
+                            suffix @ "LL"
+                    .bool | .unit | .float_ty | .str | .ptr | .cstr | .array | .fixed | .map    => suffix @ suffix
+                    .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error => suffix @ suffix
+            return ok(value.must().to_str() + suffix)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a function")

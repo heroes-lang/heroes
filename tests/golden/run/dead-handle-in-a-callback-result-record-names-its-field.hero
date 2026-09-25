@@ -1,0 +1,27 @@
+# A callback's RESULT is a record reaching two handles, and one of them was
+# given back inside the callback: the thunk checks every handle the result
+# reaches before C writes through them (panel 177's item 1), and since the
+# landing's skeptic (probe `e8`, 2026-09-25) the message names WHICH one,
+# `at .b`, as an argument's crossing names its field (design.md §4.17: the
+# reader could not tell which of the two had been given back). The path
+# depends on a value C returns, which the checker's half cannot decide.
+
+extern "dead-handle-in-a-callback-result-record-names-its-field.h"
+    record Node tag node
+    record Pair tag pair
+        a: Node
+        b: Node
+    function node_new() -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function ask_pair(cb: (function(i32) -> Pair)) -> i64
+    function one() -> i64
+
+function give(k: i32) -> Pair
+    p: Pair @ Pair(a: node_new(), b: node_new())
+
+    if one() == k.to_i64().must()
+        node_free(n: p.b)
+    return p
+
+function main()
+    print("C wrote ", ask_pair(cb: give))

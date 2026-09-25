@@ -1,0 +1,26 @@
+# WRONG on purpose, and the reason the clear is a thunk and not a line at the
+# function's entry (panel 177's critic, `cb_launder`; item 2's *never at the
+# function's entry*). A copy made before the release reaches `seen`, whose
+# address C is also given. Cleared at `seen`'s entry, the mark would go
+# whenever Heroes calls `seen` BY NAME, and the stale copy would read the
+# freed node at exit 0, three of three. Cleared in the thunk, a call by name
+# never passes the clear, and the crossing into `node_value` finds the
+# address remembered. The element `keep[0]` is no binding, so the checker's
+# half (item 3) does not see it; this is the runtime's.
+
+extern "dead-address-copy-reaching-a-callback-called-by-name.h"
+    record Node tag node
+    function node_new() -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_value(n: Node) -> i64
+    function visit(cb: (function(Node) -> i64)) -> i64
+
+function seen(n: Node) -> i64
+    return node_value(n: n)
+
+function main()
+    mine = node_new()
+    keep = [mine]
+    node_free(n: mine)
+    print("stale read through the callback ", seen(n: keep[0]))
+    print("visited ", visit(cb: seen))

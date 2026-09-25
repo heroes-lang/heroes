@@ -1,4 +1,3 @@
 before: 42
 null: false
-!sanitizer: on unknown address
-!panic: a copy of its handle the program kept
+!panic: a C handle reached the argument `o` of `value` at an address a call marked `consumes` or `transfers` ended, and nothing has handed that address out since

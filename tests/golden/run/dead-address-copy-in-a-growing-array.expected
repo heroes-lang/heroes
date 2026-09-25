@@ -1,0 +1,1 @@
+!panic: a C handle reached the argument `db` of `db_changes` at an address a call marked `consumes` or `transfers` ended, and nothing has handed that address out since
