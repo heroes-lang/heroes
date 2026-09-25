@@ -74,3 +74,21 @@ canonical 2, check 146, annotations 186, records 24, emission 562, layout 2,
 the net's own 167; the seed regenerated and the fixpoint held. Linux and
 Windows: the run goldens travel with the next platform legs of this
 milestone, which measure the merged tree.
+
+## Corrected 2026-09-25, the same evening
+
+Two sentences above were written against the lane as the coordinator last read
+it, and the lane moved before its commit. The lane's agent had been resumed and
+was still working when the coordinator took the lane over: it split
+`emit/container.hero` at the `layout` ceiling, so **the guarded subscript this
+record calls `fixed_subscript` in `container.hero` is `storageless.subscript`,
+and the fixed-array read `storageless.element`, in
+`selfhost/emit/storageless.hero`**, which `d64da8ff` carries. And that commit
+carried the seed emitted **before** the split, so the trunk's seed was not the
+fixpoint of the trunk's source from `dadba73b` until `3721222d` regenerated it
+and its merge restored the fixpoint, measured on the trunk (`cmp` identical,
+the compiler's 703 tests). The behaviour recorded above is unchanged: the
+emission suite read the split's C byte-identical, and the trunk's compiler
+built from either seed passes the same tests. What the correction pins is the
+process: a lane taken over is a lane whose agent is known to have stopped, and
+this one was resumed by the coordinator's own message an hour before.
