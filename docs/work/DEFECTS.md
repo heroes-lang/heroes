@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 4**
 
 - [ ] **077 — a handle given back after C has handed its address out again is `check` 0 and `run` 0, and the release lands on the new handle** | the live set keys on the address, so a stale handle that equals a live one is accepted as the live one, and the one correct release that follows is the call that aborts | `runtime/parts/alloc.c:436` · `spec § 13`
 
@@ -157,5 +157,44 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     exit-2 guard stops the silent form, which would attach the remark to the
     record as its doc. The repair keeps the blank line between a remark and
     the member it does not document, inside a group as outside one.
+
+- [ ] **097 — writing one element of a fixed array inside a group record passes `check` and aborts at run time as a compiler bug** | `n.a[0] @ 9` on a `record Nums tag nums` whose field is `a: i64[4]` is `check` 0, and the emitter's element write knows arrays and maps and not a fixed array, so it emits `hero_unreachable()` and the program dies with *entered unreachable code — this is a compiler bug* | `selfhost/emit/container.hero` (`write_element`, the `.index_step` arm) · `selfhost/emit/inst.hero:133`
+
+    **Origin:** the skeptic seat over the landing of route M (must), panel 177's item 3,
+    2026-09-25, probing a write that revives one element of a record's handle
+    array; reproduced by the coordinator the same day on the trunk's compiler
+    at `f1e2132f`, before any lane of that landing merged, so it is older than
+    the landing.
+
+    **The reproducer**, numbers only, no handle and no mark:
+
+        extern "nums.h"
+            record Nums tag nums
+                a: i64[4]
+            function nums_sum(n: Nums) -> i64
+
+        function main()
+            n: Nums @ Nums(a: [1, 2, 3, 4])
+            n.a[0] @ 9
+            print("sum: ", nums_sum(n: n))
+
+    with `nums.h` declaring `typedef struct nums { int64_t a[4]; } nums;` and
+    the sum. `check` 0; `run` **134** on Darwin arm64 and on Linux x86-64,
+    *panic: entered unreachable code — this is a compiler bug*, and the
+    emitted C carries `warning: variable 't7' set but not used`, which the
+    `warnings` suite would refuse if a golden held the shape. Reading
+    `n.a[0]` and `n.a[i]` works, and so does writing the whole record,
+    `n @ Nums(a: [9, 2, 3, 4])`; the same element write over a handle array,
+    `f.a[0] @ ob_new()`, dies the same way. A fixed array outside a group is
+    refused at `check` (`fixed_outside_a_group`), so a group record is the
+    only place the shape lives.
+
+    **Why it is a defect.** A correct program is accepted and then killed by
+    the compiler's own admission of a bug, at exit 134, on every leg measured.
+    `write_element` reads `.fixed` as *not a container step* and fails, and
+    the caller turns the failure into a run-time abort rather than a
+    compile-time refusal, so the language promises a write it cannot perform.
+    The repair writes the element in place with the index checked against the
+    fixed length, as a read of it already is, and gives the shape its golden.
 
 *******************************************************************************
