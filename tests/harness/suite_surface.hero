@@ -277,6 +277,7 @@ function verb_probes() -> [probe.Probe]
         row(name: "one C symbol carries two bindings, in two modules", argv: "run tests/golden/surface-fixtures/twoarity/main.hero", code: 0).out_is("n = 42\ns = forty-two\n")
         row(name: "a releaser a mark names is read in the mark's own module, checked from the program (defect 085)", argv: "check tests/golden/surface-fixtures/releaser085/main.hero", code: 1).err_has("error[unread_releaser]").err_has("releaser085/bio.hero:7:37").err_has("no `extern` of this module declares it").err_lacks("internal error")
         row(name: "and the same verdict checked from the module alone", argv: "check tests/golden/surface-fixtures/releaser085/bio.hero", code: 1).err_has("error[unread_releaser]").err_has("releaser085/bio.hero:7:37").err_lacks("internal error")
+        row(name: "two modules that declare one C function differently are refused (one C function, one contract)", argv: "check tests/golden/surface-fixtures/contract/main.hero", code: 1).err_has("error[contract_differs]").err_has("`keep` is declared here and at").err_has("`lent`").err_has("no mark").err_lacks("internal error")
         row(name: "a handle tag that C names with two words is spelled from clang's own refusal, in the module that declares it and in the one that only uses it (defect 037)", argv: "run tests/golden/surface-fixtures/structtag/main.hero", code: 0).out_is("7\n").err_empty()
         row(name: "a local may not take the name a use bound, and one mistake is one diagnostic", argv: "check tests/golden/surface-fixtures/localtakesamodule/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("what this file calls the module `state`").err_has("use state as <other>").err_has("or rename this binding").err_lacks("module_is_not_a_value").err_lacks("internal error")
         row(name: "a ptr local wearing a module's name is two diagnostics, and the qualifying repair is a guess", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("error[needs_qualifying]").err_lacks("fix (certain)").err_lacks("internal error")
@@ -430,7 +431,9 @@ test "the tables are what this module is, so they are counted"
     # 50 -> 52 on 2026-09-25, defect 085's close: a releaser a mark names is
     # read in the mark's own module, checked from the program and from the
     # module alone, and one verdict needs two modules to be seen.
-    assert verb_probes().len() == 52
+    # 52 -> 53 the same day, M-agreed-retention step 12: two modules that
+    # declare one C function differently, which no golden case can hold.
+    assert verb_probes().len() == 53
 
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"

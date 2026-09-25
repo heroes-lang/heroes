@@ -1,0 +1,9 @@
+# The same `keep`, declared again without `lent`: C keeps the bytes, so the
+# program leases them. Internally consistent, and it disagrees with `main.hero`.
+extern "keep.h"
+    function keep(s: cstr)
+
+function keeping()
+    x: cstr @ "alt".lease()
+    keep(s: x)
+    end_lease(@x)
