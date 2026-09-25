@@ -1,0 +1,238 @@
+# The state route M (must) carries through a body: which places a call has
+# ENDED on every path to here, and which have had a reference added that
+# keeps them alive (panel 177's item 3; defects 077 and 088).
+# `check/moved.hero` is the walk that carries it; this module is the lattice
+# and nothing else, so the three questions the walk asks can each be read in
+# a dozen lines.
+#
+# A PLACE is a path of segments rooted at a local: `["7"]` is local 7 whole,
+# `["7", ".cell"]` its field `cell`, `["7", "[0]"]` its element at a literal
+# index, and `["7", "[?]"]` an element at an index only the run can know.
+#
+# Every question takes the ALIVE answer wherever the path cannot settle it,
+# because a refusal here is a fact about the program's shape and never a guess
+# about a value (panel 177's compiler-engineer, E10: zero false refusals on
+# every shape run). A read of `p` is dead when a dead path is a DEFINITE
+# prefix of `p`, every segment equal and none of them `[?]`, since `xs[0]`
+# given back says nothing about `xs[i]`. A crossing of `p` whole into C is
+# dead when, besides that, `p` is a definite prefix of a dead path: C would
+# read the dead part. A write to `p` revives everything it could reach, `[?]`
+# matching any element either way, since `xs[i] @ fresh` may well be `xs[0]`.
+#
+# Where paths meet, a place stays dead only if it is dead on BOTH. That is
+# the whole difference between route M (must) and the route M (may) the
+# sitting refused, which took the union and refused two correct programs
+# whose correctness was a value (`if_correlated`, `match_correlated`, E10).
+
+use token
+
+# One ended place, and the call that ended it: the diagnostic names both, and
+# `shown` is the argument as the program wrote it at that call.
+record Dead
+    path: [str]
+    shown: str
+    callee: str
+    at: token.Span
+
+record Flow
+    dead: [Dead]
+    # Places a `retains` position or result added a reference to. An end on
+    # one of these is not the end of its life: the count the runtime keeps is
+    # above one, and only the run knows by how much (the ergonomist's A3,
+    # panel 177's item 10).
+    kept: [[str]]
+    # False after `return`, `break` and `continue`: nothing is reachable here,
+    # so nothing read here is refused, and it contributes nothing where paths
+    # meet.
+    live: bool
+
+function start() -> Flow
+    dead: [Dead] = []
+    kept: [[str]] = []
+    return Flow(dead: dead, kept: kept, live: true)
+
+function unreachable() -> Flow
+    f: Flow @ start()
+    f.live @ false
+    return f
+
+# Where two paths meet: dead on both, or alive; kept on either, or not.
+function meet(one: Flow, two: Flow) -> Flow
+    if !one.live
+        return two
+
+    if !two.live
+        return one
+    out: Flow @ start()
+
+    for d in one.dead
+        if holds(two.dead, path: d.path)
+            out.dead @ out.dead.push(d)
+
+    out.kept @ one.kept
+
+    for k in two.kept
+        if !listed(out.kept, path: k)
+            out.kept @ out.kept.push(k)
+
+    return out
+
+function holds(set: [Dead], path: [str]) -> bool
+    for d in set
+        if d.path == path
+            return true
+
+    return false
+
+function listed(set: [[str]], path: [str]) -> bool
+    for one in set
+        if one == path
+            return true
+
+    return false
+
+## The three questions
+
+# `k` names, on every run, a part of what `p` names, or all of it.
+function definite_prefix(k: [str], p: [str]) -> bool
+    if k.len() > p.len()
+        return false
+    at: i64 @ 0
+
+    while at < k.len()
+        if k[at] != p[at] || k[at] == "[?]"
+            return false
+        at @ at + 1
+
+    return true
+
+# `a` and `b` may name overlapping storage on some run.
+function may_overlap(a: [str], b: [str]) -> bool
+    at: i64 @ 0
+
+    while at < a.len() && at < b.len()
+        if a[at] != b[at] && !(is_element(a[at]) && is_element(b[at]) && (a[at] == "[?]" || b[at] == "[?]"))
+            return false
+        at @ at + 1
+
+    return true
+
+function is_element(segment: str) -> bool
+    return segment.len() > 0 && segment[0] == 91
+
+# A read of `path`: dead where an ended place covers it for certain.
+function dead_read(f: Flow, path: [str]) -> Dead?
+    for d in f.dead
+        if definite_prefix(k: d.path, p: path)
+            return ok(d)
+
+    return fail(code: "none", msg: "alive")
+
+# `path` handed to C whole: dead where it covers an ended place for certain,
+# or one covers it.
+function dead_crossing(f: Flow, path: [str]) -> Dead?
+    for d in f.dead
+        if definite_prefix(k: d.path, p: path) || definite_prefix(k: path, p: d.path)
+            return ok(d)
+
+    return fail(code: "none", msg: "alive")
+
+## The three events
+
+function ended(@f: Flow, path: [str], shown: str, callee: str, at: token.Span)
+    for k in f.kept
+        if may_overlap(a: k, b: path)
+            return
+
+    survivors: [Dead] @ []
+
+    for d in f.dead
+        if d.path != path
+            survivors @ survivors.push(d)
+
+    f.dead @ survivors.push(Dead(path: path, shown: shown, callee: callee, at: at))
+
+function written(@f: Flow, path: [str])
+    survivors: [Dead] @ []
+
+    for d in f.dead
+        if !may_overlap(a: d.path, b: path)
+            survivors @ survivors.push(d)
+
+    f.dead @ survivors
+    still: [[str]] @ []
+
+    for k in f.kept
+        if !may_overlap(a: k, b: path)
+            still @ still.push(k)
+
+    f.kept @ still
+
+function retained(@f: Flow, path: [str])
+    if !listed(f.kept, path: path)
+        f.kept @ f.kept.push(path)
+
+## Tests
+
+function span_at(n: i64) -> token.Span
+    return token.Span(start: n, end: n + 1)
+
+test "a read is dead under a definite prefix and alive under an element only the run knows"
+    f: Flow @ start()
+    ended(@f, path: ["3", ".cell"], shown: "x.cell", callee: "close", at: span_at(0))
+    assert !dead_read(f, path: ["3", ".cell"]).is_err()
+    assert !dead_read(f, path: ["3", ".cell", ".inner"]).is_err()
+    assert dead_read(f, path: ["3"]).is_err()
+    assert dead_read(f, path: ["3", ".other"]).is_err()
+    assert dead_read(f, path: ["4", ".cell"]).is_err()
+    ended(@f, path: ["5", "[?]"], shown: "xs[i]", callee: "close", at: span_at(1))
+    assert dead_read(f, path: ["5", "[?]"]).is_err()
+    assert dead_read(f, path: ["5", "[0]"]).is_err()
+    ended(@f, path: ["6", "[0]"], shown: "ys[0]", callee: "close", at: span_at(2))
+    assert !dead_read(f, path: ["6", "[0]"]).is_err()
+    assert dead_read(f, path: ["6", "[1]"]).is_err()
+    assert dead_read(f, path: ["6", "[?]"]).is_err()
+
+test "a crossing into C is dead when the whole covers a dead part, and not through an unknown element"
+    f: Flow @ start()
+    ended(@f, path: ["3", ".cell"], shown: "x.cell", callee: "close", at: span_at(0))
+    ended(@f, path: ["5", "[?]"], shown: "xs[i]", callee: "close", at: span_at(1))
+    assert !dead_crossing(f, path: ["3"]).is_err()
+    assert !dead_crossing(f, path: ["3", ".cell"]).is_err()
+    assert dead_crossing(f, path: ["3", ".other"]).is_err()
+    assert !dead_crossing(f, path: ["5"]).is_err()
+    assert dead_crossing(f, path: ["5", "[0]"]).is_err()
+    assert dead_crossing(f, path: ["5", "[?]"]).is_err()
+
+test "a write revives what it could reach, and a reference keeps a place alive"
+    f: Flow @ start()
+    ended(@f, path: ["3", ".cell"], shown: "x.cell", callee: "close", at: span_at(0))
+    ended(@f, path: ["6", "[0]"], shown: "ys[0]", callee: "close", at: span_at(1))
+    written(@f, path: ["3"])
+    assert dead_read(f, path: ["3", ".cell"]).is_err()
+    assert !dead_read(f, path: ["6", "[0]"]).is_err()
+    written(@f, path: ["6", "[?]"])
+    assert dead_read(f, path: ["6", "[0]"]).is_err()
+    retained(@f, path: ["7"])
+    ended(@f, path: ["7"], shown: "cert", callee: "free", at: span_at(2))
+    assert dead_read(f, path: ["7"]).is_err()
+    written(@f, path: ["7"])
+    ended(@f, path: ["7"], shown: "cert", callee: "free", at: span_at(3))
+    assert !dead_read(f, path: ["7"]).is_err()
+
+test "where paths meet a place is dead only on both, and kept on either"
+    one: Flow @ start()
+    two: Flow @ start()
+    ended(@one, path: ["1"], shown: "a", callee: "close", at: span_at(0))
+    ended(@one, path: ["2"], shown: "b", callee: "close", at: span_at(1))
+    ended(@two, path: ["2"], shown: "b", callee: "close", at: span_at(2))
+    retained(@two, path: ["3"])
+    both = meet(one: one, two: two)
+    assert both.live
+    assert both.dead.len() == 1
+    assert both.dead[0].shown == "b"
+    assert both.dead[0].at.start == 1
+    assert both.kept == [["3"]]
+    assert meet(one: unreachable(), two: one).dead.len() == 2
+    assert meet(one: one, two: unreachable()).dead.len() == 2
+    assert !meet(one: unreachable(), two: unreachable()).live

@@ -1,0 +1,119 @@
+# What a call does to the places it is handed (panel 177's item 3, route M
+# (must)): which argument stands at which position, which positions end a
+# life or keep one, and the path a place expression names. Beside
+# `check/moved.hero`, which walks the body, so the walk reads as control flow
+# and this as the marks; the split is a seam and not a size, the two halves
+# being read for different reasons.
+
+use token
+use ast
+use source
+use resolved
+use check/flow
+
+# Does any `extern` here end a life outright? Where none does, the walk has
+# nothing to find and the program pays nothing (the early exit
+# `check/lending.hero` takes for the same reason). A position under `when`
+# ends nothing for this analysis, and a `retains` alone ends nothing.
+function ends_a_life(decls: [ast.Decl]) -> bool
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.is_extern && fd.value.when_result.is_err()
+                    for p in fd.value.params
+                        if p.consumes || !p.transfers.is_err() && fd.value.acquires_result.is_err()
+                            return true
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return false
+
+# The receiver of a UFCS call is its first argument (§4.11), and never `@`:
+# `ufcs_on_mutable` refuses that spelling before this rule runs.
+function all_arguments(receiver: i64?, given: [ast.Arg]) -> [ast.Arg]
+    if receiver.is_err()
+        return given
+    out: [ast.Arg] @ [ast.Arg(name: fail(code: "none", msg: "the receiver"), mutable: false, value: receiver.must())]
+
+    for arg in given
+        out @ out.push(arg)
+
+    return out
+
+# The path of a place rooted at a local, `check/flow.hero`'s shape, or
+# nothing for any other expression: a call's result, a constant, a module.
+function place_of(a: ast.Ast, r: resolved.Resolved, s: source.Source, id: i64) -> [str]?
+    match a.exprs[id].kind
+        .name =>
+            match r.uses[id]
+                .local l =>
+                    root: [str] = [l.at.to_str()]
+                    return ok(root)
+                .top | .builtin | .module | .unresolved => return fail(code: "none", msg: "not a local")
+        .field f =>
+            base = place_of(a, r, s, id: f.base)
+
+            if base.is_err()
+                return base
+            return ok(base.must().push("." + source.span_text(s, f.name)))
+        .index i =>
+            base = place_of(a, r, s, id: i.base)
+
+            if base.is_err()
+                return base
+            return ok(base.must().push(element(a, s, id: i.index)))
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr | .hole | .error => return fail(
+            code: "none",
+            msg: "not a place"
+        )
+        .field_name | .interp | .unary | .binary | .call | .method | .variant_case | .array => return fail(
+            code: "none",
+            msg: "not a place"
+        )
+        .map | .try_expr | .if_expr | .match_expr => return fail(code: "none", msg: "not a place")
+
+    return fail(code: "none", msg: "not a place")
+
+# A literal index names one element; any other, only the run can name.
+function element(a: ast.Ast, s: source.Source, id: i64) -> str
+    match a.exprs[id].kind
+        .int_lit => return "[" + source.span_text(s, a.exprs[id].span) + "]"
+        .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr | .hole | .error | .name => return "[?]"
+        .field_name | .interp | .unary | .binary | .field | .index | .call | .method => return "[?]"
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr => return "[?]"
+
+    return "[?]"
+
+# What an `extern` call ends and keeps, by position (spec § 13). A `consumes`
+# or `transfers` position ends the place it is handed, unless the end is
+# conditional on something only the run knows, and then the runtime keeps the
+# truth (panel 177's item 6): a `when` on the result, or a transfer into the
+# handle the call hands back, which is not made when that handle comes back
+# null (`emit/handle_traffic.hero` writes that branch, and reads it as an
+# `acquires` result; a record result carrying the handle is read the same way
+# here, which is the alive answer). A `retains` position, or a `retains`
+# result, keeps every place the call was handed: the count is above one from
+# here on and only the run knows by how much.
+function ends(@f: flow.Flow, a: ast.Ast, r: resolved.Resolved, s: source.Source, fd: ast.FunctionDecl, handed: [ast.Arg], callee: token.Span, span: token.Span)
+    conditional = !fd.when_result.is_err()
+    into_result = !fd.acquires_result.is_err()
+    position: i64 @ 0
+
+    for p in fd.params
+        if position < handed.len() && !handed[position].mutable
+            path = place_of(a, r, s, id: handed[position].value)
+
+            if !path.is_err()
+                if !p.retains.is_err()
+                    flow.retained(@f, path: path.must())
+                else if (p.consumes || !p.transfers.is_err() && !into_result) && !conditional
+                    shown = source.span_text(s, a.exprs[handed[position].value].span)
+                    flow.ended(@f, path: path.must(), shown: shown, callee: source.span_text(s, callee), at: span)
+        position @ position + 1
+
+    if !fd.retains_result.is_err()
+        for arg in handed
+            if !arg.mutable
+                path = place_of(a, r, s, id: arg.value)
+
+                if !path.is_err()
+                    flow.retained(@f, path: path.must())

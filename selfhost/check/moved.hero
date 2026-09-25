@@ -1,0 +1,145 @@
+# A handle is not read after the call that ended its life, on every path to
+# the read (panel 177's item 3, route M (must); defects 077 and 088). The
+# sitting's prototype was its compiler-engineer's, E9 and E10 of its report;
+# this is that walk made intraprocedural and taught fields, elements,
+# `transfers`, `retains` and `when`, none of which the tree it was built on
+# had.
+#
+# **The defects.** 088: `cJSON_Delete(item: b)`, then `b` handed to a
+# parameter that does not consume, was `check` 0 and `run` 0 and C wrote into
+# freed memory. 077: `box_close(b: b)`, a new handle at the same address, then
+# `b == c` and a second `box_close(b: b)` that landed on the new one, because
+# the live set keys on the address and the address was live again.
+#
+# **What it decides.** The checker's one flow analysis: an ordered walk over
+# each body carrying `check/flow.hero`'s state, copied where control splits
+# and met where it joins, so a place is dead at a read only if the call that
+# ended it lies on EVERY path to the read. Branches, `match` arms, loops
+# (walked twice, the second time from the entry met with what one turn
+# leaves, so an end late in the body reaches the next turn's early reads),
+# `return`, `break`, `continue`, `?` and the short-circuit of `&&` and `||`.
+# A binding rebound with `@`, or bound again on a loop's next turn, holds a
+# new value and is alive. A record whose handle field was consumed is dead
+# for that field's reads and for a crossing of the whole record into C.
+#
+# **What it leaves to the run** (panel 177's items 1 and 2): an end on one
+# branch only, an earlier turn of a loop, a copy made before the call, a
+# helper that ends its `@` parameter, and an end under `when`, which happens
+# only on a value the run knows. The verdict is decided INSIDE the function:
+# a program-wide summary of which `@` parameters a function ends was
+# prototyped and refused, because one line was then refused or accepted
+# depending on a callee's body in another module (the sitting's critic,
+# `xmod`), the ground panel 176 refused the call-site rule on.
+#
+# **Ends.** A `consumes` or `transfers` position of an `extern` call without
+# `when`. A `retains` position or result keeps its argument alive for the
+# rest of the body: the count is above one and only the run knows by how
+# much, so `X509_free` twice after `X509_up_ref` is correct and not refused.
+# An `@` argument is a write, since the callee may rebind it. A call through
+# a function value carries no declaration and no mark, so it ends nothing.
+
+use ast
+use source
+use parse
+use resolve
+use resolved
+use check/state
+use check/moved_calls as calls
+use check/moved_walk as walk
+
+# The rule, over every body. A program in which no `extern` ends a life pays
+# nothing here, the early exit `check/lending.hero` takes for the same reason.
+function not_read_after_its_end(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
+    if !calls.ends_a_life(decls)
+        return
+    by_start: {i64: i64} @ {}
+    index: i64 @ 0
+
+    for l in r.locals
+        by_start[l.name.start] @ index
+        index @ index + 1
+
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if !fd.value.is_extern && !fd.value.body.is_err()
+                    for d in walk.run(a, r, s, decls, body: fd.value.body.must(), by_start: by_start)
+                        state.push_diagnostic(@c, d)
+            .test_decl t =>
+                for d in walk.run(a, r, s, decls, body: t.body, by_start: by_start)
+                    state.push_diagnostic(@c, d)
+            .constant_decl | .record_decl | .variant_decl => continue
+
+## Tests
+
+# The rule alone on one text, the way `check/leasing.hero` drives its own:
+# it reads the resolver and never a type, so no lowering is needed.
+function refused(text: str) -> [str]
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    not_read_after_its_end(@c, p.tree, out, s, p.decls)
+    lines: [str] @ []
+
+    for d in c.out.diagnostics
+        lines @ lines.push(source.locate(s, d.span.start).line.to_str() + ":" + d.code)
+
+    return lines
+
+constant GROUP: str
+    "extern \"cj.h\"\n    record Json tag cJSON\n    function make() -> Json acquires drop\n    function add(object: Json, item: Json consumes) -> i64\n    function drop(item: Json consumes)\n    function peek(item: Json) -> i64\n    function give(object: Json, item: Json transfers drop) -> i64\n    function keep(item: Json retains drop) -> i32 when 1\n    function busy(item: Json consumes) -> i32 when 0\n\n"
+
+test "defects 088 and 077: a handle read after the call that ended it is refused at the read"
+    assert refused(GROUP + "function main()\n    a = make()\n    b = make()\n    drop(item: b)\n    _ = add(object: a, item: b)\n    drop(item: a)\n") == ["15:handle_used_after_end"]
+    assert refused(GROUP + "function main()\n    b = make()\n    drop(item: b)\n    c = make()\n    print(b == c)\n    drop(item: b)\n    drop(item: c)\n") == ["15:handle_used_after_end", "16:handle_used_after_end"]
+    assert refused(GROUP + "function main()\n    a = make()\n    b = make()\n    _ = give(object: a, item: b)\n    print(peek(item: b))\n    drop(item: a)\n") == ["15:handle_used_after_end"]
+
+test "an end under when, a reference, a rebinding and a transfer into a nullable result leave the value alive"
+    assert refused(GROUP + "function main()\n    b = make()\n    _ = busy(item: b)\n    print(peek(item: b))\n    _ = busy(item: b)\n") == []
+    assert refused(GROUP + "function main()\n    b = make()\n    assert keep(item: b) == 1\n    drop(item: b)\n    drop(item: b)\n") == []
+    assert refused(GROUP + "function main()\n    b: Json @ make()\n    drop(item: b)\n    b @ make()\n    drop(item: b)\n") == []
+    grown = "extern \"cj.h\"\n    function grow(item: Json transfers drop) -> Json acquires drop\n\nfunction main()\n    b = make()\n    q = grow(item: b)\n    if q == nullptr\n        drop(item: b)\n    else\n        drop(item: q)\n"
+    assert refused(GROUP + grown) == []
+
+test "one branch is not every path, and both branches are"
+    one = "function f(c: bool)\n    b = make()\n    if c\n        drop(item: b)\n    print(peek(item: b))\n"
+    assert refused(GROUP + one) == []
+    both = "function f(c: bool)\n    b = make()\n    if c\n        drop(item: b)\n    else\n        drop(item: b)\n    print(peek(item: b))\n"
+    assert refused(GROUP + both) == ["17:handle_used_after_end"]
+    arms = "variant Way\n    left\n    right\n\nfunction f(w: Way)\n    b = make()\n    match w\n        .left => drop(item: b)\n        .right => drop(item: b)\n    print(peek(item: b))\n"
+    assert refused(GROUP + arms) == ["20:handle_used_after_end"]
+    early = "function f(c: bool)\n    b = make()\n    if c\n        drop(item: b)\n        return\n    print(peek(item: b))\n    drop(item: b)\n"
+    assert refused(GROUP + early) == []
+
+# A loop's head is where the entry meets the back edge, so an end inside the
+# body is not an end on EVERY path to a read at the top of the body: the first
+# turn reads a live value. That shape, the ergonomist's buggy loop, is the
+# runtime's (E10's `while_twice`). An end BEFORE the loop is on every path.
+test "a loop carries an end round only where every path to the head has it"
+    turn = "function main()\n    b = make()\n    n: i64 @ 0\n    while n < 2\n        print(peek(item: b))\n        drop(item: b)\n        n @ n + 1\n"
+    assert refused(GROUP + turn) == []
+    before = "function main()\n    b = make()\n    drop(item: b)\n    n: i64 @ 0\n    while n < 2\n        print(peek(item: b))\n        n @ n + 1\n"
+    assert refused(GROUP + before) == ["16:handle_used_after_end"]
+    renewed = "function main()\n    b: Json @ make()\n    drop(item: b)\n    n: i64 @ 0\n    while n < 2\n        b @ make()\n        print(peek(item: b))\n        drop(item: b)\n        n @ n + 1\n"
+    assert refused(GROUP + renewed) == []
+    late = "function main()\n    b: Json @ make()\n    drop(item: b)\n    n: i64 @ 0\n    while n < 2\n        print(peek(item: b))\n        b @ make()\n        n @ n + 1\n    drop(item: b)\n"
+    assert refused(GROUP + late) == []
+    out = "function main()\n    b = make()\n    n: i64 @ 0\n    while n < 2\n        if n == 1\n            drop(item: b)\n            break\n        n @ n + 1\n    print(peek(item: b))\n"
+    assert refused(GROUP + out) == []
+    round = "function main()\n    b = make()\n    n: i64 @ 0\n    while n < 3\n        n @ n + 1\n        if n == 1\n            drop(item: b)\n            continue\n        drop(item: b)\n"
+    assert refused(GROUP + round) == []
+
+test "a consumed field is dead for its reads and for the whole record crossing into C, and alive beside it"
+    pair = "record Pair\n    l: Json\n    r: Json\n\nfunction main()\n    p = Pair(l: make(), r: make())\n    drop(item: p.l)\n    print(peek(item: p.r))\n    print(peek(item: p.l))\n    _ = add(object: p.r, item: p.l)\n    drop(item: p.r)\n"
+    assert refused(GROUP + pair) == ["19:handle_used_after_end", "20:handle_used_after_end"]
+    whole = "extern \"cj.h\"\n    record Pair\n        l: Json\n        r: Json\n    function both(p: Pair) -> i64\n    function pair_of() -> Pair acquires drop\n\nfunction main()\n    p = pair_of()\n    drop(item: p.l)\n    print(both(p: p))\n"
+    assert refused(GROUP + whole) == ["21:handle_used_after_end"]
+
+test "an element at a literal index is one place, and an index only the run knows is none"
+    fixed = "extern \"cj.h\"\n    record Four\n        a: Json[4]\n    function four() -> Four acquires drop\n    function total(f: Four) -> i64\n\nfunction g(i: i64)\n    f = four()\n    drop(item: f.a[0])\n    print(peek(item: f.a[1]))\n    print(peek(item: f.a[0]))\n    print(peek(item: f.a[i]))\n    print(total(f: f))\n    drop(item: f.a[i])\n    print(peek(item: f.a[1]))\n    print(total(f: f))\n"
+    assert refused(GROUP + fixed) == ["21:handle_used_after_end", "23:handle_used_after_end", "26:handle_used_after_end"]
+
+test "an @ argument is a write, so a helper that ends or renews its parameter is the runtime's"
+    helper = "function finish(@j: Json)\n    drop(item: j)\n\nfunction main()\n    b: Json @ make()\n    finish(@b)\n    print(peek(item: b))\n    drop(item: b)\n    finish(@b)\n"
+    assert refused(GROUP + helper) == []

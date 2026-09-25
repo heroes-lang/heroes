@@ -1,0 +1,24 @@
+# A HELPER THAT ENDS ITS `@` PARAMETER IS THE RUNTIME'S (panel 177's item 3,
+# 2026-09-25): the sitting's `helper_consume_then_use` reproducer. The rule is
+# decided inside one function and never across a call, because a program-wide
+# summary made one line's verdict move with a callee's body in another module
+# (the sitting's critic, `xmod`). So `finish(@b)` is a write to `b` as far as
+# `main` can see, `check` 0, and the release that follows reaches the runtime,
+# which stops it before C.
+extern "handle-a-helper-that-ends-its-parameter-is-the-runtime-s.h"
+    record Node tag node
+    function node_new(v: i64) -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_peek(n: Node) -> i64
+
+function finish(@n: Node)
+    node_free(n: n)
+
+function main()
+    a = node_new(v: 1)
+    b: Node @ node_new(v: 2)
+    print("before: ", node_peek(n: b))
+    finish(@b)
+    node_free(n: b)
+    print("not reached")
+    node_free(n: a)

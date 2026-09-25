@@ -1,0 +1,53 @@
+# The refusal route M (must) makes (panel 177's item 3): a handle read after
+# the call that ended its life. It names the value, the call and where that
+# call is, and says what a program does instead, so the reader has the whole
+# story on one line and no other file to open (design.md §4.17). The one code
+# carries two sentences, because the repair is the same for both: the value
+# itself read again, and a whole record or array handed to C with a dead part
+# inside.
+
+use token
+use source
+use diag
+use check/flow
+
+function used_after_end(s: source.Source, read: token.Span, shown: str, ended: flow.Dead, whole: bool) -> diag.Diagnostic
+    where = where_it_ended(s, read: read, ended: ended)
+
+    message = if whole
+        "`" + shown + "` is handed to C whole here, and its `" + ended.shown + "` was given to `" + ended.callee + "` " + where + ", which ended its life"
+    else
+        "`" + ended.shown + "` was given to `" + ended.callee + "` " + where + ", which ended its life, and this reads it again"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "handle_used_after_end", message: message, span: read)
+    d.notes @ d.notes.push(
+        "on every path that reaches this line the value's life has ended, so what C would be handed is an address it has taken back. Give the name a new value with `@` before this line, or take a reference before the call that ends it, one a `borrows` call hands back or one a `retains` call adds, and read that instead"
+    )
+    d.notes @ d.notes.push(
+        "this is decided one function at a time, and only where the life ended on every path to the read: an end on one branch, in an earlier turn of a loop, under `when`, through a copy or inside a helper is the runtime's to stop, before C"
+    )
+    return d
+
+# `on this line` when the call and the read share one, else the line, and the
+# file too when it is not the one on screen (`source.elsewhere`'s rule).
+function where_it_ended(s: source.Source, read: token.Span, ended: flow.Dead) -> str
+    here = source.locate(s, read.start)
+    there = source.locate(s, ended.at.start)
+
+    if here.file == there.file && here.line == there.line
+        return "on this line"
+    return "at " + source.elsewhere(s, here: read.start, there: ended.at.start)
+
+## Tests
+
+test "the message names the value, the call and its line, and the whole-record case says which part"
+    s = source.new_source(name: "t.hero", text: "a\nclose(b)\nprint(b)\n")
+    ended = flow.Dead(path: ["1"], shown: "b", callee: "close", at: token.Span(start: 2, end: 10))
+    later = used_after_end(s, read: token.Span(start: 17, end: 18), shown: "b", ended: ended, whole: false)
+    assert later.code == "handle_used_after_end"
+    assert later.message == "`b` was given to `close` at line 2, which ended its life, and this reads it again"
+    assert later.notes.len() == 2
+    same = used_after_end(s, read: token.Span(start: 8, end: 9), shown: "b", ended: ended, whole: false)
+    assert same.message == "`b` was given to `close` on this line, which ended its life, and this reads it again"
+    part = flow.Dead(path: ["1", ".cell"], shown: "x.cell", callee: "free", at: token.Span(start: 2, end: 10))
+    crossing = used_after_end(s, read: token.Span(start: 17, end: 18), shown: "x", ended: part, whole: true)
+    assert crossing.message == "`x` is handed to C whole here, and its `x.cell` was given to `free` at line 2, which ended its life"

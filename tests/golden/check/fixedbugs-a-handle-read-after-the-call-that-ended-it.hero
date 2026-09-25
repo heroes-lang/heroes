@@ -1,0 +1,41 @@
+# DEFECT 088, closed at check time (panel 177's item 3, route M (must),
+# 2026-09-25): a handle handed to a call after the call that ended its life
+# was `check` 0 and `run` 0, and C was handed freed memory. Over cJSON's
+# contract in miniature, the sitting's own reproducers
+# (`docs/panel/177-briefs/`): `Delete` frees a node and its children,
+# `AddItemToObject` links `item` under `object`.
+#
+# The two shapes the sitting ran. `item:` is a consuming position, and the
+# runtime's set stopped that one before C already, 134, since the address had
+# left the set at the first release. `object:` consumes nothing, and nothing
+# read the value as dead there: `run` 0, three of three, writing into a
+# deleted object, `heap-use-after-free` only under `--sanitize`. Both are
+# refused at the read now, naming the call that ended the value and its line,
+# because on every path to that read the life has ended.
+extern "fixedbugs-a-handle-read-after-the-call-that-ended-it.h"
+    record Json tag cJSON
+    function cJSON_CreateObject() -> Json acquires cJSON_Delete
+    function cJSON_AddItemToObject(object: Json, string: cstr lent, item: Json consumes) -> i64
+    function cJSON_Delete(item: Json consumes)
+
+# `docs/panel/177-briefs/use_after_consume.hero`: the dead handle reaches a
+# position that would end it again.
+function into_a_consuming_position()
+    a = cJSON_CreateObject()
+    b = cJSON_CreateObject()
+    cJSON_Delete(item: b)
+    _ = cJSON_AddItemToObject(object: a, string: "b".cstr(), item: b)  #~ handle_used_after_end
+    cJSON_Delete(item: a)
+
+# `docs/panel/177-briefs/read_after_consume.hero`: the dead handle reaches a
+# position that only reads it, which is where the silence was.
+function into_a_borrowing_position()
+    b = cJSON_CreateObject()
+    cJSON_Delete(item: b)
+    c = cJSON_CreateObject()
+    _ = cJSON_AddItemToObject(object: b, string: "c".cstr(), item: c)  #~ handle_used_after_end
+    print("would have written into a deleted object")
+
+function main()
+    into_a_consuming_position()
+    into_a_borrowing_position()

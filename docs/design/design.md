@@ -1079,7 +1079,18 @@ exactly where 1.5 says to pay them.
 from the compiler.** In languages where `var x: i64` can be declared without a value, the compiler
 must chase every control-flow path to verify `x` is assigned before use: that is dataflow analysis
 (the same family as move checking). With mandatory initialisation the problem does not exist. One of
-the cheapest decisions in the language.
+the cheapest decisions in the language. **One analysis of that family entered all the same, on
+2026-09-25, and this sentence says which and why** (panel 177's item 3, route M (must)): a handle
+read after the call that ended its life, on every path to the read, is refused at the read, decided
+inside one function and never across a call. The sitting's compiler-engineer measured **327 code
+lines** on its prototype; landed, with fields, elements, `transfers`, `retains` and `when` taught to
+it, it is **500** non-blank lines of code outside comments and tests, 611 with its tests, across
+`selfhost/check/flow.hero`, `moved.hero`, `moved_walk.hero`, `moved_calls.hero` and
+`moved_errors.hero` (measured 2026-09-25). It entered because §1.12 outranks this paragraph's
+economy: defects 077 and 088 corrupted memory at exit 0 with no C in the program but the library's
+own, and the run-time half alone (items 1 and 2) can only report a use the checker could have
+refused. What this paragraph deletes stays deleted: that analysis reads no initialisation, since
+there is none to read.
 
 **Unused variable is a compile error.** Ten lines, catches typos, and useful in its own right.
 (Go's rule.)

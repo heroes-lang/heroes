@@ -21,10 +21,12 @@
 # span reconstruction and no new kind of table.
 #
 # **What this rule is NOT.** It does not ask whether a release happens on every
-# path — that is a flow question and `check/leasing.hero:29` and
-# `check/consuming.hero:22` both state the checker has no flow analysis. The
-# counter in `runtime/parts/alloc.c` answers that one at exit. This rule asks
-# only whether the BINDING is finished, which is a fact about declarations.
+# path — that is a flow question, and the checker's one flow analysis,
+# `check/moved.hero` (panel 177's item 3, since 2026-09-25), asks the opposite
+# one: whether a read comes AFTER the end on every path. Whether a release
+# happens at all is still nobody's at check time; the counter in
+# `runtime/parts/alloc.c` answers it at exit. This rule asks only whether the
+# BINDING is finished, which is a fact about declarations.
 #
 # **And it is why `borrows` exists.** Without a word for the borrow this rule
 # would refuse a correct binding — `sqlite3_next_stmt` hands back a statement

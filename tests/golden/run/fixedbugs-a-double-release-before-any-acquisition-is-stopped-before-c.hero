@@ -9,6 +9,13 @@
 # the promise depended on the program's history. The empty set now reports like
 # a full one, so the first give-back of a handle the set never held stops the
 # program before C, here at the first `g_close`.
+#
+# **Since 2026-09-25 the second give-back goes through a copy** (panel 177's
+# item 3, route M (must)): `g_close(x: a)` twice through one name is refused
+# at check time, `handle_used_after_end`, and the copy is the shape the
+# checker cannot see (design.md Part 8 wart 20). The empty set is asked at
+# the FIRST `g_close`, before any copy matters, so what this case pins is
+# unchanged.
 
 extern "fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.h"
     record G tag gg
@@ -18,6 +25,7 @@ extern "fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.h"
 function main()
     a = g_open()
     print("opened")
+    twice = a
     g_close(x: a)
-    g_close(x: a)
+    g_close(x: twice)
     print("closed twice")
