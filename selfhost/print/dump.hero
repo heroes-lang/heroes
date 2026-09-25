@@ -32,7 +32,7 @@ use token
 use ast
 use source
 use print/types
-use print/marks
+use print/signature as sig
 use print/bodies
 use parse
 
@@ -150,34 +150,24 @@ function extern_prefix(s: source.Source, header: token.Span?, library: ast.Libra
     return out + " "
 
 function signature(tree: ast.Ast, s: source.Source, name: str, f: ast.FunctionDecl) -> str
-    out: str @ extern_prefix(s, header: f.header, library: f.library) + "function " + name
-
-    if f.generics.len() > 0
-        parts: [str] @ []
-
-        for generic in f.generics
-            parts @ parts.push(source.span_text(s, generic))
-
-        out @ out + "<" + parts.join(", ") + ">"
+    out: str @ extern_prefix(s, header: f.header, library: f.library) + "function " + name + sig.generics_text(s, f.generics)
     rendered: [str] @ []
 
     for param in f.params
-        marker: str @ ""
+        rendered @ rendered.push(sig.parameter(tree, s, param: param))
 
-        if param.mutable
-            marker @ "@"
-        rendered @ rendered.push(
-            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + marks.counted_by_suffix(s, param.counted_by) + marks.bare_suffix(param.lent, word: "lent") + marks.owned_suffix(s, param.owned) + marks.bare_suffix(param.consumes, word: "consumes") + marks.named_suffix(s, param.transfers, word: "transfers") + marks.named_suffix(s, param.acquires, word: "acquires") + marks.named_suffix(s, param.retains, word: "retains") + marks.bare_suffix(param.borrows, word: "borrows")
-        )
+    return out + "(" + rendered.join(", ") + ") -> " + types.render_type(tree, f.result, s) + sig.result_words(s, f)
 
-    return out + "(" + rendered.join(", ") + ") -> " + types.render_type(tree, f.result, s) + marks.owned_suffix(s, f.owned_result) + marks.named_suffix(s, f.acquires_result, word: "acquires") + marks.named_suffix(s, f.retains_result, word: "retains") + marks.bare_suffix(f.borrows_result, word: "borrows") + marks.when_suffix(s, f.when_result)
-
-# The words after a parameter or a result are `print/marks.hero`'s, shared
-# with `fmt`. **This dump is what `heroes fmt` compares its own output
-# against**, so a form missing from the printer would make the self-check
-# agree with a formatter that is deleting it — which is exactly how `as`
-# shipped (CLAUDE.md §9), and how `consumes` was missing here for a day after
-# it landed, 2026-09-13. One home for both printers closes that class.
+# The words of a parameter and of a result are `print/signature.hero`'s,
+# shared with `fmt` (the marks alone were `print/marks.hero`'s until defect
+# 095, and the whole parameter is one step further of the same rule).
+# **This dump is what `heroes fmt` compares its own output against**, so a
+# form missing from the printer would make the self-check agree with a
+# formatter that is deleting it — which is exactly how `as` shipped
+# (CLAUDE.md §9), and how `consumes` was missing here for a day after it
+# landed, 2026-09-13. One home for both printers closes that class. The
+# arrow is printed here even before `()`, unlike `fmt`, because the dump
+# says what the tree holds and the tree holds a `unit` node.
 
 function case_lines(tree: ast.Ast, s: source.Source, one_case: ast.Case) -> str
     out: str @ "    case " + source.span_text(s, one_case.name) + "\n"

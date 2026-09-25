@@ -59,7 +59,7 @@ use ast
 use source
 use digits
 use print/types
-use print/marks
+use print/signature
 use print/bodies
 use parse
 
@@ -423,9 +423,14 @@ function declaration(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.
                 library: fd.value.library,
                 continues: continues
             )
-            put_line(@f, indent: indent, text: signature(tree, s, name: name, fd: fd.value))
-            f.last_line @ line
-            trailing_comment(@f, s, comments, line: line)
+            last = source.line_of(s, fd.value.signature_end.start)
+
+            if comment_inside(f, s, comments, first: line, last: last)
+                open_signature(@f, tree, s, comments, name: name, fd: fd.value, indent: indent, first: line, last: last)
+            else
+                put_line(@f, indent: indent, text: signature.one_line(tree, s, name: name, fd: fd.value))
+                f.last_line @ line
+                trailing_comment(@f, s, comments, line: line)
 
             if !fd.value.body.is_err()
                 fmt_block(@f, tree, s, comments, block: fd.value.body.must(), indent: 4)
@@ -519,49 +524,60 @@ function case_line(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
     for field in one_case.fields
         field_line(@f, tree, s, comments, field: field, indent: 8)
 
-# `-> ()` is never printed: a function that returns nothing writes no
-# arrow (§4.2's function main()), so the canonical form has one
-# spelling — UNLESS a mark rides the result, because a mark is spelled only
-# after the arrow and a printer that dropped the arrow dropped the mark with
-# it: `-> () when 0` came back as no arrow and no clause, a different program
-# at a fixpoint, measured 2026-09-24 on `success-clause-misuse.hero`.
-function signature(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionDecl) -> str
-    out: str @ "function " + name
+# The words of a signature are `print/signature.hero`'s, one home for both
+# printers and for `fmt`'s two shapes: a formatter that has not learned a form
+# does not error, it DROPS it, measured the hour `consumes` landed (CL-036).
 
-    if fd.generics.len() > 0
-        parts: [str] @ []
+# Is a comment written INSIDE this signature, after the name's line and no
+# later than the closing token's? The stream is in source order and every
+# comment above the name is printed already, so the scan stops at the first
+# one past the signature.
+function comment_inside(f: Fmt, s: source.Source, comments: [token.Span], first: i64, last: i64) -> bool
+    i: i64 @ f.next_comment
 
-        for generic in fd.generics
-            parts @ parts.push(source.span_text(s, generic))
+    while i < comments.len()
+        line = source.line_of(s, comments[i].start)
 
-        out @ out + "<" + parts.join(", ") + ">"
-    rendered: [str] @ []
+        if line > last
+            return false
+
+        if line > first
+            return true
+        i @ i + 1
+
+    return false
+
+# A signature whose parameter list holds a comment, printed one parameter
+# per line so the comment stays where the author wrote it (defect 095). The
+# one-line shape has no place for it, so it was expelled after the
+# declaration: with a member following it became that member's doc and the
+# tree guard refused at exit 2; with none it left the group as a file-level
+# remark at exit 0, the silent form, measured 2026-09-25 on every shape of a
+# Heroes function's list too (after the `(`, trailing on a parameter, before
+# the `)`, trailing on the closing line). The break is inside brackets, which
+# panel 007 allows; every list without a comment keeps the one-line shape.
+function open_signature(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], name: str, fd: ast.FunctionDecl, indent: i64, first: i64, last: i64)
+    put_line(@f, indent: indent, text: signature.opening(s, name: name, fd: fd))
+    f.last_line @ first
+    trailing_comment(@f, s, comments, line: first)
+    left: i64 @ fd.params.len()
 
     for param in fd.params
-        marker: str @ ""
+        line = source.line_of(s, param.name.start)
+        comments_before(@f, s, comments, line: line, indent: indent + 4)
+        left @ left - 1
+        separator: str @ ","
 
-        if param.mutable
-            marker @ "@"
+        if left == 0
+            separator @ ""
+        put_line(@f, indent: indent + 4, text: signature.parameter(tree, s, param: param) + separator)
+        f.last_line @ line
+        trailing_comment(@f, s, comments, line: line)
 
-        # `owned <C function>` rides the parameter and the result, and a
-        # printer that drops it DELETES it: `fmt --in-place` would hand back a
-        # program whose string C allocated is never freed, at exit 0 and with
-        # no diagnostic. CLAUDE.md §9's list, and the reason it is a list.
-        rendered @ rendered.push(
-            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + marks.counted_by_suffix(s, param.counted_by) + marks.bare_suffix(param.lent, word: "lent") + marks.owned_suffix(s, param.owned) + marks.bare_suffix(param.consumes, word: "consumes") + marks.named_suffix(s, param.transfers, word: "transfers") + marks.named_suffix(s, param.acquires, word: "acquires") + marks.named_suffix(s, param.retains, word: "retains") + marks.bare_suffix(param.borrows, word: "borrows")
-        )
-
-    out @ out + "(" + rendered.join(", ") + ")"
-    result = types.render_type(tree, fd.result, s)
-    after = marks.owned_suffix(s, fd.owned_result) + marks.named_suffix(s, fd.acquires_result, word: "acquires") + marks.named_suffix(s, fd.retains_result, word: "retains") + marks.bare_suffix(fd.borrows_result, word: "borrows") + marks.when_suffix(s, fd.when_result)
-
-    if result != "()" || after != ""
-        out @ out + " -> " + result + after
-    return out
-
-# The words after a parameter or a result are `print/marks.hero`'s, one home
-# for both printers: a formatter that has not learned a form does not error,
-# it DROPS it, measured the hour `consumes` landed (CL-036).
+    comments_before(@f, s, comments, line: last, indent: indent + 4)
+    put_line(@f, indent: indent, text: signature.closing(tree, s, fd: fd))
+    f.last_line @ last
+    trailing_comment(@f, s, comments, line: last)
 
 ## The statement walk (fmt_stmt)
 
@@ -1550,3 +1566,59 @@ test "fmt keeps `owned`, at both positions and beside the shapes that carry none
         assert parsed.diagnostics.len() == 0
         s = source.new_source(name: "t.hero", text: text)
         assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
+
+# Defect 095. A group member written one parameter per line with a comment
+# between two of them: the joined form expelled the comment after the
+# declaration, where a following member took it as documentation (the tree
+# guard's exit 2) and no following member left it outside the group at exit
+# 0. Both shapes are already canonical here, so the output is the input.
+test "fmt keeps a comment inside a parameter list where it was, with a member following and with none"
+    following = "extern \"x.h\"\n    record Ob tag ob\n    function ob_get(\n        o: Ob,\n        # a comment between\n        n: i64\n    ) -> Ob retains ob_put\n    function ob_put(o: Ob consumes)\n\nfunction main()\n    print(0)\n"
+    parsed = parse.parse(following)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: following)
+    once = format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+    assert once == following
+    again = parse.parse(once)
+    assert again.diagnostics.len() == 0
+
+    # The member after the comment documents nothing: that doc is the one
+    # line of the dump that differed.
+    assert again.decls[2].doc.len() == 0
+    last = "extern \"x.h\"\n    record Ob tag ob\n    function ob_put(o: Ob consumes)\n    function ob_get(\n        o: Ob,\n        # a comment between\n        n: i64\n    ) -> Ob retains ob_put\n\nfunction main()\n    print(0)\n"
+    parsed_last = parse.parse(last)
+    assert parsed_last.diagnostics.len() == 0
+    s_last = source.new_source(name: "t.hero", text: last)
+    assert format_file(parsed_last.tree, s_last, parsed_last.comments, parsed_last.uses, parsed_last.decls) == last
+
+# The shapes beside the one that provoked it (CLAUDE.md § RUN IT): a Heroes
+# function's list outside any group, with the comment after the `(`,
+# trailing on a parameter, before the `)`, trailing on the closing line, and
+# alone in an empty list. Before the repair every one of them was moved into
+# the body at exit 0, measured 2026-09-25 against the seed. The two texts at
+# the end are the canonicalisation itself: a list written crooked around a
+# comment comes out one per line, and one written across lines WITHOUT a
+# comment still comes out joined, so no program changes shape that did not
+# ask.
+test "every place a comment can sit inside a parameter list survives, and a list without one still joins"
+    kept = "# after the open paren\nfunction first(\n    # about a\n    a: i64\n) -> i64\n    return a\n\n# trailing on a parameter line\nfunction second(\n    a: i64,  # about a\n    b: i64\n) -> i64\n    return a + b\n\n# before the closing paren\nfunction third(\n    a: i64\n    # after the last\n) -> i64\n    return a\n\n# trailing on the closing line\nfunction fourth(\n    a: i64\n) -> i64  # the result\n    return a\n\n# an empty list holding only a remark\nfunction fifth(\n    # nothing to take\n)\n    print(0)\n\nfunction main()\n    print(first(1) + second(a: 1, b: 2) + third(1) + fourth(1))\n    fifth()\n"
+    parsed = parse.parse(kept)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: kept)
+    assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == kept
+    crooked = "function f(a: i64,\n    # c\n    b: i64) -> i64\n    return a + b\n\nfunction g(\n    a: i64,\n    b: str\n) -> i64\n    return a\n"
+    parsed_crooked = parse.parse(crooked)
+    assert parsed_crooked.diagnostics.len() == 0
+    s_crooked = source.new_source(name: "t.hero", text: crooked)
+    once = format_file(
+        parsed_crooked.tree,
+        s_crooked,
+        parsed_crooked.comments,
+        parsed_crooked.uses,
+        parsed_crooked.decls
+    )
+    assert once == "function f(\n    a: i64,\n    # c\n    b: i64\n) -> i64\n    return a + b\n\nfunction g(a: i64, b: str) -> i64\n    return a\n"
+    again = parse.parse(once)
+    assert again.diagnostics.len() == 0
+    s_again = source.new_source(name: "t.hero", text: once)
+    assert format_file(again.tree, s_again, again.comments, again.uses, again.decls) == once
