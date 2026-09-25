@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 5**
 
 - [ ] **077 — a handle given back after C has handed its address out again is `check` 0 and `run` 0, and the release lands on the new handle** | the live set keys on the address, so a stale handle that equals a live one is accepted as the live one, and the one correct release that follows is the call that aborts | `runtime/parts/alloc.c:436` · `spec § 13`
 
@@ -196,5 +196,31 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     compile-time refusal, so the language promises a write it cannot perform.
     The repair writes the element in place with the index checked against the
     fixed length, as a read of it already is, and gives the shape its golden.
+
+- [ ] **098 — two threads that acquire and release handles from one C allocator abort a correct program** | the live set records an end after C returns, so between C's release and the runtime's record the other thread can be handed the same address, the runtime overwrites the live entry with the new life, and the first thread's record then deletes the new one: the second thread's correct release is a stray | `runtime/parts/alloc.c` (`hero_handle_acquired` on a live entry with an end pending, `hero_handle_ended`)
+
+    **Origin:** the skeptic seat over the landing of panel 177's items 1 and 2
+    (the poison and the dead set), 2026-09-25, which measured it on the
+    runtime before that landing too; reproduced by the coordinator the same day
+    on the trunk's compiler at `9e17d471`, so it is older than the landing.
+    Panel 177's completeness critic had listed threads as unmeasured for both
+    of its routes.
+
+    **The reproducer.** Two threads spawned with `hero_thread_spawn`, each
+    200,000 times `n = sn_new()`, `sn_value(n: n)`, `sn_free(n: n)`, over ONE
+    C pool with a free list under a `pthread_mutex_t`, which is what every
+    real allocator is; `sn_new() -> S acquires sn_free`, `sn_free(n: S
+    consumes)`. `check` 0; `run` **134, ten of ten, on Darwin arm64**, *1 C
+    handle(s) given back that were never taken*; and ten of ten on Linux x86-64 and on Linux arm64, the same line. Windows unrun.
+
+    **Why it is a defect.** A correct program is refused, and the class is
+    every program that hands handles to C from more than one thread over one
+    allocator, which is the ordinary case for a server. The runtime's own
+    pending count (defect 084) already knows an end is in flight when the
+    second thread's acquisition arrives: an acquisition of a live address with
+    an end pending is C having released it inside that call and handed it out
+    again, so it is one more reference, not a replacement, and the end in
+    flight then leaves the new life standing. The repair makes the set say
+    that, and pins it with the reproducer as a golden over the shared pool.
 
 *******************************************************************************
