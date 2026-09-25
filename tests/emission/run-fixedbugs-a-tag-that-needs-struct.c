@@ -5,7 +5,7 @@
 #include <fixedbugs-a-tag-that-needs-struct.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -149,9 +149,13 @@ bb0:
 #line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t5 = h0_p;
 #line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+    hero_handle_alive(t5, "the argument `p` of `probe_value`");
+#line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t6 = probe_value(t5);
 #line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t7 = h1_g;
+#line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+    hero_handle_alive(t7, "the argument `g` of `gauge_read`");
 #line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t8 = gauge_read(t7);
 #line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
@@ -163,25 +167,37 @@ bb0:
 #line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t10 = h0_p;
 #line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_handle_ending(t10, "probe_close", NULL);
+    {
+#line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+    hero_handle_alive(t10, "the argument `p` of `probe_close`");
+#line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t10, "probe_close", NULL);
 #line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     (void)probe_close(t10);
 #line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_handle_ended(t10);
+    if (hero_handle_ended(t10, hero_life_0_0) && h0_p == t10) h0_p = hero_handle_dead();
+#line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+    }
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t11 = h1_g;
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_handle_ending(t11, "gauge_close", NULL);
+    {
+#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+    hero_handle_alive(t11, "the argument `g` of `gauge_close`");
+#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t11, "gauge_close", NULL);
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     (void)gauge_close(t11);
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_handle_ended(t11);
+    if (hero_handle_ended(t11, hero_life_0_0) && h1_g == t11) h1_g = hero_handle_dead();
+#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+    }
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     return;
-#line 182 "fixedbugsatagthatneedsstruct.c"
+#line 198 "fixedbugsatagthatneedsstruct.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Probe_eq(struct probe * const *a, struct probe * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsatagthatneedsstruct_Probe_hash(const void *elem) {
@@ -192,7 +208,7 @@ HERO_TU_LOCAL uint64_t h_fixedbugsatagthatneedsstruct_Probe_hash(const void *ele
 }
 
 HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Gauge_eq(struct gauge * const *a, struct gauge * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsatagthatneedsstruct_Gauge_hash(const void *elem) {

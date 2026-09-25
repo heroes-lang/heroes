@@ -3,6 +3,20 @@
 # thing that produces one, found missing from the list by the landing review
 # (2026-09-24, CL-057: the list is a measurement). The checker has no flow
 # analysis, so the release reaches the runtime, which stops it before C.
+#
+# **2026-09-25: the checker has one** (panel 177's item 3, route M (must),
+# `check/moved.hero`), and it leaves this release to the runtime on purpose:
+# `wr_new` hands back a handle, and a transfer into the handle a call hands
+# back is not made when that handle comes back null (item 6), so on that path
+# `a` is alive and owed, and the read is refused only where the life ended on
+# EVERY path. The sentence above was true when written and stands as the
+# record.
+#
+# **The sentence this case asserts moved on 2026-09-25 (panel 177's item 1).**
+# The transfer ended `a`'s life and emptied the binding, so the release is now
+# refused one check earlier, at the crossing, as a DEAD value read from the
+# binding the transfer emptied; the stray report's third cause is still in the
+# runtime's sentence for the copy that reaches it after C reused the address.
 extern "fixedbugs-a-release-after-a-transfer-is-a-stray.h"
     record Ob tag ob
     record Wr tag wr

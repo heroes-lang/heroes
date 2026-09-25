@@ -5,7 +5,7 @@
 #include <ffi-borrows-owes-nothing.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -132,13 +132,19 @@ bb0:
 #line 26 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t3 = slot_peek();
 #line 26 "tests/golden/run/ffi-borrows-owes-nothing.hero"
+    hero_handle_lent(t3);
+#line 26 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     h1_theirs = t3;
 #line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t4 = h0_mine;
 #line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
+    hero_handle_alive(t4, "the argument `s` of `slot_value`");
+#line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t5 = slot_value(t4);
 #line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t6 = h1_theirs;
+#line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
+    hero_handle_alive(t6, "the argument `s` of `slot_value`");
 #line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t7 = slot_value(t6);
 #line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
@@ -150,11 +156,17 @@ bb0:
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t9 = h0_mine;
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_handle_ending(t9, "slot_close", NULL);
+    {
+#line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
+    hero_handle_alive(t9, "the argument `s` of `slot_close`");
+#line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t9, "slot_close", NULL);
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     (void)slot_close(t9);
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_handle_ended(t9);
+    if (hero_handle_ended(t9, hero_life_0_0) && h0_mine == t9) h0_mine = hero_handle_dead();
+#line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
+    }
 #line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t10 = HERO_STR_LIT(hero_str_2f69e1a4);
 #line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"
@@ -163,10 +175,10 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     return;
-#line 167 "ffiborrowsowesnothing.c"
+#line 179 "ffiborrowsowesnothing.c"
 }
 HERO_TU_LOCAL bool h_ffiborrowsowesnothing_Slot_eq(Slot * const *a, Slot * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_ffiborrowsowesnothing_Slot_hash(const void *elem) {

@@ -1,0 +1,277 @@
+# The THUNK at the address C is handed, and the table that finds it (panel
+# 177's item 2, route T; design.md §1.12, §4.19).
+#
+# THE DANGER THIS ANSWERS. The runtime remembers every address whose life a
+# consuming call ended, until C hands the address out again. A C library that
+# allocates a node of its own and passes it to a callback (a verify
+# callback's `X509_STORE_CTX`, a `json_c_visit` node) hands out an address
+# that may be one the program gave back a moment ago, so the mark must clear
+# when the callback receives it (the ffi-pragmatist's `cb_reuse`). And a
+# callback's RESULT crosses into C like an argument does: a dead value
+# returned to C is written through, exit 0 on three legs and `--sanitize`
+# silent, where the base compiler's `--sanitize` said `heap-use-after-free`
+# (the critic's `cb_return_poison64`). So a callback's parameters are cleared
+# and its result is checked.
+#
+# WHERE, AND WHY NOT AT THE FUNCTION'S ENTRY. A function value in this
+# language is its C address, so a clear at the entry of a function C can call
+# also clears when Heroes calls it by name: a stale copy handed to such a
+# function then read freed memory at exit 0 on three legs (the critic's
+# `cb_launder`), a hole the mark had closed for every other function. The
+# clear therefore lives in a THUNK, a second C function with the function's
+# own signature that clears, calls, checks and returns, and the thunk's
+# address is what crosses to C, at the extern call's argument. A Heroes call by
+# name never reaches it.
+#
+# HOW THE ADDRESS IS FOUND, and it is asked of the value in hand rather than
+# of the instruction. A function value reaches an extern's function-typed
+# parameter through a local, a record field or an array as easily as by
+# name, and the emitter does not chase values; what it knows is the whole set
+# of functions whose address any instruction took, `callback_guard.guarded`,
+# and that set is a superset of what C can reach. So every TU that hands C a
+# function carries one static table over that set, `hero_callback_of`, and the
+# extern call passes its argument through it: a Heroes function's address
+# comes out as its thunk's, and an extern's (`free` as a callback) comes
+# out as itself. One compare per guarded function per extern call that takes
+# a callback, and nothing at all in a program that hands C no function.
+#
+# THE FALSIFIABLE CLAIM this rests on, beside `callback_guard.hero`'s: *a
+# function value crosses into C only as an argument of an extern call*. A
+# function-typed field of a group record filled from Heroes and handed to C
+# would cross without the table: that shape is not declared today, and
+# `a_callback_crosses_only_as_an_argument` below is what fires the day it is.
+
+use ast
+use source
+use check/table
+use check/state
+use check/reaches
+use ir/containers
+use emit/mangle
+use emit/ctype
+use emit/signature
+use emit/callback_guard
+use emit/writer
+use parse
+use resolve
+use checker
+use ir/lower
+
+# The thunk's C name: the function's own with the synthetic marker in front,
+# `h_0cb_main_seen` for `h_main_seen`. A Heroes module component is sanitised
+# to `[A-Za-z0-9]` and no source file's component starts with a digit, so the
+# name can collide with no function the author wrote (`emit/ctype.hero`'s
+# `SYNTHETIC` is the same convention for option and function typedefs).
+function thunk_name(real: str) -> str
+    return "h_" + ctype.SYNTHETIC + "cb_" + real.slice(from: 2, to: real.len())
+
+# The definition, beside the function's own: clear every handle a by-value
+# parameter reaches, call the function, check every handle the result reaches,
+# return. A `@` parameter is forwarded as the pointer it is and its cell is
+# left alone: C cannot call a function that takes one, and a Heroes call
+# through a value never arrives here.
+function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
+    if guarded_decls[f.decl].is_err()
+        return
+    real = signature.instance_name(f, c, s, decls)
+    result = ctype.c_result(names, c: c, ty: f.result)
+    forwarded: [str] @ []
+
+    for slot_id in f.params
+        forwarded @ forwarded.push(forwarded_name(f, slot_id: slot_id))
+
+    writer.blank(@w)
+    writer.at_generated(@w)
+    writer.line(@w, text: header(f, c, names, s, decls) + " {")
+
+    for slot_id in f.params
+        declared = f.slots[slot_id]
+
+        if !is_mutable(declared)
+            for suffix in reaches.handle_suffixes(c, s, decls, ty: declared.ty)
+                writer.line(@w, text: "    hero_handle_lent(" + forwarded_name(f, slot_id: slot_id) + suffix + ");")
+
+    invocation = real + "(" + forwarded.join(", ") + ")"
+
+    if result == "void"
+        writer.line(@w, text: "    " + invocation + ";")
+    else
+        who = source.component_at(s, f.span.start) + "." + f.name
+        writer.line(@w, text: "    " + result + " hero_result = " + invocation + ";")
+
+        # The message names the field or element the dead handle sat in, as
+        # an argument's crossing does (design.md §4.17: a result reaching two
+        # handles said only *the result*, and the reader could not tell which
+        # of the two was given back; the landing's skeptic, probe `e8`).
+        for suffix in reaches.handle_suffixes(c, s, decls, ty: f.result)
+            inside: str @ ""
+
+            if suffix != ""
+                inside @ ", at `" + suffix + "`"
+            writer.line(
+                @w,
+                text: "    hero_handle_alive(hero_result" + suffix + ", \"the result of the callback `" + who + "`" + inside + "\");"
+            )
+
+        writer.line(@w, text: "    return hero_result;")
+    writer.line(@w, text: "}")
+
+# The thunk's signature: the function's own result and parameter list, spelled
+# by the same printer the function's signature uses, under the thunk's name.
+function header(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> str
+    real = signature.instance_name(f, c, s, decls)
+    result = ctype.c_result(names, c: c, ty: f.result)
+    params: [str] @ []
+
+    for slot_id in f.params
+        params @ params.push(signature.one_param(f, c, names, slot_id: slot_id))
+
+    list: str @ "void"
+
+    if params.len() > 0
+        list @ params.join(", ")
+    return result + " " + thunk_name(real) + "(" + list + ")"
+
+function is_mutable(slot: containers.Slot) -> bool
+    return match slot.kind
+        .param_slot ps  => ps.mutable
+        .local_slot     => false
+        .synthetic_slot => false
+
+# What the thunk hands on: the parameter's own C name, which for a `@`
+# parameter is the pointer the signature declares.
+function forwarded_name(f: containers.Function, slot_id: i64) -> str
+    declared = f.slots[slot_id]
+
+    if is_mutable(declared)
+        return mangle.out_param(index: slot_id, name: declared.name)
+    return mangle.slot(index: slot_id, name: declared.name)
+
+# The table, once per TU that can hand C a function: a prototype for every
+# guarded function and its thunk, then the lookup. Emitted whenever an
+# `extern` in the program takes a callback, even where no Heroes function's
+# address is taken, because the extern call's argument is passed through it
+# either way and an extern handed as a callback comes out unchanged.
+function lookup_table(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+    if !callback_guard.takes_a_callback(p, c, decls)
+        return
+    guarded_decls = callback_guard.guarded(p, c, decls)
+    writer.at_generated(@w)
+
+    for f in p.functions
+        if guarded_decls[f.decl].is_err() || !is_ordinary(f)
+            continue
+        signature.prototype(@w, f, c, names, s, decls)
+        writer.line(@w, text: header(f, c, names, s, decls) + ";")
+
+    writer.line(@w, text: "__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {")
+
+    for f in p.functions
+        if guarded_decls[f.decl].is_err() || !is_ordinary(f)
+            continue
+        real = signature.instance_name(f, c, s, decls)
+        writer.line(
+            @w,
+            text: "    if (f == (void (*)(void))" + real + ") return (void (*)(void))" + thunk_name(real) + ";"
+        )
+
+    writer.line(@w, text: "    return f;")
+    writer.line(@w, text: "}")
+    writer.blank(@w)
+
+# A function C can call back is an ordinary function: an instance cannot be
+# a value (the checker refuses it), and a test block or a constant has no
+# address anyone takes.
+function is_ordinary(f: containers.Function) -> bool
+    return match f.kind
+        .function_kind                             => f.instance.len() == 0
+        .constant_kind | .test_kind | .extern_kind => false
+
+# The arguments of one extern call with the callbacks routed through the
+# table: an argument at a function-typed parameter is passed as
+# `(T)hero_callback_of((void (*)(void))arg)`, the cast to and from
+# `void (*)(void)` being the one C11 6.3.2.3 defines for every function
+# pointer type, and clang under the flag list in `cli/flags.hero` says nothing
+# about it (measured 2026-09-25, `-Wextra` included).
+function crossings(p: containers.Program, c: state.Checked, names: ctype.Names, decl: i64, arguments: [str]) -> [str]
+    callee: containers.Function? @ fail(code: "none", msg: "not lowered")
+
+    for candidate in p.functions
+        if candidate.decl == decl
+            callee @ ok(candidate)
+
+    if callee.is_err()
+        return arguments
+    out: [str] @ []
+    index: i64 @ 0
+
+    for argument in arguments
+        wrapped: str @ argument
+
+        if index < callee.must().params.len()
+            ty = callee.must().slots[callee.must().params[index]].ty
+
+            if table.is_function_ty(c.types, ty)
+                wrapped @ "(" + ctype.func_of(names, ty: ty) + ")hero_callback_of((void (*)(void))" + argument + ")"
+        out @ out.push(wrapped)
+        index @ index + 1
+
+    return out
+
+## Tests
+
+function program_of(text: str) -> containers.Program
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(p.tree, out, c, s, p.decls)
+    return low.program
+
+test "the thunk's name carries the synthetic marker and the function's own name"
+    assert thunk_name("h_main_seen") == "h_0cb_main_seen"
+
+# The premise this module rests on, as a test that fires when it dies
+# (CLAUDE.md § 11): a function value crosses into C only as an argument of
+# an extern call, so a group record cannot declare a function-typed field.
+test "a callback crosses only as an argument"
+    text = "extern \"m.h\"\n    record Hooks\n        on_row: (function(i64) -> i64)\n\nfunction main()\n    print(1)\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() > 0
+
+test "an extern handed as a callback comes out of the table unchanged, a Heroes function as its thunk"
+    text = "extern \"stdlib.h\"\n    function atexit(f: (function() -> ())) -> i32\n\nfunction bye()\n    print(\"bye\")\n\nfunction main()\n    _ = atexit(bye)\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    low = program_of(text)
+    names0 = ctype.new_names(s, p.decls)
+    names1 = ctype.with_options(names0, c: c, s: s, decls: p.decls)
+    names = ctype.with_functions(names1, c: c, s: s, decls: p.decls, p: low)
+    w: writer.Writer @ writer.new_writer("t")
+    lookup_table(@w, low, c, names, s, p.decls)
+    got = writer.finish(w)
+    assert has(text: got, needle: "void h_0cb_t_bye(void);")
+    assert has(text: got, needle: "    if (f == (void (*)(void))h_t_bye) return (void (*)(void))h_0cb_t_bye;")
+    crossed = crossings(low, c, names, decl: 0, arguments: ["t1"])
+    assert crossed.len() == 1
+    assert has(text: crossed[0], needle: "hero_callback_of((void (*)(void))t1)")
+
+function has(text: str, needle: str) -> bool
+    if needle.len() == 0
+        return true
+    stop = text.len() - needle.len()
+    at: i64 @ 0
+
+    while at <= stop
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false

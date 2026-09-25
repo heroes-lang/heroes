@@ -5,7 +5,7 @@
 #include <abort-handle-borrows-that-gives-away.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -117,9 +117,13 @@ bb0:
 #line 25 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     t2 = slot_open(t1);
 #line 25 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
+    hero_handle_lent(t2);
+#line 25 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     h0_a = t2;
 #line 26 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     t3 = h0_a;
+#line 26 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
+    hero_handle_alive(t3, "the argument `s` of `slot_value`");
 #line 26 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     t4 = slot_value(t3);
 #line 26 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
@@ -129,17 +133,23 @@ bb0:
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     t5 = h0_a;
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
-    hero_handle_ending(t5, "slot_close", NULL);
+    {
+#line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
+    hero_handle_alive(t5, "the argument `s` of `slot_close`");
+#line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t5, "slot_close", NULL);
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     (void)slot_close(t5);
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
-    hero_handle_ended(t5);
+    if (hero_handle_ended(t5, hero_life_0_0) && h0_a == t5) h0_a = hero_handle_dead();
+#line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
+    }
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     return;
-#line 140 "aborthandleborrowsthatgivesaway.c"
+#line 150 "aborthandleborrowsthatgivesaway.c"
 }
 HERO_TU_LOCAL bool h_aborthandleborrowsthatgivesaway_Slot_eq(Slot * const *a, Slot * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_aborthandleborrowsthatgivesaway_Slot_hash(const void *elem) {

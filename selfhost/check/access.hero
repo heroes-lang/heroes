@@ -263,13 +263,14 @@ function index_type(@c: state.Checker, s: source.Source, decls: [ast.Decl], base
 # REACHES (`.claude/rules/module-shape.md`): a `[str]` holds `str`s, and
 # `xs[0] @ "b"` is a legal write of a whole element.
 #
-# Unguarded until 2026-09-16 the store reached the emitter, whose place walk at
-# `selfhost/emit/container.hero:195-230` has no arm for a `str`: it falls to
-# `if element < 0` and returns a failure that `emit/inst.hero:130-132` renders
-# as `hero_unreachable()`. Three shapes did it — a local, a `str` in a record
-# field, a `str` inside an array — all `check` 0 and all aborting 134 saying
-# *this is a compiler bug*, which blames the author for a gap in the compiler
-# (defect 052, panel 159).
+# Unguarded until 2026-09-16 the store reached the emitter, whose place walk,
+# `write_element` in `selfhost/emit/container.hero`, has no arm for a `str`: it
+# falls to `if element < 0` and returns a failure that `emit/inst.hero`'s store
+# arm rendered as `hero_unreachable()`. Three shapes did it — a local, a `str`
+# in a record field, a `str` inside an array — all `check` 0 and all aborting
+# 134 saying *this is a compiler bug*, which blames the author for a gap in the
+# compiler (defect 052, panel 159). Since defect 097 (2026-09-25) that failure
+# is spelled as a C identifier clang refuses, so it is loud at build time.
 function refuse_str_element(@c: state.Checker, a: ast.Ast, place: i64)
     match a.exprs[place].kind
         .index i =>

@@ -1,0 +1,25 @@
+# DEFECT 077, closed at check time (panel 177's item 3, route M (must),
+# 2026-09-25): a handle given back after C had handed its address out again
+# was `check` 0 and `run` 0, and the release landed on the new handle. The
+# live set keys on the address, so a stale handle that equals a live one was
+# accepted as the live one, and the one correct release that followed was the
+# call that aborted. `same address: true`, exit 0, three of three, on three
+# platforms.
+#
+# The critic's shape over a static cell, so it needs no allocator to agree:
+# `a` is given back, `b` is opened at the same address, and both the
+# comparison and the second give-back read `a` after the call that ended it.
+# Each is refused at its own line. `f_close(x: b)` at the end is the one
+# correct release in the program and stays quiet.
+extern "fixedbugs-a-handle-given-back-after-its-address-was-handed-out-again.h"
+    record Cell tag hh
+    function f_open() -> Cell acquires f_close
+    function f_close(x: Cell consumes)
+
+function main()
+    a = f_open()
+    f_close(x: a)
+    b = f_open()
+    print("same address: ", a == b)  #~ handle_used_after_end
+    f_close(x: a)  #~ handle_used_after_end
+    f_close(x: b)

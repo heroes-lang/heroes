@@ -1,0 +1,37 @@
+# Defect 097's second door: an `@` argument whose place runs through a fixed
+# array. Found 2026-09-25 while repairing the direct write, by trying the shapes
+# beside it: all four calls below were `check` 0 and every one died at run time
+# with *entered unreachable code — this is a compiler bug*.
+#
+# WHY IT WAS THE SAME DEFECT: an element has no address the callee may keep, so
+# `selfhost/ir/inout.hero` reads it into a temporary, hands the callee that, and
+# stores the temporary back through the place after the call. That store is the
+# very `.store` that `h.a[2] @ v` lowers to, so it met the same
+# `write_element` arm, and the repair of one is the repair of both.
+#
+# One row per shape of the place: an element (`@h.a[2]`), a field of an element
+# (`@h.xs[1].v`), a whole element of records (`@h.xs[2]`), and a C out-parameter
+# (`@h.a[0]`), where C writes through the pointer and the program must see it.
+
+extern "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.h"
+    record Cell tag cell
+        v: i64
+        w: i64
+    record Holder tag holder
+        xs: Cell[3]
+        a: i64[4]
+    function put_seven(@out: i64)
+
+function inc(@x: i64)
+    x @ x + 1
+
+function widen(@c: Cell)
+    c.w @ c.w * 10
+
+function main()
+    h: Holder @ Holder(xs: [Cell(v: 1, w: 2), Cell(v: 3, w: 4), Cell(v: 5, w: 6)], a: [1, 2, 3, 4])
+    inc(@h.a[2])
+    inc(@h.xs[1].v)
+    widen(@h.xs[2])
+    put_seven(@h.a[0])
+    print(h.a[0], " ", h.a[1], " ", h.a[2], " ", h.xs[1].v, " ", h.xs[2].v, " ", h.xs[2].w)

@@ -5,7 +5,7 @@
 #include <handle-a-shim-consumes-a-handle-once-for-two-positions.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -144,6 +144,8 @@ bb0:
 #line 18 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     t4 = h1_b;
 #line 18 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
+    hero_handle_alive(t4, "the argument `b` of `bio_refs`");
+#line 18 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     t5 = bio_refs(t4);
 #line 18 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     hero_print_str(t3);
@@ -156,19 +158,33 @@ bb0:
 #line 19 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     t7 = h1_b;
 #line 19 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
-    hero_handle_transferring(t7, "bio_free");
+    {
+#line 19 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
+    hero_handle_alive(t6, "the argument `s` of `ssl_set_one_bio`");
+#line 19 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
+    hero_handle_alive(t7, "the argument `b` of `ssl_set_one_bio`");
+#line 19 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
+    uint64_t hero_life_1_0 = hero_handle_transferring(t7, "bio_free");
 #line 19 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     (void)ssl_set_one_bio(t6, t7);
 #line 19 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
-    hero_handle_ended(t7);
+    if (hero_handle_ended(t7, hero_life_1_0) && h1_b == t7) h1_b = hero_handle_dead();
+#line 19 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
+    }
 #line 20 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     t8 = h0_s;
 #line 20 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
-    hero_handle_ending(t8, "ssl_free", NULL);
+    {
+#line 20 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
+    hero_handle_alive(t8, "the argument `s` of `ssl_free`");
+#line 20 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t8, "ssl_free", NULL);
 #line 20 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     (void)ssl_free(t8);
 #line 20 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
-    hero_handle_ended(t8);
+    if (hero_handle_ended(t8, hero_life_0_0) && h0_s == t8) h0_s = hero_handle_dead();
+#line 20 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
+    }
 #line 21 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     t9 = HERO_STR_LIT(hero_str_4fad0733);
 #line 21 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
@@ -177,10 +193,10 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     return;
-#line 181 "handleashimconsumesahandleoncefortwopositions.c"
+#line 197 "handleashimconsumesahandleoncefortwopositions.c"
 }
 HERO_TU_LOCAL bool h_handleashimconsumesahandleoncefortwopositions_Bio_eq(bio * const *a, bio * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_handleashimconsumesahandleoncefortwopositions_Bio_hash(const void *elem) {
@@ -191,7 +207,7 @@ HERO_TU_LOCAL uint64_t h_handleashimconsumesahandleoncefortwopositions_Bio_hash(
 }
 
 HERO_TU_LOCAL bool h_handleashimconsumesahandleoncefortwopositions_Ssl_eq(ssl * const *a, ssl * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_handleashimconsumesahandleoncefortwopositions_Ssl_hash(const void *elem) {

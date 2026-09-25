@@ -5,7 +5,7 @@
 #include <fixedbugs-two-allocator-families-over-one-void.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -128,25 +128,37 @@ bb0:
 #line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
     t3 = h0_a;
 #line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    hero_handle_ending(t3, "arena_free", NULL);
+    {
+#line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
+    hero_handle_alive(t3, "the argument `b` of `arena_free`");
+#line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t3, "arena_free", NULL);
 #line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
     (void)arena_free(t3);
 #line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    hero_handle_ended(t3);
+    if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead();
+#line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
+    }
 #line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
     t4 = h1_h;
 #line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    hero_handle_ending(t4, "heap_free", NULL);
+    {
+#line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
+    hero_handle_alive(t4, "the argument `b` of `heap_free`");
+#line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t4, "heap_free", NULL);
 #line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
     (void)heap_free(t4);
 #line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    hero_handle_ended(t4);
+    if (hero_handle_ended(t4, hero_life_0_0) && h1_h == t4) h1_h = hero_handle_dead();
+#line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
+    }
 #line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
     return;
-#line 147 "fixedbugstwoallocatorfamiliesoveronevoid.c"
+#line 159 "fixedbugstwoallocatorfamiliesoveronevoid.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstwoallocatorfamiliesoveronevoid_Arena_eq(void * const *a, void * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugstwoallocatorfamiliesoveronevoid_Arena_hash(const void *elem) {
@@ -157,7 +169,7 @@ HERO_TU_LOCAL uint64_t h_fixedbugstwoallocatorfamiliesoveronevoid_Arena_hash(con
 }
 
 HERO_TU_LOCAL bool h_fixedbugstwoallocatorfamiliesoveronevoid_Heap_eq(void * const *a, void * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugstwoallocatorfamiliesoveronevoid_Heap_hash(const void *elem) {

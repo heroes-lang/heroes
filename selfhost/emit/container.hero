@@ -18,7 +18,8 @@
 #   and descending means unsharing this level first.
 #
 # What is NOT here: hero_array_at's bounds check and hero_map_find's
-# NULL are the runtime's. This module only spells the calls.
+# NULL are the runtime's. This module only spells the calls. A fixed
+# array's bound is the compiler's, in emit/storageless (defect 097).
 
 use ast
 use source
@@ -76,45 +77,12 @@ function build_array(c: state.Checked, names: ctype.Names, result: i64, argument
 # checks the assignment. `{spelling} const *`, not `const {spelling} *`:
 # the two differ exactly when the element is itself a pointer.
 function read_element(c: state.Checked, s: source.Source, decls: [ast.Decl], names: ctype.Names, f: containers.Function, base: i64, index: i64) -> str?
-    # A fixed array is subscripted directly, and guarded HERE (panel
-    # 062): the subscript stays on an array-typed lvalue because that is
-    # the only form UBSan's array-bounds can see, and the guard is the
-    # compiler's because -Warray-bounds was measured not to fire on an
-    # opaque index. Unsigned comparison so one test catches both ends.
-    #
-    # THE BASE ROUTES THROUGH storageless.fixed_text, and the note that
-    # used to stand here instead is why (panel 085 R6). It said the
-    # routing would arrive "when that module lands", and the module
-    # landed — construct.hero already calls it — while this call
-    # site kept the plain temporary. A fixed array is never DECLARED, so
-    # that temporary does not exist: the emitted C read `t20[...]` where
-    # `t20` appeared nowhere else in 20 MB of output, and `heroes build`
-    # was exit 2 with `use of undeclared identifier` on three ordinary
-    # programs. The note's closing clause — "the same bytes for every
-    # case the tests cover today" — was true only because no test
-    # covered it, which is CLAUDE.md §11's premise that expires in
-    # silence while the sentence around it still reads as correct.
-    is_fixed: bool @ false
-    fixed_len: i64 @ 0
+    # A fixed array is no runtime container: it is subscripted directly and
+    # guarded by the compiler, and `storageless.element` owns that read.
+    fixed = storageless.element(c, s, decls, f, base: base, index: index)
 
-    match table.get(c.types, containers.value_type(f, base))
-        .fixed x =>
-            is_fixed @ true
-            fixed_len @ x.length
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fixed @ is_fixed
-        .array | .map | .fallible | .function_ty | .named         => is_fixed @ is_fixed
-        .case_ty | .failure | .generic | .error                   => is_fixed @ is_fixed
-
-    if is_fixed
-        i = mangle.value(index)
-        base_text: str @ mangle.value(base)
-        rendered = storageless.fixed_text(c, s, decls, f, value: base)
-
-        if !rendered.is_err()
-            base_text @ rendered.must()
-        return ok(
-            base_text + "[((uint64_t)(" + i + ") >= UINT64_C(" + fixed_len.to_str() + ") ? (hero_panic(\"index out of range for a fixed array\"), (int64_t)0) : (" + i + "))]"
-        )
+    if !fixed.is_err()
+        return fixed
     element: i64 @ 0 - 1
 
     match table.get(c.types, containers.value_type(f, base))
@@ -132,6 +100,35 @@ function read_element(c: state.Checked, s: source.Source, decls: [ast.Decl], nam
     return ok(
         "*(" + spelling.must() + " const *)hero_array_at(" + mangle.value(base) + ", " + mangle.value(index) + ")"
     )
+
+# What replaces the value at a C lvalue the walk reached in place, a field or a
+# fixed-array element: release the old value where it is counted, then assign.
+# hero_array_set releases the old ELEMENT of a [T]; an in-place slot has no
+# runtime entry to do it, so releasing is this line's own job, and without it
+# one heap block stays live at exit, measured.
+function replaced(c: state.Checked, names: ctype.Names, lines: [str], lvalue: str, ty: i64, value: i64) -> [str]?
+    out: [str] @ lines
+
+    if layout.is_refcounted(c, ty)
+        release: str @ ""
+
+        match table.get(c.types, ty)
+            .str     => release @ "hero_str_decref(" + lvalue + ");"
+            .array   => release @ "hero_array_decref(" + lvalue + ");"
+            .map     => release @ "hero_map_decref(" + lvalue + ");"
+            .failure => release @ "hero_failure_release(&(" + lvalue + "));"
+            .named | .case_ty | .fallible =>
+                sat = ctype.satellite_name(names, c, ty: ty)
+
+                if sat.is_err()
+                    return fail(code: "none", msg: "a counted field with no release")
+                release @ sat.must() + "_release(&(" + lvalue + "));"
+            .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => release @ release
+            .fixed | .function_ty | .generic | .error          => release @ release
+
+        out @ out.push(release)
+    out @ out.push(lvalue + " = " + mangle.value(value) + ";")
+    return ok(out)
 
 # xs[i] @ v, and every deeper spelling of it: one unshare per array
 # step, each writing back at its own level. The walk keeps a C LVALUE
@@ -168,41 +165,22 @@ function write_element(c: state.Checked, names: ctype.Names, s: source.Source, d
                 # hero_unreachable: a runtime abort on a legal program.
                 # THIS session's own fixedbugs case.)
                 if last
-                    # hero_array_set releases the old ELEMENT; this
-                    # replaces one FIELD of it, so releasing the old
-                    # value is this line's own job — without it, one
-                    # heap block still live at exit, measured.
-                    if layout.is_refcounted(c, ty)
-                        release: str @ ""
-
-                        match table.get(c.types, ty)
-                            .str     => release @ "hero_str_decref(" + lvalue + ");"
-                            .array   => release @ "hero_array_decref(" + lvalue + ");"
-                            .map     => release @ "hero_map_decref(" + lvalue + ");"
-                            .failure => release @ "hero_failure_release(&(" + lvalue + "));"
-                            .named | .case_ty | .fallible =>
-                                sat = ctype.satellite_name(names, c, ty: ty)
-
-                                if sat.is_err()
-                                    return fail(code: "none", msg: "a counted field with no release")
-                                release @ sat.must() + "_release(&(" + lvalue + "));"
-                            .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => release @ release
-                            .fixed | .function_ty | .generic | .error          => release @ release
-
-                        lines @ lines.push(release)
-                    lines @ lines.push(lvalue + " = " + mangle.value(value) + ";")
-                    return ok(lines)
+                    return replaced(c, names, lines, lvalue, ty: ty, value: value)
             .index_step ix =>
                 # A map step ends the walk: m[k] @ v inserts, so there
                 # is no element to descend into.
                 is_map: bool @ false
                 element: i64 @ 0 - 1
+                fixed_len: i64 @ 0 - 1
 
                 match table.get(c.types, ty)
-                    .map                                                      => is_map @ true
-                    .array arr                                                => element @ arr.element
+                    .map       => is_map @ true
+                    .array arr => element @ arr.element
+                    .fixed x =>
+                        element @ x.element
+                        fixed_len @ x.length
                     .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_map @ is_map
-                    .fixed | .fallible | .function_ty | .named                => is_map @ is_map
+                    .fallible | .function_ty | .named                         => is_map @ is_map
                     .case_ty | .failure | .generic | .error                   => is_map @ is_map
 
                 if is_map
@@ -216,18 +194,31 @@ function write_element(c: state.Checked, names: ctype.Names, s: source.Source, d
                 if element < 0
                     return fail(code: "none", msg: "not a container step")
 
-                if last
-                    lines @ lines.push(
-                        "hero_array_set(&(" + lvalue + "), " + mangle.value(ix.value) + ", &" + mangle.value(value) + ");"
-                    )
-                    return ok(lines)
-                lines @ lines.push("hero_array_unshare(&(" + lvalue + "));")
-                spelling = ctype.c_type(names, c: c, ty: element)
+                # A fixed array is the elements themselves, inline in the
+                # record that holds it, so like a field it is no
+                # indirection: nothing to unshare, and the element is
+                # written where it lies. Until defect 097 this arm read
+                # `.fixed` as "not a container step", and `n.a[0] @ 9`,
+                # `check` 0, died at run time as a compiler bug.
+                if fixed_len >= 0
+                    lvalue @ storageless.subscript(base: lvalue, index: mangle.value(ix.value), length: fixed_len)
+                    ty @ element
 
-                if spelling.is_err()
-                    return fail(code: "none", msg: "an element with no C type")
-                lvalue @ "(*(" + spelling.must() + " *)hero_array_at_mut(" + lvalue + ", " + mangle.value(ix.value) + "))"
-                ty @ element
+                    if last
+                        return replaced(c, names, lines, lvalue, ty: ty, value: value)
+                else
+                    if last
+                        lines @ lines.push(
+                            "hero_array_set(&(" + lvalue + "), " + mangle.value(ix.value) + ", &" + mangle.value(value) + ");"
+                        )
+                        return ok(lines)
+                    lines @ lines.push("hero_array_unshare(&(" + lvalue + "));")
+                    spelling = ctype.c_type(names, c: c, ty: element)
+
+                    if spelling.is_err()
+                        return fail(code: "none", msg: "an element with no C type")
+                    lvalue @ "(*(" + spelling.must() + " *)hero_array_at_mut(" + lvalue + ", " + mangle.value(ix.value) + "))"
+                    ty @ element
 
         position @ position + 1
 
@@ -391,3 +382,66 @@ test "the session's own fixedbug: a trailing field behind an index releases then
     assert lines.must()[0] == "hero_array_unshare(&(h0_rows));"
     assert lines.must()[1] == "hero_str_decref((*(h_t_Row *)hero_array_at_mut(h0_rows, t1)).f_label);"
     assert lines.must()[2] == "(*(h_t_Row *)hero_array_at_mut(h0_rows, t1)).f_label = t2;"
+
+test "defect 097: a fixed-array element is written in place, through the read's own guard"
+    got = ready(
+        "extern \"m.h\"\n    record Cell tag cell\n        v: i64\n    record Holder tag holder\n        xs: Cell[3]\n\nfunction touch(h: Holder) -> i64\n    return h.xs[0].v\n\nfunction main()\n    print(1)\n"
+    )
+    cell = table.lookup(got.c.types, .named(decl: 0)).must()
+    holder = table.lookup(got.c.types, .named(decl: 1)).must()
+    fixed = table.lookup(got.c.types, .fixed(element: cell, length: 3)).must()
+    int_id = table.int_ty_id(got.c.types)
+    slots: [containers.Slot] = [containers.Slot(name: "h", ty: holder, kind: .local_slot(mutable: true))]
+    steps: [ir.PathStep] = [.field_step(at: 0), .index_step(value: 1), .field_step(at: 0)]
+    f = containers.Function(
+        name: "t",
+        decl: 2,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: slots,
+        blocks: [],
+        values: [fixed, int_id, int_id, cell],
+        arguments: [],
+        steps: steps,
+        instance: [],
+        call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
+        span: token.Span(start: 0, end: 1)
+    )
+
+    # The read of `t0[t1]`, with no instruction behind `t0`, keeps the plain
+    # temporary as its base; everything after it is the guard, and the write
+    # must carry that same text, so the two cannot disagree on a bound.
+    read = read_element(got.c, got.s, got.decls, got.names, f, base: 0, index: 1)
+    guard = read.must().slice(from: 2, to: read.must().len())
+    assert read.must() == "t0" + guard
+    assert guard == "[((uint64_t)(t1) >= UINT64_C(3) ? (hero_panic(\"index out of range for a fixed array\"), (int64_t)0) : (t1))]"
+
+    # `h.xs[i].v @ t2`: no unshare, because an inline array is no indirection,
+    # and one assignment where the element lies.
+    deep = write_element(
+        got.c,
+        got.names,
+        got.s,
+        got.decls,
+        f,
+        at: ir.Place(root: 0, path: ir.Run(start: 0, length: 3)),
+        value: 2
+    )
+    assert deep.must().len() == 1
+    assert deep.must()[0] == "h0_h.xs" + guard + ".v = t2;"
+
+    # `h.xs[i] @ t3`: the whole element, the same subscript, and the walk ends.
+    whole = write_element(
+        got.c,
+        got.names,
+        got.s,
+        got.decls,
+        f,
+        at: ir.Place(root: 0, path: ir.Run(start: 0, length: 2)),
+        value: 3
+    )
+    assert whole.must().len() == 1
+    assert whole.must()[0] == "h0_h.xs" + guard + " = t3;"

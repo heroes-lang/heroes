@@ -5,7 +5,7 @@
 #include <handle-end-only-on-success-keeps-the-connection-owed.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -129,17 +129,23 @@ bb0:
 #line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     t2 = h0_d;
 #line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_handle_ending(t2, "db_close", NULL);
+    {
+#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
+    hero_handle_alive(t2, "the argument `d` of `db_close`");
+#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t2, "db_close", NULL);
 #line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     t3 = db_close(t2);
 #line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     if (t3 == 0LL) {
 #line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_handle_ended(t2);
+    if (hero_handle_ended(t2, hero_life_0_0) && h0_d == t2) h0_d = hero_handle_dead();
 #line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     } else {
 #line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_handle_kept(t2);
+    hero_handle_kept(t2, hero_life_0_0);
+#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
+    }
 #line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     }
 #line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
@@ -147,21 +153,29 @@ bb0:
 #line 15 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     t4 = h0_d;
 #line 15 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
+    hero_handle_alive(t4, "the argument `d` of `db_finalize`");
+#line 15 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     (void)db_finalize(t4);
 #line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     t5 = h0_d;
 #line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_handle_ending(t5, "db_close", NULL);
+    {
+#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
+    hero_handle_alive(t5, "the argument `d` of `db_close`");
+#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t5, "db_close", NULL);
 #line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     t6 = db_close(t5);
 #line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     if (t6 == 0LL) {
 #line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_handle_ended(t5);
+    if (hero_handle_ended(t5, hero_life_0_0) && h0_d == t5) h0_d = hero_handle_dead();
 #line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     } else {
 #line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_handle_kept(t5);
+    hero_handle_kept(t5, hero_life_0_0);
+#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
+    }
 #line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     }
 #line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
@@ -186,10 +200,10 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     return;
-#line 190 "handleendonlyonsuccesskeepstheconnectionowed.c"
+#line 204 "handleendonlyonsuccesskeepstheconnectionowed.c"
 }
 HERO_TU_LOCAL bool h_handleendonlyonsuccesskeepstheconnectionowed_Db_eq(db * const *a, db * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_handleendonlyonsuccesskeepstheconnectionowed_Db_hash(const void *elem) {

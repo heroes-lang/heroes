@@ -45,13 +45,25 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     rule, refused because the critic measured it silencing defect 075 on three
     platforms and refusing a correct module checked alone.
 
-- [ ] **panel 177** | ratify panel 177: a dead handle is poisoned where it lay (P) and its address remembered (T), with every crossing into C checked; the compile-time half is route M on every path, inside one function; R and S are refused on the ffi seat's vetoes; the success clause is on the result and governs every end; a transfer needs a receiver | `docs/panel/177-a-dead-handle-is-poisoned-where-it-lay-and-remembered-where-it-was.md`
+- [ ] **panel 177** | ratify panel 177: a dead handle is poisoned where it lay (P) and its address remembered (T), with every crossing into C checked; the compile-time half is route M on every path, inside one function; R and S are refused on the ffi seat's vetoes; the success clause is on the result and governs every end; a transfer needs a receiver; and, decided at the landing with no sitting's ruling, a transfer that was made ends the program's own name for the value | `docs/panel/177-a-dead-handle-is-poisoned-where-it-lay-and-remembered-where-it-was.md`
 
     **Origin:** panel 177, 2026-09-24, M-agreed-retention. **The default the
-    compiler runs on meanwhile** is today's: nothing of it has landed, and
-    defects 077 and 088 stay open until the landing measures the five
-    conditions in its item 10. **What conservative would have been**: P alone,
-    refused because it misses every copy and, with callback results
-    unchecked, hides a use-after-free ASan catches today.
+    compiler runs on meanwhile**, since the landing of 2026-09-25 (step 14),
+    is the provisional resolution itself: the poison, the dead set and route
+    M (must), defects 077 and 088 closed by it. **What conservative would have
+    been**: P alone, refused because it misses every copy and, with callback
+    results unchecked, hides a use-after-free ASan catches today.
+
+    **One more decision to ratify, found at the landing (2026-09-25).** Panel
+    176's historian named *using the child after the transfer* as Risk 2, "a
+    question for the spec seats", and neither synthesis ruled it. The landing
+    decides it: a transfer that was made ends the program's own name for the
+    value, as a release does (the checker reads a transfer position as an end,
+    the runtime poisons the binding, and § 13 now says so), so json-c's
+    README order, add the child and then fill it, is refused and is written
+    fill first. **What the other reading would have been**: the name stays a
+    borrowed reference while the receiver lives, which the runtime cannot see
+    end, since C frees the child inside the receiver's release; refused as
+    the silent use-after-free it would allow.
 
 *******************************************************************************

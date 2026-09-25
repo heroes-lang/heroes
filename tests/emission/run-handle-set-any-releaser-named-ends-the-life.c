@@ -5,7 +5,7 @@
 #include <handle-set-any-releaser-named-ends-the-life.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -144,9 +144,13 @@ bb0:
 #line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
     t5 = h0_a;
 #line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
+    hero_handle_alive(t5, "the argument `x` of `h_value`");
+#line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
     t6 = h_value(t5);
 #line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
     t7 = h1_b;
+#line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
+    hero_handle_alive(t7, "the argument `x` of `h_value`");
 #line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
     t8 = h_value(t7);
 #line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
@@ -158,19 +162,31 @@ bb0:
 #line 18 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
     t10 = h0_a;
 #line 18 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_handle_ending(t10, "h_close", NULL);
+    {
+#line 18 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
+    hero_handle_alive(t10, "the argument `x` of `h_close`");
+#line 18 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t10, "h_close", NULL);
 #line 18 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
     (void)h_close(t10);
 #line 18 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_handle_ended(t10);
+    if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead();
+#line 18 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
+    }
 #line 19 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
     t11 = h1_b;
 #line 19 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_handle_ending(t11, "h_close_v2", NULL);
+    {
+#line 19 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
+    hero_handle_alive(t11, "the argument `x` of `h_close_v2`");
+#line 19 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t11, "h_close_v2", NULL);
 #line 19 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
     (void)h_close_v2(t11);
 #line 19 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_handle_ended(t11);
+    if (hero_handle_ended(t11, hero_life_0_0) && h1_b == t11) h1_b = hero_handle_dead();
+#line 19 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
+    }
 #line 20 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
     t12 = HERO_STR_LIT(hero_str_69279300);
 #line 20 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
@@ -179,10 +195,10 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
     return;
-#line 183 "handlesetanyreleasernamedendsthelife.c"
+#line 199 "handlesetanyreleasernamedendsthelife.c"
 }
 HERO_TU_LOCAL bool h_handlesetanyreleasernamedendsthelife_H_eq(hh * const *a, hh * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_handlesetanyreleasernamedendsthelife_H_hash(const void *elem) {

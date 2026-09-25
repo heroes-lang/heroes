@@ -1,0 +1,26 @@
+# WRONG on purpose (panel 177's critic, `cb_return_poison64`; item 1's
+# *callback results*). On one path the callback gives its node back and then
+# returns the same BINDING to C, which writes 64 bytes into it. The poison
+# prototyped at the sitting emptied `m` and nothing checked the RESULT of a
+# callback, so C wrote through the dead value into the runtime's own statics,
+# exit 0 on three legs, `--sanitize` silent where the base compiler's had
+# said `heap-use-after-free`. The thunk C is handed checks every handle the
+# result reaches before returning it (`emit/callback_thunk.hero`), and the
+# dead value is an address on a page nobody can write. The path depends on
+# the value C passes, which the checker's half (item 3) cannot decide.
+
+extern "dead-handle-returned-by-a-callback-is-checked.h"
+    record Node tag node
+    function node_new() -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function ask(cb: (function(i32) -> Node)) -> i64
+
+function give(k: i32) -> Node
+    m: Node @ node_new()
+
+    if k > 2
+        node_free(n: m)
+    return m
+
+function main()
+    print("C wrote ", ask(cb: give))

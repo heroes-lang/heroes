@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -96,10 +96,17 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fficallbacktypedefreachestheprobe_bye(void);
 void h_fficallbacktypedefreachestheprobe_main(void);
+void h_fficallbacktypedefreachestheprobe_bye(void);
+void h_0cb_fficallbacktypedefreachestheprobe_bye(void);
+__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    if (f == (void (*)(void))h_fficallbacktypedefreachestheprobe_bye) return (void (*)(void))h_0cb_fficallbacktypedefreachestheprobe_bye;
+    return f;
+}
+
 
 #line 27 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
 void h_fficallbacktypedefreachestheprobe_bye(void) {
-#line 103 "fficallbacktypedefreachestheprobe.c"
+#line 110 "fficallbacktypedefreachestheprobe.c"
     hero_thread_guard("fficallbacktypedefreachestheprobe.bye");
     HeroStr t1 = {0};
     goto bb0;
@@ -112,12 +119,16 @@ bb0:
     hero_print_end();
 #line 28 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
     return;
-#line 116 "fficallbacktypedefreachestheprobe.c"
+#line 123 "fficallbacktypedefreachestheprobe.c"
+}
+
+void h_0cb_fficallbacktypedefreachestheprobe_bye(void) {
+    h_fficallbacktypedefreachestheprobe_bye();
 }
 
 #line 30 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
 void h_fficallbacktypedefreachestheprobe_main(void) {
-#line 121 "fficallbacktypedefreachestheprobe.c"
+#line 132 "fficallbacktypedefreachestheprobe.c"
     h_0fn_294870dd t1;
     int32_t t2;
     int32_t t3;
@@ -128,7 +139,7 @@ bb0:
 #line 31 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
     t1 = h_fficallbacktypedefreachestheprobe_bye;
 #line 31 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
-    t2 = atexit(t1);
+    t2 = atexit((h_0fn_294870dd)hero_callback_of((void (*)(void))t1));
 #line 31 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
     t3 = INT64_C(0);
 #line 31 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
@@ -153,7 +164,7 @@ bb2:
 bb3:
 #line 32 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
     goto bb1;
-#line 157 "fficallbacktypedefreachestheprobe.c"
+#line 168 "fficallbacktypedefreachestheprobe.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

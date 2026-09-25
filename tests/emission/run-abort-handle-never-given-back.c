@@ -5,7 +5,7 @@
 #include <abort-handle-never-given-back.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -137,9 +137,13 @@ bb0:
 #line 23 "tests/golden/run/abort-handle-never-given-back.hero"
     t5 = h0_a;
 #line 23 "tests/golden/run/abort-handle-never-given-back.hero"
+    hero_handle_alive(t5, "the argument `s` of `slot_value`");
+#line 23 "tests/golden/run/abort-handle-never-given-back.hero"
     t6 = slot_value(t5);
 #line 23 "tests/golden/run/abort-handle-never-given-back.hero"
     t7 = h1_b;
+#line 23 "tests/golden/run/abort-handle-never-given-back.hero"
+    hero_handle_alive(t7, "the argument `s` of `slot_value`");
 #line 23 "tests/golden/run/abort-handle-never-given-back.hero"
     t8 = slot_value(t7);
 #line 23 "tests/golden/run/abort-handle-never-given-back.hero"
@@ -151,17 +155,23 @@ bb0:
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     t10 = h0_a;
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_ending(t10, "slot_close", NULL);
+    {
+#line 24 "tests/golden/run/abort-handle-never-given-back.hero"
+    hero_handle_alive(t10, "the argument `s` of `slot_close`");
+#line 24 "tests/golden/run/abort-handle-never-given-back.hero"
+    uint64_t hero_life_0_0 = hero_handle_ending(t10, "slot_close", NULL);
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     (void)slot_close(t10);
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_ended(t10);
+    if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead();
+#line 24 "tests/golden/run/abort-handle-never-given-back.hero"
+    }
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     return;
-#line 162 "aborthandlenevergivenback.c"
+#line 172 "aborthandlenevergivenback.c"
 }
 HERO_TU_LOCAL bool h_aborthandlenevergivenback_Slot_eq(Slot * const *a, Slot * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_aborthandlenevergivenback_Slot_hash(const void *elem) {

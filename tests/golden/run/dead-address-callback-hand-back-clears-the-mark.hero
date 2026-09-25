@@ -1,0 +1,23 @@
+# CORRECT, and it is the hole route T would have had (the ffi-pragmatist's
+# `cb_reuse`, panel 177's item 10): the program gives its node back, and C
+# then makes a node of its own AT THE SAME ADDRESS and hands it to the
+# callback. The dead set still remembers the address, so a callback that
+# reached `node_value` with it would be refused for a use-after-free that is
+# not one. The clear runs in the THUNK C was handed in place of `seen`'s own
+# address (`emit/callback_thunk.hero`): C handing an address to a callback is
+# C handing it out, and the mark goes.
+
+extern "dead-address-callback-hand-back-clears-the-mark.h"
+    record Node tag node
+    function node_new() -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_value(n: Node) -> i64
+    function visit(cb: (function(Node) -> i64)) -> i64
+
+function seen(n: Node) -> i64
+    return node_value(n: n)
+
+function main()
+    mine = node_new()
+    node_free(n: mine)
+    print("visited ", visit(cb: seen))
