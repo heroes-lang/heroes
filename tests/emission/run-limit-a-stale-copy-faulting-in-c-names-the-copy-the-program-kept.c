@@ -5,7 +5,7 @@
 #include <limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -159,13 +159,17 @@ bb0:
 #line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     t6 = h0_a;
 #line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
+    {
+#line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     hero_handle_alive(t6, "the argument `o` of `release`");
 #line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_handle_ending(t6, "release", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t6, "release", NULL);
 #line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     (void)release(t6);
 #line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    if (hero_handle_ended(t6) && h0_a == t6) h0_a = hero_handle_dead();
+    if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead();
+#line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
+    }
 #line 29 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     t7 = make_again();
 #line 29 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
@@ -203,16 +207,20 @@ bb0:
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     t15 = h2_b;
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
+    {
+#line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     hero_handle_alive(t15, "the argument `o` of `release`");
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_handle_ending(t15, "release", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t15, "release", NULL);
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     (void)release(t15);
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    if (hero_handle_ended(t15) && h2_b == t15) h2_b = hero_handle_dead();
+    if (hero_handle_ended(t15, hero_life_0_0) && h2_b == t15) h2_b = hero_handle_dead();
+#line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
+    }
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     return;
-#line 216 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 224 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 }
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

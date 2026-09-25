@@ -5,7 +5,7 @@
 #include <fixedbugs-a-real-deallocator-given-the-same-handle-twice.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -140,26 +140,34 @@ bb0:
 #line 71 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t6 = h0_a;
 #line 71 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+    {
+#line 71 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     hero_handle_alive(t6, "the argument `b` of `blk_close`");
 #line 71 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
-    hero_handle_ending(t6, "blk_close", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t6, "blk_close", NULL);
 #line 71 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     (void)blk_close(t6);
 #line 71 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
-    if (hero_handle_ended(t6) && h0_a == t6) h0_a = hero_handle_dead();
+    if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead();
+#line 71 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+    }
 #line 72 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     t7 = h1_twice;
 #line 72 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+    {
+#line 72 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     hero_handle_alive(t7, "the argument `b` of `blk_close`");
 #line 72 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
-    hero_handle_ending(t7, "blk_close", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t7, "blk_close", NULL);
 #line 72 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     (void)blk_close(t7);
 #line 72 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
-    if (hero_handle_ended(t7) && h1_twice == t7) h1_twice = hero_handle_dead();
+    if (hero_handle_ended(t7, hero_life_0_0) && h1_twice == t7) h1_twice = hero_handle_dead();
+#line 72 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
+    }
 #line 72 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     return;
-#line 163 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
+#line 171 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsarealdeallocatorgiventhesamehandletwice_Blk_eq(blk * const *a, blk * const *b) {
     return hero_handle_eq(*a, *b);

@@ -44,7 +44,6 @@ use handles
 use check/state
 use check/reaches
 use emit/writer
-use emit/handle_traffic
 use emit/handle_text
 use parse
 
@@ -78,13 +77,14 @@ function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decl
                         # is what stops one call taking one handle at two
                         # consuming positions before C (defect 084).
                         if p.consumes
-                            handle_traffic.emit_each(
+                            announce(
                                 @w,
                                 c,
                                 s,
                                 decls,
                                 ty: written.must(),
                                 value: handle_text.cell_of(arguments[at]),
+                                at: at,
                                 entry: "hero_handle_ending",
                                 tail: ", " + by
                             )
@@ -93,18 +93,39 @@ function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decl
                         # own set must name it too (panel 176's item 2): checked
                         # here, before C, like a release.
                         if !p.transfers.is_err()
-                            handle_traffic.emit_each(
+                            announce(
                                 @w,
                                 c,
                                 s,
                                 decls,
                                 ty: written.must(),
                                 value: handle_text.cell_of(arguments[at]),
+                                at: at,
                                 entry: "hero_handle_transferring",
                                 tail: ", " + handle_text.set_c(s, p.transfers.must())
                             )
                 at @ at + 1
         .constant_decl | .record_decl | .variant_decl | .test_decl => return
+
+# One announcement per handle the argument reaches, each keeping the number of
+# the life it is announced for in a local of the call's block, which the end
+# after the call hands back (defect 098, `handle_text.life_c`). Locals are
+# hoisted to the prologue everywhere else in the emitted C; these live in the
+# call's block because they belong to one call, as `hero_when` does.
+function announce(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, value: str, at: i64, entry: str, tail: str)
+    suffixes = reaches.handle_suffixes(c, s, decls, ty: ty)
+
+    if suffixes.len() == 0
+        writer.line(@w, text: "    /* heroes: a mark on a type that reaches no handle */")
+        return
+    k: i64 @ 0
+
+    for suffix in suffixes
+        writer.line(
+            @w,
+            text: "    uint64_t " + handle_text.life_c(at: at, k: k) + " = " + entry + "(" + value + suffix + tail + ");"
+        )
+        k @ k + 1
 
 # Does C READ what this argument holds, so a dead handle in it must be
 # refused before the call? A value always. An `@` cell unless its mark says a

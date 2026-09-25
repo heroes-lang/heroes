@@ -5,7 +5,7 @@
 #include <handle-alive-after-a-loop-that-ends-on-break.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -203,13 +203,17 @@ bb5:
 #line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     t12 = h0_n;
 #line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
+    {
+#line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     hero_handle_alive(t12, "the argument `n` of `node_free`");
 #line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    hero_handle_ending(t12, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t12, "node_free", NULL);
 #line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     (void)node_free(t12);
 #line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    if (hero_handle_ended(t12) && h0_n == t12) h0_n = hero_handle_dead();
+    if (hero_handle_ended(t12, hero_life_0_0) && h0_n == t12) h0_n = hero_handle_dead();
+#line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
+    }
 #line 21 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     t13 = true;
 #line 21 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
@@ -251,20 +255,24 @@ bb8:
 #line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     t24 = h0_n;
 #line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
+    {
+#line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     hero_handle_alive(t24, "the argument `n` of `node_free`");
 #line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    hero_handle_ending(t24, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t24, "node_free", NULL);
 #line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     (void)node_free(t24);
 #line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    if (hero_handle_ended(t24) && h0_n == t24) h0_n = hero_handle_dead();
+    if (hero_handle_ended(t24, hero_life_0_0) && h0_n == t24) h0_n = hero_handle_dead();
+#line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
+    }
 #line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     goto bb7;
 #line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
 bb9:
 #line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     goto bb7;
-#line 268 "handlealiveafteraloopthatendsonbreak.c"
+#line 276 "handlealiveafteraloopthatendsonbreak.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteraloopthatendsonbreak_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
