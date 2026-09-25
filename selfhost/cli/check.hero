@@ -23,6 +23,7 @@ use print/scopes
 use cli/table as cli_table
 use cli/argv
 use cli/io
+use cli/json_text
 
 function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     parsed = parse.parse_source(s)
@@ -172,22 +173,11 @@ function json(diagnostics: [diag.Diagnostic], s: source.Source) -> str
 
     return out + "  ]\n}\n"
 
+# A JSON string, quoted, through the one escape every JSON writer here shares
+# (defect 102: this one escaped three characters of the thirty-four JSON
+# forbids raw, and a stray control byte in a message made schema 1 unreadable).
 function quote(text: str) -> str
-    out: str @ "\""
-
-    for ch in text.chars()
-        if ch == "\\"
-            out @ out + "\\\\"
-        else
-            if ch == "\""
-                out @ out + "\\\""
-            else
-                if ch == "\n"
-                    out @ out + "\\n"
-                else
-                    out @ out + ch
-
-    return out + "\""
+    return "\"" + json_text.json_string(text) + "\""
 
 # Applies every certain fix, back to front so the earlier spans stay
 # valid. Only certain — CLAUDE.md §8 rather than caution: a guess is
@@ -259,6 +249,11 @@ function apply(diagnostics: [diag.Diagnostic], s: source.Source) -> str
     return text
 
 ## Tests
+
+# Schema 1 goes through the one escape (defect 102): the tab and the carriage
+# return this writer used to pass raw.
+test "a JSON string here escapes what JSON forbids raw"
+    assert quote("a\tb\rc\n\"d\\e") == "\"a\\tb\\rc\\n\\\"d\\\\e\""
 
 test "stages stop on the first noise, apply repairs, holes stay exit 0"
     # A clean file with a hole: exit 0, the report is stdout's.
