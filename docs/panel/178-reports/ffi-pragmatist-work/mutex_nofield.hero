@@ -1,0 +1,9 @@
+extern "pthread.h"
+    record Mutex tag pthread_mutex_t partial
+    function pthread_mutex_init(@m: Mutex, attr: ptr) -> i32
+    function pthread_mutex_lock(@m: Mutex) -> i32
+
+function main()
+    m: Mutex @ nullptr
+    print(pthread_mutex_init(@m, attr: nullptr))
+    print(pthread_mutex_lock(@m))

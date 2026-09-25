@@ -1,0 +1,26 @@
+extern "app.h"
+    record SockaddrUn tag sockaddr_un
+        sun_len: u8
+        sun_family: u8
+        sun_path: i8[104]
+    function app_connect(@addr: SockaddrUn) -> i64
+
+constant AF_UNIX: u8
+    1
+
+function main()
+    addr: SockaddrUn @ SockaddrUn(sun_len: 106, sun_family: AF_UNIX, sun_path: [
+        '/', 't', 'm', 'p', '/', 'a', 'p', 'p', '.', 's', 'o', 'c', 'k'
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ])
+    fd = app_connect(@addr)
+    if fd < 0
+        print("app_connect failed: ", fd)
+        exit(code: 1)
+    print("connected on descriptor ", fd)

@@ -1,0 +1,18 @@
+pthread_mutex_t        ctor==zero:NO   INITIALIZER all-zero:NO; lock(zero)=22 Invalid argument
+pthread_cond_t         ctor==zero:NO   INITIALIZER all-zero:NO; signal(zero)=22 Invalid argument; broadcast=22 Invalid argument; timedwait=22 Invalid argument
+pthread_rwlock_t       ctor==zero:NO   INITIALIZER all-zero:NO; wrlock(zero)=22 Invalid argument
+pthread_once_t INIT    ctor==zero:NO   (no ctor fn) once(zero) twice=0,0, routine ran 1 time(s)
+pthread_attr_t         ctor==zero:NO   create(attr=zero)=22 Invalid argument
+pthread_mutexattr_t    ctor==zero:NO   mutex_init(attr=zero)=22 Invalid argument
+pthread_condattr_t     ctor==zero:NO   cond_init(attr=zero)=0
+pthread_rwlockattr_t   ctor==zero:NO   rwlock_init(attr=zero)=22 Invalid argument
+sigset_t               ctor==zero:yes  sigismember(zero,SIGINT)=0
+fd_set FD_ZERO         ctor==zero:yes  
+in6_addr ANY_INIT      ctor==zero:yes  
+mbstate_t              ctor==zero:yes  mbrtowc(zero, e-grave)=2, U+00E8, locale C.UTF-8
+SHA256_CTX             ctor==zero:NO   Update(zero)=1 Final=1, digest of "abc" WRONG; bytes Final wrote into a 0x55-filled buffer: 0 of 32
+SHA_CTX                ctor==zero:NO   
+SHA512_CTX             ctor==zero:NO   
+struct flock (no ctor) ctor==zero:NO   F_RDLCK=1 F_WRLCK=3 F_UNLCK=2; fcntl(F_SETLK, zero)=-1 Invalid argument
+struct sigevent        SIGEV_NONE=0 SIGEV_SIGNAL=1 SIGEV_THREAD=3
+struct sigaction       SIG_DFL is null: yes

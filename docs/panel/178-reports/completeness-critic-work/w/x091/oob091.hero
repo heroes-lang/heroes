@@ -1,0 +1,10 @@
+extern "shapes091.h"
+    record Slot tag slot
+        name: i8[4]
+        id: i32
+
+function main()
+    s: Slot @ Slot(name: [0, 0, 0, 0], id: 7)
+    i: i64 @ -1
+    s.name[i] @ 1
+    print(s.id)

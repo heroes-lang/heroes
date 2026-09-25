@@ -1,0 +1,20 @@
+# Critic, panel 178: a union bound by one arm (extern_union.hero: "C zeroes the rest"),
+# its bytes handed to write(), under MSan: glibc's pthread_mutex_t by `__align`, and a union U by `a`.
+extern "pthread.h"
+    record pthread_mutex_t partial
+        __align: i64
+
+extern "unistd.h"
+    function write(fd: i32, @buf: pthread_mutex_t, n: u64) -> i64
+
+extern "ushim.h"
+    record U partial
+        a: i32
+    function write_u(@u: U) -> i64
+
+function main()
+    m: pthread_mutex_t @ pthread_mutex_t(__align: 0)
+    n1 = write(fd: 1, buf: @m, n: 40)
+    u: U @ U(a: 5)
+    n2 = write_u(@u)
+    print(n1 + n2)

@@ -1,0 +1,1 @@
+no. The program fills every field with zero only to have storage to hand to pthread_mutex_init, which runs and is checked before any lock. I did not claim `zero` on the record, because all zeros is not a valid mutex on every platform.

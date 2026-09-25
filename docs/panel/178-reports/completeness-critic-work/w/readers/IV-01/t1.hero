@@ -1,0 +1,18 @@
+extern "sys/utsname.h"
+    record Utsname tag utsname
+        sysname: u8[256]
+        nodename: u8[256]
+        release: u8[256]
+        version: u8[256]
+        machine: u8[256]
+    function uname(@name: Utsname) -> i32
+
+function main()
+    u: Utsname @ Utsname(sysname: [0; 256], nodename: [0; 256], release: [0; 256], version: [0; 256], machine: [0; 256])
+    r = uname(@u)
+    if r != 0
+        print(f"uname failed: {r}")
+        exit(code: 1)
+    match u.sysname.validated_bytes()
+        .ok s => print(s)
+        .err e => print(e.code)

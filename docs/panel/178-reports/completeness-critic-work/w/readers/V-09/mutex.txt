@@ -1,0 +1,1 @@
+no. The cell starts from zeros (`rest: zero`) only because every binding must be initialised, and it goes through pthread_mutex_init before any lock or unlock.

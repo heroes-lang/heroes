@@ -1,0 +1,32 @@
+# Critic, panel 178: route C for `sockaddr_un`: the header zeroes it, C's strlcpy
+# writes the path through the field's lend, bind and connect take it. No 091.
+extern "zshim.h"
+    constant SOCK_STREAM: i64
+    record SockaddrUn tag sockaddr_un partial
+        sun_family: u16
+        sun_path: i8[108]
+    function hero_un_zero() -> SockaddrUn
+    function strlcpy(dst: ptr counted_by size lent, src: cstr lent, size: u64) -> u64
+    function socket(domain: i32, kind: i32, protocol: i32) -> i32
+    function listen(fd: i32, backlog: i32) -> i32
+    function close(fd: i32) -> i32
+    function unlink(path: cstr lent) -> i32
+    function hero_bind_un(fd: i32, @a: SockaddrUn) -> i32
+    function hero_connect_un(fd: i32, @a: SockaddrUn) -> i32
+
+function main()
+    path = "/tmp/hèroes-178-critic.sock"
+    _ = unlink(path.cstr())
+    a: SockaddrUn @ hero_un_zero()
+    if strlcpy(dst: a.sun_path.ptr(), src: path.cstr(), size: 108) >= 108
+        print("does not fit")
+        exit(code: 1)
+    server = socket(domain: a.sun_family.to_i32().must(), kind: SOCK_STREAM.to_i32().must(), protocol: 0)
+    print(hero_bind_un(fd: server, @a))
+    print(listen(fd: server, backlog: 1))
+    client = socket(domain: a.sun_family.to_i32().must(), kind: SOCK_STREAM.to_i32().must(), protocol: 0)
+    print(hero_connect_un(fd: client, @a))
+    print(a.sun_path.validated_bytes().must())
+    _ = close(fd: client)
+    _ = close(fd: server)
+    _ = unlink(path.cstr())

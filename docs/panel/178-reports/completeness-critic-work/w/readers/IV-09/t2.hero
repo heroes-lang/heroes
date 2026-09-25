@@ -1,0 +1,27 @@
+extern "app.h"
+    record SockaddrUn tag sockaddr_un
+        sun_len: u8
+        sun_family: u8
+        sun_path: i8[104]
+    function app_connect(@addr: SockaddrUn) -> i64
+
+function main()
+    addr: SockaddrUn @ SockaddrUn(sun_len: 0, sun_family: 1, sun_path: [0; 104])
+    addr.sun_path[0] @ '/'
+    addr.sun_path[1] @ 't'
+    addr.sun_path[2] @ 'm'
+    addr.sun_path[3] @ 'p'
+    addr.sun_path[4] @ '/'
+    addr.sun_path[5] @ 'a'
+    addr.sun_path[6] @ 'p'
+    addr.sun_path[7] @ 'p'
+    addr.sun_path[8] @ '.'
+    addr.sun_path[9] @ 's'
+    addr.sun_path[10] @ 'o'
+    addr.sun_path[11] @ 'c'
+    addr.sun_path[12] @ 'k'
+    fd = app_connect(@addr)
+    if fd == -1
+        print("could not connect to /tmp/app.sock")
+        exit(code: 1)
+    print(f"connected, descriptor {fd}")

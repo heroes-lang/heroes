@@ -1,0 +1,9 @@
+record P
+    a: i64[4]
+    s: str
+
+function main()
+    p: P @ P(a: [1, 2, 3, 4], s: "x")
+    x: i64[4] @ [5, 6, 7, 8]
+    print(p.a[2])
+    print(x[1])

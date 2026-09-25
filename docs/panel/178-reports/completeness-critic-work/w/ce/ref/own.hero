@@ -1,0 +1,7 @@
+record Point
+    x: i64
+    y: i64
+
+function main()
+    p = Point(x: 1, rest: zero)
+    print(p.x)

@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 7**
 
 - [ ] **077 — a handle given back after C has handed its address out again is `check` 0 and `run` 0, and the release lands on the new handle** | the live set keys on the address, so a stale handle that equals a live one is accepted as the live one, and the one correct release that follows is the call that aborts | `runtime/parts/alloc.c:436` · `spec § 13`
 
@@ -132,6 +132,139 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the cheapest, and what it does to a `borrows` handle that was never in the
     set, is panel 177's question. The author can disagree and close it on the
     wart, as panel 153 put it.
+
+- [ ] **091 — writing one element of a fixed-array field through a cell is `check` 0 and dies at run time saying it is a compiler bug** | a store whose place ends in an index is always sent to the copy-on-write element writer, which serves `[T]` and fails for `T[N]`, and the emitter writes `hero_unreachable()` where the store should be | `selfhost/emit/inst.hero:133` · `selfhost/emit/container.hero:234` · `spec § 5`
+
+    **Origin:** the coordinator of panel 178, 2026-09-24, measuring today's
+    route for `sockaddr_un.sun_path` for that sitting's shared brief;
+    number agreed with the session holding this list that night.
+
+    **The reproducer** (`docs/panel/178-briefs/elem_min.hero` + `elem_min.h`):
+
+        extern "elem_min.h"
+            record Slot tag slot partial
+                name: i8[4]
+
+        function main()
+            s: Slot @ Slot(name: [0, 0, 0, 0])
+            s.name[1] @ 72
+            print(s.name[1])
+
+    `check` **0**, run **134**, `panic: entered unreachable code — this is a
+    compiler bug, please report it`: three of three on Darwin arm64 and on
+    Linux x86-64, and on Linux arm64 by `heroes run` and by the built binary.
+    The emitted C (`--emit-c`) carries
+    `hero_unreachable(); /* not an element write */` where the store belongs.
+
+    **Why it is a defect, and why the repair is a lowering.** It is defect
+    052's sibling: that was `s[0] @ 65` on a `str`, closed 2026-09-16 by a
+    REFUSAL, because spec § 3 calls `str` immutable. Here the document has
+    ruled the other way: spec § 5 says *`@` declares a mutable cell and
+    re-binds it, or a field or element inside one*, and § 13 gives a group
+    record a fixed array field. So the spec admits the write, the compiler has
+    the bug (CLAUDE.md § 12), and the repair is to emit the store, index
+    checked as the read already is.
+
+    **What it cost before it was found.** It is the only route today for the
+    bytes a program writes into a fixed field, `sun_path` being the case that
+    found it: `sunpath_*_ascii.hero` dies the same way on all three legs, so
+    such a field has no working route except a literal that spells every byte
+    as a number. Panel 178 weighs a form for it; the repair is owed whatever
+    that sitting decides.
+
+- [ ] **092 — a whole group record lent to a `void *` parameter is handed to C with no bound on the count C is told, and C writes past it** | a record behind `@` against a `void *` passes every pointee check, so `read(fd, buf: @h, n: 4096)` into a 48-byte record is `check` 0 and a stack overflow at run time | `selfhost/emit/extern_probe.hero` · `selfhost/cli/pointee.hero` · `tests/golden/fixedbugs/ffi-pointee-void.hero` · `spec § 13`
+
+    **Origin:** panel 178's ffi-pragmatist, 2026-09-24 (its § 8 F1), found
+    while binding the census structs; reproduced by the coordinator the same
+    day on all three legs before filing.
+
+    **The reproducer** (`docs/panel/178-reports/ffi-pragmatist-work/rec_overwrite.hero`):
+
+        extern "netdb.h"
+            record Hints tag addrinfo partial
+                ai_family: i32
+                ai_socktype: i32
+
+        extern "unistd.h"
+            function read(fd: i32, @buf: Hints, n: u64) -> i64
+
+        function main()
+            h: Hints @ Hints(ai_family: 0, ai_socktype: 1)
+            n = read(fd: 0, buf: @h, n: 4096)
+            print(n)
+            print(h.ai_family)
+
+    With 4096 bytes on standard input: `check` **0**; run **138** on Darwin
+    arm64, **135** (Bus error) on Linux arm64, **139** (segmentation fault) on
+    Linux x86-64, three of three on each, after printing `4096`.
+    `--sanitize`: `AddressSanitizer: stack-buffer-overflow`, *WRITE of size
+    4096*, on all three. The seat measured that the same shape through `write`
+    hands C's reader the stack beyond the record (`rec_overread.hero`).
+
+    **Why it is a defect.** design.md §1.12: a Heroes program must not
+    segfault and must not corrupt memory, and this one does both at `check` 0.
+    It is defect 010's sibling on another shape: `@value: i32` against
+    `void *` is refused (`tests/golden/fixedbugs/ffi-pointee-void.hero`), and a
+    whole record in the same position is not. The count that bounds the write
+    is a C argument the program supplies, which is the shape `counted_by`
+    relates for a lent field; nothing relates it for a record.
+
+- [ ] **093 — a `str` holding a zero byte reaches C through `.cstr()` cut at that byte, at exit 0** | `read_file` makes a `str` from any bytes, a zero among them, and `.cstr()` hands C the same bytes zero-copy, so C reads a shorter string than the program holds and nothing says so | `selfhost/emit/` `.cstr()` · `runtime/` `hero_str_cstr` · `spec § 13` · `docs/records/log/2026-08-04-0001-escape-sequences-five-split-by-context-go-s-rule.md`
+
+    **Origin:** panel 178's ffi-pragmatist, 2026-09-24 (its § 8 F3), found
+    while pricing route T's refusal of an interior zero; reproduced by the
+    coordinator the same day on all three legs before filing.
+
+    **The reproducer** (`docs/panel/178-reports/ffi-pragmatist-work/nul.hero`),
+    with `p/nul.bin` holding the five bytes `a b \0 c d`:
+
+        extern "string.h"
+            function strlen(s: cstr lent) -> u64
+
+        function main()
+            s = read_file("p/nul.bin").must()
+            print(s.len())
+            print(strlen(s.cstr()))
+
+    `check` **0**, run **0**, prints `5` then `2`: three of three on Darwin
+    arm64, and on Linux arm64 and x86-64.
+
+    **Why it is a defect.** A wrong answer at exit 0. The language already
+    ruled that an interior zero must not reach C: panel 008 froze the escape
+    set with `\0` out because *interior NUL voids §4.20's free `.cstr()`* (the
+    log entry above). The escape was closed and `read_file` is a second door to
+    the same byte, which nobody closed. Whether the repair refuses at `.cstr()`
+    (a `T?`, or an abort) or at `read_file` is the repair's question.
+
+- [ ] **094 — a group `constant` whose header value is a struct initialiser passes `check` and stops the build with `internal error`** | the emitter writes `return PT_INIT;` and a file-scope `__typeof__(PT_INIT)` probe, and `{1, 2}` is neither an expression nor a type, so clang fails and the compiler reports itself broken | `selfhost/emit/` constant emission · `.claude/rules/c-boundary.md` · `spec § 13`
+
+    **Origin:** panel 178's compiler-engineer, 2026-09-24 (its *Found while
+    measuring* 1), looking for a route by which C itself says which value is
+    valid; reproduced by the coordinator the same day on all three legs before
+    filing.
+
+    **The reproducer** (`docs/panel/178-reports/compiler-engineer-work/w/cinit/`):
+    `cinit.h` is `struct pt { int x; int y; };` and `#define PT_INIT {1, 2}`;
+
+        extern "cinit.h"
+            record Pt tag pt
+                x: i32
+                y: i32
+            constant PT_INIT: Pt
+
+        function main()
+            p = PT_INIT
+            print(p.y)
+
+    `check` **0**, `run` **2**, `internal error: compiling the generated C
+    failed`, on Darwin arm64, Linux arm64 and Linux x86-64.
+
+    **Why it is a defect.** CLAUDE.md § 7's exception: the compiler blames
+    itself for a binding it accepted. And it is the one route to *which value of
+    a struct is valid* where C says it rather than the binding's author: the
+    same program over Darwin's `PTHREAD_MUTEX_INITIALIZER` fails the same way
+    (the seat's `w/mutex_init.hero`). A compound literal, `(struct pt)PT_INIT`,
+    is valid C.
 
 - [ ] **095 — `fmt` refuses a group member whose parameters are written one per line with a comment between two of them** | the signature printer joins the parameters onto one line and has no place for the comment, which is expelled after the declaration and becomes the next member's doc, so the self-check sees a different tree and `fmt` exits 2 on a program `check` accepts | `selfhost/print/fmt.hero` (`signature`) · `selfhost/parse/members.hero`
 

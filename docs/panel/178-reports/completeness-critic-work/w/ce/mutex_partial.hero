@@ -1,0 +1,10 @@
+# Panel 178, compiler-engineer: `partial` at HEAD already builds an all-zero
+# pthread_mutex_t with one explicit zero, no claim written anywhere.
+extern "pthread.h"
+    record Mutex tag _opaque_pthread_mutex_t partial
+        __sig: i64
+    function pthread_mutex_lock(@m: Mutex) -> i32
+
+function main()
+    m: Mutex @ Mutex(__sig: 0)
+    print(pthread_mutex_lock(@m))

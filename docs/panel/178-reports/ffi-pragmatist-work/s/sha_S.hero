@@ -1,0 +1,26 @@
+# Panel 178 ffi-pragmatist: route S TODAY reaches the all-zero SHA256_CTX that
+# Z1 would refuse at `rest: zero`: `partial` zeroes every undeclared member.
+extern "sha_shim.h" package "libcrypto"
+    record Sha256 tag SHA256state_st partial
+        num: u32
+    function SHA256_Init(@c: Sha256) -> i32
+    function SHA256_Update(@c: Sha256, data: cstr lent, len: u64) -> i32
+    record Digest tag digest
+        b: u8[32]
+    function hero_sha256_final(@d: Digest, @c: Sha256) -> i32
+
+function nothing() -> Digest
+    return Digest(b: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+function main()
+    z: Sha256 @ Sha256(num: 0)
+    d: Digest @ nothing()
+    print(SHA256_Update(@z, data: "abc".cstr(), len: 3))
+    print(hero_sha256_final(@d, @z))
+    print(d.b[0])
+    c: Sha256 @ Sha256(num: 0)
+    print(SHA256_Init(@c))
+    e: Digest @ nothing()
+    print(SHA256_Update(@c, data: "abc".cstr(), len: 3))
+    print(hero_sha256_final(@e, @c))
+    print(e.b[0])
