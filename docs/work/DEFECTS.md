@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 5**
+**OPEN: 4**
 
 - [ ] **096 — inside an `extern` group, a remark followed by a blank line before the next member makes `fmt` refuse the file** | the group printer never emits the blank line for a continuing member, so the remark becomes the next member's doc, the self-check sees a different tree and `fmt` exits 2 on a program `check` accepts | `selfhost/print/fmt.hero` (the group's member walk, the `continues` branch)
 
@@ -44,32 +44,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     exit-2 guard stops the silent form, which would attach the remark to the
     record as its doc. The repair keeps the blank line between a remark and
     the member it does not document, inside a group as outside one.
-
-- [ ] **098 — two threads that acquire and release handles from one C allocator abort a correct program** | the live set records an end after C returns, so between C's release and the runtime's record the other thread can be handed the same address, the runtime overwrites the live entry with the new life, and the first thread's record then deletes the new one: the second thread's correct release is a stray | `runtime/parts/alloc.c` (`hero_handle_acquired` on a live entry with an end pending, `hero_handle_ended`)
-
-    **Origin:** the skeptic seat over the landing of panel 177's items 1 and 2
-    (the poison and the dead set), 2026-09-25, which measured it on the
-    runtime before that landing too; reproduced by the coordinator the same day
-    on the trunk's compiler at `9e17d471`, so it is older than the landing.
-    Panel 177's completeness critic had listed threads as unmeasured for both
-    of its routes.
-
-    **The reproducer.** Two threads spawned with `hero_thread_spawn`, each
-    200,000 times `n = sn_new()`, `sn_value(n: n)`, `sn_free(n: n)`, over ONE
-    C pool with a free list under a `pthread_mutex_t`, which is what every
-    real allocator is; `sn_new() -> S acquires sn_free`, `sn_free(n: S
-    consumes)`. `check` 0; `run` **134, ten of ten, on Darwin arm64**, *1 C
-    handle(s) given back that were never taken*; and ten of ten on Linux x86-64 and on Linux arm64, the same line. Windows unrun.
-
-    **Why it is a defect.** A correct program is refused, and the class is
-    every program that hands handles to C from more than one thread over one
-    allocator, which is the ordinary case for a server. The runtime's own
-    pending count (defect 084) already knows an end is in flight when the
-    second thread's acquisition arrives: an acquisition of a live address with
-    an end pending is C having released it inside that call and handed it out
-    again, so it is one more reference, not a replacement, and the end in
-    flight then leaves the new life standing. The repair makes the set say
-    that, and pins it with the reproducer as a golden over the shared pool.
 
 - [ ] **099 — a comment after the last item of a block leaves the block when `fmt` runs** | a `#` remark written at the block's indent after the last member of a group, the last statement of a body or the last field of a record is printed by the NEXT declaration's walk, at column 0, with a blank line added under it: exit 0, the tree the same, and the comment now sits at file level above the next function | `selfhost/print/fmt.hero` (`format_file`'s walk, `comments_before` at the next item's indent)
 
