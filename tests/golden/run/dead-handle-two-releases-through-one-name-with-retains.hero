@@ -1,0 +1,25 @@
+# CORRECT, and it is what makes the poison conditional (the llm-ergonomist's
+# A3 at panel 177; item 1's *when the life ended*). `ob_up_ref` adds a
+# reference through `retains`, so `cert` holds two, and giving it back twice
+# through the one name is exactly right. A poison written at every consuming
+# call would have emptied `cert` at the first `ob_put` and refused the
+# second; written only when `hero_handle_ended` answers that the count
+# reached zero, the first release leaves the name alone and the second
+# empties it. Nothing reads `cert` after that, so the program exits 0 with
+# the set balanced.
+
+extern "dead-handle-two-releases-through-one-name-with-retains.h"
+    record X509 tag ob
+    function ob_new() -> X509 acquires ob_put
+    function ob_up_ref(a: X509 retains ob_put) -> i32 when 1
+    function ob_put(a: X509 consumes)
+    function ob_refs(a: X509) -> i64
+
+function main()
+    cert = ob_new()
+    assert ob_up_ref(a: cert) == 1
+    print("references held: ", ob_refs(a: cert))
+    ob_put(a: cert)
+    print("references held: ", ob_refs(a: cert))
+    ob_put(a: cert)
+    print("two releases through one name, and both were owed")

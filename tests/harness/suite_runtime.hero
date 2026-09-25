@@ -114,8 +114,12 @@ constant LEAST_FILES: i64
 # point since the floor was written, which is the single point doing its job —
 # and the floor stayed at 3, so it would have passed a sweep that found less
 # than half of them.
+#
+# **7 -> 10 on 2026-09-25**, panel 177's dead set: one `hero_malloc_raw` in its
+# growth and two `free`s, the old table's and a dropped generation's, all
+# inside `alloc.c` where the single point says they belong.
 constant LEAST_AT_THE_POINT: i64
-    7
+    10
 
 constant LEAST_REFCOUNT: i64
     6
@@ -208,6 +212,12 @@ constant SHARED_BY_DECISION: [str]
         "runtime/parts/alloc.c hero_handle_live | how many addresses the set holds, under the same lock and for the same reason. It is deliberately NOT `_Atomic`: an atomic count beside a locked table would be a second answer to one question, which is the drift this file exists to catch"
         "runtime/parts/alloc.c hero_handle_strays | handles given back that the set did not hold — a double release, or a part of something acquired whole. Under the same lock, and process-wide for `hero_live_blocks`' reason: the gate that reads it runs on the main thread at exit"
         "runtime/parts/alloc.c hero_handle_first_stray | the first such address, kept so the message can name one rather than offer a list of causes. The list was the old counter's only option and it was rewritten three times in two days (panel 150)"
+        "runtime/parts/alloc.c hero_dead_ring | the DEAD set's window (panel 177's item 2): the address each of the last 2^20 ends gave back, by sequence number modulo the window, so the mark 2^20 ends old is the one the next end overwrites. Under the live set's own lock, because every write to it happens inside `hero_handle_ended`, `acquired`, `retained` or `lent`, which already hold that lock. It cannot be `_Thread_local` for the live set's reason one step on: a copy given back on one thread and read on another is exactly the read it exists to refuse. At most 8 MiB, and `alloc.c` states the bound"
+        "runtime/parts/alloc.c hero_dead_ring_cap | the window's capacity while it fills, doubling to 2^20 entries; under the same lock, the lock's own state"
+        "runtime/parts/alloc.c hero_dead_marks | how many ends the window has seen, whose low 20 bits place the next one; under the same lock, and a 64-bit count so it cannot wrap in any program's life"
+        "runtime/parts/alloc.c hero_dead_index | open addressing over the window, one slot per dead address holding the ring slot of its latest end, which is what a crossing into C asks. Under the same lock; at most 2^21 slots of 4 bytes, 8 MiB, and 12 for the instant it doubles to that size beside its old copy"
+        "runtime/parts/alloc.c hero_dead_index_cap | the index's capacity, under the same lock, the lock's own state"
+        "runtime/parts/alloc.c hero_dead_count | how many addresses the index holds, never above 2^20; under the same lock and, like `hero_handle_live`, deliberately not `_Atomic` beside a locked table"
         "runtime/parts/stack.c done | the once-flag over the PROCESS-wide half of the guard — the two dispositions on POSIX, the vectored handler on Windows — in each platform arm. The per-thread half moved out from under it at M-thread-stacks and is `_Thread_local`, so what is left here is genuinely the process's; `hero_args_set`'s callee, exactly like `os.c`'s pair above"
     ]
 

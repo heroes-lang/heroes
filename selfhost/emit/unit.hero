@@ -65,6 +65,7 @@ use emit/descriptors
 use emit/signature
 use emit/body
 use emit/callback_guard
+use emit/callback_thunk
 
 # One module's translation unit. The caller has already run the gate
 # over the whole program (a refusal is program-wide) and monomorphised;
@@ -115,6 +116,23 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
         for slot in f.params
             reached[f.slots[slot].ty] @ true
 
+    # Which functions C may call back (panel 111 R9). Over the FULL
+    # program, never the TU's slice: a function this TU defines may have
+    # its address taken in another module, and the fused path must reach
+    # the same answer or the two emitters disagree about one program.
+    guarded_decls = callback_guard.guarded(p, c, decls)
+
+    # The callback table names every one of them and its thunk in EVERY
+    # TU that can hand C a function (panel 177's item 2), so their
+    # signatures' types join the reach too, or a TU that never calls one
+    # of them is missing the typedef its prototype names.
+    for f in p.functions
+        if !guarded_decls[f.decl].is_err()
+            reached[f.result] @ true
+
+            for slot in f.params
+                reached[f.slots[slot].ty] @ true
+
     # ONE set feeds all four sections, and that is the invariant rather
     # than a tidiness. Every time a section got its own answer the TU
     # stopped compiling: descriptors from the whole program against
@@ -147,12 +165,6 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
     extern_probe.extern_probes(@w, tu_p, c, names, s, decls)
     perfn.prototypes(@w, c, names, decls, want: want)
 
-    # Which functions C may call back (panel 111 R9). Over the FULL
-    # program, never the TU's slice: a function this TU defines may have
-    # its address taken in another module, and the fused path must reach
-    # the same answer or the two emitters disagree about one program.
-    guarded_decls = callback_guard.guarded(p, c, decls)
-
     # `declared`, not `walked.reached`: an option this TU prints `_hash`
     # for takes its payload's descriptor address, so the descriptor set
     # has to read the same reach the printer does. `constructed` stays
@@ -173,6 +185,8 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
 
         if emit_decls.emitted(f, target: .program_build)
             signature.prototype(@w, f, c, names, s, decls)
+
+    callback_thunk.lookup_table(@w, p, c, names, s, decls)
 
     for at in keep
         f = p.functions[at]

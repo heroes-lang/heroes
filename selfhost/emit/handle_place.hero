@@ -1,0 +1,217 @@
+# The PLACE a C call's argument was read from, as the C lvalue the poison
+# writes (panel 177's item 1, route P; defects 077 and 088).
+#
+# A call marked `consumes` or `transfers` ends a handle's life, and after it
+# the program still holds the value: the binding, the `@` cell's field, the
+# element the argument came from. Nothing read that value as dead (the
+# checker does not, the live set is asked only by a consuming call), so C was
+# handed freed memory at exit 0 on three legs (defect 088), or a stale handle
+# that equalled a live one released the live one (defect 077). The repair
+# overwrites the place with `hero_handle_dead()` the moment the runtime says
+# the life ended, so the next read of that place through C is refused before
+# C runs, and a write through it faults. This module answers WHICH lvalue.
+#
+# It walks producers rather than trusting one shape, as `emit/field_lend.hero`
+# does for a lend and for the same reason: the IR loads a record into a fresh
+# temporary before reading a field of it, so the argument temporary is a COPY
+# and writing the dead value into it would poison nothing the program can
+# see. A `.load` is the place; a `.field` is one step off its base's; an
+# `.index` on a FIXED array is one subscript off its base's, because a fixed
+# array is C storage the program addresses directly. An element of a growing
+# array is not a place here: it lives behind copy-on-write, and the dead set
+# (route T, `runtime/parts/alloc.c`) is what catches a copy left there.
+#
+# **The poison is written under three conditions.** `hero_handle_ended`
+# returned that the life ended, so a handle holding a second reference from
+# `retains` is left in its name (the llm-ergonomist's A3). The place is not
+# one the SAME call writes through an `@` argument: that place is the call's
+# to set. And the place still holds the value the call was handed, so a place
+# something else rewrote is not poisoned over its new content.
+#
+# **The second condition compares PLACES, never values, and it was written
+# after the third was found insufficient** (the landing's skeptic, 2026-09-25,
+# probe `a14`). `node_swap(n: a, out: @a)` ends `a` and hands a new life back
+# into the same cell; a pool that reuses the address hands back the SAME
+# address, so `a == t` holds after the call and the value test cannot tell
+# the new life from the old one: the poison overwrote the new handle and
+# `hero_handle_acquired` then registered the dead page. So the arguments of
+# the call are compared as places — the root slot and the path, `overlaps`
+# below — and a place that overlaps any `@` argument of the call is not
+# poisoned at all. The comparison is in the conservative direction: an
+# element is one place whatever its index, and a record whose field is
+# passed `@` keeps all its handles, since a place left unpoisoned is still
+# caught through its address by the dead set.
+
+use ast
+use source
+use check/state
+use check/table
+use ir
+use ir/containers
+use emit/aggregate
+use emit/mangle
+
+# One entry per argument of the call, in the call's order: the lvalue the
+# argument was read from, or absent where the argument is not a place, or is
+# a place the call itself writes through an `@` argument. An `@` argument is
+# absent for that reason too: `check/acquiring.hero` refuses `consumes` and
+# `transfers` on a cell (`cell_cannot_end`), so C writes it and nothing here
+# ends a life read from it.
+function places_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run) -> [str?]
+    given = containers.args_of(f, run)
+    written: [str] @ []
+
+    for arg in given
+        match arg
+            .inout_arg io => written @ written.push(key_of_place(f, at: io.place))
+            .value_arg    => continue
+
+    out: [str?] @ []
+
+    for arg in given
+        match arg
+            .value_arg v =>
+                place = place_of(c, s, decls, f, value: v.value)
+                key = key_of(c, f, value: v.value)
+
+                if !place.is_err() && !key.is_err() && rewritten(written, key: key.must())
+                    out @ out.push(fail(code: "none", msg: "the call writes this place itself, through `@`"))
+                else
+                    out @ out.push(place)
+            .inout_arg => out @ out.push(fail(code: "none", msg: "a cell C writes"))
+
+    return out
+
+# Does a place overlap one the call writes through `@`?
+function rewritten(written: [str], key: str) -> bool
+    for other in written
+        if overlaps(one: key, other: other)
+            return true
+
+    return false
+
+# Two places overlap when one is the other or lies inside it. The key is
+# the root slot and the path spelled for comparison, `4.1[]` for slot 4's
+# field 1's element, so a boundary is a `.` or a `[` right after the shorter
+# key, and slot 1 does not overlap slot 10.
+function overlaps(one: str, other: str) -> bool
+    return one == other || inside(inner: one, outer: other) || inside(inner: other, outer: one)
+
+function inside(inner: str, outer: str) -> bool
+    if inner.len() <= outer.len() || inner.slice(from: 0, to: outer.len()) != outer
+        return false
+    next = inner[outer.len()]
+    return next == 46 || next == 91
+
+function key_of_place(f: containers.Function, at: ir.Place) -> str
+    text: str @ at.root.to_str()
+
+    for step in containers.steps_of(f, at.path)
+        match step
+            .field_step fs => text @ text + "." + fs.at.to_str()
+            .index_step    => text @ text + "[]"
+
+    return text
+
+# The key of the place a value was read from, walking the producers
+# `place_of` walks, with an element spelled `[]` whatever its index.
+function key_of(c: state.Checked, f: containers.Function, value: i64) -> str?
+    for blk in f.blocks
+        for inst in blk.insts
+            if !inst.dest.is_err() && inst.dest.must() == value
+                match inst.op
+                    .load ld  => return ok(key_of_place(f, at: ld.place))
+                    .field fl => return ok(key_of(c, f, value: fl.base)? + "." + fl.at.to_str())
+                    .index ix => return ok(key_of(c, f, value: ix.base)? + "[]")
+                    .lit | .store | .push_owned | .unary | .binary | .cast => return fail(
+                        code: "none",
+                        msg: "not a place"
+                    )
+                    .call | .construct | .map_get | .len_of => return fail(code: "none", msg: "not a place")
+                    .tag_of | .payload | .func_ref | .abort_op | .incref => return fail(
+                        code: "none",
+                        msg: "not a place"
+                    )
+                    .decref | .decref_slot | .hole | .missing | .copy_out => return fail(
+                        code: "none",
+                        msg: "not a place"
+                    )
+
+    return fail(code: "none", msg: "no producer")
+
+# A place whose path ends in an index is not an lvalue the C names (its
+# `aggregate.place` spelling says so in capitals), so it is absent here.
+function lvalue(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> str?
+    for step in containers.steps_of(f, at.path)
+        match step
+            .index_step => return fail(code: "none", msg: "an element behind copy-on-write is not a place")
+            .field_step => continue
+
+    return ok(aggregate.place(c, s, decls, f, at: at))
+
+function place_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, value: i64) -> str?
+    for blk in f.blocks
+        for inst in blk.insts
+            if !inst.dest.is_err() && inst.dest.must() == value
+                match inst.op
+                    .load ld => return lvalue(c, s, decls, f, at: ld.place)
+                    .field fl =>
+                        owner = containers.value_type(f, fl.base)
+                        found = aggregate.field(c, s, decls, owner: owner, index: fl.at)
+
+                        if found.is_err()
+                            return fail(code: "none", msg: "not a field of this type")
+                        base = place_of(c, s, decls, f, value: fl.base)?
+                        return ok(base + "." + found.must().member)
+                    .index ix =>
+                        if !is_fixed(c, f, value: ix.base)
+                            return fail(code: "none", msg: "an element behind copy-on-write is not a place")
+                        base = place_of(c, s, decls, f, value: ix.base)?
+                        return ok(base + "[" + mangle.value(ix.at) + "]")
+                    .lit | .store | .push_owned | .unary | .binary | .cast => return fail(
+                        code: "none",
+                        msg: "not a place"
+                    )
+                    .call | .construct | .map_get | .len_of => return fail(code: "none", msg: "not a place")
+                    .tag_of | .payload | .func_ref | .abort_op | .incref => return fail(
+                        code: "none",
+                        msg: "not a place"
+                    )
+                    .decref | .decref_slot | .hole | .missing | .copy_out => return fail(
+                        code: "none",
+                        msg: "not a place"
+                    )
+
+    return fail(code: "none", msg: "no producer")
+
+function is_fixed(c: state.Checked, f: containers.Function, value: i64) -> bool
+    return match table.get(c.types, containers.value_type(f, value))
+        .fixed                                                    => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .map | .fallible | .function_ty | .named         => false
+        .case_ty | .failure | .generic | .error                   => false
+
+# The one line that ends a life and poisons where it lay, or ends it alone
+# where the argument was no place. `value` and `place` are the C texts with
+# the handle's suffix already on them, so a record's field and a fixed
+# array's element are poisoned one handle at a time, as they are released.
+function ended_line(value: str, place: str?) -> str
+    if place.is_err()
+        return "    hero_handle_ended(" + value + ");"
+
+    return "    if (hero_handle_ended(" + value + ") && " + place.must() + " == " + value + ") " + place.must() + " = hero_handle_dead();"
+
+## Tests
+
+# The rule the skeptic's `a14` changed: a place the same call writes through
+# `@` is never poisoned, and the comparison is of places at a path boundary.
+test "a place overlaps one it lies in, and a slot does not overlap a longer number"
+    assert overlaps(one: "0", other: "0")
+    assert overlaps(one: "0.1", other: "0")
+    assert overlaps(one: "0", other: "0.1")
+    assert overlaps(one: "3[].0", other: "3[]")
+    assert !overlaps(one: "0.1", other: "0.2")
+    assert !overlaps(one: "1", other: "10")
+    assert !overlaps(one: "1.2", other: "12")
+    assert rewritten(["5", "0.1"], key: "0.1")
+    assert !rewritten(["5", "0.2"], key: "0.1")

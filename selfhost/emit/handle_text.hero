@@ -1,0 +1,40 @@
+# The spellings the handle traffic writes into the C, cut out of
+# `emit/handle_traffic.hero` on 2026-09-25 at the `layout` suite's ceiling:
+# a releaser set as the literal the runtime compares, the cell behind an
+# `@` argument's `&cell`, and the suffix a record's handle carries. Both
+# halves of the traffic, before the call and after it, spell these the same
+# way because they are written here once.
+
+use token
+use source
+use handles
+
+# The place of one handle a record reaches: the record's place with the same
+# suffix the value carries.
+function with_suffix(place: str?, suffix: str) -> str?
+    if place.is_err()
+        return place
+
+    return ok(place.must() + suffix)
+
+# A releaser set as the C string literal the runtime reads.
+function set_c(s: source.Source, mark: token.Span) -> str
+    return quoted(handles.releasers_c(source.span_text(s, mark)))
+
+# The releaser set as a C string the runtime compares by CONTENT (panel 175's
+# route A, landed at panel 176's item 1): each module is its own translation
+# unit, so neither a literal's address nor a header's static function is one
+# identity across them, and the name is. An extern's Heroes name is its C
+# symbol (spec § 13's `Member` has no rename), so the text is the same
+# everywhere.
+function quoted(text: str) -> str
+    return "\"" + text + "\""
+
+# The cell behind `&cell`. An `@` parameter is emitted as an address-of, so this
+# reads the one character off the front; anything else is handed back whole,
+# which keeps the emitted C compilable and wrong-looking rather than silently
+# right about the wrong value.
+function cell_of(argument: str) -> str
+    if argument.len() > 1 && argument[0] == 38
+        return argument.slice(from: 1, to: argument.len())
+    return argument

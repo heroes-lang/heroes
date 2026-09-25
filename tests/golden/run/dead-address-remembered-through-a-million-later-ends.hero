@@ -1,0 +1,31 @@
+# THE WINDOW, at its last end (panel 177's item 2; the landing's skeptic,
+# probes `f4` and `f5`, 2026-09-25). The dead set remembers an address from
+# the end that marked it until C hands it out again or 2^20 = 1,048,576 more
+# lives have ended: here the copy is read after 1,048,575, the most the
+# window promises, and it is refused before C. The shape the ring replaced
+# forgot an address marked last in its generation one end sooner than it
+# said, which is what the skeptic's `f4` found; a ring's window does not
+# depend on where the mark fell. The pool never hands an address out twice,
+# so nothing but the window can end the mark, and
+# `limit-a-copy-read-after-a-million-later-ends-is-not-caught` is the end
+# after this one.
+
+extern "dead-address-remembered-through-a-million-later-ends.h"
+    record Big tag big
+    function big_new() -> Big acquires big_free
+    function big_free(n: Big consumes)
+    function big_value(n: Big) -> i64
+
+function main()
+    target = big_new()
+    keep = target
+    big_free(n: target)
+    i: i64 @ 0
+
+    while i < 1048575
+        n = big_new()
+        big_free(n: n)
+        i @ i + 1
+
+    print("ends after the target: ", i)
+    print("the target reads: ", big_value(n: keep))

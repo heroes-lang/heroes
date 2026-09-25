@@ -15,7 +15,28 @@
 # Why the counter and not a rule: `selfhost/check/leasing.hero:29` and
 # `selfhost/check/consuming.hero:22` both state that the checker has no flow
 # analysis, and *how many times does this path run* is a flow question.
+#
+# **Since 2026-09-25 the second release goes through a copy** (panel 177's
+# item 3, route M (must)). The checker has one flow analysis now,
+# `check/moved.hero`, and `slot_close(a)` twice through ONE NAME is what it
+# refuses at check time, `handle_used_after_end`; that shape lives in
+# `tests/golden/check/`
+# `handle-ended-on-every-path-is-refused-at-the-read.hero`. The copy is the
+# shape the rule cannot see, design.md Part 8 wart 20, and it is what keeps
+# this case the runtime's: the count still goes to -1 and the exit still says
+# so. The sentence above was true when written and is kept as the record.
 
+#
+# **The sentence this case asserts moved on 2026-09-25 (panel 177's items 1 to
+# 3, defects 077 and 088).** The second release still stops before C runs, and
+# the check that stops it is the DEAD SET: the first `slot_close` ended the life
+# and poisoned `a`, but the second goes through `twice`, the copy the checker's
+# half routed it through, which still holds the old address, and the runtime
+# remembers that address as ended. The poison's own sentence is pinned by the
+# `dead-handle-*` cases, the one-name shape is refused at check, and the
+# runtime's stray report by
+# `fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c`,
+# whose handle nothing ever emptied.
 extern "abort-handle-given-back-twice.h"
     record Slot tag Slot
     function slot_open(n: i64) -> Slot acquires slot_close
@@ -25,5 +46,6 @@ extern "abort-handle-given-back-twice.h"
 function main()
     a = slot_open(n: 7)
     print(slot_value(s: a))
+    twice = a
     slot_close(a)
-    slot_close(a)
+    slot_close(twice)

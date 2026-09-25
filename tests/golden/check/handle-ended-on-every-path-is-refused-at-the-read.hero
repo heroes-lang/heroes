@@ -1,0 +1,102 @@
+# WHERE THE LIFE ENDED ON EVERY PATH, THE READ IS REFUSED (panel 177's item
+# 3, route M (must), 2026-09-25). The rule is decided on the program's SHAPE:
+# a place is dead at a read only if the call that ended it lies on every path
+# from the function's entry to that read. Each function below is one control
+# shape where that holds, and the read that is refused is the annotated line.
+#
+# The shapes beside these, where the end lies on SOME path and the value is
+# alive on another, are never refused and belong to `tests/golden/run/`,
+# under `handle-alive-...`: one arm of an `if`, a loop whose end sits behind a
+# `break` nobody took, an end the next turn of a loop renews. What this rule
+# leaves there the runtime stops before C (panel 177's items 1 and 2).
+extern "handle-ended-on-every-path-is-refused-at-the-read.h"
+    record Node tag node
+    function node_new() -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_peek(n: Node) -> i64
+
+variant Way
+    left
+    right
+
+# Both arms of the `if` end it, so the line after the `if` reads a dead value
+# whichever way `c` went.
+function both_arms(c: bool)
+    n = node_new()
+
+    if c
+        node_free(n: n)
+    else
+        node_free(n: n)
+    print(node_peek(n: n))  #~ handle_used_after_end
+
+# Every arm of the `match` ends it.
+function every_arm(w: Way)
+    n = node_new()
+
+    match w
+        .left  => node_free(n: n)
+        .right => node_free(n: n)
+
+    print(node_peek(n: n))  #~ handle_used_after_end
+
+# Ended before the loop, read inside it: every path into the body has the end.
+function before_the_loop()
+    n = node_new()
+    node_free(n: n)
+    k: i64 @ 0
+
+    while k < 2
+        print(node_peek(n: n) + k)  #~ handle_used_after_end
+        k @ k + 1
+
+# Ended earlier in the same turn of the loop.
+function the_same_turn()
+    k: i64 @ 0
+
+    while k < 2
+        n = node_new()
+        node_free(n: n)
+        print(node_peek(n: n))  #~ handle_used_after_end
+        k @ k + 1
+
+# The right side of `&&` runs only when the left was true, so it is one path;
+# the line after it is every path.
+function after_a_short_circuit(c: bool)
+    n = node_new()
+    node_free(n: n)
+
+    #~v handle_used_after_end
+    if c && node_peek(n: n) > 0
+        print("reached")
+
+# Given back twice through one name: the shape `abort-handle-given-back-twice`
+# and `fixedbugs-a-real-deallocator-given-the-same-handle-twice` aborted at run
+# time until this day. They now reach the runtime through a copy, which this
+# rule cannot see, and the one-name shape is refused here (E9 of panel 177's
+# compiler-engineer: the same two of 510 verdicts moved).
+function twice_through_one_name()
+    n = node_new()
+    print(node_peek(n: n))
+    node_free(n: n)
+    node_free(n: n)  #~ handle_used_after_end
+
+# A `return` in one arm takes that path out: the read after the `if` is on
+# the other path alone, where the value is alive. Not refused.
+function one_arm_returns(c: bool)
+    n = node_new()
+
+    if c
+        node_free(n: n)
+        return
+    print(node_peek(n: n))
+    node_free(n: n)
+
+function main()
+    both_arms(true)
+    every_arm(.left)
+    before_the_loop()
+    the_same_turn()
+    after_a_short_circuit(true)
+    twice_through_one_name()
+    one_arm_returns(false)
