@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 5**
+**OPEN: 6**
 
 - [ ] **077 — a handle given back after C has handed its address out again is `check` 0 and `run` 0, and the release lands on the new handle** | the live set keys on the address, so a stale handle that equals a live one is accepted as the live one, and the one correct release that follows is the call that aborts | `runtime/parts/alloc.c:436` · `spec § 13`
 
@@ -222,5 +222,37 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     again, so it is one more reference, not a replacement, and the end in
     flight then leaves the new life standing. The repair makes the set say
     that, and pins it with the reproducer as a golden over the shared pool.
+
+- [ ] **099 — a comment after the last item of a block leaves the block when `fmt` runs** | a `#` remark written at the block's indent after the last member of a group, the last statement of a body or the last field of a record is printed by the NEXT declaration's walk, at column 0, with a blank line added under it: exit 0, the tree the same, and the comment now sits at file level above the next function | `selfhost/print/fmt.hero` (`format_file`'s walk, `comments_before` at the next item's indent)
+
+    **Origin:** the parser seat that repaired defect 096, 2026-09-25, measuring
+    the shapes beside its reproducer; reproduced by the coordinator the same
+    day on the trunk's compiler at `0029567d`, so it is older than that repair.
+    Searched `docs/work/`, `docs/records/done/` and `docs/learn/` for "last
+    statement", "end of the body", "after the last member", "after the last
+    field", "trailing remark": not filed.
+
+    **The reproducer**, three shapes, each `fmt` exit 0 and each output a
+    fixpoint:
+
+        function f() -> i64
+            x = 1
+            return x
+            # a remark after the last statement of the body
+
+        function main()
+            print(f())
+
+    comes back with the remark at column 0 under `return x`'s block, above
+    `function main()`, a blank line under it; the same for a remark after the
+    last member of an `extern` group and after the last field of a record.
+
+    **Why it is a defect.** `fmt` moves a comment out of the block the author
+    wrote it in, silently: the tree does not change, so the self-check that
+    stops defect 095's and 096's shapes cannot see it, and a remark about the
+    end of a body now reads as a remark about the function below it. Defect
+    095's record calls the silent move the worse form of the two. The repair
+    prints a comment indented inside a block, after the block's last item and
+    before the dedent, at the block's own indent.
 
 *******************************************************************************
