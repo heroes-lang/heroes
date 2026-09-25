@@ -10,6 +10,12 @@
 # back`. So exit 0 says all four writes landed where the four releases found
 # them. The write itself adds no handle-set traffic: the life begins at the
 # call, and the store is an assignment where the element lies.
+#
+# **It counts the releases in C since the same evening.** Its first form read
+# the record back after giving all four handles to `ob_free`, `released: 0`:
+# C reading four freed objects, which the static pool hid. The poison of panel
+# 177's item 1 refuses that crossing before C, as it should, so the count is
+# `ob_freed`, which takes no handle.
 
 extern "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.h"
     record Ob tag ob
@@ -18,6 +24,7 @@ extern "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.h"
     function ob_new(n: i64) -> Ob acquires ob_free
     function ob_free(o: Ob consumes)
     function four_sum(f: Four) -> i64
+    function ob_freed() -> i64
 
 function main()
     f: Four @ Four(a: [nullptr, nullptr, nullptr, nullptr])
@@ -32,4 +39,4 @@ function main()
     for i in range(from: 0, to: 4)
         ob_free(o: f.a[i])
 
-    print("released: ", four_sum(f: f))
+    print("released: ", ob_freed())

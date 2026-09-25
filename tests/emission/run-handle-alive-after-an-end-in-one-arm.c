@@ -5,7 +5,7 @@
 #include <handle-alive-after-an-end-in-one-arm.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -133,6 +133,8 @@ bb0:
 #line 18 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     t3 = h0_n;
 #line 18 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
+    hero_handle_alive(t3, "the argument `n` of `node_peek`");
+#line 18 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     t4 = node_peek(t3);
 #line 18 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     t5 = INT64_C(100);
@@ -147,6 +149,8 @@ bb1:
 #line 21 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     t10 = h0_n;
 #line 21 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
+    hero_handle_alive(t10, "the argument `n` of `node_peek`");
+#line 21 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     t11 = node_peek(t10);
 #line 21 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     hero_print_str(t9);
@@ -157,11 +161,13 @@ bb1:
 #line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     t12 = h0_n;
 #line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
+    hero_handle_alive(t12, "the argument `n` of `node_free`");
+#line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     hero_handle_ending(t12, "node_free", NULL);
 #line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     (void)node_free(t12);
 #line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    hero_handle_ended(t12);
+    if (hero_handle_ended(t12) && h0_n == t12) h0_n = hero_handle_dead();
 #line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     return;
 #line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
@@ -169,11 +175,13 @@ bb2:
 #line 19 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     t7 = h0_n;
 #line 19 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
+    hero_handle_alive(t7, "the argument `n` of `node_free`");
+#line 19 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     hero_handle_ending(t7, "node_free", NULL);
 #line 19 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     (void)node_free(t7);
 #line 19 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    hero_handle_ended(t7);
+    if (hero_handle_ended(t7) && h0_n == t7) h0_n = hero_handle_dead();
 #line 20 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     t8 = HERO_STR_LIT(hero_str_543259bb);
 #line 20 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
@@ -186,10 +194,10 @@ bb2:
 bb3:
 #line 20 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     goto bb1;
-#line 190 "handlealiveafteranendinonearm.c"
+#line 198 "handlealiveafteranendinonearm.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteranendinonearm_Node_eq(node * const *a, node * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_handlealiveafteranendinonearm_Node_hash(const void *elem) {

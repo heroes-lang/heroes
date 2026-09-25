@@ -3,8 +3,10 @@
 # checker's rule tracks the NAME the ending call was handed: `keep` was handed
 # to nothing, so nothing at check time is dead, `check` 0. This is the class
 # design.md Part 8 wart 20 states, the compiler-engineer's E13, and it is why
-# the compile-time half is a half: the runtime stops the copy before C,
-# here as a handle given back that the set no longer holds.
+# the compile-time half is a half: the runtime stops the copy before C.
+# It stopped it as a handle given back that the set no longer held until the
+# runtime's half landed beside this one; since then the dead set remembers the
+# address the first release ended, and names the copy at its first crossing.
 extern "handle-a-copy-made-before-the-end-is-the-runtime-s.h"
     record Node tag node
     function node_new(v: i64) -> Node acquires node_free

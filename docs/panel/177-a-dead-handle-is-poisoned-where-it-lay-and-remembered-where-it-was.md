@@ -223,3 +223,27 @@ with this sitting.
 *Pending: `docs/work/DECIDE.md` carries this sitting as `panel 177`. Work
 proceeds on the provisional resolution: route E's lane merges, defect 090 is
 filed, then the landing of panels 176 and 177 in steps.*
+
+## Found at the landing, 2026-09-25
+
+*Appended by the coordinator at the merge of the landing's two halves (step
+14), not part of the sitting.* The landing's adversarial reviews measured the
+two halves against the shapes beside the reproducers, and two things belong
+to this record:
+
+- **Using a value after it was transferred.** Panel 176's historian named it
+  as Risk 2 (*"If `transfers` ends the Heroes value as `consumes` does, the
+  README's order is refused and must be reversed. That is a question for the
+  spec seats."*), and neither sitting's synthesis took it up. The landing
+  decides it the robust way: a transfer that was made ends the program's own
+  name for the value, as a release does. Route M (must) reads a transfer
+  position as an end, the poison empties the binding, and § 13 says so, at
+  +19 real tokens. The other reading, the name as a borrowed reference while
+  the receiver lives, is refused because the runtime cannot see the receiver
+  free the child. Queued with this sitting's ratification.
+- **The limits of item 4, as landed.** A copy read after C has handed its
+  address out again; a copy read after 2^20 other lives have ended (the dead
+  set is a ring of that many, exact for every address); and a handle C keeps
+  across the release and later hands a callback, which the thunk must clear.
+  Each is pinned at exit 0 by a `tests/golden/run/limit-*` case.
+
