@@ -1,0 +1,131 @@
+# One signature's words, printed ONCE for both printers: the type parameters,
+# a parameter with the words after its type, the words after a result, and the
+# two ends of the list, `function name<A, B>(` and `) -> R words`.
+#
+# The seam `print/marks.hero` cut for the words, taken one step out to the
+# parameter they ride and the result they follow, on the day `fmt` learned a
+# SECOND shape for a signature (defect 095: a comment inside the parameter
+# list keeps the list one parameter per line). Two shapes in one printer and a
+# copy in `dump` is three places for a form to be forgotten, and CL-036
+# measured what one forgotten place costs: `fmt --in-place` deletes the form
+# at exit 0, and the self-check cannot see it if `dump` forgot it too. So
+# `dump` reads these as well, and the `layout` suite's ceiling on `fmt.hero`
+# is, as on the day `marks.hero` was cut, why the seam is a module.
+use token
+use ast
+use source
+use print/types
+use print/marks
+
+# `<A, B>`, or nothing: type parameter names and never constraints (§4.12).
+function generics_text(s: source.Source, generics: [token.Span]) -> str
+    if generics.len() == 0
+        return ""
+    parts: [str] @ []
+
+    for generic in generics
+        parts @ parts.push(source.span_text(s, generic))
+
+    return "<" + parts.join(", ") + ">"
+
+# `@name: type` and the words after it, in the grammar's order whatever
+# order they were written (panel 177's landing). `owned <C function>` rides
+# the parameter and the result, and a printer that drops it DELETES it:
+# `fmt --in-place` would hand back a program whose string C allocated is
+# never freed, at exit 0 and with no diagnostic. CLAUDE.md §9's list, and
+# the reason it is a list.
+function parameter(tree: ast.Ast, s: source.Source, param: ast.Param) -> str
+    marker: str @ ""
+
+    if param.mutable
+        marker @ "@"
+    return marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + marks.counted_by_suffix(s, param.counted_by) + marks.bare_suffix(param.lent, word: "lent") + marks.owned_suffix(s, param.owned) + marks.bare_suffix(param.consumes, word: "consumes") + marks.named_suffix(s, param.transfers, word: "transfers") + marks.named_suffix(s, param.acquires, word: "acquires") + marks.named_suffix(s, param.retains, word: "retains") + marks.bare_suffix(param.borrows, word: "borrows")
+
+# The words after a result's type, in the grammar's order, or nothing.
+function result_words(s: source.Source, fd: ast.FunctionDecl) -> str
+    return marks.owned_suffix(s, fd.owned_result) + marks.named_suffix(s, fd.acquires_result, word: "acquires") + marks.named_suffix(s, fd.retains_result, word: "retains") + marks.bare_suffix(fd.borrows_result, word: "borrows") + marks.when_suffix(s, fd.when_result)
+
+# `function name<A, B>(`: everything before the parameters, on either of
+# `fmt`'s two shapes.
+function opening(s: source.Source, name: str, fd: ast.FunctionDecl) -> str
+    return "function " + name + generics_text(s, fd.generics) + "("
+
+# `) -> R words`, or `)` alone. `-> ()` is never printed: a function that
+# returns nothing writes no arrow (§4.2's function main()), so the canonical
+# form has one spelling — UNLESS a word rides the result, because a word is
+# spelled only after the arrow and a printer that dropped the arrow dropped
+# the word with it: `-> () when 0` came back as no arrow and no clause, a
+# different program at a fixpoint, measured 2026-09-24 on
+# `success-clause-misuse.hero`.
+function closing(tree: ast.Ast, s: source.Source, fd: ast.FunctionDecl) -> str
+    result = types.render_type(tree, fd.result, s)
+    after = result_words(s, fd)
+
+    if result != "()" || after != ""
+        return ") -> " + result + after
+    return ")"
+
+# `fmt`'s one-line shape, every list without a comment inside it: the
+# parameters one after another with `, ` between.
+function one_line(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionDecl) -> str
+    rendered: [str] @ []
+
+    for param in fd.params
+        rendered @ rendered.push(parameter(tree, s, param: param))
+
+    return opening(s, name: name, fd: fd) + rendered.join(", ") + closing(tree, s, fd: fd)
+
+test "the two ends and the words between print as the one-line form does"
+    text = "function f<T>(@a: T, b: i64 lent) -> i64 when 0"
+    s = source.new_source(name: "t.hero", text: text)
+    a: ast.Ast @ ast.new_ast()
+    t = ast.push_type(@a.types, ast.TypeNode(kind: .named, span: token.Span(start: 18, end: 19)))
+    i = ast.push_type(@a.types, ast.TypeNode(kind: .named, span: token.Span(start: 24, end: 27)))
+    none: token.Span? = fail(code: "none", msg: "absent")
+    first = ast.Param(
+        name: token.Span(start: 15, end: 16),
+        ty: t,
+        mutable: true,
+        owned: none,
+        consumes: false,
+        acquires: none,
+        transfers: none,
+        retains: none,
+        borrows: false,
+        counted_by: none,
+        lent: false
+    )
+    second = ast.Param(
+        name: token.Span(start: 21, end: 22),
+        ty: i,
+        mutable: false,
+        owned: none,
+        consumes: false,
+        acquires: none,
+        transfers: none,
+        retains: none,
+        borrows: false,
+        counted_by: none,
+        lent: true
+    )
+    fd = ast.FunctionDecl(
+        generics: [token.Span(start: 11, end: 12)],
+        params: [first, second],
+        result: i,
+        body: fail(code: "absent", msg: "unused"),
+        is_extern: true,
+        header: none,
+        library: fail(code: "absent", msg: "none"),
+        owned_result: none,
+        acquires_result: none,
+        retains_result: none,
+        borrows_result: false,
+        when_result: ok(token.Span(start: 46, end: 47)),
+        signature_end: token.Span(start: 46, end: 47)
+    )
+    assert generics_text(s, fd.generics) == "<T>"
+    assert parameter(a, s, param: first) == "@a: T"
+    assert parameter(a, s, param: second) == "b: i64 lent"
+    assert opening(s, name: "f", fd: fd) == "function f<T>("
+    assert closing(a, s, fd: fd) == ") -> i64 when 0"
+    assert one_line(a, s, name: "f", fd: fd) == "function f<T>(@a: T, b: i64 lent) -> i64 when 0"

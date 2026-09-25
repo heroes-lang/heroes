@@ -298,6 +298,9 @@ function verb_probes() -> [probe.Probe]
         row(name: "json names it too", argv: "check tests/golden/surface-fixtures/cross/main.hero --json", code: 1).err_has("\"line\": 5,")
         row(name: "the hole count names the file the holes are in", argv: "build tests/golden/surface-fixtures/holes/main.hero", code: 1).err_has("no binary: 1 hole in ").err_has("geom.hero")
         row(name: "apply does not panic on a fix in another module", argv: "check tests/golden/surface-fixtures/applyx/main.hero --apply", code: 0).err_has("another module").err_has("geom.hero").out_has("use geom").out_lacks("function area")
+        row(name: "a comment between two parameters of a group member stays there, with a member following (defect 095)", argv: "fmt tests/golden/surface-fixtures/paramcomment095/following.hero", code: 0).out_is("# Defect 095: a comment between two parameters of a group member, with a\n# member following. `fmt` joined the list onto one line and expelled the\n# comment after it, where `ob_put` took it as documentation, and the tree\n# guard refused at exit 2 a program `check` accepts. This file is canonical:\n# `fmt` prints it back byte for byte.\nextern \"x.h\"\n    record Ob tag ob\n    function ob_get(\n        o: Ob,\n        # a comment between\n        n: i64\n    ) -> Ob retains ob_put\n    function ob_put(o: Ob consumes)\n\nfunction main()\n    print(0)\n").err_empty()
+        row(name: "and with no member following, where it used to leave the group at exit 0", argv: "fmt tests/golden/surface-fixtures/paramcomment095/last.hero", code: 0).out_is("# Defect 095's silent shape: the same comment, and no member following. The\n# expelled comment landed after the group as a file-level remark, and `fmt`\n# exited 0 having MOVED it, which is worse than the refusal. This file is\n# canonical: `fmt` prints it back byte for byte.\nextern \"x.h\"\n    record Ob tag ob\n    function ob_put(o: Ob consumes)\n    function ob_get(\n        o: Ob,\n        # a comment between\n        n: i64\n    ) -> Ob retains ob_put\n\nfunction main()\n    print(0)\n").err_empty()
+        row(name: "and at every place a Heroes function's list can hold one, which used to move into the body at exit 0", argv: "fmt tests/golden/surface-fixtures/paramcomment095/heroes.hero", code: 0).out_is("# The shapes beside defect 095's: a Heroes function outside any group, with\n# a comment at every place a parameter list can hold one. Before the repair\n# every one of them was moved into the body at exit 0. This file is\n# canonical: `fmt` prints it back byte for byte.\n\n# after the open paren\nfunction first(\n    # about a\n    a: i64\n) -> i64\n    return a\n\n# trailing on a parameter line\nfunction second(\n    a: i64,  # about a\n    b: i64\n) -> i64\n    return a + b\n\n# before the closing paren\nfunction third(\n    a: i64\n    # after the last\n) -> i64\n    return a\n\n# trailing on the closing line\nfunction fourth(\n    a: i64\n) -> i64  # the result\n    return a\n\n# an empty list holding only a remark\nfunction fifth(\n    # nothing to take\n)\n    print(0)\n\nfunction main()\n    print(first(1) + second(a: 1, b: 2) + third(1) + fourth(1))\n    fifth()\n").err_empty()
         row(name: "dump-tokens shows the file that was named", argv: "lex examples/gallery/00-first.hero --dump-tokens", code: 0).out_starts("1:1 ").out_lacks("range").out_lines_max(39)
         row(name: "mutate refuses a corpus that does not compile", argv: "mutate tests/golden/check", code: 2).out_empty().err_has("this corpus does not compile").err_has("already refused by").err_has("tests/golden/check/")
         row(name: "mutate accepts the gallery", argv: "mutate examples/gallery", code: 0)
@@ -433,7 +436,12 @@ test "the tables are what this module is, so they are counted"
     # module alone, and one verdict needs two modules to be seen.
     # 52 -> 53 the same day, M-agreed-retention step 12: two modules that
     # declare one C function differently, which no golden case can hold.
-    assert verb_probes().len() == 53
+    # 53 -> 56 the same day, defect 095's close: `fmt` over three canonical
+    # files whose parameter lists hold a comment, each pinned byte for byte at
+    # exit 0. The claim is the self-check's three properties passing on a
+    # program the seed refused or silently moved, and a case under `run/` is
+    # judged by what it prints, never by `fmt`.
+    assert verb_probes().len() == 56
 
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"
