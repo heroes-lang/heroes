@@ -1,0 +1,16 @@
+# A NAME REBOUND AFTER THE END HOLDS A NEW VALUE (panel 177's item 3, route M
+# (must), 2026-09-25): `n @ node_new(...)` after `node_free(n: n)` is the
+# repair the diagnostic names, and the read after it is a read of the new
+# life. Exit 0, two acquisitions and two releases, nothing owed.
+extern "handle-alive-after-an-end-then-a-rebinding.h"
+    record Node tag node
+    function node_new(v: i64) -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_peek(n: Node) -> i64
+
+function main()
+    n: Node @ node_new(v: 1)
+    node_free(n: n)
+    n @ node_new(v: 2)
+    print("renewed: ", node_peek(n: n))
+    node_free(n: n)
