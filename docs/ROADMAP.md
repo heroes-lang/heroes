@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 5 defects · 3 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 3 defects · 3 decisions.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -16,20 +16,22 @@ against a banner reading 3.
 
 | | |
 |---|---|
-| **Current milestone** | **M-agreed-retention**, row 62, opened 2026-09-23 ([its file](work/milestones/M-agreed-retention.md)) — one C function, one story about who frees what it is handed. Step 1 measured its four items on all four platforms and found two defects under them: a handle ended by a releaser its `acquires` did not name is silent everywhere (075), and a C double free can print a runtime sentence that is false (076) |
+| **Current milestone** | **M-agreed-retention**, row 62, opened 2026-09-23 ([its file](work/milestones/M-agreed-retention.md)) — one C function, one story about who frees what it is handed. Steps 10 and 11 landed panels 175, 176 and 177's vocabulary on their provisional resolutions: the releaser set (075), `transfers`, `retains` and `when` with the runtime's pending count of the ends a call announces (079, 084, 085), the ABI at 24; step 11's landing was reviewed adversarially before its commit and six shapes were repaired first. Open under it: 077 and 088, the poison and the dead set of panel 177, and 095, a formatter refusal the review found |
 | **Last closed** | **M-declared-extents**, 2026-09-21, `m-declared-extents` ([060](journal/060-declared-extents.md)) — the extent a lend crosses with, the word it needs, and the report no word could carry · before it **M-readable-bytes** ([059](journal/059-readable-bytes.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **61** of 82 · **61** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **65,013** lines of Heroes in **228** modules (`find selfhost -name '*.hero'`) · the seed **862,422** lines of C, regenerated four times in this milestone and the fixpoint verified byte-identical each time |
+| The compiler | **66,810** lines of Heroes in **234** modules (`find selfhost -name '*.hero'`) · the seed **885,889** lines of C, regenerated at every step of this milestone and the fixpoint verified byte-identical each time |
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
-| The spec | **6344** on the vendored ranks and **8443** on the reader's own, against a ceiling of **10240**. This milestone has spent two rows so far: panel 175's four sentences in § 13 — two records may share `tag void`, a `void *` C hands out for the program to give back is a `tag void` handle, giving a handle back twice is caught unless C reused its address, and the handle-only rule panel 170 ratified and never landed — **+91 real**; and the releaser set, `acquires sqlite3_close \| sqlite3_close_v2`, with a release the mark did not name stopped before C runs — **+82 real**; both over `DELTA_GATE` on the author's word to pay the tokens. **1797 free** and 1737 net of the FFI floor |
+| The spec | **6643** on the vendored ranks and **8805** on the reader's own, against a ceiling of **10240**. This milestone has spent three rows: panel 175's four sentences in § 13 — two records may share `tag void`, a `void *` C hands out for the program to give back is a `tag void` handle, giving a handle back twice is caught unless C reused its address, and the handle-only rule panel 170 ratified and never landed — **+91 real**; the releaser set, `acquires sqlite3_close \| sqlite3_close_v2`, with a release the mark did not name stopped before C runs — **+82 real**; and `transfers`, `retains` and `when`, the three sentences with the landing review's four clauses inside them (the receiver outlives the call, the null result, the life a reference begins, the value within the type) — **+362 real**; all over `DELTA_GATE` on the author's word to pay the tokens. **1435 free** and 1375 net of the FFI floor |
 | The contract | **7737** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-21 when § 4 gained the author's second telling that they read every sitting |
-| Records | sittings **172** · journals **61**, numbered files only (the 62 this cell read counted `README.md`) · milestone files **51** · measurements **37** · entries: `docs/records/log/` **699**, `docs/records/done/` **579**, `docs/records/book/beats/` **128** |
-| Waiting on the author | **panel 175's ratification**, the one item in `DECIDE.md`, which carries a `/panel` amendment only the author can give: the blind seat reads the spec from inside the tree and rule files load into it. Work proceeds on the provisional resolution meanwhile. The open defects are this milestone's to repair |
+| Records | sittings **175** · journals **61**, numbered files only (the 62 this cell read counted `README.md`) · milestone files **51** · measurements **37** · entries: `docs/records/log/` **707**, `docs/records/done/` **592**, `docs/records/book/beats/` **128** |
+| Waiting on the author | **the ratifications of panels 175, 176 and 177**, the three items in `DECIDE.md`; the author declined them "for now" on 2026-09-24 and the work proceeds on the provisional resolutions, which steps 10 and 11 landed. The open defects are this milestone's to repair |
 
-**Re-measured 2026-09-21, the full net on a compiler built from the regenerated
-seed, which is CI's own configuration: 1980 passed, 0 failed**, over 24 suites,
-plus the compiler's own 675 and the net's own 161. The per-suite counts and what
-moved them are [060](journal/060-declared-extents.md).
+**Re-measured 2026-09-25 in the landing lane of step 11, the full net on a
+compiler built from the regenerated seed, which is CI's own configuration: 2214
+passed, 0 failed**, over 24 suites, plus the compiler's own 698 and the net's
+own 167; the seven `emit` goldens had pinned ABI 22 since step 10 landed 23,
+behind a gate output cut at forty lines, and moved to 24 by hand. The per-suite
+counts of the last close and what moved them are [060](journal/060-declared-extents.md).
 
 **And the mechanism that milestone landed was measured on each platform rather
 than inferred from this Mac**: a signal on Darwin and on Linux arm64, where

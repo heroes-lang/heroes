@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 5**
+**OPEN: 3**
 
 - [ ] **077 — a handle given back after C has handed its address out again is `check` 0 and `run` 0, and the release lands on the new handle** | the live set keys on the address, so a stale handle that equals a live one is accepted as the live one, and the one correct release that follows is the call that aborts | `runtime/parts/alloc.c:436` · `spec § 13`
 
@@ -77,80 +77,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     them apart. The spec sentence `a747e5a2` landed, *unless C has since reused
     its address*, states that limit; §1.12 is why it cannot be the answer.
 
-- [ ] **079 — a reference-counted C handle aborts a correct program whichever way its extra reference is declared** | the live set holds one life per address, so a second reference to one object has nowhere to live, and its correct release is reported as a release of something never taken | `runtime/parts/alloc.c:411` · `spec § 13`
-
-    **Origin:** panel 175's ffi-pragmatist, 2026-09-23, attacking route A at the
-    shape beside it; reproduced by the coordinator the same day before filing.
-
-    **The reproducer**, the shape of `CFRetain`/`CFRelease`,
-    `g_object_ref`/`g_object_unref`, `X509_up_ref`/`X509_free`: a C object whose
-    `obj_unref` frees it when its count reaches zero.
-
-        extern "rc.h"
-            record Obj tag obj
-            function obj_new() -> Obj acquires obj_unref
-            function obj_ref(o: Obj) -> Obj acquires obj_unref
-            function obj_unref(o: Obj consumes)
-
-        function main()
-            a = obj_new()
-            b = obj_ref(o: a)
-            obj_unref(o: a)
-            obj_unref(o: b)
-            print("both references given back")
-
-    `check` 0; `run` **134**, 396 bytes, *1 C handle(s) given back that were
-    never taken*, three of three on Darwin arm64, and the same under
-    `--sanitize`. With `obj_ref(o: Obj) -> Obj borrows` it prints its line, C
-    frees the object at count zero, and it still exits 134 with *2 C handle(s)
-    given back that were never taken*. **There is no spelling that runs.**
-
-    **Why it is a defect.** The program is correct C and correct Heroes; the
-    runtime aborts it. The set's own comment at `alloc.c:411-414` says a second
-    acquisition of a live address *is lost here*, which is right for C handing
-    an address out again after a leak and wrong for a second reference. The
-    seat's count per slot (`<scratchpad>/175-ffi-pragmatist/runtimeA2/`) runs
-    the program at 0 and still stops `handle.hero`'s double release, measured by
-    the seat and not yet by the coordinator.
-
-    **Unrun by the coordinator:** Linux and Windows.
-
-- [ ] **084 — one handle given to two consuming parameters of one call aborts a correct program, and the message calls it a double release** | the live set takes the handle back once per marked parameter, so `SSL_set_bio(s, b, b)`, OpenSSL's socket-BIO idiom, is refused although its C is correct | `selfhost/emit/handle_traffic.hero:101` · `runtime/parts/alloc.c:422`
-
-    **Origin:** panel 176's ffi-pragmatist, 2026-09-23 (its § 5 item 1);
-    reproduced by the coordinator the same day before filing.
-
-    **The reproducer**, against Homebrew's OpenSSL 3 (`--include
-    /opt/homebrew/opt/openssl@3/include --library /opt/homebrew/opt/openssl@3/lib`):
-    `SSL_new`, then `b = BIO_new(type: BIO_s_mem())`, then
-    `SSL_set_bio(s: s, rbio: b, wbio: b)` with both BIO parameters `consumes`,
-    then `SSL_free(ssl: s)`. `build` 0; **run 134, three of three**, *1 C
-    handle(s) given back that were never taken*. OpenSSL's own page says *"If
-    the rbio and wbio parameters are the same … then one reference is
-    consumed"*, and the seat measured the same C clean under ASan with 0 leaks.
-
-    **Why it is a defect.** A correct program is refused and the message names a
-    double release that did not happen: defect 079's class, over the most common
-    OpenSSL call there is. The seat measured every route panel 176 weighs
-    leaving it at 134, so the repair is owed whatever vocabulary lands.
-
-- [ ] **085 — `unread_releaser` answers 1 for a module checked alone and 0 for the same module checked inside its program** | the rule's message says *no `extern` of this module declares it* and its lookup resolves over the whole program, so the verdict depends on which file is handed to `check` | `selfhost/check/acquiring.hero:269`
-
-    **Origin:** panel 176's ffi-pragmatist, 2026-09-23 (its § 5 item 4);
-    reproduced by the coordinator the same day before filing.
-
-    **The reproducer.** `bio.hero` declares `h_open() -> H acquires h_close2`
-    and only `main.hero` declares `h_close2`; `main.hero` uses `bio`.
-    `heroes check bio.hero`: **exit 1**, `error[unread_releaser]`.
-    `heroes check main.hero`: **exit 0**, and the seat measured `build` and `run`
-    at 0 too.
-
-    **Why it is a defect.** One program, two verdicts, and the message states
-    the rule the lookup does not apply. Which of the two is right is the
-    repair's question: the per-module reading is what the message and
-    `check/acquiring.hero`'s own note say, and the program-wide one is what lets
-    a libcrypto BIO mark name libssl's calls today (the seat's § 2c).
-
 - [ ] **088 — a handle handed to a call after the call that ended its life is `check` 0 and `run` 0, and C is handed freed memory** | § 13 says a `consumes` call ends the value's life, and nothing reads the value as dead afterwards: the checker does not, and the live set is asked only by a consuming call | `spec § 13` · `selfhost/emit/handle_traffic.hero` · `runtime/parts/alloc.c`
 
     **Origin:** panel 176's completeness critic, 2026-09-23 (its § 7), which
@@ -206,5 +132,36 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the cheapest, and what it does to a `borrows` handle that was never in the
     set, is panel 177's question. The author can disagree and close it on the
     wart, as panel 153 put it.
+
+- [ ] **095 — `fmt` refuses a group member whose parameters are written one per line with a comment between two of them** | the signature printer joins the parameters onto one line and has no place for the comment, which is expelled after the declaration and becomes the next member's doc, so the self-check sees a different tree and `fmt` exits 2 on a program `check` accepts | `selfhost/print/fmt.hero` (`signature`) · `selfhost/parse/members.hero`
+
+    **Origin:** the landing review of M-agreed-retention step 11, its surface
+    finder, 2026-09-24; reproduced by the parser seat against the seed compiler
+    of the same day (`fmt` exit 2 before the lane and after it), so it predates
+    the landing.
+
+    **The reproducer.** An `extern` member written
+
+        function ob_get(
+            o: Ob,
+            # a comment between
+            n: i64
+        ) -> Ob retains ob_put
+
+    followed by another member: `check` exit 0, `fmt` exit 2 with *`fmt`
+    changed the TREE of … the output parses and is a fixpoint, and it is a
+    DIFFERENT PROGRAM*, and the file is not touched. With no member following,
+    the comment lands after the group as a file-level comment and `fmt` exits 0
+    having moved it. Measured with `parse --dump-ast`: the one line that
+    differs is `doc # a comment between`, attached to the following member.
+
+    **Why it is a defect.** A correct program is refused by a tool that must
+    be idempotent on every program the parser accepts (design.md §4.15, CLAUDE.md
+    §9); the exit-2 guard is what stops the silent form, which is worse. The
+    repair is either a place for a comment inside a printed parameter list
+    (the printer keeps the author's line breaks when a comment sits between
+    parameters) or a refusal at parse of a comment inside a signature, and
+    the choice is a formatter-surface question for the sitting that owns
+    `fmt`'s canonical form.
 
 *******************************************************************************
