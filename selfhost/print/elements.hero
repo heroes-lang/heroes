@@ -1,0 +1,283 @@
+# What a value's brackets hold, read from the tree and from the source
+# around it, for `print/brackets.hero` to print (design.md §4.9, §4.15).
+# The tree keeps no comments and no parentheses, so where one sits beside
+# the other is asked of the source here: the grouping parentheses around a
+# value, the comments between its parts, the bracket after a callee.
+# Split out of `print/brackets.hero` on 2026-09-25 with defect 101's last
+# round, along the seam between what is read and what is printed; none of
+# this prints.
+
+use token
+use ast
+use source
+use print/bodies
+use print/page
+use print/parens
+use print/between
+
+# The three things every question here reads.
+record Code
+    tree: ast.Ast
+    s: source.Source
+    comments: [token.Span]
+
+# What an opened bracket prints: the value before it (a callee, a receiver,
+# or -1), its opening text, the source lines of its opening and closing
+# brackets, the elements, and its closing text. `from` and `to` are the
+# offsets of the two brackets, -1 for parentheses `fmt` adds.
+record Bracket
+    before: i64
+    open: str
+    at: i64
+    items: [Element]
+    shut: i64
+    close: str
+    from: i64
+    to: i64
+
+# One element of an opened bracket: a map's `key` (or -1), then `lead` (an
+# argument's name and `@`), the value, parenthesised below `needed`, and
+# `after` (a call's comma, a chain's operator). A comment after `gap` and
+# before the value sits between the name or key and it. `first` is the
+# source line the element starts on.
+record Element
+    key: i64
+    lead: str
+    gap: i64
+    value: i64
+    needed: i64
+    after: str
+    first: i64
+
+# The bracket at the top of a value, or none. A call keeps its commas:
+# §4.9's newline rule is about literals, and a call written across lines is
+# still a comma-separated list (the parser requires it).
+function bracket(c: Code, value: i64) -> Bracket?
+    span = c.tree.exprs[value].span
+    b: Bracket @ Bracket(
+        before: -1,
+        open: "",
+        at: first_line(c, id: value),
+        items: [],
+        shut: end_line(c, id: value),
+        close: ")",
+        from: span.start,
+        to: span.end - 1
+    )
+
+    match c.tree.exprs[value].kind
+        # §4.9: a multi-line list separates by newline, not by comma.
+        .array arr =>
+            b.open @ "["
+            b.close @ "]"
+
+            for item in arr.elements
+                b.items @ b.items.push(plain(c, value: item, needed: 0, after: ""))
+        .map mp =>
+            b.open @ "{"
+            b.close @ "}"
+
+            for entry in mp.entries
+                item: Element @ plain(c, value: entry.value, needed: 0, after: "")
+                item.key @ entry.key
+                item.gap @ c.tree.exprs[entry.key].span.end
+                item.first @ first_line(c, id: entry.key)
+                b.items @ b.items.push(item)
+        .call cl =>
+            b.before @ cl.callee
+            b.open @ "("
+            b.from @ between.next_mark(c.s, offset: c.tree.exprs[cl.callee].span.end)
+            b.items @ arguments(c, given: cl.args)
+        .method m =>
+            b.before @ m.receiver
+            b.open @ "." + source.span_text(c.s, m.name) + "("
+            b.from @ between.next_mark(c.s, offset: m.name.end)
+            b.items @ arguments(c, given: m.args)
+        .variant_case vc =>
+            if vc.args.len() > 0
+                b.open @ "." + source.span_text(c.s, vc.name) + "("
+                b.from @ between.next_mark(c.s, offset: vc.name.end)
+                b.items @ arguments(c, given: vc.args)
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => b.open @ ""
+        .name | .hole | .unary | .binary | .field | .field_name | .index               => b.open @ ""
+        .try_expr | .if_expr | .match_expr | .error                                    => b.open @ ""
+
+    if b.open.len() == 0
+        return fail(code: "none", msg: "no bracket at the top of this value")
+    b.at @ source.line_of(c.s, b.from)
+    return ok(b)
+
+# Parentheses around a value: `fmt`'s own around a binary whose operators
+# have a comment after them or whose operands hold more than one, or the
+# author's where a comment sits just inside them. Where `split`, the
+# operands of one operator's chain are one element each, so a comment after
+# any operator stays after it; otherwise the value is the one element.
+function group(c: Code, value: i64, paren: token.Span?, split: bool) -> Bracket
+    b: Bracket @ Bracket(
+        before: -1,
+        open: "(",
+        at: first_line(c, id: value),
+        items: [],
+        shut: end_line(c, id: value),
+        close: ")",
+        from: -1,
+        to: -1
+    )
+
+    if !paren.is_err()
+        b.from @ paren.must().start
+        b.to @ paren.must().end
+        b.at @ source.line_of(c.s, b.from)
+        b.shut @ source.line_of(c.s, b.to)
+    mine = parens.power(c.tree, value)
+    rest: [Element] @ []
+    left: i64 @ value
+    chained: bool @ split
+
+    while chained
+        chained @ false
+
+        match c.tree.exprs[left].kind
+            .binary bin =>
+                if parens.power(c.tree, left) == mine
+                    rest @ rest.push(
+                        plain(c, value: bin.right, needed: mine + 1, after: " " + bodies.binary_op(bin.op))
+                    )
+                    left @ bin.left
+                    chained @ true
+            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => chained @ false
+            .name | .hole | .unary | .field | .field_name | .index | .call | .method       => chained @ false
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => chained @ false
+
+    needed: i64 @ 0
+
+    if rest.len() > 0
+        needed @ mine
+    b.items @ b.items.push(plain(c, value: left, needed: needed, after: ""))
+    at: i64 @ rest.len() - 1
+
+    # The chain was walked from its right end, and each operator goes after
+    # the operand to its left.
+    while at >= 0
+        b.items[b.items.len() - 1].after @ rest[at].after
+        rest[at].after @ ""
+        b.items @ b.items.push(rest[at])
+        at @ at - 1
+
+    return b
+
+# An element whose `lead` is printed before its value, with a comment
+# after `gap` between them: a unary operator and its operand.
+function led(c: Code, value: i64, lead: str, gap: i64) -> Element
+    item: Element @ plain(c, value: value, needed: parens.UNARY_POWER, after: "")
+    item.lead @ lead
+    item.gap @ gap
+    item.first @ source.line_of(c.s, gap)
+    return item
+
+function plain(c: Code, value: i64, needed: i64, after: str) -> Element
+    start = c.tree.exprs[value].span.start
+    return Element(
+        key: -1,
+        lead: "",
+        gap: start,
+        value: value,
+        needed: needed,
+        after: after,
+        first: source.line_of(c.s, start)
+    )
+
+function arguments(c: Code, given: [ast.Arg]) -> [Element]
+    items: [Element] @ []
+
+    for arg in given
+        comma: str @ ","
+
+        if items.len() == given.len() - 1
+            comma @ ""
+        item: Element @ plain(c, value: arg.value, needed: 0, after: comma)
+        item.lead @ parens.arg_lead(c.s, arg: arg)
+        mark = between.code_before(c.s, c.comments, offset: c.tree.exprs[arg.value].span.start)
+
+        # A mutable one's `@` is its lead, and a comment after it sits
+        # between the lead and the value, as after a name.
+        if arg.mutable && mark >= 0 && c.s.text[mark] == '@'
+            item.gap @ mark + 1
+            item.first @ source.line_of(c.s, mark)
+
+        if !arg.name.is_err()
+            item.gap @ arg.name.must().end
+            item.first @ source.line_of(c.s, arg.name.must().start)
+        items @ items.push(item)
+
+    return items
+
+# Is the next comment to print written from `from` up to `to`?
+function holds(f: page.Fmt, c: Code, from: i64, to: i64) -> bool
+    if f.next_comment >= c.comments.len()
+        return false
+    at = c.comments[f.next_comment].start
+    return at >= from && at < to
+
+# Is every comment written inside `value` inside its operand `within` too?
+function alone(f: page.Fmt, c: Code, value: i64, within: i64) -> bool
+    outer = c.tree.exprs[value].span
+    operand = c.tree.exprs[within].span
+    i: i64 @ f.next_comment
+
+    while i < c.comments.len() && c.comments[i].start < outer.end
+        if c.comments[i].start < operand.start || c.comments[i].start >= operand.end
+            return false
+        i @ i + 1
+
+    return true
+
+# Does a binary hold a comment after an operator, or comments in both its
+# operands, which only a break after each operator keeps?
+function splits(f: page.Fmt, c: Code, value: i64) -> bool
+    span = c.tree.exprs[value].span
+
+    if !holds(f, c, from: span.start, to: span.end)
+        return false
+
+    match c.tree.exprs[value].kind
+        .binary b => return !alone(f, c, value: value, within: b.left) && !alone(f, c, value: value, within: b.right)
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return false
+        .name | .hole | .unary | .field | .field_name | .index | .call | .method => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
+
+    return false
+
+# The author's grouping parentheses around a value, as the offsets of its
+# `(` and `)`, or none. The value's own span holds neither, and it can start
+# inside a group of its first operand and end inside one of its last, so the
+# pair is the first `(` before it whose `)` is past it, with only other
+# groups' brackets between. `from` and `to` are the enclosing bracket's,
+# which are never a group's: the one argument of a call sits between them.
+function grouping(c: Code, value: i64, from: i64, to: i64) -> token.Span?
+    none: token.Span? = fail(code: "none", msg: "no parentheses of the author's here")
+    span = c.tree.exprs[value].span
+    open: i64 @ between.code_before(c.s, c.comments, offset: span.start)
+
+    while open >= 0 && open != from && c.s.text[open] == '('
+        shut = between.matching(c.s, open: open)
+
+        if shut >= span.end
+            if shut == to || !between.closers_only(c.s, from: span.end, to: shut)
+                return none
+            return ok(token.Span(start: open, end: shut))
+        open @ between.code_before(c.s, c.comments, offset: open)
+
+    return none
+
+function first_line(c: Code, id: i64) -> i64
+    return source.line_of(c.s, c.tree.exprs[id].span.start)
+
+# The last source line an expression occupies: its span ends one past its
+# last byte.
+function end_line(c: Code, id: i64) -> i64
+    last: i64 @ c.tree.exprs[id].span.end - 1
+
+    if last < 0
+        last @ 0
+    return source.line_of(c.s, last)

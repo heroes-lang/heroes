@@ -1,0 +1,31 @@
+# Defect 100: a comment the parser did not take as a doc, printed where the
+# re-parse takes it as one. A comment at column 0 between two members of a
+# group, a remark directly under a second head of the same group, and the
+# same at column 0 between two fields and between two cases: `fmt` indents
+# each to the item under it, directly above it, and the trunk's tree guard
+# refused at exit 2 a program `check` accepts. A comment at column 4 above
+# the file's first declaration is the same shape at the top level. Each is
+# printed now at the item's column with a blank line under it, which keeps
+# it a remark.
+
+    # at column 4, above the first declaration
+record Point
+    x: i64
+# at column 0 between two fields
+    y: i64
+
+variant Shape
+    dot
+# at column 0 between two cases
+    box
+
+extern "x.h"
+    record Ob tag ob
+# at column 0 between two members
+    record Pool tag pool
+extern "x.h"
+    # a remark directly under a second head of the same group
+    function pool_put(p: Pool consumes)
+
+function main()
+    print(Point(x: 1, y: 2).x)

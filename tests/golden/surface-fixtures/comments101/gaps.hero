@@ -1,0 +1,37 @@
+# A comment between an argument's name and its value, between a map's key
+# and its value, and after a mutable argument's `@`: the first repair of
+# defect 101 refused the first two at exit 2 and moved the third above its
+# argument at exit 0, and the trunk moved each out of its bracket at exit 0.
+# The name keeps its line and its comment, and the value goes on the next,
+# one level in.
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+function h(@xs: [i64])
+    xs @ xs.push(1)
+
+function f() -> i64
+    xs: [i64] @ []
+    h(
+        @  # the list
+            xs
+    )
+    return g(
+        a:  # after the name
+            1,
+        b:
+            # above the value
+            2
+    )
+
+function t() -> {str: i64}
+    return {
+        "a":  # after the key
+            1,
+        "b": 2
+    }
+
+function main()
+    print(f())
+    print(t().len())

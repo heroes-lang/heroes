@@ -1,0 +1,151 @@
+# Where each comment of a file sits among its code, for the guard that
+# refuses a formatter's output with a comment moved (defect 101): how many
+# of the tree's positions start before it, how many of its expressions end
+# before it, and whether code comes before it on its own line. `fmt` prints
+# the same tree in the same order, so a comment kept where it was written
+# has the same anchor in the output, and one moved past any code, off the
+# line it trails or onto one, has another, WHICHEVER printer moved it: the
+# guard asks the two files and never the walk that wrote the second.
+#
+# The positions are the ones `fmt` keeps in order: every expression's start
+# and end, the start of every statement, type, arm and pattern, and every
+# name a declaration, field, case, parameter or `use` binds. Not a group's
+# head, which a merge prints once for two groups, and not a parameter's
+# marks, which `fmt` prints in the grammar's order.
+
+use token
+use ast
+use source
+use print/page
+use parse
+
+record Anchor
+    starts: i64
+    ends: i64
+    trailing: bool
+
+# The line of the first comment of `before` whose anchor `after` does not
+# repeat, 0 when every one does. A comment the output lost or gained is a
+# move too.
+function first_moved(before: source.Source, was: [token.Span], after: source.Source, now: [token.Span], kept: [Anchor], printed: [Anchor]) -> i64
+    index: i64 @ 0
+
+    while index < kept.len() && index < printed.len()
+        if kept[index] != printed[index]
+            return source.line_of(before, was[index].start)
+        index @ index + 1
+
+    if index < kept.len()
+        return source.line_of(before, was[index].start)
+
+    if index < printed.len()
+        return source.line_of(after, now[index].start)
+    return 0
+
+function anchors(tree: ast.Ast, s: source.Source, comments: [token.Span], uses: [ast.Use], decls: [ast.Decl]) -> [Anchor]
+    size = s.text.len() + 1
+    starts: [i64] @ []
+    ends: [i64] @ []
+
+    for _ in range(from: 0, to: size)
+        starts @ starts.push(0)
+        ends @ ends.push(0)
+
+    at: [i64] @ []
+
+    # An expression is counted as ended at its last byte, so one that ends
+    # anywhere before a comment's `#` is below it.
+    for node in tree.exprs
+        at @ at.push(node.span.start)
+        bump(@ends, at: node.span.end - 1)
+
+        match node.kind
+            .match_expr me =>
+                for arm in me.arms
+                    at @ at.push(arm.span.start)
+
+                    for pattern in arm.patterns
+                        at @ at.push(pattern.span.start)
+            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr  => at @ at
+            .name | .hole | .unary | .binary | .field | .field_name | .index                => at @ at
+            .call | .method | .variant_case | .array | .map | .try_expr | .if_expr | .error => at @ at
+
+    for node in tree.stmts
+        at @ at.push(node.span.start)
+
+    for node in tree.types
+        at @ at.push(node.span.start)
+
+    for used in uses
+        at @ at.push(used.span.start)
+
+    for decl in decls
+        for name in names_of(decl)
+            at @ at.push(name)
+
+    for offset in at
+        bump(@starts, at: offset)
+
+    out: [Anchor] @ []
+    before: i64 @ 0
+    ended: i64 @ 0
+    offset: i64 @ 0
+
+    # Both counts are of the bytes below `offset`, walked once up the file.
+    for c in comments
+        while offset < c.start && offset < size
+            before @ before + starts[offset]
+            ended @ ended + ends[offset]
+            offset @ offset + 1
+
+        out @ out.push(Anchor(starts: before, ends: ended, trailing: !page.opens_its_line(s, offset: c.start)))
+
+    return out
+
+function bump(@counts: [i64], at: i64)
+    if at >= 0 && at < counts.len()
+        counts[at] @ counts[at] + 1
+
+# The names a declaration binds: its own, its fields', its cases' and
+# their fields', its parameters'.
+function names_of(decl: ast.Decl) -> [i64]
+    out: [i64] @ [decl.name.start]
+
+    match decl.kind
+        .record_decl rec =>
+            for field in rec.fields
+                out @ out.push(field.name.start)
+        .variant_decl v =>
+            for one_case in v.cases
+                out @ out.push(one_case.name.start)
+
+                for field in one_case.fields
+                    out @ out.push(field.name.start)
+        .function_decl fd =>
+            for param in fd.value.params
+                out @ out.push(param.name.start)
+        .constant_decl | .test_decl => out @ out
+
+    return out
+
+## Tests
+
+test "a comment's anchor is the code before it and whether it trails, and a move changes it"
+    text = "function f(a: i64) -> i64  # trailing\n    # own line\n    return a\n"
+    parsed = parse.parse(text)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: text)
+    found = anchors(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+    assert found.len() == 2
+    assert found[0].trailing
+    assert !found[1].trailing
+    assert found[0].starts == found[1].starts
+    assert first_moved(before: s, was: parsed.comments, after: s, now: parsed.comments, kept: found, printed: found) == 0
+
+    # The trailing comment printed as the body's first line: nothing is
+    # crossed, and the line it trailed is lost, which is a move.
+    moved = "function f(a: i64) -> i64\n    # trailing\n    # own line\n    return a\n"
+    again = parse.parse(moved)
+    s_moved = source.new_source(name: "t.hero", text: moved)
+    now = anchors(again.tree, s_moved, again.comments, again.uses, again.decls)
+    assert first_moved(before: s, was: parsed.comments, after: s_moved, now: again.comments, kept: found, printed: now) == 1

@@ -1,0 +1,51 @@
+# Defect 099: a comment written inside a block after its last item left the
+# block when `fmt` ran. Every kind of block is here with such a comment after
+# its last item, measured one at a time on the trunk's compiler, 2026-09-25:
+# after an `if` block, a loop body, a match's last arm, a body, a record's
+# fields and a variant's last case, `fmt` printed it at the next item's
+# column at exit 0, outside the block; after a case's last field with a case
+# following and a group record's last field with a member following, the
+# next item took it as its doc and the tree guard refused at exit 2. This
+# file is canonical: `fmt` prints it back byte for byte.
+
+function f(c: bool, n: i64) -> i64
+    if c
+        print(1)
+        # after the last statement of an `if` block
+    print(2)
+
+    while c
+        print(3)
+        # after the last statement of a loop body
+
+    match n
+        0 => print(4)
+        _ => print(5)
+        # after the last arm of a match
+
+    return n
+
+    # after the last statement of a body, a blank line above it
+
+record Point
+    x: i64
+    y: i64
+    # after the last field of a record
+
+variant Shape
+    box
+        w: i64
+        # after the last field of a case
+    dot
+    # after the last case of a variant
+
+extern "x.h"
+    record Color
+        r: u8
+        g: u8
+        # after the last field of a group record, a member directly under it
+    function paint(c: Color)
+    # after the last member of a group
+
+function main()
+    print(f(c: false, n: 1))
