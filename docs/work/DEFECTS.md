@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 6**
+**OPEN: 7**
 
 - [ ] **077 — a handle given back after C has handed its address out again is `check` 0 and `run` 0, and the release lands on the new handle** | the live set keys on the address, so a stale handle that equals a live one is accepted as the live one, and the one correct release that follows is the call that aborts | `runtime/parts/alloc.c:436` · `spec § 13`
 
@@ -246,5 +246,29 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     broke: a doc above the second of two same-head groups, `fmt` 0 on the
     trunk, lost at the merge in the repair's first form; the repair of this
     defect and of 096 land together.
+
+- [ ] **101 — `fmt` moves a comment silently at three more places: off a block-opening line, out of a bracket at a body's end, and away from a blank line it adds between match arms** | a trailing comment on the line that opens a block (`if x > 0  # note`) is printed on the block's first line; a comment trailing the last element of a bracketed value at the end of a body leaves the function and becomes a column-0 remark above the next declaration; and a comment between two `match` arms gains a blank line under it the source does not have. Each at `fmt` exit 0 with the tree the same, so the self-check cannot see it | `selfhost/print/fmt.hero` (the block openers, the bracketed-value printer, the match-arm walk)
+
+    **Origin:** the skeptic seat over the repair of defects 096, 099 and 100,
+    2026-09-25, beside its reproducers; reproduced by the coordinator the same
+    day on the trunk's compiler at `3b40c60d`, so it is older than that
+    repair.
+
+    **The reproducers.** `if x > 0  # only the positive case` over a block:
+    `fmt` 0, the comment printed as the block's first line. `return [` then
+    `1,` then `2  # the last element` then `]` as a body's last statement:
+    `fmt` 0, the elements printed one per line and the comment at column 0
+    under the function, above `function main()`, a blank line under it. A
+    `# the other values` between the two arms of `return match x`: `fmt` 0, a
+    blank line added under the comment.
+
+    **Why it is a defect.** The first two move a comment away from the code
+    the author wrote it beside, silently, which defect 095's record calls the
+    worse form of a formatter's mistake; the third breaks the rule defect
+    096's repair wrote down, that a blank line is printed only where the
+    source has one. None changes the tree, so no instrument sees any of them.
+    The repair keeps a trailing comment on the line it trails, a comment
+    inside a bracket inside the bracket, and prints a blank line between arms
+    only where the source has one.
 
 *******************************************************************************
