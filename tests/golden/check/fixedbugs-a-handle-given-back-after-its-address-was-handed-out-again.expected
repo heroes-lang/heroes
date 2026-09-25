@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-a-handle-given-back-after-its-address-was-handed-out-again.hero:23:29: error[handle_used_after_end]: `a` was given to `f_close` at line 21, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-a-handle-given-back-after-its-address-was-handed-out-again.hero:24:16: error[handle_used_after_end]: `a` was given to `f_close` at line 21, which ended its life, and this reads it again

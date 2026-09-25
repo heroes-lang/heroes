@@ -5,7 +5,7 @@
 #include <fixedbugs-the-unacquired-sibling-leaks-loudly.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -162,6 +162,8 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     t5 = t4.s;
 #line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
+    hero_handle_alive(t5, "the argument `s` of `slot_value`");
+#line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     t6 = slot_value(t5);
 #line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     t7 = h0_p;
@@ -169,6 +171,8 @@ bb0:
     t8 = t7.b;
 #line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     t9 = t8.s;
+#line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
+    hero_handle_alive(t9, "the argument `s` of `slot_value`");
 #line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     t10 = slot_value(t9);
 #line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
@@ -184,11 +188,13 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     t14 = t13.s;
 #line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
+    hero_handle_alive(t14, "the argument `s` of `slot_close`");
+#line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     hero_handle_ending(t14, "slot_close", NULL);
 #line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     (void)slot_close(t14);
 #line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_handle_ended(t14);
+    if (hero_handle_ended(t14) && h0_p.a.s == t14) h0_p.a.s = hero_handle_dead();
 #line 36 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     t15 = HERO_STR_LIT(hero_str_38da945e);
 #line 36 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
@@ -197,10 +203,10 @@ bb0:
     hero_print_end();
 #line 36 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     return;
-#line 201 "fixedbugstheunacquiredsiblingleaksloudly.c"
+#line 207 "fixedbugstheunacquiredsiblingleaksloudly.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstheunacquiredsiblingleaksloudly_Slot_eq(Slot * const *a, Slot * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugstheunacquiredsiblingleaksloudly_Slot_hash(const void *elem) {

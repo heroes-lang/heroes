@@ -5,7 +5,7 @@
 #include <fixedbugs-a-discarded-acquisition-is-owed-at-exit.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -123,7 +123,7 @@ bb0:
 #line 124 "fixedbugsadiscardedacquisitionisowedatexit.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsadiscardedacquisitionisowedatexit_Ob_eq(ob * const *a, ob * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsadiscardedacquisitionisowedatexit_Ob_hash(const void *elem) {

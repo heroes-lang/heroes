@@ -1,0 +1,2 @@
+the new node reads 2
+!panic: a dead C handle reached the argument `n` of `node_free`: a call marked `consumes` or `transfers` ended this handle's life and emptied the binding, field or element it was read from

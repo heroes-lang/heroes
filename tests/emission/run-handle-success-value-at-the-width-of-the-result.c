@@ -5,7 +5,7 @@
 #include <handle-success-value-at-the-width-of-the-result.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -141,13 +141,15 @@ bb0:
 #line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     t3 = h0_a;
 #line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
+    hero_handle_alive(t3, "the argument `o` of `ob_release_all`");
+#line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     hero_handle_ending(t3, "ob_release_all", NULL);
 #line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     t4 = ob_release_all(t3);
 #line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     if (t4 == 18446744073709551615ULL) {
 #line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    hero_handle_ended(t3);
+    if (hero_handle_ended(t3) && h0_a == t3) h0_a = hero_handle_dead();
 #line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     } else {
 #line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
@@ -159,13 +161,15 @@ bb0:
 #line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     t5 = h1_b;
 #line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
+    hero_handle_alive(t5, "the argument `o` of `ob_try_put`");
+#line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     hero_handle_ending(t5, "ob_try_put", NULL);
 #line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     t6 = ob_try_put(t5);
 #line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     if (t6 == 1) {
 #line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    hero_handle_ended(t5);
+    if (hero_handle_ended(t5) && h1_b == t5) h1_b = hero_handle_dead();
 #line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     } else {
 #line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
@@ -198,10 +202,10 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     return;
-#line 202 "handlesuccessvalueatthewidthoftheresult.c"
+#line 206 "handlesuccessvalueatthewidthoftheresult.c"
 }
 HERO_TU_LOCAL bool h_handlesuccessvalueatthewidthoftheresult_Ob_eq(ob * const *a, ob * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_handlesuccessvalueatthewidthoftheresult_Ob_hash(const void *elem) {

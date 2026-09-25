@@ -5,7 +5,7 @@
 #include <fixedbugs-a-c-function-crosses-as-a-callback.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -98,10 +98,14 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsacfunctioncrossesasacallback_main(void);
+__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    return f;
+}
+
 
 #line 36 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
 void h_fixedbugsacfunctioncrossesasacallback_main(void) {
-#line 105 "fixedbugsacfunctioncrossesasacallback.c"
+#line 109 "fixedbugsacfunctioncrossesasacallback.c"
     void * h0_b;
     void * t1;
     void * t2;
@@ -122,7 +126,7 @@ bb0:
 #line 41 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
     t4 = counting_free;
 #line 41 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
-    (void)blob_take(t2, t3, t4);
+    (void)blob_take(t2, t3, (h_0fn_406f9b0)hero_callback_of((void (*)(void))t4));
 #line 44 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
     t5 = blob_first();
 #line 44 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
@@ -137,7 +141,7 @@ bb0:
     hero_print_end();
 #line 47 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
     return;
-#line 141 "fixedbugsacfunctioncrossesasacallback.c"
+#line 145 "fixedbugsacfunctioncrossesasacallback.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

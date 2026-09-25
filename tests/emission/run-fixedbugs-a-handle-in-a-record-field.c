@@ -5,7 +5,7 @@
 #include <fixedbugs-a-handle-in-a-record-field.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -146,6 +146,8 @@ bb0:
 #line 52 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     t3 = h0_s;
 #line 52 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
+    hero_handle_alive(t3.handle, "the argument `s` of `slot_count`, at `.handle`");
+#line 52 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     t4 = slot_count(t3);
 #line 52 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     hero_print_int(t4);
@@ -173,10 +175,10 @@ bb0:
     hero_print_end();
 #line 57 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     return;
-#line 177 "fixedbugsahandleinarecordfield.c"
+#line 179 "fixedbugsahandleinarecordfield.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsahandleinarecordfield_Thing_hash(const void *elem) {

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -103,10 +103,17 @@ int64_t h_main_longest_in(int64_t h0_index);
 int64_t h_main_longest_at_once(void);
 int64_t h_main_longest_alone(void);
 void h_main_main(void);
+int64_t h_main_longest_in(int64_t h0_index);
+int64_t h_0cb_main_longest_in(int64_t h0_index);
+__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    if (f == (void (*)(void))h_main_longest_in) return (void (*)(void))h_0cb_main_longest_in;
+    return f;
+}
+
 
 #line 21 "examples/collatz/main.hero"
 int64_t h_main_BANDS(void) {
-#line 110 "main.c"
+#line 117 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -114,12 +121,12 @@ bb0:
     t1 = INT64_C(8);
 #line 22 "examples/collatz/main.hero"
     return t1;
-#line 118 "main.c"
+#line 125 "main.c"
 }
 
 #line 24 "examples/collatz/main.hero"
 int64_t h_main_PER_BAND(void) {
-#line 123 "main.c"
+#line 130 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -127,12 +134,12 @@ bb0:
     t1 = INT64_C(2500);
 #line 25 "examples/collatz/main.hero"
     return t1;
-#line 131 "main.c"
+#line 138 "main.c"
 }
 
 #line 29 "examples/collatz/main.hero"
 int64_t h_main_steps(int64_t h0_n) {
-#line 136 "main.c"
+#line 143 "main.c"
     int64_t h1_count;
     int64_t h2_v;
     int64_t t1;
@@ -247,12 +254,12 @@ bb6:
     h2_v = t18;
 #line 37 "examples/collatz/main.hero"
     goto bb4;
-#line 251 "main.c"
+#line 258 "main.c"
 }
 
 #line 43 "examples/collatz/main.hero"
 int64_t h_main_longest_in(int64_t h0_index) {
-#line 256 "main.c"
+#line 263 "main.c"
     hero_thread_guard("main.longest_in");
     int64_t h1_best;
     int64_t h2_n;
@@ -364,12 +371,17 @@ bb5:
 bb6:
 #line 51 "examples/collatz/main.hero"
     goto bb4;
-#line 368 "main.c"
+#line 375 "main.c"
+}
+
+int64_t h_0cb_main_longest_in(int64_t h0_index) {
+    int64_t hero_result = h_main_longest_in(h0_index);
+    return hero_result;
 }
 
 #line 56 "examples/collatz/main.hero"
 int64_t h_main_longest_at_once(void) {
-#line 373 "main.c"
+#line 385 "main.c"
     HeroArrayHeader * h0_handles = {0};
     int64_t h1_i;
     int64_t h2_best;
@@ -420,15 +432,15 @@ bb0:
     t34 = h7_own7;
 #line 57 "examples/collatz/main.hero"
     h7_own7 = t1;
-#line 424 "main.c"
+#line 436 "main.c"
     hero_array_decref(t34);
 #line 57 "examples/collatz/main.hero"
     t35 = h0_handles;
-#line 428 "main.c"
+#line 440 "main.c"
     hero_array_incref(t1);
 #line 57 "examples/collatz/main.hero"
     h0_handles = t1;
-#line 432 "main.c"
+#line 444 "main.c"
     hero_array_decref(t35);
 #line 58 "examples/collatz/main.hero"
     t2 = INT64_C(0);
@@ -453,7 +465,7 @@ bb2:
 #line 61 "examples/collatz/main.hero"
     t8 = h1_i;
 #line 61 "examples/collatz/main.hero"
-    t9 = hero_thread_spawn(t7, t8);
+    t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8);
 #line 61 "examples/collatz/main.hero"
     hero_array_push_owned(&h0_handles, &t9);
 #line 62 "examples/collatz/main.hero"
@@ -476,11 +488,11 @@ bb3:
     t15 = h0_handles;
 #line 66 "examples/collatz/main.hero"
     t36 = h3_xs0;
-#line 480 "main.c"
+#line 492 "main.c"
     hero_array_incref(t15);
 #line 66 "examples/collatz/main.hero"
     h3_xs0 = t15;
-#line 484 "main.c"
+#line 496 "main.c"
     hero_array_decref(t36);
 #line 66 "examples/collatz/main.hero"
     t16 = INT64_C(0);
@@ -540,13 +552,13 @@ bb6:
 bb7:
 #line 72 "examples/collatz/main.hero"
     t33 = h2_best;
-#line 544 "main.c"
+#line 556 "main.c"
     hero_array_decref(h0_handles);
 #line 72 "examples/collatz/main.hero"
-#line 547 "main.c"
+#line 559 "main.c"
     hero_array_decref(h3_xs0);
 #line 72 "examples/collatz/main.hero"
-#line 550 "main.c"
+#line 562 "main.c"
     hero_array_decref(h7_own7);
     return t33;
 bb8:
@@ -562,12 +574,12 @@ bb9:
 bb10:
 #line 70 "examples/collatz/main.hero"
     goto bb8;
-#line 566 "main.c"
+#line 578 "main.c"
 }
 
 #line 75 "examples/collatz/main.hero"
 int64_t h_main_longest_alone(void) {
-#line 571 "main.c"
+#line 583 "main.c"
     int64_t h0_best;
     int64_t h1_n;
     int64_t h2_s;
@@ -660,12 +672,12 @@ bb5:
 bb6:
 #line 83 "examples/collatz/main.hero"
     goto bb4;
-#line 664 "main.c"
+#line 676 "main.c"
 }
 
 #line 88 "examples/collatz/main.hero"
 void h_main_main(void) {
-#line 669 "main.c"
+#line 681 "main.c"
     HeroStr t1 = {0};
     int64_t t2;
     int64_t t3;
@@ -698,7 +710,7 @@ bb0:
     hero_print_end();
 #line 89 "examples/collatz/main.hero"
     return;
-#line 702 "main.c"
+#line 714 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

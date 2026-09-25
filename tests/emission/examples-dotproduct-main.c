@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -104,10 +104,17 @@ int64_t h_main_band(int64_t h0_index);
 int64_t h_main_together(void);
 int64_t h_main_alone(void);
 void h_main_main(void);
+int64_t h_main_band(int64_t h0_index);
+int64_t h_0cb_main_band(int64_t h0_index);
+__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    if (f == (void (*)(void))h_main_band) return (void (*)(void))h_0cb_main_band;
+    return f;
+}
+
 
 #line 20 "examples/dotproduct/main.hero"
 int64_t h_main_BANDS(void) {
-#line 111 "main.c"
+#line 118 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -115,12 +122,12 @@ bb0:
     t1 = INT64_C(6);
 #line 21 "examples/dotproduct/main.hero"
     return t1;
-#line 119 "main.c"
+#line 126 "main.c"
 }
 
 #line 23 "examples/dotproduct/main.hero"
 int64_t h_main_PER_BAND(void) {
-#line 124 "main.c"
+#line 131 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -128,12 +135,12 @@ bb0:
     t1 = INT64_C(4000);
 #line 24 "examples/dotproduct/main.hero"
     return t1;
-#line 132 "main.c"
+#line 139 "main.c"
 }
 
 #line 29 "examples/dotproduct/main.hero"
 int64_t h_main_left(int64_t h0_at) {
-#line 137 "main.c"
+#line 144 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -157,12 +164,12 @@ bb0:
     if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow();
 #line 30 "examples/dotproduct/main.hero"
     return t5;
-#line 161 "main.c"
+#line 168 "main.c"
 }
 
 #line 32 "examples/dotproduct/main.hero"
 int64_t h_main_right(int64_t h0_at) {
-#line 166 "main.c"
+#line 173 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -186,12 +193,12 @@ bb0:
     if (__builtin_sub_overflow(t1, t4, &t5)) hero_panic_overflow();
 #line 33 "examples/dotproduct/main.hero"
     return t5;
-#line 190 "main.c"
+#line 197 "main.c"
 }
 
 #line 35 "examples/dotproduct/main.hero"
 int64_t h_main_band(int64_t h0_index) {
-#line 195 "main.c"
+#line 202 "main.c"
     hero_thread_guard("main.band");
     int64_t h1_total;
     int64_t h2_at;
@@ -285,12 +292,17 @@ bb3:
     t22 = h1_total;
 #line 43 "examples/dotproduct/main.hero"
     return t22;
-#line 289 "main.c"
+#line 296 "main.c"
+}
+
+int64_t h_0cb_main_band(int64_t h0_index) {
+    int64_t hero_result = h_main_band(h0_index);
+    return hero_result;
 }
 
 #line 45 "examples/dotproduct/main.hero"
 int64_t h_main_together(void) {
-#line 294 "main.c"
+#line 306 "main.c"
     HeroArrayHeader * h0_handles = {0};
     int64_t h1_i;
     int64_t h2_total;
@@ -338,15 +350,15 @@ bb0:
     t32 = h6_own6;
 #line 46 "examples/dotproduct/main.hero"
     h6_own6 = t1;
-#line 342 "main.c"
+#line 354 "main.c"
     hero_array_decref(t32);
 #line 46 "examples/dotproduct/main.hero"
     t33 = h0_handles;
-#line 346 "main.c"
+#line 358 "main.c"
     hero_array_incref(t1);
 #line 46 "examples/dotproduct/main.hero"
     h0_handles = t1;
-#line 350 "main.c"
+#line 362 "main.c"
     hero_array_decref(t33);
 #line 47 "examples/dotproduct/main.hero"
     t2 = INT64_C(0);
@@ -371,7 +383,7 @@ bb2:
 #line 50 "examples/dotproduct/main.hero"
     t8 = h1_i;
 #line 50 "examples/dotproduct/main.hero"
-    t9 = hero_thread_spawn(t7, t8);
+    t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8);
 #line 50 "examples/dotproduct/main.hero"
     hero_array_push_owned(&h0_handles, &t9);
 #line 51 "examples/dotproduct/main.hero"
@@ -394,11 +406,11 @@ bb3:
     t15 = h0_handles;
 #line 55 "examples/dotproduct/main.hero"
     t34 = h3_xs0;
-#line 398 "main.c"
+#line 410 "main.c"
     hero_array_incref(t15);
 #line 55 "examples/dotproduct/main.hero"
     h3_xs0 = t15;
-#line 402 "main.c"
+#line 414 "main.c"
     hero_array_decref(t34);
 #line 55 "examples/dotproduct/main.hero"
     t16 = INT64_C(0);
@@ -456,20 +468,20 @@ bb6:
 bb7:
 #line 58 "examples/dotproduct/main.hero"
     t31 = h2_total;
-#line 460 "main.c"
+#line 472 "main.c"
     hero_array_decref(h0_handles);
 #line 58 "examples/dotproduct/main.hero"
-#line 463 "main.c"
+#line 475 "main.c"
     hero_array_decref(h3_xs0);
 #line 58 "examples/dotproduct/main.hero"
-#line 466 "main.c"
+#line 478 "main.c"
     hero_array_decref(h6_own6);
     return t31;
 }
 
 #line 60 "examples/dotproduct/main.hero"
 int64_t h_main_alone(void) {
-#line 473 "main.c"
+#line 485 "main.c"
     int64_t h0_total;
     int64_t h1_at;
     int64_t t1;
@@ -550,12 +562,12 @@ bb3:
     t18 = h0_total;
 #line 68 "examples/dotproduct/main.hero"
     return t18;
-#line 554 "main.c"
+#line 566 "main.c"
 }
 
 #line 70 "examples/dotproduct/main.hero"
 void h_main_main(void) {
-#line 559 "main.c"
+#line 571 "main.c"
     HeroStr t1 = {0};
     int64_t t2;
     int64_t t3;
@@ -588,7 +600,7 @@ bb0:
     hero_print_end();
 #line 71 "examples/dotproduct/main.hero"
     return;
-#line 592 "main.c"
+#line 604 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

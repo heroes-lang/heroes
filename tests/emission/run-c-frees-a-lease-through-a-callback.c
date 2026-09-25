@@ -5,7 +5,7 @@
 #include <c-frees-a-lease-through-a-callback.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -97,10 +97,14 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_cfreesaleasethroughacallback_main(void);
+__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    return f;
+}
+
 
 #line 12 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
 void h_cfreesaleasethroughacallback_main(void) {
-#line 104 "cfreesaleasethroughacallback.c"
+#line 108 "cfreesaleasethroughacallback.c"
     HeroStr h0_x = {0};
     const char * h1_c;
     HeroStr t1 = {0};
@@ -116,11 +120,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t7 = h0_x;
-#line 120 "cfreesaleasethroughacallback.c"
+#line 124 "cfreesaleasethroughacallback.c"
     hero_str_incref(t1);
 #line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     h0_x = t1;
-#line 124 "cfreesaleasethroughacallback.c"
+#line 128 "cfreesaleasethroughacallback.c"
     hero_str_decref(t7);
 #line 14 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t2 = h0_x;
@@ -139,10 +143,10 @@ bb0:
 #line 16 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t6 = eat;
 #line 16 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
-    (void)take_cb(hero_cstr_nonnull(t5), t6);
+    (void)take_cb(hero_cstr_nonnull(t5), (h_0fn_2b4640ec)hero_callback_of((void (*)(void))t6));
 #line 17 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     hero_held_release(&h1_c);
-#line 146 "cfreesaleasethroughacallback.c"
+#line 150 "cfreesaleasethroughacallback.c"
     hero_str_decref(h0_x);
     return;
 }

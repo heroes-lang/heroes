@@ -1,0 +1,32 @@
+# THE LIMIT THAT STAYS, in the shape defect 090 was found in (panel 177's
+# item 4; design.md Part 8 wart 20): a copy made before the release, read
+# after C has handed the same address out again. `make_again` hands the
+# cleansed slot back as a new handle, which clears the runtime's memory of the
+# address, because from then on the address IS a live handle; the stale copy
+# then reaches C, and C reads a null field inside the cleansed object. What
+# this case pins is the fault handler's sentence: it says what it saw, the
+# offset and the frame, and names the two things that put a null where C read
+# it, one of which is this program. Under `--sanitize` the runtime is silent
+# and ASan reports the fault itself, which the `!sanitizer:` line pins with the
+# words the three platforms share.
+#
+# `fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle`
+# is the same program without `make_again`, and there the read is refused
+# before C. If a later route refuses it here too, this case goes red and wart
+# 20's sentence is what must change with it.
+extern "limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.h"
+    record Outer tag outer
+    function make() -> Outer acquires release
+    function make_again() -> Outer acquires release
+    function release(o: Outer consumes)
+    function value(o: Outer) -> i64
+
+function main()
+    a = make()
+    kept = a
+    print("before: ", value(o: a))
+    release(o: a)
+    b = make_again()
+    print("null: ", kept == nullptr)
+    print("after: ", value(o: kept))
+    release(o: b)

@@ -19,6 +19,15 @@
 # header says so, with the measurement). Under `--sanitize` the runtime is
 # silent and ASan reports the fault itself, which the case's `!sanitizer:`
 # line pins with the words the three platforms share.
+#
+# **Refused one check earlier since 2026-09-25 (panel 177's item 2).** The
+# runtime now remembers the address `release` ended until C hands it out
+# again, and the pool never does, so the read through `kept` is stopped at
+# its crossing into `value`, plain and under `--sanitize` alike, and the
+# fault never happens. The fault handler's own sentence, which this case used
+# to pin, is pinned by
+# `limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept`, where C
+# has handed the address out again first and the read goes through.
 extern "fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.h"
     record Outer tag outer
     function make() -> Outer acquires release

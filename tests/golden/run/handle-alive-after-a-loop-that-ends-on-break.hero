@@ -1,0 +1,27 @@
+# AN END BEHIND A `break` IS ONE PATH OUT OF THE LOOP, NOT EVERY PATH (panel
+# 177's item 3, route M (must), 2026-09-25). The loop may leave through the
+# `break`, with the node ended, or through its condition, with the node
+# alive; the program knows which and reads the node only on the second, so it
+# is correct on every run and the rule refuses nothing in it. Here the
+# condition ends the loop, and the node is read and released once: exit 0.
+extern "handle-alive-after-a-loop-that-ends-on-break.h"
+    record Node tag node
+    function node_new(v: i64) -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_peek(n: Node) -> i64
+
+function main()
+    n = node_new(v: 3)
+    ended: bool @ false
+    k: i64 @ 0
+
+    while k < 3
+        if node_peek(n: n) == k
+            node_free(n: n)
+            ended @ true
+            break
+        k @ k + 1
+
+    if !ended
+        print("kept through ", k, " turns: ", node_peek(n: n))
+        node_free(n: n)
