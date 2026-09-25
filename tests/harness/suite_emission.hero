@@ -123,8 +123,11 @@ constant ENTRIES: [str]
 # actually drifts at and the reason it is re-based at a close rather than when
 # somebody notices. Found while repairing what the full net caught before the
 # push: three of the eight are that repair's own cases.
+#
+# **296 on 2026-09-25**, printed by this suite when defect 097's eight run cases
+# took the count more than 25% past 233.
 constant LEAST: i64
-    233
+    296
 
 # One program and the bytes it was blessed to emit.
 record Program
