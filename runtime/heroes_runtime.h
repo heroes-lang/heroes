@@ -34,7 +34,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 24
+#define HERO_RUNTIME_ABI 25
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -212,13 +212,33 @@ void hero_held_release(const char **slot); /* nulls the cell: the second release
  * clause guards, or `kept(h)` when the call said it failed, since the check
  * counted the end as pending and one call may not announce more ends than the
  * address holds references (defect 084). `retained(h, "X509_free")` adds a
- * reference to a live handle or begins a life on one the set does not hold. */
+ * reference to a live handle or begins a life on one the set does not hold.
+ *
+ * Since ABI 25 (panel 177's items 1 and 2, defects 077 and 088) a handle whose
+ * life ended is DEAD in two places at once. `ended` answers whether the life
+ * ended, that is the count reached zero and the entry left the set, and the emitted
+ * C then overwrites the binding, field or element the argument was read from
+ * with `hero_handle_dead()`, an address at the start of 64 KiB mapped with no
+ * access, so a read or write through it faults instead of landing in freed
+ * memory, and the fault handlers name it (route P). The
+ * set also REMEMBERS the address itself until C hands it out again (route T):
+ * `acquired`, `retained` on an address the set did not hold, and `lent`, a
+ * `borrows` result or cell, or a handle C passes to a callback, clear the
+ * mark. `alive` is asked at every crossing of a handle into C, an argument or
+ * a callback's result, with `where` naming the crossing for the message: the
+ * dead value and a remembered address both abort before C runs. `eq` is what
+ * `==` on two handles calls, since a dead value no longer holds its address
+ * and may not be compared. `parts/alloc.c` states the dead set's bound. */
 void hero_handle_acquired(const void *handle, const char *releasers);
 void hero_handle_ending(const void *handle, const char *by, const char *pays);
 void hero_handle_transferring(const void *handle, const char *into);
-void hero_handle_ended(const void *handle);
+int hero_handle_ended(const void *handle);
 void hero_handle_kept(const void *handle);
 void hero_handle_retained(const void *handle, const char *releasers);
+void hero_handle_lent(const void *handle);
+void hero_handle_alive(const void *handle, const char *where);
+void *hero_handle_dead(void);
+bool hero_handle_eq(const void *a, const void *b);
 
 /* THE MISSING PRIMITIVE (panel 021). §4.19's ladder step 3 is "open a database,
  * run a query, READ A RESULT, close". sqlite3_column_text hands back a borrowed

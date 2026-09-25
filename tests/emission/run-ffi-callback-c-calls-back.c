@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -97,10 +97,17 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fficallbackccallsback_bye(void);
 void h_fficallbackccallsback_main(void);
+void h_fficallbackccallsback_bye(void);
+void h_0cb_fficallbackccallsback_bye(void);
+__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    if (f == (void (*)(void))h_fficallbackccallsback_bye) return (void (*)(void))h_0cb_fficallbackccallsback_bye;
+    return f;
+}
+
 
 #line 24 "tests/golden/run/ffi-callback-c-calls-back.hero"
 void h_fficallbackccallsback_bye(void) {
-#line 104 "fficallbackccallsback.c"
+#line 111 "fficallbackccallsback.c"
     hero_thread_guard("fficallbackccallsback.bye");
     HeroStr t1 = {0};
     goto bb0;
@@ -113,12 +120,16 @@ bb0:
     hero_print_end();
 #line 25 "tests/golden/run/ffi-callback-c-calls-back.hero"
     return;
-#line 117 "fficallbackccallsback.c"
+#line 124 "fficallbackccallsback.c"
+}
+
+void h_0cb_fficallbackccallsback_bye(void) {
+    h_fficallbackccallsback_bye();
 }
 
 #line 27 "tests/golden/run/ffi-callback-c-calls-back.hero"
 void h_fficallbackccallsback_main(void) {
-#line 122 "fficallbackccallsback.c"
+#line 133 "fficallbackccallsback.c"
     HeroStr t1 = {0};
     h_0fn_294870dd t2;
     int32_t t3;
@@ -136,7 +147,7 @@ bb0:
 #line 32 "tests/golden/run/ffi-callback-c-calls-back.hero"
     t2 = h_fficallbackccallsback_bye;
 #line 32 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    t3 = atexit(t2);
+    t3 = atexit((h_0fn_294870dd)hero_callback_of((void (*)(void))t2));
 #line 32 "tests/golden/run/ffi-callback-c-calls-back.hero"
     t4 = INT64_C(0);
 #line 32 "tests/golden/run/ffi-callback-c-calls-back.hero"
@@ -161,7 +172,7 @@ bb2:
 bb3:
 #line 33 "tests/golden/run/ffi-callback-c-calls-back.hero"
     goto bb1;
-#line 165 "fficallbackccallsback.c"
+#line 176 "fficallbackccallsback.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

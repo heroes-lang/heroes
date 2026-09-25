@@ -5,7 +5,7 @@
 #include <handle-reference-joins-the-life-it-finds.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -145,6 +145,8 @@ bb0:
 #line 18 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     t3 = h0_a;
 #line 18 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
+    hero_handle_alive(t3, "the argument `o` of `ob_get`");
+#line 18 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     t4 = ob_get(t3);
 #line 18 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     hero_handle_retained(t4, "ob_put");
@@ -152,6 +154,8 @@ bb0:
     h1_b = t4;
 #line 19 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     t5 = h0_a;
+#line 19 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
+    hero_handle_alive(t5, "the argument `o` of `ob_up_ref`");
 #line 19 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     t6 = ob_up_ref(t5);
 #line 19 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
@@ -168,6 +172,8 @@ bb0:
     t7 = HERO_STR_LIT(hero_str_7b9bb5d3);
 #line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     t8 = h0_a;
+#line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
+    hero_handle_alive(t8, "the argument `o` of `ob_refs`");
 #line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     t9 = ob_refs(t8);
 #line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
@@ -187,27 +193,33 @@ bb0:
 #line 21 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     t12 = h1_b;
 #line 21 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
+    hero_handle_alive(t12, "the argument `o` of `ob_put`");
+#line 21 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     hero_handle_ending(t12, "ob_put", NULL);
 #line 21 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     (void)ob_put(t12);
 #line 21 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_handle_ended(t12);
+    if (hero_handle_ended(t12) && h1_b == t12) h1_b = hero_handle_dead();
 #line 22 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     t13 = h0_a;
+#line 22 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
+    hero_handle_alive(t13, "the argument `o` of `ob_put`");
 #line 22 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     hero_handle_ending(t13, "ob_put", NULL);
 #line 22 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     (void)ob_put(t13);
 #line 22 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_handle_ended(t13);
+    if (hero_handle_ended(t13) && h0_a == t13) h0_a = hero_handle_dead();
 #line 23 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     t14 = h0_a;
+#line 23 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
+    hero_handle_alive(t14, "the argument `o` of `ob_put`");
 #line 23 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     hero_handle_ending(t14, "ob_put", NULL);
 #line 23 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     (void)ob_put(t14);
 #line 23 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_handle_ended(t14);
+    if (hero_handle_ended(t14) && h0_a == t14) h0_a = hero_handle_dead();
 #line 24 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     t15 = HERO_STR_LIT(hero_str_3f94e3d);
 #line 24 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
@@ -216,10 +228,10 @@ bb0:
     hero_print_end();
 #line 24 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     return;
-#line 220 "handlereferencejoinsthelifeitfinds.c"
+#line 232 "handlereferencejoinsthelifeitfinds.c"
 }
 HERO_TU_LOCAL bool h_handlereferencejoinsthelifeitfinds_Ob_eq(ob * const *a, ob * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_handlereferencejoinsthelifeitfinds_Ob_hash(const void *elem) {

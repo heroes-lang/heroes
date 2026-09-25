@@ -1,0 +1,31 @@
+# THE LIMIT THAT STAYS, pinned at the window's edge (panel 177's item 4;
+# spec § 13, *or a million other lives have ended*). The dead set is bounded
+# by design, so it forgets: an address is remembered until C hands it out
+# again or 2^20 = 1,048,576 more lives have ended, and here the copy is read
+# after exactly 1,048,576. The mark has left the window, the copy reaches C,
+# and C reads the freed node's word, -1, at exit 0, plain and under
+# `--sanitize` alike, since the pool is static and ASan sees nothing freed.
+# `dead-address-remembered-through-a-million-later-ends` is the same program
+# one end earlier, and there it is refused. If the window grows, this case
+# goes red, and § 13's sentence and `runtime/parts/alloc.c` are what must
+# change with it.
+
+extern "limit-a-copy-read-after-a-million-later-ends-is-not-caught.h"
+    record Big tag big
+    function big_new() -> Big acquires big_free
+    function big_free(n: Big consumes)
+    function big_value(n: Big) -> i64
+
+function main()
+    target = big_new()
+    keep = target
+    big_free(n: target)
+    i: i64 @ 0
+
+    while i < 1048576
+        n = big_new()
+        big_free(n: n)
+        i @ i + 1
+
+    print("ends after the target: ", i)
+    print("the target reads: ", big_value(n: keep))

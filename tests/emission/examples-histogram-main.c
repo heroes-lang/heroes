@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -101,10 +101,17 @@ int64_t h_main_value_at(int64_t h0_n);
 int64_t h_main_count_of(int64_t h0_digit);
 HeroArrayHeader * h_main_counts(void);
 void h_main_main(void);
+int64_t h_main_count_of(int64_t h0_digit);
+int64_t h_0cb_main_count_of(int64_t h0_digit);
+__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    if (f == (void (*)(void))h_main_count_of) return (void (*)(void))h_0cb_main_count_of;
+    return f;
+}
+
 
 #line 22 "examples/histogram/main.hero"
 int64_t h_main_NUMBERS(void) {
-#line 108 "main.c"
+#line 115 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -112,12 +119,12 @@ bb0:
     t1 = INT64_C(20000);
 #line 23 "examples/histogram/main.hero"
     return t1;
-#line 116 "main.c"
+#line 123 "main.c"
 }
 
 #line 26 "examples/histogram/main.hero"
 int64_t h_main_value_at(int64_t h0_n) {
-#line 121 "main.c"
+#line 128 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -141,12 +148,12 @@ bb0:
     t5 = t3 % t4;
 #line 27 "examples/histogram/main.hero"
     return t5;
-#line 145 "main.c"
+#line 152 "main.c"
 }
 
 #line 30 "examples/histogram/main.hero"
 int64_t h_main_count_of(int64_t h0_digit) {
-#line 150 "main.c"
+#line 157 "main.c"
     hero_thread_guard("main.count_of");
     int64_t h1_seen;
     int64_t h2_n;
@@ -343,12 +350,17 @@ bb13:
 bb14:
 #line 42 "examples/histogram/main.hero"
     goto bb12;
-#line 347 "main.c"
+#line 354 "main.c"
+}
+
+int64_t h_0cb_main_count_of(int64_t h0_digit) {
+    int64_t hero_result = h_main_count_of(h0_digit);
+    return hero_result;
 }
 
 #line 49 "examples/histogram/main.hero"
 HeroArrayHeader * h_main_counts(void) {
-#line 352 "main.c"
+#line 364 "main.c"
     HeroArrayHeader * h0_handles = {0};
     int64_t h1_d;
     HeroArrayHeader * h2_out = {0};
@@ -397,15 +409,15 @@ bb0:
     t32 = h6_own6;
 #line 50 "examples/histogram/main.hero"
     h6_own6 = t1;
-#line 401 "main.c"
+#line 413 "main.c"
     hero_array_decref(t32);
 #line 50 "examples/histogram/main.hero"
     t33 = h0_handles;
-#line 405 "main.c"
+#line 417 "main.c"
     hero_array_incref(t1);
 #line 50 "examples/histogram/main.hero"
     h0_handles = t1;
-#line 409 "main.c"
+#line 421 "main.c"
     hero_array_decref(t33);
 #line 51 "examples/histogram/main.hero"
     t2 = INT64_C(0);
@@ -430,7 +442,7 @@ bb2:
 #line 54 "examples/histogram/main.hero"
     t8 = h1_d;
 #line 54 "examples/histogram/main.hero"
-    t9 = hero_thread_spawn(t7, t8);
+    t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8);
 #line 54 "examples/histogram/main.hero"
     hero_array_push_owned(&h0_handles, &t9);
 #line 55 "examples/histogram/main.hero"
@@ -451,25 +463,25 @@ bb3:
     t34 = h7_own7;
 #line 57 "examples/histogram/main.hero"
     h7_own7 = t14;
-#line 455 "main.c"
+#line 467 "main.c"
     hero_array_decref(t34);
 #line 57 "examples/histogram/main.hero"
     t35 = h2_out;
-#line 459 "main.c"
+#line 471 "main.c"
     hero_array_incref(t14);
 #line 57 "examples/histogram/main.hero"
     h2_out = t14;
-#line 463 "main.c"
+#line 475 "main.c"
     hero_array_decref(t35);
 #line 59 "examples/histogram/main.hero"
     t15 = h0_handles;
 #line 59 "examples/histogram/main.hero"
     t36 = h3_xs0;
-#line 469 "main.c"
+#line 481 "main.c"
     hero_array_incref(t15);
 #line 59 "examples/histogram/main.hero"
     h3_xs0 = t15;
-#line 473 "main.c"
+#line 485 "main.c"
     hero_array_decref(t36);
 #line 59 "examples/histogram/main.hero"
     t16 = INT64_C(0);
@@ -523,29 +535,29 @@ bb6:
 bb7:
 #line 62 "examples/histogram/main.hero"
     t31 = h2_out;
-#line 527 "main.c"
+#line 539 "main.c"
     hero_array_incref(t31);
 #line 62 "examples/histogram/main.hero"
-#line 530 "main.c"
+#line 542 "main.c"
     hero_array_decref(h0_handles);
 #line 62 "examples/histogram/main.hero"
-#line 533 "main.c"
+#line 545 "main.c"
     hero_array_decref(h2_out);
 #line 62 "examples/histogram/main.hero"
-#line 536 "main.c"
+#line 548 "main.c"
     hero_array_decref(h3_xs0);
 #line 62 "examples/histogram/main.hero"
-#line 539 "main.c"
+#line 551 "main.c"
     hero_array_decref(h6_own6);
 #line 62 "examples/histogram/main.hero"
-#line 542 "main.c"
+#line 554 "main.c"
     hero_array_decref(h7_own7);
     return t31;
 }
 
 #line 64 "examples/histogram/main.hero"
 void h_main_main(void) {
-#line 549 "main.c"
+#line 561 "main.c"
     HeroArrayHeader * h0_found = {0};
     int64_t h1_d;
     HeroArrayHeader * h2_own2 = {0};
@@ -573,15 +585,15 @@ bb0:
     t15 = h2_own2;
 #line 65 "examples/histogram/main.hero"
     h2_own2 = t1;
-#line 577 "main.c"
+#line 589 "main.c"
     hero_array_decref(t15);
 #line 65 "examples/histogram/main.hero"
     t16 = h0_found;
-#line 581 "main.c"
+#line 593 "main.c"
     hero_array_incref(t1);
 #line 65 "examples/histogram/main.hero"
     h0_found = t1;
-#line 585 "main.c"
+#line 597 "main.c"
     hero_array_decref(t16);
 #line 66 "examples/histogram/main.hero"
     t2 = INT64_C(0);
@@ -636,10 +648,10 @@ bb2:
 #line 70 "examples/histogram/main.hero"
 bb3:
 #line 64 "examples/histogram/main.hero"
-#line 640 "main.c"
+#line 652 "main.c"
     hero_array_decref(h0_found);
 #line 64 "examples/histogram/main.hero"
-#line 643 "main.c"
+#line 655 "main.c"
     hero_array_decref(h2_own2);
     return;
 }

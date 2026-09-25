@@ -1,0 +1,1 @@
+!panic: `==` read a dead C handle: a call marked `consumes` or `transfers` ended its life and emptied the binding, field or element it was read from
