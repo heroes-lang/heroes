@@ -149,6 +149,39 @@
     "  a copy of its handle the program kept, since a freed object's fields read as zero. This\n" \
     "  runtime raised neither.\n"
 
+/* A DEAD C HANDLE USED INSIDE C, and the region that makes it a fault (panel
+ * 177's item 1; the landing's skeptic, probe `a2d`, 2026-09-25). A call that
+ * ends a handle's life leaves `hero_handle_dead()` in the place its argument
+ * was read from, and every crossing into C refuses that value before C runs.
+ * One route skips the check on purpose: an `@` cell marked `acquires`,
+ * `borrows` or `retains` is one C only WRITES (`emit/handle_before.hero`'s
+ * `reads_cell`), so a C function bound that way that READS the cell gets the
+ * dead value. It points at HERO_DEAD_SPAN bytes this runtime maps with no
+ * access, the null window's own size, so a field read or written through it
+ * at any offset under 64 KiB faults, and the handlers name it. Measured before
+ * this arm: exit 138 with both streams empty on this Mac.
+ *
+ * The page's address is read by the handler, so it is declared here, above
+ * both platform arms; `parts/alloc.c` holds the definition and maps it. An
+ * `_Atomic` pointer is lock-free on the three platforms, which is what makes
+ * the load safe inside a signal handler (C11 7.14.1.1). */
+#define HERO_DEAD_SPAN 65536ULL
+static _Atomic(void *) hero_handle_dead_page;
+#define HERO_DEAD_USE_TAIL \
+    "  A call marked `consumes` or `transfers` ended its life and emptied the place it was read\n" \
+    "  from, and C read that place: an `@` cell marked `acquires`, `borrows` or `retains` is one\n" \
+    "  C only writes, so a C function that reads it is bound wrongly, and wants its parameter\n" \
+    "  without `@`.\n"
+
+/* Unused under `--sanitize`, where ASan's handler replaces this file's and
+ * reports the fault itself, hence the attribute. */
+__attribute__((unused)) static int hero_handle_dead_at(uintptr_t addr, uintptr_t *offset) {
+    uintptr_t dead = (uintptr_t)atomic_load_explicit(&hero_handle_dead_page, memory_order_acquire);
+    if (dead == 0 || addr < dead || addr - dead >= HERO_DEAD_SPAN) return 0;
+    *offset = addr - dead;
+    return 1;
+}
+
 /* THE HELPERS, compiled on every POSIX build, under the sanitizer too (panel
  * 175). `parts/os.c`'s crash handler writes with them and asks them which Heroes
  * frame it is under, and since panel 175 that handler stays in a `--sanitize`
@@ -525,6 +558,20 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      *
      * NOTHING UNDER THE SANITIZER, as the file's head already says: ASan
      * installs its own handler and reports `SEGV on unknown address` itself. */
+    /* Before the null arm, because on Darwin arm64 the null window is 4 GiB and
+     * the order must not depend on where the kernel mapped the dead region. */
+    uintptr_t dead_offset = 0;
+    if (hero_handle_dead_at(addr, &dead_offset)) {
+        const char *who = hero_stack_blame(pc, fp, lr);
+        hero_stack_say("panic: a dead C handle was used inside C, at offset ");
+        hero_stack_say_hex(dead_offset);
+        if (who != NULL) {
+            hero_stack_say(", called from ");
+            hero_stack_say_heroes_name(who);
+        }
+        hero_stack_say("\n" HERO_DEAD_USE_TAIL);
+        hero_abort();
+    }
     if ((unsigned long long)addr < HERO_NULL_WINDOW) {
         const char *who = hero_stack_blame(pc, fp, lr);
         hero_stack_say("panic: a null pointer was read through, at offset ");
@@ -680,6 +727,18 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
      * and neither is measured on the box. The sentence and the offset are the
      * contract (panel 156 R1) and `called from` is best effort, so this arm is
      * complete without a name rather than missing one. */
+    /* The dead region, as the POSIX arm reads it and before the null arm for
+     * its reason; no offset or frame here, for the reason the null arm below
+     * gives. UNRUN on this Mac. */
+    uintptr_t dead_offset = 0;
+    if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
+        && ep->ExceptionRecord->NumberParameters >= 2
+        && hero_handle_dead_at((uintptr_t)ep->ExceptionRecord->ExceptionInformation[1], &dead_offset)) {
+        const char *line = "panic: a dead C handle was used inside C\n";
+        _write(2, line, (unsigned int)strlen(line));
+        _write(2, HERO_DEAD_USE_TAIL, (unsigned int)strlen(HERO_DEAD_USE_TAIL));
+        hero_abort();
+    }
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && ep->ExceptionRecord->NumberParameters >= 2
         && (unsigned long long)ep->ExceptionRecord->ExceptionInformation[1] < HERO_NULL_WINDOW) {

@@ -1,2 +1,2 @@
 handed over
-!panic: or a handle given back after a call marked `transfers` handed it into another value, which ends it from now on
+!panic: a dead C handle reached the argument `o` of `ob_put`: a call marked `consumes` or `transfers` ended this handle's life and emptied the binding, field or element it was read from

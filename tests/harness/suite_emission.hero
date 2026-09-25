@@ -124,12 +124,14 @@ constant ENTRIES: [str]
 # somebody notices. Found while repairing what the full net caught before the
 # push: three of the eight are that repair's own cases.
 #
-# **295 on 2026-09-25** — emit 7 · fixedbugs 38 · ir 23 · run 172, and 55
-# example programs. Raised at panel 177's item 3 landing because the seven
-# `run` cases its check-time rule owes for the shapes it must leave alive took
-# the count past the 25 % slack `floors.check` allows, and the suite said so.
+# **304 on 2026-09-25**: emit 7 · fixedbugs 38 · ir 23 · run 181, and 55 example
+# programs (`ls tests/golden/<group>/*.hero | wc -l`, and `ls -d examples/*/`),
+# re-based at panel 177's landing, whose fifteen `run/dead-*` cases and two
+# `run/limit-*` cases carried the count past the 25% margin the check allows:
+# 288 passed under a floor of 233 the day before, so the slack had reached 55
+# in eleven days.
 constant LEAST: i64
-    295
+    304
 
 # One program and the bytes it was blessed to emit.
 record Program

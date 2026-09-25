@@ -5,7 +5,7 @@
 #include <fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -138,13 +138,15 @@ bb0:
 #line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     t3 = h0_s;
 #line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
+    hero_handle_alive(t3, "the argument `s` of `wr_new`");
+#line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     hero_handle_transferring(t3, "st_fclose");
 #line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     t4 = wr_new(t3);
 #line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     if (t4 != NULL) {
 #line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    hero_handle_ended(t3);
+    if (hero_handle_ended(t3) && h0_s == t3) h0_s = hero_handle_dead();
 #line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     } else {
 #line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
@@ -158,11 +160,13 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     t5 = h1_w;
 #line 20 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
+    hero_handle_alive(t5, "the argument `w` of `wr_free`");
+#line 20 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     hero_handle_ending(t5, "wr_free", NULL);
 #line 20 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     (void)wr_free(t5);
 #line 20 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    hero_handle_ended(t5);
+    if (hero_handle_ended(t5) && h1_w == t5) h1_w = hero_handle_dead();
 #line 21 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     t6 = HERO_STR_LIT(hero_str_4414937d);
 #line 21 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
@@ -171,10 +175,10 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     return;
-#line 175 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 179 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_Stream_eq(st * const *a, st * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_Stream_hash(const void *elem) {
@@ -185,7 +189,7 @@ HERO_TU_LOCAL uint64_t h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedb
 }
 
 HERO_TU_LOCAL bool h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_Wrap_eq(wr * const *a, wr * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_Wrap_hash(const void *elem) {

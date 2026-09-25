@@ -5,7 +5,7 @@
 #include <fixedbugs-a-release-after-a-transfer-is-a-stray.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -71,11 +71,11 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 18 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 16 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsareleaseafteratransferisastray_ob_put(ob * a0) { (void)(ob_put)(a0); }
-#line 19 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 17 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsareleaseafteratransferisastray_wr_new(ob * a0) { (void)(wr_new)(a0); }
-#line 20 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 18 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsareleaseafteratransferisastray_wr_free(wr * a0) { (void)(wr_free)(a0); }
 #line 112 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
@@ -107,7 +107,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsareleaseafteratransferisastray_main(void);
 
-#line 22 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 20 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
 void h_fixedbugsareleaseafteratransferisastray_main(void) {
 #line 113 "fixedbugsareleaseafteratransferisastray.c"
     ob * h0_a;
@@ -121,66 +121,72 @@ void h_fixedbugsareleaseafteratransferisastray_main(void) {
     HeroStr t7 = {0};
     goto bb0;
 bb0:
-#line 23 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 21 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     t1 = ob_new();
-#line 23 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 21 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     hero_handle_acquired(t1, "ob_put");
-#line 23 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 21 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     h0_a = t1;
-#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 22 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     t2 = h0_a;
-#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 22 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+    hero_handle_alive(t2, "the argument `o` of `wr_new`");
+#line 22 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     hero_handle_transferring(t2, "ob_put");
-#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 22 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     t3 = wr_new(t2);
-#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 22 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     if (t3 != NULL) {
-#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
-    hero_handle_ended(t2);
-#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 22 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+    if (hero_handle_ended(t2) && h0_a == t2) h0_a = hero_handle_dead();
+#line 22 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     } else {
-#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 22 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     hero_handle_kept(t2);
-#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 22 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     }
-#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 22 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     hero_handle_acquired(t3, "wr_free");
-#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 22 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     h1_w = t3;
-#line 25 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 23 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     t4 = HERO_STR_LIT(hero_str_45627840);
-#line 25 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 23 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     hero_print_str(t4);
-#line 25 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 23 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     hero_print_end();
-#line 26 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     t5 = h0_a;
-#line 26 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+    hero_handle_alive(t5, "the argument `o` of `ob_put`");
+#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     hero_handle_ending(t5, "ob_put", NULL);
-#line 26 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     (void)ob_put(t5);
-#line 26 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
-    hero_handle_ended(t5);
-#line 27 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 24 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+    if (hero_handle_ended(t5) && h0_a == t5) h0_a = hero_handle_dead();
+#line 25 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     t6 = h1_w;
-#line 27 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 25 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+    hero_handle_alive(t6, "the argument `w` of `wr_free`");
+#line 25 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     hero_handle_ending(t6, "wr_free", NULL);
-#line 27 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 25 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     (void)wr_free(t6);
-#line 27 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
-    hero_handle_ended(t6);
-#line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 25 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+    if (hero_handle_ended(t6) && h1_w == t6) h1_w = hero_handle_dead();
+#line 26 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     t7 = HERO_STR_LIT(hero_str_4414937d);
-#line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 26 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     hero_print_str(t7);
-#line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 26 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     hero_print_end();
-#line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+#line 26 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     return;
-#line 181 "fixedbugsareleaseafteratransferisastray.c"
+#line 187 "fixedbugsareleaseafteratransferisastray.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareleaseafteratransferisastray_Ob_eq(ob * const *a, ob * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsareleaseafteratransferisastray_Ob_hash(const void *elem) {
@@ -191,7 +197,7 @@ HERO_TU_LOCAL uint64_t h_fixedbugsareleaseafteratransferisastray_Ob_hash(const v
 }
 
 HERO_TU_LOCAL bool h_fixedbugsareleaseafteratransferisastray_Wr_eq(wr * const *a, wr * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsareleaseafteratransferisastray_Wr_hash(const void *elem) {

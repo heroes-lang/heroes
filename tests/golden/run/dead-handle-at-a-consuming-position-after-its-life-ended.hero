@@ -1,0 +1,26 @@
+# The shape beside defect 088 (panel 177's brief, `use_after_consume`): the
+# dead handle reaches a CONSUMING position. This one was already stopped
+# before C, by the live set's stray report, since the address had left the set
+# at the first delete. What changes under panel 177's item 1 is the SENTENCE:
+# the crossing is asked first, so a handle whose own binding was emptied is
+# named as dead rather than as a stray, and the reader is sent to the release
+# that came too early rather than to a list of three causes.
+#
+# The ending call sits under an `if` on a value C returns, so the checker's
+# half (item 3) lets the program reach the runtime.
+
+extern "dead-handle-at-a-consuming-position-after-its-life-ended.h"
+    record Json tag Obj
+    function obj_new() -> Json acquires obj_delete
+    function obj_add(object: Json, string: cstr lent, item: Json consumes) -> i64
+    function obj_delete(item: Json consumes)
+    function one() -> i64
+
+function main()
+    a = obj_new()
+    b = obj_new()
+
+    if one() == 1
+        obj_delete(item: b)
+    _ = obj_add(object: a, string: "b".cstr(), item: b)
+    obj_delete(item: a)

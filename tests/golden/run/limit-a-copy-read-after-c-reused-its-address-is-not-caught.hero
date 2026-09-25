@@ -1,0 +1,30 @@
+# THE LIMIT THAT STAYS, pinned so that the day it moves this case says so
+# (panel 177's item 4; design.md Part 8 wart 20; spec § 13). A copy made
+# before the ending call, read after C has handed the same address out
+# again: the poison emptied `a` and not `keep`, and the dead set's mark was
+# cleared when `node_new` handed the address to `b`, because from then on
+# the address IS a live handle and nothing can tell the two apart. So the
+# read goes through and prints the NEW node's word, 2, at exit 0. The
+# free list makes the reuse deterministic; on the system allocator the same
+# program depends on the binary's code signature (defect 077's note), and
+# under `--sanitize` ASan's quarantine keeps the address from coming back,
+# so the dead set refuses the copy there (the critic's `sqlite_copy_reuse`,
+# real SQLite, run at the sitting); a static pool has no quarantine, which
+# is why this case exits 0 in all three configurations.
+#
+# If a later route catches this at run time, this case goes red, and wart
+# 20's sentence and § 13's are what must change with it.
+
+extern "limit-a-copy-read-after-c-reused-its-address-is-not-caught.h"
+    record Node tag node
+    function node_new() -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_value(n: Node) -> i64
+
+function main()
+    a = node_new()
+    keep = a
+    node_free(n: a)
+    b = node_new()
+    print("read through the stale copy: ", node_value(n: keep))
+    node_free(n: b)

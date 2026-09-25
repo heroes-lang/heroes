@@ -1,0 +1,25 @@
+# CORRECT, and the landing refused it (its skeptic, probe `a14`,
+# 2026-09-25). One call ends `a` and writes the next life into `a` through
+# `@out`, and C hands back the SAME address. The poison asked the value,
+# `a == t` after the call, which a reused address answers yes, so it
+# overwrote the new handle with the dead value and the acquisition that
+# followed registered the dead page: the next read of `a` aborted as dead.
+#
+# The place a call writes through an `@` argument is that call's to set, so
+# the poison now compares PLACES and never poisons one an `@` argument of the
+# same call overlaps (`emit/handle_place.hero`, `overlaps`). The end still
+# marks the old address dead, and the acquisition clears the mark, since C
+# has handed the address out again.
+
+extern "dead-handle-a-place-the-same-call-writes-is-not-poisoned.h"
+    record Node tag node
+    function node_new() -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_value(n: Node) -> i64
+    function node_swap(n: Node consumes, @out: Node acquires node_free)
+
+function main()
+    a: Node @ node_new()
+    node_swap(n: a, out: @a)
+    print("after the swap: ", node_value(n: a))
+    node_free(n: a)

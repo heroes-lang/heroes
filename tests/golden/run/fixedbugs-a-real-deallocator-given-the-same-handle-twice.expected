@@ -1,2 +1,2 @@
 7
-!panic: 1 C handle(s) given back that were never taken — the set of live handles did not hold that address when a call that ends or transfers it ran. Three things do this: the same handle given back TWICE, which is a double release and may already have corrupted memory; a value acquired WHOLE and released part by part, since one mark is one obligation on the whole value; or a handle given back after a call marked `transfers` handed it into another value, which ends it from now on
+!panic: a C handle reached the argument `b` of `blk_close` at an address a call marked `consumes` or `transfers` ended, and nothing has handed that address out since
