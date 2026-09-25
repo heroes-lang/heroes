@@ -129,8 +129,15 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
             if has_index
                 lines = container.write_element(c, names, s, decls, f, at: st.place, value: st.value)
 
+                # Every place the checker accepts is written since defect 097,
+                # whose `n.a[0] @ 9` reached this line, passed `check` and died
+                # at run time as a compiler bug. A failure still here is the
+                # emitter's own, so it is spelled as an undeclared identifier,
+                # `aggregate.place`'s idiom: clang refuses the unit and the
+                # build says the compiler is wrong, at exit 2 on every build,
+                # not only on the run that happens to reach the line.
                 if lines.is_err()
-                    writer.line(@w, text: "    hero_unreachable(); /* not an element write */")
+                    writer.line(@w, text: "    HERO_ELEMENT_WRITE_NOT_EMITTED; /* not an element write */")
                 else
                     for line in lines.must()
                         writer.line(@w, text: "    " + line)

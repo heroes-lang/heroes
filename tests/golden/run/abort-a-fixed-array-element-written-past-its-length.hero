@@ -1,0 +1,30 @@
+# A write one past the end of a fixed array, at a computed index: the loop
+# below is the classic off-by-one, `to: 5` over four elements, and the fifth
+# write must stop the program rather than reach `after` (defect 097).
+#
+# A LITERAL index out of range is refused at `check` (`fixed_index_out_of_range`,
+# `tests/golden/check/ffi-fixed-array.hero`), for a write as for a read. A
+# computed one is checked where it runs, by `fixed_subscript` in
+# `selfhost/emit/container.hero`, the one spelling the read goes through too, so
+# the message below is the read's, word for word: a dynamic read of `n.a[8]`
+# was measured to say it on 2026-09-25, before this write could be spelled.
+#
+# What the case pins: `after` is still 99 before every write, the fifth
+# included, and the fifth aborts at 134 with the read's message. With
+# `--sanitize` the guard fires before UBSan's `array-bounds` could, so neither
+# sanitiser has anything to say.
+
+extern "abort-a-fixed-array-element-written-past-its-length.h"
+    record Nums tag nums
+        a: i64[4]
+        after: i64
+    function nums_after(n: Nums) -> i64
+
+function main()
+    n: Nums @ Nums(a: [0, 0, 0, 0], after: 99)
+
+    for i in range(from: 0, to: 5)
+        print("after: ", nums_after(n: n), " writing ", i)
+        n.a[i] @ i * 10
+
+    print("unreached: ", n.a[3])

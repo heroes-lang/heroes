@@ -1,0 +1,35 @@
+# Defect 097 over an array of handles the program owns: four lives begun by
+# `acquires ob_free`, each written into its own element at a computed index,
+# and each ended by giving that element to `ob_free`.
+#
+# The counter is the witness (spec § 13: a handle nobody consumes aborts when
+# `main` returns, saying how many), and both of its failures were run on
+# 2026-09-25 by editing this file: writing `f.a[i / 2 * 2]`, so one slot keeps
+# its `nullptr` and one handle is written over, is 134 when `ob_free` reads the
+# null; releasing three of the four is 134 with `1 C handle(s) never given
+# back`. So exit 0 says all four writes landed where the four releases found
+# them. The write itself adds no handle-set traffic: the life begins at the
+# call, and the store is an assignment where the element lies.
+
+extern "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.h"
+    record Ob tag ob
+    record Four tag four
+        a: Ob[4]
+    function ob_new(n: i64) -> Ob acquires ob_free
+    function ob_free(o: Ob consumes)
+    function four_sum(f: Four) -> i64
+
+function main()
+    f: Four @ Four(a: [nullptr, nullptr, nullptr, nullptr])
+    n: i64 @ 1
+
+    for i in range(from: 0, to: 4)
+        f.a[i] @ ob_new(n: n)
+        n @ n * 10
+
+    print("sum: ", four_sum(f: f))
+
+    for i in range(from: 0, to: 4)
+        ob_free(o: f.a[i])
+
+    print("released: ", four_sum(f: f))
