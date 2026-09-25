@@ -1,0 +1,1 @@
+no. The program fills the record with zeros only as the starting value of the `@` cell, then calls pthread_mutex_init on it before any lock or unlock.

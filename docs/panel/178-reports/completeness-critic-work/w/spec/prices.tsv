@@ -1,0 +1,7 @@
+draft	cl100k	real	refresh_exit	digest
+baseline	6282	8361	0	0159e9b26bd998a2
+R1_merged_nopad	6310	8393	0	36a1c34f7eaceaba
+R1_merged_padding	6313	8397	0	7b3f1e885cadf0b7
+T_place_merged	6330	8422	0	0758c0ec18996d2d
+A_blank_merged	6308	8393	0	6b6e7f9319c23e04
+C_pointer	6310	8397	0	564b25ae3543a707

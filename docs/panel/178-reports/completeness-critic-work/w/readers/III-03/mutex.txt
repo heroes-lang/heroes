@@ -1,0 +1,1 @@
+no. It starts as zeros through `rest: zero`, only because I need some value in the cell, and `pthread_mutex_init` runs on it before any lock or unlock.

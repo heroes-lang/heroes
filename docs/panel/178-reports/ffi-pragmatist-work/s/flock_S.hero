@@ -1,0 +1,16 @@
+# Panel 178 ffi-pragmatist: route S TODAY reaches the all-zero `struct flock`:
+# `partial` zeroes every member it does not declare, and on glibc zero is
+# F_RDLCK over the whole file.
+extern "fcntl.h"
+    constant F_SETLK: i64
+    constant O_RDWR: i64
+    constant O_CREAT: i64
+    record Flock tag flock partial
+        l_start: i64
+    function open(path: cstr lent, flags: i32, mode: i32) -> i32
+    function fcntl(fd: i32, cmd: i32, @lock: Flock) -> i32
+
+function main()
+    fd = open(path: "/tmp/heroes-178-flock".cstr(), flags: (O_RDWR + O_CREAT).to_i32().must(), mode: 384)
+    f: Flock @ Flock(l_start: 0)
+    print(fcntl(fd: fd, cmd: F_SETLK.to_i32().must(), lock: @f))

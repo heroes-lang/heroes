@@ -1,0 +1,15 @@
+# Panel 178, today's route for `uname`: `partial` plus a Heroes producer.
+extern "sys/utsname.h"
+    record Utsname tag utsname partial
+        sysname: i8[65]
+    function uname(@u: Utsname) -> i32
+
+function blank() -> Utsname
+    return Utsname(
+        sysname: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    )
+
+function main()
+    u: Utsname @ blank()
+    _ = uname(@u).to_i64().must()
+    print(u.sysname.validated_bytes().must())

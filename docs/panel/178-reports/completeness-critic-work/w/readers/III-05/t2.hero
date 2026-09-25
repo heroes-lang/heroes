@@ -1,0 +1,20 @@
+extern "app.h"
+    record SockaddrUn tag sockaddr_un
+        sun_len: u8
+        sun_family: u8
+        sun_path: i8[104]
+    function app_connect(@addr: SockaddrUn) -> i32
+
+function unix_address(path: str) -> SockaddrUn?
+    return ok(SockaddrUn(sun_family: 1, sun_path: path.to_fixed()?, rest: zero))
+
+function main()
+    match unix_address("/tmp/app.sock")
+        .ok a =>
+            addr: SockaddrUn @ a
+            fd = app_connect(@addr)
+            if fd == -1
+                print("app_connect failed")
+                exit(code: 1)
+            print("connected: descriptor ", fd)
+        .err e => print("bad socket path: ", e.code, " ", e.msg)

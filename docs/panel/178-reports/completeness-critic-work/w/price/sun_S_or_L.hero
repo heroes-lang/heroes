@@ -1,0 +1,19 @@
+extern "sys/un.h"
+    record SockaddrUn tag sockaddr_un partial
+        sun_path: i8[104]
+
+function blank() -> SockaddrUn
+    return SockaddrUn(
+        sun_path: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    )
+
+function main()
+    a: SockaddrUn @ blank()
+    path = "/tmp/heroes-178.sock"
+    i: i64 @ 0
+
+    while i < path.len()
+        a.sun_path[i] @ path[i].to_i8().must()
+        i @ i + 1
+
+    print(a.sun_path.validated_bytes().must())

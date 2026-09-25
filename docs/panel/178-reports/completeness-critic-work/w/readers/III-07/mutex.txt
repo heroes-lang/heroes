@@ -1,0 +1,1 @@
+no. The program fills the storage with zeros (`rest: zero`) only to have a value to hand over, and it calls pthread_mutex_init on it before any lock or unlock.

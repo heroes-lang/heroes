@@ -1,0 +1,15 @@
+extern "app.h"
+    record SockaddrUn tag sockaddr_un
+        sun_len: u8
+        sun_family: u8
+        sun_path: i8[104]
+    function app_connect(@addr: SockaddrUn) -> i32
+
+function main()
+    path: i8[104]? = "/tmp/app.sock".to_fixed()
+    addr: SockaddrUn @ SockaddrUn(sun_len: 106, sun_family: 1, sun_path: path.must())
+    fd = app_connect(@addr)
+    if fd < 0
+        print("connect to /tmp/app.sock failed")
+    else
+        print(f"connected, descriptor {fd}")

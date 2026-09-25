@@ -1,0 +1,14 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+leg x86_64, Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77)
+small.hero -O0: 1 reports at: small.hero:29 
+small.hero -O1: 1 reports at: small.hero:29 
+small.hero -O2: 1 reports at: small.hero:29 
+small.hero -O3: 1 reports at: small.hero:29 
+union_arm.hero -O0: 0 reports at: none
+union_arm.hero -O1: 0 reports at: none
+union_arm.hero -O2: 0 reports at: none
+union_arm.hero -O3: 0 reports at: none
+copies.hero -O0: 1 reports at: copies.hero:36 
+copies.hero -O1: 1 reports at: copies.hero:36 
+copies.hero -O2: 1 reports at: copies.hero:36 
+copies.hero -O3: 1 reports at: copies.hero:36 

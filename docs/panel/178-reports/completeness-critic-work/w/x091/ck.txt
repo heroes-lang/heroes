@@ -1,0 +1,12 @@
+error[unused_binding]: the loop variable `s` is never read — write `for _ in …` when the element is not needed
+  at n_loopvar.hero:9:9
+    |
+  9 |     for s in xs
+    |         ^
+  fix (certain): rename `s` to `_`
+
+error[not_mutable]: `s` is the loop variable, and it is bound afresh for each element — write to a cell declared outside the loop
+  at n_loopvar.hero:10:9
+     |
+  10 |         s.name[0] @ 1
+     |         ^

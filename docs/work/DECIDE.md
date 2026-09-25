@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 4**
 
 - [ ] **panel 175** | ratify panel 175: a consuming call is three things, so route A lands only with a vocabulary 176 decides; route E lands now as the composite; § 13 lands its true sentences in full; the blind seat gets a copy of the spec outside the tree | `docs/panel/175-a-consuming-call-is-three-things-and-the-runtime-speaks-after-it-listens.md`
 
@@ -53,5 +53,20 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     conditions in its item 10. **What conservative would have been**: P alone,
     refused because it misses every copy and, with callback results
     unchecked, hides a use-after-free ASan catches today.
+
+- [ ] **panel 178** | ratify panel 178: a group record's construction may end with `rest: zero`, with no promise about padding; zero is admitted as bytes and never as a claim of validity; a header's initialiser binds as a group constant; C's `char` is `i8` in § 13; a string into a fixed field and `[x; N]` wait behind their measurements; a zero default for every type is refused | `docs/panel/178-the-rest-is-zero-where-it-is-written-and-c-says-which-value-is-valid.md`
+
+    **Origin:** panel 178, 2026-09-25, M-buildable-structs, convened on the
+    author's instruction of 2026-09-24 to bring the most robust solution even
+    if less economical. **The default the compiler runs on meanwhile** is
+    today's: nothing of it has landed, the row stays `scheduled`, and defects
+    091 to 094 are filed and open. **What conservative would have been**: the
+    element-write repair alone, no new form and no spec token, refused because
+    `utsname` stays 905 to 4016 real tokens a construction and the census's 23
+    to 42 structs a platform stay unbuildable in practice. **What the robust
+    reading would add, for the author to choose**: route T's place form now
+    rather than behind its measurement, and a sentence saying zero is not a
+    valid value of every C type (+36 real, priced by the spec-warden and
+    unneeded in fifty readers).
 
 *******************************************************************************

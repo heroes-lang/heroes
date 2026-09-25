@@ -1,0 +1,13 @@
+extern "sys/un.h"
+    record SockaddrUn tag sockaddr_un partial
+        sun_path: i8[104]
+
+extern "string.h"
+    function strlcpy(dst: ptr counted_by size lent, src: cstr lent, size: u64) -> u64
+
+function main()
+    a: SockaddrUn @ SockaddrUn(rest: zero)
+    path = "/tmp/heroes-178.sock"
+    if strlcpy(dst: a.sun_path.ptr(), src: path.cstr(), size: 104) >= 104
+        exit(code: 1)
+    print(a.sun_path.validated_bytes().must())

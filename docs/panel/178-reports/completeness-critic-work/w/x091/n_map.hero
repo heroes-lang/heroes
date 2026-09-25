@@ -1,0 +1,10 @@
+# Critic, panel 178: 091's neighbours, a fixed field inside a map value.
+extern "next.h"
+    record Slot tag slot
+        name: i8[4]
+        id: i32
+
+function main()
+    m: {str: Slot} @ {"a": Slot(name: [0, 0, 0, 0], id: 1)}
+    m["a"].name[3] @ 4
+    print(m["a"].name[3])

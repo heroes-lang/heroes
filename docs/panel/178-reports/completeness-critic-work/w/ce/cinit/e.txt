@@ -1,0 +1,29 @@
+internal error: compiling the generated C failed:
+cinit.c:42:16: warning: '(' and '{' tokens introducing statement expression appear in different macro expansion contexts [-Wcompound-token-split-by-macro]
+   42 | _Static_assert(HERO_RET_RECORD(PT_INIT, struct pt), "heroes-ffi-return PT_INIT Pt");
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cinit.c:41:70: note: expanded from macro 'HERO_RET_RECORD'
+   41 | #define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)
+      |                                                                      ^
+cinit.c:42:32: note: '{' token is here
+   42 | _Static_assert(HERO_RET_RECORD(PT_INIT, struct pt), "heroes-ffi-return PT_INIT Pt");
+      |                                ^~~~~~~
+./cinit.h:2:17: note: expanded from macro 'PT_INIT'
+    2 | #define PT_INIT {1, 2}
+      |                 ^
+cinit.c:42:16: error: statement expression not allowed at file scope
+   42 | _Static_assert(HERO_RET_RECORD(PT_INIT, struct pt), "heroes-ffi-return PT_INIT Pt");
+      |                ^
+cinit.c:41:70: note: expanded from macro 'HERO_RET_RECORD'
+   41 | #define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)
+      |                                                                      ^
+cinit.c:53:12: error: expected expression
+   53 |     return PT_INIT;
+      |            ^
+./cinit.h:2:17: note: expanded from macro 'PT_INIT'
+    2 | #define PT_INIT {1, 2}
+      |                 ^
+1 warning and 2 errors generated.
+
+the generated C is at build/tu-259b5d8a5422045c/cinit.c
+error: clang refused the generated C

@@ -1,0 +1,10 @@
+V-01	V	rest	i8	t1=ok	t1n=ok	t2=ok	t3=check:empty_record	t3n=check:empty_record	claim=no	noinit=no
+V-02	V	rest	i8	t1=ok	t1n=ok	t2=ok	t3=ok	t3n=ok	claim=no	noinit=no
+V-03	V	rest	u8	t1=run:1:ffi_field_type	t1n=ok	t2=run:1:ffi_field_type	t3=run:1:ffi_field_type	t3n=ok	claim=no	noinit=no
+V-04	V	rest	u8	t1=run:1:ffi_field_type	t1n=ok	t2=run:1:ffi_field_type	t3=run:1:ffi_field_type	t3n=ok	claim=no	noinit=no
+V-05	V	rest	u8	t1=run:1:ffi_field_type	t1n=ok	t2=run:1:ffi_field_type	t3=run:1:ffi_field_type	t3n=ok	claim=no	noinit=no
+V-06	V	rest	u8	t1=run:1:ffi_field_type	t1n=ok	t2=run:1:ffi_missing_tag	t3=run:1:ffi_field_type	t3n=ok	claim=no	noinit=no
+V-07	V	rest	i8	t1=ok	t1n=ok	t2=ok	t3=ok	t3n=ok	claim=no	noinit=no
+V-08	V	rest	u8	t1=run:1:ffi_field_type	t1n=ok	t2=run:1:ffi_field_type	t3=run:1:ffi_field_type	t3n=ok	claim=no	noinit=no
+V-09	V	rest	u8	t1=run:1:ffi_field_type	t1n=ok	t2=run:1:ffi_field_type	t3=run:1:ffi_field_type	t3n=ok	claim=no	noinit=no
+V-10	V	rest	i8	t1=ok	t1n=ok	t2=ok	t3=ok	t3n=ok	claim=no	noinit=no

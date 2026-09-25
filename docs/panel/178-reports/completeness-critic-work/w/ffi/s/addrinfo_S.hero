@@ -1,0 +1,16 @@
+# Panel 178 ffi-pragmatist, route S: `hints` as a `partial` record, to getaddrinfo("localhost").
+extern "netdb.h"
+    constant AF_INET: i64
+    constant SOCK_STREAM: i64
+    record AI tag addrinfo
+    record Hints tag addrinfo partial
+        ai_family: i32
+        ai_socktype: i32
+    function getaddrinfo(node: cstr lent, service: cstr lent, @hints: Hints, @res: AI acquires freeaddrinfo) -> i32
+    function freeaddrinfo(ai: AI consumes)
+
+function main()
+    h: Hints @ Hints(ai_family: AF_INET.to_i32().must(), ai_socktype: SOCK_STREAM.to_i32().must())
+    r: AI @ nullptr
+    print(getaddrinfo(node: "localhost".cstr(), service: "80".cstr(), hints: @h, res: @r))
+    freeaddrinfo(r)

@@ -1,0 +1,45 @@
+# Panel 178 ffi-pragmatist, route S + L: zero `sun_path`, write the path byte by byte, bind, connect.
+extern "un_shim.h"
+    constant AF_UNIX: i64
+    constant SOCK_STREAM: i64
+    record SockaddrUn tag sockaddr_un partial
+        sun_family: u16
+        sun_path: i8[108]
+    record SockaddrStorage tag sockaddr_storage partial
+        ss_family: u16
+    function socket(domain: i32, kind: i32, protocol: i32) -> i32
+    function listen(fd: i32, backlog: i32) -> i32
+    function close(fd: i32) -> i32
+    function unlink(path: cstr lent) -> i32
+    function hero_bind_un(fd: i32, @a: SockaddrUn) -> i32
+    function hero_connect_un(fd: i32, @a: SockaddrUn) -> i32
+    function hero_getsockname_un(fd: i32, @a: SockaddrUn) -> i32
+    function hero_getsockname_ss(fd: i32, @s: SockaddrStorage) -> i32
+
+function blank() -> SockaddrUn
+    return SockaddrUn(sun_family: 0, sun_path: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+function main()
+    path = "/tmp/hèroes-178-s.sock"
+    _ = unlink(path.cstr())
+    a: SockaddrUn @ blank()
+    a.sun_family @ AF_UNIX.to_u16().must()
+    i: i64 @ 0
+
+    while i < path.len()
+        a.sun_path[i] @ path[i].to_i8().must()
+        i @ i + 1
+    server = socket(domain: AF_UNIX.to_i32().must(), kind: SOCK_STREAM.to_i32().must(), protocol: 0)
+    print(hero_bind_un(fd: server, @a))
+    print(listen(fd: server, backlog: 1))
+    client = socket(domain: AF_UNIX.to_i32().must(), kind: SOCK_STREAM.to_i32().must(), protocol: 0)
+    print(hero_connect_un(fd: client, @a))
+    back: SockaddrUn @ blank()
+    print(hero_getsockname_un(fd: server, @back))
+    print(back.sun_path.validated_bytes().must())
+    ss: SockaddrStorage @ SockaddrStorage(ss_family: 0)
+    print(hero_getsockname_ss(fd: server, @ss))
+    print(ss.ss_family)
+    _ = close(fd: client)
+    _ = close(fd: server)
+    _ = unlink(path.cstr())

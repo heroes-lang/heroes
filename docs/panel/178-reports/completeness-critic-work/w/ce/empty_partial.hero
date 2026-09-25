@@ -1,0 +1,7 @@
+extern "sys/utsname.h"
+    record Utsname tag utsname partial
+    function uname(@u: Utsname) -> i32
+
+function main()
+    u: Utsname @ Utsname()
+    print(uname(@u))

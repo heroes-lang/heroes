@@ -1,0 +1,13 @@
+# Panel 178 spec-warden: the state Z1 guards, reached today through `partial` with no mark.
+extern "pthread.h"
+    record Mutex tag _opaque_pthread_mutex_t partial
+        __sig: i64
+    function pthread_mutex_lock(@m: Mutex) -> i32
+    function pthread_mutex_unlock(@m: Mutex) -> i32
+
+function main()
+    m: Mutex @ Mutex(__sig: 0)
+    rc = pthread_mutex_lock(@m)
+    print(rc)
+    rc2 = pthread_mutex_unlock(@m)
+    print(rc2)

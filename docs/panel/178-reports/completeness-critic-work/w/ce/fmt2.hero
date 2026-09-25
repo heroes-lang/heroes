@@ -1,0 +1,11 @@
+extern "kinds.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+
+function main()
+    a = Pt(
+        x: 1,
+        rest: zero
+    )
+    print(a.x)
