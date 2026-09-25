@@ -1,0 +1,278 @@
+# One C function, one contract. Two modules may each declare `keep` against
+# one header and each is checked against C alone, so `keep(s: cstr lent)`
+# beside `keep(s: cstr)` was `check` 0 while the two disagreed about what C
+# does with the bytes (M-agreed-retention's second item, panel 171's
+# completeness critic; the shape that broke upstream Clang's `noescape` on its
+# first day). The rule is program-wide like `one_tag_one_type`, because a C
+# symbol is one identity across every module that names it: a position two
+# declarations share AT ONE TYPE says the same thing about it, in one spelling
+# of the marks, and a result of one type likewise. A position declared at two
+# types is two C parameters, which clang judges each against the header:
+# `twoarity`'s two arities of `printf` (panel 094) put an `i64` and a `cstr` in
+# one variadic slot, and the rule compares only the `format` they share.
+# Inside one module the resolver's `declared_twice` speaks first, so this rule
+# reads only pairs from two files, and it reports the first disagreement of a
+# pair, once.
+use ast
+use diag
+use handles
+use source
+use token
+use check/state
+
+function agree(@c: state.Checker, s: source.Source, decls: [ast.Decl])
+    first: {str: i64} @ {}
+    index: i64 @ 0
+
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.is_extern
+                    name = source.span_text(s, decl.name)
+                    seen = first[name]
+
+                    if seen.is_err()
+                        first[name] @ index
+                    else if source.file_of(s, decl.name.start) != source.file_of(s, decls[seen.must()].name.start)
+                        compare(@c, s, decls, earlier: seen.must(), later: index)
+            .constant_decl | .record_decl | .variant_decl | .test_decl => first @ first
+
+        index @ index + 1
+
+# The two declarations, position by position over the ones they share, then
+# the result. The first disagreement is the diagnostic; the rest of the pair
+# is not walked, because one message that says which position is worth more
+# than five that say the same declaration is wrong.
+function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], earlier: i64, later: i64)
+    match decls[earlier].kind
+        .function_decl fa =>
+            match decls[later].kind
+                .function_decl fb => compare_functions(
+                    @c,
+                    s,
+                    decls,
+                    a: fa.value,
+                    b: fb.value,
+                    earlier: earlier,
+                    later: later
+                )
+                .constant_decl | .record_decl | .variant_decl | .test_decl => return
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return
+
+function compare_functions(@c: state.Checker, s: source.Source, decls: [ast.Decl], a: ast.FunctionDecl, b: ast.FunctionDecl, earlier: i64, later: i64)
+    name = source.span_text(s, decls[later].name)
+    shared: i64 @ a.params.len()
+
+    if b.params.len() < shared
+        shared @ b.params.len()
+
+    for i in range(from: 0, to: shared)
+        pa = a.params[i]
+        pb = b.params[i]
+        here = "`" + source.span_text(s, pb.name) + "`"
+
+        # A position the two declare at DIFFERENT types is two C parameters
+        # and not one: `twoarity`'s `printf(format, value: i64)` beside
+        # `printf(format, value: cstr lent)` binds a variadic slot twice, and
+        # clang judges each type against the header on its own. What the rule
+        # compares is what the two say about ONE type at one position.
+        if !same_type(c, x: pa.ty, y: pb.ty)
+            continue
+
+        if param_key(s, a, pa) != param_key(s, b, pb)
+            differs(
+                @c,
+                s,
+                name: name,
+                what: "the marks on " + here,
+                here: param_spelling(s, pb),
+                there: param_spelling(s, pa),
+                at: pb.name,
+                other: decls[earlier].name
+            )
+            return
+
+    if !same_type(c, x: a.result, y: b.result)
+        return
+
+    if result_key(s, a) != result_key(s, b)
+        differs(
+            @c,
+            s,
+            name: name,
+            what: "the marks on the result",
+            here: result_spelling(s, b),
+            there: result_spelling(s, a),
+            at: decls[later].name,
+            other: decls[earlier].name
+        )
+
+# Two written types are one type when the checker interned them to one id;
+# a type it could not resolve compares equal, because that line already
+# carries its own diagnostic.
+function same_type(c: state.Checker, x: i64, y: i64) -> bool
+    wx = c.out.written_types[x]
+    wy = c.out.written_types[y]
+
+    if wx.is_err() || wy.is_err()
+        return true
+    return wx.must() == wy.must()
+
+# What a parameter says about C, as one string, with the parts that may be
+# spelled two ways for one meaning made canonical: a set is sorted, and
+# `counted_by` names its sibling by POSITION, since the two declarations may
+# name their parameters differently and still bind one C function.
+function param_key(s: source.Source, fd: ast.FunctionDecl, p: ast.Param) -> str
+    parts: [str] @ []
+
+    if p.mutable
+        parts @ parts.push("@")
+
+    if !p.counted_by.is_err()
+        parts @ parts.push(
+            "counted_by #" + sibling_index(s, fd, named: source.span_text(s, p.counted_by.must())).to_str()
+        )
+
+    if p.lent
+        parts @ parts.push("lent")
+
+    if !p.owned.is_err()
+        parts @ parts.push("owned " + source.span_text(s, p.owned.must()))
+
+    if p.consumes
+        parts @ parts.push("consumes")
+    parts @ with_set(parts, set_key(s, p.transfers, word: "transfers"))
+    parts @ with_set(parts, set_key(s, p.acquires, word: "acquires"))
+    parts @ with_set(parts, set_key(s, p.retains, word: "retains"))
+
+    if p.borrows
+        parts @ parts.push("borrows")
+    return parts.join(" ")
+
+function result_key(s: source.Source, fd: ast.FunctionDecl) -> str
+    parts: [str] @ []
+
+    if !fd.owned_result.is_err()
+        parts @ parts.push("owned " + source.span_text(s, fd.owned_result.must()))
+    parts @ with_set(parts, set_key(s, fd.acquires_result, word: "acquires"))
+    parts @ with_set(parts, set_key(s, fd.retains_result, word: "retains"))
+
+    if fd.borrows_result
+        parts @ parts.push("borrows")
+
+    if !fd.when_result.is_err()
+        parts @ parts.push("when " + source.span_text(s, fd.when_result.must()))
+    return parts.join(" ")
+
+# `word a | b` with the names sorted, or "" where the mark is absent.
+function set_key(s: source.Source, mark: token.Span?, word: str) -> str
+    if mark.is_err()
+        return ""
+    return word + " " + sorted(handles.releasers(source.span_text(s, mark.must()))).join(" | ")
+
+function with_set(parts: [str], key: str) -> [str]
+    if key == ""
+        return parts
+    return parts.push(key)
+
+function sorted(names: [str]) -> [str]
+    out: [str] @ []
+
+    for name in names
+        placed: bool @ false
+        next: [str] @ []
+
+        for have in out
+            if !placed && before(a: name, b: have)
+                next @ next.push(name)
+                placed @ true
+            next @ next.push(have)
+
+        if !placed
+            next @ next.push(name)
+        out @ next
+
+    return out
+
+# Byte order, which is all a C identifier needs: the language orders
+# integers and floats with `<` and leaves strings to the program.
+function before(a: str, b: str) -> bool
+    i: i64 @ 0
+
+    while i < a.len() && i < b.len()
+        if a[i] != b[i]
+            return a[i] < b[i]
+        i @ i + 1
+
+    return a.len() < b.len()
+
+function sibling_index(s: source.Source, fd: ast.FunctionDecl, named: str) -> i64
+    index: i64 @ 0
+
+    for p in fd.params
+        if source.span_text(s, p.name) == named
+            return index
+        index @ index + 1
+
+    return -1
+
+# The spelling a reader sees: the marks as the author wrote them, `counted_by`
+# with its sibling's name, or `no mark`.
+function param_spelling(s: source.Source, p: ast.Param) -> str
+    parts: [str] @ []
+
+    if p.mutable
+        parts @ parts.push("@")
+
+    if !p.counted_by.is_err()
+        parts @ parts.push("counted_by " + source.span_text(s, p.counted_by.must()))
+
+    if p.lent
+        parts @ parts.push("lent")
+
+    if !p.owned.is_err()
+        parts @ parts.push("owned " + source.span_text(s, p.owned.must()))
+
+    if p.consumes
+        parts @ parts.push("consumes")
+    parts @ with_set(parts, set_key(s, p.transfers, word: "transfers"))
+    parts @ with_set(parts, set_key(s, p.acquires, word: "acquires"))
+    parts @ with_set(parts, set_key(s, p.retains, word: "retains"))
+
+    if p.borrows
+        parts @ parts.push("borrows")
+
+    if parts.len() == 0
+        return "no mark"
+    return "`" + parts.join(" ") + "`"
+
+function result_spelling(s: source.Source, fd: ast.FunctionDecl) -> str
+    key = result_key(s, fd)
+
+    if key == ""
+        return "no mark"
+    return "`" + key + "`"
+
+function differs(@c: state.Checker, s: source.Source, name: str, what: str, here: str, there: str, at: token.Span, other: token.Span)
+    where = source.elsewhere(s, here: at.start, there: other.start)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "contract_differs",
+        message: "`" + name + "` is declared here and at " + where + ", and the two disagree about " + what + ": here " + here + ", there " + there + " — one C function has one contract",
+        span: at
+    )
+    d.notes @ d.notes.push(
+        "both declarations bind one C symbol, so a position they declare at one type says the same about it: the same `@`, `lent`, `owned`, `consumes`, `transfers`, `acquires`, `retains`, `borrows` and `counted_by`, and a result of one type the same marks and `when`. Change the one that is wrong about C; if C really is called two ways, give the second way a shim with its own name in the header"
+    )
+    state.push_diagnostic(@c, d)
+
+test "a set is one key whatever its order, and a name sorts by its bytes"
+    assert sorted(["b", "a", "c"]) == ["a", "b", "c"]
+    assert sorted([]) == []
+    assert sorted(["x"]) == ["x"]
+    text = "transfers b | a"
+    s = source.new_source(name: "t.hero", text: text)
+    assert set_key(s, ok(token.Span(start: 10, end: 15)), word: "transfers") == "transfers a | b"
+    none: token.Span? = fail(code: "none", msg: "absent")
+    assert set_key(s, none, word: "acquires") == ""
+    assert with_set(["@"], "") == ["@"]
+    assert with_set(["@"], "retains a") == ["@", "retains a"]
