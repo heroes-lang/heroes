@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 6**
+**OPEN: 7**
 
 - [ ] **077 — a handle given back after C has handed its address out again is `check` 0 and `run` 0, and the release lands on the new handle** | the live set keys on the address, so a stale handle that equals a live one is accepted as the live one, and the one correct release that follows is the call that aborts | `runtime/parts/alloc.c:436` · `spec § 13`
 
@@ -254,5 +254,36 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     095's record calls the silent move the worse form of the two. The repair
     prints a comment indented inside a block, after the block's last item and
     before the dedent, at the block's own indent.
+
+    **And without the blank line it is a refusal, measured 2026-09-25** by the
+    skeptic seat over defect 096's repair and re-run by the coordinator on the
+    trunk's compiler: the same remark written directly above the next
+    declaration, no blank line between (a body's last statement then
+    `function main()`, a group's last member, a record's last field inside a
+    group), is `check` 0 and `fmt` **2**, *changed the TREE*, because the
+    remark printed at the next declaration's column becomes its doc. One root,
+    two outcomes: with the blank line the move is silent, without it the
+    self-check catches it.
+
+- [ ] **100 — inside an `extern` group, a comment at another column than the member below it, or directly under a second head of the same group, becomes that member's doc when `fmt` runs** | `fmt` re-indents a column-0 comment between two members to the members' indent, and merges two `extern` heads with the same header into one group while keeping a remark that sat directly under the second head, so in both the comment ends up at the member's column, directly above it, and the re-parse takes it as the member's doc: `check` 0, `fmt` exit 2 | `selfhost/print/fmt.hero` (the group walk, `continues`, `extern_head_once`)
+
+    **Origin:** the skeptic seat over defect 096's repair, 2026-09-25, beside
+    its reproducer; re-run by the coordinator the same day on the trunk's
+    compiler at `5c3a6e39`, so older than that repair.
+
+    **The reproducers.** A group `extern "x.h"` with `record Ob tag ob`, then
+    a comment at column 0, then `    record Pool tag pool`: `fmt` 2. And two
+    groups `extern "x.h"` one under the other, the second holding
+    `    # remark under a second head` above `    record Pool tag pool`:
+    `fmt` 2. `take_docs` in the parser takes a comment as a doc only at the
+    member's own column and directly above it, which the source did not have
+    and the output does.
+
+    **Why it is a defect.** A correct program is refused by a tool that must
+    be tree-preserving on every program the parser accepts (design.md §4.15).
+    Beside it, the skeptic found one shape the repair of 096 in its first form
+    broke: a doc above the second of two same-head groups, `fmt` 0 on the
+    trunk, lost at the merge in the repair's first form; the repair of this
+    defect and of 096 land together.
 
 *******************************************************************************
