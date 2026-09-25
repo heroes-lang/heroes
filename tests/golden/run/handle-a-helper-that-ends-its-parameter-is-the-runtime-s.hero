@@ -4,7 +4,8 @@
 # summary made one line's verdict move with a callee's body in another module
 # (the sitting's critic, `xmod`). So `finish(@b)` is a write to `b` as far as
 # `main` can see, `check` 0, and the release that follows reaches the runtime,
-# which stops it before C.
+# which stops it before C: since the runtime's half landed beside this one, as a
+# DEAD value, because the helper's release poisoned `@n`, which is `b`.
 extern "handle-a-helper-that-ends-its-parameter-is-the-runtime-s.h"
     record Node tag node
     function node_new(v: i64) -> Node acquires node_free

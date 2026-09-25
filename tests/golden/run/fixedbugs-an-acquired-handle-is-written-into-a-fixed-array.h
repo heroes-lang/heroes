@@ -21,7 +21,9 @@ static inline __attribute__((noinline)) ob *ob_new(int64_t n) {
     return &pool[next++];
 }
 
-static inline __attribute__((noinline)) void ob_free(ob *o) { o->n = 0; }
+static int64_t ob_freed_count = 0;
+static inline __attribute__((noinline)) void ob_free(ob *o) { o->n = 0; ob_freed_count++; }
+static inline __attribute__((noinline)) int64_t ob_freed(void) { return ob_freed_count; }
 
 static inline __attribute__((noinline)) int64_t four_sum(four f) {
     int64_t total = 0;

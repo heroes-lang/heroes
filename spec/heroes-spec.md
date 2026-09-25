@@ -394,7 +394,8 @@ another value of the call that outlives it, a handle parameter the call keeps or
 the handle its result begins or joins, which ends it with that call: one of the
 names must be one the handle's own mark names, or the call aborts before C runs; a
 call with no such receiver is refused, and a transfer into a handle the call hands
-back is not made when that handle is null. `retains json_object_put` after a result
+back is not made when that handle is null; once made, the program's own name for
+it has ended as if given back. `retains json_object_put` after a result
 or a parameter says the call adds a reference to a handle: on one a mark began,
 its life goes on and the mark must share a name with the one that began it; on one
 nothing began, it begins a life owed to the mark; either way the program owes one
