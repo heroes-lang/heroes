@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -123,10 +123,17 @@ HeroArrayHeader * h_main_split_words(HeroStr h0_text);
 int64_t h_main_together(void);
 int64_t h_main_alone(void);
 void h_main_main(void);
+int64_t h_main_longest_word_count(int64_t h0_index);
+int64_t h_0cb_main_longest_word_count(int64_t h0_index);
+__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+    if (f == (void (*)(void))h_main_longest_word_count) return (void (*)(void))h_0cb_main_longest_word_count;
+    return f;
+}
+
 
 #line 27 "examples/wordbands/main.hero"
 int64_t h_main_BANDS(void) {
-#line 130 "main.c"
+#line 137 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -134,12 +141,12 @@ bb0:
     t1 = INT64_C(8);
 #line 28 "examples/wordbands/main.hero"
     return t1;
-#line 138 "main.c"
+#line 145 "main.c"
 }
 
 #line 30 "examples/wordbands/main.hero"
 int64_t h_main_LINES(void) {
-#line 143 "main.c"
+#line 150 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -147,12 +154,12 @@ bb0:
     t1 = INT64_C(300);
 #line 31 "examples/wordbands/main.hero"
     return t1;
-#line 151 "main.c"
+#line 158 "main.c"
 }
 
 #line 35 "examples/wordbands/main.hero"
 HeroStr h_main_text_of(int64_t h0_index) {
-#line 156 "main.c"
+#line 163 "main.c"
     HeroArrayHeader * h1_pieces = {0};
     int64_t h2_n;
     int64_t h3_which;
@@ -216,15 +223,15 @@ bb0:
     t41 = h7_own7;
 #line 36 "examples/wordbands/main.hero"
     h7_own7 = t1;
-#line 220 "main.c"
+#line 227 "main.c"
     hero_array_decref(t41);
 #line 36 "examples/wordbands/main.hero"
     t42 = h1_pieces;
-#line 224 "main.c"
+#line 231 "main.c"
     hero_array_incref(t1);
 #line 36 "examples/wordbands/main.hero"
     h1_pieces = t1;
-#line 228 "main.c"
+#line 235 "main.c"
     hero_array_decref(t42);
 #line 37 "examples/wordbands/main.hero"
     t2 = INT64_C(0);
@@ -288,25 +295,25 @@ bb3:
     t43 = h8_own8;
 #line 52 "examples/wordbands/main.hero"
     h8_own8 = t40;
-#line 292 "main.c"
+#line 299 "main.c"
     hero_str_decref(t43);
 #line 52 "examples/wordbands/main.hero"
-#line 295 "main.c"
+#line 302 "main.c"
     hero_str_incref(t40);
 #line 52 "examples/wordbands/main.hero"
-#line 298 "main.c"
+#line 305 "main.c"
     hero_array_decref(h1_pieces);
 #line 52 "examples/wordbands/main.hero"
-#line 301 "main.c"
+#line 308 "main.c"
     hero_str_decref(h5_r0);
 #line 52 "examples/wordbands/main.hero"
-#line 304 "main.c"
+#line 311 "main.c"
     hero_str_decref(h6_word);
 #line 52 "examples/wordbands/main.hero"
-#line 307 "main.c"
+#line 314 "main.c"
     hero_array_decref(h7_own7);
 #line 52 "examples/wordbands/main.hero"
-#line 310 "main.c"
+#line 317 "main.c"
     hero_str_decref(h8_own8);
     return t40;
 bb4:
@@ -314,11 +321,11 @@ bb4:
     t31 = h5_r0;
 #line 42 "examples/wordbands/main.hero"
     t44 = h6_word;
-#line 318 "main.c"
+#line 325 "main.c"
     hero_str_incref(t31);
 #line 42 "examples/wordbands/main.hero"
     h6_word = t31;
-#line 322 "main.c"
+#line 329 "main.c"
     hero_str_decref(t44);
 #line 49 "examples/wordbands/main.hero"
     t33 = h6_word;
@@ -340,11 +347,11 @@ bb5:
     t26 = HERO_STR_LIT(hero_str_35485bab);
 #line 42 "examples/wordbands/main.hero"
     t45 = h5_r0;
-#line 344 "main.c"
+#line 351 "main.c"
     hero_str_incref(t26);
 #line 42 "examples/wordbands/main.hero"
     h5_r0 = t26;
-#line 348 "main.c"
+#line 355 "main.c"
     hero_str_decref(t45);
     goto bb4;
 bb6:
@@ -362,11 +369,11 @@ bb7:
     t27 = HERO_STR_LIT(hero_str_d3c63a0);
 #line 42 "examples/wordbands/main.hero"
     t46 = h5_r0;
-#line 366 "main.c"
+#line 373 "main.c"
     hero_str_incref(t27);
 #line 42 "examples/wordbands/main.hero"
     h5_r0 = t27;
-#line 370 "main.c"
+#line 377 "main.c"
     hero_str_decref(t46);
     goto bb4;
 bb8:
@@ -384,11 +391,11 @@ bb9:
     t28 = HERO_STR_LIT(hero_str_1d20855d);
 #line 42 "examples/wordbands/main.hero"
     t47 = h5_r0;
-#line 388 "main.c"
+#line 395 "main.c"
     hero_str_incref(t28);
 #line 42 "examples/wordbands/main.hero"
     h5_r0 = t28;
-#line 392 "main.c"
+#line 399 "main.c"
     hero_str_decref(t47);
     goto bb4;
 bb10:
@@ -406,11 +413,11 @@ bb11:
     t29 = HERO_STR_LIT(hero_str_69005961);
 #line 42 "examples/wordbands/main.hero"
     t48 = h5_r0;
-#line 410 "main.c"
+#line 417 "main.c"
     hero_str_incref(t29);
 #line 42 "examples/wordbands/main.hero"
     h5_r0 = t29;
-#line 414 "main.c"
+#line 421 "main.c"
     hero_str_decref(t48);
     goto bb4;
 bb12:
@@ -420,18 +427,18 @@ bb13:
     t30 = HERO_STR_LIT(hero_str_45336354);
 #line 42 "examples/wordbands/main.hero"
     t49 = h5_r0;
-#line 424 "main.c"
+#line 431 "main.c"
     hero_str_incref(t30);
 #line 42 "examples/wordbands/main.hero"
     h5_r0 = t30;
-#line 428 "main.c"
+#line 435 "main.c"
     hero_str_decref(t49);
     goto bb4;
 }
 
 #line 56 "examples/wordbands/main.hero"
 int64_t h_main_longest_word_count(int64_t h0_index) {
-#line 435 "main.c"
+#line 442 "main.c"
     hero_thread_guard("main.longest_word_count");
     HeroMapHeader * h1_counts = {0};
     HeroArrayHeader * h2_xs0 = {0};
@@ -540,15 +547,15 @@ bb0:
     t64 = h14_own14;
 #line 57 "examples/wordbands/main.hero"
     h14_own14 = t1;
-#line 544 "main.c"
+#line 551 "main.c"
     hero_map_decref(t64);
 #line 57 "examples/wordbands/main.hero"
     t65 = h1_counts;
-#line 548 "main.c"
+#line 555 "main.c"
     hero_map_incref(t1);
 #line 57 "examples/wordbands/main.hero"
     h1_counts = t1;
-#line 552 "main.c"
+#line 559 "main.c"
     hero_map_decref(t65);
 #line 59 "examples/wordbands/main.hero"
     t2 = h0_index;
@@ -558,7 +565,7 @@ bb0:
     t66 = h15_own15;
 #line 59 "examples/wordbands/main.hero"
     h15_own15 = t3;
-#line 562 "main.c"
+#line 569 "main.c"
     hero_str_decref(t66);
 #line 59 "examples/wordbands/main.hero"
     t4 = h_main_split_words(t3);
@@ -566,15 +573,15 @@ bb0:
     t67 = h16_own16;
 #line 59 "examples/wordbands/main.hero"
     h16_own16 = t4;
-#line 570 "main.c"
+#line 577 "main.c"
     hero_array_decref(t67);
 #line 59 "examples/wordbands/main.hero"
     t68 = h2_xs0;
-#line 574 "main.c"
+#line 581 "main.c"
     hero_array_incref(t4);
 #line 59 "examples/wordbands/main.hero"
     h2_xs0 = t4;
-#line 578 "main.c"
+#line 585 "main.c"
     hero_array_decref(t68);
 #line 59 "examples/wordbands/main.hero"
     t5 = INT64_C(0);
@@ -604,11 +611,11 @@ bb2:
     t12 = *(HeroStr const *)hero_array_at(t10, t11);
 #line 59 "examples/wordbands/main.hero"
     t69 = h4_word;
-#line 608 "main.c"
+#line 615 "main.c"
     hero_str_incref(t12);
 #line 59 "examples/wordbands/main.hero"
     h4_word = t12;
-#line 612 "main.c"
+#line 619 "main.c"
     hero_str_decref(t69);
 #line 60 "examples/wordbands/main.hero"
     t13 = h4_word;
@@ -638,15 +645,15 @@ bb2:
     t70 = h17_own17;
 #line 60 "examples/wordbands/main.hero"
     h17_own17 = t16;
-#line 642 "main.c"
+#line 649 "main.c"
     h_0opt_e201354_release(&t70);
 #line 60 "examples/wordbands/main.hero"
     t71 = h5_f0;
-#line 646 "main.c"
+#line 653 "main.c"
     h_0opt_e201354_retain(&t16);
 #line 60 "examples/wordbands/main.hero"
     h5_f0 = t16;
-#line 650 "main.c"
+#line 657 "main.c"
     h_0opt_e201354_release(&t71);
 #line 60 "examples/wordbands/main.hero"
     t17 = h5_f0;
@@ -676,11 +683,11 @@ bb4:
     t30 = HERO_STR_LIT(hero_str_0);
 #line 62 "examples/wordbands/main.hero"
     t72 = h7_best;
-#line 680 "main.c"
+#line 687 "main.c"
     hero_str_incref(t30);
 #line 62 "examples/wordbands/main.hero"
     h7_best = t30;
-#line 684 "main.c"
+#line 691 "main.c"
     hero_str_decref(t72);
 #line 63 "examples/wordbands/main.hero"
     t31 = INT64_C(0);
@@ -694,7 +701,7 @@ bb4:
     t73 = h18_own18;
 #line 65 "examples/wordbands/main.hero"
     h18_own18 = t33;
-#line 698 "main.c"
+#line 705 "main.c"
     hero_array_decref(t73);
 #line 65 "examples/wordbands/main.hero"
     t34 = hero_array_sort(t33);
@@ -702,15 +709,15 @@ bb4:
     t74 = h19_own19;
 #line 65 "examples/wordbands/main.hero"
     h19_own19 = t34;
-#line 706 "main.c"
+#line 713 "main.c"
     hero_array_decref(t74);
 #line 65 "examples/wordbands/main.hero"
     t75 = h9_xs1;
-#line 710 "main.c"
+#line 717 "main.c"
     hero_array_incref(t34);
 #line 65 "examples/wordbands/main.hero"
     h9_xs1 = t34;
-#line 714 "main.c"
+#line 721 "main.c"
     hero_array_decref(t75);
 #line 65 "examples/wordbands/main.hero"
     t35 = INT64_C(0);
@@ -770,11 +777,11 @@ bb9:
     t42 = *(HeroStr const *)hero_array_at(t40, t41);
 #line 65 "examples/wordbands/main.hero"
     t76 = h11_key;
-#line 774 "main.c"
+#line 781 "main.c"
     hero_str_incref(t42);
 #line 65 "examples/wordbands/main.hero"
     h11_key = t42;
-#line 778 "main.c"
+#line 785 "main.c"
     hero_str_decref(t76);
 #line 66 "examples/wordbands/main.hero"
     t43 = h11_key;
@@ -804,49 +811,49 @@ bb10:
 bb11:
 #line 70 "examples/wordbands/main.hero"
     t63 = h8_seen;
-#line 808 "main.c"
+#line 815 "main.c"
     hero_map_decref(h1_counts);
 #line 70 "examples/wordbands/main.hero"
-#line 811 "main.c"
+#line 818 "main.c"
     hero_array_decref(h2_xs0);
 #line 70 "examples/wordbands/main.hero"
-#line 814 "main.c"
+#line 821 "main.c"
     hero_str_decref(h4_word);
 #line 70 "examples/wordbands/main.hero"
-#line 817 "main.c"
+#line 824 "main.c"
     h_0opt_e201354_release(&h5_f0);
 #line 70 "examples/wordbands/main.hero"
-#line 820 "main.c"
+#line 827 "main.c"
     hero_str_decref(h7_best);
 #line 70 "examples/wordbands/main.hero"
-#line 823 "main.c"
+#line 830 "main.c"
     hero_array_decref(h9_xs1);
 #line 70 "examples/wordbands/main.hero"
-#line 826 "main.c"
+#line 833 "main.c"
     hero_str_decref(h11_key);
 #line 70 "examples/wordbands/main.hero"
-#line 829 "main.c"
+#line 836 "main.c"
     h_0opt_e201354_release(&h12_f1);
 #line 70 "examples/wordbands/main.hero"
-#line 832 "main.c"
+#line 839 "main.c"
     hero_map_decref(h14_own14);
 #line 70 "examples/wordbands/main.hero"
-#line 835 "main.c"
+#line 842 "main.c"
     hero_str_decref(h15_own15);
 #line 70 "examples/wordbands/main.hero"
-#line 838 "main.c"
+#line 845 "main.c"
     hero_array_decref(h16_own16);
 #line 70 "examples/wordbands/main.hero"
-#line 841 "main.c"
+#line 848 "main.c"
     h_0opt_e201354_release(&h17_own17);
 #line 70 "examples/wordbands/main.hero"
-#line 844 "main.c"
+#line 851 "main.c"
     hero_array_decref(h18_own18);
 #line 70 "examples/wordbands/main.hero"
-#line 847 "main.c"
+#line 854 "main.c"
     hero_array_decref(h19_own19);
 #line 70 "examples/wordbands/main.hero"
-#line 850 "main.c"
+#line 857 "main.c"
     h_0opt_e201354_release(&h20_own20);
     return t63;
 bb12:
@@ -856,11 +863,11 @@ bb13:
     t48 = h11_key;
 #line 67 "examples/wordbands/main.hero"
     t77 = h7_best;
-#line 860 "main.c"
+#line 867 "main.c"
     hero_str_incref(t48);
 #line 67 "examples/wordbands/main.hero"
     h7_best = t48;
-#line 864 "main.c"
+#line 871 "main.c"
     hero_str_decref(t77);
 #line 68 "examples/wordbands/main.hero"
     t49 = h1_counts;
@@ -888,15 +895,15 @@ bb13:
     t78 = h20_own20;
 #line 68 "examples/wordbands/main.hero"
     h20_own20 = t51;
-#line 892 "main.c"
+#line 899 "main.c"
     h_0opt_e201354_release(&t78);
 #line 68 "examples/wordbands/main.hero"
     t79 = h12_f1;
-#line 896 "main.c"
+#line 903 "main.c"
     h_0opt_e201354_retain(&t51);
 #line 68 "examples/wordbands/main.hero"
     h12_f1 = t51;
-#line 900 "main.c"
+#line 907 "main.c"
     h_0opt_e201354_release(&t79);
 #line 68 "examples/wordbands/main.hero"
     t52 = h12_f1;
@@ -938,12 +945,17 @@ bb17:
     h8_seen = t59;
 #line 68 "examples/wordbands/main.hero"
     goto bb12;
-#line 942 "main.c"
+#line 949 "main.c"
+}
+
+int64_t h_0cb_main_longest_word_count(int64_t h0_index) {
+    int64_t hero_result = h_main_longest_word_count(h0_index);
+    return hero_result;
 }
 
 #line 74 "examples/wordbands/main.hero"
 HeroArrayHeader * h_main_split_words(HeroStr h0_text) {
-#line 947 "main.c"
+#line 959 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_current = {0};
     HeroArrayHeader * h3_xs0 = {0};
@@ -1009,15 +1021,15 @@ bb0:
     t42 = h6_own6;
 #line 75 "examples/wordbands/main.hero"
     h6_own6 = t1;
-#line 1013 "main.c"
+#line 1025 "main.c"
     hero_array_decref(t42);
 #line 75 "examples/wordbands/main.hero"
     t43 = h1_out;
-#line 1017 "main.c"
+#line 1029 "main.c"
     hero_array_incref(t1);
 #line 75 "examples/wordbands/main.hero"
     h1_out = t1;
-#line 1021 "main.c"
+#line 1033 "main.c"
     hero_array_decref(t43);
 #line 76 "examples/wordbands/main.hero"
     t2 = hero_array_new(&hero_desc_str, 1);
@@ -1025,15 +1037,15 @@ bb0:
     t44 = h7_own7;
 #line 76 "examples/wordbands/main.hero"
     h7_own7 = t2;
-#line 1029 "main.c"
+#line 1041 "main.c"
     hero_array_decref(t44);
 #line 76 "examples/wordbands/main.hero"
     t45 = h2_current;
-#line 1033 "main.c"
+#line 1045 "main.c"
     hero_array_incref(t2);
 #line 76 "examples/wordbands/main.hero"
     h2_current = t2;
-#line 1037 "main.c"
+#line 1049 "main.c"
     hero_array_decref(t45);
 #line 78 "examples/wordbands/main.hero"
     t3 = h0_text;
@@ -1043,15 +1055,15 @@ bb0:
     t46 = h8_own8;
 #line 78 "examples/wordbands/main.hero"
     h8_own8 = t4;
-#line 1047 "main.c"
+#line 1059 "main.c"
     hero_array_decref(t46);
 #line 78 "examples/wordbands/main.hero"
     t47 = h3_xs0;
-#line 1051 "main.c"
+#line 1063 "main.c"
     hero_array_incref(t4);
 #line 78 "examples/wordbands/main.hero"
     h3_xs0 = t4;
-#line 1055 "main.c"
+#line 1067 "main.c"
     hero_array_decref(t47);
 #line 78 "examples/wordbands/main.hero"
     t5 = INT64_C(0);
@@ -1081,11 +1093,11 @@ bb2:
     t12 = *(HeroStr const *)hero_array_at(t10, t11);
 #line 78 "examples/wordbands/main.hero"
     t48 = h5_ch;
-#line 1085 "main.c"
+#line 1097 "main.c"
     hero_str_incref(t12);
 #line 78 "examples/wordbands/main.hero"
     h5_ch = t12;
-#line 1089 "main.c"
+#line 1101 "main.c"
     hero_str_decref(t48);
 #line 79 "examples/wordbands/main.hero"
     t13 = h5_ch;
@@ -1159,7 +1171,7 @@ bb9:
     t49 = h9_own9;
 #line 81 "examples/wordbands/main.hero"
     h9_own9 = t23;
-#line 1163 "main.c"
+#line 1175 "main.c"
     hero_str_decref(t49);
 #line 81 "examples/wordbands/main.hero"
     hero_array_push_owned(&h1_out, &t23);
@@ -1169,15 +1181,15 @@ bb9:
     t50 = h10_own10;
 #line 82 "examples/wordbands/main.hero"
     h10_own10 = t25;
-#line 1173 "main.c"
+#line 1185 "main.c"
     hero_array_decref(t50);
 #line 82 "examples/wordbands/main.hero"
     t51 = h2_current;
-#line 1177 "main.c"
+#line 1189 "main.c"
     hero_array_incref(t25);
 #line 82 "examples/wordbands/main.hero"
     h2_current = t25;
-#line 1181 "main.c"
+#line 1193 "main.c"
     hero_array_decref(t51);
     goto bb8;
 bb10:
@@ -1185,37 +1197,37 @@ bb10:
 bb11:
 #line 89 "examples/wordbands/main.hero"
     t41 = h1_out;
-#line 1189 "main.c"
+#line 1201 "main.c"
     hero_array_incref(t41);
 #line 89 "examples/wordbands/main.hero"
-#line 1192 "main.c"
+#line 1204 "main.c"
     hero_array_decref(h1_out);
 #line 89 "examples/wordbands/main.hero"
-#line 1195 "main.c"
+#line 1207 "main.c"
     hero_array_decref(h2_current);
 #line 89 "examples/wordbands/main.hero"
-#line 1198 "main.c"
+#line 1210 "main.c"
     hero_array_decref(h3_xs0);
 #line 89 "examples/wordbands/main.hero"
-#line 1201 "main.c"
+#line 1213 "main.c"
     hero_str_decref(h5_ch);
 #line 89 "examples/wordbands/main.hero"
-#line 1204 "main.c"
+#line 1216 "main.c"
     hero_array_decref(h6_own6);
 #line 89 "examples/wordbands/main.hero"
-#line 1207 "main.c"
+#line 1219 "main.c"
     hero_array_decref(h7_own7);
 #line 89 "examples/wordbands/main.hero"
-#line 1210 "main.c"
+#line 1222 "main.c"
     hero_array_decref(h8_own8);
 #line 89 "examples/wordbands/main.hero"
-#line 1213 "main.c"
+#line 1225 "main.c"
     hero_str_decref(h9_own9);
 #line 89 "examples/wordbands/main.hero"
-#line 1216 "main.c"
+#line 1228 "main.c"
     hero_array_decref(h10_own10);
 #line 89 "examples/wordbands/main.hero"
-#line 1219 "main.c"
+#line 1231 "main.c"
     hero_str_decref(h11_own11);
     return t41;
 bb12:
@@ -1229,7 +1241,7 @@ bb12:
     t52 = h11_own11;
 #line 87 "examples/wordbands/main.hero"
     h11_own11 = t39;
-#line 1233 "main.c"
+#line 1245 "main.c"
     hero_str_decref(t52);
 #line 87 "examples/wordbands/main.hero"
     hero_array_push_owned(&h1_out, &t39);
@@ -1239,12 +1251,12 @@ bb12:
 bb13:
 #line 87 "examples/wordbands/main.hero"
     goto bb11;
-#line 1243 "main.c"
+#line 1255 "main.c"
 }
 
 #line 91 "examples/wordbands/main.hero"
 int64_t h_main_together(void) {
-#line 1248 "main.c"
+#line 1260 "main.c"
     HeroArrayHeader * h0_handles = {0};
     int64_t h1_i;
     int64_t h2_total;
@@ -1292,15 +1304,15 @@ bb0:
     t32 = h6_own6;
 #line 92 "examples/wordbands/main.hero"
     h6_own6 = t1;
-#line 1296 "main.c"
+#line 1308 "main.c"
     hero_array_decref(t32);
 #line 92 "examples/wordbands/main.hero"
     t33 = h0_handles;
-#line 1300 "main.c"
+#line 1312 "main.c"
     hero_array_incref(t1);
 #line 92 "examples/wordbands/main.hero"
     h0_handles = t1;
-#line 1304 "main.c"
+#line 1316 "main.c"
     hero_array_decref(t33);
 #line 93 "examples/wordbands/main.hero"
     t2 = INT64_C(0);
@@ -1325,7 +1337,7 @@ bb2:
 #line 96 "examples/wordbands/main.hero"
     t8 = h1_i;
 #line 96 "examples/wordbands/main.hero"
-    t9 = hero_thread_spawn(t7, t8);
+    t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8);
 #line 96 "examples/wordbands/main.hero"
     hero_array_push_owned(&h0_handles, &t9);
 #line 97 "examples/wordbands/main.hero"
@@ -1348,11 +1360,11 @@ bb3:
     t15 = h0_handles;
 #line 101 "examples/wordbands/main.hero"
     t34 = h3_xs0;
-#line 1352 "main.c"
+#line 1364 "main.c"
     hero_array_incref(t15);
 #line 101 "examples/wordbands/main.hero"
     h3_xs0 = t15;
-#line 1356 "main.c"
+#line 1368 "main.c"
     hero_array_decref(t34);
 #line 101 "examples/wordbands/main.hero"
     t16 = INT64_C(0);
@@ -1410,20 +1422,20 @@ bb6:
 bb7:
 #line 104 "examples/wordbands/main.hero"
     t31 = h2_total;
-#line 1414 "main.c"
+#line 1426 "main.c"
     hero_array_decref(h0_handles);
 #line 104 "examples/wordbands/main.hero"
-#line 1417 "main.c"
+#line 1429 "main.c"
     hero_array_decref(h3_xs0);
 #line 104 "examples/wordbands/main.hero"
-#line 1420 "main.c"
+#line 1432 "main.c"
     hero_array_decref(h6_own6);
     return t31;
 }
 
 #line 106 "examples/wordbands/main.hero"
 int64_t h_main_alone(void) {
-#line 1427 "main.c"
+#line 1439 "main.c"
     int64_t h0_total;
     int64_t h1_i;
     int64_t t1;
@@ -1489,12 +1501,12 @@ bb3:
     t13 = h0_total;
 #line 114 "examples/wordbands/main.hero"
     return t13;
-#line 1493 "main.c"
+#line 1505 "main.c"
 }
 
 #line 116 "examples/wordbands/main.hero"
 void h_main_main(void) {
-#line 1498 "main.c"
+#line 1510 "main.c"
     HeroStr t1 = {0};
     int64_t t2;
     HeroStr t3 = {0};
@@ -1521,7 +1533,7 @@ bb0:
     hero_print_end();
 #line 117 "examples/wordbands/main.hero"
     return;
-#line 1525 "main.c"
+#line 1537 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {

@@ -32,6 +32,7 @@ use emit/mangle
 use emit/ctype
 use emit/signature
 use emit/callback_guard
+use emit/callback_thunk
 use emit/field_lend
 use emit/inst
 use emit/term
@@ -100,6 +101,11 @@ function definition(@w: writer.Writer, p: containers.Program, c: state.Checked, 
 
     writer.at_generated(@w)
     writer.line(@w, text: "}")
+
+    # The thunk C is handed instead of this function's own address (panel
+    # 177's item 2), beside the definition it wraps, so the two are one
+    # thing to read and the same translation unit links both.
+    callback_thunk.definition(@w, c, names, s, decls, f, guarded_decls: guarded_decls)
 
 # Which blocks are reachable — a lookup, not an analysis: the IR
 # already carries the answer in preds.

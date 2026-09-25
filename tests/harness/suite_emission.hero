@@ -123,8 +123,15 @@ constant ENTRIES: [str]
 # actually drifts at and the reason it is re-based at a close rather than when
 # somebody notices. Found while repairing what the full net caught before the
 # push: three of the eight are that repair's own cases.
+#
+# **304 on 2026-09-25**: emit 7 · fixedbugs 38 · ir 23 · run 181, and 55 example
+# programs (`ls tests/golden/<group>/*.hero | wc -l`, and `ls -d examples/*/`),
+# re-based at panel 177's landing, whose fifteen `run/dead-*` cases and two
+# `run/limit-*` cases carried the count past the 25% margin the check allows:
+# 288 passed under a floor of 233 the day before, so the slack had reached 55
+# in eleven days.
 constant LEAST: i64
-    233
+    304
 
 # One program and the bytes it was blessed to emit.
 record Program

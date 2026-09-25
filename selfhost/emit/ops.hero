@@ -27,6 +27,9 @@ use emit/extern_probe
 use emit/writer
 use emit/handle_traffic
 use emit/handle_before
+use emit/handle_result
+use emit/handle_place
+use emit/callback_thunk
 use emit/printing
 use token
 use parse
@@ -149,6 +152,13 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
             lend_extent.assertions(@w, c, names, s, decls, f, run: run, decl: e.decl)
             guarded = guard_arguments(p, c, decls, decl: e.decl, arguments: arguments)
 
+            # Where each argument was read from, for the poison a consuming
+            # call leaves there (panel 177's item 1); and a Heroes function
+            # handed to C goes as its thunk (item 2), through the table
+            # `emit/callback_thunk.hero` writes once per unit.
+            places = handle_place.places_of(c, s, decls, f, run: run)
+            crossed = callback_thunk.crossings(p, c, names, decl: e.decl, arguments: guarded)
+
             # The result half of the const cast: sqlite3_column_blob
             # returns const void *, and without the cast the assignment
             # violates C11 6.5.16.1 at exit 2 on ladder rung 3's own
@@ -192,9 +202,9 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
             # program discarded it, the value is kept in a block-local the
             # clause can read, evaluated once — `__typeof__` does not evaluate
             # its operand — so the call is emitted exactly once either way.
-            when = handle_traffic.success_c(c, s, decls, decl: e.decl)
-            keeps = !when.is_err() || handle_traffic.reads_result(decls, decl: e.decl)
-            invocation = extern_name + "(" + guarded.join(", ") + ")"
+            when = handle_result.success_c(c, s, decls, decl: e.decl)
+            keeps = !when.is_err() || handle_result.reads_result(decls, decl: e.decl)
+            invocation = extern_name + "(" + crossed.join(", ") + ")"
             result_name: str? @ target
 
             if keeps && assign.len() == 0
@@ -224,6 +234,7 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
                 decls: decls,
                 decl: e.decl,
                 arguments: guarded,
+                places: places,
                 target: result_name,
                 when: when
             )

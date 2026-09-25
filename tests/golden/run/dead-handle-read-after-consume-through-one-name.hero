@@ -1,0 +1,28 @@
+# DEFECT 088, closed by panel 177's item 1: a handle handed to a call after
+# the call that ended its life was `check` 0 and `run` 0, and C was handed
+# freed memory. Here `b` is deleted and then given to `obj_add` at a position
+# that does not consume, so the live set was never asked and C wrote into a
+# deleted node at exit 0, three of three on three legs.
+#
+# What catches it now is the POISON: `obj_delete(item: b)` ended the life, so
+# the runtime overwrote `b` with the dead page's address, and the crossing
+# into `obj_add` is checked before C runs. The ending call sits under an `if`
+# on a value C returns, so the checker's own half (panel 177's item 3, which
+# refuses a read dead on EVERY path) lets this program through to the
+# runtime, which is the half this case pins.
+
+extern "dead-handle-read-after-consume-through-one-name.h"
+    record Json tag Obj
+    function obj_new() -> Json acquires obj_delete
+    function obj_add(object: Json, string: cstr lent, item: Json consumes) -> i64
+    function obj_delete(item: Json consumes)
+    function one() -> i64
+
+function main()
+    b = obj_new()
+
+    if one() == 1
+        obj_delete(item: b)
+    c = obj_new()
+    _ = obj_add(object: b, string: "c".cstr(), item: c)
+    print("wrote into a deleted object")

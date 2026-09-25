@@ -1,0 +1,26 @@
+# WRONG on purpose, and the price of the exemption
+# `dead-handle-reused-as-a-retains-out-cell` needs: an `@` cell marked
+# `retains` is one C only writes, so the crossing check does not ask it, and a
+# C function that READS the cell is bound wrongly (it wants `a: X509 retains
+# ob_put`, without `@`). Here `cert` was given back, the cell holds the dead
+# value, and C reads through it. The dead value points at 64 KiB this runtime
+# maps with no access, so the read faults on the spot, and the fault handler
+# names a dead handle rather than leaving exit 138 with both streams empty,
+# which is what the landing measured before this case (its skeptic, probe
+# `a2d`, 2026-09-25). Under `--sanitize` ASan's own handler reports the fault.
+
+extern "dead-handle-read-by-c-through-a-cell-it-should-only-write.h"
+    record X509 tag ob
+    function ob_new() -> X509 acquires ob_put
+    function ob_up_ref_cell(@a: X509 retains ob_put) -> i32 when 1
+    function ob_put(a: X509 consumes)
+    function ob_refs(a: X509) -> i64
+    function one() -> i64
+
+function main()
+    cert: X509 @ ob_new()
+
+    if one() == 1
+        ob_put(a: cert)
+    assert ob_up_ref_cell(a: @cert) == 1
+    print("references held: ", ob_refs(a: cert))

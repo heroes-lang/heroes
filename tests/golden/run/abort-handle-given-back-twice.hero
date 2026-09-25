@@ -16,6 +16,15 @@
 # `selfhost/check/consuming.hero:22` both state that the checker has no flow
 # analysis, and *how many times does this path run* is a flow question.
 
+#
+# **The sentence this case asserts moved on 2026-09-25 (panel 177's item 1,
+# defects 077 and 088).** The second release still stops before C runs, and it
+# now stops one check earlier: the first `slot_close` ended the life and emptied
+# `a`, so the crossing into the second finds a DEAD value and names the
+# binding, where it used to find a stray address and name three causes. The
+# runtime's stray report is still pinned, by
+# `fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c`,
+# whose handle nothing ever emptied.
 extern "abort-handle-given-back-twice.h"
     record Slot tag Slot
     function slot_open(n: i64) -> Slot acquires slot_close

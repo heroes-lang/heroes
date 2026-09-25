@@ -5,7 +5,7 @@
 #include <netdb.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -141,17 +141,19 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     t8 = h0_res;
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
+    hero_handle_alive(t8, "the argument `ai` of `freeaddrinfo`");
+#line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     hero_handle_ending(t8, "freeaddrinfo", NULL);
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     (void)freeaddrinfo(t8);
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    hero_handle_ended(t8);
+    if (hero_handle_ended(t8) && h0_res == t8) h0_res = hero_handle_dead();
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     return;
-#line 152 "fixedbugsgetaddrinfoisbindable.c"
+#line 154 "fixedbugsgetaddrinfoisbindable.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b) {
-    return *a == *b;
+    return hero_handle_eq(*a, *b);
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugsgetaddrinfoisbindable_AI_hash(const void *elem) {

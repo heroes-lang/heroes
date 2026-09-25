@@ -1,0 +1,23 @@
+# Panel 177's brief, `helper_consume_then_use`: the life ends inside a helper
+# that takes the cell, `finish(@b)`, and the caller reuses `b`. The checker's
+# half (item 3) decides inside one function and does not look into `finish`,
+# so this is the shape that belongs to the runtime by design: the poison is
+# written into the helper's copy of the cell when `obj_delete` ends the life,
+# `@`'s copy-out carries it back to the caller's `b`, and the crossing into
+# `obj_add` refuses it before C runs.
+
+extern "dead-handle-through-a-helper-the-checker-cannot-see-into.h"
+    record Json tag Obj
+    function obj_new() -> Json acquires obj_delete
+    function obj_delete(item: Json consumes)
+    function obj_add(object: Json, string: cstr lent, item: Json consumes) -> i64
+
+function finish(@j: Json)
+    obj_delete(item: j)
+
+function main()
+    a = obj_new()
+    b: Json @ obj_new()
+    finish(@b)
+    _ = obj_add(object: a, string: "b".cstr(), item: b)
+    obj_delete(item: a)

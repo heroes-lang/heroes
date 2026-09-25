@@ -1,0 +1,32 @@
+# The ffi-pragmatist's `sqlite_copies` at panel 177, shape 2 of 4, in the
+# ledger's own shapes (`examples/ledger/main.hero`: a `record Db` holding the
+# connection, `closed(@db)` ending it through the cell). WRONG on purpose:
+# `kept` is a copy of the whole record made before the close, and its field
+# still holds the closed connection's address. The poison emptied `db.handle`
+# and not `kept.handle`; the dead set is what refuses the copy at the
+# crossing into `db_changes`, since the pool never hands an address out twice.
+
+extern "dead-address-copy-in-a-record-field.h"
+    record CDb tag cdb
+    function db_open(path: cstr lent, @out: CDb acquires db_close) -> i64
+    function db_close(db: CDb consumes) -> i64
+    function db_changes(db: CDb) -> i32
+
+record Db
+    handle: CDb
+
+function opened() -> Db?
+    db: CDb @ nullptr
+
+    if db_open(path: ":memory:".cstr(), out: @db) != 0
+        return fail(code: "cannot_open", msg: "no")
+    return ok(Db(handle: db))
+
+function closed(@db: Db) -> i64
+    return db_close(db: db.handle)
+
+function main()
+    db: Db @ opened().must()
+    kept = db
+    _ = closed(@db)
+    print(db_changes(db: kept.handle))

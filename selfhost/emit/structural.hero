@@ -68,8 +68,14 @@ function equality_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
     # asks the DECLARATION and never the field count, because *a fieldless
     # record cannot be written* was a premise about the world
     # (`.claude/rules/module-shape.md`) that M-handle-verdict killed.
+    #
+    # THROUGH THE RUNTIME SINCE PANEL 177 (item 1): a dead handle, one whose
+    # life a consuming call ended through this very binding, holds the dead
+    # page's address and not its own, so two dead handles would read equal
+    # and a dead one unequal to its earlier copy (the compiler-engineer's E6).
+    # `hero_handle_eq` refuses the read and compares the rest as addresses.
     if at.handle
-        writer.line(@w, text: "    return *a == *b;")
+        writer.line(@w, text: "    return hero_handle_eq(*a, *b);")
         writer.line(@w, text: "}")
         writer.blank(@w)
         return
