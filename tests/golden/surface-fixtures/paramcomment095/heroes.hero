@@ -1,0 +1,41 @@
+# The shapes beside defect 095's: a Heroes function outside any group, with
+# a comment at every place a parameter list can hold one. Before the repair
+# every one of them was moved into the body at exit 0. This file is
+# canonical: `fmt` prints it back byte for byte.
+
+# after the open paren
+function first(
+    # about a
+    a: i64
+) -> i64
+    return a
+
+# trailing on a parameter line
+function second(
+    a: i64,  # about a
+    b: i64
+) -> i64
+    return a + b
+
+# before the closing paren
+function third(
+    a: i64
+    # after the last
+) -> i64
+    return a
+
+# trailing on the closing line
+function fourth(
+    a: i64
+) -> i64  # the result
+    return a
+
+# an empty list holding only a remark
+function fifth(
+    # nothing to take
+)
+    print(0)
+
+function main()
+    print(first(1) + second(a: 1, b: 2) + third(1) + fourth(1))
+    fifth()

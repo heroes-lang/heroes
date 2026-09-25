@@ -1,0 +1,16 @@
+# Defect 095: a comment between two parameters of a group member, with a
+# member following. `fmt` joined the list onto one line and expelled the
+# comment after it, where `ob_put` took it as documentation, and the tree
+# guard refused at exit 2 a program `check` accepts. This file is canonical:
+# `fmt` prints it back byte for byte.
+extern "x.h"
+    record Ob tag ob
+    function ob_get(
+        o: Ob,
+        # a comment between
+        n: i64
+    ) -> Ob retains ob_put
+    function ob_put(o: Ob consumes)
+
+function main()
+    print(0)

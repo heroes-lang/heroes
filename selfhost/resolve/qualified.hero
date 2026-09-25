@@ -176,7 +176,8 @@ function a_function_decl(name_start: i64, name_end: i64) -> ast.Decl
         acquires_result: fail(code: "none", msg: "nothing to give back"),
         retains_result: fail(code: "none", msg: "nothing to give back"),
         borrows_result: false,
-        when_result: fail(code: "none", msg: "no success value")
+        when_result: fail(code: "none", msg: "no success value"),
+        signature_end: token.Span(start: name_start, end: name_end)
     )
     span = token.Span(start: name_start, end: name_end)
     return ast.Decl(name: span, doc: doc, span: span, kind: .function_decl(value: f))
@@ -197,7 +198,8 @@ function an_extern_decl(name_start: i64, name_end: i64) -> ast.Decl
         acquires_result: fail(code: "none", msg: "nothing to give back"),
         retains_result: fail(code: "none", msg: "nothing to give back"),
         borrows_result: false,
-        when_result: fail(code: "none", msg: "no success value")
+        when_result: fail(code: "none", msg: "no success value"),
+        signature_end: token.Span(start: name_start, end: name_end)
     )
     span = token.Span(start: name_start, end: name_end)
     return ast.Decl(name: span, doc: doc, span: span, kind: .function_decl(value: f))

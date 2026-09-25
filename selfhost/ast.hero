@@ -491,6 +491,8 @@ record FunctionDecl
     # `sqlite3_close` leaves the connection open on `SQLITE_BUSY`). The
     # literal's span; `check/marks.hero` holds it to the result's type.
     when_result: token.Span?
+    # Its last token, so `fmt` keeps a comment inside the list where it was (defect 095).
+    signature_end: token.Span
 
 variant DeclKind
     # `constant MAX: i64` + body (§4.2), or — inside an `extern` group — no
@@ -689,7 +691,8 @@ test "a declaration owns its members directly, no arena"
         acquires_result: fail(code: "none", msg: "nothing to give back"),
         retains_result: fail(code: "none", msg: "nothing to give back"),
         borrows_result: false,
-        when_result: fail(code: "none", msg: "no success value")
+        when_result: fail(code: "none", msg: "no success value"),
+        signature_end: zero
     )
     d = Decl(name: zero, doc: doc, span: zero, kind: .function_decl(value: f))
 
