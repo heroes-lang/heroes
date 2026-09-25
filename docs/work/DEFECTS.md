@@ -133,35 +133,29 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     set, is panel 177's question. The author can disagree and close it on the
     wart, as panel 153 put it.
 
-- [ ] **095 — `fmt` refuses a group member whose parameters are written one per line with a comment between two of them** | the signature printer joins the parameters onto one line and has no place for the comment, which is expelled after the declaration and becomes the next member's doc, so the self-check sees a different tree and `fmt` exits 2 on a program `check` accepts | `selfhost/print/fmt.hero` (`signature`) · `selfhost/parse/members.hero`
+- [ ] **096 — inside an `extern` group, a remark followed by a blank line before the next member makes `fmt` refuse the file** | the group printer never emits the blank line for a continuing member, so the remark becomes the next member's doc, the self-check sees a different tree and `fmt` exits 2 on a program `check` accepts | `selfhost/print/fmt.hero` (the group's member walk, the `continues` branch)
 
-    **Origin:** the landing review of M-agreed-retention step 11, its surface
-    finder, 2026-09-24; reproduced by the parser seat against the seed compiler
-    of the same day (`fmt` exit 2 before the lane and after it), so it predates
-    the landing.
+    **Origin:** the skeptic seat over defect 095's repair, 2026-09-25, attacking
+    the repair at the shapes beside it; measured on the seed compiler of
+    `0a8fd346` and on the repaired one alike, so it is older than both.
 
-    **The reproducer.** An `extern` member written
+    **The reproducer.** A group whose first member is followed by a remark, a
+    blank line, and `record Ob tag ob`:
 
-        function ob_get(
-            o: Ob,
-            # a comment between
-            n: i64
-        ) -> Ob retains ob_put
+        extern "x.h"
+            function ob_put(o: Ob consumes)
+            # a remark about what follows
 
-    followed by another member: `check` exit 0, `fmt` exit 2 with *`fmt`
-    changed the TREE of … the output parses and is a fixpoint, and it is a
-    DIFFERENT PROGRAM*, and the file is not touched. With no member following,
-    the comment lands after the group as a file-level comment and `fmt` exits 0
-    having moved it. Measured with `parse --dump-ast`: the one line that
-    differs is `doc # a comment between`, attached to the following member.
+            record Ob tag ob
+
+    `check` exit 0; `fmt` exit 2, *`fmt` changed the TREE … a DIFFERENT
+    PROGRAM*, and the file is not touched. With no line-broken signature
+    anywhere, so it is not 095's shape: the blank line is what is lost.
 
     **Why it is a defect.** A correct program is refused by a tool that must
-    be idempotent on every program the parser accepts (design.md §4.15, CLAUDE.md
-    §9); the exit-2 guard is what stops the silent form, which is worse. The
-    repair is either a place for a comment inside a printed parameter list
-    (the printer keeps the author's line breaks when a comment sits between
-    parameters) or a refusal at parse of a comment inside a signature, and
-    the choice is a formatter-surface question for the sitting that owns
-    `fmt`'s canonical form.
+    be idempotent on every program the parser accepts (design.md §4.15); the
+    exit-2 guard stops the silent form, which would attach the remark to the
+    record as its doc. The repair keeps the blank line between a remark and
+    the member it does not document, inside a group as outside one.
 
 *******************************************************************************
