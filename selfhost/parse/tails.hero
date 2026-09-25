@@ -152,6 +152,14 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
             ast.TypeNode(kind: .unit, span: token.Span(start: here.start, end: here.start))
         )
         parse_marks.success_needs_result(@c, text, in_group: is_extern)
+
+    # The signature's last token, `)` or the result's type or its last word,
+    # kept for `fmt`: comments never reach the grammar, so one written between
+    # two parameters is indistinguishable from the body's first comment unless
+    # the tree says where the signature stops. Without this the printer expelled
+    # it after the declaration, where it became the next member's doc (defect
+    # 095) or, with nothing following, a file-level remark at exit 0.
+    signature_end = cursor.previous_significant_span(c)
     body: ast.Block? @ fail(code: "absent", msg: "an extern function's code comes from C")
 
     if is_extern
@@ -163,7 +171,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
             cursor.recover_to_next_decl(@c)
             return
         body @ b
-    finish: token.Span @ cursor.previous_significant_span(c)
+    finish: token.Span @ signature_end
 
     if !body.is_err()
         finish @ body.must().span
@@ -179,7 +187,8 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
         acquires_result: marks.acquires,
         retains_result: marks.retains,
         borrows_result: marks.borrows,
-        when_result: marks.when
+        when_result: marks.when,
+        signature_end: signature_end
     )
     decls @ decls.push(
         ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .function_decl(value: f))
