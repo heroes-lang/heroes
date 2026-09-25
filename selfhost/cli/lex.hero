@@ -15,6 +15,7 @@ use diag
 use cli/table as cli_table
 use cli/argv
 use cli/io
+use cli/json_text
 
 function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     out = lexer.lex(s)
@@ -48,7 +49,7 @@ function json(tokens: [token.Token], s: source.Source) -> str
 
         if index == shown_tokens.len() - 1
             comma @ ""
-        out @ out + "  {\"kind\": \"" + token.kind_name(t.kind) + "\", \"text\": \"" + escape(shown(t, s)) + "\", \"line\": " + found.line.to_str() + ", \"col\": " + found.col.to_str() + "}" + comma + "\n"
+        out @ out + "  {\"kind\": \"" + token.kind_name(t.kind) + "\", \"text\": \"" + json_text.json_string(shown(t, s)) + "\", \"line\": " + found.line.to_str() + ", \"col\": " + found.col.to_str() + "}" + comma + "\n"
         index @ index + 1
 
     return out + "]\n"
@@ -76,23 +77,6 @@ function shown(t: token.Token, s: source.Source) -> str
         return ""
     return source.span_text(s, t.span)
 
-function escape(text: str) -> str
-    out: str @ ""
-
-    for ch in text.chars()
-        if ch == "\\"
-            out @ out + "\\\\"
-        else
-            if ch == "\""
-                out @ out + "\\\""
-            else
-                if ch == "\n"
-                    out @ out + "\\n"
-                else
-                    out @ out + ch
-
-    return out
-
 ## Tests
 
 test "the dump is root-only, layout tokens stay wordless, json escapes"
@@ -111,7 +95,7 @@ test "the dump is root-only, layout tokens stay wordless, json escapes"
     assert has_text(text: dumped, needle: " indent\n")
     j = json(out.tokens, s)
     assert has_text(text: j, needle: "{\"kind\": \"kw_constant\", \"text\": \"constant\", \"line\": 1, \"col\": 1},")
-    assert escape(text: "a\"b\\c\nd") == "a\\\"b\\\\c\\nd"
+    assert json_text.json_string("a\"b\\c\nd\te") == "a\\\"b\\\\c\\nd\\te"
 
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()

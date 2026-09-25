@@ -138,6 +138,10 @@ function argv_probes() -> [probe.Probe]
         row(name: "a dump prints the tokens", argv: "lex examples/gallery/00-first.hero --dump-tokens", code: 0).out_has("ident main")
         row(name: "json changes how, not what", argv: "lex examples/gallery/00-first.hero --dump-tokens --json", code: 0).out_starts("[\n").out_has("\"kind\"")
         row(name: "json alone selects no output", argv: "lex examples/gallery/00-first.hero --json", code: 0).out_empty()
+        row(name: "json writes a tab inside a string literal as an escape and never raw, so the output is JSON (defect 102)", argv: "lex tests/golden/surface-fixtures/json102/tab.hero --dump-tokens --json", code: 0).out_has("a\\tb").out_lacks("\t")
+        row(name: "and a control byte by its code, where it arrives inside an error token", argv: "lex tests/golden/surface-fixtures/json102/control.hero --dump-tokens --json", code: 1).out_has("\\u0001")
+        row(name: "a control byte the language refuses is named by its code in check's JSON, where the byte went raw", argv: "check tests/golden/surface-fixtures/json102/control.hero --json", code: 1).err_has("\"message\": \"the control character U+0001 is not part of the language's syntax\"")
+        row(name: "a character a terminal shows as nothing, or that reorders the line, is named by its code alone, and one that can be seen is shown and named", argv: "check tests/golden/surface-fixtures/json102/unseen.hero", code: 1).err_has("the invisible character U+202E is not").err_has("the invisible character U+200B is not").err_has("`€` (U+20AC) is not")
         row(name: "a missing operand shows the shape", argv: "check", code: 2).err_is("error: `check` needs a file: `heroes check <file.hero>`\n")
         row(name: "two files are refused", argv: "check a.hero b.hero", code: 2).err_has("takes one file")
         row(name: "-o needs a path", argv: "build examples/gallery/00-first.hero -o", code: 2).err_has("needs a path")
@@ -369,7 +373,11 @@ function verb_probes() -> [probe.Probe]
 test "the tables are what this module is, so they are counted"
     # Counted by running the count, after the first draft asserted two
     # numbers somebody had counted on screen (25 and 8, against 26 and 9).
-    assert argv_probes().len() == 26
+    # 26 -> 30 on 2026-09-26, defect 102: `lex --dump-tokens --json` over a tab
+    # inside a string literal and over a control byte, `check --json` over the
+    # same byte, and `check` over characters a terminal cannot show, each
+    # pinned where the byte went into JSON raw or into a message unseen.
+    assert argv_probes().len() == 30
     assert help_probes().len() == 4
     assert render_probes().len() == 9
 

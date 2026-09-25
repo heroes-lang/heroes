@@ -22,6 +22,7 @@ use number
 use literals
 use lex_interp
 use bytes
+use shown_char
 
 ## One line of words
 
@@ -221,7 +222,7 @@ function punct(@l: state.LexState, text: str)
     # only the second is the error.
     state.error_token(
         @l,
-        diag.new_diagnostic(code: "unexpected_character", message: "`" + ch + "` is not part of the language's syntax", span: span)
+        diag.new_diagnostic(code: "unexpected_character", message: shown_char.named(ch) + " is not part of the language's syntax", span: span)
     )
 
 # The single-byte table. A miss means the byte is not in the language.
