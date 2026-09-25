@@ -98,6 +98,48 @@ function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
 
     return fail(code: "none", msg: "no instruction produces this value")
 
+# One element of a fixed array, as the C lvalue `base[guarded index]`, and the
+# ONE spelling of its bound check: `element` below reads through it and
+# `container.write_element` writes through it, so a read and a write of `n.a[i]`
+# cannot disagree about the bound or the message (defect 097, whose write had no
+# spelling at all and died at run time as a compiler bug). Guarded HERE (panel
+# 062) because -Warray-bounds was measured not to fire on an opaque index, and
+# unsigned so one test catches both ends.
+function subscript(base: str, index: str, length: i64) -> str
+    return base + "[((uint64_t)(" + index + ") >= UINT64_C(" + length.to_str() + ") ? (hero_panic(\"index out of range for a fixed array\"), (int64_t)0) : (" + index + "))]"
+
+# `v.params[i]`, the read, for a base that is a fixed array; anything else is
+# the caller's, which is a `[T]` read through the runtime.
+#
+# THE BASE ROUTES THROUGH fixed_text, and the note that used to stand in
+# `container.read_element` instead is why (panel 085 R6). It said the routing
+# would arrive "when that module lands", and the module landed — construct.hero
+# already calls it — while the call site kept the plain temporary. A fixed array
+# is never DECLARED, so that temporary does not exist: the emitted C read
+# `t20[...]` where `t20` appeared nowhere else in 20 MB of output, and `heroes
+# build` was exit 2 with `use of undeclared identifier` on three ordinary
+# programs. The note's closing clause — "the same bytes for every case the tests
+# cover today" — was true only because no test covered it, which is CLAUDE.md
+# §11's premise that expires in silence while the sentence around it still reads
+# as correct.
+function element(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, base: i64, index: i64) -> str?
+    length: i64 @ 0 - 1
+
+    match table.get(c.types, containers.value_type(f, base))
+        .fixed x                                                  => length @ x.length
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => length @ length
+        .array | .map | .fallible | .function_ty | .named         => length @ length
+        .case_ty | .failure | .generic | .error                   => length @ length
+
+    if length < 0
+        return fail(code: "none", msg: "not a fixed array")
+    base_text: str @ mangle.value(base)
+    rendered = fixed_text(c, s, decls, f, value: base)
+
+    if !rendered.is_err()
+        base_text @ rendered.must()
+    return ok(subscript(base: base_text, index: mangle.value(index), length: length))
+
 ## Tests
 
 test "a fixed literal renders braced at the use site, a field read stays an lvalue"
