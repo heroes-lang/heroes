@@ -35,6 +35,7 @@ use check/ffi_sweep
 use check/marks
 use check/acquiring
 use check/releasers
+use check/contracts
 use check/lending
 use check/leasing
 use check/counted
@@ -80,6 +81,13 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # state above.
     acquiring.bindings_say_which(@c, s, decls)
     releasers.sets_name_releasers(@c, s, decls)
+
+    # One C function, one contract: two modules declaring one C name must say
+    # the same thing at every position they share (M-agreed-retention's
+    # second item, panel 171's completeness critic). Program-wide like
+    # `one_tag_one_type`, and after the rules above so a declaration's own
+    # marks are judged before two declarations are compared.
+    contracts.agree(@c, s, decls)
 
     # §4.20's lend, asked at every position rather than at the one call
     # site that types it: defect 022 was a `cstr` RETURNED, and a rule

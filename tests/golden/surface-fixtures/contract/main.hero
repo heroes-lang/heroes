@@ -1,0 +1,12 @@
+# One C function, two modules, two contracts: this one says `keep` reads the
+# bytes for the call and no longer, `alt.hero` says it keeps them. Each module
+# is right against C alone and the two cannot both be right, which is what
+# `contract_differs` says (M-agreed-retention's second item).
+use alt
+
+extern "keep.h"
+    function keep(s: cstr lent)
+
+function main()
+    keep(s: "main".cstr())
+    alt.keeping()
