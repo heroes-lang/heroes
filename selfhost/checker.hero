@@ -34,6 +34,7 @@ use check/type_labels
 use check/ffi_sweep
 use check/marks
 use check/acquiring
+use check/releasers
 use check/lending
 use check/leasing
 use check/counted
@@ -78,6 +79,7 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # declarations are checked — the same ordering `map_keys` and `ffi_sweep`
     # state above.
     acquiring.bindings_say_which(@c, s, decls)
+    releasers.sets_name_releasers(@c, s, decls)
 
     # §4.20's lend, asked at every position rather than at the one call
     # site that types it: defect 022 was a `cstr` RETURNED, and a rule

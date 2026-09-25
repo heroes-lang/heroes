@@ -1,0 +1,98 @@
+# What the handle SET is told BEFORE one C call: the checks. Cut out of
+# `emit/handle_traffic.hero` on 2026-09-25 at the `layout` suite's ceiling,
+# along the seam the line itself draws: this module speaks before C runs and
+# only reads the set, `handle_traffic` speaks after and is what mutates it.
+#
+# **`consumes` GOES BEFORE THE CALL, and `acquires` cannot** — defect 071,
+# 2026-09-20. A consumed handle's value exists before the call; an acquired
+# result does not exist until the call returns, and an acquiring `@`
+# out-parameter's cell is not written until then either. So the two ends sit on
+# opposite sides of the line, and the ordering is a fact about when each value
+# exists rather than a preference.
+#
+# WHAT IT COST TO LEARN. Until today both ends were emitted after the call, on
+# the ground that *the counter rides the call it belongs to … so the two are one
+# instruction to read* — a readability reason, and CLAUDE.md § Precedence puts
+# robustness at rank 3 and leaves that at none. Measured: a second `consumes` of
+# the same local reached C first and the process died inside the real
+# deallocator at exit 133 with **no message at all**, while the runtime's own
+# stray report — which names this exact program in three sentences — waited for
+# an exit the program never reached.
+#
+# AND THE CASE THAT WOULD HAVE CAUGHT IT SAID SO IN ITS OWN HEADER.
+# `tests/golden/run/abort-handle-given-back-twice.h`: *"`slot_close`
+# deliberately does nothing, so the second release below does not corrupt
+# anything on this machine and the case can assert the COUNT rather than a
+# crash. Against a real allocator the same program is a double free."* True,
+# written down, and never followed by the case that runs it against one. That
+# case is `fixedbugs-a-real-deallocator-given-the-same-handle-twice`.
+use ast
+use source
+use handles
+use check/state
+use emit/writer
+use emit/handle_traffic
+
+function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str])
+    match decls[decl].kind
+        .function_decl fd =>
+            at: i64 @ 0
+            by = consumer(s, fd.value, name: source.span_text(s, decls[decl].name))
+
+            for p in fd.value.params
+                if at < arguments.len()
+                    written = state.written_type(c, p.ty)
+
+                    if !written.is_err()
+                        # The CHECK is before the call and the end is after it
+                        # (`handle_traffic.after_call`), so a double release is
+                        # still stopped before C runs and a call that succeeds
+                        # only sometimes ends the life only when it did. The
+                        # runtime counts each check as an end ANNOUNCED, which
+                        # is what stops one call taking one handle at two
+                        # consuming positions before C (defect 084).
+                        if p.consumes
+                            handle_traffic.emit_each(
+                                @w,
+                                c,
+                                s,
+                                decls,
+                                ty: written.must(),
+                                value: arguments[at],
+                                entry: "hero_handle_ending",
+                                tail: ", " + by
+                            )
+
+                        # A transfer names where the life goes, and the handle's
+                        # own set must name it too (panel 176's item 2): checked
+                        # here, before C, like a release.
+                        if !p.transfers.is_err()
+                            handle_traffic.emit_each(
+                                @w,
+                                c,
+                                s,
+                                decls,
+                                ty: written.must(),
+                                value: arguments[at],
+                                entry: "hero_handle_transferring",
+                                tail: ", " + handle_traffic.set_c(s, p.transfers.must())
+                            )
+                at @ at + 1
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return
+
+# Who is giving the handle back, and what its own mark would let it pay. A
+# call that also ACQUIRES is a transfer of the old kind — `realloc`, `freopen` —
+# ending one life and beginning the next owed to its own releasers, so it may
+# take back a handle whose set shares a name with its own: `freopen` of an
+# `fopen` stream, never of a `popen` one. Panel 176's `transfers` is the
+# spelling that names this on purpose; this is what the runtime is told for
+# the older spelling.
+function consumer(s: source.Source, fd: ast.FunctionDecl, name: str) -> str
+    if !fd.acquires_result.is_err()
+        return handle_traffic.quoted(name) + ", " + handle_traffic.quoted(handles.releasers_c(source.span_text(s, fd.acquires_result.must())))
+
+    for p in fd.params
+        if !p.acquires.is_err()
+            return handle_traffic.quoted(name) + ", " + handle_traffic.quoted(handles.releasers_c(source.span_text(s, p.acquires.must())))
+
+    return handle_traffic.quoted(name) + ", NULL"

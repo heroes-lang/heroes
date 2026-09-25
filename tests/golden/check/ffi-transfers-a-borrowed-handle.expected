@@ -1,0 +1,1 @@
+tests/golden/check/ffi-transfers-a-borrowed-handle.hero:19:34: error[consumed_borrowed_handle]: `h_put` hands the life of what it is given into another value that will end it, and `h` was borrowed — this function promised not to change it

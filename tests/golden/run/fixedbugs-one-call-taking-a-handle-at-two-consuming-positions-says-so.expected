@@ -1,0 +1,2 @@
+one bio, two positions
+!panic: one call takes the same C handle at two consuming positions, and the handle holds 1 reference(s) — the library takes one reference where the binding says it takes two, as OpenSSL's `SSL_set_bio(s, b, b)` does, so the binding needs a shim that consumes it once

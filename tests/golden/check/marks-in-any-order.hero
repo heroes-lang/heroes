@@ -1,0 +1,18 @@
+# The words after a type are read in whatever order they were written (panel
+# 177's landing, finding 1), so two DIFFERENT words on one position reach the
+# checker's `one_mark_per_position` in either order, and a signature written
+# out of order and carrying no conflict checks clean (`fmt` puts its words back
+# in the grammar's order). Until 2026-09-25 only `consumes retains ob_put`
+# reached the checker; `retains ob_put consumes`, the same two words the other
+# way round, was a `)` error that named no rule, and so was `lent counted_by n`.
+extern "marks-in-any-order.h"
+    record Ob tag ob
+    function ob_new() -> Ob acquires ob_put
+    function ob_put(o: Ob consumes)
+    function ob_both(o: Ob retains ob_put consumes)  #~ one_mark_per_position
+    function ob_twice() -> Ob borrows acquires ob_put  #~ one_mark_per_position
+    function ob_read(buf: ptr lent counted_by n, n: u64) -> i64
+
+function main()
+    a = ob_new()
+    ob_put(o: a)

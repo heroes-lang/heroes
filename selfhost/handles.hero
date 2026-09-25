@@ -198,7 +198,7 @@ function releasers(text: str) -> [str]
             if word.len() > 0
                 out @ out.push(word)
             word @ ""
-        else if text[i] != ' '
+        else if !blank(text[i])
             word @ word + text.slice(from: i, to: i + 1)
         i @ i + 1
 
@@ -206,6 +206,13 @@ function releasers(text: str) -> [str]
         out @ out.push(word)
 
     return out
+
+# A space, a tab, a newline or a carriage return: inside parentheses a line
+# may end after `|` and continue below, so the span the parser hands on then
+# carries the line break, and a reader that dropped spaces alone made the
+# second name `\nfree_ob` (panel 176's landing review, 2026-09-24).
+function blank(b: u8) -> bool
+    return b == ' ' || b == 9 || b == 10 || b == 13
 
 # Each name's own span inside the set's span, for a diagnostic that points at
 # the one name that does not resolve rather than at the whole set.
@@ -215,7 +222,7 @@ function releaser_spans(text: str, at: token.Span) -> [token.Span]
     i: i64 @ 0
 
     while i < text.len()
-        if text[i] == '|' || text[i] == ' '
+        if text[i] == '|' || blank(text[i])
             if from >= 0
                 out @ out.push(token.Span(start: at.start + from, end: at.start + i))
             from @ -1

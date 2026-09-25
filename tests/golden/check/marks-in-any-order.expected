@@ -1,0 +1,2 @@
+tests/golden/check/marks-in-any-order.hero:12:22: error[one_mark_per_position]: `o` carries two of `consumes`, `transfers`, `acquires`, `retains` and `borrows`, and a value takes one: each says what the call does with the value's life, and a call does one thing with it
+tests/golden/check/marks-in-any-order.hero:13:28: error[one_mark_per_position]: the result of `ob_twice` carries two of `consumes`, `transfers`, `acquires`, `retains` and `borrows`, and a value takes one: each says what the call does with the value's life, and a call does one thing with it

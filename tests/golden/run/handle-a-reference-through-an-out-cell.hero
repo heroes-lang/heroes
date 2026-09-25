@@ -1,0 +1,20 @@
+# `retains` on an `@` out-cell: the reference C hands out lands in the cell,
+# and it is the CELL's content the runtime is told about, not the cell's
+# address. The landing review (2026-09-24) found the emitter handing over
+# `&cell`, a first life at an address C never gave, so the correct second
+# release was a stray.
+extern "handle-a-reference-through-an-out-cell.h"
+    record Ob tag ob
+    function ob_new() -> Ob acquires ob_put
+    function ob_dup(o: Ob, @out: Ob retains ob_put) -> i32 when 1
+    function ob_put(o: Ob consumes)
+    function ob_refs(o: Ob) -> i64
+
+function main()
+    a = ob_new()
+    b: Ob @ nullptr
+    rc = ob_dup(o: a, out: @b)
+    print("rc: ", rc, " refs: ", ob_refs(o: a))
+    ob_put(o: b)
+    ob_put(o: a)
+    print("both given back")

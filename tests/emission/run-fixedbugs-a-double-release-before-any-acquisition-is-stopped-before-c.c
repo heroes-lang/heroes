@@ -5,7 +5,7 @@
 #include <fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -123,15 +123,19 @@ bb0:
 #line 21 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     t3 = h0_a;
 #line 21 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
-    hero_handle_consumed(t3, "g_close", NULL);
+    hero_handle_ending(t3, "g_close", NULL);
 #line 21 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     (void)g_close(t3);
+#line 21 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
+    hero_handle_ended(t3);
 #line 22 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     t4 = h0_a;
 #line 22 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
-    hero_handle_consumed(t4, "g_close", NULL);
+    hero_handle_ending(t4, "g_close", NULL);
 #line 22 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     (void)g_close(t4);
+#line 22 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
+    hero_handle_ended(t4);
 #line 23 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     t5 = HERO_STR_LIT(hero_str_73bdf5b2);
 #line 23 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
@@ -140,7 +144,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     return;
-#line 144 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
+#line 148 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_G_eq(gg * const *a, gg * const *b) {
     return *a == *b;
