@@ -5,7 +5,7 @@
 #include <dead-address-callback-hand-back-clears-the-mark.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -158,13 +158,17 @@ bb0:
 #line 22 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     t2 = h0_mine;
 #line 22 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
+    {
+#line 22 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     hero_handle_alive(t2, "the argument `n` of `node_free`");
 #line 22 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
-    hero_handle_ending(t2, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t2, "node_free", NULL);
 #line 22 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     (void)node_free(t2);
 #line 22 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
-    if (hero_handle_ended(t2) && h0_mine == t2) h0_mine = hero_handle_dead();
+    if (hero_handle_ended(t2, hero_life_0_0) && h0_mine == t2) h0_mine = hero_handle_dead();
+#line 22 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
+    }
 #line 23 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     t3 = HERO_STR_LIT(hero_str_678ad40c);
 #line 23 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
@@ -179,7 +183,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     return;
-#line 183 "deadaddresscallbackhandbackclearsthemark.c"
+#line 187 "deadaddresscallbackhandbackclearsthemark.c"
 }
 HERO_TU_LOCAL bool h_deadaddresscallbackhandbackclearsthemark_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

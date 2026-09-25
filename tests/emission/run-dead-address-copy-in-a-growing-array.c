@@ -5,7 +5,7 @@
 #include <dead-address-copy-in-a-growing-array.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -269,21 +269,25 @@ bb0:
 #line 24 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     t2 = t1.f_handle;
 #line 24 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
+    {
+#line 24 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     hero_handle_alive(t2, "the argument `db` of `db_close`");
 #line 24 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
-    hero_handle_ending(t2, "db_close", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t2, "db_close", NULL);
 #line 24 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     t3 = db_close(t2);
 #line 24 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
-    if (hero_handle_ended(t2) && h0_db.f_handle == t2) h0_db.f_handle = hero_handle_dead();
-#line 280 "deadaddresscopyinagrowingarray.c"
+    if (hero_handle_ended(t2, hero_life_0_0) && h0_db.f_handle == t2) h0_db.f_handle = hero_handle_dead();
+#line 24 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
+    }
+#line 284 "deadaddresscopyinagrowingarray.c"
     *ph0_db = h0_db;
     return t3;
 }
 
 #line 26 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
 void h_deadaddresscopyinagrowingarray_main(void) {
-#line 287 "deadaddresscopyinagrowingarray.c"
+#line 291 "deadaddresscopyinagrowingarray.c"
     h_0opt_5553b083 h0_f0 = {0};
     h_deadaddresscopyinagrowingarray_Db h1_db;
     HeroArrayHeader * h2_handles = {0};
@@ -317,15 +321,15 @@ bb0:
     t18 = h3_own3;
 #line 27 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     h3_own3 = t1;
-#line 321 "deadaddresscopyinagrowingarray.c"
+#line 325 "deadaddresscopyinagrowingarray.c"
     h_0opt_5553b083_release(&t18);
 #line 27 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     t19 = h0_f0;
-#line 325 "deadaddresscopyinagrowingarray.c"
+#line 329 "deadaddresscopyinagrowingarray.c"
     h_0opt_5553b083_retain(&t1);
 #line 27 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     h0_f0 = t1;
-#line 329 "deadaddresscopyinagrowingarray.c"
+#line 333 "deadaddresscopyinagrowingarray.c"
     h_0opt_5553b083_release(&t19);
 #line 27 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     t2 = h0_f0;
@@ -359,15 +363,15 @@ bb1:
     t20 = h4_own4;
 #line 28 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     h4_own4 = t12;
-#line 363 "deadaddresscopyinagrowingarray.c"
+#line 367 "deadaddresscopyinagrowingarray.c"
     hero_array_decref(t20);
 #line 28 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     t21 = h2_handles;
-#line 367 "deadaddresscopyinagrowingarray.c"
+#line 371 "deadaddresscopyinagrowingarray.c"
     hero_array_incref(t12);
 #line 28 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     h2_handles = t12;
-#line 371 "deadaddresscopyinagrowingarray.c"
+#line 375 "deadaddresscopyinagrowingarray.c"
     hero_array_decref(t21);
 #line 29 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     h_deadaddresscopyinagrowingarray_closed(&h1_db);
@@ -385,16 +389,16 @@ bb1:
     hero_print_int(t17);
 #line 30 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     hero_print_end();
-#line 389 "deadaddresscopyinagrowingarray.c"
+#line 393 "deadaddresscopyinagrowingarray.c"
     h_0opt_5553b083_release(&h0_f0);
 #line 30 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
-#line 392 "deadaddresscopyinagrowingarray.c"
+#line 396 "deadaddresscopyinagrowingarray.c"
     hero_array_decref(h2_handles);
 #line 30 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
-#line 395 "deadaddresscopyinagrowingarray.c"
+#line 399 "deadaddresscopyinagrowingarray.c"
     h_0opt_5553b083_release(&h3_own3);
 #line 30 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
-#line 398 "deadaddresscopyinagrowingarray.c"
+#line 402 "deadaddresscopyinagrowingarray.c"
     hero_array_decref(h4_own4);
     return;
 bb2:
@@ -402,7 +406,7 @@ bb2:
     t6 = h0_f0;
 #line 27 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     t7 = t6.as.err;
-#line 406 "deadaddresscopyinagrowingarray.c"
+#line 410 "deadaddresscopyinagrowingarray.c"
     hero_panic_must(t7);
     hero_unreachable();
 }

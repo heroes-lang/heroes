@@ -5,7 +5,7 @@
 #include <dead-handle-in-a-callback-result-record-names-its-field.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -249,20 +249,24 @@ bb4:
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t17 = t16.b;
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
+    {
+#line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     hero_handle_alive(t17, "the argument `n` of `node_free`");
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    hero_handle_ending(t17, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t17, "node_free", NULL);
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     (void)node_free(t17);
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    if (hero_handle_ended(t17) && h1_p.b == t17) h1_p.b = hero_handle_dead();
+    if (hero_handle_ended(t17, hero_life_0_0) && h1_p.b == t17) h1_p.b = hero_handle_dead();
+#line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
+    }
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     goto bb1;
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 bb5:
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     goto bb1;
-#line 266 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 270 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 
 struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
@@ -274,7 +278,7 @@ struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0
 
 #line 26 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 void h_deadhandleinacallbackresultrecordnamesitsfield_main(void) {
-#line 278 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 282 "deadhandleinacallbackresultrecordnamesitsfield.c"
     HeroStr t1 = {0};
     h_0fn_22e3cba1 t2;
     int64_t t3;
@@ -294,7 +298,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     return;
-#line 298 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 302 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 HERO_TU_LOCAL bool h_deadhandleinacallbackresultrecordnamesitsfield_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

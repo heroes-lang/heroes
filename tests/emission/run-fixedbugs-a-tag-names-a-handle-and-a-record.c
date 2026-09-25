@@ -5,7 +5,7 @@
 #include <netdb.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -163,16 +163,20 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t10 = h1_r;
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+    {
+#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     hero_handle_alive(t10, "the argument `ai` of `freeaddrinfo`");
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_handle_ending(t10, "freeaddrinfo", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t10, "freeaddrinfo", NULL);
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     (void)freeaddrinfo(t10);
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    if (hero_handle_ended(t10) && h1_r == t10) h1_r = hero_handle_dead();
+    if (hero_handle_ended(t10, hero_life_0_0) && h1_r == t10) h1_r = hero_handle_dead();
+#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+    }
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     return;
-#line 176 "fixedbugsatagnamesahandleandarecord.c"
+#line 180 "fixedbugsatagnamesahandleandarecord.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b) {
     return hero_handle_eq(*a, *b);

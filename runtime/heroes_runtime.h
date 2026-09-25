@@ -34,7 +34,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 25
+#define HERO_RUNTIME_ABI 26
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -228,13 +228,22 @@ void hero_held_release(const char **slot); /* nulls the cell: the second release
  * a callback's result, with `where` naming the crossing for the message: the
  * dead value and a remembered address both abort before C runs. `eq` is what
  * `==` on two handles calls, since a dead value no longer holds its address
- * and may not be compared. `parts/alloc.c` states the dead set's bound. */
+ * and may not be compared. `parts/alloc.c` states the dead set's bound.
+ *
+ * Since ABI 26 (defect 098) an end names the LIFE it was announced for, because
+ * an address is not an identity: C can release one inside a call and hand it
+ * out again, to another thread or to a callback, before the call returns.
+ * `ending` and `transferring` answer the life's number, the emitted C keeps it
+ * in the call's own block, and `ended(h, life)` and `kept(h, life)` hand it
+ * back, so an end lands on the life it belongs to and never on the one that
+ * replaced it. `retained` is told whether its call also ends a handle, since
+ * only then can an end in flight on that address be the same call's. */
 void hero_handle_acquired(const void *handle, const char *releasers);
-void hero_handle_ending(const void *handle, const char *by, const char *pays);
-void hero_handle_transferring(const void *handle, const char *into);
-int hero_handle_ended(const void *handle);
-void hero_handle_kept(const void *handle);
-void hero_handle_retained(const void *handle, const char *releasers);
+uint64_t hero_handle_ending(const void *handle, const char *by, const char *pays);
+uint64_t hero_handle_transferring(const void *handle, const char *into);
+int hero_handle_ended(const void *handle, uint64_t life);
+void hero_handle_kept(const void *handle, uint64_t life);
+void hero_handle_retained(const void *handle, const char *releasers, int ends_here);
 void hero_handle_lent(const void *handle);
 void hero_handle_alive(const void *handle, const char *where);
 void *hero_handle_dead(void);

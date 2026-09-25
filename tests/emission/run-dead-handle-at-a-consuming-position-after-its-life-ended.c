@@ -5,7 +5,7 @@
 #include <dead-handle-at-a-consuming-position-after-its-life-ended.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -151,25 +151,33 @@ bb1:
 #line 25 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     t10 = h1_b;
 #line 25 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
+    {
+#line 25 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     hero_handle_alive(t7, "the argument `object` of `obj_add`");
 #line 25 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     hero_handle_alive(t10, "the argument `item` of `obj_add`");
 #line 25 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
-    hero_handle_ending(t10, "obj_add", NULL);
+    uint64_t hero_life_2_0 = hero_handle_ending(t10, "obj_add", NULL);
 #line 25 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     (void)obj_add(t7, hero_cstr_nonnull(t9), t10);
 #line 25 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
-    if (hero_handle_ended(t10) && h1_b == t10) h1_b = hero_handle_dead();
+    if (hero_handle_ended(t10, hero_life_2_0) && h1_b == t10) h1_b = hero_handle_dead();
+#line 25 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
+    }
 #line 26 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     t12 = h0_a;
 #line 26 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
+    {
+#line 26 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     hero_handle_alive(t12, "the argument `item` of `obj_delete`");
 #line 26 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
-    hero_handle_ending(t12, "obj_delete", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t12, "obj_delete", NULL);
 #line 26 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     (void)obj_delete(t12);
 #line 26 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
-    if (hero_handle_ended(t12) && h0_a == t12) h0_a = hero_handle_dead();
+    if (hero_handle_ended(t12, hero_life_0_0) && h0_a == t12) h0_a = hero_handle_dead();
+#line 26 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
+    }
 #line 26 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     return;
 #line 26 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
@@ -177,20 +185,24 @@ bb2:
 #line 24 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     t6 = h1_b;
 #line 24 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
+    {
+#line 24 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     hero_handle_alive(t6, "the argument `item` of `obj_delete`");
 #line 24 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
-    hero_handle_ending(t6, "obj_delete", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t6, "obj_delete", NULL);
 #line 24 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     (void)obj_delete(t6);
 #line 24 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
-    if (hero_handle_ended(t6) && h1_b == t6) h1_b = hero_handle_dead();
+    if (hero_handle_ended(t6, hero_life_0_0) && h1_b == t6) h1_b = hero_handle_dead();
+#line 24 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
+    }
 #line 24 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     goto bb1;
 #line 24 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
 bb3:
 #line 24 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     goto bb1;
-#line 194 "deadhandleataconsumingpositionafteritslifeended.c"
+#line 206 "deadhandleataconsumingpositionafteritslifeended.c"
 }
 HERO_TU_LOCAL bool h_deadhandleataconsumingpositionafteritslifeended_Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);

@@ -5,7 +5,7 @@
 #include <dead-handle-reused-as-a-retains-out-cell.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -146,7 +146,7 @@ bb1:
 #line 29 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     t7 = ob_get_shared(&h0_cert);
 #line 29 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
-    hero_handle_retained(h0_cert, "ob_put");
+    hero_handle_retained(h0_cert, "ob_put", 0);
 #line 29 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     if (t7 == 1LL) {
 #line 29 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
@@ -164,13 +164,17 @@ bb2:
 #line 28 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     t5 = h0_cert;
 #line 28 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
+    {
+#line 28 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     hero_handle_alive(t5, "the argument `a` of `ob_put`");
 #line 28 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
-    hero_handle_ending(t5, "ob_put", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t5, "ob_put", NULL);
 #line 28 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     (void)ob_put(t5);
 #line 28 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
-    if (hero_handle_ended(t5) && h0_cert == t5) h0_cert = hero_handle_dead();
+    if (hero_handle_ended(t5, hero_life_0_0) && h0_cert == t5) h0_cert = hero_handle_dead();
+#line 28 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
+    }
 #line 28 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     goto bb1;
 #line 28 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
@@ -196,19 +200,23 @@ bb4:
 #line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     t13 = h0_cert;
 #line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
+    {
+#line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     hero_handle_alive(t13, "the argument `a` of `ob_put`");
 #line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
-    hero_handle_ending(t13, "ob_put", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t13, "ob_put", NULL);
 #line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     (void)ob_put(t13);
 #line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
-    if (hero_handle_ended(t13) && h0_cert == t13) h0_cert = hero_handle_dead();
+    if (hero_handle_ended(t13, hero_life_0_0) && h0_cert == t13) h0_cert = hero_handle_dead();
+#line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
+    }
 #line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     return;
 #line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
 bb5:
 #line 29 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
-#line 212 "deadhandlereusedasaretainsoutcell.c"
+#line 220 "deadhandlereusedasaretainsoutcell.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }

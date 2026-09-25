@@ -5,7 +5,7 @@
 #include <ffi-acquires-and-consumes.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -159,23 +159,31 @@ bb0:
 #line 21 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t10 = h0_a;
 #line 21 "tests/golden/run/ffi-acquires-and-consumes.hero"
+    {
+#line 21 "tests/golden/run/ffi-acquires-and-consumes.hero"
     hero_handle_alive(t10, "the argument `s` of `slot_close`");
 #line 21 "tests/golden/run/ffi-acquires-and-consumes.hero"
-    hero_handle_ending(t10, "slot_close", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t10, "slot_close", NULL);
 #line 21 "tests/golden/run/ffi-acquires-and-consumes.hero"
     (void)slot_close(t10);
 #line 21 "tests/golden/run/ffi-acquires-and-consumes.hero"
-    if (hero_handle_ended(t10) && h0_a == t10) h0_a = hero_handle_dead();
+    if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead();
+#line 21 "tests/golden/run/ffi-acquires-and-consumes.hero"
+    }
 #line 22 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t11 = h1_b;
 #line 22 "tests/golden/run/ffi-acquires-and-consumes.hero"
+    {
+#line 22 "tests/golden/run/ffi-acquires-and-consumes.hero"
     hero_handle_alive(t11, "the argument `s` of `slot_close`");
 #line 22 "tests/golden/run/ffi-acquires-and-consumes.hero"
-    hero_handle_ending(t11, "slot_close", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t11, "slot_close", NULL);
 #line 22 "tests/golden/run/ffi-acquires-and-consumes.hero"
     (void)slot_close(t11);
 #line 22 "tests/golden/run/ffi-acquires-and-consumes.hero"
-    if (hero_handle_ended(t11) && h1_b == t11) h1_b = hero_handle_dead();
+    if (hero_handle_ended(t11, hero_life_0_0) && h1_b == t11) h1_b = hero_handle_dead();
+#line 22 "tests/golden/run/ffi-acquires-and-consumes.hero"
+    }
 #line 23 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t12 = HERO_STR_LIT(hero_str_455ecde8);
 #line 23 "tests/golden/run/ffi-acquires-and-consumes.hero"
@@ -184,7 +192,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/ffi-acquires-and-consumes.hero"
     return;
-#line 188 "ffiacquiresandconsumes.c"
+#line 196 "ffiacquiresandconsumes.c"
 }
 HERO_TU_LOCAL bool h_ffiacquiresandconsumes_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

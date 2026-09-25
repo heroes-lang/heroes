@@ -218,6 +218,7 @@ constant SHARED_BY_DECISION: [str]
         "runtime/parts/alloc.c hero_dead_index | open addressing over the window, one slot per dead address holding the ring slot of its latest end, which is what a crossing into C asks. Under the same lock; at most 2^21 slots of 4 bytes, 8 MiB, and 12 for the instant it doubles to that size beside its old copy"
         "runtime/parts/alloc.c hero_dead_index_cap | the index's capacity, under the same lock, the lock's own state"
         "runtime/parts/alloc.c hero_dead_count | how many addresses the index holds, never above 2^20; under the same lock and, like `hero_handle_live`, deliberately not `_Atomic` beside a locked table"
+        "runtime/parts/alloc.c hero_handle_lives | the last number issued to a handle life (defect 098), so an end names the life it was announced for and not an address C may have handed out again. Issued only inside `acquired` and `retained`, under the live set's lock, and read into the entry in the same critical section; process-wide by nature, since the two threads whose ends it tells apart are exactly the ones a per-thread copy would give the same number. Deliberately not `_Atomic` beside a locked table, on `hero_handle_live`'s reason, and a 64-bit count so it cannot wrap in any program's life"
         "runtime/parts/stack.c done | the once-flag over the PROCESS-wide half of the guard — the two dispositions on POSIX, the vectored handler on Windows — in each platform arm. The per-thread half moved out from under it at M-thread-stacks and is `_Thread_local`, so what is left here is genuinely the process's; `hero_args_set`'s callee, exactly like `os.c`'s pair above"
     ]
 
@@ -229,8 +230,12 @@ constant SHARED_BY_DECISION: [str]
 # here. The sweep reads MORE objects than it did, which is the direction nobody
 # watches: the floor was written when 28 were found and set below them, and the
 # tree has since put fifteen more between calls.
+#
+# **62 on 2026-09-26**, printed by `floors.check` when defect 098's life counter
+# made the sixty-second: panel 177's dead set had put six more between calls, and
+# the counter is the one that took the tree past a quarter above 49.
 constant LEAST_SHARED_STATE: i64
-    49
+    62
 
 function run_all(scratch: str) -> report.Report?
     nothing: [str] = []

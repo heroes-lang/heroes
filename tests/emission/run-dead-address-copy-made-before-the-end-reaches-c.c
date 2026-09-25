@@ -5,7 +5,7 @@
 #include <dead-address-copy-made-before-the-end-reaches-c.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -124,13 +124,17 @@ bb0:
 #line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
     t3 = h0_a;
 #line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
+    {
+#line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
     hero_handle_alive(t3, "the argument `n` of `node_free`");
 #line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    hero_handle_ending(t3, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t3, "node_free", NULL);
 #line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
     (void)node_free(t3);
 #line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    if (hero_handle_ended(t3) && h0_a == t3) h0_a = hero_handle_dead();
+    if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead();
+#line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
+    }
 #line 25 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
     t4 = h1_keep;
 #line 25 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
@@ -143,7 +147,7 @@ bb0:
     hero_print_end();
 #line 25 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
     return;
-#line 147 "deadaddresscopymadebeforetheendreachesc.c"
+#line 151 "deadaddresscopymadebeforetheendreachesc.c"
 }
 HERO_TU_LOCAL bool h_deadaddresscopymadebeforetheendreachesc_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

@@ -5,7 +5,7 @@
 #include <handle-a-helper-that-ends-its-parameter-is-the-runtime-s.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -116,21 +116,25 @@ bb0:
 #line 16 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
     t1 = h0_n;
 #line 16 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
+    {
+#line 16 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
     hero_handle_alive(t1, "the argument `n` of `node_free`");
 #line 16 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
-    hero_handle_ending(t1, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t1, "node_free", NULL);
 #line 16 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
     (void)node_free(t1);
 #line 16 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
-    if (hero_handle_ended(t1) && h0_n == t1) h0_n = hero_handle_dead();
-#line 127 "handleahelperthatendsitsparameteristheruntimes.c"
+    if (hero_handle_ended(t1, hero_life_0_0) && h0_n == t1) h0_n = hero_handle_dead();
+#line 16 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
+    }
+#line 131 "handleahelperthatendsitsparameteristheruntimes.c"
     *ph0_n = h0_n;
     return;
 }
 
 #line 18 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
 void h_handleahelperthatendsitsparameteristheruntimes_main(void) {
-#line 134 "handleahelperthatendsitsparameteristheruntimes.c"
+#line 138 "handleahelperthatendsitsparameteristheruntimes.c"
     node * h0_a;
     node * h1_b;
     int64_t t1;
@@ -180,13 +184,17 @@ bb0:
 #line 23 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
     t8 = h1_b;
 #line 23 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
+    {
+#line 23 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
     hero_handle_alive(t8, "the argument `n` of `node_free`");
 #line 23 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
-    hero_handle_ending(t8, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t8, "node_free", NULL);
 #line 23 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
     (void)node_free(t8);
 #line 23 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
-    if (hero_handle_ended(t8) && h1_b == t8) h1_b = hero_handle_dead();
+    if (hero_handle_ended(t8, hero_life_0_0) && h1_b == t8) h1_b = hero_handle_dead();
+#line 23 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
+    }
 #line 24 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
     t9 = HERO_STR_LIT(hero_str_4414937d);
 #line 24 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
@@ -196,16 +204,20 @@ bb0:
 #line 25 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
     t10 = h0_a;
 #line 25 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
+    {
+#line 25 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
     hero_handle_alive(t10, "the argument `n` of `node_free`");
 #line 25 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
-    hero_handle_ending(t10, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t10, "node_free", NULL);
 #line 25 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
     (void)node_free(t10);
 #line 25 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
-    if (hero_handle_ended(t10) && h0_a == t10) h0_a = hero_handle_dead();
+    if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead();
+#line 25 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
+    }
 #line 25 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
     return;
-#line 209 "handleahelperthatendsitsparameteristheruntimes.c"
+#line 221 "handleahelperthatendsitsparameteristheruntimes.c"
 }
 HERO_TU_LOCAL bool h_handleahelperthatendsitsparameteristheruntimes_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

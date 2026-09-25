@@ -1,0 +1,3 @@
+inside the release, the new node reads 2
+after it, the new node still reads 2
+inside the next release, a reference to the new node reads 4

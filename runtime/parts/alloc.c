@@ -176,10 +176,22 @@ typedef struct {
     /* Ends a call has announced before running and not yet made (defect 084):
      * never above `n`, or the call would release inside C what it holds once. */
     size_t pending;
+    /* WHICH LIFE this is, a number no other life at any address ever had
+     * (defect 098). An address is not an identity: C releases one inside a
+     * call and hands it out again, to another thread or to a callback, before
+     * the call has returned, so the end that call announced lands on a set
+     * whose entry is already a NEW life. The announcement hands the number to
+     * the emitted C and the end hands it back, so the end is counted against
+     * the life it was announced for and never against the one that replaced
+     * it. */
+    uint64_t life;
 } hero_handle_entry;
 static hero_handle_entry *hero_handle_set = NULL;
 static size_t hero_handle_cap = 0;
 static size_t hero_handle_live = 0;
+/* The last life number issued, under the lock. Zero is never issued, so a
+ * NULL handle's announcement, which touches no entry, answers zero. */
+static uint64_t hero_handle_lives = 0;
 /* Released while the set did not hold it: a double release, or a part of
  * something acquired whole. Counted rather than stored, because the message
  * names the first one and the reader needs a number for the rest. */
@@ -773,10 +785,21 @@ void hero_handle_acquired(const void *h, const char *by) {
     }
     /* The NEWEST mark wins: an address C hands out again belongs to the life
      * that just began, whatever ended the last one out of sight — and it is
-     * one reference, whatever the last life had left. */
+     * one reference, whatever the last life had left.
+     *
+     * AND IT BEGINS WITH NOTHING PENDING, UNDER A NUMBER OF ITS OWN (defect
+     * 098). An end announced here and not yet made is the OLD life's: a call is
+     * inside C releasing this address, and C released it and handed it out
+     * again before that call returned — a second thread over one allocator,
+     * which is every real allocator, or a callback C calls from inside the
+     * release. That end carries the old life's number, and `hero_handle_ended`
+     * lands it there. Until 2026-09-25 the end deleted the new life instead:
+     * two threads over one pool aborted a correct program ten times of ten on
+     * three platforms. */
     hero_handle_set[i].by = by;
     hero_handle_set[i].n = 1;
     hero_handle_set[i].pending = 0;
+    hero_handle_set[i].life = ++hero_handle_lives;
     /* C handed this address out again, so whatever ended there is over: a copy
      * of the old life at this address is now the new life's, and only
      * `--sanitize`'s quarantine can still tell them apart (panel 177's item 4). */
@@ -828,10 +851,13 @@ static size_t hero_handle_held(const void *h) {
 
 /* THE CHECK BEFORE C RUNS (defect 071's order, kept): the address is held,
  * and the consumer is one the acquiring mark named, or may pay through its
- * own mark. Nothing is mutated here; `hero_handle_ended` is the other half,
- * after the call, so a `when` clause can make the end conditional. */
-void hero_handle_ending(const void *h, const char *by, const char *pays) {
-    if (h == NULL) return;
+ * own mark. Only the announcement is counted here; `hero_handle_ended` is the
+ * other half, after the call, so a `when` clause can make the end
+ * conditional. The answer is the number of the life the end is announced
+ * for, which the emitted C keeps in the call's own block and hands to the
+ * other half (defect 098). */
+uint64_t hero_handle_ending(const void *h, const char *by, const char *pays) {
+    if (h == NULL) return 0;
     hero_handle_lock_take(&hero_handle_lock);
     size_t i = hero_handle_held(h);
     const char *owed = hero_handle_set[i].by;
@@ -840,17 +866,39 @@ void hero_handle_ending(const void *h, const char *by, const char *pays) {
         hero_handle_report_crossed(h, owed, by);
     }
     hero_handle_announce(i, h);
+    uint64_t life = hero_handle_set[i].life;
     hero_handle_lock_drop(&hero_handle_lock);
+    return life;
+}
+
+/* The slot of the life numbered `life` at `h`, or the table's size when that
+ * life is no longer the set's: C replaced it, at this address, inside the call
+ * that announced its end (defect 098). A NULL-handle announcement answered 0
+ * and never reaches here. Called with the lock held. */
+static size_t hero_handle_of_life(const void *h, uint64_t life) {
+    /* No life is numbered zero, and only a NULL handle's announcement answers
+     * it, so a handle that reaches here with zero was never announced: an
+     * emitter that stopped telling the set before the call. It is reported as
+     * the stray it would have been, which is `hero_handle_held`'s own defence,
+     * rather than passed in silence. */
+    if (life == 0) return hero_handle_held(h);
+    if (hero_handle_cap == 0) return hero_handle_cap;
+    size_t i = hero_handle_slot(hero_handle_set, hero_handle_cap, h);
+    if (hero_handle_set[i].h != h || hero_handle_set[i].life != life) return hero_handle_cap;
+    return i;
 }
 
 /* THE CALL SAID IT FAILED: the end it announced is withdrawn and the life
  * stays the program's, with the count it had. A `when` clause, or a NULL
- * handle result under a transfer (panel 177's item 6). */
-void hero_handle_kept(const void *h) {
+ * handle result under a transfer (panel 177's item 6). A call that failed
+ * released nothing, so C had no address to hand out again; if the life is
+ * nonetheless not the set's any more, C contradicted its own answer, and
+ * there is no announcement left to withdraw. */
+void hero_handle_kept(const void *h, uint64_t life) {
     if (h == NULL) return;
     hero_handle_lock_take(&hero_handle_lock);
-    size_t i = hero_handle_held(h);
-    if (hero_handle_set[i].pending > 0) hero_handle_set[i].pending--;
+    size_t i = hero_handle_of_life(h, life);
+    if (i != hero_handle_cap && hero_handle_set[i].pending > 0) hero_handle_set[i].pending--;
     hero_handle_lock_drop(&hero_handle_lock);
 }
 
@@ -869,8 +917,8 @@ static void hero_handle_report_misdirected(const void *h, const char *owed, cons
     hero_abort();
 }
 
-void hero_handle_transferring(const void *h, const char *into) {
-    if (h == NULL) return;
+uint64_t hero_handle_transferring(const void *h, const char *into) {
+    if (h == NULL) return 0;
     hero_handle_lock_take(&hero_handle_lock);
     size_t i = hero_handle_held(h);
     const char *owed = hero_handle_set[i].by;
@@ -879,7 +927,9 @@ void hero_handle_transferring(const void *h, const char *into) {
         hero_handle_report_misdirected(h, owed, into);
     }
     hero_handle_announce(i, h);
+    uint64_t life = hero_handle_set[i].life;
     hero_handle_lock_drop(&hero_handle_lock);
+    return life;
 }
 
 /* A REFERENCE (panel 176's item 4, kept as the critic measured it): on a live
@@ -896,12 +946,32 @@ static void hero_handle_report_joined_wrong(const void *h, const char *owed, con
     hero_abort();
 }
 
-void hero_handle_retained(const void *h, const char *releasers) {
+/* `ends_here` says whether the call taking this reference also ends or
+ * transfers a handle of its own, which the emitter knows from the declaration
+ * and the runtime cannot know from the address (defect 098). */
+void hero_handle_retained(const void *h, const char *releasers, int ends_here) {
     if (h == NULL) return;
     hero_handle_lock_take(&hero_handle_lock);
     if (hero_handle_cap == 0 || (hero_handle_live + 1) * 2 > hero_handle_cap) hero_handle_grow();
     size_t i = hero_handle_slot(hero_handle_set, hero_handle_cap, h);
-    if (hero_handle_set[i].h == h) {
+    if (hero_handle_set[i].h == h && !ends_here && hero_handle_set[i].pending == hero_handle_set[i].n) {
+        /* EVERY REFERENCE THE PROGRAM HOLDS IS BEING GIVEN BACK BY OTHER CALLS,
+         * still inside C, and this call, which ends nothing, is handed the
+         * address with a reference on it (defect 098's shape beside the
+         * acquisition). C freed the object inside those calls and handed the
+         * address out again as a new one, or C's own count kept the object
+         * alive; either way, once the ends in flight land, one life is owed to
+         * this reference and no other. So it begins one, as an acquisition
+         * does, and the ends in flight land on the life they were announced
+         * for. The releasers are not compared: a new object from one allocator
+         * may be another kind, and refusing it would abort a correct program.
+         * The comparison stays wherever the program's own references keep the
+         * life, which is where a binding that names the wrong releaser shows. */
+        hero_handle_set[i].by = releasers;
+        hero_handle_set[i].n = 1;
+        hero_handle_set[i].pending = 0;
+        hero_handle_set[i].life = ++hero_handle_lives;
+    } else if (hero_handle_set[i].h == h) {
         const char *owed = hero_handle_set[i].by;
         if (owed != NULL && releasers != NULL && !hero_handle_sets_share(owed, releasers)) {
             hero_handle_lock_drop(&hero_handle_lock);
@@ -913,6 +983,7 @@ void hero_handle_retained(const void *h, const char *releasers) {
         hero_handle_set[i].by = releasers;
         hero_handle_set[i].n = 1;
         hero_handle_set[i].pending = 0;
+        hero_handle_set[i].life = ++hero_handle_lives;
         hero_handle_live++;
         /* A life begins on an address the set did not hold: C handed it out. */
         hero_dead_clear_locked(h);
@@ -930,11 +1001,24 @@ void hero_handle_retained(const void *h, const char *releasers) {
  * second release through one name of a handle that `retains` gave two
  * references is not refused: the llm-ergonomist's A3, `X509_up_ref` then
  * `X509_free` twice through `cert`. The address is remembered as dead at the
- * same moment, under the same lock, so no check can run between the two. */
-int hero_handle_ended(const void *h) {
+ * same moment, under the same lock, so no check can run between the two.
+ *
+ * `life` is what the announcement answered (defect 098). When it is no longer
+ * the life at `h`, C released the address inside this call and handed it out
+ * again before the call returned, and a new life began there, which may have
+ * ended already: the life this end was announced for is over, so the answer
+ * is 1 and the place the call read from is poisoned, and the set is not
+ * touched — the new life is neither counted down nor remembered as dead. A
+ * second release of one life is refused before C by the announcement, so an
+ * end that lands on no entry is always this one. */
+int hero_handle_ended(const void *h, uint64_t life) {
     if (h == NULL) return 0;
     hero_handle_lock_take(&hero_handle_lock);
-    size_t i = hero_handle_held(h);
+    size_t i = hero_handle_of_life(h, life);
+    if (i == hero_handle_cap) {
+        hero_handle_lock_drop(&hero_handle_lock);
+        return 1;
+    }
     if (hero_handle_set[i].pending > 0) hero_handle_set[i].pending--;
     if (hero_handle_set[i].n > 1) {
         hero_handle_set[i].n--;

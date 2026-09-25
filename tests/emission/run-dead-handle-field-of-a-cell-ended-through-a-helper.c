@@ -5,7 +5,7 @@
 #include <dead-handle-field-of-a-cell-ended-through-a-helper.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -252,21 +252,25 @@ bb0:
 #line 28 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
     t2 = t1.f_handle;
 #line 28 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
+    {
+#line 28 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
     hero_handle_alive(t2, "the argument `db` of `db_close`");
 #line 28 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
-    hero_handle_ending(t2, "db_close", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t2, "db_close", NULL);
 #line 28 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
     t3 = db_close(t2);
 #line 28 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
-    if (hero_handle_ended(t2) && h0_db.f_handle == t2) h0_db.f_handle = hero_handle_dead();
-#line 263 "deadhandlefieldofacellendedthroughahelper.c"
+    if (hero_handle_ended(t2, hero_life_0_0) && h0_db.f_handle == t2) h0_db.f_handle = hero_handle_dead();
+#line 28 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
+    }
+#line 267 "deadhandlefieldofacellendedthroughahelper.c"
     *ph0_db = h0_db;
     return t3;
 }
 
 #line 30 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
 void h_deadhandlefieldofacellendedthroughahelper_main(void) {
-#line 270 "deadhandlefieldofacellendedthroughahelper.c"
+#line 274 "deadhandlefieldofacellendedthroughahelper.c"
     h_0opt_2436b697 h0_f0 = {0};
     h_deadhandlefieldofacellendedthroughahelper_Db h1_db;
     h_0opt_2436b697 h2_own2 = {0};
@@ -292,15 +296,15 @@ bb0:
     t14 = h2_own2;
 #line 31 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
     h2_own2 = t1;
-#line 296 "deadhandlefieldofacellendedthroughahelper.c"
+#line 300 "deadhandlefieldofacellendedthroughahelper.c"
     h_0opt_2436b697_release(&t14);
 #line 31 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
     t15 = h0_f0;
-#line 300 "deadhandlefieldofacellendedthroughahelper.c"
+#line 304 "deadhandlefieldofacellendedthroughahelper.c"
     h_0opt_2436b697_retain(&t1);
 #line 31 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
     h0_f0 = t1;
-#line 304 "deadhandlefieldofacellendedthroughahelper.c"
+#line 308 "deadhandlefieldofacellendedthroughahelper.c"
     h_0opt_2436b697_release(&t15);
 #line 31 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
     t2 = h0_f0;
@@ -334,10 +338,10 @@ bb1:
     hero_print_int(t13);
 #line 33 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
     hero_print_end();
-#line 338 "deadhandlefieldofacellendedthroughahelper.c"
+#line 342 "deadhandlefieldofacellendedthroughahelper.c"
     h_0opt_2436b697_release(&h0_f0);
 #line 33 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
-#line 341 "deadhandlefieldofacellendedthroughahelper.c"
+#line 345 "deadhandlefieldofacellendedthroughahelper.c"
     h_0opt_2436b697_release(&h2_own2);
     return;
 bb2:
@@ -345,7 +349,7 @@ bb2:
     t6 = h0_f0;
 #line 31 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
     t7 = t6.as.err;
-#line 349 "deadhandlefieldofacellendedthroughahelper.c"
+#line 353 "deadhandlefieldofacellendedthroughahelper.c"
     hero_panic_must(t7);
     hero_unreachable();
 }

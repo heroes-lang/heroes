@@ -5,7 +5,7 @@
 #include <dead-address-remembered-through-a-million-later-ends.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -141,13 +141,17 @@ bb0:
 #line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     t3 = h0_target;
 #line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
+    {
+#line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     hero_handle_alive(t3, "the argument `n` of `big_free`");
 #line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    hero_handle_ending(t3, "big_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t3, "big_free", NULL);
 #line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     (void)big_free(t3);
 #line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    if (hero_handle_ended(t3) && h0_target == t3) h0_target = hero_handle_dead();
+    if (hero_handle_ended(t3, hero_life_0_0) && h0_target == t3) h0_target = hero_handle_dead();
+#line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
+    }
 #line 23 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     t4 = INT64_C(0);
 #line 23 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
@@ -175,13 +179,17 @@ bb2:
 #line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     t9 = h3_n;
 #line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
+    {
+#line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     hero_handle_alive(t9, "the argument `n` of `big_free`");
 #line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    hero_handle_ending(t9, "big_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t9, "big_free", NULL);
 #line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     (void)big_free(t9);
 #line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    if (hero_handle_ended(t9) && h3_n == t9) h3_n = hero_handle_dead();
+    if (hero_handle_ended(t9, hero_life_0_0) && h3_n == t9) h3_n = hero_handle_dead();
+#line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
+    }
 #line 28 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     t10 = h2_i;
 #line 28 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
@@ -220,7 +228,7 @@ bb3:
     hero_print_end();
 #line 31 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     return;
-#line 224 "deadaddressrememberedthroughamillionlaterends.c"
+#line 232 "deadaddressrememberedthroughamillionlaterends.c"
 }
 HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_Big_eq(big * const *a, big * const *b) {
     return hero_handle_eq(*a, *b);

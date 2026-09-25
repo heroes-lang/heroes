@@ -1,0 +1,44 @@
+# DEFECT 098: two threads that acquire and give back handles from ONE C
+# allocator, which is what every real allocator is, and a correct program
+# that aborted. The runtime records an end after C returns, so between C's
+# release and that record the other thread can be handed the same address:
+# the runtime replaced the live entry with the new life, and the first
+# thread's record then deleted it, so the second thread's correct release was
+# a stray, or its next read hit an address remembered as dead. `check` 0 and
+# `run` 134, ten times of ten, on Darwin arm64, Linux x86-64 and Linux arm64.
+#
+# Since runtime ABI 26 an end names the life it was announced for: the
+# announcement answers the life's number, the emitted C keeps it in the
+# call's block, and the end hands it back, so the first thread's end lands on
+# the life it gave back and the second thread's life stands. A race is not a
+# certainty, so this case is the class's witness and not its proof;
+# `fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life`
+# is the same interleaving, made deterministic on one thread.
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+extern "fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.h"
+    record S tag sn
+    function sn_new() -> S acquires sn_free
+    function sn_free(n: S consumes)
+    function sn_value(n: S) -> i64
+
+function worker(slot: i64) -> i64
+    total: i64 @ 0
+    i: i64 @ 0
+
+    while i < 200000
+        n = sn_new()
+        total @ total + sn_value(n: n)
+        sn_free(n: n)
+        i @ i + 1
+
+    return total + slot
+
+function main()
+    a = hero_thread_spawn(body: worker, arg: 0)
+    b = hero_thread_spawn(body: worker, arg: 1)
+    print("a ", hero_thread_join(handle: a))
+    print("b ", hero_thread_join(handle: b))

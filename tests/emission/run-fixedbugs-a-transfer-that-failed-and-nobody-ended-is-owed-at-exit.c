@@ -5,7 +5,7 @@
 #include <fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -145,21 +145,25 @@ bb0:
 #line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     t8 = INT64_C(1);
 #line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
+    {
+#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     hero_handle_alive(t6, "the argument `parent` of `node_add`");
 #line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     hero_handle_alive(t7, "the argument `child` of `node_add`");
 #line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    hero_handle_transferring(t7, "node_put");
+    uint64_t hero_life_1_0 = hero_handle_transferring(t7, "node_put");
 #line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     t9 = node_add(t6, t7, t8);
 #line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     if (t9 == 0LL) {
 #line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    if (hero_handle_ended(t7) && h1_child == t7) h1_child = hero_handle_dead();
+    if (hero_handle_ended(t7, hero_life_1_0) && h1_child == t7) h1_child = hero_handle_dead();
 #line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     } else {
 #line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    hero_handle_kept(t7);
+    hero_handle_kept(t7, hero_life_1_0);
+#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
+    }
 #line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     }
 #line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
@@ -171,16 +175,20 @@ bb0:
 #line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     t10 = h0_parent;
 #line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
+    {
+#line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     hero_handle_alive(t10, "the argument `n` of `node_put`");
 #line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    hero_handle_ending(t10, "node_put", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t10, "node_put", NULL);
 #line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     (void)node_put(t10);
 #line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    if (hero_handle_ended(t10) && h0_parent == t10) h0_parent = hero_handle_dead();
+    if (hero_handle_ended(t10, hero_life_0_0) && h0_parent == t10) h0_parent = hero_handle_dead();
+#line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
+    }
 #line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     return;
-#line 184 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
+#line 192 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

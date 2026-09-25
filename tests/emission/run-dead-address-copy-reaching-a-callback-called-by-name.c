@@ -5,7 +5,7 @@
 #include <dead-address-copy-reaching-a-callback-called-by-name.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -209,13 +209,17 @@ bb0:
 #line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t4 = h0_mine;
 #line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
+    {
+#line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     hero_handle_alive(t4, "the argument `n` of `node_free`");
 #line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_handle_ending(t4, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t4, "node_free", NULL);
 #line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     (void)node_free(t4);
 #line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    if (hero_handle_ended(t4) && h0_mine == t4) h0_mine = hero_handle_dead();
+    if (hero_handle_ended(t4, hero_life_0_0) && h0_mine == t4) h0_mine = hero_handle_dead();
+#line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
+    }
 #line 25 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t5 = HERO_STR_LIT(hero_str_5bfed3fb);
 #line 25 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
@@ -244,10 +248,10 @@ bb0:
     hero_print_int(t12);
 #line 26 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     hero_print_end();
-#line 248 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 252 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_decref(h1_keep);
 #line 26 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-#line 251 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 255 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_decref(h2_own2);
     return;
 }
