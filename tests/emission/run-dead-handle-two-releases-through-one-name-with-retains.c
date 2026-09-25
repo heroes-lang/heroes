@@ -5,7 +5,7 @@
 #include <dead-handle-two-releases-through-one-name-with-retains.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -142,7 +142,7 @@ bb0:
 #line 20 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     t4 = ob_up_ref(t3);
 #line 20 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
-    hero_handle_retained(t3, "ob_put");
+    hero_handle_retained(t3, "ob_put", 0);
 #line 20 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     if (t4 == 1LL) {
 #line 20 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
@@ -174,13 +174,17 @@ bb1:
 #line 22 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     t10 = h0_cert;
 #line 22 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
+    {
+#line 22 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     hero_handle_alive(t10, "the argument `a` of `ob_put`");
 #line 22 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
-    hero_handle_ending(t10, "ob_put", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t10, "ob_put", NULL);
 #line 22 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     (void)ob_put(t10);
 #line 22 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
-    if (hero_handle_ended(t10) && h0_cert == t10) h0_cert = hero_handle_dead();
+    if (hero_handle_ended(t10, hero_life_0_0) && h0_cert == t10) h0_cert = hero_handle_dead();
+#line 22 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
+    }
 #line 23 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     t11 = HERO_STR_LIT(hero_str_7034b02b);
 #line 23 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
@@ -198,13 +202,17 @@ bb1:
 #line 24 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     t14 = h0_cert;
 #line 24 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
+    {
+#line 24 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     hero_handle_alive(t14, "the argument `a` of `ob_put`");
 #line 24 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
-    hero_handle_ending(t14, "ob_put", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t14, "ob_put", NULL);
 #line 24 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     (void)ob_put(t14);
 #line 24 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
-    if (hero_handle_ended(t14) && h0_cert == t14) h0_cert = hero_handle_dead();
+    if (hero_handle_ended(t14, hero_life_0_0) && h0_cert == t14) h0_cert = hero_handle_dead();
+#line 24 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
+    }
 #line 25 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     t15 = HERO_STR_LIT(hero_str_2507a7e5);
 #line 25 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
@@ -216,7 +224,7 @@ bb1:
 #line 25 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
 bb2:
 #line 20 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
-#line 220 "deadhandletworeleasesthroughonenamewithretains.c"
+#line 228 "deadhandletworeleasesthroughonenamewithretains.c"
     hero_panic_assert_sides(t2, hero_int_to_str(t4), hero_int_to_str(t5));
     hero_unreachable();
 }

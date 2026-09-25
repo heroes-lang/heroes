@@ -5,7 +5,7 @@
 #include <limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -173,13 +173,17 @@ bb0:
 #line 31 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     t4 = h0_a;
 #line 31 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
+    {
+#line 31 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     hero_handle_alive(t4, "the argument `n` of `node_free`");
 #line 31 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
-    hero_handle_ending(t4, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t4, "node_free", NULL);
 #line 31 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     (void)node_free(t4);
 #line 31 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
-    if (hero_handle_ended(t4) && h0_a == t4) h0_a = hero_handle_dead();
+    if (hero_handle_ended(t4, hero_life_0_0) && h0_a == t4) h0_a = hero_handle_dead();
+#line 31 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
+    }
 #line 32 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     t5 = HERO_STR_LIT(hero_str_12576dd3);
 #line 32 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
@@ -192,7 +196,7 @@ bb0:
     hero_print_end();
 #line 32 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     return;
-#line 196 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 200 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 }
 HERO_TU_LOCAL bool h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

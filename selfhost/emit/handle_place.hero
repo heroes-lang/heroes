@@ -195,11 +195,12 @@ function is_fixed(c: state.Checked, f: containers.Function, value: i64) -> bool
 # where the argument was no place. `value` and `place` are the C texts with
 # the handle's suffix already on them, so a record's field and a fixed
 # array's element are poisoned one handle at a time, as they are released.
-function ended_line(value: str, place: str?) -> str
+# `life` is the local the announcement kept (defect 098).
+function ended_line(value: str, place: str?, life: str) -> str
     if place.is_err()
-        return "    hero_handle_ended(" + value + ");"
+        return "    hero_handle_ended(" + value + ", " + life + ");"
 
-    return "    if (hero_handle_ended(" + value + ") && " + place.must() + " == " + value + ") " + place.must() + " = hero_handle_dead();"
+    return "    if (hero_handle_ended(" + value + ", " + life + ") && " + place.must() + " == " + value + ") " + place.must() + " = hero_handle_dead();"
 
 ## Tests
 

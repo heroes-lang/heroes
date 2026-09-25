@@ -5,7 +5,7 @@
 #include <dead-handle-read-after-consume-through-one-name.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -152,15 +152,19 @@ bb1:
 #line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     t10 = h1_c;
 #line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
+    {
+#line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     hero_handle_alive(t7, "the argument `object` of `obj_add`");
 #line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     hero_handle_alive(t10, "the argument `item` of `obj_add`");
 #line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    hero_handle_ending(t10, "obj_add", NULL);
+    uint64_t hero_life_2_0 = hero_handle_ending(t10, "obj_add", NULL);
 #line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     (void)obj_add(t7, hero_cstr_nonnull(t9), t10);
 #line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    if (hero_handle_ended(t10) && h1_c == t10) h1_c = hero_handle_dead();
+    if (hero_handle_ended(t10, hero_life_2_0) && h1_c == t10) h1_c = hero_handle_dead();
+#line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
+    }
 #line 28 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     t12 = HERO_STR_LIT(hero_str_1ca80789);
 #line 28 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
@@ -174,20 +178,24 @@ bb2:
 #line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     t5 = h0_b;
 #line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
+    {
+#line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     hero_handle_alive(t5, "the argument `item` of `obj_delete`");
 #line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    hero_handle_ending(t5, "obj_delete", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t5, "obj_delete", NULL);
 #line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     (void)obj_delete(t5);
 #line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    if (hero_handle_ended(t5) && h0_b == t5) h0_b = hero_handle_dead();
+    if (hero_handle_ended(t5, hero_life_0_0) && h0_b == t5) h0_b = hero_handle_dead();
+#line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
+    }
 #line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     goto bb1;
 #line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
 bb3:
 #line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     goto bb1;
-#line 191 "deadhandlereadafterconsumethroughonename.c"
+#line 199 "deadhandlereadafterconsumethroughonename.c"
 }
 HERO_TU_LOCAL bool h_deadhandlereadafterconsumethroughonename_Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);

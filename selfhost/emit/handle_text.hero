@@ -5,9 +5,43 @@
 # halves of the traffic, before the call and after it, spell these the same
 # way because they are written here once.
 
+use ast
 use token
 use source
 use handles
+use parse
+
+# THE LIFE AN END IS ANNOUNCED FOR, and where the C keeps it (defect 098). An
+# address is not an identity: C can release one inside a call and hand it out
+# again, to another thread or to a callback, before the call returns, so the
+# runtime answers each announcement with the number of the life it belongs to
+# and takes it back with the end. The number lives in a local of the call's own
+# block, one per argument and per handle the argument reaches, spelled from the
+# argument's position and the handle's index among its suffixes: the
+# announcement and the end name the same local without either being told
+# about the other.
+function life_c(at: i64, k: i64) -> str
+    return "hero_life_" + at.to_str() + "_" + k.to_str()
+
+# Does this call announce an end, a `consumes` or a `transfers` position? Then
+# its C opens a block for the lives, and a reference it takes may be joining
+# the life it is itself ending, which the runtime is told (`ends_here`).
+function announces(decls: [ast.Decl], decl: i64) -> bool
+    match decls[decl].kind
+        .function_decl fd =>
+            for p in fd.value.params
+                if p.consumes || !p.transfers.is_err()
+                    return true
+
+            return false
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+# `ends_here` as the C the runtime reads.
+function ends_here_c(decls: [ast.Decl], decl: i64) -> str
+    if announces(decls, decl: decl)
+        return "1"
+
+    return "0"
 
 # The place of one handle a record reaches: the record's place with the same
 # suffix the value carries.
@@ -38,3 +72,21 @@ function cell_of(argument: str) -> str
     if argument.len() > 1 && argument[0] == 38
         return argument.slice(from: 1, to: argument.len())
     return argument
+
+## Tests
+
+# The announcement and the end spell one local per handle, and only a call
+# that ends or transfers something opens a block to keep the lives in.
+test "an end's life is named by its position and index, and only a call that ends something keeps one"
+    assert life_c(at: 0, k: 0) == "hero_life_0_0"
+    assert life_c(at: 2, k: 1) == "hero_life_2_1"
+    text = "extern \"m.h\"\n    record Ob tag ob\n    function ob_put(a: Ob consumes)\n    function ob_give(a: Ob transfers ob_put, b: Ob)\n    function ob_look(a: Ob) -> i64\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    assert source.span_text(s, parsed.decls[1].name) == "ob_put"
+    assert !announces(parsed.decls, decl: 0)
+    assert announces(parsed.decls, decl: 1)
+    assert announces(parsed.decls, decl: 2)
+    assert !announces(parsed.decls, decl: 3)
+    assert ends_here_c(parsed.decls, decl: 1) == "1"
+    assert ends_here_c(parsed.decls, decl: 3) == "0"

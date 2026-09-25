@@ -5,7 +5,7 @@
 #include <handle-a-discarded-reference-is-still-owed.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -134,7 +134,7 @@ bb0:
 #line 15 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     __typeof__(ob_get(t2)) hero_when = ob_get(t2);
 #line 15 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
-    hero_handle_retained(hero_when, "ob_put");
+    hero_handle_retained(hero_when, "ob_put", 0);
 #line 15 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     }
 #line 16 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
@@ -154,23 +154,31 @@ bb0:
 #line 17 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     t7 = h0_a;
 #line 17 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
+    {
+#line 17 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     hero_handle_alive(t7, "the argument `o` of `ob_put`");
 #line 17 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
-    hero_handle_ending(t7, "ob_put", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t7, "ob_put", NULL);
 #line 17 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     (void)ob_put(t7);
 #line 17 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
-    if (hero_handle_ended(t7) && h0_a == t7) h0_a = hero_handle_dead();
+    if (hero_handle_ended(t7, hero_life_0_0) && h0_a == t7) h0_a = hero_handle_dead();
+#line 17 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
+    }
 #line 18 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     t8 = h0_a;
 #line 18 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
+    {
+#line 18 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     hero_handle_alive(t8, "the argument `o` of `ob_put`");
 #line 18 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
-    hero_handle_ending(t8, "ob_put", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t8, "ob_put", NULL);
 #line 18 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     (void)ob_put(t8);
 #line 18 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
-    if (hero_handle_ended(t8) && h0_a == t8) h0_a = hero_handle_dead();
+    if (hero_handle_ended(t8, hero_life_0_0) && h0_a == t8) h0_a = hero_handle_dead();
+#line 18 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
+    }
 #line 19 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     t9 = HERO_STR_LIT(hero_str_455ecde8);
 #line 19 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
@@ -179,7 +187,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     return;
-#line 183 "handleadiscardedreferenceisstillowed.c"
+#line 191 "handleadiscardedreferenceisstillowed.c"
 }
 HERO_TU_LOCAL bool h_handleadiscardedreferenceisstillowed_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

@@ -5,7 +5,7 @@
 #include <dead-handle-a-place-the-same-call-writes-is-not-poisoned.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -125,15 +125,19 @@ bb0:
 #line 23 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     t2 = h0_a;
 #line 23 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
+    {
+#line 23 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     hero_handle_alive(t2, "the argument `n` of `node_swap`");
 #line 23 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
-    hero_handle_ending(t2, "node_swap", "node_free");
+    uint64_t hero_life_0_0 = hero_handle_ending(t2, "node_swap", "node_free");
 #line 23 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     (void)node_swap(t2, &h0_a);
 #line 23 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
-    hero_handle_ended(t2);
+    hero_handle_ended(t2, hero_life_0_0);
 #line 23 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     hero_handle_acquired(h0_a, "node_free");
+#line 23 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
+    }
 #line 24 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     t3 = HERO_STR_LIT(hero_str_c10bd3d);
 #line 24 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
@@ -151,16 +155,20 @@ bb0:
 #line 25 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     t6 = h0_a;
 #line 25 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
+    {
+#line 25 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     hero_handle_alive(t6, "the argument `n` of `node_free`");
 #line 25 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
-    hero_handle_ending(t6, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t6, "node_free", NULL);
 #line 25 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     (void)node_free(t6);
 #line 25 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
-    if (hero_handle_ended(t6) && h0_a == t6) h0_a = hero_handle_dead();
+    if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead();
+#line 25 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
+    }
 #line 25 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     return;
-#line 164 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
+#line 172 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
 }
 HERO_TU_LOCAL bool h_deadhandleaplacethesamecallwritesisnotpoisoned_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

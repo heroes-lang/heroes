@@ -29,6 +29,7 @@ use emit/handle_traffic
 use emit/handle_before
 use emit/handle_result
 use emit/handle_place
+use emit/handle_text
 use emit/callback_thunk
 use emit/printing
 use token
@@ -186,7 +187,12 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
             # `consumes` is told BEFORE the call, because a handle given back
             # twice must be caught while the second call has not run yet —
             # defect 071. `handle_traffic.hero` carries why the other end
-            # cannot move with it.
+            # cannot move with it. A call that announces an end keeps the
+            # lives the ends belong to in a block of its own (defect 098).
+            lives = handle_text.announces(decls, decl: e.decl)
+
+            if lives
+                writer.line(@w, text: "    {")
             handle_before.before_call(@w, c, s, decls: decls, decl: e.decl, arguments: guarded)
 
             for candidate in p.functions
@@ -240,6 +246,9 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
             )
 
             if keeps && assign.len() == 0
+                writer.line(@w, text: "    }")
+
+            if lives
                 writer.line(@w, text: "    }")
 
 # Every cstr argument of an extern call, wrapped in the runtime's null
