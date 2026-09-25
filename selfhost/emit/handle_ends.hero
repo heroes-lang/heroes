@@ -1,0 +1,52 @@
+# The ENDS of one C call, made good or withdrawn after it returns, each against
+# the life its announcement kept (defect 098). Cut out of
+# `emit/handle_traffic.hero` on 2026-09-26 at the `layout` suite's ceiling,
+# along the seam the lives drew: an end is the one line that names a life
+# the announcement before the call numbered (`emit/handle_before.hero`), so the
+# two halves of that pairing are spelled by one module each and by
+# `handle_text.life_c` between them. What the call does with references and
+# acquisitions stays in `handle_traffic`.
+
+use ast
+use source
+use check/state
+use check/reaches
+use emit/writer
+use emit/handle_place
+use emit/handle_text
+
+# The ends of one call, `consumes` and `transfers` positions or one kind of
+# them, each as `entry`: made good (`hero_handle_ended`) or withdrawn
+# (`hero_handle_kept`). An end made good poisons the argument's place when the
+# runtime answers that the life ended, one handle at a time.
+function ends(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], fd: ast.FunctionDecl, arguments: [str], places: [str?], entry: str, which: str)
+    at: i64 @ 0
+
+    for p in fd.params
+        if at < arguments.len()
+            written = state.written_type(c, p.ty)
+            wanted = p.consumes && which != "transfers" || !p.transfers.is_err() && which != "consumes"
+
+            if !written.is_err() && wanted
+                place: str? @ fail(code: "none", msg: "no place")
+
+                if at < places.len()
+                    place @ places[at]
+                k: i64 @ 0
+
+                # Each end hands back the life its announcement kept, named by
+                # the same position and index (`handle_text.life_c`), so it
+                # lands on the life it was announced for (defect 098).
+                for suffix in reaches.handle_suffixes(c, s, decls, ty: written.must())
+                    value = handle_text.cell_of(arguments[at]) + suffix
+                    life = handle_text.life_c(at: at, k: k)
+
+                    if entry == "hero_handle_ended"
+                        writer.line(
+                            @w,
+                            text: handle_place.ended_line(value: value, place: handle_text.with_suffix(place, suffix), life: life)
+                        )
+                    else
+                        writer.line(@w, text: "    " + entry + "(" + value + ", " + life + ");")
+                    k @ k + 1
+        at @ at + 1

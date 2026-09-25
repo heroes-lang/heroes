@@ -5,7 +5,7 @@
 #include <abort-handle-borrows-that-gives-away.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -133,16 +133,20 @@ bb0:
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     t5 = h0_a;
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
+    {
+#line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     hero_handle_alive(t5, "the argument `s` of `slot_close`");
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
-    hero_handle_ending(t5, "slot_close", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t5, "slot_close", NULL);
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     (void)slot_close(t5);
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
-    if (hero_handle_ended(t5) && h0_a == t5) h0_a = hero_handle_dead();
+    if (hero_handle_ended(t5, hero_life_0_0) && h0_a == t5) h0_a = hero_handle_dead();
+#line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
+    }
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     return;
-#line 146 "aborthandleborrowsthatgivesaway.c"
+#line 150 "aborthandleborrowsthatgivesaway.c"
 }
 HERO_TU_LOCAL bool h_aborthandleborrowsthatgivesaway_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

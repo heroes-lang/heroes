@@ -5,7 +5,7 @@
 #include <fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -155,13 +155,17 @@ bb0:
 #line 41 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     t6 = h0_a;
 #line 41 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
+    {
+#line 41 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     hero_handle_alive(t6, "the argument `o` of `release`");
 #line 41 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_handle_ending(t6, "release", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t6, "release", NULL);
 #line 41 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     (void)release(t6);
 #line 41 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    if (hero_handle_ended(t6) && h0_a == t6) h0_a = hero_handle_dead();
+    if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead();
+#line 41 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
+    }
 #line 42 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     t7 = HERO_STR_LIT(hero_str_2731e935);
 #line 42 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
@@ -192,7 +196,7 @@ bb0:
     hero_print_end();
 #line 43 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     return;
-#line 196 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 200 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

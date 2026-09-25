@@ -5,7 +5,7 @@
 #include <handle-alive-after-an-end-then-a-rebinding.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -129,13 +129,17 @@ bb0:
 #line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     t3 = h0_n;
 #line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
+    {
+#line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     hero_handle_alive(t3, "the argument `n` of `node_free`");
 #line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    hero_handle_ending(t3, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t3, "node_free", NULL);
 #line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     (void)node_free(t3);
 #line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    if (hero_handle_ended(t3) && h0_n == t3) h0_n = hero_handle_dead();
+    if (hero_handle_ended(t3, hero_life_0_0) && h0_n == t3) h0_n = hero_handle_dead();
+#line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
+    }
 #line 14 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     t4 = INT64_C(2);
 #line 14 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
@@ -161,16 +165,20 @@ bb0:
 #line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     t9 = h0_n;
 #line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
+    {
+#line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     hero_handle_alive(t9, "the argument `n` of `node_free`");
 #line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    hero_handle_ending(t9, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t9, "node_free", NULL);
 #line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     (void)node_free(t9);
 #line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    if (hero_handle_ended(t9) && h0_n == t9) h0_n = hero_handle_dead();
+    if (hero_handle_ended(t9, hero_life_0_0) && h0_n == t9) h0_n = hero_handle_dead();
+#line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
+    }
 #line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     return;
-#line 174 "handlealiveafteranendthenarebinding.c"
+#line 182 "handlealiveafteranendthenarebinding.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteranendthenarebinding_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

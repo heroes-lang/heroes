@@ -5,7 +5,7 @@
 #include <handle-alive-under-when-after-a-failed-end.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -136,19 +136,23 @@ bb0:
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     t2 = h0_d;
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
+    {
+#line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     hero_handle_alive(t2, "the argument `d` of `db_close`");
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_handle_ending(t2, "db_close", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t2, "db_close", NULL);
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     t3 = db_close(t2);
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     if (t3 == 0LL) {
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    if (hero_handle_ended(t2) && h0_d == t2) h0_d = hero_handle_dead();
+    if (hero_handle_ended(t2, hero_life_0_0) && h0_d == t2) h0_d = hero_handle_dead();
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     } else {
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_handle_kept(t2);
+    hero_handle_kept(t2, hero_life_0_0);
+#line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
+    }
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     }
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
@@ -184,19 +188,23 @@ bb0:
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     t10 = h0_d;
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
+    {
+#line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     hero_handle_alive(t10, "the argument `d` of `db_close`");
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_handle_ending(t10, "db_close", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t10, "db_close", NULL);
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     t11 = db_close(t10);
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     if (t11 == 0LL) {
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    if (hero_handle_ended(t10) && h0_d == t10) h0_d = hero_handle_dead();
+    if (hero_handle_ended(t10, hero_life_0_0) && h0_d == t10) h0_d = hero_handle_dead();
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     } else {
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_handle_kept(t10);
+    hero_handle_kept(t10, hero_life_0_0);
+#line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
+    }
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     }
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
@@ -213,7 +221,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     return;
-#line 217 "handlealiveunderwhenafterafailedend.c"
+#line 225 "handlealiveunderwhenafterafailedend.c"
 }
 HERO_TU_LOCAL bool h_handlealiveunderwhenafterafailedend_Db_eq(db * const *a, db * const *b) {
     return hero_handle_eq(*a, *b);

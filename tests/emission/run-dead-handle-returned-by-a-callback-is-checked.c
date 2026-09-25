@@ -5,7 +5,7 @@
 #include <dead-handle-returned-by-a-callback-is-checked.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -148,20 +148,24 @@ bb2:
 #line 22 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
     t5 = h1_m;
 #line 22 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
+    {
+#line 22 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
     hero_handle_alive(t5, "the argument `n` of `node_free`");
 #line 22 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
-    hero_handle_ending(t5, "node_free", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t5, "node_free", NULL);
 #line 22 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
     (void)node_free(t5);
 #line 22 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
-    if (hero_handle_ended(t5) && h1_m == t5) h1_m = hero_handle_dead();
+    if (hero_handle_ended(t5, hero_life_0_0) && h1_m == t5) h1_m = hero_handle_dead();
+#line 22 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
+    }
 #line 22 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
     goto bb1;
 #line 22 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
 bb3:
 #line 22 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
     goto bb1;
-#line 165 "deadhandlereturnedbyacallbackischecked.c"
+#line 169 "deadhandlereturnedbyacallbackischecked.c"
 }
 
 node * h_0cb_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) {
@@ -172,7 +176,7 @@ node * h_0cb_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) {
 
 #line 25 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
 void h_deadhandlereturnedbyacallbackischecked_main(void) {
-#line 176 "deadhandlereturnedbyacallbackischecked.c"
+#line 180 "deadhandlereturnedbyacallbackischecked.c"
     HeroStr t1 = {0};
     h_0fn_4dd6fcee t2;
     int64_t t3;
@@ -192,7 +196,7 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
     return;
-#line 196 "deadhandlereturnedbyacallbackischecked.c"
+#line 200 "deadhandlereturnedbyacallbackischecked.c"
 }
 HERO_TU_LOCAL bool h_deadhandlereturnedbyacallbackischecked_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

@@ -5,7 +5,7 @@
 #include <abort-handle-given-back-twice.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 25, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -140,26 +140,34 @@ bb0:
 #line 50 "tests/golden/run/abort-handle-given-back-twice.hero"
     t6 = h0_a;
 #line 50 "tests/golden/run/abort-handle-given-back-twice.hero"
+    {
+#line 50 "tests/golden/run/abort-handle-given-back-twice.hero"
     hero_handle_alive(t6, "the argument `s` of `slot_close`");
 #line 50 "tests/golden/run/abort-handle-given-back-twice.hero"
-    hero_handle_ending(t6, "slot_close", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t6, "slot_close", NULL);
 #line 50 "tests/golden/run/abort-handle-given-back-twice.hero"
     (void)slot_close(t6);
 #line 50 "tests/golden/run/abort-handle-given-back-twice.hero"
-    if (hero_handle_ended(t6) && h0_a == t6) h0_a = hero_handle_dead();
+    if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead();
+#line 50 "tests/golden/run/abort-handle-given-back-twice.hero"
+    }
 #line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
     t7 = h1_twice;
 #line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
+    {
+#line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
     hero_handle_alive(t7, "the argument `s` of `slot_close`");
 #line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
-    hero_handle_ending(t7, "slot_close", NULL);
+    uint64_t hero_life_0_0 = hero_handle_ending(t7, "slot_close", NULL);
 #line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
     (void)slot_close(t7);
 #line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
-    if (hero_handle_ended(t7) && h1_twice == t7) h1_twice = hero_handle_dead();
+    if (hero_handle_ended(t7, hero_life_0_0) && h1_twice == t7) h1_twice = hero_handle_dead();
+#line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
+    }
 #line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
     return;
-#line 163 "aborthandlegivenbacktwice.c"
+#line 171 "aborthandlegivenbacktwice.c"
 }
 HERO_TU_LOCAL bool h_aborthandlegivenbacktwice_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);
