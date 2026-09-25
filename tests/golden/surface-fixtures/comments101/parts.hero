@@ -1,0 +1,58 @@
+# A comment in the part of a value before its own bracket, and in both
+# parts: a map's key and its value, a receiver and its arguments, a callee,
+# an indexed base, and the prefix of a control form at a binary's right
+# edge. The first repair of defect 101 refused all but the base at exit 2;
+# the trunk moved each out of its bracket at exit 0. Each part holding a
+# comment is opened, and the rest of the value goes on its last line.
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function pick(n: i64) -> (function(i64) -> i64)
+    assert n >= 0
+    return twice
+
+function key() -> i64
+    m = {
+        g(
+            a: 1,  # inside a key
+            b: 2
+        ): g(
+            a: 3,  # inside its value
+            b: 4
+        )
+    }
+    return m.len()
+
+function receiver() -> i64
+    return [
+        1,  # in the receiver
+        2
+    ].slice(
+        from: 0,  # in the arguments
+        to: 1
+    ).len()
+
+function callee() -> i64
+    return pick(
+        1  # inside the callee
+    )(2)
+
+function base() -> i64
+    return [
+        1  # inside the base
+    ][0]
+
+function prefix(n: i64) -> i64
+    return g(
+        a: 1,  # in the prefix
+        b: 2
+    ) + match n
+        0 => 1
+        _ => 2
+
+function main()
+    print(key() + receiver() + callee() + base() + prefix(0))

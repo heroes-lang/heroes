@@ -1,0 +1,27 @@
+# Defect 099's refusal: the same comment with no blank line under it, directly
+# above the next declaration. The trunk printed it at that declaration's
+# column, where the re-parse took it as its doc, and the tree guard refused
+# at exit 2 a program `check` accepts. It stays in its block now, and `fmt`
+# adds only the blank line that separates two declarations. The three nested
+# ends of `g` go each to its own block, and the one at column 0 was always
+# the doc of the record under it, and stays so.
+
+function f()
+    print(0)
+    # after the last statement, directly above the next function
+function g(c: bool)
+    if c
+        print(1)
+        # at the `if` block
+    # at the body
+# at the file: the doc of the record under it
+record Point
+    x: i64
+    # after the last field, directly above the next declaration
+extern "x.h"
+    record Ob tag ob
+    # after the last member, directly above the next declaration
+function main()
+    f()
+    g(c: true)
+    print(Point(x: 1).x)

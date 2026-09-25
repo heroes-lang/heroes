@@ -1,0 +1,16 @@
+# The shape beside it at a group's head: a comment trailing a second
+# `extern` head with the same header. Merging the two groups drops that
+# head's line: the trunk refused at exit 2, and the first repair of defects
+# 096, 099 and 100 printed the comment under the first group's member as a
+# remark, at exit 0. `fmt` keeps the second head now, as it keeps one whose
+# merge would move a doc. This file is canonical: `fmt` prints it back byte
+# for byte.
+
+extern "x.h"
+    record Ob tag ob
+
+extern "x.h"  # on a second head with the same header
+    record Pool tag pool
+
+function main()
+    print(0)

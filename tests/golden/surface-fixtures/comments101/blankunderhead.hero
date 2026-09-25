@@ -1,0 +1,31 @@
+# The regression the repair of defect 096 made, found by the skeptic seat
+# 2026-09-25: a doc directly above a second `extern` head with the same
+# header, and a blank line under that head. `fmt` merges the two groups and
+# drops the second head, and it printed the blank line under that head
+# between the doc and its member, where the re-parse no longer reads it as
+# the doc: the tree guard refused at exit 2 what the trunk printed at exit 0.
+# Beside it, a doc of two lines above a third head with two blank lines under
+# it, the same; and a remark under a fourth head with a blank line between
+# them, which the trunk refused at exit 2 and the first repair printed with
+# that blank line above it. `fmt` prints this file merged, each doc directly
+# above its member, and the blank lines under a dropped head go with it.
+
+extern "x.h"
+    record Ob tag ob
+# the doc of Pool, above a second head with a blank line under it
+extern "x.h"
+
+    record Pool tag pool
+# the doc of ob_new, line one
+# and line two, above a third head with two blank lines under it
+extern "x.h"
+
+
+    function ob_new() -> Ob retains ob_put
+extern "x.h"
+
+    # a remark under a fourth head, a blank line between them
+    function ob_put(o: Ob consumes)
+
+function main()
+    print(0)
