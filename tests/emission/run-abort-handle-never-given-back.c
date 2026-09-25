@@ -5,7 +5,7 @@
 #include <abort-handle-never-given-back.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -151,12 +151,14 @@ bb0:
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     t10 = h0_a;
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_consumed(t10, "slot_close", NULL);
+    hero_handle_ending(t10, "slot_close", NULL);
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     (void)slot_close(t10);
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
+    hero_handle_ended(t10);
+#line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     return;
-#line 160 "aborthandlenevergivenback.c"
+#line 162 "aborthandlenevergivenback.c"
 }
 HERO_TU_LOCAL bool h_aborthandlenevergivenback_Slot_eq(Slot * const *a, Slot * const *b) {
     return *a == *b;

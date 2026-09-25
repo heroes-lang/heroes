@@ -5,7 +5,7 @@
 #include <fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -153,9 +153,11 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     t6 = h0_a;
 #line 32 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_handle_consumed(t6, "release", NULL);
+    hero_handle_ending(t6, "release", NULL);
 #line 32 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     (void)release(t6);
+#line 32 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
+    hero_handle_ended(t6);
 #line 33 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     t7 = HERO_STR_LIT(hero_str_2731e935);
 #line 33 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
@@ -184,7 +186,7 @@ bb0:
     hero_print_end();
 #line 34 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     return;
-#line 188 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 190 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_Outer_eq(outer * const *a, outer * const *b) {
     return *a == *b;

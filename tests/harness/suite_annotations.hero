@@ -104,7 +104,7 @@ constant RUN_ROOTS: [str]
 # floor at the real count: a mark this machine cannot ask is counted in
 # `stepped_aside` rather than dropped.
 constant LEAST: i64
-    319
+    420
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

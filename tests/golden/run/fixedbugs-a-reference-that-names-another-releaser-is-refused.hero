@@ -1,0 +1,19 @@
+# A reference must share a releaser with the life it joins (panel 176's item
+# 4 as its critic corrected it): the prototype REPLACED the live entry's set,
+# so a wrong release through a reference ran silent and the correct one
+# aborted. Here the reference names `ob_drop` on a handle acquired with
+# `ob_put`, and the runtime refuses the reference itself.
+extern "fixedbugs-a-reference-that-names-another-releaser-is-refused.h"
+    record Ob tag ob
+    function ob_new() -> Ob acquires ob_put
+    function ob_get(o: Ob) -> Ob retains ob_drop
+    function ob_put(o: Ob consumes)
+    function ob_drop(o: Ob consumes)
+
+function main()
+    a = ob_new()
+    print("acquired")
+    b = ob_get(o: a)
+    ob_drop(o: b)
+    ob_put(o: a)
+    print("not reached")

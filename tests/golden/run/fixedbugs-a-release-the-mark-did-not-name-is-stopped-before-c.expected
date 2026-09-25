@@ -1,2 +1,2 @@
 opened
-!panic: a C handle was given back to `h_close`, and the call that handed it over is marked `acquires p_close`
+!panic: a C handle was given back to `h_close`, and the mark that began its life names `p_close`

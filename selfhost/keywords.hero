@@ -114,6 +114,15 @@ constant WORD_ACQUIRES: str
 constant WORD_BORROWS: str
     "borrows"
 
+constant WORD_TRANSFERS: str
+    "transfers"
+
+constant WORD_RETAINS: str
+    "retains"
+
+constant WORD_WHEN: str
+    "when"
+
 # In declaration order, which is the order the command prints and the suite
 # compares as a sequence.
 function contextual() -> [str]
@@ -129,6 +138,9 @@ function contextual() -> [str]
         WORD_CONSUMES
         WORD_ACQUIRES
         WORD_BORROWS
+        WORD_TRANSFERS
+        WORD_RETAINS
+        WORD_WHEN
     ]
 
 # The closed list. A miss means the word is an ordinary identifier.
@@ -313,7 +325,7 @@ test "every keyword resolves and an identifier does not"
 
 test "a contextual word is never a keyword, and each is listed once"
     words = contextual()
-    assert words.len() == 11
+    assert words.len() == 14
 
     for word in words
         assert keyword(word).is_err()

@@ -1,0 +1,2 @@
+handed over
+!panic: or a handle given back after a call marked `transfers` handed it into another value, which ends it from now on

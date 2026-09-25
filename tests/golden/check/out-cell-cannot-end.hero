@@ -1,0 +1,20 @@
+# An `@` parameter is a cell C hands a handle OUT through; `consumes` and
+# `transfers` hand one IN. The two cannot sit on one parameter, and until
+# 2026-09-25 the refusal was `unmarked_handle_producer`, a message that denied
+# the word on the line. `cell_cannot_end` names the word, says what `@` means,
+# and offers the marks a cell can carry or dropping the `@` (panel 176's item
+# 2 for the words, panel 148 R5 for what a cell owes). `h_out` pins the shape
+# that is right, and `h_take` the same word on a parameter without `@`, which
+# is where it reads.
+extern "out-cell-cannot-end.h"
+    record H tag hh
+    function h_open() -> H acquires h_close
+    function h_close(x: H consumes)
+    function h_take(x: H consumes)
+    function h_eat(@p: H consumes)  #~ cell_cannot_end
+    function h_give(@p: H transfers h_close, keep: H)  #~ cell_cannot_end
+    function h_out(@p: H acquires h_close) -> i32
+
+function main()
+    a = h_open()
+    h_take(x: a)

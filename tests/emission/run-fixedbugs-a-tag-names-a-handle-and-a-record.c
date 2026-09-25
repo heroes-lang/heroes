@@ -5,7 +5,7 @@
 #include <netdb.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -163,12 +163,14 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t10 = h1_r;
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_handle_consumed(t10, "freeaddrinfo", NULL);
+    hero_handle_ending(t10, "freeaddrinfo", NULL);
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     (void)freeaddrinfo(t10);
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+    hero_handle_ended(t10);
+#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     return;
-#line 172 "fixedbugsatagnamesahandleandarecord.c"
+#line 174 "fixedbugsatagnamesahandleandarecord.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b) {
     return *a == *b;

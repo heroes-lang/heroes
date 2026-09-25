@@ -57,9 +57,9 @@
 use token
 use ast
 use source
-use handles
 use digits
 use print/types
+use print/marks
 use print/bodies
 use parse
 
@@ -521,7 +521,10 @@ function case_line(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
 
 # `-> ()` is never printed: a function that returns nothing writes no
 # arrow (§4.2's function main()), so the canonical form has one
-# spelling.
+# spelling — UNLESS a mark rides the result, because a mark is spelled only
+# after the arrow and a printer that dropped the arrow dropped the mark with
+# it: `-> () when 0` came back as no arrow and no clause, a different program
+# at a fixpoint, measured 2026-09-24 on `success-clause-misuse.hero`.
 function signature(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionDecl) -> str
     out: str @ "function " + name
 
@@ -545,50 +548,20 @@ function signature(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionD
         # program whose string C allocated is never freed, at exit 0 and with
         # no diagnostic. CLAUDE.md §9's list, and the reason it is a list.
         rendered @ rendered.push(
-            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + counted_by_suffix(s, param.counted_by) + bare_suffix(param.lent, word: "lent") + owned_suffix(s, param.owned) + bare_suffix(param.consumes, word: "consumes") + acquires_suffix(s, param.acquires) + bare_suffix(param.borrows, word: "borrows")
+            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + marks.counted_by_suffix(s, param.counted_by) + marks.bare_suffix(param.lent, word: "lent") + marks.owned_suffix(s, param.owned) + marks.bare_suffix(param.consumes, word: "consumes") + marks.named_suffix(s, param.transfers, word: "transfers") + marks.named_suffix(s, param.acquires, word: "acquires") + marks.named_suffix(s, param.retains, word: "retains") + marks.bare_suffix(param.borrows, word: "borrows")
         )
 
     out @ out + "(" + rendered.join(", ") + ")"
     result = types.render_type(tree, fd.result, s)
+    after = marks.owned_suffix(s, fd.owned_result) + marks.named_suffix(s, fd.acquires_result, word: "acquires") + marks.named_suffix(s, fd.retains_result, word: "retains") + marks.bare_suffix(fd.borrows_result, word: "borrows") + marks.when_suffix(s, fd.when_result)
 
-    if result != "()"
-        out @ out + " -> " + result + owned_suffix(s, fd.owned_result) + acquires_suffix(s, fd.acquires_result) + bare_suffix(fd.borrows_result, word: "borrows")
+    if result != "()" || after != ""
+        out @ out + " -> " + result + after
     return out
 
-# ` consumes`, or nothing. Printed because a formatter that has not learned a
-# new form does not error, it DROPS it — measured the hour the marker landed.
-# ` acquires curl_easy_cleanup`, or nothing. Written the hour the mark was,
-# because the unwritten version was MEASURED dropping the word at panel 148's
-# pricing: `@out: Db acquires` came back as `@out: Db`, exit 0, no diagnostic
-# (CL-036).
-# ` lent`, ` consumes`, ` borrows`, or nothing: the three bare words, one
-# printer, so a fourth cannot be forgotten in one of three copies (panel 171).
-function bare_suffix(on: bool, word: str) -> str
-    if !on
-        return ""
-    return " " + word
-
-function acquires_suffix(s: source.Source, mark: token.Span?) -> str
-    if mark.is_err()
-        return ""
-    return " acquires " + handles.releasers_spelled(source.span_text(s, mark.must()))
-
-# ` counted_by n`, or nothing (panel 166's route C). Written in the same commit
-# as the marker, which is what the two paragraphs above were paid to learn: a
-# printer that has not met a form does not error, it DELETES it, and here the
-# deletion would turn a checked extent back into the unchecked one defect 063
-# is about — silently, at exit 0, on a `fmt --in-place`.
-function counted_by_suffix(s: source.Source, mark: token.Span?) -> str
-    if mark.is_err()
-        return ""
-    return " counted_by " + source.span_text(s, mark.must())
-
-# ` owned sqlite3_free`, or nothing. Written once and read from both
-# positions, so the two cannot learn the form apart (§4.19, panel 109).
-function owned_suffix(s: source.Source, mark: token.Span?) -> str
-    if mark.is_err()
-        return ""
-    return " owned " + source.span_text(s, mark.must())
+# The words after a parameter or a result are `print/marks.hero`'s, one home
+# for both printers: a formatter that has not learned a form does not error,
+# it DROPS it, measured the hour `consumes` landed (CL-036).
 
 ## The statement walk (fmt_stmt)
 
@@ -1516,6 +1489,49 @@ test "fmt keeps a callback in an extern group, at every position the checker jud
         assert parsed.diagnostics.len() == 0
         s = source.new_source(name: "t.hero", text: text)
         assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
+
+test "fmt keeps a mark on a result that returns nothing, arrow and all"
+    # A mark is spelled only after `->`, and `-> ()` is otherwise never
+    # printed: `-> () when 0` came back with no arrow and no clause, a
+    # fixpoint and a different program (2026-09-24). The checker refuses a
+    # clause on a void result; the formatter runs before it and prints what
+    # it was given. Three shapes: the clause, another mark, and the bare
+    # `-> ()`, which still loses its arrow.
+    for text in ["extern \"x.h\"\n    record Ob tag ob\n    function take(o: Ob consumes) -> () when 0\n\nfunction main()\n    print(0)\n", "extern \"x.h\"\n    record Ob tag ob\n    function give(o: Ob) -> () acquires put\n\nfunction main()\n    print(0)\n"]
+        parsed = parse.parse(text)
+        assert parsed.diagnostics.len() == 0
+        s = source.new_source(name: "t.hero", text: text)
+        assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
+
+    bare = "function main() -> ()\n    print(0)\n"
+    parsed = parse.parse(bare)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: bare)
+    assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == "function main()\n    print(0)\n"
+
+test "fmt spells the success value as it spells every integer"
+    # Finding 6 of panel 177's landing: `when 0xFF` stayed `0xFF` while the
+    # `0xFF` of the expression under it became `0xff`, two spellings of one
+    # value in one canonical file. Same value either way, so the tree is the
+    # same and this is a formatting change, not a program change.
+    hex = "extern \"x.h\"\n    record Ob tag ob\n    function take(o: Ob consumes) -> i32 when 0xFF\n\nfunction main()\n    x = 0xFF\n    print(x)\n"
+    parsed = parse.parse(hex)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: hex)
+    assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == "extern \"x.h\"\n    record Ob tag ob\n    function take(o: Ob consumes) -> i32 when 0xff\n\nfunction main()\n    x = 0xff\n    print(x)\n"
+
+test "fmt prints the marks in the grammar's order, whatever order they were written"
+    # Finding 1 of panel 177's landing: the reader takes the words in any
+    # order, so the printer is what gives each signature one spelling, the
+    # grammar's (`spec § 13`'s `CParam` and `Member`). The same fields are set
+    # either way, so the tree is the same and `fmt` may write it. Three
+    # shapes: a parameter's two pointer words reversed, a parameter's freer
+    # after its handle word, and a result's clause before its mark.
+    written = "extern \"x.h\"\n    record Ob tag ob\n    function read(buf: ptr lent counted_by n, n: u64) -> i64\n    function make(o: Ob retains put owned free) -> Ob when 0 acquires put\n\nfunction main()\n    print(0)\n"
+    parsed = parse.parse(written)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: written)
+    assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == "extern \"x.h\"\n    record Ob tag ob\n    function read(buf: ptr counted_by n lent, n: u64) -> i64\n    function make(o: Ob owned free retains put) -> Ob acquires put when 0\n\nfunction main()\n    print(0)\n"
 
 test "fmt keeps `owned`, at both positions and beside the shapes that carry none"
     # CLAUDE.md §9 again, and this form is the one with teeth: a formatter that

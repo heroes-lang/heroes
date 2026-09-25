@@ -1,0 +1,24 @@
+# A transfer that happens only on success (panel 176's item 3, panel 177's
+# item 6): json-c's adders take the child when they return 0 and leave it with
+# the caller when they fail, so `when 0` on the result says which. The correct
+# program ends the child itself on the failure path and not on the success
+# path, and nothing is owed at exit.
+extern "handle-transfer-only-on-success-keeps-the-obligation.h"
+    record Node tag node
+    function node_new(v: i64) -> Node acquires node_put
+    function node_add(parent: Node, child: Node transfers node_put, outcome: i32) -> i32 when 0
+    function node_put(n: Node consumes)
+    function node_sum(n: Node) -> i64
+
+function main()
+    parent = node_new(v: 10)
+    child = node_new(v: 5)
+    rc = node_add(parent: parent, child: child, outcome: 1)
+    print("failed add: ", rc)
+
+    if rc != 0
+        node_put(n: child)
+    other = node_new(v: 7)
+    _ = node_add(parent: parent, child: other, outcome: 0)
+    print("sum: ", node_sum(n: parent))
+    node_put(n: parent)

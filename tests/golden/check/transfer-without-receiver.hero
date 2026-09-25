@@ -1,0 +1,15 @@
+# A transfer names where the life GOES (panel 177's item 7): another handle
+# parameter of the call, or the handle the call acquires as its result. A call
+# with one handle and no acquiring result has nowhere to hand it, so it ENDS
+# the value, and `transfers` on it is refused. Panel 177's llm-ergonomist wrote
+# `fclose(stream: File transfers pclose)` as a first repair for defect 075,
+# and its critic ran it: `pclose` was never called, three of three.
+extern "transfer-without-receiver.h"
+    record File tag fl
+    function fl_popen() -> File acquires fl_pclose
+    function fl_pclose(f: File consumes)
+    function fl_fclose(f: File transfers fl_pclose)  #~ transfer_without_receiver
+
+function main()
+    f = fl_popen()
+    fl_fclose(f: f)

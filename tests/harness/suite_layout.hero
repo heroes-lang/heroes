@@ -417,6 +417,20 @@ constant CEILING: i64
 # files pay for themselves: `parse/members.hero` and `print/fmt.hero` each
 # collapsed two identical five-line marker functions into one, so the third bare
 # word costs them a line each rather than five.
+#
+# **One moved on 2026-09-24, M-agreed-retention step 11, for panels 176 and
+# 177's three words.** `ast.hero` 527 -> **550** (measured 548): `transfers` and
+# `retains` are two spans on `record Param`, `retains` and `when` two on
+# `record FunctionDecl`'s result, each with the comment that says what it
+# means — the shape `lent` and `counted_by` took, on the file whose module doc
+# names the knot. The other three files the step pushed past their ceilings
+# were CUT along a seam instead, and each seam is a question: `check/releasers.hero`
+# asks whether what a mark names RESOLVES (out of `acquiring.hero`, which asks
+# whether the binding SAYS how a handle begins), `emit/printing.hero` is
+# `print`, which is not a call (out of `ops.hero`), and `print/marks.hero` is
+# the one printer of the words after a parameter or a result, shared by `fmt`
+# and `dump`, which held two copies of five functions until today; `fmt.hero`
+# reads 1141 against its 1175 afterwards.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1870"
@@ -424,7 +438,7 @@ constant DECIDED: [str]
         "selfhost/ir/flatten.hero 1150"
         "selfhost/grammar_expr.hero 1085"
         "selfhost/ir/print.hero 470"
-        "selfhost/ast.hero 527"
+        "selfhost/ast.hero 550"
         "selfhost/check/table.hero 389"
         "selfhost/check/builtins.hero 378"
         "selfhost/ir/mono.hero 380"

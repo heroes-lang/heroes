@@ -1,0 +1,27 @@
+# A transfer's receiver SURVIVES the call (panel 177's item 7). Until 2026-09-25
+# any other parameter reaching a handle counted as the place the life went, so
+# `fl_both` and `fl_gone` below checked clean, and at run both lives ended with
+# nobody owing them and `fl_close` never called. A parameter marked `consumes`
+# or `transfers` is gone when the call returns and keeps nothing; a receiver is
+# another handle parameter with neither word, or the result the call `acquires`
+# or `retains`. The refusal names the sibling it found and the word that
+# disqualifies it. `fl_keep`, `fl_cell` and `fl_wrap` pin the three shapes
+# that do count: a plain sibling, an `@` cell the call `acquires`, and an
+# acquiring result.
+extern "transfer-into-a-sibling-that-does-not-survive.h"
+    record File tag fl
+    record Wrap tag wr
+    function fl_open() -> File acquires fl_close
+    function fl_close(f: File consumes)
+    function fl_both(a: File transfers fl_close, b: File transfers fl_close)  #~ transfer_without_receiver transfer_without_receiver
+    function fl_gone(a: File transfers fl_close, b: File consumes)  #~ transfer_without_receiver
+    function fl_keep(a: File transfers fl_close, b: File)
+    function fl_cell(a: File transfers fl_close, @b: File acquires fl_close)
+    function fl_wrap(a: File transfers fl_close) -> Wrap acquires wr_free
+    function wr_free(w: Wrap consumes)
+
+function main()
+    a = fl_open()
+    b = fl_open()
+    fl_keep(a: a, b: b)
+    fl_close(f: b)

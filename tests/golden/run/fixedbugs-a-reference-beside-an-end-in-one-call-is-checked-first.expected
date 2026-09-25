@@ -1,0 +1,2 @@
+one handle, two positions
+!panic: a reference marked `retains ob_other` was taken to a C handle whose life a mark owed to `ob_put|ob_swap`

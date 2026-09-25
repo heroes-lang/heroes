@@ -17,9 +17,14 @@
 # header's own pointee, in the same `_Static_assert` unit, at the author's
 # line. The diagnostic is `ffi_parameter_type`, and its fix is a `guess`: drop
 # the `@`, or the header is short by a star.
+#
+# `acquires drop` since 2026-09-24: the mark used to name `eat`, which
+# `borrows` and so ends nothing, and `unread_releaser` reads every named
+# releaser now, not only where some `extern` consumes the type.
 extern "ffi-out-cell-on-a-handle-the-header-takes-by-value.h"
     record Mem tag void
-    function make() -> Mem acquires eat
+    function make() -> Mem acquires drop
+    function drop(p: Mem consumes)
     function eat(@p: Mem borrows)  #~ ffi_parameter_type
 
 function main()

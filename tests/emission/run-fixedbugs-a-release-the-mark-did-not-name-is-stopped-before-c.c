@@ -5,7 +5,7 @@
 #include <fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -127,9 +127,11 @@ bb0:
 #line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
     t3 = h0_a;
 #line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    hero_handle_consumed(t3, "h_close", NULL);
+    hero_handle_ending(t3, "h_close", NULL);
 #line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
     (void)h_close(t3);
+#line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
+    hero_handle_ended(t3);
 #line 20 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
     t4 = HERO_STR_LIT(hero_str_4414937d);
 #line 20 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
@@ -138,7 +140,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
     return;
-#line 142 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
+#line 144 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_H_eq(hh * const *a, hh * const *b) {
     return *a == *b;

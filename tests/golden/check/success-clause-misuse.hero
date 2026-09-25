@@ -1,0 +1,27 @@
+# `when <literal>` on a result (panel 177's item 6) says which result means
+# the call did what it was handed, so it needs something on the call that
+# happens only on success, a result to compare, and a literal of the result's
+# type. And one word per position (panel 176's vocabulary): a parameter is
+# consumed, transferred, acquired, retained or borrowed, never two of them.
+#
+# What happens only on success is a PARAMETER's mark. A `retains` result is a
+# handle, and a handle that comes back null is the call's own failure, so
+# `ob_get` has nothing for a clause to govern: until 2026-09-25 the result
+# counted, and `success_without_end`'s message offered a `retains` result as a
+# shape that satisfies `when` while `success_value_type` refused every clause
+# on one.
+extern "success-clause-misuse.h"
+    record Ob tag ob
+    function ob_new() -> Ob acquires ob_put
+    function ob_put(o: Ob consumes)
+    function ob_peek(o: Ob) -> i32 when 0  #~ success_without_end
+    function ob_get(o: Ob) -> Ob retains ob_put when 0  #~ success_without_end
+    function ob_take(o: Ob consumes) -> () when 0  #~ when_on_void
+    function ob_give(o: Ob consumes) -> i32 when true  #~ success_value_type
+    function ob_test(o: Ob consumes) -> bool when 1  #~ success_value_type
+    function ob_both(o: Ob consumes retains ob_put)  #~ one_mark_per_position
+
+function main()
+    a = ob_new()
+    print(ob_peek(o: a).to_str())
+    ob_put(o: a)

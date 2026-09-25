@@ -35,23 +35,34 @@ use ast
 use source
 use token
 use diag
+use parse
 use resolved
 use check/state
 use check/leasing
 
+# One position a call takes a handle at for good, and with which word: the
+# refusal says what the callee does with the value, and a transfer does not
+# end it (panel 176's item 2), so the word rides with the position.
+record Consumed
+    at: i64
+    transfers: bool
+
 # Every consuming parameter of a declaration, by position. Absent for anything
 # that is not a function, and empty for a function with no marked parameter,
 # which is almost all of them.
-function consuming_positions(decl: ast.Decl) -> [i64]
-    out: [i64] @ []
+function consuming_positions(decl: ast.Decl) -> [Consumed]
+    out: [Consumed] @ []
 
     match decl.kind
         .function_decl fd =>
             at: i64 @ 0
 
             for p in fd.value.params
-                if p.consumes
-                    out @ out.push(at)
+                # `transfers` ends the caller's obligation as `consumes` does
+                # (panel 176's item 2), so a borrowed value may not be handed to
+                # either.
+                if p.consumes || !p.transfers.is_err()
+                    out @ out.push(Consumed(at: at, transfers: !p.transfers.is_err()))
                 at @ at + 1
         .constant_decl | .record_decl | .variant_decl | .test_decl => out @ out
 
@@ -99,25 +110,32 @@ function refuse_borrowed(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
         return
     callee = source.span_text(s, decl.name)
 
-    for at in positions
-        if at >= given.len()
+    for one in positions
+        if one.at >= given.len()
             continue
-        borrowed = borrowed_root(a, r, at: given[at].value)
+        borrowed = borrowed_root(a, r, at: given[one.at].value)
 
         if !borrowed.is_err()
-            span = a.exprs[given[at].value].span
+            span = a.exprs[given[one.at].value].span
             state.push_diagnostic(
                 @c,
-                refusal(borrowed: source.span_text(s, a.exprs[borrowed.must()].span), callee: callee, span: span)
+                refusal(borrowed: source.span_text(s, a.exprs[borrowed.must()].span), callee: callee, transfers: one.transfers, span: span)
             )
 
 # The refusal. It names the parameter the caller borrowed, because that is the
-# name to put an `@` on, and the consuming function, because that is what ends
-# the value's life.
-function refusal(borrowed: str, callee: str, span: token.Span) -> diag.Diagnostic
+# name to put an `@` on, and the consuming function, because that is what takes
+# the value for good: a `consumes` ends its life, a `transfers` hands it into
+# another value that will (panel 176's item 2). Until 2026-09-25 the message
+# said "ends" of both. The repair is the same either way, which is why one code
+# carries both.
+function refusal(borrowed: str, callee: str, transfers: bool, span: token.Span) -> diag.Diagnostic
+    does: str @ "ends the life of what it is given"
+
+    if transfers
+        does @ "hands the life of what it is given into another value that will end it"
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "consumed_borrowed_handle",
-        message: "`" + callee + "` ends the life of what it is given, and `" + borrowed + "` was borrowed — this function promised not to change it",
+        message: "`" + callee + "` " + does + ", and `" + borrowed + "` was borrowed — this function promised not to change it",
         span: span
     )
     d.notes @ d.notes.push(
@@ -127,3 +145,23 @@ function refusal(borrowed: str, callee: str, span: token.Span) -> diag.Diagnosti
         "this refuses the call, not the copy: a copy made BEFORE the call still holds the freed address, and nothing here sees that. design.md Part 8 wart 20 states that cost and names what would close it"
     )
     return d
+
+## Tests
+
+test "the positions carry the word, and the message says what the callee does"
+    p = parse.parse(
+        "extern \"m.h\"\n    record H tag hh\n    function h_put(a: H transfers h_close, b: H consumes, keep: H)\n    function h_close(x: H consumes)\n"
+    )
+    positions = consuming_positions(p.decls[1])
+    assert positions.len() == 2
+    assert positions[0].at == 0
+    assert positions[0].transfers
+    assert positions[1].at == 1
+    assert !positions[1].transfers
+    assert consuming_positions(p.decls[0]).len() == 0
+    span = token.Span(start: 0, end: 1)
+    ended = refusal(borrowed: "h", callee: "free", transfers: false, span: span)
+    assert ended.message == "`free` ends the life of what it is given, and `h` was borrowed — this function promised not to change it"
+    handed = refusal(borrowed: "h", callee: "h_put", transfers: true, span: span)
+    assert handed.message == "`h_put` hands the life of what it is given into another value that will end it, and `h` was borrowed — this function promised not to change it"
+    assert handed.notes[0] == ended.notes[0]
