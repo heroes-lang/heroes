@@ -5,7 +5,7 @@
 #include <netdb.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -141,12 +141,14 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     t8 = h0_res;
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    hero_handle_consumed(t8, "freeaddrinfo", NULL);
+    hero_handle_ending(t8, "freeaddrinfo", NULL);
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     (void)freeaddrinfo(t8);
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
+    hero_handle_ended(t8);
+#line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     return;
-#line 150 "fixedbugsgetaddrinfoisbindable.c"
+#line 152 "fixedbugsgetaddrinfoisbindable.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b) {
     return *a == *b;

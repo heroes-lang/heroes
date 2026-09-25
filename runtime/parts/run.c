@@ -40,9 +40,14 @@
 #endif
 
 /* The argument list being built. Bounded rather than grown: the longest line
- * this compiler writes is a clang invocation, and 256 words is an order of
- * magnitude above it. Overflow is a panic, not a truncation. */
-#define HERO_RUN_MAX_ARGS 256
+ * this compiler writes is a clang invocation, and overflow is a panic, not a
+ * truncation. It said 256 words was "an order of magnitude above it" until
+ * 2026-09-25, when the link line of the compiler itself, one object per
+ * module, reached 233 words and the 234th module could not be added (found by
+ * the landing review of M-agreed-retention step 11). A line is one word per
+ * module plus the flags, and the kernel's own ceiling is megabytes, so the
+ * bound is set where no program this compiler builds will meet it. */
+#define HERO_RUN_MAX_ARGS 4096
 
 static _Thread_local char *hero_run_words[HERO_RUN_MAX_ARGS + 1];
 static _Thread_local int64_t hero_run_count = 0;
@@ -64,7 +69,7 @@ void hero_run_reset(void) {
  * disagree exactly when an argument would silently become a shorter one. */
 void hero_run_arg(HeroStr word) {
     if (hero_run_count >= HERO_RUN_MAX_ARGS) {
-        hero_panic("a command line reached 256 arguments");
+        hero_panic("a command line reached 4096 arguments");
     }
     size_t length = (size_t)hero_str_len(word);
     if (strlen(word.ptr) != length) {

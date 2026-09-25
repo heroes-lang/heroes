@@ -70,9 +70,10 @@ use ast
 use source
 use token
 use diag
-use handles
+use parse
 use check/state
 use check/reaches
+use check/decls as declared
 
 # Every handle type some `extern` function takes back. The map is keyed on the
 # handle's DECLARATION, which `one_tag_one_type` makes a program-wide identity.
@@ -82,6 +83,13 @@ use check/reaches
 # whether the parameter IS a handle left this map empty for every real binding
 # that frees a struct, and an empty map makes the whole rule return at its first
 # line (panel 149's critic).
+#
+# `consumes` alone, and not `transfers`, on purpose. A transfer ends nothing
+# (panel 176's item 2): the receiver's releaser does, and that releaser is
+# itself a `consumes` extern the transfer's set must name, so counting it here
+# loses nothing. Counting it did worse: for one day it made `taker_of` name a
+# transfer function as the taker, and the note prescribed `acquires <that
+# function>`, which `unread_releaser` then refused.
 function consumed_types(c: state.Checker, s: source.Source, decls: [ast.Decl]) -> {i64: bool}
     taken: {i64: bool} @ {}
 
@@ -143,12 +151,12 @@ function taker_of(c: state.Checker, s: source.Source, decls: [ast.Decl], handle:
 
     return fail(code: "absent", msg: "no extern of this program takes one back")
 
-# The rule itself.
+# The rule itself. It walks the declarations even when nothing consumes a
+# handle, because the `@` cell's refusal below does not depend on a taker: a
+# word that hands a handle IN is wrong on a cell whatever the rest of the
+# binding says.
 function bindings_say_which(@c: state.Checker, s: source.Source, decls: [ast.Decl])
     taken = consumed_types(c, s, decls)
-
-    if taken.len() == 0
-        return
 
     for decl in decls
         match decl.kind
@@ -157,78 +165,65 @@ function bindings_say_which(@c: state.Checker, s: source.Source, decls: [ast.Dec
                     result_handle = handle_behind(c, s, decls, node: fd.value.result)
 
                     if !result_handle.is_err() && !taken[result_handle.must().decl].is_err()
-                        if fd.value.acquires_result.is_err() && !fd.value.borrows_result
+                        if fd.value.acquires_result.is_err() && fd.value.retains_result.is_err() && !fd.value.borrows_result
                             state.push_diagnostic(
                                 @c,
                                 refusal_for(c, s, decls, handle: result_handle.must().decl, producer: decl.name, route: result_handle.must().path, at: decl.name)
-                            )
-                        else
-                            releaser_reads(
-                                @c,
-                                s,
-                                decls,
-                                mark: fd.value.acquires_result,
-                                reached: result_handle.must()
                             )
 
                     for p in fd.value.params
                         if p.mutable
                             behind = handle_behind(c, s, decls, node: p.ty)
 
-                            if !behind.is_err() && !taken[behind.must().decl].is_err()
-                                if p.acquires.is_err() && !p.borrows
-                                    state.push_diagnostic(
-                                        @c,
-                                        refusal_for(c, s, decls, handle: behind.must().decl, producer: decl.name, route: behind.must().path, at: p.name)
-                                    )
-                                else
-                                    releaser_reads(@c, s, decls, mark: p.acquires, reached: behind.must())
+                            if behind.is_err()
+                                continue
+
+                            # An `@` parameter is where C hands a handle OUT
+                            # into the program's cell; `consumes` and
+                            # `transfers` hand one IN. Refused before the
+                            # producer rule, which until 2026-09-25 answered
+                            # `@p: H consumes` with `unmarked_handle_producer`,
+                            # a message that denied the word on the line.
+                            if p.consumes || !p.transfers.is_err()
+                                word: str @ "consumes"
+
+                                if !p.transfers.is_err()
+                                    word @ "transfers"
+                                state.push_diagnostic(
+                                    @c,
+                                    cell_cannot_end(word: word, param: source.span_text(s, p.name), producer: source.span_text(s, decl.name), handle: source.span_text(s, decls[behind.must().decl].name), route: behind.must().path, span: p.name)
+                                )
+                                continue
+
+                            if !taken[behind.must().decl].is_err() && p.acquires.is_err() && p.retains.is_err() && !p.borrows
+                                state.push_diagnostic(
+                                    @c,
+                                    refusal_for(c, s, decls, handle: behind.must().decl, producer: decl.name, route: behind.must().path, at: p.name)
+                                )
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
-# The word a mark names has to name something, and the something has to END the
-# life the mark BEGINS. Two facts about declarations, neither of them a flow
-# question: the name resolves to an `extern` of this module, and that `extern`
-# consumes a parameter reaching the same handle.
-#
-# `borrows` gets no such check and needs none: it names no function, which is
-# the whole reason it is a bare word.
-function releaser_reads(@c: state.Checker, s: source.Source, decls: [ast.Decl], mark: token.Span?, reached: reaches.Reached)
-    if mark.is_err()
-        return
-    text = source.span_text(s, mark.must())
-    names = handles.releasers(text)
-    spans = handles.releaser_spans(text, at: mark.must())
-    index: i64 @ 0
+# The refusal of a word that hands a handle IN, written on a cell C hands one
+# OUT through. It names the word and what `@` means, and offers the three
+# repairs: the two marks a cell can carry, or dropping the `@` when the call
+# really takes the handle in (design.md §4.17: everything needed, on one line).
+function cell_cannot_end(word: str, param: str, producer: str, handle: str, route: str, span: token.Span) -> diag.Diagnostic
+    does: str @ "says the call takes a `" + handle + "` in and ends its life"
 
-    # Every name of the set, one at a time (defect 075): the diagnostic points
-    # at the one that does not resolve, and the others still count.
-    for named in names
-        if !ends_a_life(c, s, decls, named: named, reached: reached)
-            state.push_diagnostic(
-                @c,
-                unread_releaser(named: named, handle: source.span_text(s, decls[reached.decl].name), span: spans[index])
-            )
-        index @ index + 1
+    if word == "transfers"
+        does @ "says the call takes a `" + handle + "` in and hands its life into another value"
+    inside: str @ ""
 
-# Does an `extern` of this module by that name take the handle back with
-# `consumes`? The per-module reading is the message's own words, and it is the
-# local one: a verdict that read the whole program moved with a declaration in
-# another file (defect 085's shape, and the ground panel 176 refused the
-# call-site rule on).
-function ends_a_life(c: state.Checker, s: source.Source, decls: [ast.Decl], named: str, reached: reaches.Reached) -> bool
-    for decl in decls
-        match decl.kind
-            .function_decl fd =>
-                if fd.value.is_extern && source.span_text(s, decl.name) == named
-                    for p in fd.value.params
-                        if p.consumes
-                            behind = handle_behind(c, s, decls, node: p.ty)
-
-                            if !behind.is_err() && behind.must().decl == reached.decl
-                                return true
-            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
-
-    return false
+    if route != ""
+        inside @ " inside `" + route + "`"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "cell_cannot_end",
+        message: "`" + word + "` on `@" + param + "` of `" + producer + "` " + does + ", and `@` says the opposite: `" + param + "` is a cell `" + producer + "` writes into, where a `" + handle + "` comes out to the program" + inside + ", and a cell that receives a handle cannot end one",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "say how the handle the cell receives begins, with a mark on the cell: `acquires <releaser>` if the program owes its release, or `borrows` if the library keeps it. If `" + producer + "` really takes the handle in, drop the `@`: a parameter written without it hands the value to C, and `" + word + "` reads there"
+    )
+    return d
 
 # The refusal. It names the handle, the call that takes one back, and the two
 # words that answer it — because §4.17 asks that an error carry everything
@@ -280,16 +275,49 @@ function unmarked(producer: str, taker: str, where_taken: str, handle: str, rout
         )
     return d
 
-# The second refusal, and it exists because a mandatory word nobody reads is
-# worse than no word: design.md Part 6 calls it *a comment that looks like a
-# guarantee*.
-function unread_releaser(named: str, handle: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "unread_releaser",
-        message: "`" + named + "` does not end a `" + handle + "`'s life: no `extern` of this module declares it taking one back with `consumes`",
-        span: span
+## Tests
+
+# The declaration pass, then this module's rule, on one text.
+function driven(text: str) -> state.Checker
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    c: state.Checker @ declared.checked_file(text)
+    bindings_say_which(@c, s, p.decls)
+    return c
+
+function codes_of(c: state.Checker) -> [str]
+    out: [str] @ []
+
+    for d in c.out.diagnostics
+        out @ out.push(d.code)
+
+    return out
+
+test "a transfer takes nothing back: the taker the note prescribes is the one that ends"
+    c = driven(
+        "extern \"m.h\"\n    record H tag hh\n    function h_wrap(x: H transfers h_close, keep: H)\n    function h_close(x: H consumes)\n    function h_open() -> H\n"
     )
-    d.notes @ d.notes.push(
-        "`acquires` names the call that ENDS what this one begins, so the name has to be an `extern` in this module with a `" + handle + "` parameter marked `consumes`. Declare it, or write `borrows` if the library keeps the handle and the program owes nothing"
+    assert codes_of(c) == ["unmarked_handle_producer"]
+    assert c.out.diagnostics[0].message == "`h_open` hands back a `H` and does not say whether the program owes it — `h_close` takes one back, so this binding has said how a `H` ends and not how it begins"
+    unarmed = driven(
+        "extern \"m.h\"\n    record H tag hh\n    function h_wrap(x: H transfers h_close, keep: H)\n    function h_open() -> H\n"
     )
-    return d
+    assert codes_of(unarmed) == []
+
+test "a word that hands a handle in is refused on an out-cell, before the producer rule"
+    c = driven(
+        "extern \"m.h\"\n    record H tag hh\n    function h_close(x: H consumes)\n    function h_take(@p: H consumes)\n    function h_give(@p: H transfers h_close)\n    function h_out(@p: H acquires h_close)\n"
+    )
+    assert codes_of(c) == ["cell_cannot_end", "cell_cannot_end"]
+    assert c.out.diagnostics[0].message == "`consumes` on `@p` of `h_take` says the call takes a `H` in and ends its life, and `@` says the opposite: `p` is a cell `h_take` writes into, where a `H` comes out to the program, and a cell that receives a handle cannot end one"
+    assert c.out.diagnostics[1].message == "`transfers` on `@p` of `h_give` says the call takes a `H` in and hands its life into another value, and `@` says the opposite: `p` is a cell `h_give` writes into, where a `H` comes out to the program, and a cell that receives a handle cannot end one"
+    assert c.out.diagnostics[1].notes[0] == "say how the handle the cell receives begins, with a mark on the cell: `acquires <releaser>` if the program owes its release, or `borrows` if the library keeps it. If `h_give` really takes the handle in, drop the `@`: a parameter written without it hands the value to C, and `transfers` reads there"
+    routed = cell_cannot_end(
+        word: "consumes",
+        param: "p",
+        producer: "pair_take",
+        handle: "H",
+        route: ".s",
+        span: token.Span(start: 0, end: 1)
+    )
+    assert routed.message == "`consumes` on `@p` of `pair_take` says the call takes a `H` in and ends its life, and `@` says the opposite: `p` is a cell `pair_take` writes into, where a `H` comes out to the program inside `.s`, and a cell that receives a handle cannot end one"

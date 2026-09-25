@@ -5,7 +5,7 @@
 #include <fixedbugs-two-marks-on-one-call-are-two-obligations.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -136,15 +136,19 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     t4 = h0_a;
 #line 29 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_handle_consumed(t4, "slot_close", NULL);
+    hero_handle_ending(t4, "slot_close", NULL);
 #line 29 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     (void)slot_close(t4);
+#line 29 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
+    hero_handle_ended(t4);
 #line 30 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     t5 = h1_b;
 #line 30 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_handle_consumed(t5, "conn_close", NULL);
+    hero_handle_ending(t5, "conn_close", NULL);
 #line 30 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     (void)conn_close(t5);
+#line 30 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
+    hero_handle_ended(t5);
 #line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     t6 = HERO_STR_LIT(hero_str_455ecde8);
 #line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
@@ -153,7 +157,7 @@ bb0:
     hero_print_end();
 #line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     return;
-#line 157 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 161 "fixedbugstwomarksononecallaretwoobligations.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstwomarksononecallaretwoobligations_Slot_eq(Slot * const *a, Slot * const *b) {
     return *a == *b;

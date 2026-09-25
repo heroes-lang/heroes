@@ -31,8 +31,8 @@
 use token
 use ast
 use source
-use handles
 use print/types
+use print/marks
 use print/bodies
 use parse
 
@@ -167,47 +167,17 @@ function signature(tree: ast.Ast, s: source.Source, name: str, f: ast.FunctionDe
         if param.mutable
             marker @ "@"
         rendered @ rendered.push(
-            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + counted_by_suffix(s, param.counted_by) + bare_suffix(param.lent, word: "lent") + owned_suffix(s, param.owned) + bare_suffix(param.consumes, word: "consumes") + acquires_suffix(s, param.acquires) + bare_suffix(param.borrows, word: "borrows")
+            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + marks.counted_by_suffix(s, param.counted_by) + marks.bare_suffix(param.lent, word: "lent") + marks.owned_suffix(s, param.owned) + marks.bare_suffix(param.consumes, word: "consumes") + marks.named_suffix(s, param.transfers, word: "transfers") + marks.named_suffix(s, param.acquires, word: "acquires") + marks.named_suffix(s, param.retains, word: "retains") + marks.bare_suffix(param.borrows, word: "borrows")
         )
 
-    return out + "(" + rendered.join(", ") + ") -> " + types.render_type(tree, f.result, s) + owned_suffix(s, f.owned_result) + acquires_suffix(s, f.acquires_result) + bare_suffix(f.borrows_result, word: "borrows")
+    return out + "(" + rendered.join(", ") + ") -> " + types.render_type(tree, f.result, s) + marks.owned_suffix(s, f.owned_result) + marks.named_suffix(s, f.acquires_result, word: "acquires") + marks.named_suffix(s, f.retains_result, word: "retains") + marks.bare_suffix(f.borrows_result, word: "borrows") + marks.when_suffix(s, f.when_result)
 
-# ` owned sqlite3_free`, or nothing (§4.19, panel 109). **This dump is what
-# `heroes fmt` compares its own output against**, so a form missing HERE makes
-# the formatter's self-check agree with a formatter that is deleting it —
-# which is exactly how `as` shipped (CLAUDE.md §9).
-function owned_suffix(s: source.Source, mark: token.Span?) -> str
-    if mark.is_err()
-        return ""
-    return " owned " + source.span_text(s, mark.must())
-
-# ` consumes` and ` acquires <releaser>`, added 2026-09-14 — and `consumes` was
-# MISSING HERE from the day it landed, 2026-09-13, which is the paragraph above
-# describing itself. `heroes parse --dump-ast` printed
-# `function curl_easy_cleanup(handle: Curl) -> ()` for a program that says
-# `consumes`, so for one day the formatter's self-check could not have seen a
-# formatter deleting that word. Found by walking CL-036's list rather than by a
-# suite, which is what the list is for.
-# One printer for the three bare words, `lent` among them since panel 171.
-function bare_suffix(on: bool, word: str) -> str
-    if !on
-        return ""
-    return " " + word
-
-function acquires_suffix(s: source.Source, mark: token.Span?) -> str
-    if mark.is_err()
-        return ""
-    return " acquires " + handles.releasers_spelled(source.span_text(s, mark.must()))
-
-# ` counted_by n`, or nothing (panel 166's route C). **This dump is what
-# `heroes fmt` compares its own output against**, so the form is owed here the
-# hour it lands, or the formatter's self-check agrees with a formatter that is
-# deleting the mark — which is the paragraph two functions up, describing what
-# happened to `consumes` for a day.
-function counted_by_suffix(s: source.Source, mark: token.Span?) -> str
-    if mark.is_err()
-        return ""
-    return " counted_by " + source.span_text(s, mark.must())
+# The words after a parameter or a result are `print/marks.hero`'s, shared
+# with `fmt`. **This dump is what `heroes fmt` compares its own output
+# against**, so a form missing from the printer would make the self-check
+# agree with a formatter that is deleting it — which is exactly how `as`
+# shipped (CLAUDE.md §9), and how `consumes` was missing here for a day after
+# it landed, 2026-09-13. One home for both printers closes that class.
 
 function case_lines(tree: ast.Ast, s: source.Source, one_case: ast.Case) -> str
     out: str @ "    case " + source.span_text(s, one_case.name) + "\n"

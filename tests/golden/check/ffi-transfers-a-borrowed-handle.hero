@@ -1,0 +1,30 @@
+# Defect 031's rule at a `transfers` position (panel 145; panel 176's item 2).
+# A transfer ends the caller's obligation as `consumes` does, so a borrowed
+# value may not be handed to either, and the refusal is the same code. What
+# differs is what it says the callee does: a transfer hands the life into
+# another value that will end it, and until 2026-09-25 the message said the
+# callee "ends the life of what it is given" here too, which is false of
+# `h_put`. The repair in the note, `@` on both lines, is the same.
+extern "ffi-transfers-a-borrowed-handle.h"
+    record H tag hh
+    function h_open() -> H acquires h_close
+    function h_close(x: H consumes)
+    function h_put(parent: H, child: H transfers h_close)
+
+record Holder
+    cell: H
+
+# The refusal. `h` is borrowed, and `h_put` hands what it is given away.
+function attached(parent: H, h: Holder)
+    h_put(parent: parent, child: h.cell)  #~ consumed_borrowed_handle
+
+# An `@` parameter says on the signature that the value does not survive.
+function attached_well(parent: H, @h: Holder)
+    h_put(parent: parent, child: h.cell)
+
+function main()
+    root = h_open()
+    a: Holder @ Holder(cell: h_open())
+    attached(parent: root, h: a)
+    attached_well(parent: root, @a)
+    h_close(x: root)

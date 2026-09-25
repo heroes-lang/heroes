@@ -1,0 +1,21 @@
+# A transfer hands the life INTO another value, which will end it with the
+# call the mark names (panel 176's item 2). The handle's own set must name that
+# call: here the stream was acquired with `st_pclose` and the wrapper ends it
+# with `st_fclose`, so the transfer is refused before C runs, the way a wrong
+# release is (defect 075). Before panel 176 there was no word for a transfer,
+# and `BIO_new_fp` over a `popen` stream was check 0 and run 0.
+extern "fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.h"
+    record Stream tag st
+    record Wrap tag wr
+    function st_popen() -> Stream acquires st_pclose
+    function st_pclose(s: Stream consumes)
+    function st_fclose(s: Stream consumes)
+    function wr_new(s: Stream transfers st_fclose) -> Wrap acquires wr_free
+    function wr_free(w: Wrap consumes)
+
+function main()
+    s = st_popen()
+    print("opened")
+    w = wr_new(s: s)
+    wr_free(w: w)
+    print("not reached")

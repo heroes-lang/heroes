@@ -14,9 +14,13 @@
 # those was a measured defect.
 
 use ast
+use token
 use source
 use handles
+use digits
+use widths
 use check/state
+use check/table
 use check/reaches
 use emit/writer
 
@@ -34,101 +38,222 @@ use emit/writer
 # A mark whose value cannot be named emits a comment into the C rather than
 # nothing, because a silently skipped record is the defect this whole mechanism
 # exists to catch, and a reader of a strange balance needs to find it.
-function for_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str], target: str?)
+#
+# **THE ORDER IS THE MEANING**, measured at the landing review of 2026-09-24.
+# References first, so a handle at a `consumes` position and a `retains`
+# position of one call is checked against its own set before the end removes
+# it. Then the ends, made good on success and WITHDRAWN on failure
+# (`hero_handle_kept`): the runtime counted the end as pending before C ran,
+# which is what stops one call taking one handle at two consuming positions
+# before the library frees it twice (defect 084). Then the acquisitions, last,
+# because a call that ends one life and begins another at the SAME address —
+# `freopen`, `realloc` in place — told the other way round lost the reopened
+# stream: `handle-set-a-call-that-also-acquires-pays-its-own-mark` at 134.
+function after_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str], target: str?, when: str?)
     match decls[decl].kind
         .function_decl fd =>
+            if !when.is_err() && target.is_err()
+                writer.line(@w, text: "    /* heroes: a success clause with no result to read */")
+                return
+
+            # A transfer into the handle the call hands back is not made when
+            # that handle is NULL, C's failure for a pointer result (panel
+            # 177's item 6): a `realloc` that failed leaves the block with the
+            # caller, who still owes it.
+            nullable = when.is_err() && !target.is_err() && transfers_any(fd.value) && nullable_result(c, s, decls, fd: fd.value)
+            at: i64 @ 0
+
+            for p in fd.value.params
+                if at < arguments.len() && !p.retains.is_err()
+                    written = state.written_type(c, p.ty)
+
+                    if !written.is_err()
+                        emit_each(
+                            @w,
+                            c,
+                            s,
+                            decls,
+                            ty: written.must(),
+                            value: cell_of(arguments[at]),
+                            entry: "hero_handle_retained",
+                            tail: ", " + set_c(s, p.retains.must())
+                        )
+                at @ at + 1
+
+            # Everything the call does with a life it was handed happens only
+            # on success when the declaration says which result that is: the
+            # ends, the transfers and the references, inside one `if`, and the
+            # ends withdrawn in its `else`.
+            if !when.is_err()
+                writer.line(@w, text: "    if (" + target.must() + " == " + when.must() + ") {")
+                ends(@w, c, s, decls, fd: fd.value, arguments: arguments, entry: "hero_handle_ended", which: "both")
+                retained_result(@w, c, s, decls, fd: fd.value, target: target)
+                writer.line(@w, text: "    } else {")
+                ends(@w, c, s, decls, fd: fd.value, arguments: arguments, entry: "hero_handle_kept", which: "both")
+                writer.line(@w, text: "    }")
+            else if nullable
+                ends(@w, c, s, decls, fd: fd.value, arguments: arguments, entry: "hero_handle_ended", which: "consumes")
+                writer.line(@w, text: "    if (" + target.must() + " != NULL) {")
+                ends(
+                    @w,
+                    c,
+                    s,
+                    decls,
+                    fd: fd.value,
+                    arguments: arguments,
+                    entry: "hero_handle_ended",
+                    which: "transfers"
+                )
+                writer.line(@w, text: "    } else {")
+                ends(@w, c, s, decls, fd: fd.value, arguments: arguments, entry: "hero_handle_kept", which: "transfers")
+                writer.line(@w, text: "    }")
+                retained_result(@w, c, s, decls, fd: fd.value, target: target)
+            else
+                ends(@w, c, s, decls, fd: fd.value, arguments: arguments, entry: "hero_handle_ended", which: "both")
+                retained_result(@w, c, s, decls, fd: fd.value, target: target)
+
+            # An acquisition is never governed by `when` (panel 177's item 6):
+            # `sqlite3_open` hands a connection back on error too, and the
+            # runtime already skips a null one. After the ends, see above.
             if !fd.value.acquires_result.is_err()
-                if target.is_err()
-                    writer.line(@w, text: "    /* heroes: an acquiring result with no destination */")
-                else
-                    written = state.written_type(c, fd.value.result)
+                result_mark(
+                    @w,
+                    c,
+                    s,
+                    decls,
+                    fd: fd.value,
+                    target: target,
+                    entry: "hero_handle_acquired",
+                    set: fd.value.acquires_result.must()
+                )
+            at @ 0
 
-                    if written.is_err()
-                        writer.line(@w, text: "    /* heroes: an acquiring result with no written type */")
-                    else
+            for p in fd.value.params
+                if at < arguments.len() && !p.acquires.is_err()
+                    written = state.written_type(c, p.ty)
+
+                    if !written.is_err()
                         emit_each(
                             @w,
                             c,
                             s,
                             decls,
                             ty: written.must(),
-                            value: target.must(),
+                            value: cell_of(arguments[at]),
                             entry: "hero_handle_acquired",
-                            by: quoted(handles.releasers_c(source.span_text(s, fd.value.acquires_result.must())))
+                            tail: ", " + set_c(s, p.acquires.must())
                         )
-            at: i64 @ 0
-
-            for p in fd.value.params
-                if at < arguments.len()
-                    written = state.written_type(c, p.ty)
-
-                    if !written.is_err()
-                        if !p.acquires.is_err()
-                            emit_each(
-                                @w,
-                                c,
-                                s,
-                                decls,
-                                ty: written.must(),
-                                value: cell_of(arguments[at]),
-                                entry: "hero_handle_acquired",
-                                by: quoted(handles.releasers_c(source.span_text(s, p.acquires.must())))
-                            )
-
                 at @ at + 1
         .constant_decl | .record_decl | .variant_decl | .test_decl => return
 
-# **`consumes` GOES BEFORE THE CALL, and `acquires` cannot** — defect 071,
-# 2026-09-20. A consumed handle's value exists before the call; an acquired
-# result does not exist until the call returns, and an acquiring `@`
-# out-parameter's cell is not written until then either. So the two ends sit on
-# opposite sides of the line, and the ordering is a fact about when each value
-# exists rather than a preference.
-#
-# WHAT IT COST TO LEARN. Until today both ends were emitted after the call, on
-# the ground that *the counter rides the call it belongs to … so the two are one
-# instruction to read* — a readability reason, and CLAUDE.md § Precedence puts
-# robustness at rank 3 and leaves that at none. Measured: a second `consumes` of
-# the same local reached C first and the process died inside the real
-# deallocator at exit 133 with **no message at all**, while the runtime's own
-# stray report — which names this exact program in three sentences — waited for
-# an exit the program never reached.
-#
-# AND THE CASE THAT WOULD HAVE CAUGHT IT SAID SO IN ITS OWN HEADER.
-# `tests/golden/run/abort-handle-given-back-twice.h`: *"`slot_close`
-# deliberately does nothing, so the second release below does not corrupt
-# anything on this machine and the case can assert the COUNT rather than a
-# crash. Against a real allocator the same program is a double free."* True,
-# written down, and never followed by the case that runs it against one. That
-# case is `fixedbugs-a-real-deallocator-given-the-same-handle-twice`.
-function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str])
+# The ends of one call, `consumes` and `transfers` positions or one kind of
+# them, each as `entry`: made good (`hero_handle_ended`) or withdrawn
+# (`hero_handle_kept`).
+function ends(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], fd: ast.FunctionDecl, arguments: [str], entry: str, which: str)
+    at: i64 @ 0
+
+    for p in fd.params
+        if at < arguments.len()
+            written = state.written_type(c, p.ty)
+            wanted = p.consumes && which != "transfers" || !p.transfers.is_err() && which != "consumes"
+
+            if !written.is_err() && wanted
+                emit_each(@w, c, s, decls, ty: written.must(), value: arguments[at], entry: entry, tail: "")
+        at @ at + 1
+
+# A `retains` result joins the life it finds, or begins one.
+function retained_result(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], fd: ast.FunctionDecl, target: str?)
+    if fd.retains_result.is_err()
+        return
+    result_mark(@w, c, s, decls, fd: fd, target: target, entry: "hero_handle_retained", set: fd.retains_result.must())
+
+# A result that begins a life and is one bare handle, so NULL is what C hands
+# back on failure and the C can ask. A record reaching handles is not a
+# pointer, and a result that begins no life has no failure the transfer cares
+# about.
+# Does any parameter hand its life into the call? Without one the NULL guard
+# would be an empty `if`, and the C says nothing it does not need to.
+function transfers_any(fd: ast.FunctionDecl) -> bool
+    for p in fd.params
+        if !p.transfers.is_err()
+            return true
+
+    return false
+
+function nullable_result(c: state.Checked, s: source.Source, decls: [ast.Decl], fd: ast.FunctionDecl) -> bool
+    if fd.acquires_result.is_err()
+        return false
+    written = state.written_type(c, fd.result)
+
+    if written.is_err()
+        return false
+    suffixes = reaches.handle_suffixes(c, s, decls, ty: written.must())
+    return suffixes.len() == 1 && suffixes[0] == ""
+
+# Does the call read its own result after C returns, even where the program
+# discarded it? A result that begins or joins a life is told to the runtime
+# whatever the program does with it, so `_ = ob_get(o: a)` owes its reference
+# and `_ = ob_new()` its release (the landing review, 2026-09-24: both exited
+# 0 with nothing owed, the reference silently short). `ops.hero` then keeps
+# the value in a block-local, as it does for a success clause.
+function reads_result(decls: [ast.Decl], decl: i64) -> bool
+    match decls[decl].kind
+        .function_decl fd => return !fd.value.acquires_result.is_err() || !fd.value.retains_result.is_err()
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+# A mark on the RESULT: the assignment target is the value, and a call whose
+# result went nowhere has nothing to mark, which the C says rather than hides.
+function result_mark(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], fd: ast.FunctionDecl, target: str?, entry: str, set: token.Span)
+    if target.is_err()
+        writer.line(@w, text: "    /* heroes: a marked result with no destination */")
+        return
+    written = state.written_type(c, fd.result)
+
+    if written.is_err()
+        writer.line(@w, text: "    /* heroes: a marked result with no written type */")
+        return
+    emit_each(@w, c, s, decls, ty: written.must(), value: target.must(), entry: entry, tail: ", " + set_c(s, set))
+
+# The C constant `when` compares the result with, or absent: `1` or `0` for a
+# `bool`, and the integer's VALUE in decimal with the suffix of the result's
+# signedness, `0LL` or `255ULL`. Not the text as written: `1_000` is a § 2
+# literal and not a C one, `0o17` is C only on a clang that takes C2y, and a
+# bare `18446744073709551615` draws clang's own warning on the author's line
+# (the landing review, 2026-09-24). The checker holds the value to the
+# result's range, so a literal that does not decode never reaches here.
+function success_c(c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64) -> str?
     match decls[decl].kind
         .function_decl fd =>
-            at: i64 @ 0
-            by = consumer(s, fd.value, name: source.span_text(s, decls[decl].name))
+            if fd.value.when_result.is_err()
+                return fail(code: "none", msg: "no success clause")
+            text = source.span_text(s, fd.value.when_result.must())
 
-            for p in fd.value.params
-                if at < arguments.len() && p.consumes
-                    written = state.written_type(c, p.ty)
+            if text == "true"
+                return ok("1")
 
-                    if !written.is_err()
-                        emit_each(
-                            @w,
-                            c,
-                            s,
-                            decls,
-                            ty: written.must(),
-                            value: arguments[at],
-                            entry: "hero_handle_consumed",
-                            by: by
-                        )
-                at @ at + 1
-        .constant_decl | .record_decl | .variant_decl | .test_decl => return
+            if text == "false"
+                return ok("0")
+            value = digits.decode_u64(text)
+
+            if value.is_err()
+                return ok(text)
+            suffix: str @ "ULL"
+            written = state.written_type(c, fd.value.result)
+
+            if !written.is_err()
+                match table.get(c.types, written.must())
+                    .int_ty ik =>
+                        if widths.int_signed(ik.kind)
+                            suffix @ "LL"
+                    .bool | .unit | .float_ty | .str | .ptr | .cstr | .array | .fixed | .map    => suffix @ suffix
+                    .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error => suffix @ suffix
+            return ok(value.must().to_str() + suffix)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a function")
 
 # One line per handle the value reaches. None at all is a comment and not
 # silence: a marked declaration whose type reaches nothing is a binding the
 # checker should already have refused, so if one arrives here the C says so.
-function emit_each(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, value: str, entry: str, by: str)
+function emit_each(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, value: str, entry: str, tail: str)
     suffixes = reaches.handle_suffixes(c, s, decls, ty: ty)
 
     if suffixes.len() == 0
@@ -136,7 +261,11 @@ function emit_each(@w: writer.Writer, c: state.Checked, s: source.Source, decls:
         return
 
     for suffix in suffixes
-        writer.line(@w, text: "    " + entry + "(" + value + suffix + ", " + by + ");")
+        writer.line(@w, text: "    " + entry + "(" + value + suffix + tail + ");")
+
+# A releaser set as the C string literal the runtime reads.
+function set_c(s: source.Source, mark: token.Span) -> str
+    return quoted(handles.releasers_c(source.span_text(s, mark)))
 
 # The releaser set as a C string the runtime compares by CONTENT (panel 175's
 # route A, landed at panel 176's item 1): each module is its own translation
@@ -146,23 +275,6 @@ function emit_each(@w: writer.Writer, c: state.Checked, s: source.Source, decls:
 # everywhere.
 function quoted(text: str) -> str
     return "\"" + text + "\""
-
-# Who is giving the handle back, and what its own mark would let it pay. A
-# call that also ACQUIRES is a transfer of the old kind — `realloc`, `freopen` —
-# ending one life and beginning the next owed to its own releasers, so it may
-# take back a handle whose set shares a name with its own: `freopen` of an
-# `fopen` stream, never of a `popen` one. Panel 176's `transfers` is the
-# spelling that names this on purpose; until it lands, this is what the
-# runtime is told.
-function consumer(s: source.Source, fd: ast.FunctionDecl, name: str) -> str
-    if !fd.acquires_result.is_err()
-        return quoted(name) + ", " + quoted(handles.releasers_c(source.span_text(s, fd.acquires_result.must())))
-
-    for p in fd.params
-        if !p.acquires.is_err()
-            return quoted(name) + ", " + quoted(handles.releasers_c(source.span_text(s, p.acquires.must())))
-
-    return quoted(name) + ", NULL"
 
 # The cell behind `&cell`. An `@` parameter is emitted as an address-of, so this
 # reads the one character off the front; anything else is handed back whole,

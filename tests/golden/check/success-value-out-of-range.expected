@@ -1,0 +1,5 @@
+tests/golden/check/success-value-out-of-range.hero:13:51: error[success_value_range]: `when 300` compares the result of `ob_narrow` with a value it can never hold: the result is a `u8`, which holds 0 through 255
+tests/golden/check/success-value-out-of-range.hero:14:50: error[success_value_range]: `when 99999999999` compares the result of `ob_wide` with a value it can never hold: the result is an `i32`, which holds -2147483648 through 2147483647
+tests/golden/check/success-value-out-of-range.hero:15:50: error[success_value_range]: `when 18446744073709551616` compares the result of `ob_huge` with a value it can never hold: the result is a `u64`, which holds 0 through 18446744073709551615
+tests/golden/check/success-value-out-of-range.hero:16:50: error[success_value_range]: `when 0o400` compares the result of `ob_octal` with a value it can never hold: the result is a `u8`, which holds 0 through 255
+tests/golden/check/success-value-out-of-range.hero:17:51: error[success_value_range]: `when 128` compares the result of `ob_signed` with a value it can never hold: the result is an `i8`, which holds -128 through 127

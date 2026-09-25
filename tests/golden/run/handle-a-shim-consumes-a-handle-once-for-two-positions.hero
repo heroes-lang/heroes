@@ -1,0 +1,21 @@
+# The binding panel 176 asks for over `SSL_set_bio(s, b, b)` (defect 084): a
+# one-line C shim with ONE consuming position, so the transfer is counted
+# once, as the library counts it. The transfer names what the SSL will end the
+# BIO with, `bio_free`, and after `ssl_free` the program owes nothing.
+extern "handle-a-shim-consumes-a-handle-once-for-two-positions.h"
+    record Bio tag bio
+    record Ssl tag ssl
+    function bio_new() -> Bio acquires bio_free
+    function bio_free(b: Bio consumes)
+    function bio_refs(b: Bio) -> i64
+    function ssl_new() -> Ssl acquires ssl_free
+    function ssl_free(s: Ssl consumes)
+    function ssl_set_one_bio(s: Ssl, b: Bio transfers bio_free)
+
+function main()
+    s = ssl_new()
+    b = bio_new()
+    print("refs before: ", bio_refs(b: b))
+    ssl_set_one_bio(s: s, b: b)
+    ssl_free(s: s)
+    print("freed through the ssl")

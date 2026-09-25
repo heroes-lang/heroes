@@ -1,9 +1,9 @@
 # The words after a parameter's type or after a result: `owned <freer>`,
-# `acquires <releaser set>`, `counted_by <sibling>`, and the bare `lent`,
-# `consumes` and `borrows`. Every one is a contextual word (`keywords.hero`'s
-# table), read in the one position it can stand and an ordinary name everywhere
-# else, and every one only inside an `extern` group, since each names or
-# qualifies what a C header declares.
+# `acquires <releaser set>`, `counted_by <sibling>`, `when <literal>`, and the
+# bare `lent`, `consumes` and `borrows`. Every one is a contextual word
+# (`keywords.hero`'s table), read in the one position it can stand and an
+# ordinary name everywhere else, and every one only inside an `extern` group,
+# since each names or qualifies what a C header declares.
 #
 # **Split out of `parse/members.hero` on 2026-09-24**, the day the releaser set
 # (defect 075) took that file past § 11's 300 lines. The seam names a concern
@@ -11,10 +11,20 @@
 # `members.params` and after a result in `tails`, and the cycle rule forbids
 # either of those modules from holding them for the other, which is what the
 # paragraph under `owned` below used to explain about its old home.
+#
+# **Since 2026-09-25 this module holds one reader per WORD and the loop that
+# calls them is `members.read_marks`**, which takes the words in whatever
+# order the author wrote them (panel 177's landing, finding 1). The loop sits
+# in `members` and not here because a module of its own was measured
+# impossible that day: the build's link line carries one word per module and
+# the runtime's `HERO_RUN_MAX_ARGS` is 256, and the 234th module was the word
+# that reached it. `tails` reaches the loop through `members`, which it
+# already uses, so the ring stays open.
 
 use token
 use cursor
 use keywords
+use lexer
 
 # `owned <C function>` after a `cstr`, if it is there (§4.19, panel 109): the
 # C function that frees the string this signature hands the program.
@@ -61,27 +71,52 @@ function bare_marker(@c: cursor.Cursor, text: str, in_group: bool, word: str) ->
     _ = cursor.bump(@c)
     return true
 
-# `acquires <releaser>` after a handle result or `@` out-parameter: the call
-# BEGINS that handle's life and names the one that ends it (panel 148 R2).
+# The second of one word on one position (finding 1), reported at the second;
+# `members.read_marks` consumes the second's payload with it so no `)` or
+# member error follows. The three words that name a releaser set have a form
+# for two names and the repair says it; `when` takes one value; the rest are
+# dropped.
+function repeated(@c: cursor.Cursor, word: str, holder: str, at: token.Span)
+    repair: str @ "drop the second"
+
+    if word == keywords.WORD_ACQUIRES || word == keywords.WORD_TRANSFERS || word == keywords.WORD_RETAINS
+        repair @ "one `" + word + "` names the whole set, `" + word + " sqlite3_close | sqlite3_close_v2`, so join the releasers with `|` or drop the second"
+    else if word == keywords.WORD_WHEN
+        repair @ "a result has one success value, so keep the one the header states"
+    cursor.error(
+        @c,
+        code: "repeated_mark",
+        message: "`" + word + "` is written twice on " + holder + ", and a word is written once per position: " + repair,
+        span: at
+    )
+
+# The one reader behind the three words that name a releaser set: the word,
+# then `ident { "|" ident }`, handed on as one span that `handles.releasers`
+# splits. Three words and one reader, so the set's grammar cannot drift between
+# them; they differ only in the example each shows, which the loop passes.
 #
-# **It is `owned`'s shape and not `consumes`'s, and that is the sitting's
-# finding.** A bare word was the cheaper draft and the named one measured
-# CHEAPER still — +66 vendored against +70 — because naming the releaser is
-# what this repository already does one line away, at `owned sqlite3_free`, and
-# what GCC does at `__attribute__((malloc (fclose, 1)))`. It buys the class a
-# bare mark cannot see: closing a `CStmt` with `sqlite3_close`.
-# `borrows`, the third mark and the one that says NOTHING is owed. It carries no
-# name because there is no releaser to name.
-function acquires_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_ACQUIRES
-        return fail(code: "absent", msg: "nothing here is acquired")
+# `acquires <releaser>` after a handle result or `@` out-parameter: the call
+# BEGINS that handle's life and names the one that ends it (panel 148 R2). It
+# is `owned`'s shape and not `consumes`'s, and that is the sitting's finding:
+# a bare word was the cheaper draft and the named one measured CHEAPER still,
+# +66 vendored against +70, because naming the releaser is what this
+# repository already does one line away, at `owned sqlite3_free`, and what GCC
+# does at `__attribute__((malloc (fclose, 1)))`. It buys the class a bare mark
+# cannot see: closing a `CStmt` with `sqlite3_close`. `transfers <set>` after
+# a parameter names where the life goes by the releaser that will end it
+# there (panel 176's item 2); `retains <set>` sits on either position (panel
+# 176's item 4). `borrows`, the bare one, carries no name because there is no
+# releaser to name.
+function named_marker(@c: cursor.Cursor, text: str, in_group: bool, word: str, example: str) -> token.Span?
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != word
+        return fail(code: "absent", msg: "no " + word + " here")
     keyword = cursor.bump(@c).span
 
     if !cursor.at(c, .ident)
         cursor.error(
             @c,
             code: "expected_releaser",
-            message: "`acquires` names the C function that gives this handle back: `-> Curl acquires curl_easy_cleanup`",
+            message: "`" + word + "` names the C function that gives this handle back: " + example,
             span: cursor.here_or(c, keyword)
         )
         return fail(code: "absent", msg: "the releaser's name is missing")
@@ -96,17 +131,91 @@ function acquires_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.
     while cursor.at(c, .pipe)
         bar = cursor.bump(@c).span
 
+        # The caret sits on the `|` itself and never on the cursor: a bar at
+        # the end of the line continues it, so the current token is the NEXT
+        # declaration's first and the caret landed on a line the author had
+        # done nothing wrong on (panel 177's landing, finding 4).
         if !cursor.at(c, .ident)
             cursor.error(
                 @c,
                 code: "expected_releaser",
                 message: "`|` between releasers is followed by another C function that gives this handle back: `acquires sqlite3_close | sqlite3_close_v2`",
-                span: cursor.here_or(c, bar)
+                span: bar
             )
             return fail(code: "absent", msg: "a releaser's name is missing after `|`")
         last @ cursor.bump(@c).span
 
     return ok(token.Span(start: first.start, end: last.end))
+
+# `when <literal>` after a result's marks (panel 177's item 6): the value the
+# result takes when the call succeeded, and the only time its ends, transfers
+# and references happen. An unsigned integer literal, `true` or `false`; the
+# checker holds it to the result's type. It sits on the RESULT and not on a
+# parameter, on the sitting's measurement: no real function transfers two
+# parameters under different success values, and a clause on the parameter can
+# spell two things no library shows.
+function when_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_WHEN
+        return fail(code: "absent", msg: "no success value")
+    keyword = cursor.bump(@c).span
+    here = cursor.here_or(c, keyword)
+    value = pass_success_value(@c)
+
+    if value.is_err()
+        cursor.error(
+            @c,
+            code: "expected_success_value",
+            message: "`when` takes the value that means the call did what it was handed, an unsigned integer literal, `true` or `false`: `-> i32 when 0`. A named value is written as its number, `when 0` for `SQLITE_OK`, and a negative one is not a form the grammar has",
+            span: here
+        )
+    return value
+
+# The literal after `when`, consumed whether or not it is one the grammar has.
+# An unsigned integer, `true` or `false` comes back as its span. Anything else
+# is consumed too, a `-` and then one value-shaped token, and comes back
+# absent: until 2026-09-25 the refused token was left standing, so `when -1`
+# was the refusal AND a member error at the same column (panel 177's landing,
+# finding 3). One consumer for the three readers of the clause, so the one
+# that reports it is the line's only diagnostic.
+function pass_success_value(@c: cursor.Cursor) -> token.Span?
+    if cursor.at(c, .int_lit) || cursor.at(c, .kw_true) || cursor.at(c, .kw_false)
+        return ok(cursor.bump(@c).span)
+    _ = cursor.eat(@c, .minus)
+    k = cursor.current_kind(c)
+
+    if k == .int_lit || k == .float_lit || k == .char_lit || k == .str_lit || k == .ident || k == .kw_true || k == .kw_false
+        _ = cursor.bump(@c)
+    return fail(code: "absent", msg: "no value the grammar has")
+
+# `when` where no `->` was written (finding 2): the clause compares the
+# result, and a function with no arrow has none to compare. Read at the word,
+# literal and all, so the member's line ends clean and this is its only
+# diagnostic.
+function success_needs_result(@c: cursor.Cursor, text: str, in_group: bool)
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_WHEN
+        return
+    keyword = cursor.bump(@c).span
+    _ = pass_success_value(@c).is_err()
+    cursor.error(
+        @c,
+        code: "success_needs_result",
+        message: "`when` compares the result of the call with a value, and this function returns nothing: drop the clause, or write the result it compares, `-> i32 when 0`",
+        span: keyword
+    )
+
+# `when` after a parameter (finding 5), the cursor standing on the word: the
+# sitting put the clause on the result, and this is the shape a reader writes
+# when they put it beside the `consumes` it governs. Consumed like the clause
+# it is, so `)` still follows.
+function success_on_parameter(@c: cursor.Cursor)
+    keyword = cursor.bump(@c).span
+    _ = pass_success_value(@c).is_err()
+    cursor.error(
+        @c,
+        code: "success_on_parameter",
+        message: "`when` belongs after the result and not after a parameter: `-> i32 when 0` names the result that means the call did what it was handed, and every `consumes`, `transfers` and `retains` of the call counts only then",
+        span: keyword
+    )
 
 # `counted_by <sibling>` after a `ptr` parameter: how far C reads or writes
 # through it (panel 166's route C, ratified 2026-09-19; defect 063).
@@ -153,3 +262,72 @@ function owned_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Spa
         )
         return fail(code: "absent", msg: "the freer's name is missing")
     return ok(cursor.bump(@c).span)
+
+## Tests
+
+# The tokens of one line, as the lexer cuts them: the shapes at issue (`-1`,
+# `'a'`, `1.0`, a trailing `|`) are the lexer's own cuts, so the tests read
+# real streams rather than hand-built ones.
+function tokens_of(text: str) -> cursor.Cursor
+    return cursor.new_cursor(lexer.lex_one(text).tokens)
+
+test "a refused success value is consumed with its refusal"
+    # Finding 3: five refused shapes, each one diagnostic and the line's end
+    # under the cursor afterwards, where the refused token used to stand.
+    for text in ["when -1", "when 'a'", "when 1.0", "when SQLITE_OK", "when \"x\""]
+        c: cursor.Cursor @ tokens_of(text)
+        got = when_marker(@c, text, in_group: true)
+        assert got.is_err()
+        assert c.diagnostics.len() == 1
+        assert c.diagnostics[0].code == "expected_success_value"
+        assert cursor.at(c, .terminator)
+
+    # The three shapes the grammar has come back as their span.
+    for text in ["when 0", "when true", "when 0xFF"]
+        c: cursor.Cursor @ tokens_of(text)
+        got = when_marker(@c, text, in_group: true)
+        assert !got.is_err()
+        assert c.diagnostics.len() == 0
+        assert cursor.at(c, .terminator)
+
+    # Nothing after the word at all: the refusal, and nothing consumed past it.
+    d: cursor.Cursor @ tokens_of(keywords.WORD_WHEN)
+    assert when_marker(@d, keywords.WORD_WHEN, in_group: true).is_err()
+    assert d.diagnostics[0].code == "expected_success_value"
+    assert cursor.at(d, .terminator)
+
+test "the clause with no result to compare is refused at the word"
+    # Finding 2, and the literal goes with the word so the line ends clean.
+    c: cursor.Cursor @ tokens_of("when 0")
+    success_needs_result(@c, "when 0", in_group: true)
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "success_needs_result"
+    assert c.diagnostics[0].span.start == 0
+    assert cursor.at(c, .terminator)
+
+    # Outside a group `when` is a name, untouched.
+    d: cursor.Cursor @ tokens_of("when 0")
+    success_needs_result(@d, "when 0", in_group: false)
+    assert d.diagnostics.len() == 0
+    assert cursor.at(d, .ident)
+
+test "the clause after a parameter is refused at the word and the `)` survives"
+    # Finding 5, read with the cursor on the word as `members.read_marks`
+    # calls it.
+    c: cursor.Cursor @ tokens_of("when 0)")
+    success_on_parameter(@c)
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "success_on_parameter"
+    assert cursor.at(c, .rparen)
+
+test "a dangling bar is reported at the bar and not at what follows"
+    # Finding 4: `-> Ob acquires put |` at a line's end continues the line, so
+    # the cursor stands on the next declaration and the caret went there.
+    text = "acquires put |\n\nfunction main()\n"
+    c: cursor.Cursor @ tokens_of(text)
+    got = named_marker(@c, text: text, in_group: true, word: keywords.WORD_ACQUIRES, example: "x")
+    assert got.is_err()
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "expected_releaser"
+    assert c.diagnostics[0].span.start == 13
+    assert c.diagnostics[0].span.end == 14

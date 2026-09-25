@@ -5,7 +5,7 @@
 #include <fixedbugs-a-tag-that-needs-struct.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 23, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 24, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -163,18 +163,22 @@ bb0:
 #line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t10 = h0_p;
 #line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_handle_consumed(t10, "probe_close", NULL);
+    hero_handle_ending(t10, "probe_close", NULL);
 #line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     (void)probe_close(t10);
+#line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+    hero_handle_ended(t10);
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t11 = h1_g;
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_handle_consumed(t11, "gauge_close", NULL);
+    hero_handle_ending(t11, "gauge_close", NULL);
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     (void)gauge_close(t11);
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+    hero_handle_ended(t11);
+#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     return;
-#line 178 "fixedbugsatagthatneedsstruct.c"
+#line 182 "fixedbugsatagthatneedsstruct.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Probe_eq(struct probe * const *a, struct probe * const *b) {
     return *a == *b;
