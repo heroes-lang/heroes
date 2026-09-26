@@ -1,0 +1,21 @@
+# A comment inside index brackets, which `fmt` printed on one line: the
+# first repair of defect 101 refused each at exit 2. The index breaks after
+# the token the comment follows now: after `[` (`r1`), inside an index's
+# binary (`r4`), in a map's index (`r5`), in a second index (`r6`), and in
+# the place of a mutation (`t4`).
+
+function f(a: [i64], m: {str: i64}, g: [[i64]]) -> i64
+    x = a[  # in an index
+        0]
+    y = a[a.len() -  # in an index's binary
+        1]
+    z = m[  # in a map's index
+        "k"].must()
+    b: [i64] @ a
+    b[  # in a place
+        0] @ 1
+    return x + y + z + b[0] + g[0][  # in a second index
+        0]
+
+function main()
+    print(f(a: [1], m: {"k": 2}, g: [[3]]))

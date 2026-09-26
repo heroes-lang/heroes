@@ -47,7 +47,7 @@ function run_fmt(path: str, s: source.Source, inv: argv.Invocation) -> cli_table
 
         io.eprint(text: "error: refusing to format a file with diagnostics")
         return .diagnostics_exit
-    printed = fmt.format_page(out.tree, s, out.comments, out.uses, out.decls)
+    printed = fmt.format_lexed(out.tree, s, out.comments, out.uses, out.decls, out.tokens)
     formatted = printed.out
     refusal: str? @ refuse_output_the_formatter_broke(
         path: path,
@@ -100,8 +100,9 @@ function run_fmt(path: str, s: source.Source, inv: argv.Invocation) -> cli_table
 # say since it keeps no comment but a doc: defect 101's comments moved off
 # the line they trailed and out of their brackets at exit 0, and the one
 # moved off a joined signature's `(` line was the printer's own blind spot,
-# so this check asks the two files rather than any printer
-# (`print/anchors.hero`).
+# so this check asks the two files rather than any printer: each comment's
+# block, by the rule the printer places it with, and the tokens `fmt` keeps
+# on either side of it (`print/anchors.hero`, which says what it cannot see).
 #
 # The third check is `assert_canonical` — `dump(text) == dump(fmt(text))`
 # — which the Rust bootstrap had, the port never brought over, and
@@ -127,7 +128,7 @@ function refuse_output_the_formatter_broke(path: str, original: str, formatted: 
 
     if reparsed.diagnostics.len() > 0
         return ok("`fmt` produced source that does not parse: " + diag.render_line(reparsed.diagnostics[0], after))
-    again = fmt.format_page(reparsed.tree, after, reparsed.comments, reparsed.uses, reparsed.decls)
+    again = fmt.format_lexed(reparsed.tree, after, reparsed.comments, reparsed.uses, reparsed.decls, reparsed.tokens)
 
     if again.out != formatted
         return ok("`fmt` is not a fixpoint on its own output for `" + path + "`")
@@ -151,22 +152,13 @@ function refuse_output_the_formatter_broke(path: str, original: str, formatted: 
             "`fmt` changed the TREE of `" + path + "` — the output parses and is a fixpoint, and it is a DIFFERENT PROGRAM"
         )
     first = source.new_source(name: path, text: original)
-    kept = anchors.anchors(before.tree, first, before.comments, before.uses, before.decls)
-    printed = anchors.anchors(reparsed.tree, after, reparsed.comments, reparsed.uses, reparsed.decls)
-    moved = anchors.first_moved(
-        before: first,
-        was: before.comments,
-        after: after,
-        now: reparsed.comments,
-        kept: kept,
-        printed: printed
-    )
+    moved = anchors.first_moved(was: first, input: before, now: after, output: reparsed)
 
     if moved > 0
         return ok(
             "`fmt` would move the comment on line " + moved.to_str() + " of `" + path + "` away from the code it was written beside"
         )
-    return fail(code: "clean", msg: "the output parses, is a fixpoint, holds the same tree and keeps every comment")
+    return fail(code: "clean", msg: "the output parses, is a fixpoint, holds the same tree and every comment's place")
 
 ## Tests
 

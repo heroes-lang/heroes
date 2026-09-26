@@ -1,11 +1,10 @@
-# What a value's brackets hold, read from the tree and from the source
-# around it, for `print/brackets.hero` to print (design.md §4.9, §4.15).
-# The tree keeps no comments and no parentheses, so where one sits beside
-# the other is asked of the source here: the grouping parentheses around a
-# value, the comments between its parts, the bracket after a callee.
-# Split out of `print/brackets.hero` on 2026-09-25 with defect 101's last
-# round, along the seam between what is read and what is printed; none of
-# this prints.
+# What a value's brackets hold, read from the tree and from the source's
+# tokens around it, for `print/brackets.hero` to print (design.md §4.9,
+# §4.15). The tree keeps no comments and no parentheses, so where one sits
+# beside the other is asked of the tokens here (`print/owners.hero`): the
+# comments between a value's parts, the bracket after a callee. Split out of
+# `print/brackets.hero` on 2026-09-25 with defect 101, along the seam
+# between what is read and what is printed; none of this prints.
 
 use token
 use ast
@@ -13,13 +12,14 @@ use source
 use print/bodies
 use print/page
 use print/parens
-use print/between
+use print/owners
 
-# The three things every question here reads.
+# The four things every question here reads.
 record Code
     tree: ast.Ast
     s: source.Source
     comments: [token.Span]
+    lines: owners.Lines
 
 # What an opened bracket prints: the value before it (a callee, a receiver,
 # or -1), its opening text, the source lines of its opening and closing
@@ -86,17 +86,17 @@ function bracket(c: Code, value: i64) -> Bracket?
         .call cl =>
             b.before @ cl.callee
             b.open @ "("
-            b.from @ between.next_mark(c.s, offset: c.tree.exprs[cl.callee].span.end)
+            b.from @ opener(c, after: cl.callee)
             b.items @ arguments(c, given: cl.args)
         .method m =>
             b.before @ m.receiver
             b.open @ "." + source.span_text(c.s, m.name) + "("
-            b.from @ between.next_mark(c.s, offset: m.name.end)
+            b.from @ opener_at(c, at: m.name)
             b.items @ arguments(c, given: m.args)
         .variant_case vc =>
             if vc.args.len() > 0
                 b.open @ "." + source.span_text(c.s, vc.name) + "("
-                b.from @ between.next_mark(c.s, offset: vc.name.end)
+                b.from @ opener_at(c, at: vc.name)
                 b.items @ arguments(c, given: vc.args)
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => b.open @ ""
         .name | .hole | .unary | .binary | .field | .field_name | .index               => b.open @ ""
@@ -197,13 +197,13 @@ function arguments(c: Code, given: [ast.Arg]) -> [Element]
             comma @ ""
         item: Element @ plain(c, value: arg.value, needed: 0, after: comma)
         item.lead @ parens.arg_lead(c.s, arg: arg)
-        mark = between.code_before(c.s, c.comments, offset: c.tree.exprs[arg.value].span.start)
+        mark = owners.code_before(c.lines, index: owners.index_at(c.lines, offset: c.tree.exprs[arg.value].span.start))
 
         # A mutable one's `@` is its lead, and a comment after it sits
         # between the lead and the value, as after a name.
-        if arg.mutable && mark >= 0 && c.s.text[mark] == '@'
-            item.gap @ mark + 1
-            item.first @ source.line_of(c.s, mark)
+        if arg.mutable && mark >= 0 && c.lines.tokens[mark].kind == .at
+            item.gap @ c.lines.tokens[mark].span.end
+            item.first @ source.line_of(c.s, c.lines.tokens[mark].span.start)
 
         if !arg.name.is_err()
             item.gap @ arg.name.must().end
@@ -248,27 +248,13 @@ function splits(f: page.Fmt, c: Code, value: i64) -> bool
 
     return false
 
-# The author's grouping parentheses around a value, as the offsets of its
-# `(` and `)`, or none. The value's own span holds neither, and it can start
-# inside a group of its first operand and end inside one of its last, so the
-# pair is the first `(` before it whose `)` is past it, with only other
-# groups' brackets between. `from` and `to` are the enclosing bracket's,
-# which are never a group's: the one argument of a call sits between them.
-function grouping(c: Code, value: i64, from: i64, to: i64) -> token.Span?
-    none: token.Span? = fail(code: "none", msg: "no parentheses of the author's here")
-    span = c.tree.exprs[value].span
-    open: i64 @ between.code_before(c.s, c.comments, offset: span.start)
+# The offset of the `(` after a callee's last token or after a name.
+function opener(c: Code, after: i64) -> i64
+    last = owners.index_at(c.lines, offset: c.tree.exprs[after].span.end - 1)
+    return c.lines.tokens[owners.code_after(c.lines, index: last)].span.start
 
-    while open >= 0 && open != from && c.s.text[open] == '('
-        shut = between.matching(c.s, open: open)
-
-        if shut >= span.end
-            if shut == to || !between.closers_only(c.s, from: span.end, to: shut)
-                return none
-            return ok(token.Span(start: open, end: shut))
-        open @ between.code_before(c.s, c.comments, offset: open)
-
-    return none
+function opener_at(c: Code, at: token.Span) -> i64
+    return c.lines.tokens[owners.code_after(c.lines, index: owners.index_at(c.lines, offset: at.start))].span.start
 
 function first_line(c: Code, id: i64) -> i64
     return source.line_of(c.s, c.tree.exprs[id].span.start)

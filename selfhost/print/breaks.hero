@@ -1,0 +1,116 @@
+# One line of `fmt`'s, a type, an index, a place, broken after each token a
+# comment inside it follows, so the comment stays after that token (defect
+# 101's third round, 2026-09-26: the skeptic seat's `t1`, `r1`, `t4`, each
+# refused at exit 2 before). Split out of `print/brackets.hero` the same
+# day, which calls it for a value no bracket of its own can hold the
+# comment in; it calls nothing of that knot back.
+
+use token
+use ast
+use source
+use lexer
+use digits
+use print/page
+use print/elements
+use print/owners
+
+# `head` and `text`, the source from `from` up to `to` on one line, printed
+# with the comments inside it kept (`lead`): the last line comes back.
+function led_text(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, text: str, from: i64, to: i64, indent: i64) -> str
+    c = elements.Code(tree: tree, s: s, comments: comments, lines: f.lines)
+    return lead(@f, c, head: head, text: text, from: from, to: to, indent: indent)
+
+# `head` then `text`, the one-line rendering of the source from `from` up
+# to `to`, with every comment written inside that stretch kept after the
+# token it follows: the line breaks there, the comment trailing it or on a
+# line of its own, and the rest going on four columns in, inside the bracket
+# that let the author break it. Prints every line but the last and returns
+# that one. The rendering's tokens must be the source's, but for the
+# grouping parentheses `render` drops; where they are not, the text comes
+# back whole, and the guard refuses what is left.
+function lead(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64, to: i64, indent: i64) -> str
+    if !elements.holds(f, c, from: from, to: to)
+        return head + text
+    written = within(c.lines, from: from, to: to)
+    printed: [token.Token] @ []
+
+    for t in lexer.lex_one(text).tokens
+        if t.kind != .indent && t.kind != .dedent && t.kind != .terminator && t.kind != .eof && t.kind != .comment
+            printed @ printed.push(t)
+
+    # Which printed token each written one is, -1 for a parenthesis
+    # `render` dropped.
+    matched: [i64] @ []
+    j: i64 @ 0
+
+    for i in written
+        w = c.lines.tokens[i]
+
+        if j < printed.len() && same(c.s, text: text, written: w, printed: printed[j])
+            matched @ matched.push(j)
+            j @ j + 1
+        else if w.kind == .lparen || w.kind == .rparen
+            matched @ matched.push(-1)
+        else
+            return head + text
+
+    if j != printed.len()
+        return head + text
+    line: str @ head
+    cut: i64 @ 0
+    margin: i64 @ indent
+
+    while elements.holds(f, c, from: from, to: to)
+        k = f.next_comment
+        upto: i64 @ -1
+        at: i64 @ 0
+
+        for i in written
+            if c.lines.tokens[i].span.start < c.comments[k].start && matched[at] >= 0
+                upto @ matched[at]
+            at @ at + 1
+
+        if upto >= 0 && printed[upto].span.end > cut
+            line @ line + text.slice(from: cut, to: printed[upto].span.end)
+            cut @ printed[upto].span.end
+        remark = page.trim_end(source.span_text(c.s, c.comments[k]))
+
+        if k < c.lines.owner.len() && c.lines.owner[k] == owners.TRAILS
+            page.put_line(@f, indent: margin, text: page.trim_end(line) + "  " + remark)
+        else
+            if page.trim_end(line).len() > 0
+                page.put_line(@f, indent: margin, text: page.trim_end(line))
+            page.put_line(@f, indent: indent + 4, text: remark)
+        line @ ""
+        margin @ indent + 4
+        f.last_line @ source.line_of(c.s, c.comments[k].start)
+        f.next_comment @ k + 1
+
+    rest: str @ text.slice(from: cut, to: text.len())
+
+    while rest.len() > 0 && rest[0] == ' '
+        rest @ rest.slice(from: 1, to: rest.len())
+
+    return "    " + line + rest
+
+# The tokens but comments from offset `from` up to `to`, as indices.
+function within(lines: owners.Lines, from: i64, to: i64) -> [i64]
+    out: [i64] @ []
+    i: i64 @ owners.index_at(lines, offset: from)
+
+    if i < 0 || lines.tokens[i].span.start < from
+        i @ i + 1
+
+    while i < lines.tokens.len() && lines.tokens[i].span.start < to
+        if lines.tokens[i].kind != .comment
+            out @ out.push(i)
+        i @ i + 1
+
+    return out
+
+# Is a written token the printed one, an integer in either case of its
+# digits?
+function same(s: source.Source, text: str, written: token.Token, printed: token.Token) -> bool
+    one = digits.canonical_int(source.span_text(s, written.span))
+    other = digits.canonical_int(text.slice(from: printed.span.start, to: printed.span.end))
+    return one == other

@@ -22,6 +22,11 @@ record ParseOutput
     comments: [token.Span]
     diagnostics: [diag.Diagnostic]
     tree: ast.Ast
+    # Every token the lexer made, the root file's first: `heroes fmt` reads
+    # from them what the tree does not keep, which line a statement ends on
+    # and which block a comment is in (`print/owners.hero`), and lexing the
+    # file again for it cost a third of `fmt`'s time.
+    tokens: [token.Token]
 
 # Lex and parse one file in a single call.
 #
@@ -54,7 +59,14 @@ function parse_source(s: source.Source) -> ParseOutput
     for d in c.diagnostics
         diagnostics @ diagnostics.push(d)
 
-    return ParseOutput(decls: decls, uses: uses, comments: comments, diagnostics: diagnostics, tree: a)
+    return ParseOutput(
+        decls: decls,
+        uses: uses,
+        comments: comments,
+        diagnostics: diagnostics,
+        tree: a,
+        tokens: lexed.tokens
+    )
 
 # The same parse, told where the author's own text stops — what the CLI
 # uses, because a compilation is the author's file plus every module it
@@ -78,7 +90,14 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
     for d in c.diagnostics
         diagnostics @ diagnostics.push(d)
 
-    return ParseOutput(decls: decls, uses: uses, comments: comments, diagnostics: diagnostics, tree: a)
+    return ParseOutput(
+        decls: decls,
+        uses: uses,
+        comments: comments,
+        diagnostics: diagnostics,
+        tree: a,
+        tokens: lexed.tokens
+    )
 
 test "text becomes a tree in one call, comments and all"
     text = "# a note\nconstant MAX: i64\n    64  # trailing\n"
