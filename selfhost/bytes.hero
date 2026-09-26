@@ -28,3 +28,36 @@ test "the classes answer the scanner's questions"
     assert lower('X') == 'x'
     assert lower('x') == 'x'
     assert lower('1') == '1'
+
+# The one character that starts at `at`, read by the width its first byte
+# gives (defect 103). `text.slice(from: at, to: text.len()).chars()[0]` is
+# the same answer and copies the rest of the file to get it, once per escape
+# and once per character of a character literal, which made lexing quadratic
+# in the file. A `str` is well-formed UTF-8 (spec § 3), so the lead byte says
+# how many follow; the end of the text bounds it either way.
+function char_at(text: str, at: i64) -> str
+    width: i64 @ 1
+    lead = text[at]
+
+    if lead >= 240
+        width @ 4
+    else if lead >= 224
+        width @ 3
+    else if lead >= 192
+        width @ 2
+
+    last: i64 @ at + width
+
+    if last > text.len()
+        last @ text.len()
+    return text.slice(from: at, to: last)
+
+## Tests
+
+test "a character is read by the width its first byte gives, and no further"
+    assert char_at("abc", 1) == "b"
+    assert char_at("aéb", 1) == "é"
+    assert char_at("x€", 1) == "€"
+    assert char_at("😀!", 0) == "😀"
+    assert char_at("a\\tb", 1) == "\\"
+    assert char_at("a\tb", 1) == "\t"

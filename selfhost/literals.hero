@@ -13,6 +13,7 @@ use diag
 use state
 use escape
 use layout
+use bytes
 
 ## The escape validator
 
@@ -27,7 +28,7 @@ function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted) -> bool
     if backslash + 1 >= text.len()
         l.pos @ backslash + 1
         return false
-    escaped = text.slice(from: backslash + 1, to: text.len()).chars()[0]
+    escaped = bytes.char_at(text, backslash + 1)
 
     if escaped == "\n"
         l.pos @ backslash + 1
@@ -48,7 +49,7 @@ function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted) -> bool
         d.fixes @ d.fixes.push(
             diag.Fix(title: "drop the backslash: `" + escaped + "`", replacement: escaped, span: span, certainty: .certain)
         )
-        l.diagnostics @ l.diagnostics.push(d)
+        state.push_diagnostic(@l.diagnostics, d)
     else
         d: diag.Diagnostic @ diag.new_diagnostic(
             code: "unknown_escape",
@@ -58,7 +59,7 @@ function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted) -> bool
         d.fixes @ d.fixes.push(
             diag.Fix(title: "escape the backslash: `\\\\" + escaped + "`", replacement: "\\\\" + escaped, span: span, certainty: .certain)
         )
-        l.diagnostics @ l.diagnostics.push(d)
+        state.push_diagnostic(@l.diagnostics, d)
 
     # The token keeps its kind: poisoning it to `error` would delete the
     # line's Terminator (error is not an ender, panel 007) and turn one
@@ -87,7 +88,7 @@ function raw_carriage_return(@l: state.LexState, at: i64, ctx: escape.Quoted)
         span: span
     )
     d.fixes @ d.fixes.push(diag.Fix(title: "write it as `\\r`", replacement: "\\r", span: span, certainty: .certain))
-    l.diagnostics @ l.diagnostics.push(d)
+    state.push_diagnostic(@l.diagnostics, d)
 
 ## The string
 
@@ -156,7 +157,7 @@ function char_lit(@l: state.LexState, text: str)
         else
             if text[l.pos] == layout.CR
                 raw_carriage_return(@l, l.pos, .in_char)
-            ch = text.slice(from: l.pos, to: text.len()).chars()[0]
+            ch = bytes.char_at(text, l.pos)
             l.pos @ l.pos + ch.len()
             units @ units + 1
 
