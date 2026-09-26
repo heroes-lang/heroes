@@ -1,6 +1,8 @@
 # The source's structure that the tree does not keep, read from its tokens
 # (design.md §4.15): which lines open a logical line, where each one ends,
-# which bracket closes which, and which block owns each comment. `fmt`
+# which bracket closes which, where a list's line ends an element, and
+# which block owns each comment; which parentheses group a value is
+# `print/groups.hero`'s, read from these. `fmt`
 # places a comment by it and the output guard checks the placement by it
 # (`print/anchors.hero`), so the printer and the guard read one rule.
 # Written 2026-09-26 for the last round of defects 099 and 101, where the
@@ -17,6 +19,18 @@
 # never one shallower than N's. A run of such comments is read from its
 # last one up, so no comment belongs to a shallower block than one after
 # it: printed in order, a later comment cannot sit in a deeper block.
+#
+# THE RUN RULE'S CANONICAL FORM, a choice and not an accident (the second
+# skeptic seat's `d02`, 2026-09-26, pinned by `comments101/ascending.hero`):
+# a run whose columns climb, or climb and fall, is placed wholly in the
+# block of its last comment. Columns that contradict the nesting, 4 then 8
+# then 12 after a line at 12 and before one at 4, cannot all be kept: the
+# page prints the run in order, and a block it has left does not open
+# again. Of the two readings that keep the order, the last comment's block
+# is the one taken, because a column is weak evidence above it: code
+# commented out with a `#` at column 0 stands at any depth, and read from
+# the top down it pulled a block's closing remark out of the block
+# (the first seat's `s8`, `comments101/runs.hero`).
 
 use token
 use source
@@ -33,11 +47,16 @@ constant BRACKETED: i64
 # `code[l]`: line `l` opens a logical line, at `column[l]`, which ends on
 # line `last[l]`. `owner[k]` is the depth of the block comment `k` belongs
 # to, or TRAILS or BRACKETED, and `prior[k]` the logical line before it, 0
-# for none. `tokens` are the file's tokens but its layout and its end, and
-# `pair[i]` is the bracket closing or opening token `i`, -1 for none.
+# for none. `tokens` are the file's tokens but its layout and its end,
+# `pair[i]` is the bracket closing or opening token `i`, -1 for none, and
+# `ended[i]` says a terminator stands between token `i` and the code before
+# it: the lexer plants one at a line's end inside brackets too, where it
+# separates two elements of a list down the page, and a `(` after one opens
+# no call (§4.9).
 record Lines
     tokens: [token.Token]
     pair: [i64]
+    ended: [bool]
     code: [bool]
     column: [i64]
     last: [i64]
@@ -45,30 +64,39 @@ record Lines
     prior: [i64]
 
 function none() -> Lines
-    return Lines(tokens: [], pair: [], code: [], column: [], last: [], owner: [], prior: [])
+    return Lines(tokens: [], pair: [], ended: [], code: [], column: [], last: [], owner: [], prior: [])
 
-# The structure of `text`, whose lines `s` numbers from offset 0. The lines
-# in `ignored` are not code: the second head of two groups `fmt` merges,
-# which its output does not have.
-function read(s: source.Source, text: str, ignored: [i64]) -> Lines
-    return shape(s, lexed: lexer.lex_one(text).tokens, ignored: ignored, end: text.len())
-
-# The same, from the tokens the parser was given, those before `end` only:
-# the root file's, when the rest of the compilation follows it.
+# The structure of the source `s` numbers from offset 0, from the tokens
+# the parser was given, those before `end` only: the root file's, when the
+# rest of the compilation follows it. The lines in `ignored` are not code:
+# the second head of two groups `fmt` merges, which its output does not
+# have.
 function shape(s: source.Source, lexed: [token.Token], ignored: [i64], end: i64) -> Lines
     # Every array is a local until the end: a push onto a record's field
     # copies the field, and read that way a file of fifty thousand tokens
     # took `fmt` from a third of a second to eight (measured 2026-09-26).
     tokens: [token.Token] @ []
     pair: [i64] @ []
+    ended: [bool] @ []
+    stop: bool @ false
 
     for t in lexed
         if t.span.start >= end
             break
 
-        if t.kind != .indent && t.kind != .dedent && t.kind != .terminator && t.kind != .eof
+        if t.kind == .terminator
+            stop @ true
+        else if t.kind != .indent && t.kind != .dedent && t.kind != .eof
             tokens @ tokens.push(t)
             pair @ pair.push(-1)
+
+            # A local before its push: an expression there held the array
+            # and the push copied it, quadratic in the tokens.
+            after_end = stop && t.kind != .comment
+            ended @ ended.push(after_end)
+
+            if t.kind != .comment
+                stop @ false
 
     code: [bool] @ []
     columns: [i64] @ []
@@ -139,7 +167,16 @@ function shape(s: source.Source, lexed: [token.Token], ignored: [i64], end: i64)
         index @ index + 1
 
     settle(owner: @owner, marks: marks, pending: pending, above: columns_of(columns, line: current), below: -1)
-    return Lines(tokens: tokens, pair: pair, code: code, column: columns, last: last, owner: owner, prior: prior)
+    return Lines(
+        tokens: tokens,
+        pair: pair,
+        ended: ended,
+        code: code,
+        column: columns,
+        last: last,
+        owner: owner,
+        prior: prior
+    )
 
 # The column of code line `line`, -1 for none.
 function columns_of(columns: [i64], line: i64) -> i64
@@ -236,74 +273,25 @@ function code_after(lines: Lines, index: i64) -> i64
         return -1
     return at
 
-# The author's grouping parentheses around the value at `span`, as the
-# token index of each `(`, the innermost first. The tree keeps none, and
-# the value's own span holds neither: it can start inside a group of its
-# first operand and end inside one of its last, so the innermost pair is
-# the first `(` before it, not a call's, whose `)` is past it with only
-# other groups' brackets between, and each outer one closes right after the
-# one inside it. Read from the lexer's tokens, a literal's brackets are its
-# text, a hole's `f"{")"}"` included.
-function levels(lines: Lines, span: token.Span) -> [i64]
-    out: [i64] @ []
-    first = index_at(lines, offset: span.start)
-    last = index_at(lines, offset: span.end - 1)
+# The comma after a value ending before offset `after`, where it stands on
+# a line of its own between two comments, one written between the value and
+# it and one trailing it (the second skeptic seat's `a: 1  # c` over
+# `,  # d`): one line cannot hold both, so the comma keeps its line. -1
+# otherwise, where it goes on the value's.
+function lone_comma(lines: Lines, s: source.Source, after: i64) -> i64
+    last = index_at(lines, offset: after - 1)
+    comma = code_after(lines, index: last)
 
-    if first < 0 || last < first
-        return out
-    open: i64 @ code_before(lines, index: first)
+    if last < 0 || comma < 0 || lines.tokens[comma].kind != .comma || comma == last + 1
+        return -1
+    next = comma + 1
 
-    while open >= 0 && lines.tokens[open].kind == .lparen && !calls(lines, index: open)
-        shut = lines.pair[open]
+    if next >= lines.tokens.len() || lines.tokens[next].kind != .comment
+        return -1
 
-        if shut > last
-            at: i64 @ code_after(lines, index: last)
-
-            while at >= 0 && at < shut && lines.tokens[at].kind == .rparen
-                at @ code_after(lines, index: at)
-
-            if at != shut
-                return out
-            out @ out.push(open)
-
-            # The pairs around this one, each closing right after it.
-            outer: i64 @ code_before(lines, index: open)
-
-            while outer >= 0 && lines.tokens[outer].kind == .lparen && !calls(lines, index: outer) && lines.pair[outer] == code_after(lines, index: lines.pair[out[out.len() - 1]])
-                out @ out.push(outer)
-                outer @ code_before(lines, index: outer)
-
-            return out
-        open @ code_before(lines, index: open)
-
-    return out
-
-# The offsets of the `(` at token `open` and of its `)`.
-function around(lines: Lines, open: i64) -> token.Span
-    return token.Span(start: lines.tokens[open].span.start, end: lines.tokens[lines.pair[open]].span.start)
-
-# Does the `(` at token `index` open a call's arguments, a signature's
-# parameters or a function type's, which follow a name or a value?
-# ENUMERATED, never a catch-all: a kind added later answers here or does
-# not compile, and a `_ => false` would take its `(` for a group.
-function calls(lines: Lines, index: i64) -> bool
-    before = code_before(lines, index: index)
-
-    if before < 0
-        return false
-
-    return match lines.tokens[before].kind
-        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit           => true
-        .rparen | .rbracket | .rbrace | .question | .hole                            => true
-        .kw_true | .kw_false | .kw_nullptr | .kw_function | .kw_fail                 => true
-        .kw_constant | .kw_record | .kw_variant | .kw_match | .kw_if | .kw_else      => false
-        .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue | .kw_return         => false
-        .kw_test | .kw_assert | .kw_extern | .kw_use | .eq | .at | .colon            => false
-        .colon_colon | .comma | .dot | .arrow | .fat_arrow | .pipe | .lparen         => false
-        .lbracket | .lbrace | .plus | .minus | .star | .slash | .percent | .eq_eq    => false
-        .bang_eq | .lt | .le | .gt | .ge | .and_and | .or_or | .bang | .amp | .caret => false
-        .tilde | .shl | .shr | .comment | .terminator | .indent | .dedent | .eof     => false
-        .error                                                                       => false
+    if source.line_of(s, lines.tokens[next].span.start) != source.line_of(s, lines.tokens[comma].span.start)
+        return -1
+    return comma
 
 function listed(values: [i64], value: i64) -> bool
     for one in values
@@ -319,7 +307,7 @@ function listed(values: [i64], value: i64) -> bool
 test "a logical line reaches its closing parenthesis, and a run's owner is no shallower than the comment after it"
     text = "function f(c: bool) -> i64\n    if c\n        print(1)\n#        print(2)\n        # the if block's last word\n    return (1\n    )\n    # the last word of f\n"
     s = source.new_source(name: "t.hero", text: text)
-    lines = read(s, text: text, ignored: [])
+    lines = shape(s, lexed: lexer.lex_one(text).tokens, ignored: [], end: text.len())
     assert lines.code[6]
     assert !lines.code[7]
     assert lines.last[6] == 7
@@ -332,22 +320,26 @@ test "a logical line reaches its closing parenthesis, and a run's owner is no sh
     # The same with CRLF line ends: a `\r` is no code and no column.
     crlf = "function f(c: bool) -> i64\r\n    if c\r\n        print(1)\r\n#        print(2)\r\n        # the if block's last word\r\n    return (1\r\n    )\r\n    # the last word of f\r\n"
     t = source.new_source(name: "t.hero", text: crlf)
-    other = read(t, text: crlf, ignored: [])
+    other = shape(t, lexed: lexer.lex_one(crlf).tokens, ignored: [], end: crlf.len())
     assert other.owner == lines.owner
     assert other.prior == lines.prior
     assert other.last[6] == 7
 
-# A comment inside a bracket, one trailing code, and the parentheses of a
-# call against a group's, a literal's own brackets being text.
-test "a comment's owner says bracket or trails, and a group's parentheses are told from a call's"
+# A comment inside a bracket, and one trailing code.
+test "a comment's owner says bracket or trails"
     text = "function f(a: i64) -> str\n    x = g(  # trails\n        # in the call\n        a)\n    return (f\"{\")\"}\" +\n        \"b\")\n"
     s = source.new_source(name: "t.hero", text: text)
-    lines = read(s, text: text, ignored: [])
+    lines = shape(s, lexed: lexer.lex_one(text).tokens, ignored: [], end: text.len())
     assert lines.owner[0] == TRAILS
     assert lines.owner[1] == BRACKETED
-    call = index_at(lines, offset: 35)
-    assert lines.tokens[call].kind == .lparen
-    assert calls(lines, index: call)
-    open = index_at(lines, offset: 91)
-    assert lines.tokens[open].kind == .lparen
-    assert !calls(lines, index: open)
+
+# The second skeptic seat's `a: 1  # c` over `,  # d` (e0e08d18): a comma
+# between two comments keeps its line, and one after a value alone does not.
+test "a comma between two comments is alone"
+    text = "function f(a: i64) -> [i64]\n    x = (a + 1) * 2\n    return [ok\n        (1), g(a: 1  # c\n        ,  # d\n        b: 2)]\n"
+    s = source.new_source(name: "t.hero", text: text)
+    lines = shape(s, lexed: lexer.lex_one(text).tokens, ignored: [], end: text.len())
+    comma = lone_comma(lines, s: s, after: 82)
+    assert comma >= 0
+    assert lines.tokens[comma].span.start == 96
+    assert lone_comma(lines, s: s, after: 47) == -1

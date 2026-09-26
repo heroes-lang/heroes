@@ -13,6 +13,14 @@
 # prints in the grammar's order. Anything else is compared as written, an
 # integer's digits in one case.
 #
+# `-> ()` is read over the code tokens, a comment inside the `()` being
+# none of them. Where the two kept streams still part, which a token `fmt`
+# rewrites and this module does not know would make them, no comment from
+# that point on is taken as kept: each is refused, the loud direction, and
+# the ones before it are compared as ever. Compared by text alone there, a
+# comment inside `-> ()` moved into the parameter list at exit 0 (the second
+# skeptic seat's `k01`, over e0e08d18).
+#
 # What it does not see is what those tokens and blocks do not tell apart: a
 # comment moved across only a comma, a mark, a `-> ()`, or parentheses one
 # file has and the other not; one moved between two lines of one bracket
@@ -25,6 +33,7 @@ use source
 use digits
 use parse
 use print/owners
+use print/groups
 
 # Where one comment sits: its text, its owner, and the kept tokens before
 # and after it, by their place in the kept stream and by their text.
@@ -51,8 +60,8 @@ function first_moved(was: source.Source, input: parse.ParseOutput, now: source.S
 
     for node in input.tree.exprs
         if index < output.tree.exprs.len()
-            ours = owners.levels(a, span: node.span)
-            theirs = owners.levels(b, span: output.tree.exprs[index].span)
+            ours = groups.levels(a, span: node.span)
+            theirs = groups.levels(b, span: output.tree.exprs[index].span)
             both: i64 @ ours.len()
 
             if theirs.len() < both
@@ -63,15 +72,22 @@ function first_moved(was: source.Source, input: parse.ParseOutput, now: source.S
 
     one = places(was, lines: a, kept: kept_a)
     other = places(now, lines: b, kept: kept_b)
-    same_stream = stream(was, lines: a, kept: kept_a) == stream(now, lines: b, kept: kept_b)
+
+    # Where the two kept streams part, when they do: no comment from there
+    # on can be shown to keep its place, so the first of them is refused.
+    # Compared by text alone past that point, a comment inside `-> ()` read
+    # as kept tokens moved across `) -> (` at exit 0 (the skeptic seat's
+    # `k01`, over e0e08d18).
+    parted = parting(one: stream(was, lines: a, kept: kept_a), other: stream(now, lines: b, kept: kept_b))
     k: i64 @ 0
 
     while k < one.len() && k < other.len()
         x = one[k]
         y = other[k]
         moved: bool @ x.text != y.text || x.owner != y.owner || x.prior != y.prior || x.next != y.next
+        moved @ moved || x.before != y.before || x.after != y.after
 
-        if same_stream && (x.before != y.before || x.after != y.after)
+        if parted >= 0 && (x.before >= parted || y.before >= parted)
             moved @ true
 
         if moved
@@ -131,13 +147,20 @@ function keepable(s: source.Source, lines: owners.Lines, tree: ast.Ast, decls: [
         counts = t.kind != .comment && t.kind != .comma && !owners.listed(dropped, value: line)
         out @ out.push(counts)
 
+    # `-> ()`, read over the code tokens: a comment inside the `()` is no
+    # token of it (the skeptic seat's `k01`).
     i: i64 @ 0
 
-    while i + 2 < lines.tokens.len()
-        if lines.tokens[i].kind == .arrow && lines.tokens[i + 1].kind == .lparen && lines.pair[i + 1] == i + 2
-            out[i] @ false
-            out[i + 1] @ false
-            out[i + 2] @ false
+    while i < lines.tokens.len()
+        open = owners.code_after(lines, index: i)
+
+        if lines.tokens[i].kind == .arrow && open >= 0 && lines.tokens[open].kind == .lparen
+            shut = owners.code_after(lines, index: open)
+
+            if shut >= 0 && lines.pair[open] == shut
+                out[i] @ false
+                out[open] @ false
+                out[shut] @ false
         i @ i + 1
 
     for decl in decls
@@ -181,14 +204,11 @@ function places(s: source.Source, lines: owners.Lines, kept: [bool]) -> [Place]
 
     for t in lines.tokens
         if t.kind == .comment
+            # `owners.shape` gives every comment token one owner, in order.
             k = out.len()
-            owner: i64 @ 0
-
-            if k < lines.owner.len()
-                owner @ lines.owner[k]
             place = Place(
                 text: trimmed(source.span_text(s, t.span)),
-                owner: owner,
+                owner: lines.owner[k],
                 before: count,
                 after: -1,
                 prior: prior,
@@ -210,9 +230,9 @@ function places(s: source.Source, lines: owners.Lines, kept: [bool]) -> [Place]
 
     return out
 
-# The kept tokens' texts, joined, which the two files share when every
-# token `fmt` changes is one this module leaves out.
-function stream(s: source.Source, lines: owners.Lines, kept: [bool]) -> str
+# The kept tokens' texts, which the two files share when every token `fmt`
+# changes is one this module leaves out.
+function stream(s: source.Source, lines: owners.Lines, kept: [bool]) -> [str]
     parts: [str] @ []
     index: i64 @ 0
 
@@ -222,7 +242,21 @@ function stream(s: source.Source, lines: owners.Lines, kept: [bool]) -> str
             parts @ parts.push(word)
         index @ index + 1
 
-    return parts.join(" ")
+    return parts
+
+# The place of the first kept token the two streams do not share, -1 where
+# they are the same.
+function parting(one: [str], other: [str]) -> i64
+    at: i64 @ 0
+
+    while at < one.len() && at < other.len()
+        if one[at] != other[at]
+            return at
+        at @ at + 1
+
+    if one.len() == other.len()
+        return -1
+    return at
 
 # A token as `fmt` spells it: an integer's digits in one case.
 function spelled(s: source.Source, t: token.Token) -> str
@@ -292,3 +326,38 @@ test "a comment moved across a statement is seen, and the marks and unit results
     marks = "extern \"x.h\"\n    function run(buf: ptr lent counted_by n, n: i64)  # c\n"
     ordered = "extern \"x.h\"\n    function run(buf: ptr counted_by n lent, n: i64)  # c\n"
     assert moved_line(original: marks, moved: ordered) == 0
+
+# The second skeptic seat's `k01` over e0e08d18: a comment inside `-> ()`
+# hid the `()` from the guard, the streams parted, and the move into the
+# parameter list was compared by text alone and passed.
+test "a comment inside a unit result moved into the parameter list is seen, and kept inside it or trailing the signature it is not"
+    inside = "function g() -> (  # inside the unit\n)\n    print(1)\n"
+    into = "function g(  # inside the unit\n)\n    print(1)\n"
+    assert moved_line(original: inside, moved: into) == 1
+    trailed = "function g()  # inside the unit\n    print(1)\n"
+    assert moved_line(original: inside, moved: trailed) == 0
+    assert moved_line(original: inside, moved: inside) == 0
+
+# The guard's fallbacks, each loud: where the kept streams part, every
+# comment from there on is refused and none before it; a comment the
+# output lost or gained is refused where it is.
+test "past the point where the kept streams part no comment is taken as kept, and a lost or gained comment is refused"
+    original = "function f()\n    # before\n    print(1)\n    # after\n    print(2)\n"
+    changed = "function f()\n    # before\n    print(3)\n    # after\n    print(2)\n"
+    assert moved_line(original: original, moved: changed) == 4
+    early = "function f()\n    # before\n    print(1)\n    print(2)\n"
+    late = "function f()\n    # before\n    print(1)\n    print(3)\n"
+    assert moved_line(original: early, moved: late) == 0
+    lost = "function f()\n    print(1)\n    print(2)\n"
+    assert moved_line(original: original, moved: lost) == 2
+    assert moved_line(original: lost, moved: original) == 2
+
+    # The expressions are paired by their place in the two trees, which the
+    # tree guard has already found the same; where they differ the author's
+    # parentheses are left in, the streams part, and the comment is refused.
+    grouped = "function f()\n    x = (1 + 2)\n    # c\n    print(x)\n"
+    folded = "function f()\n    x = 3\n    # c\n    print(x)\n"
+    assert moved_line(original: grouped, moved: folded) == 3
+    assert parting(one: ["a", "b"], other: ["a", "b"]) == -1
+    assert parting(one: ["a", "b"], other: ["a"]) == 1
+    assert parting(one: ["a", "b"], other: ["a", "c"]) == 1

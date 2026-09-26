@@ -13,6 +13,7 @@ use print/bodies
 use print/page
 use print/parens
 use print/owners
+use print/groups
 
 # The four things every question here reads.
 record Code
@@ -24,7 +25,9 @@ record Code
 # What an opened bracket prints: the value before it (a callee, a receiver,
 # or -1), its opening text, the source lines of its opening and closing
 # brackets, the elements, and its closing text. `from` and `to` are the
-# offsets of the two brackets, -1 for parentheses `fmt` adds.
+# offsets of the two brackets, -1 for parentheses `fmt` adds, and `seam`
+# where the stretch before the opening one starts, the end of the callee or
+# receiver or a case's `.`: a comment there is between them.
 record Bracket
     before: i64
     open: str
@@ -34,16 +37,18 @@ record Bracket
     close: str
     from: i64
     to: i64
+    seam: i64
 
 # One element of an opened bracket: a map's `key` (or -1), then `lead` (an
-# argument's name and `@`), the value, parenthesised below `needed`, and
-# `after` (a call's comma, a chain's operator). A comment after `gap` and
-# before the value sits between the name or key and it. `first` is the
-# source line the element starts on.
+# argument's name and `@`, a unary operator, a key's `: `), the value,
+# parenthesised below `needed`, and `after` (a call's comma, a chain's
+# operator). The lead's tokens are written from `from` up to the value: a
+# comment there sits between the name, the `@` or the key and the value.
+# `first` is the source line the element starts on.
 record Element
     key: i64
     lead: str
-    gap: i64
+    from: i64
     value: i64
     needed: i64
     after: str
@@ -62,7 +67,8 @@ function bracket(c: Code, value: i64) -> Bracket?
         shut: end_line(c, id: value),
         close: ")",
         from: span.start,
-        to: span.end - 1
+        to: span.end - 1,
+        seam: span.start
     )
 
     match c.tree.exprs[value].kind
@@ -80,18 +86,21 @@ function bracket(c: Code, value: i64) -> Bracket?
             for entry in mp.entries
                 item: Element @ plain(c, value: entry.value, needed: 0, after: "")
                 item.key @ entry.key
-                item.gap @ c.tree.exprs[entry.key].span.end
-                item.first @ first_line(c, id: entry.key)
+                item.lead @ ": "
+                item.from @ extent(c, id: entry.key).end
+                item.first @ source.line_of(c.s, extent(c, id: entry.key).start)
                 b.items @ b.items.push(item)
         .call cl =>
             b.before @ cl.callee
             b.open @ "("
             b.from @ opener(c, after: cl.callee)
+            b.seam @ extent(c, id: cl.callee).end
             b.items @ arguments(c, given: cl.args)
         .method m =>
             b.before @ m.receiver
             b.open @ "." + source.span_text(c.s, m.name) + "("
             b.from @ opener_at(c, at: m.name)
+            b.seam @ extent(c, id: m.receiver).end
             b.items @ arguments(c, given: m.args)
         .variant_case vc =>
             if vc.args.len() > 0
@@ -121,7 +130,8 @@ function group(c: Code, value: i64, paren: token.Span?, split: bool) -> Bracket
         shut: end_line(c, id: value),
         close: ")",
         from: -1,
-        to: -1
+        to: -1,
+        seam: -1
     )
 
     if !paren.is_err()
@@ -166,21 +176,21 @@ function group(c: Code, value: i64, paren: token.Span?, split: bool) -> Bracket
 
     return b
 
-# An element whose `lead` is printed before its value, with a comment
-# after `gap` between them: a unary operator and its operand.
-function led(c: Code, value: i64, lead: str, gap: i64) -> Element
+# An element whose `lead`, written from `from`, is printed before its
+# value, with a comment between them: a unary operator and its operand.
+function led(c: Code, value: i64, lead: str, from: i64) -> Element
     item: Element @ plain(c, value: value, needed: parens.UNARY_POWER, after: "")
     item.lead @ lead
-    item.gap @ gap
-    item.first @ source.line_of(c.s, gap)
+    item.from @ from
+    item.first @ source.line_of(c.s, from)
     return item
 
 function plain(c: Code, value: i64, needed: i64, after: str) -> Element
-    start = c.tree.exprs[value].span.start
+    start = extent(c, id: value).start
     return Element(
         key: -1,
         lead: "",
-        gap: start,
+        from: start,
         value: value,
         needed: needed,
         after: after,
@@ -199,14 +209,14 @@ function arguments(c: Code, given: [ast.Arg]) -> [Element]
         item.lead @ parens.arg_lead(c.s, arg: arg)
         mark = owners.code_before(c.lines, index: owners.index_at(c.lines, offset: c.tree.exprs[arg.value].span.start))
 
-        # A mutable one's `@` is its lead, and a comment after it sits
-        # between the lead and the value, as after a name.
+        # A mutable one's `@` is its lead, after the name where there is
+        # one, and a comment on either side of it stays there.
         if arg.mutable && mark >= 0 && c.lines.tokens[mark].kind == .at
-            item.gap @ c.lines.tokens[mark].span.end
+            item.from @ c.lines.tokens[mark].span.start
             item.first @ source.line_of(c.s, c.lines.tokens[mark].span.start)
 
         if !arg.name.is_err()
-            item.gap @ arg.name.must().end
+            item.from @ arg.name.must().start
             item.first @ source.line_of(c.s, arg.name.must().start)
         items @ items.push(item)
 
@@ -220,24 +230,52 @@ function holds(f: page.Fmt, c: Code, from: i64, to: i64) -> bool
     return at >= from && at < to
 
 # Is every comment written inside `value` inside its operand `within` too?
+# Both are asked of their extents, the parentheses at their edges included,
+# and the operand's with the author's parentheses around it inside `value`:
+# in `(a + b) * 2` a comment after the `(` is the left operand's.
 function alone(f: page.Fmt, c: Code, value: i64, within: i64) -> bool
-    outer = c.tree.exprs[value].span
-    operand = c.tree.exprs[within].span
+    outer = extent(c, id: value)
+    operand = inner(c, value: value, within: within)
     i: i64 @ f.next_comment
 
     while i < c.comments.len() && c.comments[i].start < outer.end
-        if c.comments[i].start < operand.start || c.comments[i].start >= operand.end
+        if c.comments[i].start >= outer.start && (c.comments[i].start < operand.start || c.comments[i].start >= operand.end)
             return false
         i @ i + 1
 
     return true
 
+# An operand's tokens inside `value`: its extent, and the author's
+# parentheses around it that are inside `value`'s.
+function inner(c: Code, value: i64, within: i64) -> token.Span
+    outer = extent(c, id: value)
+    operand: token.Span @ extent(c, id: within)
+
+    for open in groups.levels(c.lines, span: c.tree.exprs[within].span)
+        pair = groups.around(c.lines, open: open)
+
+        if pair.start >= outer.start && pair.end < outer.end && pair.start < operand.start
+            operand @ token.Span(start: pair.start, end: pair.end + 1)
+
+    return operand
+
+# Is a comment not printed yet written inside `span`? Not only the next
+# one: a comment just inside the author's `(` before a value is printed
+# with the group, after the value's own are asked about.
+function waits(f: page.Fmt, c: Code, span: token.Span) -> bool
+    i: i64 @ f.next_comment
+
+    while i < c.comments.len() && c.comments[i].start < span.end
+        if c.comments[i].start >= span.start
+            return true
+        i @ i + 1
+
+    return false
+
 # Does a binary hold a comment after an operator, or comments in both its
 # operands, which only a break after each operator keeps?
 function splits(f: page.Fmt, c: Code, value: i64) -> bool
-    span = c.tree.exprs[value].span
-
-    if !holds(f, c, from: span.start, to: span.end)
+    if !waits(f, c, span: extent(c, id: value))
         return false
 
     match c.tree.exprs[value].kind
@@ -255,6 +293,11 @@ function opener(c: Code, after: i64) -> i64
 
 function opener_at(c: Code, at: token.Span) -> i64
     return c.lines.tokens[owners.code_after(c.lines, index: owners.index_at(c.lines, offset: at.start))].span.start
+
+# A value's tokens, with the author's parentheses at its edges around a
+# part of it (`groups.extent`).
+function extent(c: Code, id: i64) -> token.Span
+    return groups.extent(c.lines, span: c.tree.exprs[id].span)
 
 function first_line(c: Code, id: i64) -> i64
     return source.line_of(c.s, c.tree.exprs[id].span.start)

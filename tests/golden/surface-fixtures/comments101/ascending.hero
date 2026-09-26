@@ -1,0 +1,19 @@
+# A run of comments whose columns climb after the last line of two nested
+# `if` blocks (the second skeptic seat's `d02`): 4, then 8, then 12, before a
+# line at 4. Columns that contradict the nesting cannot all be kept, since
+# the page prints the run in order and a block it has left does not open
+# again, so the whole run is placed in the block of its last comment, the
+# inner `if`'s: the canonical form `selfhost/print/owners.hero` states, with
+# the reason it reads a run from its last comment up.
+
+function f(a: bool, b: bool)
+    if a
+        if b
+            print(1)
+    # c4 body
+        # c8 outer if
+            # c12 inner if
+    print(2)
+
+function main()
+    f(a: true, b: true)

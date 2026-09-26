@@ -11,8 +11,9 @@
 # next_comment, last_line, dropped, moved}, threaded as the one @ parameter.
 # - format_file: item order, top-level blank lines, group runs;
 #   entry point, calls declaration.
-# - declaration/field_line/case_line + extern_head_once + signature:
-#   one item's shape (fmt_decl + fmt_extern).
+# - declaration/field_line/case_line + extern_head_once: one item's
+#   shape (fmt_decl + fmt_extern); a function's signature is
+#   `print/headline.hero`'s.
 # - `print/page.hero`: the lines and the comment stream (the one thing
 #   the tree does not keep, so a mistake there is a MOVED comment), and
 #   the rules every walk here calls it for; `print/owners.hero`: the
@@ -62,7 +63,6 @@ use ast
 use source
 use source_extent
 use print/types
-use print/signature
 use print/bodies
 use print/page
 use print/owners
@@ -70,6 +70,7 @@ use lexer
 use print/parens
 use print/brackets
 use print/breaks
+use print/headline
 use parse
 
 # Where a line stops being one line. Not a language rule — one
@@ -473,17 +474,7 @@ function declaration(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [t
                 library: fd.value.library,
                 continues: continues
             )
-            last = source.line_of(s, fd.value.signature_end.start)
-
-            if page.comment_inside(f, s, comments, first: line, last: last)
-                open_signature(@f, tree, s, comments, name: name, fd: fd.value, indent: indent, first: line, last: last)
-            else
-                page.put_line(@f, indent: indent, text: signature.one_line(tree, s, name: name, fd: fd.value))
-
-                # `last`, where the source's signature ended: keyed on `line`, a
-                # doc under one written across lines gained a blank above it.
-                f.last_line @ last
-                page.trailing_comment(@f, s, comments, line: line)
+            headline.signature_lines(@f, tree, s, comments, name: decl.name, fd: fd.value, indent: indent)
 
             if !fd.value.body.is_err()
                 fmt_block(@f, tree, s, comments, block: fd.value.body.must(), indent: 4)
@@ -586,116 +577,8 @@ function case_line(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [tok
     if one_case.fields.len() > 0
         page.block_end(@f, s, comments, indent: 8)
 
-# The words of a signature are `print/signature.hero`'s, one home for both
-# printers and for `fmt`'s two shapes: a formatter that has not learned a form
-# does not error, it DROPS it, measured the hour `consumes` landed (CL-036).
-
-# A signature whose parameter list holds a comment, printed one parameter
-# per line so the comment stays where the author wrote it (defect 095). The
-# one-line shape has no place for it, so it was expelled after the
-# declaration: with a member following it became that member's doc and the
-# tree guard refused at exit 2; with none it left the group as a file-level
-# remark at exit 0, the silent form, measured 2026-09-25 on every shape of a
-# Heroes function's list too (after the `(`, trailing on a parameter, before
-# the `)`, trailing on the closing line). The break is inside brackets, which
-# panel 007 allows; every list without a comment keeps the one-line shape.
-function open_signature(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], name: str, fd: ast.FunctionDecl, indent: i64, first: i64, last: i64)
-    page.put_line(@f, indent: indent, text: signature.opening(s, name: name, fd: fd))
-    f.last_line @ first
-    starts: [i64] @ []
-
-    for param in fd.params
-        starts @ starts.push(source.line_of(s, param.name.start))
-
-    starts @ starts.push(last)
-
-    # A comment trailing a line goes with the last thing printed from it:
-    # `a: i64, b: i64,  # c` is `b`'s, and the `(` line's own only where no
-    # parameter shares that line. Given to the first, it moved (defect 101).
-    if starts[0] > first
-        page.trailing_comment(@f, s, comments, line: first)
-    index: i64 @ 0
-
-    # The list's `)`: the pair of the `(` before the first parameter.
-    shut: i64 @ fd.signature_end.start
-
-    if fd.params.len() > 0
-        open: i64 @ owners.code_before(f.lines, index: owners.index_at(f.lines, offset: fd.params[0].name.start))
-
-        if open >= 0 && f.lines.tokens[open].kind == .at
-            open @ owners.code_before(f.lines, index: open)
-
-        if open >= 0 && f.lines.pair[open] >= 0
-            shut @ f.lines.tokens[f.lines.pair[open]].span.start
-
-    for param in fd.params
-        line = starts[index]
-        page.comments_before(@f, s, comments, line: line, indent: indent + 4)
-        separator: str @ ","
-
-        if index == fd.params.len() - 1
-            separator @ ""
-
-        # A comment inside the parameter's type stays inside it (`lead`),
-        # the marks after the type going on its last line.
-        whole = signature.parameter(tree, s, param: param)
-        written: str @ source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s)
-        start: i64 @ param.name.start
-
-        if param.mutable
-            written @ "@" + written
-            start @ f.lines.tokens[owners.code_before(f.lines, index: owners.index_at(f.lines, offset: start))].span.start
-        end = tree.types[param.ty].span.end
-        words = whole.slice(from: written.len(), to: whole.len())
-        text = breaks.led_text(
-            @f,
-            tree,
-            s,
-            comments,
-            head: "",
-            text: written,
-            from: start,
-            to: end,
-            indent: indent + 4
-        )
-        page.put_line(@f, indent: indent + 4, text: text + words + separator)
-        stop = source.line_of(s, end - 1)
-
-        if f.last_line < stop
-            f.last_line @ stop
-
-        # A comment on that line is the parameter's only before what follows
-        # it, the next parameter or the list's `)`: after the `)`, on a list
-        # closed on the parameter's line, it trails the result.
-        limit: i64 @ shut
-
-        if index + 1 < fd.params.len()
-            limit @ fd.params[index + 1].name.start
-
-        if f.next_comment < comments.len() && comments[f.next_comment].start < limit
-            page.trailing_comment(@f, s, comments, line: stop)
-        index @ index + 1
-
-    # The comments above the `)`'s line are the list's; one after the `)`
-    # is the result's (`closing`).
-    page.comments_before(@f, s, comments, line: source.line_of(s, shut), indent: indent + 4)
-    page.put_line(@f, indent: indent, text: closing(@f, tree, s, comments, fd: fd, indent: indent))
-
-    if f.last_line < last
-        f.last_line @ last
-    page.trailing_comment(@f, s, comments, line: last)
-
-# `) -> R words`, with a comment inside the result's type kept there
-# (`lead`); `)` alone for a result the signature does not write.
-function closing(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], fd: ast.FunctionDecl, indent: i64) -> str
-    text = signature.closing(tree, s, fd: fd)
-    result = tree.types[fd.result].span
-
-    if text == ")" || result.end <= result.start
-        return text
-    written = types.render_type(tree, fd.result, s)
-    words = signature.result_words(s, fd)
-    return breaks.led_text(@f, tree, s, comments, head: ") -> ", text: written, from: result.start, to: result.end, indent: indent) + words
+# A function's signature, on one line or with its parameter list one per
+# line, is `print/headline.hero`'s.
 
 ## The statement walk (fmt_stmt)
 
