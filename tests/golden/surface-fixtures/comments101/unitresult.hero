@@ -1,0 +1,18 @@
+# A regression the first repair of defect 101 made (trunk exit 0, lane exit
+# 2): a comment trailing a signature written with `-> ()`. `fmt` drops the
+# `-> ()`, which the old guard counted as kept, and it refused the file. The
+# guard leaves `-> ()` out of both files now: after a function's, a
+# function with a parameter's, and an extern member's.
+
+function g() -> ()  # after an empty list
+    print(1)
+
+function h(a: [i64]) -> ()  # after a parameter
+    print(a.len())
+
+extern "x.h"
+    function k() -> ()  # after an extern member
+
+function main()
+    g()
+    h(a: [1])

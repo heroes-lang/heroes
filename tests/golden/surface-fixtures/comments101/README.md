@@ -83,8 +83,10 @@ comment, and the value goes on the next.
 §4.15 breaks a long expression inside parentheses, so `fmt` keeps them
 where a comment needs them, breaking a chain after its operators, one
 operand per line, and keeps the author's own where a comment sits just
-inside them (`print/between.hero` finds them in the source). Parentheses
-around no comment are still dropped where they bind nothing.
+inside them (found in the source's tokens: `print/owners.hero`'s `levels`,
+which replaced a byte scanner, `print/between.hero`, on 2026-09-26, see
+`holes.hero`). Parentheses around no comment are still dropped where they
+bind nothing.
 
 `parts.hero`: a comment in the part of a value before its own bracket, a
 key, a receiver, a callee, a base, and the prefix of a control form. Each
@@ -103,10 +105,52 @@ checked-in file to LF, so a CRLF fixture would test LF. The CRLF shapes are
 `selfhost/print/page.hero`'s on blank lines, and every probe of the round
 was run again with CRLF line ends.
 
-Beside the printer's own check, the output guard now asks the two files
-where each comment sits among the code (`selfhost/print/anchors.hero`): how
-many of the tree's positions come before it, how many expressions end
-before it, and whether it trails code. A comment any printer moved changes
-its anchor, and `fmt` refuses: "`fmt` would move the comment on line N".
+Beside the printer's own check, the output guard asks the two files where
+each comment sits among the code (`selfhost/print/anchors.hero`), and `fmt`
+refuses where they disagree: "`fmt` would move the comment on line N".
+Corrected 2026-09-26: the first form of that check counted the tree's
+positions before each comment, and the skeptic seat over 832478b3 showed
+six moves it answered with nothing, among them an inner block's last
+comment moved out to the outer block and a comment trailing `else` moved to
+the line above. It compares each comment's owner block, by the rule
+`print/owners.hero` places it with, and the tokens `fmt` keeps on either
+side of it; the six moves are its unit tests.
+
+The files below are the defect's third round, 2026-09-26, the skeptic
+seat's findings over 832478b3, each refused at exit 2 or moved at exit 0 by
+that commit, and each kept at exit 0 now.
+
+`closer.hero` is defect 099's own class: a comment after a block's last
+statement when the statement ends with the author's `)` alone on its line.
+The `)` line was not counted as the statement's, so code seemed to stand
+between it and the comment, and the comment left the block at exit 0: after
+a body (`m1`), an `if` block (`s2`), a match's last arm (`s5`), a loop. A
+line inside a bracket is part of the logical line it continues now
+(`page.ended`, `owners.end_of`), and never a code line that closes a block.
+
+`runs.hero` is `s8`: a column-0 comment above an `if` block's last comment
+pulled that comment out with it. A run of comments is read from its last
+one up, and no comment belongs to a shallower block than one after it.
+
+`unitresult.hero` is a regression the second round made (trunk exit 0, lane
+exit 2): a comment trailing `-> ()`, which `fmt` drops and the old guard
+counted.
+
+`closeparen.hero`: a comment trailing the author's `)` line, which `fmt`
+drops where the parentheses bind nothing (`p4`, a `while`'s, `k1`, `k2`).
+The statement's or the element's last line is the `)`'s now, and the
+comment trails what is printed.
+
+`types.hero`, `indexes.hero`: a comment inside a type (`t1`, `t2`, `t7`) or
+inside index brackets (`r1`, `r4`, `r5`, `r6`, `t4`), which `fmt` prints on
+one line. The line breaks after the token the comment follows now, the rest
+going on four columns in (`brackets.lead`).
+
+`holes.hero`: a `)` or `(` inside an interpolation's hole, inside the
+author's parentheses with a comment (`h4/f1`, `f3`), which the byte scanner
+took for the group's.
+
+The CRLF and no-final-newline forms of every shape of this round are the
+skeptic seat's generators, rerun, and `selfhost/print/owners.hero`'s tests.
 
 Every output is pinned in `tests/harness/suite_surface.hero`.

@@ -15,7 +15,8 @@
 #   one item's shape (fmt_decl + fmt_extern).
 # - `print/page.hero`: the lines and the comment stream (the one thing
 #   the tree does not keep, so a mistake there is a MOVED comment), and
-#   the three rules every walk here calls it for.
+#   the rules every walk here calls it for; `print/owners.hero`: the
+#   source's logical lines and the block each comment belongs to.
 # - block/statement: the statement walk (fmt_stmt).
 # - valued/plain_valued: a head plus its value, the WIDTH-column break,
 #   match arm layout (fmt_break); `print/brackets.hero` opens a value
@@ -59,12 +60,16 @@
 use token
 use ast
 use source
+use source_extent
 use print/types
 use print/signature
 use print/bodies
 use print/page
+use print/owners
+use lexer
 use print/parens
 use print/brackets
+use print/breaks
 use parse
 
 # Where a line stops being one line. Not a language rule — one
@@ -108,9 +113,14 @@ record Item
 function format_file(tree: ast.Ast, s: source.Source, all_comments: [token.Span], uses: [ast.Use], decls: [ast.Decl]) -> str
     return format_page(tree, s, all_comments, uses, decls).out
 
-# The page, with what `heroes fmt` asks of it beside the text: `moved`,
-# the line of a comment no walk could keep where it was written.
 function format_page(tree: ast.Ast, s: source.Source, all_comments: [token.Span], uses: [ast.Use], decls: [ast.Decl]) -> page.Fmt
+    lexed = lexer.lex_one(source_extent.user_text(s)).tokens
+    return format_lexed(tree, s, all_comments, uses, decls, lexed)
+
+# The page, with what `heroes fmt` asks of it beside the text: `moved`,
+# the line of a comment no walk could keep where it was written. `lexed`
+# are the tokens the tree was parsed from, the root file's first.
+function format_lexed(tree: ast.Ast, s: source.Source, all_comments: [token.Span], uses: [ast.Use], decls: [ast.Decl], lexed: [token.Token]) -> page.Fmt
     f: page.Fmt @ page.blank_page()
 
     # The library's comments go with its declarations, and the
@@ -141,6 +151,26 @@ function format_page(tree: ast.Ast, s: source.Source, all_comments: [token.Span]
         index @ index + 1
 
     items @ sorted_items(items)
+    continuing = joins(s, comments, items: items, decls: decls)
+
+    # The logical lines and the owner of every comment, read with the heads
+    # the merges drop left out, which the page does not have.
+    dropped: [i64] @ []
+    position: i64 @ 0
+    above: i64 @ 0
+
+    for item in items
+        written: i64 @ 0
+
+        if !item.is_use
+            written @ head_line(s, decl: decls[item.at])
+
+        if continuing[position] && written != above
+            dropped @ dropped.push(written)
+        above @ written
+        position @ position + 1
+
+    f.lines @ owners.shape(s, lexed: lexed, ignored: dropped, end: source_extent.root_end(s))
 
     # The extern group, rebuilt: the parser flattened it (§4.19, panel
     # 036), so the canonical form is a run of consecutive members
@@ -149,6 +179,7 @@ function format_page(tree: ast.Ast, s: source.Source, all_comments: [token.Span]
     open_group: str @ ""
     have_previous: bool @ false
     previous_was_use: bool @ false
+    position @ 0
 
     for item in items
         line: i64 @ source.line_of(s, item.start)
@@ -160,7 +191,8 @@ function format_page(tree: ast.Ast, s: source.Source, all_comments: [token.Span]
             group @ group_key(s, decl: decls[item.at])
             doc @ decls[item.at].doc
             head @ head_line(s, decl: decls[item.at])
-        continues = group.len() > 0 && group == open_group && !page.keeps_head(f, s, comments: comments, doc: doc, head: head, start: item.start)
+        continues = continuing[position]
+        position @ position + 1
 
         # The group above closes here, so a comment written inside it after
         # its last member is its last line (defect 099), before the blank
@@ -204,8 +236,7 @@ function format_page(tree: ast.Ast, s: source.Source, all_comments: [token.Span]
             if !after_use && f.last_line > 0 && page.blank_between(s, above: f.last_line, below: line)
                 page.blank_line(@f)
             page.put_line(@f, indent: 0, text: use_line(s, used: uses[item.at]))
-            f.last_line @ line
-            page.trailing_comment(@f, s, comments, line: line)
+            page.ended(@f, s, comments, line: line)
         else
             indent: i64 @ 0
 
@@ -235,6 +266,34 @@ function format_page(tree: ast.Ast, s: source.Source, all_comments: [token.Span]
     # Comments after the last declaration still belong to the file.
     page.comments_before(@f, s, comments, line: 4611686018427387904, indent: 0)
     return f
+
+# Which items continue the group above, decided before any line is printed:
+# a member sharing its head line with the member above joins that group
+# unless the merge would move a comment (`page.keeps_head`). A member of the
+# group above written under its own head drops that head.
+function joins(s: source.Source, comments: [token.Span], items: [Item], decls: [ast.Decl]) -> [bool]
+    out: [bool] @ []
+    open_group: str @ ""
+    from: i64 @ 0
+    previous: i64 @ 0
+
+    for item in items
+        while from < comments.len() && comments[from].start < previous
+            from @ from + 1
+
+        group: str @ ""
+        continues: bool @ false
+
+        if !item.is_use
+            decl = decls[item.at]
+            group @ group_key(s, decl: decl)
+            head = head_line(s, decl: decl)
+            continues @ group.len() > 0 && group == open_group && !page.keeps_head(s, comments: comments, from: from, doc: decl.doc, head: head, start: item.start)
+        out @ out.push(continues)
+        open_group @ group
+        previous @ item.start
+
+    return out
 
 function sorted_items(items: [Item]) -> [Item]
     out: [Item] @ []
@@ -393,9 +452,14 @@ function declaration(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [t
                 library: k.library,
                 continues: continues
             )
-            page.put_line(@f, indent: indent, text: "constant " + name + ": " + types.render_type(tree, k.ty, s))
-            f.last_line @ line
-            page.trailing_comment(@f, s, comments, line: line)
+            head = "constant " + name + ": " + types.render_type(tree, k.ty, s)
+            to = tree.types[k.ty].span.end
+            page.put_line(
+                @f,
+                indent: indent,
+                text: breaks.led_text(@f, tree, s, comments, head: "", text: head, from: decl_start(decl), to: to, indent: indent)
+            )
+            page.ended(@f, s, comments, line: line)
 
             if !k.body.is_err()
                 fmt_block(@f, tree, s, comments, block: k.body.must(), indent: 4)
@@ -449,8 +513,7 @@ function declaration(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [t
             if rec.partial
                 marker @ " partial"
             page.put_line(@f, indent: indent, text: "record " + name + tag_text + marker)
-            f.last_line @ line
-            page.trailing_comment(@f, s, comments, line: line)
+            page.ended(@f, s, comments, line: line)
 
             for field in rec.fields
                 field_line(@f, tree, s, comments, field: field, indent: indent + 4)
@@ -471,8 +534,7 @@ function declaration(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [t
         .test_decl t =>
             # The name is the string literal, quotes included.
             page.put_line(@f, indent: 0, text: "test " + name)
-            f.last_line @ line
-            page.trailing_comment(@f, s, comments, line: line)
+            page.ended(@f, s, comments, line: line)
             fmt_block(@f, tree, s, comments, block: t.body, indent: 4)
 
 function field_line(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], field: ast.Field, indent: i64)
@@ -494,13 +556,14 @@ function field_line(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [to
     # content — and here it is content the CHECKER reads.
     if f.last_line > 0 && page.blank_between(s, above: f.last_line, below: line)
         page.blank_line(@f)
+    text = source.span_text(s, field.name) + ": " + types.render_type(tree, field.ty, s)
+    to = tree.types[field.ty].span.end
     page.put_line(
         @f,
         indent: indent,
-        text: source.span_text(s, field.name) + ": " + types.render_type(tree, field.ty, s)
+        text: breaks.led_text(@f, tree, s, comments, head: "", text: text, from: field.name.start, to: to, indent: indent)
     )
-    f.last_line @ line
-    page.trailing_comment(@f, s, comments, line: line)
+    page.ended(@f, s, comments, line: line)
 
 function case_line(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], one_case: ast.Case)
     line = source.line_of(s, one_case.name.start)
@@ -515,8 +578,7 @@ function case_line(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [tok
     if f.last_line > 0 && page.blank_between(s, above: f.last_line, below: line)
         page.blank_line(@f)
     page.put_line(@f, indent: 4, text: source.span_text(s, one_case.name))
-    f.last_line @ line
-    page.trailing_comment(@f, s, comments, line: line)
+    page.ended(@f, s, comments, line: line)
 
     for field in one_case.fields
         field_line(@f, tree, s, comments, field: field, indent: 8)
@@ -554,6 +616,18 @@ function open_signature(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments:
         page.trailing_comment(@f, s, comments, line: first)
     index: i64 @ 0
 
+    # The list's `)`: the pair of the `(` before the first parameter.
+    shut: i64 @ fd.signature_end.start
+
+    if fd.params.len() > 0
+        open: i64 @ owners.code_before(f.lines, index: owners.index_at(f.lines, offset: fd.params[0].name.start))
+
+        if open >= 0 && f.lines.tokens[open].kind == .at
+            open @ owners.code_before(f.lines, index: open)
+
+        if open >= 0 && f.lines.pair[open] >= 0
+            shut @ f.lines.tokens[f.lines.pair[open]].span.start
+
     for param in fd.params
         line = starts[index]
         page.comments_before(@f, s, comments, line: line, indent: indent + 4)
@@ -561,17 +635,67 @@ function open_signature(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments:
 
         if index == fd.params.len() - 1
             separator @ ""
-        page.put_line(@f, indent: indent + 4, text: signature.parameter(tree, s, param: param) + separator)
-        f.last_line @ line
 
-        if line < starts[index + 1]
-            page.trailing_comment(@f, s, comments, line: line)
+        # A comment inside the parameter's type stays inside it (`lead`),
+        # the marks after the type going on its last line.
+        whole = signature.parameter(tree, s, param: param)
+        written: str @ source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s)
+        start: i64 @ param.name.start
+
+        if param.mutable
+            written @ "@" + written
+            start @ f.lines.tokens[owners.code_before(f.lines, index: owners.index_at(f.lines, offset: start))].span.start
+        end = tree.types[param.ty].span.end
+        words = whole.slice(from: written.len(), to: whole.len())
+        text = breaks.led_text(
+            @f,
+            tree,
+            s,
+            comments,
+            head: "",
+            text: written,
+            from: start,
+            to: end,
+            indent: indent + 4
+        )
+        page.put_line(@f, indent: indent + 4, text: text + words + separator)
+        stop = source.line_of(s, end - 1)
+
+        if f.last_line < stop
+            f.last_line @ stop
+
+        # A comment on that line is the parameter's only before what follows
+        # it, the next parameter or the list's `)`: after the `)`, on a list
+        # closed on the parameter's line, it trails the result.
+        limit: i64 @ shut
+
+        if index + 1 < fd.params.len()
+            limit @ fd.params[index + 1].name.start
+
+        if f.next_comment < comments.len() && comments[f.next_comment].start < limit
+            page.trailing_comment(@f, s, comments, line: stop)
         index @ index + 1
 
-    page.comments_before(@f, s, comments, line: last, indent: indent + 4)
-    page.put_line(@f, indent: indent, text: signature.closing(tree, s, fd: fd))
-    f.last_line @ last
+    # The comments above the `)`'s line are the list's; one after the `)`
+    # is the result's (`closing`).
+    page.comments_before(@f, s, comments, line: source.line_of(s, shut), indent: indent + 4)
+    page.put_line(@f, indent: indent, text: closing(@f, tree, s, comments, fd: fd, indent: indent))
+
+    if f.last_line < last
+        f.last_line @ last
     page.trailing_comment(@f, s, comments, line: last)
+
+# `) -> R words`, with a comment inside the result's type kept there
+# (`lead`); `)` alone for a result the signature does not write.
+function closing(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], fd: ast.FunctionDecl, indent: i64) -> str
+    text = signature.closing(tree, s, fd: fd)
+    result = tree.types[fd.result].span
+
+    if text == ")" || result.end <= result.start
+        return text
+    written = types.render_type(tree, fd.result, s)
+    words = signature.result_words(s, fd)
+    return breaks.led_text(@f, tree, s, comments, head: ") -> ", text: written, from: result.start, to: result.end, indent: indent) + words
 
 ## The statement walk (fmt_stmt)
 
@@ -688,6 +812,8 @@ function fmt_block(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [tok
         # statement's own span must not answer this: it ends at a
         # Dedent on the NEXT line, and trusting it made
         # trailing_comment steal the following declaration's doc.
+        # And a logical line ends where its last continuation does, a `)`
+        # alone on its line included (`page.ended`).
         end = literal_end_line(tree, s, id: id)
         stop: i64 @ line
 
@@ -696,7 +822,7 @@ function fmt_block(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [tok
 
         if f.last_line < stop
             f.last_line @ stop
-        page.trailing_comment(@f, s, comments, line: f.last_line)
+        page.ended(@f, s, comments, line: line)
         closed_a_loop @ shape == LOOP_BLOCK || shape == MATCH_BLOCK
 
     # A remark after the last statement is this block's last line (defect
@@ -710,40 +836,56 @@ function fmt_block(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [tok
 # DROPPED THE BRANCHES).
 function statement(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], id: i64, indent: i64, head: str)
     match tree.stmts[id].kind
+        # A comment inside a head's type or place stays there (`lead`).
         .bind b =>
-            annotation: str @ ""
+            written: str @ source.span_text(s, b.name)
+            end: i64 @ b.name.end
 
             if !b.ty.is_err()
-                annotation @ ": " + types.render_type(tree, b.ty.must(), s)
-            valued(
+                written @ written + ": " + types.render_type(tree, b.ty.must(), s)
+                end @ tree.types[b.ty.must()].span.end
+            lead = breaks.led_text(
                 @f,
                 tree,
                 s,
                 comments,
-                head: head + source.span_text(s, b.name) + annotation + " = ",
-                value: b.value,
+                head: head,
+                text: written,
+                from: b.name.start,
+                to: end,
                 indent: indent
             )
+            valued(@f, tree, s, comments, head: lead + " = ", value: b.value, indent: indent)
         .declare dc =>
-            valued(
+            written = source.span_text(s, dc.name) + ": " + types.render_type(tree, dc.ty, s)
+            end = tree.types[dc.ty].span.end
+            lead = breaks.led_text(
                 @f,
                 tree,
                 s,
                 comments,
-                head: head + source.span_text(s, dc.name) + ": " + types.render_type(tree, dc.ty, s) + " @ ",
-                value: dc.value,
+                head: head,
+                text: written,
+                from: dc.name.start,
+                to: end,
                 indent: indent
             )
+            valued(@f, tree, s, comments, head: lead + " @ ", value: dc.value, indent: indent)
         .mutate m =>
-            valued(
+            place = tree.exprs[m.place].span
+            written = parens.render(tree, s, id: m.place)
+            lead = breaks.led_text(
                 @f,
                 tree,
                 s,
                 comments,
-                head: head + parens.render(tree, s, id: m.place) + " @ ",
-                value: m.value,
+                head: head,
+                text: written,
+                from: place.start,
+                to: place.end,
                 indent: indent
             )
+            valued(@f, tree, s, comments, head: lead + " @ ", value: m.value, indent: indent)
         .return_stmt r =>
             if r.value.is_err()
                 page.put_line(@f, indent: indent, text: head + "return")
@@ -795,7 +937,7 @@ function valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
                         @f,
                         s,
                         comments,
-                        line: brackets.opening_line(tree, s, comments, value: branch.cond),
+                        line: owners.start_of(f.lines, line: source.line_of(s, tree.exprs[branch.cond].span.start)),
                         indent: indent
                     )
                 block_head(@f, tree, s, comments, head: keyword + "if ", value: branch.cond, indent: indent)
@@ -811,7 +953,7 @@ function valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
                 # above it, and a remark above `else` moved under it, where
                 # `fmt` was no fixpoint on its own output.
                 if otherwise.stmts.len() > 0
-                    else_line = page.opener_line(s, first: source.line_of(s, tree.stmts[otherwise.stmts[0]].span.start))
+                    else_line = page.opener_line(f, first: source.line_of(s, tree.stmts[otherwise.stmts[0]].span.start))
                     page.comments_before(@f, s, comments, line: else_line, indent: indent)
                     page.put_line(@f, indent: indent, text: "else")
                     page.opened(@f, s, comments, line: else_line)
@@ -868,7 +1010,7 @@ function valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
 
                         if f.last_line < stop
                             f.last_line @ stop
-                        page.trailing_comment(@f, s, comments, line: f.last_line)
+                        page.ended(@f, s, comments, line: line)
                     .block blk =>
                         # A block arm never pads: its => ends the
                         # line, so there is nothing to line up with.
@@ -877,7 +1019,7 @@ function valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
 
                         if blk.block.stmts.len() > 0
                             arrow @ page.opener_line(
-                                s,
+                                f,
                                 first: source.line_of(s, tree.stmts[blk.block.stmts[0]].span.start)
                             )
                         page.opened(@f, s, comments, line: arrow)
@@ -942,7 +1084,7 @@ function valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
 # one waiting before the value's end is inside it or its parentheses.
 function plain_valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, value: i64, indent: i64)
     text = head + parens.render(tree, s, id: value)
-    reach = brackets.reach(tree, s, comments, value: value)
+    reach = brackets.reach(f, tree, value: value)
     waiting = f.next_comment < comments.len() && comments[f.next_comment].start < reach
 
     if indent + text.chars().len() <= WIDTH && !spans_lines(tree, s, value: value) && !waiting
@@ -955,7 +1097,7 @@ function plain_valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [
 # which stays on it (defect 101).
 function block_head(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, value: i64, indent: i64)
     brackets.broken(@f, tree, s, comments, head: head, value: value, indent: indent, tail: "", open: false)
-    last: i64 @ source.line_of(s, tree.exprs[value].span.end)
+    last: i64 @ owners.end_of(f.lines, line: source.line_of(s, tree.exprs[value].span.start))
 
     if last < f.last_line
         last @ f.last_line
