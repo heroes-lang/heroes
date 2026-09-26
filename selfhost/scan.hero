@@ -38,7 +38,8 @@ function line_body(@l: state.LexState, text: str)
         else if b == '\t'
             # A tab between tokens is as illegal as one in the margin.
             span = token.Span(start: l.pos, end: l.pos + 1)
-            l.diagnostics @ l.diagnostics.push(
+            state.push_diagnostic(
+                @l.diagnostics,
                 diag.new_diagnostic(code: "tab_in_line", message: "a tab is a compile error — use spaces", span: span)
             )
             l.pos @ l.pos + 1
@@ -48,7 +49,8 @@ function line_body(@l: state.LexState, text: str)
             # eats the CR too (2026-08-12, sweep 001 audit S6).
             if number.byte_at(text, l.pos + 1) != '\n'
                 span = token.Span(start: l.pos, end: l.pos + 1)
-                l.diagnostics @ l.diagnostics.push(
+                state.push_diagnostic(
+                    @l.diagnostics,
                     diag.new_diagnostic(code: "stray_carriage_return", message: "a carriage return that is not part of a line ending — delete it, or end the line", span: span)
                 )
             l.pos @ l.pos + 1
@@ -95,7 +97,7 @@ function comment(@l: state.LexState, text: str)
     # Don't let a trailing \r into the comment's text.
     if end > start && text[end - 1] == layout.CR
         end @ end - 1
-    l.tokens @ l.tokens.push(token.Token(kind: .comment, span: token.Span(start: start, end: end)))
+    state.push_token(@l.tokens, token.Token(kind: .comment, span: token.Span(start: start, end: end)))
 
 ## The word
 
@@ -212,7 +214,7 @@ function punct(@l: state.LexState, text: str)
         return
 
     # Not in the language. Skip one whole character, UTF-8-safe.
-    ch = text.slice(from: start, to: text.len()).chars()[0]
+    ch = bytes.char_at(text, start)
     l.pos @ l.pos + ch.len()
     span = token.Span(start: start, end: l.pos)
 
