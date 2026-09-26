@@ -68,6 +68,10 @@ at exit 0, the same bytes as the trunk, and the printer's check could not
 see it. The signature keeps one parameter per line now whenever a comment
 sits from its `(` line to its `)` line (`page.comment_inside`), and a
 comment trailing a line two parameters share goes after the second.
+Corrected 2026-09-26: of a list written across lines; one written on one
+line stays on one (`results.hero` below), and the rule's home is
+`selfhost/print/headline.hero`, which took the signature out of
+`print/fmt.hero` that day.
 
 `conditions.hero` replaces the first repair's `refused.hero`: a comment
 inside the value of a line that opens a block, in an `if`, an `else if`, a
@@ -85,8 +89,8 @@ where a comment needs them, breaking a chain after its operators, one
 operand per line, and keeps the author's own where a comment sits just
 inside them (found in the source's tokens: `print/owners.hero`'s `levels`,
 which replaced a byte scanner, `print/between.hero`, on 2026-09-26, see
-`holes.hero`). Parentheses around no comment are still dropped where they
-bind nothing.
+`holes.hero`; `levels` is `print/groups.hero`'s since the fourth round).
+Parentheses around no comment are still dropped where they bind nothing.
 
 `parts.hero`: a comment in the part of a value before its own bracket, a
 key, a receiver, a callee, a base, and the prefix of a control form. Each
@@ -132,9 +136,9 @@ line inside a bracket is part of the logical line it continues now
 pulled that comment out with it. A run of comments is read from its last
 one up, and no comment belongs to a shallower block than one after it.
 
-`unitresult.hero` is a regression the second round made (trunk exit 0, lane
-exit 2): a comment trailing `-> ()`, which `fmt` drops and the old guard
-counted.
+`unitresult.hero` is a regression the second round made (832478b3; trunk
+exit 0, lane exit 2): a comment trailing `-> ()`, which `fmt` drops and the
+old guard counted.
 
 `closeparen.hero`: a comment trailing the author's `)` line, which `fmt`
 drops where the parentheses bind nothing (`p4`, a `while`'s, `k1`, `k2`).
@@ -144,7 +148,8 @@ comment trails what is printed.
 `types.hero`, `indexes.hero`: a comment inside a type (`t1`, `t2`, `t7`) or
 inside index brackets (`r1`, `r4`, `r5`, `r6`, `t4`), which `fmt` prints on
 one line. The line breaks after the token the comment follows now, the rest
-going on four columns in (`brackets.lead`).
+going on four columns in (`brackets.lead`; corrected 2026-09-26: it is
+`selfhost/print/breaks.hero`'s `lead`).
 
 `holes.hero`: a `)` or `(` inside an interpolation's hole, inside the
 author's parentheses with a comment (`h4/f1`, `f3`), which the byte scanner
@@ -152,5 +157,57 @@ took for the group's.
 
 The CRLF and no-final-newline forms of every shape of this round are the
 skeptic seat's generators, rerun, and `selfhost/print/owners.hero`'s tests.
+
+The files below are the defect's fourth round, 2026-09-26, the second
+skeptic seat's findings over e0e08d18, each refused at exit 2, moved at exit
+0 or printed a column too far by that commit, and each kept at exit 0 now.
+The seat's bracket-break generator, a comment after every token inside a
+bracket, trailing it, on a line of its own, or both, reads 0 refused of the
+5,223 of its 7,464 variants that parse.
+
+`unitinside.hero` (`k01` to `k07`): a comment inside a `-> ()` the author
+wrote. The guard read the `()` around the comment as kept tokens, its
+streams parted, and it compared the rest by text alone, so the comment moved
+into the parameter list at exit 0; with a parameter it was refused. `fmt`
+keeps the `()` where a comment is inside it, the one place that comment
+has, and the guard reads `-> ()` over the code tokens and refuses every
+comment past a point where the streams part.
+
+`dots.hero`: a comment after a `.`, of a field, a method or a variant case,
+and a name with a `(` on a list's next line, which the lexer's terminator
+makes a new element and no call. The one-line text breaks after the token
+the comment follows; a bracket opened after that break opens four columns
+in.
+
+`operands.hero`: a comment just inside the author's parentheses around an
+operand, `x = (  # c` over `a + b) * 2`. The tree's span of the value starts
+at `a`, so the comment was outside it; a value's extent takes the
+parentheses at its edges now (`selfhost/print/groups.hero`'s `extent`), and
+the group is opened.
+
+`innermost.hero`: a comment after the outer of two parentheses around one
+value, inside index brackets. The one-line text's parentheses were matched
+one by one and the comment moved inside the inner pair; a printed pair is
+the written pair around the same tokens now, the innermost of several
+(`breaks.aligned`).
+
+`leads.hero`: a comment after a parameter's `@`, and between an argument's
+name and its `@`. A parameter starts at its `@`, and a lead breaks after the
+token its comment follows.
+
+`results.hero`: a comment inside the result type of a signature with no
+parameters, which opened the list and moved into it. A list on one line
+stays on one.
+
+`commas.hero`: a comma between two comments, one trailing the value before
+it and one trailing the comma, keeps a line of its own
+(`owners.lone_comma`).
+
+`pieces.hero` (`i01`, `i02`): a line broken after two comments' tokens; the
+piece between the breaks kept the space before it, a column too far.
+
+`ascending.hero` (`d02`): a run of comments whose columns climb, placed in
+the block of its last comment. A stated canonical form and not an accident:
+`selfhost/print/owners.hero` writes the rule and its reason.
 
 Every output is pinned in `tests/harness/suite_surface.hero`.

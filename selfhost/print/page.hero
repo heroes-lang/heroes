@@ -17,7 +17,9 @@
 #   re-parse reads the doc list the parser read (`comments_above`);
 # - a comment written inside a block after its last item stays in that
 #   block, at its indent (`block_end`), the block being the one
-#   `print/owners.hero` gives it, by the rule the output guard checks;
+#   `print/owners.hero` gives it, by the rule the output guard checks; a
+#   run of them whose columns climb is placed wholly in its last
+#   comment's block, the canonical form `owners` states with its reason;
 # - a comment stays on the line it trails, and one inside a bracket stays
 #   inside it (defect 101). One the walks cannot keep there is recorded in
 #   `moved`, and `heroes fmt` refuses the file rather than print the comment
@@ -300,6 +302,18 @@ function ended(@f: Fmt, s: source.Source, comments: [token.Span], line: i64)
         f.last_line @ end
     trailing_comment(@f, s, comments, line: f.last_line)
 
+# A comma `owners.lone_comma` keeps on a line of its own, at `indent`,
+# after a value just printed without it: the comment trailing the value's
+# last line, the ones above the comma, then the comma and the comment
+# trailing it, each where it was written.
+function comma_line(@f: Fmt, s: source.Source, comments: [token.Span], comma: token.Span, indent: i64)
+    trailing_comment(@f, s, comments, line: f.last_line)
+    line = source.line_of(s, comma.start)
+    comments_before(@f, s, comments, line: line, indent: indent)
+    put_line(@f, indent: indent, text: ",")
+    f.last_line @ line
+    trailing_comment(@f, s, comments, line: line)
+
 # The line that opens a block, just printed: where the block's walk
 # measures from, and the comment trailing it, which stays on it. The first
 # `comments_before` of the block printed that one as its first line
@@ -307,18 +321,6 @@ function ended(@f: Fmt, s: source.Source, comments: [token.Span], line: i64)
 function opened(@f: Fmt, s: source.Source, comments: [token.Span], line: i64)
     f.last_line @ line
     trailing_comment(@f, s, comments, line: line)
-
-# Is a comment written INSIDE this signature, from the name's line to the
-# closing token's, when those are two lines? One on the name's line of a
-# signature written across lines trails its `(` or a parameter, and the
-# joined line moved it to that line's end at exit 0 (defect 101); on a
-# signature of one line, it trails the whole of it. The stream is in source
-# order and every comment above the name is printed already, so the next
-# one is the only one to ask.
-function comment_inside(f: Fmt, s: source.Source, comments: [token.Span], first: i64, last: i64) -> bool
-    if last == first || f.next_comment >= comments.len()
-        return false
-    return source.line_of(s, comments[f.next_comment].start) <= last
 
 # Is a comment waiting to be printed above `line`? RULE 4 puts its blank
 # ABOVE the comment, and `comments_before` has already printed the
@@ -345,7 +347,7 @@ test "the line that opens a block is the logical line above its first statement"
     text = "function f(c: bool)\n    if c\n        print(1)\n    # above\n    else  # trailing\n        # under\n\n        print(2)\n"
     s = source.new_source(name: "t.hero", text: text)
     f: Fmt @ blank_page()
-    f.lines @ owners.read(s, text: text, ignored: [])
+    f.lines @ owners.shape(s, lexed: parse.parse(text).tokens, ignored: [], end: text.len())
     assert opener_line(f, first: 8) == 5
     assert first_mark(s, line: 4) == '#'
     assert first_mark(s, line: 7) == ' '
@@ -382,7 +384,7 @@ test "a comment after a block's last item is that block's where owners gives it 
     parsed = parse.parse(text)
     assert parsed.diagnostics.len() == 0
     s = source.new_source(name: "t.hero", text: text)
-    lines = owners.read(s, text: text, ignored: [])
+    lines = owners.shape(s, lexed: parsed.tokens, ignored: [], end: text.len())
     assert lines.owner[0] == 1
     assert lines.owner[1] == 1
     assert lines.owner[2] == 0
