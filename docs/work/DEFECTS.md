@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 5**
+**OPEN: 4**
 
 - [ ] **096 — inside an `extern` group, a remark followed by a blank line before the next member makes `fmt` refuse the file** | the group printer never emits the blank line for a continuing member, so the remark becomes the next member's doc, the self-check sees a different tree and `fmt` exits 2 on a program `check` accepts | `selfhost/print/fmt.hero` (the group's member walk, the `continues` branch)
 
@@ -131,30 +131,5 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     The repair keeps a trailing comment on the line it trails, a comment
     inside a bracket inside the bracket, and prints a blank line between arms
     only where the source has one.
-
-- [ ] **103 — the lexer is quadratic in the size of a file: it copies the token array at every line end and the rest of the file at every escape** | `layout.hero` appends the line-end, indent and dedent tokens as `l.tokens @ l.tokens.push(…)`, a field place the in-place store never fires on (design.md Part 8 wart 8), so every line copies the whole token array and resets its capacity, and the next in-place push reallocates it; and `literals.escape_step` reads one character as `text.slice(from: …, to: text.len()).chars()[0]`, a copy of the rest of the file per escape, as the char-literal loop and the unexpected-character path do per character | `selfhost/layout.hero:112,119,135` · `selfhost/literals.hero:30,159` · `selfhost/scan.hero:98,215` · `selfhost/state.hero:97,105` · `selfhost/lexer.hero:123,125`
-
-    **Origin:** lane g's agent, 2026-09-26, timing its own round (*parsing
-    walk.hero four times over takes 6.3 s against 0.16 s for one copy*);
-    measured by the coordinator the same day on the trunk's compiler at
-    `bdf430f1`, and profiled with `sample`, which put the time in
-    `hero_array_push` under `layout.maybe_terminator` and `layout.line_start`
-    and in the Token copies inside `hero_array_push_owned` under `state.emit`.
-
-    **The measurements**, `heroes lex` on a file of 500 functions and its 2, 4
-    and 8 copies, `user` seconds: with a string holding escapes in each, 1.32,
-    5.13, 20.67, 91.05; with a plain string, 0.03, 0.12, 0.48, 2.58; with no
-    string at all, 0.13, 0.49, 1.89 at 2, 4 and 8. Four times the time for
-    twice the file, every row; 210 KB of source takes a minute and a half to
-    lex.
-
-    **Why it is a defect and not the wart.** Design.md Part 8 wart 8 stays a
-    wart on panel 144's ruling that the cost of a push through a field is in
-    the spelling, and names the cheap one: lend the field to an `@`
-    parameter. `state.push_token` is exactly that, written for this lexer on
-    2026-08-26 with a comment saying so, and the lexer calls it from one path
-    of the eight that append a token. The repair is the spelling the ruling
-    names at every append, a character read by its own width, and a test
-    that fails if the slow spelling comes back.
 
 *******************************************************************************
