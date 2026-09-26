@@ -89,12 +89,21 @@ function emit(@l: LexState, kind: token.TokenKind, start: i64)
 function push_token(@tokens: [token.Token], t: token.Token)
     tokens @ tokens.push(t)
 
+# The same spelling for the diagnostics (defect 103), and for the same reason:
+# `l.diagnostics @ l.diagnostics.push(d)` is a field place and copies every
+# diagnostic already recorded, so a file with many errors was quadratic in
+# them. Every append to a growing array of the lexer's state goes through one
+# of these two, and the test at the bottom of this file reads the lexer's
+# modules for the other spelling.
+function push_diagnostic(@diagnostics: [diag.Diagnostic], d: diag.Diagnostic)
+    diagnostics @ diagnostics.push(d)
+
 # Error recovery in one move: record why, emit an `error` token over the same
 # span, keep lexing. The lexer never stops.
 function error_token(@l: LexState, d: diag.Diagnostic)
     span = d.span
-    l.diagnostics @ l.diagnostics.push(d)
-    l.tokens @ l.tokens.push(token.Token(kind: .error, span: span))
+    push_diagnostic(@l.diagnostics, d)
+    push_token(@l.tokens, token.Token(kind: .error, span: span))
     l.last_significant @ ok(.error)
 
 # The same recovery for a scanner that has ALREADY pushed its diagnostic — a
@@ -102,7 +111,7 @@ function error_token(@l: LexState, d: diag.Diagnostic)
 # an `error` token so the parser is not handed a number nobody decoded.
 function error_token_at(@l: LexState, start: i64)
     span = token.Span(start: start, end: l.pos)
-    l.tokens @ l.tokens.push(token.Token(kind: .error, span: span))
+    push_token(@l.tokens, token.Token(kind: .error, span: span))
     l.last_significant @ ok(.error)
 
 test "emit tracks bracket depth and the last significant token"

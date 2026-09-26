@@ -217,7 +217,7 @@ function digit_run(@l: state.LexState, text: str, base: digits.Base) -> Run
                 d.notes @ d.notes.push(
                     "`1_000_000` and `0xff_ff` are the shape; a separator that leads, trails or doubles is a typo rather than a grouping"
                 )
-                l.diagnostics @ l.diagnostics.push(d)
+                state.push_diagnostic(@l.diagnostics, d)
             run.faulted @ true
         else if base != .decimal && bytes.is_alnum(b)
             bad_start = l.pos
@@ -234,7 +234,7 @@ function digit_run(@l: state.LexState, text: str, base: digits.Base) -> Run
                     span: span
                 )
                 d.notes @ d.notes.push(digits.a_name(base) + " literal admits " + digits.base_digits(base))
-                l.diagnostics @ l.diagnostics.push(d)
+                state.push_diagnostic(@l.diagnostics, d)
             run.faulted @ true
         else
             return run
