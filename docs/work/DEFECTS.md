@@ -18,37 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 8**
-
-- [ ] **107 — `heroes fmt` refuses a program with a comment after `.` or `::` where the only bracket is the author's parentheses, because it drops them and the line break lands at depth 0** | `y = (xs.  # c` / `len())` parses, and `fmt` exits 2 with *produced source that does not parse* (`expected_field_name`), the file untouched; the same for `(p.  # c` / `x)`, `(Point::  # c` / `x)`, `(a + (b.  # c` / `c))`, and for a variant case's leading `.`, a binary's operand, a unary's operand, a `return` value and an `if` condition (`indentation_jump`); inside any other enclosing bracket the same comment formats | `selfhost/print/breaks.hero` (`restored`) · `selfhost/print/around.hero` · `selfhost/print/groups.hero`
-
-    **Origin:** panel 180's compiler-engineer, 2026-09-27, reproducers in
-    `/Users/joseph/Temp/heroes-recovery-2026-09-26/panel-180/compiler-engineer/map/fmtdefect/`,
-    widened by the critic (five more members), re-run by the coordinator on
-    the trunk's compiler at `29ed5601`: `parse` exit 0 and `fmt` exit 2 on
-    ten shapes (`expected_field_name` on seven, `expected_field_name_after_colons`,
-    `expected_case_name`, `indentation_jump`), `fmt` exit 0 on the same
-    comment inside a call, an array, an index and a type. The neighbour of lane g's fifth round (defect 101's record, F1 to
-    F3), which kept the author's parentheses around a comment inside an
-    index and did not reach these.
-
-    **Why it is a defect.** A correct program has no canonical form (design.md
-    §4.15, *exactly one correct way to write any program*); the guard stops
-    the corruption, so it is a refusal and not a silent move.
-
-- [ ] **108 — a comment inside an `extern` member's releaser set becomes part of the next releaser's name** | `acquires h_close |  # either one` / `h_close_v2` fails `heroes check` with `unread_releaser` for `#eitheroneh_close_v2`: `releasers` splits the set's source text and drops only whitespace, and the same reading feeds the checker, the emitter and `fmt`; without the comment the program runs | `selfhost/handles.hero:191` (`releasers`)
-
-    **Origin:** panel 180's completeness critic, 2026-09-27, reproducer in
-    `/Users/joseph/Temp/heroes-recovery-2026-09-26/panel-180/critic/probes/releaser/`,
-    beside the compiler-engineer's `rel_pipe` shape; loud, not corrupting, as
-    far as the critic ran; re-run by the coordinator on the trunk's compiler
-    at `29ed5601`: `heroes check` exit 1 with that message, and the control
-    without the comment runs (*ended by h_close_v2*). The neighbour of panel
-    176's releaser set.
-
-    **Why it is a defect.** A comment changes a program's meaning, here into
-    a refusal naming a function nobody wrote; a comment must be inert
-    wherever the grammar lets it stand.
+**OPEN: 6**
 
 - [ ] **111 — `heroes check` is quadratic in a program's calls and declarations, and one scan is most of the compiler checking itself** | `check/freer.marked_as_freer` reads every declaration and every parameter of the program at every call to a user function, asking whether one names it as a freer, and `resolved.declare_top` copies a module's whole map of names at every declaration: `check` on generated programs of 250, 500 and 1000 units reads 0.56, 1.45 and 4.31 s user, and on `selfhost/main.hero` the scan dominates the profile | `selfhost/check/freer.hero:40` (`marked_as_freer`) · `selfhost/resolved.hero:302` (`declare_top`)
 
