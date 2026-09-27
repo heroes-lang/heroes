@@ -1150,6 +1150,16 @@ Three rules follow, and they bind every later edit:
 - **Nobody on the page was asked, and the page says so.** No characterisation of
   a living person beyond the borrowing itself, and no claim that anyone endorses
   this language.
+- **A borrowing is credited in the session that makes it** (author instruction
+  2026-09-27, given in Italian, meant as: *if you take inspiration from a
+  language, Nim or Odin or another, remember to put it on the site's thanks
+  page*). When a sitting, a repair or a design choice takes a rule from
+  another language, the entry for that language gains the borrowing in both
+  editions, `about/thanks.html` and `it/about/thanks.html`, in the same session,
+  under this section's rules: the designer's name and every link re-checked,
+  and only what was actually taken, never a language the design only
+  compared itself with. The entry lands with the commit that lands the
+  borrowing, and it publishes with the next push, which is asked for.
 
 ## The claims that have a gate on them
 
