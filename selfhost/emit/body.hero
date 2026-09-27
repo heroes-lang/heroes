@@ -120,6 +120,11 @@ function reachable(f: containers.Function) -> [bool]
     return live
 
 function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function, live: [bool], read: {i64: bool})
+    # What every declaration below asks of the function, read once
+    # (defect 112): the first live writer of each temporary, and which
+    # slots the emitted C reads.
+    d = unread.defs(f, live)
+    slots_read = unread.slots_read(f, live, d, read)
     index: i64 @ 0
 
     for slot in f.slots
@@ -164,7 +169,7 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
             # decrefs it (`decref_slot`, panel 106), so it is read.
             deliberate: str @ ""
 
-            if !unread.slot_is_read(f, live, read: read, slot: index)
+            if !slots_read[index]
                 deliberate @ "__attribute__((unused)) "
             writer.line(
                 @w,
@@ -181,13 +186,13 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
         if ctype.is_unit(c, ty: ty)
             keep @ false
 
-        if keep && !unread.assigned(f, live, value: value_at)
+        if keep && !unread.assigned(d, value: value_at)
             keep @ false
 
         # A discarded result is never assigned either, so declaring it
         # would be the unused variable this rule exists to stop. The two
         # decisions agree by reading the same set.
-        if keep && unread.discarded(f, live, value: value_at, read: read)
+        if keep && unread.discarded(f, d, value: value_at, read: read)
             keep @ false
 
         if keep

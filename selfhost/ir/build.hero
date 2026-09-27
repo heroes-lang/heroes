@@ -20,10 +20,10 @@
 # write, because `t0: i64 @ 0` is legal Heroes.
 
 use token
-use diag
 use resolved
 use ir
 use ir/containers
+use ir/flow
 
 # Where break and continue go. A stack, because loops nest — and for a
 # `for` loop continue must land on the STEP block rather than the head:
@@ -54,6 +54,17 @@ record Lowering
     counters: {str: i64}
     # (), interned once. Every function reserves value id 0 for it.
     unit: i64
+    # The library's `validated`, found once for the program by
+    # `ir/lower.lower` (defect 112): `ir/owned_release` asked for it at every
+    # call by walking every declaration, the library's included, so lowering
+    # grew with calls times declarations. Absent until it is set, and where
+    # the library carries none, which the checker has already refused.
+    validated: i64?
+    # Each interned string's id, by its text (defect 112): `intern` walked
+    # every string interned so far, which the compiler's own thousands of
+    # literals made quadratic. Ids are still given in the order of first
+    # appearance, so the table in the program is the one it was.
+    string_ids: {str: i64}
 
 function empty_function() -> containers.Function
     return containers.Function(
@@ -92,7 +103,9 @@ function new_lowering(r: resolved.Resolved, unit: i64) -> Lowering
         slots_by_local: {},
         locals_by_span: by_span,
         counters: {},
-        unit: unit
+        unit: unit,
+        validated: fail(code: "absent", msg: "the library's `validated` is found when the program is lowered"),
+        string_ids: {}
     )
 
 ## One function at a time
@@ -133,7 +146,7 @@ function entry(@b: Lowering)
     b.current @ block(@b, note: "entry")
 
 function end_fn(@b: Lowering)
-    b.out.program.functions @ b.out.program.functions.push(b.building)
+    append_function(@b.out.program.functions, b.building)
     b.building @ empty_function()
 
 # The span of the whole declaration being lowered — what an instruction
@@ -178,7 +191,7 @@ function terminate(@b: Lowering, term: ir.Term)
     if is_terminated(b)
         return
 
-    for target in successors(term)
+    for target in flow.successors(term)
         already: bool @ false
 
         for p in b.building.blocks[target].preds
@@ -189,24 +202,6 @@ function terminate(@b: Lowering, term: ir.Term)
             b.building.blocks[target].preds @ b.building.blocks[target].preds.push(b.current)
 
     b.building.blocks[b.current].term @ term
-
-# Every block a terminator can reach. One function, so preds and the
-# terminators cannot drift apart — the verifier recomputes with this
-# same list.
-function successors(term: ir.Term) -> [i64]
-    out: [i64] @ []
-
-    match term
-        .jump j => out @ out.push(j.to)
-        .branch br =>
-            out @ out.push(br.then_to)
-            out @ out.push(br.else_to)
-        .switch_term sw =>
-            for c in sw.cases
-                out @ out.push(c)
-        .return_term | .unreachable | .open => return out
-
-    return out
 
 ## Instructions
 
@@ -225,30 +220,34 @@ function emit_void(@b: Lowering, op: ir.OpKind, ty: i64, span: token.Span)
 function push_inst(@b: Lowering, inst: ir.Inst)
     if is_terminated(b)
         return
-    b.building.blocks[b.current].insts @ b.building.blocks[b.current].insts.push(inst)
+
+    # Hoisted, emptied, pushed and stored back: lending this place with an
+    # index in it copies the list into a temporary the callee shares, so
+    # the push copied it anyway (measured in the emitted C, 2026-09-27).
+    # With the block's own reference dropped first, `held` is the list's
+    # one owner and grows in place: the hoisting design.md Part 8 wart 8
+    # names beside the lend (defect 112).
+    held: [ir.Inst] @ b.building.blocks[b.current].insts
+    none: [ir.Inst] = []
+    b.building.blocks[b.current].insts @ none
+    held @ held.push(inst)
+    b.building.blocks[b.current].insts @ held
 
 function fresh_value(@b: Lowering, ty: i64) -> i64
-    b.building.values @ b.building.values.push(ty)
+    append_type(@b.building.values, ty)
     return b.building.values.len() - 1
 
-## Program-wide
+# **Lent, so each push grows its array in place** (defect 112). Through the
+# field, `b.building.values @ …push(ty)` copied the whole list at every value,
+# and the functions and the strings the same: lowering grew with the square
+# of a function's size. The helper is the spelling design.md Part 8 wart 8's
+# ruling names (panel 144), the one defect 103 used for the lexer; a place
+# with an index in it is hoisted instead (`push_inst`).
+function append_type(@values: [i64], ty: i64)
+    values @ values.push(ty)
 
-# Interns a decoded string. Linear search: a file has few distinct
-# literals, and interning keeps the ids stable across two runs of the
-# same input, which the determinism test asserts.
-function intern(@b: Lowering, text: str) -> i64
-    index: i64 @ 0
-
-    for existing in b.out.program.strings
-        if existing == text
-            return index
-        index @ index + 1
-
-    b.out.program.strings @ b.out.program.strings.push(text)
-    return b.out.program.strings.len() - 1
-
-function push_diagnostic(@b: Lowering, d: diag.Diagnostic)
-    b.out.diagnostics @ b.out.diagnostics.push(d)
+function append_function(@functions: [containers.Function], f: containers.Function)
+    functions @ functions.push(f)
 
 ## Slots — the half of the state that holds a value
 
@@ -385,15 +384,10 @@ test "value 0 is unit, temporaries count up, synthetics never collide"
     assert b.building.slots[a].name == "$i0"
     assert b.building.slots[c].name == "$i1"
 
-test "interning is stable and a run slices back out"
+test "a run slices back out"
     b: Lowering @ fresh()
     begin(@b, name: "h", decl: 0, kind: .function_kind, result: 0, generics: [], span: token.Span(start: 0, end: 1))
     entry(@b)
-    hello = intern(@b, "hello")
-    again = intern(@b, "hello")
-    other = intern(@b, "world")
-    assert hello == again
-    assert other == hello + 1
     run = args_run(@b, [.value_arg(value: 4), .value_arg(value: 5)])
     got = containers.args_of(b.building, run)
     assert got.len() == 2

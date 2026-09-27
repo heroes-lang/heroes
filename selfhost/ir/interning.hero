@@ -1,0 +1,55 @@
+# What a lowering keeps for the whole program rather than for the function
+# being built: the interned strings and the diagnostics. Split out of
+# `ir/build.hero` on 2026-09-27, when defect 112's repair took that file
+# past design.md §11's ~300 lines; the state they write is still
+# `build.Lowering`.
+
+use diag
+use token
+use ir/build
+
+# Interns a decoded string, by a lookup in the ids table. The ids are given
+# in the order strings first appear, which keeps them stable across two runs
+# of the same input, as the determinism test asserts. This said *linear
+# search: a file has few distinct literals* until 2026-09-27, a premise about
+# the world the compiler's own source disproves (defect 112).
+function intern(@b: build.Lowering, text: str) -> i64
+    known = b.string_ids[text]
+
+    if !known.is_err()
+        return known.must()
+    id = b.out.program.strings.len()
+    append_string(@b.out.program.strings, text)
+    remember_id(@b.string_ids, text, id: id)
+    return id
+
+function push_diagnostic(@b: build.Lowering, d: diag.Diagnostic)
+    b.out.diagnostics @ b.out.diagnostics.push(d)
+
+# Lent, so the push and the store land in place (design.md Part 8 wart 8's
+# cheap spelling, defect 112).
+function append_string(@strings: [str], text: str)
+    strings @ strings.push(text)
+
+function remember_id(@ids: {str: i64}, text: str, id: i64)
+    ids[text] @ id
+
+## Tests
+
+test "interning is stable"
+    b: build.Lowering @ build.fresh()
+    build.begin(
+        @b,
+        name: "h",
+        decl: 0,
+        kind: .function_kind,
+        result: 0,
+        generics: [],
+        span: token.Span(start: 0, end: 1)
+    )
+    build.entry(@b)
+    hello = intern(@b, "hello")
+    again = intern(@b, "hello")
+    other = intern(@b, "world")
+    assert hello == again
+    assert other == hello + 1

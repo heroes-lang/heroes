@@ -78,38 +78,63 @@ function vanishes_when_unread(op: ir.OpKind) -> bool
         .index | .map_get | .copy_out | .abort_op                                => true
         .incref | .decref | .decref_slot | .hole | .missing                      => true
 
-# Whether any EMITTED instruction assigns this temporary: value 0 (the
-# unit) is assigned by nothing, and a temporary that only exists inside
-# a block nobody reaches would be an unused variable.
-function assigned(f: containers.Function, live: [bool], value: i64) -> bool
+# The first live instruction that writes each temporary, found in one pass
+# over the function (defect 112). `assigned` and `discarded` each walked
+# every live instruction for every temporary the prologue declares, and
+# `slot_is_read` called `discarded` at every load it met, so emitting a
+# function grew with the square of its size: `build --emit-c` less `check`
+# read about 3.5, 7.7 and 19.7 s at 250, 500 and 1000 calls in one `main`.
+# The FIRST writer is the one kept, in block order and then instruction
+# order among the live blocks, which is the one the walks returned.
+record Defs
+    # value -> the block of its first live writer, -1 where none writes it
+    block_of: [i64]
+    # value -> that writer's position in its block
+    inst_of: [i64]
+
+function defs(f: containers.Function, live: [bool]) -> Defs
+    block_of: [i64] @ []
+    inst_of: [i64] @ []
+
+    for _ in f.values
+        block_of @ block_of.push(-1)
+        inst_of @ inst_of.push(-1)
+
     index: i64 @ 0
 
     for blk in f.blocks
         if live[index]
+            at: i64 @ 0
+
             for one in blk.insts
-                if !one.dest.is_err() && one.dest.must() == value
-                    return true
+                if !one.dest.is_err()
+                    value = one.dest.must()
+
+                    if value >= 0 && value < block_of.len() && block_of[value] == -1
+                        block_of[value] @ index
+                        inst_of[value] @ at
+                at @ at + 1
         index @ index + 1
 
-    return false
+    return Defs(block_of: block_of, inst_of: inst_of)
+
+# Whether any EMITTED instruction assigns this temporary: value 0 (the
+# unit) is assigned by nothing, and a temporary that only exists inside
+# a block nobody reaches would be an unused variable.
+function assigned(d: Defs, value: i64) -> bool
+    return value >= 0 && value < d.block_of.len() && d.block_of[value] >= 0
 
 # A temporary that a safe op writes and nothing reads: `_ = f(x)`, and
 # the load r.must() leaves behind when the payload is (). The pair of
 # this and inst's own test is what keeps the declaration and the
 # assignment in step — they ask the same question of the same set.
-function discarded(f: containers.Function, live: [bool], value: i64, read: {i64: bool}) -> bool
+function discarded(f: containers.Function, d: Defs, value: i64, read: {i64: bool}) -> bool
     if !read[value].is_err()
         return false
-    index: i64 @ 0
 
-    for blk in f.blocks
-        if live[index]
-            for one in blk.insts
-                if !one.dest.is_err() && one.dest.must() == value
-                    return may_lose_its_destination(one.op)
-        index @ index + 1
-
-    return false
+    if !assigned(d, value)
+        return false
+    return may_lose_its_destination(f.blocks[d.block_of[value]].insts[d.inst_of[value]].op)
 
 # What the EMITTED C reads, which is not what the IR references: an
 # instruction whose result is unit emits nothing at all, so its
@@ -202,7 +227,14 @@ function reads_given(f: containers.Function, c: state.Checked, gone: {i64: bool}
 # about this function, never "is it refcounted", a premise about the
 # ownership pass. Conservative in the safe direction: the attribute
 # means MAY be unused, so an over-count silences nothing.
-function slot_is_read(f: containers.Function, live: [bool], read: {i64: bool}, slot: i64) -> bool
+# Every slot's answer, in one pass over the live instructions (defect 112):
+# `slot_is_read` walked them all for each slot. Indexed by slot.
+function slots_read(f: containers.Function, live: [bool], d: Defs, read: {i64: bool}) -> [bool]
+    out: [bool] @ []
+
+    for _ in f.slots
+        out @ out.push(false)
+
     index: i64 @ 0
 
     for blk in f.blocks
@@ -214,34 +246,45 @@ function slot_is_read(f: containers.Function, live: [bool], read: {i64: bool}, s
                     # is then discarded, so the slot is read in the IR
                     # and not in the emitted C.
                     .load ld =>
-                        if ld.place.root == slot
-                            if !inst.dest.is_err() && !discarded(f, live, value: inst.dest.must(), read: read)
-                                return true
+                        if !inst.dest.is_err() && !discarded(f, d, value: inst.dest.must(), read: read)
+                            mark(@out, slot: ld.place.root)
                     # A store THROUGH A PATH reads the root on the way
                     # (copy-on-write walks it); a store straight to the
                     # slot is the write this asks about.
 
                     .store st =>
-                        if st.place.root == slot && st.place.path.length > 0
-                            return true
+                        if st.place.path.length > 0
+                            mark(@out, slot: st.place.root)
                     # The place store reads the slot it grows: the old
                     # elements survive into the result.
 
-                    .push_owned pg =>
-                        if pg.place.root == slot
-                            return true
+                    .push_owned pg => mark(@out, slot: pg.place.root)
                     # §4.8's copy-out reads the local and writes it back
                     # through the pointer.
 
-                    .copy_out co =>
-                        if co.param == slot
-                            return true
-                    .lit | .unary | .binary | .cast | .call | .construct                        => continue
-                    .field | .index | .map_get | .len_of | .tag_of | .payload                   => continue
+                    .copy_out co => mark(@out, slot: co.param)
+                    .lit | .unary | .binary | .cast | .call | .construct => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload => continue
                     .func_ref | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
         index @ index + 1
 
-    return false
+    return out
+
+# A slot out of the table's range answers nothing, in the direction the
+# attribute can afford: an unread slot only gains `unused`, which silences
+# no warning a read slot owed.
+function mark(@out: [bool], slot: i64)
+    if slot >= 0 && slot < out.len()
+        out[slot] @ true
+
+# Whether anything in this function READS the slot, one slot's answer out
+# of `slots_read`, for the callers and tests that ask one.
+function slot_is_read(f: containers.Function, live: [bool], read: {i64: bool}, slot: i64) -> bool
+    every = slots_read(f, live, defs(f, live), read)
+
+    if slot < 0 || slot >= every.len()
+        return false
+    return every[slot]
 
 ## Tests
 
@@ -290,10 +333,11 @@ test "the fixpoint: a unit payload silences its own feeding load"
     read = emitted_reads(f, c)
     assert read[1].is_err()
     live: [bool] = [true]
-    assert discarded(f, live, value: 2, read: read)
-    assert discarded(f, live, value: 1, read: read)
-    assert assigned(f, live, value: 1)
-    assert !assigned(f, live, value: 0)
+    d = defs(f, live)
+    assert discarded(f, d, value: 2, read: read)
+    assert discarded(f, d, value: 1, read: read)
+    assert assigned(d, value: 1)
+    assert !assigned(d, value: 0)
 
     # The slot is read in the IR and not in the C: `_ = v`'s shape.
     assert !slot_is_read(f, live, read: read, slot: 0)
