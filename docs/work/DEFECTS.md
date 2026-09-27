@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 5**
+**OPEN: 11**
 
 - [ ] **104 — the spec says a NEWLINE inside brackets may fall between any two tokens, and the compiler refuses a break before an operator, a `:` or a `,`** | spec § 0 ends *Inside `(` `[` `{` a NEWLINE never ends a statement: where it separates, a production writes it; elsewhere it may fall between any two tokens*, but the lexer plants a terminator after a line-ending token inside brackets too (design.md §4.15, *terminators, which are inserted unchanged everywhere, brackets included*, which §4.9's one-element-per-line literals rely on), so `x = (1` then `+ 2)` is `expected_group_close`, while `x = (1 +` then `2)` checks clean; a reader who follows the spec writes a program the compiler refuses | `spec/heroes-spec.md:11-12` · `docs/design/design.md:1939-1946` · `selfhost/grammar_expr.hero:161` (`ends_the_expression`)
 
@@ -45,28 +45,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     instrument; changing the lexer to allow a break before an operator would
     reverse §4.15's deferral of Nim's continuation rule and is a different
     question.
-
-- [ ] **105 — `heroes lex --dump-tokens` and `heroes fmt` build what they print by appending to one string, so both are quadratic in the size of their output** | every token line and every printed line is appended as `out @ out + …` or `f.out @ f.out + …`, and a string concatenation copies the whole string under value semantics (design.md Part 8 wart 8, which panel 144 left a wart because the cost is in the spelling, naming accumulation into an array joined once as the cheap one): the JSON token dump of `selfhost/check/walk.hero`, 108 KB, takes 3.67 s user, 14.09 at two copies and 53.18 at four, the text dump 0.58, 2.22 and 12.85, while `parse --dump-ast` reads 0.08, 0.17 and 0.33 | `selfhost/cli/lex.hero:36-71` (`json`, `text_dump`) · `selfhost/print/page.hero:70-82,294-299` (`put_line`, `blank_line`) · `selfhost/print/margins.hero:32-54` (`deepened`)
-
-    **Origin:** the coordinator, 2026-09-27, timing lane g's merge for defect
-    101's record: `fmt` on 1, 2, 4, 8, 16 and 32 copies of `walk.hero` read
-    0.28, 0.58, 1.25, 2.80, 6.86 and 21.15 s user on the trunk's compiler at
-    `316d974f`, and 0.21, 0.44, 0.96, 2.22, 5.53 and 19.12 on the one at
-    `f37b01b3`, the same growth, so it is older than lane g. `sample` on the
-    8-copy run put the copies under `put_line` at 780 of 1695 samples; the
-    ladder then taken on `lex --dump-tokens` read 50.04 s at 8 copies and
-    194.31 at 16. `selfhost/cli/lex.hero` is unchanged by lane g. The wart
-    itself, re-measured the same day on a bare local and through a field of a
-    record: 20,000, 40,000 and 80,000 appends of 22 bytes, 0.10, 0.32 and 1.17
-    s user, the same for both, so here the place is not what costs.
-
-    **Why it is a defect and not the wart.** The wart stays a wart on panel
-    144's ruling, and names the cheap spelling; `parse --dump-ast` uses one and
-    is linear. This is the compiler's own code using the spelling the ruling
-    calls slow, as defect 103 was, and a dump a reader or a harness asks for
-    on a large file takes minutes. The repair is owed at the class: every
-    artifact a verb prints, measured on a ladder, not the two witnesses; and a
-    check that fails if the slow spelling comes back where a check can read it.
 
 - [ ] **106 — inside a list whose elements a NEWLINE separates, a line that begins with `- b` is a new element, so a subtraction broken before its operator runs with one element too many** | the lexer ends the line after `a` (Go's last-token rule, design.md §4.15) and the literal's `Sep` takes that NEWLINE as a separator, so `xs = [a` / `- b]` is `[a, -b]` at exit 0; `[base * qty` / `- discount]` and `{1: 10` / `- 2: 20}` the same; PEP 8 and Black break BEFORE a binary operator, so a model's natural spelling compiles to a different program, and `heroes fmt` then prints the line as `-b`, erasing the space that showed the intent | `selfhost/grammar_expr.hero` (`separator`, `array_literal`, `map_literal`) · `docs/panel/180-a-line-inside-brackets-breaks-by-how-it-ends-and-a-list-refuses-a-subtraction-it-would-split.md`
 
@@ -111,5 +89,87 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** A comment changes a program's meaning, here into
     a refusal naming a function nobody wrote; a comment must be inert
     wherever the grammar lets it stand.
+
+- [ ] **109 — every verb that reads a program panics on an empty file** | `heroes check`, `lex`, `parse` and `build` on a file of zero bytes exit 134 with `panic: string index out of range`: `source.from_files` reads the last byte of the first file, which has none; `fmt` exits 0 on the same file | `selfhost/source.hero:109` (`from_files`)
+
+    **Origin:** lane 105's agent, 2026-09-27, met it while repairing
+    `from_files` and kept it unchanged, the lane being a refactor; re-run by
+    the coordinator the same day on the trunk's compiler at `2b1a1f24`:
+    `check`, `lex`, `parse` and `build` exit 134, `fmt` exit 0.
+
+    **Why it is a defect.** The compiler must not crash on an input
+    (design.md §1.12); an empty file is a program with no `main`, and owes
+    the diagnostic any file without one gets, or a clean exit where the verb
+    has nothing to say.
+
+- [ ] **110 — building a program whose interpolated string holds a character above ASCII before a hole panics** | `print(f"é {x}")` is `check` 0, and `heroes build` or `run` exits 134 with `panic: string slice splits a character`: `lex_interp.piece_text` slices one byte of a two-byte character | `selfhost/lex_interp.hero:104` (`piece_text`)
+
+    **Origin:** lane 105's agent, 2026-09-27, kept unchanged in that
+    refactor; re-run by the coordinator on the trunk's compiler at
+    `2b1a1f24`: `check` exit 0, `run` exit 134. Beside defect 103's
+    `bytes.char_at`, which reads one character by its lead byte.
+
+    **Why it is a defect.** A program the checker accepts crashes the
+    compiler; the robustness goal (design.md §1.12) is the first thing it
+    breaks, and the spec lets a string hold any UTF-8.
+
+- [ ] **111 — `heroes check` is quadratic in a program's calls and declarations, and one scan is most of the compiler checking itself** | `check/freer.marked_as_freer` reads every declaration and every parameter of the program at every call to a user function, asking whether one names it as a freer, and `resolved.declare_top` copies a module's whole map of names at every declaration: `check` on generated programs of 250, 500 and 1000 units reads 0.56, 1.45 and 4.31 s user, and on `selfhost/main.hero` the scan dominates the profile | `selfhost/check/freer.hero:40` (`marked_as_freer`) · `selfhost/resolved.hero:302` (`declare_top`)
+
+    **Origin:** lane 105's agent, 2026-09-27, on its ladders (0.53, 1.35,
+    3.92, 12.73 s at 250 to 2000 units, and 13,715 of 15,411 samples of
+    `check selfhost/main.hero` in the scan); re-run by the coordinator on the
+    trunk's compiler at `2b1a1f24`, the ladder above at a load near 4 and a
+    `sample` of `check selfhost/main.hero` with the scan on the stack in most
+    of its 10,208 samples.
+
+    **Why it is a defect.** Defect 103's reasoning: a pass read per item where
+    it is read once, in the compiler's own code, and the cost every `check`
+    and every build pays grows with the square of the program.
+
+- [ ] **112 — emission is quadratic in the size of a function** | `emit/unread.assigned` scans every instruction of a function for each temporary it declares, so `build --emit-c` less `check` reads about 3.5, 7.7 and 19.7 s at 250, 500 and 1000 units of a generated program whose `main` makes one call per unit; the lowering's `ir/flatten.call` and `ir/owned_release.library_validated` lead the rest | `selfhost/emit/unread.hero:84` (`assigned`)
+
+    **Origin:** lane 105's agent, 2026-09-27 (2,196 of 6,633 samples of
+    `build --emit-c` at 1000 units in `assigned`); the ladder re-run by the
+    coordinator on the trunk's compiler at `2b1a1f24`, `build --emit-c` 4.01,
+    9.12 and 24.02 s user at 250, 500 and 1000 units against `check` 0.56,
+    1.45 and 4.31, at a load near 4.
+
+    **Why it is a defect.** The same shape as 111 in the back end: one pass
+    per temporary where one pass per function answers every temporary.
+
+- [ ] **113 — the holes report reads every local and every top-level name of the program once per hole** | `check/holes.in_scope` and `nearby` walk all locals and all names for each `???`, so `check` on 200, 400 and 800 holes reads 0.13, 0.33 and 1.01 s user; what the report prints per hole is capped (design.md §4.16), what it reads is not | `selfhost/check/holes.hero:84,158` (`in_scope`, `nearby`)
+
+    **Origin:** lane 105's agent, 2026-09-27 (0.05, 0.12, 0.31, 0.91 s at
+    100 to 800 holes); re-run by the coordinator on the trunk's compiler at
+    `2b1a1f24`, the numbers above at a load near 4.
+
+    **Why it is a defect.** A report whose work grows with holes times names
+    is the shape 105 closed for printed artifacts, left in a reader.
+
+- [ ] **114 — the emitted C zeroes every temporary of a function at its entry, so a lookup that returns early pays for every arm** | the emitter declares each temporary at the top of the C function with `= {0}`, and a `match` over a string of twenty arms declares them all: the emitted `h_keywords_keyword` zeroes 139 temporaries on every call to make 21 string comparisons, and on the default build line (plain `clang`, no optimisation, CLAUDE.md § Commands) every one is executed; `memset` was about a fifth of `fmt`'s samples after defect 105's repair | `selfhost/emit/` (the temporaries' declarations) · `seed/heroes.c` (`h_keywords_keyword`)
+
+    **Origin:** lane 105's agent, 2026-09-27 (`memset` 240 of 1,113 samples
+    of `fmt` on eight copies of `walk.hero`, under the lexer's keyword and
+    punctuation lookups); the emitted function read by the coordinator in
+    the trunk's seed at `2b1a1f24`: 941 lines, 139 `= {0}`, 21 string
+    comparisons.
+
+    **Why it is a defect.** Every Heroes program pays it, the compiler first:
+    work the program never reads, done at each call. The repair keeps the
+    guarantee the zeroing buys, every temporary initialised before any read,
+    and moves the initialisation to where the temporary's life begins.
+
+- [ ] **115 — on Windows, the runtime's report of a dead C handle read inside C omits where in the page it was read** | `tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero` must abort saying `a dead C handle was used inside C, at offset 0x0`, and on the Windows box it says `a dead C handle was used inside C` with no offset, so the `run` suite reads 199 passed and 1 failed there; Linux x86-64, Linux arm64 and the Mac print the offset | `runtime/` (the Windows path of the poisoned page's fault handler) · the golden above
+
+    **Origin:** the coordinator, 2026-09-27, running the `run` suite on the
+    Windows box for lane 105's merge (the trunk at `09acdabc`), and the same
+    golden run there on the trunk at `2b1a1f24`, before that merge: the same
+    text, so it is older than the lane. Panel 177, which landed the poisoned
+    page, records Windows as unrun for every row; the formatter lanes ran
+    only their own suites on the box.
+
+    **Why it is a defect.** A sentence the runtime owes is missing on one
+    platform, and the net is red there; the Windows exception record carries
+    the address a fault touched, so the offset can be said on every platform.
 
 *******************************************************************************
