@@ -83,7 +83,7 @@ function corpus(dir: str) -> [score.Program]?
     walked = process.files_under(dir: dir)
 
     if walked.is_err()
-        return fail(code: "no_corpus", msg: "cannot read " + dir)
+        return fail(code: "no_corpus", msg: unread_corpus(dir))
     paths: [str] @ []
 
     for path in walked.must()
@@ -100,6 +100,19 @@ function corpus(dir: str) -> [score.Program]?
         out @ out.push(score.Program(name: path, checked_as: checked_name(dir: dir, path: path), text: text.must()))
 
     return ok(out)
+
+# Why `dir` gave no corpus, named by what the path is. Every cause read
+# `cannot read <path>` until defect 117, a file the command reads perfectly
+# well included, which sent the reader looking for a permission or a missing
+# file that was not there (design.md §4.17). The walk fails on a file
+# because it walks a directory; the message says so, and says what to name.
+function unread_corpus(dir: str) -> str
+    if !process.path_exists(path: dir)
+        return "no file or directory is named " + dir
+
+    if !process.is_directory(path: dir)
+        return dir + " is a file, and `heroes mutate` reads a directory of programs: name the directory that holds it"
+    return "cannot read the directory " + dir
 
 # The name a corpus file is COMPILED under: itself, unless it sits below a
 # program's root — then the root directory plus its own file name, with its
@@ -184,6 +197,12 @@ function why(got: [score.Program]?) -> str
     return match got
         .ok _  => ""
         .err e => e.msg
+
+test "a corpus that is not a directory says what it is, where every cause read `cannot read` (defect 117)"
+    assert unread_corpus("no/such/place") == "no file or directory is named no/such/place"
+    assert unread_corpus("runtime/runtime.c") == "runtime/runtime.c is a file, and `heroes mutate` reads a directory of programs: name the directory that holds it"
+    walked = process.files_under(dir: "runtime")
+    assert !walked.is_err()
 
 test "an unknown operator names the ones there are"
     # The count is read off the table, never written: it said "twelve" in the
