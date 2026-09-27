@@ -21,6 +21,7 @@
 use token
 use ast
 use source
+use handles
 use print/types
 use print/signature
 use print/page
@@ -124,13 +125,11 @@ function opened(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
 
         # A comment inside the parameter's type stays inside it, the marks
         # after the type going on its last line.
-        whole = signature.parameter(tree, s, param: param)
         written: str @ source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s)
 
         if param.mutable
             written @ "@" + written
         end = tree.types[param.ty].span.end
-        words = whole.slice(from: written.len(), to: whole.len())
         text = breaks.led_text(
             @f,
             tree,
@@ -142,8 +141,38 @@ function opened(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
             to: end,
             indent: indent + 4
         )
-        page.put_line(@f, indent: indent + 4, text: text + words + separator)
-        stop = source.line_of(s, end - 1)
+
+        # And one inside a releaser set stays after the `|` it follows, the
+        # set broken there as the type is (defect 108): spelled whole, the
+        # set took the comment past its last name, where a guard that
+        # leaves the marks out could not see it. The line's pieces are
+        # pushed and joined once (defect 105's spelling).
+        line: [str] @ [text]
+
+        for w in signature.parameter_words(s, param: param)
+            if w.set.is_err()
+                line @ line.push(w.text)
+            else
+                set = w.set.must()
+                head = line.join("") + w.text
+                broke = breaks.led_text(
+                    @f,
+                    tree,
+                    s,
+                    comments,
+                    head: head,
+                    text: handles.releasers_spelled(source.span_text(s, set)),
+                    from: set.start,
+                    to: set.end,
+                    indent: indent + 4
+                )
+                line @ [broke]
+
+        page.put_line(@f, indent: indent + 4, text: line.join("") + separator)
+
+        # Its last line is the one its words end on, a set across lines
+        # included: the comment trailing that line is the parameter's.
+        stop = source.line_of(s, ends(f, type_end: end) - 1)
 
         if f.last_line < stop
             f.last_line @ stop
@@ -167,6 +196,21 @@ function begins(f: page.Fmt, param: ast.Param) -> i64
         return param.name.start
     mark = owners.code_before(f.lines, index: owners.index_at(f.lines, offset: param.name.start))
     return f.lines.tokens[mark].span.start
+
+# Where a parameter's tokens end, its type ending at `type_end`: the last
+# token before the `,` or `)` after it, since its words hold no bracket.
+function ends(f: page.Fmt, type_end: i64) -> i64
+    last: i64 @ owners.index_at(f.lines, offset: type_end - 1)
+
+    if last < 0
+        return type_end
+    next: i64 @ owners.code_after(f.lines, index: last)
+
+    while next >= 0 && f.lines.tokens[next].kind != .comma && f.lines.tokens[next].kind != .rparen
+        last @ next
+        next @ owners.code_after(f.lines, index: next)
+
+    return f.lines.tokens[last].span.end
 
 # `head` and `) -> R words`, or `)` alone for a result the signature does
 # not write or a `-> ()` with nothing inside it, with a comment inside the

@@ -39,7 +39,28 @@ function parameter(tree: ast.Ast, s: source.Source, param: ast.Param) -> str
 
     if param.mutable
         marker @ "@"
-    return marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + marks.counted_by_suffix(s, param.counted_by) + marks.bare_suffix(param.lent, word: "lent") + marks.owned_suffix(s, param.owned) + marks.bare_suffix(param.consumes, word: "consumes") + marks.named_suffix(s, param.transfers, word: "transfers") + marks.named_suffix(s, param.acquires, word: "acquires") + marks.named_suffix(s, param.retains, word: "retains") + marks.bare_suffix(param.borrows, word: "borrows")
+    words: [str] @ []
+
+    for w in parameter_words(s, param: param)
+        words @ words.push(marks.spelled(s, w: w))
+
+    return marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + words.join("")
+
+# The words after a parameter's type, in the grammar's order, each with the
+# releaser set it names: the one list of that order, which `parameter`
+# spells on one line and `print/headline.hero` prints with a comment inside
+# a set kept after its `|` (defect 108).
+function parameter_words(s: source.Source, param: ast.Param) -> [marks.Word]
+    return [
+        marks.plain_word(marks.counted_by_suffix(s, param.counted_by))
+        marks.plain_word(marks.bare_suffix(param.lent, word: "lent"))
+        marks.plain_word(marks.owned_suffix(s, param.owned))
+        marks.plain_word(marks.bare_suffix(param.consumes, word: "consumes"))
+        marks.named_word(mark: param.transfers, word: "transfers")
+        marks.named_word(mark: param.acquires, word: "acquires")
+        marks.named_word(mark: param.retains, word: "retains")
+        marks.plain_word(marks.bare_suffix(param.borrows, word: "borrows"))
+    ]
 
 # The words after a result's type, in the grammar's order, or nothing.
 function result_words(s: source.Source, fd: ast.FunctionDecl) -> str

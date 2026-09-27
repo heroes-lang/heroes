@@ -43,17 +43,19 @@ function lead(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64, t
         return rest.must()
     return "    " + rest.must()
 
-# `lead`'s lines, but the last, which comes back as it is: what follows the
-# last break, for a caller that goes on four columns in itself. Nothing is
-# printed where the text's tokens are not the source's.
-function pieces(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64, to: i64, indent: i64) -> str?
+# What `lead` breaks: the tokens the author wrote in the stretch, the text
+# with the author's parentheses around a comment put back (`restored`), its
+# tokens, and which of them each written one is. Nothing where the text's
+# tokens are not the source's.
+record Plan
+    written: [i64]
+    full: str
+    printed: [token.Token]
+    matched: [i64]
+
+function plan(f: page.Fmt, c: elements.Code, text: str, from: i64, to: i64) -> Plan?
     written = aligned.within(c.lines, from: from, to: to)
-    printed: [token.Token] @ []
-
-    for t in lexer.lex_one(text).tokens
-        if t.kind != .indent && t.kind != .dedent && t.kind != .terminator && t.kind != .eof && t.kind != .comment
-            printed @ printed.push(t)
-
+    printed = lexed(text)
     first = aligned.aligned(c, text: text, written: written, printed: printed)
 
     if first.len() != written.len()
@@ -61,29 +63,91 @@ function pieces(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64,
 
     # The author's parentheses around a comment, put back.
     full = restored(f, c, text: text, written: written, printed: printed, matched: first, to: to)
-    printed @ []
-
-    for t in lexer.lex_one(full).tokens
-        if t.kind != .indent && t.kind != .dedent && t.kind != .terminator && t.kind != .eof && t.kind != .comment
-            printed @ printed.push(t)
-
-    matched = aligned.aligned(c, text: full, written: written, printed: printed)
+    again = lexed(full)
+    matched = aligned.aligned(c, text: full, written: written, printed: again)
 
     if matched.len() != written.len()
         return fail(code: "unaligned", msg: "the text's tokens are not the source's")
+    return ok(Plan(written: written, full: full, printed: again, matched: matched))
+
+function lexed(text: str) -> [token.Token]
+    out: [token.Token] @ []
+
+    for t in lexer.lex_one(text).tokens
+        if t.kind != .indent && t.kind != .dedent && t.kind != .terminator && t.kind != .eof && t.kind != .comment
+            out @ out.push(t)
+
+    return out
+
+# The printed token the line breaks after for comment `k`: the last one the
+# author wrote before it, or -1 where none is.
+function cut_at(c: elements.Code, p: Plan, k: i64) -> i64
+    upto: i64 @ -1
+    at: i64 @ 0
+
+    for i in p.written
+        if c.lines.tokens[i].span.start < c.comments[k].start && p.matched[at] >= 0
+            upto @ p.matched[at]
+        at @ at + 1
+
+    return upto
+
+# Would `lead` break the stretch for a comment where no bracket of its text
+# is open (defect 107)? Printed where no bracket of the page is open either,
+# the line after that break stands at the statement's depth, where its
+# margin is structure: `y = (xs.  # c` over `len())`, the parentheses
+# dropped, printed `xs.` over an indented `len()`, which does not parse.
+function loose(f: page.Fmt, c: elements.Code, text: str, from: i64, to: i64) -> bool
+    if !elements.holds(f, c, from: from, to: to)
+        return false
+    got = plan(f, c, text: text, from: from, to: to)
+
+    if got.is_err()
+        return false
+    p = got.must()
+    k: i64 @ f.next_comment
+
+    while k < c.comments.len() && c.comments[k].start >= from && c.comments[k].start < to
+        upto = cut_at(c, p, k: k)
+
+        if upto < 0 || open_at(p.printed, upto: upto) == 0
+            return true
+        k @ k + 1
+
+    return false
+
+# How many brackets of the text are open after its token `upto`.
+function open_at(printed: [token.Token], upto: i64) -> i64
+    depth: i64 @ 0
+
+    for i in range(from: 0, to: upto + 1)
+        kind = printed[i].kind
+
+        if kind == .lparen || kind == .lbracket || kind == .lbrace
+            depth @ depth + 1
+        else if kind == .rparen || kind == .rbracket || kind == .rbrace
+            depth @ depth - 1
+
+    return depth
+
+# `lead`'s lines, but the last, which comes back as it is: what follows the
+# last break, for a caller that goes on four columns in itself. Nothing is
+# printed where the text's tokens are not the source's.
+function pieces(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64, to: i64, indent: i64) -> str?
+    got = plan(f, c, text: text, from: from, to: to)
+
+    if got.is_err()
+        return fail(code: "unaligned", msg: "the text's tokens are not the source's")
+    p = got.must()
+    full = p.full
+    printed = p.printed
     line: [str] @ [head]
     cut: i64 @ 0
     margin: i64 @ indent
 
     while elements.holds(f, c, from: from, to: to)
         k = f.next_comment
-        upto: i64 @ -1
-        at: i64 @ 0
-
-        for i in written
-            if c.lines.tokens[i].span.start < c.comments[k].start && matched[at] >= 0
-                upto @ matched[at]
-            at @ at + 1
+        upto = cut_at(c, p, k: k)
 
         # A piece after a break starts its line, with no space before it
         # (the second skeptic seat's `i01`: one column too far).
