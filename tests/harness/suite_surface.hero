@@ -289,6 +289,8 @@ function verb_probes() -> [probe.Probe]
         row(name: "measure counts it", argv: "measure tests/golden/surface-fixtures/empty109/empty.hero", code: 0).out_starts("tests/golden/surface-fixtures/empty109/empty.hero\n").err_empty()
         row(name: "a module of zero bytes that a program imports is joined like any other, and the program owes only what its content does", argv: "check tests/golden/surface-fixtures/empty109/main.hero", code: 1).err_has("error[unused_binding]").err_has("`use empty` is never used").err_lacks("panic").err_lacks("internal error")
         row(name: "mutate over a directory holding a file of zero bytes scores it, where it panicked", argv: "mutate tests/golden/surface-fixtures/empty109/alone", code: 0).out_starts("corpus: 1 programs under tests/golden/surface-fixtures/empty109/alone\n").err_empty()
+        row(name: "mutate on a file says it is a file and names what to give it, where it said it could not read a file it reads (defect 117)", argv: "mutate examples/adventure/main.hero", code: 2).err_has("examples/adventure/main.hero is a file, and `heroes mutate` reads a directory of programs").out_empty()
+        row(name: "and on a path that is not there says so", argv: "mutate examples/no-such-program", code: 2).err_has("no file or directory is named examples/no-such-program").out_empty()
         row(name: "a module that ends inside a declaration is refused in itself, and the next one's indented first line is not its body (found beside defect 109)", argv: "check tests/golden/surface-fixtures/fileend109/main.hero", code: 1).err_has("error[missing_body]").err_has("fileend109/a.hero:5:1").err_has("error[expected_declaration]").err_has("fileend109/b.hero:1:1").err_lacks("internal error")
         row(name: "and the program those two modules made, which ran and printed 6, does not build", argv: "run tests/golden/surface-fixtures/fileend109/main.hero", code: 1).out_empty().err_has("error[missing_body]")
         row(name: "a file that ends inside its own last declaration is refused in itself, where the library was blamed at exit 2", argv: "check tests/golden/surface-fixtures/fileend109/alone.hero", code: 1).err_has("error[missing_body]").err_has("fileend109/alone.hero:6:1").err_lacks("internal error").err_lacks("library")
@@ -707,7 +709,9 @@ test "the tables are what this module is, so they are counted"
     # newline for nothing; three for a file that ends inside a declaration,
     # whose parse read on into the next file; and two for comments and calls
     # above ASCII that aborted `fmt` and `check`, found beside defect 110.
-    assert verb_probes().len() == 121
+    # 121 -> 123 the same day, defect 117: `mutate` on a file and on a path that
+    # is not there, each saying what the path is.
+    assert verb_probes().len() == 123
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map
