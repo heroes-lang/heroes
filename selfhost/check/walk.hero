@@ -64,6 +64,7 @@ use flow_errors
 use contextless_errors
 use ffi_errors
 use check/freer as freer
+use check/freer_marks
 use check/interp
 
 ## The two statement-side answers
@@ -1606,7 +1607,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             # function this program named with `owned` is one the COMPILER
             # frees, so calling it here frees the string twice — exit 0 and
             # silent on both platforms.
-            mark = freer.marked_as_freer(c.out.freers, name: name)
+            mark = freer_marks.marked_as_freer(c.out.freers, name: name)
 
             if !mark.is_err()
                 state.push_diagnostic(@c, freer.refusal(s, name: name, mark: mark.must(), span: span))
