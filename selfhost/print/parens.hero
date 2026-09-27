@@ -1,0 +1,156 @@
+# One expression on one line, with the minimum parentheses (design.md
+# §4.15; `fmt_expr.rs` of `archive/bootstrap-rs/heroes/src/printer/`).
+# Split out of `print/fmt.hero` on 2026-09-25, with the repair of defect
+# 101, along its one clean seam: pure functions of the tree that every walk
+# in `fmt` calls and that call none of them back, so the cut makes no cycle.
+#
+# Parentheses are MINIMAL: 2 + (3 * 4) loses them, (2 + 3) * 4 keeps them.
+# `render` returns a control form's HEADER alone, and `fmt`'s `valued` owes
+# the blocks under it (defect 003, `docs/work/DONE.md`).
+
+use ast
+use source
+use digits
+use print/bodies
+
+# Binding power, on the same scale as the parser's table: higher binds
+# tighter. THE NUMBERS HAVE TO MATCH THE PARSER'S — and the two
+# strongest rows are NAMED rather than written at each site, because
+# five literal 7s survived panel 040's five new bitwise levels and fmt
+# printed (at / WORDS).to_str() as at / WORDS.to_str(), a different
+# program that does not even type-check (fixedbugs 2026-08-13).
+constant UNARY_POWER: i64
+    10
+
+constant POSTFIX_POWER: i64
+    11
+
+function power(tree: ast.Ast, id: i64) -> i64
+    match tree.exprs[id].kind
+        .binary b =>
+            return match b.op
+                .or                               => 1
+                .and                              => 2
+                .eq | .ne | .lt | .le | .gt | .ge => 3
+                .bit_or                           => 4
+                .bit_xor                          => 5
+                .bit_and                          => 6
+                .shl | .shr                       => 7
+                .add | .sub                       => 8
+                .mul | .div | .rem                => 9
+        .unary => return UNARY_POWER
+        # A control form spans lines; the loosest thing there is, so a
+        # parenthesis is never printed around it.
+
+        .if_expr | .match_expr                                                         => return 0
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return POSTFIX_POWER
+        .name | .hole | .field | .field_name | .index | .call | .method                => return POSTFIX_POWER
+        .variant_case | .array | .map | .try_expr | .error                             => return POSTFIX_POWER
+
+    return POSTFIX_POWER
+
+function render(tree: ast.Ast, s: source.Source, id: i64) -> str
+    node = tree.exprs[id]
+
+    match node.kind
+        # The one literal fmt rewrites, and only in its digits' case:
+        # a mask copied from a C header arrives as 0xFF, and §4.15's
+        # one-spelling rule is settled here rather than by refusing
+        # the paste.
+        .int_lit => return digits.canonical_int(source.span_text(s, node.span))
+        .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr | .name => return source.span_text(
+            s,
+            node.span
+        )
+        .hole    => return "???"
+        .unary u => return unary_op(u.op) + wrapped(tree, s, id: u.operand, needed: UNARY_POWER)
+        .binary b =>
+            mine = power(tree, id)
+
+            # Left-associative everywhere, so an equally-binding
+            # operator on the right DOES need its parentheses:
+            # a - (b - c).
+            return wrapped(tree, s, id: b.left, needed: mine) + " " + bodies.binary_op(b.op) + " " + wrapped(tree, s, id: b.right, needed: mine + 1)
+        .field fl => return wrapped(tree, s, id: fl.base, needed: POSTFIX_POWER) + "." + source.span_text(s, fl.name)
+        .field_name fl => return wrapped(tree, s, id: fl.base, needed: POSTFIX_POWER) + "::" + source.span_text(s, fl.name)
+        .index ix => return wrapped(tree, s, id: ix.base, needed: POSTFIX_POWER) + "[" + render(tree, s, id: ix.index) + "]"
+        .call cl => return wrapped(tree, s, id: cl.callee, needed: POSTFIX_POWER) + "(" + args_line(tree, s, given: cl.args) + ")"
+        .method m => return wrapped(tree, s, id: m.receiver, needed: POSTFIX_POWER) + "." + source.span_text(s, m.name) + "(" + args_line(tree, s, given: m.args) + ")"
+        .variant_case vc =>
+            if vc.args.len() == 0
+                return "." + source.span_text(s, vc.name)
+            return "." + source.span_text(s, vc.name) + "(" + args_line(tree, s, given: vc.args) + ")"
+        .array arr =>
+            rendered: [str] @ []
+
+            for item in arr.elements
+                rendered @ rendered.push(render(tree, s, id: item))
+
+            return "[" + rendered.join(", ") + "]"
+        .map mp =>
+            rendered: [str] @ []
+
+            for entry in mp.entries
+                rendered @ rendered.push(render(tree, s, id: entry.key) + ": " + render(tree, s, id: entry.value))
+
+            return "{" + rendered.join(", ") + "}"
+        .try_expr t => return wrapped(tree, s, id: t.value, needed: POSTFIX_POWER) + "?"
+        # Headers only: valued() prints the blocks under them.
+
+        .if_expr ie =>
+            if ie.branches.len() > 0
+                return "if " + render(tree, s, id: ie.branches[0].cond)
+            return "if"
+        .match_expr me => return "match " + render(tree, s, id: me.scrutinee)
+        # A file with an unreadable expression is not formatted at all
+        # (the command refuses on any diagnostic).
+
+        .error => return "???"
+
+    return "???"
+
+function unary_op(op: ast.UnaryOp) -> str
+    return match op
+        .neg     => "-"
+        .not     => "!"
+        .bit_not => "~"
+
+# id rendered, in parentheses only if it binds looser than needed.
+function wrapped(tree: ast.Ast, s: source.Source, id: i64, needed: i64) -> str
+    if needs_parens(tree, id: id, needed: needed)
+        return "(" + render(tree, s, id: id) + ")"
+    return render(tree, s, id: id)
+
+function needs_parens(tree: ast.Ast, id: i64, needed: i64) -> bool
+    is_control: bool @ false
+
+    match tree.exprs[id].kind
+        .if_expr | .match_expr                                                         => is_control @ true
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => is_control @ is_control
+        .name | .hole | .unary | .binary | .field | .field_name | .index               => is_control @ is_control
+        .call | .method | .variant_case | .array | .map | .try_expr | .error           => is_control @ is_control
+
+    return power(tree, id) < needed && !is_control
+
+function args_line(tree: ast.Ast, s: source.Source, given: [ast.Arg]) -> str
+    rendered: [str] @ []
+
+    for arg in given
+        rendered @ rendered.push(arg_text(tree, s, arg: arg))
+
+    return rendered.join(", ")
+
+function arg_text(tree: ast.Ast, s: source.Source, arg: ast.Arg) -> str
+    return arg_lead(s, arg: arg) + render(tree, s, id: arg.value)
+
+# What an argument prints before its value: its name, and the `@` of one
+# the call lets the callee change (§4.8).
+function arg_lead(s: source.Source, arg: ast.Arg) -> str
+    name: str @ ""
+
+    if !arg.name.is_err()
+        name @ source.span_text(s, arg.name.must()) + ": "
+
+    if arg.mutable
+        return name + "@"
+    return name

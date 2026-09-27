@@ -9,12 +9,13 @@
 use ast
 use source
 use parse
+use type_text
 
 function render_type(tree: ast.Ast, id: i64, s: source.Source) -> str
     node = tree.types[id]
 
     match node.kind
-        .named => return source.span_text(s, node.span)
+        .named => return type_text.named_text(source.span_text(s, node.span))
         .unit  => return "()"
         # i32[4] — the length is part of the type, so it is part of
         # the text.

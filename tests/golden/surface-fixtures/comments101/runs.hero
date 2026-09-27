@@ -1,0 +1,15 @@
+# A run of comments read from its last one up (the skeptic seat's `s8`): a
+# comment at column 0 above the `if` block's last comment was printed at the
+# body's column, and pulled the block's last comment out with it, at exit 0.
+# No comment of a run belongs to a shallower block than one after it, since
+# printed in order a later one cannot sit deeper: both stay in the block.
+
+function f(c: bool)
+    if c
+        print(1)
+#        print(2)
+        # the if block's last word
+    print(3)
+
+function main()
+    f(c: true)

@@ -1,0 +1,208 @@
+# One line of `fmt`'s, a type, an index, a place, broken after each token a
+# comment inside it follows, so the comment stays after that token (defect
+# 101's third round, 2026-09-26: the skeptic seat's `t1`, `r1`, `t4`, each
+# refused at exit 2 before). Split out of `print/brackets.hero` the same
+# day, which calls it for a value no bracket of its own can hold the
+# comment in; it calls nothing of that knot back.
+
+use token
+use ast
+use source
+use lexer
+use print/page
+use print/elements
+use print/owners
+use print/aligned
+use parse
+
+# `head` and `text`, the source from `from` up to `to` on one line, printed
+# with the comments inside it kept (`lead`): the last line comes back.
+function led_text(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, text: str, from: i64, to: i64, indent: i64) -> str
+    c = elements.Code(tree: tree, s: s, comments: comments, lines: f.lines)
+    return lead(@f, c, head: head, text: text, from: from, to: to, indent: indent)
+
+# `head` then `text`, the one-line rendering of the source from `from` up
+# to `to`, with every comment written inside that stretch kept after the
+# token it follows: the line breaks there, the comment trailing it or on a
+# line of its own, and the rest going on four columns in, inside the bracket
+# that let the author break it. Prints every line but the last and returns
+# that one. The rendering's tokens must be the source's but for the
+# grouping parentheses `render` drops and the commas of a list
+# (`print/aligned.hero`);
+# where they are not, the text comes back whole, and the guard refuses what
+# is left.
+function lead(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64, to: i64, indent: i64) -> str
+    if !elements.holds(f, c, from: from, to: to)
+        return head + text
+    rest = pieces(@f, c, head: head, text: text, from: from, to: to, indent: indent)
+
+    if rest.is_err()
+        return head + text
+
+    if shuts(rest.must())
+        return rest.must()
+    return "    " + rest.must()
+
+# `lead`'s lines, but the last, which comes back as it is: what follows the
+# last break, for a caller that goes on four columns in itself. Nothing is
+# printed where the text's tokens are not the source's.
+function pieces(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64, to: i64, indent: i64) -> str?
+    written = aligned.within(c.lines, from: from, to: to)
+    printed: [token.Token] @ []
+
+    for t in lexer.lex_one(text).tokens
+        if t.kind != .indent && t.kind != .dedent && t.kind != .terminator && t.kind != .eof && t.kind != .comment
+            printed @ printed.push(t)
+
+    first = aligned.aligned(c, text: text, written: written, printed: printed)
+
+    if first.len() != written.len()
+        return fail(code: "unaligned", msg: "the text's tokens are not the source's")
+
+    # The author's parentheses around a comment, put back.
+    full = restored(f, c, text: text, written: written, printed: printed, matched: first, to: to)
+    printed @ []
+
+    for t in lexer.lex_one(full).tokens
+        if t.kind != .indent && t.kind != .dedent && t.kind != .terminator && t.kind != .eof && t.kind != .comment
+            printed @ printed.push(t)
+
+    matched = aligned.aligned(c, text: full, written: written, printed: printed)
+
+    if matched.len() != written.len()
+        return fail(code: "unaligned", msg: "the text's tokens are not the source's")
+    line: str @ head
+    cut: i64 @ 0
+    margin: i64 @ indent
+
+    while elements.holds(f, c, from: from, to: to)
+        k = f.next_comment
+        upto: i64 @ -1
+        at: i64 @ 0
+
+        for i in written
+            if c.lines.tokens[i].span.start < c.comments[k].start && matched[at] >= 0
+                upto @ matched[at]
+            at @ at + 1
+
+        # A piece after a break starts its line, with no space before it
+        # (the second skeptic seat's `i01`: one column too far).
+        if upto >= 0 && printed[upto].span.end > cut
+            piece: str @ full.slice(from: cut, to: printed[upto].span.end)
+
+            if line.len() == 0
+                piece @ unspaced(piece)
+            line @ line + piece
+            cut @ printed[upto].span.end
+        remark = page.trim_end(source.span_text(c.s, c.comments[k]))
+
+        # A line the break leaves starting with a closing bracket goes at
+        # the column of the line that opened it, as an opened bracket's does.
+        if margin > indent && shuts(line)
+            margin @ indent
+
+        if k < c.lines.owner.len() && c.lines.owner[k] == owners.TRAILS
+            page.put_line(@f, indent: margin, text: page.trim_end(line) + "  " + remark)
+        else
+            if page.trim_end(line).len() > 0
+                page.put_line(@f, indent: margin, text: page.trim_end(line))
+            page.put_line(@f, indent: indent + 4, text: remark)
+        line @ ""
+        margin @ indent + 4
+        f.last_line @ source.line_of(c.s, c.comments[k].start)
+        f.next_comment @ k + 1
+
+    return ok(line + unspaced(full.slice(from: cut, to: full.len())))
+
+# `text` with the author's parentheses `render` dropped put back where a
+# comment `lead` prints is inside them, and with every pair of theirs inside
+# such a one around the same value. A break the author made inside them may
+# need them: the parser skips a line's end before a group's `)` and not
+# before an index's `]`, and `ys[(a  # c` over `)]` printed as `ys[a` over
+# `]` did not parse (the third skeptic seat's `min1`). And the guard counts
+# the innermost of several pairs around one value, so those inside a kept
+# one are kept too.
+function restored(f: page.Fmt, c: elements.Code, text: str, written: [i64], printed: [token.Token], matched: [i64], to: i64) -> str
+    partner = aligned.written_pairs(c, written: written)
+    back: [bool] @ []
+
+    for _ in written
+        back @ back.push(false)
+
+    for at in range(from: 0, to: written.len())
+        other = partner[at]
+
+        if c.lines.tokens[written[at]].kind == .lparen && other > at && matched[at] < 0 && matched[other] < 0
+            open = c.lines.tokens[written[at]].span.start
+            shut = c.lines.tokens[written[other]].span.start
+            k: i64 @ f.next_comment
+
+            while k < c.comments.len() && c.comments[k].start < to && !back[at]
+                if c.comments[k].start > open && c.comments[k].start < shut
+                    back[at] @ true
+                    back[other] @ true
+                k @ k + 1
+
+        # The pair inside a kept one, around the same value.
+        if back[at] && at + 1 < written.len() && partner[at + 1] == other - 1 && other - 1 > at + 1 && matched[at + 1] < 0
+            back[at + 1] @ true
+            back[other - 1] @ true
+
+    out: str @ ""
+    cut: i64 @ 0
+
+    for at in range(from: 0, to: written.len())
+        if back[at]
+            place: i64 @ text.len()
+            mark: str @ ")"
+
+            if c.lines.tokens[written[at]].kind == .lparen
+                mark @ "("
+                later: i64 @ at + 1
+
+                while later < written.len() && matched[later] < 0
+                    later @ later + 1
+
+                if later < written.len()
+                    place @ printed[matched[later]].span.start
+            else
+                place @ 0
+                earlier: i64 @ at - 1
+
+                while earlier >= 0 && matched[earlier] < 0
+                    earlier @ earlier - 1
+
+                if earlier >= 0
+                    place @ printed[matched[earlier]].span.end
+            out @ out + text.slice(from: cut, to: place) + mark
+            cut @ place
+
+    return out + text.slice(from: cut, to: text.len())
+
+function shuts(text: str) -> bool
+    return text.len() > 0 && (text[0] == ')' || text[0] == ']' || text[0] == '}')
+
+function unspaced(text: str) -> str
+    at: i64 @ 0
+
+    while at < text.len() && text[at] == ' '
+        at @ at + 1
+
+    return text.slice(from: at, to: text.len())
+
+## Tests
+
+# The third skeptic seat's `min1`: `ys[(a  # c` over `)]`, whose parentheses
+# `render` drops. Put back, the break after `a` is inside them.
+test "the author's parentheses around a comment the one-line text breaks at are put back"
+    text = "function f(ys: [i64], a: i64) -> i64\n    return ys[(a  # c\n    )]\n"
+    s = source.new_source(name: "t.hero", text: text)
+    parsed = parse.parse(text)
+    lines = owners.shape(s, lexed: parsed.tokens, ignored: [], end: text.len())
+    c = elements.Code(tree: parsed.tree, s: s, comments: parsed.comments, lines: lines)
+    written = aligned.within(lines, from: 48, to: 65)
+    printed = aligned.lexed("ys[a]")
+    matched = aligned.aligned(c, text: "ys[a]", written: written, printed: printed)
+    assert matched == [0, 1, -1, 2, -1, 3]
+    f: page.Fmt @ page.blank_page()
+    assert restored(f, c, text: "ys[a]", written: written, printed: printed, matched: matched, to: 65) == "ys[(a)]"

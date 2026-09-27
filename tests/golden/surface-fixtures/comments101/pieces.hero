@@ -1,0 +1,20 @@
+# A line `fmt` breaks after the tokens two comments follow, in an index (the
+# second skeptic seat's `i01`) and in a function type's parameters (`i02`):
+# the piece between the two breaks kept the space before it and stood one
+# column too far in. A piece after a break starts its line now.
+
+function add(n: i64, m: i64) -> i64
+    return n + m
+
+function f(xs: [i64], a: i64, b: i64, c: i64) -> i64
+    ys: [i64] @ xs
+    ys[a +  # after the plus
+        b -  # after the minus
+        c] @ 1
+    g: (function(n:  # after the first name
+        i64, m:  # after the second
+        i64) -> i64) @ add
+    return g(n: ys[0], m: 1)
+
+function main()
+    print(f(xs: [1, 2], a: 1, b: 1, c: 1))

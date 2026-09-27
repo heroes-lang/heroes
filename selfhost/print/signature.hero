@@ -56,7 +56,8 @@ function opening(s: source.Source, name: str, fd: ast.FunctionDecl) -> str
 # spelled only after the arrow and a printer that dropped the arrow dropped
 # the word with it: `-> () when 0` came back as no arrow and no clause, a
 # different program at a fixpoint, measured 2026-09-24 on
-# `success-clause-misuse.hero`.
+# `success-clause-misuse.hero`. `fmt` keeps a written `()` with a comment
+# inside it too, the one place that comment has (`print/headline.hero`).
 function closing(tree: ast.Ast, s: source.Source, fd: ast.FunctionDecl) -> str
     result = types.render_type(tree, fd.result, s)
     after = result_words(s, fd)

@@ -1,0 +1,5 @@
+# A comment trailing the last line of a file with no newline at its end.
+# `fmt` ends the file with one, and the comment stays on the line.
+
+function main()
+    print(0)  # the last line, no newline after it

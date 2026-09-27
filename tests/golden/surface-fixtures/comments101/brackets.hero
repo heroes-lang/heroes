@@ -1,0 +1,56 @@
+# Defect 101's second shape: a comment inside a bracket. `fmt` printed the
+# elements one per line and left the comment to the next walk, which at a
+# body's end printed it at column 0 above the next declaration, at exit 0
+# with the tree unchanged. It stays inside its bracket now, on its element's
+# line: after the last element of a list, after a call's last argument,
+# inside a call that is an argument, inside an operand, inside a receiver,
+# after a map's entry, above its last one, and on the opening and closing
+# lines. `fmt` prints this file with each list one element per line and no
+# commas (§4.9).
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+function list() -> [i64]
+    return [
+        1,
+        2  # the last element
+    ]
+
+function call() -> i64
+    return g(
+        a: 1,
+        b: 2  # the last argument
+    )
+
+function nested() -> i64
+    return g(
+        a: g(
+            a: 1,  # inside a call that is an argument
+            b: 2
+        ),
+        b: 3
+    )
+
+function operand() -> i64
+    return 1 + g(
+        a: 1,  # inside the right operand
+        b: 2
+    )
+
+function receiver() -> i64
+    return [
+        1,  # inside a receiver
+        2
+    ].len()
+
+function table() -> {str: i64}
+    return {  # on the opening line
+        "a": 1,  # after an entry
+        # above the last entry
+        "b": 2
+    }  # on the closing line
+
+function main()
+    print(list()[0] + call() + nested() + operand())
+    print(receiver() + table().len())

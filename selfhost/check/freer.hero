@@ -29,6 +29,7 @@ use source
 use diag
 use check/table
 use parse
+use type_text
 
 # The `owned <freer>` mark that names this function, if any declaration in the
 # program has one. The FIRST is enough — a second mark naming the same freer
@@ -188,7 +189,7 @@ function mark_refusals(a: ast.Ast, s: source.Source, decls: [ast.Decl], at: i64)
 # same shape `check/ffi.hero` records of panel 062, one rule wired to one call
 # site while the other positions shipped.
 function wrong_owned_type(a: ast.Ast, s: source.Source, ty: i64, subject: str, mark: token.Span) -> diag.Diagnostic?
-    written = source.span_text(s, a.types[ty].span)
+    written = type_text.named_text(source.span_text(s, a.types[ty].span))
 
     if written == "cstr"
         return fail(code: "none", msg: "the mark is on the type it is for")

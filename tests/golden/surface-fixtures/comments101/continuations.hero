@@ -1,0 +1,37 @@
+# Lines of a block's head `fmt` breaks to keep a comment inside it (the
+# third skeptic seat's `m3` and `sh3`): a continuation went at the body's
+# column and read as the body, and a line starting with `)` at the head's
+# own column read as a statement the block then hung under. Every line of
+# a head after its first goes eight columns further in now, four past the
+# body: in a `while`'s index, in an `if`'s list, after the author's
+# parentheses in an index, in a signature's result, and after a kept `()`
+# in a parameter's function type.
+
+function f(t: [i64], a: i64, b: i64) -> i64
+    while t[a +  # after the plus
+            1] > 0
+        print(2)
+
+    if t[a] == [  # a list
+            1][0]
+        print(3)
+
+    while t[(a + b  # after a sum
+            ) * 2] > 0
+        print(1)
+    return 0
+
+function list() -> [  # in the result
+        i64]
+    return [1]
+
+function g(h: (function() -> (  # in a function type's unit
+        ))) -> i64
+    h()
+    return 0
+
+function nothing()
+    print(0)
+
+function main()
+    print(f(t: [1, 2, 3, 4], a: 0, b: 1) + list().len() + g(h: nothing))

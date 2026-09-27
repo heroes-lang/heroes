@@ -1,0 +1,25 @@
+# A comment just inside the author's parentheses around an operand, not
+# around the whole value (the second skeptic seat's `x = (  # c`). The tree's
+# span of `(a + b) * 2` starts at `a`, so the comment after the `(` was
+# outside the value, which went on one line: `fmt` refused at exit 2, where
+# the trunk moved it at exit 0. A value's extent reaches the parentheses at
+# its edges now, and the group is opened: in a binding, in a call's
+# argument, around a unary operator's operand, and in a condition with a
+# comment after an operator too.
+
+function f(a: i64, b: i64) -> i64
+    x = (  # in a binding
+        a + b) * 2
+    print((  # in an argument
+        2 + 3) * 4)
+    n = -(  # around a unary's operand
+        a +
+        b)
+    if (  # in a condition
+        a > 0 &&  # positive
+        b < 10)
+        return x + n
+    return 0
+
+function main()
+    print(f(a: 1, b: 2))

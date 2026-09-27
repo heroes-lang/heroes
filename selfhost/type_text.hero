@@ -1,0 +1,52 @@
+# A named type's written text (design.md §4.3), read for the three passes
+# that ask it: `fmt` prints it, the resolver looks it up, the checker and
+# the emitter compare it with `cstr` and a field's declared type. Split out
+# of `selfhost/ast.hero` on 2026-09-26, which is at its ceiling, when the
+# third skeptic seat's `q2` showed the premise its comment stated, that a
+# named type's span is its name, false for `geom.  # c` over `Point`.
+
+# A named type's written text, `Point` or `geom.Point`, with nothing between
+# its two names but the dot. A comment after the dot is inside the span, and
+# read raw it was part of the type's name: `fmt` printed it twice, no
+# fixpoint, and `check` looked for a type called `  # c` and `Balance` (the
+# third skeptic seat's `q2`, 2026-09-26). The names are the text's first and
+# last words, so a comment's own dots are between them. Any other type's text
+# comes back as it is.
+function named_text(text: str) -> str
+    first: i64 @ 0
+
+    while first < text.len() && name_byte(text[first])
+        first @ first + 1
+
+    if first == 0 || first >= text.len() || text[first] == '['
+        return text
+    last: i64 @ text.len()
+
+    while last > first && name_byte(text[last - 1])
+        last @ last - 1
+
+    if last == text.len() || !dotted(text.slice(from: first, to: last))
+        return text
+    return text.slice(from: 0, to: first) + "." + text.slice(from: last, to: text.len())
+
+function dotted(text: str) -> bool
+    at: i64 @ 0
+
+    while at < text.len()
+        if text[at] == '.'
+            return true
+        at @ at + 1
+
+    return false
+
+function name_byte(b: u8) -> bool
+    return b == '_' || b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+
+## Tests
+test "a named type's text is its names and the dot alone"
+    assert named_text("geom.Point") == "geom.Point"
+    assert named_text("Point") == "Point"
+    assert named_text("entry.  # see a.b\n        Balance") == "entry.Balance"
+    assert named_text("u8[4]") == "u8[4]"
+    assert named_text("[u8]") == "[u8]"
+    assert named_text("cstr") == "cstr"

@@ -1,0 +1,184 @@
+# A function's signature as `fmt` prints it, with every comment inside it
+# kept where the author wrote it (design.md §4.15; defects 095 and 101).
+# Split out of `print/fmt.hero` on 2026-09-26, when the second skeptic seat
+# over e0e08d18 found the three shapes the old split between them lost: a
+# comment inside a written `-> ()` moved into the parameter list, one inside
+# the result type of a signature with no parameters did the same, and one
+# after a parameter's `@` moved above it. The words are
+# `print/signature.hero`'s, which `dump` reads too.
+#
+# TWO SHAPES. The parameter list is printed one parameter per line when it
+# is written across lines and a comment sits anywhere from its `(` line to
+# its `)` line (`opened`): joined, the comment went to the end of the line.
+# Otherwise it is one line, and the signature's one comment place left is
+# its result: a comment inside the result's type breaks the type after the
+# token it follows (`print/breaks.hero`), the `()` of a unit result
+# included, which `fmt` drops only where no comment is inside it, since the
+# comment has no other place (the seat's `k01` to `k07`). Either shape
+# printed across lines is a block's head, and every line of it after its
+# first goes eight columns further in (`margins.deepened`).
+
+use token
+use ast
+use source
+use print/types
+use print/signature
+use print/page
+use print/margins
+use print/owners
+use print/breaks
+
+# The signature of `fd`, whose name is at `name`, and the comment trailing
+# its last line.
+function signature_lines(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], name: token.Span, fd: ast.FunctionDecl, indent: i64)
+    start = f.out.len()
+    first = source.line_of(s, name.start)
+    last = source.line_of(s, fd.signature_end.start)
+    open = list_open(f.lines, name: name)
+    shut: i64 @ fd.signature_end.start
+
+    if open >= 0 && f.lines.pair[open] >= 0
+        shut @ f.lines.tokens[f.lines.pair[open]].span.start
+    closed = source.line_of(s, shut)
+    waiting = f.next_comment < comments.len() && source.line_of(s, comments[f.next_comment].start) <= closed
+
+    if closed > first && waiting
+        opened(@f, tree, s, comments, name: source.span_text(s, name), fd: fd, indent: indent, first: first, shut: shut)
+    else
+        rendered: [str] @ []
+
+        for param in fd.params
+            text = signature.parameter(tree, s, param: param)
+            rendered @ rendered.push(text)
+
+        head = signature.opening(s, name: source.span_text(s, name), fd: fd) + rendered.join(", ")
+        page.put_line(@f, indent: indent, text: closing(@f, tree, s, comments, fd: fd, head: head, indent: indent))
+
+    # `last`, where the source's signature ended: keyed on the name's line,
+    # a doc under one written across lines gained a blank above it.
+    if f.last_line < last
+        f.last_line @ last
+    page.trailing_comment(@f, s, comments, line: last)
+
+    # A signature across lines is a block's head, the body's or the next
+    # member's: `margins.deepened`.
+    margins.deepened(@f, from: start)
+
+# The token of the parameter list's `(`: the first after the name, past any
+# type parameters, which hold none.
+function list_open(lines: owners.Lines, name: token.Span) -> i64
+    at: i64 @ owners.index_at(lines, offset: name.start)
+
+    while at >= 0 && at < lines.tokens.len() && lines.tokens[at].kind != .lparen
+        at @ at + 1
+
+    if at >= lines.tokens.len()
+        return -1
+    return at
+
+# The list one parameter per line (defect 095): the comment trailing the
+# `(` line where no parameter shares it, each parameter under the comments
+# above it and with the one trailing it, a comment inside its type or after
+# its `@` kept there (`lead`), and the comments above the `)` line, which is
+# `shut`'s. One after the `)` is the result's (`closing`).
+function opened(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], name: str, fd: ast.FunctionDecl, indent: i64, first: i64, shut: i64)
+    page.put_line(@f, indent: indent, text: signature.opening(s, name: name, fd: fd))
+    f.last_line @ first
+    starts: [i64] @ []
+
+    # A parameter starts at its `@`: a comment after the `@` is inside it,
+    # and given to the `(` line it moved above the parameter (the seat's
+    # `function h(@  # c`).
+    for param in fd.params
+        start = begins(f, param: param)
+        starts @ starts.push(start)
+
+    starts @ starts.push(shut)
+
+    # A comment trailing a line goes with the last thing printed from it:
+    # `a: i64, b: i64,  # c` is `b`'s, and the `(` line's own only where no
+    # parameter shares that line. Given to the first, it moved (defect 101).
+    if source.line_of(s, starts[0]) > first
+        page.trailing_comment(@f, s, comments, line: first)
+    index: i64 @ 0
+
+    for param in fd.params
+        page.comments_before(@f, s, comments, line: source.line_of(s, starts[index]), indent: indent + 4)
+        separator: str @ ","
+
+        if index == fd.params.len() - 1
+            separator @ ""
+
+        # A comma after a comment keeps its own line (`owners.lone_comma`).
+        comma: i64 @ -1
+
+        if index + 1 < fd.params.len()
+            mark = owners.code_before(f.lines, index: owners.index_at(f.lines, offset: starts[index + 1]))
+
+            if mark >= 0 && f.lines.tokens[mark].kind == .comma
+                before = owners.code_before(f.lines, index: mark)
+                comma @ owners.lone_comma(f.lines, after: f.lines.tokens[before].span.end)
+
+        if comma >= 0
+            separator @ ""
+
+        # A comment inside the parameter's type stays inside it, the marks
+        # after the type going on its last line.
+        whole = signature.parameter(tree, s, param: param)
+        written: str @ source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s)
+
+        if param.mutable
+            written @ "@" + written
+        end = tree.types[param.ty].span.end
+        words = whole.slice(from: written.len(), to: whole.len())
+        text = breaks.led_text(
+            @f,
+            tree,
+            s,
+            comments,
+            head: "",
+            text: written,
+            from: starts[index],
+            to: end,
+            indent: indent + 4
+        )
+        page.put_line(@f, indent: indent + 4, text: text + words + separator)
+        stop = source.line_of(s, end - 1)
+
+        if f.last_line < stop
+            f.last_line @ stop
+
+        if comma >= 0
+            margins.comma_line(@f, s, comments, lines: f.lines, comma: comma, indent: indent + 4)
+
+        # A comment on that line is the parameter's only before what follows
+        # it, the next parameter or the list's `)`: after the `)`, on a list
+        # closed on the parameter's line, it trails the result.
+        if f.next_comment < comments.len() && comments[f.next_comment].start < starts[index + 1]
+            page.trailing_comment(@f, s, comments, line: stop)
+        index @ index + 1
+
+    page.comments_before(@f, s, comments, line: source.line_of(s, shut), indent: indent + 4)
+    page.put_line(@f, indent: indent, text: closing(@f, tree, s, comments, fd: fd, head: "", indent: indent))
+
+# Where a parameter's tokens start: its `@`, or its name.
+function begins(f: page.Fmt, param: ast.Param) -> i64
+    if !param.mutable
+        return param.name.start
+    mark = owners.code_before(f.lines, index: owners.index_at(f.lines, offset: param.name.start))
+    return f.lines.tokens[mark].span.start
+
+# `head` and `) -> R words`, or `)` alone for a result the signature does
+# not write or a `-> ()` with nothing inside it, with a comment inside the
+# result's type kept there (`lead`): prints every line but the last and
+# returns that one.
+function closing(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], fd: ast.FunctionDecl, head: str, indent: i64) -> str
+    text = signature.closing(tree, s, fd: fd)
+    result = tree.types[fd.result].span
+    inside = f.next_comment < comments.len() && comments[f.next_comment].start >= result.start && comments[f.next_comment].start < result.end
+
+    if result.end <= result.start || !inside
+        return head + text
+    written = types.render_type(tree, fd.result, s)
+    words = signature.result_words(s, fd)
+    return breaks.led_text(@f, tree, s, comments, head: head + ") -> ", text: written, from: result.start, to: result.end, indent: indent) + words

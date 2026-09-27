@@ -1,0 +1,36 @@
+# A comment trailing the line of the author's `)`, which `fmt` drops where
+# it binds nothing: the first repair of defect 101 refused each at exit 2,
+# since the statement's last line was its value's and not the `)`'s. It
+# trails the statement now: after a value's parentheses (`p4`), after a
+# `while` condition's, after an array element's (`k1`), after a named
+# argument's and its comma (`k2`).
+
+function f(a: i64, b: i64) -> i64
+    x = (
+        a + b
+    )  # after the paren
+    return x
+
+function w(a: bool, b: bool)
+    while (a &&
+        b
+    )  # after the close paren
+        print(1)
+
+function l(a: i64, b: i64, c: i64) -> [i64]
+    return [
+        (a +
+            b
+        )  # after the element's paren
+        c
+    ]
+
+function n(a: i64, b: i64, c: i64) -> i64
+    return f(a: (a +
+            b
+        ),  # after the paren and comma
+        b: c)
+
+function main()
+    print(f(a: 1, b: 2) + l(a: 1, b: 2, c: 3)[0] + n(a: 1, b: 2, c: 3))
+    w(a: false, b: false)

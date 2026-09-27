@@ -1,0 +1,338 @@
+# A value across lines, opened inside its brackets, with every comment
+# written inside it kept where the author put it (design.md §4.9, §4.15;
+# the `broken` half of `fmt_break.rs`). Split out of `print/fmt.hero` on
+# 2026-09-25 with the repair of defect 101: printed on one line, a comment
+# inside a bracket went on to the next statement's walk, and at a body's
+# end out of the function as a column-0 remark, at exit 0 with the tree
+# unchanged, so no guard saw it.
+#
+# The OUTERMOST bracket of a value is opened when its line is too long or
+# the author wrote it across lines, since panel 007 allows no break outside
+# a bracket. Below it, a part opens only to keep a comment: an element, an
+# argument, a map's key, a callee, a receiver, a base, an operand. A
+# comment after an operator is kept inside parentheses, the one bracket a
+# binary has (§4.15: "broken inside parentheses or not at all"), and the
+# author's own parentheses are kept where a comment sits just inside them,
+# since the tree keeps none: around the value, or around a part of it at
+# its edge, which the value's extent includes (`groups.extent`). Anywhere
+# else, a type, an index, a place, after a `.`, between a callee and its
+# `(`, in an argument's name and `@`, the one-line text breaks after the
+# token the comment follows (`print/breaks.hero`); a bracket opened after
+# such a break opens four columns in. A comma after a comment keeps a
+# line of its own (`owners.lone_comma`). What a bracket holds is
+# `print/elements.hero`'s to read; everything else about a value is
+# `render`'s.
+#
+# A KNOT, and its map: `broken` is the entry; `spread` prints every line of
+# a value but its last and returns that one, so the next part of a line (a
+# comma, the rest of a chain, a method's arguments) goes on it; `spread`
+# calls `opened` for a bracket, `one_line` for one whose only comment is
+# before it, and `part` for anything else, `opened` calls `element` for
+# each element, and each of them calls `spread` again.
+
+use token
+use ast
+use source
+use print/bodies
+use print/page
+use print/margins
+use print/parens
+use print/elements
+use print/owners
+use print/breaks
+use print/around
+
+# `head`, a value and `tail`, on one line when nothing asks otherwise, and
+# opened when `open` (the line is too long, or the author spread it) or a
+# comment inside asks. A value with no bracket stays on one line: a
+# formatter that invents a continuation invents one the language does not
+# have.
+function broken(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, value: i64, indent: i64, tail: str, open: bool)
+    c = elements.Code(tree: tree, s: s, comments: comments, lines: f.lines)
+    last = spread(
+        @f,
+        c,
+        head: head,
+        value: value,
+        indent: indent,
+        at: around.Place(needed: 0, open: open, taken: -1, all: false)
+    )
+    page.put_line(@f, indent: indent, text: last + tail)
+
+# The head a value leaves for what follows it on its last line: `fmt`'s
+# prefix of a control form at a binary's right edge.
+function led(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, value: i64, indent: i64, needed: i64) -> str
+    c = elements.Code(tree: tree, s: s, comments: comments, lines: f.lines)
+    return spread(@f, c, head: head, value: value, indent: indent, at: loose(needed))
+
+function loose(needed: i64) -> around.Place
+    return around.Place(needed: needed, open: false, taken: -1, all: false)
+
+function spread(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i64, at: around.Place) -> str
+    span = elements.extent(c, id: value)
+    pairs = around.untaken(c, span: c.tree.exprs[value].span, taken: at.taken)
+    inside = elements.holds(f, c, from: span.start, to: span.end)
+    paren: token.Span? @ fail(code: "none", msg: "no parentheses of the author's here")
+
+    if pairs.len() > 0
+        paren @ ok(pairs[0])
+
+    # Inside the author's parentheses printed for a comment, every pair of
+    # theirs around the same value is printed too, one by one from the
+    # outside: the guard counts the innermost of several, and a comment
+    # after the inner `)` of `x = ((a)  # c` over `)` moved when the inner
+    # pair was dropped (the third skeptic seat's `dp1`). A pair with a
+    # comment inside the value it holds is opened as a group, the author's
+    # parentheses being the ones a group would print: printed as text, the
+    # group inside added its own, and the second pass printed both (`((`,
+    # no fixpoint).
+    if at.all && pairs.len() > 0 && !around.just_inside(f, c, pair: pairs[pairs.len() - 1], span: span)
+        outer = pairs[pairs.len() - 1]
+
+        if elements.waits(f, c, span: span)
+            kept: elements.Bracket @ elements.group(
+                c,
+                value: value,
+                paren: ok(outer),
+                split: elements.splits(f, c, value: value) && pairs.len() == 1
+            )
+            kept.keeps @ true
+            return opened(@f, c, head: head, b: kept, indent: indent)
+        inner = around.Place(needed: 0, open: at.open, taken: outer.start, all: true)
+        return spread(@f, c, head: head + "(", value: value, indent: indent, at: inner) + ")"
+
+    # The outermost of the author's pairs with a comment just inside it is
+    # printed as a group, and the ones inside it are the group's element's.
+    level: i64 @ pairs.len() - 1
+
+    while level >= 0
+        pair = pairs[level]
+
+        if around.just_inside(f, c, pair: pair, span: span)
+            b: elements.Bracket @ elements.group(
+                c,
+                value: value,
+                paren: ok(pair),
+                split: elements.splits(f, c, value: value) && level == 0
+            )
+            b.keeps @ true
+            return opened(@f, c, head: head, b: b, indent: indent)
+        level @ level - 1
+
+    if !inside && !at.open
+        return head + parens.wrapped(c.tree, c.s, id: value, needed: at.needed)
+    shape = elements.bracket(c, value: value)
+
+    if !shape.is_err()
+        b = shape.must()
+
+        # A comment between a callee or receiver and its bracket, after the
+        # `.` or before the `(`, with none inside the bracket, which nothing
+        # asked open: the one-line text, broken after the token it follows
+        # (the second skeptic seat's `table().  # c` and `ok  # c`).
+        if !at.open && elements.holds(f, c, from: b.seam, to: b.from) && !elements.waits(f, c, span: token.Span(start: b.from, end: b.to))
+            return around.one_line(@f, c, head: head, value: value, indent: indent, needed: at.needed)
+        return opened(@f, c, head: head, b: b, indent: indent)
+
+    if !inside
+        return head + parens.wrapped(c.tree, c.s, id: value, needed: at.needed)
+    return part(@f, c, head: head, value: value, indent: indent, needed: at.needed, paren: paren, kept: at.all)
+
+# A value that is not a bracket and holds a comment: the part holding it is
+# opened, the rest printed around it, parenthesised as `render` would.
+# `paren` is the author's parentheses around it, whose lines a group keeps.
+function part(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i64, needed: i64, paren: token.Span?, kept: bool) -> str
+    before: str @ head
+    after: str @ ""
+
+    if parens.needs_parens(c.tree, id: value, needed: needed)
+        before @ head + "("
+        after @ ")"
+    postfix = loose(parens.POSTFIX_POWER)
+
+    match c.tree.exprs[value].kind
+        .binary b =>
+            mine = parens.power(c.tree, value)
+            op = " " + bodies.binary_op(b.op) + " "
+
+            if elements.alone(f, c, value: value, within: b.right)
+                left = parens.wrapped(c.tree, c.s, id: b.left, needed: mine)
+                return spread(@f, c, head: before + left + op, value: b.right, indent: indent, at: loose(mine + 1)) + after
+
+            if elements.alone(f, c, value: value, within: b.left)
+                right = parens.wrapped(c.tree, c.s, id: b.right, needed: mine + 1)
+                return spread(@f, c, head: before, value: b.left, indent: indent, at: loose(mine)) + op + right + after
+            return opened(
+                @f,
+                c,
+                head: head,
+                b: elements.group(c, value: value, paren: paren, split: true),
+                indent: indent
+            )
+        # A part whose base holds every comment in it opens the base; one
+        # after the base, after its `.` or before its `?`, is the one-line
+        # text's, below (the second skeptic seat's `p.  # c`).
+        .field fl =>
+            if elements.alone(f, c, value: value, within: fl.base)
+                base = spread(@f, c, head: before, value: fl.base, indent: indent, at: postfix)
+                return base + "." + source.span_text(c.s, fl.name) + after
+        .field_name fl =>
+            if elements.alone(f, c, value: value, within: fl.base)
+                base = spread(@f, c, head: before, value: fl.base, indent: indent, at: postfix)
+                return base + "::" + source.span_text(c.s, fl.name) + after
+        .index ix =>
+            if elements.alone(f, c, value: value, within: ix.base)
+                base = spread(@f, c, head: before, value: ix.base, indent: indent, at: postfix)
+                return base + "[" + parens.render(c.tree, c.s, id: ix.index) + "]" + after
+        .try_expr t =>
+            if elements.alone(f, c, value: value, within: t.value)
+                return spread(@f, c, head: before, value: t.value, indent: indent, at: postfix) + "?" + after
+        .unary u =>
+            # A comment after the operator itself: the operator is the
+            # lead of the one element of a group, as a name is an
+            # argument's, and the operand goes on the next line. Inside
+            # the author's parentheses kept for a comment (`kept`) the line
+            # breaks there already: a group of `fmt`'s own inside them was
+            # read as the author's by the second pass, which added another
+            # (panel 179's compiler-engineer, `parens.hero` T59, no
+            # fixpoint).
+            after_sign = elements.holds(
+                f,
+                c,
+                from: c.tree.exprs[value].span.start,
+                to: elements.inner(c, value: value, within: u.operand).start
+            )
+
+            if after_sign && kept
+                return around.one_line(@f, c, head: head, value: value, indent: indent, needed: needed)
+
+            if after_sign
+                b: elements.Bracket @ elements.group(c, value: value, paren: paren, split: false)
+                b.items[0] @ elements.led(
+                    c,
+                    value: u.operand,
+                    lead: parens.unary_op(u.op),
+                    from: c.tree.exprs[value].span.start
+                )
+                return opened(@f, c, head: head, b: b, indent: indent)
+            sign = before + parens.unary_op(u.op)
+            return spread(@f, c, head: sign, value: u.operand, indent: indent, at: loose(parens.UNARY_POWER)) + after
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => after @ after
+        .name | .hole | .call | .method | .variant_case | .array | .map                => after @ after
+        .if_expr | .match_expr | .error                                                => after @ after
+
+    # Anything else, an index holding the comment first.
+    return around.one_line(@f, c, head: head, value: value, indent: indent, needed: needed)
+
+# A bracket, opened: its first line (after any callee or receiver, opened
+# too when it holds a comment), the comment trailing the opening bracket
+# where no element shares its line, each element, and the comments before
+# the closing bracket. Returns the closing text, the caller's to finish.
+function opened(@f: page.Fmt, c: elements.Code, head: str, b: elements.Bracket, indent: i64) -> str
+    open: str @ head + b.open
+
+    # An empty `()` after a callee or receiver a comment opened stays shut:
+    # the comment asked for the part before it, not for it.
+    spare: bool @ false
+    start: str @ head
+
+    if b.before >= 0
+        spare @ b.items.len() == 0 && elements.holds(f, c, from: c.tree.exprs[b.before].span.start, to: b.from)
+        start @ spread(@f, c, head: head, value: b.before, indent: indent, at: loose(parens.POSTFIX_POWER))
+        open @ start + b.open
+
+    # One between the callee or receiver and the bracket, where the bracket
+    # is opened too: its line breaks after the token the comment follows,
+    # and the bracket, begun four columns in, is opened from there.
+    shift: str @ ""
+
+    if b.seam >= 0 && elements.holds(f, c, from: b.seam, to: b.from)
+        unread = f.next_comment
+        open @ breaks.lead(@f, c, head: start, text: b.open, from: b.seam, to: b.from + 1, indent: indent)
+
+        if f.next_comment > unread
+            shift @ "    "
+
+    if spare && !elements.holds(f, c, from: b.from, to: b.to)
+        return open + b.close
+    page.put_line(@f, indent: indent, text: open)
+    inside = indent + shift.len() + 4
+    first: i64 @ b.shut
+
+    if b.items.len() > 0
+        first @ around.starts(c, item: b.items[0], taken: b.from)
+
+    if first > b.at
+        page.opened(@f, c.s, c.comments, line: b.at)
+    else if f.last_line < b.at
+        f.last_line @ b.at
+    index: i64 @ 0
+
+    for item in b.items
+        next: i64 @ b.shut
+
+        if index + 1 < b.items.len()
+            next @ around.starts(c, item: b.items[index + 1], taken: b.from)
+        element(@f, c, item: item, indent: inside, next: next, taken: b.from, keeps: b.keeps)
+        index @ index + 1
+
+    page.comments_before(@f, c.s, c.comments, line: b.shut, indent: inside)
+
+    if f.last_line < b.shut
+        f.last_line @ b.shut
+    return shift + b.close
+
+# One element on a line of its own, under the comments written above it,
+# and with the comment trailing its last line where it is the last thing
+# there: `next` is the line the next element starts on, or the closing
+# bracket's. The element's last line is its value's, or the line of the
+# author's `)` around it, which `fmt` may drop (the skeptic seat's `k1`:
+# the comment after that `)` was refused at exit 2). A comment between an
+# argument's name, its `@` or a map's key and the value breaks that lead
+# after the token it follows, the value going on the next line.
+function element(@f: page.Fmt, c: elements.Code, item: elements.Element, indent: i64, next: i64, taken: i64, keeps: bool)
+    first = around.starts(c, item: item, taken: taken)
+    w = around.written(c, item: item, taken: taken)
+    page.comments_before(@f, c.s, c.comments, line: first, indent: indent)
+
+    # A comma after a comment keeps its own line (`owners.lone_comma`).
+    comma: i64 @ -1
+    after: str @ item.after
+
+    if item.after == ","
+        comma @ owners.lone_comma(c.lines, after: w.to)
+
+    if comma >= 0
+        after @ ""
+    head: str @ ""
+
+    if item.key >= 0
+        head @ spread(@f, c, head: "", value: item.key, indent: indent, at: loose(0))
+    at = around.Place(needed: item.needed, open: false, taken: taken, all: keeps)
+
+    # A comment in the lead breaks it after the token it follows, a name's
+    # `:` or the `@` after it (the second skeptic seat's `h(xs:  # c`), and
+    # the value goes on under it.
+    lead: str? @ fail(code: "none", msg: "no comment between the lead and the value")
+
+    if elements.holds(f, c, from: item.from, to: w.from)
+        lead @ breaks.pieces(@f, c, head: head, text: item.lead, from: item.from, to: w.from, indent: indent)
+
+    if !lead.is_err()
+        rest = spread(@f, c, head: lead.must(), value: item.value, indent: indent + 4, at: at)
+        page.put_line(@f, indent: indent + 4, text: rest + after)
+    else
+        page.put_line(
+            @f,
+            indent: indent,
+            text: spread(@f, c, head: head + item.lead, value: item.value, indent: indent, at: at) + after
+        )
+
+    if f.last_line < w.last
+        f.last_line @ w.last
+
+    if comma >= 0
+        margins.comma_line(@f, c.s, c.comments, lines: c.lines, comma: comma, indent: indent)
+
+    if f.last_line < next
+        page.trailing_comment(@f, c.s, c.comments, line: f.last_line)
