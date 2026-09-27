@@ -30,52 +30,7 @@ use diag
 use check/table
 use parse
 use type_text
-
-# Every `owned <freer>` mark in the program, by the name it gives: the table
-# `marked_as_freer` answers from, built in one pass over the declarations.
-#
-# **One pass, read at every call** (defect 111). The question used to walk
-# every declaration and every parameter of the program at every call to a
-# declared function, so `check` grew with calls times declarations and the
-# walk was 23,277 of 27,436 samples of `heroes check selfhost/main.hero`.
-#
-# The FIRST mark per name is kept — a second mark naming the same freer is the
-# same refusal, and pointing at one is what a reader can act on — in the order
-# the walk read them: declarations in order, and within one the result before
-# the parameters. Both positions are read, because both are the mark: a `cstr`
-# result and a parameter the header spells `char **`.
-function marks(decls: [ast.Decl], s: source.Source) -> {str: token.Span}
-    found: {str: token.Span} @ {}
-
-    for one in decls
-        match one.kind
-            .function_decl fd =>
-                if !fd.value.owned_result.is_err()
-                    keep_first(@found, s, mark: fd.value.owned_result.must())
-
-                for param in fd.value.params
-                    if !param.owned.is_err()
-                        keep_first(@found, s, mark: param.owned.must())
-            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
-
-    return found
-
-# The table is lent, so the store lands in the one map it is (design.md Part 8
-# wart 8's cheap spelling).
-function keep_first(@found: {str: token.Span}, s: source.Source, mark: token.Span)
-    name = source.span_text(s, mark)
-
-    if found[name].is_err()
-        found[name] @ mark
-
-# The `owned <freer>` mark that names this function, if any declaration in the
-# program has one: the first, as `marks` keeps it.
-function marked_as_freer(freers: {str: token.Span}, name: str) -> token.Span?
-    found = freers[name]
-
-    if found.is_err()
-        return fail(code: "absent", msg: "nothing names this function as a freer")
-    return found
+use check/freer_marks
 
 # What a marked call HANDS BACK, which is not what its signature declares.
 #
@@ -345,25 +300,25 @@ test "the mark is found at both positions, and another program's freer is not th
     parsed = parse.parse(text)
     assert parsed.diagnostics.len() == 0
     s = source.new_source(name: "t.hero", text: text)
-    freers = marks(parsed.decls, s)
+    freers = freer_marks.marks(parsed.decls, s)
 
     # Both positions the mark can take, because a refusal that reads only the
     # result position would let the `@` half through in silence.
-    assert !marked_as_freer(freers, name: "release").is_err()
-    assert !marked_as_freer(freers, name: "drop").is_err()
+    assert !freer_marks.marked_as_freer(freers, name: "release").is_err()
+    assert !freer_marks.marked_as_freer(freers, name: "drop").is_err()
 
     # **The two negative shapes, and they are the reason this is a refusal and
     # not a ban**: a function nobody marked, and a name no mark carries. Get
     # either wrong and every `extern` that frees anything stops compiling.
-    assert marked_as_freer(freers, name: "other").is_err()
-    assert marked_as_freer(freers, name: "sqlite3_free").is_err()
+    assert freer_marks.marked_as_freer(freers, name: "other").is_err()
+    assert freer_marks.marked_as_freer(freers, name: "sqlite3_free").is_err()
 
 test "a program with no mark at all names no freer"
     text = "extern \"x.h\"\n    function a(p: ptr) -> cstr\n    function free_it(p: ptr)\n\nfunction main()\n    print(0)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    assert marks(parsed.decls, s).len() == 0
-    assert marked_as_freer(marks(parsed.decls, s), name: "free_it").is_err()
+    assert freer_marks.marks(parsed.decls, s).len() == 0
+    assert freer_marks.marked_as_freer(freer_marks.marks(parsed.decls, s), name: "free_it").is_err()
 
 # The mark the table keeps is the one the walk it replaced returned: the first
 # declaration's, and within one declaration the result's before a parameter's.
@@ -372,10 +327,10 @@ test "the first mark of a name is the one kept, the result before a parameter"
     parsed = parse.parse(text)
     assert parsed.diagnostics.len() == 0
     s = source.new_source(name: "t.hero", text: text)
-    freers = marks(parsed.decls, s)
+    freers = freer_marks.marks(parsed.decls, s)
     assert freers.len() == 2
-    drop = marked_as_freer(freers, name: "drop").must()
-    keep = marked_as_freer(freers, name: "keep").must()
+    drop = freer_marks.marked_as_freer(freers, name: "drop").must()
+    keep = freer_marks.marked_as_freer(freers, name: "keep").must()
 
     # `a`'s result mark is the second `drop` on its line; `c`'s first
     # parameter's is the first `keep` on its line.

@@ -1,0 +1,103 @@
+# What every hole of a report reads, gathered once per report (defect
+# 113): each declaration's locals, the functions a hole may be offered by
+# result type, and the declarations' starts. Split out of `check/holes.hero`
+# on 2026-09-27, when the gathering took that file past design.md §11's ~300
+# lines; the report that reads it stays there.
+
+use ast
+use source
+use resolved
+use check/state
+use print/types
+
+# **Once per report, not once per hole** (defect 113). Each hole walked
+# every local of the program, every name of every module, rendering each
+# function's parameters before asking its result type, and every
+# declaration for the one it is in: the report grew with the holes times
+# the program, 0.13, 0.33 and 1.01 s user at 200, 400 and 800 holes.
+record Gathered
+    # Each declaration's locals, by index into `r.locals`, in that order.
+    locals_of: [[i64]]
+    # The functions a hole may be offered, by result type, each row in
+    # ascending (module, name): `maker_at[type]` is its row in `makers`.
+    maker_at: {i64: i64}
+    makers: [[Maker]]
+    # Each declaration's first byte, and whether they ascend.
+    starts: [i64]
+    ascending: bool
+
+# A function a hole may be offered, its parameters spelled once.
+record Maker
+    module: str
+    name: str
+    decl: i64
+    params: str
+
+function gather(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Gathered
+    locals_of: [[i64]] @ []
+    starts: [i64] @ []
+    ascending: bool @ true
+
+    for decl in decls
+        none: [i64] = []
+        locals_of @ locals_of.push(none)
+
+        if starts.len() > 0 && decl.span.start < starts[starts.len() - 1]
+            ascending @ false
+        starts @ starts.push(decl.span.start)
+
+    index: i64 @ 0
+
+    for local in r.locals
+        if local.owner >= 0 && local.owner < locals_of.len()
+            add_local(@locals_of[local.owner], index)
+        index @ index + 1
+
+    maker_at: {i64: i64} @ {}
+    makers: [[Maker]] @ []
+
+    # ORDER: ascending (module, name), which every row keeps.
+    for module in sort(resolved.modules_declaring(r))
+        for name in resolved.names_in(r, module: module)
+            found = resolved.top_in(r, module: module, name: name)
+
+            if found.is_err()
+                continue
+            decl = found.must()
+
+            match decls[decl].kind
+                .function_decl fd =>
+                    result = state.result_type(c, decl)
+
+                    if !result.is_err()
+                        params: [str] @ []
+
+                        for p in fd.value.params
+                            marker: str @ ""
+
+                            if p.mutable
+                                marker @ "@"
+                            params @ params.push(
+                                marker + source.span_text(s, p.name) + ": " + types.render_type(tree, p.ty, s)
+                            )
+
+                        maker = Maker(module: module, name: name, decl: decl, params: params.join(", "))
+                        row = maker_at[result.must()]
+
+                        if row.is_err()
+                            maker_at[result.must()] @ makers.len()
+                            first: [Maker] = [maker]
+                            makers @ makers.push(first)
+                        else
+                            add_maker(@makers[row.must()], maker)
+                .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return Gathered(locals_of: locals_of, maker_at: maker_at, makers: makers, starts: starts, ascending: ascending)
+
+# Lent, so the push lands in the one row it is (design.md Part 8 wart 8's
+# cheap spelling) where a push through the outer array would copy it.
+function add_local(@row: [i64], index: i64)
+    row @ row.push(index)
+
+function add_maker(@row: [Maker], maker: Maker)
+    row @ row.push(maker)
