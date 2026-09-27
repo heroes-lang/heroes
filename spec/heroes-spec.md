@@ -8,8 +8,13 @@ or more times, `( )` groups. A quoted word stands for itself; `ident`,
 `integer`, `float`, `string`, `character` and `piece` are what the lexer builds,
 and `NEWLINE`, `INDENT` and `DEDENT` come from the indentation. NEWLINE ends a
 statement, and a statement whose last part is a block ends with that block
-instead. Inside `(` `[` `{` a NEWLINE never ends a statement: where it
-separates, a production writes it; elsewhere it may fall between any two tokens.
+instead. Inside `(` `[` `{` a NEWLINE never ends a statement. A line there keeps
+its NEWLINE when it ends with a literal, `?`, `???`, a closing bracket, or a name
+or keyword other than `function` and `fail`; that NEWLINE may stand only before a
+closing bracket or a `,`, or where a production writes it, and any other line
+goes on below, at any column, so a long expression breaks after an operator.
+Where a NEWLINE separates without a `,`, the next line may not begin with a `-`
+that does not touch its operand.
 
 ## 1. Files and layout
 - One file is one module; the file you compile holds `function main()`, which
@@ -26,7 +31,7 @@ separates, a production writes it; elsewhere it may fall between any two tokens.
 - Indentation is significant and rigid: exactly 4 spaces per level; a tab is a
   compile error. No braces, no semicolons, no parentheses around conditions.
 - Syntax is ASCII-only; comments may contain any UTF-8, strings any but a raw
-  carriage return.
+  carriage return or line end: a string is one line.
 
     File = { NEWLINE } { Use | Declaration } .
     Use  = "use" ident { "/" ident } [ "as" ident ] NEWLINE .

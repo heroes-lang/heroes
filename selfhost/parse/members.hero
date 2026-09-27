@@ -21,6 +21,7 @@ use keywords
 use lexer
 use parse/marks as parse_marks
 use parse/type
+use parse/line_end
 
 ## Type parameters
 
@@ -90,7 +91,7 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
         else
             name = cursor.bump(@c).span
 
-            if !cursor.expect(@c, text: text, kind: .colon, code: "expected_parameter_type", what: "`:` and the parameter's type — signatures are always explicit")
+            if !line_end.expect_after(@c, text: text, kind: .colon, code: "expected_parameter_type", what: "`:` and the parameter's type — signatures are always explicit")
                 reading @ false
             else
                 ty = type.parse_type(@c, @a, text)
@@ -117,7 +118,7 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
 
     cursor.skip_terminators(@c)
 
-    if !cursor.expect(@c, text: text, kind: .rparen, code: "expected_params_close", what: "`)`, or `,` and another parameter")
+    if !line_end.expect_closer(@c, text: text, holds: .parameters, kind: .rparen, code: "expected_params_close", what: "`)`, or `,` and another parameter")
         # The signature's own closer is the landmark: resume just past it, so
         # the result type and the body are still read (one mistake, one
         # diagnostic).

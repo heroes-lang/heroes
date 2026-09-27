@@ -1,0 +1,9 @@
+# Panel 180 R5, shape 73 of the compiler-engineer's 117 (if inside brackets):
+# a break its block.
+# By the spec's opening paragraph, the form carries a block, which needs an
+# INDENT, and inside brackets there is none: refused on one line too, exit 1.
+function main()
+    y = f(if c
+            1  #~ missing_body expected_args_close
+        else
+            2)

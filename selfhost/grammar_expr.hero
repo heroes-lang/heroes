@@ -51,7 +51,9 @@
 # keeps planting terminators at line ends even inside `(` `[` `{` (panel 007),
 # and §4.9 makes newline the separator of a multi-line literal — so every list
 # here skips terminators, and the array and map literals accept a newline AS the
-# comma.
+# comma. A line end may stand before every closer and every `,` (panel 180 R1);
+# where one stands before what would have gone on with the line above,
+# `parse/line_end` says so (R3), and `parse/list_line` does for a literal (R2).
 
 use token
 use diag
@@ -59,6 +61,8 @@ use ast
 use cursor
 use lex_interp
 use parse/type
+use parse/line_end
+use parse/list_line
 use operators
 
 ## The precedence table — §4.14, read from the bottom up
@@ -293,10 +297,12 @@ function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         else if k == .lbracket
             _ = cursor.bump(@c)
             index = parse_expr(@c, @a, text)
+            cursor.skip_terminators(@c)
             close = cursor.current_span(c)
-            _ = cursor.expect(
+            _ = line_end.expect_closer(
                 @c,
                 text: text,
+                holds: .one_value,
                 kind: .rbracket,
                 code: "expected_index_close",
                 what: "`]` to close the index"
@@ -469,7 +475,7 @@ function group(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     inner = parse_expr(@c, @a, text)
     cursor.skip_terminators(@c)
 
-    if !cursor.expect(@c, text: text, kind: .rparen, code: "expected_group_close", what: "`)` to close the group")
+    if !line_end.expect_closer(@c, text: text, holds: .one_value, kind: .rparen, code: "expected_group_close", what: "`)` to close the group")
         cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
     return inner
 
@@ -513,7 +519,7 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
             reading @ false
         else
             key = parse_expr(@c, @a, text)
-            _ = cursor.expect(
+            _ = line_end.expect_after(
                 @c,
                 text: text,
                 kind: .colon,
@@ -536,18 +542,23 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     )
 
 # The separator between elements of a bracketed literal: a comma on one line, a
-# newline across several (§4.9). Returns false when the list is over — either
+# newline across several (§4.9), and a newline before a comma is one separator
+# with it (panel 180 R1). Returns false when the list is over — either
 # properly, at the closer, or because the separator is missing, which is
-# reported here.
+# reported here, or because `list_line.separates` refused the line end.
 function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: str) -> bool
+    newline = cursor.at(c, .terminator)
+    cursor.skip_terminators(@c)
     comma_span = cursor.current_span(c)
     comma = cursor.eat(@c, .comma)
-    newline = cursor.at(c, .terminator)
     cursor.skip_terminators(@c)
 
     if cursor.at(c, closer) || cursor.at(c, .eof)
         if comma
             trailing_comma(@c, comma_span)
+        return false
+
+    if newline && !comma && !list_line.separates(@c, text: text, closer: closer)
         return false
 
     if comma || newline
@@ -645,7 +656,7 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
 
     cursor.skip_terminators(@c)
 
-    if !cursor.expect(@c, text: text, kind: .rparen, code: "expected_args_close", what: "`)`, or `,` and another argument")
+    if !line_end.expect_closer(@c, text: text, holds: .arguments, kind: .rparen, code: "expected_args_close", what: "`)`, or `,` and another argument")
         cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
     return arguments
 

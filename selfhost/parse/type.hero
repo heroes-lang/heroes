@@ -23,6 +23,7 @@ use token
 use ast
 use cursor
 use data_errors
+use parse/line_end
 
 ## The entry point
 
@@ -115,10 +116,12 @@ function named(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 function array_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     open = cursor.bump(@c).span
     element = parse_type(@c, @a, text)
+    cursor.skip_terminators(@c)
     close = cursor.current_span(c)
-    _ = cursor.expect(
+    _ = line_end.expect_closer(
         @c,
         text: text,
+        holds: .one_type,
         kind: .rbracket,
         code: "expected_array_close",
         what: "`]` to close the array type"
@@ -132,7 +135,7 @@ function array_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 function map_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     open = cursor.bump(@c).span
     key = parse_type(@c, @a, text)
-    _ = cursor.expect(
+    _ = line_end.expect_after(
         @c,
         text: text,
         kind: .colon,
@@ -140,8 +143,16 @@ function map_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         what: "`:` between the map's key and value types"
     )
     value = parse_type(@c, @a, text)
+    cursor.skip_terminators(@c)
     close = cursor.current_span(c)
-    _ = cursor.expect(@c, text: text, kind: .rbrace, code: "expected_map_close", what: "`}` to close the map type")
+    _ = line_end.expect_closer(
+        @c,
+        text: text,
+        holds: .one_type,
+        kind: .rbrace,
+        code: "expected_map_close",
+        what: "`}` to close the map type"
+    )
     return ast.push_type(
         @a.types,
         ast.TypeNode(kind: .map_of(key: key, value: value), span: token.Span(start: open.start, end: close.end))
@@ -167,7 +178,7 @@ function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         return ast.push_type(@a.types, ast.TypeNode(kind: .error, span: open))
     labels: [token.Span] @ []
     params = function_params(@c, @a, text, @labels)
-    _ = cursor.expect(
+    _ = line_end.expect_after(
         @c,
         text: text,
         kind: .arrow,
@@ -175,10 +186,12 @@ function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         what: "`->` and the result type — a function type always states what it returns, `()` when nothing"
     )
     result = parse_type(@c, @a, text)
+    cursor.skip_terminators(@c)
     close = cursor.current_span(c)
-    _ = cursor.expect(
+    _ = line_end.expect_closer(
         @c,
         text: text,
+        holds: .one_type,
         kind: .rparen,
         code: "expected_function_type_close",
         what: "`)` to close the function type"
@@ -223,11 +236,12 @@ function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [to
             # has to ask which name belongs to which parameter.
             labels @ labels.push(token.Span(start: 0, end: 0))
             params @ params.push(ty)
+        cursor.skip_terminators(@c)
 
         if !cursor.eat(@c, .comma)
             reading @ false
 
-    if !cursor.expect(@c, text: text, kind: .rparen, code: "expected_function_type_params_close", what: "`)`, or `,` and another parameter type")
+    if !line_end.expect_closer(@c, text: text, holds: .type_list, kind: .rparen, code: "expected_function_type_params_close", what: "`)`, or `,` and another parameter type")
         cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
     return params
 
@@ -267,6 +281,7 @@ function fixed_length(@c: cursor.Cursor, text: str, open: token.Span) -> i64
         return 1
     written = cursor.slice_of(text, cursor.current_span(c))
     s = cursor.bump(@c).span
+    cursor.skip_terminators(@c)
 
     if !cursor.at(c, .rbracket)
         if !cursor.at_reported_error(c)

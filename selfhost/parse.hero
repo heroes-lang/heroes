@@ -118,3 +118,103 @@ test "diagnostics come out lexer-first, then parser"
     assert p.diagnostics.len() >= 2
     assert p.diagnostics[0].code == "tab_in_indentation"
     assert p.diagnostics[p.diagnostics.len() - 1].code == "expected_declaration"
+
+# Whether `text`'s diagnostics are all `code`, at least one, and every fix
+# they carry, applied alone, gives a program the parser accepts: the promise
+# panel 180 made of its two refusals, `spaced_minus_element` (R2) and
+# `line_end_before_continuation` (R3), where a `guess` fix is never applied by
+# `check --apply` and so nothing else would ever run one.
+function every_fix_parses(text: str, code: str) -> bool
+    first = parse(text)
+    applied: i64 @ 0
+
+    for d in first.diagnostics
+        if d.code != code
+            return false
+
+        for fix in d.fixes
+            fixed = text.slice(from: 0, to: fix.span.start) + fix.replacement + text.slice(from: fix.span.end, to: text.len())
+
+            if parse(fixed).diagnostics.len() > 0
+                return false
+            applied @ applied + 1
+
+    return applied > 0
+
+test "a minus set apart from its operand in a list is refused, and each reading parses"
+    code = "spaced_minus_element"
+    assert every_fix_parses(text: "function main()\n    xs = [a\n        - b]\n", code: code)
+    assert every_fix_parses(
+        text: "function main()\n    xs = [a\n        -  # the sign, then a comment\n        b]\n",
+        code: code
+    )
+    assert every_fix_parses(text: "function main()\n    xs = [a\n        -\n        b]\n", code: code)
+    assert every_fix_parses(text: "function main()\n    xs = [a  # trailing the line above\n        - b]\n", code: code)
+    assert every_fix_parses(text: "function main()\n    xs = [[a\n        - b]]\n", code: code)
+    assert every_fix_parses(text: "function main()\n    print([1.5\n        - 2.5].len())\n", code: code)
+    assert every_fix_parses(text: "function main()\r\n    xs = [a\r\n        - b]\r\n", code: code)
+
+    # A map's line says which reading parses, and only that one is offered.
+    key = parse("function main()\n    m = {1: 10\n        - 2: 20}\n")
+    assert key.diagnostics.len() == 1
+    assert key.diagnostics[0].fixes.len() == 1
+    assert every_fix_parses(text: "function main()\n    m = {1: 10\n        - 2: 20}\n", code: code)
+    value = parse("function main()\n    m = {\"k\": a\n        - b}\n")
+    assert value.diagnostics.len() == 1
+    assert every_fix_parses(text: "function main()\n    m = {\"k\": a\n        - b}\n", code: code)
+
+test "the first element, a written comma, and the unary spelling are not asked"
+    for text in ["function main()\n    xs = [\n        - 1\n        2\n    ]\n", "function main()\n    xs = [a,\n        - b]\n", "function main()\n    xs = [a\n        , - b]\n", "function main()\n    xs = [a\n        -b\n        -1]\n"]
+        assert parse(text).diagnostics.len() == 0
+
+test "a line end before what goes on with the line above names itself, and its fix parses"
+    code = "line_end_before_continuation"
+    shapes = [
+        "function main()\n    y = (1\n        + 2)\n"
+        "function main()\n    y = (1  # trailing the line above\n        + 2)\n"
+        "function main()\n    y = (1\n        +  # after the operator\n        2)\n"
+        "function main()\n    y = (1\n        +\n        2)\n"
+        "function main()\n    y = (xs\n        .len())\n"
+        "function main()\n    y = (f\n        (1))\n"
+        "function main()\n    y = (f()\n        ?)\n"
+        "function main()\n    y = (Point\n        ::x)\n"
+        "function main()\n    y = xs[i\n        + 1]\n"
+        "function main()\n    f(a\n        + b)\n"
+        "function main()\n    f(a\n        - b)\n"
+        "function main()\n    f(a\n        : 1)\n"
+        "function main()\n    xs = [1\n        + 2]\n"
+        "function main()\n    xs = [f()\n        ?]\n"
+        "function main()\n    m = {\"a\"\n        : 1}\n"
+        "function main()\n    m = {\"a\": 1\n        * 2}\n"
+        "function f(a\n        : i64)\n    print(a)\n"
+        "function f(a: i64\n        ?)\n    print(1)\n"
+        "function f(p: geom\n        .Point)\n    print(1)\n"
+        "function f(m: {str\n        : i64})\n    print(1)\n"
+        "function f(xs: [i64\n        ?])\n    print(1)\n"
+        "function f(g: (function(i64) \n        -> i64))\n    print(1)\n"
+        "function f(g: (function(a\n        : i64) -> i64))\n    print(1)\n"
+        "extern \"m.h\"\n    record Db tag db\n    function g(@out: Db acquires a\n        | b)\n"
+        "function main()\r\n    y = (1\r\n        + 2)\r\n"
+    ]
+
+    for text in shapes
+        assert every_fix_parses(text: text, code: code)
+
+    # Certain where going on is the only reading; in a call's arguments,
+    # before a token that can also begin one, a guess, and the `,` beside it.
+    group = parse("function main()\n    y = (a\n        - b)\n")
+    assert group.diagnostics[0].fixes.len() == 1
+    assert group.diagnostics[0].fixes[0].certainty == .certain
+    call = parse("function main()\n    f(a\n        - b)\n")
+    assert call.diagnostics[0].fixes.len() == 2
+    assert call.diagnostics[0].fixes[0].certainty == .guess
+    assert call.diagnostics[0].fixes[1].replacement == ","
+    named = parse("function main()\n    f(a\n        + b)\n")
+    assert named.diagnostics[0].fixes[0].certainty == .certain
+
+test "a line end before every closer and every comma stands, and is one separator with the comma"
+    for text in ["function main()\n    y = xs[0\n        ]\n", "function main()\n    xs = [1\n        , 2]\n", "function main()\n    m = {\"a\": 1\n        , \"b\": 2}\n", "function f(xs: [i64\n        ], m: {str: i64\n        }, a: i32[4\n        ])\n    print(1)\n", "function f(g: (function(a: i64\n        , b: i64\n        ) -> i64\n        ))\n    print(1)\n"]
+        assert parse(text).diagnostics.len() == 0
+
+    three = parse("function main()\n    xs = [1\n        2\n        , 3]\n")
+    assert three.diagnostics.len() == 0

@@ -1,0 +1,8 @@
+# Panel 180 R5, shape 58 of the compiler-engineer's 117 (array literal): a
+# break trailing , then ].
+# By the spec's opening paragraph, a `,` with nothing after it is refused on
+# one line too, and the NEWLINE before the closer changes nothing: refused,
+# exit 1.
+function main()
+    xs = [1, 2,  #~ trailing_comma
+        ]
