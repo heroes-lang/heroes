@@ -21,6 +21,7 @@ use source
 use check/table
 use check/state
 use check/freer as freer
+use check/freer_marks
 use widths
 use ir/containers
 use emit/mangle
@@ -110,7 +111,7 @@ function extern_probes(@w: writer.Writer, p: containers.Program, c: state.Checke
         # A function some `owned` mark names is probed as a FREER: its
         # pointer parameter is typed `char *`, which is where a wrong
         # freer becomes a compile error rather than a SIGSEGV.
-        frees = !freer.marked_as_freer(c.freers, name: name).is_err()
+        frees = !freer_marks.marked_as_freer(c.freers, name: name).is_err()
         parameters = parameter_list(names, c, decls, f, frees: frees)
 
         if parameters.is_err()
