@@ -241,3 +241,13 @@ standing.
 
 Pending. Queued as `panel 180` in `docs/work/DECIDE.md`. Work proceeds on the
 provisional resolution: one lane lands R1 to R6 with defects 104 and 106.
+
+## A question the sitting did not ask, ruled by the coordinator, 2026-09-27
+
+The lane that landed R2 (`74203a64`) asked whether `spaced_minus_element`
+belongs on the thesis list `check --permissive` drops, the control arm of
+design.md Part 11. It does, by the list's own definition: without the rule
+the program still has a meaning, the two elements the rule refuses. Landed on
+the trunk with the author's instruction of the same day in CLAUDE.md; the
+log entry is `docs/records/log/`'s *a split subtraction is a thesis rule*.
+The author's ratification of this sitting covers it.
