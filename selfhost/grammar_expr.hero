@@ -1196,17 +1196,18 @@ function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
 # `(interp f"a { n } b")`: the pieces verbatim and each hole re-printed, so a
 # call inside a hole shows in the dump as it shows anywhere.
 function interp_render(a: ast.Ast, pieces: [token.Span], holes: [i64], text: str) -> str
-    out: str @ "(interp"
+    parts: [str] @ ["(interp"]
     i: i64 @ 0
 
     while i < pieces.len()
-        out @ out + " " + cursor.slice_of(text, pieces[i])
+        parts @ parts.push(" " + cursor.slice_of(text, pieces[i]))
 
         if i < holes.len()
-            out @ out + " " + render(a, holes[i], text)
+            parts @ parts.push(" " + render(a, holes[i], text))
         i @ i + 1
 
-    return out + ")"
+    parts @ parts.push(")")
+    return parts.join("")
 
 function render(a: ast.Ast, at: i64, text: str) -> str
     node = a.exprs[at]

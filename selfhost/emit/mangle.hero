@@ -136,7 +136,7 @@ function tag_of(ty: str, case_name: str) -> str
 # must not be reachable by accident. $ is dropped: $i in slot 5 becomes
 # h5_i.
 function slot(index: i64, name: str) -> str
-    kept: str @ ""
+    letters: [str] @ []
 
     for ch in name.chars()
         code = ch[0]
@@ -155,10 +155,11 @@ function slot(index: i64, name: str) -> str
             is_word @ true
 
         if is_word
-            kept @ kept + ch
+            letters @ letters.push(ch)
         else
-            kept @ kept + "_"
+            letters @ letters.push("_")
 
+    kept = letters.join("")
     first: i64 @ 0
 
     while first < kept.len() && kept[first] == '_'

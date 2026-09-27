@@ -133,13 +133,14 @@ function undefined_symbol(line: str) -> str?
 
         if opened.is_err()
             return fail(code: "none", msg: "no quoted symbol")
-        quoted: str @ ""
+        letters: [str] @ []
 
         for ch in opened.must().chars()
             if ch == "\""
                 break
-            quoted @ quoted + ch
+            letters @ letters.push(ch)
 
+        quoted = letters.join("")
         cs = quoted.chars()
 
         if cs.len() > 0 && cs[0] == "_"
@@ -213,12 +214,14 @@ function package_problem(s: source.Source, decls: [ast.Decl], stderr: str, line:
 
     if opened.is_err()
         return fail(code: "none", msg: "no package name on the line")
-    name: str @ ""
+    letters: [str] @ []
 
     for ch in opened.must().chars()
         if ch == "`"
             break
-        name @ name + ch
+        letters @ letters.push(ch)
+
+    name = letters.join("")
 
     span = ffi_lookup.package_span(s, decls, name: name)
 
@@ -252,7 +255,7 @@ function package_problem(s: source.Source, decls: [ast.Decl], stderr: str, line:
     return ok(d)
 
 function replace_all(text: str, marker: str, with_text: str) -> str
-    out: str @ ""
+    parts: [str] @ []
     remaining: str @ text
     fall: bool @ false
 
@@ -270,7 +273,9 @@ function replace_all(text: str, marker: str, with_text: str) -> str
                 head @ head.push(cs[index])
                 index @ index + 1
 
-            out @ out + head.join("") + with_text
+            before = head.join("")
+            parts @ parts.push(before)
+            parts @ parts.push(with_text)
             tail: [str] @ []
             index @ at.must() + marker.chars().len()
 
@@ -280,7 +285,8 @@ function replace_all(text: str, marker: str, with_text: str) -> str
 
             remaining @ tail.join("")
 
-    return out + remaining
+    parts @ parts.push(remaining)
+    return parts.join("")
 
 ## Tests
 

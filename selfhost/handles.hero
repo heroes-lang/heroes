@@ -190,20 +190,23 @@ function handle_map_key(key: str, reached: str, span: token.Span) -> diag.Diagno
 # where one name ends. A name is an identifier, so a byte is a character here.
 function releasers(text: str) -> [str]
     out: [str] @ []
-    word: str @ ""
+    word: [str] @ []
     i: i64 @ 0
 
     while i < text.len()
         if text[i] == '|'
             if word.len() > 0
-                out @ out.push(word)
-            word @ ""
+                whole = word.join("")
+                out @ out.push(whole)
+            word @ []
         else if !blank(text[i])
-            word @ word + text.slice(from: i, to: i + 1)
+            one = text.slice(from: i, to: i + 1)
+            word @ word.push(one)
         i @ i + 1
 
     if word.len() > 0
-        out @ out.push(word)
+        whole = word.join("")
+        out @ out.push(whole)
 
     return out
 

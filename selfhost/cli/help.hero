@@ -19,7 +19,7 @@
 use cli/table as cli_table
 
 function help() -> str
-    out: str @ "heroes — the Heroes compiler\n\nusage: heroes <command> [file] [flags]\n\n"
+    rows: [str] @ ["heroes — the Heroes compiler\n\nusage: heroes <command> [file] [flags]\n\n"]
 
     for command in cli_table.commands()
         operand: str @ ""
@@ -29,23 +29,23 @@ function help() -> str
             .optional_operand => operand @ " [file]"
             .no_operand       => operand @ operand
 
-        out @ out + "  " + command.name + operand + "\n      " + command.summary + "\n"
+        rows @ rows.push("  " + command.name + operand + "\n      " + command.summary + "\n")
 
         for flag in command.flags
             spelling: str @ flag.spelling
 
             if flag.value
                 spelling @ flag.spelling + " <path>"
-            out @ out + "      " + spelling + "  " + flag.what + "\n"
+            rows @ rows.push("      " + spelling + "  " + flag.what + "\n")
 
-    out @ out + "\n  --version · --help\n\n"
-    out @ out + "streams: the artifact on stdout, diagnostics and progress on stderr.\n"
-    out @ out + "exit:    0 nothing to report · 1 diagnostics were reported, no artifact was produced\n"
-    out @ out + "         2 the tool could not run. `run` forwards the program's own status.\n"
-    out @ out + "env:     HEROES_RUNTIME  where heroes_runtime.h and runtime.c live, if not\n"
-    out @ out + "         under the working directory or beside the compiler.\n\n"
-    out @ out + "Commands not built yet: lsp · cc\n"
-    return out
+    rows @ rows.push("\n  --version · --help\n\n")
+    rows @ rows.push("streams: the artifact on stdout, diagnostics and progress on stderr.\n")
+    rows @ rows.push("exit:    0 nothing to report · 1 diagnostics were reported, no artifact was produced\n")
+    rows @ rows.push("         2 the tool could not run. `run` forwards the program's own status.\n")
+    rows @ rows.push("env:     HEROES_RUNTIME  where heroes_runtime.h and runtime.c live, if not\n")
+    rows @ rows.push("         under the working directory or beside the compiler.\n\n")
+    rows @ rows.push("Commands not built yet: lsp · cc\n")
+    return rows.join("")
 
 ## Tests
 

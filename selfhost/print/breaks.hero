@@ -71,7 +71,7 @@ function pieces(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64,
 
     if matched.len() != written.len()
         return fail(code: "unaligned", msg: "the text's tokens are not the source's")
-    line: str @ head
+    line: [str] @ [head]
     cut: i64 @ 0
     margin: i64 @ indent
 
@@ -90,29 +90,30 @@ function pieces(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64,
         if upto >= 0 && printed[upto].span.end > cut
             piece: str @ full.slice(from: cut, to: printed[upto].span.end)
 
-            if line.len() == 0
+            if line.join("").len() == 0
                 piece @ unspaced(piece)
-            line @ line + piece
+            line @ line.push(piece)
             cut @ printed[upto].span.end
         remark = page.trim_end(source.span_text(c.s, c.comments[k]))
+        said = line.join("")
 
         # A line the break leaves starting with a closing bracket goes at
         # the column of the line that opened it, as an opened bracket's does.
-        if margin > indent && shuts(line)
+        if margin > indent && shuts(said)
             margin @ indent
 
         if k < c.lines.owner.len() && c.lines.owner[k] == owners.TRAILS
-            page.put_line(@f, indent: margin, text: page.trim_end(line) + "  " + remark)
+            page.put_line(@f, indent: margin, text: page.trim_end(said) + "  " + remark)
         else
-            if page.trim_end(line).len() > 0
-                page.put_line(@f, indent: margin, text: page.trim_end(line))
+            if page.trim_end(said).len() > 0
+                page.put_line(@f, indent: margin, text: page.trim_end(said))
             page.put_line(@f, indent: indent + 4, text: remark)
-        line @ ""
+        line @ []
         margin @ indent + 4
         f.last_line @ source.line_of(c.s, c.comments[k].start)
         f.next_comment @ k + 1
 
-    return ok(line + unspaced(full.slice(from: cut, to: full.len())))
+    return ok(line.join("") + unspaced(full.slice(from: cut, to: full.len())))
 
 # `text` with the author's parentheses `render` dropped put back where a
 # comment `lead` prints is inside them, and with every pair of theirs inside
@@ -148,7 +149,7 @@ function restored(f: page.Fmt, c: elements.Code, text: str, written: [i64], prin
             back[at + 1] @ true
             back[other - 1] @ true
 
-    out: str @ ""
+    parts: [str] @ []
     cut: i64 @ 0
 
     for at in range(from: 0, to: written.len())
@@ -174,10 +175,14 @@ function restored(f: page.Fmt, c: elements.Code, text: str, written: [i64], prin
 
                 if earlier >= 0
                     place @ printed[matched[earlier]].span.end
-            out @ out + text.slice(from: cut, to: place) + mark
+            run = text.slice(from: cut, to: place)
+            parts @ parts.push(run)
+            parts @ parts.push(mark)
             cut @ place
 
-    return out + text.slice(from: cut, to: text.len())
+    rest = text.slice(from: cut, to: text.len())
+    parts @ parts.push(rest)
+    return parts.join("")
 
 function shuts(text: str) -> bool
     return text.len() > 0 && (text[0] == ')' || text[0] == ']' || text[0] == '}')

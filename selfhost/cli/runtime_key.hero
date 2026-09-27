@@ -37,12 +37,13 @@
 function runtime_text(runtime: str) -> str?
     entry = runtime + "/runtime.c"
     root = read_file(entry)?
-    gathered: str @ root
+    gathered: [str] @ [root]
 
     for name in included_names(text: root)
-        gathered @ gathered + read_file(runtime + "/" + name)?
+        one = read_file(runtime + "/" + name)?
+        gathered @ gathered.push(one)
 
-    return ok(gathered)
+    return ok(gathered.join(""))
 
 # Every `#include "…"` target in the text, in the order written. The
 # quoted form only: `<stdio.h>` is the platform's and is not ours to

@@ -104,14 +104,14 @@ function inside(inner: str, outer: str) -> bool
     return next == 46 || next == 91
 
 function key_of_place(f: containers.Function, at: ir.Place) -> str
-    text: str @ at.root.to_str()
+    parts: [str] @ [at.root.to_str()]
 
     for step in containers.steps_of(f, at.path)
         match step
-            .field_step fs => text @ text + "." + fs.at.to_str()
-            .index_step    => text @ text + "[]"
+            .field_step fs => parts @ parts.push("." + fs.at.to_str())
+            .index_step    => parts @ parts.push("[]")
 
-    return text
+    return parts.join("")
 
 # The key of the place a value was read from, walking the producers
 # `place_of` walks, with an element spelled `[]` whatever its index.

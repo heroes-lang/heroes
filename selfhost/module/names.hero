@@ -80,13 +80,16 @@ function module_of(path: str) -> str
 # It is NOT the module's binding name — that is `binding_of`, the last part.
 # Two namespaces (C's and the program's) and this is C's.
 function component_of(module: str) -> str
-    kept: str @ ""
+    letters: [str] @ []
     i: i64 @ 0
 
     while i < module.len()
         if bytes.is_alnum(module[i])
-            kept @ kept + module.slice(from: i, to: i + 1)
+            one = module.slice(from: i, to: i + 1)
+            letters @ letters.push(one)
         i @ i + 1
+
+    kept = letters.join("")
 
     if kept.len() == 0
         # A file called `.hero` or `---.hero`. It has to become SOMETHING,

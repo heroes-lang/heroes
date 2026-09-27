@@ -21,7 +21,7 @@
 # diagnostic clang quotes back) is left alone: the poison is the line-ending
 # pair, and rewriting anything else would edit clang's own words.
 function without_returns(text: str) -> str
-    out: str @ ""
+    parts: [str] @ []
     start: i64 @ 0
     at: i64 @ 0
 
@@ -31,14 +31,17 @@ function without_returns(text: str) -> str
     # ASCII `\r` or at a segment edge, which no character can straddle.
     while at < text.len()
         if text[at] == 13 && at + 1 < text.len() && text[at + 1] == 10
-            out @ out + text.slice(from: start, to: at)
+            run = text.slice(from: start, to: at)
+            parts @ parts.push(run)
             start @ at + 1
 
         at @ at + 1
 
     if start == 0
         return text
-    return out + text.slice(from: start, to: text.len())
+    rest = text.slice(from: start, to: text.len())
+    parts @ parts.push(rest)
+    return parts.join("")
 
 function trimmed(text: str) -> str
     cs = text.chars()

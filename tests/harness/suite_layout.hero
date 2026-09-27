@@ -35,6 +35,7 @@ use report
 use floors
 use shell
 use strings
+use growth
 
 constant COMPILER: str
     "selfhost"
@@ -487,6 +488,25 @@ constant SLOW_APPENDS: [str]
         "l.diagnostics @ l.diagnostics.push("
     ]
 
+# A TEXT IS NEVER GROWN BY `+` WHERE THAT COPIES IT AT EVERY STEP (defect 105,
+# 2026-09-27): a `str` local grown inside a loop, a field grown by a line, a
+# lent `str` grown at all (`tests/harness/growth.hero`, which says what it
+# reads and what it cannot see). `heroes lex --dump-tokens` and `heroes fmt`
+# were quadratic in what they print that way, 194 s and 21 s on walk.hero
+# sixteen and thirty-two times over; every module is read, as for
+# `layout/appends`, because a list of the printers would expire the day a
+# new one prints.
+#
+# ONE ALLOWANCE, and it is checked both ways: a growth this list names must
+# be there, or the entry is stale and the check says so. `lvalue` is a C
+# lvalue, and every index step wraps the whole of it in a call, so each step
+# rebuilds it whatever the spelling and pieces would be joined at every one.
+# It grows by a field's name per step of one place's path.
+constant GROWTH_ALLOWED: [str]
+    [
+        "selfhost/emit/container.hero lvalue"
+    ]
+
 function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()
 
@@ -517,6 +537,8 @@ function run_all(scratch: str) -> report.Report?
     floors.check(@r, label: "layout", found: modules.len(), floor: LEAST, what: "modules")
     over: [str] @ []
     slow: [str] @ []
+    grown_keys: [str] @ []
+    grown_lines: [str] @ []
 
     for path in modules
         text = read_file(path)
@@ -527,6 +549,12 @@ function run_all(scratch: str) -> report.Report?
 
         for found in slow_appends(path: path, text: text.must())
             slow @ slow.push(found)
+
+        for site in growth.sites(text.must())
+            key = path + " " + site.name
+            where = "    " + path + ":" + site.line.to_str() + ": " + site.code
+            grown_keys @ grown_keys.push(key)
+            grown_lines @ grown_lines.push(where)
 
         lines = code_lines(text.must())
         limit = ceiling_for(path)
@@ -550,6 +578,17 @@ function run_all(scratch: str) -> report.Report?
     else
         report.keep_pass(@r)
 
+    grown = unallowed(found: grown_keys, written: grown_lines, allowed: GROWTH_ALLOWED)
+
+    if grown.len() > 0
+        report.keep_failure(
+            @r,
+            label: "layout/concat",
+            detail: "  a text is grown by pushing its pieces onto a `[str]` and joining once, never by `+` at every step, which copies all of it each time (defect 105, design.md Part 8 wart 8):\n" + grown.join("\n")
+        )
+    else
+        report.keep_pass(@r)
+
     if over.len() > 0
         report.keep_failure(
             @r,
@@ -559,6 +598,32 @@ function run_all(scratch: str) -> report.Report?
     else
         report.keep_pass(@r)
     return ok(r)
+
+# The growths no allowance names, and each allowance no growth matched:
+# `found[i]` is `written[i]`'s module and name, as an allowance spells them.
+function unallowed(found: [str], written: [str], allowed: [str]) -> [str]
+    out: [str] @ []
+    index: i64 @ 0
+
+    for key in found
+        if !listed(allowed, key: key)
+            out @ out.push(written[index])
+        index @ index + 1
+
+    for entry in allowed
+        if !listed(found, key: entry)
+            stale = "    " + entry + ": allowed, and no longer grown there: remove the entry"
+            out @ out.push(stale)
+
+    return out
+
+# Is `key` one of `entries`?
+function listed(entries: [str], key: str) -> bool
+    for one in entries
+        if one == key
+            return true
+
+    return false
 
 # Every line of `text`, outside a comment, that appends to the lexer's state
 # through the field, as `path:line: the line`.
@@ -777,3 +842,21 @@ test "an append to the lexer's state through the field is found, and one in a co
     found = slow_appends(path: "x.hero", text: text)
     assert found.len() == 1
     assert strings.contains(text: found[0], needle: "x.hero:2:")
+
+# Defect 105's check, both ways: a growth no allowance names fails, one it
+# names passes, and an allowance no growth matches fails as stale.
+test "a growth the allowance names passes, any other fails, and a stale allowance fails"
+    found = ["selfhost/a.hero out", "selfhost/b.hero lvalue"]
+    written = ["    selfhost/a.hero:3: out @ out + x", "    selfhost/b.hero:9: lvalue @ lvalue + y"]
+    kept = unallowed(found: found, written: written, allowed: ["selfhost/b.hero lvalue"])
+    assert kept == ["    selfhost/a.hero:3: out @ out + x"]
+    none: [str] = []
+    stale = unallowed(found: none, written: none, allowed: ["selfhost/b.hero lvalue"])
+    assert stale.len() == 1
+    assert strings.contains(text: stale[0], needle: "no longer grown")
+
+    # Every allowance names a module of the compiler and one name in it.
+    for entry in GROWTH_ALLOWED
+        parts = strings.words(entry)
+        assert parts.len() == 2
+        assert strings.starts_with(text: parts[0], prefix: "selfhost/")

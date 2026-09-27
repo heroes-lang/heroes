@@ -15,14 +15,20 @@ use source
 use resolved
 use parse
 use resolve
+use stable
 
 # The library is part of every compilation and part of no dump: a
 # --dump-<stage> answers "what does the compiler know about THE FILE I
 # NAMED" (CLAUDE.md §10).
+#
+# The rows are pushed onto a local and joined once, and the locals are
+# taken in the order `stable.order` gives them by owner, once, where each
+# declaration read the whole list of locals again (defect 105: both were
+# quadratic in the file).
 function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> str
-    out: str @ "file " + s.name + "\n"
+    rows: [str] @ ["file " + s.name + "\n"]
     here = source.module_at(s, 0)
-    out @ out + "module " + here + "\n"
+    rows @ rows.push("module " + here + "\n")
 
     # What this file may write qualified, and what each module offers
     # it — the half of the question the symbol table cannot show,
@@ -34,13 +40,13 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
     named = r.module_uses[here]
 
     if !named.is_err() && named.must().len() > 0
-        out @ out + "uses\n"
+        rows @ rows.push("uses\n")
 
         inner = named.must()
 
         for binding in sort(keys(inner))
             module = inner[binding].must()
-            out @ out + "  " + binding + shown_path(binding: binding, module: module) + "\n"
+            rows @ rows.push("  " + binding + shown_path(binding: binding, module: module) + "\n")
 
             for name in resolved.names_in(r, module: module)
                 decl = resolved.top_in(r, module: module, name: name)
@@ -57,8 +63,10 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
                 # written from here and a path is not written at a call
                 # site (panel 099 R3). Which directory it came from is in
                 # the `file:line` on the same line, so nothing is lost.
-                out @ out + "    " + entity(decls, decl: decl.must()) + " " + binding + "." + name + " (" + found.file + ":" + found.line.to_str() + ")\n"
-    out @ out + "symbols\n"
+                rows @ rows.push(
+                    "    " + entity(decls, decl: decl.must()) + " " + binding + "." + name + " (" + found.file + ":" + found.line.to_str() + ")\n"
+                )
+    rows @ rows.push("symbols\n")
 
     for name in resolved.names_in(r, module: here)
         decl = resolved.top_in(r, module: here, name: name)
@@ -69,20 +77,30 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
         if !source.is_root(s, decls[decl.must()].name.start)
             continue
         line = source.line_of(s, decls[decl.must()].name.start)
-        out @ out + "  " + entity(decls, decl: decl.must()) + " " + name + " (line " + line.to_str() + ")\n"
+        rows @ rows.push("  " + entity(decls, decl: decl.must()) + " " + name + " (line " + line.to_str() + ")\n")
 
-    out @ out + "scopes\n"
+    rows @ rows.push("scopes\n")
+
+    # The locals by owner, each owner's in the order the resolver recorded
+    # them: a declaration's section is the run of them it owns.
+    owners_of: [i64] @ []
+
+    for local in r.locals
+        owners_of @ owners_of.push(local.owner)
+
+    by_owner = stable.order(by: owners_of)
+    next: i64 @ 0
     index: i64 @ 0
 
     for decl in decls
-        if !source.is_root(s, decl.name.start)
-            index @ index + 1
-            continue
-        section: str @ ""
+        section: [str] @ []
 
-        for local in r.locals
-            if local.owner != index
-                continue
+        while next < by_owner.len() && r.locals[by_owner[next]].owner < index
+            next @ next + 1
+
+        while next < by_owner.len() && r.locals[by_owner[next]].owner == index
+            local = r.locals[by_owner[next]]
+            next @ next + 1
 
             # Two spaces per scope, like every other dump here.
             indent = "  ".repeat((1 + local.depth).to_u64().must())
@@ -90,10 +108,14 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
 
             if local.mutable
                 marker @ " @"
-            section @ section + "  " + indent + kind_word(local.kind) + " " + source.span_text(s, local.name) + marker + " (reads " + local.reads.to_str() + ", writes " + local.writes.to_str() + ")\n"
+            row = "  " + indent + kind_word(local.kind) + " " + source.span_text(s, local.name) + marker + " (reads " + local.reads.to_str() + ", writes " + local.writes.to_str() + ")\n"
+            section @ section.push(row)
 
-        if section.len() > 0
-            out @ out + "  " + entity(decls, decl: index) + " " + source.span_text(s, decl.name) + "\n" + section
+        if section.len() > 0 && source.is_root(s, decl.name.start)
+            rows @ rows.push("  " + entity(decls, decl: index) + " " + source.span_text(s, decl.name) + "\n")
+
+            for row in section
+                rows @ rows.push(row)
         index @ index + 1
 
     # Named rather than counted: the suppression is file-wide (§4.16),
@@ -102,9 +124,9 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
     # ORDER: ascending module name — one trailer line per module, read
     # by a golden, so the sort is the golden's stability (§4.9).
     for module in sort(r.holes_in)
-        out @ out + "holes in `" + module + "`: unused bindings are not reported there\n"
+        rows @ rows.push("holes in `" + module + "`: unused bindings are not reported there\n")
 
-    return out
+    return rows.join("")
 
 function entity(decls: [ast.Decl], decl: i64) -> str
     match decls[decl].kind

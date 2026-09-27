@@ -7,7 +7,7 @@
 # blocks), valued -> statement (a match arm is a head on a statement),
 # and the measurements ask the renderer what a line costs.
 #
-# THE MAP (CLAUDE.md §11's due for a knot). State: `page.Fmt`{out,
+# THE MAP (CLAUDE.md §11's due for a knot). State: `page.Fmt`{printed,
 # next_comment, last_line, dropped, moved}, threaded as the one @ parameter.
 # - format_file: item order, top-level blank lines, group runs;
 #   entry point, calls declaration.
@@ -75,6 +75,7 @@ use print/breaks
 use print/headline
 use print/groups
 use parse
+use stable
 
 # Where a line stops being one line. Not a language rule — one
 # constant, and the only thing that decides single- versus multi-line
@@ -92,14 +93,11 @@ constant WIDTH: i64
     120
 
 function pad_right(text: str, width: i64) -> str
-    grown: str @ text
-    count: i64 @ text.chars().len()
+    count = text.chars().len()
 
-    while count < width
-        grown @ grown + " "
-        count @ count + 1
-
-    return grown
+    if count >= width
+        return text
+    return text + " ".repeat((width - count).to_u64().must())
 
 ## The file as a whole
 
@@ -115,7 +113,7 @@ record Item
 # formatter starts deleting the author's remarks — gofmt sorts imports
 # and can afford to, it has a comment model this one does not.
 function format_file(tree: ast.Ast, s: source.Source, all_comments: [token.Span], uses: [ast.Use], decls: [ast.Decl]) -> str
-    return format_page(tree, s, all_comments, uses, decls).out
+    return page.whole(format_page(tree, s, all_comments, uses, decls))
 
 function format_page(tree: ast.Ast, s: source.Source, all_comments: [token.Span], uses: [ast.Use], decls: [ast.Decl]) -> page.Fmt
     lexed = lexer.lex_one(source_extent.user_text(s)).tokens
@@ -299,27 +297,19 @@ function joins(s: source.Source, comments: [token.Span], items: [Item], decls: [
 
     return out
 
+# The items in source order, a tie in the order given (`stable.order`;
+# defect 105: the insertion this was copied the list at every item).
 function sorted_items(items: [Item]) -> [Item]
-    out: [Item] @ []
+    starts: [i64] @ []
 
     for item in items
-        at: i64 @ out.len()
-        probe: i64 @ 0
-        placed: bool @ false
+        starts @ starts.push(item.start)
 
-        for old in out
-            if !placed && old.start > item.start
-                at @ probe
-                placed @ true
-            probe @ probe + 1
+    out: [Item] @ []
 
-        head: [Item] @ out.slice(from: 0, to: at)
-        head @ head.push(item)
-
-        for one in out.slice(from: at, to: out.len())
-            head @ head.push(one)
-
-        out @ head
+    for at in stable.order(by: starts)
+        taken = items[at]
+        out @ out.push(taken)
 
     return out
 
@@ -458,7 +448,7 @@ function declaration(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [t
             )
             head = "constant " + name + ": " + types.render_type(tree, k.ty, s)
             to = tree.types[k.ty].span.end
-            start = f.out.len()
+            start = f.printed.size
             page.put_line(
                 @f,
                 indent: indent,
@@ -725,7 +715,7 @@ function fmt_block(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [tok
 function statement(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], id: i64, indent: i64, head: str)
     # Where the statement's first line starts on the page: a block head
     # printed across lines is deepened from there (`margins.deepened`).
-    start = f.out.len()
+    start = f.printed.size
 
     match tree.stmts[id].kind
         # A comment inside a head's type or place stays there (`lead`).
@@ -842,7 +832,7 @@ function valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
                         line: owners.start_of(f.lines, line: source.line_of(s, tree.exprs[branch.cond].span.start)),
                         indent: indent
                     )
-                opening: i64 @ f.out.len()
+                opening: i64 @ f.printed.size
 
                 if index == 0
                     opening @ from
@@ -1623,7 +1613,7 @@ test "a merged head's blank line, an opener's comment, a bracket's and an arm's 
     sh = source.new_source(name: "t.hero", text: held)
     page_held = format_page(ph.tree, sh, ph.comments, ph.uses, ph.decls)
     assert page_held.moved == 0
-    assert page_held.out == held
+    assert page.whole(page_held) == held
 
 # The shape beside defect 101's first one inside a parameter list, measured
 # 2026-09-25 on the trunk's compiler: a comment trailing a line that two
@@ -1672,7 +1662,7 @@ test "a comment on a signature's open line, after an operator, after a name, in 
             assert parsed.diagnostics.len() == 0
             s = source.new_source(name: "t.hero", text: written)
             printed = format_page(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
-            assert printed.out == wants[index]
+            assert page.whole(printed) == wants[index]
             assert printed.moved == 0
 
         index @ index + 1
