@@ -34,6 +34,7 @@
 use token
 use diag
 use resolve/vocab
+use name_rows
 
 ## The compound key that a map cannot sort
 
@@ -118,7 +119,7 @@ record Resolved
     type_uses: [vocab.TypeRef]
     locals: [Local]
     # module -> (name -> declaration index)
-    top: NameRows
+    top: name_rows.NameRows
     # the file that wrote the `use` -> what it CALLS each module -> the
     # module's whole name.
     #
@@ -128,7 +129,7 @@ record Resolved
     # file. With the local name as the key, `use syntax/decl as sd` is one
     # entry and the collision is a map hit — Modula-3's per-file rule as the
     # shape of the data rather than a check bolted beside it.
-    module_uses: UseRows
+    module_uses: name_rows.UseRows
     # Every module that contains a `???`. While one does, unused bindings are
     # not reported IN THAT MODULE (§4.16, normative: the suppression is
     # file-wide). A set rather than a flag, and the difference is a fixed
@@ -157,83 +158,12 @@ function new_resolved() -> Resolved
         uses: uses,
         type_uses: type_uses,
         locals: locals,
-        top: new_name_rows(),
-        module_uses: new_use_rows(),
+        top: name_rows.new_name_rows(),
+        module_uses: name_rows.new_use_rows(),
         holes_in: holes_in,
         fn_labels: fn_labels,
         diagnostics: diagnostics
     )
-
-## Two levels of keys, and the second is written in place
-
-# **The outer key finds a ROW, and the rows are an array** (defect 111). Held
-# as `{str: {str: i64}}`, a new name reached the inner map only by reading it
-# out, storing into the copy read and storing that back, and the read shares
-# the map, so the store copied it: every declaration copied its module's
-# whole table of names, and `check` grew with the square of a module's size.
-# A map step ends a place (`m[a][b] @ v` is not one), an index step does not:
-# `t.rows[row][name] @ v` unshares the array, whose count is one, and stores
-# into the one map it holds.
-#
-# `at` has an entry for a key exactly when `rows` has its row, and a row is
-# never removed: the two are written together, by `row_for` alone.
-record NameRows
-    # module -> its index in `rows`
-    at: {str: i64}
-    # name -> declaration index, one map per module
-    rows: [{str: i64}]
-
-# The same two levels for the `use` table: file -> binding -> module.
-record UseRows
-    at: {str: i64}
-    rows: [{str: str}]
-
-function new_name_rows() -> NameRows
-    at: {str: i64} = {}
-    rows: [{str: i64}] = []
-    return NameRows(at: at, rows: rows)
-
-function new_use_rows() -> UseRows
-    at: {str: i64} = {}
-    rows: [{str: str}] = []
-    return UseRows(at: at, rows: rows)
-
-# The row a key's names go in, made empty where the key has none. The new row
-# is pushed onto a lent array, so it grows in place (design.md Part 8 wart 8's
-# cheap spelling) where a push through the field would copy every row.
-function name_row(@t: NameRows, key: str) -> i64
-    found = t.at[key]
-
-    if !found.is_err()
-        return found.must()
-    t.at[key] @ t.rows.len()
-    fresh: {str: i64} = {}
-    grow_names(@t.rows, fresh)
-    return t.rows.len() - 1
-
-function use_row(@t: UseRows, key: str) -> i64
-    found = t.at[key]
-
-    if !found.is_err()
-        return found.must()
-    t.at[key] @ t.rows.len()
-    fresh: {str: str} = {}
-    grow_uses(@t.rows, fresh)
-    return t.rows.len() - 1
-
-function grow_names(@rows: [{str: i64}], row: {str: i64})
-    rows @ rows.push(row)
-
-function grow_uses(@rows: [{str: str}], row: {str: str})
-    rows @ rows.push(row)
-
-# One key's names, or absent where nothing was declared under it.
-function names_of(t: NameRows, key: str) -> {str: i64}?
-    found = t.at[key]
-
-    if found.is_err()
-        return fail(code: "absent", msg: key)
-    return ok(t.rows[found.must()])
 
 # What one file calls each module it `use`s, or absent where it wrote no `use`.
 function bindings_of(r: Resolved, from: str) -> {str: str}?
@@ -244,6 +174,11 @@ function bindings_of(r: Resolved, from: str) -> {str: str}?
     return ok(r.module_uses.rows[found.must()])
 
 # Every module that declares a name, in no order.
+#
+# ORDER: none, and the callers own it: both sort what this returns
+# (`module_declaring` here, `check/holes_gather.gather`), because both hand a
+# capped list to a diagnostic or a hole's report, and the cap picks by that
+# sort (design.md §4.9).
 function modules_declaring(r: Resolved) -> [str]
     return keys(r.top.at)
 
@@ -251,7 +186,7 @@ function modules_declaring(r: Resolved) -> [str]
 
 # A top-level name, looked up in one module and nowhere else.
 function top_in(r: Resolved, module: str, name: str) -> i64?
-    return names_of(r.top, key: module)?[name]
+    return name_rows.names_of(r.top, key: module)?[name]
 
 # Does `module` name a module that `from` said `use` about? Asked with the
 # module's WHOLE name, which for a path is the path: `use syntax/decl` is a
@@ -328,7 +263,7 @@ function binding_in(r: Resolved, from: str, module: str) -> str?
 # Rust `BTreeMap` gave this order for free, and the port pays for it with one
 # `sort` — which is exactly the sentence design.md §4.9 carries.
 function names_in(r: Resolved, module: str) -> [str]
-    inner = names_of(r.top, key: module)
+    inner = name_rows.names_of(r.top, key: module)
 
     if inner.is_err()
         return []
@@ -384,14 +319,14 @@ function hole_covers(r: Resolved, module: str) -> bool
 # shares it first, so the store copies nothing (defect 111; `NameRows` above
 # says why a map of maps could not).
 function declare_top(@r: Resolved, module: str, name: str, decl: i64)
-    row = name_row(@r.top, key: module)
+    row = name_rows.name_row(@r.top, key: module)
     r.top.rows[row][name] @ decl
 
 # `from` calls `module` by the name `binding`. A caller that has no alias
 # passes the path's last part, which the parser has already put in the `use`
 # node — so this function never derives a name and never has to know the rule.
 function declare_use(@r: Resolved, from: str, binding: str, module: str)
-    row = use_row(@r.module_uses, key: from)
+    row = name_rows.use_row(@r.module_uses, key: from)
     r.module_uses.rows[row][binding] @ module
 
 function note_hole(@r: Resolved, module: str)

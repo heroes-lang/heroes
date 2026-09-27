@@ -62,11 +62,17 @@ constant WALK: str
 # walks floor had 12 — more than the floor itself, which is a net with a hole
 # wider than the net. Re-based to today's counts by `floors.check`, and that
 # check is now what will notice the next time.
+#
+# **22 to 21 walks on 2026-09-27**, measured by this suite: defect 111's
+# repair read the name table by its row index, so the two walks over the
+# table itself (`resolved.module_declaring`, `check/holes.nearby`) became one
+# over the index (`resolved.modules_declaring`), which both callers sort. A
+# walk removed by a repair is the one reason a walks floor moves down.
 constant LEAST_MARKS: i64
     23
 
 constant LEAST_WALKS: i64
-    22
+    21
 
 function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()

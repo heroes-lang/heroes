@@ -40,7 +40,7 @@ use check/moved
 use check/lending
 use check/leasing
 use check/counted
-use check/freer
+use check/freer_marks
 
 # Check one resolved program. The resolver ran first and its answers are
 # inputs, never recomputed.
@@ -49,7 +49,7 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
 
     # The `owned <freer>` marks by name, once, before any body: every call
     # to a declared function asks the table (defect 111).
-    c.out.freers @ freer.marks(decls, s)
+    c.out.freers @ freer_marks.marks(decls, s)
 
     # Sizes first, and it needs no expression types.
     sizes = sized.order_and_cycles(a, r, s, decls)
