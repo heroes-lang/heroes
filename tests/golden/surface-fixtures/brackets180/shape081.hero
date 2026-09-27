@@ -1,0 +1,10 @@
+# Panel 180 R5, shape 81 of the compiler-engineer's 117 (param list): a break
+# after @.
+# By the spec's opening paragraph, the line ends with `@`, which keeps no
+# NEWLINE, so the line goes on below: accepted, exit 0.
+function f(@
+        a: i64)
+    print(1)
+
+function shape()
+    print(1)

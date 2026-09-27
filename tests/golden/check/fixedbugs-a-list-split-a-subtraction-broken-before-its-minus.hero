@@ -1,0 +1,36 @@
+# Fixed defect 106, 2026-09-27 (panel 180 R2). Symptom: inside a list whose
+# line ends separate its elements (§4.9), `[base * qty` over `- discount]`
+# ran with TWO elements, `base * qty` and `-discount`, at exit 0. Cause: the
+# lexer ends the first line after `qty`, which can end a line, and the
+# literal took that line end as the separator, so a subtraction broken
+# before its operator, PEP 8's and Black's break, became a negative element.
+# A line after a line end that separates with no `,` may not begin with a
+# `-` set apart from its operand: by a space, by a comment, or by a line end
+# after the sign, in a list, before a map's key and in a map's value. Both
+# readings are `guess` fixes where both parse, since only the gap says which
+# was meant. `-1` and `-fee`, the spelling `fmt` prints, are elements as
+# before, and so is the first line of a list and a line after a written `,`.
+function main()
+    base = 10
+    qty = 3
+    discount = 5
+    totals = [base * qty
+        - discount]  #~ spaced_minus_element
+    commented = [base
+        -  #~ spaced_minus_element
+        discount]
+    alone = [base  #~v spaced_minus_element
+        -
+        discount]
+    keyed = {1: base
+        - 2: qty}  #~ spaced_minus_element
+    valued = {"total": base
+        - discount}  #~ spaced_minus_element
+    deltas = [
+        - 1
+        -2
+        -discount
+    ]
+    written = [base,
+        - discount]
+    print(totals.len() + commented.len() + alone.len() + keyed.len() + valued.len() + deltas.len() + written.len())

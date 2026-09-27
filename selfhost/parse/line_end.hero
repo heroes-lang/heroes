@@ -1,0 +1,296 @@
+# A line end inside brackets: what the parser says where one stands and the
+# author meant the line to go on (design.md §4.15, §4.9, §4.17; panel 180).
+#
+# The lexer plants a line end after every line that ends with a name, a
+# literal, `true` `false` `nullptr`, `return` `break` `continue`, `?`, `???` or
+# a closing bracket, at any depth (panel 007, `layout.is_line_ender`). Inside
+# brackets the grammar lets that line end stand in three places: before a
+# closing bracket, before a `,`, and between a literal's elements, which it
+# separates (panel 180 R1, the spec's opening paragraph). Anywhere else it is
+# an error, and the commonest is what an author writes who breaks a long line
+# BEFORE an operator, the way PEP 8 and Black break one: `(total` over
+# `+ fee)`, a token that would have gone on with the line above after the line
+# end (panel 180 R3). The message names the line end as the cause, where it
+# said *expected `)`*, and the fix moves the token to the end of the line
+# above, which is the program written on one line. The same break in a
+# literal, where the line end separates elements, is `parse/list_line`'s, and
+# it is built from the pieces here.
+#
+# **Out of the expression knot**, because nothing here reads the tree: the
+# token array, the text and the token kinds are all it asks. The knot,
+# `parse/type`, `parse/members` and `parse/list_line` call it one way, and no
+# ring closes.
+#
+# | entry | where the parser calls it |
+# |---|---|
+# | `expect_closer` | a bracket's closer, after the line ends before it were skipped |
+# | `expect_after` | a token a production writes after a line that can end: `:`, `->` |
+
+use token
+use diag
+use cursor
+use describe
+use keywords
+use operators
+
+## What the parser is reading
+
+# Which list of the grammar holds the line end, which decides what could have
+# gone on with the line above there, and whether a missing `,` is the other
+# reading of a token that can also begin the next item:
+#
+# | case | the brackets |
+# |---|---|
+# | `one_value` | a group or an index: `(a + b)`, `xs[i]` |
+# | `arguments` | a call's, a record construction's, a variant case's (§4.9) |
+# | `elements` | a literal's, which a line end separates (§4.9) |
+# | `one_type` | a type's own: `[T]`, `{K: V}`, a function type's result |
+# | `type_list` | a function type's parameters, each of which may be named |
+# | `parameters` | a signature's, the words after each type included |
+variant Holds
+    one_value
+    arguments
+    elements
+    one_type
+    type_list
+    parameters
+
+## Where the line end was
+
+# The index of the last token a reader sees before `at`, walking back over the
+# comments and line ends between, and never before the file's first token: a
+# caller indexes the token array with it.
+function significant_before(c: cursor.Cursor, at: i64) -> i64
+    if at <= 0
+        return 0
+    i: i64 @ at - 1
+
+    while i > 0 && (c.tokens[i].kind == .comment || c.tokens[i].kind == .terminator)
+        i @ i - 1
+
+    return i
+
+# Whether a line end stands between the token the parser is on and the last
+# one a reader sees before it.
+function crossed_a_line_end(c: cursor.Cursor) -> bool
+    i: i64 @ c.pos - 1
+
+    while i >= 0 && (c.tokens[i].kind == .comment || c.tokens[i].kind == .terminator)
+        if c.tokens[i].kind == .terminator
+            return true
+        i @ i - 1
+
+    return false
+
+## What could have gone on with the line above
+
+# A suffix or a binary operator: what, at the start of a line, would have gone
+# on with a value the line above ended (spec § 7's `Postfix` and the binary
+# levels). `operators.binary_tokens` is the language's one list of the binary
+# operators, so a new one goes on with a value here the day it lands.
+function goes_on_with_a_value(kind: token.TokenKind) -> bool
+    if kind == .dot || kind == .colon_colon || kind == .question || kind == .lparen || kind == .lbracket
+        return true
+
+    for one in operators.binary_tokens()
+        if one == kind
+            return true
+
+    return false
+
+# Of those, the four that also BEGIN a value: `-x`, `.case`, `(e)`, `[1, 2]`.
+# After a line end in a literal each begins the next element, which the line
+# end separates from the last; in a call's arguments a missing `,` is the other
+# reading of each.
+function begins_a_value(kind: token.TokenKind) -> bool
+    return kind == .minus || kind == .dot || kind == .lparen || kind == .lbracket
+
+# What goes on with a type the line above ended: `T?`, `T[4]`, and the `.` of
+# `geom.Point` after a name that is not already qualified.
+function goes_on_with_a_type(c: cursor.Cursor, before: i64) -> bool
+    kind = cursor.current_kind(c)
+
+    if kind == .question || kind == .lbracket
+        return true
+    return kind == .dot && c.tokens[before].kind == .ident && c.tokens[significant_before(c, at: before)].kind != .dot
+
+# The name the line above ended with stands alone in its slot, after `(` or
+# `,`, so a `:` after it names an argument or a parameter's type: `f(a: 1)`,
+# `(function(a: i64) -> i64)`.
+function lone_name(c: cursor.Cursor, before: i64) -> bool
+    if c.tokens[before].kind != .ident
+        return false
+    k = c.tokens[significant_before(c, at: before)].kind
+    return k == .lparen || k == .comma
+
+# The name the line above ended with is a releaser a mark names, so a `|` after
+# it joins the set: `acquires sqlite3_close | sqlite3_close_v2`.
+function in_a_releaser_set(c: cursor.Cursor, text: str, before: i64) -> bool
+    if c.tokens[before].kind != .ident
+        return false
+    word_at = significant_before(c, at: before)
+
+    if c.tokens[word_at].kind == .pipe
+        return true
+    word = cursor.slice_of(text, c.tokens[word_at].span)
+    return word == keywords.WORD_ACQUIRES || word == keywords.WORD_TRANSFERS || word == keywords.WORD_RETAINS
+
+# Whether the token the parser is on would have gone on with the line above,
+# had the line not ended, in brackets that hold `holds`.
+function goes_on(c: cursor.Cursor, text: str, holds: Holds, before: i64) -> bool
+    kind = cursor.current_kind(c)
+
+    return match holds
+        .one_value => goes_on_with_a_value(kind)
+        .arguments => goes_on_with_a_value(kind) || kind == .colon && lone_name(c, before: before)
+        .elements  => goes_on_with_a_value(kind) && !begins_a_value(kind)
+        .one_type  => goes_on_with_a_type(c, before: before)
+        .type_list => goes_on_with_a_type(c, before: before) || kind == .colon && lone_name(c, before: before)
+        .parameters => goes_on_with_a_type(c, before: before) || kind == .pipe && in_a_releaser_set(c, text: text, before: before)
+
+## The entries
+
+# `cursor.expect` for a bracket's closer, called after the line ends before it
+# were skipped. Where the token the parser stands on would have gone on with
+# the line above, THE LINE END is the error and is reported as such (R3), and
+# what is left of the bracket is passed over to its closer, which is then
+# taken as usual: one mistake, one diagnostic.
+function expect_closer(@c: cursor.Cursor, text: str, holds: Holds, kind: token.TokenKind, code: str, what: str) -> bool
+    if crossed_a_line_end(c)
+        before = significant_before(c, at: c.pos)
+
+        if goes_on(c, text: text, holds: holds, before: before)
+            other = holds == .arguments && begins_a_value(cursor.current_kind(c))
+            continued(@c, text: text, before: before, other: other)
+            to_the_closer(@c, kind)
+    return cursor.expect(@c, text: text, kind: kind, code: code, what: what)
+
+# `cursor.expect` where a production writes `kind` after a line that can end:
+# `:` after a map's key and after a parameter's name, `->` after a function
+# type's parameters. A line end cannot stand there, so when `kind` is what
+# follows it the line end is reported (R3) and stepped over, and the parse
+# reads on as the author meant it.
+function expect_after(@c: cursor.Cursor, text: str, kind: token.TokenKind, code: str, what: str) -> bool
+    if cursor.at(c, .terminator)
+        next: i64 @ c.pos
+
+        while c.tokens[next].kind == .terminator || c.tokens[next].kind == .comment
+            next @ next + 1
+
+        if c.tokens[next].kind == kind
+            before = significant_before(c, at: c.pos)
+            cursor.skip_terminators(@c)
+            continued(@c, text: text, before: before, other: false)
+    return cursor.expect(@c, text: text, kind: kind, code: code, what: what)
+
+## R3: a token that goes on with the line above
+
+# The refusal where the line end stands before a token that would have gone on
+# with the line above. `certain` where going on is the only reading; `guess`
+# where a missing `,` is the other (`other`), in a call's arguments before a
+# token that can also begin one, and then the `,` is the second fix.
+function continued(@c: cursor.Cursor, text: str, before: i64, other: bool)
+    ender = c.tokens[before]
+    found = cursor.current_span(c)
+    written = cursor.slice_of(text, found)
+    message: str @ "a line end stands before `" + written + "`: the line above ends with " + named(text, ender) + ", which keeps its line end, and inside brackets a line end may stand only before a closing bracket or a `,`"
+    title: str @ "end the line above with `" + written + "`"
+    certainty: diag.Certainty @ .certain
+
+    if other
+        message @ message + "; to go on with the argument, end the line above with `" + written + "`, and for a new argument, write the `,` there"
+        title @ "go on with the argument: " + title
+        certainty @ .guess
+    else
+        message @ message + "; to break the line here, end the line above with `" + written + "`"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "line_end_before_continuation", message: message, span: found)
+    d.fixes @ d.fixes.push(
+        moved_up(text: text, ender: ender.span, found: found, tight: is_tight(cursor.current_kind(c)), title: title, certainty: certainty)
+    )
+
+    if other
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "a new argument: write the `,`", replacement: ",", span: token.Span(start: ender.span.end, end: ender.span.end), certainty: .guess)
+        )
+    c.diagnostics @ c.diagnostics.push(d)
+
+# The tokens written against what they follow, as `fmt` prints them: `xs.len`,
+# `Point::x`, `f()?`, `f(1)`, `xs[0]`, `a: 1`. Every other one moved up is
+# written after a space.
+function is_tight(kind: token.TokenKind) -> bool
+    return kind == .dot || kind == .colon_colon || kind == .question || kind == .lparen || kind == .lbracket || kind == .colon
+
+# How a token is named in a message, the way `cursor.found` names the one it
+# found: its kind, and its text where the text says more.
+function named(text: str, t: token.Token) -> str
+    if describe.carries_text(t.kind)
+        return describe.describe(t.kind) + " (`" + cursor.slice_of(text, t.span) + "`)"
+    return describe.describe(t.kind)
+
+## What both fixes share
+
+# The token moved to the end of the line above, which is the program written
+# on one line. Everything between the line above's last token and this one
+# stays where it was, a comment trailing the line above included; the spaces
+# after the token go, and so does its line end when nothing followed it there,
+# and so do the spaces that trailed the line above before its line end.
+function moved_up(text: str, ender: token.Span, found: token.Span, tight: bool, title: str, certainty: diag.Certainty) -> diag.Fix
+    lead: str @ " "
+
+    if tight
+        lead @ ""
+    end: i64 @ past_spaces(text, at: found.end)
+
+    if end + 1 < text.len() && text[end] == '\r' && text[end + 1] == '\n'
+        end @ past_spaces(text, at: end + 2)
+    else if end < text.len() && text[end] == '\n'
+        end @ past_spaces(text, at: end + 1)
+    kept: i64 @ past_spaces(text, at: ender.end)
+
+    if kept >= text.len() || text[kept] != '\n' && text[kept] != '\r'
+        kept @ ender.end
+    replacement = lead + cursor.slice_of(text, found) + text.slice(from: kept, to: found.start)
+    return diag.Fix(
+        title: title,
+        replacement: replacement,
+        span: token.Span(start: ender.end, end: end),
+        certainty: certainty
+    )
+
+function past_spaces(text: str, at: i64) -> i64
+    i: i64 @ at
+
+    while i < text.len() && text[i] == ' '
+        i @ i + 1
+
+    return i
+
+function has_a_line_end(text: str) -> bool
+    for i in range(from: 0, to: text.len())
+        if text[i] == '\n'
+            return true
+
+    return false
+
+# Past what is left of the bracket, up to its closer and not over it, so the
+# caller's `expect` takes the closer as usual.
+function to_the_closer(@c: cursor.Cursor, closer: token.TokenKind)
+    opener: token.TokenKind @ .lparen
+
+    if closer == .rbracket
+        opener @ .lbracket
+    else if closer == .rbrace
+        opener @ .lbrace
+    depth: i64 @ 0
+
+    while !cursor.at(c, .eof)
+        k = cursor.current_kind(c)
+
+        if k == closer && depth == 0
+            return
+
+        if k == opener
+            depth @ depth + 1
+        else if k == closer
+            depth @ depth - 1
+        _ = cursor.bump(@c)

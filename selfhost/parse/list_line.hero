@@ -1,0 +1,171 @@
+# A line end between two of a literal's elements, where it separates them with
+# no `,` (design.md §4.9, §4.15, §4.17; panel 180 R2 and R3, defect 106).
+#
+# `[total` over `- fee]` is the shape this module exists for. The lexer ends
+# the first line after `total`, which can end a line, and in a literal that line
+# end separates two elements, so the second line was the element `-fee`: the
+# program ran with one element too many where the space after the `-` says a
+# subtraction broken before its operator, the way PEP 8 and Black break one,
+# and `fmt` then printed `-fee`, erasing the space that showed the intent. A
+# `-` set apart from its operand, by a space, a comment or a line end, may not
+# open such a line (R2); `-1` and `-fee`, the spelling `fmt` prints, are
+# elements as before. And a token that can only go on with the element above,
+# `+` or `?`, is the line end's error as it is in any bracket (R3,
+# `parse/line_end`).
+#
+# Out of the expression knot for `parse/line_end`'s reason, and a module of its
+# own because the question is the literal's: where a line end separates, what
+# the next line may begin with.
+
+use token
+use diag
+use cursor
+use parse/line_end
+
+# Whether the line end the parser just crossed may separate a literal's element
+# from what follows (§4.9). Asked only where a line end separates with no `,`,
+# which is the one place R2 reads: the first element and a line after a
+# written `,` are never asked. It may not before a token that can only go on
+# with the element above (R3), and it is refused before a `-` set apart from
+# its operand (R2). False when what is left of the literal was passed over to
+# its closer after the one diagnostic.
+function separates(@c: cursor.Cursor, text: str, closer: token.TokenKind) -> bool
+    before = line_end.significant_before(c, at: c.pos)
+
+    if line_end.goes_on(c, text: text, holds: .elements, before: before)
+        line_end.continued(@c, text: text, before: before, other: false)
+        line_end.to_the_closer(@c, closer)
+        return false
+
+    if !cursor.at(c, .minus)
+        return true
+    sign = cursor.current_span(c)
+    after = c.tokens[c.pos + 1]
+
+    # `-1`, `-fee`: the unary spelling, against its operand, the one `fmt`
+    # prints. A negative element as it always was.
+    if after.kind != .comment && after.span.start == sign.end
+        return true
+    at: i64 @ c.pos + 1
+
+    while c.tokens[at].kind == .comment
+        at @ at + 1
+
+    operand = c.tokens[at]
+
+    # Nothing to be the sign of: the element is refused as it always was.
+    if operand.kind == .rbracket || operand.kind == .rbrace || operand.kind == .rparen || operand.kind == .comma || operand.kind == .eof
+        return true
+    return set_apart(
+        @c,
+        text: text,
+        closer: closer,
+        above: c.tokens[before].span,
+        operand: operand.span,
+        entry: closer == .rbrace && holds_a_colon(c, from: at)
+    )
+
+## R2: a minus set apart from its operand
+
+# The refusal, with each reading that parses as a `guess` fix. In a list both
+# parse, a subtraction and a negative element. In a map the line says which
+# one parses: it holds the entry's `:` and the `-` is a key's sign, or it holds
+# none and can only go on with the value above. True when the literal reads on
+# after it, false when what is left of it was passed over to its closer.
+function set_apart(@c: cursor.Cursor, text: str, closer: token.TokenKind, above: token.Span, operand: token.Span, entry: bool) -> bool
+    sign = cursor.current_span(c)
+    between = text.slice(from: sign.end, to: operand.start)
+    how: str @ "begins with `- `, a minus set apart from its value by a space"
+
+    if c.tokens[c.pos + 1].kind == .comment
+        how @ "begins with `-` and a comment, a minus set apart from its value"
+    else if line_end.has_a_line_end(between)
+        how @ "holds only `-`, a minus set apart from its value by a line end"
+    subtract = line_end.moved_up(
+        text: text,
+        ender: above,
+        found: sign,
+        tight: false,
+        title: "subtract: end the line above with the `-`",
+        certainty: .guess
+    )
+    negative = against_its_value(text: text, sign: sign, operand: operand)
+    fixes: [diag.Fix] @ []
+    message: str @ "this line of the list " + how + ", and a line end with no `,` in a list starts a new element, so it would be a negative element where the gap says a subtraction: to subtract, end the line above with the `-`; for a negative element, write the `-` against its value"
+
+    if closer == .rbracket
+        fixes @ fixes.push(subtract)
+        fixes @ fixes.push(
+            diag.Fix(title: "a negative element: write the `-` against its value", replacement: negative.replacement, span: negative.span, certainty: .guess)
+        )
+    else if entry
+        message @ "this line of the map " + how + ", and a line end with no `,` in a map starts a new entry, which this line is, since it holds the entry's `:`: the `-` is the key's sign, so write it against the key"
+        fixes @ fixes.push(
+            diag.Fix(title: "a negative key: write the `-` against its value", replacement: negative.replacement, span: negative.span, certainty: .guess)
+        )
+    else
+        message @ "this line of the map " + how + ", and a line end with no `,` in a map starts a new entry, which this line cannot be, since it holds no `:`: to subtract, end the line above with the `-`"
+        fixes @ fixes.push(subtract)
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "spaced_minus_element", message: message, span: sign)
+    d.fixes @ fixes
+    c.diagnostics @ c.diagnostics.push(d)
+
+    # A map's line with no `:` cannot be read as an entry, so what is left of
+    # the map is passed over rather than refused a second time.
+    if closer == .rbrace && !entry
+        line_end.to_the_closer(@c, closer)
+        return false
+    return true
+
+# Whether a map's line, from `from` to the line end or `,` that ends it at the
+# entry's own depth, holds the `:` that makes it an entry.
+function holds_a_colon(c: cursor.Cursor, from: i64) -> bool
+    depth: i64 @ 0
+    i: i64 @ from
+
+    while c.tokens[i].kind != .eof
+        k = c.tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth - 1
+
+            if depth < 0
+                return false
+        else if depth == 0 && k == .colon
+            return true
+        else if depth == 0 && (k == .terminator || k == .comma)
+            return false
+        i @ i + 1
+
+    return false
+
+# The `-` written against its operand, the negative element's spelling: what
+# stood between them stays, a comment included, and a line that held only the
+# `-` goes.
+function against_its_value(text: str, sign: token.Span, operand: token.Span) -> diag.Fix
+    between = text.slice(from: sign.end, to: operand.start)
+    lead: i64 @ 0
+
+    while lead < between.len() && between[lead] == ' '
+        lead @ lead + 1
+
+    rest: str @ between.slice(from: lead, to: between.len())
+    start: i64 @ sign.start
+
+    if line_end.has_a_line_end(rest) && (rest[0] == '\n' || rest[0] == '\r')
+        while start > 0 && text[start - 1] == ' '
+            start @ start - 1
+
+        cut: i64 @ 1
+
+        if rest[0] == '\r' && rest.len() > 1
+            cut @ 2
+        rest @ rest.slice(from: cut, to: rest.len())
+    return diag.Fix(
+        title: "",
+        replacement: rest + "-",
+        span: token.Span(start: start, end: operand.start),
+        certainty: .guess
+    )

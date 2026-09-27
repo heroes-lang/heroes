@@ -1,0 +1,8 @@
+# Panel 180 R5, shape 52 of the compiler-engineer's 117 (array literal): a
+# break before ,.
+# By the spec's opening paragraph, the line ends with `1`, a literal, so it
+# keeps its NEWLINE, which may stand before a `,`, and in a list the two are
+# one separator: accepted, exit 0.
+function shape()
+    xs = [1
+        , 2]

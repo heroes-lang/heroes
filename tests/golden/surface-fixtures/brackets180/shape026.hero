@@ -1,0 +1,9 @@
+# Panel 180 R5, shape 26 of the compiler-engineer's 117 (call args): a break
+# before : of a named argument.
+# By the spec's opening paragraph, the line ends with `a`, a name, so it keeps
+# its NEWLINE, which may stand only before a closing bracket or a `,`, or
+# where a production writes it, and none writes it before `:`: refused, exit
+# 1.
+function main()
+    f(a
+        : 1)  #~ line_end_before_continuation

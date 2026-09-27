@@ -1,0 +1,12 @@
+# Panel 180 R5, shape 112 of the compiler-engineer's 117 (extern member
+# params): a break before lent.
+# By the spec's opening paragraph, the line ends with `cstr`, a name, so it
+# keeps its NEWLINE, which may stand only before a closing bracket or a `,`,
+# or where a production writes it, and none writes it before `lent`: refused,
+# exit 1.
+extern "m.h"
+    function g(s: cstr
+         lent)  #~ expected_params_close
+
+function main()
+    print(1)

@@ -1,0 +1,7 @@
+# Panel 180 R5, shape 6 of the compiler-engineer's 117 (group): a break after
+# &&.
+# By the spec's opening paragraph, the line ends with `&&`, which keeps no
+# NEWLINE, so the line goes on below: accepted, exit 0.
+function shape()
+    y = (a &&
+         b)

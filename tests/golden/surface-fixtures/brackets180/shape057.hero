@@ -1,0 +1,8 @@
+# Panel 180 R5, shape 57 of the compiler-engineer's 117 (array literal): a
+# break before . in an element.
+# By the spec's opening paragraph, the line ends with `ys`, a name, so it
+# keeps its NEWLINE, which separates the next element where the literal's
+# production writes it: accepted, exit 0.
+function shape()
+    xs = [ys
+        .len()]
