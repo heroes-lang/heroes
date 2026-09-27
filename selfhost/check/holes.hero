@@ -32,6 +32,10 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
     rows: [str] @ []
     none: [str] = []
 
+    if c.holes.len() == 0
+        return ""
+    g = gather(tree, r, c, s, decls)
+
     for hole in c.holes
         # locate, never line_col plus s.name: the hole report is not a
         # Diagnostic, which is how it survived a sweep still naming
@@ -51,7 +55,7 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
             # and "expected `?`" would be worse than saying nothing.
             # What the model needs is what the FUNCTION owes.
             rows @ rows.push("  position: statement — any type, or none\n")
-            owner = owner_of(decls, at: hole.span.start)
+            owner = owner_of(g, decls, at: hole.span.start)
 
             if !owner.is_err()
                 result = state.result_type(c, owner.must())
@@ -71,9 +75,9 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
                         )
         else
             rows @ rows.push("  expected type: " + render.render_ty(c.types, s, decls, hole.expected, none) + "\n")
-        rows @ rows.push(in_scope(r, c, s, decls, at: hole.span.start))
+        rows @ rows.push(in_scope(g, r, c, s, decls, at: hole.span.start))
         rows @ rows.push(fields_of(tree, c, s, decls, expected: hole.expected))
-        rows @ rows.push(nearby(tree, r, c, s, decls, expected: hole.expected, at: hole.span.start))
+        rows @ rows.push(nearby(g, r, c, s, decls, expected: hole.expected, at: hole.span.start))
 
     return rows.join("")
 
@@ -81,24 +85,24 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
 # approximated by THE DECLARATION THE HOLE IS IN, which the resolver
 # recorded and is exact for every shape the language has: a local
 # cannot be read outside the declaration that binds it.
-function in_scope(r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], at: i64) -> str
-    owner = owner_of(decls, at: at)
+function in_scope(g: Gathered, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], at: i64) -> str
+    owner = owner_of(g, decls, at: at)
 
     if owner.is_err()
         return ""
     none: [str] = []
     shown: [str] @ []
-    index: i64 @ 0
 
-    for local in r.locals
-        if local.owner == owner.must() && local.name.start <= at
+    for index in g.locals_of[owner.must()]
+        local = r.locals[index]
+
+        if local.name.start <= at
             rendered = render.render_ty(c.types, s, decls, state.local_type(c, index), none)
             marker: str @ ""
 
             if local.mutable
                 marker @ " (mutable)"
             shown @ shown.push(source.span_text(s, local.name) + ": " + rendered + marker)
-        index @ index + 1
 
     if shown.len() == 0
         return ""
@@ -155,7 +159,7 @@ function fields_of(tree: ast.Ast, c: state.Checked, s: source.Source, decls: [as
 # it can be written — qualified — AND ONLY from a module this file can
 # name: a hole in geom.hero offered main.tally is three errors, and
 # §4.16's promise is the answer handed over, not a guess to repair.
-function nearby(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], expected: i64, at: i64) -> str
+function nearby(g: Gathered, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], expected: i64, at: i64) -> str
     here = source.module_at(s, at)
     is_error: bool @ false
 
@@ -168,83 +172,50 @@ function nearby(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
     if is_error
         return ""
     shown: [str] @ []
+    row = g.maker_at[expected]
 
-    # ORDER: ascending (module, name) — deterministic whatever the
-    # layout, and the cap picks WHICH five; the port pays the sort the
-    # bootstrap's BTreeMap gave for free (design.md §4.9).
-    fall: bool @ false
+    if row.is_err()
+        return ""
 
-    for module in sort(keys(r.top))
-        if fall
+    # ORDER: ascending (module, name), the order `gather` read them in, so
+    # the cap picks the same five it picked when this walked every module
+    # per hole (design.md §4.9).
+    for m in g.makers[row.must()]
+        if shown.len() == SUGGESTIONS
             break
+        reachable: bool @ m.module == here || m.module == source.LIBRARY_MODULE
 
-        for name in resolved.names_in(r, module: module)
-            if fall
+        if !reachable
+            reachable @ !resolved.binding_in(r, from: here, module: m.module).is_err()
+
+        if !reachable
+            continue
+        written: str @ m.name
+
+        if m.module != here
+            # The form the author would TYPE, which is what THIS FILE
+            # calls the module — its `as` name where it has one, and the
+            # path's last part where it does not (panel 100). A hole's
+            # whole job is to hand back lines that can be pasted, and
+            # `syntax/decl.foo(...)` cannot be.
+            #
+            # **No `.must()` here, and that is panel 100's engineer's own
+            # defect**: it wrote one and `heroes check` answered
+            # `panic: .must() on an error: absent: library`, because the
+            # library is in every compilation and no file `use`s it. The
+            # reachability test above is the same question, so a miss here
+            # cannot happen — and the loud `continue` is what makes that
+            # true rather than hoped.
+            local = resolved.binding_in(r, from: here, module: m.module)
+
+            if local.is_err()
                 continue
-            found = resolved.top_in(r, module: module, name: name)
+            written @ local.must() + "." + m.name
+        line: str @ written + "(" + m.params + ")"
 
-            if found.is_err()
-                continue
-            decl = found.must()
-            params: [str] @ []
-            is_function: bool @ false
-
-            match decls[decl].kind
-                .function_decl fd =>
-                    is_function @ true
-
-                    for p in fd.value.params
-                        marker: str @ ""
-
-                        if p.mutable
-                            marker @ "@"
-                        params @ params.push(
-                            marker + source.span_text(s, p.name) + ": " + types.render_type(tree, p.ty, s)
-                        )
-                .constant_decl | .record_decl | .variant_decl | .test_decl => is_function @ is_function
-
-            if !is_function
-                continue
-            result = state.result_type(c, decl)
-
-            if result.is_err() || result.must() != expected
-                continue
-            reachable: bool @ module == here || module == source.LIBRARY_MODULE
-
-            if !reachable
-                reachable @ !resolved.binding_in(r, from: here, module: module).is_err()
-
-            if !reachable
-                continue
-            written: str @ name
-
-            if module != here
-                # The form the author would TYPE, which is what THIS FILE
-                # calls the module — its `as` name where it has one, and the
-                # path's last part where it does not (panel 100). A hole's
-                # whole job is to hand back lines that can be pasted, and
-                # `syntax/decl.foo(...)` cannot be.
-                #
-                # **No `.must()` here, and that is panel 100's engineer's own
-                # defect**: it wrote one and `heroes check` answered
-                # `panic: .must() on an error: absent: library`, because the
-                # library is in every compilation and no file `use`s it. The
-                # reachability test above is the same question, so a miss here
-                # cannot happen — and the loud `continue` is what makes that
-                # true rather than hoped.
-                local = resolved.binding_in(r, from: here, module: module)
-
-                if local.is_err()
-                    continue
-                written @ local.must() + "." + name
-            line: str @ written + "(" + params.join(", ") + ")"
-
-            if decls[decl].doc.len() > 0
-                line @ line + "\n      " + source.span_text(s, decls[decl].doc[0])
-            shown @ shown.push(line)
-
-            if shown.len() == SUGGESTIONS
-                fall @ true
+        if decls[m.decl].doc.len() > 0
+            line @ line + "\n      " + source.span_text(s, decls[m.decl].doc[0])
+        shown @ shown.push(line)
 
     if shown.len() == 0
         return ""
@@ -255,16 +226,133 @@ function nearby(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
 
     return rows.join("")
 
-# Which declaration a byte offset falls inside.
-function owner_of(decls: [ast.Decl], at: i64) -> i64?
-    index: i64 @ 0
+# Which declaration a byte offset falls inside: the last one starting at or
+# before it, found by halving where the declarations' starts ascend, which
+# they do when the sources are joined in load order; where they did not, the
+# walk over every declaration it replaced answers instead, so a premise that
+# stopped holding would cost time and never an answer.
+function owner_of(g: Gathered, decls: [ast.Decl], at: i64) -> i64?
+    if !g.ascending
+        index: i64 @ 0
+
+        for decl in decls
+            if decl.span.start <= at && at < decl.span.end
+                return ok(index)
+            index @ index + 1
+
+        return fail(code: "none", msg: "no declaration holds this offset")
+    low: i64 @ 0
+    high: i64 @ g.starts.len()
+
+    while low < high
+        middle = (low + high) / 2
+
+        if g.starts[middle] <= at
+            low @ middle + 1
+        else
+            high @ middle
+
+    if low == 0
+        return fail(code: "none", msg: "no declaration holds this offset")
+    found = low - 1
+
+    if at < decls[found].span.end
+        return ok(found)
+    return fail(code: "none", msg: "no declaration holds this offset")
+
+## What every hole reads, gathered once
+
+# **Once per report, not once per hole** (defect 113). Each hole walked
+# every local of the program, every name of every module, rendering each
+# function's parameters before asking its result type, and every
+# declaration for the one it is in: the report grew with the holes times
+# the program, 0.13, 0.33 and 1.01 s user at 200, 400 and 800 holes.
+record Gathered
+    # Each declaration's locals, by index into `r.locals`, in that order.
+    locals_of: [[i64]]
+    # The functions a hole may be offered, by result type, each row in
+    # ascending (module, name): `maker_at[type]` is its row in `makers`.
+    maker_at: {i64: i64}
+    makers: [[Maker]]
+    # Each declaration's first byte, and whether they ascend.
+    starts: [i64]
+    ascending: bool
+
+# A function a hole may be offered, its parameters spelled once.
+record Maker
+    module: str
+    name: str
+    decl: i64
+    params: str
+
+function gather(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Gathered
+    locals_of: [[i64]] @ []
+    starts: [i64] @ []
+    ascending: bool @ true
 
     for decl in decls
-        if decl.span.start <= at && at < decl.span.end
-            return ok(index)
+        none: [i64] = []
+        locals_of @ locals_of.push(none)
+
+        if starts.len() > 0 && decl.span.start < starts[starts.len() - 1]
+            ascending @ false
+        starts @ starts.push(decl.span.start)
+
+    index: i64 @ 0
+
+    for local in r.locals
+        if local.owner >= 0 && local.owner < locals_of.len()
+            add_local(@locals_of[local.owner], index)
         index @ index + 1
 
-    return fail(code: "none", msg: "no declaration holds this offset")
+    maker_at: {i64: i64} @ {}
+    makers: [[Maker]] @ []
+
+    # ORDER: ascending (module, name), which every row keeps.
+    for module in sort(resolved.modules_declaring(r))
+        for name in resolved.names_in(r, module: module)
+            found = resolved.top_in(r, module: module, name: name)
+
+            if found.is_err()
+                continue
+            decl = found.must()
+
+            match decls[decl].kind
+                .function_decl fd =>
+                    result = state.result_type(c, decl)
+
+                    if !result.is_err()
+                        params: [str] @ []
+
+                        for p in fd.value.params
+                            marker: str @ ""
+
+                            if p.mutable
+                                marker @ "@"
+                            params @ params.push(
+                                marker + source.span_text(s, p.name) + ": " + types.render_type(tree, p.ty, s)
+                            )
+
+                        maker = Maker(module: module, name: name, decl: decl, params: params.join(", "))
+                        row = maker_at[result.must()]
+
+                        if row.is_err()
+                            maker_at[result.must()] @ makers.len()
+                            first: [Maker] = [maker]
+                            makers @ makers.push(first)
+                        else
+                            add_maker(@makers[row.must()], maker)
+                .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return Gathered(locals_of: locals_of, maker_at: maker_at, makers: makers, starts: starts, ascending: ascending)
+
+# Lent, so the push lands in the one row it is (design.md Part 8 wart 8's
+# cheap spelling) where a push through the outer array would copy it.
+function add_local(@row: [i64], index: i64)
+    row @ row.push(index)
+
+function add_maker(@row: [Maker], maker: Maker)
+    row @ row.push(maker)
 
 ## Tests
 
