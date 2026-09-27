@@ -1,0 +1,10 @@
+# Found beside defect 109, 2026-09-27: the parser read past the end of a file
+# into the next one. `a.hero` ends in a function with no body and `b.hero`
+# begins with an indented line, and before the repair `two` took that line
+# as its body, so this program ran and printed 6 at exit 0 though each
+# module alone is refused. Each is refused now, in its own file.
+use a
+use b
+
+function main()
+    print(a.one() + a.two() + b.three())

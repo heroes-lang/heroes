@@ -15,8 +15,9 @@
 # THE READS THE PRINTER MAKES OF WHAT IT HAS PRINTED, and why each is exact:
 # - `size`, the page's length in bytes, is the mark a head keeps to come
 #   back to (`indent_after`), an offset into the page as it is printed;
-# - `tail`, the page's last bytes, walked back from the last line, is what
-#   `blank` and `after_last` ask of the page's end;
+# - `ends_with`, whether the page's last bytes are given ones, walked back
+#   from the last line and asked a byte at a time, is what `blank` asks of
+#   the page's end, and `after_last` reads the last line itself;
 # - `indent_after` rewrites from a mark to the end, found by walking back
 #   from the last line, so it touches the head it deepens and nothing
 #   printed before it.
@@ -26,6 +27,8 @@
 # `text` and a `\n`, `after_last` keeps the last line's `\n` at its end, and
 # `indent_after` adds columns at the start of a line and nowhere else. It is
 # what lets `indent_after` read a line start at every element's first byte.
+
+use bytes
 
 ## The page
 
@@ -54,7 +57,7 @@ function blank(@sh: Sheet)
     if sh.size == 0
         return
 
-    if sh.size >= 2 && tail(sh, count: 2) == "\n\n"
+    if ends_with(sh, text: "\n\n")
         return
     line(@sh, text: "")
 
@@ -73,21 +76,24 @@ function after_last(@sh: Sheet, text: str)
     rewrite(@sh.lines, at: at, text: kept + text + "\n")
     sh.size @ sh.size - last.len() + kept.len() + text.len() + 1
 
-# The page's last `count` bytes, or all of it when it is shorter, read from
-# the fewest last lines that hold them.
-function tail(sh: Sheet, count: i64) -> str
+# Whether the page ends in `text`'s bytes, read from the fewest last lines
+# that hold them. **Asked of the bytes, never cut from them** (found beside
+# defect 110, 2026-09-27): this handed back the page's last `count` bytes as
+# a string, and where a character above ASCII ended a line, a `# café` at the
+# end of a body, the cut fell inside it and `fmt` aborted with `string slice
+# splits a character` on a program `check` accepts.
+function ends_with(sh: Sheet, text: str) -> bool
+    if text.len() > sh.size
+        return false
     at: i64 @ sh.lines.len()
     held: i64 @ 0
 
-    while at > 0 && held < count
+    while at > 0 && held < text.len()
         at @ at - 1
         held @ held + sh.lines[at].len()
 
     held_text = sh.lines.slice(from: at, to: sh.lines.len()).join("")
-
-    if held_text.len() > count
-        return held_text.slice(from: held_text.len() - count, to: held_text.len())
-    return held_text
+    return bytes.bytes_at(text: held_text, at: held_text.len() - text.len(), needle: text)
 
 ## Rewriting from a mark
 
@@ -169,8 +175,10 @@ test "a sheet reads as the one string it replaces, and ends in a blank line once
     line(@sh, text: "x")
     assert whole(sh) == "    if c  # note\n\nx\n"
     assert sh.size == whole(sh).len()
-    assert tail(sh, count: 3) == "\nx\n"
-    assert tail(sh, count: 99) == whole(sh)
+    assert ends_with(sh, text: "\nx\n")
+    assert ends_with(sh, text: whole(sh))
+    assert !ends_with(sh, text: "\n\n")
+    assert !ends_with(sh, text: whole(sh) + "x")
 
     # A trailing note on an empty page is a line of its own.
     other: Sheet @ empty()
@@ -183,6 +191,23 @@ test "a sheet reads as the one string it replaces, and ends in a blank line once
     line(@third, text: "")
     blank(@third)
     assert whole(third) == "\n\n"
+
+test "a line that ends in a character above ASCII is asked by its bytes, and takes its blank line"
+    # `fmt` aborted here on `# café` closing a body with a declaration after it.
+    sh: Sheet @ empty()
+    line(@sh, text: "    print(1)  # café")
+    blank(@sh)
+    assert whole(sh) == "    print(1)  # café\n\n"
+    blank(@sh)
+    assert whole(sh) == "    print(1)  # café\n\n"
+
+    for last in ["é", "€", "😀", "é€😀"]
+        page: Sheet @ empty()
+        line(@page, text: "# " + last)
+        assert ends_with(page, text: last + "\n")
+        assert !ends_with(page, text: "\n\n")
+        blank(@page)
+        assert whole(page) == "# " + last + "\n\n"
 
 test "a head across lines is indented after its first line, a blank line and what came before it are not"
     sh: Sheet @ empty()

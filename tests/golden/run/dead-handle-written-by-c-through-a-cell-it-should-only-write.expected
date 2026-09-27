@@ -1,0 +1,2 @@
+!sanitizer: on unknown address
+!panic: a dead C handle was used inside C, at offset 0x8

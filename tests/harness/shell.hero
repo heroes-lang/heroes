@@ -516,11 +516,12 @@ function found_under(dir: str, suffix: str, reference: str) -> [str]?
 
     return ok(out.sort())
 
+# Asked of the bytes, as `strings.ends_with` asks them: the slice this was
+# put its cut inside a character above ASCII, and a file such as `é.txt`
+# under a walked tree would have stopped the harness (found beside defect
+# 110, 2026-09-27).
 function ends_with(text: str, tail: str) -> bool
-    if tail.len() > text.len()
-        return false
-
-    return text.slice(from: text.len() - tail.len(), to: text.len()) == tail
+    return strings.ends_with(text: text, suffix: tail)
 
 # One list after another. `+` joins two `str`s and this language does
 # not overload it onto arrays, which is why this exists rather than
@@ -649,6 +650,13 @@ function remove_tree(path: str) -> ()?
 # which is what a scratch directory's name needs (main.hero).
 function pid() -> i64
     return hero_os_pid()
+
+test "a name's suffix is asked of its bytes, whatever the name holds above ASCII"
+    assert ends_with(text: "a.hero", tail: ".hero")
+    assert ends_with(text: "café/é.hero", tail: ".hero")
+    assert !ends_with(text: "é.txt", tail: ".hero")
+    assert !ends_with(text: "cafés.md", tail: ".hero")
+    assert !ends_with(text: "😀", tail: ".hero")
 
 test "a status is decoded the way a shell prints it"
     # POSIX is this case's subject, and this machine answers for itself
