@@ -1,0 +1,8 @@
+# Panel 180 R5, shape 68 of the compiler-engineer's 117 (place index left of
+# @): a break before ].
+# By the spec's opening paragraph, the line ends with `0`, a literal, so it
+# keeps its NEWLINE, which may stand before a closing bracket: accepted, exit
+# 0.
+function shape()
+    xs[0
+        ] @ 5

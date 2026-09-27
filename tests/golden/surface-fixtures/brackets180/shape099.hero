@@ -1,0 +1,11 @@
+# Panel 180 R5, shape 99 of the compiler-engineer's 117 (function type
+# params): a break before ,.
+# By the spec's opening paragraph, the line ends with `i64`, a name, so it
+# keeps its NEWLINE, which may stand before a `,`, and in a list the two are
+# one separator: accepted, exit 0.
+function f(g: (function(a: i64
+        , b: i64) -> i64))
+    print(1)
+
+function shape()
+    print(1)

@@ -1,0 +1,8 @@
+# Panel 180 R5, shape 24 of the compiler-engineer's 117 (call args): a break
+# before , (after an operator).
+# By the spec's opening paragraph, the line ends with `1`, a literal, so it
+# keeps its NEWLINE, which may stand before a `,`, and in a list the two are
+# one separator: accepted, exit 0.
+function shape()
+    f(a: 1
+        , b: 2)

@@ -1,0 +1,11 @@
+# Panel 180 R5, shape 115 of the compiler-engineer's 117 (extern member
+# params): a break before ).
+# By the spec's opening paragraph, the line ends with `f64`, a name, so it
+# keeps its NEWLINE, which may stand before a closing bracket: accepted, exit
+# 0.
+extern "m.h"
+    function g(x: f64
+        ) -> f64
+
+function shape()
+    print(1)

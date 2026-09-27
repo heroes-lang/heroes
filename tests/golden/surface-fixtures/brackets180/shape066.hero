@@ -1,0 +1,8 @@
+# Panel 180 R5, shape 66 of the compiler-engineer's 117 (map literal): a break
+# before binary - in a value.
+# By the spec's opening paragraph, the line ends with `1`, a literal, so it
+# keeps its NEWLINE, which separates without a `,`, and the next line begins
+# with a `-` that does not touch its operand: refused, exit 1.
+function main()
+    m = {"a": 1
+         - 2}  #~ spaced_minus_element

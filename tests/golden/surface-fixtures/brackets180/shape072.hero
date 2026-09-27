@@ -1,0 +1,8 @@
+# Panel 180 R5, shape 72 of the compiler-engineer's 117 (interpolation hole):
+# a break inside a call in the hole.
+# By the spec's opening paragraph, a string is one line, and the hole of an
+# `f"..."` is inside one, so the line end leaves it unterminated: refused,
+# exit 1.
+function main()
+    s = f"a {g(1,  #~ unterminated_string #~v unterminated_string expected_hole_close
+         2)} b"

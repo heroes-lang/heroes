@@ -1,0 +1,11 @@
+# Panel 180 R5, shape 116 of the compiler-engineer's 117 (generics (not a
+# bracket)): a break after ,.
+# By the spec's opening paragraph, `<` and `>` are not brackets, so the
+# NEWLINE after the `,` is not inside `(` `[` `{` and the next line's margin
+# is structural: refused, exit 1.
+function f<A,
+         B>(a: A, b: B)  #~ indentation_not_multiple_of_4 indentation_jump expected_type_parameter expected_generics_close expected_params
+    print(1)
+
+function main()
+    print(1)

@@ -1,0 +1,53 @@
+# A line inside brackets that ends where a line may end keeps its line end,
+# which may stand only before a closing bracket or a `,` (panel 180 R1 and R3,
+# the spec's opening paragraph). A long line broken BEFORE what goes on with
+# it, PEP 8's and Black's break, is refused with the line end named as the
+# cause, where it said *expected `)`*, and with a `certain` fix that moves the
+# token to the end of the line above, since going on is the only reading: in a
+# group, an index, a call before a token no argument begins with, a record
+# construction's `:`, a literal before a token no element begins with, a
+# map's `:`, a parameter's `:`, a parameter's type, and a function type's
+# `->`. What is left of a bracket is passed over after its first, so each
+# break costs one diagnostic.
+record Point
+    x: i64
+    y: i64
+
+function weighed(n: i64, by: i64) -> i64
+    return (n *
+        by)  #~ line_end_before_continuation
+
+function last(xs: [i64]) -> i64
+    return xs[xs.len() -
+        1]  #~ line_end_before_continuation
+
+function labelled(name:
+        str) -> str  #~ line_end_before_continuation
+    return name
+
+function maybe(n: i64?
+        ) -> i64  #~ line_end_before_continuation
+    return n.default(0)
+
+function double(n: i64) -> i64
+    return n * 2
+
+function applied(f: (function(i64) ->
+        i64), n: i64) -> i64  #~ line_end_before_continuation
+    return f(n)
+
+function main()
+    p = Point(x: 1, y: 2)
+    print(weighed(n: p.x +
+        p.y, by: 3))  #~ line_end_before_continuation
+    print(last([1, 2 *
+        3]))  #~ line_end_before_continuation
+    ages = {"ada":
+        36}  #~ line_end_before_continuation
+    print(ages["ada"].must())
+    print(labelled("x"))
+    print(maybe(ok(4)))
+    print(applied(f: double, n: 5))
+    q = Point(x:
+        1, y: 2)  #~ line_end_before_continuation
+    print(q.y)

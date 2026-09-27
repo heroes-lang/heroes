@@ -117,12 +117,13 @@ function pieces(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64,
 
 # `text` with the author's parentheses `render` dropped put back where a
 # comment `lead` prints is inside them, and with every pair of theirs inside
-# such a one around the same value. A break the author made inside them may
-# need them: the parser skips a line's end before a group's `)` and not
-# before an index's `]`, and `ys[(a  # c` over `)]` printed as `ys[a` over
-# `]` did not parse (the third skeptic seat's `min1`). And the guard counts
-# the innermost of several pairs around one value, so those inside a kept
-# one are kept too.
+# such a one around the same value. A break the author made inside them was
+# the first reason: `ys[(a  # c` over `)]` printed as `ys[a` over `]` did not
+# parse (the third skeptic seat's `min1`) until panel 180 let a line end stand
+# before an index's `]` as it stands before a group's `)`. It parses since,
+# and the pair stays kept, so the comment stays inside the parentheses it was
+# written in. And the guard counts the innermost of several pairs around one
+# value, so those inside a kept one are kept too.
 function restored(f: page.Fmt, c: elements.Code, text: str, written: [i64], printed: [token.Token], matched: [i64], to: i64) -> str
     partner = aligned.written_pairs(c, written: written)
     back: [bool] @ []

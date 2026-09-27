@@ -1,0 +1,12 @@
+# Panel 180 R5, shape 102 of the compiler-engineer's 117 (function type): a
+# break before ->.
+# By the spec's opening paragraph, the line ends with `)`, a closing bracket,
+# so it keeps its NEWLINE, which may stand only before a closing bracket or a
+# `,`, or where a production writes it, and none writes it before `->`:
+# refused, exit 1.
+function f(g: (function(i64) 
+        -> i64))  #~ line_end_before_continuation
+    print(1)
+
+function main()
+    print(1)
