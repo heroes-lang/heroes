@@ -471,6 +471,22 @@ constant DECIDED: [str]
 constant LEAST: i64
     257
 
+# THE LEXER'S GROWING ARRAYS ARE APPENDED ONLY THROUGH ITS TWO HELPERS
+# (defect 103, 2026-09-26). `l.tokens @ l.tokens.push(t)` is a field place,
+# and the in-place store fires on a bare place only (design.md Part 8 wart 8,
+# which panel 144 left a wart because the cost is in the spelling): every such
+# append copies the whole array and resets its capacity. The lexer appended
+# the line-end token that way once per line, and lexing was quadratic in the
+# file, 91 s for 210 KB. `state.push_token` and `state.push_diagnostic` are
+# the spelling the ruling names; this reads every module for the other one,
+# outside comments, because a list of lexer files is a premise that would
+# expire the day a new one appends.
+constant SLOW_APPENDS: [str]
+    [
+        "l.tokens @ l.tokens.push("
+        "l.diagnostics @ l.diagnostics.push("
+    ]
+
 function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()
 
@@ -500,6 +516,7 @@ function run_all(scratch: str) -> report.Report?
 
     floors.check(@r, label: "layout", found: modules.len(), floor: LEAST, what: "modules")
     over: [str] @ []
+    slow: [str] @ []
 
     for path in modules
         text = read_file(path)
@@ -507,6 +524,10 @@ function run_all(scratch: str) -> report.Report?
         if text.is_err()
             report.keep_failure(@r, label: "layout/" + strings.base_name(path: path), detail: "  cannot read " + path)
             continue
+
+        for found in slow_appends(path: path, text: text.must())
+            slow @ slow.push(found)
+
         lines = code_lines(text.must())
         limit = ceiling_for(path)
 
@@ -520,6 +541,15 @@ function run_all(scratch: str) -> report.Report?
                     "    " + path + ": " + lines.to_str() + " lines of code, past the " + limit.to_str() + " it measured when this check was written — a file already over the ceiling may not grow further"
                 )
 
+    if slow.len() > 0
+        report.keep_failure(
+            @r,
+            label: "layout/appends",
+            detail: "  the lexer's growing arrays are appended through `state.push_token(@l.tokens, t)` and `state.push_diagnostic(@l.diagnostics, d)`, never through the field itself, which copies the whole array at every append (defect 103, design.md Part 8 wart 8):\n" + slow.join("\n")
+        )
+    else
+        report.keep_pass(@r)
+
     if over.len() > 0
         report.keep_failure(
             @r,
@@ -529,6 +559,25 @@ function run_all(scratch: str) -> report.Report?
     else
         report.keep_pass(@r)
     return ok(r)
+
+# Every line of `text`, outside a comment, that appends to the lexer's state
+# through the field, as `path:line: the line`.
+function slow_appends(path: str, text: str) -> [str]
+    out: [str] @ []
+    at: i64 @ 0
+
+    for row in strings.split_on(text: text, byte: '\n')
+        at @ at + 1
+        code = strings.trimmed(row)
+
+        if strings.starts_with(text: code, prefix: "#")
+            continue
+
+        for needle in SLOW_APPENDS
+            if strings.contains(text: code, needle: needle)
+                out @ out.push("    " + path + ":" + at.to_str() + ": " + code)
+
+    return out
 
 # The lines a reader must hold in their head: everything outside a `test`
 # block, AND NOT A BLANK LINE.
@@ -722,3 +771,9 @@ test "the ceiling is per file, and a decided file keeps its own"
     # arrives for defect 032's repair, an ADDITION, which is the direction this
     # assert exists to make somebody type. The reason is above DECIDED.
     assert DECIDED.len() == 18
+
+test "an append to the lexer's state through the field is found, and one in a comment is not"
+    text = "function f(@l: LexState)\n    l.tokens @ l.tokens.push(t)\n    # l.tokens @ l.tokens.push(t) is the slow spelling\n    push_token(@l.tokens, t)\n"
+    found = slow_appends(path: "x.hero", text: text)
+    assert found.len() == 1
+    assert strings.contains(text: found[0], needle: "x.hero:2:")
