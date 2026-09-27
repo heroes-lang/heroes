@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 5**
 
 - [ ] **panel 175** | ratify panel 175: a consuming call is three things, so route A lands only with a vocabulary 176 decides; route E lands now as the composite; § 13 lands its true sentences in full; the blind seat gets a copy of the spec outside the tree | `docs/panel/175-a-consuming-call-is-three-things-and-the-runtime-speaks-after-it-listens.md`
 
@@ -76,5 +76,15 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     --probe` on one file, the guard as the only judge, the first failure's text,
     the fixtures only; refused because a flag cannot take a directory and a
     guard that judges itself cannot see a wrong rule.
+
+- [ ] **panel 180** | ratify panel 180: inside brackets a line breaks by how it ends and a NEWLINE may stand before every closer and every `,` (the compiler made uniform, route b); a list refuses a line that begins with a `-` set apart from its operand where a NEWLINE separates without a `,` (route ii, the silent split of defect 106); a line end the next token cannot continue is refused with the reason and a fix (route f); the spec's sentences on brackets and on strings made true, design.md §4.15 given the ruling, and the 117 shapes kept as `surface` rows | `docs/panel/180-a-line-inside-brackets-breaks-by-how-it-ends-and-a-list-refuses-a-subtraction-it-would-split.md`
+
+    **Origin:** panel 180, 2026-09-27, M-agreed-retention, convened on defect
+    104. **The default the compiler runs on meanwhile** is the provisional
+    resolution, landed in one lane with defects 104 and 106. **What
+    conservative would have been**: route (a), the spec listing today's seven
+    exceptions and the compiler unmoved, the silent split left standing;
+    refused because it writes accidents into the spec and keeps an exit-0
+    wrong answer.
 
 *******************************************************************************
