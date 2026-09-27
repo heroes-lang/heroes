@@ -1946,6 +1946,33 @@ invents:**
   Trailing-operator continuation at depth zero (Nim's rule) was considered and deferred: it enters
   only if the measurement baseline shows models actually produce that break shape. (Panel 007,
   predictions on record.)
+- **A break before a token inside brackets**, which nothing ruled until panel 180. The terminator
+  above is planted inside brackets too, so a line there that ends with a name, a literal, a keyword
+  that can end a line, `?`, `???` or a closing bracket keeps its NEWLINE, and what may follow that
+  NEWLINE is this rule:
+  - **It may stand before every closing bracket and before every `,`** (R1): an index's `]`, every
+    type's closer and a function type's `,` included, which until then refused it by accident and
+    for no production's sake. In a list a NEWLINE and the `,` after it are one separator, which is
+    the direction `fmt`'s own output forces, since it prints a `,` on a line of its own after a
+    comment. Any other line goes on below, at any column, so a long expression breaks AFTER an
+    operator.
+  - **Where a NEWLINE separates two elements of a literal with no `,` (§4.9), the next line may not
+    begin with a `-` set apart from its operand** by a space, a comment or a line end
+    (`spaced_minus_element`, R2, defect 106). Read as written it is a negative element, so
+    `[base * qty` / `- discount]` ran with one element too many where the space says a subtraction
+    broken before its operator, which is how PEP 8 and Black break a line. `-1` and `-fee`, the
+    spelling `fmt` prints, stay elements, and the one-per-line column of negatives with them; the
+    unspaced `[a` / `-b]` stays two elements, its `-` a sign, as Swift reads the same spacing.
+    Both readings are `guess` fixes, where both parse.
+  - **A token that would have gone on with the line above is refused with the line end named as
+    the cause** (`line_end_before_continuation`, R3): a binary operator, `.`, `::`, `?`, `(`, `[`,
+    and the `:` or `->` a production writes there. The fix moves the token to the end of the line
+    above, which is the program on one line: `certain` where going on is the only reading, `guess`
+    in a call's arguments before a token that can also begin one (`-`, `.`, `(`, `[`), where a
+    missing `,` is the other reading and writing it is the second fix.
+  Refused rather than read on: reading on is the route that sitting vetoed, because a call has no
+  NEWLINE separator and `print(f(a` / `-1))` would then print a sum at exit 0 where it was an
+  error. (Panel 180, provisional.)
 - **No parens around conditions.** `if x > 3`, not `if (x > 3)`. Zero information, two tokens saved,
   and Go/Rust/Swift already do it, so no familiarity cost.
 - **Canonical formatter, mandatory, `gofmt`-style: there is exactly one correct way to write any

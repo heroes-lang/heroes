@@ -1,0 +1,7 @@
+# Panel 180 R5, shape 50 of the compiler-engineer's 117 (array literal): a
+# break empty, after [.
+# By the spec's opening paragraph, the line ends with `[`, which keeps no
+# NEWLINE, so the line goes on below: accepted, exit 0.
+function shape()
+    xs = [
+        ]

@@ -1,0 +1,12 @@
+# Panel 180 R5, shape 110 of the compiler-engineer's 117 (extern member
+# params): a break after a mark word.
+# By the spec's opening paragraph, the line ends with `counted_by`, a name, so
+# it keeps its NEWLINE, which may stand only before a closing bracket or a
+# `,`, or where a production writes it, and none writes it before `n`:
+# refused, exit 1.
+extern "m.h"
+    function g(p: ptr counted_by  #~ expected_extent
+         n, n: u64)  #~ expected_params_close
+
+function main()
+    print(1)

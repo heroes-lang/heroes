@@ -1,0 +1,33 @@
+# In a call's arguments a token that goes on with the line above can also
+# begin the next argument: `-x`, `.case`, `(e)`, `[1, 2]`. A line end before
+# one is refused as in any bracket (panel 180 R3), and there a missing `,` is
+# the other reading, so both fixes are `guess`es, the token moved to the end
+# of the line above and the `,` written there: `print(f(a` over `-1))` is a
+# difference or two arguments, and only the author knows which. Refused
+# rather than read on, since reading on made that line print a sum at exit 0
+# where it was an error (panel 180's veto on route c).
+variant Sign
+    plus
+    minus
+
+function f(n: i64) -> i64
+    return n
+
+function g(s: Sign) -> i64
+    return match s
+        .plus  => 1
+        .minus => -1
+
+function main()
+    a = 3
+    xs = [4, 5]
+    print(f(a
+        -1))  #~ line_end_before_continuation
+    print(g(.plus
+        ))
+    print(f(xs
+        [0]))  #~ line_end_before_continuation
+    print(f(f
+        (1)))  #~ line_end_before_continuation
+    print(f(xs
+        .len()))  #~ line_end_before_continuation
