@@ -46,6 +46,7 @@ use check/contextual
 use escape
 use ir
 use ir/build
+use ir/interning
 use ir/layout
 use ir/inout
 use ir/questions
@@ -1144,7 +1145,7 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
         .null_ptr => return build.emit(@b, op: .lit(value: .null_ptr), ty: ty, span: span)
         .str_lit =>
             decoded = escape.unescape(source.span_text(s, span))
-            at = build.intern(@b, decoded)
+            at = interning.intern(@b, decoded)
             return build.emit(@b, op: .lit(value: .str_const(at: at)), ty: ty, span: span)
         # `f"…{e}…"`: the holes are lowered here, because only this walk can,
         # and the concatenation is `ir/interp.hero`'s (panel 121 R4).
@@ -1231,7 +1232,7 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
         # and the runtime never learn the form exists.
 
         .field_name f =>
-            at = build.intern(@b, source.span_text(s, f.name))
+            at = interning.intern(@b, source.span_text(s, f.name))
             return build.emit(@b, op: .lit(value: .str_const(at: at)), ty: ty, span: span)
         .index ix =>
             owner = c.expr_types[ix.base]

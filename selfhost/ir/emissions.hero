@@ -26,6 +26,7 @@ use check/contextual
 use contextless_errors
 use ir
 use ir/build
+use ir/interning
 use ir/inout
 use ir/questions
 
@@ -116,7 +117,7 @@ function assert_text(@b: build.Lowering, c: state.Checked, s: source.Source, spa
     if written.len() > 6 && written.slice(from: 0, to: 6) == "assert"
         expression @ written.slice(from: 6, to: written.len())
     expression @ questions.trimmed(expression)
-    at = build.intern(@b, expression)
+    at = interning.intern(@b, expression)
     return build.emit(@b, op: .lit(value: .str_const(at: at)), ty: table.str_ty(c.types), span: span)
 
 # The value-argument run a construct needs.
@@ -174,7 +175,7 @@ function emit_int(@b: build.Lowering, a: ast.Ast, s: source.Source, id: i64, ty:
     decoded = contextual.literal_value(a, s, id)
 
     if decoded.is_err()
-        build.push_diagnostic(@b, contextless_errors.int_out_of_range(source.span_text(s, span), span))
+        interning.push_diagnostic(@b, contextless_errors.int_out_of_range(source.span_text(s, span), span))
         return build.emit(
             @b,
             op: .lit(value: .int_const(value: contextual.LitValue(negative: false, magnitude: 0))),
