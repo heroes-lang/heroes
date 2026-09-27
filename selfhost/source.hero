@@ -109,7 +109,6 @@ function with_library(name: str, user: str, library: str) -> Source
 function from_files(inputs: [InputFile]) -> Source
     assert inputs.len() > 0
     name = inputs[0].name
-    text: str @ ""
     table: [FileEntry] @ []
 
     # `lines_before` is the newline count of the accumulated text, kept
@@ -121,20 +120,42 @@ function from_files(inputs: [InputFile]) -> Source
     # the same number read once.
     newlines: i64 @ 0
 
+    # The pieces are joined once (defect 105: `text @ text + input.text`
+    # copied the compilation so far at every file). `last` is the last piece
+    # holding a byte, whose last byte is the text's: read as the text's was,
+    # it fails the same way on a first file with no byte in it.
+    pieces: [str] @ []
+    size: i64 @ 0
+    last: str @ ""
+
     for input in inputs
         if table.len() > 0
-            if text[text.len() - 1] != '\n'
-                text @ text + "\n"
+            if last[last.len() - 1] != '\n'
+                pieces @ pieces.push("\n")
+                size @ size + 1
                 newlines @ newlines + 1
-            text @ text + "\n"
+            pieces @ pieces.push("\n")
+            size @ size + 1
             newlines @ newlines + 1
-        table @ table.push(
-            FileEntry(name: input.name, module: input.module, component: module_names.component_of(input.module), start: text.len(), lines_before: newlines, is_library: input.is_library)
+            last @ "\n"
+        entry = FileEntry(
+            name: input.name,
+            module: input.module,
+            component: module_names.component_of(input.module),
+            start: size,
+            lines_before: newlines,
+            is_library: input.is_library
         )
-        text @ text + input.text
+        table @ table.push(entry)
+        pieces @ pieces.push(input.text)
+        size @ size + input.text.len()
+
+        if input.text.len() > 0
+            last @ input.text
         newlines @ newlines + newlines_in(input.text)
 
-    return Source(name: name, text: text, line_starts: starts_of(text), files: table)
+    whole = pieces.join("")
+    return Source(name: name, text: whole, line_starts: starts_of(whole), files: table)
 
 # The '\n' count of one segment — what `starts_of(text).len() - 1` answers
 # for a whole text, without building the array.
@@ -180,13 +201,21 @@ function floor_start(starts: [i64], offset: i64) -> i64
 
     return lo
 
+# `floor_start` over the files' starts, read in place rather than copied
+# into an array at every call.
 function file_of(s: Source, offset: i64) -> i64
-    starts: [i64] @ []
+    lo: i64 @ 0
+    hi: i64 @ s.files.len() - 1
 
-    for f in s.files
-        starts @ starts.push(f.start)
+    while lo < hi
+        mid = (lo + hi + 1) / 2
 
-    return floor_start(starts, offset)
+        if s.files[mid].start <= offset
+            lo @ mid
+        else
+            hi @ mid - 1
+
+    return lo
 
 function file_at(s: Source, offset: i64) -> FileEntry
     return s.files[file_of(s, offset)]
@@ -227,15 +256,16 @@ function line_col(s: Source, offset: i64) -> Position
     return Position(line: line + 1, col: col)
 
 # The 1-based line in the whole text — the printer's question. `locate`
-# answers the reader's; nobody assembles the triple by hand.
+# answers the reader's; nobody assembles the triple by hand. The line alone,
+# from the table: counting the column's characters to throw them away cost
+# `fmt` a tenth of its time (defect 105).
 function line_of(s: Source, offset: i64) -> i64
-    return line_col(s, offset).line
+    return floor_start(s.line_starts, offset) + 1
 
 # The 1-based line WITHIN ITS OWN FILE, for a diagnostic or a `#line` that
 # names that file rather than the root.
 function file_line_of(s: Source, offset: i64) -> i64
-    p = line_col(s, offset)
-    line: i64 @ p.line - file_at(s, offset).lines_before
+    line: i64 @ line_of(s, offset) - file_at(s, offset).lines_before
 
     if line < 1
         line @ 1
@@ -253,7 +283,13 @@ record Location
 function locate(s: Source, offset: i64) -> Location
     p = line_col(s, offset)
     entry = file_at(s, offset)
-    return Location(file: entry.name, line: file_line_of(s, offset), col: p.col)
+
+    # `file_line_of`'s number, from the position and the entry in hand.
+    line: i64 @ p.line - entry.lines_before
+
+    if line < 1
+        line @ 1
+    return Location(file: entry.name, line: line, col: p.col)
 
 # How to name THE OTHER END of a mistake, from where the caret is: `line 12`
 # when both ends are in one file, `geom.hero:12` when they are not. Every

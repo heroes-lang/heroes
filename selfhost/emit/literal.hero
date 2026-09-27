@@ -102,13 +102,13 @@ constant TWO_52: f64
 # take a separator either, and `unwrap_or(0.0)` made `x: f64 @ 1_0.5`
 # print **0.0** at exit 0 (`ir/exprs.rs`, repaired 2026-08-18).
 function separatorless(text: str) -> str
-    out: str @ ""
+    parts: [str] @ []
 
     for c in text.chars()
         if c != "_"
-            out @ out + c
+            parts @ parts.push(c)
 
-    return out
+    return parts.join("")
 
 # Thirteen hex digits, which hold all 52 mantissa bits exactly.
 function hex13(mantissa: i64) -> str

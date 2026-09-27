@@ -18,12 +18,12 @@ use print/types
 use parse
 
 function write_block(tree: ast.Ast, s: source.Source, block: ast.Block, indent: i64) -> str
-    out: str @ ""
+    rows: [str] @ []
 
     for id in block.stmts
-        out @ out + write_stmt(tree, s, id: id, indent: indent, head: "")
+        rows @ rows.push(write_stmt(tree, s, id: id, indent: indent, head: ""))
 
-    return out
+    return rows.join("")
 
 function pad(indent: i64) -> str
     return " ".repeat(indent.to_u64().must())
@@ -101,7 +101,7 @@ function write_stmt(tree: ast.Ast, s: source.Source, id: i64, indent: i64, head:
 function write_valued(tree: ast.Ast, s: source.Source, head: str, value: i64, indent: i64) -> str
     match tree.exprs[value].kind
         .if_expr ie =>
-            out: str @ ""
+            rows: [str] @ []
             index: i64 @ 0
 
             for branch in ie.branches
@@ -111,16 +111,16 @@ function write_valued(tree: ast.Ast, s: source.Source, head: str, value: i64, in
                 if index == 0
                     keyword @ "if"
                     prefix @ head
-                out @ out + pad(indent) + prefix + keyword + " " + render_expr(tree, branch.cond, s) + "\n"
-                out @ out + write_block(tree, s, block: branch.block, indent: indent + 2)
+                rows @ rows.push(pad(indent) + prefix + keyword + " " + render_expr(tree, branch.cond, s) + "\n")
+                rows @ rows.push(write_block(tree, s, block: branch.block, indent: indent + 2))
                 index @ index + 1
 
             if !ie.otherwise.is_err()
-                out @ out + pad(indent) + "else\n"
-                out @ out + write_block(tree, s, block: ie.otherwise.must(), indent: indent + 2)
-            return out
+                rows @ rows.push(pad(indent) + "else\n")
+                rows @ rows.push(write_block(tree, s, block: ie.otherwise.must(), indent: indent + 2))
+            return rows.join("")
         .match_expr me =>
-            out: str @ pad(indent) + head + "match " + render_expr(tree, me.scrutinee, s) + "\n"
+            rows: [str] @ [pad(indent) + head + "match " + render_expr(tree, me.scrutinee, s) + "\n"]
 
             for arm in me.arms
                 patterns: [str] @ []
@@ -132,12 +132,12 @@ function write_valued(tree: ast.Ast, s: source.Source, head: str, value: i64, in
 
                 match arm.body
                     .one_stmt one =>
-                        out @ out + write_stmt(tree, s, id: one.at, indent: indent + 2, head: left + " => ")
+                        rows @ rows.push(write_stmt(tree, s, id: one.at, indent: indent + 2, head: left + " => "))
                     .block blk =>
-                        out @ out + pad(indent + 2) + left + " =>\n"
-                        out @ out + write_block(tree, s, block: blk.block, indent: indent + 4)
+                        rows @ rows.push(pad(indent + 2) + left + " =>\n")
+                        rows @ rows.push(write_block(tree, s, block: blk.block, indent: indent + 4))
 
-            return out
+            return rows.join("")
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return pad(indent) + head + render_expr(tree, value, s) + "\n"
         .name | .hole | .unary | .binary | .field | .field_name | .index => return pad(indent) + head + render_expr(tree, value, s) + "\n"
         .call | .method | .variant_case | .array | .map | .try_expr | .error => return pad(indent) + head + render_expr(tree, value, s) + "\n"

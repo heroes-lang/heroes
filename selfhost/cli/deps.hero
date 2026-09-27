@@ -101,7 +101,9 @@ function digest_of(path: str, @memo: {str: str}) -> str
 # first `:` is the target and is dropped.
 function paths_of(text: str) -> [str]
     out: [str] @ []
-    piece: str @ ""
+
+    # The path being read, in the runs between its escapes.
+    piece: [str] @ []
     start: i64 @ 0
     index: i64 @ 0
     seen_target: bool @ false
@@ -117,7 +119,9 @@ function paths_of(text: str) -> [str]
         byte = text[index]
 
         if byte == 92 && index + 1 < text.len() && text[index + 1] == 32
-            piece @ piece + text.slice(from: start, to: index) + " "
+            run = text.slice(from: start, to: index)
+            piece @ piece.push(run)
+            piece @ piece.push(" ")
             index @ index + 2
             start @ index
             continue
@@ -137,20 +141,24 @@ function paths_of(text: str) -> [str]
             continue
 
         if byte == 92 || byte == 32 || byte == 9 || byte == 10 || byte == 13
-            piece @ piece + text.slice(from: start, to: index)
+            run = text.slice(from: start, to: index)
+            piece @ piece.push(run)
+            path = piece.join("")
+            piece @ []
 
-            if piece.len() > 0
-                out @ out.push(piece)
-                piece @ ""
+            if path.len() > 0
+                out @ out.push(path)
             index @ index + 1
             start @ index
             continue
         index @ index + 1
 
-    piece @ piece + text.slice(from: start, to: text.len())
+    run = text.slice(from: start, to: text.len())
+    piece @ piece.push(run)
+    path = piece.join("")
 
-    if piece.len() > 0
-        out @ out.push(piece)
+    if path.len() > 0
+        out @ out.push(path)
     return out
 
 # Write the record beside a freshly built object.

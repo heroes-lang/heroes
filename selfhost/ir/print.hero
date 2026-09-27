@@ -66,7 +66,7 @@ function dump(p: containers.Program, c: state.Checked, s: source.Source, decls: 
                         .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
                         .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
-    out: str @ ""
+    rows: [str] @ []
     any_live: bool @ false
 
     for used in live
@@ -74,17 +74,17 @@ function dump(p: containers.Program, c: state.Checked, s: source.Source, decls: 
             any_live @ true
 
     if any_live
-        out @ out + "strings\n"
+        rows @ rows.push("strings\n")
 
         # ORDER: ascending string index — the dense walk IS the sort.
         at: i64 @ 0
 
         while at < live.len()
             if live[at]
-                out @ out + "    " + at.to_str() + "  \"" + escaped(p.strings[at]) + "\"\n"
+                rows @ rows.push("    " + at.to_str() + "  \"" + escaped(p.strings[at]) + "\"\n")
             at @ at + 1
 
-        out @ out + "\n"
+        rows @ rows.push("\n")
 
     # The library is part of every compilation and part of no dump: a
     # --dump-<stage> answers "what does the compiler know about the
@@ -95,14 +95,14 @@ function dump(p: containers.Program, c: state.Checked, s: source.Source, decls: 
     for f in p.functions
         if source.is_root(s, f.span.start)
             if shown > 0
-                out @ out + "\n"
-            out @ out + one(f, c, s, decls)
+                rows @ rows.push("\n")
+            rows @ rows.push(one(f, c, s, decls))
             shown @ shown + 1
 
-    return out
+    return rows.join("")
 
 function one(f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
-    out: str @ header(f, c, s, decls)
+    rows: [str] @ [header(f, c, s, decls)]
     is_extern: bool @ false
 
     match f.kind
@@ -112,24 +112,24 @@ function one(f: containers.Function, c: state.Checked, s: source.Source, decls: 
     if is_extern
         # No blocks at all: the implementation is C's, and clang
         # type-checks the call against the real header (§4.19).
-        out @ out + "    no body — C provides it\n"
-        return out
+        rows @ rows.push("    no body — C provides it\n")
+        return rows.join("")
     locals = slot_line(f, c, s, decls)
 
     if locals != ""
-        out @ out + "    slots  " + locals + "\n"
+        rows @ rows.push("    slots  " + locals + "\n")
     index: i64 @ 0
 
     for blk in f.blocks
-        out @ out + block_header(id: index, note: blk.note, preds: blk.preds)
+        rows @ rows.push(block_header(id: index, note: blk.note, preds: blk.preds))
 
         for inst in blk.insts
-            out @ out + "        " + instruction(f, inst, c, s, decls) + "\n"
+            rows @ rows.push("        " + instruction(f, inst, c, s, decls) + "\n")
 
-        out @ out + "        " + terminator(blk.term) + "\n"
+        rows @ rows.push("        " + terminator(blk.term) + "\n")
         index @ index + 1
 
-    return out
+    return rows.join("")
 
 # The signature, spelled the way the author wrote it — the same shape
 # `heroes fmt` prints, so the two artifacts agree about what a
@@ -317,20 +317,20 @@ function operation(f: containers.Function, inst: ir.Inst, c: state.Checked, s: s
 
 # A place, in the surface's own notation: `l.pos`, `xs[$t2]`, `total`.
 function written(f: containers.Function, place: ir.Place, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
-    out: str @ f.slots[place.root].name
+    parts: [str] @ [f.slots[place.root].name]
     ty: i64 @ f.slots[place.root].ty
 
     for step in containers.steps_of(f, place.path)
         match step
             .field_step fs =>
-                out @ out + "." + name_of_field(c, s, decls, owner: ty, at: fs.at)
+                parts @ parts.push("." + name_of_field(c, s, decls, owner: ty, at: fs.at))
 
                 # Carry the field's own type, or the next step in the
                 # path has nothing to look a name up in — g.rows[$t1]
                 # printed `.0` past the first step without this.
                 ty @ field_ty_of(c, decls, owner: ty, at: fs.at)
             .index_step ix =>
-                out @ out + "[" + value_name(ix.value) + "]"
+                parts @ parts.push("[" + value_name(ix.value) + "]")
 
                 match table.get(c.types, ty)
                     .array arr                                                => ty @ arr.element
@@ -338,7 +338,7 @@ function written(f: containers.Function, place: ir.Place, c: state.Checked, s: s
                     .fixed | .map | .fallible | .function_ty | .named         => ty @ table.error_ty(c.types)
                     .case_ty | .failure | .generic | .error                   => ty @ table.error_ty(c.types)
 
-    return out
+    return parts.join("")
 
 function argument_list(f: containers.Function, run: ir.Run, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
     rendered: [str] @ []
@@ -521,23 +521,23 @@ function case_name(c: state.Checked, s: source.Source, decls: [ast.Decl], owner:
 # any C binding can hand back — put a raw invisible byte into every
 # dump.
 function escaped(text: str) -> str
-    out: str @ ""
+    parts: [str] @ []
 
     for ch in text.chars()
         if ch == "\n"
-            out @ out + "\\n"
+            parts @ parts.push("\\n")
         else if ch == "\t"
-            out @ out + "\\t"
+            parts @ parts.push("\\t")
         else if ch == "\r"
-            out @ out + "\\r"
+            parts @ parts.push("\\r")
         else if ch == "\\"
-            out @ out + "\\\\"
+            parts @ parts.push("\\\\")
         else if ch == "\""
-            out @ out + "\\\""
+            parts @ parts.push("\\\"")
         else
-            out @ out + ch
+            parts @ parts.push(ch)
 
-    return out
+    return parts.join("")
 
 ## Tests
 

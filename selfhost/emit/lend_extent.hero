@@ -203,15 +203,16 @@ function runtime_guard(c: state.Checked, s: source.Source, decls: [ast.Decl], f:
 # it can hold are the ones a path and a name can, and a quote or a backslash in
 # a file name is escaped rather than assumed away.
 function quoted(text: str) -> str
-    out: str @ "\""
+    parts: [str] @ ["\""]
 
     for ch in text.chars()
         if ch == "\"" || ch == "\\"
-            out @ out + "\\" + ch
+            parts @ parts.push("\\" + ch)
         else
-            out @ out + ch
+            parts @ parts.push(ch)
 
-    return out + "\""
+    parts @ parts.push("\"")
+    return parts.join("")
 
 function param_names(s: source.Source, decls: [ast.Decl], decl: i64) -> [str]
     out: [str] @ []

@@ -1,0 +1,236 @@
+# Where the compiler grows a `str` by `+` in a way that copies it whole at
+# every step, read from its source (defect 105, 2026-09-27). `suite_layout`
+# runs it over every module as `layout/concat`.
+#
+# THE CLASS. A concatenation copies both sides under value semantics
+# (design.md Part 8 wart 8, which panel 144 left a wart because the cost is
+# in the spelling), so a text grown by `+` once per line, token or item is
+# quadratic in what it holds. `heroes lex --dump-tokens` took 194 s on 1.7
+# MB of source that way and `heroes fmt` grew its page one line at a time
+# through a field of its state. The spelling panel 144 names is the cheap
+# one: push the pieces onto a `[str]` held on a bare place and `join` once.
+#
+# THREE SHAPES, each read the way the language writes it:
+# - a `str` local, declared `name: str @ …`, grown `name @ name + …` inside
+#   a `for` or `while` that runs with it declared, the lexer's dump and every
+#   JSON writer's shape; a match arm's body is read as a statement;
+# - a field grown by a line, `a.b @ a.b + …` with a `\n` in what is added,
+#   the formatter's page, grown by a caller's loop the check cannot see;
+# - a lent `@` parameter of type `str` grown by `+`, the same growth one call
+#   removed from the loop that makes it.
+#
+# WHAT IT CANNOT SEE, said so a green run is not read as more: growth
+# through a temporary (`next = out + x` then `out @ next`); a text prepended
+# to (`out @ digit + out`, the number renderers, whose loops end with the
+# number's digits); a field grown by text with no newline in it; a helper
+# that returns `text + x` to a loop in its caller; and a copy of the whole
+# text per item that is not a concatenation, a slice rebuilt per edit or a
+# scan of the whole file per diagnostic. Those were found by timing verbs on
+# a ladder, and a ladder is the instrument for them.
+
+use strings
+
+# One growth: the line, the name grown, and the line as written.
+record Site
+    line: i64
+    name: str
+    code: str
+
+# Every growth of the three shapes in the module `text`, in order.
+function sites(text: str) -> [Site]
+    out: [Site] @ []
+    declared: {str: i64} @ {}
+    lent: {str: bool} @ {}
+    loops: [i64] @ []
+    at: i64 @ 0
+
+    for row in strings.split_on(text: text, byte: 10)
+        at @ at + 1
+        code = strings.trimmed(bare(row))
+
+        if code.len() == 0
+            continue
+        indent = indent_of(row)
+
+        # A top-level item starts a new function: nothing it declared
+        # reaches the next one.
+        if indent == 0
+            declared @ {}
+            lent @ {}
+            loops @ []
+
+        while loops.len() > 0 && indent <= loops[loops.len() - 1]
+            loops @ loops.slice(from: 0, to: loops.len() - 1)
+
+        for one in lent_names(code)
+            lent[one] @ true
+
+        if strings.starts_with(text: code, prefix: "for ") || strings.starts_with(text: code, prefix: "while ")
+            loops @ loops.push(indent)
+        local = declared_str(code)
+
+        if local.len() > 0
+            declared[local] @ indent
+        body = arm_body(code)
+        grown = grown_name(body)
+
+        if grown.len() == 0
+            continue
+        slow: bool @ false
+
+        if strings.contains(text: grown, needle: ".")
+            slow @ strings.contains(text: after_store(row), needle: "\\n")
+        else if !lent[grown].is_err()
+            slow @ true
+        else if !declared[grown].is_err() && loops.len() > 0
+            slow @ loops[loops.len() - 1] >= declared[grown].must()
+
+        if slow
+            written = strings.trimmed(row)
+            out @ out.push(Site(line: at, name: grown, code: written))
+
+    return out
+
+# The row with every string and character literal emptied and its comment
+# cut, so that a `#`, a quote or an `@` inside a literal reads as nothing.
+function bare(row: str) -> str
+    kept: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+
+    while i < row.len()
+        b = row[i]
+
+        if b == 35
+            run = row.slice(from: start, to: i)
+            kept @ kept.push(run)
+            return kept.join("")
+
+        if b == 34 || b == 39
+            run = row.slice(from: start, to: i + 1)
+            kept @ kept.push(run)
+            shut = closing(row, from: i + 1, quote: b)
+            start @ shut
+            i @ shut + 1
+            continue
+        i @ i + 1
+
+    run = row.slice(from: start, to: row.len())
+    kept @ kept.push(run)
+    return kept.join("")
+
+# The index of the quote that closes a literal opened before `from`, a
+# backslash escaping the byte after it, or the end of the row.
+function closing(row: str, from: i64, quote: u8) -> i64
+    i: i64 @ from
+
+    while i < row.len()
+        if row[i] == 92
+            i @ i + 2
+        else if row[i] == quote
+            return i
+        else
+            i @ i + 1
+
+    return row.len()
+
+function indent_of(row: str) -> i64
+    n: i64 @ 0
+
+    while n < row.len() && row[n] == 32
+        n @ n + 1
+
+    return n
+
+# The statement of a match arm written on its line, or the code itself.
+function arm_body(code: str) -> str
+    at = strings.index_of(text: code, needle: " => ")
+
+    if at.is_err()
+        return code
+    return code.slice(from: at.must() + 4, to: code.len())
+
+# `name` in `name: str @ …`, or nothing.
+function declared_str(code: str) -> str
+    name = identifier(code, from: 0)
+
+    if name.len() == 0 || strings.contains(text: name, needle: ".")
+        return ""
+
+    if strings.starts_with(text: code.slice(from: name.len(), to: code.len()), prefix: ": str @")
+        return name
+    return ""
+
+# `name` in `name @ name + …`, dotted or not, or nothing.
+function grown_name(body: str) -> str
+    name = identifier(body, from: 0)
+
+    if name.len() == 0
+        return ""
+
+    if strings.starts_with(text: body.slice(from: name.len(), to: body.len()), prefix: " @ " + name + " + ")
+        return name
+    return ""
+
+# What follows the first ` @ ` of the row, literals kept: a field's growth
+# is slow where a line is added, and the line is in a literal.
+function after_store(row: str) -> str
+    at = strings.index_of(text: row, needle: " @ ")
+
+    if at.is_err()
+        return ""
+    return row.slice(from: at.must() + 3, to: row.len())
+
+# The names of the `@` parameters of type `str` declared on this line.
+function lent_names(code: str) -> [str]
+    out: [str] @ []
+    i: i64 @ 0
+
+    while i < code.len()
+        if code[i] == 64 && (i == 0 || code[i - 1] == 40 || code[i - 1] == 32)
+            name = identifier(code, from: i + 1)
+            rest = code.slice(from: i + 1 + name.len(), to: code.len())
+
+            if name.len() > 0 && (strings.starts_with(text: rest, prefix: ": str,") || strings.starts_with(text: rest, prefix: ": str)"))
+                out @ out.push(name)
+        i @ i + 1
+
+    return out
+
+# The identifier, dots included, that starts at `from`, or nothing.
+function identifier(text: str, from: i64) -> str
+    end: i64 @ from
+
+    while end < text.len() && word_byte(text[end])
+        end @ end + 1
+
+    if end == from || text[from] == 46 || text[from] >= 48 && text[from] <= 57
+        return ""
+    return text.slice(from: from, to: end)
+
+function word_byte(b: u8) -> bool
+    return b >= 97 && b <= 122 || b >= 48 && b <= 57 || b == 95 || b == 46
+
+## Tests
+
+test "a str grown in a loop, a field grown by a line and a lent str are found, and their neighbours are not"
+    text = "function f(xs: [str], @w: str) -> str\n    out: str @ \"\"\n    total: i64 @ 0\n\n    for x in xs\n        out @ out + x\n        total @ total + 1\n        once: str @ x\n        once @ once + \"!\"\n        # out @ out + x in a comment\n        say = \"out @ out + x in a literal\"\n\n    out @ out + \"after the loop\"\n    w @ w + \"lent\"\n    return out\n\nfunction g(@f: Page)\n    f.out @ f.out + \"\\n\"\n    f.count @ f.count + 1\n    f.title @ f.title + \" more\"\n\nfunction h(ms: [bool]) -> str\n    text: str @ \"\"\n\n    for m in ms\n        match m\n            .yes => text @ text + \"y\"\n            .no  => text @ \"n\" + text\n\n    return text\n"
+    found = sites(text)
+    assert found.len() == 4
+    assert found[0].line == 6
+    assert found[0].name == "out"
+    assert found[1].line == 14
+    assert found[1].name == "w"
+    assert found[2].line == 18
+    assert found[2].name == "f.out"
+    assert found[3].line == 27
+    assert found[3].name == "text"
+
+test "a literal and a comment are emptied, escapes and character literals included"
+    assert bare("x @ \"a # b\" + '#'  # a comment") == "x @ \"\" + ''  "
+    assert bare("s = \"a \\\" @ b\"") == "s = \"\""
+    assert declared_str("out: str @ \"\"") == "out"
+    assert declared_str("out: str? @ x") == ""
+    assert grown_name("a.b @ a.b + c") == "a.b"
+    assert grown_name("a @ ab + c") == ""
+    assert lent_names("function f(@a: str, b: str, @c: i64, @d: str)") == ["a", "d"]

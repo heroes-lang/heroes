@@ -58,7 +58,7 @@ function nibble(value: i64) -> str
 # em dashes and section signs, and a version of this that escaped them by
 # hand would have counted a different document than the one on disk.
 function json_string(text: str) -> str
-    out: str @ ""
+    parts: [str] @ []
     at: i64 @ 0
     plain: i64 @ 0
 
@@ -66,11 +66,17 @@ function json_string(text: str) -> str
         one = escaped_byte(text[at])
 
         if one.len() > 0
-            out @ out + text.slice(from: plain, to: at) + one
+            run = text.slice(from: plain, to: at)
+            parts @ parts.push(run)
+            parts @ parts.push(one)
             plain @ at + 1
         at @ at + 1
 
-    return out + text.slice(from: plain, to: text.len())
+    if plain == 0
+        return text
+    rest = text.slice(from: plain, to: text.len())
+    parts @ parts.push(rest)
+    return parts.join("")
 
 ## Tests
 

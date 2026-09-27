@@ -170,13 +170,15 @@ function refuse_a_corpus_that_does_not_compile(sources: [score.Program], library
 
     if refused.len() == 0
         return fail(code: "clean", msg: "every program compiles")
-    message: str @ "this corpus does not compile, so its kill rate would be meaningless\n  " + refused.len().to_str() + " of " + sources.len().to_str() + " programs are already refused by `heroes check`:\n"
+    lines: [str] @ [
+        "this corpus does not compile, so its kill rate would be meaningless\n  " + refused.len().to_str() + " of " + sources.len().to_str() + " programs are already refused by `heroes check`:\n"
+    ]
 
     for name in refused
-        message @ message + "    " + name + "\n"
+        lines @ lines.push("    " + name + "\n")
 
     return ok(
-        message + "  every mutant of a program that is already wrong is killed by the\n  diagnostic that was already there — run `heroes check` on each"
+        lines.join("") + "  every mutant of a program that is already wrong is killed by the\n  diagnostic that was already there — run `heroes check` on each"
     )
 
 function why(got: [score.Program]?) -> str

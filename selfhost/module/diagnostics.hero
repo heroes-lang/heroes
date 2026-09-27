@@ -200,17 +200,18 @@ function module_binding_taken(binding: str, first: str, second: str, has_alias: 
 # word than the compiler does, and §4.17 says a certain fix must be the one
 # repair, not the first one that parses.
 function suggestion(module: str) -> str
-    out: str @ ""
+    parts: [str] @ []
     i: i64 @ 0
 
     while i < module.len()
         if module[i] == '/'
-            out @ out + "_"
+            parts @ parts.push("_")
         else
-            out @ out + module.slice(from: i, to: i + 1)
+            one = module.slice(from: i, to: i + 1)
+            parts @ parts.push(one)
         i @ i + 1
 
-    return out
+    return parts.join("")
 
 # An `extern` reached from another module (panel 033 R5, carried by
 # M-separate-compilation acceptance row 1). clang verifies an extern

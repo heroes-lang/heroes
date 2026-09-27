@@ -33,6 +33,9 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
         return .ok_exit
     return .diagnostics_exit
 
+# Both dumps push one row per token onto a local and join once (defect
+# 105): `out @ out + …` copied the whole dump at every token, and the JSON
+# dump of walk.hero four times over took 53 s.
 function json(tokens: [token.Token], s: source.Source) -> str
     shown_tokens: [token.Token] @ []
 
@@ -40,7 +43,7 @@ function json(tokens: [token.Token], s: source.Source) -> str
         if source.is_root(s, t.span.start)
             shown_tokens @ shown_tokens.push(t)
 
-    out: str @ "[\n"
+    rows: [str] @ ["[\n"]
     index: i64 @ 0
 
     for t in shown_tokens
@@ -49,26 +52,29 @@ function json(tokens: [token.Token], s: source.Source) -> str
 
         if index == shown_tokens.len() - 1
             comma @ ""
-        out @ out + "  {\"kind\": \"" + token.kind_name(t.kind) + "\", \"text\": \"" + json_text.json_string(shown(t, s)) + "\", \"line\": " + found.line.to_str() + ", \"col\": " + found.col.to_str() + "}" + comma + "\n"
+        row = "  {\"kind\": \"" + token.kind_name(t.kind) + "\", \"text\": \"" + json_text.json_string(shown(t, s)) + "\", \"line\": " + found.line.to_str() + ", \"col\": " + found.col.to_str() + "}" + comma + "\n"
+        rows @ rows.push(row)
         index @ index + 1
 
-    return out + "]\n"
+    rows @ rows.push("]\n")
+    return rows.join("")
 
 function text_dump(tokens: [token.Token], s: source.Source) -> str
-    out: str @ ""
+    rows: [str] @ []
 
     for t in tokens
         if !source.is_root(s, t.span.start)
             continue
         found = source.locate(s, t.span.start)
         word = shown(t, s)
+        at = found.line.to_str() + ":" + found.col.to_str() + " " + token.kind_name(t.kind)
+        row: str @ at + "\n"
 
-        if word.len() == 0
-            out @ out + found.line.to_str() + ":" + found.col.to_str() + " " + token.kind_name(t.kind) + "\n"
-        else
-            out @ out + found.line.to_str() + ":" + found.col.to_str() + " " + token.kind_name(t.kind) + " " + word + "\n"
+        if word.len() > 0
+            row @ at + " " + word + "\n"
+        rows @ rows.push(row)
 
-    return out
+    return rows.join("")
 
 # Layout tokens carry no text, so printing their (empty) slice would
 # be noise.

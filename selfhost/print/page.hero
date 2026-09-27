@@ -44,11 +44,14 @@ use source
 use cursor
 use parse
 use print/owners
+use print/sheet
 
 ## The state
 
 record Fmt
-    out: str
+    # What has been printed, line by line (`print/sheet.hero`, defect 105):
+    # a `str` grown by `+` copied the page at every line.
+    printed: sheet.Sheet
     next_comment: i64
     last_line: i64
 
@@ -65,21 +68,20 @@ record Fmt
     lines: owners.Lines
 
 function blank_page() -> Fmt
-    return Fmt(out: "", next_comment: 0, last_line: 0, dropped: 0, moved: 0, lines: owners.none())
+    return Fmt(printed: sheet.empty(), next_comment: 0, last_line: 0, dropped: 0, moved: 0, lines: owners.none())
+
+# The page as one text, joined once.
+function whole(f: Fmt) -> str
+    return sheet.whole(f.printed)
 
 function put_line(@f: Fmt, indent: i64, text: str)
     if text.len() > 0
-        f.out @ f.out + " ".repeat(indent.to_u64().must()) + text
-    f.out @ f.out + "\n"
+        sheet.line(@f.printed, text: " ".repeat(indent.to_u64().must()) + text)
+    else
+        sheet.line(@f.printed, text: "")
 
 function blank_line(@f: Fmt)
-    if f.out.len() == 0
-        return
-    n = f.out.len()
-
-    if n >= 2 && f.out.slice(from: n - 2, to: n) == "\n\n"
-        return
-    f.out @ f.out + "\n"
+    sheet.blank(@f.printed)
 
 function trim_end(text: str) -> str
     cs = text.chars()
@@ -291,11 +293,7 @@ function trailing_comment(@f: Fmt, s: source.Source, comments: [token.Span], lin
     if source.line_of(s, span.start) != line
         return
     text = trim_end(source.span_text(s, span))
-    n = f.out.len()
-
-    if n > 0 && f.out.slice(from: n - 1, to: n) == "\n"
-        f.out @ f.out.slice(from: 0, to: n - 1)
-    f.out @ f.out + "  " + text + "\n"
+    sheet.after_last(@f.printed, text: "  " + text)
     f.next_comment @ f.next_comment + 1
 
 # A line printed from source line `line`: what the next walk measures from
@@ -355,7 +353,7 @@ test "a remark keeps its blank line where the re-parse would read a doc, and a d
     parsed = parse.parse(text)
     assert parsed.diagnostics.len() == 0
     s = source.new_source(name: "t.hero", text: text)
-    f: Fmt @ Fmt(out: "", next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: owners.none())
+    f: Fmt @ Fmt(printed: sheet.empty(), next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: owners.none())
     doc: [token.Span] @ []
 
     match parsed.decls[0].kind
@@ -364,13 +362,13 @@ test "a remark keeps its blank line where the re-parse would read a doc, and a d
 
     assert doc.len() == 1
     comments_above(@f, s, comments: parsed.comments, line: 5, indent: 4, doc: doc, takes_docs: true)
-    assert f.out == "    # a remark at column 0\n\n    # the doc of y\n"
+    assert whole(f) == "    # a remark at column 0\n\n    # the doc of y\n"
 
     # Under a head the first member takes no doc, so a remark needs no blank.
-    g: Fmt @ Fmt(out: "", next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: owners.none())
+    g: Fmt @ Fmt(printed: sheet.empty(), next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: owners.none())
     none: [token.Span] = []
     comments_above(@g, s, comments: parsed.comments, line: 4, indent: 4, doc: none, takes_docs: false)
-    assert g.out == "    # a remark at column 0\n"
+    assert whole(g) == "    # a remark at column 0\n"
 
 # Owners are read with the run rule: `# deeper` is after `x()` and no block
 # is open deeper than the body there, and `# at the file` after it keeps it
@@ -385,23 +383,23 @@ test "a comment after a block's last item is that block's where owners gives it 
     assert lines.owner[1] == 1
     assert lines.owner[2] == 0
     assert lines.owner[3] == owners.TRAILS
-    f: Fmt @ Fmt(out: "", next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: lines)
+    f: Fmt @ Fmt(printed: sheet.empty(), next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: lines)
     block_end(@f, s, parsed.comments, indent: 8)
-    assert f.out == ""
+    assert whole(f) == ""
     block_end(@f, s, parsed.comments, indent: 4)
-    assert f.out == "    # deeper\n\n    # at the body\n"
+    assert whole(f) == "    # deeper\n\n    # at the body\n"
     assert f.next_comment == 2
     assert after_a_comment(f, s, parsed.comments)
 
     # Nothing is a block's once code stands between, and a trailing note
     # is never a block's.
-    g: Fmt @ Fmt(out: "", next_comment: 2, last_line: 1, dropped: 0, moved: 0, lines: lines)
+    g: Fmt @ Fmt(printed: sheet.empty(), next_comment: 2, last_line: 1, dropped: 0, moved: 0, lines: lines)
     block_end(@g, s, parsed.comments, indent: 0)
-    assert g.out == ""
-    h: Fmt @ Fmt(out: "", next_comment: 3, last_line: 7, dropped: 0, moved: 0, lines: lines)
+    assert whole(g) == ""
+    h: Fmt @ Fmt(printed: sheet.empty(), next_comment: 3, last_line: 7, dropped: 0, moved: 0, lines: lines)
     block_end(@h, s, parsed.comments, indent: 0)
-    assert h.out == ""
-    trailed: Fmt @ Fmt(out: "", next_comment: 4, last_line: 8, dropped: 0, moved: 0, lines: lines)
+    assert whole(h) == ""
+    trailed: Fmt @ Fmt(printed: sheet.empty(), next_comment: 4, last_line: 8, dropped: 0, moved: 0, lines: lines)
     assert !after_a_comment(trailed, s, parsed.comments)
 
 # The regression of defect 096's first repair (the skeptic seat's
@@ -427,11 +425,11 @@ test "a comment printed after code written after it is recorded as moved, and on
     parsed = parse.parse(text)
     assert parsed.diagnostics.len() == 0
     s = source.new_source(name: "t.hero", text: text)
-    f: Fmt @ Fmt(out: "", next_comment: 0, last_line: 4, dropped: 0, moved: 0, lines: owners.none())
+    f: Fmt @ Fmt(printed: sheet.empty(), next_comment: 0, last_line: 4, dropped: 0, moved: 0, lines: owners.none())
     comments_before(@f, s, parsed.comments, line: 6, indent: 4)
     assert f.moved == 3
-    assert f.out == "    # inside\n    # after\n"
-    g: Fmt @ Fmt(out: "", next_comment: 1, last_line: 4, dropped: 0, moved: 0, lines: owners.none())
+    assert whole(f) == "    # inside\n    # after\n"
+    g: Fmt @ Fmt(printed: sheet.empty(), next_comment: 1, last_line: 4, dropped: 0, moved: 0, lines: owners.none())
     comments_before(@g, s, parsed.comments, line: 6, indent: 4)
     assert g.moved == 0
 
@@ -442,6 +440,6 @@ test "a comment printed after code written after it is recorded as moved, and on
     h: Fmt @ blank_page()
     put_line(@h, indent: 4, text: "if c")
     opened(@h, st, pt.comments, line: 2)
-    assert h.out == "    if c  # note\n"
+    assert whole(h) == "    if c  # note\n"
     assert h.last_line == 2
     assert h.next_comment == 1

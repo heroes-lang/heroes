@@ -187,17 +187,17 @@ function finish(w: Writer) -> str
 # name would otherwise end the directive early — and on Windows-style
 # paths the backslash is the separator, so this is not hypothetical.
 function escaped_path(path: str) -> str
-    out: str @ ""
+    parts: [str] @ []
 
     for ch in path.chars()
         if ch == "\""
-            out @ out + "\\\""
+            parts @ parts.push("\\\"")
         else if ch == "\\"
-            out @ out + "\\\\"
+            parts @ parts.push("\\\\")
         else
-            out @ out + ch
+            parts @ parts.push(ch)
 
-    return out
+    return parts.join("")
 
 # Point the next line at whichever source a span actually came from.
 # Every caller that has a span and a Source goes through here rather
