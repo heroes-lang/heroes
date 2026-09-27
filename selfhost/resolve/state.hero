@@ -232,7 +232,7 @@ function top_visible(r: Resolver, name: str) -> i64?
 #
 # ORDER: ascending, because `not_a_module` prints it and a golden reads it.
 function used_modules(r: Resolver) -> [str]
-    named = r.out.module_uses[r.module]
+    named = resolved.bindings_of(r.out, from: r.module)
 
     if named.is_err()
         return []
