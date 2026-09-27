@@ -31,6 +31,7 @@ use ir/build
 use ir/questions
 use ir/emissions
 use ir/flatten
+use ir/owned_release
 use parse
 use resolve
 use checker
@@ -41,6 +42,7 @@ use checker
 # declines to ask.
 function lower(a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> containers.Lowered
     b: build.Lowering @ build.new_lowering(r, unit: table.unit_ty(c.types))
+    b.validated @ owned_release.library_validated(decls, s)
     index: i64 @ 0
 
     while index < decls.len()

@@ -35,7 +35,7 @@ use check/table
 use check/state
 use ir
 use ir/containers
-use ir/build
+use ir/flow
 use ir/inout
 use ir/uses
 use ir/values
@@ -104,7 +104,7 @@ function check_terminator(f: containers.Function, blk: containers.Block, at: str
         problems @ problems.push(at + "no terminator")
         return
 
-    for target in build.successors(blk.term)
+    for target in flow.successors(blk.term)
         if target >= f.blocks.len()
             problems @ problems.push(at + "jumps to bb" + target.to_str() + ", which does not exist")
 
@@ -124,7 +124,7 @@ function check_preds(f: containers.Function, index: i64, blk: containers.Block, 
     for candidate in f.blocks
         jumps_here: bool @ false
 
-        for target in build.successors(candidate.term)
+        for target in flow.successors(candidate.term)
             if target == index
                 jumps_here @ true
 
