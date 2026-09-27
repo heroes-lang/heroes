@@ -87,6 +87,12 @@ record Checked
     # One entry per interned type: does a value of it own a reference the
     # compiler must count. Built by the counted pass after checking.
     counted: [bool]
+    # Every `owned <freer>` mark of the program, by the name it gives
+    # (`check/freer.hero`'s `marks`). Built once by the driver before any
+    # body is checked, and asked at every call to a declared function and
+    # by the extern probes, each of which read every declaration of the
+    # program until defect 111.
+    freers: {str: token.Span}
     diagnostics: [diag.Diagnostic]
 
 # The type of a local, by its index. The hole report reads it to print
@@ -154,6 +160,7 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
     type_order: [i64] = []
     instantiations: {i64: [i64]} = {}
     counted: [bool] = []
+    freers: {str: token.Span} = {}
     diagnostics: [diag.Diagnostic] = []
     out = Checked(
         types: types,
@@ -165,6 +172,7 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
         type_order: type_order,
         instantiations: instantiations,
         counted: counted,
+        freers: freers,
         diagnostics: diagnostics
     )
     locals_by_span: {i64: i64} @ {}
