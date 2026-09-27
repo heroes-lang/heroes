@@ -1,0 +1,139 @@
+# Whether a value `fmt` prints with no bracket of the page open around it
+# needs a group to keep its comments (defect 107; design.md §4.15, *a long
+# expression is broken inside parentheses or not at all*). Split out of
+# `print/brackets.hero`, which asks it and which it does not call back.
+#
+# THE SHAPE. Where the only bracket around a comment is the author's
+# parentheses, and `fmt` drops them, the line break the comment asks for
+# lands at the statement's depth: `y = (xs.  # c` over `len())` was printed
+# `y = xs.  # c` over an indented `len()`, which does not parse, and `fmt`
+# refused at exit 2. A value's own brackets, an argument list, an array,
+# a group `fmt` opens for a comment after an operator, all hold their
+# breaks; what does not is a break in the one-line text (`breaks.lead`)
+# outside every bracket of that text, and the break between a receiver and
+# its `.name(`.
+#
+# THE RULE, read by `brackets.spread` at every value no bracket of the page
+# holds: where this says yes, the value is printed as a group, inside the
+# author's innermost pair around it, or inside `fmt`'s own parentheses where
+# the author wrote none (a line continued at the statement's own margin).
+# The pairs outside the innermost are dropped, as `fmt` drops every pair
+# that binds nothing: no comment stands between them, since one there opens
+# its pair first (`around.just_inside`). A part of the value printed by a
+# spread of its own asks the same question there, so a part with the
+# author's parentheses around it keeps those, the nearest ones to the
+# comment, and only a part with none leaves its break to the value around
+# it.
+#
+# THIS MIRRORS `spread`'s DISPATCH, and it has to: each branch below is the
+# branch `spread` or `part` takes for the same value, and says whether that
+# branch breaks a line outside a bracket it prints. A branch that disagrees
+# is loud in one of two ways, never silent: a group `fmt` did not need,
+# which the tree-identity run over the whole tree shows, or the break at the
+# statement's depth, which the output guard refuses at exit 2.
+
+use token
+use print/page
+use print/parens
+use print/elements
+use print/around
+use print/breaks
+
+# Does the value at `value`, placed by `at` with no bracket of the page
+# open around it, break a line for a comment where no bracket it prints
+# is open?
+function needs_group(f: page.Fmt, c: elements.Code, value: i64, at: around.Place) -> bool
+    span = elements.extent(c, id: value)
+
+    if !elements.holds(f, c, from: span.start, to: span.end)
+        return false
+
+    # A comment just inside a pair of the author's opens that pair already.
+    for pair in around.untaken(c, span: c.tree.exprs[value].span, taken: at.taken)
+        if around.just_inside(f, c, pair: pair, span: span)
+            return false
+
+    shape = elements.bracket(c, value: value)
+
+    if !shape.is_err()
+        b = shape.must()
+
+        # Every comment before the bracket, none inside it: the one-line text.
+        if !at.open && elements.holds(f, c, from: b.seam, to: b.from) && !elements.waits(f, c, span: token.Span(start: b.from, end: b.to))
+            return one_line(f, c, value: value, needed: at.needed)
+
+        # Opened: the callee or receiver, printed before the bracket opens,
+        # and the break between it and the bracket, which is outside it.
+        if b.before >= 0 && part_needs(f, c, value: b.before, needed: parens.POSTFIX_POWER)
+            return true
+        return b.seam >= 0 && elements.waits(f, c, span: token.Span(start: b.seam, end: b.from))
+
+    # `render`'s own parentheses around the value hold every break in it.
+    if parens.needs_parens(c.tree, id: value, needed: at.needed)
+        return false
+
+    match c.tree.exprs[value].kind
+        .binary bin =>
+            mine = parens.power(c.tree, value)
+
+            if elements.alone(f, c, value: value, within: bin.right)
+                return part_needs(f, c, value: bin.right, needed: mine + 1)
+
+            if elements.alone(f, c, value: value, within: bin.left)
+                return part_needs(f, c, value: bin.left, needed: mine)
+
+            # A comment after an operator, or in both operands: `fmt`'s group.
+            return false
+        .field fl =>
+            if elements.alone(f, c, value: value, within: fl.base)
+                return part_needs(f, c, value: fl.base, needed: parens.POSTFIX_POWER)
+        .field_name fl =>
+            if elements.alone(f, c, value: value, within: fl.base)
+                return part_needs(f, c, value: fl.base, needed: parens.POSTFIX_POWER)
+        .index ix =>
+            if elements.alone(f, c, value: value, within: ix.base)
+                return part_needs(f, c, value: ix.base, needed: parens.POSTFIX_POWER)
+        .try_expr t =>
+            if elements.alone(f, c, value: value, within: t.value)
+                return part_needs(f, c, value: t.value, needed: parens.POSTFIX_POWER)
+        .unary u =>
+            sign = elements.inner(c, value: value, within: u.operand).start
+
+            # A comment after the operator: `fmt`'s group, the operator its lead.
+            if elements.holds(f, c, from: c.tree.exprs[value].span.start, to: sign)
+                return false
+            return part_needs(f, c, value: u.operand, needed: parens.UNARY_POWER)
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return one_line(
+            f,
+            c,
+            value: value,
+            needed: at.needed
+        )
+        .name | .hole | .call | .method | .variant_case | .array | .map => return one_line(
+            f,
+            c,
+            value: value,
+            needed: at.needed
+        )
+        .if_expr | .match_expr | .error => return one_line(f, c, value: value, needed: at.needed)
+
+    # A base holding a comment with another after it: the one-line text.
+    return one_line(f, c, value: value, needed: at.needed)
+
+# A part a spread of its own prints: where the author's parentheses are
+# around it, that spread keeps them if it needs them, so only a part with
+# none can leave its break to the value around it.
+function part_needs(f: page.Fmt, c: elements.Code, value: i64, needed: i64) -> bool
+    if around.untaken(c, span: c.tree.exprs[value].span, taken: -1).len() > 0
+        return false
+    at = around.Place(needed: needed, open: false, taken: -1, all: false, enclosed: false)
+    return needs_group(f, c, value: value, at: at)
+
+# The value's one-line text broken at its comments (`around.one_line`):
+# inside `render`'s parentheses where it needs them, which hold every break,
+# and otherwise loose where a break lands outside every bracket of the text.
+function one_line(f: page.Fmt, c: elements.Code, value: i64, needed: i64) -> bool
+    if parens.needs_parens(c.tree, id: value, needed: needed)
+        return false
+    span = elements.extent(c, id: value)
+    return breaks.loose(f, c, text: parens.render(c.tree, c.s, id: value), from: span.start, to: span.end)
