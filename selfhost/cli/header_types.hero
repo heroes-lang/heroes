@@ -29,6 +29,7 @@
 # `emit/ffi_pointee.hero`'s marker, which is how the answer finds the
 # parameter.
 
+use bytes
 use emit/ffi_pointee
 use cli/pointee_ask
 
@@ -162,8 +163,11 @@ function last_star(text: str) -> i64?
 
     return fail(code: "none", msg: "no star")
 
+# `text` without `word` at its end. Asked of the bytes: a pointee named above
+# ASCII, `aébbbbbbb`, put the cut for `restrict` inside its `é` (found beside
+# defect 110, 2026-09-27).
 function strip_word(text: str, word: str) -> str
-    if text.len() >= word.len() && text.slice(from: text.len() - word.len(), to: text.len()) == word
+    if bytes.bytes_at(text: text, at: text.len() - word.len(), needle: word)
         return text.slice(from: 0, to: text.len() - word.len())
     return text
 
@@ -218,16 +222,19 @@ function types_of(json: str, wanted: [pointee_ask.Pointee]) -> {str: [str]}
 
     return out
 
-# Byte offset of `needle` in `text` at or after `from`, over bytes: the
-# dump is ASCII where it matters and the needles are ASCII entirely.
+# Byte offset of `needle` in `text` at or after `from`, over bytes. **The
+# dump is not ASCII where the author's header is not** (found beside defect
+# 110, 2026-09-27): this asked the first byte and then sliced, and a type
+# named above ASCII, `typedef int 漢;`, put the end of a candidate inside a
+# character, so `build` aborted on a binding `check` accepts. Every byte is
+# asked now, and nothing is cut until a match says where.
 function locate_text(text: str, needle: str, from: i64) -> i64?
     if needle.len() == 0 || from < 0
         return fail(code: "none", msg: "nothing to find")
     index: i64 @ from
-    first = needle[0]
 
     while index + needle.len() <= text.len()
-        if text[index] == first && text.slice(from: index, to: index + needle.len()) == needle
+        if bytes.bytes_at(text: text, at: index, needle: needle)
             return ok(index)
         index @ index + 1
 
@@ -261,6 +268,21 @@ test "what is pointed at: the text before the last star, restrict gone, by-value
     assert pointee_of("const int *").must() == "const int"
     assert pointee_of("char **restrict").must() == "char *"
     assert pointee_of("double").is_err()
+
+    # Names above ASCII, where the cut for `restrict` and a search's end fall
+    # inside a character.
+    assert pointee_of("aébbbbbbb *").must() == "aébbbbbbb"
+    assert pointee_of("漢 *restrict").must() == "漢"
+    assert pointee_of("€€€ *__restrict").must() == "€€€"
+    assert strip_word(text: "é", word: "restrict") == "é"
+
+test "the dump is searched by its bytes, and a type named above ASCII is read whole"
+    json = "{\"kind\": \"FunctionDecl\", \"name\": \"hero_ty_takes\", \"inner\": [{\"kind\": \"ParmVarDecl\", \"type\": {\"desugaredQualType\": \"int *\", \"qualType\": \"漢éé *\"}}]}\n{\"kind\": \"FunctionDecl\", \"name\": \"hero_ty_hero_file_read\", \"inner\": []}\n"
+    assert parameter_types(json: json, name: "takes") == ["漢éé *"]
+    assert parameter_types(json: json, name: "hero_file_read").len() == 0
+    assert locate_text(text: "é漢😀x", needle: "x", from: 0).must() == 9
+    assert locate_text(text: "é漢😀x", needle: "漢", from: 1).must() == 2
+    assert locate_text(text: "é漢😀x", needle: "\"", from: 0).is_err()
 
 test "the check unit asserts width and sign at the author's line, with the marker"
     wanted: [pointee_ask.Pointee] = [

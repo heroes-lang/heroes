@@ -101,6 +101,15 @@ function ends_closed(text: str) -> bool
 
 # The text a piece contributes, decoded: delimiters off, `{{` to `{`, and the
 # six escapes as a plain literal decodes them.
+#
+# **The text is cut only beside a brace** (defect 110). This walked the piece
+# byte by byte and sliced each byte out as a string of its own, so the first
+# byte of `é` was a slice that splits a character and `print(f"é {x}")`,
+# which the checker accepts, aborted the compiler at `build`. `{` is one byte
+# that is never inside another character's encoding (UTF-8 continuation bytes
+# are 128 to 191, and every lead byte above ASCII is 192 or more), so a run
+# between two doubled braces starts and ends on character boundaries whatever
+# the characters are, and it is copied whole rather than one byte at a time.
 function piece_text(text: str) -> str
     from: i64 @ 1
 
@@ -111,17 +120,18 @@ function piece_text(text: str) -> str
         return ""
     inner = text.slice(from: from, to: text.len() - 1)
     undoubled: [str] @ []
+    run: i64 @ 0
     at: i64 @ 0
 
     while at < inner.len()
         if inner[at] == '{' && at + 1 < inner.len() && inner[at + 1] == '{'
-            undoubled @ undoubled.push("{")
+            undoubled @ undoubled.push(inner.slice(from: run, to: at + 1))
             at @ at + 2
+            run @ at
         else
-            one = inner.slice(from: at, to: at + 1)
-            undoubled @ undoubled.push(one)
             at @ at + 1
 
+    undoubled @ undoubled.push(inner.slice(from: run, to: inner.len()))
     return escape.unescape("\"" + undoubled.join("") + "\"")
 
 ## Tests
@@ -138,6 +148,21 @@ test "a doubled brace is one brace, and an escape decodes as in a plain literal"
     assert piece_text("f\"{{x}}\"") == "{x}}"
     assert piece_text("f\"a\\tb {") == "a\tb "
     assert piece_text("}\\\"q\\\"\"") == "\"q\""
+
+test "a character above ASCII is copied whole before, after and between holes"
+    # Defect 110: the first byte of `é` was sliced out alone and the build aborted.
+    assert piece_text("f\"é {") == "é "
+    assert piece_text("} é\"") == " é"
+    assert piece_text("} → {") == " → "
+    assert piece_text("f\"😀\"") == "😀"
+    assert piece_text("f\"aé€😀z {") == "aé€😀z "
+
+test "a character above ASCII survives beside a doubled brace and an escape"
+    assert piece_text("f\"é{{€}}😀 {") == "é{€}}😀 "
+    assert piece_text("f\"{{é\"") == "{é"
+    assert piece_text("f\"é{{\"") == "é{"
+    assert piece_text("}\\té\\n€\\\\😀\"") == "\té\n€\\😀"
+    assert piece_text("f\"\\\"é\\\" {") == "\"é\" "
 
 test "the closing piece is the one that ends with the quote"
     assert ends_closed("} b\"")

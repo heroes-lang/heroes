@@ -52,6 +52,45 @@ function char_at(text: str, at: i64) -> str
         last @ text.len()
     return text.slice(from: at, to: last)
 
+# Whether `needle`'s bytes stand in `text` from byte `at`, asked a byte at a
+# time and never by slicing (found beside defect 110, 2026-09-27). The shape
+# it replaces, `text.slice(from: at, to: at + needle.len()) == needle` tried
+# at offset after offset, aborts with `string slice splits a character` the
+# first time an offset, or the end it adds, falls inside a character of more
+# than one byte, and a search over text holding one reaches such an offset
+# sooner or later. The first byte of a well-formed `needle` is never a
+# continuation byte, so a match starts on a character boundary, and from a
+# boundary the same bytes end on one: what a caller slices with the offset
+# is whole.
+function bytes_at(text: str, at: i64, needle: str) -> bool
+    if at < 0 || at + needle.len() > text.len()
+        return false
+    k: i64 @ 0
+
+    while k < needle.len()
+        if text[at + k] != needle[k]
+            return false
+        k @ k + 1
+
+    return true
+
+# The LAST occurrence of `needle` in `text`, as a byte offset, each offset
+# asked by its bytes. It lived in `check/builtins.hero` and sliced, so the
+# walk back from the end split the first character above ASCII it met, and
+# `x.must("é")` on a value that cannot fail aborted `check` instead of
+# saying so (found beside defect 110, 2026-09-27).
+function rfind(text: str, needle: str) -> i64?
+    if needle.len() == 0 || needle.len() > text.len()
+        return fail(code: "absent", msg: "nothing to find")
+    at: i64 @ text.len() - needle.len()
+
+    while at >= 0
+        if bytes_at(text: text, at: at, needle: needle)
+            return ok(at)
+        at @ at - 1
+
+    return fail(code: "absent", msg: "the needle never occurs")
+
 ## Tests
 
 test "a character is read by the width its first byte gives, and no further"
@@ -61,3 +100,32 @@ test "a character is read by the width its first byte gives, and no further"
     assert char_at("😀!", 0) == "😀"
     assert char_at("a\\tb", 1) == "\\"
     assert char_at("a\tb", 1) == "\t"
+
+test "a needle is found by its bytes at any offset, a character's middle included"
+    assert bytes_at(text: "a.must(", at: 1, needle: ".must(")
+    assert !bytes_at(text: "a.must(", at: 2, needle: ".must(")
+
+    # Every offset of text above ASCII is asked, the middles of `é`, `€` and
+    # `😀` among them, and only the true one answers yes.
+    text = "é€😀.x("
+    at: i64 @ 0
+
+    while at <= text.len()
+        assert bytes_at(text: text, at: at, needle: ".x(") == (at == 9)
+        at @ at + 1
+
+    assert bytes_at(text: text, at: 2, needle: "€")
+    assert bytes_at(text: text, at: 5, needle: "😀")
+    assert !bytes_at(text: text, at: 1, needle: "€")
+
+    # The edges: past the end, before the start, and the empty needle.
+    assert !bytes_at(text: "ab", at: 1, needle: "bc")
+    assert !bytes_at(text: "ab", at: -1, needle: "a")
+    assert bytes_at(text: "ab", at: 2, needle: "")
+
+test "the last occurrence is found by its bytes, past characters above ASCII"
+    assert rfind(text: "é.x(é.x(€", needle: ".x(").must() == 7
+    assert rfind(text: "x.must(", needle: ".must(").must() == 1
+    assert rfind(text: "😀", needle: ".x(").is_err()
+    assert rfind(text: "abc", needle: "").is_err()
+    assert rfind(text: "é€", needle: "€").must() == 2

@@ -22,6 +22,7 @@
 
 use token
 use ast
+use bytes
 use source
 use diag
 use resolved
@@ -405,7 +406,7 @@ function unwrapping_nothing(@c: state.Checker, s: source.Source, decls: [ast.Dec
     )
     text = source.span_text(s, span)
     suffix = "." + name + "("
-    at = rfind(haystack: text, needle: suffix)
+    at = bytes.rfind(text: text, needle: suffix)
 
     if !at.is_err() && text.len() > 0 && text[text.len() - 1] == ')'
         d.fixes @ d.fixes.push(
@@ -413,19 +414,6 @@ function unwrapping_nothing(@c: state.Checker, s: source.Source, decls: [ast.Dec
         )
     state.push_diagnostic(@c, d)
     return state.error_ty_of(c)
-
-# The LAST occurrence of `needle` in `haystack`, byte offset.
-function rfind(haystack: str, needle: str) -> i64?
-    if needle.len() == 0 || needle.len() > haystack.len()
-        return fail(code: "absent", msg: "nothing to find")
-    at: i64 @ haystack.len() - needle.len()
-
-    while at >= 0
-        if haystack.slice(from: at, to: at + needle.len()) == needle
-            return ok(at)
-        at @ at - 1
-
-    return fail(code: "absent", msg: "the needle never occurs")
 
 function arg_error(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, allowed: str, got: i64, span: token.Span) -> i64
     shown = state.show(c, s, decls, got)
@@ -532,6 +520,19 @@ test "must unwraps, and on a sure value offers the certain removal"
     mixed: [i64] = [maybe, str_id]
     assert !builtin_call(@c, s, d, name: "default", given: mixed, span: token.Span(start: 0, end: 8)).is_err()
     assert c.out.diagnostics[1].message == "expected `i64`, found `str`"
+
+test "the removal is found by its bytes, past characters above ASCII in the call"
+    # `5.default("é")` on a value that cannot fail aborted `check` here: the
+    # search for `.default(` sliced its way back through `é`.
+    c: state.Checker @ fresh()
+    s = plain_source("5.default(\"é€😀\")\n")
+    d: [ast.Decl] = []
+    int_id = table.int_ty_id(c.out.types)
+    str_id = table.str_ty(c.out.types)
+    sure: [i64] = [int_id, str_id]
+    assert !builtin_call(@c, s, d, name: "default", given: sure, span: token.Span(start: 0, end: 22)).is_err()
+    assert c.out.diagnostics[0].fixes.len() == 1
+    assert c.out.diagnostics[0].fixes[0].replacement == "5"
 
 test "an expectation is handed down where the ⇐-only forms need one"
     c: state.Checker @ fresh()
