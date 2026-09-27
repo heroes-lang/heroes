@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 5**
 
 - [ ] **104 — the spec says a NEWLINE inside brackets may fall between any two tokens, and the compiler refuses a break before an operator, a `:` or a `,`** | spec § 0 ends *Inside `(` `[` `{` a NEWLINE never ends a statement: where it separates, a production writes it; elsewhere it may fall between any two tokens*, but the lexer plants a terminator after a line-ending token inside brackets too (design.md §4.15, *terminators, which are inserted unchanged everywhere, brackets included*, which §4.9's one-element-per-line literals rely on), so `x = (1` then `+ 2)` is `expected_group_close`, while `x = (1 +` then `2)` checks clean; a reader who follows the spec writes a program the compiler refuses | `spec/heroes-spec.md:11-12` · `docs/design/design.md:1939-1946` · `selfhost/grammar_expr.hero:161` (`ends_the_expression`)
 
@@ -67,5 +67,49 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     on a large file takes minutes. The repair is owed at the class: every
     artifact a verb prints, measured on a ladder, not the two witnesses; and a
     check that fails if the slow spelling comes back where a check can read it.
+
+- [ ] **106 — inside a list whose elements a NEWLINE separates, a line that begins with `- b` is a new element, so a subtraction broken before its operator runs with one element too many** | the lexer ends the line after `a` (Go's last-token rule, design.md §4.15) and the literal's `Sep` takes that NEWLINE as a separator, so `xs = [a` / `- b]` is `[a, -b]` at exit 0; `[base * qty` / `- discount]` and `{1: 10` / `- 2: 20}` the same; PEP 8 and Black break BEFORE a binary operator, so a model's natural spelling compiles to a different program, and `heroes fmt` then prints the line as `-b`, erasing the space that showed the intent | `selfhost/grammar_expr.hero` (`separator`, `array_literal`, `map_literal`) · `docs/panel/180-a-line-inside-brackets-breaks-by-how-it-ends-and-a-list-refuses-a-subtraction-it-would-split.md`
+
+    **Origin:** panel 180, 2026-09-27: the llm-ergonomist's `deltas` column
+    and the historian's P1, run by the coordinator on the trunk's compiler at
+    `29ed5601` (`heroes run` prints 2 for each of `[a` / `- b]`,
+    `[base * qty` / `- discount]`, `[a` / `(b)]`, `[a` / `!b]`), mapped and
+    censused by the compiler-engineer: of the four tokens that both continue
+    a line and begin an element (`-`, `(`, `[`, `.`) only `-` is plausible
+    and silent, and none of the 1447 element lines in the tree begins with
+    one. The repair is the sitting's R2.
+
+    **Why it is a defect.** A plausible mistake that compiles to a different
+    program is the one class the thesis exists to refuse (design.md §1.4).
+
+- [ ] **107 — `heroes fmt` refuses a program with a comment after `.` or `::` where the only bracket is the author's parentheses, because it drops them and the line break lands at depth 0** | `y = (xs.  # c` / `len())` parses, and `fmt` exits 2 with *produced source that does not parse* (`expected_field_name`), the file untouched; the same for `(p.  # c` / `x)`, `(Point::  # c` / `x)`, `(a + (b.  # c` / `c))`, and for a variant case's leading `.`, a binary's operand, a unary's operand, a `return` value and an `if` condition (`indentation_jump`); inside any other enclosing bracket the same comment formats | `selfhost/print/breaks.hero` (`restored`) · `selfhost/print/around.hero` · `selfhost/print/groups.hero`
+
+    **Origin:** panel 180's compiler-engineer, 2026-09-27, reproducers in
+    `/Users/joseph/Temp/heroes-recovery-2026-09-26/panel-180/compiler-engineer/map/fmtdefect/`,
+    widened by the critic (five more members), re-run by the coordinator on
+    the trunk's compiler at `29ed5601`: `parse` exit 0 and `fmt` exit 2 on
+    ten shapes (`expected_field_name` on seven, `expected_field_name_after_colons`,
+    `expected_case_name`, `indentation_jump`), `fmt` exit 0 on the same
+    comment inside a call, an array, an index and a type. The neighbour of lane g's fifth round (defect 101's record, F1 to
+    F3), which kept the author's parentheses around a comment inside an
+    index and did not reach these.
+
+    **Why it is a defect.** A correct program has no canonical form (design.md
+    §4.15, *exactly one correct way to write any program*); the guard stops
+    the corruption, so it is a refusal and not a silent move.
+
+- [ ] **108 — a comment inside an `extern` member's releaser set becomes part of the next releaser's name** | `acquires h_close |  # either one` / `h_close_v2` fails `heroes check` with `unread_releaser` for `#eitheroneh_close_v2`: `releasers` splits the set's source text and drops only whitespace, and the same reading feeds the checker, the emitter and `fmt`; without the comment the program runs | `selfhost/handles.hero:191` (`releasers`)
+
+    **Origin:** panel 180's completeness critic, 2026-09-27, reproducer in
+    `/Users/joseph/Temp/heroes-recovery-2026-09-26/panel-180/critic/probes/releaser/`,
+    beside the compiler-engineer's `rel_pipe` shape; loud, not corrupting, as
+    far as the critic ran; re-run by the coordinator on the trunk's compiler
+    at `29ed5601`: `heroes check` exit 1 with that message, and the control
+    without the comment runs (*ended by h_close_v2*). The neighbour of panel
+    176's releaser set.
+
+    **Why it is a defect.** A comment changes a program's meaning, here into
+    a refusal naming a function nobody wrote; a comment must be inert
+    wherever the grammar lets it stand.
 
 *******************************************************************************
