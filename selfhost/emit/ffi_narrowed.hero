@@ -205,7 +205,7 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
         c,
         decls,
         f,
-        frees: !freer.marked_as_freer(decls, s, name: name).is_err()
+        frees: !freer.marked_as_freer(c.freers, name: name).is_err()
     )
 
     if parameters.is_err()
@@ -312,7 +312,7 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
     # declaration and pointing at it sends the reader to fix what is already
     # right. The line the author must change is the mark, so the caret goes
     # there and the message says which question is being asked.
-    mark = freer.marked_as_freer(decls, s, name: name)
+    mark = freer.marked_as_freer(c.freers, name: name)
 
     if !mark.is_err()
         bad: diag.Diagnostic @ diag.new_diagnostic(
