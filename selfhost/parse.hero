@@ -41,23 +41,36 @@ function parse(text: str) -> ParseOutput
 # its own text (lexer.lex's rule — the indent level and the open
 # brackets must not cross a file boundary), and the cursor told where
 # the author's text stops so no diagnostic anchors inside the library.
+#
+# **And every file PARSED as its own stream**, one cursor each, over the
+# tokens that end at that file's own eof (found beside defect 109,
+# 2026-09-27). One cursor over the joined stream let a declaration that a
+# file left open go on into the next file: its diagnostic landed in a file
+# the mistake is not in, the library's included, and a bodiless function
+# at a module's end took the next module's indented first lines as its
+# body and ran. The tree, the declarations and the uses are still one, in
+# load order, and the joined stream is still what every other reader gets.
 function parse_source(s: source.Source) -> ParseOutput
-    lexed = lexer.lex(s)
+    files = lexer.lex_files(s)
+    lexed = lexer.joined(s, files: files)
     comments: [token.Span] @ []
 
     for t in lexed.tokens
         if t.kind == .comment
             comments @ comments.push(t.span)
 
-    c: cursor.Cursor @ cursor.bounded_cursor(tokens: lexed.tokens, root_end: source_extent.root_end(s))
     a: ast.Ast @ ast.new_ast()
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []
-    decl.file(@c, @a, @decls, @uses, s.text)
     diagnostics: [diag.Diagnostic] @ lexed.diagnostics
+    bound = source_extent.root_end(s)
 
-    for d in c.diagnostics
-        diagnostics @ diagnostics.push(d)
+    for one in files
+        c: cursor.Cursor @ cursor.bounded_cursor(tokens: one.tokens, root_end: bound)
+        decl.file(@c, @a, @decls, @uses, s.text)
+
+        for d in c.diagnostics
+            diagnostics @ diagnostics.push(d)
 
     return ParseOutput(
         decls: decls,
@@ -98,6 +111,52 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
         tree: a,
         tokens: lexed.tokens
     )
+
+# Which file each diagnostic of a parse points into, in order.
+function files_of(s: source.Source, p: ParseOutput) -> [i64]
+    out: [i64] @ []
+
+    for d in p.diagnostics
+        out @ out.push(source.file_of(s, d.span.start))
+
+    return out
+
+test "a declaration a file leaves open is refused in that file, and the library's is not read"
+    s = source.with_library(name: "main.hero", user: "function main()\n", library: "function range()\n    return\n")
+    p = parse_source(s)
+    assert p.diagnostics.len() == 1
+    assert p.diagnostics[0].code == "missing_body"
+    assert files_of(s, p) == [0]
+    assert p.decls.len() == 1
+
+test "a module's first indented lines are not the body of the module before it"
+    # Two modules, each refused alone: before the repair the first one's
+    # bodiless `two` took the second one's first lines and the program ran.
+    inputs: [source.InputFile] = [
+        source.user_file(name: "a.hero", text: "function two() -> i64\n")
+        source.user_file(name: "b.hero", text: "    return 2\n\nfunction three() -> i64\n    return 3\n")
+    ]
+    s = source.from_files(inputs)
+    p = parse_source(s)
+    assert p.diagnostics.len() == 2
+    assert p.diagnostics[0].code == "missing_body"
+    assert p.diagnostics[1].code == "expected_declaration"
+    assert files_of(s, p) == [0, 1]
+    assert p.decls.len() == 1
+
+test "an empty file parses to nothing, before the library and between two modules"
+    s = source.with_library(name: "main.hero", user: "", library: "function range()\n    return\n")
+    p = parse_source(s)
+    assert p.diagnostics.len() == 0
+    assert p.decls.len() == 1
+    inputs: [source.InputFile] = [
+        source.user_file(name: "a.hero", text: "constant A: i64\n    1\n")
+        source.user_file(name: "b.hero", text: "")
+        source.user_file(name: "c.hero", text: "constant C: i64\n    3")
+    ]
+    three = parse_source(source.from_files(inputs))
+    assert three.diagnostics.len() == 0
+    assert three.decls.len() == 2
 
 test "text becomes a tree in one call, comments and all"
     text = "# a note\nconstant MAX: i64\n    64  # trailing\n"

@@ -1,0 +1,4 @@
+function one() -> i64
+    return 1
+
+function two() -> i64  #~v missing_body

@@ -121,23 +121,28 @@ function from_files(inputs: [InputFile]) -> Source
     newlines: i64 @ 0
 
     # The pieces are joined once (defect 105: `text @ text + input.text`
-    # copied the compilation so far at every file). `last` is the last piece
-    # holding a byte, whose last byte is the text's: read as the text's was,
-    # it fails the same way on a first file with no byte in it.
+    # copied the compilation so far at every file).
     pieces: [str] @ []
     size: i64 @ 0
-    last: str @ ""
+
+    # Whether the text so far ends inside a line: its last byte is not a
+    # newline. **A question about the bytes, answered only where a byte
+    # exists** (defect 109): this read the last byte of the last file, and a
+    # first file of zero bytes has none, so every verb that reads a program
+    # died with `string index out of range` before a token was lexed. A text
+    # with no byte in it ends no line, so nothing needs closing.
+    open: bool @ false
 
     for input in inputs
         if table.len() > 0
-            if last[last.len() - 1] != '\n'
+            if open
                 pieces @ pieces.push("\n")
                 size @ size + 1
                 newlines @ newlines + 1
             pieces @ pieces.push("\n")
             size @ size + 1
             newlines @ newlines + 1
-            last @ "\n"
+            open @ false
         entry = FileEntry(
             name: input.name,
             module: input.module,
@@ -151,7 +156,7 @@ function from_files(inputs: [InputFile]) -> Source
         size @ size + input.text.len()
 
         if input.text.len() > 0
-            last @ input.text
+            open @ input.text[input.text.len() - 1] != '\n'
         newlines @ newlines + newlines_in(input.text)
 
     whole = pieces.join("")
@@ -382,6 +387,51 @@ test "lines_before is the newline count of everything before the file"
 
     # And the numbers agree with what locate answers through them.
     assert file_line_of(s, s.files[2].start) == 1
+
+test "a first file with no byte in it ends no line, so the joiner alone follows it"
+    # Defect 109: an empty program panicked here in every verb that reads one.
+    s = with_library(name: "main.hero", user: "", library: "function range()\n    return\n")
+    assert s.files.len() == 2
+    assert s.files[1].start == 1
+    assert s.files[1].lines_before == 1
+    assert file_line_of(s, s.files[1].start) == 1
+    assert is_root(s, 0)
+    assert is_library(s, 1)
+    assert s.text == "\nfunction range()\n    return\n"
+
+test "an empty file between two others is joined like any other, whatever came before it"
+    inputs: [InputFile] = [
+        user_file(name: "a.hero", text: "constant A: i64\n    1")
+        user_file(name: "b.hero", text: "")
+        user_file(name: "c.hero", text: "constant C: i64\n    3\n")
+    ]
+    s = from_files(inputs)
+
+    # a.hero's 21 bytes, its closer, the joiner: b starts at 23 and holds
+    # nothing, so c follows one joiner later.
+    assert s.files[1].start == 23
+    assert s.files[2].start == 24
+    assert s.files[2].lines_before == 4
+    assert file_line_of(s, s.files[2].start) == 1
+    assert locate(s, s.files[2].start).file == "c.hero"
+
+test "files that are all empty are only their joiners, and a lone empty file is nothing"
+    inputs: [InputFile] = [
+        user_file(name: "a.hero", text: "")
+        user_file(name: "b.hero", text: "")
+        user_file(name: "c.hero", text: "")
+    ]
+    s = from_files(inputs)
+    assert s.text == "\n\n"
+    assert s.files[1].start == 1
+    assert s.files[2].start == 2
+    assert s.line_starts.len() == 3
+
+    alone = new_source(name: "x.hero", text: "")
+    assert alone.text == ""
+    assert alone.line_starts.len() == 1
+    assert line_col(alone, 0).line == 1
+    assert line_col(alone, 0).col == 1
 
 test "the column counts characters, not bytes"
     # `è` is two bytes; the caret after it must say column 3, not 4.

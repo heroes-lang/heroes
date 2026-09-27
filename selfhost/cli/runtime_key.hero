@@ -13,6 +13,8 @@
 # possible at all: Heroes refuses module cycles whatever the edge
 # carries, so a seam only exists where the arrows already point one way.
 
+use bytes
+
 # The runtime's whole contents — EVERY file, not the two entry points:
 # runtime.c is assembled from parts/, so hashing only the file clang
 # is handed would let a part be edited with the cached object still
@@ -52,31 +54,51 @@ function runtime_text(runtime: str) -> str?
 # Scanned by hand rather than through a split-and-search helper,
 # because this module is the toolchain's and may not `use` a text
 # module that would `use` it back — the language refuses module cycles
-# whatever the edge carries.
+# whatever the edge carries. `bytes` uses nothing, so it cannot.
+#
+# **Every question is asked of the bytes** (found beside defect 110,
+# 2026-09-27). The scan split the text into characters, counted a line in
+# characters against the head's length in bytes, and then sliced bytes:
+# a line of `runtime.c` whose tenth byte fell inside a character above
+# ASCII, an em dash in a comment at the wrong column, aborted every build
+# of every program, and so did a `#include` naming a file above ASCII.
+# The head and the quote are ASCII, so every cut made here is beside one.
 function included_names(text: str) -> [str]
     found: [str] @ []
     head = "#include \""
-    cs = text.chars()
     at: i64 @ 0
 
-    while at < cs.len()
+    while at < text.len()
         stop: i64 @ at
 
-        while stop < cs.len() && cs[stop] != "\n"
+        while stop < text.len() && text[stop] != '\n'
             stop @ stop + 1
 
-        if stop - at > head.len()
-            line = cs.slice(from: at, to: stop).join("")
+        if bytes.bytes_at(text: text, at: at, needle: head)
+            shut: i64 @ at + head.len()
 
-            if line.slice(from: 0, to: head.len()) == head
-                shut: i64 @ head.len()
+            while shut < stop && text[shut] != '"'
+                shut @ shut + 1
 
-                while shut < line.len() && line.slice(from: shut, to: shut + 1) != "\""
-                    shut @ shut + 1
-
-                if shut < line.len()
-                    found @ found.push(line.slice(from: head.len(), to: shut))
+            if shut < stop
+                found @ found.push(text.slice(from: at + head.len(), to: shut))
 
         at @ stop + 1
 
     return found
+
+## Tests
+
+test "the includes are read by their bytes, whatever a line holds above ASCII"
+    # The first line's tenth byte is inside an `é`, which aborted every build.
+    text = "// éééééééé\n#include \"parts/a.c\"\n  #include \"indented.c\"\n#include \"café.h\"\n#include <stdio.h>\n— one — two —\n#include \"never closed\n#include \"parts/b.c\""
+    assert included_names(text: text) == ["parts/a.c", "café.h", "parts/b.c"]
+    assert included_names(text: "").len() == 0
+    assert included_names(text: "#include \"").len() == 0
+
+test "the repository's own runtime names every part it includes"
+    names = included_names(text: read_file("runtime/runtime.c").must())
+    assert names.len() > 10
+
+    for name in names
+        assert !read_file("runtime/" + name).is_err()

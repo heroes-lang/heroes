@@ -1,0 +1,5 @@
+# Found beside defect 109, 2026-09-27: a file that ends inside its own last
+# declaration. The parser read on into the library appended after it, and
+# the missing body came back as `internal error: a diagnostic landed inside
+# the Heroes library` at exit 2, blaming the compiler for the author's file.
+function main()  #~v missing_body

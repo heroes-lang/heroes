@@ -23,6 +23,7 @@
 # `tests/harness/shell.hero` measured the same route on both compilers
 # (DESIGN-LOG:389).
 
+use bytes
 use cli/argv
 use cli/io
 use cli/table as cli_table
@@ -148,15 +149,13 @@ function with_slash(dir: str) -> str
 function parent_of(directory: str) -> str
     return modules.open_directory(directory.slice(from: 0, to: directory.len() - 1))
 
-# `.hero` at the end, byte-walked so a multibyte name neither matches nor
-# aborts.
+# `.hero` at the end, asked of the bytes so a multibyte name neither matches
+# nor aborts. **This comment said so while the code sliced** (found beside
+# defect 110, 2026-09-27): a file named `cafés.md` in the corpus put the cut
+# inside its `é`, and `heroes mutate` aborted before reading a program.
 function ends_hero(path: str) -> bool
     tail = ".hero"
-
-    if path.len() < tail.len()
-        return false
-
-    return path.slice(from: path.len() - tail.len(), to: path.len()) == tail
+    return bytes.bytes_at(text: path, at: path.len() - tail.len(), needle: tail)
 
 # Every program in the corpus must compile BEFORE anything is mutated. Every
 # offending file is listed rather than the first, because a corpus is usually
@@ -231,3 +230,12 @@ test "parent_of climbs one directory and ends above the top"
     assert with_slash("examples") == "examples/"
     assert with_slash("examples/") == "examples/"
     assert with_slash("") == ""
+
+test "a corpus file is a program by its last five bytes, whatever comes before them"
+    assert ends_hero("examples/a.hero")
+    assert ends_hero("café/é.hero")
+    assert !ends_hero("cafés.md")
+    assert !ends_hero("é.txt")
+    assert !ends_hero("😀")
+    assert !ends_hero(".her")
+    assert !ends_hero("")
