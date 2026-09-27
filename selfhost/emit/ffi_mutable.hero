@@ -23,6 +23,7 @@ use token
 use diag
 use check/state
 use check/freer as freer
+use check/freer_marks
 use check/render
 use ir/containers
 use emit/ctype
@@ -65,7 +66,7 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
         c,
         decls,
         f,
-        frees: !freer.marked_as_freer(c.freers, name: name).is_err()
+        frees: !freer_marks.marked_as_freer(c.freers, name: name).is_err()
     )
 
     if parameters.is_err()
