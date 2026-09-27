@@ -20,17 +20,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 *******************************************************************************
 **OPEN: 3**
 
-- [ ] **112 — emission is quadratic in the size of a function** | `emit/unread.assigned` scans every instruction of a function for each temporary it declares, so `build --emit-c` less `check` reads about 3.5, 7.7 and 19.7 s at 250, 500 and 1000 units of a generated program whose `main` makes one call per unit; the lowering's `ir/flatten.call` and `ir/owned_release.library_validated` lead the rest | `selfhost/emit/unread.hero:84` (`assigned`)
-
-    **Origin:** lane 105's agent, 2026-09-27 (2,196 of 6,633 samples of
-    `build --emit-c` at 1000 units in `assigned`); the ladder re-run by the
-    coordinator on the trunk's compiler at `2b1a1f24`, `build --emit-c` 4.01,
-    9.12 and 24.02 s user at 250, 500 and 1000 units against `check` 0.56,
-    1.45 and 4.31, at a load near 4.
-
-    **Why it is a defect.** The same shape as 111 in the back end: one pass
-    per temporary where one pass per function answers every temporary.
-
 - [ ] **114 — the emitted C zeroes every temporary of a function at its entry, so a lookup that returns early pays for every arm** | the emitter declares each temporary at the top of the C function with `= {0}`, and a `match` over a string of twenty arms declares them all: the emitted `h_keywords_keyword` zeroes 139 temporaries on every call to make 21 string comparisons, and on the default build line (plain `clang`, no optimisation, CLAUDE.md § Commands) every one is executed; `memset` was about a fifth of `fmt`'s samples after defect 105's repair | `selfhost/emit/` (the temporaries' declarations) · `seed/heroes.c` (`h_keywords_keyword`)
 
     **Origin:** lane 105's agent, 2026-09-27 (`memset` 240 of 1,113 samples
@@ -76,5 +65,19 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     rule reads as admitting it. Whether the repair refuses it, as design.md
     says, or design.md admits it, is what the lexer does: a panel path
     (CLAUDE.md § 4).
+
+- [ ] **118 — `fmt` accuses itself on a `match` arm continued at its own margin** | `.dot => a +` over `1` at the arm's own indentation, inside `y = match s`, is `check` 0 and prints 6 (defect 116's shape), and `heroes fmt` on it exits 2 with *`fmt` is not a fixpoint on its own output* and *this is a compiler bug*; the same shape after a `.` at a statement's margin, `y = xs.` over `len()`, formats at exit 0 to `y = xs.len(` over a `)` of its own | `selfhost/print/fmt.hero` · `selfhost/layout.hero` (`maybe_terminator`)
+
+    **Origin:** the coordinator, 2026-09-28, writing panel 181's brief on
+    defect 116: the seventeen shapes of that brief run through `fmt` with the
+    trunk's compiler built from the seed at `dfcac362`; five format at exit 0,
+    the arm exits 2.
+
+    **Why it is a defect, and why it has a number of its own.** A verb that
+    says *this is a compiler bug* is one, whatever the input's standing. If
+    panel 181 refuses the shape, the input stops parsing and this closes with
+    116; if it admits it, the formatter is owed a repair of its own, and a
+    defect hidden inside another's body would be forgotten by the route that
+    does not close it.
 
 *******************************************************************************
