@@ -1,0 +1,24 @@
+# Which blocks a terminator can reach: the one list the builder's
+# predecessors and the verifier's recomputation both read, so the two cannot
+# drift apart. Split out of `ir/build.hero` on 2026-09-27, when defect 112's
+# repair took that file past design.md §11's ~300 lines.
+
+use ir
+
+# Every block a terminator can reach. One function, so preds and the
+# terminators cannot drift apart — the verifier recomputes with this
+# same list.
+function successors(term: ir.Term) -> [i64]
+    out: [i64] @ []
+
+    match term
+        .jump j => out @ out.push(j.to)
+        .branch br =>
+            out @ out.push(br.then_to)
+            out @ out.push(br.else_to)
+        .switch_term sw =>
+            for c in sw.cases
+                out @ out.push(c)
+        .return_term | .unreachable | .open => return out
+
+    return out

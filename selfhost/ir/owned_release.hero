@@ -189,7 +189,7 @@ function result_or_release(@b: build.Lowering, c: state.Checked, s: source.Sourc
             span: span
         )
     freer_at = extern_named(decls, s, name: source.span_text(s, mark.must()))
-    validated_at = library_validated(decls, s)
+    validated_at = b.validated
 
     if freer_at.is_err() || validated_at.is_err()
         return emissions.emit_call(
@@ -254,7 +254,7 @@ function result_or_release(@b: build.Lowering, c: state.Checked, s: source.Sourc
 # line, so a lowering that invented a second opinion here would report a
 # program the frontend has already reported.
 function release_cells(@b: build.Lowering, c: state.Checked, s: source.Source, decls: [ast.Decl], at: i64, handed: inout.Args, span: token.Span)
-    validated_at = library_validated(decls, s)
+    validated_at = b.validated
 
     if validated_at.is_err()
         return

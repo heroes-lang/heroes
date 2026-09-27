@@ -23,6 +23,7 @@ use source
 use check/table
 use check/state
 use ir/build
+use ir/interning
 use ir/inout
 use ir/emissions
 use lex_interp
@@ -74,5 +75,5 @@ function rendered(@b: build.Lowering, c: state.Checked, value: i64, ty: i64, str
     )
 
 function literal(@b: build.Lowering, text: str, ty: i64, span: token.Span) -> i64
-    at = build.intern(@b, text)
+    at = interning.intern(@b, text)
     return build.emit(@b, op: .lit(value: .str_const(at: at)), ty: ty, span: span)
