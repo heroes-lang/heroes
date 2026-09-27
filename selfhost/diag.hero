@@ -83,7 +83,12 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # needs: the same compiler with §1 switched off. Every code traces to
 # a panel; machine_locked_path joined by panel 055's test — nothing
 # about the types is wrong, and C would take the program on exactly
-# one machine.
+# one machine. spaced_minus_element joined by panel 180 (2026-09-27, the
+# coordinator's ruling on a question the sitting did not ask): without it
+# `[a` / `- b]` still has a meaning, two elements, which is the silent
+# reading the rule exists to refuse, so the control arm reads it as a
+# language without the rule does. Its neighbour line_end_before_continuation
+# is not one: without it the program is refused all the same.
 function is_thesis_rule(d: Diagnostic) -> bool
     codes = [
         "unused_binding"
@@ -101,6 +106,7 @@ function is_thesis_rule(d: Diagnostic) -> bool
         "wrong_label"
         "declared_twice"
         "machine_locked_path"
+        "spaced_minus_element"
     ]
 
     for one in codes
@@ -133,4 +139,6 @@ test "a diagnostic starts empty and grows by mutation"
     assert u.kind == .unsupported_kind
     assert u.notes.len() == 0
     assert is_thesis_rule(new_diagnostic(code: "needs_label", message: "m", span: u.span))
+    assert is_thesis_rule(new_diagnostic(code: "spaced_minus_element", message: "m", span: u.span))
+    assert !is_thesis_rule(new_diagnostic(code: "line_end_before_continuation", message: "m", span: u.span))
     assert !is_thesis_rule(u)
