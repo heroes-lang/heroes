@@ -1,0 +1,21 @@
+# Two comments around the outer parenthesis in index brackets, one after the
+# `[` and one after the `(` (the third skeptic seat's `nf1`, and
+# `innermost.hero` with a comment after its `[`): the parentheses were
+# dropped and the second comment went to a line of its own, where the second
+# pass read it as one: no fixpoint, exit 2. The parentheses stay, and each
+# comment trails the token it follows.
+
+function f(ys: [i64], a: i64) -> i64
+    return ys[  # one
+        (  # two
+        a)]
+
+function g(xs: [i64], a: i64, b: i64, c: i64) -> i64
+    ys: [i64] @ xs
+    ys[  # after the bracket
+        (  # after the outer paren
+        (a + b) * c)] @ 1
+    return ys[0]
+
+function main()
+    print(f(ys: [1, 2], a: 0) + g(xs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], a: 1, b: 2, c: 3))

@@ -27,7 +27,9 @@ record Code
 # brackets, the elements, and its closing text. `from` and `to` are the
 # offsets of the two brackets, -1 for parentheses `fmt` adds, and `seam`
 # where the stretch before the opening one starts, the end of the callee or
-# receiver or a case's `.`: a comment there is between them.
+# receiver or a case's `.`: a comment there is between them. `keeps` says
+# the author's parentheses printed for a comment, inside which every pair of
+# theirs around the element is printed too.
 record Bracket
     before: i64
     open: str
@@ -38,6 +40,7 @@ record Bracket
     from: i64
     to: i64
     seam: i64
+    keeps: bool
 
 # One element of an opened bracket: a map's `key` (or -1), then `lead` (an
 # argument's name and `@`, a unary operator, a key's `: `), the value,
@@ -68,7 +71,8 @@ function bracket(c: Code, value: i64) -> Bracket?
         close: ")",
         from: span.start,
         to: span.end - 1,
-        seam: span.start
+        seam: span.start,
+        keeps: false
     )
 
     match c.tree.exprs[value].kind
@@ -131,7 +135,8 @@ function group(c: Code, value: i64, paren: token.Span?, split: bool) -> Bracket
         close: ")",
         from: -1,
         to: -1,
-        seam: -1
+        seam: -1,
+        keeps: false
     )
 
     if !paren.is_err()

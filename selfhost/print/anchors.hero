@@ -163,6 +163,26 @@ function keepable(s: source.Source, lines: owners.Lines, tree: ast.Ast, decls: [
                 out[shut] @ false
         i @ i + 1
 
+    # A variant case's empty `()`, which `fmt` drops as it drops `-> ()`:
+    # `.to_str()` on a list's next line is a case and no call, and read as
+    # kept tokens the streams parted and the guard refused it (the third
+    # seat's bracket-break generator, `examples/query/data/row.hero`).
+    for node in tree.exprs
+        match node.kind
+            .variant_case vc =>
+                name = owners.index_at(lines, offset: vc.name.start)
+                open = owners.code_after(lines, index: name)
+
+                if vc.args.len() == 0 && name >= 0 && open >= 0 && lines.tokens[open].kind == .lparen
+                    shut = owners.code_after(lines, index: open)
+
+                    if shut >= 0 && lines.pair[open] == shut
+                        out[open] @ false
+                        out[shut] @ false
+            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => out @ out
+            .name | .hole | .unary | .binary | .field | .field_name | .index               => out @ out
+            .call | .method | .array | .map | .try_expr | .if_expr | .match_expr | .error  => out @ out
+
     for decl in decls
         match decl.kind
             .function_decl fd =>
@@ -359,5 +379,10 @@ test "past the point where the kept streams part no comment is taken as kept, an
     folded = "function f()\n    x = 3\n    # c\n    print(x)\n"
     assert moved_line(original: grouped, moved: folded) == 3
     assert parting(one: ["a", "b"], other: ["a", "b"]) == -1
+
+    # A case's empty `()`, which `fmt` drops, is no move either.
+    cased = "function f() -> [i64]\n    return [.circle()  # c\n    ]\n"
+    bare = "function f() -> [i64]\n    return [.circle  # c\n    ]\n"
+    assert moved_line(original: cased, moved: bare) == 0
     assert parting(one: ["a", "b"], other: ["a"]) == 1
     assert parting(one: ["a", "b"], other: ["a", "c"]) == 1

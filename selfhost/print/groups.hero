@@ -111,6 +111,19 @@ function calls(lines: owners.Lines, index: i64) -> bool
         .tilde | .shl | .shr | .comment | .terminator | .indent | .dedent | .eof     => false
         .error                                                                       => false
 
+# The value at `span` with every one of the author's parentheses around
+# it or at its edges: where a statement's place begins and ends, a comment
+# before the `)` of `(x  # c` over `) @ a` being inside it (the third
+# skeptic seat's `pl1`).
+function whole(lines: owners.Lines, span: token.Span) -> token.Span
+    pairs = levels(lines, span: span)
+    inner = extent(lines, span: span)
+
+    if pairs.len() == 0
+        return inner
+    outer = around(lines, open: pairs[pairs.len() - 1])
+    return token.Span(start: outer.start, end: outer.end + 1)
+
 ## Tests
 
 # The parentheses of a call against a group's, a literal's own brackets
@@ -144,3 +157,12 @@ test "a value's extent takes the parentheses at its edges, and a list's next lin
     assert lines.tokens[call].kind == .lparen
     assert lines.ended[call]
     assert !calls(lines, index: call)
+
+# The third skeptic seat's `pl1`: a place begins and ends at its parentheses.
+test "a place's whole extent takes the parentheses around it"
+    text = "function f(a: i64) -> i64\n    x: i64 @ 0\n    (x  # c\n        ) @ a\n    return x\n"
+    s = source.new_source(name: "t.hero", text: text)
+    lines = owners.shape(s, lexed: lexer.lex_one(text).tokens, ignored: [], end: text.len())
+    place = whole(lines, span: token.Span(start: 46, end: 47))
+    assert place.start == 45
+    assert place.end == 62

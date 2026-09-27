@@ -1,7 +1,9 @@
 # A comment inside a type, which `fmt` printed on one line: the first repair
 # of defect 101 refused each at exit 2. The one-line type breaks after the
 # token the comment follows now, the rest going on four columns in: in a
-# parameter's type (`t1`), a local's (`t2`), and a field's (`t7`).
+# parameter's type (`t1`), a local's (`t2`), and a field's (`t7`). In a
+# signature, which is a block's head, eight columns further (defect 101's
+# fifth round, `continuations.hero`).
 
 function f(a: [  # inside a parameter's type
     i64]) -> i64

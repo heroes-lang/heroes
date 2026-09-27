@@ -1,0 +1,40 @@
+# A comment after the `.` of a type named from another module (the third
+# skeptic seat's `q2`), which the trunk refuses too: the type's text was its
+# source's, the comment inside it, so `fmt` printed the comment twice and
+# was no fixpoint, exit 2. A qualified type is its two names and the dot:
+# in a parameter, in a result, in a local's type, with a comment on a line
+# of its own, with one trailing the dot and one under it, and inside an
+# array parameter's type.
+
+use money
+
+function f(b: money.  # in a parameter
+        Balance) -> i64
+    return b.cents
+
+function g(n: i64) -> [money.  # in a result
+        Balance]
+    return [money.Balance(cents: n)]
+
+function h(n: i64) -> i64
+    xs: [money.  # in a local's type
+        Balance] @ g(n: n)
+    return xs.len()
+
+function own(b: money.
+        # on a line of its own after the dot (panel 179's walk.hero O5310)
+        Balance) -> i64
+    return b.cents
+
+function both(n: i64, b: money.  # trailing the dot (walk.hero B12115)
+        # and under it (B15239)
+        Balance) -> i64
+    return n + b.cents
+
+function many(bs: [money.  # in an array parameter (walk.hero T15913)
+        Balance], n: i64) -> i64
+    return bs.len() + n
+
+function main()
+    print(f(b: money.Balance(cents: 1)) + g(n: 2).len() + h(n: 3) + own(b: money.Balance(cents: 4)))
+    print(both(n: 5, b: money.Balance(cents: 6)) + many(bs: g(n: 7), n: 8))

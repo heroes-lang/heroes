@@ -406,5 +406,5 @@ test "a comment moved off the code it was written beside is refused, whichever p
     hits: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail(code: "none", msg: "no value"))]
     linv = argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_moved.hero"), program_args: [], flags: hits)
     assert run_fmt(path: "build/selftest_fmt_moved.hero", s: ls, inv: linv) == .ok_exit
-    kept = "function f(\n    a: i64,  # about a\n    b: i64\n) -> i64\n    return a + b\n"
+    kept = "function f(\n            a: i64,  # about a\n            b: i64\n        ) -> i64\n    return a + b\n"
     assert read_file("build/selftest_fmt_moved.hero").must() == kept

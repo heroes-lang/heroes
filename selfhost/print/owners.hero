@@ -273,23 +273,17 @@ function code_after(lines: Lines, index: i64) -> i64
         return -1
     return at
 
-# The comma after a value ending before offset `after`, where it stands on
-# a line of its own between two comments, one written between the value and
-# it and one trailing it (the second skeptic seat's `a: 1  # c` over
-# `,  # d`): one line cannot hold both, so the comma keeps its line. -1
-# otherwise, where it goes on the value's.
-function lone_comma(lines: Lines, s: source.Source, after: i64) -> i64
+# The comma after a value ending before offset `after`, where a comment is
+# written between the value and it: the comma keeps a line of its own after
+# the comment, which a comma moved up to the value would have crossed (the
+# second skeptic seat's `a: 1  # c` over `,  # d`, and the third's reader,
+# which counts a comma as a token both files have). -1 otherwise, where the
+# comma goes on the value's line.
+function lone_comma(lines: Lines, after: i64) -> i64
     last = index_at(lines, offset: after - 1)
     comma = code_after(lines, index: last)
 
     if last < 0 || comma < 0 || lines.tokens[comma].kind != .comma || comma == last + 1
-        return -1
-    next = comma + 1
-
-    if next >= lines.tokens.len() || lines.tokens[next].kind != .comment
-        return -1
-
-    if source.line_of(s, lines.tokens[next].span.start) != source.line_of(s, lines.tokens[comma].span.start)
         return -1
     return comma
 
@@ -334,12 +328,12 @@ test "a comment's owner says bracket or trails"
     assert lines.owner[1] == BRACKETED
 
 # The second skeptic seat's `a: 1  # c` over `,  # d` (e0e08d18): a comma
-# between two comments keeps its line, and one after a value alone does not.
-test "a comma between two comments is alone"
+# after a comment keeps its line, and one right after its value does not.
+test "a comma after a comment is alone"
     text = "function f(a: i64) -> [i64]\n    x = (a + 1) * 2\n    return [ok\n        (1), g(a: 1  # c\n        ,  # d\n        b: 2)]\n"
     s = source.new_source(name: "t.hero", text: text)
     lines = shape(s, lexed: lexer.lex_one(text).tokens, ignored: [], end: text.len())
-    comma = lone_comma(lines, s: s, after: 82)
+    comma = lone_comma(lines, after: 82)
     assert comma >= 0
     assert lines.tokens[comma].span.start == 96
-    assert lone_comma(lines, s: s, after: 47) == -1
+    assert lone_comma(lines, after: 47) == -1

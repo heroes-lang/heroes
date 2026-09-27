@@ -1,0 +1,36 @@
+# A comment just inside the author's parentheses with more inside them (panel
+# 179's compiler-engineer, whose Heroes port of the seats' bracket-break
+# generator found these over 83ac68c1): a unary operator's comment inside
+# such a group, where `fmt` added a group of its own that the second pass
+# read as the author's (no fixpoint, `parens.hero` T59); an argument's group
+# with a comment after its `(`, which the argument's lead took and moved
+# before the `(` (`parens.hero` T116); and a comment before the outer `)` of
+# two pairs in index brackets (`innermost.hero` T39, which the first form of
+# this round's repair already kept).
+
+function f(a: i64) -> i64
+    v = (  # after the paren
+        -  # a minus alone
+        a)
+    return v
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+function h(a: i64) -> i64
+    x = g(
+        a: (  # after the argument's paren
+            a +  # in an argument
+            1),
+        b: 2)
+    return x
+
+function k(xs: [i64], a: i64, b: i64, c: i64) -> i64
+    ys: [i64] @ xs
+    ys[(  # after the outer paren
+        (a + b) * c  # before the outer close
+    )] @ 1
+    return ys[0]
+
+function main()
+    print(f(a: 1) + h(a: 2) + k(xs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], a: 1, b: 2, c: 3))
