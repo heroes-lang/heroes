@@ -18,47 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 11**
-
-- [ ] **104 — the spec says a NEWLINE inside brackets may fall between any two tokens, and the compiler refuses a break before an operator, a `:` or a `,`** | spec § 0 ends *Inside `(` `[` `{` a NEWLINE never ends a statement: where it separates, a production writes it; elsewhere it may fall between any two tokens*, but the lexer plants a terminator after a line-ending token inside brackets too (design.md §4.15, *terminators, which are inserted unchanged everywhere, brackets included*, which §4.9's one-element-per-line literals rely on), so `x = (1` then `+ 2)` is `expected_group_close`, while `x = (1 +` then `2)` checks clean; a reader who follows the spec writes a program the compiler refuses | `spec/heroes-spec.md:11-12` · `docs/design/design.md:1939-1946` · `selfhost/grammar_expr.hero:161` (`ends_the_expression`)
-
-    **Origin:** panel 179's completeness critic, 2026-09-27, measuring which
-    variants of its seats' generators fail to parse; reproduced by the
-    coordinator the same night on the trunk's compiler at `fa813325`.
-    Searched `docs/`, `spec/` and the records for the sentence and for a
-    ruling on a break before an operator: the only other hit is the critic's
-    own report. The sentence entered the spec at `e497646a`, 2026-09-12,
-    M-stated-grammar step 4, and nothing has tested it since.
-
-    **The reproducers**, each a four- or six-line program, `heroes check` at
-    `fa813325`: `x = (1` / `+ 2)` exit 1, `expected_group_close`;
-    `print(f(a` / `: 1, b: 2))` exit 1, `expected_args_close`;
-    `xs = [1` / `, 2]` exit 1, `expected_expression`; `x = (1 +` / `2)` exit 0.
-
-    **Why it is a defect, and on which side.** The spec is the language as a
-    reader gets it, and this sentence tells the reader something the language
-    does not do; design.md, the source of truth, and the compiler agree with
-    each other, so the false party is the spec's sentence, not the parser.
-    CLAUDE.md § 12's *spec beats compiler* does not apply where the spec
-    contradicts design.md, which the spec only restates. The repair is the
-    sentence saying what is true, at a sitting, priced on the reader's
-    instrument; changing the lexer to allow a break before an operator would
-    reverse §4.15's deferral of Nim's continuation rule and is a different
-    question.
-
-- [ ] **106 — inside a list whose elements a NEWLINE separates, a line that begins with `- b` is a new element, so a subtraction broken before its operator runs with one element too many** | the lexer ends the line after `a` (Go's last-token rule, design.md §4.15) and the literal's `Sep` takes that NEWLINE as a separator, so `xs = [a` / `- b]` is `[a, -b]` at exit 0; `[base * qty` / `- discount]` and `{1: 10` / `- 2: 20}` the same; PEP 8 and Black break BEFORE a binary operator, so a model's natural spelling compiles to a different program, and `heroes fmt` then prints the line as `-b`, erasing the space that showed the intent | `selfhost/grammar_expr.hero` (`separator`, `array_literal`, `map_literal`) · `docs/panel/180-a-line-inside-brackets-breaks-by-how-it-ends-and-a-list-refuses-a-subtraction-it-would-split.md`
-
-    **Origin:** panel 180, 2026-09-27: the llm-ergonomist's `deltas` column
-    and the historian's P1, run by the coordinator on the trunk's compiler at
-    `29ed5601` (`heroes run` prints 2 for each of `[a` / `- b]`,
-    `[base * qty` / `- discount]`, `[a` / `(b)]`, `[a` / `!b]`), mapped and
-    censused by the compiler-engineer: of the four tokens that both continue
-    a line and begin an element (`-`, `(`, `[`, `.`) only `-` is plausible
-    and silent, and none of the 1447 element lines in the tree begins with
-    one. The repair is the sitting's R2.
-
-    **Why it is a defect.** A plausible mistake that compiles to a different
-    program is the one class the thesis exists to refuse (design.md §1.4).
+**OPEN: 8**
 
 - [ ] **107 — `heroes fmt` refuses a program with a comment after `.` or `::` where the only bracket is the author's parentheses, because it drops them and the line break lands at depth 0** | `y = (xs.  # c` / `len())` parses, and `fmt` exits 2 with *produced source that does not parse* (`expected_field_name`), the file untouched; the same for `(p.  # c` / `x)`, `(Point::  # c` / `x)`, `(a + (b.  # c` / `c))`, and for a variant case's leading `.`, a binary's operand, a unary's operand, a `return` value and an `if` condition (`indentation_jump`); inside any other enclosing bracket the same comment formats | `selfhost/print/breaks.hero` (`restored`) · `selfhost/print/around.hero` · `selfhost/print/groups.hero`
 
@@ -89,29 +49,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** A comment changes a program's meaning, here into
     a refusal naming a function nobody wrote; a comment must be inert
     wherever the grammar lets it stand.
-
-- [ ] **109 — every verb that reads a program panics on an empty file** | `heroes check`, `lex`, `parse` and `build` on a file of zero bytes exit 134 with `panic: string index out of range`: `source.from_files` reads the last byte of the first file, which has none; `fmt` exits 0 on the same file | `selfhost/source.hero:109` (`from_files`)
-
-    **Origin:** lane 105's agent, 2026-09-27, met it while repairing
-    `from_files` and kept it unchanged, the lane being a refactor; re-run by
-    the coordinator the same day on the trunk's compiler at `2b1a1f24`:
-    `check`, `lex`, `parse` and `build` exit 134, `fmt` exit 0.
-
-    **Why it is a defect.** The compiler must not crash on an input
-    (design.md §1.12); an empty file is a program with no `main`, and owes
-    the diagnostic any file without one gets, or a clean exit where the verb
-    has nothing to say.
-
-- [ ] **110 — building a program whose interpolated string holds a character above ASCII before a hole panics** | `print(f"é {x}")` is `check` 0, and `heroes build` or `run` exits 134 with `panic: string slice splits a character`: `lex_interp.piece_text` slices one byte of a two-byte character | `selfhost/lex_interp.hero:104` (`piece_text`)
-
-    **Origin:** lane 105's agent, 2026-09-27, kept unchanged in that
-    refactor; re-run by the coordinator on the trunk's compiler at
-    `2b1a1f24`: `check` exit 0, `run` exit 134. Beside defect 103's
-    `bytes.char_at`, which reads one character by its lead byte.
-
-    **Why it is a defect.** A program the checker accepts crashes the
-    compiler; the robustness goal (design.md §1.12) is the first thing it
-    breaks, and the spec lets a string hold any UTF-8.
 
 - [ ] **111 — `heroes check` is quadratic in a program's calls and declarations, and one scan is most of the compiler checking itself** | `check/freer.marked_as_freer` reads every declaration and every parameter of the program at every call to a user function, asking whether one names it as a freer, and `resolved.declare_top` copies a module's whole map of names at every declaration: `check` on generated programs of 250, 500 and 1000 units reads 0.56, 1.45 and 4.31 s user, and on `selfhost/main.hero` the scan dominates the profile | `selfhost/check/freer.hero:40` (`marked_as_freer`) · `selfhost/resolved.hero:302` (`declare_top`)
 
@@ -159,17 +96,33 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     guarantee the zeroing buys, every temporary initialised before any read,
     and moves the initialisation to where the temporary's life begins.
 
-- [ ] **115 — on Windows, the runtime's report of a dead C handle read inside C omits where in the page it was read** | `tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero` must abort saying `a dead C handle was used inside C, at offset 0x0`, and on the Windows box it says `a dead C handle was used inside C` with no offset, so the `run` suite reads 199 passed and 1 failed there; Linux x86-64, Linux arm64 and the Mac print the offset | `runtime/` (the Windows path of the poisoned page's fault handler) · the golden above
+- [ ] **116 — a statement continued at its own margin after a trailing operator compiles, where design.md says a long expression at depth zero is broken inside parentheses or not at all** | `y = a +` over `1` at the statement's own indentation is `check` 0 and prints 6: the lexer plants no terminator after `+` (Go's rule) and the same margin plants no indent, so the statement goes on; one level deeper it is refused; design.md §4.15 reads *at bracket depth zero every line's indentation is structural: a long expression is broken inside parentheses or not at all*, and *trailing-operator continuation at depth zero (Nim's rule) was considered and deferred* | `selfhost/layout.hero` (`is_line_ender`, `maybe_terminator`) · `docs/design/design.md` §4.15
 
-    **Origin:** the coordinator, 2026-09-27, running the `run` suite on the
-    Windows box for lane 105's merge (the trunk at `09acdabc`), and the same
-    golden run there on the trunk at `2b1a1f24`, before that merge: the same
-    text, so it is older than the lane. Panel 177, which landed the poisoned
-    page, records Windows as unrun for every row; the formatter lanes ran
-    only their own suites on the box.
+    **Origin:** lane B's agent, 2026-09-27, beside defect 107 (a comment on
+    its own line in such a continuation is refused by `fmt` at exit 2, since
+    the owner rule reads the continued line as a new logical line); searched
+    `docs/work/DEFECTS.md`, `docs/records/` and `docs/panel/` for *same
+    indentation*, *depth zero* and *Nim's rule* and found only panel 007's
+    deferral and panel 180's reports quoting it. Re-run by the coordinator on
+    the trunk at `f08b192d`: `y = a +` / `1` and `y = xs.` / `len()` at the
+    same margin, `check` 0 and `run` printing 6 and 2; the continuation one
+    level deeper, `check` 1.
 
-    **Why it is a defect.** A sentence the runtime owes is missing on one
-    platform, and the net is red there; the Windows exception record carries
-    the address a fault touched, so the offset can be said on every platform.
+    **Why it is a defect, and why it needs a sitting.** The compiler admits a
+    form the source of truth says was deferred; the spec's own last-token
+    rule reads as admitting it. Whether the repair refuses it, as design.md
+    says, or design.md admits it, is what the lexer does: a panel path
+    (CLAUDE.md § 4).
+
+- [ ] **117 — `heroes mutate <file>` says it cannot read a file it reads** | `heroes mutate examples/adventure/main.hero` answers `error: cannot read examples/adventure/main.hero` at exit 2: `mutate` takes a directory of programs (`no_corpus`), and the message names the wrong cause | `selfhost/cli/mutate.hero:86,99`
+
+    **Origin:** lane A's sweep of every verb on degenerate files, 2026-09-27,
+    where `mutate` on each of the 15 files read the same before and after the
+    repair of defect 109; re-run by the coordinator on a real program on the
+    trunk at `f08b192d`.
+
+    **Why it is a defect.** A diagnostic carries what is needed to fix the
+    program without opening another file (design.md §4.17), and this one sends
+    the reader to look for a permission or a missing file that is not there.
 
 *******************************************************************************
