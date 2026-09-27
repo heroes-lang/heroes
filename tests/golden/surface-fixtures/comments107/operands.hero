@@ -1,0 +1,54 @@
+# Defect 107 inside a larger value: the author's parentheses around a
+# binary's left or right operand, a unary's operand, a value a member is
+# read from, the base of a `?`, a sum's inner operand, a pair inside a pair
+# around a sum, a method whose arguments hold a comment too, two dots, and
+# the part before a control form. The pair kept is the innermost around the
+# comment: in `(1 + (p.  # c` over `x))` it is the one around `p.x`, and the
+# outer, which binds nothing, is dropped as `fmt` drops every such pair. An
+# element of an array holds its break already and keeps its old form.
+
+record Point
+    x: i64
+    y: i64
+
+function first(xs: [i64]) -> i64?
+    if xs.len() == 0
+        return fail(code: "empty", msg: "no first element")
+    return ok(xs[0])
+
+function tried(xs: [i64]) -> i64?
+    v = (xs.  # a try's value
+        first())?
+    return ok(v)
+
+function main()
+    xs = [1, 2, 3]
+    p = Point(x: 4, y: 5)
+    a = (xs.  # a left operand
+        len()) * 2
+    b = 2 * (p.  # a right operand
+        x)
+    c = -(p.  # a unary's operand
+        y)
+    d = (p.  # a member of the group
+        x).to_str()
+    e = [(xs.  # an element's, which the array holds
+        len())][0]
+    f = 1 + (xs.  # the inner of a sum
+        len())
+    g = (1 + (p.  # a pair inside a pair
+        x))
+    h = (xs.  # a method with arguments after the dot
+        slice(from: 0,  # and one inside them
+        to: 2)).len()
+    i = (p.  # two dots
+        x.to_str().  # the second
+        len())
+    k = true
+    j = (p.  # before a control form
+        y) + if k
+        1
+    else
+        2
+    print(a + b + c + e + f + g + h + i + j + tried(xs: xs).must())
+    print(d)

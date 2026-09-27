@@ -181,6 +181,15 @@ function group(c: Code, value: i64, paren: token.Span?, split: bool) -> Bracket
 
     return b
 
+# The author's `pair` around a value, kept for a comment and printed as a
+# group of one element, inside which every pair of theirs around the value
+# is kept too (`keeps`); `innermost` where no pair of theirs is inside it,
+# so a binary's operands may be the elements instead.
+function kept(f: page.Fmt, c: Code, value: i64, pair: token.Span, innermost: bool) -> Bracket
+    b: Bracket @ group(c, value: value, paren: ok(pair), split: splits(f, c, value: value) && innermost)
+    b.keeps @ true
+    return b
+
 # An element whose `lead`, written from `from`, is printed before its
 # value, with a comment between them: a unary operator and its operand.
 function led(c: Code, value: i64, lead: str, from: i64) -> Element

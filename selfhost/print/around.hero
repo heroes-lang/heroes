@@ -21,12 +21,16 @@ use print/breaks
 # `needed`, opened even with no comment inside when `open`, and inside the
 # author's parentheses opening at `taken`, which a group has printed
 # already (-1 for none): only those inside it are the value's to print, and
-# where `all`, every one of them is (`brackets.spread`).
+# where `all`, every one of them is (`brackets.spread`). `enclosed` says a
+# bracket of the page is open around it, one printed or a `(` in the head:
+# a line broken inside the value then stays inside that bracket, where
+# without one it stands at the statement's depth (defect 107).
 record Place
     needed: i64
     open: bool
     taken: i64
     all: bool
+    enclosed: bool
 
 # Where a value's statement ends: the author's outermost `)` around it, or
 # its own end. A comment before that is inside the value.

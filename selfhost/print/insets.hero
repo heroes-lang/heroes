@@ -1,0 +1,86 @@
+# Where a comment stands inside a releaser set, for the output guard
+# (`print/anchors.hero`; design.md §4.15, spec § 13). The guard compares
+# the tokens `fmt` keeps on either side of each comment and leaves a
+# parameter's and a result's marks out of them, because `fmt` prints the
+# marks in the grammar's order whatever order they were written in. So a
+# comment inside a set, `acquires h_close |  # either one` over
+# `h_close_v2`, had nothing the guard compares between it and the
+# parameter's type, and a printer that moved it past the set's last name
+# would have passed at exit 0 (defect 108, 2026-09-27).
+#
+# What this module gives the guard instead is a place a reordering cannot
+# change: the word whose set holds the comment, and how many of that set's
+# tokens, names and `|`, stand before it. `fmt` moves a whole set when it
+# reorders the words, so the place moves with it, and a comment moved within
+# the set is seen. Read from the tree's own spans of the sets, never from
+# the words' text, so a releaser that happens to be named like a word is
+# still a name. Split out of `anchors.hero` for §11's 300 lines.
+
+use ast
+use token
+use source
+use parse
+use print/owners
+
+# One entry per comment of the file, in order: `"<word> <count>"` for one
+# inside a set, the empty text for every other.
+function in_sets(lines: owners.Lines, decls: [ast.Decl]) -> [str]
+    out: [str] @ []
+    ordinal: [i64] @ []
+
+    for t in lines.tokens
+        if t.kind == .comment
+            ordinal @ ordinal.push(out.len())
+            out @ out.push("")
+        else
+            ordinal @ ordinal.push(-1)
+
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                for p in fd.value.params
+                    mark(@out, lines, ordinal, word: "transfers", set: p.transfers)
+                    mark(@out, lines, ordinal, word: "acquires", set: p.acquires)
+                    mark(@out, lines, ordinal, word: "retains", set: p.retains)
+
+                mark(@out, lines, ordinal, word: "acquires", set: fd.value.acquires_result)
+                mark(@out, lines, ordinal, word: "retains", set: fd.value.retains_result)
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return out
+
+# The comments strictly inside one set, each given its place.
+function mark(@out: [str], lines: owners.Lines, ordinal: [i64], word: str, set: token.Span?)
+    if set.is_err()
+        return
+    span = set.must()
+    at: i64 @ owners.index_at(lines, offset: span.start)
+
+    if at < 0
+        return
+    count: i64 @ 0
+
+    while at < lines.tokens.len() && lines.tokens[at].span.start < span.end
+        if lines.tokens[at].kind == .comment
+            out[ordinal[at]] @ word + " " + count.to_str()
+        else
+            count @ count + 1
+        at @ at + 1
+
+## Tests
+
+function places_of(text: str) -> [str]
+    parsed = parse.parse(text)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: text)
+    lines = owners.shape(s, lexed: parsed.tokens, ignored: [], end: text.len())
+    return in_sets(lines, decls: parsed.decls)
+
+test "a comment inside a set is placed by its word and the set's tokens before it, and any other by nothing"
+    head = "extern \"h.h\"\n    record H tag hh\n"
+    after_bar = head + "    function f(@out: H acquires a |  # c\n        b, n: i64)  # d\n"
+    assert places_of(after_bar) == ["acquires 2", ""]
+    past_name = head + "    function f(@out: H acquires a | b  # c\n        , n: i64)\n"
+    assert places_of(past_name) == [""]
+    own_line = head + "    function f(x: H transfers a |\n        # c\n        b | c,  # d\n        y: H retains e |  # g\n        f)\n"
+    assert places_of(own_line) == ["transfers 2", "", "retains 2"]

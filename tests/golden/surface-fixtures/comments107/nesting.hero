@@ -1,0 +1,21 @@
+# Defect 107 with several of the author's pairs around one value, and the
+# same value inside a call. Two or three pairs around the value keep the
+# innermost, the others binding nothing: no comment stands between them,
+# since one there opens its own pair first (`around.just_inside`). Inside a
+# call's parentheses the break is held already, and the form is the one the
+# trunk printed.
+
+record Point
+    x: i64
+    y: i64
+
+function main()
+    xs = [1, 2, 3]
+    p = Point(x: 4, y: 5)
+    a = ((xs.  # two pairs
+        len()))
+    b = (((p.  # three pairs
+        x)))
+    print((xs.  # inside a call, which holds the break already
+        len()))
+    print(a + b)
