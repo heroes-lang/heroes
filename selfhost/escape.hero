@@ -108,31 +108,32 @@ function unescape(text: str) -> str
         return ""
     inner = text.slice(from: 1, to: text.len() - 1)
     cs = inner.chars()
-    out: str @ ""
+    parts: [str] @ []
     i: i64 @ 0
 
     while i < cs.len()
         c = cs[i]
 
         if c != "\\"
-            out @ out + c
+            parts @ parts.push(c)
             i @ i + 1
             continue
 
         if i + 1 >= cs.len()
-            out @ out + "\\"
+            parts @ parts.push("\\")
             i @ i + 1
             continue
         decoded = escape_text(cs[i + 1], ctx)
 
         if decoded.is_err()
-            out @ out + "\\"
+            parts @ parts.push("\\")
             i @ i + 1
             continue
-        out @ out + decoded.must()
+        one = decoded.must()
+        parts @ parts.push(one)
         i @ i + 2
 
-    return out
+    return parts.join("")
 
 test "the six escapes decode and the split is by context"
     assert unescape("\"a\\nb\"") == "a\nb"

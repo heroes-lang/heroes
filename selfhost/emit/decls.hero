@@ -193,27 +193,44 @@ function live_strings(p: containers.Program, target: BuildTarget, s: source.Sour
 # everything non-printable, because \xNN in C has no length limit and
 # would swallow a following hex digit.
 function escape_c(text: str) -> str
-    out: str @ ""
+    # The runs between two escapes go through whole, one slice each (defect
+    # 105): a run holds printable ASCII only, so it starts and ends on a
+    # character's edge, and an escaped byte of a longer character is never
+    # the edge of a slice.
+    parts: [str] @ []
+    plain: i64 @ 0
     i: i64 @ 0
 
     while i < text.len()
         byte = text[i]
+        escape: str @ ""
 
         if byte == '"'
-            out @ out + "\\\""
+            escape @ "\\\""
         else if byte == '\\'
-            out @ out + "\\\\"
+            escape @ "\\\\"
         else if byte == '\n'
-            out @ out + "\\n"
+            escape @ "\\n"
         else if byte == '\t'
-            out @ out + "\\t"
-        else if byte >= ' ' && byte <= '~'
-            out @ out + text.slice(from: i, to: i + 1)
-        else
-            out @ out + "\\" + octal3(byte.to_i64().must())
+            escape @ "\\t"
+        else if byte < ' ' || byte > '~'
+            escape @ "\\" + octal3(byte.to_i64().must())
+
+        if escape.len() > 0
+            if i > plain
+                run = text.slice(from: plain, to: i)
+                parts @ parts.push(run)
+            parts @ parts.push(escape)
+            plain @ i + 1
         i @ i + 1
 
-    return out
+    if plain == 0
+        return text
+
+    if plain < text.len()
+        rest = text.slice(from: plain, to: text.len())
+        parts @ parts.push(rest)
+    return parts.join("")
 
 function octal3(code: i64) -> str
     digits = "01234567"

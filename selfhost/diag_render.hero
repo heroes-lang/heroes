@@ -27,24 +27,26 @@ function render(d: diag.Diagnostic, s: source.Source) -> str
     # find in it.
     found = source.locate(s, d.span.start)
     absolute = source.line_of(s, d.span.start)
-    out: str @ diag.word(d.kind) + "[" + d.code + "]: " + d.message + "\n  at " + found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + "\n"
+    rows: [str] @ [
+        diag.word(d.kind) + "[" + d.code + "]: " + d.message + "\n  at " + found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + "\n"
+    ]
     number = found.line.to_str()
     gutter = " ".repeat(number.chars().len().to_u64().must())
-    out @ out + "  " + gutter + " |\n"
-    out @ out + "  " + number + " | " + source_line(s, line: absolute) + "\n"
-    out @ out + "  " + gutter + " | " + caret(s, d, col: found.col) + "\n"
+    rows @ rows.push("  " + gutter + " |\n")
+    rows @ rows.push("  " + number + " | " + source_line(s, line: absolute) + "\n")
+    rows @ rows.push("  " + gutter + " | " + caret(s, d, col: found.col) + "\n")
 
     for note in d.notes
-        out @ out + "  note: " + note + "\n"
+        rows @ rows.push("  note: " + note + "\n")
 
     for fix in d.fixes
         tag: str @ "guess"
 
         if fix.certainty == .certain
             tag @ "certain"
-        out @ out + "  fix (" + tag + "): " + fix.title + "\n"
+        rows @ rows.push("  fix (" + tag + "): " + fix.title + "\n")
 
-    return out
+    return rows.join("")
 
 # Every diagnostic, in source order, separated by a blank line.
 function render_all(diagnostics: [diag.Diagnostic], s: source.Source) -> str
@@ -56,27 +58,25 @@ function render_all(diagnostics: [diag.Diagnostic], s: source.Source) -> str
     return rendered.join("\n")
 
 # The line as written, in the WHOLE text's numbering, trailing
-# whitespace dropped.
+# whitespace dropped. Sliced at the source's own line table (defect 105):
+# splitting the whole compilation's text into characters to find one line
+# made every diagnostic cost the size of the program, and 4000 of them took
+# 49 s. A space and a tab are one byte each and no byte of a longer
+# character, so trimming bytes trims what trimming characters did.
 function source_line(s: source.Source, line: i64) -> str
-    current: i64 @ 1
-    run: [str] @ []
+    if line < 1 || line > s.line_starts.len()
+        return ""
+    start = s.line_starts[line - 1]
+    end: i64 @ s.text.len()
 
-    for ch in s.text.chars()
-        if ch == "\n"
-            if current == line
-                break
-            current @ current + 1
-        else
-            if current == line
-                run @ run.push(ch)
+    if line < s.line_starts.len()
+        end @ s.line_starts[line] - 1
 
     # Rust's trim_end: spaces and tabs off the right.
-    end: i64 @ run.len()
-
-    while end > 0 && (run[end - 1] == " " || run[end - 1] == "\t")
+    while end > start && (s.text[end - 1] == ' ' || s.text[end - 1] == '\t')
         end @ end - 1
 
-    return run.slice(from: 0, to: end).join("")
+    return s.text.slice(from: start, to: end)
 
 # The span, underlined. One CHARACTER is one column — the underline
 # was one ^ per byte of the span, so `return "ààà"` was underlined

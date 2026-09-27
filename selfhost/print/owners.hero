@@ -52,7 +52,9 @@ constant BRACKETED: i64
 # `ended[i]` says a terminator stands between token `i` and the code before
 # it: the lexer plants one at a line's end inside brackets too, where it
 # separates two elements of a list down the page, and a `(` after one opens
-# no call (§4.9).
+# no call (§4.9). `ignored` and `end` are what `shape` was given, so a reader
+# holding these lines can tell whether they answer its own question (the
+# output guard, `print/anchors.hero`); `none`'s `end` is -1, no text's.
 record Lines
     tokens: [token.Token]
     pair: [i64]
@@ -62,9 +64,22 @@ record Lines
     last: [i64]
     owner: [i64]
     prior: [i64]
+    ignored: [i64]
+    end: i64
 
 function none() -> Lines
-    return Lines(tokens: [], pair: [], ended: [], code: [], column: [], last: [], owner: [], prior: [])
+    return Lines(
+        tokens: [],
+        pair: [],
+        ended: [],
+        code: [],
+        column: [],
+        last: [],
+        owner: [],
+        prior: [],
+        ignored: [],
+        end: -1
+    )
 
 # The structure of the source `s` numbers from offset 0, from the tokens
 # the parser was given, those before `end` only: the root file's, when the
@@ -117,9 +132,11 @@ function shape(s: source.Source, lexed: [token.Token], ignored: [i64], end: i64)
     open: [i64] @ []
     top: i64 @ 0
     index: i64 @ 0
+    at_line: i64 @ 0
 
     for t in tokens
-        line = source.floor_start(s.line_starts, t.span.start) + 1
+        at_line @ line_index(s.line_starts, from: at_line, offset: t.span.start)
+        line = at_line + 1
         column = t.span.start - s.line_starts[line - 1]
 
         if t.kind == .comment
@@ -175,7 +192,9 @@ function shape(s: source.Source, lexed: [token.Token], ignored: [i64], end: i64)
         column: columns,
         last: last,
         owner: owner,
-        prior: prior
+        prior: prior,
+        ignored: ignored,
+        end: end
     )
 
 # The column of code line `line`, -1 for none.
@@ -227,6 +246,21 @@ function start_of(lines: Lines, line: i64) -> i64
 
     while at > 0 && (at >= lines.code.len() || !lines.code[at])
         at @ at - 1
+
+    return at
+
+# `source.floor_start` walked forward from `from`, the index the token
+# before was on (defect 105): the tokens come in order, so each line start is
+# passed once rather than searched for per token. An offset before `from`'s
+# line is searched for whole, so the answer is floor_start's whatever the
+# order.
+function line_index(starts: [i64], from: i64, offset: i64) -> i64
+    if from < 0 || from >= starts.len() || starts[from] > offset
+        return source.floor_start(starts, offset)
+    at: i64 @ from
+
+    while at + 1 < starts.len() && starts[at + 1] <= offset
+        at @ at + 1
 
     return at
 
@@ -337,3 +371,19 @@ test "a comma after a comment is alone"
     assert comma >= 0
     assert lines.tokens[comma].span.start == 96
     assert lone_comma(lines, after: 47) == -1
+
+# `line_index` is `source.floor_start` whatever it starts from: walked
+# forward over every offset of a text, and asked out of order.
+test "a line walked forward is the line searched for, and an offset behind is searched for whole"
+    text = "a\n\nbc\ndef\n"
+    s = source.new_source(name: "t.hero", text: text)
+    at: i64 @ 0
+    offset: i64 @ 0
+
+    while offset <= text.len()
+        at @ line_index(s.line_starts, from: at, offset: offset)
+        assert at == source.floor_start(s.line_starts, offset)
+        offset @ offset + 1
+
+    assert line_index(s.line_starts, from: 3, offset: 1) == 0
+    assert line_index(s.line_starts, from: 99, offset: 4) == source.floor_start(s.line_starts, 4)

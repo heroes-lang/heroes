@@ -31,7 +31,7 @@ use print/breaks
 # The signature of `fd`, whose name is at `name`, and the comment trailing
 # its last line.
 function signature_lines(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], name: token.Span, fd: ast.FunctionDecl, indent: i64)
-    start = f.out.len()
+    start = f.printed.size
     first = source.line_of(s, name.start)
     last = source.line_of(s, fd.signature_end.start)
     open = list_open(f.lines, name: name)

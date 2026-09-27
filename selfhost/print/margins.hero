@@ -8,6 +8,7 @@ use token
 use source
 use print/page
 use print/owners
+use print/sheet
 
 # A comma `owners.lone_comma` keeps on a line of its own, at `indent`,
 # after a value just printed without it: the comment trailing the value's
@@ -28,41 +29,23 @@ function comma_line(@f: page.Fmt, s: source.Source, comments: [token.Span], line
 # A block's head printed from page offset `from` on: every line after its
 # first, but a blank one, goes eight columns further in (the rule above).
 # Inside a bracket a line's margin is no structure, so this changes no
-# program: every line after a head's first is inside one.
+# program: every line after a head's first is inside one. The page rewrites
+# the head's lines and nothing printed before it (`sheet.indent_after`).
 function deepened(@f: page.Fmt, from: i64)
-    first: i64 @ from
-
-    while first < f.out.len() && f.out[first] != '\n'
-        first @ first + 1
-
-    if first + 1 >= f.out.len()
-        return
-    out: str @ f.out.slice(from: 0, to: first + 1)
-    start: i64 @ first + 1
-    at: i64 @ start
-
-    while at < f.out.len()
-        if f.out[at] == '\n'
-            line = f.out.slice(from: start, to: at + 1)
-
-            if line != "\n"
-                out @ out + "        "
-            out @ out + line
-            start @ at + 1
-        at @ at + 1
-
-    f.out @ out + f.out.slice(from: start, to: f.out.len())
+    sheet.indent_after(@f.printed, from: from, by: "        ")
 
 ## Tests
 
 test "a block's head across lines is deepened after its first line, and a head of one line is not"
     f: page.Fmt @ page.blank_page()
-    f.out @ "x\n"
-    start = f.out.len()
-    f.out @ f.out + "    while t[a +  # c\n        1] > 0\n\n"
+    page.put_line(@f, indent: 0, text: "x")
+    start = f.printed.size
+    page.put_line(@f, indent: 4, text: "while t[a +  # c")
+    page.put_line(@f, indent: 8, text: "1] > 0")
+    page.blank_line(@f)
     deepened(@f, from: start)
-    assert f.out == "x\n    while t[a +  # c\n                1] > 0\n\n"
+    assert page.whole(f) == "x\n    while t[a +  # c\n                1] > 0\n\n"
     g: page.Fmt @ page.blank_page()
-    g.out @ "    if c\n"
+    page.put_line(@g, indent: 4, text: "if c")
     deepened(@g, from: 0)
-    assert g.out == "    if c\n"
+    assert page.whole(g) == "    if c\n"

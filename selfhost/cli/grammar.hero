@@ -52,22 +52,23 @@ function report() -> str
 # cannot see a word moved between two arms.
 function keyword_block() -> str
     words = keywords.keywords()
-    out: str @ "Keywords (" + words.len().to_str() + "), which a program may not use as a name:"
-    line: str @ ""
+    rows: [str] @ ["Keywords (" + words.len().to_str() + "), which a program may not use as a name:"]
+    cells: [str] @ []
     i: i64 @ 0
 
     while i < words.len()
-        line @ line + pad(text: words[i], width: 11)
+        cell = pad(text: words[i], width: 11)
+        cells @ cells.push(cell)
 
         if (i + 1) % 4 == 0
-            out @ out + "\n  " + trim_right(line)
-            line @ ""
+            rows @ rows.push("\n  " + trim_right(cells.join("")))
+            cells @ []
         i @ i + 1
 
-    if line.len() > 0
-        out @ out + "\n  " + trim_right(line)
+    if cells.len() > 0
+        rows @ rows.push("\n  " + trim_right(cells.join("")))
 
-    return out
+    return rows.join("")
 
 # The contextual words, in the order `selfhost/keywords.hero` declares them and
 # for the same reason the keywords keep theirs: the `grammar` suite reads the
@@ -76,28 +77,33 @@ function keyword_block() -> str
 # hand while the parser read eleven, because there was no table to print.
 function contextual_block() -> str
     words = keywords.contextual()
-    out: str @ "Contextual words (" + words.len().to_str() + "), each read in one position and an ordinary name everywhere else:"
-    line: str @ ""
+    rows: [str] @ [
+        "Contextual words (" + words.len().to_str() + "), each read in one position and an ordinary name everywhere else:"
+    ]
+    cells: [str] @ []
     i: i64 @ 0
 
     while i < words.len()
-        line @ line + pad(text: words[i], width: 11)
+        cell = pad(text: words[i], width: 11)
+        cells @ cells.push(cell)
 
         if (i + 1) % 4 == 0
-            out @ out + "\n  " + trim_right(line)
-            line @ ""
+            rows @ rows.push("\n  " + trim_right(cells.join("")))
+            cells @ []
         i @ i + 1
 
-    if line.len() > 0
-        out @ out + "\n  " + trim_right(line)
+    if cells.len() > 0
+        rows @ rows.push("\n  " + trim_right(cells.join("")))
 
-    return out
+    return rows.join("")
 
 # The binary operators, loosest first, each with the power the climber asks for
 # and the name the tree carries.
 function power_block() -> str
-    out: str @ "Binary operators, loosest first. Every one is left-associative, so the\nclimber asks for `power + 1` on the right. The `operator` column is the name\nthe tree carries, and a spelling paired with the wrong one parses as the wrong\noperator with every test green (panel 067).\n"
-    out @ out + "\n  power  spelling  operator"
+    rows: [str] @ [
+        "Binary operators, loosest first. Every one is left-associative, so the\nclimber asks for `power + 1` on the right. The `operator` column is the name\nthe tree carries, and a spelling paired with the wrong one parses as the wrong\noperator with every test green (panel 067).\n"
+    ]
+    rows @ rows.push("\n  power  spelling  operator")
 
     for kind in operators.binary_tokens()
         found = grammar_expr.binary_op(kind)
@@ -107,12 +113,14 @@ function power_block() -> str
             # `grammar` suite is what asserts they do. Loud rather than skipped:
             # a silently dropped row is the shape this whole command exists to
             # refuse.
-            out @ out + "\n  " + token.kind_name(kind) + " IS IN THE LIST AND NOT IN THE TABLE"
+            rows @ rows.push("\n  " + token.kind_name(kind) + " IS IN THE LIST AND NOT IN THE TABLE")
         else
             one = found.must()
-            out @ out + "\n" + aligned(number: one.power, width: 7) + "  " + pad(text: operators.spelling(one.op), width: 8) + "  " + operators.name(one.op)
+            rows @ rows.push(
+                "\n" + aligned(number: one.power, width: 7) + "  " + pad(text: operators.spelling(one.op), width: 8) + "  " + operators.name(one.op)
+            )
 
-    return out
+    return rows.join("")
 
 # The productions, collected: panel 133 R2's other half. They are AUTHORED in
 # `spec/heroes-spec.md`, each beside the prose of the construct it governs,
@@ -130,9 +138,11 @@ function production_block() -> str
 
     if text.is_err()
         return "The productions are in `" + SPEC + "`, which is not readable from here.\nThis command reads it relative to the working directory, as `measure` reads its\ntables, so run it from the repository to see them collected."
-    out: str @ "Productions, collected from `" + SPEC + "`, where each is authored beside the\nprose that governs it. `=` defines and `.` ends, `|` alternates, `[ ]` is\noptional, `{ }` repeats zero or more times."
+    rows: [str] @ [
+        "Productions, collected from `" + SPEC + "`, where each is authored beside the\nprose that governs it. `=` defines and `.` ends, `|` alternates, `[ ]` is\noptional, `{ }` repeats zero or more times."
+    ]
     in_fence: bool @ false
-    line: str @ ""
+    start: i64 @ 0
 
     # **CHARACTERS, never bytes**, and the language taught this rather than a
     # comment: slicing a byte off `—` aborts with "string slice splits a
@@ -144,18 +154,18 @@ function production_block() -> str
 
     while i <= cs.len()
         if i < cs.len() && cs[i] != "\n"
-            line @ line + cs[i]
             i @ i + 1
             continue
+        line = cs.slice(from: start, to: i).join("")
 
         if opens_fence(line)
             in_fence @ !in_fence
         else if !in_fence && indented(line)
-            out @ out + "\n" + line
-        line @ ""
+            rows @ rows.push("\n" + line)
         i @ i + 1
+        start @ i
 
-    return out
+    return rows.join("")
 
 # Both tests are anchored at column zero, which is what keeps a production's own
 # text from ever being read as either: a fence opens with three backticks there,
@@ -182,25 +192,19 @@ function what_is_not_here() -> str
     return "Nothing above is checked against the parser. The keywords, the contextual\nwords and the powers are read from the compiler's own tables, so they cannot\ndrift from it; the productions are checked for internal consistency only, which\nis `ebnflint`'s class and Go's. No instrument compares a production to the\nfunction that reads it."
 
 function pad(text: str, width: i64) -> str
-    out: str @ text
-    count: i64 @ text.chars().len()
+    count = text.chars().len()
 
-    while count < width
-        out @ out + " "
-        count @ count + 1
-
-    return out
+    if count >= width
+        return text
+    return text + " ".repeat((width - count).to_u64().must())
 
 function aligned(number: i64, width: i64) -> str
     shown = number.to_str()
-    out: str @ ""
-    count: i64 @ shown.chars().len()
+    count = shown.chars().len()
 
-    while count < width
-        out @ out + " "
-        count @ count + 1
-
-    return out + shown
+    if count >= width
+        return shown
+    return " ".repeat((width - count).to_u64().must()) + shown
 
 function trim_right(text: str) -> str
     cs = text.chars()

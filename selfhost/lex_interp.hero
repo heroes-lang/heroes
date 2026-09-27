@@ -110,18 +110,19 @@ function piece_text(text: str) -> str
     if text.len() <= from
         return ""
     inner = text.slice(from: from, to: text.len() - 1)
-    undoubled: str @ ""
+    undoubled: [str] @ []
     at: i64 @ 0
 
     while at < inner.len()
         if inner[at] == '{' && at + 1 < inner.len() && inner[at + 1] == '{'
-            undoubled @ undoubled + "{"
+            undoubled @ undoubled.push("{")
             at @ at + 2
         else
-            undoubled @ undoubled + inner.slice(from: at, to: at + 1)
+            one = inner.slice(from: at, to: at + 1)
+            undoubled @ undoubled.push(one)
             at @ at + 1
 
-    return escape.unescape("\"" + undoubled + "\"")
+    return escape.unescape("\"" + undoubled.join("") + "\"")
 
 ## Tests
 

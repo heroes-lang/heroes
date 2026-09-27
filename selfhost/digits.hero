@@ -242,10 +242,10 @@ function int_out_of_range_at(text: str, span: token.Span, kind: widths.IntKind) 
 # The prefix needs no work: `0X` never reaches here, the lexer refuses it
 # where it is written.
 function canonical_int(text: str) -> str
-    out: str @ ""
+    parts: [str] @ []
 
     for c in text.chars()
-        out @ out + match c
+        lower = match c
             "A" => "a"
             "B" => "b"
             "C" => "c"
@@ -254,7 +254,9 @@ function canonical_int(text: str) -> str
             "F" => "f"
             _   => c
 
-    return out
+        parts @ parts.push(lower)
+
+    return parts.join("")
 
 test "one value, four spellings"
     assert decode_int("31").must() == 31

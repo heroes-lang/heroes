@@ -75,14 +75,14 @@ function version_line(build_dir: str) -> str?
 
     if said.is_err()
         return fail(code: "none", msg: "nothing was said")
-    first: str @ ""
+    first: [str] @ []
 
     for ch in said.must().chars()
         if ch == "\n" || ch == "\r"
             break
-        first @ first + ch
+        first @ first.push(ch)
 
-    return ok(first)
+    return ok(first.join(""))
 
 # The floor, enforced: absent when clang is at or above it, a message the
 # CLI prints at exit 2 otherwise — the tool could not run, which is what

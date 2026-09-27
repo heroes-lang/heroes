@@ -196,26 +196,20 @@ function reported(path: str, here: str, readings: [vendored.Reading]) -> cli_tab
 
 # Left-aligned in `width` columns, counted in characters.
 function padded(text: str, width: i64) -> str
-    out: str @ text
-    count: i64 @ text.chars().len()
+    count = text.chars().len()
 
-    while count < width
-        out @ out + " "
-        count @ count + 1
-
-    return out
+    if count >= width
+        return text
+    return text + " ".repeat((width - count).to_u64().must())
 
 # Right-aligned in `width` columns.
 function aligned(number: i64, width: i64) -> str
     shown = number.to_str()
-    out: str @ ""
-    count: i64 @ shown.chars().len()
+    count = shown.chars().len()
 
-    while count < width
-        out @ out + " "
-        count @ count + 1
-
-    return out + shown
+    if count >= width
+        return shown
+    return " ".repeat((width - count).to_u64().must()) + shown
 
 test "a reading is laid out in the bootstrap's own columns"
     readings: [vendored.Reading] = [
