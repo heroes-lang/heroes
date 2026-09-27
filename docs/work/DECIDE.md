@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 4**
 
 - [ ] **panel 175** | ratify panel 175: a consuming call is three things, so route A lands only with a vocabulary 176 decides; route E lands now as the composite; § 13 lands its true sentences in full; the blind seat gets a copy of the spec outside the tree | `docs/panel/175-a-consuming-call-is-three-things-and-the-runtime-speaks-after-it-listens.md`
 
@@ -65,5 +65,16 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     borrowed reference while the receiver lives, which the runtime cannot see
     end, since C frees the child inside the receiver's release; refused as
     the silent use-after-free it would allow.
+
+- [ ] **panel 179** | ratify panel 179: the formatter's probe is a subcommand, `heroes probe [path]`, in process, over every family the seats ran, with two judges and the three open cases ruled (a comma crossing kept, a comment on a dropped parenthesis kept, the ascending-run rule the canonical form), a site and a reduced reproducer, exit 2 for a failing variant as `fmt` gives it, the fixtures in the net under every family and the whole tree under the thin one | `docs/panel/179-the-formatter-s-probe-is-a-verb-and-its-oracle-is-ruled-before-it-lands.md`
+
+    **Origin:** panel 179, 2026-09-27, M-agreed-retention, a retro-record of the
+    author's decision of 2026-09-26 that the probe enters the tool. **The
+    default the compiler runs on meanwhile** is the provisional resolution: lane
+    g repairs the 17 refusals the sitting found at `83ac68c1` first, then the
+    probe lands in its own lane. **What conservative would have been**: `fmt
+    --probe` on one file, the guard as the only judge, the first failure's text,
+    the fixtures only; refused because a flag cannot take a directory and a
+    guard that judges itself cannot see a wrong rule.
 
 *******************************************************************************

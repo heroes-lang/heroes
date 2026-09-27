@@ -113,16 +113,17 @@ function lex_one(text: str) -> LexOutput
     layout.maybe_terminator(@l)
 
     for span in l.open_brackets
-        l.diagnostics @ l.diagnostics.push(
+        state.push_diagnostic(
+            @l.diagnostics,
             diag.new_diagnostic(code: "unclosed_bracket", message: "`" + text.slice(from: span.start, to: span.end) + "` opened here is never closed", span: span)
         )
 
     end = token.Span(start: l.pos, end: l.pos)
 
     for _ in range(from: 0, to: l.level)
-        l.tokens @ l.tokens.push(token.Token(kind: .dedent, span: end))
+        state.push_token(@l.tokens, token.Token(kind: .dedent, span: end))
 
-    l.tokens @ l.tokens.push(token.Token(kind: .eof, span: end))
+    state.push_token(@l.tokens, token.Token(kind: .eof, span: end))
     return LexOutput(tokens: l.tokens, diagnostics: l.diagnostics)
 
 ## The stream, named

@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 5**
 
 - [ ] **096 — inside an `extern` group, a remark followed by a blank line before the next member makes `fmt` refuse the file** | the group printer never emits the blank line for a continuing member, so the remark becomes the next member's doc, the self-check sees a different tree and `fmt` exits 2 on a program `check` accepts | `selfhost/print/fmt.hero` (the group's member walk, the `continues` branch)
 
@@ -131,5 +131,31 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     The repair keeps a trailing comment on the line it trails, a comment
     inside a bracket inside the bracket, and prints a blank line between arms
     only where the source has one.
+
+- [ ] **104 — the spec says a NEWLINE inside brackets may fall between any two tokens, and the compiler refuses a break before an operator, a `:` or a `,`** | spec § 0 ends *Inside `(` `[` `{` a NEWLINE never ends a statement: where it separates, a production writes it; elsewhere it may fall between any two tokens*, but the lexer plants a terminator after a line-ending token inside brackets too (design.md §4.15, *terminators, which are inserted unchanged everywhere, brackets included*, which §4.9's one-element-per-line literals rely on), so `x = (1` then `+ 2)` is `expected_group_close`, while `x = (1 +` then `2)` checks clean; a reader who follows the spec writes a program the compiler refuses | `spec/heroes-spec.md:11-12` · `docs/design/design.md:1939-1946` · `selfhost/grammar_expr.hero:161` (`ends_the_expression`)
+
+    **Origin:** panel 179's completeness critic, 2026-09-27, measuring which
+    variants of its seats' generators fail to parse; reproduced by the
+    coordinator the same night on the trunk's compiler at `fa813325`.
+    Searched `docs/`, `spec/` and the records for the sentence and for a
+    ruling on a break before an operator: the only other hit is the critic's
+    own report. The sentence entered the spec at `e497646a`, 2026-09-12,
+    M-stated-grammar step 4, and nothing has tested it since.
+
+    **The reproducers**, each a four- or six-line program, `heroes check` at
+    `fa813325`: `x = (1` / `+ 2)` exit 1, `expected_group_close`;
+    `print(f(a` / `: 1, b: 2))` exit 1, `expected_args_close`;
+    `xs = [1` / `, 2]` exit 1, `expected_expression`; `x = (1 +` / `2)` exit 0.
+
+    **Why it is a defect, and on which side.** The spec is the language as a
+    reader gets it, and this sentence tells the reader something the language
+    does not do; design.md, the source of truth, and the compiler agree with
+    each other, so the false party is the spec's sentence, not the parser.
+    CLAUDE.md § 12's *spec beats compiler* does not apply where the spec
+    contradicts design.md, which the spec only restates. The repair is the
+    sentence saying what is true, at a sitting, priced on the reader's
+    instrument; changing the lexer to allow a break before an operator would
+    reverse §4.15's deferral of Nim's continuation rule and is a different
+    question.
 
 *******************************************************************************

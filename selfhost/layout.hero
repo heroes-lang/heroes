@@ -72,7 +72,8 @@ function line_start(@l: state.LexState, text: str)
 
     if saw_tab
         span = token.Span(start: ws_start, end: l.pos)
-        l.diagnostics @ l.diagnostics.push(
+        state.push_diagnostic(
+            @l.diagnostics,
             diag.new_diagnostic(code: "tab_in_indentation", message: "a tab in indentation is a compile error — indent with spaces, exactly 4 per level", span: span)
         )
         return
@@ -98,25 +99,27 @@ function line_start(@l: state.LexState, text: str)
     new_level: i64 @ (spaces + 2) / 4
 
     if spaces % 4 != 0
-        l.diagnostics @ l.diagnostics.push(
+        state.push_diagnostic(
+            @l.diagnostics,
             diag.new_diagnostic(code: "indentation_not_multiple_of_4", message: "indentation must be exactly 4 spaces per level; found " + spaces.to_str(), span: span)
         )
 
     if new_level > l.level + 1
-        l.diagnostics @ l.diagnostics.push(
+        state.push_diagnostic(
+            @l.diagnostics,
             diag.new_diagnostic(code: "indentation_jump", message: "indentation jumps from level " + l.level.to_str() + " to level " + new_level.to_str() + "; a block opens one level at a time", span: span)
         )
         new_level @ l.level + 1
 
     if new_level == l.level + 1
-        l.tokens @ l.tokens.push(token.Token(kind: .indent, span: span))
+        state.push_token(@l.tokens, token.Token(kind: .indent, span: span))
         l.level @ new_level
     else
 
         # A dedent may close several levels at once; each gets its own token
         # so blocks nest and unnest one at a time for the parser.
         for _ in range(from: new_level, to: l.level)
-            l.tokens @ l.tokens.push(token.Token(kind: .dedent, span: span))
+            state.push_token(@l.tokens, token.Token(kind: .dedent, span: span))
 
         l.level @ new_level
 
@@ -132,7 +135,7 @@ function maybe_terminator(@l: state.LexState)
     if !is_line_ender(l.last_significant.must())
         return
     span = token.Span(start: l.pos, end: l.pos)
-    l.tokens @ l.tokens.push(token.Token(kind: .terminator, span: span))
+    state.push_token(@l.tokens, token.Token(kind: .terminator, span: span))
 
 test "the margin becomes indent and dedent one level at a time"
     l: state.LexState @ state.new_state()
