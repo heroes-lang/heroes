@@ -20,6 +20,7 @@ use emit/ffi_lookup
 use parse
 use resolve
 use checker
+use type_text
 
 # _Static_assert(_Generic(&((Color *)0)->r, …), "heroes-ffi-field
 # Color r") failed: the header's struct does not have that field at
@@ -74,7 +75,7 @@ function record_field(s: source.Source, tree: ast.Ast, decls: [ast.Decl], type_n
 
                 for field in rec.fields
                     if source.span_text(s, field.name) == member
-                        written = source.span_text(s, tree.types[field.ty].span)
+                        written = type_text.named_text(source.span_text(s, tree.types[field.ty].span))
                         return ok(
                             RecordField(header: emit_externs.unquoted(s, span: rec.header.must()), field_span: field.name, declared: written)
                         )

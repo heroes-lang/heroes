@@ -9,10 +9,11 @@ use token
 use ast
 use source
 use lexer
-use digits
 use print/page
 use print/elements
 use print/owners
+use print/aligned
+use parse
 
 # `head` and `text`, the source from `from` up to `to` on one line, printed
 # with the comments inside it kept (`lead`): the last line comes back.
@@ -26,7 +27,8 @@ function led_text(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [toke
 # line of its own, and the rest going on four columns in, inside the bracket
 # that let the author break it. Prints every line but the last and returns
 # that one. The rendering's tokens must be the source's but for the
-# grouping parentheses `render` drops and the commas of a list (`aligned`);
+# grouping parentheses `render` drops and the commas of a list
+# (`print/aligned.hero`);
 # where they are not, the text comes back whole, and the guard refuses what
 # is left.
 function lead(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64, to: i64, indent: i64) -> str
@@ -45,14 +47,27 @@ function lead(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64, t
 # last break, for a caller that goes on four columns in itself. Nothing is
 # printed where the text's tokens are not the source's.
 function pieces(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64, to: i64, indent: i64) -> str?
-    written = within(c.lines, from: from, to: to)
+    written = aligned.within(c.lines, from: from, to: to)
     printed: [token.Token] @ []
 
     for t in lexer.lex_one(text).tokens
         if t.kind != .indent && t.kind != .dedent && t.kind != .terminator && t.kind != .eof && t.kind != .comment
             printed @ printed.push(t)
 
-    matched = aligned(c, text: text, written: written, printed: printed)
+    first = aligned.aligned(c, text: text, written: written, printed: printed)
+
+    if first.len() != written.len()
+        return fail(code: "unaligned", msg: "the text's tokens are not the source's")
+
+    # The author's parentheses around a comment, put back.
+    full = restored(f, c, text: text, written: written, printed: printed, matched: first, to: to)
+    printed @ []
+
+    for t in lexer.lex_one(full).tokens
+        if t.kind != .indent && t.kind != .dedent && t.kind != .terminator && t.kind != .eof && t.kind != .comment
+            printed @ printed.push(t)
+
+    matched = aligned.aligned(c, text: full, written: written, printed: printed)
 
     if matched.len() != written.len()
         return fail(code: "unaligned", msg: "the text's tokens are not the source's")
@@ -73,7 +88,7 @@ function pieces(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64,
         # A piece after a break starts its line, with no space before it
         # (the second skeptic seat's `i01`: one column too far).
         if upto >= 0 && printed[upto].span.end > cut
-            piece: str @ text.slice(from: cut, to: printed[upto].span.end)
+            piece: str @ full.slice(from: cut, to: printed[upto].span.end)
 
             if line.len() == 0
                 piece @ unspaced(piece)
@@ -97,7 +112,72 @@ function pieces(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64,
         f.last_line @ source.line_of(c.s, c.comments[k].start)
         f.next_comment @ k + 1
 
-    return ok(line + unspaced(text.slice(from: cut, to: text.len())))
+    return ok(line + unspaced(full.slice(from: cut, to: full.len())))
+
+# `text` with the author's parentheses `render` dropped put back where a
+# comment `lead` prints is inside them, and with every pair of theirs inside
+# such a one around the same value. A break the author made inside them may
+# need them: the parser skips a line's end before a group's `)` and not
+# before an index's `]`, and `ys[(a  # c` over `)]` printed as `ys[a` over
+# `]` did not parse (the third skeptic seat's `min1`). And the guard counts
+# the innermost of several pairs around one value, so those inside a kept
+# one are kept too.
+function restored(f: page.Fmt, c: elements.Code, text: str, written: [i64], printed: [token.Token], matched: [i64], to: i64) -> str
+    partner = aligned.written_pairs(c, written: written)
+    back: [bool] @ []
+
+    for _ in written
+        back @ back.push(false)
+
+    for at in range(from: 0, to: written.len())
+        other = partner[at]
+
+        if c.lines.tokens[written[at]].kind == .lparen && other > at && matched[at] < 0 && matched[other] < 0
+            open = c.lines.tokens[written[at]].span.start
+            shut = c.lines.tokens[written[other]].span.start
+            k: i64 @ f.next_comment
+
+            while k < c.comments.len() && c.comments[k].start < to && !back[at]
+                if c.comments[k].start > open && c.comments[k].start < shut
+                    back[at] @ true
+                    back[other] @ true
+                k @ k + 1
+
+        # The pair inside a kept one, around the same value.
+        if back[at] && at + 1 < written.len() && partner[at + 1] == other - 1 && other - 1 > at + 1 && matched[at + 1] < 0
+            back[at + 1] @ true
+            back[other - 1] @ true
+
+    out: str @ ""
+    cut: i64 @ 0
+
+    for at in range(from: 0, to: written.len())
+        if back[at]
+            place: i64 @ text.len()
+            mark: str @ ")"
+
+            if c.lines.tokens[written[at]].kind == .lparen
+                mark @ "("
+                later: i64 @ at + 1
+
+                while later < written.len() && matched[later] < 0
+                    later @ later + 1
+
+                if later < written.len()
+                    place @ printed[matched[later]].span.start
+            else
+                place @ 0
+                earlier: i64 @ at - 1
+
+                while earlier >= 0 && matched[earlier] < 0
+                    earlier @ earlier - 1
+
+                if earlier >= 0
+                    place @ printed[matched[earlier]].span.end
+            out @ out + text.slice(from: cut, to: place) + mark
+            cut @ place
+
+    return out + text.slice(from: cut, to: text.len())
 
 function shuts(text: str) -> bool
     return text.len() > 0 && (text[0] == ')' || text[0] == ']' || text[0] == '}')
@@ -110,222 +190,19 @@ function unspaced(text: str) -> str
 
     return text.slice(from: at, to: text.len())
 
-# Which printed token each written one is, -1 for one `render` does not
-# print, or nothing where the two are not the same tokens. Every token but
-# a parenthesis and a comma must be the same, one for one. A comma is
-# matched to one between the same two tokens, since a list written down
-# the page has none (§4.9). A pair of parentheses is matched to the written
-# pair around the same tokens, the innermost where the author wrote several:
-# matched one by one, the first `(` of `((a + b) * c)` took the printed `(`
-# of `(a + b)` and the comment after it moved inside (the second skeptic
-# seat's `xs[(  # c`). A parenthesis whose partner is outside the stretch
-# stands at its end, since the rendering prints the pair whole.
-function aligned(c: elements.Code, text: str, written: [i64], printed: [token.Token]) -> [i64]
-    none: [i64] = []
-    kinds: [token.TokenKind] @ []
-
-    for i in written
-        kind = c.lines.tokens[i].kind
-        kinds @ kinds.push(kind)
-
-    shown: [token.TokenKind] @ []
-
-    for t in printed
-        kind = t.kind
-        shown @ shown.push(kind)
-
-    ours = counted(kinds)
-    theirs = counted(shown)
-    matched: [i64] @ []
-
-    for _ in written
-        matched @ matched.push(-1)
-
-    if ours[ours.len() - 1] != theirs[theirs.len() - 1]
-        return none
-    j: i64 @ 0
-
-    for at in range(from: 0, to: written.len())
-        if !loose(kinds[at])
-            while loose(shown[j])
-                j @ j + 1
-
-            if !same(c.s, text: text, written: c.lines.tokens[written[at]], printed: printed[j])
-                return none
-            matched[at] @ j
-            j @ j + 1
-
-    # The commas, each to the printed one between the same two tokens.
-    for at in range(from: 0, to: written.len())
-        if kinds[at] == .comma
-            for p in range(from: 0, to: printed.len())
-                if shown[p] == .comma && theirs[p] == ours[at] && !owners.listed(matched, value: p)
-                    matched[at] @ p
-
-    # The pairs, by the tokens they hold.
-    mine = pairs(kinds, counts: ours, partner: written_pairs(c, written: written))
-    yours = pairs(shown, counts: theirs, partner: printed_pairs(shown))
-
-    for p in range(from: 0, to: yours.len())
-        same_range: [i64] @ []
-
-        for w in range(from: 0, to: mine.len())
-            if mine[w].low == yours[p].low && mine[w].high == yours[p].high
-                same_range @ same_range.push(w)
-
-        rank: i64 @ 0
-        total: i64 @ 0
-
-        for q in range(from: 0, to: yours.len())
-            if yours[q].low == yours[p].low && yours[q].high == yours[p].high
-                if q < p
-                    rank @ rank + 1
-                total @ total + 1
-
-        if same_range.len() < total
-            return none
-        chosen = mine[same_range[same_range.len() - total + rank]]
-
-        if chosen.open >= 0
-            matched[chosen.open] @ yours[p].open
-
-        if chosen.shut >= 0
-            matched[chosen.shut] @ yours[p].shut
-
-    return matched
-
-# A pair of parentheses: the positions of its two, -1 for one outside the
-# stretch, and how many of the other tokens stand before each.
-record Pair
-    open: i64
-    shut: i64
-    low: i64
-    high: i64
-
-function loose(kind: token.TokenKind) -> bool
-    return kind == .lparen || kind == .rparen || kind == .comma
-
-# How many tokens but parentheses and commas stand before each place, one
-# more place at the end.
-function counted(kinds: [token.TokenKind]) -> [i64]
-    out: [i64] @ []
-    count: i64 @ 0
-
-    for kind in kinds
-        out @ out.push(count)
-
-        if !loose(kind)
-            count @ count + 1
-
-    out @ out.push(count)
-    return out
-
-# The pairs of a stretch, from the partner of each parenthesis in it: a
-# position, or -2 for a `(` whose `)` is past the end, -3 for a `)` whose `(`
-# is before the start.
-function pairs(kinds: [token.TokenKind], counts: [i64], partner: [i64]) -> [Pair]
-    out: [Pair] @ []
-    end = counts[counts.len() - 1]
-
-    for at in range(from: 0, to: kinds.len())
-        if kinds[at] == .lparen && partner[at] >= 0
-            pair = Pair(open: at, shut: partner[at], low: counts[at], high: counts[partner[at]])
-            out @ out.push(pair)
-        else if kinds[at] == .lparen
-            pair = Pair(open: at, shut: -1, low: counts[at], high: end)
-            out @ out.push(pair)
-        else if kinds[at] == .rparen && partner[at] == -3
-            pair = Pair(open: -1, shut: at, low: 0, high: counts[at])
-            out @ out.push(pair)
-
-    return out
-
-function written_pairs(c: elements.Code, written: [i64]) -> [i64]
-    out: [i64] @ []
-
-    for i in written
-        other = c.lines.pair[i]
-        place: i64 @ -1
-
-        if other >= 0 && other < i
-            place @ -3
-        else if other > i
-            place @ -2
-        at: i64 @ 0
-
-        for j in written
-            if j == other
-                place @ at
-            at @ at + 1
-
-        out @ out.push(place)
-
-    return out
-
-function printed_pairs(kinds: [token.TokenKind]) -> [i64]
-    out: [i64] @ []
-    open: [i64] @ []
-
-    for _ in kinds
-        out @ out.push(-1)
-
-    for at in range(from: 0, to: kinds.len())
-        if kinds[at] == .lparen
-            open @ open.push(at)
-        else if kinds[at] == .rparen && open.len() > 0
-            other = open[open.len() - 1]
-            open @ open.slice(from: 0, to: open.len() - 1)
-            out[at] @ other
-            out[other] @ at
-
-    return out
-
-# The tokens but comments from offset `from` up to `to`, as indices.
-function within(lines: owners.Lines, from: i64, to: i64) -> [i64]
-    out: [i64] @ []
-    i: i64 @ owners.index_at(lines, offset: from)
-
-    if i < 0 || lines.tokens[i].span.start < from
-        i @ i + 1
-
-    while i < lines.tokens.len() && lines.tokens[i].span.start < to
-        if lines.tokens[i].kind != .comment
-            out @ out.push(i)
-        i @ i + 1
-
-    return out
-
-# Is a written token the printed one, an integer in either case of its
-# digits?
-function same(s: source.Source, text: str, written: token.Token, printed: token.Token) -> bool
-    one = digits.canonical_int(source.span_text(s, written.span))
-    other = digits.canonical_int(text.slice(from: printed.span.start, to: printed.span.end))
-    return one == other
-
 ## Tests
 
-function lexed(text: str) -> [token.Token]
-    out: [token.Token] @ []
-
-    for t in lexer.lex_one(text).tokens
-        if t.kind != .indent && t.kind != .dedent && t.kind != .terminator && t.kind != .eof && t.kind != .comment
-            out @ out.push(t)
-
-    return out
-
-# The second skeptic seat's `xs[(  # c` over `(a + b) * c)]`: matched one by
-# one, the author's outer `(` took the printed `(` of `(a + b)`, and the
-# comment after it moved inside. A list down the page has no commas, and
-# the rendering's are matched to nothing.
-test "a printed pair is the written pair around the same tokens, the innermost of several, and a list's commas are the rendering's"
-    text = "function f(xs: [i64], a: i64, b: i64, c: i64)\n    xs[(  # c\n        (a + b) * c)] @ 1\n    ys = [1\n        2]\n"
+# The third skeptic seat's `min1`: `ys[(a  # c` over `)]`, whose parentheses
+# `render` drops. Put back, the break after `a` is inside them.
+test "the author's parentheses around a comment the one-line text breaks at are put back"
+    text = "function f(ys: [i64], a: i64) -> i64\n    return ys[(a  # c\n    )]\n"
     s = source.new_source(name: "t.hero", text: text)
-    lines = owners.shape(s, lexed: lexer.lex_one(text).tokens, ignored: [], end: text.len())
-    c = elements.Code(tree: ast.new_ast(), s: s, comments: [], lines: lines)
-    written = within(lines, from: 53, to: 80)
-    assert written.len() == 9
-    matched = aligned(c, text: "(a + b) * c", written: written, printed: lexed("(a + b) * c"))
-    assert matched == [-1, 0, 1, 2, 3, 4, 5, 6, -1]
-    listed = aligned(c, text: "[1, 2]", written: within(lines, from: 95, to: 108), printed: lexed("[1, 2]"))
-    assert listed == [0, 1, 3, 4]
-    assert aligned(c, text: "(a - b) * c", written: written, printed: lexed("(a - b) * c")).len() == 0
+    parsed = parse.parse(text)
+    lines = owners.shape(s, lexed: parsed.tokens, ignored: [], end: text.len())
+    c = elements.Code(tree: parsed.tree, s: s, comments: parsed.comments, lines: lines)
+    written = aligned.within(lines, from: 48, to: 65)
+    printed = aligned.lexed("ys[a]")
+    matched = aligned.aligned(c, text: "ys[a]", written: written, printed: printed)
+    assert matched == [0, 1, -1, 2, -1, 3]
+    f: page.Fmt @ page.blank_page()
+    assert restored(f, c, text: "ys[a]", written: written, printed: printed, matched: matched, to: 65) == "ys[(a)]"

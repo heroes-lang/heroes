@@ -1,0 +1,4 @@
+# The module `qualified.hero` names its type from: `money.Balance`.
+
+record Balance
+    cents: i64

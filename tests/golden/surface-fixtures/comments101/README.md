@@ -210,4 +210,72 @@ piece between the breaks kept the space before it, a column too far.
 the block of its last comment. A stated canonical form and not an accident:
 `selfhost/print/owners.hero` writes the rule and its reason.
 
+The files below are the defect's fifth round, 2026-09-26, the third skeptic
+seat's findings over 83ac68c1: no comment moved at exit 0 there, and each
+of these was refused at exit 2 or printed where it read wrong. Each is kept
+at exit 0 now.
+
+`indexparens.hero` (`min1`, 571 of the 575 refusals of the seat's
+parenthesis generator): a comment inside the author's parentheses inside
+index brackets. `fmt` dropped the parentheses and broke the line after the
+value, where the parser skips a line's end before a group's `)` and not
+before an index's `]`, so the output did not parse. The one-line text keeps
+the author's parentheses around a comment it breaks at, and every pair of
+theirs inside such a pair around the same value (`breaks.restored`).
+
+`twocomments.hero` (`nf1`): two comments around the outer parenthesis in
+index brackets; the second went to a line of its own and the second pass
+read it as one, no fixpoint. With the parentheses kept each comment trails
+its token. `innermost.hero` above prints its outer pair too now.
+
+`doubleparens.hero` (`dp1`): a comment just inside the outer of two pairs
+around one value. `fmt` kept the outer pair and dropped the inner, and the
+guard, which counts the innermost of several pairs, refused. Every pair of
+the author's inside a pair kept for a comment is kept too (`Place.all`).
+
+`parenplace.hero` (`pl1`, and 43 variants in `examples/logs` and
+`examples/ledger`): a comment inside the parentheses around a mutated place.
+The place begins and ends at its parentheses now (`groups.whole`).
+
+`qualified.hero` (`q2`, which the trunk refuses too), with `money.hero`: a
+comment after the `.` of a type named from another module. The type's text
+was its source's, the comment in it, so `fmt` printed the comment twice and
+`check` looked for a type called by the comment's words. A named type is
+read as its two names and the dot (`selfhost/type_text.hero`'s `named_text`).
+
+`continuations.hero` (`m3`, `sh3`): the lines of a block's head `fmt`
+breaks to keep a comment. A continuation at the body's column read as the
+body, and one starting with `)` at the head's own column read as a
+statement the block hung under. Every line of a head after its first goes
+eight columns further in than elsewhere, four past the body
+(`selfhost/print/margins.hero`'s `deepened`): the four-columns-in of
+`types.hero`, `results.hero` and the rest above holds outside a head, and a
+signature's parameters, `signature.hero`'s and the defect-095 files', stand
+twelve in, their `)` eight.
+
+`insidegroups.hero`: the shapes panel 179's compiler-engineer found over
+83ac68c1 with the seats' bracket-break generator ported to Heroes, on
+`parens.hero` and `innermost.hero`. A unary operator's comment inside the
+author's parentheses kept for a comment gained a group of `fmt`'s own
+inside them, which the second pass read as the author's (no fixpoint); the
+line breaks inside the kept pair now. A comment after an argument's `(` was
+read as the argument's lead and moved before the `(`; the lead ends at the
+author's parentheses around the value. The third shape, a comment before
+the outer `)` of two pairs in an index, this round's first repair already
+kept. `qualified.hero` gains the seat's `walk.hero` shapes: a comment on a
+line of its own after the dot, one trailing the dot with another under it,
+and one after the dot inside an array parameter's type.
+
+A comma after a comment now keeps a line of its own whether or not a
+comment trails it (`commas.hero`, `owners.lone_comma`): the seat's second
+reader counts a comma as a token both files have, and a comma moved up to
+its value crossed the comment.
+
+`nextvalue.hero` (the continuation-column generator over `qualified.hero`,
+2026-09-27, and the shapes beside it): such a comma's line took any comment
+further along it, one inside the value after the comma, and printed the
+value without it, refused at exit 2, or, with the comment at the value's
+end, no fixpoint. The comma's line takes a comment only when it is the
+comma's next token (`margins.comma_line`).
+
 Every output is pinned in `tests/harness/suite_surface.hero`.

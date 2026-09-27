@@ -1,0 +1,68 @@
+# Where the lines `fmt` breaks start (design.md §4.15): every line of a
+# block's head after its first eight columns further in than elsewhere,
+# and a comma after a comment on a line of its own: `print/page.hero`'s
+# rule and `owners.lone_comma`'s. Split out of page on 2026-09-26, the fifth
+# round of defects 099 and 101, which took it past §11's 300 lines.
+
+use token
+use source
+use print/page
+use print/owners
+
+# A comma `owners.lone_comma` keeps on a line of its own, at `indent`,
+# after a value just printed without it: the comment trailing the value's
+# last line, the ones above the comma, then the comma, each where it was
+# written, and the comment after it when that is the comma's next token. A
+# comment further along the comma's line is inside the value that follows
+# (`, b: money.  # c` over `Balance`), and that value prints it.
+function comma_line(@f: page.Fmt, s: source.Source, comments: [token.Span], lines: owners.Lines, comma: i64, indent: i64)
+    page.trailing_comment(@f, s, comments, line: f.last_line)
+    line = source.line_of(s, lines.tokens[comma].span.start)
+    page.comments_before(@f, s, comments, line: line, indent: indent)
+    page.put_line(@f, indent: indent, text: ",")
+    f.last_line @ line
+
+    if comma + 1 < lines.tokens.len() && lines.tokens[comma + 1].kind == .comment
+        page.trailing_comment(@f, s, comments, line: line)
+
+# A block's head printed from page offset `from` on: every line after its
+# first, but a blank one, goes eight columns further in (the rule above).
+# Inside a bracket a line's margin is no structure, so this changes no
+# program: every line after a head's first is inside one.
+function deepened(@f: page.Fmt, from: i64)
+    first: i64 @ from
+
+    while first < f.out.len() && f.out[first] != '\n'
+        first @ first + 1
+
+    if first + 1 >= f.out.len()
+        return
+    out: str @ f.out.slice(from: 0, to: first + 1)
+    start: i64 @ first + 1
+    at: i64 @ start
+
+    while at < f.out.len()
+        if f.out[at] == '\n'
+            line = f.out.slice(from: start, to: at + 1)
+
+            if line != "\n"
+                out @ out + "        "
+            out @ out + line
+            start @ at + 1
+        at @ at + 1
+
+    f.out @ out + f.out.slice(from: start, to: f.out.len())
+
+## Tests
+
+test "a block's head across lines is deepened after its first line, and a head of one line is not"
+    f: page.Fmt @ page.blank_page()
+    f.out @ "x\n"
+    start = f.out.len()
+    f.out @ f.out + "    while t[a +  # c\n        1] > 0\n\n"
+    deepened(@f, from: start)
+    assert f.out == "x\n    while t[a +  # c\n                1] > 0\n\n"
+    g: page.Fmt @ page.blank_page()
+    g.out @ "    if c\n"
+    deepened(@g, from: 0)
+    assert g.out == "    if c\n"

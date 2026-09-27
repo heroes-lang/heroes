@@ -14,7 +14,9 @@
 # its result: a comment inside the result's type breaks the type after the
 # token it follows (`print/breaks.hero`), the `()` of a unit result
 # included, which `fmt` drops only where no comment is inside it, since the
-# comment has no other place (the seat's `k01` to `k07`).
+# comment has no other place (the seat's `k01` to `k07`). Either shape
+# printed across lines is a block's head, and every line of it after its
+# first goes eight columns further in (`margins.deepened`).
 
 use token
 use ast
@@ -22,12 +24,14 @@ use source
 use print/types
 use print/signature
 use print/page
+use print/margins
 use print/owners
 use print/breaks
 
 # The signature of `fd`, whose name is at `name`, and the comment trailing
 # its last line.
 function signature_lines(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], name: token.Span, fd: ast.FunctionDecl, indent: i64)
+    start = f.out.len()
     first = source.line_of(s, name.start)
     last = source.line_of(s, fd.signature_end.start)
     open = list_open(f.lines, name: name)
@@ -55,6 +59,10 @@ function signature_lines(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments
     if f.last_line < last
         f.last_line @ last
     page.trailing_comment(@f, s, comments, line: last)
+
+    # A signature across lines is a block's head, the body's or the next
+    # member's: `margins.deepened`.
+    margins.deepened(@f, from: start)
 
 # The token of the parameter list's `(`: the first after the name, past any
 # type parameters, which hold none.
@@ -101,8 +109,7 @@ function opened(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
         if index == fd.params.len() - 1
             separator @ ""
 
-        # A comma between two comments keeps its own line
-        # (`owners.lone_comma`).
+        # A comma after a comment keeps its own line (`owners.lone_comma`).
         comma: i64 @ -1
 
         if index + 1 < fd.params.len()
@@ -110,7 +117,7 @@ function opened(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
 
             if mark >= 0 && f.lines.tokens[mark].kind == .comma
                 before = owners.code_before(f.lines, index: mark)
-                comma @ owners.lone_comma(f.lines, s: s, after: f.lines.tokens[before].span.end)
+                comma @ owners.lone_comma(f.lines, after: f.lines.tokens[before].span.end)
 
         if comma >= 0
             separator @ ""
@@ -142,7 +149,7 @@ function opened(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
             f.last_line @ stop
 
         if comma >= 0
-            page.comma_line(@f, s, comments, comma: f.lines.tokens[comma].span, indent: indent + 4)
+            margins.comma_line(@f, s, comments, lines: f.lines, comma: comma, indent: indent + 4)
 
         # A comment on that line is the parameter's only before what follows
         # it, the next parameter or the list's `)`: after the `)`, on a list
