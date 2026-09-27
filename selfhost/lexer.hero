@@ -53,25 +53,37 @@ record LexOutput
 # no_entry_point's caret: a diagnostic about the input as a whole
 # belongs to the file the reader named.
 function lex(s: source.Source) -> LexOutput
-    tokens: [token.Token] @ []
-    diagnostics: [diag.Diagnostic] @ []
+    return joined(s, files: lex_files(s))
+
+# Every file's own stream, in the compilation's coordinates, each ending in
+# its OWN eof at its own end: what the parser reads, one file at a time.
+#
+# **The stream above is one, and a file's end was not in it** (found beside
+# defect 109, 2026-09-27). Each file's eof was dropped, so a file that ended
+# inside a declaration went on into the next file's tokens: `function
+# main()` alone in a file was `missing_body` found `function`, the
+# library's first word, and exit 2 blaming the compiler; a module ending
+# the same way was refused at the NEXT module's first line; and a module
+# ending in `function two() -> i64` took the next module's indented first
+# lines as its body, so a program of two modules each refused alone ran at
+# exit 0. The level and the open brackets already stopped at a file's end;
+# now the declarations do too.
+function lex_files(s: source.Source) -> [LexOutput]
+    out: [LexOutput] @ []
     index: i64 @ 0
 
     for entry in s.files
         _ = entry
         offset = s.files[index].start
         one = lex_one(source_extent.text_of(s, index))
+        tokens: [token.Token] @ []
 
         for t in one.tokens
-            # Each file's own eof is dropped; the compilation gets one,
-            # below, at the root's end. The `continue` here belongs to
-            # THIS inner loop over tokens, not to the file walk that
-            # keeps `index` — the trap that cost five sites today.
-            if t.kind == .eof
-                continue
             tokens @ tokens.push(
                 token.Token(kind: t.kind, span: token.Span(start: t.span.start + offset, end: t.span.end + offset))
             )
+
+        diagnostics: [diag.Diagnostic] @ []
 
         for d in one.diagnostics
             moved: diag.Diagnostic @ d
@@ -86,7 +98,27 @@ function lex(s: source.Source) -> LexOutput
             moved.fixes @ fixes
             diagnostics @ diagnostics.push(moved)
 
+        out @ out.push(LexOutput(tokens: tokens, diagnostics: diagnostics))
         index @ index + 1
+
+    return out
+
+# The files' streams as the compilation's ONE, for every reader but the
+# parser: each file's tokens but its own eof, and one eof at the root's end.
+function joined(s: source.Source, files: [LexOutput]) -> LexOutput
+    tokens: [token.Token] @ []
+    diagnostics: [diag.Diagnostic] @ []
+
+    for one in files
+        for t in one.tokens
+            # The `continue` belongs to THIS inner loop over tokens, not to
+            # the walk over files — the trap that cost five sites once.
+            if t.kind == .eof
+                continue
+            tokens @ tokens.push(t)
+
+        for d in one.diagnostics
+            diagnostics @ diagnostics.push(d)
 
     at = source_extent.root_end(s)
     tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: at, end: at)))

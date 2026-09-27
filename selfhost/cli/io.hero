@@ -77,8 +77,17 @@ function eprint_raw(text: str)
 # byte and no byte of a longer character, and splitting the artifact into
 # characters to read its last one made a string per character of the
 # generated C.
+#
+# **An empty artifact is printed as nothing**, found beside defect 109:
+# `print("")` writes the newline `print` always adds, so `heroes fmt` on an
+# empty program, or on one of spaces or blank lines, wrote one byte to stdout
+# where `--in-place` writes none, and the two spellings of the formatter
+# disagreed on the canonical form of an empty file.
 function print_artifact(text: str)
-    if text.len() > 0 && text[text.len() - 1] == '\n'
+    if text.len() == 0
+        return
+
+    if text[text.len() - 1] == '\n'
         print(text.slice(from: 0, to: text.len() - 1))
         return
     print(text)

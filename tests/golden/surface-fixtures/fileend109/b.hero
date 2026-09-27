@@ -1,0 +1,4 @@
+    return 2  #~ expected_declaration
+
+function three() -> i64
+    return 3

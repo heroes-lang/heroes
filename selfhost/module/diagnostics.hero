@@ -199,18 +199,25 @@ function module_binding_taken(binding: str, first: str, second: str, has_alias: 
 # already has. A GUESS rather than a certain fix — the author knows a better
 # word than the compiler does, and §4.17 says a certain fix must be the one
 # repair, not the first one that parses.
+#
+# The path is cut only beside its `/`, one byte that is never inside another
+# character, and never a byte at a time: a module path is identifier text
+# and ASCII today, and the byte-at-a-time spelling is the one that aborted
+# `build` on `f"é {x}"` (defect 110), so it is not kept where nothing but
+# today's lexer stands between it and a character above ASCII.
 function suggestion(module: str) -> str
     parts: [str] @ []
+    start: i64 @ 0
     i: i64 @ 0
 
     while i < module.len()
         if module[i] == '/'
+            parts @ parts.push(module.slice(from: start, to: i))
             parts @ parts.push("_")
-        else
-            one = module.slice(from: i, to: i + 1)
-            parts @ parts.push(one)
+            start @ i + 1
         i @ i + 1
 
+    parts @ parts.push(module.slice(from: start, to: module.len()))
     return parts.join("")
 
 # An `extern` reached from another module (panel 033 R5, carried by
@@ -309,6 +316,14 @@ test "the list reads as prose, whatever its length"
     assert listed(two) == "`x` and `y`"
     three: [str] = ["x", "y", "z"]
     assert listed(three) == "`x`, `y` and `z`"
+
+test "a suggested name closes up the path's separators, and keeps every character whole"
+    assert suggestion("ir/state") == "ir_state"
+    assert suggestion("a/b/c") == "a_b_c"
+    assert suggestion("state") == "state"
+    assert suggestion("") == ""
+    assert suggestion("/x/") == "_x_"
+    assert suggestion("café/é€😀") == "café_é€😀"
 
 test "an unused use carries its note, not a fix"
     d = unused_use(name: "geom", span: token.Span(start: 0, end: 8))

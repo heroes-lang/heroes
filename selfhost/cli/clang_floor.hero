@@ -6,6 +6,7 @@
 # with a name: what version answers, whether it is enough, and what to say
 # when it is not.
 
+use bytes
 use cli/process
 
 # THE CLANG FLOOR: 18 (author instruction 2026-09-03, panel 103 — *"if you
@@ -51,11 +52,17 @@ function major_of(first_line: str) -> i64?
         return fail(code: "none", msg: "no number after `version`")
     return ok(value)
 
+# What follows the first `marker` on the line. Each offset is asked by its
+# bytes: sliced, a vendor string with a character above ASCII before the
+# marker, `Clàng version 21.0.0`, put a cut inside it, and every `build` and
+# `doctor` aborted before clang was asked anything (found beside defect 110,
+# 2026-09-27). A match starts and ends on a character boundary, so the rest is
+# sliced whole.
 function text_after(text: str, marker: str) -> str?
     index: i64 @ 0
 
     while index + marker.len() <= text.len()
-        if text.slice(from: index, to: index + marker.len()) == marker
+        if bytes.bytes_at(text: text, at: index, needle: marker)
             return ok(text.slice(from: index + marker.len(), to: text.len()))
         index @ index + 1
 
@@ -115,6 +122,11 @@ test "the clang floor reads the major from every vendor's first line, and holds 
     assert major_of("Ubuntu clang version 18.1.3 (1ubuntu1)").must() == 18
     assert major_of("gcc (GCC) 14.1.0").is_err()
     assert FLOOR == 18
+
+    # A vendor's name above ASCII, before the marker and after it.
+    assert major_of("Clàng version 21.0.0").must() == 21
+    assert major_of("😀 clang version 19.1.0 (€)").must() == 19
+    assert major_of("clang versión 20").is_err()
 
     # This machine's own clang is at or above the floor, or nothing here would build.
     assert !check("build").is_err()

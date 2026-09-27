@@ -1,0 +1,7 @@
+# Defect 109, 2026-09-27: a program whose own file has bytes, importing a
+# module that has none. The empty module is joined to the compilation like
+# any other, and this file owes the one diagnostic its content does.
+use empty  #~ unused_binding
+
+function main()
+    print(1)

@@ -182,6 +182,38 @@ __attribute__((unused)) static int hero_handle_dead_at(uintptr_t addr, uintptr_t
     return 1;
 }
 
+/* An address as `0x…` and a terminating NUL, into `buf`, with no call at all:
+ * a signal handler may not call `snprintf`, and neither may a vectored
+ * exception handler running on the faulting thread. The offset is in both
+ * handlers' messages because the null window is the platform's own floor and
+ * not one page, so a reader has to be able to tell a null plus a field offset
+ * from a small wild pointer, and the number is the only thing that says which
+ * (defect 045).
+ *
+ * **ONE WRITER FOR BOTH PLATFORMS, above the split** (defect 115). The digits
+ * were written twice, once per arm, and the Windows arm's dead-handle line had
+ * no copy at all: it said `a dead C handle was used inside C` where the POSIX
+ * arm says `…, at offset 0x0`, and `run/`'s golden for it was red on the box
+ * alone. Three callers on two platforms now share the one loop, so the digits
+ * cannot drift between them. Unused under the sanitizer, where neither
+ * handler is compiled. */
+#define HERO_HEX_BUF (2 + 16 + 1)
+__attribute__((unused)) static void hero_stack_hex(uintptr_t v, char buf[HERO_HEX_BUF]) {
+    const char *digits = "0123456789abcdef";
+    int at = 0;
+    buf[at++] = '0';
+    buf[at++] = 'x';
+    int started = 0;
+    for (int shift = (int)(sizeof v * 8) - 4; shift >= 0; shift -= 4) {
+        unsigned nibble = (unsigned)((v >> shift) & 0xf);
+        if (nibble != 0 || started || shift == 0) {
+            buf[at++] = digits[nibble];
+            started = 1;
+        }
+    }
+    buf[at] = '\0';
+}
+
 /* THE HELPERS, compiled on every POSIX build, under the sanitizer too (panel
  * 175). `parts/os.c`'s crash handler writes with them and asks them which Heroes
  * frame it is under, and since panel 175 that handler stays in a `--sanitize`
@@ -391,27 +423,11 @@ static void hero_stack_bounds(void) {
 #endif
 }
 
-/* An address as `0x…`, written with `write(2)` like everything else here: a
- * signal handler may not call `snprintf`, which is why this exists at all. The
- * offset is in the message because the null-page window is the platform's own
- * floor and not one page — 4 GiB on Darwin — so a reader has to be able to tell
- * a null plus a field offset from a small wild pointer, and the number is the
- * only thing that says which (defect 045). */
+/* An address as `0x…`, written with `write(2)` like everything else here, in
+ * the digits `hero_stack_hex` above the platform split gives both platforms. */
 static void hero_stack_say_hex(uintptr_t v) {
-    char buf[2 + 16 + 1];
-    const char *digits = "0123456789abcdef";
-    int at = 0;
-    buf[at++] = '0';
-    buf[at++] = 'x';
-    int started = 0;
-    for (int shift = 60; shift >= 0; shift -= 4) {
-        unsigned nibble = (unsigned)((v >> shift) & 0xf);
-        if (nibble != 0 || started || shift == 0) {
-            buf[at++] = digits[nibble];
-            started = 1;
-        }
-    }
-    buf[at] = '\0';
+    char buf[HERO_HEX_BUF];
+    hero_stack_hex(v, buf);
     hero_stack_say(buf);
 }
 
@@ -680,10 +696,30 @@ static void hero_stack_guard_install(void) {
 #include <windows.h>
 #include <io.h>
 
+/* `_write` until every byte is out, as `hero_stack_say` loops on POSIX: the
+ * CRT may write fewer bytes than it was handed, and a sentence cut short is a
+ * contract broken on the one platform nobody reads it on. */
+static void hero_stack_veh_say(const char *s) {
+    size_t n = strlen(s);
+    while (n > 0) {
+        int put = _write(2, s, (unsigned int)n);
+        if (put <= 0) return;
+        s += (size_t)put;
+        n -= (size_t)put;
+    }
+}
+
+/* The POSIX arm's `hero_stack_say_hex`, in this platform's `_write`: the same
+ * digits, from the one writer above the platform split. */
+static void hero_stack_veh_say_hex(uintptr_t v) {
+    char buf[HERO_HEX_BUF];
+    hero_stack_hex(v, buf);
+    hero_stack_veh_say(buf);
+}
+
 static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
-        const char *line = "panic: stack exhausted\n";
-        _write(2, line, (unsigned int)strlen(line));
+        hero_stack_veh_say("panic: stack exhausted\n");
         hero_abort();
     }
     /* THE POSIX HALF'S WITNESS, IN WINDOWS' OWN VOCABULARY (defect 013,
@@ -699,8 +735,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
      * `nullptr`, which no C library checks. */
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && (uintptr_t)ep->ExceptionRecord->ExceptionAddress == 0) {
-        const char *line = "panic: a null function pointer was called \xe2\x80\x94 a `ptr` holding `nullptr` reached C where C calls it back\n";
-        _write(2, line, (unsigned int)strlen(line));
+        hero_stack_veh_say("panic: a null function pointer was called \xe2\x80\x94 a `ptr` holding `nullptr` reached C where C calls it back\n");
         hero_abort();
     }
 
@@ -728,45 +763,32 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
      * contract (panel 156 R1) and `called from` is best effort, so this arm is
      * complete without a name rather than missing one. */
     /* The dead region, as the POSIX arm reads it and before the null arm for
-     * its reason; no offset or frame here, for the reason the null arm below
-     * gives. UNRUN on this Mac. */
+     * its reason, and in the POSIX arm's sentence: the offset into the region
+     * is `ExceptionInformation[1]` less the region's base, as `si_addr` less it
+     * is there. It said no offset until defect 115, with a comment that gave
+     * the null arm's reason for having no FRAME as a reason for having no
+     * OFFSET, and marked the arm unrun; the box then printed the line without
+     * `at offset 0x0` and `run/`'s golden for it went red there alone. No
+     * `called from`, for the frame walk's reason at the head of this file. */
     uintptr_t dead_offset = 0;
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && ep->ExceptionRecord->NumberParameters >= 2
         && hero_handle_dead_at((uintptr_t)ep->ExceptionRecord->ExceptionInformation[1], &dead_offset)) {
-        const char *line = "panic: a dead C handle was used inside C\n";
-        _write(2, line, (unsigned int)strlen(line));
-        _write(2, HERO_DEAD_USE_TAIL, (unsigned int)strlen(HERO_DEAD_USE_TAIL));
+        hero_stack_veh_say("panic: a dead C handle was used inside C, at offset ");
+        hero_stack_veh_say_hex(dead_offset);
+        hero_stack_veh_say("\n" HERO_DEAD_USE_TAIL);
         hero_abort();
     }
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && ep->ExceptionRecord->NumberParameters >= 2
         && (unsigned long long)ep->ExceptionRecord->ExceptionInformation[1] < HERO_NULL_WINDOW) {
-        const char *line = "panic: a null pointer was read through, at offset ";
-        _write(2, line, (unsigned int)strlen(line));
         /* The offset is half the contract (panel 156 R1: the sentence and the
          * offset are what a reader may rely on, and `called from` is best
          * effort), so it is written here rather than left to the platform with
-         * a frame walk. Same digits as `hero_stack_say_hex` above, written by
-         * hand because that one lives in the POSIX arm and a second `#include`
-         * of it would be a shared helper for two callers on two platforms. */
-        unsigned long long v = (unsigned long long)ep->ExceptionRecord->ExceptionInformation[1];
-        char buf[2 + 16 + 2];
-        const char *digits = "0123456789abcdef";
-        int at = 0;
-        buf[at++] = '0';
-        buf[at++] = 'x';
-        int started = 0;
-        for (int shift = 60; shift >= 0; shift -= 4) {
-            unsigned nibble = (unsigned)((v >> shift) & 0xf);
-            if (nibble != 0 || started || shift == 0) {
-                buf[at++] = digits[nibble];
-                started = 1;
-            }
-        }
-        buf[at++] = '\n';
-        _write(2, buf, (unsigned int)at);
-        _write(2, HERO_NULL_READ_TAIL, (unsigned int)strlen(HERO_NULL_READ_TAIL));
+         * a frame walk, in the digits both platforms share. */
+        hero_stack_veh_say("panic: a null pointer was read through, at offset ");
+        hero_stack_veh_say_hex((uintptr_t)ep->ExceptionRecord->ExceptionInformation[1]);
+        hero_stack_veh_say("\n" HERO_NULL_READ_TAIL);
         hero_abort();
     }
     return EXCEPTION_CONTINUE_SEARCH;
