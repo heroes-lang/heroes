@@ -44,6 +44,21 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     guarantee the zeroing buys, every temporary initialised before any read,
     and moves the initialisation to where the temporary's life begins.
 
+    **What it actually is, read in the emitted C, 2026-09-28** (the
+    coordinator, on the trunk's seed at `c90fd658`). The zeroing is not
+    waste: it is the release's precondition. Each arm of the `match` writes
+    its value into an owned variable of its own (`h3_own3` to `h25_own25` in
+    `h_keywords_keyword`), each store releases the variable's old value
+    first, and the function's exit releases all 23, the arms not taken
+    included, so an unzeroed one would be released uninitialised. `= {0}` is
+    emitted only on a refcounted type (`emit/body.hero`, `is_refcounted`),
+    and `TokenKind?` is one because its failure half carries strings. The
+    cost is in the lowering's shape, one owned variable per arm where the
+    arms could share one destination, and changing how a `match` lowers is
+    the IR's architecture: a panel path (CLAUDE.md § 4), convened when the
+    seats can sit again. Removing the zeroing without it would trade a
+    robustness guarantee for speed, which § Precedence refuses.
+
 - [ ] **116 — a statement continued at its own margin after a trailing operator compiles, where design.md says a long expression at depth zero is broken inside parentheses or not at all** | `y = a +` over `1` at the statement's own indentation is `check` 0 and prints 6: the lexer plants no terminator after `+` (Go's rule) and the same margin plants no indent, so the statement goes on; one level deeper it is refused; design.md §4.15 reads *at bracket depth zero every line's indentation is structural: a long expression is broken inside parentheses or not at all*, and *trailing-operator continuation at depth zero (Nim's rule) was considered and deferred* | `selfhost/layout.hero` (`is_line_ender`, `maybe_terminator`) · `docs/design/design.md` §4.15
 
     **Origin:** lane B's agent, 2026-09-27, beside defect 107 (a comment on
