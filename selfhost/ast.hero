@@ -286,7 +286,7 @@ variant PatternKind
 ## Written types
 
 # A written type. `span` covers the whole type as written (`[i64]` includes its
-# brackets); for `named` the span IS the name, so the text never needs copying.
+# brackets); a `named` one's text is read through `type_text.named_text`.
 record TypeNode
     kind: TypeKind
     span: token.Span

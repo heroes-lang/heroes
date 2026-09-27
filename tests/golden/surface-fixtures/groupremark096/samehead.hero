@@ -1,0 +1,26 @@
+# The regression defect 096's first repair introduced, found by the skeptic
+# seat the same day: two `extern` groups with the same head, one under the
+# other, and a doc directly above the SECOND head. `fmt` merges the groups,
+# and the head line it drops was counted as a blank one, so a blank went
+# between the doc and its member and the tree guard refused at exit 2 what
+# the trunk printed at exit 0. The doc above a third head, with no blank
+# line anywhere, and a doc of two lines above a fourth, are the shapes beside
+# it. `fmt` prints this file merged, each doc directly above its member.
+
+extern "x.h"
+    record Ob tag ob
+
+# the doc of Pool, above a second head
+extern "x.h"
+    record Pool tag pool
+# the doc of ob_put, above a third head, no blank line anywhere
+extern "x.h"
+    function ob_put(o: Ob consumes)
+
+# the doc of ob_new, line one
+# and line two
+extern "x.h"
+    function ob_new() -> Ob retains ob_put
+
+function main()
+    print(0)

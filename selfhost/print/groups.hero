@@ -1,0 +1,168 @@
+# The author's parentheses, read from the source's tokens (design.md
+# §4.15), which the tree does not keep: the pairs around a value (`levels`),
+# the ones at its edges around a part of it (`extent`), and which `(` opens
+# a call's arguments instead (`calls`). Split out of `print/owners.hero` on
+# 2026-09-26, when the fourth round of defects 099 and 101 took it past
+# §11's 300 lines, along the seam between which block a comment is in and
+# which parentheses a value has. `print/brackets.hero`, `print/elements.hero`
+# and the output guard (`print/anchors.hero`) read these, so the printer and
+# the guard count the same pairs.
+
+use token
+use lexer
+use source
+use print/owners
+
+# The author's grouping parentheses around the value at `span`, as the
+# token index of each `(`, the innermost first. The tree keeps none, and
+# the value's own span holds neither: it can start inside a group of its
+# first operand and end inside one of its last, so the innermost pair is
+# the first `(` before it, not a call's, whose `)` is past it with only
+# other groups' brackets between, and each outer one closes right after the
+# one inside it. Read from the lexer's tokens, a literal's brackets are its
+# text, a hole's `f"{")"}"` included.
+function levels(lines: owners.Lines, span: token.Span) -> [i64]
+    out: [i64] @ []
+    first = owners.index_at(lines, offset: span.start)
+    last = owners.index_at(lines, offset: span.end - 1)
+
+    if first < 0 || last < first
+        return out
+    open: i64 @ owners.code_before(lines, index: first)
+
+    while open >= 0 && lines.tokens[open].kind == .lparen && !calls(lines, index: open)
+        shut = lines.pair[open]
+
+        if shut > last
+            at: i64 @ owners.code_after(lines, index: last)
+
+            while at >= 0 && at < shut && lines.tokens[at].kind == .rparen
+                at @ owners.code_after(lines, index: at)
+
+            if at != shut
+                return out
+            out @ out.push(open)
+
+            # The pairs around this one, each closing right after it.
+            outer: i64 @ owners.code_before(lines, index: open)
+
+            while outer >= 0 && lines.tokens[outer].kind == .lparen && !calls(lines, index: outer) && lines.pair[outer] == owners.code_after(lines, index: lines.pair[out[out.len() - 1]])
+                out @ out.push(outer)
+                outer @ owners.code_before(lines, index: outer)
+
+            return out
+        open @ owners.code_before(lines, index: open)
+
+    return out
+
+# The value at `span` with the author's parentheses at its edges that group
+# a part of it: `(a + b) * 2` begins at its `(`, which the tree's span,
+# from `a`, leaves out, as `a * (b + c)` ends at its `)`. A comment after
+# that `(` is inside the value; asked of the span, it was outside, and the
+# value was printed on one line without it (the second skeptic seat's
+# `x = (  # c`). The pairs around the whole value are `levels`'.
+function extent(lines: owners.Lines, span: token.Span) -> token.Span
+    first = owners.index_at(lines, offset: span.start)
+    last = owners.index_at(lines, offset: span.end - 1)
+
+    if first < 0 || last < first
+        return span
+    start: i64 @ first
+    before: i64 @ owners.code_before(lines, index: first)
+
+    while before >= 0 && lines.tokens[before].kind == .lparen && !calls(lines, index: before) && lines.pair[before] >= 0 && lines.pair[before] <= last
+        start @ before
+        before @ owners.code_before(lines, index: before)
+
+    end: i64 @ last
+    after: i64 @ owners.code_after(lines, index: last)
+
+    while after >= 0 && lines.tokens[after].kind == .rparen && lines.pair[after] >= start
+        end @ after
+        after @ owners.code_after(lines, index: after)
+
+    return token.Span(start: lines.tokens[start].span.start, end: lines.tokens[end].span.end)
+
+# The offsets of the `(` at token `open` and of its `)`.
+function around(lines: owners.Lines, open: i64) -> token.Span
+    return token.Span(start: lines.tokens[open].span.start, end: lines.tokens[lines.pair[open]].span.start)
+
+# Does the `(` at token `index` open a call's arguments, a signature's
+# parameters or a function type's, which follow a name or a value on the
+# same line of a list (`ended`)?
+# ENUMERATED, never a catch-all: a kind added later answers here or does
+# not compile, and a `_ => false` would take its `(` for a group.
+function calls(lines: owners.Lines, index: i64) -> bool
+    before = owners.code_before(lines, index: index)
+
+    if before < 0 || lines.ended[index]
+        return false
+
+    return match lines.tokens[before].kind
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit           => true
+        .rparen | .rbracket | .rbrace | .question | .hole                            => true
+        .kw_true | .kw_false | .kw_nullptr | .kw_function | .kw_fail                 => true
+        .kw_constant | .kw_record | .kw_variant | .kw_match | .kw_if | .kw_else      => false
+        .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue | .kw_return         => false
+        .kw_test | .kw_assert | .kw_extern | .kw_use | .eq | .at | .colon            => false
+        .colon_colon | .comma | .dot | .arrow | .fat_arrow | .pipe | .lparen         => false
+        .lbracket | .lbrace | .plus | .minus | .star | .slash | .percent | .eq_eq    => false
+        .bang_eq | .lt | .le | .gt | .ge | .and_and | .or_or | .bang | .amp | .caret => false
+        .tilde | .shl | .shr | .comment | .terminator | .indent | .dedent | .eof     => false
+        .error                                                                       => false
+
+# The value at `span` with every one of the author's parentheses around
+# it or at its edges: where a statement's place begins and ends, a comment
+# before the `)` of `(x  # c` over `) @ a` being inside it (the third
+# skeptic seat's `pl1`).
+function whole(lines: owners.Lines, span: token.Span) -> token.Span
+    pairs = levels(lines, span: span)
+    inner = extent(lines, span: span)
+
+    if pairs.len() == 0
+        return inner
+    outer = around(lines, open: pairs[pairs.len() - 1])
+    return token.Span(start: outer.start, end: outer.end + 1)
+
+## Tests
+
+# The parentheses of a call against a group's, a literal's own brackets
+# being text.
+test "a group's parentheses are told from a call's, a literal's brackets being text"
+    text = "function f(a: i64) -> str\n    x = g(  # trails\n        # in the call\n        a)\n    return (f\"{\")\"}\" +\n        \"b\")\n"
+    s = source.new_source(name: "t.hero", text: text)
+    lines = owners.shape(s, lexed: lexer.lex_one(text).tokens, ignored: [], end: text.len())
+    call = owners.index_at(lines, offset: 35)
+    assert lines.tokens[call].kind == .lparen
+    assert calls(lines, index: call)
+    open = owners.index_at(lines, offset: 91)
+    assert lines.tokens[open].kind == .lparen
+    assert !calls(lines, index: open)
+
+# The second skeptic seat's shapes over e0e08d18: a value's extent reaches
+# the author's parentheses at its edges and not those around it, and a `(`
+# on a list's next line opens no call (the lexer's terminator separates the
+# two elements).
+test "a value's extent takes the parentheses at its edges, and a list's next line opens no call"
+    text = "function f(a: i64) -> [i64]\n    x = (a + 1) * 2\n    return [ok\n        (1), g(a: 1  # c\n        ,  # d\n        b: 2)]\n"
+    s = source.new_source(name: "t.hero", text: text)
+    lines = owners.shape(s, lexed: lexer.lex_one(text).tokens, ignored: [], end: text.len())
+    product = extent(lines, span: token.Span(start: 37, end: 47))
+    assert product.start == 36
+    assert product.end == 47
+    sum = extent(lines, span: token.Span(start: 37, end: 42))
+    assert sum.start == 37
+    assert levels(lines, span: token.Span(start: 37, end: 42)) == [owners.index_at(lines, offset: 36)]
+    call = owners.index_at(lines, offset: 71)
+    assert lines.tokens[call].kind == .lparen
+    assert lines.ended[call]
+    assert !calls(lines, index: call)
+
+# The third skeptic seat's `pl1`: a place begins and ends at its parentheses.
+test "a place's whole extent takes the parentheses around it"
+    text = "function f(a: i64) -> i64\n    x: i64 @ 0\n    (x  # c\n        ) @ a\n    return x\n"
+    s = source.new_source(name: "t.hero", text: text)
+    lines = owners.shape(s, lexed: lexer.lex_one(text).tokens, ignored: [], end: text.len())
+    place = whole(lines, span: token.Span(start: 46, end: 47))
+    assert place.start == 45
+    assert place.end == 62

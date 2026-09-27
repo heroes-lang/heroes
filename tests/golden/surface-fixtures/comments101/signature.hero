@@ -1,0 +1,38 @@
+# The silent move defect 101's first repair left, and the shapes beside it:
+# a comment on the `(` line of a signature written across lines, after a
+# parameter there. `fmt` joined the signature onto one line and the comment
+# went to the end of it, at exit 0, the same bytes as the trunk, and the
+# printer's own check could not see it. The signature keeps one parameter
+# per line now whenever a comment sits anywhere from its `(` line to its
+# `)` line, as defect 095's rule does inside the list: here with the `)`
+# line's comment too, with one on every line, and in a group member. A
+# comment trailing a signature of one line trails all of it, and stays.
+
+function first(a: i64,  # about a
+    b: i64) -> i64
+    return a + b
+
+function both(a: i64,  # about a
+    b: i64
+) -> i64  # the result
+    return a + b
+
+function every(  # the list
+    a: i64,  # about a
+    # above b
+    b: i64  # about b
+    # after b
+) -> i64  # the result
+    return a + b
+
+function whole(a: i64) -> i64  # all of it
+    return a
+
+extern "x.h"
+    record Ob tag ob
+    function ob_get(o: Ob,  # the handle
+        n: i32) -> i32
+    function ob_put(o: Ob consumes)
+
+function main()
+    print(first(a: 1, b: 2) + both(a: 1, b: 2) + every(a: 1, b: 2) + whole(1))

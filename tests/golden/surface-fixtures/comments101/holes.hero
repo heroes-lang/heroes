@@ -1,0 +1,20 @@
+# A `)` or `(` inside an interpolation's hole inside the author's grouping
+# parentheses with a comment (`h4/f1`, `f3`): the first repair matched the
+# parentheses byte by byte and took the literal's `)` for the group's,
+# refusing at exit 2. They are read from the lexer's tokens now, where a
+# literal's brackets are its text, and the comment stays inside the group.
+
+function f(a: i64) -> str
+    return (
+        # just inside the paren
+        f"{a}" + f"{")"}"
+    )
+
+function g(a: i64) -> str
+    return (
+        # just inside the paren
+        f"{a}" + f"{"("}"
+    )
+
+function main()
+    print(f(a: 1) + g(a: 2))

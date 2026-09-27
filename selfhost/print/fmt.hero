@@ -7,26 +7,30 @@
 # blocks), valued -> statement (a match arm is a head on a statement),
 # and the measurements ask the renderer what a line costs.
 #
-# THE MAP (CLAUDE.md §11's due for a knot). State: Fmt{out,
-# next_comment, last_line}, threaded as the one @ parameter.
+# THE MAP (CLAUDE.md §11's due for a knot). State: `page.Fmt`{out,
+# next_comment, last_line, dropped, moved}, threaded as the one @ parameter.
 # - format_file: item order, top-level blank lines, group runs;
 #   entry point, calls declaration.
-# - declaration/field_line/case_line + extern_head_once + signature:
-#   one item's shape (fmt_decl + fmt_extern).
-# - comments_before/trailing_comment: the comment stream (the one
-#   thing the tree does not keep — a mistake here is MISSING output).
+# - declaration/field_line/case_line + extern_head_once: one item's
+#   shape (fmt_decl + fmt_extern); a function's signature is
+#   `print/headline.hero`'s.
+# - `print/page.hero`: the lines and the comment stream (the one thing
+#   the tree does not keep, so a mistake there is a MOVED comment), and
+#   the rules every walk here calls it for; `print/owners.hero`: the
+#   source's logical lines and the block each comment belongs to.
 # - block/statement: the statement walk (fmt_stmt).
-# - valued/broken/broken_args: a head plus its value, the WIDTH-column
-#   break, match arm layout (fmt_break).
-# - block_shape/value_block_shape/comment_waits_before: where the air
-#   goes (panel 095). block_shape is a SECOND dispatch over statement
+# - valued/plain_valued: a head plus its value, the WIDTH-column break,
+#   match arm layout (fmt_break); `print/brackets.hero` opens a value
+#   inside its brackets, the comments in them kept.
+# - block_shape/value_block_shape and page's comment_waits_before: where
+#   the air goes (panel 095). block_shape is a SECOND dispatch over statement
 #   and expression kinds and it must agree with statement() and
 #   valued() arm for arm — see its own comment.
 # - arm_heads/arm_alignment/close_run: where => goes (fmt_arms).
 # - fits_on_one_line/spans_lines/literal_end_line: the three
 #   measurements (fmt_fits).
-# - render/wrapped/power/args_line/arg_text/render_pattern/binary_op:
-#   minimum parentheses (fmt_expr).
+# - `print/parens.hero`: render/wrapped/power/args_line/arg_text, one
+#   expression on one line with minimum parentheses (fmt_expr).
 #
 # Three policies, stated because they are choices. Parentheses are
 # MINIMAL (2 + (3 * 4) loses them, (2 + 3) * 4 keeps them). Lines break
@@ -57,10 +61,19 @@
 use token
 use ast
 use source
-use digits
+use source_extent
 use print/types
-use print/signature
 use print/bodies
+use print/page
+use print/margins
+use print/owners
+use lexer
+use print/parens
+use print/brackets
+use print/around
+use print/breaks
+use print/headline
+use print/groups
 use parse
 
 # Where a line stops being one line. Not a language rule — one
@@ -77,71 +90,6 @@ use parse
 # began with a line this constant decided to break.
 constant WIDTH: i64
     120
-
-## The state
-
-record Fmt
-    out: str
-    next_comment: i64
-    last_line: i64
-
-function put_line(@f: Fmt, indent: i64, text: str)
-    if text.len() > 0
-        f.out @ f.out + " ".repeat(indent.to_u64().must()) + text
-    f.out @ f.out + "\n"
-
-function blank_line(@f: Fmt)
-    if f.out.len() == 0
-        return
-    n = f.out.len()
-
-    if n >= 2 && f.out.slice(from: n - 2, to: n) == "\n\n"
-        return
-    f.out @ f.out + "\n"
-
-## Comments — the one thing the tree does not keep
-
-# Print every comment above source line `line`, at indent, preserving
-# a single blank line wherever the source had one.
-function comments_before(@f: Fmt, s: source.Source, comments: [token.Span], line: i64, indent: i64)
-    while f.next_comment < comments.len()
-        span = comments[f.next_comment]
-        comment_line = source.line_of(s, span.start)
-
-        if comment_line >= line
-            return
-
-        if f.last_line > 0 && comment_line > f.last_line + 1
-            blank_line(@f)
-        put_line(@f, indent: indent, text: trim_end(source.span_text(s, span)))
-        f.last_line @ comment_line
-        f.next_comment @ f.next_comment + 1
-
-# A comment on the same line as what was just printed goes at the end
-# of that line, two spaces out.
-function trailing_comment(@f: Fmt, s: source.Source, comments: [token.Span], line: i64)
-    if f.next_comment >= comments.len()
-        return
-    span = comments[f.next_comment]
-
-    if source.line_of(s, span.start) != line
-        return
-    text = trim_end(source.span_text(s, span))
-    n = f.out.len()
-
-    if n > 0 && f.out.slice(from: n - 1, to: n) == "\n"
-        f.out @ f.out.slice(from: 0, to: n - 1)
-    f.out @ f.out + "  " + text + "\n"
-    f.next_comment @ f.next_comment + 1
-
-function trim_end(text: str) -> str
-    cs = text.chars()
-    end: i64 @ cs.len()
-
-    while end > 0 && (cs[end - 1] == " " || cs[end - 1] == "\t")
-        end @ end - 1
-
-    return cs.slice(from: 0, to: end).join("")
 
 function pad_right(text: str, width: i64) -> str
     grown: str @ text
@@ -167,7 +115,17 @@ record Item
 # formatter starts deleting the author's remarks — gofmt sorts imports
 # and can afford to, it has a comment model this one does not.
 function format_file(tree: ast.Ast, s: source.Source, all_comments: [token.Span], uses: [ast.Use], decls: [ast.Decl]) -> str
-    f: Fmt @ Fmt(out: "", next_comment: 0, last_line: 0)
+    return format_page(tree, s, all_comments, uses, decls).out
+
+function format_page(tree: ast.Ast, s: source.Source, all_comments: [token.Span], uses: [ast.Use], decls: [ast.Decl]) -> page.Fmt
+    lexed = lexer.lex_one(source_extent.user_text(s)).tokens
+    return format_lexed(tree, s, all_comments, uses, decls, lexed)
+
+# The page, with what `heroes fmt` asks of it beside the text: `moved`,
+# the line of a comment no walk could keep where it was written. `lexed`
+# are the tokens the tree was parsed from, the root file's first.
+function format_lexed(tree: ast.Ast, s: source.Source, all_comments: [token.Span], uses: [ast.Use], decls: [ast.Decl], lexed: [token.Token]) -> page.Fmt
+    f: page.Fmt @ page.blank_page()
 
     # The library's comments go with its declarations, and the
     # author's declarations, never the library's: with --in-place a
@@ -197,6 +155,26 @@ function format_file(tree: ast.Ast, s: source.Source, all_comments: [token.Span]
         index @ index + 1
 
     items @ sorted_items(items)
+    continuing = joins(s, comments, items: items, decls: decls)
+
+    # The logical lines and the owner of every comment, read with the heads
+    # the merges drop left out, which the page does not have.
+    dropped: [i64] @ []
+    position: i64 @ 0
+    above: i64 @ 0
+
+    for item in items
+        written: i64 @ 0
+
+        if !item.is_use
+            written @ head_line(s, decl: decls[item.at])
+
+        if continuing[position] && written != above
+            dropped @ dropped.push(written)
+        above @ written
+        position @ position + 1
+
+    f.lines @ owners.shape(s, lexed: lexed, ignored: dropped, end: source_extent.root_end(s))
 
     # The extern group, rebuilt: the parser flattened it (§4.19, panel
     # 036), so the canonical form is a run of consecutive members
@@ -205,25 +183,39 @@ function format_file(tree: ast.Ast, s: source.Source, all_comments: [token.Span]
     open_group: str @ ""
     have_previous: bool @ false
     previous_was_use: bool @ false
+    position @ 0
 
     for item in items
         line: i64 @ source.line_of(s, item.start)
         group: str @ ""
+        doc: [token.Span] @ []
+        head: i64 @ 0
 
         if !item.is_use
             group @ group_key(s, decl: decls[item.at])
-        continues = group.len() > 0 && group == open_group
+            doc @ decls[item.at].doc
+            head @ head_line(s, decl: decls[item.at])
+        continues = continuing[position]
+        position @ position + 1
+
+        # The group above closes here, so a comment written inside it after
+        # its last member is its last line (defect 099), before the blank
+        # line that separates it from what follows.
+        if open_group.len() > 0 && !continues
+            page.block_end(@f, s, comments, indent: 4)
         open_group @ group
 
         # A group's first member prints under a head line the member's
         # own span does not contain, so the line every comment and
         # blank-line rule keys on is the HEAD's (§4.1: without this,
-        # fmt inserted a blank line the author had not written).
-        if !item.is_use && !continues
-            head_span = extern_header_span(decls[item.at])
+        # fmt inserted a blank line the author had not written). A member
+        # merged into the group above drops its head instead (`page.gap`).
+        f.dropped @ 0
 
-            if !head_span.is_err()
-                line @ source.line_of(s, head_span.must().start)
+        if continues
+            f.dropped @ head
+        else if head > 0
+            line @ head
 
         # One blank line between top-level declarations — but not
         # between two use lines, which are a block the way a run of
@@ -234,39 +226,78 @@ function format_file(tree: ast.Ast, s: source.Source, all_comments: [token.Span]
             run = previous_was_use && item.is_use || continues
 
             if !run
-                blank_line(@f)
+                page.blank_line(@f)
         have_previous @ true
         previous_was_use @ item.is_use
-        indent_for_comments: i64 @ 0
-
-        if continues
-            indent_for_comments @ 4
-        comments_before(@f, s, comments, line: line, indent: indent_for_comments)
 
         if item.is_use
+            page.comments_before(@f, s, comments, line: line, indent: 0)
+
             # §4.1 and it is the file header that needs it: a blank
             # line between a comment and the first use is what makes
             # that comment a remark about the file instead of
             # documentation for the line under it.
-            if !after_use && f.last_line > 0 && line > f.last_line + 1
-                blank_line(@f)
-            put_line(@f, indent: 0, text: use_line(s, used: uses[item.at]))
-            f.last_line @ line
-            trailing_comment(@f, s, comments, line: line)
+            if !after_use && f.last_line > 0 && page.blank_between(s, above: f.last_line, below: line)
+                page.blank_line(@f)
+            page.put_line(@f, indent: 0, text: use_line(s, used: uses[item.at]))
+            page.ended(@f, s, comments, line: line)
         else
+            indent: i64 @ 0
+
+            if continues
+                indent @ 4
+
+            # The comments above, printed so the re-parse reads the doc the
+            # parser read: a remark keeps its blank line under it, and gains
+            # one where without it it would be read as the doc (defects 096
+            # and 100).
+            page.comments_above(@f, s, comments: comments, line: line, indent: indent, doc: doc, takes_docs: true)
 
             # A blank line between the comment group and this
             # declaration is preserved exactly: it makes those
             # comments ordinary remarks rather than documentation
-            # (§4.1) — for the first declaration too, where a file's
-            # header block lives.
-            if f.last_line > 0 && line > f.last_line + 1 && !continues
-                blank_line(@f)
+            # (§4.1), for the first declaration too, where a file's
+            # header block lives. Between two members of a group only
+            # under a comment: with none, a blank line is layout and the
+            # members stay a run.
+            if f.last_line > 0 && page.gap(f, s, above: f.last_line, below: line) && (!continues || page.after_a_comment(f, s, comments))
+                page.blank_line(@f)
             declaration(@f, tree, s, comments, decl: decls[item.at], continues: continues)
 
+    if open_group.len() > 0
+        page.block_end(@f, s, comments, indent: 4)
+
     # Comments after the last declaration still belong to the file.
-    comments_before(@f, s, comments, line: 4611686018427387904, indent: 0)
-    return f.out
+    page.comments_before(@f, s, comments, line: 4611686018427387904, indent: 0)
+    return f
+
+# Which items continue the group above, decided before any line is printed:
+# a member sharing its head line with the member above joins that group
+# unless the merge would move a comment (`page.keeps_head`). A member of the
+# group above written under its own head drops that head.
+function joins(s: source.Source, comments: [token.Span], items: [Item], decls: [ast.Decl]) -> [bool]
+    out: [bool] @ []
+    open_group: str @ ""
+    from: i64 @ 0
+    previous: i64 @ 0
+
+    for item in items
+        while from < comments.len() && comments[from].start < previous
+            from @ from + 1
+
+        group: str @ ""
+        continues: bool @ false
+
+        if !item.is_use
+            decl = decls[item.at]
+            group @ group_key(s, decl: decl)
+            head = head_line(s, decl: decl)
+            continues @ group.len() > 0 && group == open_group && !page.keeps_head(s, comments: comments, from: from, doc: decl.doc, head: head, start: item.start)
+        out @ out.push(continues)
+        open_group @ group
+        previous @ item.start
+
+    return out
 
 function sorted_items(items: [Item]) -> [Item]
     out: [Item] @ []
@@ -372,27 +403,45 @@ function group_key(s: source.Source, decl: ast.Decl) -> str
         return ""
     return extern_head(s, header: spans.header.must(), library: spans.library)
 
-function extern_header_span(decl: ast.Decl) -> token.Span?
-    return extern_spans(decl).header
+# The source line of a group member's head, 0 for a declaration outside
+# any group.
+function head_line(s: source.Source, decl: ast.Decl) -> i64
+    header = extern_spans(decl).header
+
+    if header.is_err()
+        return 0
+    return source.line_of(s, header.must().start)
 
 # The group's head line, printed by its FIRST member only, and the
 # indent every member takes. The first member's own comments are
 # flushed here, after the head: the caller keys every comment rule on
 # the head's line, so a comment between the head and the first member
-# would otherwise belong to neither (panel 038's compiler-engineer).
-function extern_head_once(@f: Fmt, s: source.Source, comments: [token.Span], decl: ast.Decl, header: token.Span?, library: ast.Library?, continues: bool) -> i64
+# would otherwise belong to neither (panel 038's compiler-engineer). None
+# of them is ever that member's doc, which the parser reads above the
+# `extern`, so a remark there keeps the blank line under it where the
+# source has one and gains none (defect 096).
+function extern_head_once(@f: page.Fmt, s: source.Source, comments: [token.Span], decl: ast.Decl, header: token.Span?, library: ast.Library?, continues: bool) -> i64
     if header.is_err()
         return 0
 
     if !continues
-        put_line(@f, indent: 0, text: extern_head(s, header: header.must(), library: library))
-        f.last_line @ source.line_of(s, header.must().start)
-        comments_before(@f, s, comments, line: source.line_of(s, decl.name.start), indent: 4)
+        page.put_line(@f, indent: 0, text: extern_head(s, header: header.must(), library: library))
+        page.opened(@f, s, comments, line: source.line_of(s, header.must().start))
+        none: [token.Span] = []
+        page.comments_above(
+            @f,
+            s,
+            comments: comments,
+            line: source.line_of(s, decl.name.start),
+            indent: 4,
+            doc: none,
+            takes_docs: false
+        )
     return 4
 
 ## One declaration (fmt_decl)
 
-function declaration(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], decl: ast.Decl, continues: bool)
+function declaration(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], decl: ast.Decl, continues: bool)
     name = source.span_text(s, decl.name)
     line = source.line_of(s, decl.name.start)
 
@@ -407,9 +456,16 @@ function declaration(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.
                 library: k.library,
                 continues: continues
             )
-            put_line(@f, indent: indent, text: "constant " + name + ": " + types.render_type(tree, k.ty, s))
-            f.last_line @ line
-            trailing_comment(@f, s, comments, line: line)
+            head = "constant " + name + ": " + types.render_type(tree, k.ty, s)
+            to = tree.types[k.ty].span.end
+            start = f.out.len()
+            page.put_line(
+                @f,
+                indent: indent,
+                text: breaks.led_text(@f, tree, s, comments, head: "", text: head, from: decl_start(decl), to: to, indent: indent)
+            )
+            page.ended(@f, s, comments, line: line)
+            margins.deepened(@f, from: start)
 
             if !k.body.is_err()
                 fmt_block(@f, tree, s, comments, block: k.body.must(), indent: 4)
@@ -423,14 +479,7 @@ function declaration(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.
                 library: fd.value.library,
                 continues: continues
             )
-            last = source.line_of(s, fd.value.signature_end.start)
-
-            if comment_inside(f, s, comments, first: line, last: last)
-                open_signature(@f, tree, s, comments, name: name, fd: fd.value, indent: indent, first: line, last: last)
-            else
-                put_line(@f, indent: indent, text: signature.one_line(tree, s, name: name, fd: fd.value))
-                f.last_line @ line
-                trailing_comment(@f, s, comments, line: line)
+            headline.signature_lines(@f, tree, s, comments, name: decl.name, fd: fd.value, indent: indent)
 
             if !fd.value.body.is_err()
                 fmt_block(@f, tree, s, comments, block: fd.value.body.must(), indent: 4)
@@ -459,28 +508,34 @@ function declaration(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.
 
             if rec.partial
                 marker @ " partial"
-            put_line(@f, indent: indent, text: "record " + name + tag_text + marker)
-            f.last_line @ line
-            trailing_comment(@f, s, comments, line: line)
+            page.put_line(@f, indent: indent, text: "record " + name + tag_text + marker)
+            page.ended(@f, s, comments, line: line)
 
             for field in rec.fields
                 field_line(@f, tree, s, comments, field: field, indent: indent + 4)
+
+            # A remark after the last field is the fields' last line (defect
+            # 099); a record with none has no block for it to stay in.
+            if rec.fields.len() > 0
+                page.block_end(@f, s, comments, indent: indent + 4)
         .variant_decl v =>
-            put_line(@f, indent: 0, text: "variant " + name)
-            f.last_line @ line
+            page.put_line(@f, indent: 0, text: "variant " + name)
+            page.opened(@f, s, comments, line: line)
 
             for one_case in v.cases
                 case_line(@f, tree, s, comments, one_case: one_case)
+
+            if v.cases.len() > 0
+                page.block_end(@f, s, comments, indent: 4)
         .test_decl t =>
             # The name is the string literal, quotes included.
-            put_line(@f, indent: 0, text: "test " + name)
-            f.last_line @ line
-            trailing_comment(@f, s, comments, line: line)
+            page.put_line(@f, indent: 0, text: "test " + name)
+            page.ended(@f, s, comments, line: line)
             fmt_block(@f, tree, s, comments, block: t.body, indent: 4)
 
-function field_line(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], field: ast.Field, indent: i64)
+function field_line(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], field: ast.Field, indent: i64)
     line = source.line_of(s, field.name.start)
-    comments_before(@f, s, comments, line: line, indent: indent)
+    page.comments_above(@f, s, comments: comments, line: line, indent: indent, doc: field.doc, takes_docs: true)
 
     # §4.1's DISCRIMINATOR, and this is the one blank line in the language
     # that carries MEANING rather than layout: a comment directly above a
@@ -495,19 +550,20 @@ function field_line(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.S
     # 095's compiler-engineer). The same test as `fmt_block` uses between
     # two statements, for the same reason — the layout the author chose is
     # content — and here it is content the CHECKER reads.
-    if f.last_line > 0 && line > f.last_line + 1
-        blank_line(@f)
-    put_line(
+    if f.last_line > 0 && page.blank_between(s, above: f.last_line, below: line)
+        page.blank_line(@f)
+    text = source.span_text(s, field.name) + ": " + types.render_type(tree, field.ty, s)
+    to = tree.types[field.ty].span.end
+    page.put_line(
         @f,
         indent: indent,
-        text: source.span_text(s, field.name) + ": " + types.render_type(tree, field.ty, s)
+        text: breaks.led_text(@f, tree, s, comments, head: "", text: text, from: field.name.start, to: to, indent: indent)
     )
-    f.last_line @ line
-    trailing_comment(@f, s, comments, line: line)
+    page.ended(@f, s, comments, line: line)
 
-function case_line(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], one_case: ast.Case)
+function case_line(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], one_case: ast.Case)
     line = source.line_of(s, one_case.name.start)
-    comments_before(@f, s, comments, line: line, indent: 4)
+    page.comments_above(@f, s, comments: comments, line: line, indent: 4, doc: one_case.doc, takes_docs: true)
 
     # The same §4.1 discriminator `field_line` carries, and here because a
     # variant case takes a doc comment too (`dump.hero`'s
@@ -515,69 +571,19 @@ function case_line(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
     # defect 004 (docs/work/DONE.md)'s repair, fixed with it rather than after it —
     # CLAUDE.md §1's fourth rule: the provoking case is a witness and a
     # `record` field and a `variant` case are the same witness twice.
-    if f.last_line > 0 && line > f.last_line + 1
-        blank_line(@f)
-    put_line(@f, indent: 4, text: source.span_text(s, one_case.name))
-    f.last_line @ line
-    trailing_comment(@f, s, comments, line: line)
+    if f.last_line > 0 && page.blank_between(s, above: f.last_line, below: line)
+        page.blank_line(@f)
+    page.put_line(@f, indent: 4, text: source.span_text(s, one_case.name))
+    page.ended(@f, s, comments, line: line)
 
     for field in one_case.fields
         field_line(@f, tree, s, comments, field: field, indent: 8)
 
-# The words of a signature are `print/signature.hero`'s, one home for both
-# printers and for `fmt`'s two shapes: a formatter that has not learned a form
-# does not error, it DROPS it, measured the hour `consumes` landed (CL-036).
+    if one_case.fields.len() > 0
+        page.block_end(@f, s, comments, indent: 8)
 
-# Is a comment written INSIDE this signature, after the name's line and no
-# later than the closing token's? The stream is in source order and every
-# comment above the name is printed already, so the scan stops at the first
-# one past the signature.
-function comment_inside(f: Fmt, s: source.Source, comments: [token.Span], first: i64, last: i64) -> bool
-    i: i64 @ f.next_comment
-
-    while i < comments.len()
-        line = source.line_of(s, comments[i].start)
-
-        if line > last
-            return false
-
-        if line > first
-            return true
-        i @ i + 1
-
-    return false
-
-# A signature whose parameter list holds a comment, printed one parameter
-# per line so the comment stays where the author wrote it (defect 095). The
-# one-line shape has no place for it, so it was expelled after the
-# declaration: with a member following it became that member's doc and the
-# tree guard refused at exit 2; with none it left the group as a file-level
-# remark at exit 0, the silent form, measured 2026-09-25 on every shape of a
-# Heroes function's list too (after the `(`, trailing on a parameter, before
-# the `)`, trailing on the closing line). The break is inside brackets, which
-# panel 007 allows; every list without a comment keeps the one-line shape.
-function open_signature(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], name: str, fd: ast.FunctionDecl, indent: i64, first: i64, last: i64)
-    put_line(@f, indent: indent, text: signature.opening(s, name: name, fd: fd))
-    f.last_line @ first
-    trailing_comment(@f, s, comments, line: first)
-    left: i64 @ fd.params.len()
-
-    for param in fd.params
-        line = source.line_of(s, param.name.start)
-        comments_before(@f, s, comments, line: line, indent: indent + 4)
-        left @ left - 1
-        separator: str @ ","
-
-        if left == 0
-            separator @ ""
-        put_line(@f, indent: indent + 4, text: signature.parameter(tree, s, param: param) + separator)
-        f.last_line @ line
-        trailing_comment(@f, s, comments, line: line)
-
-    comments_before(@f, s, comments, line: last, indent: indent + 4)
-    put_line(@f, indent: indent, text: signature.closing(tree, s, fd: fd))
-    f.last_line @ last
-    trailing_comment(@f, s, comments, line: last)
+# A function's signature, on one line or with its parameter list one per
+# line, is `print/headline.hero`'s.
 
 ## The statement walk (fmt_stmt)
 
@@ -638,15 +644,7 @@ function value_block_shape(tree: ast.Ast, id: i64) -> i64
 
     return NO_BLOCK
 
-# Is a comment waiting to be printed above `line`? RULE 4 puts its blank
-# ABOVE the comment, and `comments_before` has already printed the
-# comment by the time it could say so — hence the peek.
-function comment_waits_before(f: Fmt, s: source.Source, comments: [token.Span], line: i64) -> bool
-    if f.next_comment >= comments.len()
-        return false
-    return source.line_of(s, comments[f.next_comment].start) < line
-
-function fmt_block(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], block: ast.Block, indent: i64)
+function fmt_block(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], block: ast.Block, indent: i64)
     first: bool @ true
 
     # RULE 2's state, and it is the only new state the air rules need: a
@@ -669,14 +667,14 @@ function fmt_block(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
         # fourteenth — the only one whose wrong answer compiles — was the
         # exception. Fewer marks, each carrying more.
         if closed_a_loop
-            blank_line(@f)
+            page.blank_line(@f)
 
         # RULE 1: air before a form that opens a block, `if` included.
         # Never before the FIRST statement, which `first` already carries
         # below for the author's own blank and for the same reason: a
         # block does not open on an empty line.
         if !first && shape != NO_BLOCK
-            blank_line(@f)
+            page.blank_line(@f)
 
         # RULE 4: air above a comment run, and nothing between the
         # comment and what it documents. Statement bodies only — a
@@ -684,15 +682,15 @@ function fmt_block(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
         # callers of comments_before, and design.md §4.1 makes the blank
         # BELOW a comment there the difference between a remark and that
         # field's documentation (defect 004 (docs/work/DONE.md) § What is still owed).
-        if !first && comment_waits_before(f, s, comments, line: line)
-            blank_line(@f)
-        comments_before(@f, s, comments, line: line, indent: indent)
+        if !first && page.comment_waits_before(f, s, comments, line: line)
+            page.blank_line(@f)
+        page.comments_before(@f, s, comments, line: line, indent: indent)
 
         # A blank line the author left between two statements survives
         # — never before the FIRST statement: a block does not open on
         # an empty line.
-        if !first && f.last_line > 0 && line > f.last_line + 1
-            blank_line(@f)
+        if !first && f.last_line > 0 && page.blank_between(s, above: f.last_line, below: line)
+            page.blank_line(@f)
         first @ false
         statement(@f, tree, s, comments, id: id, indent: indent, head: "")
 
@@ -702,7 +700,9 @@ function fmt_block(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
         # statement's own span must not answer this: it ends at a
         # Dedent on the NEXT line, and trusting it made
         # trailing_comment steal the following declaration's doc.
-        end = literal_end_line(tree, s, id: id)
+        # And a logical line ends where its last continuation does, a `)`
+        # alone on its line included (`page.ended`).
+        end = literal_end_line(tree, s, lines: f.lines, id: id)
         stop: i64 @ line
 
         if !end.is_err()
@@ -710,82 +710,118 @@ function fmt_block(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
 
         if f.last_line < stop
             f.last_line @ stop
-        trailing_comment(@f, s, comments, line: f.last_line)
+        page.ended(@f, s, comments, line: line)
         closed_a_loop @ shape == LOOP_BLOCK || shape == MATCH_BLOCK
+
+    # A remark after the last statement is this block's last line (defect
+    # 099): the next item's walk printed it at its own column, outside.
+    page.block_end(@f, s, comments, indent: indent)
 
 # One statement, optionally behind a head. A match arm passes its
 # patterns as the head, which routes an arm whose body is an if
 # through valued() — the path that knows how to print a block under a
 # control head (panel 014: the separate path printed `.a => if c` and
 # DROPPED THE BRANCHES).
-function statement(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], id: i64, indent: i64, head: str)
+function statement(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], id: i64, indent: i64, head: str)
+    # Where the statement's first line starts on the page: a block head
+    # printed across lines is deepened from there (`margins.deepened`).
+    start = f.out.len()
+
     match tree.stmts[id].kind
+        # A comment inside a head's type or place stays there (`lead`).
         .bind b =>
-            annotation: str @ ""
+            written: str @ source.span_text(s, b.name)
+            end: i64 @ b.name.end
 
             if !b.ty.is_err()
-                annotation @ ": " + types.render_type(tree, b.ty.must(), s)
-            valued(
+                written @ written + ": " + types.render_type(tree, b.ty.must(), s)
+                end @ tree.types[b.ty.must()].span.end
+            lead = breaks.led_text(
                 @f,
                 tree,
                 s,
                 comments,
-                head: head + source.span_text(s, b.name) + annotation + " = ",
-                value: b.value,
+                head: head,
+                text: written,
+                from: b.name.start,
+                to: end,
                 indent: indent
             )
+            valued(@f, tree, s, comments, head: lead + " = ", value: b.value, indent: indent, from: start)
         .declare dc =>
-            valued(
+            written = source.span_text(s, dc.name) + ": " + types.render_type(tree, dc.ty, s)
+            end = tree.types[dc.ty].span.end
+            lead = breaks.led_text(
                 @f,
                 tree,
                 s,
                 comments,
-                head: head + source.span_text(s, dc.name) + ": " + types.render_type(tree, dc.ty, s) + " @ ",
-                value: dc.value,
+                head: head,
+                text: written,
+                from: dc.name.start,
+                to: end,
                 indent: indent
             )
+            valued(@f, tree, s, comments, head: lead + " @ ", value: dc.value, indent: indent, from: start)
         .mutate m =>
-            valued(
+            place = groups.whole(f.lines, span: tree.exprs[m.place].span)
+            written = parens.render(tree, s, id: m.place)
+            lead = breaks.led_text(
                 @f,
                 tree,
                 s,
                 comments,
-                head: head + render(tree, s, id: m.place) + " @ ",
-                value: m.value,
+                head: head,
+                text: written,
+                from: place.start,
+                to: place.end,
                 indent: indent
             )
+            valued(@f, tree, s, comments, head: lead + " @ ", value: m.value, indent: indent, from: start)
         .return_stmt r =>
             if r.value.is_err()
-                put_line(@f, indent: indent, text: head + "return")
+                page.put_line(@f, indent: indent, text: head + "return")
             else
-                valued(@f, tree, s, comments, head: head + "return ", value: r.value.must(), indent: indent)
-        .break_stmt    => put_line(@f, indent: indent, text: head + "break")
-        .continue_stmt => put_line(@f, indent: indent, text: head + "continue")
+                valued(
+                    @f,
+                    tree,
+                    s,
+                    comments,
+                    head: head + "return ",
+                    value: r.value.must(),
+                    indent: indent,
+                    from: start
+                )
+        .break_stmt    => page.put_line(@f, indent: indent, text: head + "break")
+        .continue_stmt => page.put_line(@f, indent: indent, text: head + "continue")
         .assert_stmt a =>
-            valued(@f, tree, s, comments, head: head + "assert ", value: a.value, indent: indent)
+            valued(@f, tree, s, comments, head: head + "assert ", value: a.value, indent: indent, from: start)
         .while_stmt w =>
-            put_line(@f, indent: indent, text: head + "while " + render(tree, s, id: w.cond))
-            f.last_line @ source.line_of(s, tree.exprs[w.cond].span.end)
+            block_head(@f, tree, s, comments, head: head + "while ", value: w.cond, indent: indent, from: start)
             fmt_block(@f, tree, s, comments, block: w.block, indent: indent + 4)
         .for_in fo =>
-            put_line(
+            block_head(
                 @f,
+                tree,
+                s,
+                comments,
+                head: head + "for " + source.span_text(s, fo.name) + " in ",
+                value: fo.iterable,
                 indent: indent,
-                text: head + "for " + source.span_text(s, fo.name) + " in " + render(tree, s, id: fo.iterable)
+                from: start
             )
-            f.last_line @ source.line_of(s, tree.exprs[fo.iterable].span.end)
             fmt_block(@f, tree, s, comments, block: fo.block, indent: indent + 4)
         .expr_stmt e =>
-            valued(@f, tree, s, comments, head: head, value: e.value, indent: indent)
+            valued(@f, tree, s, comments, head: head, value: e.value, indent: indent, from: start)
         # Unreachable: fmt refuses a file with diagnostics.
 
-        .error => put_line(@f, indent: indent, text: "???")
+        .error => page.put_line(@f, indent: indent, text: "???")
 
 ## A head plus its value (fmt_break)
 
 # On one line when it fits, broken inside its outermost bracket when
 # it does not, continued below when the value is an if or a match.
-function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, value: i64, indent: i64)
+function valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, value: i64, indent: i64, from: i64)
     match tree.exprs[value].kind
         .if_expr ie =>
             index: i64 @ 0
@@ -795,41 +831,70 @@ function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span]
 
                 if index == 0
                     keyword @ head
-                put_line(@f, indent: indent, text: keyword + "if " + render(tree, s, id: branch.cond))
-                f.last_line @ source.line_of(s, tree.exprs[branch.cond].span.end)
+                else
+                    # A remark above `else if` stays above it, at the `if`'s
+                    # indent: the branch's own walk printed it inside the
+                    # block under it, at exit 0.
+                    page.comments_before(
+                        @f,
+                        s,
+                        comments,
+                        line: owners.start_of(f.lines, line: source.line_of(s, tree.exprs[branch.cond].span.start)),
+                        indent: indent
+                    )
+                opening: i64 @ f.out.len()
+
+                if index == 0
+                    opening @ from
+                block_head(
+                    @f,
+                    tree,
+                    s,
+                    comments,
+                    head: keyword + "if ",
+                    value: branch.cond,
+                    indent: indent,
+                    from: opening
+                )
                 fmt_block(@f, tree, s, comments, block: branch.block, indent: indent + 4)
                 index @ index + 1
 
             if !ie.otherwise.is_err()
-                put_line(@f, indent: indent, text: "else")
-                fmt_block(@f, tree, s, comments, block: ie.otherwise.must(), indent: indent + 4)
-        .match_expr me =>
-            put_line(@f, indent: indent, text: head + "match " + render(tree, s, id: me.scrutinee))
-            f.last_line @ source.line_of(s, tree.exprs[me.scrutinee].span.end)
-            lefts = arm_heads(tree, s, arms: me.arms)
-            pads = arm_alignment(tree, s, arms: me.arms, lefts: lefts, indent: indent + 4)
+                otherwise = ie.otherwise.must()
 
-            # A blank line between arms is content, exactly as between
-            # statements — it stops the alignment run, so deleting it
-            # would contradict the padding computed above. Tracked
-            # against where the previous arm ENDED: an inline arm body
-            # can be an if with two blocks under it, five lines long
-            # while its head is one.
-            previous_end: i64 @ -1
+                # The same above `else`, whose line the tree does not keep
+                # (`opener_line` reads it). Without it the `else` line counted
+                # as a gap: a comment first in the block gained a blank line
+                # above it, and a remark above `else` moved under it, where
+                # `fmt` was no fixpoint on its own output.
+                if otherwise.stmts.len() > 0
+                    else_line = page.opener_line(f, first: source.line_of(s, tree.stmts[otherwise.stmts[0]].span.start))
+                    page.comments_before(@f, s, comments, line: else_line, indent: indent)
+                    page.put_line(@f, indent: indent, text: "else")
+                    page.opened(@f, s, comments, line: else_line)
+                else
+                    page.put_line(@f, indent: indent, text: "else")
+                fmt_block(@f, tree, s, comments, block: otherwise, indent: indent + 4)
+        .match_expr me =>
+            block_head(@f, tree, s, comments, head: head + "match ", value: me.scrutinee, indent: indent, from: from)
+            lefts = arm_heads(tree, s, arms: me.arms)
+            pads = arm_alignment(tree, s, lines: f.lines, arms: me.arms, lefts: lefts, indent: indent + 4)
             index: i64 @ 0
 
             for arm in me.arms
                 left = lefts[index]
                 line = source.line_of(s, arm.span.start)
-                comments_before(@f, s, comments, line: line, indent: indent + 4)
+                page.comments_before(@f, s, comments, line: line, indent: indent + 4)
 
-                if previous_end >= 0 && line > previous_end + 1
-                    blank_line(@f)
-                arm_end: i64 @ arm.span.end - 1
-
-                if arm_end < 0
-                    arm_end @ 0
-                previous_end @ source.line_of(s, arm_end)
+                # A blank line between arms is content, exactly as between
+                # statements — it stops the alignment run, so deleting it
+                # would contradict the padding computed above. Asked of the
+                # source from where the previous arm ENDED, an inline arm's
+                # `if` with two blocks under it included: counting lines
+                # made a comment between two arms a gap, and a blank line
+                # grew under it (defect 101).
+                if index > 0 && page.blank_between(s, above: f.last_line, below: line)
+                    page.blank_line(@f)
 
                 match arm.body
                     .one_stmt one =>
@@ -850,25 +915,41 @@ function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span]
                         # broke across lines occupies them, and stopping
                         # short grew a blank line on every re-format
                         # (defect 004, `docs/work/DONE.md`). The value's own extent is
-                        # the question, and fmt_block already asks it.
-                        f.last_line @ line
-                        spread = literal_end_line(tree, s, id: one.at)
+                        # the question, and fmt_block already asks it. And
+                        # never back: an inline `if` moved it past its blocks.
+                        stop: i64 @ line
+                        spread = literal_end_line(tree, s, lines: f.lines, id: one.at)
 
-                        if !spread.is_err() && spread.must() > f.last_line
-                            f.last_line @ spread.must()
-                        trailing_comment(@f, s, comments, line: f.last_line)
+                        if !spread.is_err()
+                            stop @ spread.must()
+
+                        if f.last_line < stop
+                            f.last_line @ stop
+                        page.ended(@f, s, comments, line: line)
                     .block blk =>
                         # A block arm never pads: its => ends the
                         # line, so there is nothing to line up with.
-                        put_line(@f, indent: indent + 4, text: left + " =>")
-                        f.last_line @ line
+                        page.put_line(@f, indent: indent + 4, text: left + " =>")
+                        arrow: i64 @ line
+
+                        if blk.block.stmts.len() > 0
+                            arrow @ page.opener_line(
+                                f,
+                                first: source.line_of(s, tree.stmts[blk.block.stmts[0]].span.start)
+                            )
+                        page.opened(@f, s, comments, line: arrow)
                         fmt_block(@f, tree, s, comments, block: blk.block, indent: indent + 8)
 
                 index @ index + 1
+
+            # The arms are a block too, and a remark after the last one is
+            # its last line (defect 099).
+            page.block_end(@f, s, comments, indent: indent + 4)
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => plain_valued(
             @f,
             tree,
             s,
+            comments,
             head: head,
             value: value,
             indent: indent
@@ -882,21 +963,23 @@ function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span]
             tail = binary_control_tail(tree, id: value)
 
             if tail.is_err()
-                plain_valued(@f, tree, s, head: head, value: value, indent: indent)
+                plain_valued(@f, tree, s, comments, head: head, value: value, indent: indent)
             else
                 valued(
                     @f,
                     tree,
                     s,
                     comments,
-                    head: head + binary_prefix(tree, s, id: value),
+                    head: prefix(@f, tree, s, comments, head: head, value: value, indent: indent),
                     value: tail.must(),
-                    indent: indent
+                    indent: indent,
+                    from: from
                 )
         .name | .hole | .unary | .field | .field_name | .index => plain_valued(
             @f,
             tree,
             s,
+            comments,
             head: head,
             value: value,
             indent: indent
@@ -905,89 +988,38 @@ function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span]
             @f,
             tree,
             s,
+            comments,
             head: head,
             value: value,
             indent: indent
         )
 
-function plain_valued(@f: Fmt, tree: ast.Ast, s: source.Source, head: str, value: i64, indent: i64)
-    text = head + render(tree, s, id: value)
+# On one line when it fits, the author wrote it on one and no comment is
+# waiting inside it, and opened inside its outermost bracket otherwise
+# (`print/brackets.hero`). Every comment above the statement is printed, so
+# one waiting before the value's end is inside it or its parentheses.
+function plain_valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, value: i64, indent: i64)
+    text = head + parens.render(tree, s, id: value)
+    reach = around.reach(f, tree, value: value)
+    waiting = f.next_comment < comments.len() && comments[f.next_comment].start < reach
 
-    if indent + text.chars().len() <= WIDTH && !spans_lines(tree, s, value: value)
-        put_line(@f, indent: indent, text: text)
+    if indent + text.chars().len() <= WIDTH && !spans_lines(tree, s, lines: f.lines, value: value) && !waiting
+        page.put_line(@f, indent: indent, text: text)
         return
-    broken(@f, tree, s, head: head, value: value, indent: indent)
+    brackets.broken(@f, tree, s, comments, head: head, value: value, indent: indent, tail: "", open: true)
 
-# The too-long case. Only the OUTERMOST bracket of the value is opened
-# up; if the value has none, the line stays long — panel 007 leaves
-# nowhere else to break it, and a formatter that invents a
-# continuation invents one the language does not have.
-function broken(@f: Fmt, tree: ast.Ast, s: source.Source, head: str, value: i64, indent: i64)
-    match tree.exprs[value].kind
-        # §4.9: a multi-line list separates by newline, not by comma.
-        .array arr =>
-            put_line(@f, indent: indent, text: head + "[")
+# A line that opens a block: its keyword and value, opened only where a
+# comment inside the value asks, and the comment trailing its last line,
+# which stays on it (defect 101). Printed across lines, from page offset
+# `from` on, it is deepened so no line of it reads as the block's.
+function block_head(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, value: i64, indent: i64, from: i64)
+    brackets.broken(@f, tree, s, comments, head: head, value: value, indent: indent, tail: "", open: false)
+    last: i64 @ owners.end_of(f.lines, line: source.line_of(s, tree.exprs[value].span.start))
 
-            for item in arr.elements
-                put_line(@f, indent: indent + 4, text: render(tree, s, id: item))
-
-            put_line(@f, indent: indent, text: "]")
-        .map mp =>
-            put_line(@f, indent: indent, text: head + "{")
-
-            for entry in mp.entries
-                put_line(
-                    @f,
-                    indent: indent + 4,
-                    text: render(tree, s, id: entry.key) + ": " + render(tree, s, id: entry.value)
-                )
-
-            put_line(@f, indent: indent, text: "}")
-        # A call keeps its commas: §4.9's newline rule is about
-        # literals, and a call written across lines is still a
-        # comma-separated list (the parser requires it).
-
-        .call cl =>
-            broken_args(@f, tree, s, open: head + render(tree, s, id: cl.callee) + "(", given: cl.args, indent: indent)
-        .method m =>
-            broken_args(
-                @f,
-                tree,
-                s,
-                open: head + render(tree, s, id: m.receiver) + "." + source.span_text(s, m.name) + "(",
-                given: m.args,
-                indent: indent
-            )
-        .variant_case vc =>
-            if vc.args.len() > 0
-                broken_args(
-                    @f,
-                    tree,
-                    s,
-                    open: head + "." + source.span_text(s, vc.name) + "(",
-                    given: vc.args,
-                    indent: indent
-                )
-            else
-                put_line(@f, indent: indent, text: head + render(tree, s, id: value))
-        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => put_line(
-            @f,
-            indent: indent,
-            text: head + render(tree, s, id: value)
-        )
-        # A binary reaching here is control-free: valued() intercepts one
-        # whose right edge is a control form before this path is taken.
-
-        .name | .hole | .unary | .binary | .field | .field_name | .index => put_line(
-            @f,
-            indent: indent,
-            text: head + render(tree, s, id: value)
-        )
-        .if_expr | .match_expr | .try_expr | .error => put_line(
-            @f,
-            indent: indent,
-            text: head + render(tree, s, id: value)
-        )
+    if last < f.last_line
+        last @ f.last_line
+    page.opened(@f, s, comments, line: last)
+    margins.deepened(@f, from: from)
 
 # The control form at the right edge of a chain of binary operators, if
 # there is one.
@@ -1015,34 +1047,38 @@ function binary_control_tail(tree: ast.Ast, id: i64) -> i64?
 
     return fail(code: "none", msg: "not a control form")
 
-# Everything to the LEFT of that control form, rendered as the head it
-# is printed under. Parenthesised exactly as render() would, so the
-# minimum-parentheses table holds on this path too.
-function binary_prefix(tree: ast.Ast, s: source.Source, id: i64) -> str
-    match tree.exprs[id].kind
+# Everything to the LEFT of that control form, printed as the head it is
+# printed under, parenthesised exactly as render() would, so the
+# minimum-parentheses table holds on this path too; an operand holding a
+# comment is opened, and the rest goes on its last line.
+function prefix(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, value: i64, indent: i64) -> str
+    match tree.exprs[value].kind
         .binary b =>
-            mine = power(tree, id)
-            return wrapped(tree, s, id: b.left, needed: mine) + " " + bodies.binary_op(b.op) + " " + binary_prefix(tree, s, id: b.right)
-        .if_expr | .match_expr                                                         => return ""
-        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return ""
-        .name | .hole | .unary | .field | .field_name | .index                         => return ""
-        .call | .method | .variant_case | .array | .map | .try_expr | .error           => return ""
+            left = brackets.led(
+                @f,
+                tree,
+                s,
+                comments,
+                head: head,
+                value: b.left,
+                indent: indent,
+                needed: parens.power(tree, value)
+            )
+            return prefix(
+                @f,
+                tree,
+                s,
+                comments,
+                head: left + " " + bodies.binary_op(b.op) + " ",
+                value: b.right,
+                indent: indent
+            )
+        .if_expr | .match_expr                                                         => return head
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return head
+        .name | .hole | .unary | .field | .field_name | .index                         => return head
+        .call | .method | .variant_case | .array | .map | .try_expr | .error           => return head
 
-    return ""
-
-function broken_args(@f: Fmt, tree: ast.Ast, s: source.Source, open: str, given: [ast.Arg], indent: i64)
-    put_line(@f, indent: indent, text: open)
-    index: i64 @ 0
-
-    for arg in given
-        comma: str @ ","
-
-        if index == given.len() - 1
-            comma @ ""
-        put_line(@f, indent: indent + 4, text: arg_text(tree, s, arg: arg) + comma)
-        index @ index + 1
-
-    put_line(@f, indent: indent, text: ")")
+    return head
 
 ## Where => goes (fmt_arms)
 
@@ -1066,7 +1102,7 @@ function arm_heads(tree: ast.Ast, s: source.Source, arms: [ast.Arm]) -> [str]
 # on one line is the PRINTER's question, asked with the printer's own
 # test — deciding from source adjacency made fmt(fmt(x)) != fmt(x)
 # (sweep 001 audit S3).
-function arm_alignment(tree: ast.Ast, s: source.Source, arms: [ast.Arm], lefts: [str], indent: i64) -> [i64]
+function arm_alignment(tree: ast.Ast, s: source.Source, lines: owners.Lines, arms: [ast.Arm], lefts: [str], indent: i64) -> [i64]
     pads: [i64] @ []
 
     for _ in arms
@@ -1093,7 +1129,7 @@ function arm_alignment(tree: ast.Ast, s: source.Source, arms: [ast.Arm], lefts: 
         width: i64? @ fail(code: "none", msg: "not inline")
 
         if inline
-            width @ fits_on_one_line(tree, s, arm: arm, left: lefts[index].chars().len(), indent: indent)
+            width @ fits_on_one_line(tree, s, lines: lines, arm: arm, left: lefts[index].chars().len(), indent: indent)
         joined = run_index.len() > 0 && line == previous_end + 1
 
         if width.is_err() || !joined
@@ -1142,7 +1178,7 @@ function close_run(run_index: [i64], run_len: [i64], lefts: [str], indent: i64, 
 
 # The printer's one-line test for an arm — and, when it passes, the
 # length that test measured.
-function fits_on_one_line(tree: ast.Ast, s: source.Source, arm: ast.Arm, left: i64, indent: i64) -> i64?
+function fits_on_one_line(tree: ast.Ast, s: source.Source, lines: owners.Lines, arm: ast.Arm, left: i64, indent: i64) -> i64?
     stmt_at: i64 @ -1
 
     match arm.body
@@ -1174,9 +1210,9 @@ function fits_on_one_line(tree: ast.Ast, s: source.Source, arm: ast.Arm, left: i
         # it twice (defect 004, `docs/work/DONE.md`).
         return ok(left + 4)
 
-    if spans_lines(tree, s, value: value)
+    if spans_lines(tree, s, lines: lines, value: value)
         return fail(code: "none", msg: "the author spread this value")
-    measured = left + 4 + head + render(tree, s, id: value).chars().len()
+    measured = left + 4 + head + parens.render(tree, s, id: value).chars().len()
 
     if indent + measured <= WIDTH
         return ok(measured)
@@ -1192,7 +1228,7 @@ function fits_on_one_line(tree: ast.Ast, s: source.Source, arm: ast.Arm, left: i
 # source a person writes and false of source THIS FORMATTER writes,
 # because the 88-column rule breaks a long call across lines
 # (fixedbugs: formatting twice grew a blank line after every one).
-function spans_lines(tree: ast.Ast, s: source.Source, value: i64) -> bool
+function spans_lines(tree: ast.Ast, s: source.Source, lines: owners.Lines, value: i64) -> bool
     node = tree.exprs[value]
     is_control: bool @ false
 
@@ -1204,8 +1240,15 @@ function spans_lines(tree: ast.Ast, s: source.Source, value: i64) -> bool
 
     if is_control
         return false
-    first = source.line_of(s, node.span.start)
-    last_at: i64 @ node.span.end - 1
+
+    # The value with the author's parentheses around it and at its edges:
+    # a match arm's `(  # c` over `b) == 0` begins on the `(` line, and asked
+    # of `b` alone the arm joined its run in one pass and left it in the
+    # next, no fixpoint (the third skeptic seat's parenthesis generator over
+    # `selfhost/digits.hero`).
+    whole = groups.whole(lines, span: node.span)
+    first = source.line_of(s, whole.start)
+    last_at: i64 @ whole.end - 1
 
     if last_at < 0
         last_at @ 0
@@ -1216,7 +1259,7 @@ function spans_lines(tree: ast.Ast, s: source.Source, value: i64) -> bool
 # expression's extent, never the statement's own span: a statement
 # ending in a block ends at a Dedent on the next line, and asking it
 # made trailing_comment steal the following declaration's doc comment.
-function literal_end_line(tree: ast.Ast, s: source.Source, id: i64) -> i64?
+function literal_end_line(tree: ast.Ast, s: source.Source, lines: owners.Lines, id: i64) -> i64?
     value: i64 @ -1
 
     match tree.stmts[id].kind
@@ -1233,153 +1276,13 @@ function literal_end_line(tree: ast.Ast, s: source.Source, id: i64) -> i64?
     if value == -1
         return fail(code: "none", msg: "no value expression")
 
-    if !spans_lines(tree, s, value: value)
+    if !spans_lines(tree, s, lines: lines, value: value)
         return fail(code: "none", msg: "ends where it started")
-    last_at: i64 @ tree.exprs[value].span.end - 1
+    last_at: i64 @ groups.whole(lines, span: tree.exprs[value].span).end - 1
 
     if last_at < 0
         last_at @ 0
     return ok(source.line_of(s, last_at))
-
-## Minimum parentheses (fmt_expr)
-
-# Binding power, on the same scale as the parser's table: higher binds
-# tighter. THE NUMBERS HAVE TO MATCH THE PARSER'S — and the two
-# strongest rows are NAMED rather than written at each site, because
-# five literal 7s survived panel 040's five new bitwise levels and fmt
-# printed (at / WORDS).to_str() as at / WORDS.to_str(), a different
-# program that does not even type-check (fixedbugs 2026-08-13).
-constant UNARY_POWER: i64
-    10
-
-constant POSTFIX_POWER: i64
-    11
-
-function power(tree: ast.Ast, id: i64) -> i64
-    match tree.exprs[id].kind
-        .binary b =>
-            return match b.op
-                .or                               => 1
-                .and                              => 2
-                .eq | .ne | .lt | .le | .gt | .ge => 3
-                .bit_or                           => 4
-                .bit_xor                          => 5
-                .bit_and                          => 6
-                .shl | .shr                       => 7
-                .add | .sub                       => 8
-                .mul | .div | .rem                => 9
-        .unary => return UNARY_POWER
-        # A control form spans lines; the loosest thing there is, so a
-        # parenthesis is never printed around it.
-
-        .if_expr | .match_expr                                                         => return 0
-        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return POSTFIX_POWER
-        .name | .hole | .field | .field_name | .index | .call | .method                => return POSTFIX_POWER
-        .variant_case | .array | .map | .try_expr | .error                             => return POSTFIX_POWER
-
-    return POSTFIX_POWER
-
-function render(tree: ast.Ast, s: source.Source, id: i64) -> str
-    node = tree.exprs[id]
-
-    match node.kind
-        # The one literal fmt rewrites, and only in its digits' case:
-        # a mask copied from a C header arrives as 0xFF, and §4.15's
-        # one-spelling rule is settled here rather than by refusing
-        # the paste.
-        .int_lit => return digits.canonical_int(source.span_text(s, node.span))
-        .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr | .name => return source.span_text(
-            s,
-            node.span
-        )
-        .hole => return "???"
-        .unary u =>
-            op: str @ "-"
-
-            match u.op
-                .neg     => op @ "-"
-                .not     => op @ "!"
-                .bit_not => op @ "~"
-
-            return op + wrapped(tree, s, id: u.operand, needed: UNARY_POWER)
-        .binary b =>
-            mine = power(tree, id)
-
-            # Left-associative everywhere, so an equally-binding
-            # operator on the right DOES need its parentheses:
-            # a - (b - c).
-            return wrapped(tree, s, id: b.left, needed: mine) + " " + bodies.binary_op(b.op) + " " + wrapped(tree, s, id: b.right, needed: mine + 1)
-        .field fl => return wrapped(tree, s, id: fl.base, needed: POSTFIX_POWER) + "." + source.span_text(s, fl.name)
-        .field_name fl => return wrapped(tree, s, id: fl.base, needed: POSTFIX_POWER) + "::" + source.span_text(s, fl.name)
-        .index ix => return wrapped(tree, s, id: ix.base, needed: POSTFIX_POWER) + "[" + render(tree, s, id: ix.index) + "]"
-        .call cl => return wrapped(tree, s, id: cl.callee, needed: POSTFIX_POWER) + "(" + args_line(tree, s, given: cl.args) + ")"
-        .method m => return wrapped(tree, s, id: m.receiver, needed: POSTFIX_POWER) + "." + source.span_text(s, m.name) + "(" + args_line(tree, s, given: m.args) + ")"
-        .variant_case vc =>
-            if vc.args.len() == 0
-                return "." + source.span_text(s, vc.name)
-            return "." + source.span_text(s, vc.name) + "(" + args_line(tree, s, given: vc.args) + ")"
-        .array arr =>
-            rendered: [str] @ []
-
-            for item in arr.elements
-                rendered @ rendered.push(render(tree, s, id: item))
-
-            return "[" + rendered.join(", ") + "]"
-        .map mp =>
-            rendered: [str] @ []
-
-            for entry in mp.entries
-                rendered @ rendered.push(render(tree, s, id: entry.key) + ": " + render(tree, s, id: entry.value))
-
-            return "{" + rendered.join(", ") + "}"
-        .try_expr t => return wrapped(tree, s, id: t.value, needed: POSTFIX_POWER) + "?"
-        # Headers only: valued() prints the blocks under them.
-
-        .if_expr ie =>
-            if ie.branches.len() > 0
-                return "if " + render(tree, s, id: ie.branches[0].cond)
-            return "if"
-        .match_expr me => return "match " + render(tree, s, id: me.scrutinee)
-        # A file with an unreadable expression is not formatted at all
-        # (the command refuses on any diagnostic).
-
-        .error => return "???"
-
-    return "???"
-
-# id rendered, in parentheses only if it binds looser than needed.
-function wrapped(tree: ast.Ast, s: source.Source, id: i64, needed: i64) -> str
-    text = render(tree, s, id: id)
-    is_control: bool @ false
-
-    match tree.exprs[id].kind
-        .if_expr | .match_expr                                                         => is_control @ true
-        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => is_control @ is_control
-        .name | .hole | .unary | .binary | .field | .field_name | .index               => is_control @ is_control
-        .call | .method | .variant_case | .array | .map | .try_expr | .error           => is_control @ is_control
-
-    if power(tree, id) < needed && !is_control
-        return "(" + text + ")"
-    return text
-
-function args_line(tree: ast.Ast, s: source.Source, given: [ast.Arg]) -> str
-    rendered: [str] @ []
-
-    for arg in given
-        rendered @ rendered.push(arg_text(tree, s, arg: arg))
-
-    return rendered.join(", ")
-
-function arg_text(tree: ast.Ast, s: source.Source, arg: ast.Arg) -> str
-    name: str @ ""
-
-    if !arg.name.is_err()
-        name @ source.span_text(s, arg.name.must()) + ": "
-    marker: str @ ""
-
-    if arg.mutable
-        marker @ "@"
-    return name + marker + render(tree, s, id: arg.value)
 
 ## Tests
 
@@ -1573,7 +1476,7 @@ test "fmt keeps `owned`, at both positions and beside the shapes that carry none
 # guard's exit 2) and no following member left it outside the group at exit
 # 0. Both shapes are already canonical here, so the output is the input.
 test "fmt keeps a comment inside a parameter list where it was, with a member following and with none"
-    following = "extern \"x.h\"\n    record Ob tag ob\n    function ob_get(\n        o: Ob,\n        # a comment between\n        n: i64\n    ) -> Ob retains ob_put\n    function ob_put(o: Ob consumes)\n\nfunction main()\n    print(0)\n"
+    following = "extern \"x.h\"\n    record Ob tag ob\n    function ob_get(\n                o: Ob,\n                # a comment between\n                n: i64\n            ) -> Ob retains ob_put\n    function ob_put(o: Ob consumes)\n\nfunction main()\n    print(0)\n"
     parsed = parse.parse(following)
     assert parsed.diagnostics.len() == 0
     s = source.new_source(name: "t.hero", text: following)
@@ -1585,7 +1488,7 @@ test "fmt keeps a comment inside a parameter list where it was, with a member fo
     # The member after the comment documents nothing: that doc is the one
     # line of the dump that differed.
     assert again.decls[2].doc.len() == 0
-    last = "extern \"x.h\"\n    record Ob tag ob\n    function ob_put(o: Ob consumes)\n    function ob_get(\n        o: Ob,\n        # a comment between\n        n: i64\n    ) -> Ob retains ob_put\n\nfunction main()\n    print(0)\n"
+    last = "extern \"x.h\"\n    record Ob tag ob\n    function ob_put(o: Ob consumes)\n    function ob_get(\n                o: Ob,\n                # a comment between\n                n: i64\n            ) -> Ob retains ob_put\n\nfunction main()\n    print(0)\n"
     parsed_last = parse.parse(last)
     assert parsed_last.diagnostics.len() == 0
     s_last = source.new_source(name: "t.hero", text: last)
@@ -1601,7 +1504,7 @@ test "fmt keeps a comment inside a parameter list where it was, with a member fo
 # comment still comes out joined, so no program changes shape that did not
 # ask.
 test "every place a comment can sit inside a parameter list survives, and a list without one still joins"
-    kept = "# after the open paren\nfunction first(\n    # about a\n    a: i64\n) -> i64\n    return a\n\n# trailing on a parameter line\nfunction second(\n    a: i64,  # about a\n    b: i64\n) -> i64\n    return a + b\n\n# before the closing paren\nfunction third(\n    a: i64\n    # after the last\n) -> i64\n    return a\n\n# trailing on the closing line\nfunction fourth(\n    a: i64\n) -> i64  # the result\n    return a\n\n# an empty list holding only a remark\nfunction fifth(\n    # nothing to take\n)\n    print(0)\n\nfunction main()\n    print(first(1) + second(a: 1, b: 2) + third(1) + fourth(1))\n    fifth()\n"
+    kept = "# after the open paren\nfunction first(\n            # about a\n            a: i64\n        ) -> i64\n    return a\n\n# trailing on a parameter line\nfunction second(\n            a: i64,  # about a\n            b: i64\n        ) -> i64\n    return a + b\n\n# before the closing paren\nfunction third(\n            a: i64\n            # after the last\n        ) -> i64\n    return a\n\n# trailing on the closing line\nfunction fourth(\n            a: i64\n        ) -> i64  # the result\n    return a\n\n# an empty list holding only a remark\nfunction fifth(\n            # nothing to take\n        )\n    print(0)\n\nfunction main()\n    print(first(1) + second(a: 1, b: 2) + third(1) + fourth(1))\n    fifth()\n"
     parsed = parse.parse(kept)
     assert parsed.diagnostics.len() == 0
     s = source.new_source(name: "t.hero", text: kept)
@@ -1617,8 +1520,159 @@ test "every place a comment can sit inside a parameter list survives, and a list
         parsed_crooked.uses,
         parsed_crooked.decls
     )
-    assert once == "function f(\n    a: i64,\n    # c\n    b: i64\n) -> i64\n    return a + b\n\nfunction g(a: i64, b: str) -> i64\n    return a\n"
+    assert once == "function f(\n            a: i64,\n            # c\n            b: i64\n        ) -> i64\n    return a + b\n\nfunction g(a: i64, b: str) -> i64\n    return a\n"
     again = parse.parse(once)
     assert again.diagnostics.len() == 0
     s_again = source.new_source(name: "t.hero", text: once)
     assert format_file(again.tree, s_again, again.comments, again.uses, again.decls) == once
+
+# Defect 096. The group's member walk printed a remark at the member's indent
+# and dropped the blank line under it, so the remark was the next member's
+# documentation in the re-parse and the tree guard refused at exit 2 a
+# program `check` accepts. The shapes beside it, measured 2026-09-25 on the
+# seed of f1e2132f: before a middle member and before the last, exit 2; two
+# remarks with a blank between and under, exit 2; before the FIRST member
+# the blank was deleted at exit 0 with the same tree, because no comment
+# between the head and its first member is ever a doc (`parse/group.hero`
+# gives that member the doc above `extern`), and it is kept now all the same; a
+# doc directly above a member was untouched and stays so. The last text is
+# the shape `last_line` hid: a signature written across lines with no
+# comment inside joins, and the doc under it gained a blank ABOVE it at exit
+# 0, because the blank rule was keyed on the name's line, not the `)`'s.
+test "the blank line under a remark survives inside a group, and a doc under a joined signature gains none"
+    kept = "extern \"x.h\"\n    # before the first member\n\n    record Ob tag ob\n    # documentation for ob_put\n    function ob_put(o: Ob consumes)\n    # before a middle member\n\n    record Pool tag pool\n    # one remark\n\n    # another remark\n\n    function pool_put(p: Pool consumes)\n\nfunction main()\n    print(0)\n"
+    parsed = parse.parse(kept)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: kept)
+    once = format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+    assert once == kept
+    again = parse.parse(once)
+    assert again.diagnostics.len() == 0
+
+    # Three members under a remark document nothing; the one under a doc does.
+    assert again.decls[0].doc.len() == 0
+    assert again.decls[1].doc.len() == 1
+    assert again.decls[2].doc.len() == 0
+    assert again.decls[3].doc.len() == 0
+    joined = "extern \"x.h\"\n    record Ob tag ob\n    function ob_get(\n        o: Ob,\n        n: i64\n    ) -> Ob\n    # documentation for ob_put\n    function ob_put(o: Ob consumes)\n\nfunction main()\n    print(0)\n"
+    parsed_joined = parse.parse(joined)
+    assert parsed_joined.diagnostics.len() == 0
+    s_joined = source.new_source(name: "t.hero", text: joined)
+    once_joined = format_file(
+        parsed_joined.tree,
+        s_joined,
+        parsed_joined.comments,
+        parsed_joined.uses,
+        parsed_joined.decls
+    )
+    assert once_joined == "extern \"x.h\"\n    record Ob tag ob\n    function ob_get(o: Ob, n: i64) -> Ob\n    # documentation for ob_put\n    function ob_put(o: Ob consumes)\n\nfunction main()\n    print(0)\n"
+    again_joined = parse.parse(once_joined)
+    assert again_joined.diagnostics.len() == 0
+    assert again_joined.decls[2].doc.len() == 1
+    s_again_joined = source.new_source(name: "t.hero", text: once_joined)
+    assert format_file(again_joined.tree, s_again_joined, again_joined.comments, again_joined.uses, again_joined.decls) == once_joined
+
+# The shapes beside defect 096's that `print/page.hero`'s first rule
+# repaired, each measured on the trunk's compiler 2026-09-25: a comment on
+# the first line of a body under a Heroes function's joined signature (the
+# skeptic seat's `p05f`) and on the first line of an `else` block gained a
+# blank line above it at exit 0, the dropped signature lines and the `else`
+# line counted as a gap; a remark above `else if` moved under it at exit 0,
+# and one above `else` made `fmt` no fixpoint on its own output.
+test "a comment first in a body under a joined signature or an else gains no blank, and one above an else stays"
+    joined = "function f(\n    a: i64,\n    b: i64\n) -> i64\n    # first body line\n    return a + b\n"
+    parsed = parse.parse(joined)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: joined)
+    once = format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+    assert once == "function f(a: i64, b: i64) -> i64\n    # first body line\n    return a + b\n"
+    again = parse.parse(once)
+    s_again = source.new_source(name: "t.hero", text: once)
+    assert format_file(again.tree, s_again, again.comments, again.uses, again.decls) == once
+    kept = "function f(n: i64)\n    if n == 0\n        print(0)\n    # above else if\n    else if n == 1\n        print(1)\n    # above else\n    else\n        # first in else\n        print(2)\n"
+    parsed_kept = parse.parse(kept)
+    assert parsed_kept.diagnostics.len() == 0
+    s_kept = source.new_source(name: "t.hero", text: kept)
+    assert format_file(parsed_kept.tree, s_kept, parsed_kept.comments, parsed_kept.uses, parsed_kept.decls) == kept
+
+# Defect 101 through the whole printer, with the regression of 096's first
+# repair beside it (both measured 2026-09-25 on the trunk's compiler and on
+# that repair): a doc above a second same-head head with a blank line under
+# it lost its member at exit 2, and stays directly above it merged; a comment
+# trailing a line that opens a block became the block's first line, one
+# inside a bracket left it, and one between two arms gained a blank line
+# under it, each at exit 0, and each stays where it was written; and one
+# inside a condition's bracket, which the first repair refused, is kept.
+test "a merged head's blank line, an opener's comment, a bracket's and an arm's stay where the author put them"
+    merged = "extern \"x.h\"\n    record Ob tag ob\n# the doc of Pool\nextern \"x.h\"\n\n    record Pool tag pool\n"
+    pm = parse.parse(merged)
+    assert pm.diagnostics.len() == 0
+    sm = source.new_source(name: "t.hero", text: merged)
+    once = format_file(pm.tree, sm, pm.comments, pm.uses, pm.decls)
+    assert once == "extern \"x.h\"\n    record Ob tag ob\n    # the doc of Pool\n    record Pool tag pool\n"
+    assert parse.parse(once).decls[1].doc.len() == 1
+    kept = "function f(n: i64) -> [i64]\n    if n == 0  # on an if\n        print(0)\n    else  # on an else\n        print(1)\n\n    match n  # on a match\n        0 => print(0)\n        # between two arms\n        _ =>  # on a block arm\n            print(1)\n            # at the end of a block arm\n\n    return [\n        1  # on an element\n        # above the last\n        2\n    ]\n"
+    pk = parse.parse(kept)
+    assert pk.diagnostics.len() == 0
+    sk = source.new_source(name: "t.hero", text: kept)
+    assert format_file(pk.tree, sk, pk.comments, pk.uses, pk.decls) == kept
+    assert format_page(pk.tree, sk, pk.comments, pk.uses, pk.decls).moved == 0
+    held = "function f() -> i64\n    while g(\n                1  # inside the condition\n            ) > 0\n        return 1\n\n    return 0\n\nfunction g(n: i64) -> i64\n    return n\n"
+    ph = parse.parse(held)
+    assert ph.diagnostics.len() == 0
+    sh = source.new_source(name: "t.hero", text: held)
+    page_held = format_page(ph.tree, sh, ph.comments, ph.uses, ph.decls)
+    assert page_held.moved == 0
+    assert page_held.out == held
+
+# The shape beside defect 101's first one inside a parameter list, measured
+# 2026-09-25 on the trunk's compiler: a comment trailing a line that two
+# parameters share was printed after the first of them at exit 0. It goes
+# with the last thing printed from its line, as in a bracket.
+test "a comment trailing a line that parameters share stays after the last of them"
+    shared = "function f(\n    a: i64, b: i64,  # about b\n    c: i64\n) -> i64\n    return a + b + c\n"
+    parsed = parse.parse(shared)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: shared)
+    once = format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+    assert once == "function f(\n            a: i64,\n            b: i64,  # about b\n            c: i64\n        ) -> i64\n    return a + b + c\n"
+    again = parse.parse(once)
+    s_again = source.new_source(name: "t.hero", text: once)
+    assert format_file(again.tree, s_again, again.comments, again.uses, again.decls) == once
+
+# Defect 101's last round: the shapes its first repair refused, and the
+# silent move it left on a joined signature's `(` line, each kept where it
+# is written, and each again with CRLF line ends, which `fmt` prints as LF.
+# Here and not as fixtures: `.gitattributes` normalises every checked-in
+# file to LF, so a CRLF fixture would test LF.
+test "a comment on a signature's open line, after an operator, after a name, in a condition stays, CRLF too"
+    lf = [
+        "function f(a: i64,  # about a\n    b: i64) -> i64\n    return a + b\n"
+        "function f(a: i64) -> i64\n    x = (a +  # after a plus\n        1)\n    return x\n"
+        "function f() -> i64\n    return g(\n        a:  # after the name\n            1\n    )\n\nfunction g(a: i64) -> i64\n    return a\n"
+        "function f(n: i64) -> i64\n    if n > g(\n        1  # inside the condition\n    )\n        return 1\n    return 0\n\nfunction g(n: i64) -> i64\n    return n\n"
+    ]
+    crlf = [
+        "function f(a: i64,  # about a\r\n    b: i64) -> i64\r\n    return a + b\r\n"
+        "function f(a: i64) -> i64\r\n    x = (a +  # after a plus\r\n        1)\r\n    return x\r\n"
+        "function f() -> i64\r\n    return g(\r\n        a:  # after the name\r\n            1\r\n    )\r\n\r\nfunction g(a: i64) -> i64\r\n    return a\r\n"
+        "function f(n: i64) -> i64\r\n    if n > g(\r\n        1  # inside the condition\r\n    )\r\n        return 1\r\n    return 0\r\n\r\nfunction g(n: i64) -> i64\r\n    return n\r\n"
+    ]
+    wants = [
+        "function f(\n            a: i64,  # about a\n            b: i64\n        ) -> i64\n    return a + b\n"
+        "function f(a: i64) -> i64\n    x = (\n        a +  # after a plus\n        1\n    )\n    return x\n"
+        lf[2]
+        "function f(n: i64) -> i64\n    if n > g(\n                1  # inside the condition\n            )\n        return 1\n    return 0\n\nfunction g(n: i64) -> i64\n    return n\n"
+    ]
+    index: i64 @ 0
+
+    for text in lf
+        for written in [text, crlf[index]]
+            parsed = parse.parse(written)
+            assert parsed.diagnostics.len() == 0
+            s = source.new_source(name: "t.hero", text: written)
+            printed = format_page(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+            assert printed.out == wants[index]
+            assert printed.moved == 0
+
+        index @ index + 1

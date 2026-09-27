@@ -1,0 +1,447 @@
+# The page `heroes fmt` writes: its lines, and its comments, the one thing
+# the tree does not keep, each put back where the author wrote it. Split out
+# of `print/fmt.hero` on 2026-09-25 along that seam, with the repairs of
+# defects 096, 099 and 100, because a mistake here is not a wrong line but a
+# MOVED comment, and the tree guard sees only the moves that change a doc.
+#
+# Five rules, and each asks the source or the tree, never the page:
+# - a blank line is printed where the SOURCE has one (`blank_between`),
+#   never where a line fmt dropped or does not track left a gap: the second
+#   head of two merged groups and the blank lines under it (`gap`), the
+#   lines of a joined signature, an `else`. With ONE exception in this
+#   module, made in `comments_above` and written there: a remark the
+#   re-parse would read as the next item's doc gains the blank line that
+#   keeps it a remark (defect 100), since the other layout changes the
+#   program. Panel 095's air between statements is `print/fmt.hero`'s;
+# - the comments above an item that takes documentation are printed so the
+#   re-parse reads the doc list the parser read (`comments_above`);
+# - a comment written inside a block after its last item stays in that
+#   block, at its indent (`block_end`), the block being the one
+#   `print/owners.hero` gives it, by the rule the output guard checks; a
+#   run of them whose columns climb is placed wholly in its last
+#   comment's block, the canonical form `owners` states with its reason;
+# - a line that opens a block (an `if`, `else if`, `while`, `for`, `match`,
+#   a signature, a constant's head), printed across lines to keep a comment
+#   inside it, puts every line after its first eight columns further in
+#   than elsewhere (`print/margins.hero`): four past the block's own
+#   column, a closing bracket's line included. At the body's column a
+#   continuation read as the body's first line, and a `)` at the head's own
+#   read as a statement the block then hung under (the third skeptic seat's
+#   `m3`, `sh3`);
+# - a comment stays on the line it trails, and one inside a bracket stays
+#   inside it (defect 101). One the walks cannot keep there is recorded in
+#   `moved`, and `heroes fmt` refuses the file rather than print the comment
+#   somewhere else at exit 0; the guard's own check (`print/anchors.hero`)
+#   asks the two files where every comment is, whatever printed them.
+#
+# Not `print/comments.hero`: every printer function takes the stream as a
+# parameter named `comments`, and a local may not take a module's name
+# (`shadowed_binding`, `resolve/top.hero`'s "a local may not take a name a
+# `use` bound").
+
+use token
+use source
+use cursor
+use parse
+use print/owners
+
+## The state
+
+record Fmt
+    out: str
+    next_comment: i64
+    last_line: i64
+
+    # The line of the head a merge dropped above the member being printed,
+    # 0 for none (`gap`).
+    dropped: i64
+
+    # The line of the first comment printed away from where the author
+    # wrote it, 0 while there is none (`comments_before`).
+    moved: i64
+
+    # The source's logical lines and the block each comment belongs to
+    # (`print/owners.hero`).
+    lines: owners.Lines
+
+function blank_page() -> Fmt
+    return Fmt(out: "", next_comment: 0, last_line: 0, dropped: 0, moved: 0, lines: owners.none())
+
+function put_line(@f: Fmt, indent: i64, text: str)
+    if text.len() > 0
+        f.out @ f.out + " ".repeat(indent.to_u64().must()) + text
+    f.out @ f.out + "\n"
+
+function blank_line(@f: Fmt)
+    if f.out.len() == 0
+        return
+    n = f.out.len()
+
+    if n >= 2 && f.out.slice(from: n - 2, to: n) == "\n\n"
+        return
+    f.out @ f.out + "\n"
+
+function trim_end(text: str) -> str
+    cs = text.chars()
+    end: i64 @ cs.len()
+
+    while end > 0 && (cs[end - 1] == " " || cs[end - 1] == "\t")
+        end @ end - 1
+
+    return cs.slice(from: 0, to: end).join("")
+
+## Blank lines, read from the source
+
+# Is one of the source lines strictly between `above` and `below` blank,
+# holding nothing but whitespace, a CRLF file's `\r` included? The line
+# arithmetic this replaced (`below > above + 1`) counted a line fmt DROPPED
+# as a blank one, which made a doc above the second of two merged groups a
+# remark (the regression of defect 096's first repair). It stops at the
+# first blank line.
+function blank_between(s: source.Source, above: i64, below: i64) -> bool
+    line: i64 @ above + 1
+
+    while line < below
+        if line_is_blank(s, line: line)
+            return true
+        line @ line + 1
+
+    return false
+
+# `blank_between`, less the blank lines under a group head the merge drops:
+# they are that head's layout. Printed, one stood between a doc above the
+# head and the member it documents, and `fmt` refused at exit 2 what the
+# trunk printed (the regression of 096's repair, the skeptic seat's
+# `g7_doc_blank_under_head`). The blank lines above that head are the
+# author's, and stay.
+function gap(f: Fmt, s: source.Source, above: i64, below: i64) -> bool
+    stop: i64 @ below
+
+    if f.dropped > above && f.dropped < below
+        stop @ f.dropped
+    return blank_between(s, above: above, below: stop)
+
+function line_is_blank(s: source.Source, line: i64) -> bool
+    return first_mark(s, line: line) == ' '
+
+# The first byte on a source line that is not whitespace, or a space for a
+# line that has none.
+function first_mark(s: source.Source, line: i64) -> u8
+    if line < 1 || line > s.line_starts.len()
+        return 'x'
+    i: i64 @ s.line_starts[line - 1]
+    stop: i64 @ s.text.len()
+
+    if line < s.line_starts.len()
+        stop @ s.line_starts[line]
+
+    while i < stop
+        b = s.text[i]
+
+        if b != ' ' && b != '\t' && b != '\r' && b != '\n'
+            return b
+        i @ i + 1
+
+    return ' '
+
+# The line of the keyword that opens a block whose first statement is on
+# line `first`: the logical line before it, since nothing else can stand
+# between an `else` or an arm's `=>` and the first statement under it. The
+# tree keeps no span for `else`.
+function opener_line(f: Fmt, first: i64) -> i64
+    return owners.start_of(f.lines, line: first - 1)
+
+# Does the comment at `offset` open its line? One with code before it on
+# its line is that code's trailing note, and never a block's last line.
+function opens_its_line(s: source.Source, offset: i64) -> bool
+    i: i64 @ s.line_starts[source.line_of(s, offset) - 1]
+
+    while i < offset
+        if s.text[i] != ' ' && s.text[i] != '\t'
+            return false
+        i @ i + 1
+
+    return true
+
+# Was the last line printed a comment on a line of its own? The members of
+# a group stay a run, and the one blank line between two of them is the one
+# under a comment where the source has it: a remark's, or the last line of a
+# record's fields (`block_end`). A trailing note shares its code's line.
+function after_a_comment(f: Fmt, s: source.Source, comments: [token.Span]) -> bool
+    if f.next_comment == 0
+        return false
+    span = comments[f.next_comment - 1]
+    return source.line_of(s, span.start) == f.last_line && opens_its_line(s, offset: span.start)
+
+## The comment stream
+
+# Print every comment above source line `line`, at indent, with a single
+# blank line above one wherever the source has one.
+#
+# Every comment no walk kept where it was written arrives here in the end,
+# the file's last call taking them all, so this is where a move is seen: a
+# comment on or above the last line printed lands after code written after
+# it, or off the code it trailed (defect 101).
+function comments_before(@f: Fmt, s: source.Source, comments: [token.Span], line: i64, indent: i64)
+    while f.next_comment < comments.len()
+        span = comments[f.next_comment]
+        comment_line = source.line_of(s, span.start)
+
+        if comment_line >= line
+            return
+
+        if comment_line <= f.last_line && f.moved == 0
+            f.moved @ comment_line
+
+        if f.last_line > 0 && gap(f, s, above: f.last_line, below: comment_line)
+            blank_line(@f)
+        put_line(@f, indent: indent, text: trim_end(source.span_text(s, span)))
+        f.last_line @ comment_line
+        f.next_comment @ f.next_comment + 1
+
+# The comments above an item that takes documentation (§4.1: a declaration,
+# a group member, a field, a case), printed so the re-parse reads the doc
+# list the parser read, which is `doc`. Those go directly above the item.
+# Every other one is a remark, and a blank line goes under the last remark
+# where the source has one, OR where without it the re-parse would take it
+# as documentation: `cursor.take_docs` takes the run of comments at the
+# item's column directly above it, stopped by a `##` heading, and every
+# comment here is printed at the item's column (defect 100: a column-0
+# comment between two members, a remark under a merged group's second head).
+# THE ONE BLANK LINE THIS MODULE WRITES THAT THE SOURCE DOES NOT HAVE is
+# this one, written because the other layout is a different program: the
+# re-parse would give the item a doc the parser did not. (Panel 095's air
+# between statements and declarations is `print/fmt.hero`'s, written there.)
+# `takes_docs` is false for a group's first member only, which the parser
+# gives the doc above the `extern` and never a comment under it.
+function comments_above(@f: Fmt, s: source.Source, comments: [token.Span], line: i64, indent: i64, doc: [token.Span], takes_docs: bool)
+    unread = f.next_comment
+    bound: i64 @ line
+
+    if doc.len() > 0
+        bound @ source.line_of(s, doc[0].start)
+    comments_before(@f, s, comments, line: bound, indent: indent)
+
+    if f.next_comment > unread
+        last = comments[f.next_comment - 1]
+        remark_line = source.line_of(s, last.start)
+        taken = takes_docs && !cursor.starts_a_section(source.span_text(s, last))
+
+        if gap(f, s, above: remark_line, below: bound) || taken
+            blank_line(@f)
+    comments_before(@f, s, comments, line: line, indent: indent)
+
+# The comments written INSIDE a block after its last item (defect 099),
+# printed as that block's last lines at its indent. The next item's walk
+# printed them at its own column: above a declaration they became its doc
+# and the tree guard refused, and with a blank line under them they left
+# the block at exit 0. A comment is the block's when `owners` gives it to
+# this block or a deeper one, the deeper ones having closed first, and no
+# logical line stands between it and what was printed last. Asked of the
+# page instead, a `)` alone on its line was code between them, and the
+# comment after it left the block at exit 0 (the skeptic seat's `m1`).
+# Where the source has a blank line above one, so does the page, and none
+# is added: panel 095's air above a comment run is for the statement under
+# it.
+function block_end(@f: Fmt, s: source.Source, comments: [token.Span], indent: i64)
+    while f.next_comment < comments.len() && f.next_comment < f.lines.owner.len()
+        k = f.next_comment
+        line = source.line_of(s, comments[k].start)
+
+        if line <= f.last_line || f.lines.owner[k] < indent / 4 || f.lines.prior[k] > f.last_line
+            return
+
+        if f.last_line > 0 && gap(f, s, above: f.last_line, below: line)
+            blank_line(@f)
+        put_line(@f, indent: indent, text: trim_end(source.span_text(s, comments[k])))
+        f.last_line @ line
+        f.next_comment @ k + 1
+
+# A group's first member keeps ITS OWN head, on line `head`, where fmt would
+# merge its group into the one above for sharing a head line and the merge
+# would move a comment. One trailing that head would lose its line (defect
+# 101). One between that head and a member whose doc sits above it would
+# stand between the member and its doc, where the re-parse takes it as the
+# doc instead: no layout that keeps the source order has both.
+#
+# Asked before any line is printed, from `from`, the first comment after the
+# member above: the comments inside that member are before any doc of this
+# one and on no head line of it, so they answer nothing here.
+function keeps_head(s: source.Source, comments: [token.Span], from: i64, doc: [token.Span], head: i64, start: i64) -> bool
+    after: i64 @ start
+
+    if doc.len() > 0
+        after @ doc[doc.len() - 1].end
+    i: i64 @ from
+
+    while i < comments.len() && comments[i].start < start
+        if comments[i].start >= after || source.line_of(s, comments[i].start) == head
+            return true
+        i @ i + 1
+
+    return false
+
+# A comment on the same line as what was just printed goes at the end
+# of that line, two spaces out.
+function trailing_comment(@f: Fmt, s: source.Source, comments: [token.Span], line: i64)
+    if f.next_comment >= comments.len()
+        return
+    span = comments[f.next_comment]
+
+    if source.line_of(s, span.start) != line
+        return
+    text = trim_end(source.span_text(s, span))
+    n = f.out.len()
+
+    if n > 0 && f.out.slice(from: n - 1, to: n) == "\n"
+        f.out @ f.out.slice(from: 0, to: n - 1)
+    f.out @ f.out + "  " + text + "\n"
+    f.next_comment @ f.next_comment + 1
+
+# A line printed from source line `line`: what the next walk measures from
+# is the last line of its logical line, and the comment trailing that one
+# stays on it. A `)` alone on its line closes the statement it is in, and is
+# no code between that statement and a comment after it (defect 099's last
+# shape, the skeptic seat's `m1`, and `p4`'s comment after that `)`).
+function ended(@f: Fmt, s: source.Source, comments: [token.Span], line: i64)
+    end = owners.end_of(f.lines, line: line)
+
+    if f.last_line < end
+        f.last_line @ end
+    trailing_comment(@f, s, comments, line: f.last_line)
+
+# The line that opens a block, just printed: where the block's walk
+# measures from, and the comment trailing it, which stays on it. The first
+# `comments_before` of the block printed that one as its first line
+# (defect 101: `if`, `else`, `while`, `for`, `match`, a block arm, a head).
+function opened(@f: Fmt, s: source.Source, comments: [token.Span], line: i64)
+    f.last_line @ line
+    trailing_comment(@f, s, comments, line: line)
+
+# Is a comment waiting to be printed above `line`? RULE 4 puts its blank
+# ABOVE the comment, and `comments_before` has already printed the
+# comment by the time it could say so: hence the peek.
+function comment_waits_before(f: Fmt, s: source.Source, comments: [token.Span], line: i64) -> bool
+    if f.next_comment >= comments.len()
+        return false
+    return source.line_of(s, comments[f.next_comment].start) < line
+
+## Tests
+
+test "a blank line is one the source has, never a line fmt dropped"
+    text = "extern \"x.h\"\n    record Ob tag ob\n# doc\nextern \"x.h\"\n\n    record Pool tag pool\r\n\r\n"
+    s = source.new_source(name: "t.hero", text: text)
+    assert blank_between(s, above: 2, below: 6)
+    assert !blank_between(s, above: 3, below: 5)
+    assert blank_between(s, above: 6, below: 8)
+    assert line_is_blank(s, line: 7)
+    assert !line_is_blank(s, line: 4)
+    assert opens_its_line(s, offset: 34)
+    assert !opens_its_line(s, offset: 21)
+
+test "the line that opens a block is the logical line above its first statement"
+    text = "function f(c: bool)\n    if c\n        print(1)\n    # above\n    else  # trailing\n        # under\n\n        print(2)\n"
+    s = source.new_source(name: "t.hero", text: text)
+    f: Fmt @ blank_page()
+    f.lines @ owners.shape(s, lexed: parse.parse(text).tokens, ignored: [], end: text.len())
+    assert opener_line(f, first: 8) == 5
+    assert first_mark(s, line: 4) == '#'
+    assert first_mark(s, line: 7) == ' '
+    assert first_mark(s, line: 9) == ' '
+    assert first_mark(s, line: 10) == 'x'
+
+test "a remark keeps its blank line where the re-parse would read a doc, and a doc gains none"
+    text = "record Point\n    x: i64\n# a remark at column 0\n    # the doc of y\n    y: i64\n"
+    parsed = parse.parse(text)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: text)
+    f: Fmt @ Fmt(out: "", next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: owners.none())
+    doc: [token.Span] @ []
+
+    match parsed.decls[0].kind
+        .record_decl rec                                             => doc @ rec.fields[1].doc
+        .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
+
+    assert doc.len() == 1
+    comments_above(@f, s, comments: parsed.comments, line: 5, indent: 4, doc: doc, takes_docs: true)
+    assert f.out == "    # a remark at column 0\n\n    # the doc of y\n"
+
+    # Under a head the first member takes no doc, so a remark needs no blank.
+    g: Fmt @ Fmt(out: "", next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: owners.none())
+    none: [token.Span] = []
+    comments_above(@g, s, comments: parsed.comments, line: 4, indent: 4, doc: none, takes_docs: false)
+    assert g.out == "    # a remark at column 0\n"
+
+# Owners are read with the run rule: `# deeper` is after `x()` and no block
+# is open deeper than the body there, and `# at the file` after it keeps it
+# no shallower than itself.
+test "a comment after a block's last item is that block's where owners gives it to that block, and only there"
+    text = "function f()\n    x()\n        # deeper\n\n    # at the body\n# at the file\nfunction main()\n    f()  # trailing\n"
+    parsed = parse.parse(text)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: text)
+    lines = owners.shape(s, lexed: parsed.tokens, ignored: [], end: text.len())
+    assert lines.owner[0] == 1
+    assert lines.owner[1] == 1
+    assert lines.owner[2] == 0
+    assert lines.owner[3] == owners.TRAILS
+    f: Fmt @ Fmt(out: "", next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: lines)
+    block_end(@f, s, parsed.comments, indent: 8)
+    assert f.out == ""
+    block_end(@f, s, parsed.comments, indent: 4)
+    assert f.out == "    # deeper\n\n    # at the body\n"
+    assert f.next_comment == 2
+    assert after_a_comment(f, s, parsed.comments)
+
+    # Nothing is a block's once code stands between, and a trailing note
+    # is never a block's.
+    g: Fmt @ Fmt(out: "", next_comment: 2, last_line: 1, dropped: 0, moved: 0, lines: lines)
+    block_end(@g, s, parsed.comments, indent: 0)
+    assert g.out == ""
+    h: Fmt @ Fmt(out: "", next_comment: 3, last_line: 7, dropped: 0, moved: 0, lines: lines)
+    block_end(@h, s, parsed.comments, indent: 0)
+    assert h.out == ""
+    trailed: Fmt @ Fmt(out: "", next_comment: 4, last_line: 8, dropped: 0, moved: 0, lines: lines)
+    assert !after_a_comment(trailed, s, parsed.comments)
+
+# The regression of defect 096's first repair (the skeptic seat's
+# `g7_doc_blank_under_head`): a doc above a second head the merge drops, and
+# a blank line under that head, which `gap` gives to the head. A blank line
+# above the head stays the author's.
+test "a blank line under a head the merge dropped is that head's, and one above it stays"
+    text = "extern \"x.h\"\n    record Ob tag ob\n\n# doc\nextern \"x.h\"\n\n    record Pool tag pool\n"
+    s = source.new_source(name: "t.hero", text: text)
+    f: Fmt @ blank_page()
+    f.dropped @ 5
+    assert !gap(f, s, above: 4, below: 7)
+    assert gap(f, s, above: 2, below: 4)
+    assert gap(f, s, above: 2, below: 7)
+    assert gap(f, s, above: 5, below: 7)
+    f.dropped @ 0
+    assert gap(f, s, above: 4, below: 7)
+
+# Defect 101: every comment no walk kept reaches `comments_before` in the
+# end, and one on or above the last line printed is recorded as moved.
+test "a comment printed after code written after it is recorded as moved, and one after the code is not"
+    text = "function f()\n    g(\n        # inside\n    )\n    # after\n    h()\n"
+    parsed = parse.parse(text)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: text)
+    f: Fmt @ Fmt(out: "", next_comment: 0, last_line: 4, dropped: 0, moved: 0, lines: owners.none())
+    comments_before(@f, s, parsed.comments, line: 6, indent: 4)
+    assert f.moved == 3
+    assert f.out == "    # inside\n    # after\n"
+    g: Fmt @ Fmt(out: "", next_comment: 1, last_line: 4, dropped: 0, moved: 0, lines: owners.none())
+    comments_before(@g, s, parsed.comments, line: 6, indent: 4)
+    assert g.moved == 0
+
+    # The comment trailing a line that opens a block stays on it.
+    trailed = "function f(c: bool)\n    if c  # note\n        print(1)\n"
+    pt = parse.parse(trailed)
+    st = source.new_source(name: "t.hero", text: trailed)
+    h: Fmt @ blank_page()
+    put_line(@h, indent: 4, text: "if c")
+    opened(@h, st, pt.comments, line: 2)
+    assert h.out == "    if c  # note\n"
+    assert h.last_line == 2
+    assert h.next_comment == 1

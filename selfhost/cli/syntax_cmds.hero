@@ -14,6 +14,7 @@ use diag
 use parse
 use print/dump
 use print/fmt
+use print/anchors
 use cli/table as cli_table
 use cli/argv
 use cli/io
@@ -46,8 +47,21 @@ function run_fmt(path: str, s: source.Source, inv: argv.Invocation) -> cli_table
 
         io.eprint(text: "error: refusing to format a file with diagnostics")
         return .diagnostics_exit
-    formatted = fmt.format_file(out.tree, s, out.comments, out.uses, out.decls)
-    refusal = refuse_output_the_formatter_broke(path: path, original: source_extent.user_text(s), formatted: formatted)
+    printed = fmt.format_lexed(out.tree, s, out.comments, out.uses, out.decls, out.tokens)
+    formatted = printed.out
+    refusal: str? @ refuse_output_the_formatter_broke(
+        path: path,
+        original: source_extent.user_text(s),
+        formatted: formatted
+    )
+
+    # The printer's own check, and the one no other can make: a comment no
+    # walk could keep where it was written is printed somewhere else, which
+    # changes neither the tree nor the second pass (defect 101).
+    if printed.moved > 0
+        refusal @ ok(
+            "`fmt` cannot keep the comment on line " + printed.moved.to_str() + " of `" + path + "` where it is written"
+        )
 
     if !refusal.is_err()
         io.eprint(text: "error: " + refusal.must())
@@ -72,14 +86,23 @@ function run_fmt(path: str, s: source.Source, inv: argv.Invocation) -> cli_table
 # file at exit 0 (defect 003 (docs/work/DONE.md), the third instance of this class
 # after panels 014 and 060/061 — every one found by a person).
 #
-# THREE CHECKS, and they are three different properties. The output must
+# FOUR CHECKS OF THE OUTPUT, and they are four different properties,
+# beside `run_fmt`'s own, the printer's word that it kept every comment
+# where it was written (defect 101). The output must
 # PARSE, because a formatter that emits source the parser refuses has
 # produced a non-program. Formatting it again must give the same TEXT,
 # because a canonical form that is not a fixpoint is not canonical. And
 # it must hold the same TREE — which is the one the other two cannot do:
 # output that parses and is a fixpoint can still mean something else.
 # Panel 061's deleted `partial`, panel 060's hoisted `record`, and a
-# record-field remark promoted to documentation are all of that kind.
+# record-field remark promoted to documentation are all of that kind. And
+# every comment must sit where it sat among the code, which the tree cannot
+# say since it keeps no comment but a doc: defect 101's comments moved off
+# the line they trailed and out of their brackets at exit 0, and the one
+# moved off a joined signature's `(` line was the printer's own blind spot,
+# so this check asks the two files rather than any printer: each comment's
+# block, by the rule the printer places it with, and the tokens `fmt` keeps
+# on either side of it (`print/anchors.hero`, which says what it cannot see).
 #
 # The third check is `assert_canonical` — `dump(text) == dump(fmt(text))`
 # — which the Rust bootstrap had, the port never brought over, and
@@ -105,10 +128,15 @@ function refuse_output_the_formatter_broke(path: str, original: str, formatted: 
 
     if reparsed.diagnostics.len() > 0
         return ok("`fmt` produced source that does not parse: " + diag.render_line(reparsed.diagnostics[0], after))
-    twice = fmt.format_file(reparsed.tree, after, reparsed.comments, reparsed.uses, reparsed.decls)
+    again = fmt.format_lexed(reparsed.tree, after, reparsed.comments, reparsed.uses, reparsed.decls, reparsed.tokens)
 
-    if twice != formatted
+    if again.out != formatted
         return ok("`fmt` is not a fixpoint on its own output for `" + path + "`")
+
+    if again.moved > 0
+        return ok(
+            "`fmt` cannot keep the comment on line " + again.moved.to_str() + " of its own output for `" + path + "`"
+        )
     before = parse.parse(original)
 
     if before.diagnostics.len() > 0
@@ -123,7 +151,14 @@ function refuse_output_the_formatter_broke(path: str, original: str, formatted: 
         return ok(
             "`fmt` changed the TREE of `" + path + "` — the output parses and is a fixpoint, and it is a DIFFERENT PROGRAM"
         )
-    return fail(code: "clean", msg: "the output parses, is a fixpoint, and holds the same tree")
+    first = source.new_source(name: path, text: original)
+    moved = anchors.first_moved(was: first, input: before, now: after, output: reparsed)
+
+    if moved > 0
+        return ok(
+            "`fmt` would move the comment on line " + moved.to_str() + " of `" + path + "` away from the code it was written beside"
+        )
+    return fail(code: "clean", msg: "the output parses, is a fixpoint, holds the same tree and every comment's place")
 
 ## Tests
 
@@ -338,3 +373,38 @@ test "the tree guard sees `owned`, and this is the alias test's own lesson appli
         assert formatted == text
         quiet = refuse_output_the_formatter_broke(path: "t.hero", original: text, formatted: formatted)
         assert quiet.is_err()
+
+# Defect 101's last silent move, and the guard that makes the class loud
+# whatever printer moves one: the trunk's `fmt` joined a signature with a
+# comment on its `(` line and moved the comment to the joined line's end, at
+# exit 0, and neither the tree nor the second pass could see it. The pair
+# below is that move; the anchors of the two files differ, so the guard
+# refuses it. A PREDICATE TEST, as the tree check's is: the real printer no
+# longer makes the move, which the second half measures.
+test "a comment moved off the code it was written beside is refused, whichever printer moved it"
+    original = "function f(a: i64,  # about a\n    b: i64) -> i64\n    return a + b\n"
+    moved = "function f(a: i64, b: i64) -> i64  # about a\n    return a + b\n"
+    caught = refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: moved)
+    assert !caught.is_err()
+    assert strings_has(haystack: caught.must(), needle: "would move the comment on line 1")
+
+    # Off the line it trails, with nothing crossed: an opener's comment
+    # printed as its block's first line.
+    trailed = "function f(n: i64)\n    if n > 0  # the positive case\n        print(n)\n"
+    dropped = "function f(n: i64)\n    if n > 0\n        # the positive case\n        print(n)\n"
+    assert !refuse_output_the_formatter_broke(path: "t.hero", original: trailed, formatted: dropped).is_err()
+
+    # And the real printer keeps both, which the guard passes.
+    for text in [original, trailed]
+        parsed = parse.parse(text)
+        s = source.new_source(name: "t.hero", text: text)
+        formatted = fmt.format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+        assert refuse_output_the_formatter_broke(path: "t.hero", original: text, formatted: formatted).is_err()
+
+    assert !write_file(path: "build/selftest_fmt_moved.hero", text: original).is_err()
+    ls = source.new_source(name: "build/selftest_fmt_moved.hero", text: original)
+    hits: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail(code: "none", msg: "no value"))]
+    linv = argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_moved.hero"), program_args: [], flags: hits)
+    assert run_fmt(path: "build/selftest_fmt_moved.hero", s: ls, inv: linv) == .ok_exit
+    kept = "function f(\n            a: i64,  # about a\n            b: i64\n        ) -> i64\n    return a + b\n"
+    assert read_file("build/selftest_fmt_moved.hero").must() == kept

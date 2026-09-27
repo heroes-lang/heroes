@@ -464,8 +464,12 @@ constant DECIDED: [str]
 # floor that stands still stops catching the thing it was written for. The
 # ratchet only ever goes up, and the day this number is wrong again the check
 # will say so with the number to write.
+#
+# **257 on 2026-09-26**, re-based when `floors.check` said so: the fourth round
+# of defects 099 and 101 added `print/headline.hero` and `print/groups.hero`
+# to a tree of 255, and 257 is past 204 by more than a quarter.
 constant LEAST: i64
-    204
+    257
 
 # THE LEXER'S GROWING ARRAYS ARE APPENDED ONLY THROUGH ITS TWO HELPERS
 # (defect 103, 2026-09-26). `l.tokens @ l.tokens.push(t)` is a field place,

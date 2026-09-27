@@ -1,0 +1,106 @@
+# What stands around a value `print/brackets.hero` prints (design.md
+# §4.15): its place beside what surrounds it, the author's parentheses
+# around it not printed yet, whether a comment sits just inside them, where
+# its statement ends, the lines an element starts on and is written across,
+# and the value's one-line text broken at its comments.
+# Split out of `print/brackets.hero` on 2026-09-26, the fifth round of
+# defects 099 and 101, which took it past §11's 300 lines, and `Place` and
+# `written` on 2026-09-27, when the same round took it past them again;
+# none of this calls that knot back.
+
+use token
+use ast
+use source
+use print/page
+use print/parens
+use print/elements
+use print/groups
+use print/breaks
+
+# How a value is printed beside what surrounds it: parenthesised below
+# `needed`, opened even with no comment inside when `open`, and inside the
+# author's parentheses opening at `taken`, which a group has printed
+# already (-1 for none): only those inside it are the value's to print, and
+# where `all`, every one of them is (`brackets.spread`).
+record Place
+    needed: i64
+    open: bool
+    taken: i64
+    all: bool
+
+# Where a value's statement ends: the author's outermost `)` around it, or
+# its own end. A comment before that is inside the value.
+function reach(f: page.Fmt, tree: ast.Ast, value: i64) -> i64
+    around = groups.levels(f.lines, span: tree.exprs[value].span)
+
+    if around.len() == 0
+        return groups.extent(f.lines, span: tree.exprs[value].span).end
+    return groups.around(f.lines, open: around[around.len() - 1]).end
+
+# Is a comment not printed yet written just inside the author's `pair`,
+# between its `(` and the value at `span` or between the value and its `)`?
+function just_inside(f: page.Fmt, c: elements.Code, pair: token.Span, span: token.Span) -> bool
+    before = token.Span(start: pair.start, end: span.start)
+    after = token.Span(start: span.end, end: pair.end)
+    return elements.waits(f, c, span: before) || elements.waits(f, c, span: after)
+
+# The author's parentheses around a value not printed yet, innermost first.
+function untaken(c: elements.Code, span: token.Span, taken: i64) -> [token.Span]
+    out: [token.Span] @ []
+
+    for open in groups.levels(c.lines, span: span)
+        pair = groups.around(c.lines, open: open)
+
+        if taken < 0 || pair.start > taken
+            out @ out.push(pair)
+
+    return out
+
+# A value's one-line text, parenthesised below `needed`, broken after each
+# token a comment inside it follows (`print/breaks.hero`).
+function one_line(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i64, needed: i64) -> str
+    before: str @ head
+    after: str @ ""
+
+    if parens.needs_parens(c.tree, id: value, needed: needed)
+        before @ head + "("
+        after @ ")"
+    text = parens.render(c.tree, c.s, id: value)
+    span = elements.extent(c, id: value)
+    return breaks.lead(@f, c, head: before, text: text, from: span.start, to: span.end, indent: indent) + after
+
+# The line an element starts on: its own first, or that of the author's
+# outermost `(` around it not printed yet, which a comment after it trails.
+function starts(c: elements.Code, item: elements.Element, taken: i64) -> i64
+    pairs = untaken(c, span: c.tree.exprs[item.value].span, taken: taken)
+
+    if pairs.len() > 0 && source.line_of(c.s, pairs[pairs.len() - 1].start) < item.first
+        return source.line_of(c.s, pairs[pairs.len() - 1].start)
+    return item.first
+
+# Where an element's value is written, the author's parentheses around it
+# not printed yet included: from the outermost `(` or the value's start, to
+# past its `)` or the value's end, and the last line either is on. The lead
+# ends at `from`: a comment after that `(` is the group's, just inside it,
+# and read as the lead's it moved before the `(` (panel 179's
+# compiler-engineer, `parens.hero` T116).
+record Written
+    from: i64
+    to: i64
+    last: i64
+
+function written(c: elements.Code, item: elements.Element, taken: i64) -> Written
+    span = elements.extent(c, id: item.value)
+    pairs = untaken(c, span: c.tree.exprs[item.value].span, taken: taken)
+    w: Written @ Written(from: span.start, to: span.end, last: elements.end_line(c, id: item.value))
+
+    if pairs.len() > 0
+        outer = pairs[pairs.len() - 1]
+        w.to @ outer.end + 1
+
+        if outer.start < w.from
+            w.from @ outer.start
+
+        if source.line_of(c.s, outer.end) > w.last
+            w.last @ source.line_of(c.s, outer.end)
+    return w

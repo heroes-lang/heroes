@@ -1,0 +1,388 @@
+# The output guard's comment check (defect 101's last round, 2026-09-26):
+# for every comment, the block `print/owners.hero` gives it, and the tokens
+# `fmt` keeps on either side of it, must be the same in the input and the
+# output. The guard asks the two files, with the rule the printer places by,
+# and never the walk that printed the second.
+#
+# The tokens compared are the ones `fmt` keeps in order. Commas are left
+# out, since a list down the page has none and one across has them; the
+# author's grouping parentheses are counted only where both files have them
+# around the same value; a group's second head, which a merge drops, is left
+# out of the input with the lines it is on; `-> ()`, which `fmt` drops, is
+# left out of both, and so are a parameter's and a result's marks, which it
+# prints in the grammar's order. Anything else is compared as written, an
+# integer's digits in one case.
+#
+# `-> ()` is read over the code tokens, a comment inside the `()` being
+# none of them. Where the two kept streams still part, which a token `fmt`
+# rewrites and this module does not know would make them, no comment from
+# that point on is taken as kept: each is refused, the loud direction, and
+# the ones before it are compared as ever. Compared by text alone there, a
+# comment inside `-> ()` moved into the parameter list at exit 0 (the second
+# skeptic seat's `k01`, over e0e08d18).
+#
+# What it does not see is what those tokens and blocks do not tell apart: a
+# comment moved across only a comma, a mark, a `-> ()`, or parentheses one
+# file has and the other not; one moved between two lines of one bracket
+# with no token crossed; and the blank lines around a comment. The order of
+# the comments is compared, so a run cannot be reordered.
+
+use token
+use ast
+use source
+use digits
+use parse
+use print/owners
+use print/groups
+
+# Where one comment sits: its text, its owner, and the kept tokens before
+# and after it, by their place in the kept stream and by their text.
+record Place
+    text: str
+    owner: i64
+    before: i64
+    after: i64
+    prior: str
+    next: str
+
+# The line in `was` of the first comment whose place `fmt` changed in
+# `now`, or 0 when every comment kept its place.
+function first_moved(was: source.Source, input: parse.ParseOutput, now: source.Source, output: parse.ParseOutput) -> i64
+    dropped = merged_heads(was, input: input, output: output)
+    a = owners.shape(was, lexed: input.tokens, ignored: dropped, end: was.text.len())
+    b = owners.shape(now, lexed: output.tokens, ignored: [], end: now.text.len())
+    kept_a: [bool] @ keepable(was, lines: a, tree: input.tree, decls: input.decls, dropped: dropped)
+    kept_b: [bool] @ keepable(now, lines: b, tree: output.tree, decls: output.decls, dropped: [])
+
+    # The author's parentheses count where both files have them around the
+    # same value, the inner ones first.
+    index: i64 @ 0
+
+    for node in input.tree.exprs
+        if index < output.tree.exprs.len()
+            ours = groups.levels(a, span: node.span)
+            theirs = groups.levels(b, span: output.tree.exprs[index].span)
+            both: i64 @ ours.len()
+
+            if theirs.len() < both
+                both @ theirs.len()
+            drop(@kept_a, lines: a, opens: ours, from: both)
+            drop(@kept_b, lines: b, opens: theirs, from: both)
+        index @ index + 1
+
+    one = places(was, lines: a, kept: kept_a)
+    other = places(now, lines: b, kept: kept_b)
+
+    # Where the two kept streams part, when they do: no comment from there
+    # on can be shown to keep its place, so the first of them is refused.
+    # Compared by text alone past that point, a comment inside `-> ()` read
+    # as kept tokens moved across `) -> (` at exit 0 (the skeptic seat's
+    # `k01`, over e0e08d18).
+    parted = parting(one: stream(was, lines: a, kept: kept_a), other: stream(now, lines: b, kept: kept_b))
+    k: i64 @ 0
+
+    while k < one.len() && k < other.len()
+        x = one[k]
+        y = other[k]
+        moved: bool @ x.text != y.text || x.owner != y.owner || x.prior != y.prior || x.next != y.next
+        moved @ moved || x.before != y.before || x.after != y.after
+
+        if parted >= 0 && (x.before >= parted || y.before >= parted)
+            moved @ true
+
+        if moved
+            return source.line_of(was, input.comments[k].start)
+        k @ k + 1
+
+    if k < one.len()
+        return source.line_of(was, input.comments[k].start)
+
+    if k < other.len()
+        return source.line_of(now, output.comments[k].start)
+    return 0
+
+# The lines of the heads in the input the output does not have: a member
+# that began a group in the input and continues the one above in the
+# output.
+function merged_heads(was: source.Source, input: parse.ParseOutput, output: parse.ParseOutput) -> [i64]
+    out: [i64] @ []
+    index: i64 @ 1
+
+    while index < input.decls.len() && index < output.decls.len()
+        written = header_of(input.decls[index])
+        above = header_of(input.decls[index - 1])
+        printed = header_of(output.decls[index])
+        printed_above = header_of(output.decls[index - 1])
+
+        if written >= 0 && above >= 0 && written != above && printed >= 0 && printed == printed_above
+            line = source.line_of(was, written)
+            out @ out.push(line)
+        index @ index + 1
+
+    return out
+
+# The offset of a group member's head, -1 outside any group.
+function header_of(decl: ast.Decl) -> i64
+    header: token.Span? @ fail(code: "none", msg: "no head")
+
+    match decl.kind
+        .function_decl fd          => header @ fd.value.header
+        .constant_decl k           => header @ k.header
+        .record_decl rec           => header @ rec.header
+        .variant_decl | .test_decl => header @ header
+
+    if header.is_err()
+        return -1
+    return header.must().start
+
+# Which tokens count: not a comment or a comma, not on a dropped head's
+# line, not `-> ()`, not a mark. The parentheses are settled after.
+function keepable(s: source.Source, lines: owners.Lines, tree: ast.Ast, decls: [ast.Decl], dropped: [i64]) -> [bool]
+    out: [bool] @ []
+
+    # Each value is a local before its push: an argument that calls out
+    # held the array, and the push copied it, quadratic in the tokens.
+    for t in lines.tokens
+        line = source.floor_start(s.line_starts, t.span.start) + 1
+        counts = t.kind != .comment && t.kind != .comma && !owners.listed(dropped, value: line)
+        out @ out.push(counts)
+
+    # `-> ()`, read over the code tokens: a comment inside the `()` is no
+    # token of it (the skeptic seat's `k01`).
+    i: i64 @ 0
+
+    while i < lines.tokens.len()
+        open = owners.code_after(lines, index: i)
+
+        if lines.tokens[i].kind == .arrow && open >= 0 && lines.tokens[open].kind == .lparen
+            shut = owners.code_after(lines, index: open)
+
+            if shut >= 0 && lines.pair[open] == shut
+                out[i] @ false
+                out[open] @ false
+                out[shut] @ false
+        i @ i + 1
+
+    # A variant case's empty `()`, which `fmt` drops as it drops `-> ()`:
+    # `.to_str()` on a list's next line is a case and no call, and read as
+    # kept tokens the streams parted and the guard refused it (the third
+    # seat's bracket-break generator, `examples/query/data/row.hero`).
+    for node in tree.exprs
+        match node.kind
+            .variant_case vc =>
+                name = owners.index_at(lines, offset: vc.name.start)
+                open = owners.code_after(lines, index: name)
+
+                if vc.args.len() == 0 && name >= 0 && open >= 0 && lines.tokens[open].kind == .lparen
+                    shut = owners.code_after(lines, index: open)
+
+                    if shut >= 0 && lines.pair[open] == shut
+                        out[open] @ false
+                        out[shut] @ false
+            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => out @ out
+            .name | .hole | .unary | .binary | .field | .field_name | .index               => out @ out
+            .call | .method | .array | .map | .try_expr | .if_expr | .match_expr | .error  => out @ out
+
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                for param in fd.value.params
+                    at: i64 @ owners.index_at(lines, offset: tree.types[param.ty].span.end - 1) + 1
+
+                    while at < lines.tokens.len() && lines.tokens[at].kind != .comma && lines.tokens[at].kind != .rparen
+                        out[at] @ false
+                        at @ at + 1
+
+                result = tree.types[fd.value.result].span.end
+                stop = fd.value.signature_end.end
+                at: i64 @ owners.index_at(lines, offset: result - 1) + 1
+
+                while at < lines.tokens.len() && lines.tokens[at].span.start < stop && lines.tokens[at].span.start >= result
+                    out[at] @ false
+                    at @ at + 1
+            .constant_decl | .record_decl | .variant_decl | .test_decl => out @ out
+
+    return out
+
+function drop(@kept: [bool], lines: owners.Lines, opens: [i64], from: i64)
+    at: i64 @ from
+
+    while at < opens.len()
+        kept[opens[at]] @ false
+
+        if lines.pair[opens[at]] >= 0
+            kept[lines.pair[opens[at]]] @ false
+        at @ at + 1
+
+# Each comment's place, in stream order.
+function places(s: source.Source, lines: owners.Lines, kept: [bool]) -> [Place]
+    out: [Place] @ []
+    count: i64 @ 0
+    prior: str @ ""
+    index: i64 @ 0
+    waiting: [i64] @ []
+
+    for t in lines.tokens
+        if t.kind == .comment
+            # `owners.shape` gives every comment token one owner, in order.
+            k = out.len()
+            place = Place(
+                text: trimmed(source.span_text(s, t.span)),
+                owner: lines.owner[k],
+                before: count,
+                after: -1,
+                prior: prior,
+                next: ""
+            )
+            out @ out.push(place)
+            waiting @ waiting.push(k)
+        else if kept[index]
+            word = spelled(s, t: t)
+
+            for k in waiting
+                out[k].after @ count
+                out[k].next @ word
+
+            waiting @ []
+            prior @ word
+            count @ count + 1
+        index @ index + 1
+
+    return out
+
+# The kept tokens' texts, which the two files share when every token `fmt`
+# changes is one this module leaves out.
+function stream(s: source.Source, lines: owners.Lines, kept: [bool]) -> [str]
+    parts: [str] @ []
+    index: i64 @ 0
+
+    for t in lines.tokens
+        if kept[index]
+            word = spelled(s, t: t)
+            parts @ parts.push(word)
+        index @ index + 1
+
+    return parts
+
+# The place of the first kept token the two streams do not share, -1 where
+# they are the same.
+function parting(one: [str], other: [str]) -> i64
+    at: i64 @ 0
+
+    while at < one.len() && at < other.len()
+        if one[at] != other[at]
+            return at
+        at @ at + 1
+
+    if one.len() == other.len()
+        return -1
+    return at
+
+# A token as `fmt` spells it: an integer's digits in one case.
+function spelled(s: source.Source, t: token.Token) -> str
+    if t.kind == .int_lit
+        return digits.canonical_int(source.span_text(s, t.span))
+    return source.span_text(s, t.span)
+
+function trimmed(text: str) -> str
+    end: i64 @ text.len()
+
+    while end > 0 && (text[end - 1] == ' ' || text[end - 1] == '\t' || text[end - 1] == '\r')
+        end @ end - 1
+
+    return text.slice(from: 0, to: end)
+
+## Tests
+
+# The skeptic seat's six moves over 832478b3 (`zz_probe.hero`), each of
+# which the guard of that commit answered with 0, and the controls.
+function moved_line(original: str, moved: str) -> i64
+    a = parse.parse(original)
+    b = parse.parse(moved)
+    assert a.diagnostics.len() == 0
+    assert b.diagnostics.len() == 0
+    was = source.new_source(name: "a.hero", text: original)
+    now = source.new_source(name: "b.hero", text: moved)
+    return first_moved(was: was, input: a, now: now, output: b)
+
+test "an inner block's last comment moved out to the outer block is seen"
+    original = "function f(c: bool)\n    if c\n        print(1)\n        # in the if\n    print(2)\n"
+    moved = "function f(c: bool)\n    if c\n        print(1)\n    # in the if\n    print(2)\n"
+    assert moved_line(original: original, moved: moved) == 4
+    assert moved_line(original: original, moved: original) == 0
+
+test "a comment above else moved under it, and one trailing else moved to the line above, are seen"
+    above = "function f(c: bool)\n    if c\n        print(1)\n    # above else\n    else\n        print(2)\n"
+    under = "function f(c: bool)\n    if c\n        print(1)\n    else\n        # above else\n        print(2)\n"
+    assert moved_line(original: above, moved: under) == 4
+    trailing = "function f(c: bool)\n    if c\n        print(1)\n    else  # the other case\n        print(2)\n"
+    earlier = "function f(c: bool)\n    if c\n        print(1)  # the other case\n    else\n        print(2)\n"
+    assert moved_line(original: trailing, moved: earlier) == 4
+
+test "a comment moved past the author's closing parenthesis is seen"
+    original = "function f(a: i64, b: i64) -> i64\n    x = (\n        a + b  # the sum\n    )\n    return x\n"
+    moved = "function f(a: i64, b: i64) -> i64\n    x = (\n        a + b\n    )  # the sum\n    return x\n"
+    assert moved_line(original: original, moved: moved) == 3
+
+test "a body's last comment moved to the file level, and one moved across a second head, are seen"
+    body = "function f()\n    print(1)\n    # the body's last word\n\nfunction g()\n    print(2)\n"
+    file = "function f()\n    print(1)\n\n# the body's last word\n\nfunction g()\n    print(2)\n"
+    assert moved_line(original: body, moved: file) == 3
+    group = "extern \"x.h\"\n    record Ob tag ob\n    # about Ob\nextern \"x.h\"\n    record Pool tag pool\n"
+    across = "extern \"x.h\"\n    record Ob tag ob\nextern \"x.h\"\n    # about Ob\n\n    record Pool tag pool\n"
+    assert moved_line(original: group, moved: across) == 3
+
+    # The merge `fmt` makes drops the second head, which is not a move.
+    merged = "extern \"x.h\"\n    record Ob tag ob\n    # about Ob\n\n    record Pool tag pool\n"
+    assert moved_line(original: group, moved: merged) == 0
+
+test "a comment moved across a statement is seen, and the marks and unit results fmt rewrites are not moves"
+    original = "function f()\n    print(1)\n    # between\n    print(2)\n"
+    moved = "function f()\n    print(1)\n    print(2)\n    # between\n"
+    assert moved_line(original: original, moved: moved) == 3
+    unit = "function g() -> ()  # c\n    print(1)\n"
+    bare = "function g()  # c\n    print(1)\n"
+    assert moved_line(original: unit, moved: bare) == 0
+    marks = "extern \"x.h\"\n    function run(buf: ptr lent counted_by n, n: i64)  # c\n"
+    ordered = "extern \"x.h\"\n    function run(buf: ptr counted_by n lent, n: i64)  # c\n"
+    assert moved_line(original: marks, moved: ordered) == 0
+
+# The second skeptic seat's `k01` over e0e08d18: a comment inside `-> ()`
+# hid the `()` from the guard, the streams parted, and the move into the
+# parameter list was compared by text alone and passed.
+test "a comment inside a unit result moved into the parameter list is seen, and kept inside it or trailing the signature it is not"
+    inside = "function g() -> (  # inside the unit\n)\n    print(1)\n"
+    into = "function g(  # inside the unit\n)\n    print(1)\n"
+    assert moved_line(original: inside, moved: into) == 1
+    trailed = "function g()  # inside the unit\n    print(1)\n"
+    assert moved_line(original: inside, moved: trailed) == 0
+    assert moved_line(original: inside, moved: inside) == 0
+
+# The guard's fallbacks, each loud: where the kept streams part, every
+# comment from there on is refused and none before it; a comment the
+# output lost or gained is refused where it is.
+test "past the point where the kept streams part no comment is taken as kept, and a lost or gained comment is refused"
+    original = "function f()\n    # before\n    print(1)\n    # after\n    print(2)\n"
+    changed = "function f()\n    # before\n    print(3)\n    # after\n    print(2)\n"
+    assert moved_line(original: original, moved: changed) == 4
+    early = "function f()\n    # before\n    print(1)\n    print(2)\n"
+    late = "function f()\n    # before\n    print(1)\n    print(3)\n"
+    assert moved_line(original: early, moved: late) == 0
+    lost = "function f()\n    print(1)\n    print(2)\n"
+    assert moved_line(original: original, moved: lost) == 2
+    assert moved_line(original: lost, moved: original) == 2
+
+    # The expressions are paired by their place in the two trees, which the
+    # tree guard has already found the same; where they differ the author's
+    # parentheses are left in, the streams part, and the comment is refused.
+    grouped = "function f()\n    x = (1 + 2)\n    # c\n    print(x)\n"
+    folded = "function f()\n    x = 3\n    # c\n    print(x)\n"
+    assert moved_line(original: grouped, moved: folded) == 3
+    assert parting(one: ["a", "b"], other: ["a", "b"]) == -1
+
+    # A case's empty `()`, which `fmt` drops, is no move either.
+    cased = "function f() -> [i64]\n    return [.circle()  # c\n    ]\n"
+    bare = "function f() -> [i64]\n    return [.circle  # c\n    ]\n"
+    assert moved_line(original: cased, moved: bare) == 0
+    assert parting(one: ["a", "b"], other: ["a"]) == 1
+    assert parting(one: ["a", "b"], other: ["a", "c"]) == 1

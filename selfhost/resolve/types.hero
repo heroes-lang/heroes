@@ -23,6 +23,7 @@ use widths
 use resolve/state
 use resolve/errors
 use module/diagnostics
+use type_text
 
 function resolve_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
     match a.types[id].kind
@@ -64,7 +65,7 @@ function resolve_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [
 
 function named(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
     span = a.types[id].span
-    name = source.span_text(s, span)
+    name = type_text.named_text(source.span_text(s, span))
     prim = vocab.primitive(name)
 
     if !prim.is_err()
@@ -126,7 +127,7 @@ function first_dot(name: str) -> i64?
 
 function qualified_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64, split_at: i64)
     span = a.types[id].span
-    name = source.span_text(s, span)
+    name = type_text.named_text(source.span_text(s, span))
 
     # The qualifier as WRITTEN, kept under its own name: `module` below is
     # overwritten with the module this resolves to, and the two differ the
