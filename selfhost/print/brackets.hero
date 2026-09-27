@@ -18,10 +18,11 @@
 # else, a type, an index, a place, after a `.`, between a callee and its
 # `(`, in an argument's name and `@`, the one-line text breaks after the
 # token the comment follows (`print/breaks.hero`); a bracket opened after
-# such a break opens four columns in. A comma after a comment keeps a
-# line of its own (`owners.lone_comma`). What a bracket holds is
-# `print/elements.hero`'s to read; everything else about a value is
-# `render`'s.
+# such a break opens four columns in; where no bracket is open around the
+# value, the value is a group instead (defect 107, `print/bare.hero`). A
+# comma after a comment keeps a line of its own (`owners.lone_comma`). What
+# a bracket holds is `print/elements.hero`'s to read; everything else about
+# a value is `render`'s.
 #
 # A KNOT, and its map: `broken` is the entry; `spread` prints every line of
 # a value but its last and returns that one, so the next part of a line (a
@@ -41,6 +42,7 @@ use print/elements
 use print/owners
 use print/breaks
 use print/around
+use print/bare
 
 # `head`, a value and `tail`, on one line when nothing asks otherwise, and
 # opened when `open` (the line is too long, or the author spread it) or a
@@ -55,7 +57,7 @@ function broken(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
         head: head,
         value: value,
         indent: indent,
-        at: around.Place(needed: 0, open: open, taken: -1, all: false)
+        at: around.Place(needed: 0, open: open, taken: -1, all: false, enclosed: false)
     )
     page.put_line(@f, indent: indent, text: last + tail)
 
@@ -63,10 +65,10 @@ function broken(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
 # prefix of a control form at a binary's right edge.
 function led(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, value: i64, indent: i64, needed: i64) -> str
     c = elements.Code(tree: tree, s: s, comments: comments, lines: f.lines)
-    return spread(@f, c, head: head, value: value, indent: indent, at: loose(needed))
+    return spread(@f, c, head: head, value: value, indent: indent, at: loose(needed, enclosed: false))
 
-function loose(needed: i64) -> around.Place
-    return around.Place(needed: needed, open: false, taken: -1, all: false)
+function loose(needed: i64, enclosed: bool) -> around.Place
+    return around.Place(needed: needed, open: false, taken: -1, all: false, enclosed: enclosed)
 
 function spread(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i64, at: around.Place) -> str
     span = elements.extent(c, id: value)
@@ -90,15 +92,9 @@ function spread(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i
         outer = pairs[pairs.len() - 1]
 
         if elements.waits(f, c, span: span)
-            kept: elements.Bracket @ elements.group(
-                c,
-                value: value,
-                paren: ok(outer),
-                split: elements.splits(f, c, value: value) && pairs.len() == 1
-            )
-            kept.keeps @ true
-            return opened(@f, c, head: head, b: kept, indent: indent)
-        inner = around.Place(needed: 0, open: at.open, taken: outer.start, all: true)
+            kept = elements.kept(f, c, value: value, pair: outer, innermost: pairs.len() == 1)
+            return opened(@f, c, head: head, b: kept, indent: indent, enclosed: true)
+        inner = around.Place(needed: 0, open: at.open, taken: outer.start, all: true, enclosed: true)
         return spread(@f, c, head: head + "(", value: value, indent: indent, at: inner) + ")"
 
     # The outermost of the author's pairs with a comment just inside it is
@@ -109,15 +105,16 @@ function spread(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i
         pair = pairs[level]
 
         if around.just_inside(f, c, pair: pair, span: span)
-            b: elements.Bracket @ elements.group(
-                c,
-                value: value,
-                paren: ok(pair),
-                split: elements.splits(f, c, value: value) && level == 0
-            )
-            b.keeps @ true
-            return opened(@f, c, head: head, b: b, indent: indent)
+            kept = elements.kept(f, c, value: value, pair: pair, innermost: level == 0)
+            return opened(@f, c, head: head, b: kept, indent: indent, enclosed: at.enclosed)
         level @ level - 1
+
+    # A value no bracket of the page holds, whose printing would break a line
+    # for a comment where no bracket is open (defect 107): a group inside the
+    # author's innermost pair around it, or `fmt`'s own where it has none.
+    if !at.enclosed && inside && bare.needs_group(f, c, value: value, at: at)
+        grouped = elements.group(c, value: value, paren: paren, split: false)
+        return opened(@f, c, head: head, b: grouped, indent: indent, enclosed: false)
 
     if !inside && !at.open
         return head + parens.wrapped(c.tree, c.s, id: value, needed: at.needed)
@@ -132,23 +129,27 @@ function spread(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i
         # (the second skeptic seat's `table().  # c` and `ok  # c`).
         if !at.open && elements.holds(f, c, from: b.seam, to: b.from) && !elements.waits(f, c, span: token.Span(start: b.from, end: b.to))
             return around.one_line(@f, c, head: head, value: value, indent: indent, needed: at.needed)
-        return opened(@f, c, head: head, b: b, indent: indent)
+        return opened(@f, c, head: head, b: b, indent: indent, enclosed: at.enclosed)
 
     if !inside
         return head + parens.wrapped(c.tree, c.s, id: value, needed: at.needed)
-    return part(@f, c, head: head, value: value, indent: indent, needed: at.needed, paren: paren, kept: at.all)
+    return part(@f, c, head: head, value: value, indent: indent, at: at, paren: paren)
 
 # A value that is not a bracket and holds a comment: the part holding it is
 # opened, the rest printed around it, parenthesised as `render` would.
 # `paren` is the author's parentheses around it, whose lines a group keeps.
-function part(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i64, needed: i64, paren: token.Span?, kept: bool) -> str
+# A part is enclosed where the value is, or inside `render`'s parentheses.
+function part(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i64, at: around.Place, paren: token.Span?) -> str
     before: str @ head
     after: str @ ""
+    needed = at.needed
+    enclosed: bool @ at.enclosed
 
     if parens.needs_parens(c.tree, id: value, needed: needed)
         before @ head + "("
         after @ ")"
-    postfix = loose(parens.POSTFIX_POWER)
+        enclosed @ true
+    postfix = loose(parens.POSTFIX_POWER, enclosed: enclosed)
 
     match c.tree.exprs[value].kind
         .binary b =>
@@ -157,17 +158,18 @@ function part(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i64
 
             if elements.alone(f, c, value: value, within: b.right)
                 left = parens.wrapped(c.tree, c.s, id: b.left, needed: mine)
-                return spread(@f, c, head: before + left + op, value: b.right, indent: indent, at: loose(mine + 1)) + after
+                return spread(@f, c, head: before + left + op, value: b.right, indent: indent, at: loose(mine + 1, enclosed: enclosed)) + after
 
             if elements.alone(f, c, value: value, within: b.left)
                 right = parens.wrapped(c.tree, c.s, id: b.right, needed: mine + 1)
-                return spread(@f, c, head: before, value: b.left, indent: indent, at: loose(mine)) + op + right + after
+                return spread(@f, c, head: before, value: b.left, indent: indent, at: loose(mine, enclosed: enclosed)) + op + right + after
             return opened(
                 @f,
                 c,
                 head: head,
                 b: elements.group(c, value: value, paren: paren, split: true),
-                indent: indent
+                indent: indent,
+                enclosed: enclosed
             )
         # A part whose base holds every comment in it opens the base; one
         # after the base, after its `.` or before its `?`, is the one-line
@@ -203,7 +205,7 @@ function part(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i64
                 to: elements.inner(c, value: value, within: u.operand).start
             )
 
-            if after_sign && kept
+            if after_sign && at.all
                 return around.one_line(@f, c, head: head, value: value, indent: indent, needed: needed)
 
             if after_sign
@@ -214,9 +216,9 @@ function part(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i64
                     lead: parens.unary_op(u.op),
                     from: c.tree.exprs[value].span.start
                 )
-                return opened(@f, c, head: head, b: b, indent: indent)
+                return opened(@f, c, head: head, b: b, indent: indent, enclosed: enclosed)
             sign = before + parens.unary_op(u.op)
-            return spread(@f, c, head: sign, value: u.operand, indent: indent, at: loose(parens.UNARY_POWER)) + after
+            return spread(@f, c, head: sign, value: u.operand, indent: indent, at: loose(parens.UNARY_POWER, enclosed: enclosed)) + after
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => after @ after
         .name | .hole | .call | .method | .variant_case | .array | .map                => after @ after
         .if_expr | .match_expr | .error                                                => after @ after
@@ -228,7 +230,9 @@ function part(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i64
 # too when it holds a comment), the comment trailing the opening bracket
 # where no element shares its line, each element, and the comments before
 # the closing bracket. Returns the closing text, the caller's to finish.
-function opened(@f: page.Fmt, c: elements.Code, head: str, b: elements.Bracket, indent: i64) -> str
+# `enclosed` is the value's own place: its callee or receiver is printed
+# before the bracket opens, where the value is.
+function opened(@f: page.Fmt, c: elements.Code, head: str, b: elements.Bracket, indent: i64, enclosed: bool) -> str
     open: str @ head + b.open
 
     # An empty `()` after a callee or receiver a comment opened stays shut:
@@ -238,7 +242,8 @@ function opened(@f: page.Fmt, c: elements.Code, head: str, b: elements.Bracket, 
 
     if b.before >= 0
         spare @ b.items.len() == 0 && elements.holds(f, c, from: c.tree.exprs[b.before].span.start, to: b.from)
-        start @ spread(@f, c, head: head, value: b.before, indent: indent, at: loose(parens.POSTFIX_POWER))
+        receiver = loose(parens.POSTFIX_POWER, enclosed: enclosed)
+        start @ spread(@f, c, head: head, value: b.before, indent: indent, at: receiver)
         open @ start + b.open
 
     # One between the callee or receiver and the bracket, where the bracket
@@ -307,8 +312,8 @@ function element(@f: page.Fmt, c: elements.Code, item: elements.Element, indent:
     head: str @ ""
 
     if item.key >= 0
-        head @ spread(@f, c, head: "", value: item.key, indent: indent, at: loose(0))
-    at = around.Place(needed: item.needed, open: false, taken: taken, all: keeps)
+        head @ spread(@f, c, head: "", value: item.key, indent: indent, at: loose(0, enclosed: true))
+    at = around.Place(needed: item.needed, open: false, taken: taken, all: keeps, enclosed: true)
 
     # A comment in the lead breaks it after the token it follows, a name's
     # `:` or the `@` after it (the second skeptic seat's `h(xs:  # c`), and

@@ -1,0 +1,15 @@
+# A line continued at the statement's own margin after a `.`, which the
+# lexer reads as one statement (no terminator after the `.`, no indent at
+# the same column) and design.md §4.15 defers (*trailing-operator
+# continuation at depth zero*, panel 007). There are no parentheses of the
+# author's to keep, and `fmt` prints its own, as it already did for a
+# comment after an operator there; the trunk refused at exit 2. With the
+# comment on a line of its own inside the continuation, `fmt` still refuses
+# at exit 2, since the owner rule reads the continued line as a new logical
+# line and the comment as a block's; that shape is reported apart.
+
+function main()
+    xs = [1, 2, 3]
+    c = xs.  # at the statement's own margin, no parentheses
+    len()
+    print(c)

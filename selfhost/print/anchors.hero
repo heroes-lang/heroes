@@ -21,11 +21,17 @@
 # comment inside `-> ()` moved into the parameter list at exit 0 (the second
 # skeptic seat's `k01`, over e0e08d18).
 #
+# A comment inside a releaser set is compared by its place in the set too,
+# the word whose set holds it and the set's tokens before it
+# (`print/insets.hero`, defect 108): the marks left out, nothing else stood
+# between it and the parameter's type.
+#
 # What it does not see is what those tokens and blocks do not tell apart: a
-# comment moved across only a comma, a mark, a `-> ()`, or parentheses one
-# file has and the other not; one moved between two lines of one bracket
-# with no token crossed; and the blank lines around a comment. The order of
-# the comments is compared, so a run cannot be reordered.
+# comment moved across only a comma, a mark outside a set, a `-> ()`, or
+# parentheses one file has and the other not; one moved between two lines
+# of one bracket with no token crossed; and the blank lines around a
+# comment. The order of the comments is compared, so a run cannot be
+# reordered.
 
 use token
 use ast
@@ -34,6 +40,7 @@ use digits
 use parse
 use print/owners
 use print/groups
+use print/insets
 
 # Where one comment sits: its text, its owner, and the kept tokens before
 # and after it, by their place in the kept stream and by their text.
@@ -44,6 +51,7 @@ record Place
     after: i64
     prior: str
     next: str
+    inset: str
 
 # The line in `was` of the first comment whose place `fmt` changed in
 # `now`, or 0 when every comment kept its place.
@@ -93,8 +101,8 @@ function first_moved_read(was: source.Source, input: parse.ParseOutput, now: sou
             drop(@kept_b, lines: b, opens: theirs, from: both)
         index @ index + 1
 
-    one = places(was, lines: a, kept: kept_a)
-    other = places(now, lines: b, kept: kept_b)
+    one = places(was, lines: a, kept: kept_a, in_sets: insets.in_sets(a, decls: input.decls))
+    other = places(now, lines: b, kept: kept_b, in_sets: insets.in_sets(b, decls: output.decls))
 
     # Where the two kept streams part, when they do: no comment from there
     # on can be shown to keep its place, so the first of them is refused.
@@ -108,7 +116,7 @@ function first_moved_read(was: source.Source, input: parse.ParseOutput, now: sou
         x = one[k]
         y = other[k]
         moved: bool @ x.text != y.text || x.owner != y.owner || x.prior != y.prior || x.next != y.next
-        moved @ moved || x.before != y.before || x.after != y.after
+        moved @ moved || x.before != y.before || x.after != y.after || x.inset != y.inset
 
         if parted >= 0 && (x.before >= parted || y.before >= parted)
             moved @ true
@@ -239,8 +247,9 @@ function drop(@kept: [bool], lines: owners.Lines, opens: [i64], from: i64)
             kept[lines.pair[opens[at]]] @ false
         at @ at + 1
 
-# Each comment's place, in stream order.
-function places(s: source.Source, lines: owners.Lines, kept: [bool]) -> [Place]
+# Each comment's place, in stream order, `in_sets` giving each its place
+# inside a releaser set.
+function places(s: source.Source, lines: owners.Lines, kept: [bool], in_sets: [str]) -> [Place]
     out: [Place] @ []
     count: i64 @ 0
     prior: str @ ""
@@ -257,7 +266,8 @@ function places(s: source.Source, lines: owners.Lines, kept: [bool]) -> [Place]
                 before: count,
                 after: -1,
                 prior: prior,
-                next: ""
+                next: "",
+                inset: in_sets[k]
             )
             out @ out.push(place)
             waiting @ waiting.push(k)
@@ -371,6 +381,18 @@ test "a comment moved across a statement is seen, and the marks and unit results
     marks = "extern \"x.h\"\n    function run(buf: ptr lent counted_by n, n: i64)  # c\n"
     ordered = "extern \"x.h\"\n    function run(buf: ptr counted_by n lent, n: i64)  # c\n"
     assert moved_line(original: marks, moved: ordered) == 0
+
+# Defect 108: the marks are left out of the compared tokens, so a comment
+# inside a releaser set is compared by its place in the set, which a move
+# past the set's last name changes and a reordering of the words does not.
+test "a comment moved inside a releaser set is seen, and one whose set the words' order moved is not"
+    head = "extern \"x.h\"\n    record H tag hh\n    function f(\n        @out: H "
+    written = head + "lent acquires a |  # c\n            b\n    )\n"
+    past = head + "lent acquires a | b  # c\n    )\n"
+    assert moved_line(original: written, moved: past) == 4
+    reordered = head + "acquires a |  # c\n            b lent\n    )\n"
+    assert moved_line(original: reordered, moved: written) == 0
+    assert moved_line(original: written, moved: written) == 0
 
 # The second skeptic seat's `k01` over e0e08d18: a comment inside `-> ()`
 # hid the `()` from the guard, the streams parted, and the move into the

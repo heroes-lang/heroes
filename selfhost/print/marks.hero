@@ -30,9 +30,32 @@ function bare_suffix(on: bool, word: str) -> str
 # ` acquires a | b`, ` transfers x`, ` retains y`, or nothing: the three words
 # that carry a releaser set, one printer, the set spelled back canonically.
 function named_suffix(s: source.Source, mark: token.Span?, word: str) -> str
+    return spelled(s, w: named_word(mark: mark, word: word))
+
+# One word after a parameter's type, as `fmt` prints it: its text, and the
+# releaser set that follows the text, which only the three words above have.
+# The set is kept as its span so that a printer holding a comment inside it
+# can break it after the `|` the comment follows (defect 108), where the
+# spelled text alone moved the comment past the set's last name.
+record Word
+    text: str
+    set: token.Span?
+
+# A word with no set: `text` alone.
+function plain_word(text: str) -> Word
+    return Word(text: text, set: fail(code: "none", msg: "no releaser set"))
+
+# ` acquires ` and its set, or nothing where the mark is absent.
+function named_word(mark: token.Span?, word: str) -> Word
     if mark.is_err()
-        return ""
-    return " " + word + " " + handles.releasers_spelled(source.span_text(s, mark.must()))
+        return plain_word("")
+    return Word(text: " " + word + " ", set: mark)
+
+# The word as one line: its text and its set spelled back canonically.
+function spelled(s: source.Source, w: Word) -> str
+    if w.set.is_err()
+        return w.text
+    return w.text + handles.releasers_spelled(source.span_text(s, w.set.must()))
 
 # ` when 0`, or nothing (panel 177's item 6), after every other mark of a result.
 #
