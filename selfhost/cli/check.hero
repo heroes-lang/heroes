@@ -24,6 +24,7 @@ use cli/table as cli_table
 use cli/argv
 use cli/io
 use cli/json_text
+use stable
 
 function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     parsed = parse.parse_source(s)
@@ -136,22 +137,22 @@ function rich(diagnostics: [diag.Diagnostic], s: source.Source) -> str
 # reads `schema` can refuse a version it does not know, which is the
 # whole reason the field is first.
 function json(diagnostics: [diag.Diagnostic], s: source.Source) -> str
-    out: str @ "{\n  \"schema\": 1,\n  \"diagnostics\": [\n"
+    rows: [str] @ ["{\n  \"schema\": 1,\n  \"diagnostics\": [\n"]
     index: i64 @ 0
 
     for d in diagnostics
         found = source.locate(s, d.span.start)
-        out @ out + "    {\n"
-        out @ out + "      \"code\": \"" + d.code + "\",\n"
-        out @ out + "      \"message\": " + quote(d.message) + ",\n"
-        out @ out + "      \"file\": " + quote(found.file) + ",\n"
-        out @ out + "      \"line\": " + found.line.to_str() + ",\n      \"col\": " + found.col.to_str() + ",\n"
+        rows @ rows.push("    {\n")
+        rows @ rows.push("      \"code\": \"" + d.code + "\",\n")
+        rows @ rows.push("      \"message\": " + quote(d.message) + ",\n")
+        rows @ rows.push("      \"file\": " + quote(found.file) + ",\n")
+        rows @ rows.push("      \"line\": " + found.line.to_str() + ",\n      \"col\": " + found.col.to_str() + ",\n")
         notes: [str] @ []
 
         for note in d.notes
             notes @ notes.push(quote(note))
 
-        out @ out + "      \"notes\": [" + notes.join(", ") + "],\n"
+        rows @ rows.push("      \"notes\": [" + notes.join(", ") + "],\n")
         fixes: [str] @ []
 
         for fix in d.fixes
@@ -163,15 +164,16 @@ function json(diagnostics: [diag.Diagnostic], s: source.Source) -> str
                 "{\"title\": " + quote(fix.title) + ", \"replacement\": " + quote(fix.replacement) + ", \"certainty\": \"" + tag + "\"}"
             )
 
-        out @ out + "      \"fixes\": [" + fixes.join(", ") + "]\n"
+        rows @ rows.push("      \"fixes\": [" + fixes.join(", ") + "]\n")
 
         if index == diagnostics.len() - 1
-            out @ out + "    }\n"
+            rows @ rows.push("    }\n")
         else
-            out @ out + "    },\n"
+            rows @ rows.push("    },\n")
         index @ index + 1
 
-    return out + "  ]\n}\n"
+    rows @ rows.push("  ]\n}\n")
+    return rows.join("")
 
 # A JSON string, quoted, through the one escape every JSON writer here shares
 # (defect 102: this one escaped three characters of the thirty-four JSON
@@ -216,28 +218,50 @@ function apply(diagnostics: [diag.Diagnostic], s: source.Source) -> str
             text: "note: " + elsewhere.len().to_str() + " certain fix(es) are in another module and were not applied: " + elsewhere.join(", ")
         )
 
-    # Insertion sort ascending by start, then applied in reverse.
-    ordered: [diag.Fix] @ []
+    # Ascending by start, a tie in the order found (`stable.order`; defect
+    # 105: the insertion this was copied the list at every fix), then
+    # applied back to front.
+    starts: [i64] @ []
 
     for fix in edits
-        at: i64 @ ordered.len()
-        probe: i64 @ 0
-        placed: bool @ false
+        starts @ starts.push(fix.span.start)
 
-        for old in ordered
-            if !placed && old.span.start > fix.span.start
-                at @ probe
-                placed @ true
-            probe @ probe + 1
+    ordered: [diag.Fix] @ []
 
-        head: [diag.Fix] @ ordered.slice(from: 0, to: at)
-        head @ head.push(fix)
+    for at in stable.order(by: starts)
+        taken = edits[at]
+        ordered @ ordered.push(taken)
 
-        for one in ordered.slice(from: at, to: ordered.len())
-            head @ head.push(one)
+    # Fixes apart, each ending where or before the next begins, give the
+    # same text back to front as front to back, and front to back copies
+    # the file once: the piece before each fix, then the fix, joined. Back
+    # to front copied the whole file at every fix. Fixes that overlap are
+    # applied back to front as ever, each on the text the later ones left.
+    apart: bool @ true
+    next: i64 @ 0
 
-        ordered @ head
+    while next < ordered.len()
+        if ordered[next].span.end < ordered[next].span.start
+            apart @ false
 
+        if next > 0 && ordered[next - 1].span.end > ordered[next].span.start
+            apart @ false
+        next @ next + 1
+
+    if apart
+        pieces: [str] @ []
+        cut: i64 @ 0
+        whole = source_extent.user_text(s)
+
+        for fix in ordered
+            stretch = whole.slice(from: cut, to: fix.span.start)
+            pieces @ pieces.push(stretch)
+            pieces @ pieces.push(fix.replacement)
+            cut @ fix.span.end
+
+        rest = whole.slice(from: cut, to: whole.len())
+        pieces @ pieces.push(rest)
+        return pieces.join("")
     text: str @ source_extent.user_text(s)
     index: i64 @ ordered.len() - 1
 

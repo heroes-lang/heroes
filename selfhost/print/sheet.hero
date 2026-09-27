@@ -1,0 +1,214 @@
+# The text `heroes fmt` prints, kept as its lines until it is asked for
+# whole (design.md §4.15; defect 105). Split out of `print/page.hero` on
+# 2026-09-27, when the page stopped being one `str`: `f.out @ f.out + …`
+# copied everything printed so far at every line, since a concatenation
+# copies both sides under value semantics (design.md Part 8 wart 8, which
+# panel 144 left a wart because the cost is in the spelling), and `fmt` was
+# quadratic in the size of its output, 7.07 s user for walk.hero sixteen
+# times over.
+#
+# THE SPELLING THE RULING NAMES. Each line is pushed onto `lines` through
+# `grow`, which takes the array as an `@` parameter, so inside it the place
+# is bare and the push grows in place; `whole` joins once. A line is
+# rewritten where it stands (`rewrite`), never by rebuilding the array.
+#
+# THE READS THE PRINTER MAKES OF WHAT IT HAS PRINTED, and why each is exact:
+# - `size`, the page's length in bytes, is the mark a head keeps to come
+#   back to (`indent_after`), an offset into the page as it is printed;
+# - `tail`, the page's last bytes, walked back from the last line, is what
+#   `blank` and `after_last` ask of the page's end;
+# - `indent_after` rewrites from a mark to the end, found by walking back
+#   from the last line, so it touches the head it deepens and nothing
+#   printed before it.
+#
+# THE ONE INVARIANT, a fact about this value because every writer is here:
+# every element of `lines` is non-empty and ends in its `\n`. `line` pushes
+# `text` and a `\n`, `after_last` keeps the last line's `\n` at its end, and
+# `indent_after` adds columns at the start of a line and nowhere else. It is
+# what lets `indent_after` read a line start at every element's first byte.
+
+## The page
+
+# `lines`, the page in order, each element one or more whole lines; `size`,
+# the sum of their lengths.
+record Sheet
+    lines: [str]
+    size: i64
+
+function empty() -> Sheet
+    return Sheet(lines: [], size: 0)
+
+# The whole page, joined once.
+function whole(sh: Sheet) -> str
+    return sh.lines.join("")
+
+# The line `text`, with its `\n`.
+function line(@sh: Sheet, text: str)
+    ended = text + "\n"
+    grow(@sh.lines, text: ended)
+    sh.size @ sh.size + ended.len()
+
+# A blank line, unless the page is empty or already ends in one: never two
+# in a row (`print/fmt.hero`'s panel 095 paragraph).
+function blank(@sh: Sheet)
+    if sh.size == 0
+        return
+
+    if sh.size >= 2 && tail(sh, count: 2) == "\n\n"
+        return
+    line(@sh, text: "")
+
+# `text` at the end of the last line, before its `\n`, or a line of its own
+# on an empty page.
+function after_last(@sh: Sheet, text: str)
+    if sh.lines.len() == 0
+        line(@sh, text: text)
+        return
+    at = sh.lines.len() - 1
+    last = sh.lines[at]
+    kept: str @ last
+
+    if last.len() > 0 && last[last.len() - 1] == '\n'
+        kept @ last.slice(from: 0, to: last.len() - 1)
+    rewrite(@sh.lines, at: at, text: kept + text + "\n")
+    sh.size @ sh.size - last.len() + kept.len() + text.len() + 1
+
+# The page's last `count` bytes, or all of it when it is shorter, read from
+# the fewest last lines that hold them.
+function tail(sh: Sheet, count: i64) -> str
+    at: i64 @ sh.lines.len()
+    held: i64 @ 0
+
+    while at > 0 && held < count
+        at @ at - 1
+        held @ held + sh.lines[at].len()
+
+    held_text = sh.lines.slice(from: at, to: sh.lines.len()).join("")
+
+    if held_text.len() > count
+        return held_text.slice(from: held_text.len() - count, to: held_text.len())
+    return held_text
+
+## Rewriting from a mark
+
+# Every line after the first `\n` at or after byte `from`, but a blank one,
+# gains `by` in front. The line holding `from` is found walking back from the
+# end, so the cost is the lines rewritten and never the page before them.
+function indent_after(@sh: Sheet, from: i64, by: str)
+    if from >= sh.size
+        return
+    at: i64 @ sh.lines.len() - 1
+    start: i64 @ sh.size - sh.lines[at].len()
+
+    while start > from
+        at @ at - 1
+        start @ start - sh.lines[at].len()
+
+    first = sh.lines[at]
+    newline: i64 @ from - start
+
+    while newline < first.len() && first[newline] != '\n'
+        newline @ newline + 1
+
+    if start + newline + 1 >= sh.size
+        return
+    grown: i64 @ 0
+    one = indented(text: first, from: newline + 1, by: by)
+    grown @ grown + one.len() - first.len()
+    rewrite(@sh.lines, at: at, text: one)
+    later: i64 @ at + 1
+
+    while later < sh.lines.len()
+        was = sh.lines[later]
+        now = indented(text: was, from: 0, by: by)
+        grown @ grown + now.len() - was.len()
+        rewrite(@sh.lines, at: later, text: now)
+        later @ later + 1
+
+    sh.size @ sh.size + grown
+
+# `text` with `by` in front of every whole line from byte `from` on that is
+# not a blank one.
+function indented(text: str, from: i64, by: str) -> str
+    parts: [str] @ [text.slice(from: 0, to: from)]
+    start: i64 @ from
+    at: i64 @ from
+
+    while at < text.len()
+        if text[at] == '\n'
+            if at > start
+                parts @ parts.push(by)
+            parts @ parts.push(text.slice(from: start, to: at + 1))
+            start @ at + 1
+        at @ at + 1
+
+    parts @ parts.push(text.slice(from: start, to: text.len()))
+    return parts.join("")
+
+## The spelling
+
+# The push on a bare place: `lines` is the caller's array, lent, so the
+# in-place store fires (design.md Part 8 wart 8; `sh.lines @
+# sh.lines.push(…)` would copy it).
+function grow(@lines: [str], text: str)
+    lines @ lines.push(text)
+
+function rewrite(@lines: [str], at: i64, text: str)
+    lines[at] @ text
+
+## Tests
+
+test "a sheet reads as the one string it replaces, and ends in a blank line once"
+    sh: Sheet @ empty()
+    blank(@sh)
+    assert whole(sh) == ""
+    line(@sh, text: "    if c")
+    after_last(@sh, text: "  # note")
+    blank(@sh)
+    blank(@sh)
+    line(@sh, text: "x")
+    assert whole(sh) == "    if c  # note\n\nx\n"
+    assert sh.size == whole(sh).len()
+    assert tail(sh, count: 3) == "\nx\n"
+    assert tail(sh, count: 99) == whole(sh)
+
+    # A trailing note on an empty page is a line of its own.
+    other: Sheet @ empty()
+    after_last(@other, text: "  # alone")
+    assert whole(other) == "  # alone\n"
+
+    # A page of one blank line is one `\n`, and a blank line after it is a
+    # second: the old string's `n >= 2`.
+    third: Sheet @ empty()
+    line(@third, text: "")
+    blank(@third)
+    assert whole(third) == "\n\n"
+
+test "a head across lines is indented after its first line, a blank line and what came before it are not"
+    sh: Sheet @ empty()
+    line(@sh, text: "x")
+    mark = sh.size
+    line(@sh, text: "    while t[a +  # c")
+    line(@sh, text: "        1] > 0")
+    line(@sh, text: "")
+    indent_after(@sh, from: mark, by: "        ")
+    assert whole(sh) == "x\n    while t[a +  # c\n                1] > 0\n\n"
+    assert sh.size == whole(sh).len()
+
+    # One line, or nothing, after the mark: nothing to indent.
+    one: Sheet @ empty()
+    line(@one, text: "    if c")
+    indent_after(@one, from: 0, by: "        ")
+    indent_after(@one, from: one.size, by: "        ")
+    assert whole(one) == "    if c\n"
+
+    # A mark inside a line whose `\n` a trailing note moved: the line it is
+    # on is the head's first, and a line that holds two keeps both right.
+    inner: Sheet @ empty()
+    line(@inner, text: "a")
+    mark_inner = inner.size
+    after_last(@inner, text: "  # t")
+    line(@inner, text: "b\nc")
+    indent_after(@inner, from: mark_inner, by: "..")
+    assert whole(inner) == "a  # t\n..b\n..c\n"
+    assert inner.size == whole(inner).len()

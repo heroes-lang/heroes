@@ -14,7 +14,9 @@ use diag
 use parse
 use print/dump
 use print/fmt
+use print/page
 use print/anchors
+use print/owners
 use cli/table as cli_table
 use cli/argv
 use cli/io
@@ -48,10 +50,24 @@ function run_fmt(path: str, s: source.Source, inv: argv.Invocation) -> cli_table
         io.eprint(text: "error: refusing to format a file with diagnostics")
         return .diagnostics_exit
     printed = fmt.format_lexed(out.tree, s, out.comments, out.uses, out.decls, out.tokens)
-    formatted = printed.out
-    refusal: str? @ refuse_output_the_formatter_broke(
+    formatted = page.whole(printed)
+
+    # The file alone is what the guard compares against, and `fmt` read it
+    # alone (`input.read_root_only`), so this parse and the lines the printer
+    # read it with are the guard's own and are handed over rather than made
+    # again (defect 105). A source that holds more than the file is parsed
+    # alone, as the guard would.
+    before: parse.ParseOutput @ out
+    read: owners.Lines @ printed.lines
+
+    if s.files.len() != 1
+        before @ parse.parse(source_extent.user_text(s))
+        read @ owners.none()
+    refusal: str? @ refused_output(
         path: path,
         original: source_extent.user_text(s),
+        before: before,
+        read: read,
         formatted: formatted
     )
 
@@ -123,6 +139,17 @@ function run_fmt(path: str, s: source.Source, inv: argv.Invocation) -> cli_table
 #
 # Every failure is the COMPILER's (§7): exit 2, author's file untouched.
 function refuse_output_the_formatter_broke(path: str, original: str, formatted: str) -> str?
+    return refused_output(
+        path: path,
+        original: original,
+        before: parse.parse(original),
+        read: owners.none(),
+        formatted: formatted
+    )
+
+# The guard, handed the original's parse, standalone, and the lines the
+# first pass read it with, or `owners.none()` (`anchors.first_moved_read`).
+function refused_output(path: str, original: str, before: parse.ParseOutput, read: owners.Lines, formatted: str) -> str?
     after = source.new_source(name: path, text: formatted)
     reparsed = parse.parse(formatted)
 
@@ -130,29 +157,35 @@ function refuse_output_the_formatter_broke(path: str, original: str, formatted: 
         return ok("`fmt` produced source that does not parse: " + diag.render_line(reparsed.diagnostics[0], after))
     again = fmt.format_lexed(reparsed.tree, after, reparsed.comments, reparsed.uses, reparsed.decls, reparsed.tokens)
 
-    if again.out != formatted
+    if page.whole(again) != formatted
         return ok("`fmt` is not a fixpoint on its own output for `" + path + "`")
 
     if again.moved > 0
         return ok(
             "`fmt` cannot keep the comment on line " + again.moved.to_str() + " of its own output for `" + path + "`"
         )
-    before = parse.parse(original)
 
     if before.diagnostics.len() > 0
         # The root file alone does not parse, which `run_fmt` has already
         # ruled out for the whole compilation — so there is no tree to
         # compare against and the two checks above stand on their own.
         return fail(code: "clean", msg: "the root file alone does not parse")
-    was = dump.dump_ast(before.tree, source.new_source(name: path, text: original), before.uses, before.decls)
+    first = source.new_source(name: path, text: original)
+    was = dump.dump_ast(before.tree, first, before.uses, before.decls)
     now = dump.dump_ast(reparsed.tree, after, reparsed.uses, reparsed.decls)
 
     if was != now
         return ok(
             "`fmt` changed the TREE of `" + path + "` — the output parses and is a fixpoint, and it is a DIFFERENT PROGRAM"
         )
-    first = source.new_source(name: path, text: original)
-    moved = anchors.first_moved(was: first, input: before, now: after, output: reparsed)
+    moved = anchors.first_moved_read(
+        was: first,
+        input: before,
+        now: after,
+        output: reparsed,
+        read_input: read,
+        read_output: again.lines
+    )
 
     if moved > 0
         return ok(

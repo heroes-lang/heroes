@@ -48,9 +48,32 @@ record Place
 # The line in `was` of the first comment whose place `fmt` changed in
 # `now`, or 0 when every comment kept its place.
 function first_moved(was: source.Source, input: parse.ParseOutput, now: source.Source, output: parse.ParseOutput) -> i64
+    return first_moved_read(
+        was: was,
+        input: input,
+        now: now,
+        output: output,
+        read_input: owners.none(),
+        read_output: owners.none()
+    )
+
+# `first_moved`, handed the lines `fmt` read the two files with: `read_input`
+# read from `was` and `input.tokens`, `read_output` from `now` and
+# `output.tokens`, or `owners.none()`. Each is this check's own reading
+# where it ignored the lines this check ignores and read to the end of the
+# text, which `shape` records, and is read again where it did not: the
+# guard reads each file once for both walks rather than twice (defect 105).
+function first_moved_read(was: source.Source, input: parse.ParseOutput, now: source.Source, output: parse.ParseOutput, read_input: owners.Lines, read_output: owners.Lines) -> i64
     dropped = merged_heads(was, input: input, output: output)
-    a = owners.shape(was, lexed: input.tokens, ignored: dropped, end: was.text.len())
-    b = owners.shape(now, lexed: output.tokens, ignored: [], end: now.text.len())
+    a: owners.Lines @ read_input
+
+    if read_input.end != was.text.len() || read_input.ignored != dropped
+        a @ owners.shape(was, lexed: input.tokens, ignored: dropped, end: was.text.len())
+    none: [i64] = []
+    b: owners.Lines @ read_output
+
+    if read_output.end != now.text.len() || read_output.ignored != none
+        b @ owners.shape(now, lexed: output.tokens, ignored: none, end: now.text.len())
     kept_a: [bool] @ keepable(was, lines: a, tree: input.tree, decls: input.decls, dropped: dropped)
     kept_b: [bool] @ keepable(now, lines: b, tree: output.tree, decls: output.decls, dropped: [])
 
@@ -142,9 +165,11 @@ function keepable(s: source.Source, lines: owners.Lines, tree: ast.Ast, decls: [
 
     # Each value is a local before its push: an argument that calls out
     # held the array, and the push copied it, quadratic in the tokens.
+    at_line: i64 @ 0
+
     for t in lines.tokens
-        line = source.floor_start(s.line_starts, t.span.start) + 1
-        counts = t.kind != .comment && t.kind != .comma && !owners.listed(dropped, value: line)
+        at_line @ owners.line_index(s.line_starts, from: at_line, offset: t.span.start)
+        counts = t.kind != .comment && t.kind != .comma && !owners.listed(dropped, value: at_line + 1)
         out @ out.push(counts)
 
     # `-> ()`, read over the code tokens: a comment inside the `()` is no
@@ -386,3 +411,28 @@ test "past the point where the kept streams part no comment is taken as kept, an
     assert moved_line(original: cased, moved: bare) == 0
     assert parting(one: ["a", "b"], other: ["a"]) == 1
     assert parting(one: ["a", "b"], other: ["a", "c"]) == 1
+
+# Defect 105: the lines `fmt` read a file with are this check's own where
+# they ignored what it ignores and read to the end, and are read again
+# where they did not, so the answer is the same either way.
+test "the lines fmt read the two files with give the answer this check reads them for, and other lines are read again"
+    original = "extern \"x.h\"\n    record Ob tag ob\n    # about Ob\nextern \"x.h\"\n    record Pool tag pool\n"
+    moved = "extern \"x.h\"\n    record Ob tag ob\nextern \"x.h\"\n    # about Ob\n\n    record Pool tag pool\n"
+    a = parse.parse(original)
+    b = parse.parse(moved)
+    was = source.new_source(name: "a.hero", text: original)
+    now = source.new_source(name: "b.hero", text: moved)
+    dropped = merged_heads(was, input: a, output: b)
+    none: [i64] = []
+    read_a = owners.shape(was, lexed: a.tokens, ignored: dropped, end: original.len())
+    read_b = owners.shape(now, lexed: b.tokens, ignored: none, end: moved.len())
+    assert read_a.end == original.len()
+    assert first_moved_read(was: was, input: a, now: now, output: b, read_input: read_a, read_output: read_b) == 3
+    assert first_moved(was: was, input: a, now: now, output: b) == 3
+
+    # Lines read with a line ignored, or short of the end, are read again:
+    # these are the other file's, and taken as they are the answer is not 3.
+    other = owners.shape(was, lexed: a.tokens, ignored: [2], end: moved.len())
+    short = owners.shape(now, lexed: b.tokens, ignored: dropped, end: 10)
+    assert first_moved_read(was: was, input: a, now: now, output: b, read_input: short, read_output: other) == 3
+    assert owners.none().end == -1

@@ -159,14 +159,11 @@ function run_doctor(build_dir: str, runtime_hint: str) -> cli_table.Exit
     return .failed_exit
 
 function pad_to(text: str, width: i64) -> str
-    out: str @ text
-    count: i64 @ text.chars().len()
+    count = text.chars().len()
 
-    while count < width
-        out @ out + " "
-        count @ count + 1
-
-    return out
+    if count >= width
+        return text
+    return text + " ".repeat((width - count).to_u64().must())
 
 # The twenty laws, byte-exact — the test below pins this text verbatim,
 # so a change is deliberate in two places (CLAUDE.md §9's redundancy

@@ -29,7 +29,7 @@ constant SUGGESTIONS: i64
 
 # The report for every hole in the file, in source order.
 function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
-    out: str @ ""
+    rows: [str] @ []
     none: [str] = []
 
     for hole in c.holes
@@ -37,7 +37,7 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
         # Diagnostic, which is how it survived a sweep still naming
         # the root file at concatenated lines (panel 033 D2).
         found = source.locate(s, hole.span.start)
-        out @ out + "hole at " + found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + "\n"
+        rows @ rows.push("hole at " + found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + "\n")
         is_error: bool @ false
 
         match table.get(c.types, hole.expected)
@@ -50,7 +50,7 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
             # A hole in statement position: nothing is expected of it,
             # and "expected `?`" would be worse than saying nothing.
             # What the model needs is what the FUNCTION owes.
-            out @ out + "  position: statement — any type, or none\n"
+            rows @ rows.push("  position: statement — any type, or none\n")
             owner = owner_of(decls, at: hole.span.start)
 
             if !owner.is_err()
@@ -66,14 +66,16 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
                         .case_ty | .failure | .generic                             => is_unit @ is_unit
 
                     if !is_unit
-                        out @ out + "  this function returns: " + render.render_ty(c.types, s, decls, result.must(), none) + "\n"
+                        rows @ rows.push(
+                            "  this function returns: " + render.render_ty(c.types, s, decls, result.must(), none) + "\n"
+                        )
         else
-            out @ out + "  expected type: " + render.render_ty(c.types, s, decls, hole.expected, none) + "\n"
-        out @ out + in_scope(r, c, s, decls, at: hole.span.start)
-        out @ out + fields_of(tree, c, s, decls, expected: hole.expected)
-        out @ out + nearby(tree, r, c, s, decls, expected: hole.expected, at: hole.span.start)
+            rows @ rows.push("  expected type: " + render.render_ty(c.types, s, decls, hole.expected, none) + "\n")
+        rows @ rows.push(in_scope(r, c, s, decls, at: hole.span.start))
+        rows @ rows.push(fields_of(tree, c, s, decls, expected: hole.expected))
+        rows @ rows.push(nearby(tree, r, c, s, decls, expected: hole.expected, at: hole.span.start))
 
-    return out
+    return rows.join("")
 
 # The locals visible at the hole, with their types. "Visible" is
 # approximated by THE DECLARATION THE HOLE IS IN, which the resolver
@@ -100,17 +102,17 @@ function in_scope(r: resolved.Resolved, c: state.Checked, s: source.Source, decl
 
     if shown.len() == 0
         return ""
-    out: str @ "  in scope:\n"
+    rows: [str] @ ["  in scope:\n"]
     kept: i64 @ 0
 
     for line in shown
         if kept < SUGGESTIONS
-            out @ out + "    " + line + "\n"
+            rows @ rows.push("    " + line + "\n")
         kept @ kept + 1
 
     if shown.len() > SUGGESTIONS
-        out @ out + "    … and " + (shown.len() - SUGGESTIONS).to_str() + " more\n"
-    return out
+        rows @ rows.push("    … and " + (shown.len() - SUGGESTIONS).to_str() + " more\n")
+    return rows.join("")
 
 # The fields of the expected type, where it is a record — the hole is
 # most often a value that has to be built, and the fields are what it
@@ -246,12 +248,12 @@ function nearby(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
 
     if shown.len() == 0
         return ""
-    out: str @ "  functions that return it:\n"
+    rows: [str] @ ["  functions that return it:\n"]
 
     for line in shown
-        out @ out + "    " + line + "\n"
+        rows @ rows.push("    " + line + "\n")
 
-    return out
+    return rows.join("")
 
 # Which declaration a byte offset falls inside.
 function owner_of(decls: [ast.Decl], at: i64) -> i64?

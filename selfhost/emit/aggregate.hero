@@ -125,7 +125,7 @@ function case_names(names: ctype.Names, s: source.Source, decls: [ast.Decl], dec
 # refuses the unit and the failure is exit 2, the compiler's, and loud.
 function place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> str
     slot = f.slots[at.root]
-    text: str @ mangle.slot(index: at.root, name: slot.name)
+    parts: [str] @ [mangle.slot(index: at.root, name: slot.name)]
     ty: i64 @ slot.ty
 
     for step in containers.steps_of(f, at.path)
@@ -134,12 +134,13 @@ function place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: contain
                 found = field(c, s, decls, owner: ty, index: fs.at)
 
                 if found.is_err()
-                    return text
-                text @ text + "." + found.must().member
+                    return parts.join("")
+                member = "." + found.must().member
+                parts @ parts.push(member)
                 ty @ found.must().ty
-            .index_step => return text + " HERO_INDEX_STEP_IS_NOT_AN_LVALUE"
+            .index_step => return parts.join("") + " HERO_INDEX_STEP_IS_NOT_AN_LVALUE"
 
-    return text
+    return parts.join("")
 
 # t3 = (h_m_Point){.f_x = t1, .f_y = t2};
 function construct(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str]) -> str?

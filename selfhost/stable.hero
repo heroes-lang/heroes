@@ -1,0 +1,105 @@
+# A stable order, n log n (defect 105): the permutation that puts a list of
+# keys in ascending order, equal keys in the order they came. The compiler
+# ordered what it prints by inserting each item into a copy of the list so
+# far, a copy per item, quadratic in the items: the diagnostics by position
+# (`resolve.by_position`), the formatter's items (`print/fmt.hero`), the
+# certain fixes `check --apply` writes, the locals `--dump-scopes` lists. The
+# built-in `sort` orders numbers and strings, never records, and says
+# nothing of equal keys; this orders their indices by a key the caller
+# reads, and the caller takes the items in that order.
+#
+# A bottom-up merge: runs of width 1, 2, 4, ... are merged pairwise, the
+# left run winning a tie, which is what keeps equal keys in their order.
+# Every array is a local pushed on a bare place (design.md Part 8 wart 8).
+
+# The indices of `by` in ascending order of their key, a tie kept in the
+# order of the indices.
+function order(by: [i64]) -> [i64]
+    count = by.len()
+    sequence: [i64] @ range(from: 0, to: count)
+    width: i64 @ 1
+
+    while width < count
+        merged: [i64] @ []
+        start: i64 @ 0
+
+        while start < count
+            middle: i64 @ start + width
+
+            if middle > count
+                middle @ count
+            stop: i64 @ middle + width
+
+            if stop > count
+                stop @ count
+            left: i64 @ start
+            right: i64 @ middle
+
+            while left < middle && right < stop
+                if by[sequence[right]] < by[sequence[left]]
+                    taken = sequence[right]
+                    merged @ merged.push(taken)
+                    right @ right + 1
+                else
+                    taken = sequence[left]
+                    merged @ merged.push(taken)
+                    left @ left + 1
+
+            while left < middle
+                taken = sequence[left]
+                merged @ merged.push(taken)
+                left @ left + 1
+
+            while right < stop
+                taken = sequence[right]
+                merged @ merged.push(taken)
+                right @ right + 1
+
+            start @ stop
+
+        sequence @ merged
+        width @ width * 2
+
+    return sequence
+
+## Tests
+
+test "the order is ascending and keeps equal keys in the order they came"
+    none: [i64] = []
+    assert order(by: none).len() == 0
+    assert order(by: [7]) == [0]
+    assert order(by: [3, 1, 2]) == [1, 2, 0]
+    assert order(by: [5, 1, 5, 1, 5]) == [1, 3, 0, 2, 4]
+    assert order(by: [4, 3, 2, 1, 0, -1, 9]) == [5, 4, 3, 2, 1, 0, 6]
+
+    # The insertion it replaces, on every list of five keys from 0 to 3: the
+    # item goes after every one before it whose key is not greater.
+    code: i64 @ 0
+
+    while code < 1024
+        picked: [i64] @ []
+        rest: i64 @ code
+
+        for _ in range(from: 0, to: 5)
+            digit = rest % 4
+            picked @ picked.push(digit)
+            rest @ rest / 4
+
+        inserted: [i64] @ []
+
+        for index in range(from: 0, to: 5)
+            at: i64 @ inserted.len()
+
+            while at > 0 && picked[inserted[at - 1]] > picked[index]
+                at @ at - 1
+
+            grown: [i64] @ inserted.slice(from: 0, to: at)
+            grown @ grown.push(index)
+
+            for one in inserted.slice(from: at, to: inserted.len())
+                grown @ grown.push(one)
+
+            inserted @ grown
+
+        assert order(by: picked) == inserted
+        code @ code + 1

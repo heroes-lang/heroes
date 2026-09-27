@@ -28,6 +28,7 @@ use parse
 use diag
 use resolved
 use resolve/state
+use stable
 use resolve/top
 use resolve/decls as resolve_decls
 use resolve/cycles
@@ -76,26 +77,20 @@ function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use
     r.out.diagnostics @ by_position(r.out.diagnostics)
     return r.out
 
-# A stable insertion sort keyed on the span's start — stable because equal
-# keys never cross the `>` below, and hand-written because `sort` orders
-# numbers and strings, never records.
+# The diagnostics in order of the span's start, equal starts in the order
+# they were found (`stable.order`, defect 105: the insertion this was
+# copied the list at every diagnostic, quadratic in them).
 function by_position(diagnostics: [diag.Diagnostic]) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
+    starts: [i64] @ []
 
     for d in diagnostics
-        at: i64 @ out.len()
+        starts @ starts.push(d.span.start)
 
-        while at > 0 && out[at - 1].span.start > d.span.start
-            at @ at - 1
+    out: [diag.Diagnostic] @ []
 
-        before = out.slice(from: 0, to: at)
-        after = out.slice(from: at, to: out.len())
-        grown: [diag.Diagnostic] @ before.push(d)
-
-        for rest in after
-            grown @ grown.push(rest)
-
-        out @ grown
+    for at in stable.order(by: starts)
+        taken = diagnostics[at]
+        out @ out.push(taken)
 
     return out
 
