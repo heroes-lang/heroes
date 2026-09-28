@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 6**
+**OPEN: 7**
 
 - [ ] **panel 175** | ratify panel 175: a consuming call is three things, so route A lands only with a vocabulary 176 decides; route E lands now as the composite; § 13 lands its true sentences in full; the blind seat gets a copy of the spec outside the tree | `docs/panel/175-a-consuming-call-is-three-things-and-the-runtime-speaks-after-it-listens.md`
 
@@ -107,5 +107,20 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     names no rule and leaves the class to be found member by member. **Two
     points for the author**: the code's place on the thesis list, and § 12's
     default reversed on § 1's clause.
+
+- [ ] **panel 182** | ratify panel 182: the emitted C never zeroes a value or an `@` parameter's slot and zeroes every other refcounted slot, the verifier checks order within a block, every aggregate written by tag and payload is written whole first, the cache keys take the C compiler and its flags (defect 122); and the deferral of the consuming store and the initialising stores until the compiler crosses a leak gate | `docs/panel/182-a-value-is-never-zeroed-a-slot-is-and-a-definition-is-whole.md`
+
+    **Origin:** panel 182, 2026-09-28, M-agreed-retention, the soundness lane,
+    convened on defect 114. **The default the compiler runs on meanwhile** is
+    the provisional resolution, landed in one lane with defects 114 and 122.
+    **What conservative would have been**: the two-clause rule alone, without
+    the whole definitions, the order check or defect 122. **Deferred, for the
+    author to schedule or refuse**: route (b), an owning temporary moved into
+    the slot its only use stores it to, and route (f)'s initialising stores,
+    6 to 9 points of user time over the adopted route, back when the compiler's
+    own runs cross a leak gate and (b)'s fault injection is shown to fire;
+    MemorySanitizer as a Linux leg once the cache keys include the flags; and
+    coalescing the synthetic slots of mutually exclusive arms, its premise
+    unrun.
 
 *******************************************************************************
