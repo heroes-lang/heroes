@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 5**
 
 - [ ] **129 — a line holding `-` alone draws two certain joins, and applied together they write a program `check` refuses** | in `function main()`, `x = a` over a line holding `-` alone over `print(x)` costs two `continuation_outside_brackets`, and `check --apply` writes `x = a -` over `print(x)`, which `check` refuses again; in a `match`, `0 => 5` over `-` over `"=>"` has both joins applied, `0 => 5 - "=>"`, which is `bad_operand` | `selfhost/open_line.hero` (`goes_on_at_head`, `refuse_the_end`)
 
@@ -148,5 +148,27 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     parser handed the line the author broke. Here the line it is handed holds
     the next arm's `=>`, which no join can make part of an arm's body, so the
     parser's refusal is the break's debris and not a second mistake.
+
+- [ ] **133 — after a declaration head the lexer refuses as a foreign word with a certain swap, the declaration's own mistakes are reported only once the swap is applied** | `const MAX = 5` costs `reserved_word` alone, and `check --apply` writes `constant MAX = 5`, which then costs `expected_constant_type`; `const MAX: i64 = 5` then costs `missing_body`, `fn main() {` then `missing_body`, `struct Point {` then `empty_record`: two turns for one habit | `selfhost/scan.hero` (the foreign word emitted as an `error` token) · `selfhost/keywords.hero` (`foreign_word`) · `selfhost/parse/decl.hero` · `cursor.recover_to_next_decl`
+
+    **Origin:** lane 129's agent, 2026-09-29, reading `check/reserved-words`'s
+    applied text while building the `fixes` suite's judgement of cases with no
+    `.fixed` (`85066233`, reported and not changed); widened by the
+    coordinator on the trunk's compiler at `ee1b648b` to every declaration
+    keyword a swap names (`const.hero`, `const_typed.hero`, `fn_brace.hero`,
+    `struct_brace.hero` in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/d133/`, 2026-09-29).
+    Beside it and not of it: every foreign word the LEXER refuses is reported
+    in the first run (`fn add(a: int, b: int) -> int` costs four, clean after
+    `--apply`), and `let`, whose repair is guidance, has no certain swap.
+    The cause is read and unrun: the lexer emits the word as an `error` token
+    (`state.error_token`), and at a top-level line's head the parser's
+    recovery drops the whole declaration, its body included.
+
+    **Why it is a defect.** The same as 130's: a mistake present and
+    unreported is a silence where a message is owed, and design.md §4.17 asks
+    that a model fix a program in one turn. `const MAX = 5`, `fn main() {`
+    and `struct Point {` are the habits of the three languages a model has
+    read most.
 
 *******************************************************************************
