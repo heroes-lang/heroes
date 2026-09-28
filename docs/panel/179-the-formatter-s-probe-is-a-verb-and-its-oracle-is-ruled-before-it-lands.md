@@ -201,3 +201,46 @@ artifact class.
 *Pending: `docs/work/DECIDE.md` carries this sitting as `panel 179`. Work
 proceeds on the provisional resolution: lane g repairs the 17 refusals first,
 then the probe lands in its own lane.*
+
+## The landing, 2026-09-28
+
+The probe landed in its own lane (M-agreed-retention step 27, `e8ed8732`,
+merged `49e50f34`), on items 1 to 8 above, after lane g's merge as item 8
+asked. Its gate, Linux arm64 and the Windows box are in the lane's commit and in
+defect 121's record, the one defect its first run found and the lane repaired.
+
+**A second exception in the reader, which is the author's to ratify.** The
+reader disagreed with the guard on 640 of the first run's 664 failures, every
+one a fixture holding two `extern` groups under one head with a comment directly
+above the second head: `fmt` merges the groups (panel 036's canonical form) and
+prints the comment above the member it documents, while the reader read the
+second head as a logical line. The lane resolved it as the reader's rule (d), *a
+head the output does not have is no logical line in the variant either*, read
+from the two files as the guard's `merged_heads` does. Item 4 called ruling (c)
+the reader's one stated exception; (d) is a second, queued with this sitting's
+ratification in `docs/work/DECIDE.md`.
+
+**One deliberate difference from the seats' generators**: `parengen.py` named
+the literal kinds by words the JSON dump never prints, so the seats' parenthesis
+wrap only ever wrapped names and booleans; the port wraps literals as the script
+meant (2139 variants over the fixtures against the seats' 1209).
+
+**Owed before the push that carries this**, since it touches `selfhost/print/`,
+and unrun at the landing: the by-hand run `.claude/rules/verification.md` now
+states, the single and bracket families over `selfhost`, `tests` and `examples`
+and the fixtures unstrided, about 4.4 CPU hours at `-O2` by that rule's own
+arithmetic.
+
+### The predictions, scored at the landing (the lane's measurements)
+
+| seat | prediction | score |
+|---|---|---|
+| compiler-engineer | each module at or under 300 counted lines | **held**: the largest, `probe/reader.hero`, 296 |
+| compiler-engineer | the three modules together at or under 420 | **falsified**: deform, judge and command 936; the probe with its reader and reduction 1,324 |
+| compiler-engineer | `heroes probe selfhost/check/walk.hero` reports 39,731 variants for comment insertion and bracket break | **held** on the text of `83ac68c1` (10,364 and 29,367); today's `walk.hero` gives 39,740 |
+| compiler-engineer | the fully judged run over `walk.hero` refuses at least 1% of the parsing bracket breaks (a number to take at the landing) | taken: **0 of 22,860** on today's `walk.hero`, every variant held by both judges |
+| spec-warden | the spec reads 8861 real and 6693 vendored after the landing | **falsified as numbers** (8999 and 6794, moved by panel 180's landing, `74203a64`); the zero delta held, since the probe changes no byte under `spec/` |
+| spec-warden | `heroes --help` grows to 74 lines and 948 to 950 vendored tokens | **falsified**: 75 lines, 1001 vendored |
+| spec-warden | the fixtures give 7,982 generated and 6,350 parsing | generated **held**; parsing **falsified**, 6,560 under today's parser (probably panel 180's repair; not verified) |
+| historian | none of ten formatter CLIs lists a generator of deformed inputs within twelve months | checkable 2027-09-27 |
+| critic | `parens.hero` gives 576 variants, 456 parsing, 6 refused at `83ac68c1` | generated **held** (576); none refused today |
