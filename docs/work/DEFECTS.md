@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 3**
 
 - [ ] **129 — a line holding `-` alone draws two certain joins, and applied together they write a program `check` refuses** | in `function main()`, `x = a` over a line holding `-` alone over `print(x)` costs two `continuation_outside_brackets`, and `check --apply` writes `x = a -` over `print(x)`, which `check` refuses again; in a `match`, `0 => 5` over `-` over `"=>"` has both joins applied, `0 => 5 - "=>"`, which is `bad_operand` | `selfhost/open_line.hero` (`goes_on_at_head`, `refuse_the_end`)
 
@@ -41,6 +41,26 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     2026-09-28 16:40 (`docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md`):
     found after the eight M-agreed-retention repairs before its tag, and
     not repaired in it.
+
+    **Widened 2026-09-28 at 23:00 by the coordinator, on the trunk's compiler
+    at `79aeeffa`, to two classes, neither of them the `-`'s.** The
+    directories cited above were gone by 22:55, removed by nobody in this
+    conversation; `stmt_minus_alone.hero` and `x07_arrow_in_string.hero` were
+    copied at 22:47 and the shapes below written beside them
+    (`/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/d129/`, 2026-09-28).
+    (A) **The joins of one statement broken at two or more line ends are
+    judged one at a time**, so a `certain` one applied without the others
+    writes a line the same code refuses: `+`, `&&` and `+ b *` alone on the
+    line do what `-` does (`p1`, `p4`, `p3`), and so does a statement with no
+    line holding an operator alone, `x = y +` over `z +` over `print(x)`,
+    joined to `x = y + z +` (`q12`), `x = y` over `+ z +` (`q14`), and a
+    chain whose second break carries a comment and so no fix (`q15`); where
+    every join is `certain`, `x = a` over `-` over `b`, the three-line join
+    is right and compiles (`x05`, `p2`, `q13`). (B) **A `certain` join writes
+    an operator against a literal it can take under no type**: `x07`'s
+    `5 - "=>"`, `x = a` over `- "s"` (`q10`), `x = a &&` over `1` (`q11`), and,
+    beside defect 126, the sign join `-"a" => 10` on a `str` match (`p5`);
+    `-'a'` on an `i64` match compiles (`p6`), since a character is an integer.
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -65,5 +85,39 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     2026-09-28 16:40 (`docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md`):
     found after the eight M-agreed-retention repairs before its tag, and
     not repaired in it.
+
+    **Widened 2026-09-28 at 23:00 by the coordinator, on the trunk's compiler
+    at `79aeeffa`: the class is every statement that ends with its own block,
+    and the cause is now read, not inferred.** The reproducers were rebuilt
+    from this entry's text, the directory above being gone by 22:55
+    (`/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/d130/`, 2026-09-28),
+    and they print what the entry says. `grammar_expr.finish` skips the rest
+    of the line of any statement that reported a diagnostic, and a statement
+    whose last part is a block has already consumed its own dedent, so the
+    line it skips is the next statement's, and `balanced_block` then takes
+    that statement's block. The skip is keyed on a diagnostic anywhere inside
+    the statement, so the arm is one witness of many: an error in the body of
+    a `for` (`w1`), an `if` (`w2`), a `while` (`w3`), an `else` (`w4`), a
+    bound `if` (`w5`) or an arm's block (`w7`) hides the statement after it,
+    and two nested blocks hide two (`w6`, lines 6 and 7). A declaration's
+    body does not (`w9`): `cursor.recover_to_next_decl` asks whether the
+    cursor already stands at a fresh line, which `finish` never asks.
+
+- [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
+
+    **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
+    the blocks beside defect 130 on the trunk's compiler at `79aeeffa`
+    (`w8_cond_error.hero` and `v1` to `v6` in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/d130/`, 2026-09-28).
+    The cause is read and unrun: the guard before `missing_body` and
+    `missing_match_arms` is `cursor.at_reported_error`, which asks whether the
+    current TOKEN is an `error` token, not whether the head already reported;
+    the failed head leaves the cursor on the `)` it could not read.
+    `if (n > )` costs one diagnostic (`v6`), because the parenthesis
+    recovery consumes the line.
+
+    **Why it is a defect.** design.md §4.17: one mistake, one message. The
+    second names a body that is there, one level down, as missing, so a
+    model that reads it as a second mistake repairs a block that was right.
 
 *******************************************************************************
