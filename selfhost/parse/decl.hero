@@ -42,6 +42,7 @@ use parse/use_line
 use parse/tails
 use parse/group
 use grammar_expr
+use parse/opening
 
 ## The dispatcher
 
@@ -134,7 +135,17 @@ function constant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl]
     if h.is_err()
         return
     hd = h.must()
-    tails.constant_tail(@c, @a, @decls, text, keyword: hd.keyword, doc: hd.doc, name: hd.name, linkage: .heroes)
+    tails.constant_tail(
+        @c,
+        @a,
+        @decls,
+        text,
+        keyword: hd.keyword,
+        doc: hd.doc,
+        name: hd.name,
+        linkage: .heroes,
+        head: opening.mark(c)
+    )
 
 ## function
 
@@ -146,13 +157,24 @@ function function_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl]
     if h.is_err()
         return
     hd = h.must()
-    tails.function_tail(@c, @a, @decls, text, keyword: hd.keyword, doc: hd.doc, name: hd.name, linkage: .heroes)
+    tails.function_tail(
+        @c,
+        @a,
+        @decls,
+        text,
+        keyword: hd.keyword,
+        doc: hd.doc,
+        name: hd.name,
+        linkage: .heroes,
+        head: opening.mark(c)
+    )
 
 ## test
 
 # `test "3-4-5 triangle"` + body (§4.18). The name is a string, not an
 # identifier: it is a title, and it is printed when the test fails.
 function test_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
+    began = opening.mark(c)
     keyword = cursor.current_span(c)
     doc = cursor.take_docs(@c, text, keyword)
     _ = cursor.bump(@c)
@@ -168,7 +190,7 @@ function test_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], te
         cursor.recover_to_next_decl(@c)
         return
     name = cursor.bump(@c).span
-    b = grammar_expr.block(@c, @a, text: text, owner: "a `test`")
+    b = grammar_expr.block(@c, @a, text: text, owner: "a `test`", head: began)
 
     if b.is_err()
         cursor.recover_to_next_decl(@c)

@@ -1,0 +1,24 @@
+# Fixed defect 131, 2026-09-28, the heads of declarations. Symptom: a function
+# whose result type failed, `function f() -> )`, and a constant whose type
+# failed, `constant C: )`, each cost `expected_type` and then `missing_body` at
+# the same column, and the body, never parsed, hid its mistakes; a `test`
+# whose line went on past its name was named `missing_body` and its body
+# dropped. And where the failed signature had no body, the missing body was
+# named at the `)`. Cause: a declaration's body is read by the same
+# `grammar_expr.block` as a loop's, and asked the same wrong token. The rest
+# of the signature's line is dropped, and the body below it read, or named
+# missing at the next declaration, where a signature that did not fail has it
+# named (`parse/opening`).
+
+function result() -> )  #~ expected_type
+    y = 3 )  #~ expected_end_of_line
+
+constant TYPED: )  #~ expected_type
+    3 )  #~ expected_end_of_line
+
+test "a name and more" )  #~ missing_body
+    y = 3 )  #~ expected_end_of_line
+
+function bodiless() -> )  #~ expected_type
+function main()  #~ missing_body
+    w = 5 )  #~ expected_end_of_line

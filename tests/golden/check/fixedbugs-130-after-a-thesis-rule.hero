@@ -1,0 +1,24 @@
+# Fixed defect 130, 2026-09-28, beside it: a thesis rule is not a failure.
+# Symptom: a statement whose only report was one of the rules the thesis adds
+# (`diag.is_thesis_rule`) was recovered from as if it had failed, so the line
+# after a `match` holding `0 => x = 5` was dropped, and so was the `)` left
+# after a list that `spaced_minus_element` refused; and `check --permissive`,
+# which drops the thesis rules, then said nothing at all about either program
+# and passed it on, exit 0 over a line that does not parse. Cause: the
+# recovery asked whether any diagnostic had been said. It asks whether a
+# refusal was (`cursor.refused_since`): a thesis rule leaves the program a
+# meaning, and nothing is dropped on its account.
+
+function after_an_arm(n: i64)
+    match n
+        0 => x = 5  #~ declaration_in_arm
+        _ => print(2)
+    z = 4 )  #~ expected_end_of_line
+
+function after_a_list(a: i64, b: i64)
+    xs = [a
+        - b] )  #~ spaced_minus_element #~ expected_end_of_line
+    print(xs.len())
+
+function main()
+    print(1)

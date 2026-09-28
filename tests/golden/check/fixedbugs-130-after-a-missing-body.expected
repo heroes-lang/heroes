@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-130-after-a-missing-body.hero:11:5: error[missing_body]: a `while` needs an indented body — one level deeper, exactly 4 spaces (found a name (`z`))
+tests/golden/check/fixedbugs-130-after-a-missing-body.hero:11:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
