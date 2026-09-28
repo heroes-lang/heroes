@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 7**
+**OPEN: 8**
 
 - [ ] **123 — a `match` arm whose pattern begins with a `-` set apart from its operand compiles, where the spec refuses it** | `k = match n` with the arm `- 1 => 10` is `check` 0 and prints 10, as `-1 => 10` does; spec § 0 reads *where a NEWLINE separates without a `,`, the next line may not begin with a `-` that does not touch its operand*, and a `match`'s arms are separated by NEWLINE; panel 180's `spaced_minus_element` refuses the shape in a literal and panel 181's refusal at depth zero, and an arm is the one NEWLINE-separated context left | `selfhost/parse/list_line.hero` (`spaced_minus_element`) · `selfhost/grammar_expr.hero` (`arm`)
 
@@ -106,6 +106,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     in silence, the plausible slip of a copied line whose value was not
     changed.
 
+    **Widened 2026-09-28, by lane 123's agent, reproduced by the coordinator
+    on the trunk's compiler at `d0f24496` at 18:50** (`w01` to `w06` in
+    `/Users/joseph/Temp/heroes-recovery-2026-09-26/defect127/`): the class is
+    an arm an earlier arm covers, and it compiles in silence in four more
+    shapes: an arm after `_` (`_ => 20` over `0 => 10` prints 20); `"a"`
+    twice on a `str`; `97`, `'a'` and `0x61 | 1`, one value in three
+    spellings; and two `.ok` arms on an `i64?`, where `check/walk.case_pattern`'s
+    fallible branch marks the case covered without asking whether it already
+    was, while its variant branch refuses `.a` twice and `.a | .a`. The
+    coordinator reads the fallible shape as this defect's class and not a
+    new defect under the waiver of 16:40: the same rule, `duplicate_arm`, in
+    the neighbouring branch of the same function, landing in this defect's
+    commit.
+
 - [ ] **129 — a line holding `-` alone draws two certain joins, and applied together they write a program `check` refuses** | in `function main()`, `x = a` over a line holding `-` alone over `print(x)` costs two `continuation_outside_brackets`, and `check --apply` writes `x = a -` over `print(x)`, which `check` refuses again; in a `match`, `0 => 5` over `-` over `"=>"` has both joins applied, `0 => 5 - "=>"`, which is `bad_operand` | `selfhost/open_line.hero` (`goes_on_at_head`, `refuse_the_end`)
 
     **Origin:** lane 123's agent, 2026-09-28, attacking the positions beside
@@ -122,6 +136,30 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     holding `-` alone draws one at its head and one at its end, and nothing
     judges the two together. Defect 126 is the same shape on an arm; this is
     it at the statement and before a value that is not a pattern.
+
+    **Carried to the next milestone**, by the author's instruction of
+    2026-09-28 16:40 (`docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md`):
+    found after the eight M-agreed-retention repairs before its tag, and
+    not repaired in it.
+
+- [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
+
+    **Origin:** lane 123's agent, 2026-09-28, beside defect 124, on the
+    trunk's compiler at `aee8b01e` (reproducers `shapes/y01_three_bad.hero`
+    and `shapes/y02_stmt_bad.hero` in `/Users/joseph/Temp/heroes-lane-123-scratch/`);
+    reproduced by the coordinator on the trunk's compiler at `d0f24496` at
+    18:47, who widened it from a second `match` to any statement with
+    `z2_two_plain_errors.hero`, beside the control `z4_no_match.hero`
+    (`/Users/joseph/Temp/heroes-recovery-2026-09-26/defect130/`, 2026-09-28).
+    The cause is unrun and inferred by the finder from the reading:
+    `match_expr` skips the failed arm's line, and the enclosing statement's
+    own recovery then drops one more line.
+
+    **Why it is a defect.** The program is refused, so nothing runs wrong,
+    but a mistake is present and unreported: a silence where a message is
+    owed. design.md §4.17 asks that a model fix a program in one turn; a
+    mistake hidden behind another costs a second one, and a third where two
+    are hidden in a row.
 
     **Carried to the next milestone**, by the author's instruction of
     2026-09-28 16:40 (`docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md`):
