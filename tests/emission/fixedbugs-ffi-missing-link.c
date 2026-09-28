@@ -95,7 +95,7 @@ void h_ffimissinglink_main(void);
 #line 59 "tests/golden/fixedbugs/ffi-missing-link.hero"
 void h_ffimissinglink_main(void) {
 #line 98 "ffimissinglink.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
     goto bb0;
 bb0:

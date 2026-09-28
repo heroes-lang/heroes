@@ -115,10 +115,10 @@ void h_deadhandlereadafterconsumethroughonename_main(void) {
     Obj * t5;
     Obj * t6;
     Obj * t7;
-    HeroStr t8 = {0};
+    HeroStr t8;
     const char * t9;
     Obj * t10;
-    HeroStr t12 = {0};
+    HeroStr t12;
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"

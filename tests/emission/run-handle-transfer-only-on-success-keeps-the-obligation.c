@@ -122,7 +122,7 @@ void h_handletransferonlyonsuccesskeepstheobligation_main(void) {
     node * t6;
     int32_t t7;
     int32_t t8;
-    HeroStr t9 = {0};
+    HeroStr t9;
     int32_t t10;
     int32_t t11;
     int32_t t12;
@@ -133,7 +133,7 @@ void h_handletransferonlyonsuccesskeepstheobligation_main(void) {
     node * t17;
     node * t18;
     int32_t t19;
-    HeroStr t21 = {0};
+    HeroStr t21;
     node * t22;
     int64_t t23;
     node * t24;

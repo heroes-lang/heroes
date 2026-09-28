@@ -96,7 +96,7 @@ bool h_adversarialnestedshortcircuit_decide(bool h0_a, bool h1_b, bool h2_c);
 #line 7 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bool h_adversarialnestedshortcircuit_loud(HeroStr h0_tag, bool h1_answer) {
 #line 99 "adversarialnestedshortcircuit.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     bool t2;
     goto bb0;
 bb0:
@@ -118,14 +118,14 @@ bool h_adversarialnestedshortcircuit_decide(bool h0_a, bool h1_b, bool h2_c) {
 #line 119 "adversarialnestedshortcircuit.c"
     bool h3_b0;
     bool h4_b1;
-    HeroStr t1 = {0};
+    HeroStr t1;
     bool t2;
     bool t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     bool t5;
     bool t6;
     bool t7;
-    HeroStr t8 = {0};
+    HeroStr t8;
     bool t9;
     bool t10;
     bool t11;

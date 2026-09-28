@@ -108,7 +108,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 void h_fficallbacktypedefreachestheprobe_bye(void) {
 #line 110 "fficallbacktypedefreachestheprobe.c"
     hero_thread_guard("fficallbacktypedefreachestheprobe.bye");
-    HeroStr t1 = {0};
+    HeroStr t1;
     goto bb0;
 bb0:
 #line 28 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
@@ -133,7 +133,7 @@ void h_fficallbacktypedefreachestheprobe_main(void) {
     int32_t t2;
     int32_t t3;
     bool t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     goto bb0;
 bb0:
 #line 31 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"

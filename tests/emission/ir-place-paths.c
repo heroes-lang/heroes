@@ -108,7 +108,7 @@ int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c)
 #line 12 "tests/golden/ir/place-paths.hero"
 void h_placepaths_set_cell(h_placepaths_Grid *ph0_g, int64_t h1_r, int64_t h2_c, int64_t h3_v) {
 #line 111 "placepaths.c"
-    h_placepaths_Grid h0_g = {0};
+    h_placepaths_Grid h0_g;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -133,11 +133,11 @@ bb0:
 #line 15 "tests/golden/ir/place-paths.hero"
 int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c) {
 #line 136 "placepaths.c"
-    h_placepaths_Grid t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    h_placepaths_Grid t1;
+    HeroArrayHeader * t2;
     int64_t t3;
-    h_placepaths_Row t4 = {0};
-    HeroArrayHeader * t5 = {0};
+    h_placepaths_Row t4;
+    HeroArrayHeader * t5;
     int64_t t6;
     int64_t t7;
     goto bb0;

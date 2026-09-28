@@ -168,12 +168,12 @@ h_0opt_e201354 h_orderoptionsandfntypedefs_half(int64_t h0_n) {
     int64_t t6;
     int64_t t7;
     int64_t t8;
-    h_0opt_e201354 t9 = {0};
-    HeroStr t10 = {0};
-    HeroStr t11 = {0};
-    h_0opt_e201354 t12 = {0};
-    h_0opt_e201354 t13 = {0};
-    h_0opt_e201354 t14 = {0};
+    h_0opt_e201354 t9;
+    HeroStr t10;
+    HeroStr t11;
+    h_0opt_e201354 t12;
+    h_0opt_e201354 t13;
+    h_0opt_e201354 t14;
     goto bb0;
 bb0:
 #line 15 "tests/golden/emit/order-options-and-fn-typedefs.hero"
@@ -262,13 +262,13 @@ h_0opt_f87774a h_orderoptionsandfntypedefs_name_of(int64_t h0_n) {
     int64_t t1;
     int64_t t2;
     bool t3;
-    HeroStr t4 = {0};
-    h_0opt_f87774a t5 = {0};
-    HeroStr t6 = {0};
-    HeroStr t7 = {0};
-    h_0opt_f87774a t8 = {0};
-    h_0opt_f87774a t9 = {0};
-    h_0opt_f87774a t10 = {0};
+    HeroStr t4;
+    h_0opt_f87774a t5;
+    HeroStr t6;
+    HeroStr t7;
+    h_0opt_f87774a t8;
+    h_0opt_f87774a t9;
+    h_0opt_f87774a t10;
     goto bb0;
 bb0:
 #line 20 "tests/golden/emit/order-options-and-fn-typedefs.hero"
@@ -344,12 +344,12 @@ h_0opt_de89a9a h_orderoptionsandfntypedefs_origin(bool h0_flag) {
     int64_t t2;
     int64_t t3;
     h_orderoptionsandfntypedefs_Point t4;
-    h_0opt_de89a9a t5 = {0};
-    HeroStr t6 = {0};
-    HeroStr t7 = {0};
-    h_0opt_de89a9a t8 = {0};
-    h_0opt_de89a9a t9 = {0};
-    h_0opt_de89a9a t10 = {0};
+    h_0opt_de89a9a t5;
+    HeroStr t6;
+    HeroStr t7;
+    h_0opt_de89a9a t8;
+    h_0opt_de89a9a t9;
+    h_0opt_de89a9a t10;
     goto bb0;
 bb0:
 #line 25 "tests/golden/emit/order-options-and-fn-typedefs.hero"
@@ -478,7 +478,7 @@ bb0:
 #line 39 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 void h_orderoptionsandfntypedefs_tick(void) {
 #line 481 "orderoptionsandfntypedefs.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     goto bb0;
 bb0:
 #line 40 "tests/golden/emit/order-options-and-fn-typedefs.hero"
@@ -511,34 +511,34 @@ void h_orderoptionsandfntypedefs_main(void) {
     int64_t t4;
     int64_t t5;
     h_orderoptionsandfntypedefs_Point t6;
-    HeroArrayHeader * t7 = {0};
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t7;
+    HeroArrayHeader * t8;
     int64_t t9;
     h_orderoptionsandfntypedefs_Point t10;
     int64_t t11;
     int64_t t12;
-    h_0opt_e201354 t13 = {0};
-    h_0opt_e201354 t14 = {0};
+    h_0opt_e201354 t13;
+    h_0opt_e201354 t14;
     int64_t t15;
     int64_t t16;
     bool t17;
-    h_0opt_e201354 t18 = {0};
+    h_0opt_e201354 t18;
     int64_t t19;
     int64_t t20;
     int64_t t21;
     int64_t t22;
-    h_0opt_f87774a t23 = {0};
-    h_0opt_f87774a t24 = {0};
+    h_0opt_f87774a t23;
+    h_0opt_f87774a t24;
     int64_t t25;
     int64_t t26;
     bool t27;
-    h_0opt_f87774a t28 = {0};
-    HeroStr t29 = {0};
-    HeroStr t30 = {0};
-    HeroStr t31 = {0};
+    h_0opt_f87774a t28;
+    HeroStr t29;
+    HeroStr t30;
+    HeroStr t31;
     bool t32;
-    h_0opt_de89a9a t33 = {0};
-    h_0opt_de89a9a t34 = {0};
+    h_0opt_de89a9a t33;
+    h_0opt_de89a9a t34;
     int64_t t35;
     int64_t t36;
     bool t37;
@@ -547,16 +547,16 @@ void h_orderoptionsandfntypedefs_main(void) {
     int64_t t40;
     int64_t t41;
     h_0fn_294870dd t42;
-    HeroArrayHeader * t43 = {0};
-    HeroArrayHeader * t44 = {0};
-    h_0opt_e201354 t45 = {0};
-    h_0opt_e201354 t46 = {0};
-    h_0opt_f87774a t47 = {0};
-    h_0opt_f87774a t48 = {0};
-    HeroStr t49 = {0};
-    HeroStr t50 = {0};
-    h_0opt_de89a9a t51 = {0};
-    h_0opt_de89a9a t52 = {0};
+    HeroArrayHeader * t43;
+    HeroArrayHeader * t44;
+    h_0opt_e201354 t45;
+    h_0opt_e201354 t46;
+    h_0opt_f87774a t47;
+    h_0opt_f87774a t48;
+    HeroStr t49;
+    HeroStr t50;
+    h_0opt_de89a9a t51;
+    h_0opt_de89a9a t52;
     goto bb0;
 bb0:
 #line 43 "tests/golden/emit/order-options-and-fn-typedefs.hero"

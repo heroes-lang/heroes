@@ -128,9 +128,9 @@ void h_handlealiveafteraloopthatendsonbreak_main(void) {
     int64_t t16;
     bool t17;
     bool t18;
-    HeroStr t19 = {0};
+    HeroStr t19;
     int64_t t20;
-    HeroStr t21 = {0};
+    HeroStr t21;
     node * t22;
     int64_t t23;
     node * t24;

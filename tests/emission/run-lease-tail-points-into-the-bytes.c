@@ -121,7 +121,7 @@ void h_leasetailpointsintothebytes_main(void) {
 #line 122 "leasetailpointsintothebytes.c"
     const char * h0_label;
     const char * h1_tail;
-    HeroStr t1 = {0};
+    HeroStr t1;
     const char * t2;
     const char * t3;
     const char * t4;

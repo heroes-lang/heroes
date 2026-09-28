@@ -114,15 +114,15 @@ h_0opt_e201354 h_mustaborts_half(int64_t h0_n) {
     int64_t t3;
     int64_t t4;
     bool t5;
-    HeroStr t6 = {0};
-    HeroStr t7 = {0};
-    h_0opt_e201354 t8 = {0};
+    HeroStr t6;
+    HeroStr t7;
+    h_0opt_e201354 t8;
     int64_t t9;
     int64_t t10;
     int64_t t11;
-    h_0opt_e201354 t12 = {0};
-    h_0opt_e201354 t13 = {0};
-    h_0opt_e201354 t14 = {0};
+    h_0opt_e201354 t12;
+    h_0opt_e201354 t13;
+    h_0opt_e201354 t14;
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/must-aborts.hero"
@@ -211,29 +211,29 @@ void h_mustaborts_main(void) {
     h_0opt_e201354 h2_own2 = {0};
     h_0opt_e201354 h3_own3 = {0};
     int64_t t1;
-    h_0opt_e201354 t2 = {0};
-    h_0opt_e201354 t3 = {0};
+    h_0opt_e201354 t2;
+    h_0opt_e201354 t3;
     int64_t t4;
     int64_t t5;
     bool t6;
-    h_0opt_e201354 t7 = {0};
-    HeroFailure t8 = {0};
-    h_0opt_e201354 t9 = {0};
+    h_0opt_e201354 t7;
+    HeroFailure t8;
+    h_0opt_e201354 t9;
     int64_t t10;
     int64_t t11;
-    h_0opt_e201354 t12 = {0};
-    h_0opt_e201354 t13 = {0};
+    h_0opt_e201354 t12;
+    h_0opt_e201354 t13;
     int64_t t14;
     int64_t t15;
     bool t16;
-    h_0opt_e201354 t17 = {0};
-    HeroFailure t18 = {0};
-    h_0opt_e201354 t19 = {0};
+    h_0opt_e201354 t17;
+    HeroFailure t18;
+    h_0opt_e201354 t19;
     int64_t t20;
-    h_0opt_e201354 t21 = {0};
-    h_0opt_e201354 t22 = {0};
-    h_0opt_e201354 t23 = {0};
-    h_0opt_e201354 t24 = {0};
+    h_0opt_e201354 t21;
+    h_0opt_e201354 t22;
+    h_0opt_e201354 t23;
+    h_0opt_e201354 t24;
     goto bb0;
 bb0:
 #line 24 "tests/golden/run/must-aborts.hero"

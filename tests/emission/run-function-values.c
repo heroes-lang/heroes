@@ -161,7 +161,7 @@ bb0:
 #line 44 "tests/golden/run/function-values.hero"
 void h_functionvalues_tick(void) {
 #line 164 "functionvalues.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     goto bb0;
 bb0:
 #line 45 "tests/golden/run/function-values.hero"
@@ -207,12 +207,12 @@ void h_functionvalues_main(void) {
     int64_t t3;
     int64_t t4;
     int64_t t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     h_0fn_2e6a42a3 t7;
     int64_t t8;
     int64_t t9;
     int64_t t10;
-    HeroStr t11 = {0};
+    HeroStr t11;
     h_0fn_2e6a42a3 t12;
     int64_t t13;
     int64_t t14;
@@ -220,33 +220,33 @@ void h_functionvalues_main(void) {
     h_0fn_294870dd t16;
     h_0fn_2e6a42a3 t17;
     h_0fn_2e6a42a3 t18;
-    HeroArrayHeader * t19 = {0};
-    HeroArrayHeader * t20 = {0};
+    HeroArrayHeader * t19;
+    HeroArrayHeader * t20;
     int64_t t21;
     h_0fn_2e6a42a3 t22;
     int64_t t23;
     int64_t t24;
     int64_t t25;
-    HeroStr t26 = {0};
-    HeroArrayHeader * t27 = {0};
+    HeroStr t26;
+    HeroArrayHeader * t27;
     int64_t t28;
     h_0fn_2e6a42a3 t29;
     int64_t t30;
     int64_t t31;
     int64_t t32;
-    HeroStr t33 = {0};
-    HeroArrayHeader * t34 = {0};
+    HeroStr t33;
+    HeroArrayHeader * t34;
     int64_t t35;
     h_0fn_2e6a42a3 t36;
     h_0fn_2e6a42a3 t37;
     h_0fn_2e6a42a3 t38;
     bool t39;
-    HeroStr t40 = {0};
+    HeroStr t40;
     h_0fn_2e6a42a3 t41;
     h_0fn_2e6a42a3 t42;
     bool t43;
-    HeroArrayHeader * t44 = {0};
-    HeroArrayHeader * t45 = {0};
+    HeroArrayHeader * t44;
+    HeroArrayHeader * t45;
     goto bb0;
 bb0:
 #line 52 "tests/golden/run/function-values.hero"

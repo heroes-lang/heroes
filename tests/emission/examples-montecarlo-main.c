@@ -375,7 +375,7 @@ double h_main_estimate(void) {
     int64_t h4_i0;
     int64_t h5_h;
     HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -387,13 +387,13 @@ double h_main_estimate(void) {
     int64_t t12;
     int64_t t13;
     int64_t t14;
-    HeroArrayHeader * t15 = {0};
+    HeroArrayHeader * t15;
     int64_t t16;
     int64_t t17;
-    HeroArrayHeader * t18 = {0};
+    HeroArrayHeader * t18;
     int64_t t19;
     bool t20;
-    HeroArrayHeader * t21 = {0};
+    HeroArrayHeader * t21;
     int64_t t22;
     int64_t t23;
     int64_t t24;
@@ -412,9 +412,9 @@ double h_main_estimate(void) {
     int64_t t37;
     double t38;
     double t39;
-    HeroArrayHeader * t40 = {0};
-    HeroArrayHeader * t41 = {0};
-    HeroArrayHeader * t42 = {0};
+    HeroArrayHeader * t40;
+    HeroArrayHeader * t41;
+    HeroArrayHeader * t42;
     goto bb0;
 bb0:
 #line 59 "examples/montecarlo/main.hero"
@@ -571,13 +571,13 @@ bb7:
 #line 73 "examples/montecarlo/main.hero"
 void h_main_main(void) {
 #line 574 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     int64_t t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     double t8;
     goto bb0;
 bb0:

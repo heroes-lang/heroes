@@ -105,7 +105,7 @@ void h_fixedbugsgetaddrinfoisbindable_main(void) {
     struct addrinfo * h0_res;
     int32_t h1_rc;
     struct addrinfo * t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     const char * t3;
     void * t4;
     void * t5;

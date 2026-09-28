@@ -101,7 +101,7 @@ void h_fixedbugsadiscardedacquisitionisowedatexit_main(void);
 #line 9 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
 void h_fixedbugsadiscardedacquisitionisowedatexit_main(void) {
 #line 104 "fixedbugsadiscardedacquisitionisowedatexit.c"
-    HeroStr t2 = {0};
+    HeroStr t2;
     goto bb0;
 bb0:
 #line 10 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"

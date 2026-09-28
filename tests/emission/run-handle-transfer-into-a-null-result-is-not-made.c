@@ -127,7 +127,7 @@ void h_handletransferintoanullresultisnotmade_main(void) {
     mem * t6;
     mem * t7;
     bool t8;
-    HeroStr t9 = {0};
+    HeroStr t9;
     mem * t10;
     int64_t t11;
     mem * t12;
@@ -139,7 +139,7 @@ void h_handletransferintoanullresultisnotmade_main(void) {
     mem * t18;
     mem * t19;
     bool t20;
-    HeroStr t21 = {0};
+    HeroStr t21;
     mem * t22;
     int64_t t23;
     mem * t24;

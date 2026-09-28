@@ -164,18 +164,18 @@ void h_deadaddresscopyreachingacallbackcalledbyname_main(void) {
     HeroArrayHeader * h2_own2 = {0};
     node * t1;
     node * t2;
-    HeroArrayHeader * t3 = {0};
+    HeroArrayHeader * t3;
     node * t4;
-    HeroStr t5 = {0};
-    HeroArrayHeader * t6 = {0};
+    HeroStr t5;
+    HeroArrayHeader * t6;
     int64_t t7;
     node * t8;
     int64_t t9;
-    HeroStr t10 = {0};
+    HeroStr t10;
     h_0fn_b062dd1 t11;
     int64_t t12;
-    HeroArrayHeader * t13 = {0};
-    HeroArrayHeader * t14 = {0};
+    HeroArrayHeader * t13;
+    HeroArrayHeader * t14;
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"

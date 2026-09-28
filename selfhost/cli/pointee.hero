@@ -168,7 +168,8 @@ function opaque_out(c: state.Checked, slot: containers.Slot, decls: [ast.Decl]) 
 
 ## The check itself
 
-# Ask the header, once per (compiler, declarations, headers, search path).
+# Ask the header, once per (compiler, declarations, headers, search path),
+# the C compiler included: the dump and the verdict are clang's (defect 122).
 # Absent is the answer when nothing is asked, when the answer is cached
 # and fresh, or when the check passed; a failure carries clang's own words,
 # which `emit/ffi.hero` reads back into the author's diagnostic.
@@ -192,7 +193,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
         )
 
     key = digest.digest(
-        t.fingerprint + "|pointee|" + asked.join(",") + "|" + headers.join(",") + "|" + search_include.join(",") + "|" + package_flags.join(" ") + "|" + t.runtime_key
+        t.fingerprint + "|pointee|" + t.compiler_key + "|" + asked.join(",") + "|" + headers.join(",") + "|" + search_include.join(",") + "|" + package_flags.join(" ") + "|" + t.runtime_key
     )
     dir = t.build + "/pointee-" + key
     dump_json = dir + "/dump.json"

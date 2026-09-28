@@ -619,7 +619,7 @@ int64_t h_main_together(void) {
     int64_t h4_i0;
     int64_t h5_h;
     HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -633,13 +633,13 @@ int64_t h_main_together(void) {
     int64_t t14;
     int64_t t15;
     int64_t t16;
-    HeroArrayHeader * t17 = {0};
+    HeroArrayHeader * t17;
     int64_t t18;
     int64_t t19;
-    HeroArrayHeader * t20 = {0};
+    HeroArrayHeader * t20;
     int64_t t21;
     bool t22;
-    HeroArrayHeader * t23 = {0};
+    HeroArrayHeader * t23;
     int64_t t24;
     int64_t t25;
     int64_t t26;
@@ -650,9 +650,9 @@ int64_t h_main_together(void) {
     int64_t t31;
     int64_t t32;
     int64_t t33;
-    HeroArrayHeader * t34 = {0};
-    HeroArrayHeader * t35 = {0};
-    HeroArrayHeader * t36 = {0};
+    HeroArrayHeader * t34;
+    HeroArrayHeader * t35;
+    HeroArrayHeader * t36;
     goto bb0;
 bb0:
 #line 77 "examples/mandelbrot/main.hero"
@@ -872,11 +872,11 @@ bb3:
 #line 101 "examples/mandelbrot/main.hero"
 void h_main_main(void) {
 #line 875 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     int64_t t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     int64_t t6;
     goto bb0;
 bb0:

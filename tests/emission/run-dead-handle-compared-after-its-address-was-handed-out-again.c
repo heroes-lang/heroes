@@ -142,7 +142,7 @@ void h_deadhandlecomparedafteritsaddresswashandedoutagain_main(void) {
     hh * t4;
     bool t5;
     hh * t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"

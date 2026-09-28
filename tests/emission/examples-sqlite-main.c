@@ -147,7 +147,7 @@ int64_t h_main_SQLITE_ROW(void) {
 int64_t h_main_run(sqlite3 * h0_db, HeroStr h1_sql) {
 #line 149 "main.c"
     sqlite3 * t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     const char * t3;
     void * t4;
     void * t5;
@@ -186,7 +186,7 @@ int64_t h_main_first_int(sqlite3 * h0_db, HeroStr h1_sql) {
     sqlite3_stmt * t1;
     const char * t2;
     sqlite3 * t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     const char * t5;
     int32_t t6;
     int64_t t7;
@@ -324,24 +324,24 @@ void h_main_main(void) {
 #line 325 "main.c"
     sqlite3 * h0_db;
     sqlite3 * t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     const char * t3;
     int64_t t4;
     int64_t t5;
     bool t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     sqlite3 * t8;
     sqlite3 * t10;
-    HeroStr t11 = {0};
+    HeroStr t11;
     sqlite3 * t13;
-    HeroStr t14 = {0};
-    HeroStr t16 = {0};
+    HeroStr t14;
+    HeroStr t16;
     sqlite3 * t17;
-    HeroStr t18 = {0};
+    HeroStr t18;
     int64_t t19;
-    HeroStr t20 = {0};
+    HeroStr t20;
     sqlite3 * t21;
-    HeroStr t22 = {0};
+    HeroStr t22;
     int64_t t23;
     sqlite3 * t24;
     goto bb0;
