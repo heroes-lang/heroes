@@ -1,0 +1,35 @@
+# Fixed defect 129, 2026-09-28, the chain with no operator alone. Symptom: a
+# statement broken at a line end whose next line could stand alone, and again
+# before a line that can only go on, `x = a +` over `show(n: b)` over `+ c`,
+# had its first join a `guess` and its second `certain`, so `check --apply`
+# wrote `show(n: b) + c` and left `x = a +` refused; the same with the `guess`
+# last, `x = y +` over `z +` over `print(x)`, is in the unit tests, since its
+# second line cannot carry an annotation without a comment in the chain.
+# Cause: each join was judged alone. Every join of one statement takes the
+# weakest certainty among them now (`selfhost/line_joins.hero`).
+#
+# A golden cannot hold a `guess`: this `.expected` is `--brief`, which prints
+# no certainty, and a `.fixed` must check clean. So what this file pins is one
+# diagnostic per break; the certainties are held by `selfhost/lexer.hero`'s
+# defect 129 tests, which lex the same shapes.
+
+function show(n: i64) -> i64
+    return n
+
+function call_then_head(a: i64, b: i64, c: i64) -> i64
+    #~v continuation_outside_brackets
+    x = a +
+    show(n: b)
+    + c  #~ continuation_outside_brackets
+    return x
+
+function in_an_arm(n: i64, a: i64) -> i64
+    return match n
+        #~v continuation_outside_brackets
+        0 => a +
+        show(n: a)
+        + a  #~ continuation_outside_brackets
+        _ => 0
+
+function main()
+    print(call_then_head(a: 1, b: 2, c: 3) + in_an_arm(n: 0, a: 1))
