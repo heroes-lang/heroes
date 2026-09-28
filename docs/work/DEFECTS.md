@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 5**
+**OPEN: 6**
 
 - [ ] **114 — the emitted C zeroes every temporary of a function at its entry, so a lookup that returns early pays for every arm** | the emitter declares each temporary at the top of the C function with `= {0}`, and a `match` over a string of twenty arms declares them all: the emitted `h_keywords_keyword` zeroes 139 temporaries on every call to make 21 string comparisons, and on the default build line (plain `clang`, no optimisation, CLAUDE.md § Commands) every one is executed; `memset` was about a fifth of `fmt`'s samples after defect 105's repair | `selfhost/emit/` (the temporaries' declarations) · `seed/heroes.c` (`h_keywords_keyword`)
 
@@ -103,5 +103,18 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** A machine-applicable fix that compiles and keeps
     the bug is the case the rule was written for: `heroes check --apply`
     would automate the silent reading the refusal exists to stop.
+
+- [ ] **122 — a build's object cache ignores which C compiler and which flags built an object, so a changed compiler or flag reuses stale objects** | the unit key (`selfhost/cli/units.hero:82-84`) is the fingerprint, level, module, text, runtime and search paths, the fingerprint being `VERSION`, and the runtime object's (`selfhost/cli/toolchain.hero:154`) likewise: a program printing `__clang_major__` built under Apple clang 21 prints 21, built warm with Homebrew clang 22.1.8 first on the `PATH` still prints 21, and built cold prints 22; a compiler with one more flag in its list and the same `VERSION` reused every object (the critic) | `selfhost/cli/units.hero` · `selfhost/cli/toolchain.hero` · `selfhost/cli/clang_floor.hero` (which already writes `clang --version` on every build)
+
+    **Origin:** panel 182's compiler-engineer, 2026-09-28, reading the key
+    while probing a pattern-initialised build; run by the sitting's critic
+    (clang 21 against 22 on a warm directory, and a flag added with the version
+    unchanged), and reproduced by the coordinator the same morning in
+    `/Users/joseph/Temp/heroes-recovery-2026-09-26/defect122/`.
+
+    **Why it is a defect.** A build that silently links an object compiled by
+    another compiler, or without a flag the compiler now passes, is a program
+    other than the one its source and its compiler say, at exit 0; and it is
+    the precondition for every new instrument leg the sitting names.
 
 *******************************************************************************
