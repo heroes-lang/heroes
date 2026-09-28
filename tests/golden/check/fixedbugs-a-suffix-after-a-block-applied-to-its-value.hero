@@ -1,0 +1,33 @@
+# Fixed defect 119 (panel 181, 2026-09-28). Symptom: `f = if c` over its
+# blocks, then `(5)` at the statement's margin, compiled and printed 10: the
+# `(5)` was read as a call of the `if`'s value, and `[0]` after a block of
+# arrays printed 7; `heroes fmt` exited 2 on both, *this is a compiler bug*.
+# Cause: the parser's suffix loop stopped only at a `.` after a block that
+# had just closed (panel 035), and read every other suffix on across the
+# dedent. A statement whose last part is a block ends with it, so each line
+# here is a line of its own, and each computes a value nothing receives:
+# refused once each, by the rule that says so, and `fmt` formats the file at
+# exit 0 with each a statement of its own.
+
+function double(n: i64) -> i64
+    return n * 2
+
+function triple(n: i64) -> i64
+    return n * 3
+
+function main()
+    c: bool = true
+    f = if c
+        double
+    else
+        triple
+    (5)  #~ discarded_value
+    print(f(1))
+    first: [i64] = [7, 8]
+    second: [i64] = [9]
+    g = if c
+        first
+    else
+        second
+    [0]  #~ discarded_value
+    print(g.len())

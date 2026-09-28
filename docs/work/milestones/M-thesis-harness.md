@@ -162,6 +162,23 @@ number. Corpus material is labelled and never enters the held-out set
     continuation `:1861`; `:1800-1809` is now about literal patterns and
     `&&`/`||`.
 
+    **Correction, 2026-09-28 (panel 181's completeness critic, four counts):**
+    the settled paragraph above is false as measured on this date.
+    (1) The form compiled: `y = a +` over `1` at the statement's margin ran at
+    exit 0 until this date (defect 116), and so did a break across a blank
+    line, a pattern broken after `|` and `for x in` over `xs`. (2) The rule is
+    design.md §4.15's *Continuation lines* bullet (`:1939-1948` at `0fc98107`),
+    not `:1800-1804`; the re-verification of 2026-09-10 moved the pointer and
+    did not run the claim. (3) `ends_the_expression` refuses one shape, a
+    binary operator heading the line after a control form's block, and its
+    postfix neighbour compiled (defect 119). (4) That repair was defect 005's
+    `/decide` answer `5a` of 2026-08-28, not panel 095, which is the blank-line
+    sitting. Since panel 181 (provisional) the form is refused in both
+    directions, by the lexer at the line break (`continuation_outside_brackets`,
+    `selfhost/open_line.hero`), and the sitting adopted a spec sentence for it
+    (its item 7), which lands in a commit of its own; what this item still owns
+    is the scoring of panel 007's two predictions, which metric 2 alone can do.
+
 - [ ] **M-thesis-harness** | the compiles-but-wrong-output bucket the harness never named | `docs/panel/009-spec-budget-2000.md:100-103` · `design.md:2851-2853` · `selfhost/mutate/score.hero`
 
     **Origin:** panel 009's llm-ergonomist, as a condition on its own vote

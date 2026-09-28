@@ -1,0 +1,10 @@
+# Panel 181, defect 118's second member: `y = xs.` over `len()` at the
+# statement's margin, which `fmt` printed at exit 0 as `y = xs.len(` over a
+# `)` of its own. Refused now, once, and `fmt` refuses it at exit 1.
+
+function main()
+    xs: [i64] = [1, 2]
+    #~v continuation_outside_brackets
+    y = xs.
+    len()
+    print(y)

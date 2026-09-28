@@ -1,0 +1,18 @@
+# Panel 181, beside defect 119: a line that begins with `(` after a block is
+# a statement of its own, as it reads, and runs as one. `(5).print()` prints
+# 5, and `f`, the `if`'s value, is the function the `if` chose.
+
+function double(n: i64) -> i64
+    return n * 2
+
+function triple(n: i64) -> i64
+    return n * 3
+
+function main()
+    c: bool = true
+    f = if c
+        double
+    else
+        triple
+    (5).print()
+    print(f(1))
