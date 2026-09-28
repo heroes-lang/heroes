@@ -1,0 +1,255 @@
+# What a `match`'s arms cover (design.md §4.7, §4.17; defects 128 and before).
+#
+# **Every case named, or the compiler names the ones that are missing**, the
+# rule the language is built around: `case_pattern` counts the cases the arms
+# name, `wildcard_pattern` says where `_` may close a `match`, and
+# `exhaustive` names what is left. They came out of `check/walk.hero` with
+# defect 128, along the seam the language allows: none of them checks an
+# expression, so none calls back into the walk, and `walk.arms` calls each.
+#
+# **An arm an earlier arm covers is refused** (`duplicate_arm`, defect 128).
+# Two arms naming one case were refused for a variant and not for a
+# fallible, whose `.ok` could be named twice; two arms of one literal value
+# compiled in silence, the second never reached: `"a"` twice, `97`, `'a'` and
+# `0x61`, which are one number, `-0` beside `0`, and any arm after a `_`,
+# which matches every value. They are one mistake, a pattern no value can
+# reach, and so one code, with the earlier arm named where it spelled the
+# value another way. A literal's value is read as the checker reads it for its
+# width (`contextual.literal_value`), the sign folded in and `-0` the number
+# `0`; a string's is its text with the escapes decoded.
+
+use token
+use ast
+use source
+use escape
+use check/table
+use check/state
+use check/contextual
+use data_errors
+
+# What the patterns of one `match` have taken so far: whether a `_` has, and
+# each literal's value with the spelling it was first written in.
+record Seen
+    wildcard: bool
+    values: [str]
+    spellings: [str]
+
+function none() -> Seen
+    empty: [str] = []
+    return Seen(wildcard: false, values: empty, spellings: empty)
+
+# Report `p` when an earlier pattern of its `match` takes every value it
+# takes, then count it as taken.
+#
+# Only over an integer or a `str`, the subjects a literal and `_` may match:
+# on any other, the pattern is refused for its type or for the `_`, and a
+# second diagnostic here would count one mistake twice.
+function after(@c: state.Checker, a: ast.Ast, s: source.Source, @seen: Seen, subject: i64, p: ast.Pattern)
+    if table.poisoned(c.out.types, subject) || !takes_literals(table.get(c.out.types, subject))
+        return
+    shown = source.span_text(s, p.span)
+
+    match p.kind
+        .wildcard =>
+            if seen.wildcard
+                state.push_diagnostic(@c, data_errors.after_a_wildcard(shown, span: p.span))
+            seen.wildcard @ true
+        .literal l =>
+            if seen.wildcard
+                state.push_diagnostic(@c, data_errors.after_a_wildcard(shown, span: p.span))
+                return
+            value = value_of(a, s, id: l.value)
+
+            if value.is_err()
+                return
+            at: i64 @ 0
+
+            while at < seen.values.len()
+                if seen.values[at] == value.must()
+                    state.push_diagnostic(
+                        @c,
+                        data_errors.covered_value(shown: shown, earlier: seen.spellings[at], span: p.span)
+                    )
+                    return
+                at @ at + 1
+
+            seen.values @ seen.values.push(value.must())
+            seen.spellings @ seen.spellings.push(shown)
+        .variant_case | .error => return
+
+function takes_literals(ty: table.Ty) -> bool
+    return match ty
+        .int_ty | .str                                                              => true
+        .float_ty | .bool | .ptr | .cstr | .unit | .array | .fixed | .map           => false
+        .named | .fallible | .function_ty | .case_ty | .failure | .generic | .error => false
+
+# The value a literal pattern takes, as a key two spellings of one value
+# share: a number by its sign and magnitude, `-0` as `0`, and a string by
+# its decoded text. A negated string has no value; the checker refuses it.
+function value_of(a: ast.Ast, s: source.Source, id: i64) -> str?
+    number = contextual.literal_value(a, s, id)
+
+    if !number.is_err()
+        v = number.must()
+
+        if v.negative && v.magnitude != 0
+            return ok("number -" + v.magnitude.to_str())
+        return ok("number " + v.magnitude.to_str())
+
+    match a.exprs[id].kind
+        .str_lit => return ok("string " + escape.unescape(source.span_text(s, a.exprs[id].span)))
+        .int_lit | .float_lit | .char_lit | .interp | .bool_lit | .null_ptr | .name => return fail(
+            code: "no_value",
+            msg: "no value to compare"
+        )
+        .hole | .unary | .binary | .field | .field_name | .index | .call | .method => return fail(
+            code: "no_value",
+            msg: "no value to compare"
+        )
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
+            code: "no_value",
+            msg: "no value to compare"
+        )
+
+    return fail(code: "no_value", msg: "no value to compare")
+
+## Cases, the wildcard, and what is left
+
+# `.case name` — records the case as covered and hands back what the
+# payload binding is worth.
+function case_pattern(@c: state.Checker, s: source.Source, decls: [ast.Decl], subject: i64, name: token.Span, span: token.Span, @covered: [i64]) -> i64
+    case_name = source.span_text(s, name)
+
+    if table.poisoned(c.out.types, subject)
+        return state.error_ty_of(c)
+
+    match table.get(c.out.types, subject)
+        .named n =>
+            match decls[n.decl].kind
+                .variant_decl v =>
+                    at: i64 @ -1
+                    index: i64 @ 0
+
+                    for one_case in v.cases
+                        if source.span_text(s, one_case.name) == case_name
+                            at @ index
+                        index @ index + 1
+
+                    if at < 0
+                        known: [str] @ []
+
+                        for one_case in v.cases
+                            known @ known.push(source.span_text(s, one_case.name))
+
+                        holder = source.span_text(s, decls[n.decl].name)
+                        state.push_diagnostic(
+                            @c,
+                            data_errors.no_such_case(holder: holder, case_name: case_name, known: known, span: name)
+                        )
+                        return state.error_ty_of(c)
+
+                    if listed(covered, at)
+                        state.push_diagnostic(@c, data_errors.duplicate_arm(case_name, span))
+                    covered @ covered.push(at)
+                    return table.intern(@c.out.types, .case_ty(decl: n.decl, at: at))
+                .constant_decl | .function_decl | .record_decl | .test_decl =>
+                    got = state.show(c, s, decls, subject)
+                    state.push_diagnostic(@c, data_errors.not_matchable(got, span))
+                    return state.error_ty_of(c)
+        # §4.6's two cases, and they are the only ones.
+
+        .fallible o =>
+            if case_name == "ok" || case_name == "err"
+                at: i64 @ 0
+
+                if case_name == "err"
+                    at @ 1
+
+                # Named twice, as a variant's case is (defect 128).
+                if listed(covered, at)
+                    state.push_diagnostic(@c, data_errors.duplicate_arm(case_name, span))
+                covered @ covered.push(at)
+
+                if at == 0
+                    return o.payload
+                return table.failure_ty(c.out.types)
+            known: [str] = ["ok", "err"]
+            state.push_diagnostic(
+                @c,
+                data_errors.no_such_case(holder: "a fallible value", case_name: case_name, known: known, span: name)
+            )
+            return state.error_ty_of(c)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+            got = state.show(c, s, decls, subject)
+            state.push_diagnostic(@c, data_errors.case_on_non_variant(got: got, case_name: case_name, span: span))
+            return state.error_ty_of(c)
+        .array | .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error =>
+            got = state.show(c, s, decls, subject)
+            state.push_diagnostic(@c, data_errors.case_on_non_variant(got: got, case_name: case_name, span: span))
+            return state.error_ty_of(c)
+
+    return state.error_ty_of(c)
+
+# `_` as a whole arm: legal only where exhaustiveness is impossible.
+function wildcard_pattern(@c: state.Checker, s: source.Source, decls: [ast.Decl], subject: i64, span: token.Span)
+    if table.poisoned(c.out.types, subject)
+        return
+
+    countable = match table.get(c.out.types, subject)
+        .named n =>
+            match decls[n.decl].kind
+                .variant_decl                                               => true
+                .constant_decl | .function_decl | .record_decl | .test_decl => false
+        .fallible | .bool                                                      => true
+        .int_ty | .float_ty | .str | .ptr | .cstr | .unit | .array             => false
+        .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error => false
+
+    if countable
+        got = state.show(c, s, decls, subject)
+        state.push_diagnostic(@c, data_errors.wildcard_on_variant(got, span))
+
+# The rule the language is built around: every case named, or the
+# compiler names the ones that are missing.
+function exhaustive(@c: state.Checker, s: source.Source, decls: [ast.Decl], subject: i64, covered: [i64], wildcard_seen: bool, span: token.Span)
+    if wildcard_seen || table.poisoned(c.out.types, subject)
+        return
+
+    match table.get(c.out.types, subject)
+        .named n =>
+            match decls[n.decl].kind
+                .variant_decl v =>
+                    missing: [str] @ []
+                    index: i64 @ 0
+
+                    for one_case in v.cases
+                        if !listed(covered, index)
+                            missing @ missing.push("." + source.span_text(s, one_case.name))
+                        index @ index + 1
+
+                    if missing.len() > 0
+                        state.push_diagnostic(@c, data_errors.non_exhaustive(missing, span))
+                .constant_decl | .function_decl | .record_decl | .test_decl => return
+        .fallible =>
+            missing: [str] @ []
+
+            if !listed(covered, 0)
+                missing @ missing.push(".ok")
+
+            if !listed(covered, 1)
+                missing @ missing.push(".err")
+
+            if missing.len() > 0
+                state.push_diagnostic(@c, data_errors.non_exhaustive(missing, span))
+        # i64 and str cannot be enumerated, so `_` is how they are
+        # finished — and its absence is the error.
+
+        .int_ty | .str => state.push_diagnostic(@c, data_errors.needs_wildcard(span))
+        .float_ty | .bool | .ptr | .cstr | .unit | .array => return
+        .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error => return
+
+function listed(xs: [i64], x: i64) -> bool
+    for one in xs
+        if one == x
+            return true
+
+    return false

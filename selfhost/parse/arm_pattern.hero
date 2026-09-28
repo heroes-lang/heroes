@@ -1,0 +1,126 @@
+# One arm's pattern (design.md §4.7; spec § 8's `Pattern`; defect 124).
+#
+#     Pattern = "." ident [ ident ] | "_" | [ "-" ] ( integer | string | character ) .
+#
+# **A literal is one token, after at most one `-`, and nothing after it.**
+# Until defect 124 the literal went through the expression parser's `unary`,
+# chosen so that `|`, the pattern join, could never be read as an operator:
+# the premise that expired in the bootstrap, when `1 | 2 => "small"` became
+# the expression `3` and matched nothing. `unary` reads more than a literal,
+# though: after a `-` any operand, and after a literal every suffix. So
+# `-m => 10` compared the scrutinee with a runtime value, `-one() =>` called
+# a function inside a pattern, `"ab".len() =>` and `--1 =>` compiled, and
+# `-1.5` was a pattern where `1.5` was refused, since the checker asked only
+# that the types agree. Reading the production's own tokens here, and none
+# of the expression parser's, makes each of them the refusal spec § 8
+# already implies, `expected_pattern`, saying what a pattern may be.
+#
+# Out of the expression knot, because it no longer calls into it: the cursor
+# and the tree are all it asks. `grammar_expr.arm` calls `read`.
+
+use token
+use ast
+use cursor
+
+# What a pattern may be, the tail of every refusal here.
+constant ALLOWED: str
+    "`.case`, `.case name`, `_` (on `i64`/`str` only), or an integer, a string or a character, with an optional `-`"
+
+# `.num n`, `.num _`, `.plus`, `_`, or a literal.
+#
+# The payload name is optional and may be `_`: `.num _ => 0` is legal, `_ => 0`
+# on a variant is not (§4.7). That distinction is not obvious, which is why the
+# spec states it and the tree keeps the two apart.
+function read(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern?
+    start = cursor.current_span(c)
+    k = cursor.current_kind(c)
+
+    if k == .dot
+        _ = cursor.bump(@c)
+
+        if !cursor.at(c, .ident)
+            if !cursor.at_reported_error(c)
+                cursor.error(
+                    @c,
+                    code: "expected_pattern_case",
+                    message: "expected a case name after `.`, found " + cursor.found(c, text) + " — an arm is `.name => value`",
+                    span: cursor.current_span(c)
+                )
+            return fail(code: "no_case_name", msg: "the pattern names no case")
+        name = cursor.bump(@c).span
+
+        # A name here binds the payload; `_` binds it and says it is unused,
+        # which is what keeps §4.4's unused-binding rule honest.
+        binding: token.Span? @ fail(code: "no_binding", msg: "the payload is not bound")
+
+        if cursor.at(c, .ident)
+            binding @ ok(cursor.bump(@c).span)
+        return ok(
+            ast.Pattern(kind: .variant_case(name: name, binding: binding), span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
+        )
+
+    # `_` lexes as an identifier: it is the wildcard only here.
+    if k == .ident && cursor.slice_of(text, start) == "_"
+        _ = cursor.bump(@c)
+        return ok(ast.Pattern(kind: .wildcard, span: start))
+
+    if is_literal(k) || k == .minus
+        value = literal(@c, @a, text)
+
+        if value.is_err()
+            return fail(code: "no_pattern", msg: "no literal after the sign")
+
+        if goes_on(cursor.current_kind(c))
+            refuse(
+                @c,
+                message: "a pattern is one literal and nothing after it, found " + cursor.found(c, text) + " — " + ALLOWED + "; compare a computed value with `if`"
+            )
+            return fail(code: "no_pattern", msg: "the literal goes on as an expression")
+        return ok(
+            ast.Pattern(kind: .literal(value: value.must()), span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
+        )
+    refuse(@c, message: "expected a pattern, found " + cursor.found(c, text) + " — " + ALLOWED)
+    return fail(code: "no_pattern", msg: "nothing here starts a pattern")
+
+# A literal, or a literal with one leading `-`, as the tree's expression:
+# the sign a `.unary` around the literal, as the expression parser builds
+# it, so the checker and the lowering read the same node they always read.
+# Anything else after the `-`, a float, a name, a group, another `-`, is
+# refused as no pattern.
+function literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64?
+    sign = cursor.current_span(c)
+    signed = cursor.eat(@c, .minus)
+    at = cursor.current_span(c)
+    k = cursor.current_kind(c)
+
+    if !is_literal(k)
+        refuse(@c, message: "expected a pattern, found " + cursor.found(c, text) + " — " + ALLOWED)
+        return fail(code: "no_literal", msg: "no literal after the sign")
+    _ = cursor.bump(@c)
+    kind: ast.ExprKind @ .int_lit
+
+    if k == .str_lit
+        kind @ .str_lit
+    else if k == .char_lit
+        kind @ .char_lit
+    value = ast.push_expr(@a.exprs, ast.Expr(kind: kind, span: at))
+
+    if !signed
+        return ok(value)
+    return ok(
+        ast.push_expr(@a.exprs, ast.Expr(kind: .unary(op: .neg, operand: value), span: token.Span(start: sign.start, end: at.end)))
+    )
+
+# The three literals spec § 8's production names: an integer, a string, a
+# character. Not a float, and not `true` or `false`.
+function is_literal(k: token.TokenKind) -> bool
+    return k == .int_lit || k == .str_lit || k == .char_lit
+
+# A token that would go on with a literal as an expression: a field or a
+# method, a call, an index, `?`, `::`.
+function goes_on(k: token.TokenKind) -> bool
+    return k == .dot || k == .lparen || k == .lbracket || k == .question || k == .colon_colon
+
+function refuse(@c: cursor.Cursor, message: str)
+    if !cursor.at_reported_error(c)
+        cursor.error(@c, code: "expected_pattern", message: message, span: cursor.current_span(c))

@@ -87,7 +87,10 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # coordinator's ruling on a question the sitting did not ask): without it
 # `[a` / `- b]` still has a meaning, two elements, which is the silent
 # reading the rule exists to refuse, so the control arm reads it as a
-# language without the rule does. Its neighbour line_end_before_continuation
+# language without the rule does. Since defect 123 (2026-09-28) the same code
+# refuses an arm's `- 1 =>`, the spec's one sentence in its last context, and
+# the ruling holds there as written: without it the arm still has a meaning,
+# the negative pattern. Its neighbour line_end_before_continuation
 # is not one: without it the program is refused all the same.
 # continuation_outside_brackets joined by panel 181 (2026-09-28, provisional,
 # the author's to overrule): the lexer hands the parser the one line the

@@ -1,0 +1,14 @@
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:15:9: error[duplicate_arm]: `0` is already covered by an earlier arm, whose `_` matches every value: no value reaches this one
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:20:9: error[duplicate_arm]: `_` is already covered by an earlier arm, whose `_` matches every value: no value reaches this one
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:24:13: error[duplicate_arm]: `1` is already covered by an earlier arm, whose `_` matches every value: no value reaches this one
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:29:9: error[duplicate_arm]: `"a"` is already covered by an earlier arm: no value reaches this one
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:31:9: error[duplicate_arm]: `"\n"` is already covered by an earlier arm: no value reaches this one
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:37:9: error[duplicate_arm]: `'a'` is already covered by an earlier arm, written `97`, the same value: no value reaches this one
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:38:9: error[duplicate_arm]: `0x61` is already covered by an earlier arm, written `97`, the same value: no value reaches this one
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:40:9: error[duplicate_arm]: `-0` is already covered by an earlier arm, written `0`, the same value: no value reaches this one
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:42:9: error[duplicate_arm]: `-1` is already covered by an earlier arm: no value reaches this one
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:43:13: error[duplicate_arm]: `2` is already covered by an earlier arm: no value reaches this one
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:49:9: error[duplicate_arm]: `97` is already covered by an earlier arm, written `'a'`, the same value: no value reaches this one
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:56:9: error[duplicate_arm]: `.ok` is already covered by an earlier arm
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:60:17: error[duplicate_arm]: `.ok` is already covered by an earlier arm
+tests/golden/check/fixedbugs-an-arm-an-earlier-arm-covers.hero:61:18: error[duplicate_arm]: `.err` is already covered by an earlier arm

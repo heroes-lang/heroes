@@ -1,0 +1,75 @@
+# Fixed defect 124, 2026-09-28. Symptom: after a `-`, a `match` pattern read
+# a whole unary expression, and after a literal every suffix, where spec § 8
+# reads `[ "-" ] ( integer | string | character )`: `-m => 10` compared the
+# scrutinee with a runtime name and printed 10, `-one() => 10` called a
+# function inside the pattern, and `-(1)`, `-xs[0]`, `--1`, `-1.5`,
+# `"ab".len()` and `0 | -m` compiled, `-1.5` where `1.5` was refused. Cause:
+# the pattern's literal went through the expression parser's `unary`, and the
+# checker asked only that the types agree. A pattern's literal is one token
+# after at most one `-` now, and anything else is `expected_pattern`, whose
+# message says what a pattern may be. `-1`, `-'a'` and `-0x1f` are patterns
+# as before. One shape per function, so that no refusal's recovery reaches
+# the next one.
+
+function one() -> i64
+    return 1
+
+function named(n: i64, m: i64) -> i64
+    return match n
+        -m => 10  #~ expected_pattern
+        _ => 20
+
+function spaced(n: i64, m: i64) -> i64
+    return match n
+        - m => 10  #~ expected_pattern
+        _ => 20
+
+function called(n: i64) -> i64
+    return match n
+        -one() => 10  #~ expected_pattern
+        _ => 20
+
+function grouped(n: i64) -> i64
+    return match n
+        -(1) => 10  #~ expected_pattern
+        _ => 20
+
+function indexed(n: i64, xs: [i64]) -> i64
+    return match n
+        -xs[0] => 10  #~ expected_pattern
+        _ => 20
+
+function doubled(n: i64) -> i64
+    return match n
+        --1 => 10  #~ expected_pattern
+        _ => 20
+
+function floated(x: f64) -> i64
+    return match x
+        -1.5 => 10  #~ expected_pattern
+        _ => 20
+
+function plain(x: f64) -> i64
+    return match x
+        1.5 => 10  #~ expected_pattern
+        _ => 20
+
+function suffixed(n: i64) -> i64
+    return match n
+        "ab".len() => 10  #~ expected_pattern
+        _ => 20
+
+function joined(n: i64, m: i64) -> i64
+    return match n
+        0 | -m => 10  #~ expected_pattern
+        _ => 20
+
+function kept(n: i64) -> i64
+    return match n
+        -1    => 10
+        -'a'  => 97
+        -0x1f => 31
+        _     => 20
+
+function main()
+    print(kept(-1) + one())
