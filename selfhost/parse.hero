@@ -410,3 +410,32 @@ test "a pattern takes one literal after its sign, and nothing after the literal"
 
     for shape in ["-1", "-0", "-'a'", "-\"a\"", "-0x1f", "1 | -2", "-9223372036854775808", "\"ab\" | \"c\""]
         assert parse("function main()\n    k = match n\n        " + shape + " => 10\n        _ => 20\n").diagnostics.len() == 0
+
+# The codes of a parse's diagnostics, in order: what the tests below compare.
+function codes(diagnostics: [diag.Diagnostic]) -> [str]
+    out: [str] @ []
+
+    for d in diagnostics
+        out @ out.push(d.code)
+
+    return out
+
+# Defect 130: a statement that failed drops only what is left of its own line,
+# so the statement after a block holding a mistake is read, at every level a
+# mistake closes; and a thesis rule is no failure, so nothing is dropped on
+# its account, and the control arm, which drops the rule, is not left with
+# nothing to say.
+test "a failed statement drops only its own line, and a thesis rule drops none"
+    eol = "expected_end_of_line"
+    after_a_match = parse(
+        "function main()\n    k = match n\n        + => 10\n        _ => 20\n    y = 3 )\n    z = 4 )\n"
+    )
+    assert codes(after_a_match.diagnostics) == ["expected_pattern", eol, eol]
+    nested = parse(
+        "function main()\n    for i in xs\n        if c\n            y = 3 )\n        z = 4 )\n    w = 5 )\n"
+    )
+    assert codes(nested.diagnostics) == [eol, eol, eol]
+    past_a_comment = parse("function main()\n    while c\n    # a note\n    z = 4 )\n")
+    assert codes(past_a_comment.diagnostics) == ["missing_body", eol]
+    thesis = parse("function main()\n    match n\n        0 => x = 5\n        _ => print(2)\n    z = 4 )\n")
+    assert codes(thesis.diagnostics) == ["declaration_in_arm", eol]

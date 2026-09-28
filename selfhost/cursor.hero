@@ -254,6 +254,19 @@ function reversed(spans: [token.Span]) -> [token.Span]
 function diagnostic_count(c: Cursor) -> i64
     return c.diagnostics.len()
 
+# Whether the parser refused anything since it had said `said`. A thesis rule
+# is no refusal: the program keeps a meaning without one, and a recovery keyed
+# on it would drop, from `check --permissive`, what it hides (defect 130).
+function refused_since(c: Cursor, said: i64) -> bool
+    i: i64 @ said
+
+    while i < c.diagnostics.len()
+        if !diag.is_thesis_rule(c.diagnostics[i])
+            return true
+        i @ i + 1
+
+    return false
+
 function error(@c: Cursor, code: str, message: str, span: token.Span)
     c.diagnostics @ c.diagnostics.push(diag.new_diagnostic(code: code, message: message, span: span))
 
@@ -413,6 +426,22 @@ function skip_line(@c: Cursor)
         if bump(@c).kind == .terminator
             return
 
+# Whether the cursor stands at a line's start: behind it, past any comment
+# line, a line end, an indent or a dedent. A construct that ended there has
+# nothing of its line left, and this line is the NEXT one's (defect 130).
+function at_fresh_line(c: Cursor) -> bool
+    i: i64 @ c.pos - 1
+
+    while i >= 0 && c.tokens[i].kind == .comment
+        i @ i - 1
+
+    return i < 0 || c.tokens[i].kind == .terminator || c.tokens[i].kind == .indent || c.tokens[i].kind == .dedent
+
+# What a failed construct begun at token `from` drops: the rest of ITS line.
+function drop_rest_of_line(@c: Cursor, from: i64)
+    if c.pos == from || !at_fresh_line(c)
+        skip_line(@c)
+
 # Drop what is left of a broken declaration: the rest of its line and, if it had
 # one, its whole body.
 #
@@ -422,13 +451,7 @@ function skip_line(@c: Cursor)
 # need span arithmetic when `Point = record` ended in a non-ender; the
 # keyword-first shape made the token stream carry it.
 function recover_to_next_decl(@c: Cursor)
-    fresh_line: bool @ c.pos == 0
-
-    if c.pos > 0
-        k = c.tokens[c.pos - 1].kind
-        fresh_line @ k == .terminator || k == .indent || k == .dedent
-
-    if !fresh_line
+    if !at_fresh_line(c)
         scanning: bool @ true
 
         while scanning && !at(c, .eof) && !at(c, .indent)
@@ -498,6 +521,49 @@ test "a broken line is dropped without leaving the block"
     d: Cursor @ new_cursor(stopping)
     skip_line(@d)
     assert current_kind(d) == .dedent
+
+# Defect 130: a failed construct drops the rest of ITS line, and a construct
+# that ended at a line end has none left, past a comment line too; one that
+# consumed nothing still owns its whole line.
+test "a failed construct drops only its own line, past a comment line"
+    # `x` `)`, the line end, a comment line, then `y` `=`.
+    tokens: [token.Token] = [
+        token.Token(kind: .ident, span: token.Span(start: 0, end: 1))
+        token.Token(kind: .rparen, span: token.Span(start: 2, end: 3))
+        token.Token(kind: .terminator, span: token.Span(start: 3, end: 3))
+        token.Token(kind: .comment, span: token.Span(start: 4, end: 10))
+        token.Token(kind: .ident, span: token.Span(start: 11, end: 12))
+        token.Token(kind: .eq, span: token.Span(start: 13, end: 14))
+        token.Token(kind: .terminator, span: token.Span(start: 14, end: 14))
+        token.Token(kind: .eof, span: token.Span(start: 15, end: 15))
+    ]
+    c: Cursor @ new_cursor(tokens)
+    assert at_fresh_line(c)
+    _ = bump(@c)
+    assert !at_fresh_line(c)
+
+    # Mid-line, the rest of the line goes, and the next one is untouched.
+    drop_rest_of_line(@c, from: 0)
+    assert c.pos == 4
+    assert at_fresh_line(c)
+
+    # At the next line's start, a construct that began earlier drops nothing.
+    drop_rest_of_line(@c, from: 0)
+    assert c.pos == 4
+
+    # One that began here and consumed nothing drops its own line.
+    drop_rest_of_line(@c, from: 4)
+    assert current_kind(c) == .eof
+
+test "a thesis rule is no refusal to a recovery"
+    tokens: [token.Token] = [token.Token(kind: .eof, span: token.Span(start: 0, end: 0))]
+    c: Cursor @ new_cursor(tokens)
+    here = token.Span(start: 0, end: 0)
+    error(@c, code: "declaration_in_arm", message: "m", span: here)
+    assert !refused_since(c, 0)
+    error(@c, code: "expected_expression", message: "m", span: here)
+    assert refused_since(c, 0)
+    assert !refused_since(c, 2)
 
 test "one bad declaration costs one, and never costs the next"
     # `function f(` … then a body, then the next declaration. Recovery eats the

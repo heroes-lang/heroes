@@ -754,10 +754,11 @@ function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str) -> ast.Blo
 
 function statement(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     start = cursor.current_span(c)
+    from = c.pos
     reported_before = cursor.diagnostic_count(c)
     kind: ast.StmtKind @ statement_kind(@c, @a, text)
-    failed = cursor.diagnostic_count(c) > reported_before
-    return finish(@c, @a, text, start: start, kind: kind, failed: failed)
+    failed = cursor.refused_since(c, reported_before)
+    return finish(@c, @a, text, start: start, from: from, kind: kind, failed: failed)
 
 function statement_kind(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     k = cursor.current_kind(c)
@@ -796,7 +797,7 @@ function statement_kind(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKi
 # Every statement ends at its line end. Consuming the terminator here — in one
 # place — is what keeps the block loop from having to know which statements span
 # lines.
-function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, kind: ast.StmtKind, failed: bool) -> i64
+function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, from: i64, kind: ast.StmtKind, failed: bool) -> i64
     # The last significant token, never a trailing comment: the span is what the
     # caret underlines (§4.17).
     span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
@@ -805,8 +806,10 @@ function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, ki
         # A statement that already failed has said what is wrong: the rest of
         # its line is debris, not a second mistake — and so is any block hanging
         # off it, which is how a depth-zero line continuation used to cost three
-        # diagnostics instead of one.
-        cursor.skip_line(@c)
+        # diagnostics instead of one. **Only ITS line** (defect 130): one that
+        # ended with its own block or line end has none left, and the line
+        # under the cursor, which this dropped, was the next statement's.
+        cursor.drop_rest_of_line(@c, from: from)
 
         if cursor.at(c, .indent)
             _ = cursor.balanced_block(@c)
@@ -964,13 +967,16 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     branches: [ast.Branch] @ []
     cond = parse_expr(@c, @a, text)
     first = block(@c, @a, text: text, owner: "an `if`")
+    whole = !first.is_err()
 
-    if first.is_err()
-        return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
-    branches @ branches.push(ast.Branch(cond: cond, block: first.must()))
+    if whole
+        branches @ branches.push(ast.Branch(cond: cond, block: first.must()))
     otherwise: ast.Block? @ fail(code: "no_else", msg: "the `if` has no `else`")
 
-    # `else` closes the `if`'s block, so the cursor is back at this level.
+    # `else` closes the `if`'s block, so the cursor is back at this level. A
+    # branch whose body was missing leaves it at the line below too, and the
+    # `else` there is still this `if`'s: read on its own it was a second
+    # mistake, at the column of the first (defect 130).
     chaining: bool @ true
 
     while chaining && cursor.at(c, .kw_else)
@@ -980,9 +986,7 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
             more_cond = parse_expr(@c, @a, text)
             more = block(@c, @a, text: text, owner: "an `else if`")
 
-            if more.is_err()
-                chaining @ false
-            else
+            if !more.is_err()
                 branches @ branches.push(ast.Branch(cond: more_cond, block: more.must()))
         else
             last = block(@c, @a, text: text, owner: "an `else`")
@@ -991,6 +995,8 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
                 otherwise @ last
             chaining @ false
 
+    if !whole
+        return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
     end: token.Span @ branches[branches.len() - 1].block.span
 
     if !otherwise.is_err()
@@ -1038,11 +1044,13 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
             # terminated (panel 014, found while costing it).
             _ = cursor.balanced_block(@c)
         else
+            from = c.pos
             one = arm(@c, @a, text)
 
             if one.is_err()
-                # A pattern or `=>` that failed consumed nothing reusable.
-                cursor.skip_line(@c)
+                # A pattern or `=>` that failed consumed nothing reusable, and
+                # the rest of its line is all that goes (defect 130).
+                cursor.drop_rest_of_line(@c, from: from)
             else
 
                 # A body that failed has already dropped the rest of its line

@@ -304,6 +304,15 @@ test "stages stop on the first noise, apply repairs, holes stay exit 0"
     repaired = apply(parsed.diagnostics, fs)
     assert has_text(text: repaired, needle: "function = 3")
 
+# Defect 130: the control arm is never left with nothing to say about a
+# program the parser could not read. It drops the thesis rules, and a
+# recovery keyed on one used to drop the line after the arm that broke it.
+test "the control arm still refuses what a thesis rule stood in front of"
+    perm: [argv.FlagHit] = [argv.FlagHit(spelling: "--permissive", value: fail(code: "none", msg: "no value"))]
+    pinv = argv.Invocation(tag: .check_cmd, file: ok("t.hero"), program_args: [], flags: perm)
+    after_the_arm = "function main()\n    match 1\n        0 => x = 5\n        _ => print(2)\n    z = 4 )\n"
+    assert run(source.new_source(name: "t.hero", text: after_the_arm), pinv) == .diagnostics_exit
+
 test "the json schema leads with its version and escapes its strings"
     text = "function main()\n    n = 3\n    print(1)\n"
     s = source.new_source(name: "t.hero", text: text)
