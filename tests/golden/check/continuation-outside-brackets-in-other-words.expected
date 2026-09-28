@@ -1,0 +1,5 @@
+tests/golden/check/continuation-outside-brackets-in-other-words.hero:36:9: error[base_prefix_case]: `0X10` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/continuation-outside-brackets-in-other-words.hero:13:36: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/continuation-outside-brackets-in-other-words.hero:19:36: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/continuation-outside-brackets-in-other-words.hero:29:5: error[expected_expression]: expected an expression, found `+` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/continuation-outside-brackets-in-other-words.hero:37:12: error[expected_expression]: expected an expression, found `*` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

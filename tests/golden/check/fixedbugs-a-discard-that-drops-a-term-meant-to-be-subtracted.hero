@@ -1,0 +1,15 @@
+# Fixed defect 120 (panel 181, 2026-09-28). Symptom: `total = base` over
+# `- fee` at one margin was refused with `discarded_value`, whose fix, tagged
+# `certain`, wrote `_ = - fee`; applied with `check --apply`, the program
+# printed 100 where the subtraction meant 93. Cause: the lexer ended the
+# first line, which can end, and the second became a statement of its own,
+# whose one repair on offer kept the bug. A `-` set apart from its operand
+# can only go on with the line above, so the line is refused as the break it
+# is, once, and the fix writes the subtraction on one line.
+
+function main()
+    base: i64 = 100
+    fee: i64 = 7
+    total = base
+    - fee  #~ continuation_outside_brackets
+    print(total)

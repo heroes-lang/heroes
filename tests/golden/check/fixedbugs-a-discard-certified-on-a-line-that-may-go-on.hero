@@ -1,0 +1,21 @@
+# Fixed with defect 120 (panel 181's audit of `discarded_value`, 2026-09-28).
+# Symptom: a line whose value nothing receives took `_ = ` as a `certain`
+# fix even where it may be the rest of the line above, `total = base` over
+# `-fee`, the `-` against its operand, where `_ = -fee` drops the term; and
+# on `(5)` alone the fix landed inside the parentheses, `(_ = 5)`, which does
+# not parse. Cause: the certainty ignored how the line begins, and the
+# insertion used the value's span, which leaves the parentheses out. A line
+# that begins with `-`, `.`, `(` or `[`, the tokens that begin a value and go
+# on with one, takes `_ = ` as a `guess` only, at its first byte.
+
+function main()
+    base: i64 = 100
+    fee: i64 = 7
+    total = base
+    -fee  #~ discarded_value
+    print(total)
+    xs: [i64] = [1, 2]
+    y = xs
+    [0]  #~ discarded_value
+    print(y.len())
+    (5)  #~ discarded_value

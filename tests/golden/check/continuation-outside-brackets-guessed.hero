@@ -1,0 +1,104 @@
+# Panel 181 (2026-09-28, provisional), the branches where joining the two
+# lines is not the only repair: refused with exactly one diagnostic each,
+# `continuation_outside_brackets`, and its fix a `guess` or none, so nothing
+# here is applied by `check --apply` and there is no `.fixed`
+# (`selfhost/open_line.hero`, item 3 of the sitting).
+
+function show(n: i64)
+    print(n)
+
+function double(n: i64) -> i64
+    return n * 2
+
+function triple(n: i64) -> i64
+    return n * 3
+
+variant S
+    a
+    b
+
+## The line ends where its statement cannot
+
+# The next line calls, and could stand alone: the join may be the dropped
+# operand's wrong repair (Guido van Rossum's `x = y +` over `f(x)`, PEP 3125).
+function dropped_operand(a: i64) -> i64
+    #~v continuation_outside_brackets
+    y = a +
+    show(n: a)
+    return y
+
+# A method call after the `.` could stand alone too (defect 118's second
+# member, which `fmt` printed as `xs.len(` over a `)` of its own).
+function after_a_dot(xs: [i64]) -> i64
+    #~v continuation_outside_brackets
+    n = xs.
+    len()
+    return n
+
+# `else` over `if`, where the `if` line could stand alone.
+function else_over_if(c: bool, d: bool) -> i64
+    if c
+        return 1
+    #~v continuation_outside_brackets
+    else
+    if d
+        return 2
+    return 3
+
+# A shallower line, where the author more likely closed the block.
+function shallower(a: i64, b: i64, c: bool) -> i64
+    if c
+        #~v continuation_outside_brackets
+        y = a +
+    b
+        return y
+    return 0
+
+# A comment between the two lines, which a join would carry into the
+# statement: no fix at all.
+function comment_between(a: i64) -> i64
+    #~v continuation_outside_brackets
+    y = a +
+    # the second term
+    1
+    return y
+
+# A comment after the operator, the same.
+function trailing_comment(a: i64) -> i64
+    y = a +  # the first term #~ continuation_outside_brackets
+    1
+    return y
+
+## The next line can only go on with the line above
+
+# After a block that has just closed: the join moves the line into the
+# block's last one, which the author more likely did not mean.
+function after_a_block(c: bool) -> i64
+    x = if c
+        1
+    else
+        2
+    + 3  #~ continuation_outside_brackets
+    return x
+
+# The `?` after a `match`'s arms, which a postfix would have applied to the
+# `match`'s value (defect 119's `?` member).
+function question_after_a_block(s: S) -> i64?
+    r = match s
+        .a => ok(1)
+        .b => ok(2)
+    ?  #~ continuation_outside_brackets
+    return ok(r)
+
+# A comment line between the finished line and the operator.
+function comment_before_the_operator(a: i64) -> i64
+    y = a
+    # the second term
+    + 1  #~ continuation_outside_brackets
+    return y
+
+function main()
+    print(dropped_operand(a: 1) + after_a_dot(xs: [1]) + else_over_if(c: true, d: true))
+    print(shallower(a: 1, b: 2, c: true) + comment_between(a: 1) + trailing_comment(a: 1))
+    print(after_a_block(c: true) + question_after_a_block(s: .a).must() + comment_before_the_operator(a: 1))
+    print(double(n: 1) + triple(n: 1))

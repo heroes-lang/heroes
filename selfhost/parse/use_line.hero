@@ -111,7 +111,9 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
             return
         part = cursor.current_span(c)
 
-        if part.start != slash.end
+        # A line end there with no terminator is the lexer's refused join
+        # (panel 181, `open_line`), and the path it hands on is read whole.
+        if part.start != slash.end && !keywords.strings_has(text: text.slice(from: slash.end, to: part.start), needle: "\n")
             part_missing(@c, text, name: name, slash: slash)
             return
         _ = cursor.bump(@c)
