@@ -1,0 +1,25 @@
+# Fixed defect 129, 2026-09-28, class (B), beside defect 126. Symptom: on a
+# `str` match, an arm's `-` alone over `"a" => 10` had its join `certain`, and
+# `check --apply` wrote `-"a" => 10`, which is `bad_operand`: a sign takes an
+# integer or a character, never a string. Cause: the sign's join did not ask
+# what it signs. It is a `guess` now, before the arm's `=>` and before a `|`
+# (`selfhost/line_joins.hero`).
+#
+# A golden cannot hold a `guess`: this `.expected` is `--brief`, which prints
+# no certainty, and a `.fixed` must check clean. So what this file pins is one
+# diagnostic per break; the certainties are held by `selfhost/lexer.hero`'s
+# defect 129 tests, which lex the same shapes.
+
+function pick(s: str) -> i64
+    return match s
+        "p" => 5
+        #~v continuation_outside_brackets
+        -
+        "a" => 10
+        #~v continuation_outside_brackets
+        -
+        "b" | "c" => 11
+        _ => 20
+
+function main()
+    print(pick(s: "q"))

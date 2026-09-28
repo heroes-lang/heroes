@@ -1,0 +1,305 @@
+# The joins a line left open is offered, weighed once the file is lexed
+# (design.md §4.15, §4.17; panel 181 item 3; defect 129).
+#
+# `open_line` refuses a depth-zero line break and offers the join, *write the
+# statement on one line*, `certain` or `guess` by what that break shows. Two
+# things it cannot see there, and each made a `certain` join write a program
+# `check` refuses, which is what `.claude/rules/diagnostics-and-goldens.md`
+# calls a `guess` that lied:
+#
+# - **The statement's other breaks.** A statement broken at two line ends is
+#   one mistake that two joins repair together, so applying the `certain` ones
+#   alone writes a line the same rule refuses again: `x = y +` over `z +` over
+#   `print(x)` became `x = y + z +` over `print(x)`. The joins of one
+#   statement take ONE certainty, the weakest among them, and a break that
+#   offers no join (a comment between) makes every other one a `guess`, since
+#   applying them leaves it standing. Each break keeps its own diagnostic
+#   (panel 181 item 2): this moves certainties, never the count.
+# - **What the join writes beside its operator.** `0 => 5` over `-` over
+#   `"=>"` joined to `5 - "=>"`, which no type admits. Where an operand is a
+#   literal and the whole operand, the join is `certain` only if the operator
+#   takes that literal's family (`operand_families`), and two literal operands
+#   only if they are of one family.
+#
+# Both are read from the finished stream, where every token of the joined
+# lines exists. The lexer plants no terminator, indent or dedent while it
+# joins, so the breaks of one statement are a run with none planted between
+# them at depth zero. A literal is the whole operand where nothing beside it
+# binds tighter, by spec § 7's precedence; anywhere an operand is not a lone
+# literal (`1 + 2`, `-1`, a name, a call) the join keeps its certainty, which
+# is what the lexer cannot judge without the checker's types.
+#
+# | entry | called by |
+# |---|---|
+# | `weigh` | `lexer.lex_one`, after the file's last token |
+
+use token
+use state
+use operand_families as families
+
+## The joins, weighed
+
+# Every refused break's join, against what it writes and then against its
+# statement's other breaks: a join ends `certain` only where both allow it.
+function weigh(@l: state.LexState, text: str)
+    breaks = l.breaks
+
+    for b in breaks
+        if joined(l, b) && !writes_a_type(l.tokens, text, o: operator_of(b))
+            guessed(@l, b)
+
+    first: i64 @ 0
+
+    while first < breaks.len()
+        last: i64 @ first
+
+        while last + 1 < breaks.len() && one_statement(l.tokens, from: breaks[last].after, to: breaks[last + 1].after)
+            last @ last + 1
+
+        if any_weak(l, breaks: breaks.slice(from: first, to: last + 1))
+            for b in breaks.slice(from: first, to: last + 1)
+                guessed(@l, b)
+
+        first @ last + 1
+
+# The index of the operator the join writes: the head of the line below, or
+# the last token of the line above.
+function operator_of(b: state.Break) -> i64
+    if b.head
+        return b.after
+    return b.after - 1
+
+# Does the refusal carry its join? It carries one fix, the join, or none.
+function joined(l: state.LexState, b: state.Break) -> bool
+    return l.diagnostics[b.diagnostic].fixes.len() > 0
+
+function guessed(@l: state.LexState, b: state.Break)
+    if joined(l, b)
+        l.diagnostics[b.diagnostic].fixes[0].certainty @ .guess
+
+function any_weak(l: state.LexState, breaks: [state.Break]) -> bool
+    for b in breaks
+        if !joined(l, b) || l.diagnostics[b.diagnostic].fixes[0].certainty == .guess
+            return true
+
+    return false
+
+# No terminator, indent or dedent planted at depth zero in `from` .. `to`:
+# the two breaks either side are one statement's.
+function one_statement(tokens: [token.Token], from: i64, to: i64) -> bool
+    depth: i64 @ 0
+
+    for t in tokens.slice(from: from, to: to)
+        k = t.kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if (k == .rparen || k == .rbracket || k == .rbrace) && depth > 0
+            depth @ depth - 1
+        else if depth == 0 && (k == .terminator || k == .indent || k == .dedent)
+            return false
+
+    return true
+
+## What a join writes
+
+# Can the operator at `o` take the operands the joined line gives it? False
+# only where one is a literal of a family it does not take, the two are
+# literals of two families, or the literal after it stands before an arm's
+# `=>` where no pattern takes an operator.
+function writes_a_type(tokens: [token.Token], text: str, o: i64) -> bool
+    kind = tokens[o].kind
+
+    if families.takes(kind) == .unjudged
+        return true
+    prefix = kind == .bang || kind == .tilde || kind == .minus && no_left_operand(tokens, at: o)
+    level: i64 @ families.power(kind)
+
+    if prefix
+        level @ families.PREFIX
+    next = past_the_operand(tokens, text, from: o + 1, level: level)
+    right: families.Family @ .none
+
+    if next >= 0
+        right @ families.family(tokens[o + 1].kind)
+
+        if tokens[next].kind == .fat_arrow
+            return writes_a_pattern(tokens, text, o: o, prefix: prefix, right: right)
+
+        # A prefix operator's value is of its literal's family, and it is the
+        # left operand of the binary operator after it: `-` over `1.5 | 2`.
+        if prefix && !families.admits(families.takes(tokens[next].kind), right)
+            return false
+    left: families.Family @ .none
+
+    if !prefix && families.power(kind) > 0
+        left @ whole_before(tokens, text, last: o - 1, level: families.power(kind))
+    wants = families.takes(kind)
+    return families.admits(wants, left) && families.admits(wants, right) && one_type(left: left, right: right)
+
+# The literal after the operator stands before an arm's `=>`, so it is a
+# pattern (spec § 8's Pattern). Only a `-` that signs it and a `|` between two
+# patterns write an operator there, a sign an integer's or a character's and
+# a `|` either side of one type; and never inside an arm's body, where the
+# join writes the next arm's pattern as an operand (`0 => 5 -` over
+# `1 => 10`).
+function writes_a_pattern(tokens: [token.Token], text: str, o: i64, prefix: bool, right: families.Family) -> bool
+    if arrow_before(tokens, o: o)
+        return false
+    kind = tokens[o].kind
+
+    if kind == .minus && prefix
+        return families.admits(.integer, right)
+
+    if kind != .pipe
+        return false
+    left = whole_before(tokens, text, last: o - 1, level: families.power(kind))
+    return families.admits(.pattern, left) && families.admits(.pattern, right) && one_type(left: left, right: right)
+
+function one_type(left: families.Family, right: families.Family) -> bool
+    return left == .none || right == .none || left == right
+
+# Is there an arm's `=>` between the start of the operator's statement and
+# the operator?
+function arrow_before(tokens: [token.Token], o: i64) -> bool
+    i: i64 @ o - 1
+
+    while i >= 0 && tokens[i].kind != .terminator && tokens[i].kind != .indent && tokens[i].kind != .dedent
+        if tokens[i].kind == .fat_arrow
+            return true
+        i @ i - 1
+
+    return false
+
+# A `-` with nothing before it that ends a value negates or signs: at a
+# line's edge, or after `=`, an operator, an opener or a keyword that takes
+# an expression.
+function no_left_operand(tokens: [token.Token], at: i64) -> bool
+    p = before_comments(tokens, at: at - 1)
+
+    if p < 0
+        return true
+    k = tokens[p].kind
+    return families.begins_an_operand(k) || families.power(k) > 0 || k == .bang || k == .tilde
+
+## The literal and its edges
+
+# The index of the token after the literal that begins at `from`, when that
+# literal is the whole operand of an operator binding at `level`: what
+# follows it ends the expression, is an arm's `=>`, or is a binary operator
+# that binds no tighter. -1 when no literal begins there, or a call, a
+# field, an index or a tighter operator goes on with it.
+function past_the_operand(tokens: [token.Token], text: str, from: i64, level: i64) -> i64
+    last = literal_last(tokens, text, from: from)
+
+    if last < 0
+        return -1
+    next = past_comments(tokens, from: last + 1)
+
+    if next >= tokens.len()
+        return -1
+    k = tokens[next].kind
+
+    if k == .terminator || k == .indent || k == .dedent || k == .eof || k == .fat_arrow
+        return next
+    binds = families.power(k)
+
+    if binds > 0 && binds <= level
+        return next
+    return -1
+
+# The family of the literal that ends at `last`, when it is the whole left
+# operand of an operator binding at `level`: before it an operand begins, or
+# a binary operator binds strictly looser. `none` otherwise.
+function whole_before(tokens: [token.Token], text: str, last: i64, level: i64) -> families.Family
+    first = literal_first(tokens, text, last: last)
+
+    if first < 0
+        return .none
+    p = before_comments(tokens, at: first - 1)
+
+    if p >= 0 && !families.begins_an_operand(tokens[p].kind)
+        binds = families.power(tokens[p].kind)
+
+        if binds == 0 || binds >= level
+            return .none
+    return families.family(tokens[last].kind)
+
+# The literal that begins at `from`: its last token, which is `from` itself
+# but for an interpolated one, whose pieces and holes run to the piece that
+# closes it. -1 when no literal begins there.
+function literal_last(tokens: [token.Token], text: str, from: i64) -> i64
+    if from < 0 || from >= tokens.len() || families.family(tokens[from].kind) == .none
+        return -1
+
+    if tokens[from].kind != .str_piece
+        return from
+    depth: i64 @ 0
+    i: i64 @ from
+
+    while i < tokens.len()
+        t = tokens[i]
+
+        if t.kind == .str_piece
+            if opens(text, t)
+                depth @ depth + 1
+
+            if closes(text, t)
+                depth @ depth - 1
+
+            if depth <= 0
+                return i
+        i @ i + 1
+
+    return -1
+
+# The literal that ends at `last`: its first token, walking back over an
+# interpolated one to the piece that opens it. -1 when none ends there.
+function literal_first(tokens: [token.Token], text: str, last: i64) -> i64
+    if last < 0 || last >= tokens.len() || families.family(tokens[last].kind) == .none
+        return -1
+
+    if tokens[last].kind != .str_piece
+        return last
+    depth: i64 @ 0
+    i: i64 @ last
+
+    while i >= 0
+        t = tokens[i]
+
+        if t.kind == .str_piece
+            if closes(text, t)
+                depth @ depth + 1
+
+            if opens(text, t)
+                depth @ depth - 1
+
+            if depth <= 0
+                return i
+        i @ i - 1
+
+    return -1
+
+# A piece that opens an interpolated literal, `f"…{` or the whole `f"…"`.
+function opens(text: str, t: token.Token) -> bool
+    return t.span.end - t.span.start >= 2 && text[t.span.start] == 'f' && text[t.span.start + 1] == '"'
+
+# A piece that closes one, `}…"` or the whole `f"…"`.
+function closes(text: str, t: token.Token) -> bool
+    return t.span.end - t.span.start >= 2 && text[t.span.end - 1] == '"'
+
+function past_comments(tokens: [token.Token], from: i64) -> i64
+    i: i64 @ from
+
+    while i < tokens.len() && tokens[i].kind == .comment
+        i @ i + 1
+
+    return i
+
+function before_comments(tokens: [token.Token], at: i64) -> i64
+    i: i64 @ at
+
+    while i >= 0 && tokens[i].kind == .comment
+        i @ i - 1
+
+    return i

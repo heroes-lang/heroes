@@ -1,0 +1,173 @@
+# What an operator can take, when its operand is a literal, and how tightly
+# it binds (design.md §4.17; spec § 2, § 7, § 8; defect 129).
+#
+# A join `open_line` offers writes an operator against what the other line
+# holds, and it is `certain` only where the program it writes can check
+# (`line_joins.hero`). Where an operand is a bare literal the lexer can say
+# that much without a parse, because a literal belongs to one FAMILY of types
+# whatever type its context gives it (spec § 2: `1` is any integer, and so is
+# `'a'`), and an operator takes a set of families (spec § 7).
+#
+# **The sets below are the checker's answers, not a reading of the spec.**
+# Measured 2026-09-28 on the compiler at `a6eab736`: every binary operator
+# against every literal kind beside a value of `i64`, `u8`, `f64`, `str`,
+# `bool` and `ptr`, on either side; the three prefix operators; a pattern's
+# sign; and every literal against every literal. They agree with spec § 7
+# row for row, and add one fact its table does not state: two literals check
+# together only within one family, so `1 + 2.0`, `"s" + 1` and `true == 1`
+# are refused. A condition takes `true` or `false` (`not_bool` after `if`,
+# `while` and `assert`), `for` iterates no literal (`not_iterable`, a string
+# included), and `match` inspects any literal but `true` and `false`, which
+# no arm matches (`_` is `wildcard_on_variant`, `.true` and `true` are no
+# pattern).
+#
+# ENUMERATED over token kinds, never a catch-all: a new kind is a compile
+# error here until somebody decides it (`layout.is_line_ender`'s discipline).
+
+use token
+
+## The literals
+
+# The family of types a literal can take, and `none` for a token that is no
+# literal, which nothing here judges.
+variant Family
+    none
+    integer
+    float
+    text
+    truth
+    pointer
+
+function family(kind: token.TokenKind) -> Family
+    return match kind
+        .int_lit | .char_lit                                                             => .integer
+        .float_lit                                                                       => .float
+        .str_lit | .str_piece                                                            => .text
+        .kw_true | .kw_false                                                             => .truth
+        .kw_nullptr                                                                      => .pointer
+        .ident | .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match      => .none
+        .kw_if | .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue      => .none
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail | .eq | .at => .none
+        .colon | .colon_colon | .comma | .dot | .question | .hole | .arrow | .fat_arrow  => .none
+        .pipe | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace            => .none
+        .plus | .minus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le       => .none
+        .gt | .ge | .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr     => .none
+        .comment | .terminator | .indent | .dedent | .eof | .error                       => .none
+
+## The operators
+
+# What an operator takes, as families: `sum` is `+`'s, a number or a `str`;
+# `pattern` is what a `|` joins in an arm, an integer or a string;
+# `scrutinee` is `match`'s; `nothing` is `for`'s, which iterates an array or
+# a range and never a literal. And `unjudged` for a token whose operand is no
+# value this module weighs (`=`, `@`, `.`, `::`, ...), whose join keeps the
+# certainty its break gave it.
+variant Takes
+    unjudged
+    anything
+    sum
+    number
+    integer
+    truth
+    pattern
+    scrutinee
+    nothing
+
+# `-` answers `number` whether it subtracts or negates, and `|` answers
+# `integer`: a `-` that signs a pattern and a `|` between two patterns are the
+# caller's to tell, since only what stands after the literal says so.
+function takes(kind: token.TokenKind) -> Takes
+    return match kind
+        .plus                                                                        => .sum
+        .minus | .star | .slash | .percent | .lt | .le | .gt | .ge                   => .number
+        .amp | .pipe | .caret | .shl | .shr | .tilde                                 => .integer
+        .and_and | .or_or | .bang | .kw_if | .kw_while | .kw_assert                  => .truth
+        .eq_eq | .bang_eq                                                            => .anything
+        .kw_match                                                                    => .scrutinee
+        .kw_in                                                                       => .nothing
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit           => .unjudged
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_else            => .unjudged
+        .kw_for | .kw_break | .kw_continue | .kw_return | .kw_test | .kw_extern      => .unjudged
+        .kw_nullptr | .kw_use | .kw_true | .kw_false | .kw_fail | .eq | .at | .colon => .unjudged
+        .colon_colon | .comma | .dot | .question | .hole | .arrow | .fat_arrow       => .unjudged
+        .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace                => .unjudged
+        .comment | .terminator | .indent | .dedent | .eof | .error                   => .unjudged
+
+# Can an operator that takes `t` take a literal of family `f` under some
+# type? One row per family, naming what takes it, so a new `Takes` takes no
+# literal until a row says it does.
+function admits(t: Takes, f: Family) -> bool
+    return match f
+        .none => true
+        .integer => t == .unjudged || t == .anything || t == .sum || t == .number || t == .integer || t == .pattern || t == .scrutinee
+        .float   => t == .unjudged || t == .anything || t == .sum || t == .number || t == .scrutinee
+        .text    => t == .unjudged || t == .anything || t == .sum || t == .pattern || t == .scrutinee
+        .truth   => t == .unjudged || t == .anything || t == .truth
+        .pointer => t == .unjudged || t == .anything || t == .scrutinee
+
+## How tightly
+
+# A prefix operator, `-` `!` `~`, binds tighter than every binary one (spec
+# § 7: unary before `* / %`).
+constant PREFIX: i64
+    10
+
+# How tightly a binary operator binds: spec § 7's precedence as the parser's
+# climber numbers it (`grammar_expr.binary_op`, to which `cli/grammar.hero`'s
+# test holds this copy), and 0 for a token that is no binary operator.
+function power(kind: token.TokenKind) -> i64
+    return match kind
+        .or_or                                                                      => 1
+        .and_and                                                                    => 2
+        .eq_eq | .bang_eq | .lt | .le | .gt | .ge                                   => 3
+        .pipe                                                                       => 4
+        .caret                                                                      => 5
+        .amp                                                                        => 6
+        .shl | .shr                                                                 => 7
+        .plus | .minus                                                              => 8
+        .star | .slash | .percent                                                   => 9
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit          => 0
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match | .kw_if => 0
+        .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue          => 0
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use     => 0
+        .kw_true | .kw_false | .kw_fail | .eq | .at | .colon | .colon_colon         => 0
+        .comma | .dot | .question | .hole | .arrow | .fat_arrow | .bang | .tilde    => 0
+        .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace               => 0
+        .comment | .terminator | .indent | .dedent | .eof | .error                  => 0
+
+# A token after which an operand begins, so a literal right after it is the
+# whole left operand of the operator that follows the literal: a binding, a
+# mutation, `return`, an arm's `=>`, a keyword that takes an expression, an
+# opener or a `,`, and a line's edge.
+function begins_an_operand(kind: token.TokenKind) -> bool
+    return match kind
+        .eq | .at | .kw_return | .fat_arrow | .kw_assert | .kw_if | .kw_while | .kw_in    => true
+        .kw_match | .lparen | .lbracket | .lbrace | .comma                                => true
+        .terminator | .indent | .dedent                                                   => true
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit                => false
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_else | .kw_for       => false
+        .kw_break | .kw_continue | .kw_test | .kw_extern | .kw_nullptr | .kw_use          => false
+        .kw_true | .kw_false | .kw_fail | .colon | .colon_colon | .dot | .question        => false
+        .hole | .arrow | .pipe | .rparen | .rbracket | .rbrace | .plus | .minus | .star   => false
+        .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge | .and_and | .or_or => false
+        .bang | .amp | .caret | .tilde | .shl | .shr | .comment | .eof | .error           => false
+
+test "an operator takes the families the checker accepts beside it, and no other"
+    assert admits(takes(.plus), .text)
+    assert admits(takes(.plus), .float)
+    assert !admits(takes(.plus), .truth)
+    assert !admits(takes(.minus), .text)
+    assert admits(takes(.minus), .integer)
+    assert !admits(takes(.amp), .float)
+    assert admits(takes(.caret), family(.char_lit))
+    assert !admits(takes(.and_and), .integer)
+    assert admits(takes(.or_or), family(.kw_false))
+    assert admits(takes(.bang_eq), .pointer)
+    assert !admits(takes(.bang), family(.int_lit))
+    assert !admits(takes(.kw_while), family(.str_lit))
+    assert !admits(takes(.kw_in), family(.str_piece))
+    assert !admits(.pattern, .float)
+    assert admits(.pattern, .text)
+    assert admits(takes(.eq), .text)
+    assert family(.hole) == .none
+    assert admits(takes(.kw_assert), .none)

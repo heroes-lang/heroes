@@ -1,0 +1,68 @@
+# Defect 129, 2026-09-28, class (B)'s shapes that must NOT move: every join here
+# writes an operator against a literal it takes, or against a literal a
+# tighter operator holds, so each stays `certain`, `check --apply` writes the
+# joined program and the `.fixed` checks clean. A sign on a character in an
+# `i64` match (a character is an integer, spec § 2), and a sign before a `|`;
+# `+` over a string; `&&` over `true`; `&&` over `1` that a comparison below
+# holds; `+` over `1 * 2`; two floats; two strings; a literal condition that
+# is a boolean (`selfhost/line_joins.hero`).
+
+function sign_on_a_character(n: i64) -> i64
+    return match n
+        0 => 5
+        #~v continuation_outside_brackets
+        -
+        'a' => 10
+        #~v continuation_outside_brackets
+        -
+        1 | 2 => 11
+        _ => 20
+
+function plus_a_string(s: str) -> str
+    #~v continuation_outside_brackets
+    x = s +
+    "b"
+    return x
+
+function and_true(a: bool) -> bool
+    #~v continuation_outside_brackets
+    x = a &&
+    true
+    return x
+
+function and_a_comparison(b: bool) -> bool
+    #~v continuation_outside_brackets
+    x = b &&
+    1
+    == 1  #~ continuation_outside_brackets
+    return x
+
+function plus_a_product(a: i64) -> i64
+    #~v continuation_outside_brackets
+    x = a +
+    1 * 2
+    return x
+
+function floats() -> f64
+    x = 1.5
+    * 2.0  #~ continuation_outside_brackets
+    return x
+
+function strings() -> str
+    x = "s"
+    + "t"  #~ continuation_outside_brackets
+    return x
+
+function literal_while()
+    #~v continuation_outside_brackets
+    while
+    false
+        print(0)
+
+function main()
+    print(sign_on_a_character(n: -97) + sign_on_a_character(n: -2))
+    print(plus_a_string(s: "a") + strings())
+    print(and_true(a: true) && and_a_comparison(b: true))
+    print(plus_a_product(a: 1))
+    print(floats())
+    literal_while()

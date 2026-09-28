@@ -26,12 +26,16 @@
 # `next_line.hero`, rest on that: a quote they misread costs a message or a
 # fix's certainty, never an acceptance.
 #
+# Each refusal offers its join with the certainty that break shows, and
+# records the break (`state.Break`); `line_joins.hero` weighs every join once
+# the file is lexed, against the statement's other breaks and against what the
+# join writes beside its operator (defect 129).
+#
 # | entry | called by |
 # |---|---|
 # | `left_open` | `layout.maybe_terminator`, at a line end, where the line is left open (a line that owes its terminator is recorded there) |
 # | `goes_on`, `goes_on_below` | `layout.line_start`, at the next line with words: refused and joined, or ended there |
 # | `abandon`, `settle` | `layout.line_start` where a tab or a stray carriage return leaves the margin unread, and `lexer.lex_one` at the file's end |
-
 use token
 use state
 use diag
@@ -240,7 +244,7 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
         else if left.kind == .minus && opens_a_line(l.tokens, at: at) && text[l.pos] != '>'
             glue @ ""
         d.fixes @ d.fixes.push(joined(glue: glue, from: left.span.end, to: l.pos, certainty: certainty))
-    state.push_diagnostic(@l.diagnostics, d)
+    refused(@l, d, head: false)
     return true
 
 # The line above could end, and this one begins with a token that can only
@@ -277,7 +281,15 @@ function refuse_the_head(@l: state.LexState, text: str, at: i64, spaces: i64, co
         if head.kind == .question || head.kind == .colon_colon
             glue @ ""
         d.fixes @ d.fixes.push(joined(glue: glue, from: left.span.end, to: l.pos, certainty: certainty))
+    refused(@l, d, head: true)
+
+# The certainty either refusal gives its join is what the break itself shows.
+# What it cannot show, the statement's other breaks and what the join writes
+# against its operator, `line_joins` weighs once the file is lexed, from the
+# break recorded here (defect 129).
+function refused(@l: state.LexState, d: diag.Diagnostic, head: bool)
     state.push_diagnostic(@l.diagnostics, d)
+    state.push_break(@l.breaks, state.Break(diagnostic: l.diagnostics.len() - 1, after: l.tokens.len(), head: head))
 
 function joined(glue: str, from: i64, to: i64, certainty: diag.Certainty) -> diag.Fix
     return diag.Fix(
