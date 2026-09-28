@@ -97,8 +97,10 @@ function goes_on_at_head(text: str, at: i64) -> i64
 
     # `-1` and `-fee` against their operand begin a value of their own (panel
     # 180's criterion), and so does a `-` that opens an arm, whose pattern it
-    # signs (`- 1 => …`).
-    if first.kind == .minus && (!set_apart(text, at: at + 1) || next_line.holds_an_arrow(text, from: at))
+    # signs (`- 1 => …`): the arm's `=>` on the `-`'s own line, or, where
+    # only a comment or the line's end follows the `-`, on the next line with
+    # words, whose line end after the `-` is refused alone (defect 126).
+    if first.kind == .minus && (!set_apart(text, at: at + 1) || next_line.holds_an_arrow(text, from: at) || next_line.arrow_below(text, from: at + 1))
         return -1
     return at
 

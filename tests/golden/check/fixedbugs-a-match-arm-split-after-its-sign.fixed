@@ -1,0 +1,26 @@
+# Fixed defect 126, 2026-09-28 (panel 181's landing). Symptom: a `match` arm
+# whose `-` stood alone on the line above its literal, `0 => 5` over `-` over
+# `1 => 10`, cost three diagnostics, and the `certain` fix of the first wrote
+# `0 => 5 - 1 => 10`, which does not parse. Cause: the lexer let a `-` that
+# opens an arm through only when the arm's `=>` stood on the `-`'s own line,
+# so a `-` a line end set apart from its literal was read as a subtraction
+# going on with the arm above, joined to it, and the line after refused a
+# second time. The `=>` is looked for on the next line with words as well
+# now, so the break costs one diagnostic, the line that cannot end with `-`,
+# after an inline arm and after a block arm, and its join writes `-1`, the
+# spelling the arm takes.
+
+function pick(n: i64) -> i64
+    return match n
+        0 => 5
+        #~v continuation_outside_brackets
+        -1 => 10
+        2 =>
+            print(2)
+            20
+        #~v continuation_outside_brackets
+        -3 => 30
+        _ => 0
+
+function main()
+    print(pick(-1) + pick(-3) + pick(0))

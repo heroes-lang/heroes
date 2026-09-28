@@ -77,9 +77,30 @@ function spanning(tokens: [token.Token], a: ast.Ast, text: str, at: token.Span) 
             # wrapped, nor is any outside it.
             if holds_a_block(tokens, span: e.span)
                 return fail(code: "a_block_inside", msg: "the expression holds a block")
+
+            if in_a_pattern(a, span: e.span)
+                return fail(code: "a_pattern", msg: "a pattern takes no parentheses")
             return ok(e.span)
 
     return fail(code: "nothing_to_wrap", msg: "no expression holds both sides of the break")
+
+# Whether `span` lies inside one of an arm's patterns, which take no
+# parentheses (spec § 8): `-` over `1 => 10` has an expression to wrap, the
+# pattern's value, and no place a `(` may stand, so `(-` over `1) => 10`
+# would be a fix that does not parse (defect 126).
+function in_a_pattern(a: ast.Ast, span: token.Span) -> bool
+    for e in a.exprs
+        match e.kind
+            .match_expr me =>
+                for one in me.arms
+                    for p in one.patterns
+                        if p.span.start <= span.start && span.end <= p.span.end
+                            return true
+            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => continue
+            .name | .hole | .unary | .binary | .field | .field_name | .index | .call       => continue
+            .method | .variant_case | .array | .map | .try_expr | .if_expr | .error        => continue
+
+    return false
 
 function holds_a_block(tokens: [token.Token], span: token.Span) -> bool
     i: i64 @ first_at(tokens, start: span.start)
