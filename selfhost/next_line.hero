@@ -75,6 +75,43 @@ function holds_an_arrow(text: str, from: i64) -> bool
 
     return false
 
+# Does nothing but spaces and a comment follow `from` on its line, and the
+# next line with words hold an arm's `=>`? Then a `-` before `from` signs the
+# pattern of an arm broken after its sign, `-` over `1 => 10` (defect 126):
+# the line that ends with it is refused as one that cannot end, and it is
+# never a subtraction going on with the arm above.
+function arrow_below(text: str, from: i64) -> bool
+    i: i64 @ past_the_line(text, from: past_blanks(text, from: from))
+
+    while i < text.len() && text[i] == '\n'
+        i @ past_blanks(text, from: i + 1)
+
+        if i < text.len() && text[i] != '\n' && text[i] != '#'
+            return holds_an_arrow(text, from: i)
+        i @ past_the_line(text, from: i)
+
+    return false
+
+# `from`, past spaces and carriage returns.
+function past_blanks(text: str, from: i64) -> i64
+    i: i64 @ from
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\r')
+        i @ i + 1
+
+    return i
+
+# `from` past a comment to its line end; any other byte stays where it is.
+function past_the_line(text: str, from: i64) -> i64
+    if from >= text.len() || text[from] != '#'
+        return from
+    i: i64 @ from
+
+    while i < text.len() && text[i] != '\n'
+        i @ i + 1
+
+    return i
+
 # Could the line from `from`, read alone, be a statement of its own: a call,
 # a control form, a binding, a hole? Then the join may be the wrong repair.
 # Yes on any doubt, an interpolated literal included, whose holes hold quotes
@@ -187,3 +224,13 @@ test "an arm's arrow is found outside brackets and strings only"
     assert !holds_an_arrow("- f(a => b)\n", from: 0)
     assert !holds_an_arrow("- \"=>\"\n", from: 0)
     assert !holds_an_arrow("- fee  # => note\n", from: 0)
+
+test "a sign alone on its line, or before a comment, finds the arm's arrow on the next line with words"
+    assert arrow_below("-\n        1 => 10\n", from: 1)
+    assert arrow_below("-  # the sign\n        1 => 10\n", from: 1)
+    assert arrow_below("-\r\n        1 => 10\r\n", from: 1)
+    assert arrow_below("-\n\n        # a note\n        1 => 10\n", from: 1)
+    assert !arrow_below("- 1 => 10\n", from: 1)
+    assert !arrow_below("-\n        fee\n", from: 1)
+    assert !arrow_below("-\n        f(a => b)\n", from: 1)
+    assert !arrow_below("-", from: 1)

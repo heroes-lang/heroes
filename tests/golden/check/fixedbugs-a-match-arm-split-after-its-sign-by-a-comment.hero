@@ -1,0 +1,25 @@
+# Fixed defect 126, 2026-09-28, its commented shape: the `-` of an arm's
+# pattern followed by a comment, which ends its line, over the literal and
+# the arm's `=>`. After an inline arm it cost three diagnostics and a
+# `certain` fix that joined the `-` to the arm above; as the first arm its
+# one diagnostic carried a `guess` that wrapped the pattern in parentheses,
+# `(-  # the sign` over `1)`, and a pattern takes none. One diagnostic each
+# now, the line that cannot end with `-`, and no fix: a join would carry the
+# comment into the arm, and no `(` stands in a pattern.
+
+function pick(n: i64) -> i64
+    return match n
+        -  #~ continuation_outside_brackets
+        1 => 10
+        0 => 5
+        -  #~ continuation_outside_brackets
+        2 => 20
+        3 =>
+            print(3)
+            30
+        -  #~ continuation_outside_brackets
+        4 => 40
+        _ => 0
+
+function main()
+    print(pick(-1))
