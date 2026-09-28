@@ -60,6 +60,12 @@ record Row
 # guard refuses to drop the comment. Fifteen variants unstrided, all `paren`
 # and all on a pattern's line, eight of them in the row's stride. Repairing
 # 124 takes the shape out of the parser, and each entry out of this row.
+#
+# **None again since defect 124's repair** (2026-09-28): a pattern takes one
+# literal after its sign, so `-(  # c` over `1)` no longer parses and is no
+# variant the guard judges. Measured: 0 refused by the guard in the fixtures
+# row, strided and unstrided, and `paren`'s parsing count 711 -> 703 in the
+# stride (1398 -> 1383 unstrided), the fifteen and nothing else.
 function rows() -> [Row]
     # Measured 2026-09-28 at panel 181's landing, which added
     # `surface-fixtures/continuation181/` (two seeds, two files refused), its
@@ -70,7 +76,7 @@ function rows() -> [Row]
         Floor(family: "single", generated: 6479, parsing: 3240)
         Floor(family: "multi", generated: 585, parsing: 293)
         Floor(family: "bracket", generated: 9120, parsing: 3395)
-        Floor(family: "paren", generated: 2220, parsing: 711)
+        Floor(family: "paren", generated: 2220, parsing: 703)
         Floor(family: "ends", generated: 518, parsing: 259)
         Floor(family: "columns", generated: 5500, parsing: 2750)
         Floor(family: "texts", generated: 3254, parsing: 1627)
@@ -79,19 +85,8 @@ function rows() -> [Row]
     tests: [Floor] = [Floor(family: "multi", generated: 5706, parsing: 5706)]
     examples: [Floor] = [Floor(family: "multi", generated: 1080, parsing: 1080)]
     none: [str] = []
-    negative = "tests/golden/surface-fixtures/patterns125/negative.hero paren "
-    defect124 = [
-        negative + "B13"
-        negative + "A20"
-        negative + "C20"
-        negative + "A28"
-        negative + "C28"
-        negative + "A47"
-        negative + "C47"
-        negative + "B102"
-    ]
     return [
-        Row(name: "the fixtures, every family", words: ["probe", "--stride", "2"], seeds: 65, floors: fixtures, known: defect124)
+        Row(name: "the fixtures, every family", words: ["probe", "--stride", "2"], seeds: 65, floors: fixtures, known: none)
         Row(name: "selfhost, multi", words: ["probe", "selfhost", "--family", "multi"], seeds: 284, floors: selfhost, known: none)
         Row(name: "tests, multi", words: ["probe", "tests", "--family", "multi"], seeds: 634, floors: tests, known: none)
         Row(name: "examples, multi", words: ["probe", "examples", "--family", "multi"], seeds: 120, floors: examples, known: none)
