@@ -215,5 +215,42 @@ refusal, which is §1.11's failure in exchange for §1.12's.
 
 ## Author's verdict
 
+**RATIFIED 2026-09-28**, in one act with every sitting
+`docs/work/DECIDE.md` held, panels 175, 176, 177, 179, 180, 181 and 182,
+on the author's instruction of that evening, meant as: *ratify every
+decision on the list*. **Recorded as a reading of this file**, CLAUDE.md
+§ 4's default, which the author asked on 2026-09-21 to be taken for
+granted; not `by delegation`. The recommendations the list carried are
+taken with it. Each sentence below was verified against the tree at
+`a6eab736` before it was written.
+
+**What the yes settles.** Route A landed with panel 176's vocabulary, the mark
+keyed on a set, and defect 075 closed with it (2026-09-24), 079 after it
+(2026-09-25). Route E landed as the composite and closed defects 080, 081 and
+082. § 13 carries the true sentences of item 5: *two records may not name one
+tag but `void`*, the reuse-honest *giving one back*, and panel 170's
+handle-only rule. Defect 078 closed with `ffi_owned_const_cell`. Routes B and C
+stay refused, C on the ffi-pragmatist's veto, which a ratification cannot lift.
+The author had declined the first three of these ratifications "for now" on
+2026-09-24; this is the answer that followed.
+
+**Item 7 is applied with the ratification.** `/panel` now hands the
+llm-ergonomist a copy of the specification outside the repository, in the
+seat's own scratchpad directory, and the brief asks the seat to say whether any
+project rule reached its context, which is the measurement item 7 names; the
+seat's own file says the same. Amended by author instruction with no sitting,
+as CLAUDE.md § 4 leaves the skills: `.claude/skills/panel/SKILL.md` and
+`.claude/agents/llm-ergonomist.md`. What it closes: reading `spec/**` from
+inside the tree loads `.claude/rules/spec-shape.md` by its `paths:`, and that
+file carries token counts the seat is never given.
+
+**What the yes does not settle**: the llm-ergonomist's prediction, registered
+at M-thesis-harness, and the historian's, registered at the first milestone
+whose `examples/` gains two consumers for one handle type. Both stay open at
+their milestones.
+
+**What this section said while the sitting was open**, kept because a
+record is not rewritten:
+
 *Pending: `docs/work/DECIDE.md` carries this sitting as `panel 175`. Work
 proceeds on the resolution: the landing of items 3 to 6, then panel 176.*

@@ -231,6 +231,33 @@ landed emission.
 
 ## Author's verdict
 
+**RATIFIED 2026-09-28**, in one act with every sitting
+`docs/work/DECIDE.md` held, panels 175, 176, 177, 179, 180, 181 and 182,
+on the author's instruction of that evening, meant as: *ratify every
+decision on the list*. **Recorded as a reading of this file**, CLAUDE.md
+§ 4's default, which the author asked on 2026-09-21 to be taken for
+granted; not `by delegation`. The recommendations the list carried are
+taken with it. Each sentence below was verified against the tree at
+`a6eab736` before it was written.
+
+**What the yes settles**: items 1 to 7 as landed with defects 114 and 122, and
+**the deferral, not the refusal**, of what the list named for the author to
+schedule or refuse: route (b), the consuming store, and (f)'s initialising
+stores, back when the compiler itself crosses a leak gate and (b)'s fault
+injection is shown to fire; route (g), the critic's unlisted route, carried
+with them; MemorySanitizer as a Linux instrument leg; and coalescing the
+synthetic slots of mutually exclusive arms, its premise unrun. **Scheduled by
+the coordinator**, under CLAUDE.md § 3's delegated default and said once: one
+open item in `docs/work/milestones/M-deployable-binary.md`, the one scheduled
+milestone whose deliverable is what a built program costs when it runs, which
+is what the deferred routes would buy. The author may move it. Item 6's two
+false sentences, the zeroing and the cleanup-label chain the critic's second
+report found, are corrected in design.md Part 5, where the paragraph says what
+it used to read.
+
+**What this section said while the sitting was open**, kept because a
+record is not rewritten:
+
 *Pending: `docs/work/DECIDE.md` carries this sitting as `panel 182`. Work
 proceeds on the provisional resolution: one lane lands items 1 to 7 and closes
 defects 114 and 122.*
