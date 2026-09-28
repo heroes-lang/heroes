@@ -66,6 +66,7 @@ use ffi_errors
 use check/freer as freer
 use check/freer_marks
 use check/interp
+use check/reach
 
 ## The two statement-side answers
 
@@ -1008,18 +1009,29 @@ function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
     branches: [join.Branch] @ []
     covered: [i64] @ []
     wildcard_seen: bool @ false
+    seen: reach.Seen @ reach.none()
 
     for arm in match_arms
         for pattern in arm.patterns
+            reach.after(@c, a, s, @seen, subject: subject, p: pattern)
+
             match pattern.kind
                 .variant_case cp =>
-                    bound = case_pattern(@c, s, decls, subject: subject, name: cp.name, span: pattern.span, @covered)
+                    bound = reach.case_pattern(
+                        @c,
+                        s,
+                        decls,
+                        subject: subject,
+                        name: cp.name,
+                        span: pattern.span,
+                        @covered
+                    )
 
                     if !cp.binding.is_err()
                         state.bind_local(@c, cp.binding.must(), ty: bound)
                 .wildcard =>
                     wildcard_seen @ true
-                    wildcard_pattern(@c, a, s, decls, subject: subject, span: pattern.span)
+                    reach.wildcard_pattern(@c, s, decls, subject: subject, span: pattern.span)
                 .literal l => literal_pattern(@c, a, r, s, decls, subject: subject, value: l.value)
                 .error     => continue
 
@@ -1039,96 +1051,8 @@ function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
 
         branches @ branches.push(join.Branch(value: value, span: arm.span))
 
-    exhaustive(@c, a, s, decls, subject: subject, covered: covered, wildcard_seen: wildcard_seen, span: span)
+    reach.exhaustive(@c, s, decls, subject: subject, covered: covered, wildcard_seen: wildcard_seen, span: span)
     return branches
-
-# `.case name` — records the case as covered and hands back what the
-# payload binding is worth.
-function case_pattern(@c: state.Checker, s: source.Source, decls: [ast.Decl], subject: i64, name: token.Span, span: token.Span, @covered: [i64]) -> i64
-    case_name = source.span_text(s, name)
-
-    if table.poisoned(c.out.types, subject)
-        return state.error_ty_of(c)
-
-    match table.get(c.out.types, subject)
-        .named n =>
-            match decls[n.decl].kind
-                .variant_decl v =>
-                    at: i64 @ -1
-                    index: i64 @ 0
-
-                    for one_case in v.cases
-                        if source.span_text(s, one_case.name) == case_name
-                            at @ index
-                        index @ index + 1
-
-                    if at < 0
-                        known: [str] @ []
-
-                        for one_case in v.cases
-                            known @ known.push(source.span_text(s, one_case.name))
-
-                        holder = source.span_text(s, decls[n.decl].name)
-                        state.push_diagnostic(
-                            @c,
-                            data_errors.no_such_case(holder: holder, case_name: case_name, known: known, span: name)
-                        )
-                        return state.error_ty_of(c)
-
-                    if listed(covered, at)
-                        state.push_diagnostic(@c, data_errors.duplicate_arm(case_name, span))
-                    covered @ covered.push(at)
-                    return table.intern(@c.out.types, .case_ty(decl: n.decl, at: at))
-                .constant_decl | .function_decl | .record_decl | .test_decl =>
-                    got = state.show(c, s, decls, subject)
-                    state.push_diagnostic(@c, data_errors.not_matchable(got, span))
-                    return state.error_ty_of(c)
-        # §4.6's two cases, and they are the only ones.
-
-        .fallible o =>
-            if case_name == "ok"
-                covered @ covered.push(0)
-                return o.payload
-
-            if case_name == "err"
-                covered @ covered.push(1)
-                return table.failure_ty(c.out.types)
-            known: [str] = ["ok", "err"]
-            state.push_diagnostic(
-                @c,
-                data_errors.no_such_case(holder: "a fallible value", case_name: case_name, known: known, span: name)
-            )
-            return state.error_ty_of(c)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
-            got = state.show(c, s, decls, subject)
-            state.push_diagnostic(@c, data_errors.case_on_non_variant(got: got, case_name: case_name, span: span))
-            return state.error_ty_of(c)
-        .array | .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error =>
-            got = state.show(c, s, decls, subject)
-            state.push_diagnostic(@c, data_errors.case_on_non_variant(got: got, case_name: case_name, span: span))
-            return state.error_ty_of(c)
-
-    return state.error_ty_of(c)
-
-# `_` as a whole arm: legal only where exhaustiveness is impossible.
-function wildcard_pattern(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], subject: i64, span: token.Span)
-    _ = a
-
-    if table.poisoned(c.out.types, subject)
-        return
-
-    countable = match table.get(c.out.types, subject)
-        .named n =>
-            match decls[n.decl].kind
-                .variant_decl                                               => true
-                .constant_decl | .function_decl | .record_decl | .test_decl => false
-        .fallible | .bool                                                      => true
-        .int_ty | .float_ty | .str | .ptr | .cstr | .unit | .array             => false
-        .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error => false
-
-    if countable
-        got = state.show(c, s, decls, subject)
-        state.push_diagnostic(@c, data_errors.wildcard_on_variant(got, span))
 
 # A literal arm, checked against the subject's type, which is the type its
 # context asks for (spec § 2), the sign folded into the literal as a
@@ -1140,47 +1064,6 @@ function literal_pattern(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
         _ = synth(@c, a, r, s, decls, value)
         return
     check(@c, a, r, s, decls, id: value, expected: subject)
-
-# The rule the language is built around: every case named, or the
-# compiler names the ones that are missing.
-function exhaustive(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], subject: i64, covered: [i64], wildcard_seen: bool, span: token.Span)
-    _ = a
-
-    if wildcard_seen || table.poisoned(c.out.types, subject)
-        return
-
-    match table.get(c.out.types, subject)
-        .named n =>
-            match decls[n.decl].kind
-                .variant_decl v =>
-                    missing: [str] @ []
-                    index: i64 @ 0
-
-                    for one_case in v.cases
-                        if !listed(covered, index)
-                            missing @ missing.push("." + source.span_text(s, one_case.name))
-                        index @ index + 1
-
-                    if missing.len() > 0
-                        state.push_diagnostic(@c, data_errors.non_exhaustive(missing, span))
-                .constant_decl | .function_decl | .record_decl | .test_decl => return
-        .fallible =>
-            missing: [str] @ []
-
-            if !listed(covered, 0)
-                missing @ missing.push(".ok")
-
-            if !listed(covered, 1)
-                missing @ missing.push(".err")
-
-            if missing.len() > 0
-                state.push_diagnostic(@c, data_errors.non_exhaustive(missing, span))
-        # i64 and str cannot be enumerated, so `_` is how they are
-        # finished — and its absence is the error.
-
-        .int_ty | .str => state.push_diagnostic(@c, data_errors.needs_wildcard(span))
-        .float_ty | .bool | .ptr | .cstr | .unit | .array => return
-        .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error => return
 
 # A declared function used as a VALUE carries its parameter names into its
 # type, and only where §4.9 needs them: two positions of one type. Anywhere
@@ -2310,3 +2193,29 @@ test "a literal arm takes the width of what it matches, and that width's range"
     wrong = checked_program("function f(s: str) -> i64\n    return match s\n        1 => 1\n        _ => 0\n")
     assert wrong.out.diagnostics.len() == 1
     assert wrong.out.diagnostics[0].message == "expected `str`, found `i64`"
+
+# Defect 128: an arm an earlier arm covers is `duplicate_arm`: a literal of a
+# value an earlier literal took, however spelled, any pattern after a `_`,
+# and a fallible's case named twice. Distinct values, a `_` after the
+# literals, and the same value on another `match` are not.
+test "an arm an earlier arm covers is refused, however its value is spelled"
+    covered = [
+        "function f(n: i64) -> i64\n    return match n\n        _ => 0\n        0 => 1\n"
+        "function f(n: i64) -> i64\n    return match n\n        _ => 0\n        _ => 1\n"
+        "function f(s: str) -> i64\n    return match s\n        \"a\" => 0\n        \"a\" => 1\n        _ => 2\n"
+        "function f(n: i64) -> i64\n    return match n\n        97 => 0\n        'a' => 1\n        _ => 2\n"
+        "function f(n: i64) -> i64\n    return match n\n        0 => 0\n        -0 => 1\n        _ => 2\n"
+        "function f(n: u8) -> i64\n    return match n\n        1 | 0x1 => 0\n        _ => 2\n"
+        "function f(r: i64?) -> i64\n    return match r\n        .ok x => x\n        .err _ | .err _ => 0\n"
+    ]
+
+    for text in covered
+        c = checked_program(text)
+        assert c.out.diagnostics.len() == 1
+        assert c.out.diagnostics[0].code == "duplicate_arm"
+
+    kept = checked_program(
+        "function f(n: i64) -> i64\n    a = match n\n        -1 => 0\n        1 => 1\n        '1' => 2\n        2 | _ => 3\n    return a + match n\n        1 => 1\n        _ => 0\n"
+    )
+    assert kept.out.diagnostics.len() == 0
+    assert checked_program("function f(n: i64) -> i64\n    return match n\n        0 => 0\n        -0 => 1\n        _ => 2\n").out.diagnostics[0].message == "`-0` is already covered by an earlier arm, written `0`, the same value: no value reaches this one"

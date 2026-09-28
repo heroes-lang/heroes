@@ -1,0 +1,73 @@
+# Fixed defect 128, 2026-09-28. Symptom: two literal arms of one value
+# compiled in silence, the second never reached: `"a"` twice, `97` beside
+# `'a'` and `0x61`, which are one number, `-0` beside `0`, and any arm after a
+# `_`, which matches every value (`_` then `0 =>` printed the `_` arm's
+# value at exit 0). A fallible's `.ok` or `.err` could be named twice. Two
+# arms naming one case of a variant were already `duplicate_arm`. Cause:
+# `case_pattern` counted a variant's cases and not a fallible's, and nothing
+# counted a literal's value or the `_`. One code for the one mistake, a
+# pattern no value can reach, naming the earlier arm where it spelled the
+# value another way. The arms at the end are distinct values and stay legal.
+
+function after_a_wildcard(n: i64) -> i64
+    return match n
+        _ => 0
+        0 => 1  #~ duplicate_arm
+
+function two_wildcards(n: i64) -> i64
+    return match n
+        _ => 0
+        _ => 1  #~ duplicate_arm
+
+function in_a_join(n: i64) -> i64
+    return match n
+        _ | 1 => 0  #~ duplicate_arm
+
+function twice(s: str) -> i64
+    return match s
+        "a" => 0
+        "a" => 1  #~ duplicate_arm
+        "\n" => 2
+        "\n" => 3  #~ duplicate_arm
+        _ => 4
+
+function spellings(n: i64) -> i64
+    return match n
+        97 => 0
+        'a' => 1  #~ duplicate_arm
+        0x61 | 2 => 2  #~ duplicate_arm
+        0 => 3
+        -0 => 4  #~ duplicate_arm
+        -1 => 5
+        -1 => 6  #~ duplicate_arm
+        3 | 2 => 7  #~ duplicate_arm
+        _ => 8
+
+function byte(b: u8) -> i64
+    return match b
+        'a' => 0
+        97 => 1  #~ duplicate_arm
+        _ => 2
+
+function fallible(r: i64?) -> i64
+    return match r
+        .ok x => x
+        .err _ => 0
+        .ok y => y  #~ duplicate_arm
+
+function joined(r: i64?) -> i64
+    return match r
+        .ok _ | .ok _ => 1  #~ duplicate_arm
+        .err _ | .err _ => 0  #~ duplicate_arm
+
+function kept(n: i64) -> i64
+    return match n
+        -1 => 0
+        1 => 1
+        '1' => 2
+        0 => 3
+        2 | _ => 4
+
+function main()
+    print(after_a_wildcard(0) + two_wildcards(0) + in_a_join(0) + twice("a") + spellings(0) + byte(97))
+    print(fallible(ok(1)) + joined(ok(1)) + kept(1))
