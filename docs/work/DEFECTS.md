@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 5**
+**OPEN: 6**
 
 - [ ] **114 — the emitted C zeroes every temporary of a function at its entry, so a lookup that returns early pays for every arm** | the emitter declares each temporary at the top of the C function with `= {0}`, and a `match` over a string of twenty arms declares them all: the emitted `h_keywords_keyword` zeroes 139 temporaries on every call to make 21 string comparisons, and on the default build line (plain `clang`, no optimisation, CLAUDE.md § Commands) every one is executed; `memset` was about a fifth of `fmt`'s samples after defect 105's repair | `selfhost/emit/` (the temporaries' declarations) · `seed/heroes.c` (`h_keywords_keyword`)
 
@@ -103,5 +103,18 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** A verb that says *this is a compiler bug* is one;
     and no suite saw it because no fixture and none of the probe's families
     holds a negative pattern.
+
+- [ ] **126 — panel 181's join is certain on an arm whose `-` is split from its operand by a line end or a comment, and writes a program that does not parse** | `match n` with `0 => 5` over a line holding `-` alone over `1 => 10` costs three diagnostics, and `check --apply` writes `0 => 5 - 1 => 10`, refused with `expected_end_of_line`; with `-  # the sign` the join keeps the comment inside the line; on the first arm the certain join writes `- 1 => 10`, which defect 123's repair refuses; and the parenthesised `guess` would wrap a pattern's value, and a pattern takes no parentheses | `selfhost/open_line.hero` (`goes_on_at_head`, `refuse_the_end`) · `selfhost/parse/wrap_break.hero` (`spanning`)
+
+    **Origin:** lane 123's agent, 2026-09-28, attacking the separators beside
+    defect 123 (a line end or a comment where 123 has a space; reproducers
+    `shapes/s07` to `s10` and `applied/` in
+    `/Users/joseph/Temp/heroes-lane-123-scratch/`); reproduced by the
+    coordinator on the trunk's compiler at `3bde187f` the same morning
+    (`arm_split.hero` in `/Users/joseph/Temp/heroes-recovery-2026-09-26/defect126/`).
+
+    **Why it is a defect.** Panel 181's item 3: a `certain` fix that fails to
+    compile is a defect of the landing, and `heroes check --apply` would write
+    it into a file.
 
 *******************************************************************************
