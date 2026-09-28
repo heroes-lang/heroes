@@ -309,6 +309,8 @@ CL-060.
   discard it and write down why. **A suite reading the tree owns the tree until
   it exits** (CL-025), so work beside a gate goes in the scratchpad or a
   detached worktree: free while one DECIDES, never while one is TIMED (CL-071).
+  **A lane lives under `.claude/worktrees/`, never beside the project**
+  (author instruction 2026-09-28; `.claude/rules/records.md` § Working in lanes).
 - **A milestone is tagged only over a clean list** (author instruction
   2026-09-08): zero open items in `docs/work/DEFECTS.md`, and nothing open in
   `docs/work/DECIDE.md` that is not a `panel NNN` ratification. The author asked

@@ -185,13 +185,28 @@ rotations above are what make it possible: a lane writes its own milestone file,
 its own entries under `docs/records/log/` and `docs/records/done/`, its own beat — every one of
 them a file nobody else is writing.
 
-- **The worktree lives outside this tree**, `~/Temp/heroes-lane-<milestone>` or
-  the like, and **never** under `.claude/worktrees/`. A nested checkout made a
+- **The worktree lives inside this tree, under `.claude/worktrees/<lane>`, and
+  never in a folder beside the project** (author instruction 2026-09-28, meant
+  as: the lanes go inside the project's `.claude/worktrees`, not outside it in
+  parallel folders; write it so it is known for good). **Until that day this
+  bullet said the opposite**, *outside this tree, never under
+  `.claude/worktrees/`*, for two measured reasons: a nested checkout made a
   tree-walking check report another tree's milestone names as this one's
   (2026-08-12), and the mere existence of that directory hid a citation defect
   for three red CI runs, on the one machine that could not see it (2026-09-07).
-  A worktree has its own index, which is why it is safer than a second session
-  here: CL-041 and CL-070 are both a shared index carrying away somebody's work.
+  Both were repaired in the instruments before the instruction was given: the
+  record walks ask git which files are the project's (`shell.project_files`),
+  the citation check asks `git check-ignore`, and `.claude/worktrees/` is in
+  `.gitignore`. **Measured the day it changed**, with a worktree of the trunk at
+  `.claude/worktrees/lane-rule-probe`: `git check-ignore` names it ignored,
+  `git status` does not list it, and records 24, layout 4, order 3, canonical 2,
+  surface 332, spec 20 and probe 24 read the same counts as without it, each 0
+  failed. **What a nested lane still owes**, because the two old failures were
+  a walk by the filesystem: any `find`, `tar` or copy of the tree excludes
+  `.claude/worktrees` by name, the archive sent to Linux arm64 and the Windows
+  box first, or it ships every lane inside it. A worktree has its own index,
+  which is why it is safer than a second session here: CL-041 and CL-070 are
+  both a shared index carrying away somebody's work.
 - **Merge, not rebase.** This repository cites commit hashes inside records —
   `/step` § 3 asks for the fixing commit's hash — and a rebase rewrites them, so
   it falsifies in silence a citation a lane wrote about itself.
