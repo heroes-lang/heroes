@@ -34,6 +34,7 @@ use parse/type
 use parse/members as parse_members
 use parse/marks as parse_marks
 use grammar_expr
+use parse/opening
 
 ## Linkage — where a declaration's implementation comes from
 
@@ -90,7 +91,7 @@ function here_or(c: cursor.Cursor, fallback: token.Span) -> token.Span
 # The symmetry is the whole rule this form rests on: **inside a group a
 # declaration is a signature, not a definition**, so `constant` gives up its
 # body for the same reason `function` gives up its own — C has the thing.
-function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage)
+function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage, head: opening.Mark)
     if !cursor.expect(@c, text: text, kind: .colon, code: "expected_constant_type", what: "`:` and the constant's type — a `constant` declares a value, so it has one")
         cursor.recover_to_next_decl(@c)
         return
@@ -103,7 +104,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     if is_from_c(linkage)
         body_check(@c, "constant")
     else
-        b = grammar_expr.block(@c, @a, text: text, owner: "a `constant`")
+        b = grammar_expr.block(@c, @a, text: text, owner: "a `constant`", head: head)
 
         if b.is_err()
             cursor.recover_to_next_decl(@c)
@@ -119,7 +120,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
 
 # Everything after a function's name: generics, the signature, and — for a
 # non-extern — the body. Shared by `function` and a group's members.
-function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage)
+function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage, head: opening.Mark)
     is_extern = is_from_c(linkage)
     generic_names = parse_members.generics(@c, text)
 
@@ -165,7 +166,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     if is_extern
         body_check(@c, "function")
     else
-        b = grammar_expr.block(@c, @a, text: text, owner: "a `function`")
+        b = grammar_expr.block(@c, @a, text: text, owner: "a `function`", head: head)
 
         if b.is_err()
             cursor.recover_to_next_decl(@c)

@@ -1,0 +1,16 @@
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:14:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:15:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:19:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:20:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:24:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:25:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:31:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:32:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:36:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:38:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:40:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:41:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:45:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:49:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:55:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-after-a-block-holding-a-mistake.hero:58:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

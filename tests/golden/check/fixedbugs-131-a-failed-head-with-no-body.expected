@@ -1,0 +1,11 @@
+tests/golden/check/fixedbugs-131-a-failed-head-with-no-body.hero:11:12: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-a-failed-head-with-no-body.hero:12:5: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found a name (`print`))
+tests/golden/check/fixedbugs-131-a-failed-head-with-no-body.hero:13:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-failed-head-with-no-body.hero:16:12: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-a-failed-head-with-no-body.hero:17:5: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `else`)
+tests/golden/check/fixedbugs-131-a-failed-head-with-no-body.hero:18:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-failed-head-with-no-body.hero:19:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-failed-head-with-no-body.hero:24:17: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-a-failed-head-with-no-body.hero:25:5: error[missing_body]: an `else if` needs an indented body — one level deeper, exactly 4 spaces (found `else`)
+tests/golden/check/fixedbugs-131-a-failed-head-with-no-body.hero:26:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-failed-head-with-no-body.hero:27:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

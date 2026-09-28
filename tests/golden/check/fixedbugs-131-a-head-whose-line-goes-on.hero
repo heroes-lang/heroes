@@ -1,0 +1,38 @@
+# Fixed defect 131, 2026-09-28, beside it: a head that parsed and whose line
+# goes on. Symptom: `if n > 0 )` over an indented body was named
+# `missing_body` at the `)`, once, as before, and then the body under it was
+# dropped whole with every mistake inside it; so after `else )` and after
+# `match n )`, and in a bound `if`. Cause: what went on past the head was
+# reported as a missing body, and the statement, having reported, dropped the
+# line and the block under it. The message stays where it was, naming what it
+# found, and the body below the line is read as the head's body
+# (`parse/opening`).
+
+function after_if(n: i64)
+    if n > 0 )  #~ missing_body
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function after_else(n: i64)
+    if n > 0
+        print(1)
+    else )  #~ missing_body
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function after_match(n: i64)
+    match n )  #~ missing_match_arms
+        + => print(1)  #~ expected_pattern
+        _ => print(2)
+    z = 4 )  #~ expected_end_of_line
+
+function in_a_bound_if(n: i64) -> i64
+    k = if n > 0
+        1
+    else )  #~ missing_body
+        2 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+    return k
+
+function main()
+    print(1)

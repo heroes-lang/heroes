@@ -58,6 +58,15 @@ record Diagnostic
     fixes: [Fix]
     notes: [str]
 
+# A diagnostic the parser held back because the lexer joined the line it
+# is about into a block's head (`parse/opening`, defect 131): `cause` spans
+# the break, where the lexer's refusal of the join stands, and `at` is how
+# many the parser had said before it, which is where it goes if it is said.
+record Held
+    at: i64
+    cause: token.Span
+    diagnostic: Diagnostic
+
 # The one constructor, so every diagnostic starts complete and empty-handed.
 function new_diagnostic(code: str, message: str, span: token.Span) -> Diagnostic
     fixes: [Fix] = []
