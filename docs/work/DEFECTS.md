@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 5**
 
 - [ ] **114 — the emitted C zeroes every temporary of a function at its entry, so a lookup that returns early pays for every arm** | the emitter declares each temporary at the top of the C function with `= {0}`, and a `match` over a string of twenty arms declares them all: the emitted `h_keywords_keyword` zeroes 139 temporaries on every call to make 21 string comparisons, and on the default build line (plain `clang`, no optimisation, CLAUDE.md § Commands) every one is executed; `memset` was about a fifth of `fmt`'s samples after defect 105's repair | `selfhost/emit/` (the temporaries' declarations) · `seed/heroes.c` (`h_keywords_keyword`)
 
@@ -79,5 +79,29 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     116; if it admits it, the formatter is owed a repair of its own, and a
     defect hidden inside another's body would be forgotten by the route that
     does not close it.
+
+- [ ] **119 — a line at a statement's margin that begins with `(`, `[` or `?` after an `if` or `match` block is applied to the block's value** | `f = if c` / `    double` / `else` / `    triple` / `(5)` at the statement's margin is `check` 0 and prints 10, the `(5)` read as a call of the `if`'s value; with `[0]` after a block of arrays it prints 7; `heroes fmt` exits 2 on both, *this is a compiler bug*; the reader sees a block and then a line of its own | `selfhost/grammar_expr.hero` (`ends_the_expression`, the postfix loop after a block-valued expression)
+
+    **Origin:** panel 181's completeness critic, 2026-09-28, asking whether
+    defect 116 is the whole class or one entry of it; reproduced by the
+    coordinator on the trunk's compiler at `0fc98107` the same night
+    (`q1_postfix_call.hero` and `q2_postfix_index.hero` in
+    `/Users/joseph/Temp/heroes-recovery-2026-09-26/panel-181/coordinator-key/`).
+
+    **Why it is a defect.** Defect 005's neighbour: its repair taught
+    `ends_the_expression` to stop a binary operator at a line end after a
+    block, and a postfix was left reading on. A program that reads as two
+    statements runs as one, which is design.md §4.15's one accepted silent
+    case widened by the compiler rather than by the language.
+
+- [ ] **120 — `discarded_value`'s `certain` fix on a line that begins with a spaced `-` after a finished line drops a term the author meant to subtract** | `total = base` / `- fee` at one margin is refused with `discarded_value`, and its fix, tagged `certain` in `check --json`, writes `_ = - fee`: applied with `check --apply`, the program prints 100 where the subtraction meant 93; `.claude/rules/diagnostics-and-goldens.md` reads *a `certain` fix repairs the defect the diagnostic names*, and panel 180's `spaced_minus_element` gives the same shape inside a list two `guess` fixes | `selfhost/discard_errors.hero` (`discarded_value`) · `selfhost/parse/list_line.hero` (`spaced_minus_element`)
+
+    **Origin:** panel 181's completeness critic, 2026-09-28; reproduced by the
+    coordinator on the trunk's compiler at `0fc98107` the same night
+    (`q3_minus.hero`, `check --apply` then `run` printing 100).
+
+    **Why it is a defect.** A machine-applicable fix that compiles and keeps
+    the bug is the case the rule was written for: `heroes check --apply`
+    would automate the silent reading the refusal exists to stop.
 
 *******************************************************************************
