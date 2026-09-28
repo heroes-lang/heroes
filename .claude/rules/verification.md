@@ -68,6 +68,19 @@ happened here first.
 | `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, plus everything `selfhost/**` already gets |
 | `docs/**`, `DESIGN-LOG.md`, `CLAUDE.md`, `.claude/**` | `records` |
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero` |
+| a file `site/src/lib/claims.ts` names at its top (`selfhost/cli/table.hero`, `selfhost/cli/doctor.hero`, `selfhost/parse/decl.hero`, `tests/harness/suite_spec.hero`, `.claude/agents/`, `.github/workflows/ci.yml`, and the rest it lists), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push |
+
+**The site's build was missing from this map until 2026-09-28**, and it cost a
+deploy. `heroes probe` became the command's thirteenth verb at M-agreed-retention
+step 27, and the start page in both editions still said *twelve verbs* and named
+eleven of them plus `this`; the whole net read 3,144 and 0, the push of that
+milestone's close went out, and `site/src/lib/claims.ts`, which counts the
+`Command(` rows of `selfhost/cli/table.hero` and asks the page to say the same,
+refused the deploy. The page that was live stayed live, so nothing false was
+published, and nothing true was either. The claims check is the site's
+instrument and no suite of the net runs it, so a change to a file it reads goes
+through the site's build before the push, as a `selfhost/print/` change goes
+through the probe by hand.
 
 **`grammar` was missing from the spec row until 2026-09-16**, found by panel
 159's completeness critic while auditing the briefs that sitting was working
