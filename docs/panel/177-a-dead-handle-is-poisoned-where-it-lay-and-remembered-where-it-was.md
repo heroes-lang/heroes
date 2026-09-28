@@ -220,6 +220,29 @@ with this sitting.
 
 ## Author's verdict
 
+**RATIFIED 2026-09-28**, in one act with every sitting
+`docs/work/DECIDE.md` held, panels 175, 176, 177, 179, 180, 181 and 182,
+on the author's instruction of that evening, meant as: *ratify every
+decision on the list*. **Recorded as a reading of this file**, CLAUDE.md
+§ 4's default, which the author asked on 2026-09-21 to be taken for
+granted; not `by delegation`. The recommendations the list carried are
+taken with it. Each sentence below was verified against the tree at
+`a6eab736` before it was written.
+
+**What the yes settles**: the poison, the dead set and route M as landed at
+M-agreed-retention step 14, defects 077 and 088 closed on 2026-09-25, and the
+limits the landing pinned at exit 0 by the `tests/golden/run/limit-*` cases,
+fifteen files. **And the decision found at the landing**, which no sitting had
+ruled: a transfer that was made ends the program's own name for the value, as
+a release does. § 13 says so (*once made, the program's own name for it has
+ended as if given back*), so json-c's README order, add the child and then
+fill it, stays refused and is written fill first. The other reading, the name
+as a borrowed reference while the receiver lives, stays refused as the silent
+use-after-free it would allow. R and S stay refused on the ffi seat's vetoes.
+
+**What this section said while the sitting was open**, kept because a
+record is not rewritten:
+
 *Pending: `docs/work/DECIDE.md` carries this sitting as `panel 177`. Work
 proceeds on the provisional resolution: route E's lane merges, defect 090 is
 filed, then the landing of panels 176 and 177 in steps.*
