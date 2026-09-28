@@ -244,3 +244,16 @@ arithmetic.
 | spec-warden | the fixtures give 7,982 generated and 6,350 parsing | generated **held**; parsing **falsified**, 6,560 under today's parser (probably panel 180's repair; not verified) |
 | historian | none of ten formatter CLIs lists a generator of deformed inputs within twelve months | checkable 2027-09-27 |
 | critic | `parens.hero` gives 576 variants, 456 parsing, 6 refused at `83ac68c1` | generated **held** (576); none refused today |
+
+**Corrected 2026-09-28, at M-agreed-retention's close**
+(`docs/records/done/2026-09-28-2138-the-predictions-of-m-agreed-retention-scored.md`):
+the spec-warden's fixture row is **falsified on both counts**. Its *generated
+held* rests on the recovered Python generators and not on the probe that
+landed, and its 6,560 sums the probe's single, multi and bracket rows with the
+seats' paren row, a figure no single run prints. The landed probe over the 30
+files as at `83ac68c1`, unstrided, on `e8ed8732`'s compiler and on the trunk's
+at `a63cf9ed`, reads 8,405 generated and 6,977 parsing against 7,982 and
+6,350; the whole generated difference is the paren family, 981 against 558.
+The compiler-engineer's *number to take* is scored void there, since the
+configuration it names, the probe judging `83ac68c1`'s formatter, was never
+built.
