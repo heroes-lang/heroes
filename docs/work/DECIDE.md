@@ -95,6 +95,14 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     refused because it writes accidents into the spec and keeps an exit-0
     wrong answer.
 
+    **Added 2026-09-28, at defect 123's landing** (lane 123, `492a7ee4`):
+    the spec's sentence carries no bracket limit, and the compiler now
+    refuses the same shape opening a `match` arm, with the list's code and a
+    `certain` fix, since in a pattern a `-` can only be its literal's sign.
+    design.md §4.15's bullet names a literal's elements and calls both fixes
+    `guess`, so it says less than the compiler does; ratifying may extend it
+    to the arm, which is the recommendation, since the spec already says so.
+
 - [ ] **panel 181** | ratify panel 181: outside brackets a line ends its statement in both directions, refused by one lexer diagnostic at the break with the joined line handed on (route (a) final, widened to the class the critic found: a postfix after a block, a leading spaced `-`, the `error` token's glue); the join `certain` only where the next line cannot stand alone; the code on the thesis list; the spec's longer sentence and § 1's clause made true, +62 real | `docs/panel/181-outside-brackets-a-line-ends-its-statement-in-both-directions.md`
 
     **Origin:** panel 181, 2026-09-28, M-agreed-retention, convened on defect
@@ -107,6 +115,14 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     names no rule and leaves the class to be found member by member. **Two
     points for the author**: the code's place on the thesis list, and § 12's
     default reversed on § 1's clause.
+
+    **A third, added 2026-09-28 at defect 126's landing** (lane 123,
+    `1e2c3506`): whether a line that holds a whole arm stands alone under
+    item 3. The landing reads it as not standing alone, so the join after an
+    arm's split `-` is `certain`; read the other way it is a `guess`.
+    **Recommendation: keep it `certain`**, because the arm's `-` can only be
+    its literal's sign, so the joined arm has one reading, and every join the
+    lane applied checked clean and printed what the arm means.
 
 - [ ] **panel 182** | ratify panel 182: the emitted C never zeroes a value or an `@` parameter's slot and zeroes every other refcounted slot, the verifier checks order within a block, every aggregate written by tag and payload is written whole first, the cache keys take the C compiler and its flags (defect 122); and the deferral of the consuming store and the initialising stores until the compiler crosses a leak gate | `docs/panel/182-a-value-is-never-zeroed-a-slot-is-and-a-definition-is-whole.md`
 
