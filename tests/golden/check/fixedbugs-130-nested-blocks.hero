@@ -1,0 +1,26 @@
+# Fixed defect 130, 2026-09-28, blocks inside blocks. Symptom: one mistake in
+# the innermost of several nested blocks hid one statement at every level it
+# closed: two nested blocks hid two, three hid three. Cause: each enclosing
+# statement that had reported dropped the line after its own dedent
+# (`grammar_expr.finish`), and every level below had reported. A failed
+# statement drops only what is left of its own line now, so each level's
+# next line is read.
+
+function two_deep(n: i64)
+    for i in range(from: 0, to: 3)
+        if n > 0
+            y = 3 )  #~ expected_end_of_line
+        z = 4 )  #~ expected_end_of_line
+    w = 5 )  #~ expected_end_of_line
+
+function three_deep(n: i64)
+    for i in range(from: 0, to: 3)
+        while n > 0
+            if n > 1
+                y = 3 )  #~ expected_end_of_line
+            a = 1 )  #~ expected_end_of_line
+        b = 2 )  #~ expected_end_of_line
+    c = 3 )  #~ expected_end_of_line
+
+function main()
+    print(1)
