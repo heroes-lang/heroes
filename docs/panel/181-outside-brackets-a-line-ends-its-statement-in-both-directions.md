@@ -353,3 +353,34 @@ was told so at 03:46.
 | seat | prediction | checkable at |
 |---|---|---|
 | llm-ergonomist, second reading | the landed compiler answers the fifteen fragments as the seat did, 15 of 15, or 14 of 15 with fragment 9 the one; no refused fragment accepted with another meaning; both written programs compile | the landing |
+
+## Item 1 (ii) narrowed, 2026-09-28 at 04:03
+
+**The list in item 1 (ii) was wrong about `(` and `[`**, measured by the
+landing lane's agent and reproduced by the coordinator: both begin a Primary
+(spec § 7), so a line that begins with one after a finished line is a
+statement of its own, and a legal one where it means something. On the trunk's
+compiler, `y = a` / `(a + b).print()` compiles and prints 7 then 5, and `y = 1`
+/ `[1, 2].len().print()` prints 2 then 1; the tree holds one such line,
+`tests/golden/surface-fixtures/comments101/parenplace.hero:10`, `(x  # after
+the place` / `) @ a`, which the list as written would have refused, moving its
+exit and falsifying the spec-warden's prediction. The lane's census of the 1164
+files of `0fc98107` found no depth-zero line after a finished line or a closed
+block that begins with a binary operator, a `-`, `?`, `::` or `[`, and that one
+beginning with `(`.
+
+**The resolution as it lands** (the coordinator's approval of the lane's
+reading, 04:00): the lexer refuses, and hands on the join for, a depth-zero line
+that begins with a binary operator, a `-` set apart from its operand, `?` or
+`::`, at the statement's margin and after a closed block; a line that begins
+with `(`, `[` or `.` begins a new statement, and **the parser's postfix loop
+stops at every suffix after a block that has just closed** (panel 035's own
+rule, *a suffix never reaches across a block that just closed*, made true of
+every suffix and not only `.`), so defect 119's `(5)` and `[0]` become lines of
+their own, refused as unused values, and a line such as `(5).print()` after a
+block runs as the second statement it reads as; `discarded_value`'s `_ =` is a
+`guess` on a line that begins with `-`, `.`, `(` or `[`, panel 180's
+`begins_a_value` set. Nothing here changes a verdict: the second blind reading
+refused fragments 10 and 11 as unused values, which is this reading. The
+wording V3 already says it: *the next line may not go on with it*, and a line
+that begins a Primary does not.
