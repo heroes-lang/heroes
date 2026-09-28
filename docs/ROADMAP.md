@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 6 defects · 7 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 7 defects · 7 decisions.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -24,7 +24,7 @@ against a banner reading 3.
 | The spec | **6693** on the vendored ranks and **8861** on the reader's own, against a ceiling of **10240**. This milestone has spent four rows: panel 175's four sentences in § 13 — two records may share `tag void`, a `void *` C hands out for the program to give back is a `tag void` handle, giving a handle back twice is caught unless C reused its address, and the handle-only rule panel 170 ratified and never landed — **+91 real**; the releaser set, `acquires sqlite3_close \| sqlite3_close_v2`, with a release the mark did not name stopped before C runs — **+82 real**; and `transfers`, `retains` and `when`, the three sentences with the landing review's four clauses inside them (the receiver outlives the call, the null result, the life a reference begins, the value within the type) — **+362 real**; and panel 177's give-back sentence, a handle given back ends and a copy made before is stopped unless C handed the address out again, with a transfer that was made ending the name — **+56 real**; all over `DELTA_GATE` on the author's word to pay the tokens. **1379 free** and 1319 net of the FFI floor |
 | The contract | **7737** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-21 when § 4 gained the author's second telling that they read every sitting |
 | Records | sittings **175** · journals **61**, numbered files only (the 62 this cell read counted `README.md`) · milestone files **51** · measurements **37** · entries: `docs/records/log/` **709**, `docs/records/done/` **595**, `docs/records/book/beats/` **128** |
-| Waiting on the author | **the ratifications of panels 175, 176, 177, 179, 180, 181 and 182**, the seven items in `DECIDE.md`; the author declined the first three "for now" on 2026-09-24, and the work proceeds on every provisional resolution, 175 to 177 landed by steps 10 and 11 and 180 by step 21. The open defects are this milestone's to repair |
+| Waiting on the author | **the ratifications of panels 175, 176, 177, 179, 180, 181 and 182**, the seven items in `DECIDE.md`; the author declined the first three "for now" on 2026-09-24, and the work proceeds on every provisional resolution, 175 to 177 landed by steps 10 and 11 and 180 by step 21. The open defects are this milestone's to repair, save 129, carried to the next by the author's waiver of 16:40 |
 
 **Re-measured 2026-09-25 in lane c of step 12, the full net on a compiler
 built from the regenerated seed, which is CI's own configuration: 2215 passed,
