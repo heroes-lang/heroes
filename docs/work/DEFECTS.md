@@ -62,6 +62,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     beside defect 126, the sign join `-"a" => 10` on a `str` match (`p5`);
     `-'a'` on an `i64` match compiles (`p6`), since a character is an integer.
 
+    **Corrected 2026-09-28 at 23:17**: the directories were removed by the
+    author, who took them for old lanes, and restored from the trash the
+    same evening, so the paths above resolve again; the copies in the
+    scratchpad are what the lanes read.
+
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
     **Origin:** lane 123's agent, 2026-09-28, beside defect 124, on the
@@ -102,6 +107,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and two nested blocks hide two (`w6`, lines 6 and 7). A declaration's
     body does not (`w9`): `cursor.recover_to_next_decl` asks whether the
     cursor already stands at a fresh line, which `finish` never asks.
+
+    **Corrected 2026-09-28 at 23:17**: the directories were removed by the
+    author, who took them for old lanes, and restored from the trash the
+    same evening, so the paths above resolve again; the copies in the
+    scratchpad are what the lanes read.
 
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
