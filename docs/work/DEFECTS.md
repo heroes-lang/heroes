@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 7**
+**OPEN: 3**
 
 - [ ] **114 — the emitted C zeroes every temporary of a function at its entry, so a lookup that returns early pays for every arm** | the emitter declares each temporary at the top of the C function with `= {0}`, and a `match` over a string of twenty arms declares them all: the emitted `h_keywords_keyword` zeroes 139 temporaries on every call to make 21 string comparisons, and on the default build line (plain `clang`, no optimisation, CLAUDE.md § Commands) every one is executed; `memset` was about a fifth of `fmt`'s samples after defect 105's repair | `selfhost/emit/` (the temporaries' declarations) · `seed/heroes.c` (`h_keywords_keyword`)
 
@@ -47,62 +47,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the IR's architecture: a panel path (CLAUDE.md § 4), convened when the
     seats can sit again. Removing the zeroing without it would trade a
     robustness guarantee for speed, which § Precedence refuses.
-
-- [ ] **116 — a statement continued at its own margin after a trailing operator compiles, where design.md says a long expression at depth zero is broken inside parentheses or not at all** | `y = a +` over `1` at the statement's own indentation is `check` 0 and prints 6: the lexer plants no terminator after `+` (Go's rule) and the same margin plants no indent, so the statement goes on; one level deeper it is refused; design.md §4.15 reads *at bracket depth zero every line's indentation is structural: a long expression is broken inside parentheses or not at all*, and *trailing-operator continuation at depth zero (Nim's rule) was considered and deferred* | `selfhost/layout.hero` (`is_line_ender`, `maybe_terminator`) · `docs/design/design.md` §4.15
-
-    **Origin:** lane B's agent, 2026-09-27, beside defect 107 (a comment on
-    its own line in such a continuation is refused by `fmt` at exit 2, since
-    the owner rule reads the continued line as a new logical line); searched
-    `docs/work/DEFECTS.md`, `docs/records/` and `docs/panel/` for *same
-    indentation*, *depth zero* and *Nim's rule* and found only panel 007's
-    deferral and panel 180's reports quoting it. Re-run by the coordinator on
-    the trunk at `f08b192d`: `y = a +` / `1` and `y = xs.` / `len()` at the
-    same margin, `check` 0 and `run` printing 6 and 2; the continuation one
-    level deeper, `check` 1.
-
-    **Why it is a defect, and why it needs a sitting.** The compiler admits a
-    form the source of truth says was deferred; the spec's own last-token
-    rule reads as admitting it. Whether the repair refuses it, as design.md
-    says, or design.md admits it, is what the lexer does: a panel path
-    (CLAUDE.md § 4).
-
-- [ ] **118 — `fmt` accuses itself on a `match` arm continued at its own margin** | `.dot => a +` over `1` at the arm's own indentation, inside `y = match s`, is `check` 0 and prints 6 (defect 116's shape), and `heroes fmt` on it exits 2 with *`fmt` is not a fixpoint on its own output* and *this is a compiler bug*; the same shape after a `.` at a statement's margin, `y = xs.` over `len()`, formats at exit 0 to `y = xs.len(` over a `)` of its own | `selfhost/print/fmt.hero` · `selfhost/layout.hero` (`maybe_terminator`)
-
-    **Origin:** the coordinator, 2026-09-28, writing panel 181's brief on
-    defect 116: the seventeen shapes of that brief run through `fmt` with the
-    trunk's compiler built from the seed at `dfcac362`; five format at exit 0,
-    the arm exits 2.
-
-    **Why it is a defect, and why it has a number of its own.** A verb that
-    says *this is a compiler bug* is one, whatever the input's standing. If
-    panel 181 refuses the shape, the input stops parsing and this closes with
-    116; if it admits it, the formatter is owed a repair of its own, and a
-    defect hidden inside another's body would be forgotten by the route that
-    does not close it.
-
-- [ ] **119 — a line at a statement's margin that begins with `(`, `[` or `?` after an `if` or `match` block is applied to the block's value** | `f = if c` / `    double` / `else` / `    triple` / `(5)` at the statement's margin is `check` 0 and prints 10, the `(5)` read as a call of the `if`'s value; with `[0]` after a block of arrays it prints 7; `heroes fmt` exits 2 on both, *this is a compiler bug*; the reader sees a block and then a line of its own | `selfhost/grammar_expr.hero` (`ends_the_expression`, the postfix loop after a block-valued expression)
-
-    **Origin:** panel 181's completeness critic, 2026-09-28, asking whether
-    defect 116 is the whole class or one entry of it; reproduced by the
-    coordinator on the trunk's compiler at `0fc98107` the same night
-    (`q1_postfix_call.hero` and `q2_postfix_index.hero` in
-    `/Users/joseph/Temp/heroes-recovery-2026-09-26/panel-181/coordinator-key/`).
-
-    **Why it is a defect.** Defect 005's neighbour: its repair taught
-    `ends_the_expression` to stop a binary operator at a line end after a
-    block, and a postfix was left reading on. A program that reads as two
-    statements runs as one, which is design.md §4.15's one accepted silent
-    case widened by the compiler rather than by the language.
-
-- [ ] **120 — `discarded_value`'s `certain` fix on a line that begins with a spaced `-` after a finished line drops a term the author meant to subtract** | `total = base` / `- fee` at one margin is refused with `discarded_value`, and its fix, tagged `certain` in `check --json`, writes `_ = - fee`: applied with `check --apply`, the program prints 100 where the subtraction meant 93; `.claude/rules/diagnostics-and-goldens.md` reads *a `certain` fix repairs the defect the diagnostic names*, and panel 180's `spaced_minus_element` gives the same shape inside a list two `guess` fixes | `selfhost/discard_errors.hero` (`discarded_value`) · `selfhost/parse/list_line.hero` (`spaced_minus_element`)
-
-    **Origin:** panel 181's completeness critic, 2026-09-28; reproduced by the
-    coordinator on the trunk's compiler at `0fc98107` the same night
-    (`q3_minus.hero`, `check --apply` then `run` printing 100).
-
-    **Why it is a defect.** A machine-applicable fix that compiles and keeps
-    the bug is the case the rule was written for: `heroes check --apply`
-    would automate the silent reading the refusal exists to stop.
 
 - [ ] **122 — a build's object cache ignores which C compiler and which flags built an object, so a changed compiler or flag reuses stale objects** | the unit key (`selfhost/cli/units.hero:82-84`) is the fingerprint, level, module, text, runtime and search paths, the fingerprint being `VERSION`, and the runtime object's (`selfhost/cli/toolchain.hero:154`) likewise: a program printing `__clang_major__` built under Apple clang 21 prints 21, built warm with Homebrew clang 22.1.8 first on the `PATH` still prints 21, and built cold prints 22; a compiler with one more flag in its list and the same `VERSION` reused every object (the critic) | `selfhost/cli/units.hero` · `selfhost/cli/toolchain.hero` · `selfhost/cli/clang_floor.hero` (which already writes `clang --version` on every build)
 
