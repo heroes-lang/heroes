@@ -378,7 +378,7 @@ int64_t h_main_in_parallel(int64_t h0_bands) {
     int64_t h5_i0;
     int64_t h6_h;
     HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -390,13 +390,13 @@ int64_t h_main_in_parallel(int64_t h0_bands) {
     int64_t t12;
     int64_t t13;
     int64_t t14;
-    HeroArrayHeader * t15 = {0};
+    HeroArrayHeader * t15;
     int64_t t16;
     int64_t t17;
-    HeroArrayHeader * t18 = {0};
+    HeroArrayHeader * t18;
     int64_t t19;
     bool t20;
-    HeroArrayHeader * t21 = {0};
+    HeroArrayHeader * t21;
     int64_t t22;
     int64_t t23;
     int64_t t24;
@@ -407,9 +407,9 @@ int64_t h_main_in_parallel(int64_t h0_bands) {
     int64_t t29;
     int64_t t30;
     int64_t t31;
-    HeroArrayHeader * t32 = {0};
-    HeroArrayHeader * t33 = {0};
-    HeroArrayHeader * t34 = {0};
+    HeroArrayHeader * t32;
+    HeroArrayHeader * t33;
+    HeroArrayHeader * t34;
     goto bb0;
 bb0:
 #line 97 "examples/threads/main.hero"
@@ -550,15 +550,15 @@ bb7:
 #line 111 "examples/threads/main.hero"
 void h_main_main(void) {
 #line 553 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
     int64_t t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     int64_t t5;
     int64_t t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     int64_t t8;
-    HeroStr t9 = {0};
+    HeroStr t9;
     goto bb0;
 bb0:
 #line 112 "examples/threads/main.hero"

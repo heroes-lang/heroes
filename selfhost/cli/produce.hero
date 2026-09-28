@@ -59,8 +59,11 @@ function failure_of(art: compile.Artifact?) -> str
 function produce(path: str, s: source.Source, options: compile.Options, t: toolchain.Toolchain, version: str) -> Produced?
     # The clang floor, once per build and before anything is emitted
     # (panel 103, author instruction): an older clang is exit 2 with the
-    # version found and the floor, not a wrong verdict later.
-    floor = clang_floor.check(t.build)
+    # version found and the floor, not a wrong verdict later. Checked on the
+    # banner of the one answer `toolchain.locate_toolchain` asked clang for,
+    # the answer every cache key carries (defect 122), so the floor and the
+    # keys are one clang's word and not two processes'.
+    floor = clang_floor.check(t.compiler_banner)
 
     if floor.is_err()
         io.eprint(text: "error: " + failure_message(floor))

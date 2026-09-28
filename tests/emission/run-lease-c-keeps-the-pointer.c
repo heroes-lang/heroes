@@ -108,21 +108,21 @@ void h_leaseckeepsthepointer_main(void) {
     int64_t t2;
     int64_t t3;
     bool t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     int64_t t6;
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
-    HeroStr t10 = {0};
+    HeroStr t7;
+    HeroStr t8;
+    HeroStr t9;
+    HeroStr t10;
     const char * t11;
     const char * t12;
     uint64_t t13;
     int64_t t14;
     int64_t t15;
     int64_t t16;
-    HeroStr t17 = {0};
-    HeroStr t18 = {0};
-    HeroStr t19 = {0};
+    HeroStr t17;
+    HeroStr t18;
+    HeroStr t19;
     goto bb0;
 bb0:
 #line 16 "tests/golden/run/lease-c-keeps-the-pointer.hero"

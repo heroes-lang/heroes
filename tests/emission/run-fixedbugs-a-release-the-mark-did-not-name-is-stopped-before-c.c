@@ -107,9 +107,9 @@ void h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_main(void) {
 #line 108 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
     hh * h0_a;
     hh * t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     hh * t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"

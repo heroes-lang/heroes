@@ -135,19 +135,19 @@ void h_abortafixedarrayelementwrittenpastitslength_main(void) {
     struct nums t7;
     int64_t t8;
     int64_t t9;
-    HeroArrayHeader * t10 = {0};
+    HeroArrayHeader * t10;
     int64_t t11;
     int64_t t12;
-    HeroArrayHeader * t13 = {0};
+    HeroArrayHeader * t13;
     int64_t t14;
     bool t15;
-    HeroArrayHeader * t16 = {0};
+    HeroArrayHeader * t16;
     int64_t t17;
     int64_t t18;
-    HeroStr t19 = {0};
+    HeroStr t19;
     struct nums t20;
     int64_t t21;
-    HeroStr t22 = {0};
+    HeroStr t22;
     int64_t t23;
     int64_t t24;
     int64_t t25;
@@ -156,12 +156,12 @@ void h_abortafixedarrayelementwrittenpastitslength_main(void) {
     int64_t t28;
     int64_t t29;
     int64_t t30;
-    HeroStr t31 = {0};
+    HeroStr t31;
     struct nums t32;
     int64_t t34;
     int64_t t35;
-    HeroArrayHeader * t36 = {0};
-    HeroArrayHeader * t37 = {0};
+    HeroArrayHeader * t36;
+    HeroArrayHeader * t37;
     goto bb0;
 bb0:
 #line 24 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
@@ -300,7 +300,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -309,9 +309,9 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
     int64_t t9;
     int64_t t10;
     int64_t t11;
-    HeroArrayHeader * t12 = {0};
-    HeroArrayHeader * t13 = {0};
-    HeroArrayHeader * t14 = {0};
+    HeroArrayHeader * t12;
+    HeroArrayHeader * t13;
+    HeroArrayHeader * t14;
     goto bb0;
 bb0:
 #line 27 "<heroes library>"

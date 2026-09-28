@@ -181,10 +181,10 @@ bb0:
 HeroStr h_functiontypedfieldnevercalledthrough_shout(HeroStr h0_a) {
 #line 183 "functiontypedfieldnevercalledthrough.c"
     HeroStr h1_own1 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    HeroStr t3;
+    HeroStr t4;
     goto bb0;
 bb0:
 #line 58 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
@@ -222,20 +222,20 @@ void h_functiontypedfieldnevercalledthrough_main(void) {
     h_functiontypedfieldnevercalledthrough_Direct t2;
     h_0fn_48ac9712 t3;
     h_functiontypedfieldnevercalledthrough_Direct t4;
-    HeroStr t5 = {0};
-    h_functiontypedfieldnevercalledthrough_Outer t6 = {0};
+    HeroStr t5;
+    h_functiontypedfieldnevercalledthrough_Outer t6;
     h_0fn_48ac9712 t7;
     h_functiontypedfieldnevercalledthrough_Direct t8;
-    HeroArrayHeader * t9 = {0};
-    h_functiontypedfieldnevercalledthrough_Held t10 = {0};
+    HeroArrayHeader * t9;
+    h_functiontypedfieldnevercalledthrough_Held t10;
     h_0fn_6f1dc5d7 t11;
     h_functiontypedfieldnevercalledthrough_Either t12;
-    HeroStr t17 = {0};
-    h_functiontypedfieldnevercalledthrough_Outer t18 = {0};
-    h_functiontypedfieldnevercalledthrough_Outer t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    h_functiontypedfieldnevercalledthrough_Held t21 = {0};
-    h_functiontypedfieldnevercalledthrough_Held t22 = {0};
+    HeroStr t17;
+    h_functiontypedfieldnevercalledthrough_Outer t18;
+    h_functiontypedfieldnevercalledthrough_Outer t19;
+    HeroArrayHeader * t20;
+    h_functiontypedfieldnevercalledthrough_Held t21;
+    h_functiontypedfieldnevercalledthrough_Held t22;
     goto bb0;
 bb0:
 #line 61 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"

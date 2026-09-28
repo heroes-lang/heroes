@@ -137,11 +137,11 @@ void h_deadhandlegivenbackafteritsaddresswashandedoutagain_main(void) {
     node * h1_b;
     node * t1;
     node * t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     node * t4;
     int64_t t5;
     node * t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     node * t8;
     goto bb0;
 bb0:

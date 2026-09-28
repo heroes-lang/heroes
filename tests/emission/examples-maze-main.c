@@ -244,43 +244,43 @@ void h_main_main(void) {
     HeroStr h6_own6 = {0};
     HeroStr h7_own7 = {0};
     HeroStr h8_own8 = {0};
-    HeroArrayHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
     bool t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     int64_t t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
-    HeroStr t10 = {0};
-    h_0opt_f87774a t11 = {0};
-    h_0opt_f87774a t12 = {0};
+    HeroStr t10;
+    h_0opt_f87774a t11;
+    h_0opt_f87774a t12;
     int64_t t13;
-    h_0opt_f87774a t14 = {0};
-    HeroFailure t15 = {0};
-    HeroStr t16 = {0};
-    HeroArrayHeader * t17 = {0};
+    h_0opt_f87774a t14;
+    HeroFailure t15;
+    HeroStr t16;
+    HeroArrayHeader * t17;
     int64_t t18;
-    HeroStr t19 = {0};
-    HeroStr t20 = {0};
-    HeroStr t21 = {0};
-    HeroStr t22 = {0};
-    HeroFailure t23 = {0};
-    HeroStr t24 = {0};
-    HeroStr t25 = {0};
-    h_0opt_f87774a t26 = {0};
-    HeroStr t27 = {0};
-    HeroStr t28 = {0};
-    HeroArrayHeader * t29 = {0};
-    HeroArrayHeader * t30 = {0};
-    h_0opt_f87774a t31 = {0};
-    h_0opt_f87774a t32 = {0};
-    HeroFailure t33 = {0};
-    HeroStr t34 = {0};
-    HeroStr t35 = {0};
-    HeroStr t36 = {0};
-    HeroStr t37 = {0};
+    HeroStr t19;
+    HeroStr t20;
+    HeroStr t21;
+    HeroStr t22;
+    HeroFailure t23;
+    HeroStr t24;
+    HeroStr t25;
+    h_0opt_f87774a t26;
+    HeroStr t27;
+    HeroStr t28;
+    HeroArrayHeader * t29;
+    HeroArrayHeader * t30;
+    h_0opt_f87774a t31;
+    h_0opt_f87774a t32;
+    HeroFailure t33;
+    HeroStr t34;
+    HeroStr t35;
+    HeroStr t36;
+    HeroStr t37;
     goto bb0;
 bb0:
 #line 18 "examples/maze/main.hero"
@@ -476,7 +476,7 @@ bb6:
 #line 28 "examples/maze/main.hero"
 void h_main_stop(HeroStr h0_message) {
 #line 479 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
     goto bb0;
 bb0:
@@ -504,28 +504,28 @@ void h_main_lay_out(HeroStr h0_text) {
     h_0opt_7f9f63e h4_own4 = {0};
     HeroStr h5_own5 = {0};
     HeroStr h6_own6 = {0};
-    HeroStr t1 = {0};
-    h_0opt_7f9f63e t2 = {0};
-    h_0opt_7f9f63e t3 = {0};
+    HeroStr t1;
+    h_0opt_7f9f63e t2;
+    h_0opt_7f9f63e t3;
     int64_t t4;
-    h_0opt_7f9f63e t5 = {0};
-    HeroFailure t6 = {0};
-    HeroFailure t7 = {0};
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
-    HeroStr t10 = {0};
-    HeroFailure t11 = {0};
-    HeroStr t12 = {0};
-    HeroStr t13 = {0};
-    h_0opt_7f9f63e t14 = {0};
-    h_grid_Grid t15 = {0};
-    h_grid_Grid t16 = {0};
-    h_0opt_7f9f63e t17 = {0};
-    h_0opt_7f9f63e t18 = {0};
-    HeroFailure t19 = {0};
-    HeroStr t20 = {0};
-    HeroStr t21 = {0};
-    h_grid_Grid t22 = {0};
+    h_0opt_7f9f63e t5;
+    HeroFailure t6;
+    HeroFailure t7;
+    HeroStr t8;
+    HeroStr t9;
+    HeroStr t10;
+    HeroFailure t11;
+    HeroStr t12;
+    HeroStr t13;
+    h_0opt_7f9f63e t14;
+    h_grid_Grid t15;
+    h_grid_Grid t16;
+    h_0opt_7f9f63e t17;
+    h_0opt_7f9f63e t18;
+    HeroFailure t19;
+    HeroStr t20;
+    HeroStr t21;
+    h_grid_Grid t22;
     goto bb0;
 bb0:
 #line 33 "examples/maze/main.hero"
@@ -656,29 +656,29 @@ void h_main_walk(h_grid_Grid h0_g) {
     h_0opt_2270cbe7 h4_own4 = {0};
     HeroStr h5_own5 = {0};
     HeroStr h6_own6 = {0};
-    h_grid_Grid t1 = {0};
-    h_0opt_2270cbe7 t2 = {0};
-    h_0opt_2270cbe7 t3 = {0};
+    h_grid_Grid t1;
+    h_0opt_2270cbe7 t2;
+    h_0opt_2270cbe7 t3;
     int64_t t4;
-    h_0opt_2270cbe7 t5 = {0};
-    HeroFailure t6 = {0};
-    HeroFailure t7 = {0};
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
-    HeroStr t10 = {0};
-    HeroFailure t11 = {0};
-    HeroStr t12 = {0};
-    HeroStr t13 = {0};
-    h_0opt_2270cbe7 t14 = {0};
-    HeroArrayHeader * t15 = {0};
-    h_grid_Grid t16 = {0};
-    HeroArrayHeader * t17 = {0};
-    h_0opt_2270cbe7 t18 = {0};
-    h_0opt_2270cbe7 t19 = {0};
-    HeroFailure t20 = {0};
-    HeroStr t21 = {0};
-    HeroStr t22 = {0};
-    HeroArrayHeader * t23 = {0};
+    h_0opt_2270cbe7 t5;
+    HeroFailure t6;
+    HeroFailure t7;
+    HeroStr t8;
+    HeroStr t9;
+    HeroStr t10;
+    HeroFailure t11;
+    HeroStr t12;
+    HeroStr t13;
+    h_0opt_2270cbe7 t14;
+    HeroArrayHeader * t15;
+    h_grid_Grid t16;
+    HeroArrayHeader * t17;
+    h_0opt_2270cbe7 t18;
+    h_0opt_2270cbe7 t19;
+    HeroFailure t20;
+    HeroStr t21;
+    HeroStr t22;
+    HeroArrayHeader * t23;
     goto bb0;
 bb0:
 #line 38 "examples/maze/main.hero"
@@ -809,27 +809,27 @@ void h_main_show(h_grid_Grid h0_g, HeroArrayHeader * h1_path) {
     int64_t h3_i0;
     HeroStr h4_line = {0};
     HeroArrayHeader * h5_own5 = {0};
-    h_grid_Grid t1 = {0};
-    HeroArrayHeader * t2 = {0};
-    HeroArrayHeader * t3 = {0};
+    h_grid_Grid t1;
+    HeroArrayHeader * t2;
+    HeroArrayHeader * t3;
     int64_t t4;
     int64_t t5;
-    HeroArrayHeader * t6 = {0};
+    HeroArrayHeader * t6;
     int64_t t7;
     bool t8;
-    HeroArrayHeader * t9 = {0};
+    HeroArrayHeader * t9;
     int64_t t10;
-    HeroStr t11 = {0};
-    HeroStr t12 = {0};
+    HeroStr t11;
+    HeroStr t12;
     int64_t t13;
     int64_t t14;
     int64_t t15;
-    HeroStr t16 = {0};
-    HeroArrayHeader * t17 = {0};
+    HeroStr t16;
+    HeroArrayHeader * t17;
     int64_t t18;
-    HeroArrayHeader * t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroStr t21 = {0};
+    HeroArrayHeader * t19;
+    HeroArrayHeader * t20;
+    HeroStr t21;
     goto bb0;
 bb0:
 #line 43 "examples/maze/main.hero"
@@ -959,14 +959,14 @@ HeroArrayHeader * h_main_drawn(h_grid_Grid h0_g, HeroArrayHeader * h1_path) {
     HeroStr h24_own24 = {0};
     HeroStr h25_own25 = {0};
     h_0opt_473cb9ae h26_own26 = {0};
-    HeroMapHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroMapHeader * t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     int64_t t10;
     int64_t t11;
@@ -974,37 +974,37 @@ HeroArrayHeader * h_main_drawn(h_grid_Grid h0_g, HeroArrayHeader * h1_path) {
     int64_t t13;
     int64_t t14;
     int64_t t15;
-    HeroArrayHeader * t16 = {0};
+    HeroArrayHeader * t16;
     int64_t t17;
-    h_grid_Grid t18 = {0};
+    h_grid_Grid t18;
     int64_t t19;
-    HeroArrayHeader * t20 = {0};
+    HeroArrayHeader * t20;
     int64_t t21;
     int64_t t22;
-    HeroArrayHeader * t23 = {0};
+    HeroArrayHeader * t23;
     int64_t t24;
     bool t25;
-    HeroArrayHeader * t26 = {0};
+    HeroArrayHeader * t26;
     int64_t t27;
     int64_t t28;
-    HeroArrayHeader * t29 = {0};
+    HeroArrayHeader * t29;
     int64_t t30;
-    h_grid_Grid t31 = {0};
+    h_grid_Grid t31;
     int64_t t32;
-    HeroArrayHeader * t33 = {0};
+    HeroArrayHeader * t33;
     int64_t t34;
     int64_t t35;
-    HeroArrayHeader * t36 = {0};
+    HeroArrayHeader * t36;
     int64_t t37;
     bool t38;
-    HeroArrayHeader * t39 = {0};
+    HeroArrayHeader * t39;
     int64_t t40;
     int64_t t41;
-    h_grid_Grid t42 = {0};
+    h_grid_Grid t42;
     int64_t t43;
     int64_t t44;
     int64_t t45;
-    h_grid_Grid t46 = {0};
+    h_grid_Grid t46;
     int64_t t47;
     uint8_t t48;
     uint8_t t49;
@@ -1019,42 +1019,42 @@ HeroArrayHeader * h_main_drawn(h_grid_Grid h0_g, HeroArrayHeader * h1_path) {
     bool t58;
     bool t59;
     uint8_t t61;
-    HeroStr t62 = {0};
-    HeroMapHeader * t64 = {0};
+    HeroStr t62;
+    HeroMapHeader * t64;
     int64_t t65;
-    h_0opt_473cb9ae t66 = {0};
-    h_0opt_473cb9ae t67 = {0};
+    h_0opt_473cb9ae t66;
+    h_0opt_473cb9ae t67;
     int64_t t68;
     int64_t t69;
     bool t70;
     bool t71;
-    HeroStr t73 = {0};
-    HeroStr t76 = {0};
+    HeroStr t73;
+    HeroStr t76;
     int64_t t78;
     int64_t t79;
     int64_t t80;
-    HeroArrayHeader * t82 = {0};
-    HeroStr t83 = {0};
-    HeroStr t84 = {0};
+    HeroArrayHeader * t82;
+    HeroStr t83;
+    HeroStr t84;
     int64_t t86;
     int64_t t87;
     int64_t t88;
-    HeroArrayHeader * t89 = {0};
-    HeroMapHeader * t90 = {0};
-    HeroMapHeader * t91 = {0};
-    HeroArrayHeader * t92 = {0};
-    HeroArrayHeader * t93 = {0};
-    HeroArrayHeader * t94 = {0};
-    HeroArrayHeader * t95 = {0};
-    HeroArrayHeader * t96 = {0};
-    HeroArrayHeader * t97 = {0};
-    HeroArrayHeader * t98 = {0};
-    HeroArrayHeader * t99 = {0};
-    HeroArrayHeader * t100 = {0};
-    HeroStr t101 = {0};
-    HeroStr t102 = {0};
-    h_0opt_473cb9ae t103 = {0};
-    h_0opt_473cb9ae t104 = {0};
+    HeroArrayHeader * t89;
+    HeroMapHeader * t90;
+    HeroMapHeader * t91;
+    HeroArrayHeader * t92;
+    HeroArrayHeader * t93;
+    HeroArrayHeader * t94;
+    HeroArrayHeader * t95;
+    HeroArrayHeader * t96;
+    HeroArrayHeader * t97;
+    HeroArrayHeader * t98;
+    HeroArrayHeader * t99;
+    HeroArrayHeader * t100;
+    HeroStr t101;
+    HeroStr t102;
+    h_0opt_473cb9ae t103;
+    h_0opt_473cb9ae t104;
     goto bb0;
 bb0:
 #line 51 "examples/maze/main.hero"
@@ -1461,7 +1461,7 @@ bb19:
 #line 67 "examples/maze/main.hero"
       } else {
 #line 67 "examples/maze/main.hero"
-        t66.tag = INT64_C(0);
+        t66 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
 #line 67 "examples/maze/main.hero"
         (&hero_desc_bool)->copy(&t66.as.ok, found);
 #line 67 "examples/maze/main.hero"
@@ -1516,7 +1516,7 @@ bb21:
 #line 21 "examples/maze/grid.hero"
 HeroStr h_grid_ERR_EMPTY_MAZE(void) {
 #line 1519 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     goto bb0;
 bb0:
 #line 22 "examples/maze/grid.hero"
@@ -1529,7 +1529,7 @@ bb0:
 #line 24 "examples/maze/grid.hero"
 HeroStr h_grid_ERR_MISSING_MARK(void) {
 #line 1532 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     goto bb0;
 bb0:
 #line 25 "examples/maze/grid.hero"
@@ -1542,7 +1542,7 @@ bb0:
 #line 27 "examples/maze/grid.hero"
 HeroStr h_grid_ERR_RAGGED_MAZE(void) {
 #line 1545 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     goto bb0;
 bb0:
 #line 28 "examples/maze/grid.hero"
@@ -1555,7 +1555,7 @@ bb0:
 #line 30 "examples/maze/grid.hero"
 HeroStr h_grid_ERR_REPEATED_MARK(void) {
 #line 1558 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     goto bb0;
 bb0:
 #line 31 "examples/maze/grid.hero"
@@ -1613,22 +1613,22 @@ HeroArrayHeader * h_grid_split_lines(HeroStr h0_text) {
     HeroArrayHeader * h4_own4 = {0};
     HeroStr h5_own5 = {0};
     HeroStr h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     int64_t t6;
     bool t7;
-    HeroStr t8 = {0};
+    HeroStr t8;
     int64_t t9;
     uint8_t t10;
     uint8_t t11;
     bool t12;
-    HeroStr t14 = {0};
+    HeroStr t14;
     int64_t t15;
     int64_t t16;
-    HeroStr t17 = {0};
+    HeroStr t17;
     int64_t t19;
     int64_t t20;
     int64_t t21;
@@ -1636,19 +1636,19 @@ HeroArrayHeader * h_grid_split_lines(HeroStr h0_text) {
     int64_t t23;
     int64_t t24;
     int64_t t25;
-    HeroStr t26 = {0};
+    HeroStr t26;
     int64_t t27;
     bool t28;
-    HeroStr t30 = {0};
+    HeroStr t30;
     int64_t t31;
-    HeroStr t32 = {0};
+    HeroStr t32;
     int64_t t33;
-    HeroStr t34 = {0};
-    HeroArrayHeader * t36 = {0};
-    HeroArrayHeader * t37 = {0};
-    HeroArrayHeader * t38 = {0};
-    HeroStr t39 = {0};
-    HeroStr t40 = {0};
+    HeroStr t34;
+    HeroArrayHeader * t36;
+    HeroArrayHeader * t37;
+    HeroArrayHeader * t38;
+    HeroStr t39;
+    HeroStr t40;
     goto bb0;
 bb0:
 #line 48 "examples/maze/grid.hero"
@@ -1835,109 +1835,109 @@ h_0opt_7f9f63e h_grid_read(HeroStr h0_text) {
     h_0opt_7f9f63e h24_own24 = {0};
     h_0opt_7f9f63e h25_own25 = {0};
     h_0opt_7f9f63e h26_own26 = {0};
-    HeroArrayHeader * t1 = {0};
-    HeroStr t2 = {0};
-    HeroArrayHeader * t3 = {0};
+    HeroArrayHeader * t1;
+    HeroStr t2;
+    HeroArrayHeader * t3;
     int64_t t4;
     int64_t t5;
-    HeroArrayHeader * t6 = {0};
+    HeroArrayHeader * t6;
     int64_t t7;
     bool t8;
-    HeroArrayHeader * t9 = {0};
+    HeroArrayHeader * t9;
     int64_t t10;
-    HeroStr t11 = {0};
-    HeroStr t12 = {0};
-    HeroStr t13 = {0};
+    HeroStr t11;
+    HeroStr t12;
+    HeroStr t13;
     bool t14;
-    HeroStr t16 = {0};
+    HeroStr t16;
     int64_t t18;
     int64_t t19;
     int64_t t20;
-    HeroArrayHeader * t21 = {0};
+    HeroArrayHeader * t21;
     int64_t t22;
     int64_t t23;
     bool t24;
-    HeroStr t25 = {0};
-    HeroStr t26 = {0};
-    h_0opt_7f9f63e t27 = {0};
-    HeroArrayHeader * t28 = {0};
+    HeroStr t25;
+    HeroStr t26;
+    h_0opt_7f9f63e t27;
+    HeroArrayHeader * t28;
     int64_t t29;
-    HeroStr t30 = {0};
+    HeroStr t30;
     int64_t t31;
-    HeroArrayHeader * t32 = {0};
+    HeroArrayHeader * t32;
     int64_t t33;
     int64_t t34;
-    HeroArrayHeader * t35 = {0};
+    HeroArrayHeader * t35;
     int64_t t36;
     bool t37;
-    HeroArrayHeader * t38 = {0};
+    HeroArrayHeader * t38;
     int64_t t39;
-    HeroStr t40 = {0};
-    HeroStr t41 = {0};
+    HeroStr t40;
+    HeroStr t41;
     int64_t t42;
     int64_t t43;
     bool t44;
-    HeroStr t45 = {0};
-    HeroStr t46 = {0};
+    HeroStr t45;
+    HeroStr t46;
     int64_t t47;
-    HeroStr t48 = {0};
-    HeroStr t49 = {0};
-    HeroStr t50 = {0};
-    HeroStr t51 = {0};
-    h_0opt_7f9f63e t52 = {0};
+    HeroStr t48;
+    HeroStr t49;
+    HeroStr t50;
+    HeroStr t51;
+    h_0opt_7f9f63e t52;
     int64_t t53;
     int64_t t54;
     int64_t t55;
-    HeroArrayHeader * t56 = {0};
+    HeroArrayHeader * t56;
     int64_t t57;
-    HeroArrayHeader * t58 = {0};
+    HeroArrayHeader * t58;
     int64_t t59;
-    h_grid_Grid t60 = {0};
-    h_grid_Grid t61 = {0};
+    h_grid_Grid t60;
+    h_grid_Grid t61;
     uint8_t t62;
-    h_0opt_e201354 t63 = {0};
-    h_0opt_e201354 t64 = {0};
+    h_0opt_e201354 t63;
+    h_0opt_e201354 t64;
     int64_t t65;
     int64_t t66;
     bool t67;
-    h_0opt_e201354 t68 = {0};
-    HeroFailure t69 = {0};
-    h_0opt_7f9f63e t70 = {0};
-    h_grid_Grid t73 = {0};
+    h_0opt_e201354 t68;
+    HeroFailure t69;
+    h_0opt_7f9f63e t70;
+    h_grid_Grid t73;
     uint8_t t74;
-    h_0opt_e201354 t75 = {0};
-    h_0opt_e201354 t76 = {0};
+    h_0opt_e201354 t75;
+    h_0opt_e201354 t76;
     int64_t t77;
     int64_t t78;
     bool t79;
-    h_0opt_e201354 t80 = {0};
-    HeroFailure t81 = {0};
-    h_0opt_7f9f63e t82 = {0};
-    h_grid_Grid t85 = {0};
-    h_0opt_7f9f63e t86 = {0};
-    HeroArrayHeader * t87 = {0};
-    HeroArrayHeader * t88 = {0};
-    HeroArrayHeader * t89 = {0};
-    HeroArrayHeader * t90 = {0};
-    HeroStr t91 = {0};
-    HeroArrayHeader * t92 = {0};
-    HeroStr t93 = {0};
-    h_0opt_7f9f63e t94 = {0};
-    HeroStr t95 = {0};
-    h_grid_Grid t96 = {0};
-    h_grid_Grid t97 = {0};
-    h_0opt_e201354 t98 = {0};
-    h_0opt_e201354 t99 = {0};
-    HeroStr t100 = {0};
-    HeroStr t101 = {0};
-    HeroStr t102 = {0};
-    HeroStr t103 = {0};
-    h_0opt_7f9f63e t104 = {0};
-    h_0opt_e201354 t105 = {0};
-    h_0opt_e201354 t106 = {0};
-    h_0opt_7f9f63e t107 = {0};
-    h_0opt_7f9f63e t108 = {0};
-    h_0opt_7f9f63e t109 = {0};
+    h_0opt_e201354 t80;
+    HeroFailure t81;
+    h_0opt_7f9f63e t82;
+    h_grid_Grid t85;
+    h_0opt_7f9f63e t86;
+    HeroArrayHeader * t87;
+    HeroArrayHeader * t88;
+    HeroArrayHeader * t89;
+    HeroArrayHeader * t90;
+    HeroStr t91;
+    HeroArrayHeader * t92;
+    HeroStr t93;
+    h_0opt_7f9f63e t94;
+    HeroStr t95;
+    h_grid_Grid t96;
+    h_grid_Grid t97;
+    h_0opt_e201354 t98;
+    h_0opt_e201354 t99;
+    HeroStr t100;
+    HeroStr t101;
+    HeroStr t102;
+    HeroStr t103;
+    h_0opt_7f9f63e t104;
+    h_0opt_e201354 t105;
+    h_0opt_e201354 t106;
+    h_0opt_7f9f63e t107;
+    h_0opt_7f9f63e t108;
+    h_0opt_7f9f63e t109;
     goto bb0;
 bb0:
 #line 63 "examples/maze/grid.hero"
@@ -2726,7 +2726,7 @@ bb21:
 int64_t h_grid_index_of(h_grid_Grid h0_g, int64_t h1_row, int64_t h2_column) {
 #line 2728 "main.c"
     int64_t t1;
-    h_grid_Grid t2 = {0};
+    h_grid_Grid t2;
     int64_t t3;
     int64_t t4;
     int64_t t5;
@@ -2754,7 +2754,7 @@ bb0:
 int64_t h_grid_row_of(h_grid_Grid h0_g, int64_t h1_index) {
 #line 2756 "main.c"
     int64_t t1;
-    h_grid_Grid t2 = {0};
+    h_grid_Grid t2;
     int64_t t3;
     int64_t t4;
     goto bb0;
@@ -2780,7 +2780,7 @@ bb0:
 int64_t h_grid_column_of(h_grid_Grid h0_g, int64_t h1_index) {
 #line 2782 "main.c"
     int64_t t1;
-    h_grid_Grid t2 = {0};
+    h_grid_Grid t2;
     int64_t t3;
     int64_t t4;
     goto bb0;
@@ -2805,13 +2805,13 @@ bb0:
 #line 93 "examples/maze/grid.hero"
 uint8_t h_grid_at(h_grid_Grid h0_g, int64_t h1_index) {
 #line 2808 "main.c"
-    h_grid_Grid t1 = {0};
-    HeroArrayHeader * t2 = {0};
-    h_grid_Grid t3 = {0};
+    h_grid_Grid t1;
+    HeroArrayHeader * t2;
+    h_grid_Grid t3;
     int64_t t4;
     int64_t t5;
-    HeroStr t6 = {0};
-    h_grid_Grid t7 = {0};
+    HeroStr t6;
+    h_grid_Grid t7;
     int64_t t8;
     int64_t t9;
     uint8_t t10;
@@ -2852,7 +2852,7 @@ bool h_grid_inside(h_grid_Grid h0_g, int64_t h1_row, int64_t h2_column) {
     int64_t t2;
     bool t3;
     int64_t t4;
-    h_grid_Grid t5 = {0};
+    h_grid_Grid t5;
     int64_t t6;
     bool t7;
     bool t8;
@@ -2861,7 +2861,7 @@ bool h_grid_inside(h_grid_Grid h0_g, int64_t h1_row, int64_t h2_column) {
     bool t11;
     bool t12;
     int64_t t13;
-    h_grid_Grid t14 = {0};
+    h_grid_Grid t14;
     int64_t t15;
     bool t16;
     bool t17;
@@ -2945,7 +2945,7 @@ bb6:
 #line 99 "examples/maze/grid.hero"
 bool h_grid_is_open(h_grid_Grid h0_g, int64_t h1_index) {
 #line 2948 "main.c"
-    h_grid_Grid t1 = {0};
+    h_grid_Grid t1;
     int64_t t2;
     uint8_t t3;
     uint8_t t4;
@@ -2995,34 +2995,34 @@ h_0opt_e201354 h_grid_locate(h_grid_Grid h0_g, uint8_t h1_mark) {
     int64_t t2;
     int64_t t3;
     int64_t t4;
-    h_grid_Grid t5 = {0};
+    h_grid_Grid t5;
     int64_t t6;
-    HeroArrayHeader * t7 = {0};
+    HeroArrayHeader * t7;
     int64_t t8;
     int64_t t9;
-    HeroArrayHeader * t10 = {0};
+    HeroArrayHeader * t10;
     int64_t t11;
     bool t12;
-    HeroArrayHeader * t13 = {0};
+    HeroArrayHeader * t13;
     int64_t t14;
     int64_t t15;
     int64_t t16;
-    h_grid_Grid t17 = {0};
+    h_grid_Grid t17;
     int64_t t18;
-    HeroArrayHeader * t19 = {0};
+    HeroArrayHeader * t19;
     int64_t t20;
     int64_t t21;
-    HeroArrayHeader * t22 = {0};
+    HeroArrayHeader * t22;
     int64_t t23;
     bool t24;
-    HeroArrayHeader * t25 = {0};
+    HeroArrayHeader * t25;
     int64_t t26;
     int64_t t27;
-    h_grid_Grid t28 = {0};
+    h_grid_Grid t28;
     int64_t t29;
     int64_t t30;
     int64_t t31;
-    h_grid_Grid t32 = {0};
+    h_grid_Grid t32;
     int64_t t33;
     uint8_t t34;
     uint8_t t35;
@@ -3030,14 +3030,14 @@ h_0opt_e201354 h_grid_locate(h_grid_Grid h0_g, uint8_t h1_mark) {
     int64_t t37;
     int64_t t38;
     bool t39;
-    HeroStr t40 = {0};
-    HeroStr t41 = {0};
+    HeroStr t40;
+    HeroStr t41;
     uint8_t t42;
-    HeroStr t43 = {0};
-    HeroStr t44 = {0};
-    HeroStr t45 = {0};
-    HeroStr t46 = {0};
-    h_0opt_e201354 t47 = {0};
+    HeroStr t43;
+    HeroStr t44;
+    HeroStr t45;
+    HeroStr t46;
+    h_0opt_e201354 t47;
     int64_t t48;
     int64_t t49;
     int64_t t50;
@@ -3048,31 +3048,31 @@ h_0opt_e201354 h_grid_locate(h_grid_Grid h0_g, uint8_t h1_mark) {
     int64_t t55;
     int64_t t56;
     bool t57;
-    HeroStr t58 = {0};
-    HeroStr t59 = {0};
+    HeroStr t58;
+    HeroStr t59;
     uint8_t t60;
-    HeroStr t61 = {0};
-    HeroStr t62 = {0};
-    HeroStr t63 = {0};
-    HeroStr t64 = {0};
-    h_0opt_e201354 t65 = {0};
+    HeroStr t61;
+    HeroStr t62;
+    HeroStr t63;
+    HeroStr t64;
+    h_0opt_e201354 t65;
     int64_t t66;
-    h_0opt_e201354 t67 = {0};
-    HeroArrayHeader * t68 = {0};
-    HeroArrayHeader * t69 = {0};
-    HeroArrayHeader * t70 = {0};
-    HeroArrayHeader * t71 = {0};
-    HeroStr t72 = {0};
-    HeroStr t73 = {0};
-    HeroStr t74 = {0};
-    HeroStr t75 = {0};
-    h_0opt_e201354 t76 = {0};
-    h_0opt_e201354 t77 = {0};
-    HeroStr t78 = {0};
-    HeroStr t79 = {0};
-    HeroStr t80 = {0};
-    HeroStr t81 = {0};
-    h_0opt_e201354 t82 = {0};
+    h_0opt_e201354 t67;
+    HeroArrayHeader * t68;
+    HeroArrayHeader * t69;
+    HeroArrayHeader * t70;
+    HeroArrayHeader * t71;
+    HeroStr t72;
+    HeroStr t73;
+    HeroStr t74;
+    HeroStr t75;
+    h_0opt_e201354 t76;
+    h_0opt_e201354 t77;
+    HeroStr t78;
+    HeroStr t79;
+    HeroStr t80;
+    HeroStr t81;
+    h_0opt_e201354 t82;
     goto bb0;
 bb0:
 #line 105 "examples/maze/grid.hero"
@@ -3546,12 +3546,12 @@ HeroStr h_grid_one_char(uint8_t h0_mark) {
     uint8_t t1;
     uint8_t t2;
     bool t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     uint8_t t5;
     uint8_t t6;
     bool t7;
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
+    HeroStr t8;
+    HeroStr t9;
     goto bb0;
 bb0:
 #line 123 "examples/maze/grid.hero"
@@ -3608,52 +3608,52 @@ HeroArrayHeader * h_grid_neighbours(h_grid_Grid h0_g, int64_t h1_index) {
     HeroArrayHeader * h7_own7 = {0};
     HeroArrayHeader * h8_own8 = {0};
     HeroArrayHeader * h9_own9 = {0};
-    h_grid_Grid t1 = {0};
+    h_grid_Grid t1;
     int64_t t2;
     int64_t t3;
-    h_grid_Grid t4 = {0};
+    h_grid_Grid t4;
     int64_t t5;
     int64_t t6;
-    HeroArrayHeader * t7 = {0};
-    h_grid_Grid t8 = {0};
-    HeroArrayHeader * t9 = {0};
+    HeroArrayHeader * t7;
+    h_grid_Grid t8;
+    HeroArrayHeader * t9;
     int64_t t10;
     int64_t t11;
     int64_t t12;
     int64_t t13;
-    HeroArrayHeader * t14 = {0};
-    h_grid_Grid t15 = {0};
-    HeroArrayHeader * t16 = {0};
+    HeroArrayHeader * t14;
+    h_grid_Grid t15;
+    HeroArrayHeader * t16;
     int64_t t17;
     int64_t t18;
     int64_t t19;
     int64_t t20;
-    HeroArrayHeader * t21 = {0};
-    h_grid_Grid t22 = {0};
-    HeroArrayHeader * t23 = {0};
+    HeroArrayHeader * t21;
+    h_grid_Grid t22;
+    HeroArrayHeader * t23;
     int64_t t24;
     int64_t t25;
     int64_t t26;
     int64_t t27;
-    HeroArrayHeader * t28 = {0};
-    h_grid_Grid t29 = {0};
-    HeroArrayHeader * t30 = {0};
+    HeroArrayHeader * t28;
+    h_grid_Grid t29;
+    HeroArrayHeader * t30;
     int64_t t31;
     int64_t t32;
     int64_t t33;
     int64_t t34;
-    HeroArrayHeader * t35 = {0};
-    HeroArrayHeader * t36 = {0};
-    HeroArrayHeader * t37 = {0};
-    HeroArrayHeader * t38 = {0};
-    HeroArrayHeader * t39 = {0};
-    HeroArrayHeader * t40 = {0};
-    HeroArrayHeader * t41 = {0};
-    HeroArrayHeader * t42 = {0};
-    HeroArrayHeader * t43 = {0};
-    HeroArrayHeader * t44 = {0};
-    HeroArrayHeader * t45 = {0};
-    HeroArrayHeader * t46 = {0};
+    HeroArrayHeader * t35;
+    HeroArrayHeader * t36;
+    HeroArrayHeader * t37;
+    HeroArrayHeader * t38;
+    HeroArrayHeader * t39;
+    HeroArrayHeader * t40;
+    HeroArrayHeader * t41;
+    HeroArrayHeader * t42;
+    HeroArrayHeader * t43;
+    HeroArrayHeader * t44;
+    HeroArrayHeader * t45;
+    HeroArrayHeader * t46;
     goto bb0;
 bb0:
 #line 132 "examples/maze/grid.hero"
@@ -3830,25 +3830,25 @@ HeroArrayHeader * h_grid_step(h_grid_Grid h0_g, HeroArrayHeader * h1_out, int64_
 #line 3831 "main.c"
     int64_t h4_index;
     HeroArrayHeader * h5_own5 = {0};
-    h_grid_Grid t1 = {0};
+    h_grid_Grid t1;
     int64_t t2;
     int64_t t3;
     bool t4;
     bool t5;
-    HeroArrayHeader * t6 = {0};
-    h_grid_Grid t7 = {0};
+    HeroArrayHeader * t6;
+    h_grid_Grid t7;
     int64_t t8;
     int64_t t9;
     int64_t t10;
-    h_grid_Grid t11 = {0};
+    h_grid_Grid t11;
     int64_t t12;
     bool t13;
     bool t14;
-    HeroArrayHeader * t15 = {0};
-    HeroArrayHeader * t16 = {0};
+    HeroArrayHeader * t15;
+    HeroArrayHeader * t16;
     int64_t t17;
-    HeroArrayHeader * t18 = {0};
-    HeroArrayHeader * t19 = {0};
+    HeroArrayHeader * t18;
+    HeroArrayHeader * t19;
     goto bb0;
 bb0:
 #line 142 "examples/maze/grid.hero"
@@ -3933,7 +3933,7 @@ bb6:
 #line 21 "examples/maze/solve.hero"
 HeroStr h_solve_ERR_NO_PATH(void) {
 #line 3936 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     goto bb0;
 bb0:
 #line 22 "examples/maze/solve.hero"
@@ -3970,41 +3970,41 @@ h_0opt_2270cbe7 h_solve_solve(h_grid_Grid h0_g) {
     HeroArrayHeader * h22_own22 = {0};
     h_0opt_2270cbe7 h23_own23 = {0};
     h_0opt_e201354 h24_own24 = {0};
-    h_grid_Grid t1 = {0};
+    h_grid_Grid t1;
     uint8_t t2;
-    h_0opt_e201354 t3 = {0};
-    h_0opt_e201354 t4 = {0};
+    h_0opt_e201354 t3;
+    h_0opt_e201354 t4;
     int64_t t5;
     int64_t t6;
     bool t7;
-    h_0opt_e201354 t8 = {0};
-    HeroFailure t9 = {0};
-    h_0opt_2270cbe7 t10 = {0};
-    h_0opt_e201354 t11 = {0};
+    h_0opt_e201354 t8;
+    HeroFailure t9;
+    h_0opt_2270cbe7 t10;
+    h_0opt_e201354 t11;
     int64_t t12;
-    h_grid_Grid t13 = {0};
+    h_grid_Grid t13;
     uint8_t t14;
-    h_0opt_e201354 t15 = {0};
-    h_0opt_e201354 t16 = {0};
+    h_0opt_e201354 t15;
+    h_0opt_e201354 t16;
     int64_t t17;
     int64_t t18;
     bool t19;
-    h_0opt_e201354 t20 = {0};
-    HeroFailure t21 = {0};
-    h_0opt_2270cbe7 t22 = {0};
-    h_0opt_e201354 t23 = {0};
+    h_0opt_e201354 t20;
+    HeroFailure t21;
+    h_0opt_2270cbe7 t22;
+    h_0opt_e201354 t23;
     int64_t t24;
-    HeroMapHeader * t25 = {0};
+    HeroMapHeader * t25;
     int64_t t26;
     int64_t t27;
     int64_t t28;
-    HeroArrayHeader * t29 = {0};
+    HeroArrayHeader * t29;
     int64_t t30;
     int64_t t31;
-    HeroArrayHeader * t32 = {0};
+    HeroArrayHeader * t32;
     int64_t t33;
     bool t34;
-    HeroArrayHeader * t35 = {0};
+    HeroArrayHeader * t35;
     int64_t t36;
     int64_t t37;
     int64_t t38;
@@ -4013,26 +4013,26 @@ h_0opt_2270cbe7 h_solve_solve(h_grid_Grid h0_g) {
     int64_t t41;
     int64_t t42;
     bool t43;
-    HeroMapHeader * t44 = {0};
+    HeroMapHeader * t44;
     int64_t t45;
     int64_t t46;
-    HeroArrayHeader * t47 = {0};
-    h_0opt_2270cbe7 t48 = {0};
-    h_grid_Grid t49 = {0};
+    HeroArrayHeader * t47;
+    h_0opt_2270cbe7 t48;
+    h_grid_Grid t49;
     int64_t t50;
-    HeroArrayHeader * t51 = {0};
+    HeroArrayHeader * t51;
     int64_t t52;
     int64_t t53;
-    HeroArrayHeader * t54 = {0};
+    HeroArrayHeader * t54;
     int64_t t55;
     bool t56;
-    HeroArrayHeader * t57 = {0};
+    HeroArrayHeader * t57;
     int64_t t58;
     int64_t t59;
-    HeroMapHeader * t60 = {0};
+    HeroMapHeader * t60;
     int64_t t61;
-    h_0opt_e201354 t62 = {0};
-    h_0opt_e201354 t63 = {0};
+    h_0opt_e201354 t62;
+    h_0opt_e201354 t63;
     int64_t t64;
     int64_t t65;
     bool t66;
@@ -4042,27 +4042,27 @@ h_0opt_2270cbe7 h_solve_solve(h_grid_Grid h0_g) {
     int64_t t72;
     int64_t t73;
     int64_t t74;
-    HeroStr t75 = {0};
-    HeroStr t76 = {0};
-    h_0opt_2270cbe7 t77 = {0};
-    h_0opt_e201354 t78 = {0};
-    h_0opt_e201354 t79 = {0};
-    h_0opt_e201354 t80 = {0};
-    h_0opt_e201354 t81 = {0};
-    h_0opt_2270cbe7 t82 = {0};
-    HeroMapHeader * t83 = {0};
-    HeroMapHeader * t84 = {0};
-    HeroArrayHeader * t85 = {0};
-    HeroArrayHeader * t86 = {0};
-    h_0opt_2270cbe7 t87 = {0};
-    HeroStr t88 = {0};
-    h_0opt_2270cbe7 t89 = {0};
-    HeroArrayHeader * t90 = {0};
-    HeroArrayHeader * t91 = {0};
-    HeroArrayHeader * t92 = {0};
-    h_0opt_2270cbe7 t93 = {0};
-    h_0opt_e201354 t94 = {0};
-    h_0opt_e201354 t95 = {0};
+    HeroStr t75;
+    HeroStr t76;
+    h_0opt_2270cbe7 t77;
+    h_0opt_e201354 t78;
+    h_0opt_e201354 t79;
+    h_0opt_e201354 t80;
+    h_0opt_e201354 t81;
+    h_0opt_2270cbe7 t82;
+    HeroMapHeader * t83;
+    HeroMapHeader * t84;
+    HeroArrayHeader * t85;
+    HeroArrayHeader * t86;
+    h_0opt_2270cbe7 t87;
+    HeroStr t88;
+    h_0opt_2270cbe7 t89;
+    HeroArrayHeader * t90;
+    HeroArrayHeader * t91;
+    HeroArrayHeader * t92;
+    h_0opt_2270cbe7 t93;
+    h_0opt_e201354 t94;
+    h_0opt_e201354 t95;
     goto bb0;
 bb0:
 #line 25 "examples/maze/solve.hero"
@@ -4608,7 +4608,7 @@ bb12:
 #line 40 "examples/maze/solve.hero"
       } else {
 #line 40 "examples/maze/solve.hero"
-        t62.tag = INT64_C(0);
+        t62 = (h_0opt_e201354){.tag = INT64_C(0)};
 #line 40 "examples/maze/solve.hero"
         (&hero_desc_int)->copy(&t62.as.ok, found);
 #line 40 "examples/maze/solve.hero"
@@ -4690,30 +4690,30 @@ HeroArrayHeader * h_solve_walk_back(HeroMapHeader * h0_came, int64_t h1_start, i
     h_0opt_e201354 h7_own7 = {0};
     HeroArrayHeader * h8_own8 = {0};
     int64_t t1;
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
     int64_t t5;
     bool t6;
-    HeroMapHeader * t7 = {0};
+    HeroMapHeader * t7;
     int64_t t8;
-    h_0opt_e201354 t9 = {0};
-    h_0opt_e201354 t10 = {0};
+    h_0opt_e201354 t9;
+    h_0opt_e201354 t10;
     int64_t t11;
     int64_t t12;
     bool t13;
-    h_0opt_e201354 t14 = {0};
-    HeroFailure t15 = {0};
-    h_0opt_e201354 t16 = {0};
+    h_0opt_e201354 t14;
+    HeroFailure t15;
+    h_0opt_e201354 t16;
     int64_t t17;
     int64_t t19;
-    HeroArrayHeader * t21 = {0};
-    HeroArrayHeader * t22 = {0};
-    HeroArrayHeader * t23 = {0};
-    HeroArrayHeader * t24 = {0};
-    h_0opt_e201354 t25 = {0};
-    h_0opt_e201354 t26 = {0};
-    HeroArrayHeader * t27 = {0};
+    HeroArrayHeader * t21;
+    HeroArrayHeader * t22;
+    HeroArrayHeader * t23;
+    HeroArrayHeader * t24;
+    h_0opt_e201354 t25;
+    h_0opt_e201354 t26;
+    HeroArrayHeader * t27;
     goto bb0;
 bb0:
 #line 49 "examples/maze/solve.hero"
@@ -4771,7 +4771,7 @@ bb2:
 #line 53 "examples/maze/solve.hero"
       } else {
 #line 53 "examples/maze/solve.hero"
-        t9.tag = INT64_C(0);
+        t9 = (h_0opt_e201354){.tag = INT64_C(0)};
 #line 53 "examples/maze/solve.hero"
         (&hero_desc_int)->copy(&t9.as.ok, found);
 #line 53 "examples/maze/solve.hero"
@@ -4866,21 +4866,21 @@ HeroArrayHeader * h_solve_reversed(HeroArrayHeader * h0_xs) {
     int64_t h4_i;
     HeroArrayHeader * h5_own5 = {0};
     HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
-    HeroArrayHeader * t3 = {0};
+    HeroArrayHeader * t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     int64_t t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     bool t10;
-    HeroArrayHeader * t11 = {0};
+    HeroArrayHeader * t11;
     int64_t t12;
     int64_t t13;
-    HeroArrayHeader * t15 = {0};
-    HeroArrayHeader * t16 = {0};
+    HeroArrayHeader * t15;
+    HeroArrayHeader * t16;
     int64_t t17;
     int64_t t18;
     int64_t t19;
@@ -4890,11 +4890,11 @@ HeroArrayHeader * h_solve_reversed(HeroArrayHeader * h0_xs) {
     int64_t t24;
     int64_t t25;
     int64_t t26;
-    HeroArrayHeader * t27 = {0};
-    HeroArrayHeader * t28 = {0};
-    HeroArrayHeader * t29 = {0};
-    HeroArrayHeader * t30 = {0};
-    HeroArrayHeader * t31 = {0};
+    HeroArrayHeader * t27;
+    HeroArrayHeader * t28;
+    HeroArrayHeader * t29;
+    HeroArrayHeader * t30;
+    HeroArrayHeader * t31;
     goto bb0;
 bb0:
 #line 59 "examples/maze/solve.hero"
@@ -5019,7 +5019,7 @@ bb4:
 #line 67 "examples/maze/solve.hero"
 int64_t h_solve_steps(HeroArrayHeader * h0_path) {
 #line 5022 "main.c"
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -5046,31 +5046,31 @@ bool h_solve_is_walkable(h_grid_Grid h0_g, HeroArrayHeader * h1_path) {
     int64_t h4_i;
     HeroArrayHeader * h5_own5 = {0};
     HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     bool t4;
     bool t5;
     int64_t t6;
-    HeroArrayHeader * t7 = {0};
+    HeroArrayHeader * t7;
     int64_t t8;
-    HeroArrayHeader * t9 = {0};
+    HeroArrayHeader * t9;
     int64_t t10;
     int64_t t11;
-    HeroArrayHeader * t12 = {0};
+    HeroArrayHeader * t12;
     int64_t t13;
     bool t14;
-    HeroArrayHeader * t15 = {0};
+    HeroArrayHeader * t15;
     int64_t t16;
     int64_t t17;
-    h_grid_Grid t18 = {0};
-    HeroArrayHeader * t19 = {0};
+    h_grid_Grid t18;
+    HeroArrayHeader * t19;
     int64_t t20;
     int64_t t21;
     int64_t t22;
     int64_t t23;
-    HeroArrayHeader * t24 = {0};
-    HeroArrayHeader * t25 = {0};
+    HeroArrayHeader * t24;
+    HeroArrayHeader * t25;
     int64_t t26;
     int64_t t27;
     bool t28;
@@ -5080,9 +5080,9 @@ bool h_solve_is_walkable(h_grid_Grid h0_g, HeroArrayHeader * h1_path) {
     int64_t t32;
     int64_t t33;
     bool t34;
-    HeroArrayHeader * t35 = {0};
-    HeroArrayHeader * t36 = {0};
-    HeroArrayHeader * t37 = {0};
+    HeroArrayHeader * t35;
+    HeroArrayHeader * t36;
+    HeroArrayHeader * t37;
     goto bb0;
 bb0:
 #line 73 "examples/maze/solve.hero"
@@ -5242,13 +5242,13 @@ bool h_solve_contains(HeroArrayHeader * h0_known, int64_t h1_one) {
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     int64_t h4_each;
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
-    HeroArrayHeader * t4 = {0};
+    HeroArrayHeader * t4;
     int64_t t5;
     bool t6;
-    HeroArrayHeader * t7 = {0};
+    HeroArrayHeader * t7;
     int64_t t8;
     int64_t t9;
     int64_t t10;
@@ -5259,7 +5259,7 @@ bool h_solve_contains(HeroArrayHeader * h0_known, int64_t h1_one) {
     int64_t t15;
     int64_t t16;
     bool t17;
-    HeroArrayHeader * t18 = {0};
+    HeroArrayHeader * t18;
     goto bb0;
 bb0:
 #line 83 "examples/maze/solve.hero"
@@ -5345,7 +5345,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -5354,9 +5354,9 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
     int64_t t9;
     int64_t t10;
     int64_t t11;
-    HeroArrayHeader * t12 = {0};
-    HeroArrayHeader * t13 = {0};
-    HeroArrayHeader * t14 = {0};
+    HeroArrayHeader * t12;
+    HeroArrayHeader * t13;
+    HeroArrayHeader * t14;
     goto bb0;
 bb0:
 #line 27 "<heroes library>"
@@ -5455,47 +5455,47 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
     HeroStr h10_own10 = {0};
     h_0opt_f87774a h11_own11 = {0};
     int64_t t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     const char * t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     int64_t t5;
     int64_t t6;
     bool t7;
-    HeroStr t8 = {0};
-    h_0opt_f87774a t9 = {0};
+    HeroStr t8;
+    h_0opt_f87774a t9;
     int64_t t10;
     int64_t t11;
     bool t12;
-    HeroStr t13 = {0};
-    HeroStr t14 = {0};
-    HeroStr t15 = {0};
-    HeroStr t16 = {0};
-    h_0opt_f87774a t17 = {0};
+    HeroStr t13;
+    HeroStr t14;
+    HeroStr t15;
+    HeroStr t16;
+    h_0opt_f87774a t17;
     int64_t t18;
     int64_t t19;
     bool t20;
-    HeroStr t21 = {0};
-    HeroStr t22 = {0};
-    HeroStr t23 = {0};
-    HeroStr t24 = {0};
-    HeroStr t25 = {0};
-    HeroStr t26 = {0};
-    h_0opt_f87774a t27 = {0};
-    HeroStr t28 = {0};
-    HeroStr t29 = {0};
-    HeroStr t30 = {0};
-    HeroStr t31 = {0};
-    h_0opt_f87774a t32 = {0};
-    HeroStr t33 = {0};
-    HeroStr t34 = {0};
-    h_0opt_f87774a t35 = {0};
-    HeroStr t36 = {0};
-    h_0opt_f87774a t37 = {0};
-    HeroStr t38 = {0};
-    h_0opt_f87774a t39 = {0};
-    HeroStr t40 = {0};
-    HeroStr t41 = {0};
-    h_0opt_f87774a t42 = {0};
+    HeroStr t21;
+    HeroStr t22;
+    HeroStr t23;
+    HeroStr t24;
+    HeroStr t25;
+    HeroStr t26;
+    h_0opt_f87774a t27;
+    HeroStr t28;
+    HeroStr t29;
+    HeroStr t30;
+    HeroStr t31;
+    h_0opt_f87774a t32;
+    HeroStr t33;
+    HeroStr t34;
+    h_0opt_f87774a t35;
+    HeroStr t36;
+    h_0opt_f87774a t37;
+    HeroStr t38;
+    h_0opt_f87774a t39;
+    HeroStr t40;
+    HeroStr t41;
+    h_0opt_f87774a t42;
     goto bb0;
 bb0:
 #line 167 "<heroes library>"
@@ -5812,20 +5812,20 @@ HeroArrayHeader * h_library_args(void) {
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
     HeroStr h3_own3 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
     bool t5;
     int64_t t7;
-    HeroStr t8 = {0};
+    HeroStr t8;
     int64_t t10;
     int64_t t11;
     int64_t t12;
-    HeroArrayHeader * t13 = {0};
-    HeroArrayHeader * t14 = {0};
-    HeroArrayHeader * t15 = {0};
-    HeroStr t16 = {0};
+    HeroArrayHeader * t13;
+    HeroArrayHeader * t14;
+    HeroArrayHeader * t15;
+    HeroStr t16;
     goto bb0;
 bb0:
 #line 189 "<heroes library>"

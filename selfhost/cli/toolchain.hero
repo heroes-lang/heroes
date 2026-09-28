@@ -28,6 +28,7 @@
 #   same fact, same key, different plumbing.
 
 use cli/io
+use cli/clang_floor
 use cli/deps
 use cli/digest
 use cli/flags
@@ -45,6 +46,17 @@ record Toolchain
     # `cat` invocations and 25 MB of hashing (162 KB × 157) for one
     # answer that cannot change during a build. Located once, here.
     runtime_key: str
+    # THE C COMPILER AND THE FLAGS EVERY OBJECT IS COMPILED UNDER, hashed
+    # (defect 122, panel 182's item 4): what `clang_floor.identity` says this
+    # machine's clang will run for `flags.flags()`, and that list itself. Every
+    # key under `build/` that names an object or an answer clang gave carries
+    # it, so another clang, another flag or another sysroot is another
+    # directory and never a warm hit. Asked once, here, for the reason
+    # `runtime_key` is.
+    compiler_key: str
+    # That answer's first line, the version banner the floor is checked on;
+    # empty when clang did not answer.
+    compiler_banner: str
 
 # Locate the runtime, or say the places it looked. The search is why
 # the ABI stamp exists: a decoy runtime/ compiled with zero warnings
@@ -60,15 +72,30 @@ function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
     for candidate in candidates
         if !read_file(candidate + "/heroes_runtime.h").is_err() && !read_file(candidate + "/runtime.c").is_err()
             gathered = runtime_key.runtime_text(candidate)?
+            said = clang_floor.identity(build_dir: "build", runtime: candidate, words: flags.flags())
 
             return ok(
-                Toolchain(runtime: candidate, build: "build", fingerprint: fingerprint, runtime_key: digest.digest(gathered))
+                Toolchain(runtime: candidate, build: "build", fingerprint: fingerprint, runtime_key: digest.digest(gathered), compiler_key: digest.digest(flags.flags().join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")))
             )
 
     return fail(
         code: "failed",
         msg: "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: the given hint and ./runtime\n  set HEROES_RUNTIME=<dir> to say where it is"
     )
+
+# What the key is given for clang's answer: the answer, or what was said
+# instead. A clang that did not answer keys apart from one that did, and the
+# build's own compile then says why.
+function answer_text(said: str?) -> str
+    match said
+        .ok text => return "answered|" + text
+        .err e   => return "unanswered|" + e.msg
+
+# The words a key carries for the level and the sanitizers: the flags
+# themselves, so a sanitizer list that grows is another key, where one bit
+# said only whether there was any.
+function build_words(level: str, sanitize: bool) -> str
+    return level + "|" + flags.sanitizers(sanitize: sanitize).join(" ")
 
 # Run one clang line, stderr captured to a file and read back. clang's
 # own words are kept verbatim: a failure here says THE COMPILER is
@@ -119,12 +146,8 @@ function run_clang(line: [str], what: str, err_path: str) -> ()?
     return fail(code: "clang", msg: what + " failed:\n" + noise)
 
 function dir_for(t: Toolchain, source_name: str, text: str, level_key: str, sanitize: bool, search: str) -> str?
-    san: str @ ""
-
-    if sanitize
-        san @ "+san"
     key = digest.digest(
-        t.fingerprint + "|" + level_key + san + "|" + source_name + "|" + text + "|" + t.runtime_key + search
+        t.fingerprint + "|" + t.compiler_key + "|" + build_words(level: level_key, sanitize: sanitize) + "|" + source_name + "|" + text + "|" + t.runtime_key + search
     )
     dir = t.build + "/" + key
     made = process.mkdir_all(dir)
@@ -140,6 +163,14 @@ function dir_for(t: Toolchain, source_name: str, text: str, level_key: str, sani
 # directory is atomic on POSIX, and whoever wins the race published
 # byte-for-byte our object, because the key covers everything.
 #
+# **"The compiler" was the HEROES compiler's version, and "everything" was
+# false** (defect 122, measured by panel 182's critic): the key held no C
+# compiler and no flag, so a runtime object Apple clang 21 compiled was served
+# to a build under Homebrew clang 22.1.8, and one compiled without a flag to a
+# compiler that passes it. The key now carries `compiler_key`, clang's own
+# account of what it runs for the flag list, and the sanitizer flags
+# themselves rather than one bit.
+#
 # **The key covers the runtime's own sources and nothing else, so the
 # C HEADERS `runtime.c` includes were outside it** — the same hole the
 # per-module cache had, one level over, and this one is worse when it
@@ -151,7 +182,9 @@ function dir_for(t: Toolchain, source_name: str, text: str, level_key: str, sani
 # hashes every byte of it (CLAUDE.md §1: a repair is attacked at the
 # shapes next to the one that provoked it, before the commit).
 function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
-    key = digest.digest(t.fingerprint + "|" + level + "|" + strings.bool_text(sanitize) + "|" + t.runtime_key)
+    key = digest.digest(
+        t.fingerprint + "|" + t.compiler_key + "|" + build_words(level: level, sanitize: sanitize) + "|" + t.runtime_key
+    )
     made = process.mkdir_all(t.build)
 
     if made.is_err()
@@ -296,6 +329,42 @@ test "the toolchain finds the real runtime and compiles it through system()"
         .err e =>
             assert e.code == "clang"
             assert has_text(text: e.msg, needle: "undeclared_name")
+
+test "an object compiled under one clang answer is never served under another (defect 122)"
+    found = locate_toolchain(hint: "", fingerprint: "port-test")
+    assert !found.is_err()
+    here = found.must()
+
+    # The banner is what this machine's clang said first, and the floor
+    # reads it.
+    assert here.compiler_banner.len() > 0
+    assert !clang_floor.check(here.compiler_banner).is_err()
+
+    # The same toolchain as clang describes it under one more flag: the
+    # answer is clang's own, asked of the real compiler, so what moves the
+    # key is what the world said and not a string this test made up.
+    more = strings.with_all(list: flags.flags(), more: ["-DHEROES_KEY_PROBE=1"])
+    said = clang_floor.identity(build_dir: "build", runtime: here.runtime, words: more)
+    assert !said.is_err()
+    other: Toolchain @ here
+    other.compiler_key @ digest.digest(more.join(" ") + "|" + answer_text(said))
+    assert other.compiler_key != here.compiler_key
+
+    # Warm under one, then the other: a second object is COMPILED rather
+    # than the first served, and the first is still the first one's.
+    first = runtime_object(here, level: "-O0", sanitize: false).must()
+    second = runtime_object(other, level: "-O0", sanitize: false).must()
+    assert first != second
+    assert process.path_exists(path: second)
+    assert runtime_object(here, level: "-O0", sanitize: false).must() == first
+
+    # The fused unit's directory keys apart the same way, and so do the
+    # sanitizer's flags, which were one bit.
+    d1 = dir_for(here, source_name: "x.hero", text: "a", level_key: "-O0", sanitize: false, search: "")
+    d2 = dir_for(other, source_name: "x.hero", text: "a", level_key: "-O0", sanitize: false, search: "")
+    assert d1.must() != d2.must()
+    assert build_words(level: "-O0", sanitize: true) == "-O0|-fsanitize=address,undefined"
+    assert build_words(level: "-O2", sanitize: false) == "-O2|"
 
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()

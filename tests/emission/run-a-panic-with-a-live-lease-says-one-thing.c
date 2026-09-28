@@ -102,22 +102,22 @@ void h_apanicwithaliveleasesaysonething_main(void) {
     HeroArrayHeader * h2_a = {0};
     HeroArrayHeader * h3_own3 = {0};
     HeroStr h4_own4 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
+    HeroStr t1;
+    HeroStr t2;
     const char * t3;
     const char * t4;
     int64_t t5;
     int64_t t6;
     int64_t t7;
-    HeroArrayHeader * t8 = {0};
-    HeroArrayHeader * t9 = {0};
+    HeroArrayHeader * t8;
+    HeroArrayHeader * t9;
     int64_t t10;
     int64_t t11;
-    HeroStr t12 = {0};
-    HeroStr t13 = {0};
-    HeroArrayHeader * t14 = {0};
-    HeroArrayHeader * t15 = {0};
-    HeroStr t16 = {0};
+    HeroStr t12;
+    HeroStr t13;
+    HeroArrayHeader * t14;
+    HeroArrayHeader * t15;
+    HeroStr t16;
     goto bb0;
 bb0:
 #line 11 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"

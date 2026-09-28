@@ -169,8 +169,8 @@ HeroStr h_fixedbugsaufcschaingavetwocallsonekey_shown(h_fixedbugsaufcschaingavet
     HeroStr h1_own1 = {0};
     h_fixedbugsaufcschaingavetwocallsonekey_R t1;
     int64_t t2;
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
+    HeroStr t3;
+    HeroStr t4;
     goto bb0;
 bb0:
 #line 54 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
@@ -217,10 +217,10 @@ bb0:
 HeroStr h_fixedbugsaufcschaingavetwocallsonekey_glue(HeroStr h0_acc, HeroStr h1_item) {
 #line 219 "fixedbugsaufcschaingavetwocallsonekey.c"
     HeroStr h2_own2 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    HeroStr t3;
+    HeroStr t4;
     goto bb0;
 bb0:
 #line 63 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
@@ -264,55 +264,55 @@ void h_fixedbugsaufcschaingavetwocallsonekey_main(void) {
     h_fixedbugsaufcschaingavetwocallsonekey_R t4;
     int64_t t5;
     h_fixedbugsaufcschaingavetwocallsonekey_R t6;
-    HeroArrayHeader * t7 = {0};
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t7;
+    HeroArrayHeader * t8;
     h_0fn_7df997ea t9;
-    HeroArrayHeader * t10 = {0};
+    HeroArrayHeader * t10;
     int64_t t11;
     h_0fn_6ca17148 t12;
     int64_t t13;
-    HeroArrayHeader * t14 = {0};
+    HeroArrayHeader * t14;
     h_0fn_43d3f883 t15;
-    HeroArrayHeader * t16 = {0};
-    HeroStr t17 = {0};
+    HeroArrayHeader * t16;
+    HeroStr t17;
     h_0fn_2248724e t18;
-    HeroStr t19 = {0};
-    HeroArrayHeader * t20 = {0};
+    HeroStr t19;
+    HeroArrayHeader * t20;
     h_0fn_7df997ea t21;
-    HeroArrayHeader * t22 = {0};
+    HeroArrayHeader * t22;
     h_0fn_48ac9712 t23;
-    HeroArrayHeader * t24 = {0};
+    HeroArrayHeader * t24;
     int64_t t25;
     h_0fn_6ca17148 t26;
     int64_t t27;
-    HeroArrayHeader * t28 = {0};
+    HeroArrayHeader * t28;
     h_0fn_7df997ea t29;
-    HeroArrayHeader * t30 = {0};
+    HeroArrayHeader * t30;
     int64_t t31;
-    HeroArrayHeader * t32 = {0};
+    HeroArrayHeader * t32;
     h_0fn_7df997ea t33;
-    HeroArrayHeader * t34 = {0};
-    HeroArrayHeader * t35 = {0};
+    HeroArrayHeader * t34;
+    HeroArrayHeader * t35;
     int64_t t36;
     h_0fn_6ca17148 t37;
     int64_t t38;
-    HeroArrayHeader * t39 = {0};
+    HeroArrayHeader * t39;
     h_0fn_7df997ea t40;
-    HeroArrayHeader * t41 = {0};
+    HeroArrayHeader * t41;
     int64_t t42;
     h_0fn_6ca17148 t43;
     int64_t t44;
-    HeroArrayHeader * t45 = {0};
-    HeroArrayHeader * t46 = {0};
-    HeroArrayHeader * t47 = {0};
-    HeroArrayHeader * t48 = {0};
-    HeroStr t49 = {0};
-    HeroArrayHeader * t50 = {0};
-    HeroArrayHeader * t51 = {0};
-    HeroArrayHeader * t52 = {0};
-    HeroArrayHeader * t53 = {0};
-    HeroArrayHeader * t54 = {0};
-    HeroArrayHeader * t55 = {0};
+    HeroArrayHeader * t45;
+    HeroArrayHeader * t46;
+    HeroArrayHeader * t47;
+    HeroArrayHeader * t48;
+    HeroStr t49;
+    HeroArrayHeader * t50;
+    HeroArrayHeader * t51;
+    HeroArrayHeader * t52;
+    HeroArrayHeader * t53;
+    HeroArrayHeader * t54;
+    HeroArrayHeader * t55;
     goto bb0;
 bb0:
 #line 66 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
@@ -554,14 +554,14 @@ HERO_TU_LOCAL HeroArrayHeader * h_library_map_1920d470(HeroArrayHeader * h0_xs, 
     int64_t h4_i0;
     h_fixedbugsaufcschaingavetwocallsonekey_R h5_x;
     HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     h_fixedbugsaufcschaingavetwocallsonekey_R t10;
     h_0fn_7df997ea t12;
@@ -570,10 +570,10 @@ HERO_TU_LOCAL HeroArrayHeader * h_library_map_1920d470(HeroArrayHeader * h0_xs, 
     int64_t t16;
     int64_t t17;
     int64_t t18;
-    HeroArrayHeader * t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroArrayHeader * t21 = {0};
-    HeroArrayHeader * t22 = {0};
+    HeroArrayHeader * t19;
+    HeroArrayHeader * t20;
+    HeroArrayHeader * t21;
+    HeroArrayHeader * t22;
     goto bb0;
 bb0:
 #line 37 "<heroes library>"
@@ -680,13 +680,13 @@ HERO_TU_LOCAL int64_t h_library_fold_37f8817a(HeroArrayHeader * h0_xs, int64_t h
     int64_t h5_i0;
     int64_t h6_x;
     int64_t t1;
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     int64_t t10;
     h_0fn_6ca17148 t11;
@@ -697,7 +697,7 @@ HERO_TU_LOCAL int64_t h_library_fold_37f8817a(HeroArrayHeader * h0_xs, int64_t h
     int64_t t16;
     int64_t t17;
     int64_t t18;
-    HeroArrayHeader * t19 = {0};
+    HeroArrayHeader * t19;
     goto bb0;
 bb0:
 #line 59 "<heroes library>"
@@ -786,27 +786,27 @@ HERO_TU_LOCAL HeroArrayHeader * h_library_map_192392c2(HeroArrayHeader * h0_xs, 
     h_fixedbugsaufcschaingavetwocallsonekey_R h5_x;
     HeroArrayHeader * h6_own6 = {0};
     HeroStr h7_own7 = {0};
-    HeroArrayHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     h_fixedbugsaufcschaingavetwocallsonekey_R t10;
     h_0fn_43d3f883 t12;
     h_fixedbugsaufcschaingavetwocallsonekey_R t13;
-    HeroStr t14 = {0};
+    HeroStr t14;
     int64_t t16;
     int64_t t17;
     int64_t t18;
-    HeroArrayHeader * t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroArrayHeader * t21 = {0};
-    HeroArrayHeader * t22 = {0};
-    HeroStr t23 = {0};
+    HeroArrayHeader * t19;
+    HeroArrayHeader * t20;
+    HeroArrayHeader * t21;
+    HeroArrayHeader * t22;
+    HeroStr t23;
     goto bb0;
 bb0:
 #line 37 "<heroes library>"
@@ -922,29 +922,29 @@ HERO_TU_LOCAL HeroStr h_library_fold_f720dcd(HeroArrayHeader * h0_xs, HeroStr h1
     int64_t h5_i0;
     HeroStr h6_x = {0};
     HeroStr h7_own7 = {0};
-    HeroStr t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroStr t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
-    HeroStr t10 = {0};
+    HeroStr t10;
     h_0fn_2248724e t11;
-    HeroStr t12 = {0};
-    HeroStr t13 = {0};
-    HeroStr t14 = {0};
+    HeroStr t12;
+    HeroStr t13;
+    HeroStr t14;
     int64_t t15;
     int64_t t16;
     int64_t t17;
-    HeroStr t18 = {0};
-    HeroStr t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroStr t21 = {0};
-    HeroStr t22 = {0};
-    HeroStr t23 = {0};
+    HeroStr t18;
+    HeroStr t19;
+    HeroArrayHeader * t20;
+    HeroStr t21;
+    HeroStr t22;
+    HeroStr t23;
     goto bb0;
 bb0:
 #line 59 "<heroes library>"
@@ -1066,14 +1066,14 @@ HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, 
     int64_t h4_i0;
     int64_t h5_x;
     HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     int64_t t10;
     h_0fn_48ac9712 t12;
@@ -1082,10 +1082,10 @@ HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, 
     int64_t t16;
     int64_t t17;
     int64_t t18;
-    HeroArrayHeader * t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroArrayHeader * t21 = {0};
-    HeroArrayHeader * t22 = {0};
+    HeroArrayHeader * t19;
+    HeroArrayHeader * t20;
+    HeroArrayHeader * t21;
+    HeroArrayHeader * t22;
     goto bb0;
 bb0:
 #line 37 "<heroes library>"

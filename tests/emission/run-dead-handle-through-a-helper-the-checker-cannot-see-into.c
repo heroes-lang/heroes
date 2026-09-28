@@ -137,7 +137,7 @@ void h_deadhandlethroughahelperthecheckercannotseeinto_main(void) {
     Obj * t1;
     Obj * t2;
     Obj * t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     const char * t5;
     Obj * t6;
     Obj * t8;

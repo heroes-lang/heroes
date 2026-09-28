@@ -97,14 +97,14 @@ void h_abortrepeatoverflows_main(void) {
 #line 98 "abortrepeatoverflows.c"
     uint64_t h0_n;
     HeroStr h1_own1 = {0};
-    HeroStr t1 = {0};
+    HeroStr t1;
     uint64_t t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     uint64_t t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     int64_t t6;
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
+    HeroStr t7;
+    HeroStr t8;
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/abort-repeat-overflows.hero"

@@ -139,23 +139,23 @@ void h_fixedbugsaborrowedhandleiswrittenintoafixedarray_main(void) {
     int64_t t10;
     int64_t t11;
     ob * t12;
-    HeroArrayHeader * t13 = {0};
+    HeroArrayHeader * t13;
     int64_t t14;
     int64_t t15;
     int64_t t16;
     int64_t t17;
     int64_t t18;
     ob * t19;
-    HeroStr t20 = {0};
+    HeroStr t20;
     struct four t21;
     int64_t t22;
-    HeroStr t23 = {0};
+    HeroStr t23;
     struct four t24;
     int64_t t26;
     ob * t27;
     ob * t28;
     bool t29;
-    HeroArrayHeader * t30 = {0};
+    HeroArrayHeader * t30;
     goto bb0;
 bb0:
 #line 23 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
@@ -264,20 +264,20 @@ HeroArrayHeader * h_library_args(void) {
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
     HeroStr h3_own3 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
     bool t5;
     int64_t t7;
-    HeroStr t8 = {0};
+    HeroStr t8;
     int64_t t10;
     int64_t t11;
     int64_t t12;
-    HeroArrayHeader * t13 = {0};
-    HeroArrayHeader * t14 = {0};
-    HeroArrayHeader * t15 = {0};
-    HeroStr t16 = {0};
+    HeroArrayHeader * t13;
+    HeroArrayHeader * t14;
+    HeroArrayHeader * t15;
+    HeroStr t16;
     goto bb0;
 bb0:
 #line 189 "<heroes library>"

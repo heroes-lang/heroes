@@ -138,42 +138,42 @@ void h_f32thenarrowfloat_main(void) {
     float t18;
     float t19;
     float t20;
-    HeroArrayHeader * t21 = {0};
-    HeroArrayHeader * t22 = {0};
-    HeroArrayHeader * t23 = {0};
-    HeroArrayHeader * t24 = {0};
+    HeroArrayHeader * t21;
+    HeroArrayHeader * t22;
+    HeroArrayHeader * t23;
+    HeroArrayHeader * t24;
     int64_t t25;
     float t26;
-    HeroArrayHeader * t27 = {0};
+    HeroArrayHeader * t27;
     int64_t t28;
     float t29;
-    HeroMapHeader * t30 = {0};
-    HeroStr t31 = {0};
+    HeroMapHeader * t30;
+    HeroStr t31;
     float t32;
-    HeroMapHeader * t33 = {0};
-    HeroStr t34 = {0};
-    h_0opt_db86062 t35 = {0};
-    h_0opt_db86062 t36 = {0};
+    HeroMapHeader * t33;
+    HeroStr t34;
+    h_0opt_db86062 t35;
+    h_0opt_db86062 t36;
     int64_t t37;
     int64_t t38;
     bool t39;
-    h_0opt_db86062 t40 = {0};
-    HeroFailure t41 = {0};
-    h_0opt_db86062 t42 = {0};
+    h_0opt_db86062 t40;
+    HeroFailure t41;
+    h_0opt_db86062 t42;
     float t43;
-    HeroArrayHeader * t44 = {0};
+    HeroArrayHeader * t44;
     int64_t t45;
     float t46;
     float t47;
     bool t48;
-    HeroArrayHeader * t49 = {0};
-    HeroArrayHeader * t50 = {0};
-    HeroArrayHeader * t51 = {0};
-    HeroArrayHeader * t52 = {0};
-    HeroMapHeader * t53 = {0};
-    HeroMapHeader * t54 = {0};
-    h_0opt_db86062 t55 = {0};
-    h_0opt_db86062 t56 = {0};
+    HeroArrayHeader * t49;
+    HeroArrayHeader * t50;
+    HeroArrayHeader * t51;
+    HeroArrayHeader * t52;
+    HeroMapHeader * t53;
+    HeroMapHeader * t54;
+    h_0opt_db86062 t55;
+    h_0opt_db86062 t56;
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/f32-the-narrow-float.hero"
@@ -355,7 +355,7 @@ bb0:
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
       } else {
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
-        t35.tag = INT64_C(0);
+        t35 = (h_0opt_db86062){.tag = INT64_C(0)};
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
         (&hero_desc_f32)->copy(&t35.as.ok, found);
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"

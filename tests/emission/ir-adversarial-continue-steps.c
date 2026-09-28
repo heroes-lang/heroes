@@ -96,13 +96,13 @@ int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs) {
     int64_t h3_i0;
     int64_t h4_x;
     int64_t t1;
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     int64_t t10;
     int64_t t11;
@@ -117,7 +117,7 @@ int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs) {
     int64_t t20;
     int64_t t21;
     int64_t t22;
-    HeroArrayHeader * t23 = {0};
+    HeroArrayHeader * t23;
     goto bb0;
 bb0:
 #line 8 "tests/golden/ir/adversarial-continue-steps.hero"

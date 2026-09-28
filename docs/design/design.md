@@ -2634,19 +2634,51 @@ Two passes sit between type checking and emission, and they are **core obligatio
   precedent, and LLVM D92808 records what happens when refcount pairing lives only in the backend:
   passes separate the calls from their markers. `cow_check` joins them at **M-value-aggregates**, where `push`
   gives it a call site; at M-strings-ownership it would have none, and an instruction nothing emits is an arm that
-  rots. **Five rules, each with a compiled counterexample** (panel 021 R2): a plain parameter is
-  *borrowed* and excluded from the sweep, which covers local and synthetic slots only; an `@`
-  parameter is *moved in and moved out*, its copy-out replacing the decref; a store increfs the new
-  value before decrefing the old; a returned value is increfed before the sweep; and an owning
-  temporary — one whose defining op allocates — is decrefed at the end of its defining block, made
-  safe by a checked invariant rather than by a liveness pass. Refcounted slots are
-  **zero-initialised** in the prologue so cleanup is unconditional (clang's ARC specification
-  licenses exactly this for `__strong` locals; rustc's `ElaborateDrops` does the alternative and
-  then optimises it into the same thing), with `ptr == NULL` as the one non-value that every
-  runtime entry point rejects. The pass builds a cleanup-label chain per function so every exit
-  edge (`return`, `?`,
-  `break`, `continue`, `panic`, match fallthrough) releases live locals and performs `@` copy-out
-  (§4.8: "copy-out happens always"). The runtime cannot know where a scope ends; only lowering can.
+  rots. **Six rules, each with a compiled counterexample** (panel 021 R2 gave five; the sixth is
+  `selfhost/ir/own.hero`'s, found by running it): a plain parameter is *borrowed* and excluded
+  from the sweep, which covers local and synthetic slots only; an `@` parameter is *moved in and
+  moved out*, its copy-out replacing the decref; a store increfs the new value before decrefing
+  the old, which it loads from the slot first (an indexed store hands the old element to the
+  runtime to release instead); a returned value is increfed before the sweep; an owning
+  temporary, one whose defining op allocates, is **moved into a synthetic slot of its own, in the
+  block that defines it**, so nothing is owned by a temporary past its own instruction and every
+  release is a slot's; and an aggregate constructor retains every counted field it captures.
+  Refcounted local and synthetic slots are **zero-initialised** in the prologue so cleanup is
+  unconditional (clang's ARC specification licenses exactly this for `__strong` locals; rustc's
+  `ElaborateDrops` does the alternative and then optimises it into the same thing), with
+  `ptr == NULL` as the one non-value that every runtime entry point rejects: the store's load of
+  the old value reads each such slot before its first store, and the sweep releases it whether
+  the path that stored it ran or not. An `@` parameter's slot is not zeroed, because its copy-in
+  writes it before the first block, and a temporary is never initialised: its one definition
+  precedes every read of it on every path, which the verifier proves between blocks and within
+  one, and the C writes it whole, so `-Werror=uninitialized` goes on checking it. **Every block
+  that returns**, a `return` and the early return a `?` lowers to, performs the `@` copy-out,
+  retains what it returns, and releases every local and synthetic slot (§4.8: "copy-out happens
+  always"); `break`, `continue` and a `match`'s arms are jumps inside the function and release
+  nothing, and a panic (`hero_panic` and its kin, `_Noreturn`) aborts the process where it
+  stands, releasing nothing and copying nothing out. The runtime cannot know where a scope ends;
+  only lowering can.
+
+  **AMENDED 2026-09-28 by panel 182**
+  (`docs/panel/182-a-value-is-never-zeroed-a-slot-is-and-a-definition-is-whole.md`), and what
+  the paragraph said is kept here, because a public sentence that was false should say it was.
+  It read *"an owning temporary [...] is decrefed at the end of its defining block, made safe by a
+  checked invariant rather than by a liveness pass"*: that is the draft `own.hero` records as
+  refuted within the hour, since `.must()`, `?`, `&&` and an `if` used as a value open a block in
+  the middle of an expression, and the pass has moved the value into a slot ever since. It read
+  *"Refcounted slots are zero-initialised"*, and the emitter also zeroed every refcounted
+  temporary, 84,601 in the seed at `64003edd`, every one written before any read or release
+  (the sitting's four instruments at `0fc98107`, and its critic's analyser again at `64003edd`),
+  and every `@` parameter's slot, 634, each written by its copy-in first; panel 021 R3 had
+  licensed slots only. And it read *"The pass builds a cleanup-label chain per function so every
+  exit edge (`return`, `?`, `break`, `continue`, `panic`, match fallthrough) releases live locals
+  and performs `@` copy-out"*: read in the emitted C the same day, there is no chain. In a function
+  with a `?`, a `break` in a `while`, an `assert`, a `.must()` and an `@` parameter, each of its
+  two returning blocks carries its own copy-out and its own sweep of all ten slots, the `break` is
+  a `goto` to the loop's exit, and the assert's and the `.must()`'s panics release nothing; in a
+  second, with a `match` inside a `while` and a `continue`, each arm and the `continue` are a
+  `goto` with no release, and the one returning block sweeps all eight. It said *five rules*, and
+  `own.hero` states six.
 
 ### The sugar: erased on the way into the IR
 

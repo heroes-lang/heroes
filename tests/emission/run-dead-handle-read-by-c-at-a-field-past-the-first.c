@@ -115,11 +115,11 @@ void h_deadhandlereadbycatafieldpastthefirst_main(void) {
     int64_t t3;
     bool t4;
     ob * t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     int32_t t7;
     int32_t t8;
     bool t9;
-    HeroStr t10 = {0};
+    HeroStr t10;
     ob * t11;
     int64_t t12;
     goto bb0;
