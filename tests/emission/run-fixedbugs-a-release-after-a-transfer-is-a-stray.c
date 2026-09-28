@@ -115,10 +115,10 @@ void h_fixedbugsareleaseafteratransferisastray_main(void) {
     ob * t1;
     ob * t2;
     wr * t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     ob * t5;
     wr * t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     goto bb0;
 bb0:
 #line 29 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"

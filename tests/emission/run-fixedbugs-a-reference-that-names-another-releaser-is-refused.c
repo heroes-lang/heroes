@@ -111,12 +111,12 @@ void h_fixedbugsareferencethatnamesanotherreleaserisrefused_main(void) {
     ob * h0_a;
     ob * h1_b;
     ob * t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     ob * t3;
     ob * t4;
     ob * t5;
     ob * t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     goto bb0;
 bb0:
 #line 14 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"

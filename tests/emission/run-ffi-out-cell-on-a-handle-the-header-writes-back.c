@@ -114,7 +114,7 @@ void h_ffioutcellonahandletheheaderwritesback_main(void) {
     int32_t t5;
     void * t6;
     void * t7;
-    HeroStr t8 = {0};
+    HeroStr t8;
     goto bb0;
 bb0:
 #line 14 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"

@@ -487,8 +487,8 @@ HeroStr h_main_hex_of(int64_t h0_value) {
     int64_t h4_nibble;
     HeroStr h5_own5 = {0};
     HeroStr h6_own6 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
+    HeroStr t1;
+    HeroStr t2;
     int64_t t3;
     int64_t t4;
     int64_t t5;
@@ -500,23 +500,23 @@ HeroStr h_main_hex_of(int64_t h0_value) {
     int64_t t11;
     int64_t t12;
     int64_t t13;
-    HeroStr t14 = {0};
-    HeroStr t15 = {0};
+    HeroStr t14;
+    HeroStr t15;
     int64_t t16;
     int64_t t17;
     int64_t t18;
     int64_t t19;
-    HeroStr t20 = {0};
-    HeroStr t21 = {0};
+    HeroStr t20;
+    HeroStr t21;
     int64_t t22;
     int64_t t23;
     int64_t t24;
-    HeroStr t25 = {0};
-    HeroStr t26 = {0};
-    HeroStr t27 = {0};
-    HeroStr t28 = {0};
-    HeroStr t29 = {0};
-    HeroStr t30 = {0};
+    HeroStr t25;
+    HeroStr t26;
+    HeroStr t27;
+    HeroStr t28;
+    HeroStr t29;
+    HeroStr t30;
     goto bb0;
 bb0:
 #line 106 "examples/palette/main.hero"
@@ -675,10 +675,10 @@ void h_main_main(void) {
     int64_t t25;
     bool t26;
     int64_t t27;
-    HeroStr t28 = {0};
+    HeroStr t28;
     int64_t t29;
     int64_t t30;
-    HeroStr t31 = {0};
+    HeroStr t31;
     int64_t t32;
     int64_t t33;
     bool t34;
@@ -695,8 +695,8 @@ void h_main_main(void) {
     int64_t t45;
     int64_t t46;
     bool t47;
-    HeroStr t48 = {0};
-    HeroStr t49 = {0};
+    HeroStr t48;
+    HeroStr t49;
     goto bb0;
 bb0:
 #line 119 "examples/palette/main.hero"

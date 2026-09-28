@@ -99,14 +99,14 @@ void h_fixedbugscwritesoverastringsheader_main(void) {
 #line 100 "fixedbugscwritesoverastringsheader.c"
     HeroStr h0_word = {0};
     HeroStr h1_own1 = {0};
-    HeroStr t1 = {0};
+    HeroStr t1;
     uint64_t t2;
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
+    HeroStr t3;
+    HeroStr t4;
     const char * t5;
-    HeroStr t6 = {0};
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
+    HeroStr t6;
+    HeroStr t7;
+    HeroStr t8;
     goto bb0;
 bb0:
 #line 25 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"

@@ -112,7 +112,7 @@ void h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_main(void) {
     node * t2;
     int64_t t3;
     node * t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     node * t6;
     node * t7;
     int32_t t8;

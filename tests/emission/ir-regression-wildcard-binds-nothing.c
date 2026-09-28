@@ -172,10 +172,10 @@ int64_t h_regressionwildcardbindsnothing_count_of(HeroArrayHeader * h0_xs) {
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     int64_t t1;
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
     int64_t t8;
@@ -185,7 +185,7 @@ int64_t h_regressionwildcardbindsnothing_count_of(HeroArrayHeader * h0_xs) {
     int64_t t12;
     int64_t t13;
     int64_t t14;
-    HeroArrayHeader * t15 = {0};
+    HeroArrayHeader * t15;
     goto bb0;
 bb0:
 #line 19 "tests/golden/ir/regression-wildcard-binds-nothing.hero"

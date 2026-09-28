@@ -133,17 +133,17 @@ bool h_main_fits(HeroArrayHeader * h0_placed, int64_t h1_col) {
     bool h5_b0;
     int64_t t1;
     int64_t t2;
-    HeroArrayHeader * t3 = {0};
+    HeroArrayHeader * t3;
     int64_t t4;
     bool t5;
-    HeroArrayHeader * t6 = {0};
+    HeroArrayHeader * t6;
     int64_t t7;
     int64_t t8;
     int64_t t9;
     int64_t t10;
     bool t11;
     bool t12;
-    HeroArrayHeader * t13 = {0};
+    HeroArrayHeader * t13;
     int64_t t14;
     int64_t t15;
     int64_t t16;
@@ -296,7 +296,7 @@ int64_t h_main_solutions_from(HeroArrayHeader * h0_placed) {
     int64_t h1_found;
     int64_t h2_col;
     HeroArrayHeader * h3_deeper = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     bool t4;
@@ -306,20 +306,20 @@ int64_t h_main_solutions_from(HeroArrayHeader * h0_placed) {
     int64_t t8;
     int64_t t9;
     bool t10;
-    HeroArrayHeader * t11 = {0};
+    HeroArrayHeader * t11;
     int64_t t12;
     bool t13;
-    HeroArrayHeader * t14 = {0};
+    HeroArrayHeader * t14;
     int64_t t16;
     int64_t t18;
-    HeroArrayHeader * t19 = {0};
+    HeroArrayHeader * t19;
     int64_t t20;
     int64_t t21;
     int64_t t22;
     int64_t t23;
     int64_t t24;
     int64_t t25;
-    HeroArrayHeader * t26 = {0};
+    HeroArrayHeader * t26;
     goto bb0;
 bb0:
 #line 44 "examples/nqueens/main.hero"
@@ -432,11 +432,11 @@ int64_t h_main_from_column(int64_t h0_col) {
     HeroArrayHeader * h1_start = {0};
     HeroArrayHeader * h2_own2 = {0};
     int64_t t1;
-    HeroArrayHeader * t2 = {0};
-    HeroArrayHeader * t3 = {0};
+    HeroArrayHeader * t2;
+    HeroArrayHeader * t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
-    HeroArrayHeader * t6 = {0};
+    HeroArrayHeader * t5;
+    HeroArrayHeader * t6;
     goto bb0;
 bb0:
 #line 60 "examples/nqueens/main.hero"
@@ -488,7 +488,7 @@ int64_t h_main_together(void) {
     int64_t h4_i0;
     int64_t h5_h;
     HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -500,13 +500,13 @@ int64_t h_main_together(void) {
     int64_t t12;
     int64_t t13;
     int64_t t14;
-    HeroArrayHeader * t15 = {0};
+    HeroArrayHeader * t15;
     int64_t t16;
     int64_t t17;
-    HeroArrayHeader * t18 = {0};
+    HeroArrayHeader * t18;
     int64_t t19;
     bool t20;
-    HeroArrayHeader * t21 = {0};
+    HeroArrayHeader * t21;
     int64_t t22;
     int64_t t23;
     int64_t t24;
@@ -517,9 +517,9 @@ int64_t h_main_together(void) {
     int64_t t29;
     int64_t t30;
     int64_t t31;
-    HeroArrayHeader * t32 = {0};
-    HeroArrayHeader * t33 = {0};
-    HeroArrayHeader * t34 = {0};
+    HeroArrayHeader * t32;
+    HeroArrayHeader * t33;
+    HeroArrayHeader * t34;
     goto bb0;
 bb0:
 #line 64 "examples/nqueens/main.hero"
@@ -662,11 +662,11 @@ int64_t h_main_alone(void) {
 #line 663 "main.c"
     HeroArrayHeader * h0_empty = {0};
     HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t1;
+    HeroArrayHeader * t2;
     int64_t t3;
-    HeroArrayHeader * t4 = {0};
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t4;
+    HeroArrayHeader * t5;
     goto bb0;
 bb0:
 #line 79 "examples/nqueens/main.hero"
@@ -700,9 +700,9 @@ bb0:
 #line 82 "examples/nqueens/main.hero"
 void h_main_main(void) {
 #line 703 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     int64_t t4;
     goto bb0;
 bb0:

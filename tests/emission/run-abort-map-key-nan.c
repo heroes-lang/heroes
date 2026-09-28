@@ -128,13 +128,13 @@ void h_abortmapkeynan_main(void) {
     HeroArrayHeader * h1_own1 = {0};
     double t1;
     double t2;
-    HeroArrayHeader * t3 = {0};
+    HeroArrayHeader * t3;
     int64_t t4;
     double t5;
-    HeroArrayHeader * t6 = {0};
+    HeroArrayHeader * t6;
     int64_t t7;
-    HeroArrayHeader * t8 = {0};
-    HeroArrayHeader * t9 = {0};
+    HeroArrayHeader * t8;
+    HeroArrayHeader * t9;
     goto bb0;
 bb0:
 #line 37 "tests/golden/run/abort-map-key-nan.hero"
@@ -201,14 +201,14 @@ HERO_TU_LOCAL int64_t h_abortmapkeynan_count_1ad16c(HeroArrayHeader * h0_ks) {
     int64_t h3_i0;
     double h4_k;
     HeroMapHeader * h5_own5 = {0};
-    HeroMapHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroMapHeader * t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     double t10;
     double t11;
@@ -216,11 +216,11 @@ HERO_TU_LOCAL int64_t h_abortmapkeynan_count_1ad16c(HeroArrayHeader * h0_ks) {
     int64_t t13;
     int64_t t14;
     int64_t t15;
-    HeroMapHeader * t16 = {0};
+    HeroMapHeader * t16;
     int64_t t17;
-    HeroMapHeader * t18 = {0};
-    HeroMapHeader * t19 = {0};
-    HeroArrayHeader * t20 = {0};
+    HeroMapHeader * t18;
+    HeroMapHeader * t19;
+    HeroArrayHeader * t20;
     goto bb0;
 bb0:
 #line 28 "tests/golden/run/abort-map-key-nan.hero"

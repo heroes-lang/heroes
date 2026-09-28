@@ -117,12 +117,12 @@ void h_fixedbugsadiscardedbindingwarnsinc_main(void) {
     HeroStr h1_s = {0};
     int64_t h2_kept;
     int64_t t1;
-    HeroStr t3 = {0};
+    HeroStr t3;
     int64_t t5;
     int64_t t7;
     int64_t t8;
     int64_t t9;
-    HeroStr t10 = {0};
+    HeroStr t10;
     goto bb0;
 bb0:
 #line 34 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"

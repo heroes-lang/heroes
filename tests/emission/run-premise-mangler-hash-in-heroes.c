@@ -119,31 +119,31 @@ int64_t h_premisemanglerhashinheroes_typehash(HeroStr h0_rendered) {
     h_0opt_e201354 h7_own7 = {0};
     int64_t t1;
     int64_t t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     int64_t t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     bool t10;
-    HeroArrayHeader * t11 = {0};
+    HeroArrayHeader * t11;
     int64_t t12;
     int64_t t13;
     int64_t t14;
     int64_t t15;
     int64_t t16;
-    HeroStr t17 = {0};
+    HeroStr t17;
     int64_t t18;
     uint8_t t19;
-    h_0opt_e201354 t20 = {0};
-    h_0opt_e201354 t21 = {0};
+    h_0opt_e201354 t20;
+    h_0opt_e201354 t21;
     int64_t t22;
     int64_t t23;
     bool t24;
-    h_0opt_e201354 t25 = {0};
-    HeroFailure t26 = {0};
-    h_0opt_e201354 t27 = {0};
+    h_0opt_e201354 t25;
+    HeroFailure t26;
+    h_0opt_e201354 t27;
     int64_t t28;
     int64_t t29;
     int64_t t30;
@@ -152,10 +152,10 @@ int64_t h_premisemanglerhashinheroes_typehash(HeroStr h0_rendered) {
     int64_t t33;
     int64_t t34;
     int64_t t35;
-    HeroArrayHeader * t36 = {0};
-    HeroArrayHeader * t37 = {0};
-    h_0opt_e201354 t38 = {0};
-    h_0opt_e201354 t39 = {0};
+    HeroArrayHeader * t36;
+    HeroArrayHeader * t37;
+    h_0opt_e201354 t38;
+    h_0opt_e201354 t39;
     goto bb0;
 bb0:
 #line 25 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
@@ -311,13 +311,13 @@ bb6:
 #line 32 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
 void h_premisemanglerhashinheroes_main(void) {
 #line 314 "premisemanglerhashinheroes.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     int64_t t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     int64_t t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     int64_t t8;
     goto bb0;
 bb0:
@@ -364,7 +364,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -373,9 +373,9 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
     int64_t t9;
     int64_t t10;
     int64_t t11;
-    HeroArrayHeader * t12 = {0};
-    HeroArrayHeader * t13 = {0};
-    HeroArrayHeader * t14 = {0};
+    HeroArrayHeader * t12;
+    HeroArrayHeader * t13;
+    HeroArrayHeader * t14;
     goto bb0;
 bb0:
 #line 27 "<heroes library>"

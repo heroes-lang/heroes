@@ -262,6 +262,17 @@ function build_map(c: state.Checked, names: ctype.Names, result: i64, arguments:
 # option, that struct is generated per payload type — so the wrapping
 # is here, and the found value is COPIED through its descriptor: the
 # map still owns its copy, and the V? needs one of its own.
+#
+# **THE FOUND PATH WRITES THE OPTION WHOLE BEFORE IT COPIES THE PAYLOAD IN**
+# (panel 182's item 3). It wrote `t.tag = INT64_C(0);` and then copied into
+# `t.as.ok`, so the option's other bytes (the rest of the union, and the
+# padding) kept whatever the prologue left there; with a temporary no longer
+# zeroed (`emit/body.hero`) that is indeterminate memory inside a value the IR
+# shows as defined whole, and no instrument here sees a part left unwritten.
+# The compound literal is the whole write: C zeroes every member it does not
+# name. This was the one such site in the emitter, 132 in the seed and 83 in
+# the blessed corpus at `64003edd`; `tests/harness/suite_wholes.hero` pins
+# zero.
 function map_get(c: state.Checked, names: ctype.Names, f: containers.Function, map_value: i64, key: i64, result: i64, into: str) -> [str]?
     value_ty: i64 @ 0 - 1
 
@@ -281,7 +292,7 @@ function map_get(c: state.Checked, names: ctype.Names, f: containers.Function, m
     lines @ lines.push("  if (found == NULL) {")
     lines @ lines.push("    " + into + " = (" + option + "){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};")
     lines @ lines.push("  } else {")
-    lines @ lines.push("    " + into + ".tag = INT64_C(0);")
+    lines @ lines.push("    " + into + " = (" + option + "){.tag = INT64_C(0)};")
 
     # A unit value type has no ok member at all, so the tag is the
     # whole answer.

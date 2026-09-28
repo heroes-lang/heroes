@@ -102,10 +102,10 @@ void h_fficstr_main(void);
 HeroStr h_fficstr_shout(HeroStr h0_text) {
 #line 104 "fficstr.c"
     HeroStr h1_own1 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    HeroStr t3;
+    HeroStr t4;
     goto bb0;
 bb0:
 #line 16 "tests/golden/run/ffi-cstr.hero"
@@ -133,13 +133,13 @@ bb0:
 void h_fficstr_main(void) {
 #line 135 "fficstr.c"
     HeroStr h0_own0 = {0};
-    HeroStr t1 = {0};
+    HeroStr t1;
     const char * t2;
-    HeroStr t4 = {0};
-    HeroStr t5 = {0};
+    HeroStr t4;
+    HeroStr t5;
     const char * t6;
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
+    HeroStr t8;
+    HeroStr t9;
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/ffi-cstr.hero"

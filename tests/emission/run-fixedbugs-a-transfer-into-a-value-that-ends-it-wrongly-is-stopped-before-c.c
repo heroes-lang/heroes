@@ -116,11 +116,11 @@ void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void) 
     st * h0_s;
     wr * h1_w;
     st * t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     st * t3;
     wr * t4;
     wr * t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"

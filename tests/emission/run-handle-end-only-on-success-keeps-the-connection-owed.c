@@ -114,9 +114,9 @@ void h_handleendonlyonsuccesskeepstheconnectionowed_main(void) {
     db * t4;
     db * t5;
     int32_t t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     int32_t t8;
-    HeroStr t9 = {0};
+    HeroStr t9;
     int32_t t10;
     goto bb0;
 bb0:

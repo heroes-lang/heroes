@@ -115,8 +115,8 @@ void h_handlealiveafteranendinonearm_main(void) {
     int64_t t5;
     bool t6;
     node * t7;
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
+    HeroStr t8;
+    HeroStr t9;
     node * t10;
     int64_t t11;
     node * t12;

@@ -148,19 +148,19 @@ h_0opt_2436b697 h_deadhandlefieldofacellendedthroughahelper_opened(void) {
     h_0opt_2436b697 h1_own1 = {0};
     h_0opt_2436b697 h2_own2 = {0};
     cdb * t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     const char * t3;
     int64_t t4;
     int64_t t5;
     bool t6;
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
-    h_0opt_2436b697 t9 = {0};
+    HeroStr t7;
+    HeroStr t8;
+    h_0opt_2436b697 t9;
     cdb * t10;
     h_deadhandlefieldofacellendedthroughahelper_Db t11;
-    h_0opt_2436b697 t12 = {0};
-    h_0opt_2436b697 t13 = {0};
-    h_0opt_2436b697 t14 = {0};
+    h_0opt_2436b697 t12;
+    h_0opt_2436b697 t13;
+    h_0opt_2436b697 t14;
     goto bb0;
 bb0:
 #line 21 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
@@ -274,20 +274,20 @@ void h_deadhandlefieldofacellendedthroughahelper_main(void) {
     h_0opt_2436b697 h0_f0 = {0};
     h_deadhandlefieldofacellendedthroughahelper_Db h1_db;
     h_0opt_2436b697 h2_own2 = {0};
-    h_0opt_2436b697 t1 = {0};
-    h_0opt_2436b697 t2 = {0};
+    h_0opt_2436b697 t1;
+    h_0opt_2436b697 t2;
     int64_t t3;
     int64_t t4;
     bool t5;
-    h_0opt_2436b697 t6 = {0};
-    HeroFailure t7 = {0};
-    h_0opt_2436b697 t8 = {0};
+    h_0opt_2436b697 t6;
+    HeroFailure t7;
+    h_0opt_2436b697 t8;
     h_deadhandlefieldofacellendedthroughahelper_Db t9;
     h_deadhandlefieldofacellendedthroughahelper_Db t11;
     cdb * t12;
     int32_t t13;
-    h_0opt_2436b697 t14 = {0};
-    h_0opt_2436b697 t15 = {0};
+    h_0opt_2436b697 t14;
+    h_0opt_2436b697 t15;
     goto bb0;
 bb0:
 #line 31 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"

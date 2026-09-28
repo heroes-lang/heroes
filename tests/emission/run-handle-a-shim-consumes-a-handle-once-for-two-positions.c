@@ -118,13 +118,13 @@ void h_handleashimconsumesahandleoncefortwopositions_main(void) {
     bio * h1_b;
     ssl * t1;
     bio * t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     bio * t4;
     int64_t t5;
     ssl * t6;
     bio * t7;
     ssl * t8;
-    HeroStr t9 = {0};
+    HeroStr t9;
     goto bb0;
 bb0:
 #line 16 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"

@@ -102,19 +102,19 @@ void h_abortnullcstrintoc_main(void);
 void h_abortnullcstrintoc_main(void) {
 #line 104 "abortnullcstrintoc.c"
     const char * h0_absent;
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
+    HeroStr t1;
+    HeroStr t2;
     const char * t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     const char * t5;
     const char * t6;
     const char * t7;
-    HeroStr t8 = {0};
+    HeroStr t8;
     const char * t9;
     const char * t10;
     const char * t11;
     bool t12;
-    HeroStr t13 = {0};
+    HeroStr t13;
     goto bb0;
 bb0:
 #line 21 "tests/golden/run/abort-null-cstr-into-c.hero"

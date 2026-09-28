@@ -102,7 +102,7 @@ void h_fixedbugscgivesapointerbacktwiceandtheruntimesaysso_main(void) {
     void * t1;
     void * t2;
     void * t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     goto bb0;
 bb0:
 #line 26 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"

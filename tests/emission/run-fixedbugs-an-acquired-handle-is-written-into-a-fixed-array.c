@@ -141,13 +141,13 @@ void h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main(void) {
     int64_t t7;
     int64_t t8;
     int64_t t9;
-    HeroArrayHeader * t10 = {0};
+    HeroArrayHeader * t10;
     int64_t t11;
     int64_t t12;
-    HeroArrayHeader * t13 = {0};
+    HeroArrayHeader * t13;
     int64_t t14;
     bool t15;
-    HeroArrayHeader * t16 = {0};
+    HeroArrayHeader * t16;
     int64_t t17;
     int64_t t18;
     int64_t t19;
@@ -159,18 +159,18 @@ void h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main(void) {
     int64_t t25;
     int64_t t26;
     int64_t t27;
-    HeroStr t28 = {0};
+    HeroStr t28;
     struct four t29;
     int64_t t30;
     int64_t t31;
     int64_t t32;
-    HeroArrayHeader * t33 = {0};
+    HeroArrayHeader * t33;
     int64_t t34;
     int64_t t35;
-    HeroArrayHeader * t36 = {0};
+    HeroArrayHeader * t36;
     int64_t t37;
     bool t38;
-    HeroArrayHeader * t39 = {0};
+    HeroArrayHeader * t39;
     int64_t t40;
     int64_t t41;
     struct four t42;
@@ -179,12 +179,12 @@ void h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main(void) {
     int64_t t46;
     int64_t t47;
     int64_t t48;
-    HeroStr t49 = {0};
+    HeroStr t49;
     int64_t t50;
-    HeroArrayHeader * t51 = {0};
-    HeroArrayHeader * t52 = {0};
-    HeroArrayHeader * t53 = {0};
-    HeroArrayHeader * t54 = {0};
+    HeroArrayHeader * t51;
+    HeroArrayHeader * t52;
+    HeroArrayHeader * t53;
+    HeroArrayHeader * t54;
     goto bb0;
 bb0:
 #line 30 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
@@ -417,7 +417,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -426,9 +426,9 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
     int64_t t9;
     int64_t t10;
     int64_t t11;
-    HeroArrayHeader * t12 = {0};
-    HeroArrayHeader * t13 = {0};
-    HeroArrayHeader * t14 = {0};
+    HeroArrayHeader * t12;
+    HeroArrayHeader * t13;
+    HeroArrayHeader * t14;
     goto bb0;
 bb0:
 #line 27 "<heroes library>"

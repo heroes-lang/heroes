@@ -107,8 +107,8 @@ void h_f64rendering_main(void) {
     double t13;
     double t14;
     double t15;
-    HeroStr t16 = {0};
-    HeroStr t17 = {0};
+    HeroStr t16;
+    HeroStr t17;
     goto bb0;
 bb0:
 #line 20 "tests/golden/run/f64-rendering.hero"

@@ -101,15 +101,15 @@ void h_fixedbugsctrapswithaleaseliveoneveryarchitecture_main(void) {
     HeroStr h0_word = {0};
     const char * h1_held;
     HeroStr h2_own2 = {0};
-    HeroStr t1 = {0};
+    HeroStr t1;
     uint64_t t2;
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
+    HeroStr t3;
+    HeroStr t4;
     const char * t5;
     const char * t6;
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
+    HeroStr t7;
+    HeroStr t8;
+    HeroStr t9;
     goto bb0;
 bb0:
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"

@@ -118,7 +118,7 @@ void h_ffiborrowsowesnothing_main(void) {
     int64_t t7;
     int64_t t8;
     Slot * t9;
-    HeroStr t10 = {0};
+    HeroStr t10;
     goto bb0;
 bb0:
 #line 25 "tests/golden/run/ffi-borrows-owes-nothing.hero"

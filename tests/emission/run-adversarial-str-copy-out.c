@@ -96,24 +96,24 @@ void h_adversarialstrcopyout_main(void);
 #line 13 "tests/golden/run/adversarial-str-copy-out.hero"
 void h_adversarialstrcopyout_extend(HeroStr *ph0_s, int64_t h1_times) {
 #line 99 "adversarialstrcopyout.c"
-    HeroStr h0_s = {0};
+    HeroStr h0_s;
     int64_t h2_i;
     HeroStr h3_own3 = {0};
     int64_t t1;
     int64_t t2;
     int64_t t3;
     bool t4;
-    HeroStr t5 = {0};
-    HeroStr t6 = {0};
-    HeroStr t7 = {0};
+    HeroStr t5;
+    HeroStr t6;
+    HeroStr t7;
     int64_t t8;
     int64_t t9;
     int64_t t10;
     int64_t t11;
     int64_t t12;
     bool t13;
-    HeroStr t14 = {0};
-    HeroStr t15 = {0};
+    HeroStr t14;
+    HeroStr t15;
     h0_s = *ph0_s;
     goto bb0;
 bb0:
@@ -196,18 +196,18 @@ void h_adversarialstrcopyout_main(void) {
 #line 197 "adversarialstrcopyout.c"
     HeroStr h0_a = {0};
     HeroStr h1_b = {0};
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
+    HeroStr t3;
+    HeroStr t4;
     int64_t t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     int64_t t7;
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
+    HeroStr t8;
+    HeroStr t9;
     int64_t t10;
-    HeroStr t11 = {0};
-    HeroStr t12 = {0};
+    HeroStr t11;
+    HeroStr t12;
     goto bb0;
 bb0:
 #line 24 "tests/golden/run/adversarial-str-copy-out.hero"

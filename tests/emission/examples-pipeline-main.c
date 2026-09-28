@@ -148,80 +148,80 @@ HeroStr h_main_report(HeroStr h0_text) {
     HeroStr h17_own17 = {0};
     HeroStr h18_own18 = {0};
     HeroStr h19_own19 = {0};
-    HeroStr t1 = {0};
-    h_readsource_Reader t2 = {0};
-    h_writesource_Sink t3 = {0};
+    HeroStr t1;
+    h_readsource_Reader t2;
+    h_writesource_Sink t3;
     int64_t t4;
     int64_t t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     bool t7;
-    h_0opt_f87774a t8 = {0};
-    h_0opt_f87774a t9 = {0};
-    h_0opt_f87774a t10 = {0};
+    h_0opt_f87774a t8;
+    h_0opt_f87774a t9;
+    h_0opt_f87774a t10;
     int64_t t11;
     int64_t t12;
     bool t13;
-    h_0opt_f87774a t14 = {0};
-    h_0opt_f87774a t15 = {0};
+    h_0opt_f87774a t14;
+    h_0opt_f87774a t15;
     int64_t t16;
     int64_t t17;
     bool t18;
-    h_0opt_f87774a t19 = {0};
-    HeroFailure t20 = {0};
-    h_0opt_f87774a t21 = {0};
-    HeroStr t22 = {0};
+    h_0opt_f87774a t19;
+    HeroFailure t20;
+    h_0opt_f87774a t21;
+    HeroStr t22;
     int64_t t23;
     int64_t t24;
     int64_t t25;
-    HeroStr t26 = {0};
+    HeroStr t26;
     int64_t t27;
     int64_t t28;
     bool t29;
-    HeroStr t30 = {0};
+    HeroStr t30;
     int64_t t31;
-    HeroStr t32 = {0};
+    HeroStr t32;
     int64_t t33;
     int64_t t34;
     bool t35;
-    HeroStr t36 = {0};
+    HeroStr t36;
     bool t37;
     bool t38;
-    HeroStr t39 = {0};
-    HeroStr t40 = {0};
+    HeroStr t39;
+    HeroStr t40;
     int64_t t41;
-    HeroStr t42 = {0};
-    HeroStr t43 = {0};
-    HeroStr t44 = {0};
+    HeroStr t42;
+    HeroStr t43;
+    HeroStr t44;
     int64_t t45;
-    HeroStr t46 = {0};
-    HeroStr t47 = {0};
-    HeroStr t48 = {0};
+    HeroStr t46;
+    HeroStr t47;
+    HeroStr t48;
     int64_t t49;
     int64_t t50;
     bool t51;
-    HeroStr t52 = {0};
-    HeroStr t53 = {0};
-    HeroStr t54 = {0};
-    HeroStr t55 = {0};
-    h_writesource_Sink t56 = {0};
-    HeroStr t57 = {0};
-    h_readsource_Reader t58 = {0};
-    h_readsource_Reader t59 = {0};
-    h_writesource_Sink t60 = {0};
-    h_writesource_Sink t61 = {0};
-    HeroStr t62 = {0};
-    h_0opt_f87774a t63 = {0};
-    h_0opt_f87774a t64 = {0};
-    h_0opt_f87774a t65 = {0};
-    HeroStr t66 = {0};
-    HeroStr t67 = {0};
-    HeroStr t68 = {0};
-    HeroStr t69 = {0};
-    h_0opt_f87774a t70 = {0};
-    HeroStr t71 = {0};
-    HeroStr t72 = {0};
-    HeroStr t73 = {0};
-    HeroStr t74 = {0};
+    HeroStr t52;
+    HeroStr t53;
+    HeroStr t54;
+    HeroStr t55;
+    h_writesource_Sink t56;
+    HeroStr t57;
+    h_readsource_Reader t58;
+    h_readsource_Reader t59;
+    h_writesource_Sink t60;
+    h_writesource_Sink t61;
+    HeroStr t62;
+    h_0opt_f87774a t63;
+    h_0opt_f87774a t64;
+    h_0opt_f87774a t65;
+    HeroStr t66;
+    HeroStr t67;
+    HeroStr t68;
+    HeroStr t69;
+    h_0opt_f87774a t70;
+    HeroStr t71;
+    HeroStr t72;
+    HeroStr t73;
+    HeroStr t74;
     goto bb0;
 bb0:
 #line 35 "examples/pipeline/main.hero"
@@ -608,38 +608,38 @@ bool h_main_looks_like_heading(HeroStr h0_row) {
     int64_t h3_i0;
     HeroStr h4_ch = {0};
     HeroArrayHeader * h5_own5 = {0};
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
     int64_t t3;
     bool t4;
     bool t5;
-    HeroStr t6 = {0};
-    HeroStr t7 = {0};
-    HeroArrayHeader * t8 = {0};
+    HeroStr t6;
+    HeroStr t7;
+    HeroArrayHeader * t8;
     int64_t t9;
     int64_t t10;
-    HeroArrayHeader * t11 = {0};
+    HeroArrayHeader * t11;
     int64_t t12;
     bool t13;
-    HeroArrayHeader * t14 = {0};
+    HeroArrayHeader * t14;
     int64_t t15;
-    HeroStr t16 = {0};
-    HeroStr t17 = {0};
+    HeroStr t16;
+    HeroStr t17;
     int64_t t18;
     int64_t t19;
     bool t20;
-    HeroStr t21 = {0};
+    HeroStr t21;
     int64_t t22;
     int64_t t23;
     int64_t t24;
-    HeroStr t25 = {0};
-    HeroStr t26 = {0};
+    HeroStr t25;
+    HeroStr t26;
     bool t27;
-    HeroStr t28 = {0};
-    HeroArrayHeader * t29 = {0};
-    HeroArrayHeader * t30 = {0};
-    HeroStr t31 = {0};
-    HeroStr t32 = {0};
+    HeroStr t28;
+    HeroArrayHeader * t29;
+    HeroArrayHeader * t30;
+    HeroStr t31;
+    HeroStr t32;
     goto bb0;
 bb0:
 #line 69 "examples/pipeline/main.hero"
@@ -796,7 +796,7 @@ bb10:
 #line 82 "examples/pipeline/main.hero"
 HeroStr h_main_SAMPLE(void) {
 #line 799 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     goto bb0;
 bb0:
 #line 83 "examples/pipeline/main.hero"
@@ -812,13 +812,13 @@ void h_main_main(void) {
     HeroStr h0_own0 = {0};
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
-    HeroStr t5 = {0};
-    HeroStr t6 = {0};
-    HeroStr t7 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    HeroStr t3;
+    HeroStr t4;
+    HeroStr t5;
+    HeroStr t6;
+    HeroStr t7;
     goto bb0;
 bb0:
 #line 86 "examples/pipeline/main.hero"
@@ -878,47 +878,47 @@ h_readsource_Reader h_readsource_new_reader(HeroStr h0_text) {
     HeroArrayHeader * h7_own7 = {0};
     HeroStr h8_own8 = {0};
     h_readsource_Reader h9_own9 = {0};
-    HeroArrayHeader * t1 = {0};
-    HeroStr t2 = {0};
-    HeroStr t3 = {0};
-    HeroArrayHeader * t4 = {0};
+    HeroArrayHeader * t1;
+    HeroStr t2;
+    HeroStr t3;
+    HeroArrayHeader * t4;
     int64_t t5;
     int64_t t6;
-    HeroArrayHeader * t7 = {0};
+    HeroArrayHeader * t7;
     int64_t t8;
     bool t9;
-    HeroArrayHeader * t10 = {0};
+    HeroArrayHeader * t10;
     int64_t t11;
-    HeroStr t12 = {0};
-    HeroStr t13 = {0};
-    HeroStr t14 = {0};
+    HeroStr t12;
+    HeroStr t13;
+    HeroStr t14;
     bool t15;
-    HeroStr t17 = {0};
-    HeroStr t19 = {0};
-    HeroStr t20 = {0};
-    HeroStr t21 = {0};
-    HeroStr t22 = {0};
+    HeroStr t17;
+    HeroStr t19;
+    HeroStr t20;
+    HeroStr t21;
+    HeroStr t22;
     int64_t t23;
     int64_t t24;
     int64_t t25;
-    HeroStr t26 = {0};
+    HeroStr t26;
     int64_t t27;
     int64_t t28;
     bool t29;
-    HeroStr t31 = {0};
-    HeroArrayHeader * t33 = {0};
+    HeroStr t31;
+    HeroArrayHeader * t33;
     int64_t t34;
-    h_readsource_Reader t35 = {0};
-    HeroArrayHeader * t36 = {0};
-    HeroArrayHeader * t37 = {0};
-    HeroStr t38 = {0};
-    HeroArrayHeader * t39 = {0};
-    HeroArrayHeader * t40 = {0};
-    HeroStr t41 = {0};
-    HeroStr t42 = {0};
-    HeroStr t43 = {0};
-    HeroStr t44 = {0};
-    h_readsource_Reader t45 = {0};
+    h_readsource_Reader t35;
+    HeroArrayHeader * t36;
+    HeroArrayHeader * t37;
+    HeroStr t38;
+    HeroArrayHeader * t39;
+    HeroArrayHeader * t40;
+    HeroStr t41;
+    HeroStr t42;
+    HeroStr t43;
+    HeroStr t44;
+    h_readsource_Reader t45;
     goto bb0;
 bb0:
 #line 13 "examples/pipeline/read/source.hero"
@@ -1134,33 +1134,33 @@ bb10:
 #line 30 "examples/pipeline/read/source.hero"
 h_0opt_f87774a h_readsource_next_line(h_readsource_Reader *ph0_r) {
 #line 1137 "main.c"
-    h_readsource_Reader h0_r = {0};
+    h_readsource_Reader h0_r;
     HeroStr h1_one = {0};
     h_0opt_f87774a h2_own2 = {0};
     h_0opt_f87774a h3_own3 = {0};
-    h_readsource_Reader t1 = {0};
+    h_readsource_Reader t1;
     int64_t t2;
-    h_readsource_Reader t3 = {0};
-    HeroArrayHeader * t4 = {0};
+    h_readsource_Reader t3;
+    HeroArrayHeader * t4;
     int64_t t5;
     bool t6;
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
-    h_0opt_f87774a t9 = {0};
-    h_readsource_Reader t10 = {0};
-    HeroArrayHeader * t11 = {0};
-    h_readsource_Reader t12 = {0};
+    HeroStr t7;
+    HeroStr t8;
+    h_0opt_f87774a t9;
+    h_readsource_Reader t10;
+    HeroArrayHeader * t11;
+    h_readsource_Reader t12;
     int64_t t13;
-    HeroStr t14 = {0};
-    h_readsource_Reader t15 = {0};
+    HeroStr t14;
+    h_readsource_Reader t15;
     int64_t t16;
     int64_t t17;
     int64_t t18;
-    HeroStr t19 = {0};
-    h_0opt_f87774a t20 = {0};
-    HeroStr t21 = {0};
-    h_0opt_f87774a t22 = {0};
-    h_0opt_f87774a t23 = {0};
+    HeroStr t19;
+    h_0opt_f87774a t20;
+    HeroStr t21;
+    h_0opt_f87774a t22;
+    h_0opt_f87774a t23;
     h0_r = *ph0_r;
     goto bb0;
 bb0:
@@ -1273,10 +1273,10 @@ bb3:
 #line 37 "examples/pipeline/read/source.hero"
 int64_t h_readsource_remaining(h_readsource_Reader h0_r) {
 #line 1276 "main.c"
-    h_readsource_Reader t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    h_readsource_Reader t1;
+    HeroArrayHeader * t2;
     int64_t t3;
-    h_readsource_Reader t4 = {0};
+    h_readsource_Reader t4;
     int64_t t5;
     int64_t t6;
     goto bb0;
@@ -1304,12 +1304,12 @@ h_writesource_Sink h_writesource_new_sink(void) {
     HeroArrayHeader * h0_empty = {0};
     HeroArrayHeader * h1_own1 = {0};
     h_writesource_Sink h2_own2 = {0};
-    HeroArrayHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
-    h_writesource_Sink t3 = {0};
-    HeroArrayHeader * t4 = {0};
-    HeroArrayHeader * t5 = {0};
-    h_writesource_Sink t6 = {0};
+    HeroArrayHeader * t1;
+    HeroArrayHeader * t2;
+    h_writesource_Sink t3;
+    HeroArrayHeader * t4;
+    HeroArrayHeader * t5;
+    h_writesource_Sink t6;
     goto bb0;
 bb0:
 #line 14 "examples/pipeline/write/source.hero"
@@ -1358,14 +1358,14 @@ bb0:
 #line 17 "examples/pipeline/write/source.hero"
 void h_writesource_emit(h_writesource_Sink *ph0_s, HeroStr h1_row) {
 #line 1361 "main.c"
-    h_writesource_Sink h0_s = {0};
+    h_writesource_Sink h0_s;
     HeroArrayHeader * h2_own2 = {0};
-    h_writesource_Sink t1 = {0};
-    HeroArrayHeader * t2 = {0};
-    HeroStr t3 = {0};
-    HeroArrayHeader * t4 = {0};
-    HeroArrayHeader * t5 = {0};
-    HeroArrayHeader * t6 = {0};
+    h_writesource_Sink t1;
+    HeroArrayHeader * t2;
+    HeroStr t3;
+    HeroArrayHeader * t4;
+    HeroArrayHeader * t5;
+    HeroArrayHeader * t6;
     h0_s = *ph0_s;
     goto bb0;
 bb0:
@@ -1402,11 +1402,11 @@ bb0:
 HeroStr h_writesource_rendered(h_writesource_Sink h0_s) {
 #line 1404 "main.c"
     HeroStr h1_own1 = {0};
-    h_writesource_Sink t1 = {0};
-    HeroArrayHeader * t2 = {0};
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
-    HeroStr t5 = {0};
+    h_writesource_Sink t1;
+    HeroArrayHeader * t2;
+    HeroStr t3;
+    HeroStr t4;
+    HeroStr t5;
     goto bb0;
 bb0:
 #line 21 "examples/pipeline/write/source.hero"
@@ -1435,8 +1435,8 @@ bb0:
 #line 23 "examples/pipeline/write/source.hero"
 int64_t h_writesource_count(h_writesource_Sink h0_s) {
 #line 1438 "main.c"
-    h_writesource_Sink t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    h_writesource_Sink t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     goto bb0;
 bb0:

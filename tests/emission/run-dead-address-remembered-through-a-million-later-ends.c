@@ -121,9 +121,9 @@ void h_deadaddressrememberedthroughamillionlaterends_main(void) {
     int64_t t10;
     int64_t t11;
     int64_t t12;
-    HeroStr t13 = {0};
+    HeroStr t13;
     int64_t t14;
-    HeroStr t15 = {0};
+    HeroStr t15;
     big * t16;
     int64_t t17;
     goto bb0;

@@ -112,11 +112,11 @@ void h_limitacopygivenbackaftercreuseditsaddressisnotcaught_main(void) {
     cell * t2;
     cell * t3;
     cell * t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     cell * t6;
     int64_t t7;
     cell * t8;
-    HeroStr t9 = {0};
+    HeroStr t9;
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"

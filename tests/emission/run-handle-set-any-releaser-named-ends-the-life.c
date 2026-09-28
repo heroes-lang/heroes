@@ -122,7 +122,7 @@ void h_handlesetanyreleasernamedendsthelife_main(void) {
     int64_t t9;
     hh * t10;
     hh * t11;
-    HeroStr t12 = {0};
+    HeroStr t12;
     goto bb0;
 bb0:
 #line 15 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"

@@ -105,11 +105,11 @@ void h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_main(void) {
     gg * h0_a;
     gg * h1_twice;
     gg * t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     gg * t3;
     gg * t4;
     gg * t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     goto bb0;
 bb0:
 #line 26 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"

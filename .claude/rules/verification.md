@@ -23,14 +23,15 @@ today's ANSWER and the command above it is the instrument. Re-run the command
 rather than trusting the table:
 
 ```sh
-# the twenty suite names the net registers, which are what `-- <compiler> <name>` takes
+# the suite names the net registers, which are what `-- <compiler> <name>` takes
+# (one word it prints, `harness`, is not a suite; the count is the command's)
 grep -oE '"[a-z_]+"' tests/harness/main.hero | sort -u
 
 # what each suite file walks, from its own constants — the literal paths, and
 # the bare group names of a suite that builds `"tests/golden/" + group`
 for f in tests/harness/suite_*.hero; do
   printf "%-14s " "$(basename $f .hero | sed 's/^suite_//')"
-  { grep -ohE '"(tests/golden/[a-z-]+|examples|selfhost|spec/[a-z-]+\.md|docs/[a-z/]+)"' "$f"
+  { grep -ohE '"(tests/golden/[a-z-]+|tests/emission|examples|selfhost|seed/heroes\.c|spec/[a-z-]+\.md|docs/[a-z/]+)"' "$f"
     if grep -q '"tests/golden/" +' "$f"; then
       for d in $(ls tests/golden); do
         grep -qE "^[[:space:]]*\"$d\"[[:space:]]*$" "$f" && echo "\"tests/golden/$d\""
@@ -53,6 +54,7 @@ happened here first.
 | touched | the suites that judge it |
 |---|---|
 | `selfhost/**` | `canonical` `layout` `order` `records`, **plus the compiler's own tests** |
+| `selfhost/emit/**`, `selfhost/ir/**` (they move `tests/emission/**` and `seed/heroes.c`) | **`emission`** `determinism` **`wholes`** `descriptors`, plus everything `selfhost/**` already gets |
 | `selfhost/print/**`, `selfhost/lexer.hero`, `selfhost/parse/**` | **`probe`** `surface`, plus everything `selfhost/**` already gets, and the run by hand below before a push |
 | `tests/golden/check/**` | **`check`** `annotations` `canonical` `fixes` |
 | `tests/golden/fixedbugs/**` | `annotations` `canonical` **`emission`** |
@@ -92,6 +94,30 @@ coordinator trusted the table instead of running `emission`, which is this
 file's first warning in so many words. The command now also prints the bare
 group names of any suite that concatenates the golden root, and on that day it
 printed the four groups above and changed no other row.
+
+**`wholes` and `descriptors` were invisible to the command until 2026-09-28**,
+and so was `tests/emission` under `emission` and `records`: the grep's
+alternation named no path outside `tests/golden/`, `examples`, `selfhost`,
+`spec/` and `docs/`, so the two suites that read `tests/emission` and
+`seed/heroes.c` printed an empty row, which reads as *judges nothing*. Found by
+panel 182's lane when it added `wholes`, the coordinator asking where the map
+said an emitter change owed it. The command now names both paths, and on that
+day, against its old self, it moved four rows and no other:
+
+```
+descriptors    "seed/heroes.c" "tests/emission"
+emission       "examples" "tests/emission" "tests/golden/emit" "tests/golden/fixedbugs" "tests/golden/ir" "tests/golden/run"
+records        ... "docs/work/milestones" "selfhost" "tests/emission"
+wholes         "seed/heroes.c" "tests/emission"
+```
+
+**`wholes` refuses a write into a part of a temporary that nothing wrote whole
+on that path** (panel 182's item 3): since that sitting the prologue gives a
+temporary no initialiser, so the bytes such a write leaves are what the stack
+held, inside a value the IR calls defined, and the sitting's critic found no
+other instrument here that sees them (the verifier, clang, ASan). An emitter or
+lowering change is what can introduce one, which is why that row owes it; it
+reads files and runs no compiler.
 
 **A NEW CHECKER RULE is not a `selfhost/**` change, and the row above says it
 is.** Added 2026-09-14, at the M-marked-acquisition close, and it cost six red
