@@ -16,34 +16,36 @@ against a banner reading 3.
 
 | | |
 |---|---|
-| **Current milestone** | **M-agreed-retention**, row 62, opened 2026-09-23 ([its file](work/milestones/M-agreed-retention.md)) — one C function, one story about who frees what it is handed. Steps 10 and 11 landed panels 175, 176 and 177's vocabulary on their provisional resolutions: the releaser set (075), `transfers`, `retains` and `when` with the runtime's pending count of the ends a call announces (079, 084, 085), the ABI at 24; step 11's landing was reviewed adversarially before its commit and six shapes were repaired first. Step 12 closed the milestone's own two items: one C function, one contract across modules (`contract_differs`), and the destructor no single declaration can spell, by record. Step 13 closed 095, the formatter keeping a comment inside a parameter list, and its skeptic found 096 beside it. Step 14 landed panel 177 from two lanes, the checker refusing a handle read after its end and the runtime poisoning the place and remembering the address, and closed 077 and 088. Step 16 closed 098: an end names the life it was announced for, so two threads over one allocator give back their own handles, runtime ABI 26. Step 17 closed 096, 099, 100 and 101: `fmt` keeps every comment the generators can reach where the author wrote it, and refuses output that would move one. Step 18 closed 102: every JSON the compiler writes goes through one escape, and a character a diagnostic cannot show is named by its code. Step 19 closed 103: the lexer is linear in the size of a file, and the compiler checks itself a quarter faster. Step 20 closed 105: every artifact a verb prints is linear in its size, and `fmt` is faster than before its guard. Step 21 closed 104 and 106 on panel 180: inside brackets a line breaks by how it ends, and a list refuses a subtraction it would split. Step 22 closed 109, 110 and 115: an empty file is a program with nothing in it, text above ASCII is never cut inside a character, and Windows says where C read a dead handle. Step 23 closed 107 and 108: a comment keeps the parentheses a line break needs, and a comment inside a releaser set is a comment. Step 24 closed 117: `heroes mutate` says what a path it cannot walk is. Step 25 closed 111 and 113: the checker reads each declaration once, and the compiler checks itself six times faster. Step 26 closed 112: the emitter and the lowering read each function once, and emitting a function grows with its size and no longer with its square. Step 27 landed `heroes probe` on panel 179, the formatter's probe over seven families with two judges, and closed 121, which its first run found: a comma that leads its line with a comment after it. Step 28 landed panel 181 and closed 116, 118, 119 and 120: outside brackets a line ends its statement, in both directions, refused at the break with one diagnostic, and the spec says so. Step 29 landed panel 182 and closed 114 and 122: a value is never zeroed and a slot is, every definition is written whole, `fmt` and `check` a fifth faster, and a build's cache knows which compiler and flags made an object. Open under it: 123, a spaced `-` opening a `match` arm, 124, a negative pattern that reads a whole expression, 125, `fmt` accusing itself on every negative pattern, 126, a certain join that writes a split arm into a line that does not parse, 127, a literal pattern refused on every integer type but `i64`, and 128, a duplicate literal arm kept in silence, all six in lane 123; by the author's waiver of 16:40 a defect found after that hour is carried to the next milestone | 
-| **Last closed** | **M-declared-extents**, 2026-09-21, `m-declared-extents` ([060](journal/060-declared-extents.md)) — the extent a lend crosses with, the word it needs, and the report no word could carry · before it **M-readable-bytes** ([059](journal/059-readable-bytes.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **61** of 82 · **61** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **67,305** lines of Heroes in **236** modules (`find selfhost -name '*.hero'`) · the seed **890,938** lines of C, regenerated at every step of this milestone and the fixpoint verified byte-identical each time |
+| **Current milestone** | **none open**: M-agreed-retention closed on 2026-09-28 and opened no row, so row 63, **M-buildable-structs**, stays `scheduled` until somebody opens it; its census sat as panel 178 on a peer session's branch, `lane-panel-178`, which is not on the trunk. Defects 129 and 130 are carried to the milestone opened next, by the author's waiver of 2026-09-28 16:40, and `records/tagged` holds that waiver as `CARRIED_OVER` |
+| **Last closed** | **M-agreed-retention**, 2026-09-28, `m-agreed-retention` ([061](journal/061-agreed-retention.md)) — five words for what a C call does with a handle, a runtime that holds the program to them, and a line that ends where it says it does · before it **M-declared-extents** ([060](journal/060-declared-extents.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **62** of 82 · **62** tags matching `m*`, the legacy `m0`-`m8` included |
+| The compiler | **78,853** lines of Heroes in **287** modules (`find selfhost -name '*.hero'`) · the seed **1,026,106** lines of C, regenerated at every step of this milestone and the fixpoint verified byte-identical each time |
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
-| The spec | **6693** on the vendored ranks and **8861** on the reader's own, against a ceiling of **10240**. This milestone has spent four rows: panel 175's four sentences in § 13 — two records may share `tag void`, a `void *` C hands out for the program to give back is a `tag void` handle, giving a handle back twice is caught unless C reused its address, and the handle-only rule panel 170 ratified and never landed — **+91 real**; the releaser set, `acquires sqlite3_close \| sqlite3_close_v2`, with a release the mark did not name stopped before C runs — **+82 real**; and `transfers`, `retains` and `when`, the three sentences with the landing review's four clauses inside them (the receiver outlives the call, the null result, the life a reference begins, the value within the type) — **+362 real**; and panel 177's give-back sentence, a handle given back ends and a copy made before is stopped unless C handed the address out again, with a transfer that was made ending the name — **+56 real**; all over `DELTA_GATE` on the author's word to pay the tokens. **1379 free** and 1319 net of the FFI floor |
-| The contract | **7737** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-21 when § 4 gained the author's second telling that they read every sitting |
-| Records | sittings **175** · journals **61**, numbered files only (the 62 this cell read counted `README.md`) · milestone files **51** · measurements **37** · entries: `docs/records/log/` **709**, `docs/records/done/` **595**, `docs/records/book/beats/` **128** |
+| The spec | **6838** on the vendored ranks and **9060** on the reader's own, against a ceiling of **10240**. The milestone spent six rows of `docs/measurements/010-spec-budget-ledger.md`: four in § 13 for what a C call does with a handle (panels 175 to 177, 8270 to 8861 real) and two for where a line breaks inside brackets and ends outside them (panels 180 and 181, 8861 to 9060) |
+| The contract | **7875** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-28 when § Verification gained the author's rule that a lane lives under `.claude/worktrees/` |
+| Records | sittings **179** · journals **62**, numbered files only · milestone files **51** · measurements **37** · entries: `docs/records/log/` **721**, `docs/records/done/` **631**, `docs/records/book/beats/` **129** |
 | Waiting on the author | **the ratifications of panels 175, 176, 177, 179, 180, 181 and 182**, the seven items in `DECIDE.md`; the author declined the first three "for now" on 2026-09-24, and the work proceeds on every provisional resolution, 175 to 177 landed by steps 10 and 11 and 180 by step 21. The two open defects, 129 and 130, are carried to the next milestone by the author's waiver of 16:40 |
 
-**Re-measured 2026-09-25 in lane c of step 12, the full net on a compiler
-built from the regenerated seed, which is CI's own configuration: 2215 passed,
-0 failed**, over 24 suites, plus the compiler's own 699 and the net's own 167; the seven `emit` goldens had pinned ABI 22 since step 10 landed 23,
-behind a gate output cut at forty lines, and moved to 24 by hand. The per-suite
-counts of the last close and what moved them are [060](journal/060-declared-extents.md).
+**Re-measured 2026-09-28 at the close, the full net on a compiler built from
+the regenerated seed, which is CI's own configuration: 3144 passed, 0 failed**,
+over 26 suites, plus the compiler's own 828 and the net's own 179. Linux arm64 and
+the Windows box each ran the compiler's 828 tests and 19 suites at 0 failed on
+lane 123's merged tree, which the trunk's code equals. The per-suite counts are
+[061](journal/061-agreed-retention.md).
 
-**And the mechanism that milestone landed was measured on each platform rather
-than inferred from this Mac**: a signal on Darwin and on Linux arm64, where
-glibc raises SIGABRT on every path Darwin splits between SIGTRAP and SIGABRT,
-and on Windows a vectored handler catching `STATUS_HEAP_CORRUPTION`, written at
-the close because three goldens were red on that leg without it.
+**The by-hand probe `.claude/rules/verification.md` owes before a push that
+touches `selfhost/print/` ran at the close** on that tree: `single` and
+`bracket` over the 1,046 seeds of `selfhost`, `tests` and `examples` and every
+family over the fixtures, unstrided, 1,287,836 variants that parse, every one
+held by both judges and none refused; the 90 files the parser refuses are the
+ones the probe's own walk of `tests` names.
 
 ---
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–61
-are done, in the order they closed, and rows 62–82 are what is next, in the order
+One table, one row per milestone, **closed first and scheduled after**: rows 1–62
+are done, in the order they closed, and rows 63–82 are what is next, in the order
 they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
@@ -72,7 +74,9 @@ which is the one thing this paragraph exists to prevent. Then 1–60 and 61–81
 until 2026-09-23: M-declared-extents's close ticked row 61 and entered
 `M-agreed-retention` at 62, so **the table is 82 long** and the scheduled block
 is 62–82, and that close restated neither this sentence nor *61 of 81* in § Where
-we are; the OPENING of row 62 found both. It is the
+we are; the OPENING of row 62 found both. Then 1–61 and 62–82 until M-agreed-retention
+closed on 2026-09-28 and opened no row, the table still 82 long, counted at that
+close. It is the
 one number in this file that no instrument reads, so it is
 restated here and re-read at every close with § Where we are — and at every
 OPENING too, which is what moved it twice on one day, what caught it at row 59,
@@ -146,7 +150,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 59 | **M-arm-platform** | done 2026-09-18 | `m-arm-platform` | [058](journal/058-arm-platform.md) | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
 | 60 | **M-readable-bytes** | done 2026-09-18 | `m-readable-bytes` | [059](journal/059-readable-bytes.md) | a C byte buffer becomes text a program can print: the inbound direction `str` has never had · **§1.11** |
 | 61 | **M-declared-extents** | done 2026-09-21 | `m-declared-extents` | [060](journal/060-declared-extents.md) | how far C may read through a lent address, and what becomes of the pointer afterwards: `counted_by` declares the extent and the emitter checks it against the field's own `sizeof` in C; then the author flipped the default, so a C parameter is taken to KEEP what it is handed and a lend reaches only one declared `lent`; and where no word can reach — C frees the bytes from a callback, or from a later call with no pointer at all — the runtime names the leases that were live. **Seven defects, all closed** · **§1.12**, **§4.19** |
-| 62 | **M-agreed-retention** | **OPEN** | — | — | one C function, one story about who frees what it is handed: two modules may declare it with contradictory retention marks and the compiler takes both; one declaration cannot carry a contract chosen per call, which is `sqlite3_bind_text`'s three modes; and nothing says a pointer C made is C's to free once. Opened at M-declared-extents's close, because its four carried items had no home a reader would look in · **§1.11**, **§4.19** |
+| 62 | **M-agreed-retention** | done 2026-09-28 | `m-agreed-retention` | [061](journal/061-agreed-retention.md) | one C function, one story about who frees what it is handed: two modules may declare it with contradictory retention marks and the compiler takes both; one declaration cannot carry a contract chosen per call, which is `sqlite3_bind_text`'s three modes; and nothing says a pointer C made is C's to free once. Opened at M-declared-extents's close, because its four carried items had no home a reader would look in · **§1.11**, **§4.19** |
 | 63 | **M-buildable-structs** | scheduled | — | — | a real five-field `utsname` needs 1280 literal zeros, 4312 bytes for a nine-line program, measured and RUN at panel 164. Not a defect, because nothing is broken: what is missing is a way to write *the rest are zero* |
 | 64 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
 | 65 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
