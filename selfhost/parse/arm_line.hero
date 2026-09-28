@@ -56,11 +56,13 @@ function spaced_sign(@c: cursor.Cursor, text: str)
     d.fixes @ d.fixes.push(fix)
     c.diagnostics @ c.diagnostics.push(d)
 
-# A token a `-` can be the sign of. A comment after the `-` ends its line,
-# and a line end, a block's edge or the file's end leaves nothing to sign:
-# the pattern is refused as it always was.
+# A literal a pattern's `-` may sign (spec § 8): an integer, a string, a
+# character. After anything else the `-` begins no pattern, which
+# `parse/arm_pattern` refuses (defect 124), so a second diagnostic here
+# would count one mistake twice; and a comment after the `-` ends its
+# line, which is the lexer's.
 function signs(kind: token.TokenKind) -> bool
-    return kind != .comment && kind != .terminator && kind != .indent && kind != .dedent && kind != .eof
+    return kind == .int_lit || kind == .str_lit || kind == .char_lit
 
 # Whether only the margin's spaces stand between the line's start and `at`.
 function opens_its_line(text: str, at: i64) -> bool

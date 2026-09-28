@@ -378,3 +378,35 @@ test "an arm broken after its sign is refused once, and no fix wraps a pattern"
         assert broken.diagnostics.len() == 1
         assert broken.diagnostics[0].code == code
         assert broken.diagnostics[0].fixes.len() == 0
+
+# Defect 124: after at most one `-`, a pattern takes one literal token, an
+# integer, a string or a character (spec § 8), and nothing goes on after it,
+# where the pattern went through the expression parser's `unary` and took a
+# name, a call, a group, an index, a float, a second sign and every suffix.
+# Each is refused once, as no pattern, and the production's own spellings
+# parse as before, `-"a"` included, which the checker refuses by its type.
+test "a pattern takes one literal after its sign, and nothing after the literal"
+    refused = [
+        "-m"
+        "- m"
+        "-one()"
+        "-(1)"
+        "-xs[0]"
+        "--1"
+        "- -1"
+        "-1.5"
+        "1.5"
+        "\"ab\".len()"
+        "'a'.to_i64()"
+        "-.a"
+        "-true"
+        "0 | -m"
+    ]
+
+    for shape in refused
+        got = parse("function main()\n    k = match n\n        " + shape + " => 10\n        _ => 20\n")
+        assert got.diagnostics.len() == 1
+        assert got.diagnostics[0].code == "expected_pattern"
+
+    for shape in ["-1", "-0", "-'a'", "-\"a\"", "-0x1f", "1 | -2", "-9223372036854775808", "\"ab\" | \"c\""]
+        assert parse("function main()\n    k = match n\n        " + shape + " => 10\n        _ => 20\n").diagnostics.len() == 0

@@ -20,14 +20,14 @@
 # `match_expr` reaches `arm`, which reaches both `statement` and `block`;
 # `annotated` reaches `parse_type` in another module, which reaches nothing here
 # — the one edge that leaves the knot and the reason `parse_type` stays its own
-# file.
+# file. `arm` reads its patterns with `parse/arm_pattern`, which since defect
+# 124 reaches nothing here either.
 #
 # **The entry points**, and they are the whole public surface:
 #
 # | function | what it reads |
 # |---|---|
 # | `parse_expr` | one expression, weakest binding first |
-# | `pattern_operand` | a pattern's operand — a literal, or one with `-` |
 # | `call_args` | `(x, name: y, @l)`, shared by calls, records and cases |
 # | `statement` | one statement, its line end consumed |
 # | `block` | an indented body — a declaration's, a loop's, an arm's |
@@ -65,6 +65,7 @@ use parse/type
 use parse/line_end
 use parse/list_line
 use parse/arm_line
+use parse/arm_pattern
 use operators
 
 ## The precedence table — §4.14, read from the bottom up
@@ -223,24 +224,6 @@ function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i6
                 )
 
     return left
-
-## Entry point 2 — a pattern's operand
-
-# A literal, or a literal with a leading `-`.
-#
-# **Deliberately not `parse_expr`**, and the reason is a premise that expired
-# silently in the bootstrap. Until the bitwise set landed, no binary operator
-# could follow a literal in pattern position, so parsing a pattern with the full
-# expression parser was safe and nobody wrote the premise down. `|` can follow
-# one — it is the pattern join (§4.7) — and `1 | 2 => "small"` quietly became
-# the expression `3`, so `name(1)` matched nothing and fell through to `_`. A
-# silent wrong answer, which is the class this language spends tokens to avoid.
-#
-# Calling `unary` rather than `binary` is what makes the join unreachable from
-# here: no binary operator is ever consumed in a pattern, whatever the table
-# grows.
-function pattern_operand(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
-    return unary(@c, @a, text)
 
 ## `-x`, `!x`, `~x`
 
@@ -1076,7 +1059,7 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
     start = cursor.current_span(c)
     patterns: [ast.Pattern] @ []
     arm_line.spaced_sign(@c, text)
-    first = pattern(@c, @a, text)
+    first = arm_pattern.read(@c, @a, text)
 
     if first.is_err()
         return fail(code: "no_pattern", msg: "the arm has no pattern")
@@ -1084,7 +1067,7 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
     joining: bool @ true
 
     while joining && cursor.eat(@c, .pipe)
-        more = pattern(@c, @a, text)
+        more = arm_pattern.read(@c, @a, text)
 
         if more.is_err()
             return fail(code: "no_pattern", msg: "a joined pattern is missing")
@@ -1154,61 +1137,6 @@ function declared_name(a: ast.Ast, at: i64) -> Declared?
             code: "not_a_declaration",
             msg: "no name bound"
         )
-
-# `.num n`, `.num _`, `.plus`, `_`, or a literal.
-#
-# The payload name is optional and may be `_`: `.num _ => 0` is legal, `_ => 0`
-# on a variant is not (§4.7). That distinction is not obvious, which is why the
-# spec states it and the tree keeps the two apart.
-function pattern(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern?
-    start = cursor.current_span(c)
-    k = cursor.current_kind(c)
-
-    if k == .dot
-        _ = cursor.bump(@c)
-
-        if !cursor.at(c, .ident)
-            if !cursor.at_reported_error(c)
-                cursor.error(
-                    @c,
-                    code: "expected_pattern_case",
-                    message: "expected a case name after `.`, found " + cursor.found(c, text) + " — an arm is `.name => value`",
-                    span: cursor.current_span(c)
-                )
-            return fail(code: "no_case_name", msg: "the pattern names no case")
-        name = cursor.bump(@c).span
-
-        # A name here binds the payload; `_` binds it and says it is unused,
-        # which is what keeps §4.4's unused-binding rule honest.
-        binding: token.Span? @ fail(code: "no_binding", msg: "the payload is not bound")
-
-        if cursor.at(c, .ident)
-            binding @ ok(cursor.bump(@c).span)
-        return ok(
-            ast.Pattern(kind: .variant_case(name: name, binding: binding), span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
-        )
-
-    # `_` lexes as an identifier: it is the wildcard only here.
-    if k == .ident && cursor.slice_of(text, start) == "_"
-        _ = cursor.bump(@c)
-        return ok(ast.Pattern(kind: .wildcard, span: start))
-
-    if k == .int_lit || k == .str_lit || k == .char_lit || k == .minus
-        # `pattern_operand`, never `parse_expr`: `|` is the join here and an
-        # operator there, and the full parser eats the join.
-        value = pattern_operand(@c, @a, text)
-        return ok(
-            ast.Pattern(kind: .literal(value: value), span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
-        )
-
-    if !cursor.at_reported_error(c)
-        cursor.error(
-            @c,
-            code: "expected_pattern",
-            message: "expected a pattern, found " + cursor.found(c, text) + " — `.case`, `.case name`, a literal, or `_` (on `i64`/`str` only)",
-            span: cursor.current_span(c)
-        )
-    return fail(code: "no_pattern", msg: "nothing here starts a pattern")
 
 ## Tests — the precedence table, read back off real token streams
 
@@ -1421,7 +1349,7 @@ test "a pattern's operand never consumes the join, which is what | is there"
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
-    at = pattern_operand(@c, @a, "1 | 2")
+    at = arm_pattern.literal(@c, @a, "1 | 2").must()
     assert render(a, at, "1 | 2") == "1"
     assert cursor.current_kind(c) == .pipe
 
