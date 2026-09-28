@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 5**
 
 - [ ] **114 — the emitted C zeroes every temporary of a function at its entry, so a lookup that returns early pays for every arm** | the emitter declares each temporary at the top of the C function with `= {0}`, and a `match` over a string of twenty arms declares them all: the emitted `h_keywords_keyword` zeroes 139 temporaries on every call to make 21 string comparisons, and on the default build line (plain `clang`, no optimisation, CLAUDE.md § Commands) every one is executed; `memset` was about a fifth of `fmt`'s samples after defect 105's repair | `selfhost/emit/` (the temporaries' declarations) · `seed/heroes.c` (`h_keywords_keyword`)
 
@@ -75,6 +75,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     pattern, so the refusal loses no program and its fix, the `-` touching
     its operand, is the spelling `fmt` prints.
 
+    **Corrected 2026-09-28, by lane 123's agent:** `fmt` prints no spelling
+    of a negative pattern, it exits 2 on every one, the unspaced `-1 =>`
+    included (defect 125), so the last clause above was false when written.
+
 - [ ] **124 — after a `-`, a `match` pattern reads a whole expression, so a pattern can name a variable or call a function** | `grammar_expr.pattern` reads `pattern_operand`, which is `unary`, so after a `-` any postfix expression parses, and `check/walk.literal_pattern` compares only its type: `-m => 10` with `m: i64 = 1` and `n = -1` is `check` 0 and prints 10, the pattern compared against a runtime name, and `-one() => 10` runs `one` inside the match, printing its 99 and then 10; also `-(1)`, `-xs[0]`, `--1`, `- -1`, and `-1.5` on an `f64` where `1.5` is `expected_pattern`; spec § 8 reads `Pattern = ... | [ "-" ] ( integer | string | character )` | `selfhost/grammar_expr.hero` (`pattern`, `pattern_operand`) · `selfhost/check/walk.hero` (`literal_pattern`)
 
     **Origin:** lane 123's agent, 2026-09-28, attacking the shapes beside
@@ -87,5 +91,17 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     compiler admits a name, which silently reads a value at run time, and a
     call, which runs code with its effects inside a match, both at exit 0; and
     a float after a `-` where a float is not a pattern at all.
+
+- [ ] **125 — `fmt` accuses itself on every negative literal pattern** | `k = match n` with the arm `-1 => 10` is `check` 0, and `heroes fmt` exits 2 with *`fmt` produced source that does not parse* (`expected_pattern`, found `(`) and *this is a compiler bug*: `print/bodies.render_pattern` renders a literal pattern through `render_expr`, whose unary case prints `(-1)`, and a parenthesis opens no pattern; also on `return match n` and on a statement `match` | `selfhost/print/bodies.hero` (`render_pattern`)
+
+    **Origin:** lane 123's agent, 2026-09-28, attacking the shapes beside
+    defect 123 (reproducers `shapes/u01` to `u03` in
+    `/Users/joseph/Temp/heroes-lane-123-scratch/`); reproduced by the
+    coordinator on the trunk's compiler at `62425393` the same morning
+    (`neg_pattern.hero` in `/Users/joseph/Temp/heroes-recovery-2026-09-26/defect125/`).
+
+    **Why it is a defect.** A verb that says *this is a compiler bug* is one;
+    and no suite saw it because no fixture and none of the probe's families
+    holds a negative pattern.
 
 *******************************************************************************
