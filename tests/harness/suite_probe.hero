@@ -44,41 +44,35 @@ record Row
     floors: [Floor]
     known: [str]
 
-# Defect 116's shape in `comments107/margin.hero`: a comment on a line of
-# its own inside a statement continued at its own margin, which the owner
-# rule reads as a new logical line, so the guard refuses at exit 2
-# (`docs/work/DEFECTS.md`, 116's origin). Every variant that puts one there.
-constant MARGIN: str
-    "tests/golden/surface-fixtures/comments107/margin.hero"
-
+# No failure is known, since panel 181's landing (2026-09-28). Defect 116's
+# shape in `comments107/margin.hero`, a comment on a line of its own inside a
+# statement continued at its own margin, was the one: seven variants in the
+# fixtures row and three in the tests row, refused by the guard at exit 2.
+# The statement no longer parses, so the file is no seed and its failures
+# went with it, measured: 0 variants refused by the guard in any row. A new
+# failure names its defect here.
 function rows() -> [Row]
+    # Measured 2026-09-28 at panel 181's landing, which added
+    # `surface-fixtures/continuation181/` (two seeds, two files refused), its
+    # four lexer modules to selfhost and its goldens to tests, and took
+    # margin.hero out of the seeds.
     fixtures: [Floor] = [
-        Floor(family: "single", generated: 6252, parsing: 3126)
-        Floor(family: "multi", generated: 567, parsing: 284)
-        Floor(family: "bracket", generated: 8910, parsing: 3306)
-        Floor(family: "paren", generated: 2139, parsing: 684)
-        Floor(family: "ends", generated: 502, parsing: 251)
-        Floor(family: "columns", generated: 5318, parsing: 2659)
-        Floor(family: "texts", generated: 3125, parsing: 1563)
+        Floor(family: "single", generated: 6351, parsing: 3176)
+        Floor(family: "multi", generated: 576, parsing: 288)
+        Floor(family: "bracket", generated: 8979, parsing: 3332)
+        Floor(family: "paren", generated: 2169, parsing: 690)
+        Floor(family: "ends", generated: 510, parsing: 255)
+        Floor(family: "columns", generated: 5396, parsing: 2698)
+        Floor(family: "texts", generated: 3182, parsing: 1591)
     ]
-    fixtures_known: [str] = [
-        MARGIN + " single O14_0"
-        MARGIN + " single O14_8"
-        MARGIN + " multi ALLOP"
-        MARGIN + " ends ALLO_crlf"
-        MARGIN + " columns C14_2"
-        MARGIN + " columns C14_10"
-        MARGIN + " texts V14"
-    ]
-    selfhost: [Floor] = [Floor(family: "multi", generated: 2520, parsing: 2520)]
-    tests: [Floor] = [Floor(family: "multi", generated: 5679, parsing: 5679)]
-    tests_known: [str] = [MARGIN + " multi ALLO", MARGIN + " multi ALLOP", MARGIN + " multi ALLTO"]
+    selfhost: [Floor] = [Floor(family: "multi", generated: 2556, parsing: 2556)]
+    tests: [Floor] = [Floor(family: "multi", generated: 5706, parsing: 5706)]
     examples: [Floor] = [Floor(family: "multi", generated: 1080, parsing: 1080)]
     none: [str] = []
     return [
-        Row(name: "the fixtures, every family", words: ["probe", "--stride", "2"], seeds: 63, floors: fixtures, known: fixtures_known)
-        Row(name: "selfhost, multi", words: ["probe", "selfhost", "--family", "multi"], seeds: 280, floors: selfhost, known: none)
-        Row(name: "tests, multi", words: ["probe", "tests", "--family", "multi"], seeds: 631, floors: tests, known: tests_known)
+        Row(name: "the fixtures, every family", words: ["probe", "--stride", "2"], seeds: 64, floors: fixtures, known: none)
+        Row(name: "selfhost, multi", words: ["probe", "selfhost", "--family", "multi"], seeds: 284, floors: selfhost, known: none)
+        Row(name: "tests, multi", words: ["probe", "tests", "--family", "multi"], seeds: 634, floors: tests, known: none)
         Row(name: "examples, multi", words: ["probe", "examples", "--family", "multi"], seeds: 120, floors: examples, known: none)
     ]
 

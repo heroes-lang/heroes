@@ -12,6 +12,7 @@ use source_extent
 use cursor
 use lexer
 use parse/decl
+use parse/wrap_break
 
 record ParseOutput
     decls: [ast.Decl]
@@ -76,7 +77,7 @@ function parse_source(s: source.Source) -> ParseOutput
         decls: decls,
         uses: uses,
         comments: comments,
-        diagnostics: diagnostics,
+        diagnostics: wrap_break.offer(diagnostics, tokens: lexed.tokens, a: a, text: s.text),
         tree: a,
         tokens: lexed.tokens
     )
@@ -107,7 +108,7 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
         decls: decls,
         uses: uses,
         comments: comments,
-        diagnostics: diagnostics,
+        diagnostics: wrap_break.offer(diagnostics, tokens: lexed.tokens, a: a, text: text),
         tree: a,
         tokens: lexed.tokens
     )
@@ -225,6 +226,32 @@ test "a minus set apart from its operand in a list is refused, and each reading 
 test "the first element, a written comma, and the unary spelling are not asked"
     for text in ["function main()\n    xs = [\n        - 1\n        2\n    ]\n", "function main()\n    xs = [a,\n        - b]\n", "function main()\n    xs = [a\n        , - b]\n", "function main()\n    xs = [a\n        -b\n        -1]\n"]
         assert parse(text).diagnostics.len() == 0
+
+# Panel 181: every fix of a line broken outside brackets, the join and the
+# parentheses the parser offers, applied alone, gives a program that parses.
+test "a line broken outside brackets is refused once, and each of its repairs parses"
+    code = "continuation_outside_brackets"
+
+    for text in ["function main()\n    y = a +\n    1\n", "function main()\n    y = a +\n        1\n", "function main()\n    if a &&\n    b\n        print(1)\n", "function main()\n    y = xs.\n    len()\n", "function main()\n    y = a +  # a note\n    1\n", "function main()\n    total = base\n    - fee\n", "function main()\n    x = f()\n    ?\n", "function main()\n    if c\n        y = a +\n    b\n"]
+        assert every_fix_parses(text: text, code: code)
+
+    wrapped = parse("function main()\n    y = a +\n    1\n")
+    assert wrapped.diagnostics[0].fixes.len() == 2
+    assert wrapped.diagnostics[0].fixes[1].replacement == "(a +\n    1)"
+    assert wrapped.diagnostics[0].fixes[1].certainty == .guess
+    head = parse("function main()\n    total = base\n    - fee\n")
+    assert head.diagnostics[0].fixes.len() == 1
+    arrow = parse("function main()\n    y =\n    a\n")
+    assert arrow.diagnostics[0].fixes.len() == 1
+
+    # An `if` cannot stand inside brackets, so the `else` over `if` break,
+    # whose only expression is the `if`, takes the join alone.
+    block = parse("function main()\n    if c\n        return\n    else\n    if d\n        return\n")
+    assert block.diagnostics[0].fixes.len() == 1
+    assert every_fix_parses(
+        text: "function main()\n    if c\n        return\n    else\n    if d\n        return\n",
+        code: "continuation_outside_brackets"
+    )
 
 test "a line end before what goes on with the line above names itself, and its fix parses"
     code = "line_end_before_continuation"

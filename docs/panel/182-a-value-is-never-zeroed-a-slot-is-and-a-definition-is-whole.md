@@ -234,3 +234,25 @@ landed emission.
 *Pending: `docs/work/DECIDE.md` carries this sitting as `panel 182`. Work
 proceeds on the provisional resolution: one lane lands items 1 to 7 and closes
 defects 114 and 122.*
+
+## The critic's second report, 2026-09-28 at 06:40
+
+Resumed by the coordinator's message, the critic finished its runs and wrote a
+second report beneath the first (`docs/panel/182-reports/completeness-critic.md`).
+It changes no item of the resolution, and adds four things the landing carries:
+- **MemorySanitizer, run**, on the Linux arm64 image: the trunk, (a-min), (e)
+  and (f) compilers give 0 reports on `check`, `fmt` and `--dump-ir`, and the
+  206 `run` goldens that build under it give the same exit, report count and
+  output across the trunk's, (a-min)'s and (e)'s emission; the one report common
+  to all three is in the runtime's crash-blame stack walk
+  (`runtime/parts/stack.c:372`), unrelated to zeroing.
+- **design.md Part 5 (lines 2612-2626) has a second false sentence** beside rule
+  5: *a cleanup-label chain per function so every exit edge (..., panic, ...)
+  releases live locals*, where the emitted C has one sweep at the return block
+  and none on panic. Item 6 owes both.
+- **A route nobody listed**: (g), declare each value where it is defined, which
+  C permits across a `goto`; it removes the value prologue outright, its gain
+  over (a-min) unrun. Carried with the deferred routes.
+- **(f)'s consumed-store half is not leak-only**: its wrong answer is a use
+  after free, and two fault injections of it were vacuous, which is the
+  resolution's reason for deferring it.

@@ -1,0 +1,21 @@
+# Fixed defect 116 (panel 181, 2026-09-28). Symptom: `y = a +` over `1` at the
+# statement's own margin compiled and printed 6, where design.md §4.15 reads
+# *at bracket depth zero every line's indentation is structural: a long
+# expression is broken inside parentheses or not at all*; one level deeper
+# the same break was refused as a block. Cause: the lexer planted no
+# terminator after a token that cannot end a line (Go's rule, panel 007), and
+# the same margin planted no indent, so the statement went on. Now the line
+# end is refused, once, and the fix writes the statement on one line.
+
+record P
+    x: i64
+
+function main()
+    a: i64 = 5
+    #~v continuation_outside_brackets
+    y = a + 1
+    print(y)
+    p = P(x: 2)
+    #~v continuation_outside_brackets
+    n = p.x
+    print(n)
