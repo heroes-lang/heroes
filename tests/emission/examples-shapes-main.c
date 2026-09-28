@@ -141,14 +141,14 @@ void h_main_main(void) {
     h_geompoint_Point t13;
     h_geompoint_Point t14;
     int64_t t15;
-    HeroStr t16 = {0};
+    HeroStr t16;
     int64_t t17;
     int64_t t18;
-    HeroStr t19 = {0};
+    HeroStr t19;
     int64_t t20;
     int64_t t21;
-    HeroStr t22 = {0};
-    HeroStr t23 = {0};
+    HeroStr t22;
+    HeroStr t23;
     goto bb0;
 bb0:
 #line 26 "examples/shapes/main.hero"
@@ -439,23 +439,23 @@ HeroStr h_renderascii_bar(int64_t h0_width) {
     int64_t t4;
     int64_t t5;
     h_geompoint_Point t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     h_geompoint_Point t8;
     h_geompoint_Point t9;
     int64_t t10;
-    h_0opt_fbbb698 t11 = {0};
-    h_0opt_fbbb698 t12 = {0};
+    h_0opt_fbbb698 t11;
+    h_0opt_fbbb698 t12;
     int64_t t13;
     int64_t t14;
     bool t15;
-    h_0opt_fbbb698 t16 = {0};
-    HeroFailure t17 = {0};
-    h_0opt_fbbb698 t18 = {0};
+    h_0opt_fbbb698 t16;
+    HeroFailure t17;
+    h_0opt_fbbb698 t18;
     uint64_t t19;
-    HeroStr t20 = {0};
-    h_0opt_fbbb698 t21 = {0};
-    h_0opt_fbbb698 t22 = {0};
-    HeroStr t23 = {0};
+    HeroStr t20;
+    h_0opt_fbbb698 t21;
+    h_0opt_fbbb698 t22;
+    HeroStr t23;
     goto bb0;
 bb0:
 #line 15 "examples/shapes/render/ascii.hero"
@@ -563,25 +563,25 @@ HeroStr h_renderascii_frame(int64_t h0_width, int64_t h1_height) {
     HeroStr h6_own6 = {0};
     HeroStr h7_own7 = {0};
     int64_t t1;
-    HeroStr t2 = {0};
-    HeroArrayHeader * t3 = {0};
+    HeroStr t2;
+    HeroArrayHeader * t3;
     int64_t t4;
     int64_t t5;
     int64_t t6;
     bool t7;
     int64_t t9;
-    HeroStr t10 = {0};
+    HeroStr t10;
     int64_t t12;
     int64_t t13;
     int64_t t14;
-    HeroArrayHeader * t15 = {0};
-    HeroStr t16 = {0};
-    HeroStr t17 = {0};
-    HeroStr t18 = {0};
-    HeroArrayHeader * t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroStr t21 = {0};
-    HeroStr t22 = {0};
+    HeroArrayHeader * t15;
+    HeroStr t16;
+    HeroStr t17;
+    HeroStr t18;
+    HeroArrayHeader * t19;
+    HeroArrayHeader * t20;
+    HeroStr t21;
+    HeroStr t22;
     goto bb0;
 bb0:
 #line 20 "examples/shapes/render/ascii.hero"

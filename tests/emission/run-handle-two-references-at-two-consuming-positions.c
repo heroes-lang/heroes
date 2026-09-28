@@ -117,12 +117,12 @@ void h_handletworeferencesattwoconsumingpositions_main(void) {
     ob * t1;
     ob * t2;
     ob * t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     ob * t5;
     int64_t t6;
     ob * t7;
     ob * t8;
-    HeroStr t9 = {0};
+    HeroStr t9;
     int64_t t10;
     goto bb0;
 bb0:

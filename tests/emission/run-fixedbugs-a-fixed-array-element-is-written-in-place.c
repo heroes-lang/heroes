@@ -119,7 +119,7 @@ void h_fixedbugsafixedarrayelementiswritteninplace_main(void) {
     struct nums t6;
     int64_t t7;
     int64_t t8;
-    HeroStr t9 = {0};
+    HeroStr t9;
     struct nums t10;
     int64_t t11;
     goto bb0;

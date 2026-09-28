@@ -109,7 +109,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 void h_fficallbackccallsback_bye(void) {
 #line 111 "fficallbackccallsback.c"
     hero_thread_guard("fficallbackccallsback.bye");
-    HeroStr t1 = {0};
+    HeroStr t1;
     goto bb0;
 bb0:
 #line 25 "tests/golden/run/ffi-callback-c-calls-back.hero"
@@ -130,12 +130,12 @@ void h_0cb_fficallbackccallsback_bye(void) {
 #line 27 "tests/golden/run/ffi-callback-c-calls-back.hero"
 void h_fficallbackccallsback_main(void) {
 #line 133 "fficallbackccallsback.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     h_0fn_294870dd t2;
     int32_t t3;
     int32_t t4;
     bool t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     goto bb0;
 bb0:
 #line 28 "tests/golden/run/ffi-callback-c-calls-back.hero"

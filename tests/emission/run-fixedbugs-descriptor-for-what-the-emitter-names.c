@@ -218,12 +218,12 @@ h_0opt_786b106a h_fixedbugsdescriptorforwhattheemitternames_grab(bool h0_f) {
     bool t1;
     int64_t t2;
     h_fixedbugsdescriptorforwhattheemitternames_P t3;
-    h_0opt_786b106a t4 = {0};
-    HeroStr t5 = {0};
-    HeroStr t6 = {0};
-    h_0opt_786b106a t7 = {0};
-    h_0opt_786b106a t8 = {0};
-    h_0opt_786b106a t9 = {0};
+    h_0opt_786b106a t4;
+    HeroStr t5;
+    HeroStr t6;
+    h_0opt_786b106a t7;
+    h_0opt_786b106a t8;
+    h_0opt_786b106a t9;
     goto bb0;
 bb0:
 #line 28 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -294,12 +294,12 @@ h_0opt_538f2d82 h_fixedbugsdescriptorforwhattheemitternames_shape_of(bool h0_f) 
     bool t1;
     int64_t t2;
     h_fixedbugsdescriptorforwhattheemitternames_Shape t3;
-    h_0opt_538f2d82 t4 = {0};
-    HeroStr t5 = {0};
-    HeroStr t6 = {0};
-    h_0opt_538f2d82 t7 = {0};
-    h_0opt_538f2d82 t8 = {0};
-    h_0opt_538f2d82 t9 = {0};
+    h_0opt_538f2d82 t4;
+    HeroStr t5;
+    HeroStr t6;
+    h_0opt_538f2d82 t7;
+    h_0opt_538f2d82 t8;
+    h_0opt_538f2d82 t9;
     goto bb0;
 bb0:
 #line 33 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -438,10 +438,10 @@ int64_t h_fixedbugsdescriptorforwhattheemitternames_width(bool h0_f) {
     h_fixedbugsdescriptorforwhattheemitternames_Shape h3_s;
     h_0opt_538f2d82 h4_own4 = {0};
     bool t1;
-    h_0opt_538f2d82 t2 = {0};
-    h_0opt_538f2d82 t3 = {0};
+    h_0opt_538f2d82 t2;
+    h_0opt_538f2d82 t3;
     int64_t t4;
-    h_0opt_538f2d82 t5 = {0};
+    h_0opt_538f2d82 t5;
     h_fixedbugsdescriptorforwhattheemitternames_Shape t6;
     h_fixedbugsdescriptorforwhattheemitternames_Shape t7;
     int64_t t8;
@@ -449,8 +449,8 @@ int64_t h_fixedbugsdescriptorforwhattheemitternames_width(bool h0_f) {
     int64_t t10;
     int64_t t11;
     int64_t t12;
-    h_0opt_538f2d82 t13 = {0};
-    h_0opt_538f2d82 t14 = {0};
+    h_0opt_538f2d82 t13;
+    h_0opt_538f2d82 t14;
     goto bb0;
 bb0:
 #line 48 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -535,33 +535,33 @@ void h_fixedbugsdescriptorforwhattheemitternames_main(void) {
     h_0opt_786b106a h4_own4 = {0};
     HeroArrayHeader * h5_own5 = {0};
     bool t1;
-    h_0opt_786b106a t2 = {0};
-    h_0opt_786b106a t3 = {0};
+    h_0opt_786b106a t2;
+    h_0opt_786b106a t3;
     int64_t t4;
     int64_t t5;
     bool t6;
-    h_0opt_786b106a t7 = {0};
-    HeroFailure t8 = {0};
-    h_0opt_786b106a t9 = {0};
+    h_0opt_786b106a t7;
+    HeroFailure t8;
+    h_0opt_786b106a t9;
     h_fixedbugsdescriptorforwhattheemitternames_P t10;
     int64_t t11;
     bool t12;
-    h_0opt_786b106a t13 = {0};
-    h_0opt_786b106a t14 = {0};
+    h_0opt_786b106a t13;
+    h_0opt_786b106a t14;
     int64_t t15;
     int64_t t16;
     bool t17;
     bool t18;
     int64_t t19;
-    HeroArrayHeader * t20 = {0};
-    HeroArrayHeader * t21 = {0};
+    HeroArrayHeader * t20;
+    HeroArrayHeader * t21;
     int64_t t22;
-    h_0opt_786b106a t23 = {0};
-    h_0opt_786b106a t24 = {0};
-    h_0opt_786b106a t25 = {0};
-    h_0opt_786b106a t26 = {0};
-    HeroArrayHeader * t27 = {0};
-    HeroArrayHeader * t28 = {0};
+    h_0opt_786b106a t23;
+    h_0opt_786b106a t24;
+    h_0opt_786b106a t25;
+    h_0opt_786b106a t26;
+    HeroArrayHeader * t27;
+    HeroArrayHeader * t28;
     goto bb0;
 bb0:
 #line 53 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -699,7 +699,7 @@ bb2:
 #line 39 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsdescriptorforwhattheemitternames_count_1b9a87(HeroArrayHeader * h0_xs) {
 #line 702 "fixedbugsdescriptorforwhattheemitternames.c"
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     goto bb0;
 bb0:

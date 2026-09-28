@@ -55,6 +55,8 @@
 #                 compilers agreed on (M-bootstrap-archive step 1)
 #   descriptors   every descriptor the blessed C names is defined in it,
 #                 and every one it defines is named — both directions
+#   wholes        every temporary the blessed C and the seed define is
+#                 written whole before any part of it (panel 182)
 #   cache         the per-module build cache: a header edit is not
 #                 invisible, an untouched build still hits, an edit moves
 #                 exactly the objects that read the edited file, and a
@@ -79,6 +81,7 @@ use suite_cache
 use suite_canonical
 use suite_corpus
 use suite_descriptors
+use suite_wholes
 use suite_determinism
 use suite_emission
 use suite_fixes
@@ -222,6 +225,18 @@ function main()
             print("harness: the descriptors suite could not run")
             exit(2)
         print("  descriptors: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # The same bytes again, and the seed with them: is every temporary
+    # written whole before any part of it (panel 182). No compiler runs.
+    if only == "" || only == "wholes"
+        got = suite_wholes.run_all(scratch: scratch)
+
+        if got.is_err()
+            print("harness: the wholes suite could not run")
+            exit(2)
+        print("  wholes: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 

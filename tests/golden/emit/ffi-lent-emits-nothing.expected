@@ -97,7 +97,7 @@ void h_ffilentemitsnothing_main(void);
 #line 14 "tests/golden/emit/ffi-lent-emits-nothing.hero"
 void h_ffilentemitsnothing_main(void) {
 #line 100 "ffilentemitsnothing.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     const char * t2;
     uint64_t t3;
     goto bb0;

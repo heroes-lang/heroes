@@ -170,12 +170,12 @@ h_0opt_e201354 h_fixedbugssynthesisednamesareunspellable_half(int64_t h0_n) {
     int64_t t6;
     int64_t t7;
     int64_t t8;
-    h_0opt_e201354 t9 = {0};
-    HeroStr t10 = {0};
-    HeroStr t11 = {0};
-    h_0opt_e201354 t12 = {0};
-    h_0opt_e201354 t13 = {0};
-    h_0opt_e201354 t14 = {0};
+    h_0opt_e201354 t9;
+    HeroStr t10;
+    HeroStr t11;
+    h_0opt_e201354 t12;
+    h_0opt_e201354 t13;
+    h_0opt_e201354 t14;
     goto bb0;
 bb0:
 #line 29 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
@@ -271,17 +271,17 @@ void h_fixedbugssynthesisednamesareunspellable_main(void) {
     h_0fn_48ac9712 t7;
     int64_t t8;
     int64_t t9;
-    h_0opt_e201354 t10 = {0};
-    h_0opt_e201354 t11 = {0};
+    h_0opt_e201354 t10;
+    h_0opt_e201354 t11;
     int64_t t12;
     int64_t t13;
     bool t14;
-    h_0opt_e201354 t15 = {0};
+    h_0opt_e201354 t15;
     int64_t t16;
     int64_t t17;
     int64_t t18;
-    h_0opt_e201354 t19 = {0};
-    h_0opt_e201354 t20 = {0};
+    h_0opt_e201354 t19;
+    h_0opt_e201354 t20;
     goto bb0;
 bb0:
 #line 34 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"

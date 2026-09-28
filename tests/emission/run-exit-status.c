@@ -95,9 +95,9 @@ void h_library_exit(int64_t h0_code);
 #line 18 "tests/golden/run/exit-status.hero"
 void h_exitstatus_main(void) {
 #line 98 "exitstatus.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/exit-status.hero"

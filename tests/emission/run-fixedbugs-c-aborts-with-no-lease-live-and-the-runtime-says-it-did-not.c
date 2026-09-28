@@ -96,8 +96,8 @@ void h_fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot_main(void);
 #line 15 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"
 void h_fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot_main(void) {
 #line 99 "fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot.c"
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
+    HeroStr t1;
+    HeroStr t2;
     goto bb0;
 bb0:
 #line 16 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"

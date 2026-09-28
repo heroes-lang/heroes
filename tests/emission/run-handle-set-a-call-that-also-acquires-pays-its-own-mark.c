@@ -119,7 +119,7 @@ void h_handlesetacallthatalsoacquirespaysitsownmark_main(void) {
     hh * t6;
     int64_t t7;
     hh * t8;
-    HeroStr t9 = {0};
+    HeroStr t9;
     goto bb0;
 bb0:
 #line 14 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"

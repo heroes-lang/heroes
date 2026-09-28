@@ -107,13 +107,13 @@ void h_cfreesaleasethroughacallback_main(void) {
 #line 108 "cfreesaleasethroughacallback.c"
     HeroStr h0_x = {0};
     const char * h1_c;
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
+    HeroStr t1;
+    HeroStr t2;
     const char * t3;
     int64_t t4;
     const char * t5;
     h_0fn_2b4640ec t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     goto bb0;
 bb0:
 #line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"

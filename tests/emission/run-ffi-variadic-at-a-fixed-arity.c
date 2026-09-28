@@ -97,7 +97,7 @@ void h_ffivariadicatafixedarity_main(void);
 #line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
 void h_ffivariadicatafixedarity_main(void) {
 #line 100 "ffivariadicatafixedarity.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     const char * t2;
     int64_t t3;
     int64_t t5;

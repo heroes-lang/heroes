@@ -100,17 +100,17 @@ void h_fixedbugsachandlerthatrecoversleavesnoline_main(void) {
     HeroStr h0_word = {0};
     __attribute__((unused)) const char * h1_held;
     HeroStr h2_own2 = {0};
-    HeroStr t1 = {0};
+    HeroStr t1;
     uint64_t t2;
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
+    HeroStr t3;
+    HeroStr t4;
     const char * t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     int32_t t7;
     int32_t t8;
     int32_t t9;
-    HeroStr t10 = {0};
-    HeroStr t11 = {0};
+    HeroStr t10;
+    HeroStr t11;
     goto bb0;
 bb0:
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"

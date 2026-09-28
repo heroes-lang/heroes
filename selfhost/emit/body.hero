@@ -2,15 +2,37 @@
 # (design.md §3.1; panels 020, 021, 029, 038). Port of
 # archive/bootstrap-rs/heroes/src/emit/body.rs.
 #
-# THE PROLOGUE EXISTS BECAUSE GOTO MAY NOT JUMP OVER AN INITIALISATION.
-# Every slot and temporary is declared at the top, and nothing is given
-# an initial value: a Heroes binding is always initialised, so a C
-# local clang thinks may be read uninitialised is a LOWERING bug —
-# exactly what -Werror=uninitialized is in the flag set to catch.
-# Zero-initialising would hide it. The ONE exception (panel 021 R3): a
-# refcounted slot is zeroed so the exit sweep is unconditional — decref
-# of the null non-value is a no-op, and the alternative is a liveness
-# pass. clang's ARC spec licenses exactly this for __strong locals.
+# EVERY SLOT AND TEMPORARY IS DECLARED IN THE PROLOGUE, as one place to
+# read them, and not because C forbids the jump. This header said *goto
+# may not jump over an initialisation*, and that is C++'s rule: C accepts
+# it, compiled under this project's flags by panel 182's critic
+# (`gotoinit.c`, exit 0), where clang++ refuses it.
+#
+# WHAT THE PROLOGUE INITIALISES, and why each class is what it is (panel
+# 182, on panel 021 R3):
+# - A VALUE, a temporary `t<N>`, is NEVER ZEROED. Its one definition
+#   precedes every read of it on every path, which the verifier proves
+#   (`ir/values.hero`: dominance between blocks, `in_order` within one),
+#   and the C writes each definition whole (`emit/container.hero`'s map
+#   lookup is where it did not). So a C local clang thinks may be read
+#   uninitialised is a LOWERING bug, which is what -Werror=uninitialized
+#   is in the flag set to catch, and a zero would hide it: the seed held
+#   81,680 zeroed values at `0fc98107`, every one dead by four
+#   instruments, each taken out of that check. clang sees a read BY
+#   VALUE; a read through an address (`release(&t)`) it does not see,
+#   and there the verifier stands alone.
+# - A REFCOUNTED SLOT IS ZEROED (panel 021 R3), because rule 3's
+#   old-value load reads every slot before its first store (`ir/own.hero`:
+#   load old, store, release old), and the exit sweep releases every
+#   local and synthetic slot whether the path that stored it ran or not.
+#   decref of the null non-value is a no-op; the alternative is a
+#   liveness pass. clang's ARC spec licenses exactly this for __strong
+#   locals.
+# - AN `@` PARAMETER'S SLOT IS NOT ZEROED: the copy-in at the end of the
+#   prologue writes it from its pointer before `goto bb0`, so no read can
+#   come first.
+# - Nothing else is initialised, for the value's reason: a Heroes
+#   binding is always initialised, and clang checks the rest.
 #
 # A BLOCK NOTHING JUMPS TO IS OMITTED ENTIRELY, not merely unlabelled:
 # C is physical, and an unlabelled block would fall through from the
@@ -153,7 +175,10 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
         if !spelled.is_err()
             initialiser: str @ ""
 
-            if layout.is_refcounted(c, slot.ty)
+            # Refcounted and not an `@` parameter's (the header above says
+            # why each): a parameter reaching here is a mutable one, since a
+            # plain one was skipped, and the copy-in writes it before bb0.
+            if layout.is_refcounted(c, slot.ty) && !is_param
                 initialiser @ " = {0}"
 
             # A slot that is written and never read is told to C that the
@@ -198,12 +223,11 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
         if keep
             spelled = ctype.c_type(names, c: c, ty: ty)
 
+            # A temporary takes NO initialiser, refcounted or not (panel
+            # 182; the header above says why). Until then this line zeroed a
+            # refcounted one, carried from the Rust port with no comment
+            # beside it (`body.rs:178`), where panel 021 R3 licensed slots.
             if !spelled.is_err()
-                initialiser: str @ ""
-
-                if layout.is_refcounted(c, ty)
-                    initialiser @ " = {0}"
-
                 # The TEMPORARY half of the attribute above (panel 118).
                 # An op that may NOT lose its destination still prints
                 # its assignment, because the overflow guard, the nan
@@ -242,7 +266,7 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
                     spelling @ "const " + spelled.must()
                 writer.line(
                     @w,
-                    text: "    " + deliberate + spelling + " " + mangle.value(value_at) + initialiser + ";"
+                    text: "    " + deliberate + spelling + " " + mangle.value(value_at) + ";"
                 )
         value_at @ value_at + 1
 

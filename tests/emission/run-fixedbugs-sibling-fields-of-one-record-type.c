@@ -144,7 +144,7 @@ void h_fixedbugssiblingfieldsofonerecordtype_main(void) {
     Pair t14;
     Inner t15;
     Slot * t16;
-    HeroStr t17 = {0};
+    HeroStr t17;
     goto bb0;
 bb0:
 #line 43 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"

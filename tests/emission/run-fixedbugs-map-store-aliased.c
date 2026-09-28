@@ -112,32 +112,32 @@ void h_fixedbugsmapstorealiased_main(void) {
     int64_t h3_r0;
     HeroMapHeader * h4_own4 = {0};
     h_0opt_e201354 h5_own5 = {0};
-    HeroMapHeader * t1 = {0};
-    HeroStr t2 = {0};
+    HeroMapHeader * t1;
+    HeroStr t2;
     int64_t t3;
-    HeroMapHeader * t4 = {0};
-    HeroStr t5 = {0};
+    HeroMapHeader * t4;
+    HeroStr t5;
     int64_t t6;
-    HeroMapHeader * t7 = {0};
+    HeroMapHeader * t7;
     int64_t t8;
-    HeroMapHeader * t9 = {0};
+    HeroMapHeader * t9;
     int64_t t10;
-    HeroMapHeader * t11 = {0};
-    HeroStr t12 = {0};
-    h_0opt_e201354 t13 = {0};
-    h_0opt_e201354 t14 = {0};
+    HeroMapHeader * t11;
+    HeroStr t12;
+    h_0opt_e201354 t13;
+    h_0opt_e201354 t14;
     int64_t t15;
     int64_t t16;
     bool t17;
-    h_0opt_e201354 t18 = {0};
+    h_0opt_e201354 t18;
     int64_t t19;
     int64_t t20;
     int64_t t21;
-    HeroMapHeader * t22 = {0};
-    HeroMapHeader * t23 = {0};
-    HeroMapHeader * t24 = {0};
-    h_0opt_e201354 t25 = {0};
-    h_0opt_e201354 t26 = {0};
+    HeroMapHeader * t22;
+    HeroMapHeader * t23;
+    HeroMapHeader * t24;
+    h_0opt_e201354 t25;
+    h_0opt_e201354 t26;
     goto bb0;
 bb0:
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
@@ -209,7 +209,7 @@ bb0:
 #line 38 "tests/golden/run/fixedbugs-map-store-aliased.hero"
       } else {
 #line 38 "tests/golden/run/fixedbugs-map-store-aliased.hero"
-        t13.tag = INT64_C(0);
+        t13 = (h_0opt_e201354){.tag = INT64_C(0)};
 #line 38 "tests/golden/run/fixedbugs-map-store-aliased.hero"
         (&hero_desc_int)->copy(&t13.as.ok, found);
 #line 38 "tests/golden/run/fixedbugs-map-store-aliased.hero"

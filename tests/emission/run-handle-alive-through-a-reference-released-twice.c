@@ -115,17 +115,17 @@ void h_handlealivethroughareferencereleasedtwice_main(void) {
     x509 * t1;
     x509 * t2;
     int32_t t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     int32_t t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     x509 * t7;
     int64_t t8;
     x509 * t9;
-    HeroStr t10 = {0};
+    HeroStr t10;
     x509 * t11;
     int64_t t12;
     x509 * t13;
-    HeroStr t14 = {0};
+    HeroStr t14;
     goto bb0;
 bb0:
 #line 16 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"

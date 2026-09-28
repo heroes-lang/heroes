@@ -123,15 +123,15 @@ void h_handlereferencejoinsthelifeitfinds_main(void) {
     ob * t4;
     ob * t5;
     int32_t t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     ob * t8;
     int64_t t9;
-    HeroStr t10 = {0};
+    HeroStr t10;
     int32_t t11;
     ob * t12;
     ob * t13;
     ob * t14;
-    HeroStr t15 = {0};
+    HeroStr t15;
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"

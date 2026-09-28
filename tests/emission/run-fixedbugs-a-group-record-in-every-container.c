@@ -200,66 +200,66 @@ void h_fixedbugsagrouprecordineverycontainer_main(void) {
     bool t21;
     Color t22;
     Color t23;
-    HeroArrayHeader * t24 = {0};
-    HeroArrayHeader * t25 = {0};
+    HeroArrayHeader * t24;
+    HeroArrayHeader * t25;
     int64_t t26;
-    HeroArrayHeader * t27 = {0};
+    HeroArrayHeader * t27;
     int64_t t28;
     Color t29;
     Color t30;
     bool t31;
-    HeroMapHeader * t32 = {0};
+    HeroMapHeader * t32;
     int64_t t33;
     Color t34;
-    HeroMapHeader * t35 = {0};
+    HeroMapHeader * t35;
     int64_t t36;
-    h_0opt_31fbd75 t37 = {0};
-    h_0opt_31fbd75 t38 = {0};
+    h_0opt_31fbd75 t37;
+    h_0opt_31fbd75 t38;
     int64_t t39;
     int64_t t40;
     bool t41;
-    h_0opt_31fbd75 t42 = {0};
-    HeroFailure t43 = {0};
-    h_0opt_31fbd75 t44 = {0};
+    h_0opt_31fbd75 t42;
+    HeroFailure t43;
+    h_0opt_31fbd75 t44;
     Color t45;
     Color t46;
     bool t47;
-    HeroMapHeader * t48 = {0};
+    HeroMapHeader * t48;
     Color t49;
     int64_t t50;
-    HeroMapHeader * t51 = {0};
+    HeroMapHeader * t51;
     Color t52;
-    h_0opt_e201354 t53 = {0};
-    h_0opt_e201354 t54 = {0};
+    h_0opt_e201354 t53;
+    h_0opt_e201354 t54;
     int64_t t55;
     int64_t t56;
     bool t57;
-    h_0opt_e201354 t58 = {0};
-    HeroFailure t59 = {0};
-    h_0opt_e201354 t60 = {0};
+    h_0opt_e201354 t58;
+    HeroFailure t59;
+    h_0opt_e201354 t60;
     int64_t t61;
     Color t62;
-    h_0opt_31fbd75 t63 = {0};
-    h_0opt_31fbd75 t64 = {0};
-    h_0opt_31fbd75 t65 = {0};
+    h_0opt_31fbd75 t63;
+    h_0opt_31fbd75 t64;
+    h_0opt_31fbd75 t65;
     int64_t t66;
     int64_t t67;
     bool t68;
     Color t69;
     int32_t t70;
-    HeroArrayHeader * t71 = {0};
-    HeroArrayHeader * t72 = {0};
-    HeroMapHeader * t73 = {0};
-    HeroMapHeader * t74 = {0};
-    h_0opt_31fbd75 t75 = {0};
-    h_0opt_31fbd75 t76 = {0};
-    HeroMapHeader * t77 = {0};
-    HeroMapHeader * t78 = {0};
-    h_0opt_e201354 t79 = {0};
-    h_0opt_e201354 t80 = {0};
-    h_0opt_31fbd75 t81 = {0};
-    h_0opt_31fbd75 t82 = {0};
-    h_0opt_31fbd75 t83 = {0};
+    HeroArrayHeader * t71;
+    HeroArrayHeader * t72;
+    HeroMapHeader * t73;
+    HeroMapHeader * t74;
+    h_0opt_31fbd75 t75;
+    h_0opt_31fbd75 t76;
+    HeroMapHeader * t77;
+    HeroMapHeader * t78;
+    h_0opt_e201354 t79;
+    h_0opt_e201354 t80;
+    h_0opt_31fbd75 t81;
+    h_0opt_31fbd75 t82;
+    h_0opt_31fbd75 t83;
     goto bb0;
 bb0:
 #line 42 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
@@ -405,7 +405,7 @@ bb0:
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
       } else {
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
-        t37.tag = INT64_C(0);
+        t37 = (h_0opt_31fbd75){.tag = INT64_C(0)};
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
         (&h_fixedbugsagrouprecordineverycontainer_Color_desc)->copy(&t37.as.ok, found);
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
@@ -487,7 +487,7 @@ bb1:
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
       } else {
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
-        t53.tag = INT64_C(0);
+        t53 = (h_0opt_e201354){.tag = INT64_C(0)};
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
         (&hero_desc_int)->copy(&t53.as.ok, found);
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"

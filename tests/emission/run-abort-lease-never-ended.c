@@ -98,7 +98,7 @@ void h_abortleaseneverended_main(void);
 void h_abortleaseneverended_main(void) {
 #line 100 "abortleaseneverended.c"
     const char * h0_c;
-    HeroStr t1 = {0};
+    HeroStr t1;
     const char * t2;
     const char * t3;
     uint64_t t4;

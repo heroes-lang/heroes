@@ -130,63 +130,63 @@ void h_fixedbugsacontextboundparameterthroughageneric_main(void) {
     h_0opt_f87774a h15_own15 = {0};
     int64_t t1;
     int64_t t2;
-    HeroArrayHeader * t3 = {0};
-    h_0opt_e201354 t4 = {0};
-    h_0opt_e201354 t5 = {0};
+    HeroArrayHeader * t3;
+    h_0opt_e201354 t4;
+    h_0opt_e201354 t5;
     int64_t t6;
     int64_t t7;
     bool t8;
-    h_0opt_e201354 t9 = {0};
-    HeroFailure t10 = {0};
-    h_0opt_e201354 t11 = {0};
+    h_0opt_e201354 t9;
+    HeroFailure t10;
+    h_0opt_e201354 t11;
     int64_t t12;
-    HeroStr t13 = {0};
-    HeroStr t14 = {0};
-    HeroArrayHeader * t15 = {0};
-    h_0opt_f87774a t16 = {0};
-    h_0opt_f87774a t17 = {0};
+    HeroStr t13;
+    HeroStr t14;
+    HeroArrayHeader * t15;
+    h_0opt_f87774a t16;
+    h_0opt_f87774a t17;
     int64_t t18;
     int64_t t19;
     bool t20;
-    h_0opt_f87774a t21 = {0};
-    HeroFailure t22 = {0};
-    h_0opt_f87774a t23 = {0};
-    HeroStr t24 = {0};
-    HeroArrayHeader * t25 = {0};
-    HeroArrayHeader * t26 = {0};
-    h_0opt_e201354 t27 = {0};
-    h_0opt_e201354 t28 = {0};
+    h_0opt_f87774a t21;
+    HeroFailure t22;
+    h_0opt_f87774a t23;
+    HeroStr t24;
+    HeroArrayHeader * t25;
+    HeroArrayHeader * t26;
+    h_0opt_e201354 t27;
+    h_0opt_e201354 t28;
     int64_t t29;
     int64_t t30;
     bool t31;
-    HeroArrayHeader * t32 = {0};
-    HeroArrayHeader * t33 = {0};
-    h_0opt_f87774a t34 = {0};
-    h_0opt_f87774a t35 = {0};
+    HeroArrayHeader * t32;
+    HeroArrayHeader * t33;
+    h_0opt_f87774a t34;
+    h_0opt_f87774a t35;
     int64_t t36;
-    h_0opt_f87774a t37 = {0};
-    HeroStr t38 = {0};
-    HeroStr t39 = {0};
-    h_0opt_f87774a t40 = {0};
-    HeroFailure t41 = {0};
-    HeroFailure t42 = {0};
-    HeroStr t43 = {0};
-    HeroArrayHeader * t44 = {0};
-    h_0opt_e201354 t45 = {0};
-    h_0opt_e201354 t46 = {0};
-    HeroArrayHeader * t47 = {0};
-    h_0opt_f87774a t48 = {0};
-    h_0opt_f87774a t49 = {0};
-    HeroArrayHeader * t50 = {0};
-    HeroArrayHeader * t51 = {0};
-    h_0opt_e201354 t52 = {0};
-    h_0opt_e201354 t53 = {0};
-    HeroArrayHeader * t54 = {0};
-    HeroArrayHeader * t55 = {0};
-    h_0opt_f87774a t56 = {0};
-    h_0opt_f87774a t57 = {0};
-    HeroStr t58 = {0};
-    HeroFailure t59 = {0};
+    h_0opt_f87774a t37;
+    HeroStr t38;
+    HeroStr t39;
+    h_0opt_f87774a t40;
+    HeroFailure t41;
+    HeroFailure t42;
+    HeroStr t43;
+    HeroArrayHeader * t44;
+    h_0opt_e201354 t45;
+    h_0opt_e201354 t46;
+    HeroArrayHeader * t47;
+    h_0opt_f87774a t48;
+    h_0opt_f87774a t49;
+    HeroArrayHeader * t50;
+    HeroArrayHeader * t51;
+    h_0opt_e201354 t52;
+    h_0opt_e201354 t53;
+    HeroArrayHeader * t54;
+    HeroArrayHeader * t55;
+    h_0opt_f87774a t56;
+    h_0opt_f87774a t57;
+    HeroStr t58;
+    HeroFailure t59;
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
@@ -517,18 +517,18 @@ HERO_TU_LOCAL h_0opt_e201354 h_fixedbugsacontextboundparameterthroughageneric_fi
 #line 518 "fixedbugsacontextboundparameterthroughageneric.c"
     h_0opt_e201354 h1_own1 = {0};
     h_0opt_e201354 h2_own2 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     bool t4;
-    HeroStr t5 = {0};
-    h_0opt_e201354 t6 = {0};
-    HeroArrayHeader * t7 = {0};
+    HeroStr t5;
+    h_0opt_e201354 t6;
+    HeroArrayHeader * t7;
     int64_t t8;
     int64_t t9;
-    h_0opt_e201354 t10 = {0};
-    h_0opt_e201354 t11 = {0};
-    h_0opt_e201354 t12 = {0};
+    h_0opt_e201354 t10;
+    h_0opt_e201354 t11;
+    h_0opt_e201354 t12;
     goto bb0;
 bb0:
 #line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
@@ -599,18 +599,18 @@ HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundparameterthroughageneric_fi
 #line 600 "fixedbugsacontextboundparameterthroughageneric.c"
     h_0opt_f87774a h1_own1 = {0};
     h_0opt_f87774a h2_own2 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     bool t4;
-    HeroStr t5 = {0};
-    h_0opt_f87774a t6 = {0};
-    HeroArrayHeader * t7 = {0};
+    HeroStr t5;
+    h_0opt_f87774a t6;
+    HeroArrayHeader * t7;
     int64_t t8;
-    HeroStr t9 = {0};
-    h_0opt_f87774a t10 = {0};
-    h_0opt_f87774a t11 = {0};
-    h_0opt_f87774a t12 = {0};
+    HeroStr t9;
+    h_0opt_f87774a t10;
+    h_0opt_f87774a t11;
+    h_0opt_f87774a t12;
     goto bb0;
 bb0:
 #line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
@@ -682,10 +682,10 @@ bb3:
 HERO_TU_LOCAL h_0opt_e201354 h_fixedbugsacontextboundparameterthroughageneric_wanted_1b9a87(HeroStr h0_what) {
 #line 684 "fixedbugsacontextboundparameterthroughageneric.c"
     h_0opt_e201354 h1_own1 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
-    h_0opt_e201354 t3 = {0};
-    h_0opt_e201354 t4 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    h_0opt_e201354 t3;
+    h_0opt_e201354 t4;
     goto bb0;
 bb0:
 #line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
@@ -720,10 +720,10 @@ bb0:
 HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundparameterthroughageneric_wanted_1e58d9(HeroStr h0_what) {
 #line 722 "fixedbugsacontextboundparameterthroughageneric.c"
     h_0opt_f87774a h1_own1 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
-    h_0opt_f87774a t3 = {0};
-    h_0opt_f87774a t4 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    h_0opt_f87774a t3;
+    h_0opt_f87774a t4;
     goto bb0;
 bb0:
 #line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"

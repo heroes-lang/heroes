@@ -165,19 +165,19 @@ h_0opt_5553b083 h_deadaddresscopyinagrowingarray_opened(void) {
     h_0opt_5553b083 h1_own1 = {0};
     h_0opt_5553b083 h2_own2 = {0};
     cdb * t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     const char * t3;
     int64_t t4;
     int64_t t5;
     bool t6;
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
-    h_0opt_5553b083 t9 = {0};
+    HeroStr t7;
+    HeroStr t8;
+    h_0opt_5553b083 t9;
     cdb * t10;
     h_deadaddresscopyinagrowingarray_Db t11;
-    h_0opt_5553b083 t12 = {0};
-    h_0opt_5553b083 t13 = {0};
-    h_0opt_5553b083 t14 = {0};
+    h_0opt_5553b083 t12;
+    h_0opt_5553b083 t13;
+    h_0opt_5553b083 t14;
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
@@ -293,26 +293,26 @@ void h_deadaddresscopyinagrowingarray_main(void) {
     HeroArrayHeader * h2_handles = {0};
     h_0opt_5553b083 h3_own3 = {0};
     HeroArrayHeader * h4_own4 = {0};
-    h_0opt_5553b083 t1 = {0};
-    h_0opt_5553b083 t2 = {0};
+    h_0opt_5553b083 t1;
+    h_0opt_5553b083 t2;
     int64_t t3;
     int64_t t4;
     bool t5;
-    h_0opt_5553b083 t6 = {0};
-    HeroFailure t7 = {0};
-    h_0opt_5553b083 t8 = {0};
+    h_0opt_5553b083 t6;
+    HeroFailure t7;
+    h_0opt_5553b083 t8;
     h_deadaddresscopyinagrowingarray_Db t9;
     h_deadaddresscopyinagrowingarray_Db t10;
     cdb * t11;
-    HeroArrayHeader * t12 = {0};
-    HeroArrayHeader * t14 = {0};
+    HeroArrayHeader * t12;
+    HeroArrayHeader * t14;
     int64_t t15;
     cdb * t16;
     int32_t t17;
-    h_0opt_5553b083 t18 = {0};
-    h_0opt_5553b083 t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroArrayHeader * t21 = {0};
+    h_0opt_5553b083 t18;
+    h_0opt_5553b083 t19;
+    HeroArrayHeader * t20;
+    HeroArrayHeader * t21;
     goto bb0;
 bb0:
 #line 27 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"

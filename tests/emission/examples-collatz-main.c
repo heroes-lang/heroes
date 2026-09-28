@@ -390,7 +390,7 @@ int64_t h_main_longest_at_once(void) {
     int64_t h5_h;
     int64_t h6_found;
     HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -402,13 +402,13 @@ int64_t h_main_longest_at_once(void) {
     int64_t t12;
     int64_t t13;
     int64_t t14;
-    HeroArrayHeader * t15 = {0};
+    HeroArrayHeader * t15;
     int64_t t16;
     int64_t t17;
-    HeroArrayHeader * t18 = {0};
+    HeroArrayHeader * t18;
     int64_t t19;
     bool t20;
-    HeroArrayHeader * t21 = {0};
+    HeroArrayHeader * t21;
     int64_t t22;
     int64_t t23;
     int64_t t24;
@@ -421,9 +421,9 @@ int64_t h_main_longest_at_once(void) {
     int64_t t31;
     int64_t t32;
     int64_t t33;
-    HeroArrayHeader * t34 = {0};
-    HeroArrayHeader * t35 = {0};
-    HeroArrayHeader * t36 = {0};
+    HeroArrayHeader * t34;
+    HeroArrayHeader * t35;
+    HeroArrayHeader * t36;
     goto bb0;
 bb0:
 #line 57 "examples/collatz/main.hero"
@@ -678,11 +678,11 @@ bb6:
 #line 88 "examples/collatz/main.hero"
 void h_main_main(void) {
 #line 681 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     int64_t t6;
     goto bb0;
 bb0:

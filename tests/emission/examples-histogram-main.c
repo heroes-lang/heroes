@@ -369,7 +369,7 @@ HeroArrayHeader * h_main_counts(void) {
     int64_t h5_h;
     HeroArrayHeader * h6_own6 = {0};
     HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -380,14 +380,14 @@ HeroArrayHeader * h_main_counts(void) {
     int64_t t11;
     int64_t t12;
     int64_t t13;
-    HeroArrayHeader * t14 = {0};
-    HeroArrayHeader * t15 = {0};
+    HeroArrayHeader * t14;
+    HeroArrayHeader * t15;
     int64_t t16;
     int64_t t17;
-    HeroArrayHeader * t18 = {0};
+    HeroArrayHeader * t18;
     int64_t t19;
     bool t20;
-    HeroArrayHeader * t21 = {0};
+    HeroArrayHeader * t21;
     int64_t t22;
     int64_t t23;
     int64_t t25;
@@ -395,12 +395,12 @@ HeroArrayHeader * h_main_counts(void) {
     int64_t t28;
     int64_t t29;
     int64_t t30;
-    HeroArrayHeader * t31 = {0};
-    HeroArrayHeader * t32 = {0};
-    HeroArrayHeader * t33 = {0};
-    HeroArrayHeader * t34 = {0};
-    HeroArrayHeader * t35 = {0};
-    HeroArrayHeader * t36 = {0};
+    HeroArrayHeader * t31;
+    HeroArrayHeader * t32;
+    HeroArrayHeader * t33;
+    HeroArrayHeader * t34;
+    HeroArrayHeader * t35;
+    HeroArrayHeader * t36;
     goto bb0;
 bb0:
 #line 50 "examples/histogram/main.hero"
@@ -561,22 +561,22 @@ void h_main_main(void) {
     HeroArrayHeader * h0_found = {0};
     int64_t h1_d;
     HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
     bool t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     int64_t t7;
-    HeroStr t8 = {0};
-    HeroArrayHeader * t9 = {0};
+    HeroStr t8;
+    HeroArrayHeader * t9;
     int64_t t10;
     int64_t t11;
     int64_t t12;
     int64_t t13;
     int64_t t14;
-    HeroArrayHeader * t15 = {0};
-    HeroArrayHeader * t16 = {0};
+    HeroArrayHeader * t15;
+    HeroArrayHeader * t16;
     goto bb0;
 bb0:
 #line 65 "examples/histogram/main.hero"

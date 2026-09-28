@@ -115,19 +115,19 @@ h_0opt_e201354 h_sugartry_first_of(HeroArrayHeader * h0_xs) {
 #line 116 "sugartry.c"
     h_0opt_e201354 h1_own1 = {0};
     h_0opt_e201354 h2_own2 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     bool t4;
-    HeroStr t5 = {0};
-    HeroStr t6 = {0};
-    h_0opt_e201354 t7 = {0};
-    HeroArrayHeader * t8 = {0};
+    HeroStr t5;
+    HeroStr t6;
+    h_0opt_e201354 t7;
+    HeroArrayHeader * t8;
     int64_t t9;
     int64_t t10;
-    h_0opt_e201354 t11 = {0};
-    h_0opt_e201354 t12 = {0};
-    h_0opt_e201354 t13 = {0};
+    h_0opt_e201354 t11;
+    h_0opt_e201354 t12;
+    h_0opt_e201354 t13;
     goto bb0;
 bb0:
 #line 8 "tests/golden/ir/sugar-try.hero"
@@ -207,27 +207,27 @@ h_0opt_e201354 h_sugartry_step(h_sugartry_Reader *ph0_r, HeroArrayHeader * h1_xs
     h_0opt_e201354 h4_own4 = {0};
     h_0opt_e201354 h5_own5 = {0};
     h_0opt_e201354 h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
-    h_0opt_e201354 t2 = {0};
-    h_0opt_e201354 t3 = {0};
+    HeroArrayHeader * t1;
+    h_0opt_e201354 t2;
+    h_0opt_e201354 t3;
     int64_t t4;
     int64_t t5;
     bool t6;
-    h_0opt_e201354 t7 = {0};
-    HeroFailure t8 = {0};
-    h_0opt_e201354 t9 = {0};
-    h_0opt_e201354 t10 = {0};
+    h_0opt_e201354 t7;
+    HeroFailure t8;
+    h_0opt_e201354 t9;
+    h_0opt_e201354 t10;
     int64_t t11;
     h_sugartry_Reader t12;
     int64_t t13;
     int64_t t14;
     int64_t t15;
     int64_t t16;
-    h_0opt_e201354 t17 = {0};
-    h_0opt_e201354 t18 = {0};
-    h_0opt_e201354 t19 = {0};
-    h_0opt_e201354 t20 = {0};
-    h_0opt_e201354 t21 = {0};
+    h_0opt_e201354 t17;
+    h_0opt_e201354 t18;
+    h_0opt_e201354 t19;
+    h_0opt_e201354 t20;
+    h_0opt_e201354 t21;
     h0_r = *ph0_r;
     goto bb0;
 bb0:

@@ -222,10 +222,12 @@ function reads_given(f: containers.Function, c: state.Checked, gone: {i64: bool}
 # the only way to reach it: an unused binding is already a compile
 # error, so a written-never-read slot exists exactly when the author
 # wrote the discard. A refcounted slot never reaches here and the
-# reason is structural: the exit sweep loads it to decref, so it is
+# reason is structural: the exit sweep reads it to decref, so it is
 # read by construction — the rule asks "does anything read it", a fact
 # about this function, never "is it refcounted", a premise about the
-# ownership pass. Conservative in the safe direction: the attribute
+# ownership pass. **The sweep's own arm was missing from the walk below
+# until panel 182** (item 5), so "by construction" held only through
+# rule 3's old-value load; it now holds through the sweep itself. Conservative in the safe direction: the attribute
 # means MAY be unused, so an over-count silences nothing.
 # Every slot's answer, in one pass over the live instructions (defect 112):
 # `slot_is_read` walked them all for each slot. Indexed by slot.
@@ -263,9 +265,18 @@ function slots_read(f: containers.Function, live: [bool], d: Defs, read: {i64: b
                     # through the pointer.
 
                     .copy_out co => mark(@out, slot: co.param)
-                    .lit | .unary | .binary | .cast | .call | .construct => continue
-                    .field | .index | .map_get | .len_of | .tag_of | .payload => continue
-                    .func_ref | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+                    # The exit sweep reads the slot it releases (panel 106),
+                    # which `ir/uses.slots_of` and `emit/body.hero` both say
+                    # and this walk did not (panel 182's item 5). It was never
+                    # missed because rule 3's old-value load reads every swept
+                    # slot first; a lowering that drops that load would have
+                    # given 5,468 swept slots a false `unused`, measured on
+                    # panel 182's compiler-engineer on route (f).
+
+                    .decref_slot ds                                              => mark(@out, slot: ds.slot)
+                    .lit | .unary | .binary | .cast | .call | .construct         => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload    => continue
+                    .func_ref | .abort_op | .incref | .decref | .hole | .missing => continue
         index @ index + 1
 
     return out
@@ -341,6 +352,55 @@ test "the fixpoint: a unit payload silences its own feeding load"
 
     # The slot is read in the IR and not in the C: `_ = v`'s shape.
     assert !slot_is_read(f, live, read: read, slot: 0)
+
+test "the exit sweep reads the slot it releases, with no load before it"
+    # A slot stored once and then only swept: the shape a lowering without
+    # rule 3's old-value load produces (panel 182's item 5). The sweep is
+    # the read; without its arm the slot would be told `unused`.
+    text = "function f()\n    print(1)\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    unit_id = table.unit_ty(c.types)
+    str_id = table.str_ty(c.types)
+    span = token.Span(start: 0, end: 1)
+    place = ir.Place(root: 0, path: ir.Run(start: 0, length: 0))
+    stored = ir.Inst(dest: ok(1), op: .lit(value: .str_const(at: 0)), ty: str_id, span: span)
+    store = ir.Inst(dest: fail(code: "none", msg: "void"), op: .store(place: place, value: 1), ty: str_id, span: span)
+    sweep = ir.Inst(dest: fail(code: "none", msg: "void"), op: .decref_slot(slot: 0), ty: str_id, span: span)
+    preds: [i64] = []
+    slots: [containers.Slot] = [containers.Slot(name: "own0", ty: str_id, kind: .synthetic_slot)]
+
+    for insts in [[stored, store, sweep], [stored, store]]
+        blk = containers.Block(
+            preds: preds,
+            insts: insts,
+            term: .return_term(value: fail(code: "none", msg: "bare")),
+            note: "t"
+        )
+        f = containers.Function(
+            name: "t",
+            decl: 0,
+            kind: .function_kind,
+            generics: [],
+            params: [],
+            result: unit_id,
+            slots: slots,
+            blocks: [blk],
+            values: [unit_id, str_id],
+            arguments: [],
+            steps: [],
+            instance: [],
+            call_instances: {},
+            instantiated_at: token.Span(start: 0, end: 0),
+            span: span
+        )
+        live: [bool] = [true]
+        read = emitted_reads(f, c)
+
+        # Swept, the slot is read; stored and never swept or loaded, it is not.
+        assert slot_is_read(f, live, read: read, slot: 0) == (insts.len() == 3)
 
 test "the op table: pure reads and calls may lose, aborters may not"
     assert may_lose_its_destination(
