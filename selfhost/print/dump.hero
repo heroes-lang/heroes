@@ -10,7 +10,7 @@
 #
 # EVERY FIELD OF A DECLKIND IS DESTRUCTURED AND USED HERE (panels 060,
 # 061, 062). This module is half of a guard, and the other half lives in
-# `syntax_cmds.hero::refuse_output_the_formatter_broke`: it asserts
+# `guard.hero::refuse_output_the_formatter_broke`: it asserts
 # dump(text) == dump(fmt(text)) — "fmt changed the tree" — so a field the
 # formatter can print and this dump elides is a CANCELLING PAIR, and the
 # pair reports GREEN.

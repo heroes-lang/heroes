@@ -1,0 +1,135 @@
+# A failing variant made small (panel 179 item 5; design.md §4.15): its
+# lines deleted, many at a time and then one at a time, for as long as the
+# judge that failed it still does, so a failure the probe finds in a file of
+# two thousand lines is reported as the few lines that make it, the shape
+# each seat had cut its reproducers to by hand. Where the variant is a
+# splice, a line holding one of the probe's own comments (`# zq_`) is never
+# deleted: the reproducer is the probe's failure and not another one the
+# deletions stumbled on. A variant that rewrote every line has such a
+# comment on every other one, and there only the judge's word is kept.
+#
+# THE ORDER IS FIXED, so a failure reduces to the same lines on every run:
+# chunks of half the file, then a quarter, down to single lines, each tried
+# from the top, a deletion kept whenever the same judge still fails the
+# rest (`fails`, `probe/judge.hero`'s question for that judge); then single
+# lines again until a pass keeps none. It stops after
+# `ATTEMPTS` programs judged and says so.
+
+use probe/seed
+
+constant ATTEMPTS: i64
+    3000
+
+record Reduced
+    text: str
+    lines: i64
+    attempts: i64
+    finished: bool
+
+function reduced(text: str, fails: (function(str) -> bool), protect: bool) -> Reduced
+    lines: [str] @ seed.cut_lines(text)
+    newline = seed.ends_newline(text)
+    attempts: i64 @ 0
+    chunk: i64 @ lines.len() / 2
+
+    if chunk < 1
+        chunk @ 1
+
+    while attempts < ATTEMPTS
+        kept: bool @ false
+        at: i64 @ 0
+
+        while at < lines.len() && attempts < ATTEMPTS
+            end: i64 @ at + chunk
+
+            if end > lines.len()
+                end @ lines.len()
+
+            if protect && holds_probe(lines.slice(from: at, to: end))
+                at @ end
+                continue
+            left: [str] @ lines.slice(from: 0, to: at)
+
+            for line in lines.slice(from: end, to: lines.len())
+                left @ left.push(line)
+
+            attempts @ attempts + 1
+
+            if fails(seed.joined(lines: left, crlf: false, newline: newline))
+                lines @ left
+                kept @ true
+            else
+                at @ end
+
+        if chunk == 1 && !kept
+            return Reduced(
+                text: seed.joined(lines: lines, crlf: false, newline: newline),
+                lines: lines.len(),
+                attempts: attempts,
+                finished: true
+            )
+
+        if chunk > 1
+            chunk @ chunk / 2
+
+    return Reduced(
+        text: seed.joined(lines: lines, crlf: false, newline: newline),
+        lines: lines.len(),
+        attempts: attempts,
+        finished: false
+    )
+
+function holds_probe(lines: [str]) -> bool
+    for line in lines
+        if has_mark(line)
+            return true
+
+    return false
+
+# Whether `line` holds `zq_`, the mark every comment the probe writes starts
+# with.
+function has_mark(line: str) -> bool
+    at: i64 @ 0
+
+    while at + 3 <= line.len()
+        if line[at] == 'z' && line[at + 1] == 'q' && line[at + 2] == '_'
+            return true
+        at @ at + 1
+
+    return false
+
+## Tests
+
+# A stand-in for a judge, so the order of work is tested whatever the
+# printer does today: a program "fails" while it still has both lines.
+function has_both(text: str) -> bool
+    return has_line(text: text, line: "    a = 1") && has_line(text: text, line: "    d = 4")
+
+function has_line(text: str, line: str) -> bool
+    for one in seed.cut_lines(text)
+        if one == line
+            return true
+
+    return false
+
+function never(text: str) -> bool
+    _ = text
+    return false
+
+test "a failure is cut to the lines that make it, the probe's own comments kept, in a fixed order"
+    text = "function f()\n    a = 1\n    b = 2  # zq_t3\n    c = 3\n    d = 4\n    e = 5\n    # zq_o7_4\n"
+    cut = reduced(text, fails: has_both, protect: true)
+    assert cut.finished
+    assert cut.text == "    a = 1\n    b = 2  # zq_t3\n    d = 4\n    # zq_o7_4\n"
+    assert cut.lines == 4
+    assert reduced(text, fails: has_both, protect: true).attempts == cut.attempts
+
+    # Unprotected, the probe's comments go too where the judge still fails.
+    bare = reduced(text, fails: has_both, protect: false)
+    assert bare.text == "    a = 1\n    d = 4\n"
+
+    # Where nothing fails, nothing is deleted.
+    kept = reduced(text, fails: never, protect: true)
+    assert kept.text == text
+    assert has_mark("    # zq_o3_4")
+    assert !has_mark("    # z q_")

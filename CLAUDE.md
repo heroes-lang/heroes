@@ -107,7 +107,9 @@ ask* has exactly three exceptions, named in § 3. And, author instruction
 2026-09-12: **take the most robust and production-ready resolution, never the
 easiest, the compromise, or the cheapest in tokens.** § 4 said it of a panel's;
 it binds every choice. Said again 2026-09-27: never economise on tokens, and
-where robustness is not at stake take the one fastest at run time.
+where robustness is not at stake take the one fastest at run time. And
+2026-09-28, of the spec's own tokens: always the most robust and solid route,
+at their cost too.
 
 ## 1. Re-read protocol: what never to trust from memory
 - Read `spec/heroes-spec.md` in full at the start of every session; its budget

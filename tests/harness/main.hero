@@ -63,6 +63,9 @@
 #                 twice, the prototype a caller compiles is the one the
 #                 definition sits beside, and the runtime's descriptors
 #                 are named and never copied
+#   probe         `heroes probe` over the formatter's fixtures under every
+#                 family and over the whole tree under `multi`, each row
+#                 pinning its floors (panel 179)
 #
 # Nothing is left in Rust that this cannot ask. The last one to arrive was
 # `emission`, and it is the only suite here whose ancestor could not be
@@ -83,6 +86,7 @@ use suite_golden
 use suite_layout
 use suite_lines
 use suite_order
+use suite_probe
 use suite_records
 use suite_runtime
 use suite_spec
@@ -361,6 +365,18 @@ function main()
             print("harness: the canonical check could not run")
             exit(2)
         print("  canonical: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # The formatter's probe: every comment placement the skeptic seats made
+    # by hand, formatted and judged twice in one process (panel 179).
+    if only == "" || only == "probe"
+        got = suite_probe.run_all(scratch: scratch, compiler: compiler)
+
+        if got.is_err()
+            print("harness: the probe rows could not run")
+            exit(2)
+        print("  probe: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
