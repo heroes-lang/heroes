@@ -345,3 +345,25 @@ test "the pattern messages name what is known and what is missing"
     assert partial_match.message == "this `match` does not cover `lparen`"
     banned = wildcard_on_variant(got: "Token", span: span)
     assert banned.code == "wildcard_on_variant"
+
+# A literal arm whose value an earlier literal arm took (defect 128). The
+# earlier spelling is named where it differs, since `'a'` covering `97` is
+# the whole of what the reader has to be told.
+function covered_value(shown: str, earlier: str, span: token.Span) -> diag.Diagnostic
+    tail: str @ ""
+
+    if earlier != shown
+        tail @ ", written `" + earlier + "`, the same value"
+    return diag.new_diagnostic(
+        code: "duplicate_arm",
+        message: "`" + shown + "` is already covered by an earlier arm" + tail + ": no value reaches this one",
+        span: span
+    )
+
+# A pattern after a `_`, which has taken every value (defect 128).
+function after_a_wildcard(shown: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "duplicate_arm",
+        message: "`" + shown + "` is already covered by an earlier arm, whose `_` matches every value: no value reaches this one",
+        span: span
+    )
