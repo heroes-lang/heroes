@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 4**
 
 - [ ] **129 — a line holding `-` alone draws two certain joins, and applied together they write a program `check` refuses** | in `function main()`, `x = a` over a line holding `-` alone over `print(x)` costs two `continuation_outside_brackets`, and `check --apply` writes `x = a -` over `print(x)`, which `check` refuses again; in a `match`, `0 => 5` over `-` over `"=>"` has both joins applied, `0 => 5 - "=>"`, which is `bad_operand` | `selfhost/open_line.hero` (`goes_on_at_head`, `refuse_the_end`)
 
@@ -129,5 +129,24 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** design.md §4.17: one mistake, one message. The
     second names a body that is there, one level down, as missing, so a
     model that reads it as a second mistake repairs a block that was right.
+
+- [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
+
+    **Origin:** lane 129's agent, 2026-09-29, beside defect 129 (its finding 2,
+    `cascade_next_arms_pattern.hero`, copied to
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/d132/`, 2026-09-29);
+    reproduced by the coordinator on the trunk's compiler at `7d3cd33b`: two
+    breaks, four diagnostics, and on the trunk both joins `certain`, writing
+    programs that do not parse (defect 129's class, which lane 129 repairs; the
+    second diagnostic stays after that repair, by the lane's own report).
+
+    **The shape, whole, since the file above lives in a session's scratchpad:**
+    a function `return match n` whose arms are `0 => 5 -` / `1 => 10` /
+    `_ => 20`, and one whose arms are `0 => 5` / `| 1 => 10` / `_ => 20`.
+
+    **Why it is a defect.** Panel 181 item 2: one diagnostic per break, the
+    parser handed the line the author broke. Here the line it is handed holds
+    the next arm's `=>`, which no join can make part of an arm's body, so the
+    parser's refusal is the break's debris and not a second mistake.
 
 *******************************************************************************
