@@ -228,7 +228,14 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
             certainty @ .guess
         glue: str @ " "
 
+        # `.`, `::` and `/` join with no space, and so does a `-` that begins
+        # its line, which is a sign: the join writes it against its operand
+        # as `fmt` does, `-` over `1 => 10` as `-1 => 10`, where a space wrote
+        # `- 1`, the spaced sign the spec refuses (defect 123). Never before
+        # `>`, which would make the `-` an arrow.
         if left.kind == .dot || left.kind == .colon_colon || left.kind == .slash
+            glue @ ""
+        else if left.kind == .minus && opens_a_line(l.tokens, at: at) && text[l.pos] != '>'
             glue @ ""
         d.fixes @ d.fixes.push(joined(glue: glue, from: left.span.end, to: l.pos, certainty: certainty))
     state.push_diagnostic(@l.diagnostics, d)
@@ -279,6 +286,16 @@ function joined(glue: str, from: i64, to: i64, certainty: diag.Certainty) -> dia
     )
 
 ## What the line above holds
+
+# Does the token at `at` begin its line in the stream: nothing before it but
+# comments, back to a line's end, a block's edge or the file's start?
+function opens_a_line(tokens: [token.Token], at: i64) -> bool
+    i: i64 @ at - 1
+
+    while i >= 0 && tokens[i].kind == .comment
+        i @ i - 1
+
+    return i < 0 || tokens[i].kind == .terminator || tokens[i].kind == .indent || tokens[i].kind == .dedent
 
 # Is the token at `at` the colon of a statement's `name:`, which the next
 # line's type and binding complete?

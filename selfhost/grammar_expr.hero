@@ -53,7 +53,8 @@
 # here skips terminators, and the array and map literals accept a newline AS the
 # comma. A line end may stand before every closer and every `,` (panel 180 R1);
 # where one stands before what would have gone on with the line above,
-# `parse/line_end` says so (R3), and `parse/list_line` does for a literal (R2).
+# `parse/line_end` says so (R3), and `parse/list_line` does for a literal (R2),
+# as `parse/arm_line` does for the `-` that opens an arm (defect 123).
 
 use token
 use diag
@@ -63,6 +64,7 @@ use lex_interp
 use parse/type
 use parse/line_end
 use parse/list_line
+use parse/arm_line
 use operators
 
 ## The precedence table — §4.14, read from the bottom up
@@ -1073,6 +1075,7 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
     start = cursor.current_span(c)
     patterns: [ast.Pattern] @ []
+    arm_line.spaced_sign(@c, text)
     first = pattern(@c, @a, text)
 
     if first.is_err()
