@@ -22,6 +22,12 @@ record ParseOutput
     # because a formatter that drops a comment is a formatter nobody runs.
     comments: [token.Span]
     diagnostics: [diag.Diagnostic]
+    # The same parse as the control arm reads it, `check --permissive`
+    # (defect 131): with what a block's head held back over a line the lexer
+    # joined (`parse/opening`), where the lexer's refusal of the join is a
+    # thesis rule. That arm drops the refusal and reads the join as the
+    # program, for which the held report is the only one.
+    control: [diag.Diagnostic]
     tree: ast.Ast
     # Every token the lexer made, the root file's first: `heroes fmt` reads
     # from them what the tree does not keep, which line a statement ends on
@@ -64,20 +70,26 @@ function parse_source(s: source.Source) -> ParseOutput
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []
     diagnostics: [diag.Diagnostic] @ lexed.diagnostics
+    control: [diag.Diagnostic] @ lexed.diagnostics
     bound = source_extent.root_end(s)
 
     for one in files
         c: cursor.Cursor @ cursor.bounded_cursor(tokens: one.tokens, root_end: bound)
         decl.file(@c, @a, @decls, @uses, s.text)
+        said = placed(c, lexed: one.diagnostics)
 
-        for d in c.diagnostics
+        for d in said.normal
             diagnostics @ diagnostics.push(d)
+
+        for d in said.control
+            control @ control.push(d)
 
     return ParseOutput(
         decls: decls,
         uses: uses,
         comments: comments,
         diagnostics: wrap_break.offer(diagnostics, tokens: lexed.tokens, a: a, text: s.text),
+        control: wrap_break.offer(control, tokens: lexed.tokens, a: a, text: s.text),
         tree: a,
         tokens: lexed.tokens
     )
@@ -100,18 +112,67 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
     uses: [ast.Use] @ []
     decl.file(@c, @a, @decls, @uses, text)
     diagnostics: [diag.Diagnostic] @ lexed.diagnostics
+    control: [diag.Diagnostic] @ lexed.diagnostics
+    said = placed(c, lexed: lexed.diagnostics)
 
-    for d in c.diagnostics
+    for d in said.normal
         diagnostics @ diagnostics.push(d)
+
+    for d in said.control
+        control @ control.push(d)
 
     return ParseOutput(
         decls: decls,
         uses: uses,
         comments: comments,
         diagnostics: wrap_break.offer(diagnostics, tokens: lexed.tokens, a: a, text: text),
+        control: wrap_break.offer(control, tokens: lexed.tokens, a: a, text: text),
         tree: a,
         tokens: lexed.tokens
     )
+
+# One file's parser diagnostics as each arm reads them.
+record Said
+    normal: [diag.Diagnostic]
+    control: [diag.Diagnostic]
+
+# Each held diagnostic goes where the parser would have said it, in the arms
+# the lexer's refusal at its break leaves it to: a refusal that is a thesis
+# rule stands in the normal arm alone, so the held one is said in the control
+# arm alone; one that is not says it in both, so the held one in neither; and
+# a join nobody refused leaves it to say it in both, the loud direction.
+function placed(c: cursor.Cursor, lexed: [diag.Diagnostic]) -> Said
+    normal: [diag.Diagnostic] @ []
+    control: [diag.Diagnostic] @ []
+    next: i64 @ 0
+    i: i64 @ 0
+
+    while i <= c.diagnostics.len()
+        while next < c.held.len() && c.held[next].at == i
+            held = c.held[next]
+            refusal = refusal_at(lexed, cause: held.cause)
+
+            if refusal.is_err()
+                normal @ normal.push(held.diagnostic)
+                control @ control.push(held.diagnostic)
+            else if diag.is_thesis_rule(refusal.must())
+                control @ control.push(held.diagnostic)
+            next @ next + 1
+
+        if i < c.diagnostics.len()
+            normal @ normal.push(c.diagnostics[i])
+            control @ control.push(c.diagnostics[i])
+        i @ i + 1
+
+    return Said(normal: normal, control: control)
+
+# The lexer's refusal that stands inside `cause`, a break a head was joined at.
+function refusal_at(lexed: [diag.Diagnostic], cause: token.Span) -> diag.Diagnostic?
+    for d in lexed
+        if d.span.start >= cause.start && d.span.start < cause.end
+            return ok(d)
+
+    return fail(code: "unrefused", msg: "the lexer refused nothing at the break")
 
 # Which file each diagnostic of a parse points into, in order.
 function files_of(s: source.Source, p: ParseOutput) -> [i64]
@@ -439,3 +500,22 @@ test "a failed statement drops only its own line, and a thesis rule drops none"
     assert codes(past_a_comment.diagnostics) == ["missing_body", eol]
     thesis = parse("function main()\n    match n\n        0 => x = 5\n        _ => print(2)\n    z = 4 )\n")
     assert codes(thesis.diagnostics) == ["declaration_in_arm", eol]
+    assert codes(thesis.control) == ["declaration_in_arm", eol]
+
+# Defect 131: a head that refused something drops the rest of its line and
+# reads the body below it; with no body, it is named at the line below unless
+# the head's recovery ran past its own line; and over a line the lexer joined
+# to it, what it would say of the body is the control arm's alone.
+test "a failed head reads its body, and a joined one leaves its report to the control arm"
+    over_a_body = parse("function main()\n    if n > )\n        y = 3 )\n    print(2)\n")
+    assert codes(over_a_body.diagnostics) == ["expected_expression", "expected_end_of_line"]
+    match_head = parse("function main()\n    match )\n        + => print(1)\n        _ => print(2)\n")
+    assert codes(match_head.diagnostics) == ["expected_expression", "expected_pattern"]
+    no_body = parse("function main()\n    if n > )\n    print(2)\n")
+    assert codes(no_body.diagnostics) == ["expected_expression", "missing_body"]
+    crossed = parse("function main()\n    if (n > 0\n        y = 3 )\n    z = 4 )\n")
+    assert codes(crossed.diagnostics) == ["expected_group_close", "expected_end_of_line"]
+    joined = parse("function main()\n    if n >\n        print(1)\n    z = 4 )\n")
+    assert codes(joined.diagnostics) == ["continuation_outside_brackets", "expected_end_of_line"]
+    assert codes(joined.control) == ["continuation_outside_brackets", "missing_body", "expected_end_of_line"]
+    assert joined.control[1].span.start == joined.control[2].span.start - 6

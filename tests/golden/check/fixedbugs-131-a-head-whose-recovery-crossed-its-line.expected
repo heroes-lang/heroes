@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-131-a-head-whose-recovery-crossed-its-line.hero:13:9: error[expected_group_close]: expected `)` to close the group, found a name (`y`)
+tests/golden/check/fixedbugs-131-a-head-whose-recovery-crossed-its-line.hero:14:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
