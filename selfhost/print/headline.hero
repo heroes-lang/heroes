@@ -110,7 +110,8 @@ function opened(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
         if index == fd.params.len() - 1
             separator @ ""
 
-        # A comma after a comment keeps its own line (`owners.lone_comma`).
+        # A comma after a comment keeps its own line (`owners.lone_comma`),
+        # and so does one with a comment after it (`margins.commented_comma`).
         comma: i64 @ -1
 
         if index + 1 < fd.params.len()
@@ -119,6 +120,9 @@ function opened(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
             if mark >= 0 && f.lines.tokens[mark].kind == .comma
                 before = owners.code_before(f.lines, index: mark)
                 comma @ owners.lone_comma(f.lines, after: f.lines.tokens[before].span.end)
+
+                if comma < 0
+                    comma @ margins.commented_comma(f.lines, s: s, after: f.lines.tokens[before].span.end)
 
         if comma >= 0
             separator @ ""

@@ -300,12 +300,16 @@ function element(@f: page.Fmt, c: elements.Code, item: elements.Element, indent:
     w = around.written(c, item: item, taken: taken)
     page.comments_before(@f, c.s, c.comments, line: first, indent: indent)
 
-    # A comma after a comment keeps its own line (`owners.lone_comma`).
+    # A comma after a comment keeps its own line (`owners.lone_comma`), and
+    # so does one with a comment after it (`margins.commented_comma`).
     comma: i64 @ -1
     after: str @ item.after
 
     if item.after == ","
         comma @ owners.lone_comma(c.lines, after: w.to)
+
+    if comma < 0
+        comma @ margins.commented_comma(c.lines, s: c.s, after: w.to)
 
     if comma >= 0
         after @ ""

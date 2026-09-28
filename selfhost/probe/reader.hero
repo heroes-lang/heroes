@@ -1,0 +1,408 @@
+# The probe's second judge (panel 179 item 4; design.md §4.15): where a
+# reader who never saw `print/owners.hero` would say each comment belongs,
+# asked of a variant and of `fmt`'s output, which must agree. A port of the
+# second skeptic seat's `rd.py`, its `model` and the comparisons of its
+# `check`. The guard (`print/guard.hero`) places a comment by the rule the
+# printer places it with, so it can see a walk that broke the rule and never
+# a rule that is wrong; this one derives the owner again from the tokens,
+# from indentation and the code around it, as that seat did.
+#
+# THE TOKENS IT COUNTS are the ones `fmt` cannot add or drop: not a comment,
+# a comma, a parenthesis, a `-> ()`, or an extern group's head line, which
+# a merge of two groups drops (the Python dropped the `extern` and its
+# header, and a `link` after them would have read as a lost token). A
+# comment's neighbours are the counted tokens either side of it.
+#
+# EACH COMMENT IS ONE OF THREE. With code before it on its line it TRAILS
+# the last counted token before it. On a line of its own inside a bracket it
+# is BRACKETED, owned by the square and curly brackets around it. Anywhere
+# else it sits in a BLOCK: between the logical line before it (P) and the
+# one after (N), at the depth its column asks for, never shallower than N's
+# nor deeper than the deeper of the two, the block named by the line that
+# opened it.
+#
+# THE THREE RULINGS OF PANEL 179, which is what this reader must agree with.
+# (a) A comment that crosses only a comma is kept: the comma is a separator
+# the canonical form places, and it is no counted token. (b) A comment
+# trailing a parenthesis `fmt` drops is kept when it trails the same code on
+# the same line: the parenthesis is no counted token either. (c) The
+# ascending-run rule `print/owners.hero` states is the canonical form, and
+# this reader's one stated exception: a run of block comments between the
+# same two logical lines is read from its last comment up, none placed in a
+# shallower block than one after it, and a comment the canonical form so
+# places is where it belongs (`comments101/ascending.hero` pins it).
+#
+# AND ONE CASE THE SITTING DID NOT SEE, found by the probe's first run over
+# the fixtures (2026-09-28), and a question for the author rather than a
+# ruling: (d) two groups under the same head, one directly under the other,
+# are one group (panel 036's canonical form), and a comment directly above
+# the second head, which the parser gives the group's first member as its
+# doc, is printed above that member inside the merged group. Read with the
+# second head as a logical line, the comment is the file's and the output's
+# is the group's, which was 640 of that run's 664 failures, every variant
+# of the fixtures that hold the shape. `fmt` keeps the second head where a merge would
+# change what documents what (`comments100/kepthead.hero`), so which heads
+# are gone is read from the two files, as the guard reads it: a head whose
+# group's first member has no head above it in the output is read as no
+# logical line in the variant either.
+#
+# What it cannot see, as the guard cannot: a comment moved between two
+# lines of one bracket with no counted token crossed, and the blank lines
+# around a comment.
+
+use token
+use source
+use lexer
+use probe/seed
+
+# One comment, placed: `owner` as this reader reads it, `canonical` where
+# the canonical form puts it (the run rule's block, for a block comment),
+# and its neighbours, `prior` the count of counted tokens before it less
+# one, `next` that count, -1 at the end.
+record Note
+    text: str
+    line: i64
+    kind: str
+    owner: str
+    canonical: str
+    prior: i64
+    next: i64
+
+# Every comment placed, the counted tokens' number, and each extern head
+# line by the counted token after it, its group's first member.
+record Model
+    notes: [Note]
+    total: i64
+    heads: [i64]
+
+# Whether the variant `was` and `fmt`'s output `now` place every comment
+# alike: "" when they do, else the first they do not, said with its line.
+# The variant is read with the heads the output does not have left out
+# (the rule `(d)` above).
+function compare(was: str, before: [token.Token], now: str, after: [token.Token]) -> str
+    printed = model(now, tokens: after, ignored: [])
+    first = model(was, tokens: before, ignored: [])
+    dropped: [i64] @ []
+
+    for head in first.heads
+        if !listed(printed.heads, value: head)
+            dropped @ dropped.push(head)
+
+    if dropped.len() == 0
+        return moved(was: first, now: printed)
+    return moved(was: model(was, tokens: before, ignored: dropped), now: printed)
+
+function listed(values: [i64], value: i64) -> bool
+    for one in values
+        if one == value
+            return true
+
+    return false
+
+# The comments of `text`, placed, reading no head in `ignored` (the counted
+# token after it) as a logical line.
+function model(text: str, tokens: [token.Token], ignored: [i64]) -> Model
+    words = seed.placed(text, tokens: tokens)
+    starts = source.starts_of(text)
+    keep = counted(words)
+    norm: [i64] @ []
+    depth: [i64] @ []
+    around: [str] @ []
+    count: i64 @ 0
+    open: [str] @ []
+
+    for i in range(from: 0, to: words.len())
+        norm @ norm.push(count)
+
+        if keep[i]
+            count @ count + 1
+        depth @ depth.push(open.len())
+        kind = words[i].kind
+        named: [str] @ []
+
+        # Only a comment is asked which brackets are around it.
+        if kind == .comment
+            for one in open
+                if one != ""
+                    named @ named.push(one)
+
+        around @ around.push(named.join(","))
+
+        if kind == .lparen
+            open @ open.push("")
+        else if kind == .lbracket || kind == .lbrace
+            open @ open.push(norm[i].to_str())
+        else if (kind == .rparen || kind == .rbracket || kind == .rbrace) && open.len() > 0
+            open @ open.slice(from: 0, to: open.len() - 1)
+
+    # The logical lines: a line whose first code token is at depth 0, its
+    # column, that token, and the blocks open after it.
+    column: [i64] @ []
+    first: [i64] @ []
+    blocks: [[str]] @ []
+    heads: [i64] @ []
+    stack: [str] @ ["file"]
+    seen: i64 @ -1
+
+    for i in range(from: 0, to: words.len())
+        w = words[i]
+
+        if w.kind == .comment || w.line == seen
+            continue
+        seen @ w.line
+
+        if depth[i] > 0
+            continue
+
+        if w.kind == .kw_extern
+            heads @ heads.push(norm[i])
+
+            if listed(ignored, value: norm[i])
+                continue
+        level = w.start / 4
+
+        if level > stack.len() - 1
+            opener: str @ "orphan"
+
+            if first.len() > 0
+                opener @ opened_by(text, starts: starts, words: words, norm: norm, at: first[first.len() - 1])
+
+            while stack.len() - 1 < level
+                stack @ stack.push(opener)
+        else if level < stack.len() - 1
+            stack @ stack.slice(from: 0, to: level + 1)
+        column @ column.push(w.start)
+        first @ first.push(i)
+        blocks @ blocks.push(stack)
+
+    notes: [Note] @ []
+    depths: [i64] @ []
+    between: [i64] @ []
+    stacks: [[str]] @ []
+    last_code: i64 @ -1
+    p: i64 @ -1
+
+    for i in range(from: 0, to: words.len())
+        w = words[i]
+
+        while p + 1 < first.len() && first[p + 1] <= i
+            p @ p + 1
+
+        if w.kind != .comment
+            last_code @ i
+            continue
+        next: i64 @ -1
+
+        if norm[i] < count
+            next @ norm[i]
+        body = seed.right_trimmed(text.slice(from: starts[w.line] + w.start, to: starts[w.line] + w.end))
+        note: Note @ Note(
+            text: body,
+            line: w.line + 1,
+            kind: "block",
+            owner: "",
+            canonical: "",
+            prior: norm[i] - 1,
+            next: next
+        )
+        level: i64 @ -1
+        open_here: [str] @ []
+
+        if last_code >= 0 && words[last_code].line == w.line
+            note.kind @ "trails"
+            note.owner @ "trails " + (norm[i] - 1).to_str()
+        else if depth[i] > 0
+            note.kind @ "bracket"
+            note.owner @ "bracket " + around[i]
+        else
+            above: i64 @ 0
+            below: i64 @ 0
+            open_here @ ["file"]
+
+            if p >= 0
+                above @ column[p] / 4
+                open_here @ blocks[p]
+
+            if p + 1 < first.len()
+                below @ column[p + 1] / 4
+
+                if below > above
+                    opener: str @ "orphan"
+
+                    if p >= 0
+                        opener @ opened_by(text, starts: starts, words: words, norm: norm, at: first[p])
+                    open_here @ open_here.push(opener)
+            high: i64 @ above
+
+            if below > high
+                high @ below
+            level @ w.start / 4
+
+            if level < below
+                level @ below
+
+            if level > high
+                level @ high
+            note.owner @ block_name(stack: open_here, level: level)
+        note.canonical @ note.owner
+        notes @ notes.push(note)
+        depths @ depths.push(level)
+        between @ between.push(p)
+        stacks @ stacks.push(open_here)
+
+    # The run rule, read from the last comment up.
+    later: i64 @ -1
+    later_between: i64 @ -2
+    k: i64 @ notes.len() - 1
+
+    while k >= 0
+        if notes[k].kind != "block"
+            later_between @ -2
+        else
+            level: i64 @ depths[k]
+
+            if later_between == between[k] && level < later
+                level @ later
+            notes[k].canonical @ block_name(stack: stacks[k], level: level)
+            later @ level
+            later_between @ between[k]
+        k @ k - 1
+
+    return Model(notes: notes, total: count, heads: heads)
+
+# Which tokens are counted: not a comment, a comma or a parenthesis, not
+# the three tokens of `-> ()`, not any token of an extern group's head line.
+function counted(words: [seed.Word]) -> [bool]
+    out: [bool] @ []
+
+    # A local before its push: a `&&` in the argument parts the push from its
+    # store, and the push copies the array (`ir/place_store.hero`'s pattern).
+    for w in words
+        kept = w.kind != .comment && w.kind != .comma && w.kind != .lparen && w.kind != .rparen
+        out @ out.push(kept)
+
+    code: [i64] @ []
+
+    for i in range(from: 0, to: words.len())
+        if words[i].kind != .comment
+            code @ code.push(i)
+
+    for a in range(from: 0, to: code.len())
+        i = code[a]
+
+        if words[i].kind == .arrow && a + 2 < code.len() && words[code[a + 1]].kind == .lparen && words[code[a + 2]].kind == .rparen
+            out[i] @ false
+
+        if words[i].kind == .kw_extern
+            b: i64 @ a
+
+            while b < code.len() && words[code[b]].line == words[i].line
+                out[code[b]] @ false
+                b @ b + 1
+
+    return out
+
+# The name of the block the logical line starting at word `at` opens: an
+# extern group by its header, anything else by its first counted token.
+function opened_by(text: str, starts: [i64], words: [seed.Word], norm: [i64], at: i64) -> str
+    if words[at].kind != .kw_extern
+        return norm[at].to_str()
+    j: i64 @ at + 1
+
+    while j < words.len() && words[j].kind == .comment
+        j @ j + 1
+
+    if j >= words.len()
+        return "extern"
+    w = words[j]
+    return "extern " + text.slice(from: starts[w.line] + w.start, to: starts[w.line] + w.end)
+
+function block_name(stack: [str], level: i64) -> str
+    if level < stack.len()
+        return "block " + level.to_str() + " " + stack[level]
+    return "block " + level.to_str() + " ?"
+
+## The comparison
+
+# The first comment `fmt`'s output does not keep where the variant has it,
+# said with its line in both, or "" when every one is kept.
+function moved(was: Model, now: Model) -> str
+    if was.total != now.total
+        return "the tokens `fmt` keeps are " + was.total.to_str() + " in the variant and " + now.total.to_str() + " in its output"
+    k: i64 @ 0
+
+    while k < was.notes.len() && k < now.notes.len()
+        x = was.notes[k]
+        y = now.notes[k]
+        at = "the comment on line " + x.line.to_str() + " (line " + y.line.to_str() + " of the output)"
+
+        if x.text != y.text
+            return at + " is not the comment the output has there"
+
+        if x.kind != y.kind
+            return at + " " + x.kind + " in the variant and " + y.kind + " in the output"
+
+        if x.canonical != y.owner
+            return at + " belongs to " + x.canonical + " and the output puts it in " + y.owner
+
+        if x.prior != y.prior || x.next != y.next
+            return at + " sits between tokens " + x.prior.to_str() + " and " + x.next.to_str() + ", and the output puts it between " + y.prior.to_str() + " and " + y.next.to_str()
+        k @ k + 1
+
+    if was.notes.len() != now.notes.len()
+        return "the variant has " + was.notes.len().to_str() + " comments and the output " + now.notes.len().to_str()
+    return ""
+
+## Tests
+
+function kept_between(was: str, now: str) -> str
+    return compare(was: was, before: lexer.lex_one(was).tokens, now: now, after: lexer.lex_one(now).tokens)
+
+test "a comment moved across a statement or out of its block is seen"
+    original = "function f()\n    print(1)\n    # between\n    print(2)\n"
+    across = "function f()\n    print(1)\n    print(2)\n    # between\n"
+    assert kept_between(was: original, now: across) != ""
+    assert kept_between(was: original, now: original) == ""
+    inner = "function f(c: bool)\n    if c\n        print(1)\n        # in the if\n    print(2)\n"
+    outer = "function f(c: bool)\n    if c\n        print(1)\n    # in the if\n    print(2)\n"
+    assert kept_between(was: inner, now: outer) != ""
+    lost = "function f()\n    print(1)\n    print(2)\n"
+    assert kept_between(was: original, now: lost) != ""
+
+test "the three rulings: a comma crossed, a parenthesis dropped, and an ascending run are kept"
+    # (a) the comment trails `a` in both, the comma no counted token.
+    comma = "function main()\n    f(a  # c\n        , b)\n"
+    placed = "function main()\n    f(a,  # c\n        b)\n"
+    assert kept_between(was: comma, now: placed) == ""
+
+    # (b) it trails `2` in both, the parentheses no counted tokens.
+    grouped = "function main()\n    x = (1 +\n        2)  # c\n    print(x)\n"
+    folded = "function main()\n    x = 1 + 2  # c\n    print(x)\n"
+    assert kept_between(was: grouped, now: folded) == ""
+
+    # (c) columns 4, 8, 12 climb after a line at 12 and before one at 4:
+    # read from the last up, all three are in the innermost block.
+    head = "function f(c: bool, d: bool)\n    if c\n        if d\n            print(1)\n"
+    climbing = head + "    # a\n        # b\n            # c\n    print(2)\n"
+    placed_run = head + "            # a\n            # b\n            # c\n    print(2)\n"
+    assert kept_between(was: climbing, now: placed_run) == ""
+    notes = model(climbing, tokens: lexer.lex_one(climbing).tokens, ignored: []).notes
+    assert notes[0].owner != notes[0].canonical
+    assert notes[2].owner == notes[2].canonical
+
+    # A comment alone at 4 there is the function body's, and one the
+    # output moved into the innermost block is seen.
+    alone = head + "    # a\n    print(2)\n"
+    deeper = head + "            # a\n    print(2)\n"
+    assert kept_between(was: alone, now: deeper) != ""
+
+test "a comment above the second of two groups under one head is the merged group's, and above a head kept it is the file's"
+    # (d): `fmt` merges the groups, the doc going above its member.
+    two = "extern \"x.h\"\n    record Ob tag ob\n\n# the doc of Pool\nextern \"x.h\"\n    record Pool tag pool\n"
+    merged = "extern \"x.h\"\n    record Ob tag ob\n\n    # the doc of Pool\n    record Pool tag pool\n"
+    assert kept_between(was: two, now: merged) == ""
+
+    # A head the output keeps is read as a head: the same comment moved into
+    # the group above it is seen.
+    moved_in = "extern \"x.h\"\n    record Ob tag ob\n    # the doc of Pool\nextern \"x.h\"\n    record Pool tag pool\n"
+    assert kept_between(was: two, now: moved_in) != ""

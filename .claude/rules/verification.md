@@ -53,13 +53,14 @@ happened here first.
 | touched | the suites that judge it |
 |---|---|
 | `selfhost/**` | `canonical` `layout` `order` `records`, **plus the compiler's own tests** |
+| `selfhost/print/**`, `selfhost/lexer.hero`, `selfhost/parse/**` | **`probe`** `surface`, plus everything `selfhost/**` already gets, and the run by hand below before a push |
 | `tests/golden/check/**` | **`check`** `annotations` `canonical` `fixes` |
 | `tests/golden/fixedbugs/**` | `annotations` `canonical` **`emission`** |
 | `tests/golden/unsupported/**` | **`unsupported`** `annotations` `canonical` |
 | `tests/golden/run/**` | `canonical` `determinism` **`emission`** `lines` `run` `warnings` |
 | `tests/golden/emit/**` | **`emit`** `canonical` `determinism` **`emission`** `warnings` |
 | `tests/golden/ir/**` | **`ir`** `canonical` `determinism` **`emission`** |
-| `tests/golden/surface-fixtures/**` | `annotations` `fixes` |
+| `tests/golden/surface-fixtures/**` | `annotations` `fixes` **`probe`** |
 | `examples/**` | `canonical` `corpus` `emission` `warnings` |
 | `spec/heroes-spec.md` | `spec` `special` **`grammar`** |
 | `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, plus everything `selfhost/**` already gets |
@@ -129,6 +130,30 @@ loosen the suite**: a defect the checker refuses belongs in
 before had already put four of its own, and which `emission` excludes by
 design. A premise written down is a premise that fails loudly; this one did its
 job.
+
+## The formatter's probe, by hand, before a push that touches `selfhost/print/`
+
+Added 2026-09-28 with `heroes probe`, panel 179 item 7. The net holds two of
+its forms: the fixtures under every family, one variant in two because the
+whole run measured past the sitting's 60 s of user time, and the whole tree
+under `multi` alone (`tests/harness/suite_probe.hero`). **What it cannot hold
+is the form that found the defects**: a comment at every place one can stand
+and every bracket broken after every token, over every file. So:
+
+> **Before a push that touches `selfhost/print/`, run `heroes probe <root>
+> --family single` and `--family bracket` over `selfhost`, `tests` and
+> `examples`, and `heroes probe` over the fixtures with no stride, and push
+> only over exit 0**, or over exit 2 on the failures `suite_probe`'s rows
+> name as an open defect's. A failure is a finding for `docs/work/DEFECTS.md`
+> or a repair in the same lane, never a reason to skip the run.
+
+Its cost, measured 2026-09-28 on one module and carried to the tree by
+arithmetic, so an inference: 25 µs per line of the seed for each variant with
+a compiler built at `-O2`, 8.6 variants per line in the two families, and
+73.3 million for the sum of the squared line counts of the 1,020 seeds, about
+4.4 CPU hours at `-O2` and five times that with the gate's plain build. It is
+the reason the run is by hand: build the compiler with `clang -O2` for it and
+run the six invocations side by side.
 
 ## What may run beside a gate, and what may not
 

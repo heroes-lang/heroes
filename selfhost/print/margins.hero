@@ -1,7 +1,7 @@
 # Where the lines `fmt` breaks start (design.md §4.15): every line of a
 # block's head after its first eight columns further in than elsewhere,
-# and a comma after a comment on a line of its own: `print/page.hero`'s
-# rule and `owners.lone_comma`'s. Split out of page on 2026-09-26, the fifth
+# and a comma after a comment on a line of its own, or with one after it:
+# `print/page.hero`'s rule and `owners.lone_comma`'s. Split out of page on 2026-09-26, the fifth
 # round of defects 099 and 101, which took it past §11's 300 lines.
 
 use token
@@ -25,6 +25,29 @@ function comma_line(@f: page.Fmt, s: source.Source, comments: [token.Span], line
 
     if comma + 1 < lines.tokens.len() && lines.tokens[comma + 1].kind == .comment
         page.trailing_comment(@f, s, comments, line: line)
+
+# The comma after a value ending before offset `after` that the author
+# wrote on a line after the value's, with a comment trailing it: it keeps
+# that line too, the comment after it, where any other comma goes up to the
+# value or, in a list or a map down the page, is dropped, and the comment
+# went on a line of its own, which the guard refused at exit 2 (`heroes
+# probe`'s first run over the fixtures, 2026-09-28: a list, a map, a call and
+# a signature, `comments101/commacomment.hero`). -1 otherwise.
+function commented_comma(lines: owners.Lines, s: source.Source, after: i64) -> i64
+    last = owners.index_at(lines, offset: after - 1)
+    comma = owners.code_after(lines, index: last)
+
+    if last < 0 || comma < 0 || lines.tokens[comma].kind != .comma || comma + 1 >= lines.tokens.len()
+        return -1
+    line = source.line_of(s, lines.tokens[comma].span.start)
+    said = lines.tokens[comma + 1]
+
+    if said.kind != .comment || source.line_of(s, said.span.start) != line
+        return -1
+
+    if source.line_of(s, lines.tokens[last].span.start) >= line
+        return -1
+    return comma
 
 # A block's head printed from page offset `from` on: every line after its
 # first, but a blank one, goes eight columns further in (the rule above).
