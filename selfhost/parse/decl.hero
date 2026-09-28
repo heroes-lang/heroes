@@ -41,18 +41,25 @@ use parse/members as parse_members
 use parse/use_line
 use parse/tails
 use parse/group
+use parse/swap_reading
 use grammar_expr
 
 ## The dispatcher
 
 # Read declarations until end of file. Every path either builds a declaration
 # or recovers past one, so this loop always makes progress.
+#
+# **A foreign word whose certain swap is a declaration's keyword opens that
+# declaration** (defect 133): `fn main() {` is read as `function main() {`,
+# so the brace is reported in the same run as the `fn`. Every declaration
+# below consumes its keyword without asking its kind, which is what lets the
+# `error` token the lexer left there stand for the keyword the swap writes.
 function file(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], @uses: [ast.Use], text: str)
     done: bool @ false
 
     while !done
         cursor.skip_terminators(@c)
-        k = cursor.current_kind(c)
+        k = swap_reading.reads_as(c, text)
 
         if k == .eof
             done @ true
@@ -106,10 +113,15 @@ record Head
     doc: [token.Span]
     name: token.Span
 
+#
+# The keyword is quoted as WRITTEN, which is the keyword's own spelling
+# everywhere but where the parser reads a foreign word as its swap (defect
+# 133): `const` alone on its line is *after `const`*, the word the author can
+# find, and never *after an unreadable token*.
 function head(@c: cursor.Cursor, text: str, example: str) -> Head?
     keyword = cursor.current_span(c)
     doc = cursor.take_docs(@c, text, keyword)
-    kind_text = cursor.found(c, text)
+    kind_text = "`" + cursor.slice_of(text, keyword) + "`"
     _ = cursor.bump(@c)
 
     if !cursor.at(c, .ident)
@@ -207,8 +219,9 @@ function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl],
     grammar_expr.eat_python_colon(@c)
     cursor.skip_terminators(@c)
 
+    # Past the line end, the next head is read as its swap (defect 133).
     if !cursor.at(c, .indent)
-        if !cursor.at_reported_error(c)
+        if !swap_reading.at_reported_error(c, text)
             cursor.error(
                 @c,
                 code: "empty_variant",
@@ -362,3 +375,51 @@ test "an absolute path in a group head is the machine's, not the program's"
     assert p.diagnostics.len() == 1
     assert p.diagnostics[0].code == "machine_locked_path"
     assert p.decls.len() == 1
+
+# Defect 133. `parse_source` returns the PARSER's diagnostics, so each case
+# counts what the construct itself costs beside the lexer's `reserved_word`.
+test "a foreign word whose certain swap is a declaration's keyword opens that declaration"
+    braced = parse_source("fn main() {\n    print(1)\n}\n")
+    assert braced.diagnostics.len() >= 1
+    assert braced.diagnostics[0].code == "missing_body"
+
+    untyped = parse_source("const MAX = 5\n")
+    assert untyped.diagnostics.len() == 1
+    assert untyped.diagnostics[0].code == "expected_constant_type"
+
+    # A correct rest is a whole declaration, and the one after it is untouched.
+    text = "struct Point\n    x: i64\nenum Color\n    red\nimport geom\nfunction f()\n    return\n"
+    whole = parse_source(text)
+    assert whole.diagnostics.len() == 0
+    assert whole.decls.len() == 3
+    assert whole.uses.len() == 1
+    assert cursor.slice_of(text, whole.decls[0].name) == "Point"
+    assert cursor.slice_of(text, whole.decls[2].name) == "f"
+
+    # And a group member reads the same way.
+    member = parse_source("extern \"m.h\"\n    fn q(x: f64) -> f64\n    const K: i64\n")
+    assert member.diagnostics.len() == 0
+    assert member.decls.len() == 2
+
+test "a swap is read only where its keyword is what the grammar expects"
+    # `fn` as a NAME: the swap writes `function function(`, a new error of
+    # the fix's own (defect 015's class), so it is not read and the lexer's
+    # diagnostic stands alone.
+    named = parse_source("function fn(x: i64)\n    return\n")
+    assert named.diagnostics.len() == 0
+
+    # Guidance is never read: `class` might be a record, and the parser does
+    # not guess.
+    guided = parse_source("class Point\n    x: i64\n")
+    assert guided.diagnostics.len() == 0
+    assert guided.decls.len() == 0
+
+    # `enum` writes `variant`, which no group holds.
+    grouped = parse_source("extern \"m.h\"\n    enum E\n")
+    assert grouped.diagnostics.len() == 0
+
+    # And the keyword is quoted as written.
+    bare = parse_source("const\n")
+    assert bare.diagnostics.len() == 1
+    said = "expected the declared name after `const`,"
+    assert bare.diagnostics[0].message.slice(from: 0, to: said.len()) == said

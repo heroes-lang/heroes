@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-133-a-record-opened-by-struct.hero:16:1: error[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
+tests/golden/check/fixedbugs-133-a-record-opened-by-struct.hero:20:1: error[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
+tests/golden/check/fixedbugs-133-a-record-opened-by-struct.hero:26:1: error[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
+tests/golden/check/fixedbugs-133-a-record-opened-by-struct.hero:16:1: error[empty_record]: a `record` needs at least one field, indented one level below it
+tests/golden/check/fixedbugs-133-a-record-opened-by-struct.hero:18:1: error[expected_declaration]: expected a declaration, found `}` — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test "…"`, or `extern`
+tests/golden/check/fixedbugs-133-a-record-opened-by-struct.hero:21:10: error[expected_field_type]: expected `:` and the field's type, found a name (`i64`)
+tests/golden/check/fixedbugs-133-a-record-opened-by-struct.hero:24:1: error[empty_record]: a `record` needs at least one field, indented one level below it

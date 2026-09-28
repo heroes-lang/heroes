@@ -33,6 +33,7 @@ use keywords
 use parse/type
 use parse/members as parse_members
 use parse/marks as parse_marks
+use parse/swap_reading
 use grammar_expr
 
 ## Linkage — where a declaration's implementation comes from
@@ -278,7 +279,7 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
     cursor.skip_terminators(@c)
 
     if !cursor.at(c, .indent) && !is_handle
-        if !cursor.at_reported_error(c)
+        if !swap_reading.at_reported_error(c, text)
             cursor.error(
                 @c,
                 code: "empty_record",

@@ -1,0 +1,22 @@
+# Fixed defect 133, 2026-09-29, the shapes beside it. Symptom of the repair
+# refused: the parser reading every certain swap as the keyword it writes,
+# as a lexer emitting `function` for `fn` would, cost a second diagnostic
+# wherever the swap is wrong where the word stands, each quoting a word the
+# author never wrote: `function fn(` cost `expected_name` "found
+# `function`", `record struct` cost `continuation_outside_brackets` and
+# `expected_name`, and `const x = 5` in a body cost `expected_expression`,
+# measured on 2026-09-29. Cause: a keyword stands where the grammar expects
+# it and nowhere else. So the parser reads a swap only where it dispatches
+# on the keyword the swap writes (`parse/swap_reading.hero`), and each line
+# below costs its `reserved_word` alone. That the certain fix writes a new
+# error in these three places is defect 015's class, not this one's.
+
+function fn(x: i64) -> i64  #~ reserved_word
+    return x
+
+record struct  #~ reserved_word
+    x: i64
+
+function main()
+    const x = 5  #~ reserved_word
+    print(x)
