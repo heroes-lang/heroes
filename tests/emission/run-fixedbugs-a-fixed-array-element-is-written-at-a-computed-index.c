@@ -191,13 +191,13 @@ void h_fixedbugsafixedarrayelementiswrittenatacomputedindex_main(void) {
     struct quad t7;
     int64_t t8;
     int64_t t9;
-    HeroArrayHeader * t10 = {0};
+    HeroArrayHeader * t10;
     int64_t t11;
     int64_t t12;
-    HeroArrayHeader * t13 = {0};
+    HeroArrayHeader * t13;
     int64_t t14;
     bool t15;
-    HeroArrayHeader * t16 = {0};
+    HeroArrayHeader * t16;
     int64_t t17;
     int64_t t18;
     int64_t t19;
@@ -212,22 +212,22 @@ void h_fixedbugsafixedarrayelementiswrittenatacomputedindex_main(void) {
     struct quad t29;
     int64_t t31;
     int32_t t32;
-    HeroStr t33 = {0};
+    HeroStr t33;
     struct quad t34;
     int64_t t36;
     int32_t t37;
-    HeroStr t38 = {0};
+    HeroStr t38;
     struct quad t39;
     int64_t t41;
     int32_t t42;
-    HeroStr t43 = {0};
+    HeroStr t43;
     struct quad t44;
     int64_t t46;
     int32_t t47;
-    HeroStr t48 = {0};
+    HeroStr t48;
     struct quad t49;
     int64_t t50;
-    HeroArrayHeader * t51 = {0};
+    HeroArrayHeader * t51;
     int64_t t52;
     int64_t t53;
     int64_t t54;
@@ -235,19 +235,19 @@ void h_fixedbugsafixedarrayelementiswrittenatacomputedindex_main(void) {
     struct quad t56;
     int64_t t58;
     int32_t t59;
-    HeroStr t60 = {0};
+    HeroStr t60;
     struct quad t61;
     int64_t t63;
     int32_t t64;
-    HeroStr t65 = {0};
+    HeroStr t65;
     struct quad t66;
     int64_t t67;
-    HeroStr t68 = {0};
+    HeroStr t68;
     struct quad t69;
     int64_t t70;
-    HeroArrayHeader * t71 = {0};
-    HeroArrayHeader * t72 = {0};
-    HeroArrayHeader * t73 = {0};
+    HeroArrayHeader * t71;
+    HeroArrayHeader * t72;
+    HeroArrayHeader * t73;
     goto bb0;
 bb0:
 #line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
@@ -477,7 +477,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -486,9 +486,9 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
     int64_t t9;
     int64_t t10;
     int64_t t11;
-    HeroArrayHeader * t12 = {0};
-    HeroArrayHeader * t13 = {0};
-    HeroArrayHeader * t14 = {0};
+    HeroArrayHeader * t12;
+    HeroArrayHeader * t13;
+    HeroArrayHeader * t14;
     goto bb0;
 bb0:
 #line 27 "<heroes library>"
@@ -561,20 +561,20 @@ HeroArrayHeader * h_library_args(void) {
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
     HeroStr h3_own3 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
     bool t5;
     int64_t t7;
-    HeroStr t8 = {0};
+    HeroStr t8;
     int64_t t10;
     int64_t t11;
     int64_t t12;
-    HeroArrayHeader * t13 = {0};
-    HeroArrayHeader * t14 = {0};
-    HeroArrayHeader * t15 = {0};
-    HeroStr t16 = {0};
+    HeroArrayHeader * t13;
+    HeroArrayHeader * t14;
+    HeroArrayHeader * t15;
+    HeroStr t16;
     goto bb0;
 bb0:
 #line 189 "<heroes library>"

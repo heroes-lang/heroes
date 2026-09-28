@@ -49,6 +49,7 @@ extern "hero_os.h"
     function hero_fs_mkdir_all(path: cstr lent) -> i64
     function hero_fs_remove(path: cstr lent) -> i64
     function hero_fs_rename(from: cstr lent, to: cstr lent) -> i64
+    function hero_os_pid() -> i64
 
 extern "stdlib.h"
     function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
@@ -184,6 +185,12 @@ function files_under(dir: str) -> [str]?
 
 function env(name: str) -> str
     return validated(c: getenv(name: name.cstr())).default("")
+
+# This process's own id, as the operating system numbers it: what makes a
+# file under `build/` one that no other `heroes` process in the same tree
+# writes (defect 057's rule, `cli/clang_floor.identity`'s use of it).
+function pid() -> i64
+    return hero_os_pid()
 
 ## Tests
 

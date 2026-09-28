@@ -156,21 +156,21 @@ struct pair h_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) 
     struct pair t3;
     int64_t t4;
     int32_t t5;
-    h_0opt_e201354 t6 = {0};
-    h_0opt_e201354 t7 = {0};
+    h_0opt_e201354 t6;
+    h_0opt_e201354 t7;
     int64_t t8;
     int64_t t9;
     bool t10;
-    h_0opt_e201354 t11 = {0};
-    HeroFailure t12 = {0};
-    h_0opt_e201354 t13 = {0};
+    h_0opt_e201354 t11;
+    HeroFailure t12;
+    h_0opt_e201354 t13;
     int64_t t14;
     bool t15;
     struct pair t16;
     node * t17;
     struct pair t18;
-    h_0opt_e201354 t19 = {0};
-    h_0opt_e201354 t20 = {0};
+    h_0opt_e201354 t19;
+    h_0opt_e201354 t20;
     goto bb0;
 bb0:
 #line 20 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
@@ -279,7 +279,7 @@ struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0
 #line 26 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 void h_deadhandleinacallbackresultrecordnamesitsfield_main(void) {
 #line 282 "deadhandleinacallbackresultrecordnamesitsfield.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     h_0fn_22e3cba1 t2;
     int64_t t3;
     goto bb0;

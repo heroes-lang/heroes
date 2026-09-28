@@ -181,7 +181,7 @@ void h_main_main(void) {
     AutomationEvent h2_event;
     Rectangle h3_box;
     uint32_t t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     int32_t t3;
     int32_t t4;
     int32_t t5;
@@ -206,7 +206,7 @@ void h_main_main(void) {
     Vector2 t24;
     Vector2 t25;
     float t26;
-    HeroStr t27 = {0};
+    HeroStr t27;
     Vector2 t28;
     float t29;
     uint32_t t30;

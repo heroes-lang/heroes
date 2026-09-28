@@ -100,10 +100,10 @@ int64_t h_coreblocks_first_even_after(HeroArrayHeader * h0_xs, int64_t h1_floor)
     int64_t h3_v;
     int64_t t1;
     int64_t t2;
-    HeroArrayHeader * t3 = {0};
+    HeroArrayHeader * t3;
     int64_t t4;
     bool t5;
-    HeroArrayHeader * t6 = {0};
+    HeroArrayHeader * t6;
     int64_t t7;
     int64_t t8;
     int64_t t9;
@@ -232,13 +232,13 @@ HeroStr h_coreblocks_named(int64_t h0_n) {
     int64_t t5;
     int64_t t6;
     bool t7;
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
-    HeroStr t10 = {0};
-    HeroStr t11 = {0};
-    HeroStr t12 = {0};
-    HeroStr t13 = {0};
-    HeroStr t14 = {0};
+    HeroStr t8;
+    HeroStr t9;
+    HeroStr t10;
+    HeroStr t11;
+    HeroStr t12;
+    HeroStr t13;
+    HeroStr t14;
     goto bb0;
 bb0:
 #line 22 "tests/golden/ir/core-blocks.hero"

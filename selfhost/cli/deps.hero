@@ -50,6 +50,17 @@
 # path and change their contents is caught by the digest instead, and
 # one that changes neither cannot matter.
 #
+# **The paragraph above holds for an UPGRADE and not for a SWITCH** (defect
+# 122, 2026-09-28). With two clangs installed side by side, Apple's 21 and
+# Homebrew's 22.1.8 on one Mac, choosing the other one on the `PATH` removes
+# no header: the old listing's `.../clang/21/include/` files are all still
+# there and still hash the same, so every object stayed fresh, and a program
+# printing `__clang_major__` printed 21 under clang 22 (panel 182's critic,
+# then the coordinator's reproducer). And the one that "cannot matter" does:
+# a flag added to `flags.hero` changes no header either. Neither is this
+# file's question, which is what a compile READ; both are the key's, and the
+# key now carries the compiler and its flags (`Toolchain.compiler_key`).
+#
 # THE FALLBACKS ALL POINT THE LOUD WAY (CLAUDE.md §11). No record, an
 # unreadable record, a short line, a vanished header: every one of them
 # is "not fresh", which recompiles. Nothing here can turn a miss into a

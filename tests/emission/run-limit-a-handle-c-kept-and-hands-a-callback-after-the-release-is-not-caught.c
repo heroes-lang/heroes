@@ -150,7 +150,7 @@ void h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_main(void) {
     h_0fn_7a996e48 t2;
     node * t3;
     node * t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     int64_t t6;
     goto bb0;
 bb0:

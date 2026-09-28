@@ -115,12 +115,12 @@ void h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_main(void) {
     bio * h1_b;
     ssl * t1;
     bio * t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     ssl * t4;
     bio * t5;
     bio * t6;
     ssl * t7;
-    HeroStr t8 = {0};
+    HeroStr t8;
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"

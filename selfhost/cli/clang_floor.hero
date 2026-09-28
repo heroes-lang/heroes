@@ -1,13 +1,24 @@
-# The clang floor: the oldest clang this compiler is measured on, asked of
-# the machine once per build and by `heroes doctor` (panel 103, author
-# instruction 2026-09-03: *"if you need to, you can require a recent minimum
-# clang version, whichever you like"*; M-robustness-guards step 3c). Its own module
-# because `cli/toolchain.hero` was at the ceiling and the floor is a concern
-# with a name: what version answers, whether it is enough, and what to say
-# when it is not.
+# The clang this build compiles with: which one answers, whether it is
+# enough, and what to say when it is not. The floor is the oldest clang this
+# compiler is measured on, asked of the machine once per build and by
+# `heroes doctor` (panel 103, author instruction 2026-09-03: *"if you need to,
+# you can require a recent minimum clang version, whichever you like"*;
+# M-robustness-guards step 3c). Its own module because `cli/toolchain.hero`
+# was at the ceiling and the floor is a concern with a name.
+#
+# **WHICH CLANG ANSWERS IS ALSO WHAT EVERY CACHED OBJECT IS KEYED ON** (defect
+# 122, panel 182's item 4). The keys under `build/` held the Heroes version,
+# the level, the text, the runtime and the search paths, and not the C
+# compiler: a program printing `__clang_major__` built warm under Homebrew
+# clang 22.1.8 printed 21, the object Apple clang 21 had left, and a compiler
+# with one more flag and the same `VERSION` reused every object (the sitting's
+# critic, and the coordinator's reproducer). `identity` is the answer the keys
+# now carry, asked once per build where `--version` was asked before, so a
+# build runs no more clang processes than it did.
 
 use bytes
 use cli/process
+use cli/strings
 
 # THE CLANG FLOOR: 18 (author instruction 2026-09-03, panel 103 — *"if you
 # need to, you can require a recent minimum clang version, whichever you
@@ -68,39 +79,73 @@ function text_after(text: str, marker: str) -> str?
 
     return fail(code: "none", msg: "marker absent")
 
-# What this machine's clang answers `--version` with — its first line — or
-# absent when clang is not on the PATH. Asked once per build in `produce`,
-# and by `heroes doctor`; a few milliseconds beside a link.
-function version_line(build_dir: str) -> str?
-    out_path = build_dir + "/clang-version.txt"
+# WHAT THIS MACHINE'S CLANG SAYS IT WILL RUN for `words`, the flags every
+# object is compiled under: `clang -###`, which prints the banner `--version`
+# prints (its first four lines: the version, the target, the thread model and
+# the directory the binary lives in) and then, without running it, the
+# compiler invocation those flags resolve to on this machine, sysroot, SDK,
+# target and include directories included. So the answer changes when the
+# binary on the PATH does, when a flag does, and when an input clang takes
+# from the environment rather than the command line does (`SDKROOT`, `CPATH`),
+# where `--version` and the flag list alone would change for the first two.
+# Measured 2026-09-28 on this Mac: the same answer twice from one clang, and
+# a different one from Apple clang 21 and Homebrew clang 22.1.8.
+#
+# The input is the runtime's own `runtime.c`, because the driver refuses an
+# input that is not there and that one is wherever a build can run; `-###`
+# compiles nothing and writes no object. The answer goes to a file named for
+# THIS process, since two builds in one tree under two clangs would otherwise
+# each read the other's (defect 057's shape: a path nobody else writes cannot
+# be substituted), and the file is removed once read. Absent, with what was
+# said, when clang cannot be started or refuses the words; the build's own
+# compile then says why in clang's words.
+function identity(build_dir: str, runtime: str, words: [str]) -> str?
     process.mkdir_all(build_dir)?
-    ran = process.run(program: "clang", words: ["clang", "--version"], out: out_path, err: process.discard())
+    said_path = build_dir + "/clang-identity-" + process.pid().to_str() + ".txt"
+    line: [str] @ strings.with_all(list: ["clang", "-###"], more: words)
+    line @ strings.with_all(list: line, more: ["-c", runtime + "/runtime.c", "-o", "identity.o"])
+    ran = process.run(program: "clang", words: line, out: process.discard(), err: said_path)
+    said = read_file(said_path)
 
-    if !ran.started || ran.code != 0
-        return fail(code: "none", msg: "clang did not answer --version")
-    said = read_file(out_path)
+    # A removal that fails leaves a file no later build reads: its name
+    # carries a process id that ends with this process.
+    _ = process.remove_file(said_path).is_err()
+
+    if !ran.started
+        return fail(code: "none", msg: "clang could not be started")
 
     if said.is_err()
-        return fail(code: "none", msg: "nothing was said")
+        return fail(code: "none", msg: "clang said nothing")
+
+    # clang on Windows ends its lines `\r\n` (`toolchain.run_clang` has the
+    # measurement); the answer is normalised where it enters, so the same
+    # compiler keys the same objects whichever way its stream was opened.
+    text = strings.without_returns(said.must())
+
+    if ran.code != 0
+        return fail(code: "none", msg: text)
+    return ok(text)
+
+# The first line of what clang said, its version banner.
+function banner(said: str) -> str
     first: [str] @ []
 
-    for ch in said.must().chars()
-        if ch == "\n" || ch == "\r"
+    for ch in said.chars()
+        if ch == "\n"
             break
         first @ first.push(ch)
 
-    return ok(first.join(""))
+    return first.join("")
 
-# The floor, enforced: absent when clang is at or above it, a message the
-# CLI prints at exit 2 otherwise — the tool could not run, which is what
-# exit 2 means (CLAUDE.md §10). A clang that does not answer is left to
-# `run_clang`, which already says *not on this machine's PATH*.
-function check(build_dir: str) -> ()?
-    line = version_line(build_dir)
-
-    if line.is_err()
+# The floor, enforced on the banner `identity` read: absent when clang is at
+# or above it, a message the CLI prints at exit 2 otherwise — the tool could
+# not run, which is what exit 2 means (CLAUDE.md §10). A clang that did not
+# answer, or a banner with no version in it, is left to `run_clang`, which
+# already says *not on this machine's PATH*.
+function check(banner_line: str) -> ()?
+    if banner_line.len() == 0
         return ok()
-    major = major_of(line.must())
+    major = major_of(banner_line)
 
     if major.is_err()
         return ok()
@@ -108,7 +153,7 @@ function check(build_dir: str) -> ()?
     if major.must() < FLOOR
         return fail(
             code: "clang",
-            msg: "clang " + FLOOR.to_str() + " or newer is required, and this machine's clang is `" + line.must() + "` — the flags this compiler passes and the way it reads a header's parameter types were measured on clang 18, 21 and 22; an older clang answers differently, and a guess would be silent. `heroes doctor` says what this machine has"
+            msg: "clang " + FLOOR.to_str() + " or newer is required, and this machine's clang is `" + banner_line + "` — the flags this compiler passes and the way it reads a header's parameter types were measured on clang 18, 21 and 22; an older clang answers differently, and a guess would be silent. `heroes doctor` says what this machine has"
         )
     return ok()
 
@@ -129,4 +174,26 @@ test "the clang floor reads the major from every vendor's first line, and holds 
     assert major_of("clang versión 20").is_err()
 
     # This machine's own clang is at or above the floor, or nothing here would build.
-    assert !check("build").is_err()
+    here = identity(build_dir: "build", runtime: "runtime", words: ["-std=gnu11"])
+    assert !here.is_err()
+    assert !check(banner(here.must())).is_err()
+    assert check(banner_line: "Ubuntu clang version 17.0.6").is_err()
+    assert !check(banner_line: "").is_err()
+
+test "the identity is what this clang says it will run, and a flag moves it"
+    # Asked of the real clang: the banner is its first line, as `--version`
+    # prints it, and one more flag is another answer. The flag is a macro
+    # definition, the kind the driver hands to the compiler it runs; that
+    # it appears in the answer is what makes a changed flag list a changed
+    # key (defect 122), asserted of the world rather than of this file.
+    one = identity(build_dir: "build", runtime: "runtime", words: ["-std=gnu11", "-O0"]).must()
+    same = identity(build_dir: "build", runtime: "runtime", words: ["-std=gnu11", "-O0"]).must()
+    other = identity(build_dir: "build", runtime: "runtime", words: ["-std=gnu11", "-O0", "-DHEROES_KEY_PROBE=1"]).must(
+    )
+    assert !major_of(banner(one)).is_err()
+    assert one == same
+    assert one != other
+
+    # A word clang refuses is an absent identity carrying what it said.
+    refused = identity(build_dir: "build", runtime: "runtime", words: ["--heroes-no-such-flag"])
+    assert refused.is_err()

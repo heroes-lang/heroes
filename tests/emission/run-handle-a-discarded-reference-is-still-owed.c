@@ -111,12 +111,12 @@ void h_handleadiscardedreferenceisstillowed_main(void) {
     ob * h0_a;
     ob * t1;
     ob * t2;
-    HeroStr t4 = {0};
+    HeroStr t4;
     ob * t5;
     int64_t t6;
     ob * t7;
     ob * t8;
-    HeroStr t9 = {0};
+    HeroStr t9;
     goto bb0;
 bb0:
 #line 14 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"

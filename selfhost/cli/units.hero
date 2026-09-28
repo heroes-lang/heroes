@@ -8,7 +8,12 @@
 # the sanitizer bit, the module name, the TU's own emitted text, the
 # runtime's whole contents, the search paths, and the RESOLVED package
 # cflags — machine state that changes with no source edit, so the name
-# is not enough. Link names deliberately do NOT enter it: the link line
+# is not enough. **And, since defect 122, the C compiler and its flags**
+# (`Toolchain.compiler_key`, what this machine's clang says it runs for the
+# flag list), with the sanitizer flags themselves in place of the bit. The
+# fingerprint is the Heroes `VERSION`, so until then an object compiled by
+# Apple clang 21 was a warm hit for Homebrew clang 22.1.8, and one compiled
+# without a flag for a compiler that passes it (panel 182's critic). Link names deliberately do NOT enter it: the link line
 # is re-run on every build (it is one clang call over cached objects),
 # so a `link` edit takes effect without a recompile — which is the
 # 093 ffi-pragmatist's falsifier answered by construction.
@@ -37,6 +42,7 @@
 
 use source
 use cli/io
+use cli/clang_floor
 use cli/deps
 use cli/digest
 use cli/flags
@@ -75,12 +81,8 @@ function components(s: source.Source) -> [str]
 # hashing — about 104 s at this compiler's measured 1.2 MB/s. Read
 # once, hashed once, answered once per TU.
 function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, package_flags: [str], source_dir: str, search_include: [str], @memo: {str: str}) -> str?
-    san: str @ ""
-
-    if sanitize
-        san @ "+san"
     key = digest.digest(
-        t.fingerprint + "|tu|" + level + san + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|" + package_flags.join(" ")
+        t.fingerprint + "|tu|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|" + package_flags.join(" ")
     )
     dir = t.build + "/tu-" + key
     made = process.mkdir_all(dir)
@@ -261,3 +263,29 @@ function link_objects(t: toolchain.Toolchain, objects: [str], binary: str, level
     if process.rename_over(from: staged, to: binary).is_err()
         return fail(code: "failed", msg: "cannot publish " + binary)
     return ok()
+
+## Tests
+
+test "a unit compiled under one clang answer is compiled again under another (defect 122)"
+    here = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+
+    # clang's own answer under one more flag, asked of the real compiler.
+    more = strings.with_all(list: flags.flags(), more: ["-DHEROES_KEY_PROBE=1"])
+    said = clang_floor.identity(build_dir: "build", runtime: here.runtime, words: more)
+    other: toolchain.Toolchain @ here
+    other.compiler_key @ digest.digest(more.join(" ") + "|" + toolchain.answer_text(said))
+    text = "#include <stdint.h>\nint64_t heroes_key_probe(void);\nint64_t heroes_key_probe(void) { return 1; }\n"
+    none: [str] = []
+    memo: {str: str} @ {}
+    first = tu_object(here, module: "keyprobe", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).must(
+    )
+    second = tu_object(other, module: "keyprobe", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).must(
+    )
+
+    # Another directory, compiled there, and the first still the first's.
+    assert first != second
+    assert process.path_exists(path: first)
+    assert process.path_exists(path: second)
+    again = tu_object(here, module: "keyprobe", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).must(
+    )
+    assert again == first

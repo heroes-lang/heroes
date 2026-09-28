@@ -100,10 +100,10 @@ HeroStr h_afunctiontypethatnamesitsownway_relay(h_0fn_573f54ce h0_f) {
 #line 101 "afunctiontypethatnamesitsownway.c"
     HeroStr h1_own1 = {0};
     h_0fn_573f54ce t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     int64_t t3;
-    HeroStr t4 = {0};
-    HeroStr t5 = {0};
+    HeroStr t4;
+    HeroStr t5;
     goto bb0;
 bb0:
 #line 25 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
@@ -134,8 +134,8 @@ void h_afunctiontypethatnamesitsownway_main(void) {
 #line 135 "afunctiontypethatnamesitsownway.c"
     HeroStr h0_own0 = {0};
     h_0fn_1fb9aa18 t1;
-    HeroStr t2 = {0};
-    HeroStr t3 = {0};
+    HeroStr t2;
+    HeroStr t3;
     goto bb0;
 bb0:
 #line 28 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
@@ -163,15 +163,15 @@ HeroStr h_afunctiontypethatnamesitsownway_pair(HeroStr h0_code, int64_t h1_at) {
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
-    HeroStr t3 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    HeroStr t3;
     int64_t t4;
-    HeroStr t5 = {0};
-    HeroStr t6 = {0};
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
+    HeroStr t5;
+    HeroStr t6;
+    HeroStr t7;
+    HeroStr t8;
+    HeroStr t9;
     goto bb0;
 bb0:
 #line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"

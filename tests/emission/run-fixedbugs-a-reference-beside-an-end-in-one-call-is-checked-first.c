@@ -110,11 +110,11 @@ void h_fixedbugsareferencebesideanendinonecallischeckedfirst_main(void) {
 #line 111 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
     ob * h0_a;
     ob * t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     ob * t3;
     ob * t4;
     ob * t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     goto bb0;
 bb0:
 #line 15 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"

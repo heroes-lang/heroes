@@ -115,15 +115,15 @@ void h_handlealiveunderwhenafterafailedend_main(void) {
     db * t1;
     db * t2;
     int32_t t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     int32_t t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     db * t7;
     int64_t t8;
     db * t9;
     db * t10;
     int32_t t11;
-    HeroStr t12 = {0};
+    HeroStr t12;
     int32_t t13;
     goto bb0;
 bb0:

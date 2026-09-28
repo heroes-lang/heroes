@@ -105,36 +105,36 @@ void h_fixedbugsmapstoreleaked_main(void) {
     HeroStr h4_own4 = {0};
     HeroStr h5_own5 = {0};
     h_0opt_f87774a h6_own6 = {0};
-    HeroMapHeader * t1 = {0};
-    HeroStr t2 = {0};
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
-    HeroStr t5 = {0};
-    HeroStr t6 = {0};
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
-    HeroMapHeader * t10 = {0};
-    HeroStr t11 = {0};
-    h_0opt_f87774a t12 = {0};
-    h_0opt_f87774a t13 = {0};
+    HeroMapHeader * t1;
+    HeroStr t2;
+    HeroStr t3;
+    HeroStr t4;
+    HeroStr t5;
+    HeroStr t6;
+    HeroStr t7;
+    HeroStr t8;
+    HeroStr t9;
+    HeroMapHeader * t10;
+    HeroStr t11;
+    h_0opt_f87774a t12;
+    h_0opt_f87774a t13;
     int64_t t14;
     int64_t t15;
     bool t16;
-    h_0opt_f87774a t17 = {0};
-    HeroStr t18 = {0};
-    HeroStr t19 = {0};
-    HeroStr t20 = {0};
-    HeroMapHeader * t21 = {0};
+    h_0opt_f87774a t17;
+    HeroStr t18;
+    HeroStr t19;
+    HeroStr t20;
+    HeroMapHeader * t21;
     int64_t t22;
-    HeroMapHeader * t23 = {0};
-    HeroMapHeader * t24 = {0};
-    HeroStr t25 = {0};
-    HeroStr t26 = {0};
-    h_0opt_f87774a t27 = {0};
-    h_0opt_f87774a t28 = {0};
-    HeroStr t29 = {0};
-    HeroStr t30 = {0};
+    HeroMapHeader * t23;
+    HeroMapHeader * t24;
+    HeroStr t25;
+    HeroStr t26;
+    h_0opt_f87774a t27;
+    h_0opt_f87774a t28;
+    HeroStr t29;
+    HeroStr t30;
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/fixedbugs-map-store-leaked.hero"
@@ -206,7 +206,7 @@ bb0:
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
       } else {
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
-        t12.tag = INT64_C(0);
+        t12 = (h_0opt_f87774a){.tag = INT64_C(0)};
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
         (&hero_desc_str)->copy(&t12.as.ok, found);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"

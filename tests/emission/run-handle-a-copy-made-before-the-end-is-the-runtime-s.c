@@ -112,12 +112,12 @@ void h_handleacopymadebeforetheendistheruntimes_main(void) {
     int64_t t1;
     node * t2;
     node * t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     node * t5;
     int64_t t6;
     node * t7;
     node * t8;
-    HeroStr t9 = {0};
+    HeroStr t9;
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"

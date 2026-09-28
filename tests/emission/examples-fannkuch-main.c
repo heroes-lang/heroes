@@ -137,25 +137,25 @@ int64_t h_main_flips(HeroArrayHeader * h0_order) {
     int64_t h3_low;
     int64_t h4_high;
     int64_t h5_held;
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
-    HeroArrayHeader * t3 = {0};
+    HeroArrayHeader * t3;
     int64_t t4;
     int64_t t5;
     int64_t t6;
     bool t7;
     int64_t t8;
-    HeroArrayHeader * t9 = {0};
+    HeroArrayHeader * t9;
     int64_t t10;
     int64_t t11;
     int64_t t12;
     int64_t t13;
     bool t14;
-    HeroArrayHeader * t15 = {0};
+    HeroArrayHeader * t15;
     int64_t t16;
     int64_t t17;
     int64_t t18;
-    HeroArrayHeader * t19 = {0};
+    HeroArrayHeader * t19;
     int64_t t20;
     int64_t t21;
     int64_t t22;
@@ -170,7 +170,7 @@ int64_t h_main_flips(HeroArrayHeader * h0_order) {
     int64_t t31;
     int64_t t32;
     int64_t t33;
-    HeroArrayHeader * t34 = {0};
+    HeroArrayHeader * t34;
     goto bb0;
 bb0:
 #line 74 "examples/fannkuch/main.hero"
@@ -303,8 +303,8 @@ h_main_Walk h_main_start(int64_t h0_n) {
     HeroArrayHeader * h4_own4 = {0};
     HeroArrayHeader * h5_own5 = {0};
     h_main_Walk h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
     int64_t t5;
@@ -314,16 +314,16 @@ h_main_Walk h_main_start(int64_t h0_n) {
     int64_t t13;
     int64_t t14;
     int64_t t15;
-    HeroArrayHeader * t16 = {0};
-    HeroArrayHeader * t17 = {0};
+    HeroArrayHeader * t16;
+    HeroArrayHeader * t17;
     int64_t t18;
     bool t19;
-    h_main_Walk t20 = {0};
-    HeroArrayHeader * t21 = {0};
-    HeroArrayHeader * t22 = {0};
-    HeroArrayHeader * t23 = {0};
-    HeroArrayHeader * t24 = {0};
-    h_main_Walk t25 = {0};
+    h_main_Walk t20;
+    HeroArrayHeader * t21;
+    HeroArrayHeader * t22;
+    HeroArrayHeader * t23;
+    HeroArrayHeader * t24;
+    h_main_Walk t25;
     goto bb0;
 bb0:
 #line 95 "examples/fannkuch/main.hero"
@@ -441,18 +441,18 @@ bb3:
 #line 109 "examples/fannkuch/main.hero"
 void h_main_reset(h_main_Walk *ph0_w) {
 #line 444 "main.c"
-    h_main_Walk h0_w = {0};
-    h_main_Walk t1 = {0};
+    h_main_Walk h0_w;
+    h_main_Walk t1;
     int64_t t2;
     int64_t t3;
     bool t4;
-    h_main_Walk t5 = {0};
+    h_main_Walk t5;
     int64_t t6;
     int64_t t7;
     int64_t t8;
-    h_main_Walk t9 = {0};
+    h_main_Walk t9;
     int64_t t10;
-    h_main_Walk t11 = {0};
+    h_main_Walk t11;
     int64_t t12;
     int64_t t13;
     int64_t t14;
@@ -509,29 +509,29 @@ bb3:
 #line 118 "examples/fannkuch/main.hero"
 void h_main_advance(h_main_Walk *ph0_w) {
 #line 512 "main.c"
-    h_main_Walk h0_w = {0};
+    h_main_Walk h0_w;
     int64_t h1_head;
     int64_t h2_i;
     bool t1;
-    h_main_Walk t2 = {0};
+    h_main_Walk t2;
     int64_t t3;
-    h_main_Walk t4 = {0};
-    HeroArrayHeader * t5 = {0};
+    h_main_Walk t4;
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
     bool t8;
-    h_main_Walk t9 = {0};
-    HeroArrayHeader * t10 = {0};
+    h_main_Walk t9;
+    HeroArrayHeader * t10;
     int64_t t11;
     int64_t t12;
     int64_t t13;
     int64_t t14;
-    h_main_Walk t15 = {0};
+    h_main_Walk t15;
     int64_t t16;
     bool t17;
     int64_t t18;
-    h_main_Walk t19 = {0};
-    HeroArrayHeader * t20 = {0};
+    h_main_Walk t19;
+    HeroArrayHeader * t20;
     int64_t t21;
     int64_t t22;
     int64_t t23;
@@ -539,26 +539,26 @@ void h_main_advance(h_main_Walk *ph0_w) {
     int64_t t25;
     int64_t t26;
     int64_t t27;
-    h_main_Walk t28 = {0};
+    h_main_Walk t28;
     int64_t t29;
     int64_t t30;
-    h_main_Walk t31 = {0};
+    h_main_Walk t31;
     int64_t t32;
-    h_main_Walk t33 = {0};
-    HeroArrayHeader * t34 = {0};
-    h_main_Walk t35 = {0};
+    h_main_Walk t33;
+    HeroArrayHeader * t34;
+    h_main_Walk t35;
     int64_t t36;
     int64_t t37;
     int64_t t38;
     int64_t t39;
-    h_main_Walk t40 = {0};
-    HeroArrayHeader * t41 = {0};
-    h_main_Walk t42 = {0};
+    h_main_Walk t40;
+    HeroArrayHeader * t41;
+    h_main_Walk t42;
     int64_t t43;
     int64_t t44;
     int64_t t45;
     bool t46;
-    h_main_Walk t47 = {0};
+    h_main_Walk t47;
     int64_t t48;
     int64_t t49;
     int64_t t50;
@@ -738,15 +738,15 @@ h_main_Fannkuch h_main_fannkuch(int64_t h0_n) {
     int64_t h5_count;
     h_main_Walk h6_own6 = {0};
     int64_t t1;
-    h_main_Walk t2 = {0};
+    h_main_Walk t2;
     int64_t t3;
     int64_t t4;
     int64_t t5;
-    h_main_Walk t6 = {0};
+    h_main_Walk t6;
     bool t7;
     bool t8;
-    h_main_Walk t9 = {0};
-    HeroArrayHeader * t10 = {0};
+    h_main_Walk t9;
+    HeroArrayHeader * t10;
     int64_t t11;
     int64_t t12;
     int64_t t13;
@@ -770,8 +770,8 @@ h_main_Fannkuch h_main_fannkuch(int64_t h0_n) {
     int64_t t31;
     int64_t t32;
     h_main_Fannkuch t33;
-    h_main_Walk t34 = {0};
-    h_main_Walk t35 = {0};
+    h_main_Walk t34;
+    h_main_Walk t35;
     goto bb0;
 bb0:
 #line 141 "examples/fannkuch/main.hero"
@@ -1000,9 +1000,9 @@ void h_main_main(void) {
     h_main_Fannkuch t3;
     h_main_Fannkuch t4;
     int64_t t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     int64_t t7;
-    HeroStr t8 = {0};
+    HeroStr t8;
     h_main_Fannkuch t9;
     int64_t t10;
     goto bb0;
@@ -1059,26 +1059,26 @@ HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_numbers) {
     int64_t h4_one;
     HeroArrayHeader * h5_own5 = {0};
     HeroStr h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     int64_t t10;
     int64_t t12;
-    HeroStr t13 = {0};
+    HeroStr t13;
     int64_t t15;
     int64_t t16;
     int64_t t17;
-    HeroArrayHeader * t18 = {0};
-    HeroArrayHeader * t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroArrayHeader * t21 = {0};
-    HeroStr t22 = {0};
+    HeroArrayHeader * t18;
+    HeroArrayHeader * t19;
+    HeroArrayHeader * t20;
+    HeroArrayHeader * t21;
+    HeroStr t22;
     goto bb0;
 bb0:
 #line 268 "examples/fannkuch/main.hero"

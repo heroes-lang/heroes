@@ -124,12 +124,12 @@ HeroStr h_fixedbugsastepoffthelaststatementleftthefile_shout(HeroStr h0_s) {
 #line 125 "fixedbugsastepoffthelaststatementleftthefile.c"
     HeroStr h1_loud = {0};
     HeroStr h2_own2 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
-    HeroStr t5 = {0};
-    HeroStr t6 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    HeroStr t3;
+    HeroStr t4;
+    HeroStr t5;
+    HeroStr t6;
     goto bb0;
 bb0:
 #line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
@@ -171,26 +171,26 @@ void h_fixedbugsastepoffthelaststatementleftthefile_main(void) {
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroStr h2_own2 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t3;
     int64_t t4;
     int64_t t7;
     int64_t t8;
-    HeroArrayHeader * t10 = {0};
+    HeroArrayHeader * t10;
     int64_t t11;
-    HeroStr t12 = {0};
-    HeroArrayHeader * t13 = {0};
+    HeroStr t12;
+    HeroArrayHeader * t13;
     int64_t t14;
     int64_t t15;
-    HeroStr t16 = {0};
-    HeroArrayHeader * t17 = {0};
+    HeroStr t16;
+    HeroArrayHeader * t17;
     int64_t t18;
     int64_t t19;
-    HeroStr t20 = {0};
-    HeroStr t21 = {0};
-    HeroArrayHeader * t22 = {0};
-    HeroArrayHeader * t23 = {0};
-    HeroStr t24 = {0};
+    HeroStr t20;
+    HeroStr t21;
+    HeroArrayHeader * t22;
+    HeroArrayHeader * t23;
+    HeroStr t24;
     goto bb0;
 bb0:
 #line 34 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"

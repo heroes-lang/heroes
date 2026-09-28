@@ -110,12 +110,12 @@ HeroStr h_generics_label(int64_t h0_n) {
 #line 111 "generics.c"
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
-    HeroStr t5 = {0};
-    HeroStr t6 = {0};
+    HeroStr t3;
+    HeroStr t4;
+    HeroStr t5;
+    HeroStr t6;
     goto bb0;
 bb0:
 #line 32 "tests/golden/run/generics.hero"
@@ -171,73 +171,73 @@ void h_generics_main(void) {
     HeroArrayHeader * h15_own15 = {0};
     HeroArrayHeader * h16_own16 = {0};
     HeroStr h17_own17 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
-    HeroArrayHeader * t3 = {0};
-    HeroStr t4 = {0};
-    HeroStr t5 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    HeroArrayHeader * t3;
+    HeroStr t4;
+    HeroStr t5;
     int64_t t6;
     int64_t t7;
     int64_t t8;
-    HeroArrayHeader * t9 = {0};
+    HeroArrayHeader * t9;
     int64_t t10;
-    HeroStr t11 = {0};
-    HeroStr t12 = {0};
-    HeroArrayHeader * t13 = {0};
-    HeroStr t14 = {0};
-    HeroStr t15 = {0};
+    HeroStr t11;
+    HeroStr t12;
+    HeroArrayHeader * t13;
+    HeroStr t14;
+    HeroStr t15;
     int64_t t16;
     int64_t t17;
     int64_t t18;
-    HeroArrayHeader * t19 = {0};
+    HeroArrayHeader * t19;
     int64_t t20;
     int64_t t21;
     int64_t t22;
     int64_t t23;
-    HeroArrayHeader * t24 = {0};
+    HeroArrayHeader * t24;
     h_0fn_4a13fb08 t25;
-    HeroArrayHeader * t26 = {0};
-    HeroStr t27 = {0};
-    HeroStr t28 = {0};
+    HeroArrayHeader * t26;
+    HeroStr t27;
+    HeroStr t28;
     int64_t t29;
     int64_t t30;
-    HeroArrayHeader * t31 = {0};
+    HeroArrayHeader * t31;
     int64_t t32;
     int64_t t33;
     int64_t t34;
-    HeroArrayHeader * t35 = {0};
+    HeroArrayHeader * t35;
     int64_t t36;
-    HeroStr t37 = {0};
-    HeroStr t38 = {0};
-    HeroArrayHeader * t39 = {0};
-    HeroStr t40 = {0};
-    HeroArrayHeader * t41 = {0};
-    HeroArrayHeader * t42 = {0};
-    HeroArrayHeader * t43 = {0};
-    HeroArrayHeader * t44 = {0};
+    HeroStr t37;
+    HeroStr t38;
+    HeroArrayHeader * t39;
+    HeroStr t40;
+    HeroArrayHeader * t41;
+    HeroArrayHeader * t42;
+    HeroArrayHeader * t43;
+    HeroArrayHeader * t44;
     int64_t t45;
-    HeroStr t46 = {0};
-    HeroArrayHeader * t47 = {0};
-    HeroArrayHeader * t48 = {0};
-    HeroStr t49 = {0};
-    HeroArrayHeader * t50 = {0};
-    HeroStr t51 = {0};
-    HeroArrayHeader * t52 = {0};
-    HeroArrayHeader * t53 = {0};
-    HeroStr t54 = {0};
-    HeroArrayHeader * t55 = {0};
-    HeroArrayHeader * t56 = {0};
-    HeroArrayHeader * t57 = {0};
-    HeroStr t58 = {0};
-    HeroArrayHeader * t59 = {0};
-    HeroArrayHeader * t60 = {0};
-    HeroArrayHeader * t61 = {0};
-    HeroArrayHeader * t62 = {0};
-    HeroArrayHeader * t63 = {0};
-    HeroArrayHeader * t64 = {0};
-    HeroArrayHeader * t65 = {0};
-    HeroArrayHeader * t66 = {0};
-    HeroStr t67 = {0};
+    HeroStr t46;
+    HeroArrayHeader * t47;
+    HeroArrayHeader * t48;
+    HeroStr t49;
+    HeroArrayHeader * t50;
+    HeroStr t51;
+    HeroArrayHeader * t52;
+    HeroArrayHeader * t53;
+    HeroStr t54;
+    HeroArrayHeader * t55;
+    HeroArrayHeader * t56;
+    HeroArrayHeader * t57;
+    HeroStr t58;
+    HeroArrayHeader * t59;
+    HeroArrayHeader * t60;
+    HeroArrayHeader * t61;
+    HeroArrayHeader * t62;
+    HeroArrayHeader * t63;
+    HeroArrayHeader * t64;
+    HeroArrayHeader * t65;
+    HeroArrayHeader * t66;
+    HeroStr t67;
     goto bb0;
 bb0:
 #line 36 "tests/golden/run/generics.hero"
@@ -631,9 +631,9 @@ bb0:
 #line 16 "tests/golden/run/generics.hero"
 HERO_TU_LOCAL HeroStr h_generics_first_1e58d9(HeroArrayHeader * h0_xs) {
 #line 634 "generics.c"
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/generics.hero"
@@ -652,7 +652,7 @@ bb0:
 #line 16 "tests/golden/run/generics.hero"
 HERO_TU_LOCAL int64_t h_generics_first_1b9a87(HeroArrayHeader * h0_xs) {
 #line 655 "generics.c"
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     goto bb0;
@@ -673,12 +673,12 @@ bb0:
 #line 19 "tests/golden/run/generics.hero"
 HERO_TU_LOCAL HeroStr h_generics_last_1e58d9(HeroArrayHeader * h0_xs) {
 #line 676 "generics.c"
-    HeroArrayHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
     int64_t t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     goto bb0;
 bb0:
 #line 20 "tests/golden/run/generics.hero"
@@ -703,8 +703,8 @@ bb0:
 #line 19 "tests/golden/run/generics.hero"
 HERO_TU_LOCAL int64_t h_generics_last_1b9a87(HeroArrayHeader * h0_xs) {
 #line 706 "generics.c"
-    HeroArrayHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
     int64_t t5;
@@ -739,27 +739,27 @@ HERO_TU_LOCAL HeroArrayHeader * h_generics_convert_37fb3fcc(HeroArrayHeader * h0
     int64_t h5_x;
     HeroArrayHeader * h6_own6 = {0};
     HeroStr h7_own7 = {0};
-    HeroArrayHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     int64_t t10;
     h_0fn_4a13fb08 t12;
     int64_t t13;
-    HeroStr t14 = {0};
+    HeroStr t14;
     int64_t t16;
     int64_t t17;
     int64_t t18;
-    HeroArrayHeader * t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroArrayHeader * t21 = {0};
-    HeroArrayHeader * t22 = {0};
-    HeroStr t23 = {0};
+    HeroArrayHeader * t19;
+    HeroArrayHeader * t20;
+    HeroArrayHeader * t21;
+    HeroArrayHeader * t22;
+    HeroStr t23;
     goto bb0;
 bb0:
 #line 24 "tests/golden/run/generics.hero"
@@ -870,9 +870,9 @@ bb4:
 #line 16 "tests/golden/run/generics.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_generics_first_4ce7463f(HeroArrayHeader * h0_xs) {
 #line 873 "generics.c"
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
-    HeroArrayHeader * t3 = {0};
+    HeroArrayHeader * t3;
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/generics.hero"

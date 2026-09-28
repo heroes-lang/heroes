@@ -122,7 +122,7 @@ void h_fixedbugsatagnamesahandleandarecord_main(void) {
     int32_t t2;
     struct addrinfo t3;
     struct addrinfo * t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     const char * t6;
     void * t7;
     int32_t t8;

@@ -144,7 +144,7 @@ void h_deadaddresscallbackhandbackclearsthemark_main(void) {
     node * h0_mine;
     node * t1;
     node * t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     h_0fn_41481456 t4;
     int64_t t5;
     goto bb0;

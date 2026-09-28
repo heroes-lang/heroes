@@ -107,10 +107,10 @@ void h_lendinsidealoop_main(void) {
     int64_t t4;
     bool t5;
     uint64_t t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     int64_t t8;
-    HeroStr t9 = {0};
-    HeroStr t10 = {0};
+    HeroStr t9;
+    HeroStr t10;
     const char * t11;
     uint64_t t12;
     uint64_t t13;
@@ -118,8 +118,8 @@ void h_lendinsidealoop_main(void) {
     int64_t t15;
     int64_t t16;
     uint64_t t17;
-    HeroStr t18 = {0};
-    HeroStr t19 = {0};
+    HeroStr t18;
+    HeroStr t19;
     goto bb0;
 bb0:
 #line 13 "tests/golden/run/lend-inside-a-loop.hero"

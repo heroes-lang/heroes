@@ -98,21 +98,21 @@ void h_abortarrayslice_main(void) {
     int64_t t1;
     int64_t t2;
     int64_t t3;
-    HeroArrayHeader * t4 = {0};
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t4;
+    HeroArrayHeader * t5;
     int64_t t6;
     int64_t t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
-    HeroArrayHeader * t10 = {0};
+    HeroArrayHeader * t10;
     int64_t t11;
     int64_t t12;
-    HeroArrayHeader * t13 = {0};
+    HeroArrayHeader * t13;
     int64_t t14;
-    HeroArrayHeader * t15 = {0};
-    HeroArrayHeader * t16 = {0};
-    HeroArrayHeader * t17 = {0};
-    HeroArrayHeader * t18 = {0};
+    HeroArrayHeader * t15;
+    HeroArrayHeader * t16;
+    HeroArrayHeader * t17;
+    HeroArrayHeader * t18;
     goto bb0;
 bb0:
 #line 6 "tests/golden/run/abort-array-slice.hero"

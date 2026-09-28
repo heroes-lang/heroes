@@ -94,14 +94,14 @@ void h_abortstrindex_main(void);
 void h_abortstrindex_main(void) {
 #line 96 "abortstrindex.c"
     HeroStr h0_s = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
+    HeroStr t1;
+    HeroStr t2;
     int64_t t3;
     uint8_t t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     int64_t t6;
     uint8_t t7;
-    HeroStr t8 = {0};
+    HeroStr t8;
     goto bb0;
 bb0:
 #line 8 "tests/golden/run/abort-str-index.hero"

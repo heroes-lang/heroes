@@ -96,15 +96,15 @@ void h_abortarrayindex_main(void) {
     int64_t t1;
     int64_t t2;
     int64_t t3;
-    HeroArrayHeader * t4 = {0};
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t4;
+    HeroArrayHeader * t5;
     int64_t t6;
     int64_t t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     int64_t t10;
-    HeroArrayHeader * t11 = {0};
-    HeroArrayHeader * t12 = {0};
+    HeroArrayHeader * t11;
+    HeroArrayHeader * t12;
     goto bb0;
 bb0:
 #line 5 "tests/golden/run/abort-array-index.hero"

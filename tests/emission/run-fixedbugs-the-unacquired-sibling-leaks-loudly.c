@@ -142,7 +142,7 @@ void h_fixedbugstheunacquiredsiblingleaksloudly_main(void) {
     Pair t12;
     Inner t13;
     Slot * t14;
-    HeroStr t15 = {0};
+    HeroStr t15;
     goto bb0;
 bb0:
 #line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"

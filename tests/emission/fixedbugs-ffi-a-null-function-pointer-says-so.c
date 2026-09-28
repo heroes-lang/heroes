@@ -97,7 +97,7 @@ void h_ffianullfunctionpointersaysso_main(void);
 #line 46 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
 void h_ffianullfunctionpointersaysso_main(void) {
 #line 100 "ffianullfunctionpointersaysso.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     void * t2;
     goto bb0;
 bb0:

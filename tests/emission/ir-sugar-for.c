@@ -96,13 +96,13 @@ int64_t h_sugarfor_total_of(HeroArrayHeader * h0_xs) {
     int64_t h3_i0;
     int64_t h4_x;
     int64_t t1;
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     int64_t t10;
     int64_t t11;
@@ -112,7 +112,7 @@ int64_t h_sugarfor_total_of(HeroArrayHeader * h0_xs) {
     int64_t t15;
     int64_t t16;
     int64_t t17;
-    HeroArrayHeader * t18 = {0};
+    HeroArrayHeader * t18;
     goto bb0;
 bb0:
 #line 5 "tests/golden/ir/sugar-for.hero"

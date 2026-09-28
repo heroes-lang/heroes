@@ -236,10 +236,10 @@ void h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_main(void) {
     h_0fn_48ac9712 t4;
     int64_t t5;
     int64_t t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     int64_t t8;
     int64_t t9;
-    HeroStr t10 = {0};
+    HeroStr t10;
     int64_t t11;
     int64_t t12;
     goto bb0;

@@ -98,15 +98,15 @@ HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal) {
 #line 99 "strings.c"
     HeroStr h2_prefix = {0};
     HeroStr h3_own3 = {0};
-    HeroStr t1 = {0};
+    HeroStr t1;
     bool t2;
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
-    HeroStr t5 = {0};
-    HeroStr t6 = {0};
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
+    HeroStr t3;
+    HeroStr t4;
+    HeroStr t5;
+    HeroStr t6;
+    HeroStr t7;
+    HeroStr t8;
+    HeroStr t9;
     goto bb0;
 bb0:
 #line 8 "tests/golden/emit/strings.hero"
@@ -167,10 +167,10 @@ bb3:
 void h_strings_main(void) {
 #line 169 "strings.c"
     HeroStr h0_own0 = {0};
-    HeroStr t1 = {0};
+    HeroStr t1;
     bool t2;
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
+    HeroStr t3;
+    HeroStr t4;
     goto bb0;
 bb0:
 #line 15 "tests/golden/emit/strings.hero"

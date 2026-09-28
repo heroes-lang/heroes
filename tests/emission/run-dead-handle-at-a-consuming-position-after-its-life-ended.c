@@ -114,7 +114,7 @@ void h_deadhandleataconsumingpositionafteritslifeended_main(void) {
     bool t5;
     Obj * t6;
     Obj * t7;
-    HeroStr t8 = {0};
+    HeroStr t8;
     const char * t9;
     Obj * t10;
     Obj * t12;
