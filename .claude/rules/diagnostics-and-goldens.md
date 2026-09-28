@@ -58,6 +58,14 @@ shapes beside the site.
 Golden convention: `x.hero` plus `x.expected`, plus `x.fixed` where a certain
 fix exists, and CI asserts the applied fix compiles.
 
+**Widened 2026-09-28, defect 129's lane, on the coordinator's finding that a
+case with no `.fixed` was never judged**: the sentence above left no answer for
+a case whose certain fixes are right while it keeps a diagnostic no certain fix
+repairs, and 39 cases were that. Such a case carries `x.applied`, what
+`check --apply` writes, pinned byte for byte, not checking clean, and unchanged
+by a second `--apply`; and a case with neither file is left as it is by
+`--apply`, which `tests/harness/suite_fixes.hero` asserts of every case.
+
 ## The goldens
 
 `UPDATE_GOLDEN=1` **does not exist and is not implemented**, and it is
