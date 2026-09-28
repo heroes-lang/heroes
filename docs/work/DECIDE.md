@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 5**
+**OPEN: 6**
 
 - [ ] **panel 175** | ratify panel 175: a consuming call is three things, so route A lands only with a vocabulary 176 decides; route E lands now as the composite; § 13 lands its true sentences in full; the blind seat gets a copy of the spec outside the tree | `docs/panel/175-a-consuming-call-is-three-things-and-the-runtime-speaks-after-it-listens.md`
 
@@ -86,5 +86,18 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     exceptions and the compiler unmoved, the silent split left standing;
     refused because it writes accidents into the spec and keeps an exit-0
     wrong answer.
+
+- [ ] **panel 181** | ratify panel 181: outside brackets a line ends its statement in both directions, refused by one lexer diagnostic at the break with the joined line handed on (route (a) final, widened to the class the critic found: a postfix after a block, a leading spaced `-`, the `error` token's glue); the join `certain` only where the next line cannot stand alone; the code on the thesis list; the spec's longer sentence and § 1's clause made true, +62 real | `docs/panel/181-outside-brackets-a-line-ends-its-statement-in-both-directions.md`
+
+    **Origin:** panel 181, 2026-09-28, M-agreed-retention, convened on defect
+    116 with 118 beside it; 119 and 120 filed from its critic. **The default
+    the compiler runs on meanwhile** is the provisional resolution, landed in
+    one lane with the four defects. **What conservative would have been**: P2,
+    a terminator at every depth-zero line end and an arm's body refused after
+    one, 12 code lines, the parser's generic messages, no fix, no spec
+    sentence, a control arm that cannot switch the rule off; refused because it
+    names no rule and leaves the class to be found member by member. **Two
+    points for the author**: the code's place on the thesis list, and § 12's
+    default reversed on § 1's clause.
 
 *******************************************************************************
