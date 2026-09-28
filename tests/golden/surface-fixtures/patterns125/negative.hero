@@ -1,0 +1,32 @@
+# Defect 125, 2026-09-28: `heroes fmt` printed a negative pattern through the
+# tree dump's printer, which writes `(-1)`, and `(` begins no pattern, so it
+# exited 2 on every program holding one, calling itself a compiler bug. This
+# file is its own canonical form: the sign against its literal, the first arm
+# and a later one, joined on either side of a `|`, a character, and a block's
+# arm.
+
+function sign(n: i64) -> i64
+    return match n
+        -1     => 10
+        0      => 0
+        -2 | 2 => 20
+        3 | -3 => 30
+        _      => 40
+
+function letter(c: i64) -> str
+    return match c
+        -'a' => "minus a"
+        _    => "other"
+
+function main()
+    print(sign(-1))
+    print(sign(-2))
+    print(sign(-3))
+    print(sign(7))
+    print(letter(-97))
+
+    match sign(0)
+        -1 =>
+            print(-1)
+            print(1)
+        _ => print(0)
