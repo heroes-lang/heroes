@@ -328,3 +328,28 @@ to ratifying today's behaviour is the resolution.
 proceeds on the provisional resolution: the landing lane repairs defects 116,
 118, 119 and 120 on it, with the spec and design.md amendments in their own
 commit citing this file.*
+
+## The second blind reading, 2026-09-28 at 03:45
+
+A fresh llm-ergonomist read the candidate spec with V3 and R4 in place and
+nothing else (`docs/panel/181-reports/llm-ergonomist-second-reading.md`, brief
+`docs/panel/181-briefs/llm-ergonomist-second-reading.md`). **It approves the
+wording unchanged.** It predicts the landed compiler accepts fragments 3, 9 and
+12 and refuses the other twelve, the shapes of defects 119 (fragment 10) and
+120 (fragment 7) among them, with zero silent divergences, and that its two
+written programs, a parenthesised four-call sum and a parenthesised
+three-clause condition, compile at the first try. It considered the shorter
+*"Outside brackets no line goes on below"* and declined it: the answers do not
+change, and the sentence's second half, *the next line may not go on with it*,
+is what catches the leading-operator habits of fragments 6 and 7. Without the
+sentence its own first draft broke a sum outside brackets and hoisted a long
+condition's clauses into names, the reordering that loses `&&`'s short
+circuit. One hesitation it names and does not blame on the sentence: fragment
+9 (`ys = [1, 2,` / `3]`), where § 0's line ending in `,` and § 10's *"separates
+elements by newline across lines and by comma on one"* pull apart, 75 per cent
+on accepted. **The wording stands as item 7 gives it**, and the landing lane
+was told so at 03:46.
+
+| seat | prediction | checkable at |
+|---|---|---|
+| llm-ergonomist, second reading | the landed compiler answers the fifteen fragments as the seat did, 15 of 15, or 14 of 15 with fragment 9 the one; no refused fragment accepted with another meaning; both written programs compile | the landing |
