@@ -77,6 +77,14 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     the fixtures only; refused because a flag cannot take a directory and a
     guard that judges itself cannot see a wrong rule.
 
+    **Added 2026-09-28, at the landing (`49e50f34`):** the reader carries a
+    second stated exception beside ruling (c), its rule (d), *a head the
+    output does not have is no logical line in the variant either*, for two
+    `extern` groups `fmt` merges under one head (640 of the first run's 664
+    failures); item 4 called (c) the reader's one exception, so (d) is part of
+    what this item ratifies. And the by-hand run the landing wrote into
+    `.claude/rules/verification.md` is owed before the push that carries it.
+
 - [ ] **panel 180** | ratify panel 180: inside brackets a line breaks by how it ends and a NEWLINE may stand before every closer and every `,` (the compiler made uniform, route b); a list refuses a line that begins with a `-` set apart from its operand where a NEWLINE separates without a `,` (route ii, the silent split of defect 106); a line end the next token cannot continue is refused with the reason and a fix (route f); the spec's sentences on brackets and on strings made true, design.md §4.15 given the ruling, and the 117 shapes kept as `surface` rows | `docs/panel/180-a-line-inside-brackets-breaks-by-how-it-ends-and-a-list-refuses-a-subtraction-it-would-split.md`
 
     **Origin:** panel 180, 2026-09-27, M-agreed-retention, convened on defect
