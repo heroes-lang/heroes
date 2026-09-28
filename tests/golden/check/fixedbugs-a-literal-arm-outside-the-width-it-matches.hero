@@ -1,0 +1,43 @@
+# Fixed defect 127, 2026-09-28, the refusing half: a literal arm is checked
+# against the width it matches, so a literal outside that width's range is
+# `int_out_of_range`, naming the width, where every arm on a width but `i64`
+# was `type_mismatch: expected ..., found i64` whatever its value. Each edge
+# one past, on either side, the sign folded into the literal, and a
+# literal joined with one that fits. The arms that fit are
+# `run/a-literal-arm-takes-the-width-it-matches`.
+
+function byte(n: u8) -> i64
+    return match n
+        256 => 1  #~ int_out_of_range
+        _ => 0
+
+function unsigned(n: u8) -> i64
+    return match n
+        1 | -1 => 1  #~ int_out_of_range
+        _ => 0
+
+function narrow(n: i32) -> i64
+    return match n
+        2147483648 => 1  #~ int_out_of_range
+        -2147483649 => 2  #~ int_out_of_range
+        _ => 0
+
+function small(n: i8) -> i64
+    return match n
+        128 => 1  #~ int_out_of_range
+        -129 => 2  #~ int_out_of_range
+        _ => 0
+
+function wide(n: u64) -> i64
+    return match n
+        18446744073709551616 => 1  #~ int_out_of_range
+        _ => 0
+
+function signed_edge(n: i64) -> i64
+    return match n
+        -9223372036854775809 => 1  #~ int_out_of_range
+        9223372036854775808 => 2  #~ int_out_of_range
+        _ => 0
+
+function main()
+    print(byte(1) + unsigned(1) + narrow(1) + small(1) + wide(1) + signed_edge(1))

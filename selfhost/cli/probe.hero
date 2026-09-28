@@ -61,6 +61,7 @@ constant FIXTURES: [str]
         "tests/golden/surface-fixtures/groupremark096"
         "tests/golden/surface-fixtures/nonascii110"
         "tests/golden/surface-fixtures/paramcomment095"
+        "tests/golden/surface-fixtures/patterns125"
         "tests/golden/surface-fixtures/releaser108"
     ]
 
@@ -375,7 +376,9 @@ test "a family the probe does not make is named with the seven, and a path that 
     assert gathered(["no/such/place"]).is_err()
 
     # 9 -> 10 on 2026-09-28: `continuation181`, panel 181's `fmt` rows.
-    assert FIXTURES.len() == 10
+    # 10 -> 11 the same day: `patterns125`. No seed held a negative pattern,
+    # and `fmt` exited 2 on every program with one (defect 125).
+    assert FIXTURES.len() == 11
 
 test "a stride is a whole number from 1 up"
     assert counted("2") == 2

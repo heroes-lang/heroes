@@ -109,6 +109,16 @@ function render(tree: ast.Ast, s: source.Source, id: i64) -> str
 
     return "???"
 
+# One arm's pattern as `fmt` prints it. A literal's value goes through
+# `render`, so a sign stands against its literal, `-1` and `-'a'`: the
+# dump's own printer, `bodies.render_pattern`, writes every unary in its
+# parentheses to prove the precedence table, and `(-1)` is no pattern, so
+# `fmt` exited 2 on every program holding a negative one (defect 125).
+function pattern(tree: ast.Ast, s: source.Source, p: ast.Pattern) -> str
+    return match p.kind
+        .literal l                         => render(tree, s, id: l.value)
+        .variant_case | .wildcard | .error => bodies.render_pattern(tree, s, pattern: p)
+
 function unary_op(op: ast.UnaryOp) -> str
     return match op
         .neg     => "-"

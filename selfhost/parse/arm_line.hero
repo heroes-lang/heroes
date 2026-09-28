@@ -1,0 +1,74 @@
+# A `match` arm whose pattern opens with a `-` set apart from its literal
+# (design.md §4.7, §4.15, §4.17; the spec's opening paragraph; defect 123).
+#
+# `k = match n` over `- 1 => 10` compiled and matched -1. A NEWLINE separates
+# a `match` from its arms and each arm from the next, and the spec's opening
+# paragraph says that where a NEWLINE separates without a `,`, the next line
+# may not begin with a `-` that does not touch its operand. Panel 180 wrote
+# that sentence with no bracket limit and refused the shape between a
+# literal's elements (`parse/list_line`); panel 181 refused it leading a
+# statement's line (`open_line`), and let a `-` that opens an arm through to
+# the parser, which read it as the pattern's sign. The arm was the context
+# left.
+#
+# **One sentence, one code**: `spaced_minus_element`, the list's, and on the
+# thesis list with it (`diag.is_thesis_rule`), since without the rule the arm
+# still has a meaning, the negative pattern. **One fix, and it is
+# `certain`**, where the list's two are guesses: in a pattern a `-` can only
+# be its literal's sign, so the arm has one reading, and the fix writes it
+# the way `fmt` prints it, `-1`.
+#
+# **Only the space is this module's.** A comment or a line end after the `-`
+# ends the line with it, which outside brackets the lexer has refused
+# already (`continuation_outside_brackets`), and a second diagnostic here
+# would count one break twice. Out of the expression knot for
+# `parse/list_line`'s reason: a question with a name and no cycle.
+
+use token
+use diag
+use cursor
+use parse/line_end
+use parse/list_line
+
+# At an arm's first pattern: refuse it where it opens with a `-` that a space
+# sets apart from its operand, on the line the `-` begins. Nothing is
+# consumed, so the pattern is read as it always was, the negative literal the
+# fix writes, and the parse goes on.
+function spaced_sign(@c: cursor.Cursor, text: str)
+    if !cursor.at(c, .minus)
+        return
+    sign = cursor.current_span(c)
+    operand = c.tokens[c.pos + 1]
+
+    if operand.span.start == sign.end || !opens_its_line(text, at: sign.start) || !signs(operand.kind)
+        return
+
+    if line_end.has_a_line_end(text.slice(from: sign.end, to: operand.span.start))
+        return
+    fix: diag.Fix @ list_line.against_its_value(text: text, sign: sign, operand: operand.span)
+    fix.title @ "write the `-` against its value"
+    fix.certainty @ .certain
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "spaced_minus_element",
+        message: "this arm begins with `- `, a minus set apart from its value by a space, and where a NEWLINE separates, as it does every arm from the line above, the next line may not begin with a `-` that does not touch its operand: in a pattern the `-` can only be its literal's sign, so write it against its value",
+        span: sign
+    )
+    d.fixes @ d.fixes.push(fix)
+    c.diagnostics @ c.diagnostics.push(d)
+
+# A literal a pattern's `-` may sign (spec § 8): an integer, a string, a
+# character. After anything else the `-` begins no pattern, which
+# `parse/arm_pattern` refuses (defect 124), so a second diagnostic here
+# would count one mistake twice; and a comment after the `-` ends its
+# line, which is the lexer's.
+function signs(kind: token.TokenKind) -> bool
+    return kind == .int_lit || kind == .str_lit || kind == .char_lit
+
+# Whether only the margin's spaces stand between the line's start and `at`.
+function opens_its_line(text: str, at: i64) -> bool
+    i: i64 @ at
+
+    while i > 0 && text[i - 1] == ' '
+        i @ i - 1
+
+    return i == 0 || text[i - 1] == '\n'

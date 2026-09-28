@@ -1,0 +1,9 @@
+tests/golden/check/fixedbugs-a-literal-arm-outside-the-width-it-matches.hero:11:9: error[int_out_of_range]: `256` does not fit a `u8`
+tests/golden/check/fixedbugs-a-literal-arm-outside-the-width-it-matches.hero:16:13: error[int_out_of_range]: `-1` does not fit a `u8`
+tests/golden/check/fixedbugs-a-literal-arm-outside-the-width-it-matches.hero:21:9: error[int_out_of_range]: `2147483648` does not fit an `i32`
+tests/golden/check/fixedbugs-a-literal-arm-outside-the-width-it-matches.hero:22:9: error[int_out_of_range]: `-2147483649` does not fit an `i32`
+tests/golden/check/fixedbugs-a-literal-arm-outside-the-width-it-matches.hero:27:9: error[int_out_of_range]: `128` does not fit an `i8`
+tests/golden/check/fixedbugs-a-literal-arm-outside-the-width-it-matches.hero:28:9: error[int_out_of_range]: `-129` does not fit an `i8`
+tests/golden/check/fixedbugs-a-literal-arm-outside-the-width-it-matches.hero:33:9: error[int_out_of_range]: `18446744073709551616` does not fit a `u64`
+tests/golden/check/fixedbugs-a-literal-arm-outside-the-width-it-matches.hero:38:9: error[int_out_of_range]: `-9223372036854775809` does not fit an `i64`
+tests/golden/check/fixedbugs-a-literal-arm-outside-the-width-it-matches.hero:39:9: error[int_out_of_range]: `9223372036854775808` does not fit an `i64`
