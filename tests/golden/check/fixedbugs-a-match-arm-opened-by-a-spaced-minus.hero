@@ -1,0 +1,59 @@
+# Fixed defect 123, 2026-09-28. Symptom: `k = match n` over the arm
+# `- 1 => 10`, a `-` set apart from its literal by a space, compiled and
+# matched -1, where the spec's opening paragraph refuses it: where a NEWLINE
+# separates without a `,`, the next line may not begin with a `-` that does
+# not touch its operand, and a NEWLINE separates a `match` from its arms and
+# each arm from the next. Cause: panel 180 refused the shape between a
+# literal's elements and panel 181 at the head of a statement's line, and the
+# arm, whose `-` the lexer lets through as its pattern's sign, was the
+# context left. Refused with the list's code, one sentence and one code, on a
+# first arm, a later one, one after a block arm and one in a nested `match`;
+# its fix writes the `-` against its literal and is `certain`, since in a
+# pattern the `-` can only be the sign. A `-` alone on the line above an arm
+# is the lexer's, refused as a line that cannot end with `-`, and its join
+# now writes `-6`, where it wrote `- 6`, which this rule refuses. The
+# unspaced `-4`, a `-` after a `|` and a `-` in an arm's body are untouched.
+
+function pick(n: i64) -> i64
+    return match n
+        - 1 => 10  #~ spaced_minus_element
+        0 => 0
+        - 2 | 2 => 20  #~ spaced_minus_element
+        3 | - 3 => 30
+        -4 => 40
+        -  5 => 50  #~ spaced_minus_element
+        _ => - 1
+
+function letter(c: i64) -> str
+    return match c
+        0 =>
+            print(0)
+            "zero"
+        - 'a' => "minus a"  #~ spaced_minus_element
+        _ => "other"
+
+function split(n: i64) -> i64
+    return match n
+        #~v continuation_outside_brackets
+        -
+        6 => 60
+        _ => 0
+
+function main()
+    n: i64 = -5
+
+    match n
+        0 =>
+            if n > 0
+                print(1)
+            else
+                print(2)
+        - 5 =>  #~ spaced_minus_element
+            match n + 10
+                - 5 => print(0)  #~ spaced_minus_element
+                5 => print(pick(n))
+                _ => print(9)
+        _ => print(letter(-97))
+    print(pick(-1) + pick(-2) + pick(3) + pick(-4) + pick(7))
+    print(letter(-97))
+    print(split(-6))

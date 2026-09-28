@@ -304,3 +304,43 @@ test "a line end before every closer and every comma stands, and is one separato
 
     three = parse("function main()\n    xs = [1\n        2\n        , 3]\n")
     assert three.diagnostics.len() == 0
+
+# Defect 123: an arm whose pattern opens with a `-` a space sets apart from
+# its literal is refused once, where it compiled, and its one fix, `certain`,
+# gives a program that parses: a first arm, a later one, one after a block
+# arm, a joined pattern, two spaces, a character, CRLF. And the `-` alone on
+# the line above an arm, the lexer's, joins without a space, to `-1`, where
+# the join wrote `- 1`, which the rule refuses; the join is asked alone,
+# since the parentheses offered beside it wrap a pattern (defect 126).
+test "an arm opened by a minus set apart from its literal is refused, and its fix parses"
+    code = "spaced_minus_element"
+    shapes = [
+        "function main()\n    k = match n\n        - 1 => 10\n        _ => 20\n"
+        "function main()\n    k = match n\n        0 => 5\n        - 1 => 10\n        _ => 20\n"
+        "function main()\n    k = match n\n        0 =>\n            print(0)\n            5\n        - 1 => 10\n        _ => 20\n"
+        "function main()\n    k = match n\n        - 1 | 2 => 10\n        _ => 20\n"
+        "function main()\n    k = match n\n        -  1 => 10\n        _ => 20\n"
+        "function main()\n    k = match n\n        - 'a' => 10\n        _ => 20\n"
+        "function main()\r\n    k = match n\r\n        0 => 5\r\n        - 1 => 10\r\n        _ => 20\r\n"
+    ]
+
+    for text in shapes
+        assert every_fix_parses(text: text, code: code)
+        refused = parse(text)
+        assert refused.diagnostics.len() == 1
+        assert refused.diagnostics[0].fixes.len() == 1
+        assert refused.diagnostics[0].fixes[0].certainty == .certain
+        assert refused.diagnostics[0].fixes[0].replacement == "-"
+
+    split = "function main()\n    k = match n\n        -\n        1 => 10\n        _ => 20\n"
+    broken = parse(split)
+    assert broken.diagnostics.len() == 1
+    mend = broken.diagnostics[0].fixes[0]
+    assert mend.replacement == ""
+    assert mend.certainty == .certain
+    joined = split.slice(from: 0, to: mend.span.start) + mend.replacement + split.slice(from: mend.span.end, to: split.len())
+    assert parse(joined).diagnostics.len() == 0
+
+test "the unary spelling, a minus after a join and a minus in an arm's body are not asked"
+    for text in ["function main()\n    k = match n\n        -1 => 10\n        _ => 20\n", "function main()\n    k = match n\n        2 | - 1 => 10\n        _ => 20\n", "function main()\n    k = match n\n        0 => - 1\n        _ => 20\n"]
+        assert parse(text).diagnostics.len() == 0
