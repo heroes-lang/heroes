@@ -67,6 +67,10 @@ record Shape
 # could see it: a floor is a premise about the world, and the comment stating it
 # went on reading as true. `floors.check` is what sees it now, and these numbers
 # are re-based to today's count.
+#
+# **`check` 181 from defects 130 and 131's lane, 2026-09-29**: its fifteen
+# `fixedbugs-130-*` and `fixedbugs-131-*` cases took the tree past its floor
+# of 142 by more than a quarter, and the suite printed 181.
 function shape_check() -> Shape
     return Shape(
         name: "check",
@@ -75,7 +79,7 @@ function shape_check() -> Shape
         flag: "--brief",
         on_stderr: true,
         want_code: 1,
-        least: 142,
+        least: 181,
         watched: true,
         silent_stdout: false,
         library_skip: false

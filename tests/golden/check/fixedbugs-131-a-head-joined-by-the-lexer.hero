@@ -1,0 +1,30 @@
+# Fixed defect 131, 2026-09-28, a head the lexer joined to its body. Symptom:
+# `if n >` over a deeper `print(1)` cost `continuation_outside_brackets` and
+# then `missing_body` at the next statement, and so did `while` and `match`
+# heads: the lexer hands the parser the joined line, `if n > print(1)`, which
+# has no body, since the body the author wrote IS the joined line; and the
+# next statement's own mistake went unreported. Cause: the parser never learns
+# what the lexer said, and a join leaves no `error` token. The head now reads
+# the join off its own text, two tokens on two lines with no line end between
+# (`parse/opening`), and holds its report back: `parse` gives it to the
+# control arm alone, since `check --permissive` drops the lexer's refusal, a
+# thesis rule, and reads the join as the program.
+
+function joined_if(n: i64)
+    if n >  #~ continuation_outside_brackets
+        print(1)
+    z = 4 )  #~ expected_end_of_line
+
+function joined_while(n: i64)
+    while n >  #~ continuation_outside_brackets
+        print(1)
+    z = 4 )  #~ expected_end_of_line
+
+function joined_match(n: i64)
+    match n +  #~ continuation_outside_brackets
+        1 => print(1)
+        _ => print(2)
+    z = 4 )  #~ expected_end_of_line
+
+function main()
+    print(1)

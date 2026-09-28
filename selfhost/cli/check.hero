@@ -28,7 +28,14 @@ use stable
 
 function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     parsed = parse.parse_source(s)
-    stop = report(parsed.diagnostics, s, inv)
+
+    # The control arm reads the parse as a language without the thesis rules
+    # does: what a refusal of theirs held back is said there (defect 131).
+    said: [diag.Diagnostic] @ parsed.diagnostics
+
+    if argv.has(inv, spelling: "--permissive")
+        said @ parsed.control
+    stop = report(said, s, inv)
 
     if !stop.is_err()
         return stop.must()
@@ -303,6 +310,18 @@ test "stages stop on the first noise, apply repairs, holes stay exit 0"
     parsed = parse.parse(fs.text)
     repaired = apply(parsed.diagnostics, fs)
     assert has_text(text: repaired, needle: "function = 3")
+
+# Defects 130 and 131: the control arm is never left with nothing to say about
+# a program the parser could not read. It drops the thesis rules, so it reads
+# what a thesis refusal held back, the joined head's missing body, and what a
+# recovery keyed on a thesis rule used to drop, the line after the arm.
+test "the control arm still refuses what a thesis rule stood in front of"
+    perm: [argv.FlagHit] = [argv.FlagHit(spelling: "--permissive", value: fail(code: "none", msg: "no value"))]
+    pinv = argv.Invocation(tag: .check_cmd, file: ok("t.hero"), program_args: [], flags: perm)
+    joined = source.new_source(name: "t.hero", text: "function main()\n    n = 1\n    if n >\n        print(1)\n")
+    assert run(joined, pinv) == .diagnostics_exit
+    after_the_arm = "function main()\n    match 1\n        0 => x = 5\n        _ => print(2)\n    z = 4 )\n"
+    assert run(source.new_source(name: "t.hero", text: after_the_arm), pinv) == .diagnostics_exit
 
 test "the json schema leads with its version and escapes its strings"
     text = "function main()\n    n = 3\n    print(1)\n"

@@ -108,8 +108,11 @@ constant RUN_ROOTS: [str]
 # onto panel 180's landing**: the 117 bracket shapes and the new goldens of
 # the two lanes took the tree past the floor by more than a quarter, and the
 # suite said so and printed the count, the rule working as written.
+# **659 from defect 130's lane, 2026-09-29**: its seven `fixedbugs-130-*`
+# cases, whose marks are the statements a failed block used to hide, took
+# the count past the quarter, and the suite printed 659.
 constant LEAST: i64
-    527
+    659
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

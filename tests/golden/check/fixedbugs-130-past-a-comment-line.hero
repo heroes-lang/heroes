@@ -1,0 +1,33 @@
+# Fixed defect 130, 2026-09-28, a comment line between two statements, and
+# between two declarations. Symptom: where a comment line followed what had
+# failed, the next statement or the next declaration was dropped whole: a
+# bodiless `constant` over a comment line took the `constant` below it, body
+# and all, and so did a bodiless `function`. Cause: the question "is the
+# cursor at a fresh line" read the token just behind the cursor, and past a
+# comment line that token is the comment, not the line end
+# (`cursor.recover_to_next_decl`, and the same question in `finish`). It is
+# asked past comment lines now (`cursor.at_fresh_line`).
+
+constant BARE: i64
+# a note between the two
+constant NEXT: i64  #~ missing_body
+    3 )  #~ expected_end_of_line
+
+function bare()
+# a note between the two
+function next()  #~ missing_body
+    y = 3 )  #~ expected_end_of_line
+
+function after_a_block(n: i64)
+    if n > 0
+        y = 3 )  #~ expected_end_of_line
+    # a note between the two
+    z = 4 )  #~ expected_end_of_line
+
+function after_a_missing_body(n: i64)
+    while n > 0
+    # a note between the two
+    z = 4 )  #~ missing_body #~ expected_end_of_line
+
+function main()
+    print(1)
