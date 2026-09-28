@@ -897,7 +897,25 @@ function tagged(@r: report.Report, scratch: str, present: [str])
         return
 
     if open_defects.must().len() > 0
-        refusal = tag_is_excused(tag: newest, open_rows: open_defects.must(), present: present)
+        refusal: str @ tag_is_excused(tag: newest, open_rows: open_defects.must(), present: present)
+
+        if refusal != ""
+            list_then = text_at(scratch: scratch, tag: newest, path: "docs/work/DEFECTS.md")
+
+            if list_then.is_err()
+                report.keep_failure(@r, label: "records/tagged", detail: "  cannot read DEFECTS.md at " + newest)
+                return
+            carried = tag_is_carried(
+                tag: newest,
+                open_rows: open_defects.must(),
+                text: list_then.must(),
+                present: present
+            )
+
+            if carried == ""
+                refusal @ ""
+            else
+                refusal @ refusal + "\n  " + carried
 
         if refusal != ""
             report.keep_failure(
@@ -1050,6 +1068,17 @@ function open_items_at(scratch: str, tag: str, path: str) -> [str]?
 
     return ok(open_rows)
 
+# A list's whole text AS IT WAS at a tag, where `open_items_at` keeps only its
+# item lines: a carried defect's reason is in its body, and only the body at
+# the tag says what the tag was told.
+function text_at(scratch: str, tag: str, path: str) -> str?
+    shown = shell.run(scratch: scratch, program: "git", words: ["git", "show", tag + ":" + path])?
+
+    if shown.code != 0
+        return fail(code: "no_such_file", msg: path + " does not exist at " + tag)
+
+    return ok(shown.out)
+
 # THE STRICT READING OF *a sitting's ratification*, AND WHY IT ASKS THE TAG'S
 # OWN TREE WHETHER IT CARRIED THIS RULE.
 #
@@ -1120,6 +1149,101 @@ constant TAGGED_OVER: [str]
     [
         "m-readable-bytes | 2026-09-18 | 061 062 | 2026-09-18-1745-defect-061-closes-and-its-own-premise-was-false.md 2026-09-18-1310-defect-062-closes-and-the-marker-was-one-word.md"
     ]
+
+# A tag placed over a defect the AUTHOR CARRIED to the next milestone, which is
+# the second exception and a different one: `TAGGED_OVER` forgives a tag over
+# defects closed since, while a carried defect is open on purpose, so that
+# table's *not open today* would refuse exactly what the author asked for.
+# Added 2026-09-28 by the author's waiver of 16:40,
+# `docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md`:
+# M-agreed-retention closes with the defects found after its last eight carried.
+#
+# A row is `<tag> | <date> | <defect numbers> | <the log entry that carried
+# them>`, and it is not an amnesty either. Every one of these can die:
+#
+#   - the numbers are EXACTLY the ones open at that tag, so a defect the tag
+#     forgot cannot shelter behind a row written for the ones it carried;
+#   - the log entry exists under `docs/records/log/`;
+#   - each defect's own item, in the list AS IT WAS at the tag, says
+#     `CARRIED_MARKER` and names that entry, so the carrying is written where
+#     the defect is and not only here.
+#
+# **It lasts one milestone, and nothing has to remember that.** `tagged` judges
+# the newest tag alone and a row names one tag, so the next tag over a defect
+# still open is excused by nothing until somebody writes a row for it.
+constant CARRIED_OVER: [str]
+    [
+        "m-agreed-retention | 2026-09-28 | 129 | 2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md"
+    ]
+
+# What a carried defect's own body says, the words `docs/work/DEFECTS.md`'s
+# item 129 opens its last paragraph with.
+constant CARRIED_MARKER: str
+    "**Carried to the next milestone**"
+
+# Whether `CARRIED_OVER` excuses this tag over exactly these defects, `text`
+# being `docs/work/DEFECTS.md` at the tag. The empty string when it does and the
+# reason when it does not, as `tag_is_excused` answers.
+function tag_is_carried(tag: str, open_rows: [str], text: str, present: [str]) -> str
+    numbers: [str] @ []
+
+    for row in open_rows
+        n = defect_number(row)
+
+        if n != ""
+            numbers @ numbers.push(n)
+
+    found: str @ ""
+
+    for row in CARRIED_OVER
+        fields = strings.split_text(text: row, separator: "|")
+
+        if fields.len() == 4 && strings.trimmed(fields[0]) == tag
+            found @ row
+
+    if found == ""
+        return "Nothing in CARRIED_OVER names " + tag + ", so nothing carries it."
+    parts = strings.split_text(text: found, separator: "|")
+    listed = strings.words(strings.trimmed(parts[2]))
+
+    if !same_numbers(listed: listed, numbers: numbers)
+        return "CARRIED_OVER names " + listed.join(" ") + " for " + tag + ", and the tag stands over " + numbers.join(" ") + ": a row carries exactly what its tag stands over, never more and never less."
+    entry = strings.trimmed(parts[3])
+
+    if !log_is_present(entry: entry, present: present)
+        return "CARRIED_OVER names the log entry " + entry + ", and no such file is under docs/records/log/."
+
+    for n in numbers
+        body = item_region(text: text, number: n)
+
+        if !strings.contains(text: body, needle: CARRIED_MARKER) || !strings.contains(text: body, needle: entry)
+            return "CARRIED_OVER carries " + n + " at " + tag + ", and that defect's own item there does not say " + CARRIED_MARKER + " and name " + entry + "."
+
+    return ""
+
+function log_is_present(entry: str, present: [str]) -> bool
+    for path in present
+        if strings.ends_with(text: path, suffix: "docs/records/log/" + entry)
+            return true
+
+    return false
+
+# Defect `number`'s item in a list's text, its item line and its body, up to
+# the next item or the list's closing fence; empty where no item is numbered so.
+function item_region(text: str, number: str) -> str
+    region: str @ ""
+    inside: bool @ false
+
+    for row in strings.lines(text)
+        trimmed = strings.trimmed(row)
+
+        if defect_number(trimmed) != "" || strings.starts_with(text: trimmed, prefix: "****")
+            inside @ defect_number(trimmed) == number
+
+        if inside
+            region @ region + row + "\n"
+
+    return region
 
 # Whether `newest`'s own tree carried the strict rule. An error means the
 # executor could not be read there and is never read as either answer.
@@ -1262,6 +1386,13 @@ function exemptions(@r: report.Report, present: [str])
     for entry in QUOTES_THE_OLD_SPELLING
         if !selects_suffix(entry: entry, present: present)
             dead @ dead.push("    QUOTES_THE_OLD_SPELLING: " + entry)
+
+    # A carried row whose log entry is gone is dead before its tag is judged.
+    for row in CARRIED_OVER
+        fields = strings.split_text(text: row, separator: "|")
+
+        if fields.len() != 4 || !log_is_present(entry: strings.trimmed(fields[3]), present: present)
+            dead @ dead.push("    CARRIED_OVER: " + row)
 
     # THE OTHER ELEVEN LISTS, none of which was covered until 2026-09-12. Three
     # were checked and eleven were not, which is the same asymmetry this function
@@ -4942,3 +5073,52 @@ test "a tag's excuse covers exactly what it stood over, and nothing else"
 
     # A row naming a done record that is not in the tree is not excused.
     assert tag_is_excused(tag: "m-readable-bytes", open_rows: two, present: []) != ""
+
+# The carried row is not an amnesty either, and each clause of
+# `tag_is_carried` fires on its own for the same reason.
+test "a carried defect is excused at its tag only where its own item says so"
+    one = ["- [ ] **129 — a minus alone** | x | y"]
+    logs = ["docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md"]
+    carrying = [
+        "**OPEN: 1**"
+        ""
+        "- [ ] **129 — a minus alone** | x | y"
+        ""
+        "    **Carried to the next milestone**, by the author's instruction of"
+        "    2026-09-28 16:40 (`docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md`)."
+        ""
+        "****************"
+    ]
+    list_then = carrying.join("\n")
+
+    # The real row, over the real defect, its entry present and its own item
+    # saying it is carried.
+    assert tag_is_carried(tag: "m-agreed-retention", open_rows: one, text: list_then, present: logs) == ""
+
+    # A tag no row names is carried by nothing.
+    assert tag_is_carried(tag: "m-somewhere-else", open_rows: one, text: list_then, present: logs) != ""
+
+    # A tag standing over a defect the row does not name is not carried.
+    two = one.push("- [ ] **126 — an arm** | x | y")
+    assert tag_is_carried(tag: "m-agreed-retention", open_rows: two, text: list_then, present: logs) != ""
+
+    # A row whose log entry is not in the tree carries nothing.
+    assert tag_is_carried(tag: "m-agreed-retention", open_rows: one, text: list_then, present: []) != ""
+
+    # A defect whose own item does not say it is carried is not carried, and
+    # the words belong to THAT item: the same words under the next item do not
+    # count.
+    elsewhere = [
+        "- [ ] **129 — a minus alone** | x | y"
+        ""
+        "    **Origin:** lane 123."
+        ""
+        "- [ ] **130 — something else** | x | y"
+        ""
+        "    **Carried to the next milestone**, by the author's instruction of"
+        "    2026-09-28 16:40 (`docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md`)."
+        ""
+        "****************"
+    ]
+    silent = elsewhere.join("\n")
+    assert tag_is_carried(tag: "m-agreed-retention", open_rows: one, text: silent, present: logs) != ""
