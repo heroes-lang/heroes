@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 6**
+**OPEN: 7**
 
 - [ ] **114 — the emitted C zeroes every temporary of a function at its entry, so a lookup that returns early pays for every arm** | the emitter declares each temporary at the top of the C function with `= {0}`, and a `match` over a string of twenty arms declares them all: the emitted `h_keywords_keyword` zeroes 139 temporaries on every call to make 21 string comparisons, and on the default build line (plain `clang`, no optimisation, CLAUDE.md § Commands) every one is executed; `memset` was about a fifth of `fmt`'s samples after defect 105's repair | `selfhost/emit/` (the temporaries' declarations) · `seed/heroes.c` (`h_keywords_keyword`)
 
@@ -116,5 +116,19 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     another compiler, or without a flag the compiler now passes, is a program
     other than the one its source and its compiler say, at exit 0; and it is
     the precondition for every new instrument leg the sitting names.
+
+- [ ] **123 — a `match` arm whose pattern begins with a `-` set apart from its operand compiles, where the spec refuses it** | `k = match n` with the arm `- 1 => 10` is `check` 0 and prints 10, as `-1 => 10` does; spec § 0 reads *where a NEWLINE separates without a `,`, the next line may not begin with a `-` that does not touch its operand*, and a `match`'s arms are separated by NEWLINE; panel 180's `spaced_minus_element` refuses the shape in a literal and panel 181's refusal at depth zero, and an arm is the one NEWLINE-separated context left | `selfhost/parse/list_line.hero` (`spaced_minus_element`) · `selfhost/grammar_expr.hero` (`arm`)
+
+    **Origin:** lane 181's agent, 2026-09-28, beside panel 181's landing,
+    left unchanged and reported; reproduced by the coordinator on the trunk's
+    compiler at `28d7129c` the same morning (`arm_minus.hero` in
+    `/Users/joseph/Temp/heroes-recovery-2026-09-26/defect123/`).
+
+    **Why it is a defect.** The spec states the rule without the bracket
+    limit design.md's panel 180 bullet gives it, and CLAUDE.md § 12 reads the
+    disagreement as the compiler's: a reader of the spec predicts a refusal
+    the compiler does not make. The shape has one reading, a negative
+    pattern, so the refusal loses no program and its fix, the `-` touching
+    its operand, is the spelling `fmt` prints.
 
 *******************************************************************************

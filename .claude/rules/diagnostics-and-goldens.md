@@ -43,6 +43,18 @@ the two nearest the line obey it by construction — `value_errors.hero`'s
 `resolve/errors.hero`'s rename-to-`_` fires for a loop variable and a match
 payload and never for a binding.
 
+**Falsified 2026-09-28, twice, at the site this paragraph called nearest the
+line** (`discarded_value`, now in `selfhost/discard_errors.hero`). Its
+`certain` `_ = ` on `total = base` over `- fee` wrote a program that compiles
+and prints 100 where the subtraction meant 93 (defect 120, panel 181's
+critic), and the audit panel 181's landing made of the same site found its
+insertion placed by the value's span, so `(5)` alone took `(_ = 5)`, which
+does not parse. Both repaired in `5772c830`: `_ = ` is a `guess` on a line that
+begins with a value's first token, and it is inserted at the line's first
+byte. The 23-site reading of 2026-09-08 was a reading, not a run; the
+instrument that caught both was `check --apply` followed by `run` on the
+shapes beside the site.
+
 Golden convention: `x.hero` plus `x.expected`, plus `x.fixed` where a certain
 fix exists, and CI asserts the applied fix compiles.
 
