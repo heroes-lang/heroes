@@ -1946,6 +1946,29 @@ invents:**
   Trailing-operator continuation at depth zero (Nim's rule) was considered and deferred: it enters
   only if the measurement baseline shows models actually produce that break shape. (Panel 007,
   predictions on record.)
+- **Outside brackets a line ends its statement, in both directions** (panel 181, provisional,
+  2026-09-28), the ruling of the bullet above made true where the compiler had not: until that
+  sitting a line that planted no terminator ran on into the next at the same margin (defect 116),
+  the consequence of Go's ender list with nothing to refuse it. A depth-zero line whose last token
+  cannot end a statement, and a depth-zero line that begins with a token that can only go on with
+  the line above (a binary operator, a `-` set apart from its operand by panel 180's criterion,
+  `?`, `::`), at the statement's margin or after a block that has just closed, are one mistake,
+  refused by one diagnostic at the line break, `continuation_outside_brackets`. The lexer emits it
+  (`selfhost/open_line.hero`) and hands the parser the one line the author broke, so nothing
+  downstream moves, and `check --permissive`, where the code is a thesis rule, reads the join.
+  Three block heads are not continuations: `else` and `=>` before a deeper line open their bodies,
+  and `:` before one keeps the parser's `trailing_colon`. A line that begins with a declaration or
+  statement keyword, or one that binds or mutates, ends the line above, and the parser says what
+  that line lacks. A line that begins with `(`, `[` or `.` begins a statement of its own, after a
+  line end and after a block alike, where the parser's suffix loop stops at every suffix (defect
+  119): the sitting listed `(` and `[` among the continuations, and its landing narrowed that on a
+  census, since both begin a `Primary` and `(x) @ a` is a line of the language. An `error` token
+  ends a depth-zero line, so a malformed token never hides the next line's mistake. The fix writes
+  the statement on one line: `certain` where the next line cannot stand alone, a `guess` where it
+  could (a call, a binding, a control form, a hole), after a shallower line and after a block, and
+  none with a comment between; the parser offers the expression wrapped in parentheses as a second
+  `guess`. Terminators are still inserted unchanged everywhere, the refusal beside them, and the
+  deferral of Nim's rule above stands as written.
 - **A break before a token inside brackets**, which nothing ruled until panel 180. The terminator
   above is planted inside brackets too, so a line there that ends with a name, a literal, a keyword
   that can end a line, `?`, `???` or a closing bracket keeps its NEWLINE, and what may follow that

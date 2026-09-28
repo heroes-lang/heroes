@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-a-suffix-after-a-block-applied-to-its-value.hero:24:6: error[discarded_value]: this line's value has type `i64` and nothing receives it — write `_ = …` to discard it on purpose
+tests/golden/check/fixedbugs-a-suffix-after-a-block-applied-to-its-value.hero:32:5: error[discarded_value]: this line's value has type `[i64]` and nothing receives it — write `_ = …` to discard it on purpose

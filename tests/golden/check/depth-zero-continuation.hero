@@ -2,6 +2,15 @@
 # Guards panel 007: there is NO continuation at bracket depth zero. A line
 # ending in `+` gets no terminator, so the next line is read as part of the
 # same expression — and an indented line there is a block, not a continuation.
+#
+# Correction, 2026-09-28 (panel 181, provisional): the first claim above was
+# false at the statement's own margin, where `total = 1 +` over `2` compiled
+# and ran until this date, as the second sentence says of the line after `+`
+# (defect 116); this case tested only the deeper line, refused as a block.
+# Both margins are one refusal now, of the line end at the `+`, which is
+# where the annotation and the `.expected` moved from the `2`:
+# `continuation_outside_brackets` (`selfhost/open_line.hero`).
 function main()
+    #~v continuation_outside_brackets
     total = 1 +
-        2  #~ expected_expression
+        2

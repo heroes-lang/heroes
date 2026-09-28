@@ -17,6 +17,10 @@
 # holds: where this says yes, the value is printed as a group, inside the
 # author's innermost pair around it, or inside `fmt`'s own parentheses where
 # the author wrote none (a line continued at the statement's own margin).
+# That second case has had no input since panel 181 refused the line
+# (`open_line`): measured 2026-09-28, with this branch made to exit, no file
+# of the tree's 1179 and no probe of 675 reached it, where one file did the
+# day before (`comments107/margin.hero`).
 # The pairs outside the innermost are dropped, as `fmt` drops every pair
 # that binds nothing: no comment stands between them, since one there opens
 # its pair first (`around.just_inside`). A part of the value printed by a

@@ -1,0 +1,20 @@
+# Fixed defect 118 (panel 181, 2026-09-28). Symptom: `heroes fmt` exited 2,
+# *`fmt` is not a fixpoint on its own output* and *this is a compiler bug*, on
+# a `match` arm continued at its own margin, `.dot => a +` over `1`, which
+# `check` accepted and ran. Cause: defect 116's continuation, which the
+# formatter's line owner read as two logical lines. The shape is refused now,
+# with one diagnostic, and `fmt` refuses it at exit 1 like any file that does
+# not parse (`suite_surface`'s rows on `surface-fixtures/continuation181/`).
+
+variant S
+    dot
+    sq
+
+function main()
+    a: i64 = 5
+    s: S = .dot
+    y = match s
+        #~v continuation_outside_brackets
+        .dot => a + 1
+        .sq => 0
+    print(y)

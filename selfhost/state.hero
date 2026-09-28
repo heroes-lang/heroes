@@ -42,12 +42,25 @@ record LexState
     # Kind of the current line's last significant (non-comment) token — the
     # one datum terminator insertion needs (layout.hero).
     last_significant: token.TokenKind?
+    # A depth-zero line whose end is not its statement's end (panel 181,
+    # `open_line.hero`): the index in `tokens` of its last significant token,
+    # and the offset of the line end after it. -1 when the last line with
+    # words ended its statement.
+    open_line: i64
+    open_end: i64
+    # A depth-zero line that ended with a value owes its terminator until the
+    # next line with words says it begins a statement (`open_line`): the
+    # offset of that line end, -1 when none is owed. The comment lines read
+    # meanwhile are `held`, so they follow the terminator as they always did.
+    owed: i64
+    held: [token.Token]
 
 function new_state() -> LexState
     brackets: [token.Span] = []
     holes: [i64] = []
     tokens: [token.Token] = []
     diagnostics: [diag.Diagnostic] = []
+    held: [token.Token] = []
     return LexState(
         pos: 0,
         level: 0,
@@ -55,7 +68,11 @@ function new_state() -> LexState
         holes: holes,
         tokens: tokens,
         diagnostics: diagnostics,
-        last_significant: fail(code: ERR_NO_SIGNIFICANT, msg: "no significant token yet")
+        last_significant: fail(code: ERR_NO_SIGNIFICANT, msg: "no significant token yet"),
+        open_line: -1,
+        open_end: -1,
+        owed: -1,
+        held: held
     )
 
 ## Emitting

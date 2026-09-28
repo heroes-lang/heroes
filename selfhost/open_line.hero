@@ -1,0 +1,304 @@
+# The line left open: a depth-zero line that ends where its statement does
+# not (design.md §4.15; panel 181, provisional).
+#
+# Outside brackets a line ends its statement (the spec's opening paragraph).
+# The lexer plants a terminator after a line whose last token can end one
+# (Go's rule, panel 007, `layout.is_line_ender`), and a line breaks the rule
+# in one of two directions: its last token cannot end a statement (`y = a +`,
+# `xs.`, `for x in`), or the next line begins with a token that can only go on
+# with it (`+ 1`, `- fee` with the `-` set apart, `?`, `::x`). Both are one
+# mistake, refused here by one diagnostic, `continuation_outside_brackets`,
+# and **the stream the parser is handed is the one line the author broke**: no
+# terminator between, no indent, no dedent. The parser and everything after it
+# read what they would read had the line not been broken, so the break costs
+# exactly one diagnostic, and the control arm (`check --permissive`,
+# `diag.is_thesis_rule`) reads the join.
+#
+# A line that begins with `(`, `[` or `.` begins a statement of its own and
+# is not this module's: `(x) @ a`, `[1, 2].len().print()` and `.case =>` are
+# lines of the language (panel 181, narrowed by its landing on a census).
+#
+# Where the lexer cannot tell which statement the author meant, it never
+# decides whether the program compiles, only which diagnostic the author
+# reads: a line that begins with a declaration or statement keyword, or one
+# that binds or mutates, ends the open line above it, and the parser says
+# what that line lacks in its own words. The scans of the next line's text,
+# `next_line.hero`, rest on that: a quote they misread costs a message or a
+# fix's certainty, never an acceptance.
+#
+# | entry | called by |
+# |---|---|
+# | `left_open` | `layout.maybe_terminator`, at a line end, where the line is left open (a line that owes its terminator is recorded there) |
+# | `goes_on`, `goes_on_below` | `layout.line_start`, at the next line with words: refused and joined, or ended there |
+# | `abandon`, `settle` | `layout.line_start` where a tab or a stray carriage return leaves the margin unread, and `lexer.lex_one` at the file's end |
+
+use token
+use state
+use diag
+use keywords
+use bytes
+use punctuation
+use next_line
+
+## At the line end
+
+# A depth-zero line that ends with a token no line may end with is left open:
+# the next line with words decides (`goes_on`).
+function left_open(@l: state.LexState)
+    l.open_line @ last_significant(l.tokens)
+    l.open_end @ l.pos
+
+# A depth-zero line that ended with a value OWES its terminator
+# (`layout.maybe_terminator` records where, `state.owed`), which is planted
+# when the next line with words turns out to begin a statement of its own,
+# and never when it can only go on with this one (`goes_on_below`). Deciding
+# there rather than at the line end is what keeps the rule cheap: the next
+# line's first token is where the scanner is about to read, so nothing is read
+# twice, and nothing planted is taken back, which would copy the token array
+# per break. Measured 2026-09-28 on the 74,955 lines of `selfhost/`
+# concatenated: a first form that read ahead at every line end, over the next
+# line's margin and every comment line between, cost 0.05 s of the 1.53 s it
+# lexed in.
+
+# The index of the last token of `tokens` that is not a comment.
+function last_significant(tokens: [token.Token]) -> i64
+    at: i64 @ tokens.len() - 1
+
+    while at > 0 && tokens[at].kind == .comment
+        at @ at - 1
+
+    return at
+
+# The owed terminator, planted where its line ended, and the comment lines
+# held since then after it: the stream a line that ends its statement makes.
+function settle(@l: state.LexState)
+    if l.owed < 0
+        return
+    state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: l.owed, end: l.owed)))
+    l.owed @ -1
+    flush(@l)
+
+function flush(@l: state.LexState)
+    if l.held.len() == 0
+        return
+
+    for t in l.held
+        state.push_token(@l.tokens, t)
+
+    empty: [token.Token] = []
+    l.held @ empty
+
+# `at`, when the token there can only go on with the line above, else -1.
+function goes_on_at_head(text: str, at: i64) -> i64
+    first = punctuation.punct_at(text, at: at)
+
+    if !can_only_go_on(first.kind)
+        return -1
+
+    # `-1` and `-fee` against their operand begin a value of their own (panel
+    # 180's criterion), and so does a `-` that opens an arm, whose pattern it
+    # signs (`- 1 => …`).
+    if first.kind == .minus && (!set_apart(text, at: at + 1) || next_line.holds_an_arrow(text, from: at))
+        return -1
+    return at
+
+# A token no statement begins with, which at the head of a line can only go
+# on with the line above: a binary operator (spec § 7), the `?` that
+# propagates and the `::` that names a field. ENUMERATED, never a catch-all:
+# a new kind is a compile error here until somebody decides it, which is
+# `layout.is_line_ender`'s own discipline. `-` answers true, and the caller
+# asks panel 180's question of it.
+function can_only_go_on(kind: token.TokenKind) -> bool
+    return match kind
+        .or_or | .and_and | .eq_eq | .bang_eq | .lt | .le | .gt | .ge                    => true
+        .pipe | .caret | .amp | .shl | .shr | .plus | .minus | .star | .slash | .percent => true
+        .question | .colon_colon                                                         => true
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit               => false
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match | .kw_if      => false
+        .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue               => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use          => false
+        .kw_true | .kw_false | .kw_fail | .eq | .at | .colon | .comma | .dot | .hole     => false
+        .arrow | .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace        => false
+        .rbrace | .bang | .tilde | .comment | .terminator | .indent | .dedent | .eof     => false
+        .error                                                                           => false
+
+# A `-` set apart from its operand, by a space, a comment or a line end.
+function set_apart(text: str, at: i64) -> bool
+    if at >= text.len()
+        return true
+    b = text[at]
+    return b == ' ' || b == '#' || b == '\r' || b == '\n'
+
+# Does the statement the tokens end with open with a declaration's keyword?
+function heads_a_declaration(tokens: [token.Token]) -> bool
+    i: i64 @ tokens.len() - 1
+
+    while i > 0 && tokens[i - 1].kind != .terminator && tokens[i - 1].kind != .indent && tokens[i - 1].kind != .dedent
+        i @ i - 1
+
+    while i < tokens.len() - 1 && tokens[i].kind == .comment
+        i @ i + 1
+
+    k = tokens[i].kind
+    return k == .kw_function || k == .kw_constant || k == .kw_record || k == .kw_variant || k == .kw_test || k == .kw_extern || k == .kw_use
+
+## At the next line with words
+
+# Decide the line left open, at the next line with words, whose margin is
+# `spaces` and whose first byte is `l.pos`. True when that line goes on with
+# it, refused: no margin token is emitted and the level stays, so the parser
+# reads the two lines as the one the author broke.
+function goes_on(@l: state.LexState, text: str, spaces: i64) -> bool
+    at = l.open_line
+    l.open_line @ -1
+    return refuse_the_end(@l, text, at: at, spaces: spaces)
+
+# Decide the terminator a line that ended with a value owes, at the next line
+# with words, whose margin is `spaces` and whose first byte is `l.pos`. True
+# when that line can only go on with it, refused and joined as in `goes_on`;
+# false when the terminator is planted, which is every line of a program that
+# compiles. A deeper line is a block's first, or the parser's indentation
+# error; a word, a literal, a `(`, a `[` or a `.` begins a statement of its
+# own; and a declaration's head is no statement a line goes on with, so the
+# parser says what the head lacks.
+function goes_on_below(@l: state.LexState, text: str, spaces: i64) -> bool
+    b = text[l.pos]
+
+    if (spaces + 2) / 4 > l.level || bytes.is_alnum(b) || b == '_' || b == '"' || b == '\'' || goes_on_at_head(text, at: l.pos) < 0 || heads_a_declaration(l.tokens)
+        settle(@l)
+        return false
+    at = last_significant(l.tokens)
+    commented = l.tokens.len() > at + 1 || l.held.len() > 0
+    l.owed @ -1
+    flush(@l)
+    refuse_the_head(@l, text, at: at, spaces: spaces, commented: commented)
+    return true
+
+# Where a tab leaves the margin unread: a line end that owed its terminator
+# gets it, so nothing goes on in silence.
+function abandon(@l: state.LexState)
+    settle(@l)
+    l.open_line @ -1
+
+function plant(@l: state.LexState)
+    state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: l.open_end, end: l.open_end)))
+
+# The line above ended with a token no line may end with.
+function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> bool
+    left = l.tokens[at]
+    margin = l.level * 4
+    first = keywords.keyword(next_line.word_at(text, at: l.pos))
+    fresh = !first.is_err() && next_line.starts_afresh(first.must())
+
+    # A block head: `else` and `=>` open a body, and a `:` before a deeper
+    # line is the Python habit, which the parser refuses with its own fix.
+    if spaces > margin && (left.kind == .kw_else || left.kind == .fat_arrow || left.kind == .colon)
+        return false
+
+    # A line that binds or mutates is a statement of its own, which no
+    # expression goes on into: only a declaration's `name:` takes one.
+    binding = next_line.holds_a_binding(text, from: l.pos) && !names_a_declaration(l.tokens, at: at)
+
+    # Never after `=>`: the parser reads an arm's body across a line end
+    # (`grammar_expr.arm`), so a line ended there would go on in silence.
+    split = fresh || binding || left.kind == .kw_else && (first.is_err() || first.must() != .kw_if)
+
+    if split && left.kind != .fat_arrow
+        plant(@l)
+        return false
+    where: str @ "at the same margin, where a new statement begins"
+
+    if spaces > margin
+        where @ "one level deeper, where a block would begin"
+    else if spaces < margin
+        where @ "at a shallower margin, where the block above ends"
+    message = "a line outside brackets ends its statement, and this one cannot end with `" + text.slice(from: left.span.start, to: left.span.end) + "`: the next line goes on with it " + where + "; write the statement on one line, or break it inside parentheses"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "continuation_outside_brackets", message: message, span: left.span)
+
+    # Joining the lines is the program the parser reads. It is `certain` where
+    # the next line cannot stand alone, so the join is the only repair; a
+    # `guess` where it can, which is the dropped operand's shape (Guido van
+    # Rossum's `x = y +` over `f(x)`, PEP 3125), and after a shallower line,
+    # where the author more likely closed the block; and there is none with a
+    # comment between, which a join would carry into the statement.
+    if l.tokens.len() == at + 1
+        certainty: diag.Certainty @ .certain
+
+        if spaces < margin || next_line.stands_alone(text, from: l.pos)
+            certainty @ .guess
+        glue: str @ " "
+
+        if left.kind == .dot || left.kind == .colon_colon || left.kind == .slash
+            glue @ ""
+        d.fixes @ d.fixes.push(joined(glue: glue, from: left.span.end, to: l.pos, certainty: certainty))
+    state.push_diagnostic(@l.diagnostics, d)
+    return true
+
+# The line above could end, and this one begins with a token that can only
+# go on with it.
+function refuse_the_head(@l: state.LexState, text: str, at: i64, spaces: i64, commented: bool)
+    left = l.tokens[at]
+    head = punctuation.punct_at(text, at: l.pos)
+    shown: str @ "`" + text.slice(from: l.pos, to: l.pos + head.width) + "`"
+
+    if head.kind == .minus
+        shown @ "a `-` set apart from its operand"
+    where: str @ "the line above, which ended its statement at the same margin"
+    after_a_block = spaces < l.level * 4
+
+    if after_a_block
+        where @ "the block above, whose statement ended when the block closed"
+    message = "a line outside brackets ends its statement, and this one cannot begin with " + shown + ": it goes on with " + where + "; write the statement on one line, or break it after an operator inside parentheses"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "continuation_outside_brackets",
+        message: message,
+        span: token.Span(start: l.pos, end: l.pos + head.width)
+    )
+
+    # The join is the only repair at the same margin, since no statement
+    # begins with this token; after a block it moves the line into the
+    # block's last one, which the author more likely did not mean.
+    if !commented
+        certainty: diag.Certainty @ .certain
+
+        if after_a_block
+            certainty @ .guess
+        glue: str @ " "
+
+        if head.kind == .question || head.kind == .colon_colon
+            glue @ ""
+        d.fixes @ d.fixes.push(joined(glue: glue, from: left.span.end, to: l.pos, certainty: certainty))
+    state.push_diagnostic(@l.diagnostics, d)
+
+function joined(glue: str, from: i64, to: i64, certainty: diag.Certainty) -> diag.Fix
+    return diag.Fix(
+        title: "write the statement on one line",
+        replacement: glue,
+        span: token.Span(start: from, end: to),
+        certainty: certainty
+    )
+
+## What the line above holds
+
+# Is the token at `at` the colon of a statement's `name:`, which the next
+# line's type and binding complete?
+function names_a_declaration(tokens: [token.Token], at: i64) -> bool
+    if at < 1 || tokens[at].kind != .colon || tokens[at - 1].kind != .ident
+        return false
+
+    if at == 1
+        return true
+    k = tokens[at - 2].kind
+    return k == .terminator || k == .indent || k == .dedent
+
+test "a token that can only go on is a binary operator, the propagating `?` or `::`"
+    assert can_only_go_on(.plus)
+    assert can_only_go_on(.and_and)
+    assert can_only_go_on(.question)
+    assert can_only_go_on(.colon_colon)
+    assert !can_only_go_on(.lparen)
+    assert !can_only_go_on(.lbracket)
+    assert !can_only_go_on(.dot)
+    assert !can_only_go_on(.hole)
+    assert !can_only_go_on(.arrow)
+    assert !can_only_go_on(.bang)
