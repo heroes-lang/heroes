@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 6**
+**OPEN: 8**
 
 - [ ] **114 — the emitted C zeroes every temporary of a function at its entry, so a lookup that returns early pays for every arm** | the emitter declares each temporary at the top of the C function with `= {0}`, and a `match` over a string of twenty arms declares them all: the emitted `h_keywords_keyword` zeroes 139 temporaries on every call to make 21 string comparisons, and on the default build line (plain `clang`, no optimisation, CLAUDE.md § Commands) every one is executed; `memset` was about a fifth of `fmt`'s samples after defect 105's repair | `selfhost/emit/` (the temporaries' declarations) · `seed/heroes.c` (`h_keywords_keyword`)
 
@@ -92,6 +92,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     call, which runs code with its effects inside a match, both at exit 0; and
     a float after a `-` where a float is not a pattern at all.
 
+    **Widened 2026-09-28, by lane 123's agent:** it is wider than the `-`.
+    With no sign at all a pattern reads a literal's suffixes, `"ab".len() =>
+    10` compiles and prints 10, `'a'.to_i64().must() =>` compiles, and so does
+    `0 | -m`: a pattern's literal is one token, optionally after one `-`.
+
 - [ ] **125 — `fmt` accuses itself on every negative literal pattern** | `k = match n` with the arm `-1 => 10` is `check` 0, and `heroes fmt` exits 2 with *`fmt` produced source that does not parse* (`expected_pattern`, found `(`) and *this is a compiler bug*: `print/bodies.render_pattern` renders a literal pattern through `render_expr`, whose unary case prints `(-1)`, and a parenthesis opens no pattern; also on `return match n` and on a statement `match` | `selfhost/print/bodies.hero` (`render_pattern`)
 
     **Origin:** lane 123's agent, 2026-09-28, attacking the shapes beside
@@ -116,5 +121,30 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** Panel 181's item 3: a `certain` fix that fails to
     compile is a defect of the landing, and `heroes check --apply` would write
     it into a file.
+
+- [ ] **127 — a literal pattern on an integer type other than `i64` is refused, so a `match` over a `u8` can only be `_`** | `255 =>` in a `match` over a `u8` is `type_mismatch: expected u8, found i64`, and `1 =>` over an `i32` likewise: `check/walk.literal_pattern` synthesises the literal's type, `i64`, instead of checking the literal against the scrutinee, where spec § 2 reads *a literal takes the type its context asks for*; and `x: i64 = -9223372036854775808` compiles while the same spelling as a pattern is `int_out_of_range` | `selfhost/check/walk.hero` (`literal_pattern`)
+
+    **Origin:** lane 123's agent, 2026-09-28, attacking the shapes beside
+    defect 124 (reproducers `shapes/v05`, `v06`, `v12`, `v15`, `v17` in
+    `/Users/joseph/Temp/heroes-lane-123-scratch/`); reproduced by the
+    coordinator on the trunk's compiler at `5fdd0edd` the same afternoon
+    (`u8_pattern.hero` in `/Users/joseph/Temp/heroes-recovery-2026-09-26/defect127/`).
+
+    **Why it is a defect.** A program the spec admits, a `match` over a byte
+    by its values, is refused, and the only spelling left is `_`; the
+    refusal's message names a type the author never wrote.
+
+- [ ] **128 — two literal arms with the same value compile, while two arms naming the same case are refused** | `match n` with `0 => 10` and a later `0 => 30` is `check` 0 and prints 10, the second arm never reachable, and `-0` beside `0` likewise; the same shape over a variant, `.dot` twice, is `duplicate_arm` (*`.dot` is already covered by an earlier arm*, `selfhost/data_errors.hero:254`) | `selfhost/check/walk.hero` (the arm walk that calls `duplicate_arm` for a case and not for a literal)
+
+    **Origin:** lane 123's agent, 2026-09-28, as a question beside defect 124
+    (`shapes/v07`, `v14`); the coordinator found the existing refusal for
+    cases and reproduced both shapes on the trunk's compiler at `5fdd0edd`
+    (`dup_literal.hero`, `dup_case.hero` in
+    `/Users/joseph/Temp/heroes-recovery-2026-09-26/defect127/`).
+
+    **Why it is a defect.** The compiler already names an arm an earlier arm
+    covers as a mistake, for cases; for literals it keeps the unreachable arm
+    in silence, the plausible slip of a copied line whose value was not
+    changed.
 
 *******************************************************************************
