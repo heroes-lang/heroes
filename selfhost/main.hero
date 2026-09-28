@@ -40,6 +40,7 @@ use cli/doctor
 use cli/help
 use cli/measure
 use cli/mutate
+use cli/probe
 use cli/grammar
 
 # The version, and the one place it lives (CLAUDE.md §14, release tags):
@@ -132,6 +133,7 @@ function main()
         )
         .measure_cmd => exit(code: cli_table.exit_code(measure.run(inv)))
         .mutate_cmd  => exit(code: cli_table.exit_code(mutate.run(inv)))
+        .probe_cmd   => exit(code: cli_table.exit_code(probe.run(inv)))
         # The seven that read a program fall through to the walk
         # below. The arm is a no-op MUTATION and not a print: a
         # `print("")` here put a blank line above every diagnostic and
@@ -181,7 +183,7 @@ function main()
             inv: inv
         )
         .doctor_cmd | .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => verdict @ verdict
-        .grammar_cmd                                                                    => verdict @ verdict
+        .grammar_cmd | .probe_cmd                                                       => verdict @ verdict
 
     exit(code: cli_table.exit_code(verdict))
 
@@ -202,7 +204,7 @@ function compiling(path: str, s: source.Source, inv: argv.Invocation) -> cli_tab
         .test_cmd => return verbs.run_test(path: path, s: s, inv: inv, t: t, version: VERSION)
         .lex_cmd | .parse_cmd | .check_cmd | .fmt_cmd | .doctor_cmd => return .ok_exit
         .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => return .ok_exit
-        .grammar_cmd => return .ok_exit
+        .grammar_cmd | .probe_cmd => return .ok_exit
 
     return .ok_exit
 

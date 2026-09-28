@@ -1,0 +1,204 @@
+# What `heroes probe` makes of every variant (panel 179 items 2, 4 and 5;
+# design.md §4.15, §3.3): the variant built from its edit, formatted and
+# guarded by `print/guard.hero`'s `checked`, the one function `heroes fmt`
+# calls, in this process and never by starting `heroes` again; then read by
+# the independent reader (`probe/reader.hero`) beside `fmt`'s output. The
+# two judges must agree: a variant the guard refuses is a failure of the
+# guard's, one it passes and the reader does not is a failure of the
+# reader's, and either is `fmt` failing a program the parser accepts.
+#
+# A variant the parser refuses never reaches `fmt`. It is DISCARDED, and
+# counted by its family and by the first diagnostic the parser gave it, so
+# a run can say what it did not test (the completeness critic: one variant
+# in five of one fixture, and a spec sentence the parser disagreed with
+# among them, defect 104).
+
+use source
+use print/guard
+use probe/seed
+use probe/lines
+use probe/tokens
+use probe/reader
+
+# The seven families, in the order the report prints them.
+constant FAMILIES: [str]
+    ["single", "multi", "bracket", "paren", "ends", "columns", "texts"]
+
+function known(family: str) -> bool
+    for one in FAMILIES
+        if one == family
+            return true
+
+    return false
+
+# One family's variants of one seed.
+function edits(s: seed.Seed, family: str) -> [seed.Edit]
+    if family == "single"
+        return lines.single(s)
+
+    if family == "multi"
+        return lines.multi(s)
+
+    if family == "bracket"
+        return tokens.bracket(s)
+
+    if family == "paren"
+        return tokens.paren(s)
+
+    if family == "ends"
+        return lines.ends(s)
+
+    if family == "columns"
+        return lines.columns(s)
+
+    if family == "texts"
+        return lines.texts(s)
+    return []
+
+variant Outcome
+    # The parser refuses the variant: its first diagnostic's code.
+    discarded
+        code: str
+    held
+    # `fmt`'s guard refused its own output, as `heroes fmt` would at exit 2.
+    refused
+        why: str
+    # The guard passed it and the independent reader did not.
+    moved
+        why: str
+
+# What `fmt` and the two judges make of the program `text`, named `path`.
+function judged(path: str, text: str) -> Outcome
+    done = guard.checked(path: path, s: source.new_source(name: path, text: text))
+
+    if done.input.diagnostics.len() > 0
+        return .discarded(code: done.input.diagnostics[0].code)
+
+    if !done.refusal.is_err()
+        return .refused(why: done.refusal.must())
+
+    # The output is the variant byte for byte: every comment is where it was.
+    if done.formatted == text
+        return .held
+    why = reader.compare(was: text, before: done.input.tokens, now: done.formatted, after: done.output.tokens)
+
+    if why != ""
+        return .moved(why: why)
+    return .held
+
+## The tallies
+
+# One family's counts: every variant made, the ones judged (all of them
+# but under a stride), and of those the ones the parser took, held, and
+# refused by each judge.
+record Tally
+    family: str
+    generated: i64
+    judged: i64
+    parsing: i64
+    held: i64
+    guard: i64
+    reader: i64
+
+record Discard
+    family: str
+    code: str
+    count: i64
+
+# One variant `fmt` failed, as a site: never its text.
+record Failure
+    path: str
+    family: str
+    name: str
+    judge: str
+    why: str
+
+# A run: `stride` judges every `stride`-th variant of each family, counted
+# across the run in the order the seeds are read, the first included, so
+# a strided run judges the same variants every time (1 judges them all).
+record Run
+    tallies: [Tally]
+    discards: [Discard]
+    failures: [Failure]
+    stride: i64
+
+function start(families: [str], stride: i64) -> Run
+    tallies: [Tally] @ []
+
+    for family in families
+        tallies @ tallies.push(Tally(family: family, generated: 0, judged: 0, parsing: 0, held: 0, guard: 0, reader: 0))
+
+    return Run(tallies: tallies, discards: [], failures: [], stride: stride)
+
+# Every variant of `s` in the families `r` counts, counted, and the ones
+# its stride picks judged.
+function probe_seed(@r: Run, s: seed.Seed)
+    tallies: [Tally] @ r.tallies
+    discards: [Discard] @ r.discards
+    failures: [Failure] @ r.failures
+
+    for k in range(from: 0, to: tallies.len())
+        family = tallies[k].family
+
+        for e in edits(s, family: family)
+            index = tallies[k].generated
+            tallies[k].generated @ index + 1
+
+            if index % r.stride != 0
+                continue
+            tallies[k].judged @ tallies[k].judged + 1
+
+            match judged(path: s.path, text: lines.text(s, e: e))
+                .discarded d =>
+                    discards @ discarded(discards, family: family, code: d.code)
+                .held =>
+                    tallies[k].parsing @ tallies[k].parsing + 1
+                    tallies[k].held @ tallies[k].held + 1
+                .refused f =>
+                    tallies[k].parsing @ tallies[k].parsing + 1
+                    tallies[k].guard @ tallies[k].guard + 1
+                    failures @ failures.push(
+                        Failure(path: s.path, family: family, name: e.name, judge: "the guard", why: f.why)
+                    )
+                .moved m =>
+                    tallies[k].parsing @ tallies[k].parsing + 1
+                    tallies[k].reader @ tallies[k].reader + 1
+                    failures @ failures.push(
+                        Failure(path: s.path, family: family, name: e.name, judge: "the reader", why: m.why)
+                    )
+
+    r @ Run(tallies: tallies, discards: discards, failures: failures, stride: r.stride)
+
+# `discards` with one more of `code` in `family`.
+function discarded(discards: [Discard], family: str, code: str) -> [Discard]
+    out: [Discard] @ discards
+
+    for k in range(from: 0, to: out.len())
+        if out[k].family == family && out[k].code == code
+            out[k].count @ out[k].count + 1
+            return out
+
+    out @ out.push(Discard(family: family, code: code, count: 1))
+    return out
+
+# The variant of `s` named `name` in `family`, rebuilt from the seed as the
+# seats' last driver rebuilt one: by its name.
+function rebuilt(s: seed.Seed, family: str, name: str) -> seed.Edit?
+    for e in edits(s, family: family)
+        if e.name == name
+            return ok(e)
+
+    return fail(code: "no_variant", msg: "no variant " + name + " in " + family)
+
+# Whether the guard, or the reader, fails the program `text`: the two
+# questions a reduction asks (`probe/reduce.hero`), under one name for every
+# program it tries, since a name is only ever in what a failure says.
+function guard_fails(text: str) -> bool
+    return match judged(path: "reduced.hero", text: text)
+        .refused                    => true
+        .discarded | .held | .moved => false
+
+function reader_fails(text: str) -> bool
+    return match judged(path: "reduced.hero", text: text)
+        .moved                        => true
+        .discarded | .held | .refused => false

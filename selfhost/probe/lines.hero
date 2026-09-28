@@ -1,0 +1,312 @@
+# The comment families that deform a file line by line (panel 179 item 3;
+# design.md §4.15), ported from the skeptic seats' Python, which is their
+# specification: every name a variant carries is the name the Python gave
+# it, so a variant a seat reported can be rebuilt from the file it came
+# from.
+#
+# - `single`, the second seat's `gen.py single`: a comment trailing every
+#   line that holds a token and no comment (`T<line>`), a comment on a line
+#   of its own above every line at each column a reader might put it, 0,
+#   the line's own, four past it, four short of it, the line above's and
+#   four past that (`O<line>_<column>`), and one after the last line at 0
+#   and at the last line's column (`END_<column>`).
+# - `multi`, `gen.py multi`: nine rewrites of the whole file, a comment
+#   trailing every line (`ALLT`, and `ALLT_crlf` with CRLF line ends), one
+#   above every line at its column and at the line above's (`ALLO`,
+#   `ALLOP`), both at once (`ALLTO`), and above every line that closes two
+#   or more blocks a run at every column between, descending, ascending,
+#   with blank lines between, and mixed (`RUNDESC`, `RUNASC`, `RUNDESCBL`,
+#   `RUNMIX`).
+# - `ends`, the line ends the first seat's `drive.py` made and the second
+#   dropped, `ALLT_nonl`, `ALLO_crlf`, `ALLO_nonl` and `ENDNONL_<column>`
+#   (no final line end), with the file itself under CRLF, without its last
+#   line end, and both, the completeness critic's three copies.
+# - `columns`, the gap the critic measured in all of them: every `O`
+#   comment again two columns further in, so at a column that is not a
+#   multiple of 4 (`C<line>_<column>`).
+# - `texts`, the critic's other gap: a trailing comment past the width a
+#   line breaks at (`L<line>`), a trailing one and one on its own line of
+#   two-, three- and four-byte characters (`U<line>`, `V<line>`).
+#
+# The bracket break and the parenthesis wrap cut lines at tokens and are
+# `probe/tokens.hero`'s.
+
+use probe/seed
+
+# What every family asks of each line: whether a token starts on it,
+# whether a comment does, and the nearest line above it that is not blank
+# (`prior[n]` for the end of the file), -1 for none.
+record Facts
+    tokens: [bool]
+    comments: [bool]
+    prior: [i64]
+
+function facts(s: seed.Seed) -> Facts
+    tokens: [bool] @ []
+    comments: [bool] @ []
+
+    for _ in s.lines
+        tokens @ tokens.push(false)
+        comments @ comments.push(false)
+
+    for w in s.words
+        if w.line < s.lines.len()
+            tokens[w.line] @ true
+
+            if w.kind == .comment
+                comments[w.line] @ true
+
+    prior: [i64] @ []
+    last: i64 @ -1
+    index: i64 @ 0
+
+    for line in s.lines
+        prior @ prior.push(last)
+
+        if !seed.blank(line)
+            last @ index
+        index @ index + 1
+
+    prior @ prior.push(last)
+    return Facts(tokens: tokens, comments: comments, prior: prior)
+
+# The line a comment may trail: a token on it, and no comment.
+function trailable(f: Facts, line: i64) -> bool
+    return f.tokens[line] && !f.comments[line]
+
+# The columns `single` puts a comment at above line `i`, ascending.
+function columns_above(s: seed.Seed, f: Facts, i: i64) -> [i64]
+    own = seed.indent_of(s.lines[i])
+    found: [i64] @ [0, own, own + 4]
+
+    if f.prior[i] >= 0
+        above = seed.indent_of(s.lines[f.prior[i]])
+        found @ found.push(above)
+        found @ found.push(above + 4)
+
+    if own >= 4
+        found @ found.push(own - 4)
+    out: [i64] @ []
+
+    for k in found.sort()
+        if out.len() == 0 || out[out.len() - 1] != k
+            out @ out.push(k)
+
+    return out
+
+# The columns a comment after the last line goes at.
+function end_columns(s: seed.Seed, f: Facts) -> [i64]
+    last = f.prior[s.lines.len()]
+
+    if last < 0 || seed.indent_of(s.lines[last]) == 0
+        return [0]
+    return [0, seed.indent_of(s.lines[last])]
+
+function single(s: seed.Seed) -> [seed.Edit]
+    f = facts(s)
+    out: [seed.Edit] @ []
+
+    for i in range(from: 0, to: s.lines.len())
+        line = s.lines[i]
+        n = (i + 1).to_str()
+
+        if trailable(f, line: i)
+            out @ out.push(
+                seed.splice(family: "single", name: "T" + n, at: i, cut: 1, put: [line + "  # zq_t" + n], newline: true)
+            )
+
+        for k in columns_above(s, f: f, i: i)
+            put = [seed.spaces(k) + "# zq_o" + n + "_" + k.to_str()]
+            out @ out.push(
+                seed.splice(family: "single", name: "O" + n + "_" + k.to_str(), at: i, cut: 0, put: put, newline: true)
+            )
+
+    for k in end_columns(s, f: f)
+        put = [seed.spaces(k) + "# zq_end"]
+        out @ out.push(
+            seed.splice(family: "single", name: "END_" + k.to_str(), at: s.lines.len(), cut: 0, put: put, newline: true)
+        )
+
+    return out
+
+# The nine are the same for every file: their text is `shaped`'s.
+function multi(_: seed.Seed) -> [seed.Edit]
+    out: [seed.Edit] @ [whole(family: "multi", name: "ALLT", shape: "ALLT", crlf: false, newline: true)]
+    out @ out.push(whole(family: "multi", name: "ALLT_crlf", shape: "ALLT", crlf: true, newline: true))
+
+    for shape in ["ALLO", "ALLOP", "ALLTO", "RUNDESC", "RUNASC", "RUNDESCBL", "RUNMIX"]
+        out @ out.push(whole(family: "multi", name: shape, shape: shape, crlf: false, newline: true))
+
+    return out
+
+function ends(s: seed.Seed) -> [seed.Edit]
+    out: [seed.Edit] @ [whole(family: "ends", name: "SEED_crlf", shape: "SEED", crlf: true, newline: true)]
+    out @ out.push(whole(family: "ends", name: "SEED_nonl", shape: "SEED", crlf: false, newline: false))
+    out @ out.push(whole(family: "ends", name: "SEED_crlf_nonl", shape: "SEED", crlf: true, newline: false))
+    out @ out.push(whole(family: "ends", name: "ALLT_nonl", shape: "ALLT", crlf: false, newline: false))
+    out @ out.push(whole(family: "ends", name: "ALLO_crlf", shape: "ALLO", crlf: true, newline: true))
+    out @ out.push(whole(family: "ends", name: "ALLO_nonl", shape: "ALLO", crlf: false, newline: false))
+
+    for k in end_columns(s, f: facts(s))
+        put = [seed.spaces(k) + "# zq_end"]
+        out @ out.push(
+            seed.splice(family: "ends", name: "ENDNONL_" + k.to_str(), at: s.lines.len(), cut: 0, put: put, newline: false)
+        )
+
+    return out
+
+function columns(s: seed.Seed) -> [seed.Edit]
+    f = facts(s)
+    out: [seed.Edit] @ []
+
+    for i in range(from: 0, to: s.lines.len())
+        n = (i + 1).to_str()
+
+        for k in columns_above(s, f: f, i: i)
+            column = (k + 2).to_str()
+            put = [seed.spaces(k + 2) + "# zq_c" + n + "_" + column]
+            out @ out.push(
+                seed.splice(family: "columns", name: "C" + n + "_" + column, at: i, cut: 0, put: put, newline: true)
+            )
+
+    return out
+
+# Two-, three- and four-byte characters, which `fmt` printed back byte for
+# byte only once defect 110 was repaired.
+constant WIDE: str
+    "é € 😀"
+
+# A remark longer than the width a line of code breaks at, on any line.
+constant LONG: str
+    "a remark long enough that the line it trails runs past the column where the formatter breaks a line of code"
+
+function texts(s: seed.Seed) -> [seed.Edit]
+    f = facts(s)
+    out: [seed.Edit] @ []
+
+    for i in range(from: 0, to: s.lines.len())
+        line = s.lines[i]
+        n = (i + 1).to_str()
+
+        if trailable(f, line: i)
+            long = [line + "  # zq_l" + n + " " + LONG]
+            out @ out.push(seed.splice(family: "texts", name: "L" + n, at: i, cut: 1, put: long, newline: true))
+            wide = [line + "  # zq_u" + n + " " + WIDE]
+            out @ out.push(seed.splice(family: "texts", name: "U" + n, at: i, cut: 1, put: wide, newline: true))
+
+        if !seed.blank(line)
+            above = [seed.spaces(seed.indent_of(line)) + "# zq_v" + n + " " + WIDE]
+            out @ out.push(seed.splice(family: "texts", name: "V" + n, at: i, cut: 0, put: above, newline: true))
+
+    return out
+
+function whole(family: str, name: str, shape: str, crlf: bool, newline: bool) -> seed.Edit
+    return seed.Edit(family: family, name: name, shape: shape, at: 0, cut: 0, put: [], crlf: crlf, newline: newline)
+
+## A variant's text
+
+function text(s: seed.Seed, e: seed.Edit) -> str
+    if e.shape == ""
+        return seed.joined(lines: seed.spliced(s, e: e), crlf: e.crlf, newline: e.newline)
+    return seed.joined(lines: shaped(s, shape: e.shape), crlf: e.crlf, newline: e.newline)
+
+# Every line of the seed rewritten by one of `multi`'s shapes, or as it is.
+function shaped(s: seed.Seed, shape: str) -> [str]
+    f = facts(s)
+    out: [str] @ []
+
+    for i in range(from: 0, to: s.lines.len())
+        line = s.lines[i]
+        n = (i + 1).to_str()
+        own = seed.indent_of(line)
+
+        if !seed.blank(line) && (shape == "ALLO" || shape == "ALLOP" || shape == "ALLTO")
+            column: i64 @ own
+
+            if shape == "ALLOP"
+                column @ column_of(s, line: f.prior[i])
+            out @ out.push(seed.spaces(column) + "# zq_o" + n)
+
+        if (shape == "ALLT" || shape == "ALLTO") && trailable(f, line: i)
+            out @ out.push(line + "  # zq_t" + n)
+            continue
+        above = f.prior[i]
+
+        if shape.len() > 3 && shape.slice(from: 0, to: 3) == "RUN" && !seed.blank(line) && !seed.commented(line) && above >= 0
+            for k in run(from: column_of(s, line: above), to: own, style: shape)
+                out @ out.push(seed.spaces(k) + "# zq_r" + n + "_" + k.to_str())
+
+                if shape == "RUNDESCBL"
+                    out @ out.push("")
+
+        out @ out.push(line)
+
+    if shape == "ALLO" || shape == "ALLOP"
+        out @ out.push(seed.spaces(column_of(s, line: f.prior[s.lines.len()])) + "# zq_end")
+    return out
+
+# The column of line `line`, 0 for none.
+function column_of(s: seed.Seed, line: i64) -> i64
+    if line < 0
+        return 0
+    return seed.indent_of(s.lines[line])
+
+# A run's columns between a line at `from` and a shallower one at `to`,
+# two blocks or more apart: every fourth column from `from` down to `to`,
+# in the order `style` names.
+function run(from: i64, to: i64, style: str) -> [i64]
+    if from - to < 8
+        return []
+    down: [i64] @ []
+    k: i64 @ from
+
+    while k > to - 1
+        down @ down.push(k)
+        k @ k - 4
+
+    if style == "RUNASC"
+        up: [i64] @ []
+
+        for at in range(from: 0, to: down.len())
+            up @ up.push(down[down.len() - 1 - at])
+
+        return up
+
+    if style == "RUNMIX"
+        mixed: [i64] @ down.slice(from: 1, to: down.len())
+        mixed @ mixed.push(down[0])
+        return mixed
+    return down
+
+## Tests
+
+function seeded(written: str) -> seed.Seed
+    words: [seed.Word] = [
+        seed.Word(kind: .kw_function, line: 0, start: 0, end: 8)
+        seed.Word(kind: .kw_if, line: 1, start: 4, end: 6)
+        seed.Word(kind: .ident, line: 2, start: 8, end: 13)
+        seed.Word(kind: .comment, line: 3, start: 0, end: 3)
+        seed.Word(kind: .ident, line: 4, start: 4, end: 9)
+    ]
+    return seed.Seed(path: "t.hero", text: written, lines: seed.cut_lines(written), newline: true, words: words)
+
+test "the line families make the seats' variants, named as the seats named them"
+    s = seeded("function f()\n    if c\n        print(1)\n# c\n    print(2)\n")
+    names: [str] @ []
+
+    for e in single(s)
+        names @ names.push(e.name)
+
+    assert names == ["T1", "O1_0", "O1_4", "T2", "O2_0", "O2_4", "O2_8", "T3", "O3_0", "O3_4", "O3_8", "O3_12", "O4_0", "O4_4", "O4_8", "O4_12", "T5", "O5_0", "O5_4", "O5_8", "END_0", "END_4"]
+    assert text(s, e: single(s)[1]) == "# zq_o1_0\nfunction f()\n    if c\n        print(1)\n# c\n    print(2)\n"
+    assert multi(s).len() == 9
+    allt = text(s, e: multi(s)[1])
+    assert allt == "function f()  # zq_t1\r\n    if c  # zq_t2\r\n        print(1)  # zq_t3\r\n# c\r\n    print(2)  # zq_t5\r\n"
+    assert run(from: 12, to: 0, style: "RUNDESC") == [12, 8, 4, 0]
+    assert run(from: 12, to: 0, style: "RUNASC") == [0, 4, 8, 12]
+    assert run(from: 12, to: 4, style: "RUNMIX") == [8, 4, 12]
+    assert run(from: 8, to: 4, style: "RUNDESC") == []
+    assert ends(s).len() == 8
+    assert text(s, e: ends(s)[1]) == "function f()\n    if c\n        print(1)\n# c\n    print(2)"
+    assert columns(s)[0].put == ["  # zq_c1_2"]
+    assert texts(s)[1].put == ["function f()  # zq_u1 é € 😀"]

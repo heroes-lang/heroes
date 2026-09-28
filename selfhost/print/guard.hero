@@ -1,0 +1,198 @@
+# THE OUTPUT GUARD, and what `heroes fmt` makes of one source (design.md
+# §4.15, §3.3). Moved here from `cli/syntax_cmds.hero` on 2026-09-28 for
+# panel 179's probe, which asks the same question of every variant it makes
+# and must ask it the way `fmt` does: `checked` is the one function both
+# call, so the probe cannot judge a formatter `fmt` is not.
+#
+# `fmt` checked that its INPUT parsed and never looked at what it wrote,
+# so it deleted seven arms out of a compiler source file at exit 0 (defect
+# 003 (docs/work/DONE.md), the third instance of this class after panels
+# 014 and 060/061, every one found by a person).
+#
+# FOUR CHECKS OF THE OUTPUT, and they are four different properties,
+# beside the printer's own word that it kept every comment where it was
+# written (defect 101). The output must PARSE, because a formatter that
+# emits source the parser refuses has produced a non-program. Formatting it
+# again must give the same TEXT, because a canonical form that is not a
+# fixpoint is not canonical. And it must hold the same TREE, which is the
+# one the other two cannot do: output that parses and is a fixpoint can
+# still mean something else. Panel 061's deleted `partial`, panel 060's
+# hoisted `record`, and a record-field remark promoted to documentation are
+# all of that kind. And every comment must sit where it sat among the code,
+# which the tree cannot say since it keeps no comment but a doc: defect
+# 101's comments moved off the line they trailed and out of their brackets
+# at exit 0, and the one moved off a joined signature's `(` line was the
+# printer's own blind spot, so this check asks the two files rather than
+# any printer: each comment's block, by the rule the printer places it
+# with, and the tokens `fmt` keeps on either side of it
+# (`print/anchors.hero`, which says what it cannot see).
+#
+# The third check is `assert_canonical`, `dump(text) == dump(fmt(text))`,
+# which the Rust bootstrap had, the port never brought over, and `dump.hero`
+# went on claiming as live for a week.
+#
+# HOW THE TWO TREES ARE MADE COMPARABLE, because they are not by default:
+# a source may hold the whole module graph plus the library appended, while
+# the output is one file. So the root file's own text is parsed standalone
+# and compared against the output parsed standalone, one file against one
+# file, both named `path` so `dump_ast`'s first line agrees. Two things
+# make the dump invariant under legitimate formatting, both measured rather
+# than assumed: `bodies.hero` runs an integer literal through
+# `canonical_int`, so `fmt`'s one literal rewrite (`0xFF` to `0xff`) dumps
+# identically; and the dump carries names, structure and doc comments,
+# never spans or columns.
+#
+# Every failure is the COMPILER's (§7): `fmt` exits 2, the author's file
+# untouched.
+
+use source
+use source_extent
+use diag
+use parse
+use print/dump
+use print/fmt
+use print/page
+use print/anchors
+use print/owners
+
+# What `fmt` made of one source: the input's parse, and when it holds no
+# diagnostic, the canonical text, the parse of that text, and the guard's
+# word on it: `ok` with the reason when `fmt` accuses itself, `fail` when
+# every check held. With diagnostics nothing is formatted, `formatted` is
+# empty and `output` is the parse of that empty text.
+record Checked
+    input: parse.ParseOutput
+    formatted: str
+    output: parse.ParseOutput
+    refusal: str?
+
+# The formatter and its guard over `s`, read as `fmt` reads a file: the
+# root file alone (`input.read_root_only`), named `path`.
+function checked(path: str, s: source.Source) -> Checked
+    out = parse.parse_source(s)
+
+    if out.diagnostics.len() > 0
+        return Checked(
+            input: out,
+            formatted: "",
+            output: parse.parse(""),
+            refusal: fail(code: "unformatted", msg: "the file has diagnostics")
+        )
+    printed = fmt.format_lexed(out.tree, s, out.comments, out.uses, out.decls, out.tokens)
+    formatted = page.whole(printed)
+
+    # The file alone is what the guard compares against, and `fmt` read it
+    # alone, so this parse and the lines the printer read it with are the
+    # guard's own and are handed over rather than made again (defect 105).
+    # A source that holds more than the file is parsed alone, as the guard
+    # would.
+    before: parse.ParseOutput @ out
+    read: owners.Lines @ printed.lines
+
+    if s.files.len() != 1
+        before @ parse.parse(source_extent.user_text(s))
+        read @ owners.none()
+    judged = judged_output(
+        path: path,
+        original: source_extent.user_text(s),
+        before: before,
+        read: read,
+        formatted: formatted
+    )
+    refusal: str? @ judged.refusal
+
+    # The printer's own check, and the one no other can make: a comment no
+    # walk could keep where it was written is printed somewhere else, which
+    # changes neither the tree nor the second pass (defect 101).
+    if printed.moved > 0
+        refusal @ ok(
+            "`fmt` cannot keep the comment on line " + printed.moved.to_str() + " of `" + path + "` where it is written"
+        )
+    return Checked(input: out, formatted: formatted, output: judged.output, refusal: refusal)
+
+# The guard over a pair, the original parsed here.
+function refuse_output_the_formatter_broke(path: str, original: str, formatted: str) -> str?
+    return refused_output(
+        path: path,
+        original: original,
+        before: parse.parse(original),
+        read: owners.none(),
+        formatted: formatted
+    )
+
+# The guard, handed the original's parse, standalone, and the lines the
+# first pass read it with, or `owners.none()` (`anchors.first_moved_read`).
+function refused_output(path: str, original: str, before: parse.ParseOutput, read: owners.Lines, formatted: str) -> str?
+    return judged_output(path: path, original: original, before: before, read: read, formatted: formatted).refusal
+
+# The guard's word and the output's parse, which a second judge reads.
+record Judged
+    refusal: str?
+    output: parse.ParseOutput
+
+function judged_output(path: str, original: str, before: parse.ParseOutput, read: owners.Lines, formatted: str) -> Judged
+    after = source.new_source(name: path, text: formatted)
+    reparsed = parse.parse(formatted)
+
+    if reparsed.diagnostics.len() > 0
+        return Judged(
+            refusal: ok("`fmt` produced source that does not parse: " + diag.render_line(reparsed.diagnostics[0], after)),
+            output: reparsed
+        )
+    again = fmt.format_lexed(reparsed.tree, after, reparsed.comments, reparsed.uses, reparsed.decls, reparsed.tokens)
+
+    if page.whole(again) != formatted
+        return Judged(refusal: ok("`fmt` is not a fixpoint on its own output for `" + path + "`"), output: reparsed)
+
+    if again.moved > 0
+        return Judged(
+            refusal: ok("`fmt` cannot keep the comment on line " + again.moved.to_str() + " of its own output for `" + path + "`"),
+            output: reparsed
+        )
+
+    if before.diagnostics.len() > 0
+        # The root file alone does not parse, which `checked` has already
+        # ruled out for the whole compilation, so there is no tree to
+        # compare against and the two checks above stand on their own.
+        return Judged(refusal: fail(code: "clean", msg: "the root file alone does not parse"), output: reparsed)
+    first = source.new_source(name: path, text: original)
+    was = dump.dump_ast(before.tree, first, before.uses, before.decls)
+    now = dump.dump_ast(reparsed.tree, after, reparsed.uses, reparsed.decls)
+
+    if was != now
+        return Judged(
+            refusal: ok("`fmt` changed the TREE of `" + path + "` — the output parses and is a fixpoint, and it is a DIFFERENT PROGRAM"),
+            output: reparsed
+        )
+    moved = anchors.first_moved_read(
+        was: first,
+        input: before,
+        now: after,
+        output: reparsed,
+        read_input: read,
+        read_output: again.lines
+    )
+
+    if moved > 0
+        return Judged(
+            refusal: ok("`fmt` would move the comment on line " + moved.to_str() + " of `" + path + "` away from the code it was written beside"),
+            output: reparsed
+        )
+    return Judged(
+        refusal: fail(code: "clean", msg: "the output parses, is a fixpoint, holds the same tree and every comment's place"),
+        output: reparsed
+    )
+
+## Tests
+
+test "a clean file is formatted and passes its guard, and one with diagnostics is not formatted"
+    s = source.new_source(name: "t.hero", text: "function main()\n    print(2 + (3 * 4))  # kept\n")
+    done = checked(path: "t.hero", s: s)
+    assert done.input.diagnostics.len() == 0
+    assert done.formatted == "function main()\n    print(2 + 3 * 4)  # kept\n"
+    assert done.refusal.is_err()
+    assert done.output.comments.len() == 1
+    broken = checked(path: "t.hero", s: source.new_source(name: "t.hero", text: "function main(\n"))
+    assert broken.input.diagnostics.len() > 0
+    assert broken.formatted == ""
+    assert broken.refusal.is_err()

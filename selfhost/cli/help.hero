@@ -35,7 +35,7 @@ function help() -> str
             spelling: str @ flag.spelling
 
             if flag.value
-                spelling @ flag.spelling + " <path>"
+                spelling @ flag.spelling + " <" + flag.placeholder + ">"
             rows @ rows.push("      " + spelling + "  " + flag.what + "\n")
 
     rows @ rows.push("\n  --version · --help\n\n")

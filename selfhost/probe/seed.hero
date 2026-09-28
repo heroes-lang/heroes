@@ -1,0 +1,214 @@
+# One file as `heroes probe` reads it (panel 179; design.md §4.15, §3.3):
+# its text, its lines, and its tokens with the line and the columns each
+# sits at, read from the tokens the parser was given rather than lexed
+# again. The generators (`probe/lines.hero`, `probe/tokens.hero`) build
+# every variant from these, and the independent reader
+# (`probe/reader.hero`) reads the variant and `fmt`'s output the same way.
+#
+# THE LINES ARE THE SEATS' LINES. The Python the skeptic seats wrote cut
+# the text at every `\n` and dropped the empty piece after a final one, so
+# a line keeps a `\r` a CRLF file ends it with; the variants rejoin them the
+# way each generator did, which is what makes the port's counts theirs.
+#
+# THE COLUMNS ARE BYTES, where the lexer's dump counts characters. Every
+# column the probe reads is either a splice point inside one line, where a
+# byte offset is the only exact one, or the column of a line's first token
+# or of a comment with nothing before it, and those follow nothing but
+# spaces, since a Heroes line is indented with spaces alone (spec § 1), so
+# the two counts agree there by what the value is.
+
+use token
+use source
+
+# A token, placed: its kind, the 0-based line it starts on, and its start
+# and end as byte offsets into that line. A token never spans a line: a
+# string is one line (spec § 1) and a comment ends at one.
+record Word
+    kind: token.TokenKind
+    line: i64
+    start: i64
+    end: i64
+
+record Seed
+    path: str
+    text: str
+    lines: [str]
+    newline: bool
+    words: [Word]
+
+# One variant, as the edit that makes it rather than its text, which is
+# built when it is judged: a variant of a file of two thousand lines is a
+# copy of the file, and the seats' own last driver learned not to hold forty
+# thousand of them at once. `family` and `name` are the variant's, the name
+# the seats' Python gave it. A splice replaces `cut` lines from line `at`
+# with `put`; a `shape` other than "" rewrites every line instead, by that
+# shape (`probe/lines.hero`). `crlf` and `newline` say how the lines are
+# joined.
+record Edit
+    family: str
+    name: str
+    shape: str
+    at: i64
+    cut: i64
+    put: [str]
+    crlf: bool
+    newline: bool
+
+function splice(family: str, name: str, at: i64, cut: i64, put: [str], newline: bool) -> Edit
+    return Edit(family: family, name: name, shape: "", at: at, cut: cut, put: put, crlf: false, newline: newline)
+
+# The seed's lines with the splice `e` made.
+function spliced(s: Seed, e: Edit) -> [str]
+    out: [str] @ s.lines.slice(from: 0, to: e.at)
+
+    for line in e.put
+        out @ out.push(line)
+
+    for line in s.lines.slice(from: e.at + e.cut, to: s.lines.len())
+        out @ out.push(line)
+
+    return out
+
+# The seed `text`, named `path`, from the tokens its parse was given.
+function read(path: str, text: str, tokens: [token.Token]) -> Seed
+    cut = cut_lines(text)
+    return Seed(path: path, text: text, lines: cut, newline: ends_newline(text), words: placed(text, tokens: tokens))
+
+# Every token but the layout ones and the end, placed, in order.
+function placed(text: str, tokens: [token.Token]) -> [Word]
+    starts = source.starts_of(text)
+    out: [Word] @ []
+    at: i64 @ 0
+
+    for t in tokens
+        if t.kind == .indent || t.kind == .dedent || t.kind == .terminator || t.kind == .eof
+            continue
+
+        # The tokens come in order, so each line start is passed once.
+        while at + 1 < starts.len() && starts[at + 1] <= t.span.start
+            at @ at + 1
+
+        word = Word(kind: t.kind, line: at, start: t.span.start - starts[at], end: t.span.end - starts[at])
+        out @ out.push(word)
+
+    return out
+
+# The text cut at every `\n`, the piece after a final one dropped.
+function cut_lines(text: str) -> [str]
+    out: [str] @ []
+    from: i64 @ 0
+    at: i64 @ 0
+
+    while at < text.len()
+        if text[at] == '\n'
+            piece = text.slice(from: from, to: at)
+            out @ out.push(piece)
+            from @ at + 1
+        at @ at + 1
+
+    if from < text.len() || !ends_newline(text)
+        rest = text.slice(from: from, to: text.len())
+        out @ out.push(rest)
+    return out
+
+function ends_newline(text: str) -> bool
+    return text.len() > 0 && text[text.len() - 1] == '\n'
+
+# `lines` joined by `\n`, or by `\r\n`, with a line end after the last when
+# `newline` says so.
+function joined(lines: [str], crlf: bool, newline: bool) -> str
+    end: str @ "\n"
+
+    if crlf
+        end @ "\r\n"
+    body = lines.join(end)
+
+    if newline
+        return body + end
+    return body
+
+## What a line is, asked as the seats' Python asked it
+
+# The spaces a line starts with.
+function indent_of(line: str) -> i64
+    at: i64 @ 0
+
+    while at < line.len() && line[at] == ' '
+        at @ at + 1
+
+    return at
+
+# A line with nothing but blanks on it.
+function blank(line: str) -> bool
+    at: i64 @ 0
+
+    while at < line.len()
+        if !white(line[at])
+            return false
+        at @ at + 1
+
+    return true
+
+# A line whose first mark is a `#`.
+function commented(line: str) -> bool
+    at: i64 @ 0
+
+    while at < line.len() && white(line[at])
+        at @ at + 1
+
+    return at < line.len() && line[at] == '#'
+
+function white(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\r'
+
+# The line with the blanks at its end taken off, and at its start.
+function right_trimmed(line: str) -> str
+    end: i64 @ line.len()
+
+    while end > 0 && white(line[end - 1])
+        end @ end - 1
+
+    return line.slice(from: 0, to: end)
+
+function left_trimmed(line: str) -> str
+    at: i64 @ 0
+
+    while at < line.len() && white(line[at])
+        at @ at + 1
+
+    return line.slice(from: at, to: line.len())
+
+# `count` spaces.
+function spaces(count: i64) -> str
+    if count <= 0
+        return ""
+    return " ".repeat(count.to_u64().must())
+
+## Tests
+
+test "a seed's lines are the seats' lines, and its tokens are placed by byte"
+    assert cut_lines("a\nb\n") == ["a", "b"]
+    assert cut_lines("a\nb") == ["a", "b"]
+    assert cut_lines("") == [""]
+    assert cut_lines("a\r\n\n") == ["a\r", ""]
+    assert joined(lines: ["a", "b"], crlf: true, newline: true) == "a\r\nb\r\n"
+    assert joined(lines: ["a", "b"], crlf: false, newline: false) == "a\nb"
+    text = "function f()  # é\n    print(1)\n"
+    lexed = [
+        token.Token(kind: .kw_function, span: token.Span(start: 0, end: 8))
+        token.Token(kind: .comment, span: token.Span(start: 14, end: 18))
+        token.Token(kind: .terminator, span: token.Span(start: 18, end: 19))
+        token.Token(kind: .ident, span: token.Span(start: 23, end: 28))
+    ]
+    words = placed(text, tokens: lexed)
+    assert words.len() == 3
+    assert words[1].line == 0
+    assert words[1].end == 18
+    assert words[2].line == 1
+    assert words[2].start == 4
+    assert indent_of("    x") == 4
+    assert blank("  \r")
+    assert commented("    # c")
+    assert !commented("x  # c")
+    assert right_trimmed("a b  \r") == "a b"
+    assert left_trimmed("  , b") == ", b"
