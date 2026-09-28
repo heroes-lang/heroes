@@ -103,21 +103,21 @@ void h_abortsortnan_main(void) {
     double t4;
     double t5;
     double t6;
-    HeroArrayHeader * t7 = {0};
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t7;
+    HeroArrayHeader * t8;
     int64_t t9;
     double t10;
     double t11;
     double t12;
     double t13;
-    HeroArrayHeader * t14 = {0};
-    HeroArrayHeader * t15 = {0};
+    HeroArrayHeader * t14;
+    HeroArrayHeader * t15;
     int64_t t16;
     double t17;
-    HeroArrayHeader * t18 = {0};
-    HeroArrayHeader * t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroArrayHeader * t21 = {0};
+    HeroArrayHeader * t18;
+    HeroArrayHeader * t19;
+    HeroArrayHeader * t20;
+    HeroArrayHeader * t21;
     goto bb0;
 bb0:
 #line 15 "tests/golden/run/abort-sort-nan.hero"

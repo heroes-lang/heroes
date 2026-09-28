@@ -100,12 +100,12 @@ void h_cfreesaleaseonalatercall_main(void) {
 #line 101 "cfreesaleaseonalatercall.c"
     HeroStr h0_x = {0};
     const char * h1_c;
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
+    HeroStr t1;
+    HeroStr t2;
     const char * t3;
     const char * t4;
     int64_t t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     goto bb0;
 bb0:
 #line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"

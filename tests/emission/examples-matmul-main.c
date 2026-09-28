@@ -230,7 +230,7 @@ HeroArrayHeader * h_main_product_row(int64_t h0_row) {
     int64_t h3_total;
     int64_t h4_k;
     HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -256,9 +256,9 @@ HeroArrayHeader * h_main_product_row(int64_t h0_row) {
     int64_t t26;
     int64_t t27;
     int64_t t28;
-    HeroArrayHeader * t29 = {0};
-    HeroArrayHeader * t30 = {0};
-    HeroArrayHeader * t31 = {0};
+    HeroArrayHeader * t29;
+    HeroArrayHeader * t30;
+    HeroArrayHeader * t31;
     goto bb0;
 bb0:
 #line 35 "examples/matmul/main.hero"
@@ -393,7 +393,7 @@ int64_t h_main_band(int64_t h0_index) {
     int64_t h9_v;
     HeroArrayHeader * h10_own10 = {0};
     HeroArrayHeader * h11_own11 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -411,27 +411,27 @@ int64_t h_main_band(int64_t h0_index) {
     int64_t t16;
     bool t17;
     int64_t t19;
-    HeroArrayHeader * t20 = {0};
+    HeroArrayHeader * t20;
     int64_t t22;
     int64_t t23;
     int64_t t24;
     int64_t t25;
-    HeroArrayHeader * t26 = {0};
+    HeroArrayHeader * t26;
     int64_t t27;
     int64_t t28;
-    HeroArrayHeader * t29 = {0};
+    HeroArrayHeader * t29;
     int64_t t30;
     bool t31;
-    HeroArrayHeader * t32 = {0};
+    HeroArrayHeader * t32;
     int64_t t33;
-    HeroArrayHeader * t34 = {0};
-    HeroArrayHeader * t35 = {0};
+    HeroArrayHeader * t34;
+    HeroArrayHeader * t35;
     int64_t t36;
     int64_t t37;
-    HeroArrayHeader * t38 = {0};
+    HeroArrayHeader * t38;
     int64_t t39;
     bool t40;
-    HeroArrayHeader * t41 = {0};
+    HeroArrayHeader * t41;
     int64_t t42;
     int64_t t43;
     int64_t t44;
@@ -444,12 +444,12 @@ int64_t h_main_band(int64_t h0_index) {
     int64_t t51;
     int64_t t52;
     int64_t t53;
-    HeroArrayHeader * t54 = {0};
-    HeroArrayHeader * t55 = {0};
-    HeroArrayHeader * t56 = {0};
-    HeroArrayHeader * t57 = {0};
-    HeroArrayHeader * t58 = {0};
-    HeroArrayHeader * t59 = {0};
+    HeroArrayHeader * t54;
+    HeroArrayHeader * t55;
+    HeroArrayHeader * t56;
+    HeroArrayHeader * t57;
+    HeroArrayHeader * t58;
+    HeroArrayHeader * t59;
     goto bb0;
 bb0:
 #line 54 "examples/matmul/main.hero"
@@ -709,7 +709,7 @@ int64_t h_main_together(void) {
     int64_t h4_i0;
     int64_t h5_h;
     HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -721,13 +721,13 @@ int64_t h_main_together(void) {
     int64_t t12;
     int64_t t13;
     int64_t t14;
-    HeroArrayHeader * t15 = {0};
+    HeroArrayHeader * t15;
     int64_t t16;
     int64_t t17;
-    HeroArrayHeader * t18 = {0};
+    HeroArrayHeader * t18;
     int64_t t19;
     bool t20;
-    HeroArrayHeader * t21 = {0};
+    HeroArrayHeader * t21;
     int64_t t22;
     int64_t t23;
     int64_t t24;
@@ -738,9 +738,9 @@ int64_t h_main_together(void) {
     int64_t t29;
     int64_t t30;
     int64_t t31;
-    HeroArrayHeader * t32 = {0};
-    HeroArrayHeader * t33 = {0};
-    HeroArrayHeader * t34 = {0};
+    HeroArrayHeader * t32;
+    HeroArrayHeader * t33;
+    HeroArrayHeader * t34;
     goto bb0;
 bb0:
 #line 70 "examples/matmul/main.hero"
@@ -893,13 +893,13 @@ int64_t h_main_alone(void) {
     int64_t t4;
     bool t5;
     int64_t t6;
-    HeroArrayHeader * t7 = {0};
+    HeroArrayHeader * t7;
     int64_t t8;
     int64_t t9;
-    HeroArrayHeader * t10 = {0};
+    HeroArrayHeader * t10;
     int64_t t11;
     bool t12;
-    HeroArrayHeader * t13 = {0};
+    HeroArrayHeader * t13;
     int64_t t14;
     int64_t t15;
     int64_t t16;
@@ -912,8 +912,8 @@ int64_t h_main_alone(void) {
     int64_t t23;
     int64_t t24;
     int64_t t25;
-    HeroArrayHeader * t26 = {0};
-    HeroArrayHeader * t27 = {0};
+    HeroArrayHeader * t26;
+    HeroArrayHeader * t27;
     goto bb0;
 bb0:
 #line 85 "examples/matmul/main.hero"
@@ -1033,11 +1033,11 @@ bb7:
 #line 96 "examples/matmul/main.hero"
 void h_main_main(void) {
 #line 1036 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     int64_t t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     int64_t t6;
     goto bb0;
 bb0:

@@ -115,15 +115,15 @@ void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void) {
     outer * h1_kept;
     outer * t1;
     outer * t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     outer * t4;
     int64_t t5;
     outer * t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     outer * t8;
     outer * t9;
     bool t10;
-    HeroStr t11 = {0};
+    HeroStr t11;
     outer * t12;
     int64_t t13;
     goto bb0;

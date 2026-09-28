@@ -139,22 +139,22 @@ HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1
     h_nestedmatch_Colour t4;
     h_nestedmatch_Colour t5;
     int64_t t6;
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
+    HeroStr t7;
+    HeroStr t8;
+    HeroStr t9;
     h_nestedmatch_Colour t10;
     h_nestedmatch_Colour t11;
     int64_t t12;
-    HeroStr t13 = {0};
-    HeroStr t14 = {0};
-    HeroStr t15 = {0};
-    HeroStr t16 = {0};
-    HeroStr t17 = {0};
-    HeroStr t18 = {0};
-    HeroStr t19 = {0};
-    HeroStr t20 = {0};
-    HeroStr t21 = {0};
-    HeroStr t22 = {0};
+    HeroStr t13;
+    HeroStr t14;
+    HeroStr t15;
+    HeroStr t16;
+    HeroStr t17;
+    HeroStr t18;
+    HeroStr t19;
+    HeroStr t20;
+    HeroStr t21;
+    HeroStr t22;
     goto bb0;
 bb0:
 #line 22 "tests/golden/ir/nested-match.hero"

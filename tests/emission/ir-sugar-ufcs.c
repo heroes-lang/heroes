@@ -114,10 +114,10 @@ void h_sugarufcs_main(void) {
     HeroArrayHeader * h0_own0 = {0};
     int64_t t1;
     int64_t t2;
-    HeroArrayHeader * t3 = {0};
+    HeroArrayHeader * t3;
     int64_t t4;
     int64_t t5;
-    HeroArrayHeader * t6 = {0};
+    HeroArrayHeader * t6;
     goto bb0;
 bb0:
 #line 8 "tests/golden/ir/sugar-ufcs.hero"

@@ -99,10 +99,10 @@ void h_fixedbugsconcatleaked_main(void);
 HeroStr h_fixedbugsconcatleaked_greet(HeroStr h0_name) {
 #line 101 "fixedbugsconcatleaked.c"
     HeroStr h1_own1 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    HeroStr t3;
+    HeroStr t4;
     goto bb0;
 bb0:
 #line 18 "tests/golden/run/fixedbugs-concat-leaked.hero"
@@ -135,31 +135,31 @@ void h_fixedbugsconcatleaked_main(void) {
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
     HeroStr h5_own5 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
-    HeroStr t5 = {0};
-    HeroStr t6 = {0};
-    HeroStr t7 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    HeroStr t3;
+    HeroStr t4;
+    HeroStr t5;
+    HeroStr t6;
+    HeroStr t7;
     int64_t t8;
     int64_t t9;
     int64_t t10;
     bool t11;
-    HeroStr t12 = {0};
-    HeroStr t13 = {0};
-    HeroStr t14 = {0};
+    HeroStr t12;
+    HeroStr t13;
+    HeroStr t14;
     int64_t t15;
     int64_t t16;
     int64_t t17;
-    HeroStr t18 = {0};
+    HeroStr t18;
     int64_t t19;
-    HeroStr t20 = {0};
-    HeroStr t21 = {0};
-    HeroStr t22 = {0};
-    HeroStr t23 = {0};
-    HeroStr t24 = {0};
-    HeroStr t25 = {0};
+    HeroStr t20;
+    HeroStr t21;
+    HeroStr t22;
+    HeroStr t23;
+    HeroStr t24;
+    HeroStr t25;
     goto bb0;
 bb0:
 #line 21 "tests/golden/run/fixedbugs-concat-leaked.hero"

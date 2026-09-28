@@ -110,7 +110,7 @@ void h_deadhandleaplacethesamecallwritesisnotpoisoned_main(void) {
     node * h0_a;
     node * t1;
     node * t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     node * t4;
     int64_t t5;
     node * t6;

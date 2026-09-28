@@ -111,20 +111,20 @@ void h_deadhandletworeleasesthroughonenamewithretains_main(void) {
 #line 112 "deadhandletworeleasesthroughonenamewithretains.c"
     ob * h0_cert;
     ob * t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     ob * t3;
     int32_t t4;
     int32_t t5;
     bool t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     ob * t8;
     int64_t t9;
     ob * t10;
-    HeroStr t11 = {0};
+    HeroStr t11;
     ob * t12;
     int64_t t13;
     ob * t14;
-    HeroStr t15 = {0};
+    HeroStr t15;
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"

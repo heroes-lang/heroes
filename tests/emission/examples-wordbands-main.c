@@ -168,7 +168,7 @@ HeroStr h_main_text_of(int64_t h0_index) {
     HeroStr h6_word = {0};
     HeroArrayHeader * h7_own7 = {0};
     HeroStr h8_own8 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -193,28 +193,28 @@ HeroStr h_main_text_of(int64_t h0_index) {
     int64_t t23;
     int64_t t24;
     bool t25;
-    HeroStr t26 = {0};
-    HeroStr t27 = {0};
-    HeroStr t28 = {0};
-    HeroStr t29 = {0};
-    HeroStr t30 = {0};
-    HeroStr t31 = {0};
-    HeroStr t33 = {0};
+    HeroStr t26;
+    HeroStr t27;
+    HeroStr t28;
+    HeroStr t29;
+    HeroStr t30;
+    HeroStr t31;
+    HeroStr t33;
     int64_t t35;
     int64_t t36;
     int64_t t37;
-    HeroArrayHeader * t38 = {0};
-    HeroStr t39 = {0};
-    HeroStr t40 = {0};
-    HeroArrayHeader * t41 = {0};
-    HeroArrayHeader * t42 = {0};
-    HeroStr t43 = {0};
-    HeroStr t44 = {0};
-    HeroStr t45 = {0};
-    HeroStr t46 = {0};
-    HeroStr t47 = {0};
-    HeroStr t48 = {0};
-    HeroStr t49 = {0};
+    HeroArrayHeader * t38;
+    HeroStr t39;
+    HeroStr t40;
+    HeroArrayHeader * t41;
+    HeroArrayHeader * t42;
+    HeroStr t43;
+    HeroStr t44;
+    HeroStr t45;
+    HeroStr t46;
+    HeroStr t47;
+    HeroStr t48;
+    HeroStr t49;
     goto bb0;
 bb0:
 #line 36 "examples/wordbands/main.hero"
@@ -460,27 +460,27 @@ int64_t h_main_longest_word_count(int64_t h0_index) {
     HeroArrayHeader * h18_own18 = {0};
     HeroArrayHeader * h19_own19 = {0};
     h_0opt_e201354 h20_own20 = {0};
-    HeroMapHeader * t1 = {0};
+    HeroMapHeader * t1;
     int64_t t2;
-    HeroStr t3 = {0};
-    HeroArrayHeader * t4 = {0};
+    HeroStr t3;
+    HeroArrayHeader * t4;
     int64_t t5;
     int64_t t6;
-    HeroArrayHeader * t7 = {0};
+    HeroArrayHeader * t7;
     int64_t t8;
     bool t9;
-    HeroArrayHeader * t10 = {0};
+    HeroArrayHeader * t10;
     int64_t t11;
-    HeroStr t12 = {0};
-    HeroStr t13 = {0};
-    HeroMapHeader * t14 = {0};
-    HeroStr t15 = {0};
-    h_0opt_e201354 t16 = {0};
-    h_0opt_e201354 t17 = {0};
+    HeroStr t12;
+    HeroStr t13;
+    HeroMapHeader * t14;
+    HeroStr t15;
+    h_0opt_e201354 t16;
+    h_0opt_e201354 t17;
     int64_t t18;
     int64_t t19;
     bool t20;
-    h_0opt_e201354 t21 = {0};
+    h_0opt_e201354 t21;
     int64_t t22;
     int64_t t23;
     int64_t t24;
@@ -489,33 +489,33 @@ int64_t h_main_longest_word_count(int64_t h0_index) {
     int64_t t27;
     int64_t t28;
     int64_t t29;
-    HeroStr t30 = {0};
+    HeroStr t30;
     int64_t t31;
-    HeroMapHeader * t32 = {0};
-    HeroArrayHeader * t33 = {0};
-    HeroArrayHeader * t34 = {0};
+    HeroMapHeader * t32;
+    HeroArrayHeader * t33;
+    HeroArrayHeader * t34;
     int64_t t35;
     int64_t t36;
-    HeroArrayHeader * t37 = {0};
+    HeroArrayHeader * t37;
     int64_t t38;
     bool t39;
-    HeroArrayHeader * t40 = {0};
+    HeroArrayHeader * t40;
     int64_t t41;
-    HeroStr t42 = {0};
-    HeroStr t43 = {0};
+    HeroStr t42;
+    HeroStr t43;
     int64_t t44;
-    HeroStr t45 = {0};
+    HeroStr t45;
     int64_t t46;
     bool t47;
-    HeroStr t48 = {0};
-    HeroMapHeader * t49 = {0};
-    HeroStr t50 = {0};
-    h_0opt_e201354 t51 = {0};
-    h_0opt_e201354 t52 = {0};
+    HeroStr t48;
+    HeroMapHeader * t49;
+    HeroStr t50;
+    h_0opt_e201354 t51;
+    h_0opt_e201354 t52;
     int64_t t53;
     int64_t t54;
     bool t55;
-    h_0opt_e201354 t56 = {0};
+    h_0opt_e201354 t56;
     int64_t t57;
     int64_t t58;
     int64_t t59;
@@ -523,22 +523,22 @@ int64_t h_main_longest_word_count(int64_t h0_index) {
     int64_t t61;
     int64_t t62;
     int64_t t63;
-    HeroMapHeader * t64 = {0};
-    HeroMapHeader * t65 = {0};
-    HeroStr t66 = {0};
-    HeroArrayHeader * t67 = {0};
-    HeroArrayHeader * t68 = {0};
-    HeroStr t69 = {0};
-    h_0opt_e201354 t70 = {0};
-    h_0opt_e201354 t71 = {0};
-    HeroStr t72 = {0};
-    HeroArrayHeader * t73 = {0};
-    HeroArrayHeader * t74 = {0};
-    HeroArrayHeader * t75 = {0};
-    HeroStr t76 = {0};
-    HeroStr t77 = {0};
-    h_0opt_e201354 t78 = {0};
-    h_0opt_e201354 t79 = {0};
+    HeroMapHeader * t64;
+    HeroMapHeader * t65;
+    HeroStr t66;
+    HeroArrayHeader * t67;
+    HeroArrayHeader * t68;
+    HeroStr t69;
+    h_0opt_e201354 t70;
+    h_0opt_e201354 t71;
+    HeroStr t72;
+    HeroArrayHeader * t73;
+    HeroArrayHeader * t74;
+    HeroArrayHeader * t75;
+    HeroStr t76;
+    HeroStr t77;
+    h_0opt_e201354 t78;
+    h_0opt_e201354 t79;
     goto bb0;
 bb0:
 #line 57 "examples/wordbands/main.hero"
@@ -634,7 +634,7 @@ bb2:
 #line 60 "examples/wordbands/main.hero"
       } else {
 #line 60 "examples/wordbands/main.hero"
-        t16.tag = INT64_C(0);
+        t16 = (h_0opt_e201354){.tag = INT64_C(0)};
 #line 60 "examples/wordbands/main.hero"
         (&hero_desc_int)->copy(&t16.as.ok, found);
 #line 60 "examples/wordbands/main.hero"
@@ -884,7 +884,7 @@ bb13:
 #line 68 "examples/wordbands/main.hero"
       } else {
 #line 68 "examples/wordbands/main.hero"
-        t51.tag = INT64_C(0);
+        t51 = (h_0opt_e201354){.tag = INT64_C(0)};
 #line 68 "examples/wordbands/main.hero"
         (&hero_desc_int)->copy(&t51.as.ok, found);
 #line 68 "examples/wordbands/main.hero"
@@ -967,52 +967,52 @@ HeroArrayHeader * h_main_split_words(HeroStr h0_text) {
     HeroStr h9_own9 = {0};
     HeroArrayHeader * h10_own10 = {0};
     HeroStr h11_own11 = {0};
-    HeroArrayHeader * t1 = {0};
-    HeroArrayHeader * t2 = {0};
-    HeroStr t3 = {0};
-    HeroArrayHeader * t4 = {0};
+    HeroArrayHeader * t1;
+    HeroArrayHeader * t2;
+    HeroStr t3;
+    HeroArrayHeader * t4;
     int64_t t5;
     int64_t t6;
-    HeroArrayHeader * t7 = {0};
+    HeroArrayHeader * t7;
     int64_t t8;
     bool t9;
-    HeroArrayHeader * t10 = {0};
+    HeroArrayHeader * t10;
     int64_t t11;
-    HeroStr t12 = {0};
-    HeroStr t13 = {0};
-    HeroStr t14 = {0};
+    HeroStr t12;
+    HeroStr t13;
+    HeroStr t14;
     bool t15;
-    HeroArrayHeader * t16 = {0};
+    HeroArrayHeader * t16;
     int64_t t17;
     int64_t t18;
     bool t19;
-    HeroArrayHeader * t21 = {0};
-    HeroStr t22 = {0};
-    HeroStr t23 = {0};
-    HeroArrayHeader * t25 = {0};
-    HeroStr t27 = {0};
+    HeroArrayHeader * t21;
+    HeroStr t22;
+    HeroStr t23;
+    HeroArrayHeader * t25;
+    HeroStr t27;
     int64_t t29;
     int64_t t30;
     int64_t t31;
-    HeroArrayHeader * t32 = {0};
+    HeroArrayHeader * t32;
     int64_t t33;
     int64_t t34;
     bool t35;
-    HeroArrayHeader * t37 = {0};
-    HeroStr t38 = {0};
-    HeroStr t39 = {0};
-    HeroArrayHeader * t41 = {0};
-    HeroArrayHeader * t42 = {0};
-    HeroArrayHeader * t43 = {0};
-    HeroArrayHeader * t44 = {0};
-    HeroArrayHeader * t45 = {0};
-    HeroArrayHeader * t46 = {0};
-    HeroArrayHeader * t47 = {0};
-    HeroStr t48 = {0};
-    HeroStr t49 = {0};
-    HeroArrayHeader * t50 = {0};
-    HeroArrayHeader * t51 = {0};
-    HeroStr t52 = {0};
+    HeroArrayHeader * t37;
+    HeroStr t38;
+    HeroStr t39;
+    HeroArrayHeader * t41;
+    HeroArrayHeader * t42;
+    HeroArrayHeader * t43;
+    HeroArrayHeader * t44;
+    HeroArrayHeader * t45;
+    HeroArrayHeader * t46;
+    HeroArrayHeader * t47;
+    HeroStr t48;
+    HeroStr t49;
+    HeroArrayHeader * t50;
+    HeroArrayHeader * t51;
+    HeroStr t52;
     goto bb0;
 bb0:
 #line 75 "examples/wordbands/main.hero"
@@ -1264,7 +1264,7 @@ int64_t h_main_together(void) {
     int64_t h4_i0;
     int64_t h5_h;
     HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -1276,13 +1276,13 @@ int64_t h_main_together(void) {
     int64_t t12;
     int64_t t13;
     int64_t t14;
-    HeroArrayHeader * t15 = {0};
+    HeroArrayHeader * t15;
     int64_t t16;
     int64_t t17;
-    HeroArrayHeader * t18 = {0};
+    HeroArrayHeader * t18;
     int64_t t19;
     bool t20;
-    HeroArrayHeader * t21 = {0};
+    HeroArrayHeader * t21;
     int64_t t22;
     int64_t t23;
     int64_t t24;
@@ -1293,9 +1293,9 @@ int64_t h_main_together(void) {
     int64_t t29;
     int64_t t30;
     int64_t t31;
-    HeroArrayHeader * t32 = {0};
-    HeroArrayHeader * t33 = {0};
-    HeroArrayHeader * t34 = {0};
+    HeroArrayHeader * t32;
+    HeroArrayHeader * t33;
+    HeroArrayHeader * t34;
     goto bb0;
 bb0:
 #line 92 "examples/wordbands/main.hero"
@@ -1507,9 +1507,9 @@ bb3:
 #line 116 "examples/wordbands/main.hero"
 void h_main_main(void) {
 #line 1510 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
-    HeroStr t3 = {0};
+    HeroStr t3;
     int64_t t4;
     goto bb0;
 bb0:

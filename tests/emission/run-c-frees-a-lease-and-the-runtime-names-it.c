@@ -99,12 +99,12 @@ void h_cfreesaleaseandtheruntimenamesit_main(void) {
 #line 100 "cfreesaleaseandtheruntimenamesit.c"
     HeroStr h0_x = {0};
     const char * h1_c;
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
+    HeroStr t1;
+    HeroStr t2;
     const char * t3;
     int64_t t4;
     const char * t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     goto bb0;
 bb0:
 #line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"

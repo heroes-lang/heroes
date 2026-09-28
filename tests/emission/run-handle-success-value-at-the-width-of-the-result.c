@@ -118,11 +118,11 @@ void h_handlesuccessvalueatthewidthoftheresult_main(void) {
     uint64_t t4;
     ob * t5;
     bool t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     uint64_t t8;
     uint64_t t9;
     bool t10;
-    HeroStr t11 = {0};
+    HeroStr t11;
     bool t12;
     goto bb0;
 bb0:

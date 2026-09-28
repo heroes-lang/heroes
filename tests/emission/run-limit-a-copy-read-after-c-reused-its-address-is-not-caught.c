@@ -111,7 +111,7 @@ void h_limitacopyreadaftercreuseditsaddressisnotcaught_main(void) {
     node * t2;
     node * t3;
     node * t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     node * t6;
     int64_t t7;
     node * t8;

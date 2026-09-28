@@ -98,12 +98,12 @@ void h_fixedbugsu64tostr_main(void) {
     uint64_t t1;
     uint64_t t2;
     uint64_t t3;
-    HeroStr t4 = {0};
+    HeroStr t4;
     uint64_t t5;
     uint64_t t6;
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
-    HeroStr t9 = {0};
+    HeroStr t7;
+    HeroStr t8;
+    HeroStr t9;
     goto bb0;
 bb0:
 #line 26 "tests/golden/run/fixedbugs-u64-to-str.hero"

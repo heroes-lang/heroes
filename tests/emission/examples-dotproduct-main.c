@@ -310,7 +310,7 @@ int64_t h_main_together(void) {
     int64_t h4_i0;
     int64_t h5_h;
     HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -322,13 +322,13 @@ int64_t h_main_together(void) {
     int64_t t12;
     int64_t t13;
     int64_t t14;
-    HeroArrayHeader * t15 = {0};
+    HeroArrayHeader * t15;
     int64_t t16;
     int64_t t17;
-    HeroArrayHeader * t18 = {0};
+    HeroArrayHeader * t18;
     int64_t t19;
     bool t20;
-    HeroArrayHeader * t21 = {0};
+    HeroArrayHeader * t21;
     int64_t t22;
     int64_t t23;
     int64_t t24;
@@ -339,9 +339,9 @@ int64_t h_main_together(void) {
     int64_t t29;
     int64_t t30;
     int64_t t31;
-    HeroArrayHeader * t32 = {0};
-    HeroArrayHeader * t33 = {0};
-    HeroArrayHeader * t34 = {0};
+    HeroArrayHeader * t32;
+    HeroArrayHeader * t33;
+    HeroArrayHeader * t34;
     goto bb0;
 bb0:
 #line 46 "examples/dotproduct/main.hero"
@@ -568,11 +568,11 @@ bb3:
 #line 70 "examples/dotproduct/main.hero"
 void h_main_main(void) {
 #line 571 "main.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     int64_t t6;
     goto bb0;
 bb0:

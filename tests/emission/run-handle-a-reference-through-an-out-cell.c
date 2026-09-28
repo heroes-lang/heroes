@@ -116,14 +116,14 @@ void h_handleareferencethroughanoutcell_main(void) {
     ob * t2;
     ob * t3;
     int32_t t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     int32_t t6;
-    HeroStr t7 = {0};
+    HeroStr t7;
     ob * t8;
     int64_t t9;
     ob * t10;
     ob * t11;
-    HeroStr t12 = {0};
+    HeroStr t12;
     goto bb0;
 bb0:
 #line 14 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"

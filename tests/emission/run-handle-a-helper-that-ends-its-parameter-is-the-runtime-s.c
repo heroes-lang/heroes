@@ -141,11 +141,11 @@ void h_handleahelperthatendsitsparameteristheruntimes_main(void) {
     node * t2;
     int64_t t3;
     node * t4;
-    HeroStr t5 = {0};
+    HeroStr t5;
     node * t6;
     int64_t t7;
     node * t8;
-    HeroStr t9 = {0};
+    HeroStr t9;
     node * t10;
     goto bb0;
 bb0:

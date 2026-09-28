@@ -114,8 +114,8 @@ h_0opt_e201354 h_fixedbugsunaryminusisnotaliteral_negated(int64_t h0_n) {
     h_0opt_e201354 h1_own1 = {0};
     int64_t t1;
     int64_t t2;
-    h_0opt_e201354 t3 = {0};
-    h_0opt_e201354 t4 = {0};
+    h_0opt_e201354 t3;
+    h_0opt_e201354 t4;
     goto bb0;
 bb0:
 #line 33 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
@@ -164,7 +164,7 @@ void h_fixedbugsunaryminusisnotaliteral_main(void) {
     h_0opt_e201354 h3_f0 = {0};
     h_0opt_e201354 h4_own4 = {0};
     int8_t t1;
-    HeroStr t2 = {0};
+    HeroStr t2;
     int8_t t3;
     int64_t t4;
     int64_t t5;
@@ -172,35 +172,35 @@ void h_fixedbugsunaryminusisnotaliteral_main(void) {
     double t7;
     double t8;
     double t9;
-    HeroStr t10 = {0};
+    HeroStr t10;
     int64_t t11;
-    HeroStr t12 = {0};
+    HeroStr t12;
     double t13;
-    HeroStr t14 = {0};
+    HeroStr t14;
     int64_t t15;
-    h_0opt_e201354 t16 = {0};
-    h_0opt_e201354 t17 = {0};
+    h_0opt_e201354 t16;
+    h_0opt_e201354 t17;
     int64_t t18;
     int64_t t19;
     bool t20;
-    h_0opt_e201354 t21 = {0};
-    HeroFailure t22 = {0};
-    h_0opt_e201354 t23 = {0};
+    h_0opt_e201354 t21;
+    HeroFailure t22;
+    h_0opt_e201354 t23;
     int64_t t24;
-    HeroStr t25 = {0};
+    HeroStr t25;
     double t26;
     double t27;
-    HeroStr t28 = {0};
+    HeroStr t28;
     int64_t t29;
     int64_t t30;
     int64_t t31;
     int64_t t32;
-    HeroStr t33 = {0};
+    HeroStr t33;
     double t34;
     double t35;
     double t36;
-    h_0opt_e201354 t37 = {0};
-    h_0opt_e201354 t38 = {0};
+    h_0opt_e201354 t37;
+    h_0opt_e201354 t38;
     goto bb0;
 bb0:
 #line 40 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"

@@ -114,7 +114,7 @@ void h_fixedbugstwomarksononecallaretwoobligations_main(void) {
     int64_t t3;
     Slot * t4;
     Conn * t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     goto bb0;
 bb0:
 #line 26 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"

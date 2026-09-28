@@ -119,7 +119,7 @@ void h_ffiacquiresandconsumes_main(void) {
     int64_t t9;
     Slot * t10;
     Slot * t11;
-    HeroStr t12 = {0};
+    HeroStr t12;
     goto bb0;
 bb0:
 #line 18 "tests/golden/run/ffi-acquires-and-consumes.hero"

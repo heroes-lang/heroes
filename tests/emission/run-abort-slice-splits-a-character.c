@@ -96,18 +96,18 @@ void h_abortslicesplitsacharacter_main(void) {
     HeroStr h0_word = {0};
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
+    HeroStr t1;
+    HeroStr t2;
     int64_t t3;
     int64_t t4;
-    HeroStr t5 = {0};
-    HeroStr t6 = {0};
+    HeroStr t5;
+    HeroStr t6;
     int64_t t7;
     int64_t t8;
-    HeroStr t9 = {0};
-    HeroStr t10 = {0};
-    HeroStr t11 = {0};
-    HeroStr t12 = {0};
+    HeroStr t9;
+    HeroStr t10;
+    HeroStr t11;
+    HeroStr t12;
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/abort-slice-splits-a-character.hero"

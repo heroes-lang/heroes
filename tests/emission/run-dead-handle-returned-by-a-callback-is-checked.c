@@ -177,7 +177,7 @@ node * h_0cb_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) {
 #line 25 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
 void h_deadhandlereturnedbyacallbackischecked_main(void) {
 #line 180 "deadhandlereturnedbyacallbackischecked.c"
-    HeroStr t1 = {0};
+    HeroStr t1;
     h_0fn_4dd6fcee t2;
     int64_t t3;
     goto bb0;

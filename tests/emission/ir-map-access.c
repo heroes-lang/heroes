@@ -110,19 +110,19 @@ int64_t h_mapaccess_score_of(HeroMapHeader * h0_scores, HeroStr h1_name) {
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_r0;
     h_0opt_e201354 h4_own4 = {0};
-    HeroMapHeader * t1 = {0};
-    HeroStr t2 = {0};
-    h_0opt_e201354 t3 = {0};
-    h_0opt_e201354 t4 = {0};
+    HeroMapHeader * t1;
+    HeroStr t2;
+    h_0opt_e201354 t3;
+    h_0opt_e201354 t4;
     int64_t t5;
     int64_t t6;
     bool t7;
-    h_0opt_e201354 t8 = {0};
+    h_0opt_e201354 t8;
     int64_t t9;
     int64_t t10;
     int64_t t11;
-    h_0opt_e201354 t12 = {0};
-    h_0opt_e201354 t13 = {0};
+    h_0opt_e201354 t12;
+    h_0opt_e201354 t13;
     goto bb0;
 bb0:
 #line 6 "tests/golden/ir/map-access.hero"
@@ -140,7 +140,7 @@ bb0:
 #line 6 "tests/golden/ir/map-access.hero"
       } else {
 #line 6 "tests/golden/ir/map-access.hero"
-        t3.tag = INT64_C(0);
+        t3 = (h_0opt_e201354){.tag = INT64_C(0)};
 #line 6 "tests/golden/ir/map-access.hero"
         (&hero_desc_int)->copy(&t3.as.ok, found);
 #line 6 "tests/golden/ir/map-access.hero"
@@ -204,7 +204,7 @@ bb3:
 #line 8 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_first_of(HeroArrayHeader * h0_xs) {
 #line 207 "mapaccess.c"
-    HeroArrayHeader * t1 = {0};
+    HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
     goto bb0;
@@ -223,10 +223,10 @@ bb0:
 #line 11 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_both(HeroMapHeader * h0_scores, HeroArrayHeader * h1_xs) {
 #line 226 "mapaccess.c"
-    HeroMapHeader * t1 = {0};
-    HeroStr t2 = {0};
+    HeroMapHeader * t1;
+    HeroStr t2;
     int64_t t3;
-    HeroArrayHeader * t4 = {0};
+    HeroArrayHeader * t4;
     int64_t t5;
     int64_t t6;
     goto bb0;

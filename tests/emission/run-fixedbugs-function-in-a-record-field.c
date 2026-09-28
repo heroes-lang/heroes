@@ -168,21 +168,21 @@ void h_fixedbugsfunctioninarecordfield_main(void) {
     h_0fn_48ac9712 h5_call;
     h_fixedbugsfunctioninarecordfield_Holder h6_own6 = {0};
     h_0fn_48ac9712 t1;
-    HeroStr t2 = {0};
-    h_fixedbugsfunctioninarecordfield_Holder t3 = {0};
-    h_fixedbugsfunctioninarecordfield_Holder t4 = {0};
+    HeroStr t2;
+    h_fixedbugsfunctioninarecordfield_Holder t3;
+    h_fixedbugsfunctioninarecordfield_Holder t4;
     h_0fn_48ac9712 t5;
     int64_t t6;
     int64_t t7;
-    h_fixedbugsfunctioninarecordfield_Holder t8 = {0};
-    HeroStr t9 = {0};
-    h_fixedbugsfunctioninarecordfield_Holder t10 = {0};
+    h_fixedbugsfunctioninarecordfield_Holder t8;
+    HeroStr t9;
+    h_fixedbugsfunctioninarecordfield_Holder t10;
     h_0fn_48ac9712 t11;
-    h_fixedbugsfunctioninarecordfield_Holder t12 = {0};
+    h_fixedbugsfunctioninarecordfield_Holder t12;
     h_0fn_48ac9712 t13;
     int64_t t14;
     int64_t t15;
-    h_fixedbugsfunctioninarecordfield_Holder t16 = {0};
+    h_fixedbugsfunctioninarecordfield_Holder t16;
     h_0fn_48ac9712 t17;
     int64_t t18;
     int64_t t19;
@@ -199,9 +199,9 @@ void h_fixedbugsfunctioninarecordfield_main(void) {
     int64_t t30;
     int64_t t31;
     int64_t t32;
-    h_fixedbugsfunctioninarecordfield_Holder t33 = {0};
-    h_fixedbugsfunctioninarecordfield_Holder t34 = {0};
-    h_fixedbugsfunctioninarecordfield_Holder t35 = {0};
+    h_fixedbugsfunctioninarecordfield_Holder t33;
+    h_fixedbugsfunctioninarecordfield_Holder t34;
+    h_fixedbugsfunctioninarecordfield_Holder t35;
     goto bb0;
 bb0:
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"

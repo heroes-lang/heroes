@@ -114,19 +114,19 @@ void h_ffif32againstafloatheaderiscorrect_main(void) {
     float t2;
     float t3;
     float t4;
-    h_0opt_e201354 t5 = {0};
-    h_0opt_e201354 t6 = {0};
+    h_0opt_e201354 t5;
+    h_0opt_e201354 t6;
     int64_t t7;
     int64_t t8;
     bool t9;
-    h_0opt_e201354 t10 = {0};
-    HeroFailure t11 = {0};
-    h_0opt_e201354 t12 = {0};
+    h_0opt_e201354 t10;
+    HeroFailure t11;
+    h_0opt_e201354 t12;
     int64_t t13;
-    HeroStr t14 = {0};
-    h_0opt_e201354 t15 = {0};
-    h_0opt_e201354 t16 = {0};
-    HeroStr t17 = {0};
+    HeroStr t14;
+    h_0opt_e201354 t15;
+    h_0opt_e201354 t16;
+    HeroStr t17;
     goto bb0;
 bb0:
 #line 46 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"

@@ -112,7 +112,7 @@ void h_handlealiveafteranendthenarebinding_main(void) {
     node * t3;
     int64_t t4;
     node * t5;
-    HeroStr t6 = {0};
+    HeroStr t6;
     node * t7;
     int64_t t8;
     node * t9;

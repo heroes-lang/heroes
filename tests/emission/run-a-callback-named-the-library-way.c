@@ -108,10 +108,10 @@ HERO_TU_LOCAL HeroStr h_library_fold_37fb3fcc(HeroArrayHeader * h0_xs, HeroStr h
 HeroStr h_acallbacknamedthelibraryway_join_up(HeroStr h0_acc, HeroStr h1_item) {
 #line 110 "acallbacknamedthelibraryway.c"
     HeroStr h2_own2 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    HeroStr t3;
+    HeroStr t4;
     goto bb0;
 bb0:
 #line 21 "tests/golden/run/a-callback-named-the-library-way.hero"
@@ -159,12 +159,12 @@ HeroStr h_acallbacknamedthelibraryway_tally(HeroStr h0_acc, int64_t h1_item) {
 #line 160 "acallbacknamedthelibraryway.c"
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
-    HeroStr t1 = {0};
+    HeroStr t1;
     int64_t t2;
-    HeroStr t3 = {0};
-    HeroStr t4 = {0};
-    HeroStr t5 = {0};
-    HeroStr t6 = {0};
+    HeroStr t3;
+    HeroStr t4;
+    HeroStr t5;
+    HeroStr t6;
     goto bb0;
 bb0:
 #line 27 "tests/golden/run/a-callback-named-the-library-way.hero"
@@ -208,32 +208,32 @@ void h_acallbacknamedthelibraryway_main(void) {
     HeroStr h3_own3 = {0};
     HeroArrayHeader * h4_own4 = {0};
     HeroStr h5_own5 = {0};
-    HeroStr t1 = {0};
-    HeroStr t2 = {0};
-    HeroStr t3 = {0};
-    HeroArrayHeader * t4 = {0};
-    HeroArrayHeader * t5 = {0};
-    HeroStr t6 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    HeroStr t3;
+    HeroArrayHeader * t4;
+    HeroArrayHeader * t5;
+    HeroStr t6;
     h_0fn_2248724e t7;
-    HeroStr t8 = {0};
+    HeroStr t8;
     int64_t t9;
     int64_t t10;
     int64_t t11;
-    HeroArrayHeader * t12 = {0};
-    HeroArrayHeader * t13 = {0};
+    HeroArrayHeader * t12;
+    HeroArrayHeader * t13;
     int64_t t14;
     h_0fn_6ca17148 t15;
     int64_t t16;
-    HeroArrayHeader * t17 = {0};
-    HeroStr t18 = {0};
+    HeroArrayHeader * t17;
+    HeroStr t18;
     h_0fn_1fb9aa18 t19;
-    HeroStr t20 = {0};
-    HeroArrayHeader * t21 = {0};
-    HeroArrayHeader * t22 = {0};
-    HeroStr t23 = {0};
-    HeroArrayHeader * t24 = {0};
-    HeroArrayHeader * t25 = {0};
-    HeroStr t26 = {0};
+    HeroStr t20;
+    HeroArrayHeader * t21;
+    HeroArrayHeader * t22;
+    HeroStr t23;
+    HeroArrayHeader * t24;
+    HeroArrayHeader * t25;
+    HeroStr t26;
     goto bb0;
 bb0:
 #line 30 "tests/golden/run/a-callback-named-the-library-way.hero"
@@ -382,29 +382,29 @@ HERO_TU_LOCAL HeroStr h_library_fold_f720dcd(HeroArrayHeader * h0_xs, HeroStr h1
     int64_t h5_i0;
     HeroStr h6_x = {0};
     HeroStr h7_own7 = {0};
-    HeroStr t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroStr t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
-    HeroStr t10 = {0};
+    HeroStr t10;
     h_0fn_2248724e t11;
-    HeroStr t12 = {0};
-    HeroStr t13 = {0};
-    HeroStr t14 = {0};
+    HeroStr t12;
+    HeroStr t13;
+    HeroStr t14;
     int64_t t15;
     int64_t t16;
     int64_t t17;
-    HeroStr t18 = {0};
-    HeroStr t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroStr t21 = {0};
-    HeroStr t22 = {0};
-    HeroStr t23 = {0};
+    HeroStr t18;
+    HeroStr t19;
+    HeroArrayHeader * t20;
+    HeroStr t21;
+    HeroStr t22;
+    HeroStr t23;
     goto bb0;
 bb0:
 #line 59 "<heroes library>"
@@ -526,13 +526,13 @@ HERO_TU_LOCAL int64_t h_library_fold_37f8817a(HeroArrayHeader * h0_xs, int64_t h
     int64_t h5_i0;
     int64_t h6_x;
     int64_t t1;
-    HeroArrayHeader * t2 = {0};
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     int64_t t10;
     h_0fn_6ca17148 t11;
@@ -543,7 +543,7 @@ HERO_TU_LOCAL int64_t h_library_fold_37f8817a(HeroArrayHeader * h0_xs, int64_t h
     int64_t t16;
     int64_t t17;
     int64_t t18;
-    HeroArrayHeader * t19 = {0};
+    HeroArrayHeader * t19;
     goto bb0;
 bb0:
 #line 59 "<heroes library>"
@@ -631,28 +631,28 @@ HERO_TU_LOCAL HeroStr h_library_fold_37fb3fcc(HeroArrayHeader * h0_xs, HeroStr h
     int64_t h5_i0;
     int64_t h6_x;
     HeroStr h7_own7 = {0};
-    HeroStr t1 = {0};
-    HeroArrayHeader * t2 = {0};
+    HeroStr t1;
+    HeroArrayHeader * t2;
     int64_t t3;
     int64_t t4;
-    HeroArrayHeader * t5 = {0};
+    HeroArrayHeader * t5;
     int64_t t6;
     bool t7;
-    HeroArrayHeader * t8 = {0};
+    HeroArrayHeader * t8;
     int64_t t9;
     int64_t t10;
     h_0fn_7d3ea77e t11;
-    HeroStr t12 = {0};
+    HeroStr t12;
     int64_t t13;
-    HeroStr t14 = {0};
+    HeroStr t14;
     int64_t t15;
     int64_t t16;
     int64_t t17;
-    HeroStr t18 = {0};
-    HeroStr t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroStr t21 = {0};
-    HeroStr t22 = {0};
+    HeroStr t18;
+    HeroStr t19;
+    HeroArrayHeader * t20;
+    HeroStr t21;
+    HeroStr t22;
     goto bb0;
 bb0:
 #line 59 "<heroes library>"
