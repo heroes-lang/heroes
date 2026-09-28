@@ -1,0 +1,13 @@
+# Panel 180 R5, shape 113 of the compiler-engineer's 117 (extern member
+# params): a break before | in a releaser set.
+# By the spec's opening paragraph, the line ends with `a`, a name, so it keeps
+# its NEWLINE, which may stand only before a closing bracket or a `,`, or
+# where a production writes it, and none writes it before `|`: refused, exit
+# 1.
+extern "m.h"
+    record Db tag db
+    function g(@out: Db acquires a |
+         b)  #~ line_end_before_continuation
+
+function main()
+    print(1)

@@ -1,0 +1,26 @@
+# The shapes beside defect 110, found 2026-09-27: text above ASCII where the
+# compiler cut it a byte at a time or searched it by slicing. A comment that
+# ends in a character of two, three or four bytes, closing a body or a
+# record with a declaration after it, aborted `fmt`; `.default` and `must`
+# on a value that cannot fail, with such a character in the call, aborted
+# `check`. `fmt` prints this file back byte for byte, and `check` refuses
+# the two calls with the diagnostic any such call gets.
+
+record Point
+    x: i64  # café
+
+function a()
+    print(1)  # €
+
+function b()
+    print("x")
+    # 😀
+
+function main()
+    a()
+    b()
+    print(Point(x: 1).x)
+    x = 5  #~ bad_operand
+    y = must("€")  #~ bad_operand
+    print(x)
+    print(y)
