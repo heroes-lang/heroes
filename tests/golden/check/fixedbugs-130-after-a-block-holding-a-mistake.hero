@@ -1,0 +1,62 @@
+# Fixed defect 130, 2026-09-28, every kind of block. Symptom: a mistake inside
+# any block hid the statement after the block, whatever that statement held:
+# the body of a `for`, an `if`, a `while`, an `else`, an `else if` chain, a
+# bound `if` and an arm's block each reported their own mistake and never the
+# `z = 4 )` below them. Cause: the reporting was keyed on a diagnostic
+# anywhere inside the statement, so the arm was one witness of many, and
+# `grammar_expr.finish` dropped the line after the statement's own dedent. A
+# failed statement drops only what is left of its own line now, and one that
+# ended with its block has none left. One shape per function, so that no
+# refusal's recovery reaches the next one.
+
+function after_for()
+    for i in range(from: 0, to: 3)
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function after_if(n: i64)
+    if n > 0
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function after_while(n: i64)
+    while n > 0
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function after_else(n: i64)
+    if n > 0
+        print(1)
+    else
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function after_a_chain(n: i64)
+    if n > 0
+        a = 1 )  #~ expected_end_of_line
+    else if n < 0
+        b = 2 )  #~ expected_end_of_line
+    else
+        c = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function after_a_bound_if(n: i64) -> i64
+    k = if n > 0
+        y = 3 )  #~ expected_end_of_line
+        1
+    else
+        2
+    z = 4 )  #~ expected_end_of_line
+    return k
+
+function after_an_arm_block(n: i64) -> i64
+    k = match n
+        0 =>
+            y = 3 )  #~ expected_end_of_line
+            1
+        _ => 2
+    z = 4 )  #~ expected_end_of_line
+    return k
+
+function main()
+    print(1)
