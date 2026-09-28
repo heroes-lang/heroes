@@ -18,48 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 8**
-
-- [ ] **114 — the emitted C zeroes every temporary of a function at its entry, so a lookup that returns early pays for every arm** | the emitter declares each temporary at the top of the C function with `= {0}`, and a `match` over a string of twenty arms declares them all: the emitted `h_keywords_keyword` zeroes 139 temporaries on every call to make 21 string comparisons, and on the default build line (plain `clang`, no optimisation, CLAUDE.md § Commands) every one is executed; `memset` was about a fifth of `fmt`'s samples after defect 105's repair | `selfhost/emit/` (the temporaries' declarations) · `seed/heroes.c` (`h_keywords_keyword`)
-
-    **Origin:** lane 105's agent, 2026-09-27 (`memset` 240 of 1,113 samples
-    of `fmt` on eight copies of `walk.hero`, under the lexer's keyword and
-    punctuation lookups); the emitted function read by the coordinator in
-    the trunk's seed at `2b1a1f24`: 941 lines, 139 `= {0}`, 21 string
-    comparisons.
-
-    **Why it is a defect.** Every Heroes program pays it, the compiler first:
-    work the program never reads, done at each call. The repair keeps the
-    guarantee the zeroing buys, every temporary initialised before any read,
-    and moves the initialisation to where the temporary's life begins.
-
-    **What it actually is, read in the emitted C, 2026-09-28** (the
-    coordinator, on the trunk's seed at `c90fd658`). The zeroing is not
-    waste: it is the release's precondition. Each arm of the `match` writes
-    its value into an owned variable of its own (`h3_own3` to `h25_own25` in
-    `h_keywords_keyword`), each store releases the variable's old value
-    first, and the function's exit releases all 23, the arms not taken
-    included, so an unzeroed one would be released uninitialised. `= {0}` is
-    emitted only on a refcounted type (`emit/body.hero`, `is_refcounted`),
-    and `TokenKind?` is one because its failure half carries strings. The
-    cost is in the lowering's shape, one owned variable per arm where the
-    arms could share one destination, and changing how a `match` lowers is
-    the IR's architecture: a panel path (CLAUDE.md § 4), convened when the
-    seats can sit again. Removing the zeroing without it would trade a
-    robustness guarantee for speed, which § Precedence refuses.
-
-- [ ] **122 — a build's object cache ignores which C compiler and which flags built an object, so a changed compiler or flag reuses stale objects** | the unit key (`selfhost/cli/units.hero:82-84`) is the fingerprint, level, module, text, runtime and search paths, the fingerprint being `VERSION`, and the runtime object's (`selfhost/cli/toolchain.hero:154`) likewise: a program printing `__clang_major__` built under Apple clang 21 prints 21, built warm with Homebrew clang 22.1.8 first on the `PATH` still prints 21, and built cold prints 22; a compiler with one more flag in its list and the same `VERSION` reused every object (the critic) | `selfhost/cli/units.hero` · `selfhost/cli/toolchain.hero` · `selfhost/cli/clang_floor.hero` (which already writes `clang --version` on every build)
-
-    **Origin:** panel 182's compiler-engineer, 2026-09-28, reading the key
-    while probing a pattern-initialised build; run by the sitting's critic
-    (clang 21 against 22 on a warm directory, and a flag added with the version
-    unchanged), and reproduced by the coordinator the same morning in
-    `/Users/joseph/Temp/heroes-recovery-2026-09-26/defect122/`.
-
-    **Why it is a defect.** A build that silently links an object compiled by
-    another compiler, or without a flag the compiler now passes, is a program
-    other than the one its source and its compiler say, at exit 0; and it is
-    the precondition for every new instrument leg the sitting names.
+**OPEN: 6**
 
 - [ ] **123 — a `match` arm whose pattern begins with a `-` set apart from its operand compiles, where the spec refuses it** | `k = match n` with the arm `- 1 => 10` is `check` 0 and prints 10, as `-1 => 10` does; spec § 0 reads *where a NEWLINE separates without a `,`, the next line may not begin with a `-` that does not touch its operand*, and a `match`'s arms are separated by NEWLINE; panel 180's `spaced_minus_element` refuses the shape in a literal and panel 181's refusal at depth zero, and an arm is the one NEWLINE-separated context left | `selfhost/parse/list_line.hero` (`spaced_minus_element`) · `selfhost/grammar_expr.hero` (`arm`)
 
