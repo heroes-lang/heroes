@@ -56,6 +56,7 @@ constant FIXTURES: [str]
         "tests/golden/surface-fixtures/comments100"
         "tests/golden/surface-fixtures/comments101"
         "tests/golden/surface-fixtures/comments107"
+        "tests/golden/surface-fixtures/continuation181"
         "tests/golden/surface-fixtures/empty109"
         "tests/golden/surface-fixtures/groupremark096"
         "tests/golden/surface-fixtures/nonascii110"
@@ -372,7 +373,9 @@ test "a family the probe does not make is named with the seven, and a path that 
     )
     assert run(wrong) == .failed_exit
     assert gathered(["no/such/place"]).is_err()
-    assert FIXTURES.len() == 9
+
+    # 9 -> 10 on 2026-09-28: `continuation181`, panel 181's `fmt` rows.
+    assert FIXTURES.len() == 10
 
 test "a stride is a whole number from 1 up"
     assert counted("2") == 2

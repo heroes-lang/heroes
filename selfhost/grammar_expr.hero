@@ -274,15 +274,25 @@ function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     # its own arms and its dedent, and then this loop saw the `.` of the NEXT
     # OUTER ARM and read it as a field. The error landed on the following arm, a
     # line the author did nothing wrong on (panel 035).
-    closed_a_block = cursor.previous_kind(c) == .dedent
+    #
+    # **Every suffix, not only the `.`** (defect 119, panel 181). The dedent is
+    # a line end outside brackets, which ends the statement, so a `(`, a `[`, a
+    # `?` or a `::` there heads a line of its own: `f = if c` … `else` …
+    # `triple` over `(5)` ran as a call of the `if`'s value and printed 10,
+    # where the reader sees a block and then a line. `(` and `[` begin a
+    # statement, which is what the parser now reads; `?` and `::` begin none:
+    # the lexer refuses them where the block's last line ends with a value,
+    # handing this parser the joined line (`open_line`), and after a `return`,
+    # `break` or `continue` the parser refuses them as a line no statement
+    # begins with.
+    if cursor.previous_kind(c) == .dedent
+        return base
     chaining: bool @ true
 
     while chaining
         k = cursor.current_kind(c)
 
-        if closed_a_block && k == .dot
-            chaining @ false
-        else if k == .dot
+        if k == .dot
             base @ after_dot(@c, @a, text, base)
 
             if cursor.current_kind(c) == .dot && base < 0

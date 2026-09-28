@@ -25,6 +25,7 @@ use source
 use source_extent
 use state
 use layout
+use open_line
 use scan
 use escape
 
@@ -143,6 +144,7 @@ function lex_one(text: str) -> LexOutput
     # `)` silently swallows the rest of the file's layout), then close every
     # block still open.
     layout.maybe_terminator(@l)
+    open_line.settle(@l)
 
     for span in l.open_brackets
         state.push_diagnostic(
@@ -251,7 +253,11 @@ test "a backslash at end of line leaves the layout intact"
     # indent and dedent that follows (§4.15).
     out = lex_one("s = \"oops\\\n    x\n")
     assert out.diagnostics[0].code == "unterminated_string"
-    assert kind_line(out.tokens) == "ident eq error indent ident terminator dedent eof"
+
+    # The `terminator` after `error` since 2026-09-28: an `error` token ends a
+    # line at depth zero (panel 181), so the malformed line cannot swallow the
+    # next one. The indent and dedent after it are the layout this test guards.
+    assert kind_line(out.tokens) == "ident eq error terminator indent ident terminator dedent eof"
 
 # UNVERIFIED — pending debrief
 test "a multibyte character after the backslash does not panic"
@@ -319,3 +325,102 @@ test "a hole the line does not close is an unterminated string, and the next lin
     out = lex_one("s = f\"a {n\ny = 1\n")
     assert out.diagnostics.len() == 1
     assert out.diagnostics[0].code == "unterminated_string"
+
+# Panel 181: outside brackets a line ends its statement, in both directions,
+# and the parser is handed the one line the author broke (`open_line.hero`).
+test "a line that cannot end is refused at every margin, and the parser is handed the one line"
+    out = lex_one("y = a +\n1\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "continuation_outside_brackets"
+    assert out.diagnostics[0].fixes[0].certainty == .certain
+    assert out.diagnostics[0].fixes[0].replacement == " "
+    assert kind_line(out.tokens) == "ident eq ident plus int terminator eof"
+    deeper = lex_one("y = xs.\n    len\nz = 2\n")
+    assert deeper.diagnostics.len() == 1
+    assert deeper.diagnostics[0].fixes[0].replacement == ""
+    assert kind_line(deeper.tokens) == "ident eq ident dot ident terminator ident eq int terminator eof"
+    shallower = lex_one("if a\n    y = a +\nb\n")
+    assert shallower.diagnostics[0].fixes[0].certainty == .guess
+    assert kind_line(shallower.tokens) == "kw_if ident terminator indent ident eq ident plus ident terminator dedent eof"
+    commented = lex_one("y = a +  # c\n1\n")
+    assert commented.diagnostics.len() == 1
+    assert commented.diagnostics[0].fixes.len() == 0
+    blank = lex_one("y = a +\n\n1\n")
+    assert blank.diagnostics.len() == 1
+    crlf = lex_one("y = a +\r\n1\r\n")
+    assert crlf.diagnostics.len() == 1
+    assert crlf.diagnostics[0].fixes[0].span == token.Span(start: 7, end: 9)
+
+test "the join is a guess where the next line could stand alone"
+    for text in ["y = a +\nshow(n: a)\n", "y = a +\nif c\n", "y = xs.\nlen()\n", "y = a +\n???\n"]
+        out = lex_one(text)
+        assert out.diagnostics.len() == 1
+        assert out.diagnostics[0].fixes[0].certainty == .guess
+
+test "a line that can only go on with the line above is refused, and joined to it"
+    out = lex_one("total = base\n- fee\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "continuation_outside_brackets"
+    assert out.diagnostics[0].span == token.Span(start: 13, end: 14)
+    assert out.diagnostics[0].fixes[0].certainty == .certain
+    assert kind_line(out.tokens) == "ident eq ident minus ident terminator eof"
+    propagated = lex_one("x = f()\n?\n")
+    assert propagated.diagnostics[0].fixes[0].replacement == ""
+    assert kind_line(propagated.tokens) == "ident eq ident lparen rparen question terminator eof"
+    after_a_block = lex_one("x = if c\n    1\nelse\n    2\n+ 3\n")
+    assert after_a_block.diagnostics.len() == 1
+    assert after_a_block.diagnostics[0].fixes[0].certainty == .guess
+    assert kind_line(after_a_block.tokens) == "ident eq kw_if ident terminator indent int terminator dedent kw_else indent int plus int terminator dedent eof"
+
+test "a line that begins a statement of its own is never a continuation"
+    for text in ["y = a\n(a + b).print()\n", "y = a\n[1, 2].len().print()\n", "y = a\n-a\n", "k = match s\n    0 => 1\n    -1 => 2\n", "k = match s\n    0 => 1\n    - 1 => 2\n", "k = match s\n    .a => 1\n    .b => 2\n", "y = a\n???\n", "f(x)\n-> i64\n"]
+        assert lex_one(text).diagnostics.len() == 0
+
+test "after a whole statement the next line is its own, whatever it begins with"
+    assert kind_line(lex_one("return\n+ 1\n").tokens) == "kw_return terminator plus int terminator eof"
+    assert kind_line(lex_one("break\n- b\n").tokens) == "kw_break terminator minus ident terminator eof"
+    assert kind_line(lex_one("use a\n/b\n").tokens) == "kw_use ident terminator slash ident terminator eof"
+    assert kind_line(lex_one("function f()\n+ 1\n").tokens) == "kw_function ident lparen rparen terminator plus int terminator eof"
+    assert lex_one("return\n+ 1\n").diagnostics.len() == 0
+
+test "else, an arm's arrow and the colon habit still open a block"
+    out = lex_one("else\n    x = 1\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "kw_else indent ident eq int terminator dedent eof"
+    arm = lex_one(".a =>\n    1\n")
+    assert arm.diagnostics.len() == 0
+    assert kind_line(arm.tokens) == "dot ident fat_arrow indent int terminator dedent eof"
+    colon = lex_one("if a:\n    x = 1\n")
+    assert colon.diagnostics.len() == 0
+
+test "a line left unfinished before a fresh one or a binding is ended there, and the parser says what it lacks"
+    out = lex_one("use shapes/\n\nfunction main()\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "kw_use ident slash terminator kw_function ident lparen rparen terminator eof"
+    split = lex_one("else\nif b\n")
+    assert split.diagnostics.len() == 1
+    alone = lex_one("else\nx = 1\n")
+    assert alone.diagnostics.len() == 0
+    assert kind_line(alone.tokens) == "kw_else terminator ident eq int terminator eof"
+    two = lex_one("total @ total +\ncount @ count + 1\n")
+    assert two.diagnostics.len() == 0
+    assert kind_line(two.tokens) == "ident at ident plus terminator ident at ident plus int terminator eof"
+    ret = lex_one("return a +\nx = 1\n")
+    assert ret.diagnostics.len() == 0
+    typed = lex_one("y:\ni64 = 5\n")
+    assert typed.diagnostics.len() == 1
+    assert typed.diagnostics[0].code == "continuation_outside_brackets"
+
+test "an error token ends a line at depth zero, so the next line is parsed on its own"
+    out = lex_one("a = 0X10\nb = 1\n")
+    assert kind_line(out.tokens) == "ident eq error terminator ident eq int terminator eof"
+
+test "after an arm's arrow a line is never ended in silence, since the parser reads across it"
+    out = lex_one(".dot =>\nreturn 1\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "continuation_outside_brackets"
+    assert kind_line(out.tokens) == "dot ident fat_arrow kw_return int terminator eof"
+
+test "inside brackets the rule is not this one"
+    out = lex_one("y = (a +\n1)\nz = [1,\n2]\n")
+    assert out.diagnostics.len() == 0

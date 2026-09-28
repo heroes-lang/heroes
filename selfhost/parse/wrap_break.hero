@@ -1,0 +1,123 @@
+# The second repair of a line broken outside brackets: the parentheses that
+# keep the author's break (design.md §4.15, §4.17; panel 181, item 3).
+#
+# `open_line` refuses a depth-zero line that ends where its statement cannot,
+# and its fix is the join, the statement on one line. Where there is an
+# expression to wrap, parentheses are the other repair: inside them a line
+# that ends with an operator goes on below (the spec's opening paragraph), so
+# `y = (a +` over `1)` keeps the break and compiles. The lexer cannot place
+# the `(`, since it does not know where the expression starts, and the parser
+# does, so the fix is offered here, after the parse, on the lexer's own
+# diagnostic. It is a `guess`: the join and the wrap both repair the break,
+# and neither is the only one.
+#
+# Only for the break a line's END makes. A line that BEGINS with an operator
+# is not repaired by parentheses, because inside them a line end before an
+# operator is refused too (panel 180 R3, `parse/line_end`), and a line end
+# right after `=`, `in`, `->` or `=>` has no expression on both sides of it.
+
+use token
+use diag
+use ast
+
+constant CODE: str
+    "continuation_outside_brackets"
+
+# The diagnostics, with the wrap added to each of the lexer's refusals it
+# repairs. `tokens` and `text` are the ones the spans index.
+function offer(diagnostics: [diag.Diagnostic], tokens: [token.Token], a: ast.Ast, text: str) -> [diag.Diagnostic]
+    refused: bool @ false
+
+    for d in diagnostics
+        if d.code == CODE
+            refused @ true
+
+    if !refused
+        return diagnostics
+    out: [diag.Diagnostic] @ []
+
+    for d in diagnostics
+        if d.code != CODE
+            out @ out.push(d)
+            continue
+        wrapped: diag.Diagnostic @ d
+        around = spanning(tokens, a, text, at: d.span)
+
+        if !around.is_err()
+            e = around.must()
+            wrapped.fixes @ wrapped.fixes.push(
+                diag.Fix(title: "break it inside parentheses", replacement: "(" + text.slice(from: e.start, to: e.end) + ")", span: e, certainty: .guess)
+            )
+        out @ out.push(wrapped)
+
+    return out
+
+# The span of the innermost expression that holds the token at `at` and the
+# first token of the line after it, when a line end follows that token; the
+# first such expression in the tree's order is the innermost, since a node is
+# pushed after the nodes it holds.
+function spanning(tokens: [token.Token], a: ast.Ast, text: str, at: token.Span) -> token.Span?
+    i = first_at(tokens, start: at.start)
+
+    if i < 0 || tokens[i].span.end != at.end
+        return fail(code: "no_token", msg: "no token has the diagnostic's span")
+    j: i64 @ i + 1
+
+    while j < tokens.len() && tokens[j].kind == .comment
+        j @ j + 1
+
+    if j >= tokens.len() || !breaks_between(text, from: at.end, to: tokens[j].span.start)
+        return fail(code: "no_break", msg: "the line does not end after this token")
+    after = tokens[j].span
+
+    for e in a.exprs
+        if e.kind != .error && e.span.start <= at.start && e.span.end >= after.end
+            # An `if` or a `match` carries a block, and no block stands inside
+            # brackets, so the innermost expression that holds one is not
+            # wrapped, nor is any outside it.
+            if holds_a_block(tokens, span: e.span)
+                return fail(code: "a_block_inside", msg: "the expression holds a block")
+            return ok(e.span)
+
+    return fail(code: "nothing_to_wrap", msg: "no expression holds both sides of the break")
+
+function holds_a_block(tokens: [token.Token], span: token.Span) -> bool
+    i: i64 @ first_at(tokens, start: span.start)
+
+    while i >= 0 && i < tokens.len() && tokens[i].span.start < span.end
+        if tokens[i].kind == .indent || tokens[i].kind == .dedent
+            return true
+        i @ i + 1
+
+    return false
+
+# The index of the first token that starts at `start`, or -1: the tokens are
+# in source order, so the search halves.
+function first_at(tokens: [token.Token], start: i64) -> i64
+    low: i64 @ 0
+    high: i64 @ tokens.len()
+
+    while low < high
+        middle = (low + high) / 2
+
+        if tokens[middle].span.start < start
+            low @ middle + 1
+        else
+            high @ middle
+
+    while low < tokens.len() && tokens[low].span.start == start
+        if tokens[low].kind != .terminator && tokens[low].kind != .indent && tokens[low].kind != .dedent && tokens[low].kind != .comment
+            return low
+        low @ low + 1
+
+    return -1
+
+function breaks_between(text: str, from: i64, to: i64) -> bool
+    i: i64 @ from
+
+    while i < to && i < text.len()
+        if text[i] == '\n'
+            return true
+        i @ i + 1
+
+    return false

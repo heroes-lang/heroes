@@ -38,8 +38,26 @@ use diag
 # bare `write_file(…)` and wrote exactly that. The repair is not to
 # downgrade the fix to a guess — a guess that cannot compile is still
 # wrong — but to withdraw it and say what does answer a failure.
-function discarded_value(got: str, receiver: str?, fallible: bool, span: token.Span) -> diag.Diagnostic
-    insertion = token.Span(start: span.start, end: span.start)
+#
+# **A line that may be the rest of the one above takes no `certain` `_ = `**
+# (panel 181, item 5; defect 120). `total = base` over `-fee` is refused
+# here, and `_ = -fee` compiles and drops the term the author meant to
+# subtract: the fix keeps the bug, so it is a `guess`
+# (`.claude/rules/diagnostics-and-goldens.md`). The line begins with one of
+# the four tokens that begin a value AND go on with one (panel 180's
+# `line_end.begins_a_value`): `-`, `.`, `(`, `[`. The same shape with the
+# `-` set apart never arrives here, since the lexer refuses it
+# (`open_line`), and neither does a `?` or a `::`.
+#
+# `text` is the compilation's, which `span` indexes: the line's first byte
+# is read there, because a value's span leaves out the parentheses around
+# it, and `(5)` alone took `_ = ` as `(_ = 5)`, which does not parse (found
+# by the same audit).
+function discarded_value(got: str, receiver: str?, fallible: bool, span: token.Span, text: str) -> diag.Diagnostic
+    opening = line_opening(text, at: span.start)
+    insertion = token.Span(start: opening, end: opening)
+    first = text.slice(from: opening, to: opening + 1)
+    continues = first == "-" || first == "." || first == "(" || first == "["
     refused: str @ ""
 
     if fallible
@@ -58,8 +76,13 @@ function discarded_value(got: str, receiver: str?, fallible: bool, span: token.S
             )
             return d
         d.message @ d.message + " — write `_ = …` to discard it on purpose"
+        certainty: diag.Certainty @ .certain
+
+        if continues
+            certainty @ .guess
+            d.notes @ d.notes.push(the_rest_of_the_line_above(first))
         d.fixes @ d.fixes.push(
-            diag.Fix(title: "discard it explicitly", replacement: "_ = ", span: insertion, certainty: .certain)
+            diag.Fix(title: "discard it explicitly", replacement: "_ = ", span: insertion, certainty: certainty)
         )
         return d
     name = receiver.must()
@@ -78,10 +101,29 @@ function discarded_value(got: str, receiver: str?, fallible: bool, span: token.S
         )
         return d
     d.message @ d.message + ", or `_ = …` to discard it on purpose"
+
+    if continues
+        d.notes @ d.notes.push(the_rest_of_the_line_above(first))
     d.fixes @ d.fixes.push(
         diag.Fix(title: "discard it explicitly", replacement: "_ = ", span: insertion, certainty: .guess)
     )
     return d
+
+# Where the statement whose value starts at `at` begins: back over the
+# parentheses its value's span leaves out, and forward over the margin.
+function line_opening(text: str, at: i64) -> i64
+    i: i64 @ at
+
+    while i > 0 && i <= text.len() && (text[i - 1] == '(' || text[i - 1] == ' ')
+        i @ i - 1
+
+    while i < at && text[i] == ' '
+        i @ i + 1
+
+    return i
+
+function the_rest_of_the_line_above(first: str) -> str
+    return "a line that begins with `" + first + "` may be the rest of the line above, which ended its statement: outside brackets a long expression breaks after an operator, inside parentheses"
 
 # The ways a `T?`'s error can be answered, listed for a reader who has
 # just been refused (§4.17: everything needed without opening another
@@ -175,31 +217,74 @@ function bound_unit(name: str, span: token.Span) -> diag.Diagnostic
 
 test "a discarded value splits on the receiver, and certainty follows"
     span = token.Span(start: 12, end: 20)
+    text = "function main()\n    xs.push(4)\n"
     bare = discarded_value(
         got: "[i64]",
         receiver: fail(code: "absent", msg: "no receiver"),
         fallible: false,
-        span: span
+        span: span,
+        text: text
     )
     assert bare.fixes.len() == 1
     assert bare.fixes[0].certainty == .certain
     assert bare.fixes[0].span.start == 12 && bare.fixes[0].span.end == 12
-    named = discarded_value(got: "[i64]", receiver: ok("xs"), fallible: false, span: span)
+    named = discarded_value(got: "[i64]", receiver: ok("xs"), fallible: false, span: span, text: text)
     assert named.fixes.len() == 2
     assert named.fixes[0].certainty == .guess
     assert named.fixes[1].certainty == .guess
     assert named.fixes[0].replacement == "xs @ "
+
+# Defect 120 and panel 181's audit: a line that may be the rest of the one
+# above is never discarded by a `certain` fix, and the fix lands before the
+# parentheses a value's span leaves out.
+test "a line that begins like the rest of the line above takes only a guessed discard, at its first byte"
+    text = "function main()\n    y = 1\n    (5)\n    -y\n    x\n"
+    paren = discarded_value(
+        got: "i64",
+        receiver: fail(code: "absent", msg: "no receiver"),
+        fallible: false,
+        span: token.Span(start: 31, end: 32),
+        text: text
+    )
+    assert paren.fixes[0].certainty == .guess
+    assert paren.fixes[0].span.start == 30
+    assert paren.notes.len() == 1
+    minus = discarded_value(
+        got: "i64",
+        receiver: fail(code: "absent", msg: "no receiver"),
+        fallible: false,
+        span: token.Span(start: 38, end: 40),
+        text: text
+    )
+    assert minus.fixes[0].certainty == .guess
+    alone = discarded_value(
+        got: "i64",
+        receiver: fail(code: "absent", msg: "no receiver"),
+        fallible: false,
+        span: token.Span(start: 45, end: 46),
+        text: text
+    )
+    assert alone.fixes[0].certainty == .certain
+    assert alone.fixes[0].span.start == 45
+    assert alone.notes.len() == 0
 
 # Panel 118's third half: once `_ = e` on a fallible is refused, the
 # `_ = ` fix must not be OFFERED, let alone offered as `certain`, or
 # `heroes check --apply` writes a program the next pass rejects.
 test "a discarded FALLIBLE offers no `_ = ` at all, and says what answers an error instead"
     span = token.Span(start: 12, end: 20)
-    bare = discarded_value(got: "()?", receiver: fail(code: "absent", msg: "no receiver"), fallible: true, span: span)
+    text = "function main()\n    xs.push(4)\n"
+    bare = discarded_value(
+        got: "()?",
+        receiver: fail(code: "absent", msg: "no receiver"),
+        fallible: true,
+        span: span,
+        text: text
+    )
     assert bare.fixes.len() == 0
     assert bare.notes.len() == 1
     assert bare.message == "this line's value has type `()?` and nothing receives it, and `_ = …` will not do either: a `T?` may not be discarded"
-    named = discarded_value(got: "[i64]?", receiver: ok("xs"), fallible: true, span: span)
+    named = discarded_value(got: "[i64]?", receiver: ok("xs"), fallible: true, span: span, text: text)
     assert named.fixes.len() == 1
     assert named.fixes[0].replacement == "xs @ "
     assert named.notes.len() == 1

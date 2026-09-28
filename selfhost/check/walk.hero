@@ -959,7 +959,7 @@ function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, 
                 receiver = returns_its_receiver(c, a, s, value: value, got: got)
                 state.push_diagnostic(
                     @c,
-                    discard_errors.discarded_value(got: shown, receiver: receiver, fallible: discard.is_fallible(c, got), span: span)
+                    discard_errors.discarded_value(got: shown, receiver: receiver, fallible: discard.is_fallible(c, got), span: span, text: s.text)
                 )
             return falls_with_nothing()
 

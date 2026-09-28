@@ -89,6 +89,10 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # reading the rule exists to refuse, so the control arm reads it as a
 # language without the rule does. Its neighbour line_end_before_continuation
 # is not one: without it the program is refused all the same.
+# continuation_outside_brackets joined by panel 181 (2026-09-28, provisional,
+# the author's to overrule): the lexer hands the parser the one line the
+# author broke, so without the rule `y = a +` over `1` means `y = a + 1`,
+# which the control arm reads, a continuation the language never had.
 function is_thesis_rule(d: Diagnostic) -> bool
     codes = [
         "unused_binding"
@@ -107,6 +111,7 @@ function is_thesis_rule(d: Diagnostic) -> bool
         "declared_twice"
         "machine_locked_path"
         "spaced_minus_element"
+        "continuation_outside_brackets"
     ]
 
     for one in codes
@@ -141,4 +146,5 @@ test "a diagnostic starts empty and grows by mutation"
     assert is_thesis_rule(new_diagnostic(code: "needs_label", message: "m", span: u.span))
     assert is_thesis_rule(new_diagnostic(code: "spaced_minus_element", message: "m", span: u.span))
     assert !is_thesis_rule(new_diagnostic(code: "line_end_before_continuation", message: "m", span: u.span))
+    assert is_thesis_rule(new_diagnostic(code: "continuation_outside_brackets", message: "m", span: u.span))
     assert !is_thesis_rule(u)

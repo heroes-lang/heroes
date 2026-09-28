@@ -14,7 +14,9 @@ or keyword other than `function` and `fail`; that NEWLINE may stand only before 
 closing bracket or a `,`, or where a production writes it, and any other line
 goes on below, at any column, so a long expression breaks after an operator.
 Where a NEWLINE separates without a `,`, the next line may not begin with a `-`
-that does not touch its operand.
+that does not touch its operand. Outside brackets a line ends its statement: it
+may not end where the statement cannot, and the next line may not go on with it,
+so a long expression, a condition included, breaks inside parentheses.
 
 ## 1. Files and layout
 - One file is one module; the file you compile holds `function main()`, which
@@ -29,7 +31,7 @@ that does not touch its operand.
 - `#` comments to end of line, markdown inside. A comment directly above a
   declaration documents it; `##` is a section heading.
 - Indentation is significant and rigid: exactly 4 spaces per level; a tab is a
-  compile error. No braces, no semicolons, no parentheses around conditions.
+  compile error. No braces, no semicolons; a condition needs no parentheses.
 - Syntax is ASCII-only; comments may contain any UTF-8, strings any but a raw
   carriage return or line end: a string is one line.
 

@@ -9,13 +9,19 @@
 # forgot `nullptr` in is_line_ender's allow-list when the keyword arrived at
 # M-ffi-ladder — silent for a line, loud on the next, panel 007's own trap.
 # In Heroes that bug is INEXPRESSIBLE: `_` is forbidden on a variant match,
-# so the arm below must name all 61 kinds, and a 62nd kind is a compile error
+# so the arm below must name all 69 kinds, and a 70th kind is a compile error
 # on this very function until somebody decides its enderness. The language
 # refuses its bootstrap's own recorded defect.
+#
+# A line whose end is not its statement's end, in either direction, is
+# `open_line.hero`'s (panel 181): this module asks it at the two moments it
+# can be told, a line's end and the next line's margin.
 
 use token
 use state
 use diag
+use bytes
+use open_line
 
 ## The carriage return
 
@@ -71,6 +77,7 @@ function line_start(@l: state.LexState, text: str)
         l.pos @ l.pos + 1
 
     if saw_tab
+        open_line.abandon(@l)
         span = token.Span(start: ws_start, end: l.pos)
         state.push_diagnostic(
             @l.diagnostics,
@@ -88,7 +95,29 @@ function line_start(@l: state.LexState, text: str)
     b = text[l.pos]
 
     if b == '\n' || b == CR || b == '#'
+        # A stray carriage return with words after it takes no margin, so what
+        # it holds follows the terminator its line end owed.
+        if b == CR && (l.pos + 1 >= text.len() || text[l.pos + 1] != '\n')
+            open_line.settle(@l)
         return
+
+    if l.open_line >= 0 && open_line.goes_on(@l, text, spaces: spaces)
+        return
+
+    # The terminator the line above owes, planted here inline for every line
+    # that begins with a word or a literal, or opens a block, which is every
+    # line of a program that compiles: a call per line costs this lexer more
+    # than the rule does (measured 2026-09-28). A line that begins with
+    # anything else asks `open_line`, which may refuse and join it.
+    if l.owed >= 0
+        if (spaces + 2) / 4 > l.level || bytes.is_alnum(b) || b == '_' || b == '"' || b == '\''
+            state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: l.owed, end: l.owed)))
+            l.owed @ -1
+
+            if l.held.len() > 0
+                open_line.flush(@l)
+        else if open_line.goes_on_below(@l, text, spaces: spaces)
+            return
     span = token.Span(start: ws_start, end: l.pos)
 
     # Recovery, and the distinction matters: a wrong margin is always an
@@ -128,11 +157,37 @@ function line_start(@l: state.LexState, text: str)
 # Plant the terminator — only if the line can be *over*. Appended raw rather
 # than through `emit`: the terminator must not become the next line's "last
 # significant token", and it tracks no bracket.
+#
+# Outside brackets a line ends its statement, so at depth zero a line that
+# cannot end is left open, and one that ends with a value owes its
+# terminator until the next line with words shows it is not going on with it
+# (`open_line`); `return`, `break` and `continue` end theirs here.
 function maybe_terminator(@l: state.LexState)
     if l.last_significant.is_err()
         return
+    kind = l.last_significant.must()
+    ender = is_line_ender(kind)
 
-    if !is_line_ender(l.last_significant.must())
+    if l.open_brackets.len() == 0
+        # An `error` token ends a line at depth zero (panel 181): the lexer has
+        # spoken there, and a line glued on below it went into the recovery
+        # that drops the rest of the statement, so the next line's own mistake
+        # was never reported.
+        if kind == .error
+            state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: l.pos, end: l.pos)))
+            return
+
+        if !ender
+            open_line.left_open(@l)
+            return
+
+        # Owed, and planted at the next line with words (`line_start`) unless
+        # that line can only go on with this one (`open_line.goes_on_below`).
+        if kind != .kw_return && kind != .kw_break && kind != .kw_continue
+            l.owed @ l.pos
+            return
+
+    if !ender
         return
     span = token.Span(start: l.pos, end: l.pos)
     state.push_token(@l.tokens, token.Token(kind: .terminator, span: span))
@@ -186,6 +241,9 @@ test "the terminator lands only where a line can be over"
     l.pos @ 1
     state.emit(@l, .ident, 0)
     maybe_terminator(@l)
+    assert l.tokens.len() == 1
+    assert l.owed == 1
+    open_line.settle(@l)
     assert l.tokens.len() == 2
     assert l.tokens[1].kind == .terminator
     p: state.LexState @ state.new_state()
@@ -193,6 +251,7 @@ test "the terminator lands only where a line can be over"
     state.emit(@p, .plus, 0)
     maybe_terminator(@p)
     assert p.tokens.len() == 1
+    assert p.open_line == 0
     e: state.LexState @ state.new_state()
     maybe_terminator(@e)
     assert e.tokens.len() == 0

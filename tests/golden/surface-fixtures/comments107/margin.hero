@@ -7,9 +7,19 @@
 # comment on a line of its own inside the continuation, `fmt` still refuses
 # at exit 2, since the owner rule reads the continued line as a new logical
 # line and the comment as a block's; that shape is reported apart.
+#
+# Correction, 2026-09-28 (panel 181, provisional): the shape is refused now,
+# with one diagnostic at the `.`, `continuation_outside_brackets`: outside
+# brackets a line ends its statement, which is what §4.15's ratified *a long
+# expression is broken inside parentheses or not at all* says, and the
+# lexer's reading above was defect 116, which this fixture found. `fmt`
+# refuses the file at exit 1, as it does any file that does not parse, and
+# the parentheses it printed are the parser's fix now, a `guess`, since a
+# comment stands between the two lines and a join would carry it.
 
 function main()
     xs = [1, 2, 3]
+    #~v continuation_outside_brackets
     c = xs.  # at the statement's own margin, no parentheses
     len()
     print(c)
