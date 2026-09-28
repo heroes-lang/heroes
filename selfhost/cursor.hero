@@ -67,6 +67,8 @@ record Cursor
     # class). One number is all the clamp needs, and the parser stays
     # a function of text rather than growing a Source.
     root_end: i64
+    # What a head held back over a joined line, for `parse` to place.
+    held: [diag.Held]
 
 function new_cursor(tokens: [token.Token]) -> Cursor
     return bounded_cursor(tokens: tokens, root_end: -1)
@@ -74,9 +76,10 @@ function new_cursor(tokens: [token.Token]) -> Cursor
 # The same, told where the author's text stops. -1 means "everything is
 # the author's", which is what a single-file parse is.
 function bounded_cursor(tokens: [token.Token], root_end: i64) -> Cursor
-    diagnostics: [diag.Diagnostic] = []
+    said: [diag.Diagnostic] = []
     comments: [token.Span] = []
-    c: Cursor @ Cursor(tokens: tokens, pos: 0, diagnostics: diagnostics, comments: comments, root_end: root_end)
+    held: [diag.Held] = []
+    c: Cursor @ Cursor(tokens: tokens, pos: 0, diagnostics: said, comments: comments, root_end: root_end, held: held)
     pass_comments(@c)
     return c
 
@@ -123,9 +126,9 @@ function peek(c: Cursor, ahead: i64) -> token.TokenKind
 
     return c.tokens[i].kind
 
-# The kind of the token just consumed. One caller, one reason: a statement that
-# ended with a block has already eaten its dedent, so it must not also be asked
-# for a line end.
+# The kind of the token just consumed. One caller, one reason: a suffix never
+# reaches across a block that just closed, whose dedent is behind the cursor
+# (`grammar_expr.postfix`; `finish` asks `at_fresh_line` since defect 130).
 function previous_kind(c: Cursor) -> token.TokenKind
     if c.pos == 0
         return c.tokens[0].kind

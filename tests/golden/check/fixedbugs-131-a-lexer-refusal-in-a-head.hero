@@ -1,0 +1,28 @@
+# Fixed defect 131, 2026-09-28, beside it: the lexer refuses a token inside a
+# head. Symptom: `if n > let`, a reserved word, over an indented body cost
+# `reserved_word` and then `unexpected_block` for the body, "indented deeper
+# than anything that opens one", which the `if` opens; so did an unterminated
+# string and a character no token begins with. The body was dropped whole and
+# its mistakes with it. Cause: the parser stays silent at the lexer's `error`
+# token, and then read the head's line as a statement that had ended, so the
+# body under it was an orphan. The rest of a head's line is dropped once it
+# has said nothing and its line goes on, and the body below it is read
+# (`parse/opening`).
+
+function reserved(n: i64)
+    if n > let  #~ reserved_word
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function unterminated(s: str)  #~v unterminated_string
+    if s == "abc
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function unexpected(n: i64)
+    if n > $  #~ unexpected_character
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function main()
+    print(1)

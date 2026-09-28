@@ -66,6 +66,7 @@ use parse/line_end
 use parse/list_line
 use parse/arm_line
 use parse/arm_pattern
+use parse/opening
 use operators
 
 ## The precedence table — §4.14, read from the bottom up
@@ -707,21 +708,20 @@ function eat_python_colon(@c: cursor.Cursor)
     c.diagnostics @ c.diagnostics.push(d)
     _ = cursor.bump(@c)
 
-# The indented body of a declaration, a loop, an `if` or a `match` arm. A
-# failure is `.is_err()` and the caller gives up on that construct — where Rust
-# returns `Option<Block>`.
-function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str) -> ast.Block?
+# The indented body of a declaration, a loop, an `if` or a `match` arm, after
+# the head that began at `head`. A failure is `.is_err()` and the caller gives
+# up on that construct — where Rust returns `Option<Block>`. What a head that
+# failed still owes its body is `parse/opening`'s (defect 131).
+function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: opening.Mark) -> ast.Block?
+    failed = opening.refused(c, head)
     eat_python_colon(@c)
-    cursor.skip_terminators(@c)
+    missing = opening.Missing(
+        code: "missing_body",
+        lead: owner + " needs an indented body — one level deeper, exactly 4 spaces (found ",
+        tail: ")"
+    )
 
-    if !cursor.at(c, .indent)
-        if !cursor.at_reported_error(c)
-            cursor.error(
-                @c,
-                code: "missing_body",
-                message: owner + " needs an indented body — one level deeper, exactly 4 spaces (found " + cursor.found(c, text) + ")",
-                span: cursor.current_span(c)
-            )
+    if !opening.body_follows(@c, text, head: head, failed: failed, missing: missing)
         return fail(code: "missing_body", msg: owner)
     open = cursor.bump(@c).span
     stmts: [i64] @ []
@@ -816,10 +816,11 @@ function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, fr
         return ast.push_stmt(@a.stmts, ast.Stmt(kind: kind, span: span))
 
     # A statement that ended with a block — a loop, an `if`, a `match` —
-    # consumed its own dedent, and a dedent IS the end of a line.
-    ended_with_block = cursor.previous_kind(c) == .dedent
+    # consumed its own dedent, and a dedent IS the end of a line; so did one
+    # whose head looked past its line end for a body that was not there.
+    ended = c.pos > from && cursor.at_fresh_line(c)
 
-    if !ended_with_block && !cursor.at(c, .dedent) && !cursor.at(c, .eof) && !cursor.eat(@c, .terminator)
+    if !ended && !cursor.at(c, .dedent) && !cursor.at(c, .eof) && !cursor.eat(@c, .terminator)
         if !cursor.at_reported_error(c)
             cursor.error(
                 @c,
@@ -841,9 +842,10 @@ function return_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
 # `while cond` — the condition loop (§4.7; panel 018 split it out of the old
 # two-grammar `for`).
 function while_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
+    head = opening.mark(c)
     _ = cursor.bump(@c)
     cond = parse_expr(@c, @a, text)
-    body = block(@c, @a, text: text, owner: "a `while`")
+    body = block(@c, @a, text: text, owner: "a `while`", head: head)
 
     if body.is_err()
         return .error
@@ -856,13 +858,14 @@ function while_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
 # because `for x of xs` — a mangled iteration, not a condition — reaches the
 # identical parse state, and a machine-applied `while` there would not compile.
 function for_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
+    head = opening.mark(c)
     keyword = cursor.bump(@c).span
 
     if cursor.at(c, .ident) && cursor.peek(c, 1) == .kw_in
         name = cursor.bump(@c).span
         _ = cursor.bump(@c)
         iterable = parse_expr(@c, @a, text)
-        body = block(@c, @a, text: text, owner: "a `for`")
+        body = block(@c, @a, text: text, owner: "a `for`", head: head)
 
         if body.is_err()
             return .error
@@ -886,7 +889,7 @@ function for_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     # Parse the rest as the condition loop it most likely was: one mistake, one
     # diagnostic, and the body still gets checked.
     cond = parse_expr(@c, @a, text)
-    recovered = block(@c, @a, text: text, owner: "a `for`")
+    recovered = block(@c, @a, text: text, owner: "a `for`", head: head)
 
     if recovered.is_err()
         return .error
@@ -963,10 +966,11 @@ function is_place(a: ast.Ast, at: i64) -> bool
 # parentheses around the condition (§4.15) and no truthiness: the condition must
 # be `bool`, checked by the type checker.
 function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    head = opening.mark(c)
     start = cursor.bump(@c).span
     branches: [ast.Branch] @ []
     cond = parse_expr(@c, @a, text)
-    first = block(@c, @a, text: text, owner: "an `if`")
+    first = block(@c, @a, text: text, owner: "an `if`", head: head)
     whole = !first.is_err()
 
     if whole
@@ -980,16 +984,17 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     chaining: bool @ true
 
     while chaining && cursor.at(c, .kw_else)
+        branch_head = opening.mark(c)
         _ = cursor.bump(@c)
 
         if cursor.eat(@c, .kw_if)
             more_cond = parse_expr(@c, @a, text)
-            more = block(@c, @a, text: text, owner: "an `else if`")
+            more = block(@c, @a, text: text, owner: "an `else if`", head: branch_head)
 
             if !more.is_err()
                 branches @ branches.push(ast.Branch(cond: more_cond, block: more.must()))
         else
-            last = block(@c, @a, text: text, owner: "an `else`")
+            last = block(@c, @a, text: text, owner: "an `else`", head: branch_head)
 
             if !last.is_err()
                 otherwise @ last
@@ -1008,19 +1013,18 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
 # `match e` + one arm per line, indented.
 function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    head = opening.mark(c)
     start = cursor.bump(@c).span
     scrutinee = parse_expr(@c, @a, text)
+    failed = opening.refused(c, head)
     eat_python_colon(@c)
-    cursor.skip_terminators(@c)
+    missing = opening.Missing(
+        code: "missing_match_arms",
+        lead: "a `match` needs its arms indented one level below it, found ",
+        tail: ""
+    )
 
-    if !cursor.at(c, .indent)
-        if !cursor.at_reported_error(c)
-            cursor.error(
-                @c,
-                code: "missing_match_arms",
-                message: "a `match` needs its arms indented one level below it, found " + cursor.found(c, text),
-                span: cursor.current_span(c)
-            )
+    if !opening.body_follows(@c, text, head: head, failed: failed, missing: missing)
         return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
     _ = cursor.bump(@c)
     arms: [ast.Arm] @ []
@@ -1064,6 +1068,7 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # One arm: patterns joined by `|`, `=>`, then one statement on the same line or
 # a block below it (§4.7, panel 014).
 function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
+    head = opening.mark(c)
     start = cursor.current_span(c)
     patterns: [ast.Pattern] @ []
     arm_line.spaced_sign(@c, text)
@@ -1092,7 +1097,7 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
     body: ast.ArmBody @ .one_stmt(at: 0)
 
     if cursor.at(c, .indent)
-        inner = block(@c, @a, text: text, owner: "a `match` arm")
+        inner = block(@c, @a, text: text, owner: "a `match` arm", head: head)
 
         if inner.is_err()
             return fail(code: "no_body", msg: "the arm's block is missing")

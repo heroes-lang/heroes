@@ -1,0 +1,16 @@
+# Fixed defect 131, 2026-09-28, beside it: `for` over what is not an
+# iteration. Symptom: `for x of xs` over an indented body cost
+# `for_missing_in`, whose repair is `while`, and then `missing_body` at `of`,
+# and the body the comment above `for_stmt` promises is "still checked" was
+# dropped with its mistakes. Cause: the rest of the head, parsed as the
+# condition it most likely was, stopped at `of`, and the check for a body
+# asked that token. A head that refused something drops the rest of its line
+# and reads the body below it (`parse/opening`).
+
+function over_of(xs: [i64])
+    for x of xs  #~ for_missing_in
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function main()
+    print(1)
