@@ -1,0 +1,60 @@
+# A comma the author wrote at the start of a line of its own with a comment
+# after it: in a list, a map, a call, a record's construction, a method's
+# arguments and a signature, and in a list under a comment trailing the value
+# before the comma. `heroes probe`'s first run over the fixtures found it
+# (panel 179, 2026-09-28): its bracket break after the `1` of
+# `brackets.hero`'s `[1,  # inside a receiver` put the comma on such a line,
+# and `fmt` printed the comment after it on a line of its own, which its
+# guard refused at exit 2 in every one of these places. The comma keeps its
+# line now, and the comment its place after it.
+
+record Point
+    x: i64
+    y: i64
+
+function list() -> [i64]
+    return [1
+        ,  # after the comma
+        2]
+
+function both() -> [i64]
+    return [1  # after the value
+        ,  # after the comma
+        2]
+
+function entries() -> {i64: i64}
+    return {1: 2
+        ,  # after the entry's comma
+        3: 4}
+
+function call(a: i64, b: bool) -> i64
+    return g(a
+        ,  # after an argument's comma
+        b)
+
+function construct() -> Point
+    return Point(x: 1
+        ,  # after a field's comma
+        y: 2)
+
+function method(xs: [i64]) -> i64
+    return xs.fold(0
+        ,  # after a method argument's comma
+        add)
+
+function signature(a: i64
+        ,  # after a parameter's comma
+        b: i64) -> i64
+    return a + b
+
+function g(a: i64, b: bool) -> i64
+    if b
+        return a
+    return 0
+
+function add(acc: i64, item: i64) -> i64
+    return acc + item
+
+function main()
+    print(list().len() + both().len() + entries().len())
+    print(call(a: 3, b: true) + construct().x + method([1, 2]) + signature(a: 1, b: 2))

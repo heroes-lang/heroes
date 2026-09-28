@@ -28,6 +28,15 @@ A new top-level verb needs a *proven overload* of an existing one, which is what
 every recorded split was (`git checkout` becoming `switch` and `restore`,
 `go get` becoming `go install`), never a new capability.
 
+**The two sentences above pull apart for a new capability with an artifact
+class of its own** (panel 179's completeness critic): the first makes it a
+subcommand, the second admits no new verb that is not an overload. Panel 179
+read them this way for `heroes probe`: the capability entered by the author's
+decision of 2026-09-26, which the stopping rule was not stretched to cover, and
+the sitting ruled its shape by the first sentence, since its artifact is a
+verdict over generated programs and its operand a directory, which `fmt`'s row
+cannot carry. The second sentence governs a verb split out of an existing one.
+
 **The contract of every invocation**: the artifact on stdout, diagnostics on
 stderr; exit 0 clean, exit 1 the input has diagnostics, exit 2 the tool could not
 run. Inspection is `--dump-<stage>` (design.md §3.5 has the list); `--json` says

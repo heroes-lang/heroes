@@ -1,0 +1,309 @@
+# `heroes probe` in the net (panel 179 item 7; design.md §4.15): the
+# formatter's probe over its fixture directories under every family, and
+# over the whole tree under the thin one, `multi`, alone.
+#
+# WHAT A ROW ASSERTS. The probe exits 0, every variant the parser accepts
+# holding under both judges, or 2 with exactly the failures a row names as
+# an open defect's, each by its file, family and variant; and its report
+# reads at least the seeds and, per family, the variants generated and
+# parsing the row pins. The floors are the point (the spec-warden's
+# condition): a generator that silently made fewer variants would judge
+# less and pass, the green run that tested nothing. A `multi` row is
+# checked by what the value is as well: that family makes nine variants of
+# every seed, so its count is nine times the seeds, whatever the tree holds.
+#
+# THE FIXTURE ROW JUDGES ONE VARIANT IN TWO. Unstrided it measured 64.65 s,
+# 64.79 s and 65.26 s of user time with a compiler built unoptimised, as
+# the gate's is (2026-09-28, the load between 2 and 8), past the 60 s panel
+# 179 set for an unstrided row, so the row takes `--stride 2`, which judges
+# the same variants every run; every one of them is judged by hand before a
+# push that touches `selfhost/print/` (`.claude/rules/verification.md`). Its
+# directories are the ones a `fmt` row of `suite_surface.hero` reads, and
+# the row checks that the report names each, so a formatter fixture added
+# there and not to the probe's default is red here.
+#
+# KNOWN FAILURES, each an open defect's and named with it: the row is red
+# when one stops failing, which is the day its entry goes, as well as when
+# anything else fails.
+
+use report
+use floors
+use shell
+use strings
+use suite_surface
+
+record Floor
+    family: str
+    generated: i64
+    parsing: i64
+
+record Row
+    name: str
+    words: [str]
+    seeds: i64
+    floors: [Floor]
+    known: [str]
+
+# Defect 116's shape in `comments107/margin.hero`: a comment on a line of
+# its own inside a statement continued at its own margin, which the owner
+# rule reads as a new logical line, so the guard refuses at exit 2
+# (`docs/work/DEFECTS.md`, 116's origin). Every variant that puts one there.
+constant MARGIN: str
+    "tests/golden/surface-fixtures/comments107/margin.hero"
+
+function rows() -> [Row]
+    fixtures: [Floor] = [
+        Floor(family: "single", generated: 6252, parsing: 3126)
+        Floor(family: "multi", generated: 567, parsing: 284)
+        Floor(family: "bracket", generated: 8910, parsing: 3306)
+        Floor(family: "paren", generated: 2139, parsing: 684)
+        Floor(family: "ends", generated: 502, parsing: 251)
+        Floor(family: "columns", generated: 5318, parsing: 2659)
+        Floor(family: "texts", generated: 3125, parsing: 1563)
+    ]
+    fixtures_known: [str] = [
+        MARGIN + " single O14_0"
+        MARGIN + " single O14_8"
+        MARGIN + " multi ALLOP"
+        MARGIN + " ends ALLO_crlf"
+        MARGIN + " columns C14_2"
+        MARGIN + " columns C14_10"
+        MARGIN + " texts V14"
+    ]
+    selfhost: [Floor] = [Floor(family: "multi", generated: 2520, parsing: 2520)]
+    tests: [Floor] = [Floor(family: "multi", generated: 5679, parsing: 5679)]
+    tests_known: [str] = [MARGIN + " multi ALLO", MARGIN + " multi ALLOP", MARGIN + " multi ALLTO"]
+    examples: [Floor] = [Floor(family: "multi", generated: 1080, parsing: 1080)]
+    none: [str] = []
+    return [
+        Row(name: "the fixtures, every family", words: ["probe", "--stride", "2"], seeds: 63, floors: fixtures, known: fixtures_known)
+        Row(name: "selfhost, multi", words: ["probe", "selfhost", "--family", "multi"], seeds: 280, floors: selfhost, known: none)
+        Row(name: "tests, multi", words: ["probe", "tests", "--family", "multi"], seeds: 631, floors: tests, known: tests_known)
+        Row(name: "examples, multi", words: ["probe", "examples", "--family", "multi"], seeds: 120, floors: examples, known: none)
+    ]
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+    index: i64 @ 0
+
+    for row in rows()
+        words: [str] @ [compiler]
+
+        for word in row.words
+            words @ words.push(word)
+
+        ran = shell.run(scratch: scratch, program: compiler, words: words)?
+        judged(@r, row: row, ran: ran)
+
+        # The first row is the fixtures': every directory a `fmt` row reads
+        # is one it probed.
+        if index == 0
+            for dir in fixture_directories()
+                if !strings.contains(text: ran.out, needle: "\n  " + dir + ": ")
+                    report.keep_failure(
+                        @r,
+                        label: "probe/fixtures",
+                        detail: "  `heroes probe`'s default does not read " + dir + ", which a `fmt` row of the surface suite reads: add it to `selfhost/cli/probe.hero`'s FIXTURES"
+                    )
+        index @ index + 1
+
+    return ok(r)
+
+# What one row's run says, against what the row pins.
+function judged(@r: report.Report, row: Row, ran: shell.Run)
+    label = "probe/" + row.name
+    named = failures(ran.err)
+    want: i64 @ 0
+
+    if row.known.len() > 0
+        want @ 2
+
+    if ran.code != want
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  exited " + ran.code.to_str() + ", not " + want.to_str() + ":\n" + head(ran.err)
+        )
+        return
+
+    for one in named
+        if !listed(row.known, key: one)
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  a failure no open defect names: " + one + "\n" + head(ran.err)
+            )
+            return
+
+    for one in row.known
+        if !listed(named, key: one)
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  " + one + " no longer fails: its defect's repair takes it out of this row's known failures"
+            )
+            return
+
+    seeds = seeds_of(ran.out)
+    floors.check(@r, label: label + "/seeds", found: seeds, floor: row.seeds, what: "seeds")
+
+    for floor in row.floors
+        cells = tally(text: ran.out, family: floor.family)
+
+        if cells.len() != 7
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  the report has no row for " + floor.family + ":\n" + ran.out
+            )
+            continue
+        generated = number(cells[1])
+        parsing = number(cells[3])
+        floors.check(
+            @r,
+            label: label + "/" + floor.family,
+            found: generated,
+            floor: floor.generated,
+            what: "variants generated"
+        )
+        floors.check(
+            @r,
+            label: label + "/" + floor.family + "/parsing",
+            found: parsing,
+            floor: floor.parsing,
+            what: "variants parsing"
+        )
+
+        # A fact about the value: `multi` rewrites each seed nine ways.
+        if floor.family == "multi" && row.floors.len() == 1 && generated != 9 * seeds
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  `multi` made " + generated.to_str() + " variants of " + seeds.to_str() + " seeds, not nine of each"
+            )
+
+# Every failure the report names, as `<file> <family> <variant>`: the first
+# is written `, family F, variant V,` after its file, the next ones `F V,`.
+function failures(err: str) -> [str]
+    out: [str] @ []
+
+    for line in strings.lines(err)
+        first = strings.starts_with(text: line, prefix: "error: the first, `")
+
+        if !first && !strings.starts_with(text: line, prefix: "    `")
+            continue
+        parts = strings.split_text(text: line, separator: "`")
+
+        if parts.len() < 3
+            continue
+        pieces = strings.split_text(text: parts[2], separator: ",")
+        found: [str] @ [parts[1]]
+
+        if first && pieces.len() > 2
+            for word in strings.words(pieces[1] + " " + pieces[2])
+                if word != "family" && word != "variant"
+                    found @ found.push(word)
+        else if !first
+            for word in strings.words(pieces[0])
+                found @ found.push(word)
+
+        out @ out.push(found.join(" "))
+
+    return out
+
+function seeds_of(out: str) -> i64
+    words = strings.words(out)
+
+    if words.len() < 2 || words[0] != "probe:"
+        return 0
+    return number(words[1])
+
+# The cells of the report's row for `family`, the family first.
+function tally(text: str, family: str) -> [str]
+    for line in strings.lines(text)
+        if strings.starts_with(text: line, prefix: "| " + family + " | ")
+            cells: [str] @ []
+
+            for cell in strings.split_text(text: line, separator: "|")
+                if strings.trimmed(cell).len() > 0
+                    cells @ cells.push(strings.trimmed(cell))
+
+            return cells
+
+    return []
+
+function number(text: str) -> i64
+    return strings.to_number(text).default(-1)
+
+function listed(entries: [str], key: str) -> bool
+    for one in entries
+        if one == key
+            return true
+
+    return false
+
+function head(text: str) -> str
+    lines = strings.lines(text)
+
+    if lines.len() > 12
+        return lines.slice(from: 0, to: 12).join("\n") + "\n  ..."
+    return text
+
+# The directories the surface suite's `fmt` rows read.
+function fixture_directories() -> [str]
+    out: [str] @ []
+    tables = [
+        suite_surface.argv_probes()
+        suite_surface.help_probes()
+        suite_surface.render_probes()
+        suite_surface.ffi_probes()
+        suite_surface.verb_probes()
+        suite_surface.bracket_probes()
+    ]
+
+    for table in tables
+        for p in table
+            words = strings.words(p.argv)
+
+            if words.len() < 2 || words[0] != "fmt" || !strings.starts_with(text: words[1], prefix: "tests/golden/surface-fixtures/")
+                continue
+            dir = directory_of(words[1])
+
+            if !listed(out, key: dir)
+                out @ out.push(dir)
+
+    return out
+
+function directory_of(path: str) -> str
+    at: i64 @ path.len() - 1
+
+    while at > 0 && path[at] != '/'
+        at @ at - 1
+
+    return path.slice(from: 0, to: at)
+
+## Tests
+
+test "a report's failures, seeds and rows are read as the probe writes them"
+    err = "error: `fmt` failed 2 of 9 variants the parser accepts: 2 refused by its own guard, 0 by the independent reader\nerror: the first, `a/b.hero`, family single, variant O14_0, the guard: it moved\n  the variant leaves the file at its line 14:\n  the next:\n    `a/b.hero` multi ALLO, the guard: it moved\nerror: this is a compiler bug, and no file was changed"
+    assert failures(err) == ["a/b.hero single O14_0", "a/b.hero multi ALLO"]
+    out = "probe: 3 seeds, and 1 files the parser refuses\n  x: 3 seeds\n\n| family | generated | judged | parsing | held | refused by the guard | refused by the reader |\n| multi | 27 | 27 | 27 | 27 | 0 | 0 |\n"
+    assert seeds_of(out) == 3
+    assert tally(text: out, family: "multi") == ["multi", "27", "27", "27", "27", "0", "0"]
+    assert tally(text: out, family: "single") == []
+    assert directory_of("tests/golden/surface-fixtures/comments101/a.hero") == "tests/golden/surface-fixtures/comments101"
+    assert fixture_directories().len() >= 9
+
+test "a row is red on an exit it does not expect, a failure no defect names, and a known one that holds"
+    row = rows()[1]
+    r: report.Report @ report.empty()
+    judged(
+        @r,
+        row: row,
+        ran: shell.Run(code: 2, out: "", err: "error: the first, `x.hero`, family multi, variant ALLO, the guard: it moved", started: true, why: 0)
+    )
+    assert r.failed == 1
+    known = rows()[2]
+    k: report.Report @ report.empty()
+    judged(@k, row: known, ran: shell.Run(code: 2, out: "", err: "", started: true, why: 0))
+    assert k.failed == 1

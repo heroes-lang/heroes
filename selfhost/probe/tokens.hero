@@ -1,0 +1,155 @@
+# The families that cut a line at a token (panel 179 item 3; design.md
+# §4.15, §4.9), ported from the skeptic seats' Python, whose names each
+# variant keeps: `<tag><index>`, the index a token's place among the file's
+# tokens that are not comments.
+#
+# - `bracket`, the second seat's `tokgen.py`: inside a bracket, after every
+#   token another follows on its line, the line broken there with a comment
+#   trailing the token (`T`), on a line of its own (`O`), or both (`B`), the
+#   rest of the line eight columns past the line's own. Never beside a
+#   piece of an interpolated string, which a break would cut.
+# - `paren`, the third seat's `parengen.py`: a value with a token before it
+#   and after it on its line, wrapped in the author's parentheses with a
+#   comment after the value (`A`), after the `(` (`B`), or on a line of its
+#   own (`C`), the `)` on the next line. Not a name a call, a field, an
+#   index or a label follows, and not one a declaration or a `.`, `for` or
+#   `use` comes before. The Python meant every literal as a value too and
+#   named four of the kinds by words the lexer's JSON dump never prints
+#   (`int_lit` where it prints `int`), so the seats' runs wrapped names and
+#   booleans only; this wraps what the Python said it would.
+
+use token
+use probe/seed
+
+function opens(kind: token.TokenKind) -> bool
+    return kind == .lparen || kind == .lbracket || kind == .lbrace
+
+function closes(kind: token.TokenKind) -> bool
+    return kind == .rparen || kind == .rbracket || kind == .rbrace
+
+# The tokens that are not comments, in order.
+function code(s: seed.Seed) -> [seed.Word]
+    out: [seed.Word] @ []
+
+    for w in s.words
+        if w.kind != .comment
+            out @ out.push(w)
+
+    return out
+
+function bracket(s: seed.Seed) -> [seed.Edit]
+    words = code(s)
+    out: [seed.Edit] @ []
+    depth: i64 @ 0
+
+    for index in range(from: 0, to: words.len())
+        t = words[index]
+
+        if opens(t.kind)
+            depth @ depth + 1
+        else if closes(t.kind)
+            depth @ depth - 1
+
+        if depth <= 0 || index + 1 >= words.len()
+            continue
+        next = words[index + 1]
+
+        if next.line != t.line || t.kind == .str_piece || next.kind == .str_piece
+            continue
+        line = s.lines[t.line]
+        pad = seed.spaces(seed.indent_of(line) + 8)
+        head = seed.right_trimmed(line.slice(from: 0, to: t.end))
+        rest = pad + seed.left_trimmed(line.slice(from: t.end, to: line.len()))
+        n = index.to_str()
+        trailing = [head + "  # zq_" + n + "_T", rest]
+        own = [head, pad + "# zq_" + n + "_O", rest]
+        both = [head + "  # zq_" + n + "_t", pad + "# zq_" + n + "_o", rest]
+        out @ out.push(
+            seed.splice(family: "bracket", name: "T" + n, at: t.line, cut: 1, put: trailing, newline: s.newline)
+        )
+        out @ out.push(seed.splice(family: "bracket", name: "O" + n, at: t.line, cut: 1, put: own, newline: s.newline))
+        out @ out.push(seed.splice(family: "bracket", name: "B" + n, at: t.line, cut: 1, put: both, newline: s.newline))
+
+    return out
+
+function value(kind: token.TokenKind) -> bool
+    literal = kind == .int_lit || kind == .float_lit || kind == .str_lit || kind == .char_lit
+    return literal || kind == .ident || kind == .kw_true || kind == .kw_false
+
+# A name this token is the word of, not a value: the name a declaration,
+# a `.`, a `for` or a `use` comes before.
+function naming(kind: token.TokenKind) -> bool
+    declares = kind == .kw_function || kind == .kw_record || kind == .kw_variant || kind == .kw_constant
+    return declares || kind == .dot || kind == .kw_for || kind == .kw_use
+
+# What makes a name before it a callee, a record, a module or a label.
+function applies(kind: token.TokenKind) -> bool
+    return kind == .lparen || kind == .colon || kind == .dot || kind == .lbracket
+
+function paren(s: seed.Seed) -> [seed.Edit]
+    words = code(s)
+    out: [seed.Edit] @ []
+
+    for index in range(from: 1, to: words.len())
+        t = words[index]
+
+        if !value(t.kind) || index + 1 >= words.len()
+            continue
+        before = words[index - 1]
+        after = words[index + 1]
+
+        if after.line != t.line || t.kind == .ident && applies(after.kind)
+            continue
+
+        if before.line != t.line || naming(before.kind)
+            continue
+        line = s.lines[t.line]
+        pad = seed.spaces(seed.indent_of(line) + 8)
+        head = line.slice(from: 0, to: t.start)
+        word = line.slice(from: t.start, to: t.end)
+        rest = line.slice(from: t.end, to: line.len())
+        n = index.to_str()
+        after_value = [head + "(" + word + "  # zq_" + n + "_A", pad + ")" + rest]
+        after_open = [head + "(  # zq_" + n + "_B", pad + word + ")" + rest]
+        own = [head + "(" + word, pad + "# zq_" + n + "_C", pad + ")" + rest]
+        out @ out.push(
+            seed.splice(family: "paren", name: "A" + n, at: t.line, cut: 1, put: after_value, newline: s.newline)
+        )
+        out @ out.push(
+            seed.splice(family: "paren", name: "B" + n, at: t.line, cut: 1, put: after_open, newline: s.newline)
+        )
+        out @ out.push(seed.splice(family: "paren", name: "C" + n, at: t.line, cut: 1, put: own, newline: s.newline))
+
+    return out
+
+## Tests
+
+test "a bracket breaks after every token inside it, and a value is wrapped where it stands between two"
+    text = "function f(a: i64) -> i64\n    return g(a, 1)\n"
+    words: [seed.Word] = [
+        seed.Word(kind: .kw_function, line: 0, start: 0, end: 8)
+        seed.Word(kind: .ident, line: 0, start: 9, end: 10)
+        seed.Word(kind: .lparen, line: 0, start: 10, end: 11)
+        seed.Word(kind: .ident, line: 0, start: 11, end: 12)
+        seed.Word(kind: .colon, line: 0, start: 12, end: 13)
+        seed.Word(kind: .ident, line: 0, start: 14, end: 17)
+        seed.Word(kind: .rparen, line: 0, start: 17, end: 18)
+        seed.Word(kind: .arrow, line: 0, start: 19, end: 21)
+        seed.Word(kind: .ident, line: 0, start: 22, end: 25)
+        seed.Word(kind: .kw_return, line: 1, start: 4, end: 10)
+        seed.Word(kind: .ident, line: 1, start: 11, end: 12)
+        seed.Word(kind: .lparen, line: 1, start: 12, end: 13)
+        seed.Word(kind: .ident, line: 1, start: 13, end: 14)
+        seed.Word(kind: .comma, line: 1, start: 14, end: 15)
+        seed.Word(kind: .int_lit, line: 1, start: 16, end: 17)
+        seed.Word(kind: .rparen, line: 1, start: 17, end: 18)
+    ]
+    s = seed.Seed(path: "t.hero", text: text, lines: seed.cut_lines(text), newline: true, words: words)
+    breaks = bracket(s)
+    assert breaks.len() == 24
+    assert breaks[0].name == "T2"
+    assert breaks[0].put == ["function f(  # zq_2_T", "        a: i64) -> i64"]
+    wraps = paren(s)
+    assert wraps.len() == 9
+    assert wraps[3].name == "A12"
+    assert wraps[7].put == ["    return g(a, (  # zq_14_B", "            1))"]

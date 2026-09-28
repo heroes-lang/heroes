@@ -1,0 +1,391 @@
+# heroes probe [path] [--family <name>] [--stride <count>]: the formatter's
+# probe (panel 179; design.md §3.5, §4.15, and Part 11 metric 3's shape
+# turned on `fmt`).
+#
+# From every file the parser accepts under `path`, a file or a directory,
+# or under the formatter's fixture directories when none is named, it makes
+# the variants the skeptic seats made by hand, a comment at every place one
+# can stand, in seven families (`probe/lines.hero`, `probe/tokens.hero`),
+# runs `fmt` and its guard on each in this process, and has an independent
+# reader judge where every comment went (`probe/judge.hero`). The report on
+# stdout counts each family's variants, generated, parsing, held and
+# refused by each judge, and the variants the parser refused by the first
+# diagnostic it gave them. A failure is reported on stderr as a site, the
+# file, the family, the variant's name and the line it changed, and as the
+# variant cut by deleting lines while the same judge still fails it, never
+# as the whole text.
+#
+# `--family` makes one family's variants alone, the net's rows over the whole
+# tree making `multi`'s; `--stride` judges one variant in that many of each
+# family, counted in the order the files are read, so a strided run judges
+# the same variants every time, and the net's row over the fixtures judges
+# one in two since the whole run measured past panel 179's 60 s of user
+# time (item 7; `tests/harness/suite_probe.hero`).
+#
+# EXIT, as `fmt` gives it (panel 179 item 6): 0 when every variant the
+# parser accepts holds; 2 when one does not, the formatter accusing itself as
+# `fmt` does for the same finding, and when the tool cannot run; 1 when the
+# file named has diagnostics, or no file under the path parses. Under a
+# directory a file the parser refuses is no seed: it is named on stderr and
+# counted, and the row that runs the probe pins how many seeds it read.
+#
+# A SUBCOMMAND, by the author's decision of 2026-09-26 that the probe enters
+# the tool; the sitting ruled its shape: its artifact is a verdict over
+# generated programs and its operand a directory, which `fmt`'s row cannot
+# carry (`.claude/rules/cli-surface.md`).
+
+use bytes
+use source
+use diag
+use parse
+use cli/argv
+use cli/io
+use cli/table as cli_table
+use cli/process
+use probe/seed
+use probe/judge
+use probe/lines
+use probe/reduce
+
+# The formatter's fixture directories: every directory a `fmt` row of the
+# surface suite reads, which that suite's `probe` rows check against its
+# own table, so a directory added there and not here is red.
+constant FIXTURES: [str]
+    [
+        "tests/golden/surface-fixtures/comments099"
+        "tests/golden/surface-fixtures/comments100"
+        "tests/golden/surface-fixtures/comments101"
+        "tests/golden/surface-fixtures/comments107"
+        "tests/golden/surface-fixtures/empty109"
+        "tests/golden/surface-fixtures/groupremark096"
+        "tests/golden/surface-fixtures/nonascii110"
+        "tests/golden/surface-fixtures/paramcomment095"
+        "tests/golden/surface-fixtures/releaser108"
+    ]
+
+# How many failures past the first the report names.
+constant NAMED: i64
+    20
+
+# A path the probe was given and the `.hero` files under it.
+record Root
+    path: str
+    files: [str]
+    seeds: i64
+
+function run(inv: argv.Invocation) -> cli_table.Exit
+    named = argv.value_of(inv, spelling: "--family")
+    families: [str] @ judge.FAMILIES
+
+    if !named.is_err()
+        if !judge.known(named.must())
+            io.eprint(text: "error: no family `" + named.must() + "`\n  the seven are: " + judge.FAMILIES.join(", "))
+            return .failed_exit
+        families @ [named.must()]
+    stride: i64 @ 1
+    given = argv.value_of(inv, spelling: "--stride")
+
+    if !given.is_err()
+        stride @ counted(given.must())
+
+        if stride < 1
+            io.eprint(
+                text: "error: `--stride` takes a whole number of variants from 1 up, and was given `" + given.must() + "`"
+            )
+            return .failed_exit
+    paths: [str] @ FIXTURES
+
+    if !inv.file.is_err()
+        paths @ [inv.file.must()]
+    found = gathered(paths)
+
+    if found.is_err()
+        io.eprint(text: "error: " + why(found))
+        return .failed_exit
+    roots: [Root] @ found.must()
+    single = !inv.file.is_err() && !process.is_directory(path: inv.file.must())
+    r: judge.Run @ judge.start(families, stride: stride)
+    refused: i64 @ 0
+
+    for k in range(from: 0, to: roots.len())
+        for path in roots[k].files
+            text = read_file(path)
+
+            if text.is_err()
+                io.eprint(text: "error: cannot read `" + path + "`")
+                return .failed_exit
+            s = source.new_source(name: path, text: text.must())
+            parsed = parse.parse_source(s)
+
+            if parsed.diagnostics.len() > 0 && single
+                for d in parsed.diagnostics
+                    io.eprint(text: diag.render_line(d, s))
+
+                io.eprint(text: "error: refusing to probe a file with diagnostics")
+                return .diagnostics_exit
+
+            if parsed.diagnostics.len() > 0
+                io.eprint(
+                    text: "note: `" + path + "` is no seed: the parser refuses it, error[" + parsed.diagnostics[0].code + "]"
+                )
+                refused @ refused + 1
+                continue
+            judge.probe_seed(@r, s: seed.read(path: path, text: text.must(), tokens: parsed.tokens))
+            roots[k].seeds @ roots[k].seeds + 1
+
+    io.print_artifact(text: report(roots: roots, r: r, refused: refused))
+
+    if r.failures.len() > 0
+        io.eprint(text: failed(r))
+        return .failed_exit
+
+    if seeds(roots) == 0
+        return .diagnostics_exit
+    return .ok_exit
+
+# Each path, and the `.hero` files under it in order: a file is itself.
+function gathered(paths: [str]) -> [Root]?
+    out: [Root] @ []
+
+    for path in paths
+        if !process.path_exists(path: path)
+            return fail(code: "no_path", msg: "no file or directory is named " + path)
+
+        if !process.is_directory(path: path)
+            out @ out.push(Root(path: path, files: [path], seeds: 0))
+            continue
+        walked = process.files_under(dir: path)
+
+        if walked.is_err()
+            return fail(code: "no_path", msg: "cannot read the directory " + path)
+        files: [str] @ []
+
+        for one in walked.must()
+            if bytes.bytes_at(text: one, at: one.len() - 5, needle: ".hero")
+                files @ files.push(one)
+
+        out @ out.push(Root(path: path, files: files.sort(), seeds: 0))
+
+    total: i64 @ 0
+
+    for root in out
+        total @ total + root.files.len()
+
+    if total == 0
+        return fail(code: "no_seed", msg: "no `.hero` file under " + paths.join(", "))
+    return ok(out)
+
+# The number `text` spells in decimal, -1 when it spells none or one past a
+# million, which no run holds.
+function counted(text: str) -> i64
+    if text.len() == 0 || text.len() > 7
+        return -1
+    value: i64 @ 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] < '0' || text[at] > '9'
+            return -1
+        value @ value * 10 + (text[at] - '0').to_i64().must()
+
+    return value
+
+function why(got: [Root]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+function seeds(roots: [Root]) -> i64
+    count: i64 @ 0
+
+    for root in roots
+        count @ count + root.seeds
+
+    return count
+
+## The report
+
+function report(roots: [Root], r: judge.Run, refused: i64) -> str
+    stride: str @ ""
+
+    if r.stride > 1
+        stride @ ", one variant in " + r.stride.to_str() + " of each family judged"
+    rows: [str] @ [
+        "probe: " + seeds(roots).to_str() + " seeds, and " + refused.to_str() + " files the parser refuses" + stride + "\n"
+    ]
+
+    for root in roots
+        rows @ rows.push("  " + root.path + ": " + root.seeds.to_str() + " seeds\n")
+
+    rows @ rows.push(
+        "\n| family | generated | judged | parsing | held | refused by the guard | refused by the reader |\n|---|---|---|---|---|---|---|\n"
+    )
+    sum: judge.Tally @ judge.Tally(
+        family: "**total**",
+        generated: 0,
+        judged: 0,
+        parsing: 0,
+        held: 0,
+        guard: 0,
+        reader: 0
+    )
+
+    for t in r.tallies
+        rows @ rows.push(tally_row(t))
+        sum @ judge.Tally(
+            family: sum.family,
+            generated: sum.generated + t.generated,
+            judged: sum.judged + t.judged,
+            parsing: sum.parsing + t.parsing,
+            held: sum.held + t.held,
+            guard: sum.guard + t.guard,
+            reader: sum.reader + t.reader
+        )
+
+    rows @ rows.push(tally_row(sum))
+
+    if r.discards.len() > 0
+        rows @ rows.push(
+            "\ndiscarded, the parser refusing the variant, by its first diagnostic:\n| family | diagnostic | variants |\n|---|---|---|\n"
+        )
+
+        for t in r.tallies
+            codes: [str] @ []
+
+            for d in r.discards
+                if d.family == t.family
+                    codes @ codes.push(d.code)
+
+            for code in codes.sort()
+                for d in r.discards
+                    if d.family == t.family && d.code == code
+                        rows @ rows.push("| " + d.family + " | " + d.code + " | " + d.count.to_str() + " |\n")
+
+    return rows.join("")
+
+function tally_row(t: judge.Tally) -> str
+    cells = [
+        t.family
+        t.generated.to_str()
+        t.judged.to_str()
+        t.parsing.to_str()
+        t.held.to_str()
+        t.guard.to_str()
+        t.reader.to_str()
+    ]
+    return "| " + cells.join(" | ") + " |\n"
+
+# The failures, as sites: the first with where its variant leaves its file
+# and the variant cut to the lines that still fail, then the next ones by
+# name.
+function failed(r: judge.Run) -> str
+    guarded: i64 @ 0
+    parsing: i64 @ 0
+
+    for t in r.tallies
+        guarded @ guarded + t.guard
+        parsing @ parsing + t.parsing
+
+    first = r.failures[0]
+    rows: [str] @ [
+        "error: `fmt` failed " + r.failures.len().to_str() + " of " + parsing.to_str() + " variants the parser accepts: " + guarded.to_str() + " refused by its own guard, " + (r.failures.len() - guarded).to_str() + " by the independent reader\n"
+    ]
+    rows @ rows.push(
+        "error: the first, `" + first.path + "`, family " + first.family + ", variant " + first.name + ", " + first.judge + ": " + first.why + "\n"
+    )
+    rows @ rows.push(site(first))
+    shown: i64 @ 0
+
+    for one in r.failures.slice(from: 1, to: r.failures.len())
+        if shown == 0
+            rows @ rows.push("  the next:\n")
+
+        if shown < NAMED
+            rows @ rows.push(
+                "    `" + one.path + "` " + one.family + " " + one.name + ", " + one.judge + ": " + one.why + "\n"
+            )
+        shown @ shown + 1
+
+    if shown > NAMED
+        rows @ rows.push("    and " + (shown - NAMED).to_str() + " more\n")
+    rows @ rows.push("error: this is a compiler bug, and no file was changed")
+    return rows.join("")
+
+# Where the first failure's variant leaves its file, and the variant cut
+# by deleting lines while the same judge still fails it.
+function site(f: judge.Failure) -> str
+    text = read_file(f.path)
+
+    if text.is_err()
+        return "  `" + f.path + "` cannot be read again to rebuild the variant\n"
+    parsed = parse.parse_source(source.new_source(name: f.path, text: text.must()))
+    s = seed.read(path: f.path, text: text.must(), tokens: parsed.tokens)
+    found = judge.rebuilt(s, family: f.family, name: f.name)
+
+    if found.is_err()
+        return "  the variant cannot be rebuilt from `" + f.path + "`\n"
+    built = lines.text(s, e: found.must())
+    after = seed.cut_lines(built)
+    at: i64 @ 0
+
+    while at < s.lines.len() && at < after.len() && s.lines[at] == after[at]
+        at @ at + 1
+
+    rows: [str] @ ["  the variant leaves the file at its line " + (at + 1).to_str() + ":\n"]
+
+    for k in range(from: at, to: at + 3)
+        if k < after.len()
+            rows @ rows.push("    " + (k + 1).to_str() + " | " + after[k] + "\n")
+
+    fails: (function(str) -> bool) @ judge.guard_fails
+
+    if f.judge == "the reader"
+        fails @ judge.reader_fails
+    cut = reduce.reduced(built, fails: fails, protect: found.must().shape == "")
+    stopped: str @ ""
+
+    if !cut.finished
+        stopped @ ", stopped at the limit"
+    rows @ rows.push(
+        "  cut by deleting lines while " + f.judge + " still fails it, to " + cut.lines.to_str() + " lines (" + cut.attempts.to_str() + " programs judged" + stopped + "):\n"
+    )
+
+    for line in seed.cut_lines(cut.text)
+        rows @ rows.push("    | " + line + "\n")
+
+    return rows.join("")
+
+## Tests
+
+test "a family the probe does not make is named with the seven, and a path that is not there is refused"
+    inv = argv.Invocation(
+        tag: .probe_cmd,
+        file: ok("tests/golden/surface-fixtures/nonascii110"),
+        program_args: [],
+        flags: [argv.FlagHit(spelling: "--family", value: ok("single"))]
+    )
+    assert run(inv) == .ok_exit
+    wrong = argv.Invocation(
+        tag: .probe_cmd,
+        file: ok("tests/golden/surface-fixtures/nonascii110"),
+        program_args: [],
+        flags: [argv.FlagHit(spelling: "--family", value: ok("singles"))]
+    )
+    assert run(wrong) == .failed_exit
+    assert gathered(["no/such/place"]).is_err()
+    assert FIXTURES.len() == 9
+
+test "a stride is a whole number from 1 up"
+    assert counted("2") == 2
+    assert counted("1000000") == 1000000
+    assert counted("0") == 0
+    assert counted("-1") == -1
+    assert counted("x2") == -1
+    assert counted("") == -1
+    assert counted("10000000") == -1
+    zero = argv.Invocation(
+        tag: .probe_cmd,
+        file: ok("tests/golden/surface-fixtures/nonascii110"),
+        program_args: [],
+        flags: [argv.FlagHit(spelling: "--stride", value: ok("0"))]
+    )
+    assert run(zero) == .failed_exit

@@ -25,6 +25,7 @@ variant Tag
     fmt_cmd
     doctor_cmd
     mutate_cmd
+    probe_cmd
     measure_cmd
     grammar_cmd
     this_cmd
@@ -48,6 +49,11 @@ record Flag
     repeatable: bool
     directory: bool
 
+    # What the help and a missing value call the value: `path` for every
+    # flag but one that names something else, which a `<path>` would
+    # misdescribe (`--family`, panel 179).
+    placeholder: str
+
 record Command
     tag: Tag
     name: str
@@ -56,13 +62,24 @@ record Command
     summary: str
 
 function plain(spelling: str, what: str) -> Flag
-    return Flag(spelling: spelling, what: what, value: false, repeatable: false, directory: false)
+    return Flag(spelling: spelling, what: what, value: false, repeatable: false, directory: false, placeholder: "")
 
 function valued(spelling: str, what: str) -> Flag
-    return Flag(spelling: spelling, what: what, value: true, repeatable: false, directory: false)
+    return Flag(spelling: spelling, what: what, value: true, repeatable: false, directory: false, placeholder: "path")
+
+# A flag whose value is a name and not a path.
+function named(spelling: str, what: str, placeholder: str) -> Flag
+    return Flag(
+        spelling: spelling,
+        what: what,
+        value: true,
+        repeatable: false,
+        directory: false,
+        placeholder: placeholder
+    )
 
 function search_path(spelling: str, what: str) -> Flag
-    return Flag(spelling: spelling, what: what, value: true, repeatable: true, directory: true)
+    return Flag(spelling: spelling, what: what, value: true, repeatable: true, directory: true, placeholder: "path")
 
 function commands() -> [Command]
     lex_flags: [Flag] = [
@@ -111,6 +128,10 @@ function commands() -> [Command]
         plain(spelling: "--survivors", what: "print the mutants the compiler accepted, not only the rates")
         valued(spelling: "--operator", what: "score this operator alone, by its id")
     ]
+    probe_flags: [Flag] = [
+        named(spelling: "--family", what: "make that family's variants alone: single, multi, bracket, paren, ends, columns or texts", placeholder: "name")
+        named(spelling: "--stride", what: "judge one variant in that many of each family, the first included, and count them all", placeholder: "count")
+    ]
 
     # The one flag in this table that reaches the network, and the only one
     # anywhere in the tool. It PRINTS the constants for a person to paste and
@@ -130,6 +151,7 @@ function commands() -> [Command]
         Command(tag: .fmt_cmd, name: "fmt", operand: .file_operand, flags: fmt_flags, summary: "print the canonical form")
         Command(tag: .doctor_cmd, name: "doctor", operand: .no_operand, flags: no_flags, summary: "check the toolchain (clang, CLT, arch, runtime, cache)")
         Command(tag: .mutate_cmd, name: "mutate", operand: .optional_operand, flags: mutate_flags, summary: "metric 3: make one plausible mistake per site and count what the compiler catches (default: examples/)")
+        Command(tag: .probe_cmd, name: "probe", operand: .optional_operand, flags: probe_flags, summary: "put a comment at every place one can stand in each file, format every variant, and judge that `fmt` keeps each comment where it was (default: the formatter's fixture directories)")
         Command(tag: .measure_cmd, name: "measure", operand: .optional_operand, flags: measure_flags, summary: "count a spec file against its ceiling (default: spec/heroes-spec.md)")
         Command(tag: .grammar_cmd, name: "grammar", operand: .no_operand, flags: no_flags, summary: "print the terminals and the precedence, from the compiler's own tables")
         Command(tag: .this_cmd, name: "this", operand: .no_operand, flags: no_flags, summary: "print The Zen of Heroes")
@@ -201,7 +223,9 @@ test "the table is the pipeline's order and the flags carry their shapes"
     # precedence from this compiler's own tables (panel 133 R1). The number is
     # pinned rather than derived so that a command added in silence cannot be:
     # it moves in the commit that adds one, beside the row.
-    assert table.len() == 12
+    # **12 -> 13 on 2026-09-28**, `probe`, the formatter's probe (panel 179
+    # item 1, the author's decision of 2026-09-26).
+    assert table.len() == 13
     assert table[0].name == "lex"
     assert table[3].name == "build"
 

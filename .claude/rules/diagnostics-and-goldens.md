@@ -95,6 +95,11 @@ The list to walk, and each one is owed a test rather than a reading:
   defect produced and asserts it refuses.
 - **`heroes mutate`**: a form it cannot re-print is a form it silently declines
   to mutate, so the rate flatters itself.
+- **`heroes probe`'s independent reader**, `selfhost/probe/reader.hero`, added
+  2026-09-28 (panel 179): it counts only the tokens `fmt` can neither add nor
+  drop, so a form `fmt` rewrites is one the reader must learn to leave out, or
+  every variant of a file that holds it reads as a moved comment. Its test is
+  a probe row: `heroes probe` over a fixture of the form at exit 0.
 - **the diagnostics that quote a program back**, the `Fix` replacements above
   all, because a `certain` fix built from the wrong half of a new form is
   machine-applied into a program that does not parse.

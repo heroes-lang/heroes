@@ -278,4 +278,16 @@ value without it, refused at exit 2, or, with the comment at the value's
 end, no fixpoint. The comma's line takes a comment only when it is the
 comma's next token (`margins.comma_line`).
 
+`commacomment.hero` (`heroes probe`'s first run over the fixtures, panel
+179, 2026-09-28): a comma the author wrote at the start of a line of its
+own with a comment after it, and nothing between the value and the comma.
+The probe's bracket break after the `1` of `brackets.hero`'s `[1,  #
+inside a receiver` makes one, and so did the same break in
+`conditions.hero` and `parts.hero`. The comma went up to its value, or in a
+list or a map down the page was dropped, and the comment after it went on a
+line of its own inside the bracket, which the guard refused at exit 2 in a
+list, a map, a call, a construction, a method call and a signature. Such a
+comma keeps its line now, as one after a comment does
+(`margins.commented_comma`).
+
 Every output is pinned in `tests/harness/suite_surface.hero`.
