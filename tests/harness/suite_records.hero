@@ -909,7 +909,8 @@ function tagged(@r: report.Report, scratch: str, present: [str])
                 tag: newest,
                 open_rows: open_defects.must(),
                 text: list_then.must(),
-                present: present
+                present: present,
+                rows: CARRIED_OVER
             )
 
             if carried == ""
@@ -1173,7 +1174,7 @@ constant TAGGED_OVER: [str]
 # still open is excused by nothing until somebody writes a row for it.
 constant CARRIED_OVER: [str]
     [
-        "m-agreed-retention | 2026-09-28 | 129 | 2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md"
+        "m-agreed-retention | 2026-09-28 | 129 130 | 2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md"
     ]
 
 # What a carried defect's own body says, the words `docs/work/DEFECTS.md`'s
@@ -1181,10 +1182,13 @@ constant CARRIED_OVER: [str]
 constant CARRIED_MARKER: str
     "**Carried to the next milestone**"
 
-# Whether `CARRIED_OVER` excuses this tag over exactly these defects, `text`
-# being `docs/work/DEFECTS.md` at the tag. The empty string when it does and the
-# reason when it does not, as `tag_is_excused` answers.
-function tag_is_carried(tag: str, open_rows: [str], text: str, present: [str]) -> str
+# Whether a row of `rows`, which is `CARRIED_OVER` everywhere but a test,
+# excuses this tag over exactly these defects, `text` being
+# `docs/work/DEFECTS.md` at the tag. The empty string when it does and the
+# reason when it does not, as `tag_is_excused` answers. The table is a
+# parameter so the test below holds its own row and does not move each time
+# the real one does.
+function tag_is_carried(tag: str, open_rows: [str], text: str, present: [str], rows: [str]) -> str
     numbers: [str] @ []
 
     for row in open_rows
@@ -1195,7 +1199,7 @@ function tag_is_carried(tag: str, open_rows: [str], text: str, present: [str]) -
 
     found: str @ ""
 
-    for row in CARRIED_OVER
+    for row in rows
         fields = strings.split_text(text: row, separator: "|")
 
         if fields.len() == 4 && strings.trimmed(fields[0]) == tag
@@ -5077,12 +5081,19 @@ test "a tag's excuse covers exactly what it stood over, and nothing else"
 # The carried row is not an amnesty either, and each clause of
 # `tag_is_carried` fires on its own for the same reason.
 test "a carried defect is excused at its tag only where its own item says so"
-    one = ["- [ ] **129 — a minus alone** | x | y"]
-    logs = ["docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md"]
+    entry = "2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md"
+    table = ["m-carrying | 2026-09-28 | 129 130 | " + entry]
+    both = ["- [ ] **129 — a minus alone** | x | y", "- [ ] **130 — a skipped statement** | x | y"]
+    logs = ["docs/records/log/" + entry]
     carrying = [
-        "**OPEN: 1**"
+        "**OPEN: 2**"
         ""
         "- [ ] **129 — a minus alone** | x | y"
+        ""
+        "    **Carried to the next milestone**, by the author's instruction of"
+        "    2026-09-28 16:40 (`docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md`)."
+        ""
+        "- [ ] **130 — a skipped statement** | x | y"
         ""
         "    **Carried to the next milestone**, by the author's instruction of"
         "    2026-09-28 16:40 (`docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md`)."
@@ -5091,19 +5102,22 @@ test "a carried defect is excused at its tag only where its own item says so"
     ]
     list_then = carrying.join("\n")
 
-    # The real row, over the real defect, its entry present and its own item
-    # saying it is carried.
-    assert tag_is_carried(tag: "m-agreed-retention", open_rows: one, text: list_then, present: logs) == ""
+    # A row over the defects its tag stands over, its entry present and each
+    # defect's own item saying it is carried.
+    assert tag_is_carried(tag: "m-carrying", open_rows: both, text: list_then, present: logs, rows: table) == ""
 
     # A tag no row names is carried by nothing.
-    assert tag_is_carried(tag: "m-somewhere-else", open_rows: one, text: list_then, present: logs) != ""
+    assert tag_is_carried(tag: "m-somewhere-else", open_rows: both, text: list_then, present: logs, rows: table) != ""
 
-    # A tag standing over a defect the row does not name is not carried.
-    two = one.push("- [ ] **126 — an arm** | x | y")
-    assert tag_is_carried(tag: "m-agreed-retention", open_rows: two, text: list_then, present: logs) != ""
+    # A tag standing over a defect the row does not name is not carried, and
+    # neither is one standing over fewer than the row names.
+    three = both.push("- [ ] **126 — an arm** | x | y")
+    assert tag_is_carried(tag: "m-carrying", open_rows: three, text: list_then, present: logs, rows: table) != ""
+    alone = ["- [ ] **129 — a minus alone** | x | y"]
+    assert tag_is_carried(tag: "m-carrying", open_rows: alone, text: list_then, present: logs, rows: table) != ""
 
     # A row whose log entry is not in the tree carries nothing.
-    assert tag_is_carried(tag: "m-agreed-retention", open_rows: one, text: list_then, present: []) != ""
+    assert tag_is_carried(tag: "m-carrying", open_rows: both, text: list_then, present: [], rows: table) != ""
 
     # A defect whose own item does not say it is carried is not carried, and
     # the words belong to THAT item: the same words under the next item do not
@@ -5113,7 +5127,7 @@ test "a carried defect is excused at its tag only where its own item says so"
         ""
         "    **Origin:** lane 123."
         ""
-        "- [ ] **130 — something else** | x | y"
+        "- [ ] **130 — a skipped statement** | x | y"
         ""
         "    **Carried to the next milestone**, by the author's instruction of"
         "    2026-09-28 16:40 (`docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md`)."
@@ -5121,4 +5135,4 @@ test "a carried defect is excused at its tag only where its own item says so"
         "****************"
     ]
     silent = elsewhere.join("\n")
-    assert tag_is_carried(tag: "m-agreed-retention", open_rows: one, text: silent, present: logs) != ""
+    assert tag_is_carried(tag: "m-carrying", open_rows: both, text: silent, present: logs, rows: table) != ""
