@@ -1,0 +1,28 @@
+# Fixed defect 133, 2026-09-29. Symptom: `const MAX = 5` cost
+# `reserved_word` alone, and only once `check --apply` had written
+# `constant MAX = 5` did the next run report `expected_constant_type`;
+# `const LIMIT: i64 = 5` then cost `missing_body`: two turns for one habit,
+# where design.md §4.17 asks for one. Cause: the lexer emits the refused
+# word as an `error` token, and at a top-level line's head the parser's
+# recovery dropped the whole declaration with its body. The parser now reads
+# a foreign word whose certain swap is a declaration's keyword as that
+# keyword (`parse/swap_reading.hero`), so the constant's own mistake is
+# reported beside the word; the `reserved_word` and its certain fix are the
+# lexer's, unchanged. A correct `const` costs the word alone, at the file's
+# head, between two declarations and at its end.
+
+const FIRST: i64  #~ reserved_word
+    1
+
+function first() -> i64
+    return FIRST
+
+const MAX = 5  #~ reserved_word expected_constant_type
+
+const LIMIT: i64 = 5  #~ reserved_word missing_body
+
+function main()
+    print(first())
+
+const LAST: i64  #~ reserved_word
+    2

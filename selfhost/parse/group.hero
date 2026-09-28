@@ -28,6 +28,7 @@ use ast
 use keywords
 use parse/use_line
 use parse/tails
+use parse/swap_reading
 
 ## The extern group
 
@@ -62,8 +63,9 @@ function extern_group(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: 
     library = library_clause(@c, text)
     cursor.skip_terminators(@c)
 
+    # Past the line end, the next head is read as its swap (defect 133).
     if !cursor.at(c, .indent)
-        if !cursor.at_reported_error(c)
+        if !swap_reading.at_reported_error(c, text)
             cursor.error(
                 @c,
                 code: "expected_extern_block",
@@ -205,6 +207,10 @@ function one_library(@c: cursor.Cursor, text: str) -> ast.Library?
 # Recovery here is `skip_line`, never `recover_to_next_decl`: inside a block,
 # dropping "the rest of the declaration" would eat the members that follow,
 # and `field_block` and `case_block` skip a line for the same reason.
+#
+# A member opened by `fn`, `struct` or `const` is read as the certain swap
+# writes it, as at the top level (defect 133); `enum` writes `variant`, which
+# no group holds, so it reads as nothing here and costs no second message.
 function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, group_doc: [token.Span], linkage: tails.Linkage)
     _ = cursor.bump(@c)
     first: bool @ true
@@ -212,7 +218,7 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
 
     while !done
         cursor.skip_terminators(@c)
-        k = cursor.current_kind(c)
+        k = swap_reading.reads_as(c, text)
 
         if k == .dedent
             _ = cursor.bump(@c)

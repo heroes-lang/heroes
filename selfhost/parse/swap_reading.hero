@@ -1,0 +1,168 @@
+# What a foreign word READS AS where the parser stands: the word of the
+# language its certain swap writes (defect 133, design.md §4.17).
+#
+# `fn main() {`, `struct Point {` and `const MAX = 5` are each two mistakes, a
+# word from another language and a shape this one refuses. Until 2026-09-29
+# the parser met the refused word at the head of the line and dropped the
+# declaration whole, so the second mistake was reported only after `check
+# --apply` had written `function`, `record` or `constant`: two turns for one
+# habit, where §4.17 asks for one. The parser now reads the construct as the
+# swap writes it, and the `reserved_word` diagnostic and its `certain` fix are
+# the lexer's, unchanged.
+#
+# **Only a CERTAIN swap is read, and only where the parser dispatches on the
+# kind it writes.** A hint or guidance (`int(`, `let`, `class`) is never
+# applied, so nothing may read it as written. And a caller asks for the one
+# kind its position can hold: the top level asks for a declaration's keyword,
+# an `extern` group for a member's, a type for `function` or a name. So a
+# swap is read exactly where the word it writes is what the grammar expects,
+# and a swap that would be wrong where it stands (`function fn(`, `record
+# struct`, `const x = 5` in a body) is read nowhere and costs no second
+# diagnostic. Those three are a certain fix that writes a new error, which is
+# defect 015's class and not this one.
+#
+# **The token stays `error`, and that is the design rather than a shortcut.**
+# The other way, the lexer emitting the keyword's token for the word, was
+# built and measured on 2026-09-29 and refused: every reader of the stream
+# then saw a keyword in positions where the swap is wrong, and the three
+# shapes above cost `expected_expression`, `expected_name`, and
+# `continuation_outside_brackets` with `expected_name`, each quoting a word
+# the author never wrote (`found \`constant\``). Here the layout that decides
+# where a line ends, `fmt`, `probe`, the dumps and every
+# `cursor.at_reported_error` guard see exactly the stream they saw before.
+#
+# A leaf: it reads the cursor and the word tables, and nothing it calls reads
+# the parser.
+
+use token
+use bytes
+use cursor
+use keywords
+use foreign_at
+
+## Reading
+
+# The kind the current token reads as: its own, or, for a foreign word whose
+# certain swap is ONE keyword, that keyword's. `int` -> `i64` is a name and
+# `elif` -> `else if` is two words, so both read as the `error` they are.
+function reads_as(c: cursor.Cursor, text: str) -> token.TokenKind
+    k = cursor.current_kind(c)
+
+    if k != .error
+        return k
+    word = foreign_at.certain_swap(text, cursor.current_span(c))
+
+    if word.is_err()
+        return k
+    swapped = keywords.keyword(word.must())
+
+    if swapped.is_err()
+        return k
+    return swapped.must()
+
+# `cursor.at_reported_error`, asked of what the token READS AS. A guard that
+# has crossed its declaration's line end is looking at the NEXT line's first
+# token, and a foreign word the parser reads as its swap is a keyword there:
+# `record P` over `struct Q` is still an empty record, as it is once the swap
+# writes `record Q` (defect 133). Every other `error` token keeps its silence.
+function at_reported_error(c: cursor.Cursor, text: str) -> bool
+    return reads_as(c, text) == .error
+
+# Consume the current token when it reads as `kind`, as `cursor.eat` does
+# when it IS that kind.
+function eat_as(@c: cursor.Cursor, text: str, kind: token.TokenKind) -> bool
+    if reads_as(c, text) != kind
+        return false
+    _ = cursor.bump(@c)
+    return true
+
+# Whether the current token is a foreign word whose certain swap is a NAME,
+# `int` -> `i64` today: in a type's place it reads as the named type the
+# swap writes, so a signature's result and a constant's type go on to their
+# body. The node keeps the span of what was written, so a stage that read
+# its text would read `int` and refuse it aloud; none does, because the
+# `reserved_word` stops the compilation after the parse.
+function reads_as_name(c: cursor.Cursor, text: str) -> bool
+    if !cursor.at(c, .error)
+        return false
+    word = foreign_at.certain_swap(text, cursor.current_span(c))
+
+    if word.is_err()
+        return false
+
+    if !keywords.keyword(word.must()).is_err()
+        return false
+    return is_identifier(word.must())
+
+# A word the lexer would read as one identifier: `else if` is not one.
+function is_identifier(word: str) -> bool
+    if word.len() == 0
+        return false
+
+    if !bytes.is_alpha(word[0]) && word[0] != '_'
+        return false
+    i: i64 @ 1
+
+    while i < word.len()
+        if !bytes.is_alnum(word[i]) && word[i] != '_'
+            return false
+        i @ i + 1
+
+    return true
+
+## Tests
+
+function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
+    return token.Token(kind: kind, span: token.Span(start: start, end: end))
+
+test "a certain swap to a keyword reads as that keyword, and nothing else does"
+    text = "fn struct let int elif main"
+    tokens = [
+        tok(.error, start: 0, end: 2)
+        tok(.error, start: 3, end: 9)
+        tok(.error, start: 10, end: 13)
+        tok(.error, start: 14, end: 17)
+        tok(.error, start: 18, end: 22)
+        tok(.ident, start: 23, end: 27)
+        tok(.eof, start: 27, end: 27)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    assert reads_as(c, text) == .kw_function
+    assert !reads_as_name(c, text)
+    _ = cursor.bump(@c)
+    assert reads_as(c, text) == .kw_record
+
+    # `let` is guidance, so it reads as the `error` it is.
+    _ = cursor.bump(@c)
+    assert reads_as(c, text) == .error
+    assert !reads_as_name(c, text)
+
+    # `int` reads as a name and never as a keyword.
+    _ = cursor.bump(@c)
+    assert reads_as(c, text) == .error
+    assert reads_as_name(c, text)
+
+    # `elif` writes two words, which no one token can stand for.
+    _ = cursor.bump(@c)
+    assert reads_as(c, text) == .error
+    assert !reads_as_name(c, text)
+
+    # A plain name is its own kind.
+    _ = cursor.bump(@c)
+    assert reads_as(c, text) == .ident
+    assert !reads_as_name(c, text)
+
+test "eat_as consumes only what reads as the kind asked for"
+    text = "fn(i64)"
+    tokens = [tok(.error, start: 0, end: 2), tok(.lparen, start: 2, end: 3), tok(.eof, start: 7, end: 7)]
+    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    assert !eat_as(@c, text, .kw_record)
+    assert eat_as(@c, text, .kw_function)
+    assert cursor.at(c, .lparen)
+
+test "an identifier is one word"
+    assert is_identifier("i64")
+    assert is_identifier("_x1")
+    assert !is_identifier("else if")
+    assert !is_identifier("1x")
+    assert !is_identifier("")

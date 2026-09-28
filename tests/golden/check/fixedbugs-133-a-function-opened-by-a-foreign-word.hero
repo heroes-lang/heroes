@@ -1,0 +1,26 @@
+# Fixed defect 133, 2026-09-29. Symptom: `fn main() {` cost `reserved_word`
+# alone, and only once `check --apply` had written `function main() {` did
+# the next run report `missing_body` at the brace; `func` over a call left
+# open and `def` over a body ending in an operator hid theirs the same way.
+# Cause: the lexer emits the refused word as an `error` token, and at a
+# top-level line's head the parser's recovery dropped the whole declaration
+# with its body. The parser now reads `fn`, `func` and `def`, whose certain
+# swap is `function`, as `function` (`parse/swap_reading.hero`), so each
+# body's own mistake is reported beside the word. The `}` below the brace is
+# refused as it is after the swap: `function main() {` costs the same two.
+
+function helper() -> i64
+    return 1
+
+fn main() {  #~ reserved_word missing_body
+    print(helper())
+}  #~ expected_declaration
+
+func show()  #~ reserved_word
+    print(helper() +)  #~ expected_expression
+
+def twice(x: i64) -> i64  #~ reserved_word
+    return x *  #~ expected_expression
+
+function after()
+    print(2)
