@@ -51,26 +51,47 @@ record Row
 # The statement no longer parses, so the file is no seed and its failures
 # went with it, measured: 0 variants refused by the guard in any row. A new
 # failure names its defect here.
+#
+# **Eight, defect 124's, since `patterns125` became a seed** (2026-09-28, the
+# repair of defect 125). The `paren` family wraps a negative pattern's
+# literal in the author's parentheses with a comment inside, `-(  # c` over
+# `1)`, and the parser reads it as a pattern, since after a `-` it takes any
+# unary operand where spec § 8 takes a literal; `fmt` prints `-1` and the
+# guard refuses to drop the comment. Fifteen variants unstrided, all `paren`
+# and all on a pattern's line, eight of them in the row's stride. Repairing
+# 124 takes the shape out of the parser, and each entry out of this row.
 function rows() -> [Row]
     # Measured 2026-09-28 at panel 181's landing, which added
     # `surface-fixtures/continuation181/` (two seeds, two files refused), its
     # four lexer modules to selfhost and its goldens to tests, and took
-    # margin.hero out of the seeds.
+    # margin.hero out of the seeds. The fixtures' floors measured again the
+    # same day with `patterns125/negative.hero`, the 65th seed (defect 125).
     fixtures: [Floor] = [
-        Floor(family: "single", generated: 6351, parsing: 3176)
-        Floor(family: "multi", generated: 576, parsing: 288)
-        Floor(family: "bracket", generated: 8979, parsing: 3332)
-        Floor(family: "paren", generated: 2169, parsing: 690)
-        Floor(family: "ends", generated: 510, parsing: 255)
-        Floor(family: "columns", generated: 5396, parsing: 2698)
-        Floor(family: "texts", generated: 3182, parsing: 1591)
+        Floor(family: "single", generated: 6479, parsing: 3240)
+        Floor(family: "multi", generated: 585, parsing: 293)
+        Floor(family: "bracket", generated: 9120, parsing: 3395)
+        Floor(family: "paren", generated: 2220, parsing: 711)
+        Floor(family: "ends", generated: 518, parsing: 259)
+        Floor(family: "columns", generated: 5500, parsing: 2750)
+        Floor(family: "texts", generated: 3254, parsing: 1627)
     ]
     selfhost: [Floor] = [Floor(family: "multi", generated: 2556, parsing: 2556)]
     tests: [Floor] = [Floor(family: "multi", generated: 5706, parsing: 5706)]
     examples: [Floor] = [Floor(family: "multi", generated: 1080, parsing: 1080)]
     none: [str] = []
+    negative = "tests/golden/surface-fixtures/patterns125/negative.hero paren "
+    defect124 = [
+        negative + "B13"
+        negative + "A20"
+        negative + "C20"
+        negative + "A28"
+        negative + "C28"
+        negative + "A47"
+        negative + "C47"
+        negative + "B102"
+    ]
     return [
-        Row(name: "the fixtures, every family", words: ["probe", "--stride", "2"], seeds: 64, floors: fixtures, known: none)
+        Row(name: "the fixtures, every family", words: ["probe", "--stride", "2"], seeds: 65, floors: fixtures, known: defect124)
         Row(name: "selfhost, multi", words: ["probe", "selfhost", "--family", "multi"], seeds: 284, floors: selfhost, known: none)
         Row(name: "tests, multi", words: ["probe", "tests", "--family", "multi"], seeds: 634, floors: tests, known: none)
         Row(name: "examples, multi", words: ["probe", "examples", "--family", "multi"], seeds: 120, floors: examples, known: none)

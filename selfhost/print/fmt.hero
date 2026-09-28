@@ -1080,7 +1080,7 @@ function arm_heads(tree: ast.Ast, s: source.Source, arms: [ast.Arm]) -> [str]
         patterns: [str] @ []
 
         for pattern in arm.patterns
-            patterns @ patterns.push(bodies.render_pattern(tree, s, pattern: pattern))
+            patterns @ patterns.push(parens.pattern(tree, s, p: pattern))
 
         out @ out.push(patterns.join(" | "))
 
@@ -1666,3 +1666,27 @@ test "a comment on a signature's open line, after an operator, after a name, in 
             assert printed.moved == 0
 
         index @ index + 1
+
+# Defect 125, 2026-09-28: `fmt` printed a negative pattern through the dump's
+# printer, which writes `(-1)`, so it exited 2 on every program holding one,
+# `-1 => 10` included. Each shape beside it is its own fixpoint: an arm after
+# another, the first and a joined one, a character, a block's arm, a
+# statement's `match`, and the hexadecimal digits fmt lowers.
+test "a negative pattern prints with its sign against its literal"
+    shapes = [
+        "function f(n: i64) -> i64\n    return match n\n        -1 => 10\n        _  => 20\n"
+        "function f(n: i64) -> i64\n    return match n\n        0      => 5\n        -1 | 2 => 10\n        3 | -4 => 30\n        _      => 20\n"
+        "function f(n: i64) -> i64\n    return match n\n        -'a' => 1\n        _    => 2\n"
+        "function f(n: i64)\n    match n\n        -1 =>\n            print(1)\n            print(2)\n        _ => print(3)\n"
+    ]
+
+    for text in shapes
+        parsed = parse.parse(text)
+        assert parsed.diagnostics.len() == 0
+        s = source.new_source(name: "t.hero", text: text)
+        assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
+
+    lowered = "function f(n: i64) -> i64\n    return match n\n        -0x1F => 1\n        _     => 2\n"
+    pl = parse.parse(lowered)
+    sl = source.new_source(name: "t.hero", text: lowered)
+    assert format_file(pl.tree, sl, pl.comments, pl.uses, pl.decls) == "function f(n: i64) -> i64\n    return match n\n        -0x1f => 1\n        _     => 2\n"
