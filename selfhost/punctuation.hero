@@ -1,0 +1,164 @@
+# The punctuation table: which token a byte, or two or three, begin
+# (design.md §4.15, spec § 7's operator table).
+#
+# Out of `scan.hero` on 2026-09-28 (panel 181), because two readers now ask
+# it the same question. `scan.punct` asks it for every punctuation token it
+# lexes; `open_line` asks it of the first word of the NEXT line, before that
+# line is lexed, to tell whether the line can only go on with the one above
+# (a `+`, a `?`, a `::`) or begins a statement of its own. One table is the
+# point: a second copy of the longest-match ladder in the layout would have
+# drifted the day an operator landed, and the drift would have decided what
+# a line break means.
+#
+# `keywords.hero` is the same table for words; this is the one for the rest.
+
+use token
+use number
+
+record Punct
+    kind: token.TokenKind
+    # How many bytes the token takes. Zero when the byte begins no token of
+    # the language, and then `kind` is `error`, which nothing reads.
+    width: i64
+
+# The token at `at`, longest match first (`???` before `?`, `->` before `-`,
+# `==` before `=`…).
+function punct_at(text: str, at: i64) -> Punct
+    b0 = number.byte_at(text, at)
+    b1 = number.byte_at(text, at + 1)
+    b2 = number.byte_at(text, at + 2)
+
+    # Three bytes.
+    if b0 == '?' && b1 == '?' && b2 == '?'
+        return Punct(kind: .hole, width: 3)
+
+    # Two bytes. `<<` and `>>` are matched here only because no prefix
+    # operator starts with `<` or `>` — the falsifiable claim, tested in the
+    # Rust tree by a_shift_is_never_two_comparisons.
+    if b0 == '-' && b1 == '>'
+        return Punct(kind: .arrow, width: 2)
+
+    if b0 == '=' && b1 == '>'
+        return Punct(kind: .fat_arrow, width: 2)
+
+    if b0 == '=' && b1 == '='
+        return Punct(kind: .eq_eq, width: 2)
+
+    if b0 == '!' && b1 == '='
+        return Punct(kind: .bang_eq, width: 2)
+
+    if b0 == '<' && b1 == '='
+        return Punct(kind: .le, width: 2)
+
+    if b0 == '>' && b1 == '='
+        return Punct(kind: .ge, width: 2)
+
+    if b0 == '&' && b1 == '&'
+        return Punct(kind: .and_and, width: 2)
+
+    if b0 == '|' && b1 == '|'
+        return Punct(kind: .or_or, width: 2)
+
+    if b0 == '<' && b1 == '<'
+        return Punct(kind: .shl, width: 2)
+
+    if b0 == '>' && b1 == '>'
+        return Punct(kind: .shr, width: 2)
+
+    if b0 == ':' && b1 == ':'
+        return Punct(kind: .colon_colon, width: 2)
+
+    # One byte.
+    one = one_byte(b0)
+
+    if one.is_err()
+        return Punct(kind: .error, width: 0)
+    return Punct(kind: one.must(), width: 1)
+
+# The single-byte table. A miss means the byte is not in the language.
+function one_byte(b: u8) -> token.TokenKind?
+    if b == '&'
+        return ok(.amp)
+
+    if b == '^'
+        return ok(.caret)
+
+    if b == '~'
+        return ok(.tilde)
+
+    if b == '='
+        return ok(.eq)
+
+    if b == '@'
+        return ok(.at)
+
+    if b == ':'
+        return ok(.colon)
+
+    if b == ','
+        return ok(.comma)
+
+    if b == '.'
+        return ok(.dot)
+
+    if b == '?'
+        return ok(.question)
+
+    if b == '|'
+        return ok(.pipe)
+
+    if b == '('
+        return ok(.lparen)
+
+    if b == ')'
+        return ok(.rparen)
+
+    if b == '['
+        return ok(.lbracket)
+
+    if b == ']'
+        return ok(.rbracket)
+
+    if b == '{'
+        return ok(.lbrace)
+
+    if b == '}'
+        return ok(.rbrace)
+
+    if b == '+'
+        return ok(.plus)
+
+    if b == '-'
+        return ok(.minus)
+
+    if b == '*'
+        return ok(.star)
+
+    if b == '/'
+        return ok(.slash)
+
+    if b == '%'
+        return ok(.percent)
+
+    if b == '<'
+        return ok(.lt)
+
+    if b == '>'
+        return ok(.gt)
+
+    if b == '!'
+        return ok(.bang)
+    return fail(code: "not_punctuation", msg: "not a token byte")
+
+test "the longest match wins, and a byte outside the language takes no width"
+    assert punct_at("???", at: 0).kind == .hole
+    assert punct_at("??", at: 0).kind == .question
+    assert punct_at("??", at: 0).width == 1
+    assert punct_at("->", at: 0).kind == .arrow
+    assert punct_at("- 1", at: 0).kind == .minus
+    assert punct_at("x == y", at: 2).kind == .eq_eq
+    assert punct_at("=>", at: 0).width == 2
+    assert punct_at("::x", at: 0).kind == .colon_colon
+    assert punct_at(":", at: 0).kind == .colon
+    assert punct_at("€", at: 0).width == 0
+    assert punct_at("", at: 0).width == 0

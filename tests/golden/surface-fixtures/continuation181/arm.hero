@@ -1,0 +1,18 @@
+# Panel 181, defect 118's first member: a `match` arm continued at its own
+# margin, `.dot => a +` over `1`, on which `heroes fmt` exited 2, *this is a
+# compiler bug*. The line end is refused now, once, and `fmt` refuses the
+# file at exit 1, as it does any file that does not parse.
+
+variant S
+    dot
+    sq
+
+function main()
+    a: i64 = 5
+    s: S = .dot
+    y = match s
+        #~v continuation_outside_brackets
+        .dot => a +
+        1
+        .sq => 0
+    print(y)
