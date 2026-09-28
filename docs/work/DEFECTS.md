@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 4**
 
 - [ ] **114 — the emitted C zeroes every temporary of a function at its entry, so a lookup that returns early pays for every arm** | the emitter declares each temporary at the top of the C function with `= {0}`, and a `match` over a string of twenty arms declares them all: the emitted `h_keywords_keyword` zeroes 139 temporaries on every call to make 21 string comparisons, and on the default build line (plain `clang`, no optimisation, CLAUDE.md § Commands) every one is executed; `memset` was about a fifth of `fmt`'s samples after defect 105's repair | `selfhost/emit/` (the temporaries' declarations) · `seed/heroes.c` (`h_keywords_keyword`)
 
@@ -74,5 +74,18 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the compiler does not make. The shape has one reading, a negative
     pattern, so the refusal loses no program and its fix, the `-` touching
     its operand, is the spelling `fmt` prints.
+
+- [ ] **124 — after a `-`, a `match` pattern reads a whole expression, so a pattern can name a variable or call a function** | `grammar_expr.pattern` reads `pattern_operand`, which is `unary`, so after a `-` any postfix expression parses, and `check/walk.literal_pattern` compares only its type: `-m => 10` with `m: i64 = 1` and `n = -1` is `check` 0 and prints 10, the pattern compared against a runtime name, and `-one() => 10` runs `one` inside the match, printing its 99 and then 10; also `-(1)`, `-xs[0]`, `--1`, `- -1`, and `-1.5` on an `f64` where `1.5` is `expected_pattern`; spec § 8 reads `Pattern = ... | [ "-" ] ( integer | string | character )` | `selfhost/grammar_expr.hero` (`pattern`, `pattern_operand`) · `selfhost/check/walk.hero` (`literal_pattern`)
+
+    **Origin:** lane 123's agent, 2026-09-28, attacking the shapes beside
+    defect 123 (reproducers in `/Users/joseph/Temp/heroes-lane-123-scratch/shapes/`);
+    reproduced by the coordinator on the trunk's compiler at `aee8b01e` the
+    same morning (`name_pattern.hero`, `call_pattern.hero` in
+    `/Users/joseph/Temp/heroes-recovery-2026-09-26/defect124/`).
+
+    **Why it is a defect.** A pattern is a constant the spec names, and the
+    compiler admits a name, which silently reads a value at run time, and a
+    call, which runs code with its effects inside a match, both at exit 0; and
+    a float after a `-` where a float is not a pattern at all.
 
 *******************************************************************************
