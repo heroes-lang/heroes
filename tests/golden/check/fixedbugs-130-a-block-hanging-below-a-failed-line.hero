@@ -1,0 +1,65 @@
+# Fixed defect 130's second round, 2026-09-29: the block below a line that
+# already said what is wrong with it. Symptom: after a statement that failed,
+# `x = )` or `return )`, an over-indented block below it went whole, and every
+# mistake inside it with it; after a line that went on, a misspelled head such
+# as `iff x > 1` or a stray `y = 3 )`, the block was named `unexpected_block`,
+# "indented deeper than anything that opens one", though it was the body the
+# misspelled head opens. Cause: `grammar_expr.finish` dropped a failed
+# statement's hanging block, by a rule written for the depth-zero
+# continuation the lexer has joined since panel 181, and a line that went on
+# left its block to the block loop, which names an orphan. The block below
+# either is read and not named (`grammar_expr.hanging`): arms as arms, so that
+# a misspelled `match` over its arms is one mistake, statements as
+# statements. Below a line that ended well an orphan is still named once and
+# dropped, as before, since read as lines a continuation the lexer lets
+# through, `x = a` over `and b`, cost two. One shape per function.
+
+function after_a_failed_line()
+    x = )  #~ expected_expression
+        z = 4 )  #~ expected_end_of_line
+    w = 5 )  #~ expected_end_of_line
+
+function after_a_misspelled_if(x: i64)
+    iff x > 1  #~ expected_end_of_line
+        z = 4 )  #~ expected_end_of_line
+    w = 5 )  #~ expected_end_of_line
+
+function after_a_misspelled_while(x: i64)
+    whle x > 1  #~ expected_end_of_line
+        z = 4 )  #~ expected_end_of_line
+    w = 5 )  #~ expected_end_of_line
+
+function after_a_line_that_went_on()
+    y = 3 )  #~ expected_end_of_line
+        z = 4 )  #~ expected_end_of_line
+    w = 5 )  #~ expected_end_of_line
+
+function two_deep()
+    x = )  #~ expected_expression
+        z = 4 )  #~ expected_end_of_line
+            q = 1 )  #~ expected_end_of_line
+    w = 5 )  #~ expected_end_of_line
+
+function inside_a_body(n: i64)
+    if n > 0
+        x = )  #~ expected_expression
+            z = 4 )  #~ expected_end_of_line
+    w = 5 )  #~ expected_end_of_line
+
+function after_return() -> i64
+    return )  #~ expected_expression
+        z = 4 )  #~ expected_end_of_line
+
+function after_a_misspelled_match(n: i64)
+    mach n  #~ expected_end_of_line
+        0 => print(0) )  #~ expected_end_of_line
+        _ => print(1)
+    w = 5 )  #~ expected_end_of_line
+
+function after_a_line_that_ended_well(a: bool, b: bool) -> bool
+    x = a
+        and b  #~ unexpected_block
+    return x
+
+function main()
+    print(1)

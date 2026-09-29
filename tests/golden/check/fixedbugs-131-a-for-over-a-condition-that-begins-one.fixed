@@ -1,0 +1,11 @@
+# Fixed defect 131's third round, 2026-09-29, the other side of the rule:
+# where the token after `for` begins an expression, *use `while`* is
+# `certain`, and the loop it writes checks clean. `for !done` can hold no loop
+# variable, and `while !done` is the loop its author meant.
+
+function main()
+    done: bool @ false
+
+    while !done  #~ for_missing_in
+        done @ true
+    print(1)

@@ -1,0 +1,33 @@
+# Fixed defect 130's second round, 2026-09-29, a block where an arm should
+# start. Symptom: `0 => print(1)` over a deeper `print(99)` compiled, and the
+# program printed 1: the deeper line was dropped without a word, where after
+# a statement it is named `unexpected_block`; and below an arm whose pattern
+# failed, `+ =>`, its block went whole with every mistake inside it. Cause:
+# the arms loop took any indent for the body of an arm that had failed and
+# dropped it (`cursor.balanced_block`), whether one had failed or not. Below a
+# whole arm the block is an orphan, named once and dropped, as a statement's
+# is; below a failed one it is that arm's body, read and not named
+# (`grammar_expr.arms_of`). One shape per function.
+
+function under_a_whole_arm(n: i64)
+    match n
+        0 => print(1)
+            print(99)  #~ unexpected_block
+        _ => print(2)
+
+function under_a_whole_bound_arm(n: i64) -> i64
+    k = match n
+        0 => 1
+            print(99)  #~ unexpected_block
+        _ => 2
+    return k
+
+function under_a_failed_arm(n: i64)
+    match n
+        + =>  #~ expected_pattern
+            y = 3 )  #~ expected_end_of_line
+        _ => print(2)
+    z = 4 )  #~ expected_end_of_line
+
+function main()
+    under_a_whole_arm(0)

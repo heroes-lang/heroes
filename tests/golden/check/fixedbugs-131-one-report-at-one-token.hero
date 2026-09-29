@@ -1,0 +1,29 @@
+# Fixed defect 131's second round, 2026-09-29, beside it: more than one report
+# at one token. Symptom: `[1 2]` cost `expected_separator` and
+# `expected_array_close` at the `2`, `[1, )]` three at the `)`, `{1: 2 3: 4}`
+# two at the `3`, `{1: 2, )}` five at the `)` (a key, a `:`, a value, a
+# separator and a closer), and a field `x: )` `expected_type` and
+# `expected_field` at the `)`. Cause: each part of a list asked again, at the
+# token the part before had been refused at, for what it expects there. A
+# closer, a `:` and an expression are not asked for where a report already
+# stands (`line_end.said_here`), and nor are a separator, a field or a case.
+# One shape per function.
+
+record P
+    x: )  #~ expected_type
+    y: i64
+
+function list_without_a_comma() -> [i64]
+    return [1 2]  #~ expected_separator
+
+function list_with_a_stray_closer() -> [i64]
+    return [1, )]  #~ expected_expression
+
+function map_without_a_comma() -> {i64: i64}
+    return {1: 2 3: 4}  #~ expected_separator
+
+function map_with_a_stray_closer() -> {i64: i64}
+    return {1: 2, )}  #~ expected_expression
+
+function main()
+    print(1)

@@ -95,7 +95,7 @@ function here_or(c: cursor.Cursor, fallback: token.Span) -> token.Span
 # body for the same reason `function` gives up its own — C has the thing.
 function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage, head: opening.Mark)
     if !cursor.expect(@c, text: text, kind: .colon, code: "expected_constant_type", what: "`:` and the constant's type — a `constant` declares a value, so it has one")
-        cursor.recover_to_next_decl(@c)
+        grammar_expr.abandon(@c, @a, text, from: head.pos)
         return
     ty = type.parse_type(@c, @a, text)
 
@@ -129,7 +129,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     if !cursor.at(c, .lparen)
         # `params` reports the missing `(` with its own message.
         _ = parse_members.params(@c, @a, text, in_group: is_extern)
-        cursor.recover_to_next_decl(@c)
+        grammar_expr.abandon(@c, @a, text, from: head.pos)
         return
     parameters = parse_members.params(@c, @a, text, in_group: is_extern)
 

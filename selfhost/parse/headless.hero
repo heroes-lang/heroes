@@ -39,7 +39,6 @@ use ast
 use cursor
 use parse/members as parse_members
 use grammar_expr
-use parse/opening
 
 ## Reading
 
@@ -49,8 +48,14 @@ variant Shape
     members
     statements
 
-# Read the indented block the cursor stands on, by the shape its lines have.
+# Read the block the cursor stands on, if one is there, by the shape its
+# lines have. A body whose margin holds a tab has no `indent` to read shapes
+# under, and `grammar_expr.hanging` reads it as the body it is, as it does
+# under any head that failed (lane 130's third round).
 function read(@c: cursor.Cursor, @a: ast.Ast, text: str)
+    if !cursor.at(c, .indent)
+        grammar_expr.hanging(@c, @a, text)
+        return
     shape = shape_below(c)
 
     if shape == .fields
@@ -60,8 +65,7 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str)
     else if shape == .members
         _ = cursor.balanced_block(@c)
     else
-        if grammar_expr.block(@c, @a, text: text, owner: "a body", head: opening.mark(c)).is_err()
-            return
+        grammar_expr.hanging(@c, @a, text)
 
 ## The shape, read from the tokens
 
