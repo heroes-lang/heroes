@@ -130,6 +130,16 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     lane 133, whose files it is in; reproducers in
     `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/`, 2026-09-29).
 
+    **Widened 2026-09-29 by lane 133's agent**: on the compilers of
+    `a6eab736` and `7c0cb024` the parser HUNG, forever, on a line headed by a
+    refused word after an `if`, `while` or `for` block (`elif`, or `let`
+    after an `if`); lane 130's merge `0ba7b084` ended it, measured at exit 1,
+    and a case per shape is owed (`hang/o.hero`, `y3`, `y4`, `y8`, `r`, `s`);
+    and a bodiless or empty declaration above a line opened by a guidance
+    word (`class`, `let`, `€`) is never told, before or after `--apply`
+    (`next/fbody_class.hero`); both in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-133/`, 2026-09-29.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
@@ -170,6 +180,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     that does not repair, and one mistake with two messages. Sent back to
     lane 130.
 
+    **Widened 2026-09-29 by lane 133's agent**: `test`, `function` and
+    `constant` heads with junk over a body that is there still name it
+    missing, `missing_body` found `)` (`a/fjunk.hero`, `cjunk`, `tjunk`);
+    `extern "m.h" )` costs two messages; `fn main() {` costs
+    `expected_declaration` again at its `}`; and `empty_variant`'s caret
+    stands on the next line's first token where `empty_record` points at its
+    own head; all in `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-133/`, 2026-09-29.
+
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
     **Origin:** lane 129's agent, 2026-09-29, beside defect 129 (its finding 2,
@@ -205,6 +223,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     (`shapes3/t19`), all in
     `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/`, 2026-09-29.
 
+    **Widened 2026-09-29 by lane 133's agent**: the lexer does not take a
+    refused word as the start of a fresh line, so such a line joins an open
+    line above it and the same mistake takes another code once the swap is
+    applied (`next/ctype_then_const.hero`, `field_then_struct.hero`,
+    `use_then_import.hero`, `more/open_line_fn2.hero` in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-133/`, 2026-09-29).
+
 - [ ] **133 — after a declaration head the lexer refuses as a foreign word with a certain swap, the declaration's own mistakes are reported only once the swap is applied** | `const MAX = 5` costs `reserved_word` alone, and `check --apply` writes `constant MAX = 5`, which then costs `expected_constant_type`; `const MAX: i64 = 5` then costs `missing_body`, `fn main() {` then `missing_body`, `struct Point {` then `empty_record`: two turns for one habit | `selfhost/scan.hero` (the foreign word emitted as an `error` token) · `selfhost/keywords.hero` (`foreign_word`) · `selfhost/parse/decl.hero` · `cursor.recover_to_next_decl`
 
     **Origin:** lane 129's agent, 2026-09-29, reading `check/reserved-words`'s
@@ -226,5 +251,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     that a model fix a program in one turn. `const MAX = 5`, `fn main() {`
     and `struct Point {` are the habits of the three languages a model has
     read most.
+
+    **Widened 2026-09-29 by lane 133's agent, after its repair landed at
+    `6f3d31d6`**: (i) a certain swap that is wrong where it stands, which
+    `--apply` writes into a program still refused: `function fn(` to
+    `function function(`, `record struct`, `const x = 5` in a body to
+    `constant x = 5`, `fn` or `struct` nested in a body, `enum` in a group, a
+    same-line `record P fn`, and `include "stdio.h"` to `use`, whose message
+    then points at `stdio.h.hero` (defect 015's class of the byte after a
+    word, one position further); (ii) `elif` is not read as `else if` (it
+    costs `reserved_word`, `unexpected_block` and `expected_expression`) and
+    `switch` not as `match`; (iii) `fn(i64) -> i64` without its parentheses
+    is silent until the swap; reproducers `shapes/`, `more/`, `a/*swap*`,
+    `final/elif_ok.hero`, `shapes/elif_brace.hero`,
+    `shapes/switch_expr.hero`, `more/fntype_noparens.hero` in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-133/`, 2026-09-29.
 
 *******************************************************************************
