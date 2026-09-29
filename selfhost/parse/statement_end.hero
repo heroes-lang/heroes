@@ -1,0 +1,155 @@
+# What a statement's end owes the rest of its line and the block below it
+# (design.md §4.17; defects 130 and 131, 2026-09-28 and -29).
+#
+# Every statement ends at its line end, consumed in one place,
+# `grammar_expr.finish`, which asks this module what the end owes. The
+# questions moved here out of `finish` on 2026-09-29 (lane X4), when
+# `grammar_expr.hero` stood at its ceiling: none of them reads the grammar,
+# and what hangs below the line is handed back for the grammar to read
+# (`Below`).
+#
+# **A statement that failed has said what is wrong**: the rest of its line is
+# debris, not a second mistake, and so is a block hanging below it, which is
+# READ and never named; the continuation that once cost three diagnostics for
+# one is joined by the lexer since panel 181. **Only its line** (defect 130):
+# a statement that ended with its own block or line end has none left, and
+# the line under the cursor, which the drop took, was the next statement's.
+# **And not past braces closed on a line of their own** (lane X1's finding
+# 4): in `}` over `x` the body in braces ended the statement, and `x` is
+# where its line should end, where the `{`'s own report, the habit's, made
+# the statement a failed one and `x` was dropped unsaid.
+#
+# A statement that did not fail ends where its line does, or the rest is
+# `expected_end_of_line` unless the lexer spoke at that token, and the rest
+# goes, a `{` that ends the line staying for the block below. What hangs
+# below: under a line that said what is wrong, `iff x > 1` over its body or
+# braces that end it, `loop {`, read and never named; under one only the
+# lexer refused, the block is the rest of it (`f"a {` over `x}`), named and
+# gone whole, unless it refused the line's first word, `elif x` or `fn
+# inner()`: that block is the line's own, `grammar_expr.under`'s.
+#
+# **Past a refused word that heads a binding**, `let x = 5 )`, `const k =
+# 7` in a body or `var y = {` over a map, the rest of the line is a
+# statement, and it is handed back to be read as one (`rest`): until
+# 2026-09-29 it went with the word, its own mistakes unsaid, and a map's
+# entries were read as a body's lines.
+#
+# **A literal the lexer refused is still a value** (lane Y's finding,
+# 2026-09-29). Its spelling is its one mistake, `0X10`, and its place is a
+# value's: where the grammar asked an operand of it, `x = 0X10 + f(1) )`, the
+# line is read past it (`refused_operand`), and where the line's end goes, `x
+# = 1 0X10`, the end is still owed (`refused_literal`). The line its certain
+# fix writes, `0x10`, is refused for that `)` or that `0x10`, which the first
+# run hid, so a certain fix wrote a program with a mistake no run had told.
+
+use token
+use cursor
+use describe
+use ast
+use parse/brace_habit
+use parse/headless
+use parse/orphans
+use parse/refused_heads
+
+# What hangs below the line a statement ended on, for the grammar to read.
+variant Below
+    nothing
+    # A block or braces below a line that said what is wrong: read, never
+    # named (`grammar_expr.hanging`).
+    read
+    # The block below a line whose first word the lexer refused
+    # (`grammar_expr.under`).
+    refused
+    # The rest of a line a refused word heads that binds, a statement past
+    # the word, under the cursor (`grammar_expr.statement`).
+    rest
+
+# The end of the statement begun at token `from`, which refused something if
+# `failed`: the rest of its line consumed, told where it is a mistake, and what
+# hangs below it.
+function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
+    if failed && !brace_habit.after_a_close(c, text)
+        brace_habit.drop_rest_of_line(@c, text, from: from)
+        return hangs_below(c, text)
+    ended = c.pos > from && cursor.at_fresh_line(c)
+
+    if ended || cursor.at(c, .dedent) || cursor.at(c, .eof) || cursor.eat(@c, .terminator)
+        return .nothing
+    said = !cursor.at_reported_error(c) || refused_literal(c, text)
+
+    # A line a refused word heads that binds, `let x = 5 )` or `let m = {`
+    # over a map's entries: past the word the rest is a statement, read as
+    # one, its own mistakes told, where it was dropped with the word.
+    if !said && c.pos == from && headless.refused_head(c, text, at: from) && refused_heads.binds(c, from: from)
+        _ = cursor.bump(@c)
+        return .rest
+
+    if said
+        cursor.error(
+            @c,
+            code: "expected_end_of_line",
+            message: "expected the end of the line, found " + found(c, text) + " — one statement per line, no semicolons",
+            span: cursor.current_span(c)
+        )
+    brace_habit.skip_line(@c, text)
+
+    if !said && headless.refused_head(c, text, at: from)
+        return .refused
+
+    if said
+        return hangs_below(c, text)
+
+    if brace_habit.opens_here(c, text)
+        return .read
+
+    # A block below a line the lexer refused past its head is the rest of
+    # that line, `f"a {` over `x} b"`: named, and gone whole, its lines no
+    # statements of their own.
+    if cursor.at(c, .indent)
+        orphans.named(@c)
+        _ = cursor.balanced_block(@c)
+    return .nothing
+
+function hangs_below(c: cursor.Cursor, text: str) -> Below
+    if cursor.at(c, .indent) || brace_habit.opens_here(c, text)
+        return .read
+    return .nothing
+
+# Whether the cursor stands on a literal the lexer refused, a number or a
+# quoted literal: an `error` token whose first byte is a digit or a quote.
+function refused_literal(c: cursor.Cursor, text: str) -> bool
+    if !cursor.at(c, .error)
+        return false
+    first = text[cursor.current_span(c).start]
+    return first >= '0' && first <= '9' || first == '"' || first == '\''
+
+# Whether the cursor stands on a refused literal the grammar asked an operand
+# of and could not read: an `error` expression at its span, built since the
+# statement's first, `exprs`.
+function refused_operand(c: cursor.Cursor, a: ast.Ast, text: str, exprs: i64) -> bool
+    if !refused_literal(c, text)
+        return false
+    here = cursor.current_span(c)
+    i: i64 @ exprs
+
+    while i < a.exprs.len()
+        if a.exprs[i].kind == .error && a.exprs[i].span == here
+            return true
+        i @ i + 1
+
+    return false
+
+# The token under the cursor as "expected X, found Y" names it: a refused
+# literal as the literal it is, in the words the line its certain fix writes
+# is told in, where the lexer's word for it is an unreadable token.
+function found(c: cursor.Cursor, text: str) -> str
+    if !refused_literal(c, text)
+        return cursor.found(c, text)
+    first = text[cursor.current_span(c).start]
+    kind: token.TokenKind @ .int_lit
+
+    if first == '"'
+        kind @ .str_lit
+    else if first == '\''
+        kind @ .char_lit
+    return describe.describe(kind) + " (`" + cursor.slice_of(text, cursor.current_span(c)) + "`)"

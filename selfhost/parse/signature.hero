@@ -1,0 +1,66 @@
+# A function's signature: what follows its name up to its body (design.md
+# §4.2, §4.12, §4.19; panels 109, 177).
+#
+# Moved out of `parse/tails.function_tail` on 2026-09-29 (lane X4, defect
+# 130's class), when a second reader needed it: a block of declarations under
+# a line whose head the lexer refused, `class Q` over `function f()`, is read
+# as the declarations it holds (`parse/member_heads`), and a nested function's
+# head is read as a top-level one is. The body is the caller's, which is what
+# lets this be a leaf: it reads types, parameters and marks, and nothing that
+# reads the grammar.
+
+use token
+use cursor
+use ast
+use parse/type
+use parse/members as parse_members
+use parse/marks as parse_marks
+
+record Signature
+    generics: [token.Span]
+    params: [ast.Param]
+    result: i64
+    marks: parse_members.Marks
+    # The signature's last token, `)` or the result's type or its last word,
+    # kept for `fmt`: comments never reach the grammar, so one written between
+    # two parameters is indistinguishable from the body's first comment unless
+    # the tree says where the signature stops. Without this the printer
+    # expelled it after the declaration, where it became the next member's doc
+    # (defect 095) or, with nothing following, a file-level remark at exit 0.
+    end: token.Span
+
+# Generics, the parameters and the result after a function's name, or a
+# failure where no `(` follows it, which `params` has reported.
+function read(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> Signature?
+    generic_names = parse_members.generics(@c, text)
+
+    if !cursor.at(c, .lparen)
+        _ = parse_members.params(@c, @a, text, in_group: in_group)
+        return fail(code: "expected_params", msg: "no `(` after the name")
+    parameters = parse_members.params(@c, @a, text, in_group: in_group)
+
+    # No `->` means no value. The `unit` node is synthesised at the end of the
+    # header so later passes never have to ask whether the arrow was written
+    # (§4.3: `()` is a type like any other).
+    result: i64 @ 0
+
+    # `-> cstr owned sqlite3_free`: the freer rides the RESULT and is read
+    # right after its type, which is the only place it can be — a signature
+    # with no arrow hands nothing back for anybody to free (§4.19, panel 109).
+    # The five words come in any order (panel 177's landing, finding 1), and
+    # `when` with no arrow before it is named as such (finding 2).
+    marks: parse_members.Marks @ parse_members.no_marks()
+
+    if cursor.eat(@c, .arrow)
+        result @ type.parse_type(@c, @a, text)
+        marks @ parse_members.read_marks(@c, text: text, in_group: in_group, on_result: true, holder: "the result")
+    else
+        here = cursor.current_span(c)
+        result @ ast.push_type(
+            @a.types,
+            ast.TypeNode(kind: .unit, span: token.Span(start: here.start, end: here.start))
+        )
+        parse_marks.success_needs_result(@c, text, in_group: in_group)
+    return ok(
+        Signature(generics: generic_names, params: parameters, result: result, marks: marks, end: cursor.previous_significant_span(c))
+    )

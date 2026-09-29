@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-130-the-rest-of-a-refused-binding-line.hero:14:5: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/fixedbugs-130-the-rest-of-a-refused-binding-line.hero:15:5: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/fixedbugs-130-the-rest-of-a-refused-binding-line.hero:18:5: error[reserved_word]: `const` is not a word in this language — inside a body a value is bound with `=`: `x = 5`, and a `constant` is declared at the top level of a file
+tests/golden/check/fixedbugs-130-the-rest-of-a-refused-binding-line.hero:19:5: error[reserved_word]: `int` is not a word in this language — an integer type says its width, `i64`, and a type is written where a type goes: after a name and `:`, or after `->`
+tests/golden/check/fixedbugs-130-the-rest-of-a-refused-binding-line.hero:20:5: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/fixedbugs-130-the-rest-of-a-refused-binding-line.hero:14:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-the-rest-of-a-refused-binding-line.hero:18:17: error[expected_end_of_line]: expected the end of the line, found a number (`7`) — one statement per line, no semicolons

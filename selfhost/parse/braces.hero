@@ -17,11 +17,15 @@
 #   are read as the body they are, their own mistakes too, and the `}` goes
 #   silently;
 # - under a head that owes MEMBERS (a `record`, a `variant`, an `extern`
-#   group), the caller refuses the `{` as its head's junk and the region goes
-#   whole (`parse/records.no_members_below`).
+#   group), the caller refuses the `{` as its head's junk, and the members
+#   inside are read through the view of them `parse/braced_lines` lays out,
+#   the `,` between them the habit's debris (`parse/members_below`; they went
+#   whole until 2026-09-29, lane X1's finding 1).
 #
 # A `{` that is not the last thing on its line opens a map or a map type,
-# and is never the habit.
+# and is never the habit, but right after a record's, a variant's or a
+# group's head, where no map stands: `record P { x: i64 }` is the habit on
+# one line.
 
 use ast
 use cursor
@@ -41,8 +45,10 @@ function opens(c: cursor.Cursor, text: str) -> bool
 function body_or_block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: opening.Mark) -> ast.Block?
     return grammar_expr.block(@c, @a, text: text, owner: owner, head: head)
 
-# A head that owes members: the braced region goes whole, `{` to `}`, after
-# the caller's one report of the `{`.
+# Braces below a head that failed past a line of its own, `extern "m.h" )`
+# over them, which go whole with that head, `{` to `}`, after the caller's
+# one report; where members stand in braces they are read instead
+# (`parse/members_below`).
 function skip(@c: cursor.Cursor)
     close = brace_habit.closer(c, open: c.pos)
 

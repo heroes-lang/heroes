@@ -1,0 +1,36 @@
+# Fixed 2026-09-29, defect 130's class, lane X4, on lane Y's finding.
+# Symptom: a block indented deeper than anything that opens one, under a line
+# that ended well, `x = 1` over a deeper `print(1) )`, was named
+# `unexpected_block` and dropped whole, every mistake inside it unsaid, and
+# at the top level of a file the same. Cause: the block loop named an orphan
+# and dropped it, since read as lines a continuation the lexer lets through
+# cost two. It is now named once and its lines read (`parse/orphans.hero`),
+# their own mistakes told, a block deeper still named again, a block of arms
+# read as arms, and a declaration in it told as one in any body is. One whose
+# first line is the line above going on, a token that only ever goes on with
+# a line, `+ 1` or `else`, or a word and then a value with no operator
+# between them, `and c`, the shape of an operator another language spells as
+# a word, is still the one mistake its name says, and goes whole.
+
+use geom
+    print(0) )  #~ expected_declaration expected_end_of_line
+
+function main()
+    x = 1
+        print(1) )  #~ unexpected_block expected_end_of_line
+        y = 2 3  #~ expected_end_of_line
+    a = 2
+        print(a)  #~ unexpected_block
+            z = 3 )  #~ unexpected_block expected_end_of_line
+    b = 3
+        0 => 5  #~ unexpected_block
+    c = 4
+        + 1  #~ unexpected_block
+    d = 5
+        else  #~ unexpected_block
+    e = 6
+        and c  #~ unexpected_block
+    f = 7
+        function inner()  #~ unexpected_block expected_expression
+            q = 8 )  #~ expected_end_of_line
+    print(x, a, b, c, d, e, f)

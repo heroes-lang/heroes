@@ -1,0 +1,24 @@
+# Fixed 2026-09-29, defect 130's class, lane X4. Symptom: past a word the
+# lexer refused at the head of a line that binds, the rest of the line went
+# with the word: `let x = 5 )` never told its `)`, `const k = 7 7` its `7`,
+# and `let m = {` over a map's entries read them as a body's lines, each
+# entry's `:` a mistake of its own. Cause: a line whose first word the lexer
+# refused dropped its rest, as a line headed by a word that heads a block
+# must, where the rest is no statement. Past a refused word whose line
+# binds, `let`, `var`, `const k =` in a body or `int n =`, the rest is now
+# read as the statement it is (`parse/statement_end.hero`), its own mistakes
+# told, a map as a map, and a body below it as the body of what it holds:
+# `let z = if x == 5` over its branch is no orphan.
+
+function main()
+    let x = 5 )  #~ reserved_word expected_end_of_line
+    let m = {  #~ reserved_word
+        "a": 1
+    }
+    const k = 7 7  #~ reserved_word expected_end_of_line
+    int n = 8  #~ reserved_word
+    let z = if x == 5  #~ reserved_word
+        1
+    else
+        2
+    print(x, m, k, n, z)

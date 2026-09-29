@@ -1,0 +1,17 @@
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:15:1: error[reserved_word]: `class` is not a word in this language — use `record` (there is no inheritance)
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:26:5: error[reserved_word]: `class` is not a word in this language — use `record` (there is no inheritance)
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:16:21: error[expected_parameter_type]: expected `:` and the parameter's type — signatures are always explicit, found a name (`i64`)
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:17:18: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:19:1: error[expected_declaration]: expected a declaration, found a name (`impl`) — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test "…"`, or `extern`
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:20:28: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:21:18: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:28:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:29:39: error[expected_params]: expected `(` — a signature always has a parameter list, `()` when it takes nothing, found end of line
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:30:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:32:15: error[expected_field_type]: expected `:` and the field's type, found a name (`i64`)
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:33:18: error[expected_end_of_line]: expected the end of the line after `record S`, found `{` — its fields go on the lines below it, one level deeper
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:34:15: error[expected_field_type]: expected `:` and the field's type, found a name (`i64`)
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:38:13: error[expected_case]: expected a case name, found a number (`5`) — a variant case is a name on its own line, with its fields indented below it
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:39:20: error[expected_constant_type]: expected `:` and the constant's type — a `constant` declares a value, so it has one, found a name (`i64`)
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:41:25: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-declarations-under-a-refused-head.hero:42:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

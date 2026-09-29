@@ -1,0 +1,40 @@
+# Fixed 2026-09-29, defect 130's class, lane X4. Symptom: a block indented
+# below a line whose first word the lexer refused was read as that line's body
+# and never named, which is right where the word opens a block where it comes
+# from, `elif`, `fn`, `struct` or `const B: i64`, and a silence where it
+# opens none: under `let x = 5` or `import geom` the deeper block is a
+# mistake of its own, indented deeper than anything that opens one (lane X1's
+# finding 7). Cause: the reading asked only whether the word was refused. It
+# asks the word too now (`parse/refused_heads.hero`): `let`, `var`, `import`,
+# `null`, `throw` and a refused character open nothing, and nor does a line
+# that binds, `const k = 7` or `int n = 8`, where `const B: i64` and
+# `int main()` head a block. Where nothing opens one, the block is
+# `unexpected_block` and its lines are read, their own mistakes told, at the
+# top level of a file too; one whose first line is the line above going on,
+# `+ 1`, goes whole, the one mistake its name says.
+
+let top = 5  #~ reserved_word
+    print(0) )  #~ unexpected_block expected_end_of_line
+
+function main()
+    let x = 5  #~ reserved_word
+        print(1) )  #~ unexpected_block expected_end_of_line
+    var y = 6  #~ reserved_word
+        print(2) )  #~ unexpected_block expected_end_of_line
+    import geom  #~ reserved_word
+        z = 3 )  #~ unexpected_block expected_end_of_line
+    const k = 7  #~ reserved_word
+        print(3) )  #~ unexpected_block expected_end_of_line
+    int n = 8  #~ reserved_word
+        print(4) )  #~ unexpected_block expected_end_of_line
+    throw e  #~ reserved_word
+        print(5) )  #~ unexpected_block expected_end_of_line
+    null  #~ reserved_word
+        print(6) )  #~ unexpected_block expected_end_of_line
+    € w = 9  #~ unexpected_character
+        print(7) )  #~ unexpected_block expected_end_of_line
+    let q = 5  #~ reserved_word
+        + 1  #~ unexpected_block
+    const B: i64  #~ reserved_word
+        5 )  #~ expected_end_of_line
+    print(0)

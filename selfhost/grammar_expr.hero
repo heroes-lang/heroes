@@ -77,6 +77,10 @@ use parse/margin_arms
 use parse/broken_arm
 use parse/headless
 use parse/brace_habit
+use parse/braced_lines
+use parse/statement_end
+use parse/heads
+use parse/orphans
 use operators
 
 ## The precedence table — §4.14, read from the bottom up
@@ -733,15 +737,14 @@ function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: open
     found = opening.body_follows(@c, text, head: head, failed: failed, missing: opening.missing_body(owner))
 
     return match found
-        .indented => ok(indented_block(@c, @a, text, close: -1))
-        .braced b => ok(indented_block(@c, @a, text, close: b.close))
+        .indented => ok(indented_block(@c, @a, text))
+        .braced _ => ok(in_braces(@c, @a, text))
         .tabbed   => ok(tabbed_block(@c, @a, text))
         .none     => fail(code: "missing_body", msg: owner)
 
-# The statements of the block whose opener is under the cursor: an indent, or
-# the `{` of a body in braces, read to the `}` at `close` (-1 for an indent),
-# whose line end goes with it as a dedent's does: an `else` below is the `if`'s.
-function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str, close: i64) -> ast.Block
+# The statements of the block whose indent is under the cursor; a block one
+# deeper, which no head opens, named and read (`parse/orphans`).
+function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
     open = cursor.bump(@c).span
     stmts: [i64] @ []
     reading: bool @ true
@@ -753,21 +756,22 @@ function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str, close: i64) -
         if k == .dedent
             _ = cursor.bump(@c)
             reading @ false
-        else if c.pos == close
-            _ = cursor.bump(@c)
-            _ = cursor.eat(@c, .terminator)
+        else if k == .eof
             reading @ false
-        else if k == .eof || close >= 0 && c.pos > close
-            reading @ false
-        else if k == .rbrace && close >= 0
-            # A nested `{`'s, which its head's recovery dropped.
-            _ = cursor.bump(@c)
         else if k == .indent
-            opening.orphan(@c)
+            if orphans.read(@c)
+                hanging(@c, @a, text)
         else
             stmts @ stmts.push(statement(@c, @a, text))
 
     return ast.Block(span: token.Span(start: open.end, end: cursor.previous_significant_span(c).end), stmts: stmts)
+
+# A body in braces, its `{` under the cursor, read as `parse/braced_lines` lays it out.
+function in_braces(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
+    lines: cursor.Cursor @ braced_lines.laid_out(c, text)
+    body = indented_block(@lines, @a, text)
+    braced_lines.took(c: @c, view: lines)
+    return body
 
 # The statements of a body whose margin holds a tab (`opening.tabbed_line`),
 # and of a block below them, which the lexer opened one level too deep.
@@ -777,7 +781,7 @@ function tabbed_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
 
     while opening.tabbed_line(c, text) || cursor.at(c, .indent)
         if cursor.at(c, .indent)
-            for s in indented_block(@c, @a, text, close: -1).stmts
+            for s in indented_block(@c, @a, text).stmts
                 stmts @ stmts.push(s)
         else
             stmts @ stmts.push(statement(@c, @a, text))
@@ -791,9 +795,9 @@ function hanging(@c: cursor.Cursor, @a: ast.Ast, text: str)
     if cursor.at(c, .indent) && headless.arms_below(c)
         _ = arms_of(@c, @a, text, tabbed: false)
     else if cursor.at(c, .indent)
-        _ = indented_block(@c, @a, text, close: -1)
+        _ = indented_block(@c, @a, text)
     else if brace_habit.opens_here(c, text)
-        _ = indented_block(@c, @a, text, close: brace_habit.closer(c, open: c.pos))
+        _ = in_braces(@c, @a, text)
     else if opening.tabbed_line(c, text)
         _ = tabbed_block(@c, @a, text)
 
@@ -802,13 +806,43 @@ function abandon(@c: cursor.Cursor, @a: ast.Ast, text: str, from: i64)
     brace_habit.drop_rest_of_line(@c, text, from: from)
     hanging(@c, @a, text)
 
+# The block below a line whose head, the token at `word`, nothing reads (`parse/headless`).
+function under(@c: cursor.Cursor, @a: ast.Ast, text: str, word: i64)
+    left = headless.read_below(@c, @a, text, word: word)
+
+    if left == .declarations
+        declarations(@c, @a, text)
+    else if left == .statements
+        hanging(@c, @a, text)
+
+# A block of declarations under such a line, `class Q` over `function f()`,
+# indented or in braces: each line read as what its keyword opens, the head
+# by `parse/heads` and the body by `block` (defect 130's class, lane X4).
+function declarations(@c: cursor.Cursor, @a: ast.Ast, text: str)
+    if brace_habit.opens_here(c, text)
+        lines: cursor.Cursor @ braced_lines.laid_out(c, text)
+        declarations(@lines, @a, text)
+        braced_lines.took(c: @c, view: lines)
+        return
+    _ = cursor.bump(@c)
+    owed: heads.Owed @ heads.next(@c, @a, text)
+
+    while owed.owes != .done
+        if owed.owes == .body
+            _ = block(@c, @a, text: text, owner: owed.owner, head: owed.head).is_err()
+        else if owed.owes == .abandoned
+            abandon(@c, @a, text, from: owed.head.pos)
+        else
+            _ = statement(@c, @a, text)
+        owed @ heads.next(@c, @a, text)
+
 function statement(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     start = cursor.current_span(c)
     from = c.pos
-    reported_before = cursor.diagnostic_count(c)
+    said = cursor.diagnostic_count(c)
+    exprs = a.exprs.len()
     kind: ast.StmtKind @ statement_kind(@c, @a, text)
-    failed = cursor.refused_since(c, reported_before)
-    return finish(@c, @a, text, start: start, from: from, kind: kind, failed: failed)
+    return finish(@c, @a, text, start: start, from: from, kind: kind, said: said, exprs: exprs)
 
 function statement_kind(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     k = cursor.current_kind(c)
@@ -844,57 +878,29 @@ function statement_kind(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKi
         return annotated(@c, @a, text)
     return expression_or_mutation(@c, @a, text)
 
-# Every statement ends at its line end. Consuming the terminator here — in one
-# place — is what keeps the block loop from having to know which statements span
-# lines.
-function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, from: i64, kind: ast.StmtKind, failed: bool) -> i64
-    # The last significant token, never a trailing comment: the span is what the
-    # caret underlines (§4.17).
+# Every statement ends at its line end, consumed here, in one place; what
+# that owes the rest of the line and the block below is `parse/statement_end`'s,
+# after a literal the lexer refused where an operand goes is read past.
+function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, from: i64, kind: ast.StmtKind, said: i64, exprs: i64) -> i64
+    while !cursor.refused_since(c, said) && statement_end.refused_operand(c, a, text, exprs: exprs)
+        _ = cursor.bump(@c)
+
+        if !binary_op(cursor.current_kind(c)).is_err()
+            _ = cursor.bump(@c)
+            _ = parse_expr(@c, @a, text)
+        else if cursor.at(c, .dot)
+            _ = parse_expr(@c, @a, text)
+
+    # The last significant token, never a trailing comment, is what the caret underlines.
     span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
+    below = statement_end.close(@c, text, from: from, failed: cursor.refused_since(c, said))
 
-    if failed
-        # A statement that already failed has said what is wrong: the rest of
-        # its line is debris, not a second mistake — and so is any block hanging
-        # off it, which is how a depth-zero line continuation used to cost three
-        # diagnostics instead of one. **Only ITS line** (defect 130): one that
-        # ended with its own block or line end has none left, and the line
-        # under the cursor, which this dropped, was the next statement's. A
-        # block hanging below is READ, not named: the continuation that cost
-        # three is joined by the lexer since panel 181. So are braces that end
-        # the line, where the drop stops (`parse/brace_habit`).
-        brace_habit.drop_rest_of_line(@c, text, from: from)
-
-        if cursor.at(c, .indent) || brace_habit.opens_here(c, text)
-            hanging(@c, @a, text)
-        return ast.push_stmt(@a.stmts, ast.Stmt(kind: kind, span: span))
-
-    # A statement that ended with a block — a loop, an `if`, a `match` —
-    # consumed its own dedent, and a dedent IS the end of a line; so did one
-    # whose head looked past its line end for a body that was not there.
-    ended = c.pos > from && cursor.at_fresh_line(c)
-
-    if !ended && !cursor.at(c, .dedent) && !cursor.at(c, .eof) && !cursor.eat(@c, .terminator)
-        said = !cursor.at_reported_error(c)
-
-        if said
-            cursor.error(
-                @c,
-                code: "expected_end_of_line",
-                message: "expected the end of the line, found " + cursor.found(c, text) + " — one statement per line, no semicolons",
-                span: cursor.current_span(c)
-            )
-        brace_habit.skip_line(@c, text)
-
-        # As below a failed line, `iff x > 1` over its body or braces that end
-        # it, `loop {`; not below one only the lexer refused, whose block is the
-        # rest of it (`f"a {` over `x}`), unless it refused the line's first
-        # word, `elif x` or `fn inner()`: that block is the line's body, read by
-        # the shape of its lines and never named (`parse/headless`).
-        if !said && headless.refused_head(c, text, at: from)
-            if !headless.members(@c, @a, text)
-                hanging(@c, @a, text)
-        else if said && cursor.at(c, .indent) || brace_habit.opens_here(c, text)
-            hanging(@c, @a, text)
+    if below == .refused
+        under(@c, @a, text, word: from)
+    else if below == .read
+        hanging(@c, @a, text)
+    else if below == .rest
+        _ = statement(@c, @a, text)
     return ast.push_stmt(@a.stmts, ast.Stmt(kind: kind, span: span))
 
 # `return e`, or bare `return` where the function returns nothing.

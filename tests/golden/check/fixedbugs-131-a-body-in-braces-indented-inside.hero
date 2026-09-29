@@ -1,0 +1,50 @@
+# Fixed 2026-09-29, defect 131's class, lane X4. Symptom: a body in braces
+# whose own blocks are indented inside it, braces outside and indentation
+# inside, `function main() {` over `if x == 1` over a deeper `print(1)`,
+# named each inner body missing, a body that is there, a message per head for
+# the one mistake the braces are (lane X1's finding 3); an `else`, a `for`, a
+# `while` and a `match`'s arms the same, and a `test`'s body too. Cause:
+# inside braces the lexer makes no indent, so the inner bodies reached the
+# parser at their head's own level. A body in braces is now read through a
+# view of the braces laid out as the lexer lays out an indented block
+# (`parse/braced_lines.hero`): the margins inside open and close blocks, a
+# level at a time, and the `{`'s report is the habit's one message. The inner
+# lines' own mistakes are told; a line that ends where its statement cannot,
+# `z = 1 +`, is told where it ends, as with no braces around it, and a
+# stray `)` that the lexer took for the braces' close does not open a
+# second layout of its own.
+
+function main() {  #~ missing_body
+    x = 1
+    if x == 1
+        print(1)
+        y = 3 4  #~ expected_end_of_line
+    else
+        print(2)
+    for i in [1, 2]
+        print(i)
+    while x < 3
+        print(x)
+    match x
+        1 => print(1)
+        _ => print(2)
+    z = 1 +  #~ expected_expression
+        2
+    if x == 2 {  #~ missing_body
+        if x == 3
+            print(3)
+    }
+}
+
+function stray() {  #~ missing_body
+    x = 1
+    if x == 1
+        y = 3 )  #~ expected_end_of_line
+    print(x)
+}
+
+test "adds" {  #~ missing_body
+    n = 1
+    if n == 1
+        assert n + 1 == 2
+}

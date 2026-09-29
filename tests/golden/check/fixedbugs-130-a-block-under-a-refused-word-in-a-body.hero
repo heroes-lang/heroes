@@ -49,3 +49,11 @@ function exceptions()
 
 function main()
     print(0)
+
+# Corrected 2026-09-29 by lane X4 (defect 130's class): a block of
+# declarations under such a line, which the header says goes whole, is read
+# as the declarations it holds
+# (`fixedbugs-130-declarations-under-a-refused-head`); and the block is the
+# line's body only where the word opens one where it comes from, as every
+# word here does: under `let x = 5` or `import geom` it is `unexpected_block`
+# and read (`fixedbugs-130-a-block-under-a-word-that-opens-none`).

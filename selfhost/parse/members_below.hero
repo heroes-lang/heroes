@@ -1,0 +1,243 @@
+# Where a head's members stand, when they are not indented right below it,
+# and what is told of them: a `record`'s fields, a `variant`'s cases and an
+# `extern` group's signatures (design.md §4.17; defects 130 and 131,
+# 2026-09-29).
+#
+# Moved out of `parse/records.hero` on 2026-09-29 (lane X4), when a record
+# or a variant nested in a block of declarations under a refused head came to
+# be read as a top-level one is (`parse/heads.next`): that reader sits below
+# the grammar, and `parse/records.hero` reads the grammar for the `:` habit,
+# so the questions it shared moved into this leaf, which reads none.
+#
+# Over members that are there, indented below a head whose line went on, the
+# head's junk is the one report, and the members are read; with none, the
+# head's own "empty" report is. **In braces** the members are read too,
+# through the view `parse/braced_lines` lays out (lane X1's finding 1): until
+# 2026-09-29 a braced record, variant or group went whole, `y i64` inside it
+# unsaid. The braces and the `,` between members are the habit's debris, and
+# a `{` is one report where it stands (`no_members_below`).
+
+use token
+use cursor
+use ast
+use diag
+use text_lines
+use parse/members as parse_members
+use parse/swap_reading
+use parse/brace_habit
+use parse/braced_lines
+
+## Where the members stand
+
+# Where a head's members stand when they are not indented right below it.
+variant Below
+    # Indented below the head's line, once what goes on past it is dropped.
+    indented
+    # In braces, their `{` under the cursor and their `}` at `close`, read
+    # through the view `parse/braced_lines` lays out.
+    braced
+        close: i64
+    # Nowhere.
+    none
+
+# What a head that owes members says where none is indented below it, and
+# where they stand once its line is dropped. Over members that are there,
+# indented or in braces, the head's junk is the one report; with nothing
+# below, `empty` is, the caller's own words and caret; and on the head's own
+# line a word the lexer refused is its report already. Shared by a `record`,
+# a `variant` and an `extern` group, whose members the caller reads.
+#
+# **Braces are one report per `{`** (`parse/braces.hero`): a `{` that ends
+# the head's line, right after it, is the head's junk, and one past junk
+# already told, or alone on the line below a head whose line ended, Allman's
+# style, is `empty`'s code where it stands, saying where the members go. Its
+# caret is on the `{`'s own line, which its message names: it read *expected
+# the end of the line after `record P`* on the line after the one that had
+# ended (lane X1's finding 12, 2026-09-29).
+function no_members_below(@c: cursor.Cursor, text: str, head: token.Span, members: str, empty: diag.Diagnostic) -> Below
+    junk = cursor.current_span(c)
+    found = swap_reading.found(c, text)
+    spoke = swap_reading.at_reported_error(c, text)
+    goes_on = !cursor.at_fresh_line(c)
+    brace = opening_brace(c, text, goes_on: goes_on)
+    quoted = on_one_line(c, text, head: head)
+
+    if brace >= 0
+        if goes_on && !spoke
+            junk_after_head(@c, head: quoted, found: found, span: junk, members: members)
+
+        while c.pos < brace
+            _ = cursor.bump(@c)
+
+        if !goes_on || junk.start != cursor.current_span(c).start
+            c.diagnostics @ c.diagnostics.push(
+                diag.new_diagnostic(code: empty.code, message: "the " + members + " of `" + quoted + "` go on the lines below it, one level deeper, and never in braces (found `{`)", span: cursor.current_span(c))
+            )
+        close = brace_habit.closer(c, open: brace)
+
+        # Braces that hold nothing hold no member either, which is a mistake
+        # the braces' report does not name.
+        if holds_nothing(c, from: brace, to: close)
+            c.diagnostics @ c.diagnostics.push(empty)
+        return .braced(close: close)
+
+    if goes_on
+        cursor.skip_line(@c)
+
+    if !spoke
+        if goes_on && cursor.at(c, .indent)
+            junk_after_head(@c, head: quoted, found: found, span: junk, members: members)
+        else
+            c.diagnostics @ c.diagnostics.push(empty)
+
+    if cursor.at(c, .indent)
+        return .indented
+    return .none
+
+# The `{` that opens a head's members in braces, or -1: one right after the
+# head, where no map can stand, whether its line ends there or its members
+# follow it on the line, `record P { x: i64 }`; else the first on the rest of
+# the head's line that ends it, or one alone on the line below, where the
+# cursor stands once the head's line has ended (`parse/brace_habit`).
+function opening_brace(c: cursor.Cursor, text: str, goes_on: bool) -> i64
+    if goes_on && cursor.at(c, .lbrace)
+        return c.pos
+
+    if goes_on
+        return brace_habit.ending(c, text)
+
+    if cursor.at(c, .lbrace) && brace_habit.alone(text, cursor.current_span(c))
+        return c.pos
+    return -1
+
+# Whether nothing but line ends and comments stands between the tokens at
+# `from` and `to`.
+function holds_nothing(c: cursor.Cursor, from: i64, to: i64) -> bool
+    i: i64 @ from + 1
+
+    while i < to
+        if !cursor.is_invisible(c.tokens[i].kind)
+            return false
+        i @ i + 1
+
+    return true
+
+# Where members stand right under the cursor: at an indent, or in braces
+# that end the line.
+function here(c: cursor.Cursor, text: str) -> Below
+    if cursor.at(c, .indent)
+        return .indented
+
+    if brace_habit.opens_here(c, text)
+        return .braced(close: brace_habit.closer(c, open: c.pos))
+    return .none
+
+# The fields below a head, where `below` says they stand.
+function fields_below(@c: cursor.Cursor, @a: ast.Ast, text: str, below: Below) -> [ast.Field]
+    close = close_of(below)
+    none: [ast.Field] = []
+
+    if close < 0 && !cursor.at(c, .indent)
+        return none
+
+    if close < 0
+        return parse_members.field_block(@c, @a, text)
+    lines: cursor.Cursor @ braced_lines.laid_out(c, text)
+    fields = parse_members.field_block(@lines, @a, text)
+    braced_lines.took(c: @c, view: lines)
+    return fields
+
+# The cases below a head, where `below` says they stand.
+function cases_below(@c: cursor.Cursor, @a: ast.Ast, text: str, below: Below) -> [ast.Case]
+    close = close_of(below)
+    none: [ast.Case] = []
+
+    if close < 0 && !cursor.at(c, .indent)
+        return none
+
+    if close < 0
+        return parse_members.case_block(@c, @a, text)
+    lines: cursor.Cursor @ braced_lines.laid_out(c, text)
+    cases = parse_members.case_block(@lines, @a, text)
+    braced_lines.took(c: @c, view: lines)
+    return cases
+
+# The `}` of members in braces, or -1.
+function close_of(below: Below) -> i64
+    return match below
+        .braced b => b.close
+        .indented => -1
+        .none     => -1
+
+# A head whose line goes on over the members below it: the junk is the one
+# mistake, so it is the one report, and the members are read as they stand.
+# `expected_end_of_line` is the code a statement's line gets for the same
+# mistake, and the message says where the members go.
+function junk_after_head(@c: cursor.Cursor, head: str, found: str, span: token.Span, members: str)
+    cursor.error(
+        @c,
+        code: "expected_end_of_line",
+        message: "expected the end of the line after `" + head + "`, found " + found + " — its " + members + " go on the lines below it, one level deeper",
+        span: span
+    )
+
+# The head as it stands on one line: its tokens as the text spells them, one
+# space where a line break stood between two of them, and no comment. The
+# lexer joins `record` over `x: i64`, the control arm, `check --permissive`,
+# reads the join as the program, and the message quoted the head with the
+# break and the margin inside its backticks, `record` + a line end + `x`
+# (defect 131's class, 2026-09-29).
+function on_one_line(c: cursor.Cursor, text: str, head: token.Span) -> str
+    i: i64 @ c.pos
+
+    while i > 0 && c.tokens[i - 1].span.start >= head.start
+        i @ i - 1
+
+    parts: [str] @ []
+    last: i64 @ -1
+
+    while i < c.tokens.len() && c.tokens[i].span.end <= head.end
+        t = c.tokens[i]
+
+        if !cursor.is_invisible(t.kind) && t.kind != .eof
+            if last >= 0 && text_lines.newlines_between(text, from: last, to: t.span.start) > 0
+                parts @ parts.push(" ")
+            else if last >= 0
+                parts @ parts.push(text.slice(from: last, to: t.span.start))
+            parts @ parts.push(cursor.slice_of(text, t.span))
+            last @ t.span.end
+        i @ i + 1
+
+    return parts.join("")
+
+# What `empty_record` says. Three messages rather than one, because the repair
+# differs and §4.17 asks a diagnostic to carry it: outside a group there is no
+# header, so fields are the only answer; inside one, a `tag` and no fields is the
+# handle form; and a `partial` record with no fields names nothing at all, which
+# is the case a reader reaches by deleting a field block and forgetting the word.
+function empty_record_message(in_group: bool, partial: bool) -> str
+    if !in_group
+        return "a `record` needs at least one field, indented one level below it"
+
+    if partial
+        return "`partial` names only SOME of the header's fields, so a `partial` `record` with none names nothing — give it its fields, or drop `partial` and name the type for a HANDLE: `record Db tag sqlite3` is C's `sqlite3 *`"
+    return "a `record` needs at least one field, indented one level below it — or, in an `extern` group, a `tag` and no fields make it a HANDLE, a pointer to a type the header leaves opaque: `record Db tag sqlite3` is C's `sqlite3 *`"
+
+# `empty_record` at the head it names, in its words (`empty_record_message`).
+function empty_record(head: token.Span, in_group: bool, partial: bool) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "empty_record",
+        message: empty_record_message(in_group: in_group, partial: partial),
+        span: head
+    )
+
+# What `empty_variant` says, at its own head `variant Token`, as
+# `empty_record` points at its head: it pointed at the next line's first
+# token, a line the author did nothing wrong on, until 2026-09-29 (defect
+# 131's class).
+function empty_variant(written: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "empty_variant",
+        message: "a `variant` needs at least one case, indented one level below it",
+        span: written
+    )

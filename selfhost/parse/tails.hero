@@ -32,9 +32,8 @@
 use token
 use cursor
 use ast
-use parse/type
-use parse/members as parse_members
-use parse/marks as parse_marks
+use parse/heads
+use parse/signature
 use grammar_expr
 use parse/opening
 use parse/braces
@@ -95,10 +94,12 @@ function here_or(c: cursor.Cursor, fallback: token.Span) -> token.Span
 # declaration is a signature, not a definition**, so `constant` gives up its
 # body for the same reason `function` gives up its own — C has the thing.
 function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage, head: opening.Mark)
-    if !cursor.expect(@c, text: text, kind: .colon, code: "expected_constant_type", what: "`:` and the constant's type — a `constant` declares a value, so it has one")
+    typed = heads.constant_type(@c, @a, text)
+
+    if typed.is_err()
         grammar_expr.abandon(@c, @a, text, from: head.pos)
         return
-    ty = type.parse_type(@c, @a, text)
+    ty = typed.must()
 
     # An `extern` constant has no body, and an indented one under it is the
     # mistake `body_check` names. Everything else keeps the old shape.
@@ -122,48 +123,17 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     )
 
 # Everything after a function's name: generics, the signature, and — for a
-# non-extern — the body. Shared by `function` and a group's members.
+# non-extern — the body. Shared by `function` and a group's members; the
+# signature is `parse/signature`'s, which a declaration nested under a refused
+# head reads too (lane X4, 2026-09-29).
 function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage, head: opening.Mark)
     is_extern = is_from_c(linkage)
-    generic_names = parse_members.generics(@c, text)
+    read = signature.read(@c, @a, text, in_group: is_extern)
 
-    if !cursor.at(c, .lparen)
-        # `params` reports the missing `(` with its own message.
-        _ = parse_members.params(@c, @a, text, in_group: is_extern)
+    if read.is_err()
         grammar_expr.abandon(@c, @a, text, from: head.pos)
         return
-    parameters = parse_members.params(@c, @a, text, in_group: is_extern)
-
-    # No `->` means no value. The `unit` node is synthesised at the end of the
-    # header so later passes never have to ask whether the arrow was written
-    # (§4.3: `()` is a type like any other).
-    result: i64 @ 0
-
-    # `-> cstr owned sqlite3_free`: the freer rides the RESULT and is read
-    # right after its type, which is the only place it can be — a signature
-    # with no arrow hands nothing back for anybody to free (§4.19, panel 109).
-    # The five words come in any order (panel 177's landing, finding 1), and
-    # `when` with no arrow before it is named as such (finding 2).
-    marks: parse_members.Marks @ parse_members.no_marks()
-
-    if cursor.eat(@c, .arrow)
-        result @ type.parse_type(@c, @a, text)
-        marks @ parse_members.read_marks(@c, text: text, in_group: is_extern, on_result: true, holder: "the result")
-    else
-        here = cursor.current_span(c)
-        result @ ast.push_type(
-            @a.types,
-            ast.TypeNode(kind: .unit, span: token.Span(start: here.start, end: here.start))
-        )
-        parse_marks.success_needs_result(@c, text, in_group: is_extern)
-
-    # The signature's last token, `)` or the result's type or its last word,
-    # kept for `fmt`: comments never reach the grammar, so one written between
-    # two parameters is indistinguishable from the body's first comment unless
-    # the tree says where the signature stops. Without this the printer expelled
-    # it after the declaration, where it became the next member's doc (defect
-    # 095) or, with nothing following, a file-level remark at exit 0.
-    signature_end = cursor.previous_significant_span(c)
+    sig = read.must()
     body: ast.Block? @ fail(code: "absent", msg: "an extern function's code comes from C")
 
     if is_extern
@@ -175,24 +145,24 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
             cursor.recover_to_next_decl(@c)
             return
         body @ b
-    finish: token.Span @ signature_end
+    finish: token.Span @ sig.end
 
     if !body.is_err()
         finish @ body.must().span
     f = ast.FunctionDecl(
-        generics: generic_names,
-        params: parameters,
-        result: result,
+        generics: sig.generics,
+        params: sig.params,
+        result: sig.result,
         body: body,
         is_extern: is_extern,
         header: linkage_header(linkage),
         library: linkage_library(linkage),
-        owned_result: marks.owned,
-        acquires_result: marks.acquires,
-        retains_result: marks.retains,
-        borrows_result: marks.borrows,
-        when_result: marks.when,
-        signature_end: signature_end
+        owned_result: sig.marks.owned,
+        acquires_result: sig.marks.acquires,
+        retains_result: sig.marks.retains,
+        borrows_result: sig.marks.borrows,
+        when_result: sig.marks.when,
+        signature_end: sig.end
     )
     decls @ decls.push(
         ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .function_decl(value: f))

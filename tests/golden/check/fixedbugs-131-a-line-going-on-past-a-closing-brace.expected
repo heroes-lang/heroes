@@ -1,0 +1,10 @@
+tests/golden/check/fixedbugs-131-a-line-going-on-past-a-closing-brace.hero:11:17: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-line-going-on-past-a-closing-brace.hero:12:15: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-line-going-on-past-a-closing-brace.hero:14:7: error[expected_end_of_line]: expected the end of the line, found a name (`x`) — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-line-going-on-past-a-closing-brace.hero:15:15: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-line-going-on-past-a-closing-brace.hero:17:12: error[missing_body]: an `else` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-line-going-on-past-a-closing-brace.hero:19:7: error[expected_end_of_line]: expected the end of the line, found a name (`y`) — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-line-going-on-past-a-closing-brace.hero:20:13: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-a-line-going-on-past-a-closing-brace.hero:20:15: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-line-going-on-past-a-closing-brace.hero:22:7: error[expected_end_of_line]: expected the end of the line, found a name (`z`) — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-line-going-on-past-a-closing-brace.hero:25:7: error[expected_end_of_line]: expected the end of the line, found a name (`w`) — one statement per line, no semicolons
