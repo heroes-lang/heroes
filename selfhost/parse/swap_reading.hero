@@ -66,13 +66,27 @@ function reads_as(c: cursor.Cursor, text: str) -> token.TokenKind
         return k
     return swapped.must()
 
-# `cursor.at_reported_error`, asked of what the token READS AS. A guard that
-# has crossed its declaration's line end is looking at the NEXT line's first
-# token, and a foreign word the parser reads as its swap is a keyword there:
-# `record P` over `struct Q` is still an empty record, as it is once the swap
-# writes `record Q` (defect 133). Every other `error` token keeps its silence.
+# The kind a token that OPENS ITS LINE reads as: `reads_as` where the cursor
+# stands at a line's start, and the token's own kind anywhere else. A
+# declaration's keyword opens its line, so a dispatcher that lands in the
+# middle of one, past a construct that failed and left its line, is looking
+# at junk, which a swap would turn into a second declaration: `extern "m.h"
+# fn` read `fn` as a function with no name (defect 133).
+function opens_line_as(c: cursor.Cursor, text: str) -> token.TokenKind
+    if !cursor.at_fresh_line(c)
+        return cursor.current_kind(c)
+    return reads_as(c, text)
+
+# `cursor.at_reported_error`, asked of what the token READS AS where it opens
+# its line. A guard that has crossed its declaration's line end is looking
+# at the NEXT line's first token, and a foreign word the parser reads as its
+# swap is a keyword there: `record P` over `struct Q` is still an empty
+# record, as it is once the swap writes `record Q` (defect 133). On the
+# head's own line the word is junk the lexer has reported, and that report
+# is the one message: `function f() fn` costs `reserved_word` alone. Every
+# other `error` token keeps its silence.
 function at_reported_error(c: cursor.Cursor, text: str) -> bool
-    return reads_as(c, text) == .error
+    return cursor.at(c, .error) && opens_line_as(c, text) == .error
 
 # `cursor.found`, for a word read as its swap: the word as WRITTEN, `fn`,
 # which the author can find, rather than *an unreadable token*, which the
@@ -149,6 +163,11 @@ test "a certain swap to a keyword reads as that keyword, and nothing else does"
     assert found(c, text) == "`fn`"
     _ = cursor.bump(@c)
     assert reads_as(c, text) == .kw_record
+
+    # In the middle of a line the same word is junk the lexer reported: no
+    # dispatcher opens a declaration on it, and no guard speaks over it.
+    assert opens_line_as(c, text) == .error
+    assert at_reported_error(c, text)
 
     # `let` is guidance, so it reads as the `error` it is, and keeps its silence.
     _ = cursor.bump(@c)
