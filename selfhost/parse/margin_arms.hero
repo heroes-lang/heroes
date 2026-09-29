@@ -1,0 +1,141 @@
+# Arms written at their `match`'s own margin (design.md §4.7, §4.17; defect
+# 131's class, 2026-09-29).
+#
+# A `match` owes its arms one level below it. Written at its own margin they
+# cost `missing_match_arms` at the first, and then each was read as a
+# statement and refused at its `=>`, `expected_end_of_line`: one mistake, one
+# message more per arm, and every mistake inside the arms unreported. The
+# lines below a `match` with no arms under it that begin at its margin and
+# hold a `=>` outside brackets, or are an arm broken before its `=>`, are its
+# arms, misplaced: `missing_match_arms` is their one report, and they are
+# read as arms (`grammar_expr.arms_of`).
+#
+# Two kinds of line are not taken, since they can be another `match`'s arms:
+# the lines below a `match` that is an arm's value on that arm's line,
+# `0 => match m`, and the lines past a dedent, at an enclosing block's margin.
+# Nor are the lines below a `match` inside brackets, which have no margin.
+#
+# | entry | called by |
+# |---|---|
+# | `below` | `grammar_expr.match_expr` |
+# | `end_here` | `grammar_expr.arms_of` |
+
+use token
+use cursor
+use parse/broken_arm
+use lexer
+
+# Whether the line under the cursor begins at the margin of the `match` whose
+# keyword is token `head`, holds an arm, and can be that `match`'s.
+function below(c: cursor.Cursor, head: i64) -> bool
+    return after_a_line_end(c) && holds_an_arm(c) && !an_arms_value(c, head) && !inside_a_bracket(c, head)
+
+# Whether the arms read at a margin end at the cursor: at a dedent, which is
+# the enclosing block's, or at a line that holds no arm. An indent below an
+# arm and the stream's end are the arms loop's own to answer.
+function end_here(c: cursor.Cursor) -> bool
+    k = cursor.current_kind(c)
+
+    if k == .indent || k == .eof
+        return false
+    return k == .dedent || !holds_an_arm(c)
+
+# Whether the token behind the cursor, past any comment line, is a line end
+# that keeps the margin: a terminator, not an indent or a dedent.
+function after_a_line_end(c: cursor.Cursor) -> bool
+    i: i64 @ c.pos - 1
+
+    while i > 0 && c.tokens[i].kind == .comment
+        i @ i - 1
+
+    return i >= 0 && c.tokens[i].kind == .terminator
+
+# Whether the line under the cursor holds a `=>` outside brackets, or is an
+# arm broken before its `=>`, whose next line begins with one
+# (`parse/broken_arm`).
+function holds_an_arm(c: cursor.Cursor) -> bool
+    depth: i64 @ 0
+    i: i64 @ c.pos
+
+    while c.tokens[i].kind != .eof && !(depth == 0 && is_line_end(c.tokens[i].kind))
+        k = c.tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if (k == .rparen || k == .rbracket || k == .rbrace) && depth > 0
+            depth @ depth - 1
+        else if k == .fat_arrow && depth == 0
+            return true
+        i @ i + 1
+
+    return broken_arm.arrow_below(c, end: i) >= 0
+
+# Whether the `match` at token `head` is an arm's value: a `=>` stands before
+# it on its line.
+function an_arms_value(c: cursor.Cursor, head: i64) -> bool
+    i: i64 @ head - 1
+
+    while i >= 0 && !is_line_end(c.tokens[i].kind)
+        if c.tokens[i].kind == .fat_arrow
+            return true
+        i @ i - 1
+
+    return false
+
+# Whether the `match` at token `head` stands inside a bracket not closed
+# before it. The lexer plants line ends inside brackets and no margin, so no
+# line below is at the `match`'s margin there: `f(match t` over its arms is
+# refused as it stands (panel 180 R5's shape 74). The bracket may have opened
+# on a line above, so the walk goes back to the block's edge, an indent or a
+# dedent, which no bracket spans; it runs only where a `match` has no arms.
+function inside_a_bracket(c: cursor.Cursor, head: i64) -> bool
+    depth: i64 @ 0
+    i: i64 @ head - 1
+
+    while i >= 0 && c.tokens[i].kind != .indent && c.tokens[i].kind != .dedent
+        k = c.tokens[i].kind
+
+        if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth + 1
+        else if (k == .lparen || k == .lbracket || k == .lbrace) && depth == 0
+            return true
+        else if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth - 1
+        i @ i - 1
+
+    return false
+
+function is_line_end(kind: token.TokenKind) -> bool
+    return kind == .terminator || kind == .indent || kind == .dedent
+
+## Tests
+
+# The cursor on the first token of `text`'s second line, in the lexer's own
+# stream, with the `match` keyword's index beside it.
+record Placed
+    c: cursor.Cursor
+    head: i64
+
+function on_the_second_line(text: str) -> Placed
+    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+    head: i64 @ -1
+
+    while !cursor.at(c, .terminator)
+        if cursor.at(c, .kw_match)
+            head @ c.pos
+        _ = cursor.bump(@c)
+
+    cursor.skip_terminators(@c)
+    return Placed(c: c, head: head)
+
+test "a line at a match's margin is its arm where it holds one and the match owns it"
+    for text in ["match n\n_ => 1\n", "match n\n# the arms\n0 | 1 => 1\n", "match n\n0\n=> 1\n"]
+        p = on_the_second_line(text)
+        assert below(p.c, head: p.head)
+
+    # No arm on the line, a `=>` inside brackets, a `match` that is an arm's
+    # value, whose margin holds the enclosing `match`'s arms, and a `match`
+    # inside a bracket, below which no line has a margin.
+    for text in ["match n\nprint(1)\n", "match n\nf([x => 1])\n", "0 => match m\n_ => 5\n", "f(match t\n.a => 1)\n"]
+        p = on_the_second_line(text)
+        assert !below(p.c, head: p.head)

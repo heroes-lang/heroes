@@ -1,0 +1,114 @@
+# An arm broken before its `=>` (design.md §4.7, §4.17; defect 131's class,
+# 2026-09-29).
+#
+# `0` over `=> 5` is one arm the author broke before its arrow. A line that
+# begins with `=>` is not one the lexer joins to the line above (panel 181's
+# list names what cannot begin a line, and widening it is a language change),
+# so the parser meets the arm's line end where the `=>` is owed and says so,
+# `expected_arm_arrow`, found end of line, and those words are true there.
+# It then read the line below as an arm of its own and refused it too,
+# `expected_pattern` at the `=>`: one mistake, two messages, and the arm's
+# value never read.
+#
+# Now the arm goes on at the `=>` below, on the next line or at the head of a
+# block the lexer opened for it, and is read as it would stand written on one
+# line: its value says its own mistakes, the next line is the next arm, and
+# whatever else a block opened for the `=>` holds stands below that one-line
+# arm, deeper, the orphan `grammar_expr.arms_of` names below a whole arm.
+#
+# | entry | called by |
+# |---|---|
+# | `onto_its_arrow`, `close_its_block` | `grammar_expr.arm` |
+# | `arrow_below` | `parse/margin_arms` |
+
+use cursor
+use lexer
+
+# Where the arm's line ends before its `=>` and the next line, or the first of
+# a block below it, begins with one: the cursor moves past that `=>`, which
+# is the arm's, and the answer is yes. The line end was already named, by the
+# `expect` before this, and is not named again.
+function onto_its_arrow(@c: cursor.Cursor) -> bool
+    at = arrow_below(c, end: c.pos)
+
+    while at >= 0 && c.pos <= at
+        _ = cursor.bump(@c)
+
+    return at >= 0
+
+# The index of the `=>` the line below the line end at token `end` begins
+# with, past comment lines and an indent, or -1. `parse/margin_arms` asks it
+# too: a line broken before its arrow is an arm.
+function arrow_below(c: cursor.Cursor, end: i64) -> i64
+    if c.tokens[end].kind != .terminator
+        return -1
+    i: i64 @ end
+
+    while c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
+        i @ i + 1
+
+    if c.tokens[i].kind == .indent
+        i @ i + 1
+
+    while c.tokens[i].kind == .comment
+        i @ i + 1
+
+    if c.tokens[i].kind == .fat_arrow
+        return i
+    return -1
+
+# After the value of the arm begun at token `from`, the block the lexer opened
+# for its `=>`, if it opened one: closed at its dedent, and what else it holds
+# named once and gone whole, as an orphan below a whole arm is.
+function close_its_block(@c: cursor.Cursor, from: i64)
+    if !opened_for_the_arrow(c, from)
+        return
+
+    if !cursor.at(c, .dedent) && !cursor.at(c, .eof) && !cursor.at_reported_error(c)
+        cursor.error(
+            @c,
+            code: "unexpected_block",
+            message: "this block is indented deeper than anything that opens one",
+            span: cursor.current_span(c)
+        )
+
+    while !cursor.at(c, .dedent) && !cursor.at(c, .eof)
+        if cursor.at(c, .indent)
+            _ = cursor.balanced_block(@c)
+        else
+            _ = cursor.bump(@c)
+
+    _ = cursor.eat(@c, .dedent)
+
+# Whether an indent stands between the arm's first token and its `=>`: the
+# lexer opened a block for the line the `=>` begins.
+function opened_for_the_arrow(c: cursor.Cursor, from: i64) -> bool
+    i: i64 @ from
+
+    while i < c.pos && c.tokens[i].kind != .fat_arrow
+        if c.tokens[i].kind == .indent
+            return true
+        i @ i + 1
+
+    return false
+
+## Tests
+
+# The cursor past an arm's first token, in the lexer's own stream of `text`.
+function past_the_pattern(text: str) -> cursor.Cursor
+    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+    _ = cursor.bump(@c)
+    return c
+
+test "an arm broken before its `=>` goes on at the `=>` below, and nowhere else"
+    for text in ["0\n=> 5\n", "0\n# a note\n=> 5\n", "0\n\n=> 5\n", "0\n    => 5\n"]
+        c: cursor.Cursor @ past_the_pattern(text)
+        assert onto_its_arrow(@c)
+        assert cursor.at(c, .int_lit)
+
+    # Junk before the line end, no `=>` below, and no line below at all.
+    for text in ["0 7\n=> 5\n", "0\n5\n", "0\n"]
+        c: cursor.Cursor @ past_the_pattern(text)
+        stood = c.pos
+        assert !onto_its_arrow(@c)
+        assert c.pos == stood

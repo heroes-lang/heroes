@@ -1,0 +1,11 @@
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow.hero:20:33: error[expected_arm_arrow]: expected `=>` and the arm's value, found end of line
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow.hero:27:33: error[expected_arm_arrow]: expected `=>` and the arm's value, found end of line
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow.hero:34:37: error[expected_arm_arrow]: expected `=>` and the arm's value, found end of line
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow.hero:41:46: error[expected_arm_arrow]: expected `=>` and the arm's value, found end of line
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow.hero:48:33: error[expected_arm_arrow]: expected `=>` and the arm's value, found end of line
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow.hero:56:33: error[expected_arm_arrow]: expected `=>` and the arm's value, found end of line
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow.hero:64:33: error[expected_arm_arrow]: expected `=>` and the arm's value, found end of line
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow.hero:70:33: error[expected_arm_arrow]: expected `=>` and the arm's value, found end of line
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow.hero:71:21: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow.hero:76:33: error[expected_arm_arrow]: expected `=>` and the arm's value, found end of line
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow.hero:78:13: error[unexpected_block]: this block is indented deeper than anything that opens one
