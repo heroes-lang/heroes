@@ -233,9 +233,11 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
         plant(@l)
         return false
 
-    # Read apart, the line ends here (`LexState.apart`).
+    # Read apart, the line ends here (`LexState.apart`); read as bodies, a line
+    # below at this margin is read one level deeper.
     if l.apart
         plant(@l)
+        l.deeper @ l.bodies && spaces == margin
         return false
     where: str @ "at the same margin, where a new statement begins"
 

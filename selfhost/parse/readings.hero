@@ -1,0 +1,149 @@
+# The readings of a file whose lexer refused a line break, their parser
+# diagnostics each in the order of the text (design.md §4.15, §4.17; panel
+# 181 item 2; defect 132): the JOINED one the parser read, the lines read
+# APART (`lexer.lex_apart`), and, below a bodiless head, the lines read as
+# BODIES (`lexer.lex_bodies`). `parse/apart` weighs them; what each question
+# asks of a reading is a binary search over its offsets.
+#
+# | entry | called by |
+# |---|---|
+# | `Sorted`, `sorted`, `says`, `any_in`, `starts_in` | `parse/apart`, `parse/below_a_head` |
+# | `Readings`, `readings` | `parse/apart` |
+# | `read_bodies` | `parse/apart` |
+
+use token
+use diag
+use ast
+use lexer
+use cursor
+use stable
+use foreign_at
+use parse/decl
+use parse/which_arm
+use parse/joined_lines as seams
+
+## A reading's diagnostics, in the order of the text
+
+record Sorted
+    diagnostics: [diag.Diagnostic]
+    starts: [i64]
+
+function sorted(diagnostics: [diag.Diagnostic]) -> Sorted
+    starts: [i64] @ []
+
+    for d in diagnostics
+        starts @ starts.push(d.span.start)
+
+    out: [diag.Diagnostic] @ []
+    ascending: [i64] @ []
+
+    for i in stable.order(by: starts)
+        out @ out.push(diagnostics[i])
+        ascending @ ascending.push(starts[i])
+
+    return Sorted(diagnostics: out, starts: ascending)
+
+# Whether `s` holds one of `d`'s code at `d`'s offset.
+function says(s: Sorted, d: diag.Diagnostic) -> bool
+    i: i64 @ seams.last_at_most(s.starts, at: d.span.start - 1) + 1
+
+    while i < s.starts.len() && s.starts[i] == d.span.start
+        if s.diagnostics[i].code == d.code
+            return true
+        i @ i + 1
+
+    return false
+
+# Whether `s` holds one that begins in `from` .. `to`.
+function any_in(s: Sorted, from: i64, to: i64) -> bool
+    i = seams.last_at_most(s.starts, at: from - 1) + 1
+    return i < s.starts.len() && s.starts[i] < to
+
+# The readings' diagnostics: the joined one's, said and held, and what
+# of them the parser itself held back (`held`, a head's missing body over a
+# line the lexer joined, `parse/opening`); and the apart one's inside a break
+# (`inside`) and outside one (`other`). And where each reading's stream holds
+# an `error` token (`joined_errors`, `apart_errors`): the lexer refused
+# something there, which the parser reads as said, so its recovery may drop
+# what follows as a refusal of its own does (`x = 0X10 +` over `print(1) )`).
+record Readings
+    joined: Sorted
+    held: Sorted
+    inside: Sorted
+    other: Sorted
+    joined_errors: [i64]
+    apart_errors: [i64]
+
+# The readings of the file whose joined reading is `c`, over its joined lines.
+function readings(c: cursor.Cursor, lines: [seams.Line], froms: [i64], apart: lexer.LexOutput, text: str) -> Readings
+    joined: [diag.Diagnostic] @ c.diagnostics
+    held: [diag.Diagnostic] @ []
+
+    for h in c.held
+        joined @ joined.push(h.diagnostic)
+        held @ held.push(h.diagnostic)
+
+    inside: [diag.Diagnostic] @ []
+    other: [diag.Diagnostic] @ []
+
+    for d in read_apart(apart, text: text, root_end: c.root_end)
+        at = seams.line_at(lines, froms: froms, at: d.span.start)
+
+        if at >= 0 && seams.inside_a_break(lines[at], at: d.span.start)
+            inside @ inside.push(d)
+        else
+            other @ other.push(d)
+
+    return Readings(
+        joined: sorted(joined),
+        held: sorted(held),
+        inside: sorted(inside),
+        other: sorted(other),
+        joined_errors: errors_in(c.tokens, text: text),
+        apart_errors: errors_in(apart.tokens, text: text)
+    )
+
+# Where each `error` token of a stream begins, in the order of the text,
+# but a foreign word's whose certain swap the parser reads it as, where it
+# stands (`parse/swap_reading`): `fn two() ->` is a function's head to the
+# parser, whose recovery drops nothing after it.
+function errors_in(tokens: [token.Token], text: str) -> [i64]
+    out: [i64] @ []
+
+    for t in tokens
+        if t.kind == .error && foreign_at.certain_swap(text, t.span).is_err()
+            out @ out.push(t.span.start)
+
+    return out
+
+# Whether one of `starts`, which ascend, stands in `from` .. `to`.
+function starts_in(starts: [i64], from: i64, to: i64) -> bool
+    i = seams.last_at_most(starts, at: from - 1) + 1
+    return i < starts.len() && starts[i] < to
+
+# The file read apart and as bodies (`lexer.lex_bodies`), its parser
+# diagnostics as its normal arm says them. The file's text runs from the line
+# of the apart reading's first token to its end: a file begins a line of the
+# compilation's text, and a blank line before its first token lexes to
+# nothing.
+function read_bodies(apart: lexer.LexOutput, text: str, root_end: i64) -> [diag.Diagnostic]
+    start: i64 @ apart.tokens[0].span.start
+
+    while start > 0 && text[start - 1] != '\n'
+        start @ start - 1
+
+    end = apart.tokens[apart.tokens.len() - 1].span.start
+    return read_apart(
+        lexer.moved(lexer.lex_bodies(text.slice(from: start, to: end)), offset: start),
+        text: text,
+        root_end: root_end
+    )
+
+# The apart reading's parser diagnostics, as its normal arm says them.
+function read_apart(apart: lexer.LexOutput, text: str, root_end: i64) -> [diag.Diagnostic]
+    c: cursor.Cursor @ cursor.bounded_cursor(tokens: apart.tokens, root_end: root_end)
+    a: ast.Ast @ ast.new_ast()
+    decls: [ast.Decl] @ []
+    uses: [ast.Use] @ []
+    decl.file(@c, @a, @decls, @uses, text)
+    return which_arm.placed(c, lexed: apart.diagnostics).normal

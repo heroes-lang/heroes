@@ -1,0 +1,57 @@
+# Fixed defect 132's class, 2026-09-29, a mistake on the line below a
+# bodiless head (the limit lane 132 named). Symptom: the `)` of `for` over a
+# same-margin `print(1) )` stayed hidden, and so did those of `if`, of an
+# `if` alone in an arm, and of an arm at a `match`'s own margin: the break
+# and the missing body were told, the line's own mistake was not, and it was
+# told a turn later. Cause: `parse/apart` let the apart reading speak on a
+# line only where it had refused nothing before, and there it had refused the
+# head's missing body at the line's first word, which is the line above's
+# mistake and not this one's; waiving that alone would have told the `=>` of
+# `0 => 1` below `match`, an arm read as a statement, which is no mistake of
+# the line either. Now such a line is read as what it is: as the head's body,
+# one level deeper (`lexer.lex_bodies`), unless read apart it reads further,
+# its first refusal standing later, and what that reading refuses on the
+# line is the line's own mistake, the joined reading's reports there judged
+# against it too: `if` over `) x`, refused joined and read as a body at the
+# `)`, and refused apart there under another code, tells its `)`. So each
+# `)` below is told, and the arm below `match` costs its missing arms alone.
+
+function a_for_over_a_stray_paren()
+    #~v continuation_outside_brackets
+    for
+    print(1) )  #~ missing_body expected_end_of_line
+
+function an_if_over_a_stray_paren()
+    #~v continuation_outside_brackets
+    if
+    print(2) )  #~ missing_body expected_end_of_line
+
+function an_arm_whose_if_is_alone(n: i64) -> i64
+    return match n
+        #~v continuation_outside_brackets
+        0 => if
+        print(3) )  #~ missing_body expected_end_of_line
+        _ => 4
+
+function an_if_over_a_line_a_paren_opens()
+    #~v continuation_outside_brackets
+    if
+    ) x  #~ expected_expression missing_body
+
+function a_match_over_an_arm_at_its_margin() -> i64
+    #~v continuation_outside_brackets
+    k = match
+    0 => 5  #~ missing_match_arms
+    return k
+
+function a_match_over_an_arm_and_a_stray_paren() -> i64
+    #~v continuation_outside_brackets
+    k = match
+    0 => 6 )  #~ missing_match_arms expected_end_of_line
+    return k
+
+function main()
+    a_for_over_a_stray_paren()
+    an_if_over_a_stray_paren()
+    an_if_over_a_line_a_paren_opens()
+    print(an_arm_whose_if_is_alone(n: 0) + a_match_over_an_arm_at_its_margin() + a_match_over_an_arm_and_a_stray_paren())

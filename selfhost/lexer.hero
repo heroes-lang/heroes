@@ -141,7 +141,7 @@ function joined(s: source.Source, files: [LexOutput]) -> LexOutput
 # One file's tokens, in that file's own coordinates. Never fails: errors are
 # in `diagnostics`, and the token stream is always complete through eof.
 function lex_one(text: str) -> LexOutput
-    return lexed(text, apart: false)
+    return lexed(text, apart: false, bodies: false)
 
 # The same file with its lines read APART (defect 132): every break
 # `lex_one` refuses and joins is a line end here, whose next line's margin
@@ -149,11 +149,19 @@ function lex_one(text: str) -> LexOutput
 # It is what the author's lines say taken one at a time, which `parse/apart`
 # holds the joined reading against; the diagnostics are not its concern.
 function lex_apart(text: str) -> LexOutput
-    return lexed(text, apart: true)
+    return lexed(text, apart: true, bodies: false)
 
-function lexed(text: str, apart: bool) -> LexOutput
+# The lines apart, and each line below a break at the margin of the line
+# above read one level deeper, as the body of the head that line may be
+# (defect 132): where `parse/apart` asks what a line below a bodiless head
+# holds of its own, read as the body it was likely meant to be.
+function lex_bodies(text: str) -> LexOutput
+    return lexed(text, apart: true, bodies: true)
+
+function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
     l: state.LexState @ state.new_state()
     l.apart @ apart
+    l.bodies @ bodies
 
     while true
         layout.line_start(@l, text)
