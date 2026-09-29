@@ -1,0 +1,17 @@
+# Fixed defect 131, 2026-09-28, the one place a failed head says nothing about
+# its body. Symptom: `if (n > 0` over `y = 3 )` cost `expected_group_close`
+# and then `missing_body` at the next statement, and that statement's own
+# mistake was dropped. Cause: the group runs to the first `)` it can close
+# with, the body's own, so the body line went into the head; its absence is
+# the recovery's doing, not the author's, and naming it names the first
+# mistake again. A head whose recovery ran past its own line says nothing
+# about a body it did not find (`parse/opening`), and the statement below it
+# is read.
+
+function unclosed(n: i64)
+    if (n > 0
+        y = 3 )  #~ expected_group_close
+    z = 4 )  #~ expected_end_of_line
+
+function main()
+    print(1)

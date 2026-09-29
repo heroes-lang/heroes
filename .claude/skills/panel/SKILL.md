@@ -125,10 +125,22 @@ is a full panel.
      in `selfhost/` can afford to, and the brief says so rather than steering it
      away: two of panel 177's seats built edited compilers this way and the
      sitting's resolution rests on what they ran.
-   - `llm-ergonomist` ← ONLY `spec/heroes-spec.md`, the proposal as a spec
-     diff, and 1–3 concrete tasks. **Never design.md, never the repo.** Where
+   - `llm-ergonomist` ← ONLY a copy of the specification, the proposal as a
+     spec diff, and 1–3 concrete tasks. **Never design.md, never the repo.** Where
      a status-quo-vs-proposal comparison is possible, present the two variants
      label-stripped (blind A/B).
+
+     **The copy lives outside the repository**, in the seat's own
+     `<scratchpad>/<NNN>-llm-ergonomist/`, and the brief names that path and no
+     path inside the tree (panel 175 item 7, ratified 2026-09-28 by author
+     instruction). Reading `spec/heroes-spec.md` in place loads every rule file
+     whose `paths:` names `spec/**` into the seat's context, and
+     `.claude/rules/spec-shape.md` carries the spec's token counts, which this
+     seat is never given. So the blind seat was not blind. **The brief also asks
+     the seat to say whether any project rule, contract or memory reached its
+     context**, and the synthesis records the answer: that is the measurement
+     the sitting asked for, and a yes voids the reading until it is re-run
+     from a copy.
    - `spec-warden` ← the measured token count of the spec before/after (run
      the counter; if only an estimate exists, say so — its verdict will be
      provisional).
