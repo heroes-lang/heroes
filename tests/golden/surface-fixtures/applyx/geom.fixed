@@ -1,0 +1,3 @@
+function area(side: i64) -> i64
+    totl = side * side
+    return totl  #~ unknown_name

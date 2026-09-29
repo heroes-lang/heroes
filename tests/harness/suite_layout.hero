@@ -481,11 +481,13 @@ constant LEAST: i64
 # file, 91 s for 210 KB. `state.push_token` and `state.push_diagnostic` are
 # the spelling the ruling names; this reads every module for the other one,
 # outside comments, because a list of lexer files is a premise that would
-# expire the day a new one appends.
+# expire the day a new one appends. `state.push_break` joined them for the
+# refused breaks (defect 129, 2026-09-28), and so did its slow spelling here.
 constant SLOW_APPENDS: [str]
     [
         "l.tokens @ l.tokens.push("
         "l.diagnostics @ l.diagnostics.push("
+        "l.breaks @ l.breaks.push("
     ]
 
 # A TEXT IS NEVER GROWN BY `+` WHERE THAT COPIES IT AT EVERY STEP (defect 105,

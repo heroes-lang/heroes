@@ -1,0 +1,42 @@
+# Fixed defect 129, 2026-09-29, a shape beside the coordinator's widening of
+# class (B). Symptom: a join captures the operand after it and so re-associates
+# the rest of that line: `x = v ==` over `1 == 2` writes `(v == 1) == 2` and
+# `x = v <` over `1 < 2` writes `(v < 1) < 2`, which no type admits though each
+# line alone is fine; `x = a && b` over `+ 1` writes `a && (b + 1)`; and
+# `if a +` over `1` writes a condition that is a number. Each join was
+# `certain`. Cause: only the join's own operator was judged. The whole
+# expression the join writes is judged now, in its context, and the join is a
+# `guess` where it is refused and neither side is refused alone
+# (`literal_operands.refuses_the_whole`).
+#
+# Every join here is a `guess`, so `check --apply` writes the file back
+# unchanged, and `tests/harness/suite_fixes.hero` asserts exactly that of a
+# case with no `.fixed` or `.applied`: a join that turned `certain` again goes
+# red there.
+
+function equal_twice(v: i64) -> bool
+    #~v continuation_outside_brackets
+    x = v ==
+    1 == 2
+    return x
+
+function less_twice(v: i64) -> bool
+    #~v continuation_outside_brackets
+    x = v <
+    1 < 2
+    return x
+
+function a_sum_under_and(a: bool, b: i64) -> bool
+    x = a && b
+    + 1  #~ continuation_outside_brackets
+    return x
+
+function a_number_for_a_condition(a: i64)
+    #~v continuation_outside_brackets
+    if a +
+    1
+        print(a)
+
+function main()
+    print(equal_twice(v: 1) || less_twice(v: 1) || a_sum_under_and(a: true, b: 1))
+    a_number_for_a_condition(a: 1)

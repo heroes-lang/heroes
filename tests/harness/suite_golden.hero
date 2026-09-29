@@ -68,9 +68,17 @@ record Shape
 # went on reading as true. `floors.check` is what sees it now, and these numbers
 # are re-based to today's count.
 #
+# **`check` 142 -> 178 on 2026-09-28**, re-based when `floors.check` said so:
+# defect 129's twelve `fixedbugs-129-` cases took the directory from 166 to
+# 178, past the floor by more than a quarter.
+#
 # **`check` 181 from defects 130 and 131's lane, 2026-09-29**: its fifteen
 # `fixedbugs-130-*` and `fixedbugs-131-*` cases took the tree past its floor
 # of 142 by more than a quarter, and the suite printed 181.
+#
+# **198 where the two lanes met, 2026-09-29**: defect 129's lane merged the
+# trunk at `0ba7b084`, which carried lane 130's cases, and on the merged tree
+# the suite printed 198, its seventeen and lane 130's fifteen over 166.
 function shape_check() -> Shape
     return Shape(
         name: "check",
@@ -79,7 +87,7 @@ function shape_check() -> Shape
         flag: "--brief",
         on_stderr: true,
         want_code: 1,
-        least: 181,
+        least: 198,
         watched: true,
         silent_stdout: false,
         library_skip: false

@@ -323,3 +323,17 @@ and is not on the trunk or this milestone's.
     **Nothing broken was found in the compiler** by the runs above: no crash, no
     wrong answer, and every `certain` fix applied compiled. Defect 129, open and
     carried, is the one known `certain`-fix fault in this area.
+
+    **Scored beneath, 2026-09-29, from the close's push** (`d02b8bf4..f0b84729`
+    and `f0b84729..79aeeffa`, 2026-09-28): panel 174's compiler-engineer, *on the
+    close's pre-push Windows CI leg and the two after it, 0 lines carrying `the
+    operating system's own reason is 32`, and `harness:` reads `0 failed`*, is
+    **HELD on the first leg**, with two owed. The first push's run
+    (36480104335) was cancelled by the workflow's `concurrency` group when the
+    second push landed, every leg of it included, so the first Windows leg to
+    finish is run 36482022429, job 109130284853, on `79aeeffa`:
+    `gh run view 36482022429 --log --job 109130284853 | grep -ac "operating
+    system's own reason is 32"` reads **0**, and its net reads *harness: 3067
+    passed, 0 failed*, with the compiler's 828 tests and the net's own 179, in
+    68 minutes. The two legs after it are the next two pushes' Windows legs,
+    scored when they run, and the prediction is not renewed.
