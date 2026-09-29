@@ -82,6 +82,12 @@ record LexState
     # there is left out of the stream.
     apart: bool
     heads: [i64]
+    # Read apart and as BODIES (`lexer.lex_bodies`, defect 132): a line below a
+    # break at the margin of the line above is read one level deeper, as the
+    # body of the head that line may be. `deeper` is that request, from the
+    # break to the margin of the line it stands before.
+    bodies: bool
+    deeper: bool
 
 function new_state() -> LexState
     brackets: [token.Span] = []
@@ -105,7 +111,9 @@ function new_state() -> LexState
         held: held,
         breaks: breaks,
         apart: false,
-        heads: heads
+        heads: heads,
+        bodies: false,
+        deeper: false
     )
 
 ## Emitting

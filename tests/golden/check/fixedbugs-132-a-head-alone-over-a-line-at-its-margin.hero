@@ -1,0 +1,59 @@
+# Fixed defect 132's class, 2026-09-29, a block's head alone over a line at
+# its own margin (the limit lane 132 named). Symptom: `for` alone over a
+# same-margin `print(3)` reported the missing body, and `if`, `while`,
+# `else if` and a bound `match` alone over the same line did not: two
+# heads, one mistake, told for one of them and silent for the others. Both
+# readings agree the body is missing, at different offsets: read apart, the
+# head's line ends at the break and the body is missing at the `print`;
+# joined, the line runs on and the parser holds the missing body back at the
+# end of the block, as a join's. `for` alone was told only because the joined
+# `for print(3)` also refused its loop variable. Cause: `parse/apart` asked
+# only whether the joined reading had refused something before the apart
+# reading's report, never whether the two readings said the same report of
+# the same head. Now a missing body the apart reading says at the first word
+# of the line below a break, and the joined one holds farther along that
+# line, is the author's mistake, told once, where the lines put it
+# (`agreed`). The control arm, `check --permissive`, reads the join as the
+# program and says the joined reading's report, as it did.
+
+function an_if_alone()
+    #~v continuation_outside_brackets
+    if
+    print(1)  #~ missing_body
+
+function a_while_alone()
+    #~v continuation_outside_brackets
+    while
+    print(2)  #~ missing_body
+
+function a_for_alone()
+    #~v continuation_outside_brackets
+    for
+    print(3)  #~ missing_body
+
+function an_else_if_alone(n: i64)
+    if n > 0
+        print(0)
+    #~v continuation_outside_brackets
+    else if
+    print(4)  #~ missing_body
+
+function a_match_alone() -> i64
+    #~v continuation_outside_brackets
+    k = match
+    print(5)  #~ missing_match_arms
+    return 0
+
+function an_if_left_open(a: i64)
+    #~v continuation_outside_brackets
+    if a >
+    print(6)  #~ missing_body
+    print(7)
+
+function main()
+    an_if_alone()
+    a_while_alone()
+    a_for_alone()
+    an_else_if_alone(n: 1)
+    print(a_match_alone())
+    an_if_left_open(a: 1)

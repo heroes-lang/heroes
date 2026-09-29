@@ -79,6 +79,10 @@ record Shape
 # **198 where the two lanes met, 2026-09-29**: defect 129's lane merged the
 # trunk at `0ba7b084`, which carried lane 130's cases, and on the merged tree
 # the suite printed 198, its seventeen and lane 130's fifteen over 166.
+#
+# **250 where lane Y met the trunk, 2026-09-29**: lanes 132, 133, X1, X2
+# and Y took the directory past 198 by more than a quarter, and on the merged
+# tree the suite asked for 250.
 function shape_check() -> Shape
     return Shape(
         name: "check",
@@ -87,7 +91,7 @@ function shape_check() -> Shape
         flag: "--brief",
         on_stderr: true,
         want_code: 1,
-        least: 198,
+        least: 250,
         watched: true,
         silent_stdout: false,
         library_skip: false

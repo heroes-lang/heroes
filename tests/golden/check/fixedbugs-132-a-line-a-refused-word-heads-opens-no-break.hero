@@ -1,0 +1,58 @@
+# Fixed defect 132's class, 2026-09-29, a line a refused word heads (lane
+# 133's report, the shape cut from its
+# `fixedbugs-133-a-swap-certain-only-where-its-word-is-right.hero`).
+# Symptom: `include <stdio.h>` left its line open at the `>`, so the line
+# below cost `continuation_outside_brackets` beside `reserved_word`, and was
+# joined into a line the parser drops whole, so a mistake of its own, the
+# stray `)` of `print(1) )`, went unreported; so did `let x = a +`,
+# `var total: i64 =`, `import java.util.*` in a body and `case 1 =>` over the
+# line below them, and a line below that could only go on, `+ 1`, was joined
+# into the `include` line and refused as a continuation of it. Cause: the
+# lexer weighed the line's last token as the author's line break, where the
+# line is the foreign habit's shape, which the parser reads as nothing and
+# drops. Now a line a refused word heads is that word's mistake, and its
+# tokens open no break: its end is a line end, and the line below is read on
+# its own (`selfhost/line_above.hero`). A word read as its certain swap heads
+# the line its swap does (`fixedbugs-132-a-swapped-word-breaks-its-line-as-its-swap-does.hero`).
+# Nothing below is certain, so `--apply` writes the file back unchanged.
+
+include <stdio.h>  #~ reserved_word
+
+function a_header_in_a_body()
+    include <stdio.h>  #~ reserved_word
+    print(1) )  #~ expected_end_of_line
+
+function a_binding_left_open(a: i64)
+    let x = a +  #~ reserved_word
+    print(2) )  #~ expected_end_of_line
+
+function a_mutable_left_open()
+    var total: i64 =  #~ reserved_word
+    print(3) )  #~ expected_end_of_line
+
+function an_import_in_a_body()
+    import java.util.*  #~ reserved_word
+    print(4) )  #~ expected_end_of_line
+
+function a_case_arm()
+    case 1 =>  #~ reserved_word
+    print(5) )  #~ expected_end_of_line
+
+function a_line_left_open_over_a_header(a: i64)
+    #~v continuation_outside_brackets
+    x = a +
+    include <stdio.h>  #~ reserved_word
+    print(6) )  #~ expected_end_of_line
+
+function an_operator_below_a_header()
+    include "stdio.h"  #~ reserved_word
+    + 1  #~ expected_expression
+
+function main()
+    a_header_in_a_body()
+    a_binding_left_open(a: 1)
+    a_mutable_left_open()
+    an_import_in_a_body()
+    a_case_arm()
+    a_line_left_open_over_a_header(a: 1)
+    an_operator_below_a_header()
