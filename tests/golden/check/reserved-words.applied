@@ -9,6 +9,13 @@
 # costs nothing more after the swap: the line under it opens with the
 # lexer's `let`, so `empty_record` stays silent in both. `let` has no certain
 # swap and is read as nothing.
-record Point  #~ reserved_word
+#
+# Moved again 2026-09-29 (defect 130's class, given to defect 133's lane):
+# `struct Point` now also costs `empty_record`. It has no fields, and the
+# guard that stayed silent at the next line's `let`, a word the lexer
+# refused, was silent about the record rather than about the word: after
+# `--apply` the record is as empty, and it was never told. A guard past its
+# declaration's line end now keeps its silence only on the head's own line.
+record Point  #~ reserved_word empty_record
 let x = 5  #~ reserved_word
 constant MAX = 5  #~ reserved_word expected_constant_type

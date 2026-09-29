@@ -1,0 +1,44 @@
+# Fixed defect 133's second round, 2026-09-29. Symptom: every swap was
+# `certain` wherever its word stood, so `check --apply` wrote `include
+# "stdio.h"` into `use "stdio.h"`, which then read `stdio.h.hero`; `enum` in
+# an `extern` group into a `variant` no group holds; `switch` at the top of
+# a file into a `match` that declares nothing; `int` opening a line into
+# `i64 count`; `fn` and `struct` inside a body into declarations that cannot
+# stand there; `switch` with no value and `elif` with no `if` above it into
+# a `match` and an `else if` the parser refuses. Each was a program `check`
+# refused with a code the first run had not reported. Cause: defect 015's
+# rule read one byte, the one after the word; where the word stands was
+# read by nobody. A swap is now certain only where the word it writes is
+# right in that place (`foreign_at.hero`, from the text in hand,
+# `word_place.hero`), and elsewhere the message says what is right there.
+# Measured over the twelve words with a swap in 61 places each, 732
+# programs, `check`, `check --apply`, `check`: a certain swap left a code
+# of the parse the first run had not reported in 514 on the trunk's
+# compiler and in one here, `elif x == 2:`, whose colon waits because the
+# parser does not read the `elif` line (grammar_expr's, given to lane 132).
+# Eleven more show a later stage's code, the programs' own, reached once
+# the parse is clean. Nothing below is certain, so `--apply` writes the
+# file back unchanged.
+
+include "stdio.h"  #~ reserved_word
+
+switch Mode  #~ reserved_word
+
+int count  #~ reserved_word
+
+extern "m.h"
+    enum Mode  #~ reserved_word
+        a
+    function q() -> i64
+
+function area(p: struct) -> i64  #~ reserved_word
+    return 1
+
+function main()
+    x = 1
+    fn inner()  #~ reserved_word
+    struct Point  #~ reserved_word
+    import geom  #~ reserved_word
+    y = switch  #~ reserved_word
+    elif x == 2  #~ reserved_word
+    print(x + y + area(p: 1))

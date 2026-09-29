@@ -1,4 +1,5 @@
-tests/golden/check/reserved-words.hero:12:1: error[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
-tests/golden/check/reserved-words.hero:13:1: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
-tests/golden/check/reserved-words.hero:14:1: error[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
-tests/golden/check/reserved-words.hero:14:11: error[expected_constant_type]: expected `:` and the constant's type — a `constant` declares a value, so it has one, found `=`
+tests/golden/check/reserved-words.hero:19:1: error[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
+tests/golden/check/reserved-words.hero:20:1: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/reserved-words.hero:21:1: error[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
+tests/golden/check/reserved-words.hero:19:1: error[empty_record]: a `record` needs at least one field, indented one level below it
+tests/golden/check/reserved-words.hero:21:11: error[expected_constant_type]: expected `:` and the constant's type — a `constant` declares a value, so it has one, found `=`
