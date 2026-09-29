@@ -1,0 +1,12 @@
+tests/golden/check/fixedbugs-130-a-case-with-its-fields-in-braces.hero:13:15: error[expected_end_of_line]: expected the end of the line after `variant Shape`, found `{` — its cases go on the lines below it, one level deeper
+tests/golden/check/fixedbugs-130-a-case-with-its-fields-in-braces.hero:14:12: error[expected_end_of_line]: expected the end of the line after the case `circle`, found `{` — one case per line, its fields on the lines below it, one level deeper
+tests/golden/check/fixedbugs-130-a-case-with-its-fields-in-braces.hero:15:11: error[expected_field_type]: expected `:` and the field's type, found a name (`f64`)
+tests/golden/check/fixedbugs-130-a-case-with-its-fields-in-braces.hero:21:10: error[expected_end_of_line]: expected the end of the line after the case `ring`, found `{` — one case per line, its fields on the lines below it, one level deeper
+tests/golden/check/fixedbugs-130-a-case-with-its-fields-in-braces.hero:23:11: error[expected_field_type]: expected `:` and the field's type, found a name (`f64`)
+tests/golden/check/fixedbugs-130-a-case-with-its-fields-in-braces.hero:25:9: error[expected_end_of_line]: expected the end of the line after the case `dot`, found `{` — one case per line, its fields on the lines below it, one level deeper
+tests/golden/check/fixedbugs-130-a-case-with-its-fields-in-braces.hero:25:21: error[expected_field_type]: expected `:` and the field's type, found a name (`f64`)
+tests/golden/check/fixedbugs-130-a-case-with-its-fields-in-braces.hero:26:11: error[expected_end_of_line]: expected the end of the line after the case `empty`, found `{` — one case per line, its fields on the lines below it, one level deeper
+tests/golden/check/fixedbugs-130-a-case-with-its-fields-in-braces.hero:28:5: error[expected_case]: expected a case name, found `{` — a variant case is a name on its own line, with its fields indented below it
+tests/golden/check/fixedbugs-130-a-case-with-its-fields-in-braces.hero:29:11: error[expected_field_type]: expected `:` and the field's type, found a name (`f64`)
+tests/golden/check/fixedbugs-130-a-case-with-its-fields-in-braces.hero:31:10: error[expected_end_of_line]: expected the end of the line after the case `blob`, found `{` — one case per line, its fields on the lines below it, one level deeper
+tests/golden/check/fixedbugs-130-a-case-with-its-fields-in-braces.hero:31:21: error[expected_end_of_line]: expected the end of the line after the case `blob`, found a name (`x`) — one case per line, its fields on the lines below it, one level deeper
