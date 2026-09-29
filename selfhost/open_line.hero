@@ -24,7 +24,14 @@
 # that binds or mutates, ends the open line above it, and the parser says
 # what that line lacks in its own words. The scans of the next line's text,
 # `next_line.hero`, rest on that: a quote they misread costs a message or a
-# fix's certainty, never an acceptance.
+# fix's certainty, never an acceptance; and so do the questions about the
+# lines already lexed, `line_above.hero`.
+#
+# A line a word the lexer refused heads is that word's mistake, which the
+# parser drops whole, and its tokens open no break: its end is a line end,
+# and a line below that could only go on is read on its own (defect 132's
+# class, lane 133's finding). A word the parser reads as its certain swap
+# heads the line its swap does.
 #
 # Each refusal offers its join with the certainty that break shows, and
 # records the break (`state.Break`); `line_joins.hero` weighs every join once
@@ -43,6 +50,7 @@ use diag
 use bytes
 use punctuation
 use next_line
+use line_above
 
 ## At the line end
 
@@ -135,19 +143,6 @@ function set_apart(text: str, at: i64) -> bool
     b = text[at]
     return b == ' ' || b == '#' || b == '\r' || b == '\n'
 
-# Does the statement the tokens end with open with a declaration's keyword?
-function heads_a_declaration(tokens: [token.Token]) -> bool
-    i: i64 @ tokens.len() - 1
-
-    while i > 0 && tokens[i - 1].kind != .terminator && tokens[i - 1].kind != .indent && tokens[i - 1].kind != .dedent
-        i @ i - 1
-
-    while i < tokens.len() - 1 && tokens[i].kind == .comment
-        i @ i + 1
-
-    k = tokens[i].kind
-    return k == .kw_function || k == .kw_constant || k == .kw_record || k == .kw_variant || k == .kw_test || k == .kw_extern || k == .kw_use
-
 ## At the next line with words
 
 # Decide the line left open, at the next line with words, whose margin is
@@ -166,11 +161,11 @@ function goes_on(@l: state.LexState, text: str, spaces: i64) -> bool
 # compiles. A deeper line is a block's first, or the parser's indentation
 # error; a word, a literal, a `(`, a `[` or a `.` begins a statement of its
 # own; and a declaration's head is no statement a line goes on with, so the
-# parser says what the head lacks.
+# parser says what the head lacks, nor is a line a refused word heads.
 function goes_on_below(@l: state.LexState, text: str, spaces: i64) -> bool
     b = text[l.pos]
 
-    if (spaces + 2) / 4 > l.level || bytes.is_alnum(b) || b == '_' || b == '"' || b == '\'' || goes_on_at_head(text, at: l.pos) < 0 || heads_a_declaration(l.tokens)
+    if (spaces + 2) / 4 > l.level || bytes.is_alnum(b) || b == '_' || b == '"' || b == '\'' || goes_on_at_head(text, at: l.pos) < 0 || line_above.heads_a_declaration(l.tokens) || line_above.headed_by_a_refused_word(l.tokens, breaks: l.breaks, text, at: last_significant(l.tokens))
         settle(@l)
         return false
 
@@ -216,9 +211,16 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     if spaces > margin && opens_a_body(left.kind)
         return false
 
+    # A line a refused word heads is that word's mistake, and its end is no
+    # break: ended here, the next line is read on its own.
+    if line_above.headed_by_a_refused_word(l.tokens, breaks: l.breaks, text, at: at)
+        ended(@l)
+        plant(@l)
+        return false
+
     # A line that binds or mutates is a statement of its own, which no
     # expression goes on into: only a declaration's `name:` takes one.
-    binding = next_line.holds_a_binding(text, from: l.pos) && !names_a_declaration(l.tokens, at: at)
+    binding = next_line.holds_a_binding(text, from: l.pos) && !line_above.names_a_declaration(l.tokens, at: at)
 
     # Never after `=>`: an arm's body is on the arm's line or in the block
     # below it, so the line the author broke after the arrow is refused and
@@ -264,7 +266,7 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
         # `>`, which would make the `-` an arrow.
         if left.kind == .dot || left.kind == .colon_colon || left.kind == .slash
             glue @ ""
-        else if left.kind == .minus && opens_a_line(l.tokens, at: at) && text[l.pos] != '>'
+        else if left.kind == .minus && line_above.opens_a_line(l.tokens, at: at) && text[l.pos] != '>'
             glue @ ""
         d.fixes @ d.fixes.push(joined(glue: glue, from: left.span.end, to: l.pos, certainty: certainty))
     refused(@l, d, head: false)
@@ -326,29 +328,6 @@ function joined(glue: str, from: i64, to: i64, certainty: diag.Certainty) -> dia
         span: token.Span(start: from, end: to),
         certainty: certainty
     )
-
-## What the line above holds
-
-# Does the token at `at` begin its line in the stream: nothing before it but
-# comments, back to a line's end, a block's edge or the file's start?
-function opens_a_line(tokens: [token.Token], at: i64) -> bool
-    i: i64 @ at - 1
-
-    while i >= 0 && tokens[i].kind == .comment
-        i @ i - 1
-
-    return i < 0 || tokens[i].kind == .terminator || tokens[i].kind == .indent || tokens[i].kind == .dedent
-
-# Is the token at `at` the colon of a statement's `name:`, which the next
-# line's type and binding complete?
-function names_a_declaration(tokens: [token.Token], at: i64) -> bool
-    if at < 1 || tokens[at].kind != .colon || tokens[at - 1].kind != .ident
-        return false
-
-    if at == 1
-        return true
-    k = tokens[at - 2].kind
-    return k == .terminator || k == .indent || k == .dedent
 
 test "a token that can only go on is a binary operator, the propagating `?` or `::`"
     assert can_only_go_on(.plus)

@@ -1,0 +1,25 @@
+# Fixed defect 132's class, 2026-09-29, a foreign word the parser reads as
+# its certain swap, at a line break, the boundary of
+# `fixedbugs-132-a-line-a-refused-word-heads-opens-no-break.hero`. Symptom,
+# of lane 133's first round: `5 +` left open over `fn main()` cost
+# `continuation_outside_brackets` beside `reserved_word` and, once `check
+# --apply` had written `function`, `expected_expression`, one mistake under
+# two codes; the `)` below it was told only after the swap. Lane 133 made
+# the lexer ask what the word's swap writes (`next_line.opening_keyword`),
+# and lane Y measured it held on its tree; no case held the shape until this
+# one. And its other side: a line such a word heads is the line its swap
+# heads, so `fn two() ->` over `i64` is refused as `function two() ->` is,
+# and a line a refused word heads opens no break only where the parser reads
+# the word as nothing. Each mistake takes the same code before and after
+# `--apply` writes the swaps, which the `.applied` pins.
+
+constant A: i64
+    #~v expected_expression
+    5 +
+fn main()  #~ reserved_word
+    x = 3 )  #~ expected_end_of_line
+
+#~v reserved_word continuation_outside_brackets
+fn two() ->
+i64
+    return 2
