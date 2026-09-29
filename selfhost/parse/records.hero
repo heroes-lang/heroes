@@ -105,15 +105,35 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
     cursor.skip_terminators(@c)
 
     if !cursor.at(c, .indent) && !is_handle
-        if !swap_reading.at_reported_error(c, text)
-            cursor.error(
-                @c,
-                code: "empty_record",
-                message: empty_record_message(in_group: in_group, partial: partial),
-                span: token.Span(start: keyword.start, end: head_end.end)
-            )
-        cursor.recover_to_next_decl(@c)
-        return
+        # What goes on past the head is dropped and fields below it are read
+        # (defect 131's second round, lane 130). **And they are never called
+        # absent** (defect 131's class, 2026-09-29): over fields that are
+        # there, the report is the head's own junk, as `record Point )` over
+        # `x: i64` is; `empty_record` is the report where there are none.
+        junk = cursor.current_span(c)
+        found = swap_reading.found(c, text)
+        spoke = swap_reading.at_reported_error(c, text)
+        goes_on = !cursor.at_fresh_line(c)
+
+        if goes_on
+            cursor.skip_line(@c)
+
+        if !spoke
+            if goes_on && cursor.at(c, .indent)
+                junk_after_head(
+                    @c,
+                    head: cursor.slice_of(text, token.Span(start: keyword.start, end: head_end.end)),
+                    found: found,
+                    span: junk,
+                    members: "its fields"
+                )
+            else
+                cursor.error(
+                    @c,
+                    code: "empty_record",
+                    message: empty_record_message(in_group: in_group, partial: partial),
+                    span: token.Span(start: keyword.start, end: head_end.end)
+                )
     fields: [ast.Field] @ []
     finish: token.Span @ head_end
 
@@ -125,6 +145,18 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
         finish @ fields[fields.len() - 1].name
     decls @ decls.push(
         ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: tails.linkage_header(linkage), library: tails.linkage_library(linkage), partial: partial, tag: tag))
+    )
+
+# A head whose line goes on over the members below it: the junk is the one
+# mistake, so it is the one report, and the members are read as they stand.
+# `expected_end_of_line` is the code a statement's line gets for the same
+# mistake, and the message says where the members go.
+function junk_after_head(@c: cursor.Cursor, head: str, found: str, span: token.Span, members: str)
+    cursor.error(
+        @c,
+        code: "expected_end_of_line",
+        message: "expected the end of the line after `" + head + "`, found " + found + " — " + members + " go on the lines below it, one level deeper",
+        span: span
     )
 
 # What `empty_record` says. Three messages rather than one, because the repair

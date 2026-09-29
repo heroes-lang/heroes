@@ -62,7 +62,7 @@ function file(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], @uses: [ast.Us
 
     while !done
         cursor.skip_terminators(@c)
-        k = swap_reading.reads_as(c, text)
+        k = swap_reading.opens_line_as(c, text)
 
         if k == .eof
             done @ true
@@ -101,16 +101,25 @@ function unexpected_top_level(@c: cursor.Cursor, @a: ast.Ast, text: str)
     # class, 2026-09-29): `recrod Point` over its fields owes the fields'
     # mistakes in this run, and `expected_declaration` stays the one report
     # of the head. `parse/headless.hero` reads it by the shape of its lines.
+    # Only where the refused word OPENS its line: in the middle of one, past a
+    # head that failed and left it (`extern "m.h" )`), the block is that
+    # head's, and it goes whole with it, as it always did.
     if cursor.at(c, .indent)
         _ = cursor.balanced_block(@c)
         return
+    opens = cursor.at_fresh_line(c)
     from = c.pos
     _ = cursor.bump(@c)
     cursor.drop_rest_of_line(@c, from: from)
     cursor.skip_terminators(@c)
 
-    if cursor.at(c, .indent)
+    if !cursor.at(c, .indent)
+        return
+
+    if opens
         headless.read(@c, @a, text)
+    else
+        _ = cursor.balanced_block(@c)
 
 ## The shared head
 
@@ -252,17 +261,40 @@ function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl],
     grammar_expr.eat_python_colon(@c)
     cursor.skip_terminators(@c)
 
-    # Past the line end, the next head is read as its swap (defect 133).
+    # Past the line end, the next head is read as its swap (defect 133). What
+    # goes on past the head is dropped and cases below it are read, as a
+    # record's fields are (defect 131's second round, lane 130), and over
+    # cases that are there the report is the head's own junk, never
+    # `empty_variant` (defect 131's class, 2026-09-29; `records.record_tail`).
     if !cursor.at(c, .indent)
-        if !swap_reading.at_reported_error(c, text)
-            cursor.error(
-                @c,
-                code: "empty_variant",
-                message: "a `variant` needs at least one case, indented one level below it",
-                span: tails.here_or(c, hd.keyword)
-            )
-        cursor.recover_to_next_decl(@c)
-        return
+        junk = cursor.current_span(c)
+        found = swap_reading.found(c, text)
+        spoke = swap_reading.at_reported_error(c, text)
+        goes_on = !cursor.at_fresh_line(c)
+        empty_at = tails.here_or(c, hd.keyword)
+
+        if goes_on
+            cursor.skip_line(@c)
+
+        if !spoke
+            if goes_on && cursor.at(c, .indent)
+                records.junk_after_head(
+                    @c,
+                    head: cursor.slice_of(text, token.Span(start: hd.keyword.start, end: hd.name.end)),
+                    found: found,
+                    span: junk,
+                    members: "its cases"
+                )
+            else
+                cursor.error(
+                    @c,
+                    code: "empty_variant",
+                    message: "a `variant` needs at least one case, indented one level below it",
+                    span: empty_at
+                )
+
+        if !cursor.at(c, .indent)
+            return
     start = cursor.current_span(c)
     cases = parse_members.case_block(@c, @a, text)
     finish: token.Span @ start

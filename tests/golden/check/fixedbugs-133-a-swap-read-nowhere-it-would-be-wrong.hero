@@ -10,6 +10,17 @@
 # on the keyword the swap writes (`parse/swap_reading.hero`), and each line
 # below costs its `reserved_word` alone. That the certain fix writes a new
 # error in these three places is defect 015's class, not this one's.
+#
+# Widened the same day: a swapped word on a head's OWN line is junk the
+# lexer has reported, and that report is the one message. The guards that
+# read the next line's head as its swap read it there too, so `function
+# show() fn` over a body cost `missing_body` "found `fn`" beside the
+# `reserved_word`, `record Pair fn` over fields and `variant Kind struct`
+# over cases each a second message, and `extern "m.h" fn` read the `fn` as a
+# declaration with no name. The swap is now read only where the word opens
+# its line (`swap_reading.opens_line_as`), and each of these costs its
+# `reserved_word` alone; the certain fix writes a keyword where none can
+# stand, which is defect 015's class again.
 
 function fn(x: i64) -> i64  #~ reserved_word
     return x
@@ -20,3 +31,12 @@ record struct  #~ reserved_word
 function main()
     const x = 5  #~ reserved_word
     print(x)
+
+function show() fn  #~ reserved_word
+    print(1)
+
+record Pair fn  #~ reserved_word
+    x: i64
+
+variant Kind struct  #~ reserved_word
+    a

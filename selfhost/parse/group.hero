@@ -220,7 +220,7 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
 
     while !done
         cursor.skip_terminators(@c)
-        k = swap_reading.reads_as(c, text)
+        k = swap_reading.opens_line_as(c, text)
 
         if k == .dedent
             _ = cursor.bump(@c)

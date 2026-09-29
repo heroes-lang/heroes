@@ -15,6 +15,9 @@
 #   fields, read by `parse_members.field_block`;
 # - a CASE is a name alone on its line, and a block whose first line is one
 #   is a variant's cases, read by `parse_members.case_block`;
+# - a line opened by a declaration's keyword makes it an `extern` group's
+#   members, under a head the word misspelled; no reader holds members
+#   without their group's head, so the block goes whole, as it did before;
 # - anything else is a statement, and the block is a body, read by
 #   `grammar_expr.hanging` as the body under any head that failed.
 #
@@ -43,6 +46,7 @@ use parse/opening
 variant Shape
     fields
     cases
+    members
     statements
 
 # Read the indented block the cursor stands on, by the shape its lines have.
@@ -53,6 +57,8 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str)
         _ = parse_members.field_block(@c, @a, text)
     else if shape == .cases
         _ = parse_members.case_block(@c, @a, text)
+    else if shape == .members
+        _ = cursor.balanced_block(@c)
     else
         if grammar_expr.block(@c, @a, text: text, owner: "a body", head: opening.mark(c)).is_err()
             return
@@ -70,7 +76,15 @@ function shape_below(c: cursor.Cursor) -> Shape
 
     if starts.len() > 0 && case_shaped(c.tokens, starts[0])
         return .cases
+
+    for start in starts
+        if opens_a_declaration(c.tokens[start].kind)
+            return .members
+
     return .statements
+
+function opens_a_declaration(kind: token.TokenKind) -> bool
+    return kind == .kw_function || kind == .kw_constant || kind == .kw_record || kind == .kw_variant
 
 # Where each line of the block begins, at the block's own depth.
 function line_starts(c: cursor.Cursor) -> [i64]
@@ -167,3 +181,6 @@ test "a block is read as fields, cases or a body by the shape of its lines"
 
     # v: i64 @ 0 is a binding, not a field
     assert shape_of([.indent, .ident, .colon, .ident, .at, .int_lit, .terminator, .dedent, .eof]) == .statements
+
+    # function q() -> i64: a group's member, whose head is not here to read it
+    assert shape_of([.indent, .kw_function, .ident, .lparen, .rparen, .arrow, .ident, .terminator, .dedent, .eof]) == .members
