@@ -127,6 +127,16 @@ cannot see:
    conditions above are what make it *loud* when you forget; this one is why you
    should not rely on them.
 
+   **Since 2026-09-29 the commit is the BATCH's closing commit, not each
+   repair's** (author instruction; CLAUDE.md § Verification;
+   `.claude/rules/verification.md` § The batch; CL-079). Measured over
+   2026-09-15 to 29, 93 commits carried a regenerated seed, 22.9 million lines
+   of churn, and 21 of 58 merges had this file in conflict. A repair commit
+   inside a batch says *seed not regenerated, awaiting the batch gate* in its
+   body; the batch's close regenerates it, verifies the fixpoint by `cmp`, and
+   is the only commit of the batch that is ever pushed or merged. The two
+   conditions above are unchanged and still bind that commit.
+
 ## If the seed is already broken — how to get a compiler back
 
 This is the case the rest of this file exists to prevent, written down because

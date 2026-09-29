@@ -209,6 +209,19 @@ machine at load 30 and is discarded as a duration (the ratio). So a batch gate
 runs its suites in parallel, and its duration is not a number anyone writes
 down while it does.
 
+**Two things the first batch gate under this rule found, the same evening.**
+`cache` went red in the parallel pass, 4 and 2, *nothing was edited and these
+objects were rebuilt: build/tu-.../library.o*: that suite asks the filesystem
+which object is newer after a build that touched nothing, and in the shared
+`build/` another suite's build had rewritten the library's object, one slot
+per compiler, at that moment. It read 6 and 0 alone, before and after. So
+**`cache` runs alone, after the parallel pass**, being the one suite whose
+question is about the cache rather than about a program; and **a suite red in
+the parallel pass is re-run alone before its red is read as a verdict**. A
+false red is what a shared cache can produce; a false green it cannot, since
+an object read half-written fails to compile or to link, and every other suite
+read the same counts in parallel as alone, twice (26 of 26 on 2026-09-29).
+
 **Forbidden: anything while a clock runs.** CL-025 is unchanged and it is the
 half that bites: time before and after with `/usr/bin/time -p`, and while a
 clock runs the machine stays still. Paid for again on 2026-09-08, when a run
@@ -341,7 +354,8 @@ fast-forward the trunk: same tree, no second gate):
 1. the seed regenerated, the compiler built from it, the fixpoint by `cmp`;
 2. the compiler's own tests, the net's own tests, **the full net**, its counts
    in the closing commit's body; the suites may run six at a time in separate
-   processes (§ What may run beside a gate, below), and nothing is timed while
+   processes, `cache` alone after them, and a red suite is re-run alone before
+   it is read (§ What may run beside a gate, below); nothing is timed while
    they do;
 3. the census of `check` over the tracked `.hero` files, trunk against batch,
    where the batch changed what the compiler refuses (the rule *a new checker
