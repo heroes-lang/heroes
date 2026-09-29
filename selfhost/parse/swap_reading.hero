@@ -28,11 +28,17 @@
 # shapes above cost `expected_expression`, `expected_name`, and
 # `continuation_outside_brackets` with `expected_name`, each quoting a word
 # the author never wrote (`found \`constant\``). Here the layout that decides
-# where a line ends, `fmt`, `probe`, the dumps and every
-# `cursor.at_reported_error` guard see exactly the stream they saw before.
+# where a line ends, `fmt`, `probe` and the dumps see exactly the stream they
+# saw before, and so does every `cursor.at_reported_error` guard but the four
+# that stand past a declaration's line end, at the next line's first token:
+# an empty `record`, `variant` or `extern` group and an absent body. Those
+# ask `at_reported_error` below, because the next head is read as its swap.
 #
 # A leaf: it reads the cursor and the word tables, and nothing it calls reads
-# the parser.
+# the parser. Its callers: `parse/decl.hero` (`file`, `variant_declaration`),
+# `parse/group.hero` (`extern_group`, `members`), `parse/records.hero`
+# (`record_tail`), `parse/type.hero` (`prefix`, `unit_or_function`) and
+# `parse/opening.hero` (`absent`).
 
 use token
 use bytes
@@ -67,6 +73,14 @@ function reads_as(c: cursor.Cursor, text: str) -> token.TokenKind
 # writes `record Q` (defect 133). Every other `error` token keeps its silence.
 function at_reported_error(c: cursor.Cursor, text: str) -> bool
     return reads_as(c, text) == .error
+
+# `cursor.found`, for a word read as its swap: the word as WRITTEN, `fn`,
+# which the author can find, rather than *an unreadable token*, which the
+# parser has just read.
+function found(c: cursor.Cursor, text: str) -> str
+    if cursor.at(c, .error) && reads_as(c, text) != .error
+        return "`" + cursor.slice_of(text, cursor.current_span(c)) + "`"
+    return cursor.found(c, text)
 
 # Consume the current token when it reads as `kind`, as `cursor.eat` does
 # when it IS that kind.
@@ -129,13 +143,19 @@ test "a certain swap to a keyword reads as that keyword, and nothing else does"
     c: cursor.Cursor @ cursor.new_cursor(tokens)
     assert reads_as(c, text) == .kw_function
     assert !reads_as_name(c, text)
+
+    # A guard past a line end reads it as the keyword, and quotes it as written.
+    assert !at_reported_error(c, text)
+    assert found(c, text) == "`fn`"
     _ = cursor.bump(@c)
     assert reads_as(c, text) == .kw_record
 
-    # `let` is guidance, so it reads as the `error` it is.
+    # `let` is guidance, so it reads as the `error` it is, and keeps its silence.
     _ = cursor.bump(@c)
     assert reads_as(c, text) == .error
     assert !reads_as_name(c, text)
+    assert at_reported_error(c, text)
+    assert found(c, text) == cursor.found(c, text)
 
     # `int` reads as a name and never as a keyword.
     _ = cursor.bump(@c)
