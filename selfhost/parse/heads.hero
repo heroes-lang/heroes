@@ -1,0 +1,248 @@
+# The head of a declaration, its keyword, doc comment and name; and the heads
+# of a block of declarations under a line whose head nothing reads (design.md
+# §4.1, §4.17; defect 130's class, 2026-09-29).
+#
+# `head` is the shared head of every named declaration at the top level. It
+# moved here out of `parse/decl.hero` on 2026-09-29 (lane X4), with what a
+# constant and a test read after their name (`constant_type`, `test_name`),
+# when a second reader needed them. That reader is `next`: `class Q` over
+# `function f()` over its body is a block of declarations, the class's
+# methods, which until that day went whole, every mistake inside it waiting
+# for the word to be fixed (lane X1's finding 9). It is read as the
+# declarations it holds, each line as the top level reads what its keyword
+# opens: a function's signature (`parse/signature`), a constant's type, a
+# test's name, a record's fields and a variant's cases, indented or in
+# braces. What a line owes once its head is read is handed back, a body
+# being the grammar's to read (`grammar_expr.declarations`, the one caller):
+# the body under the head, the block below a head that failed, or the line
+# itself, a statement, where no declaration's keyword opens it. The trees
+# built here belong to no declaration and are left in the arena, as a failed
+# statement's are.
+#
+# A leaf below the knot: it reads types, parameters, fields and cases, and
+# nothing that reads the grammar.
+
+use token
+use cursor
+use ast
+use lexer
+use parse/type
+use parse/signature
+use parse/opening
+use parse/brace_habit
+use parse/members_below
+
+## The head
+
+# The shared head of every named declaration: the kind keyword —
+# documentation attaches to it, since it opens the line — then the declared
+# name. When it fails, the rest of its line is already dropped, up to a `{`
+# that ends it, and what hangs below it, indented or in braces, is the
+# caller's to read, since the caller knows what a body of its kind holds
+# (defect 131's second round: it used to go whole, with every mistake inside
+# it).
+#
+# Port note: Rust returns `Option<(Span, Vec<Span>, Span)>`; Heroes has no
+# tuples, so the three travel as a record and the `Option` is a fallible.
+record Head
+    keyword: token.Span
+    doc: [token.Span]
+    name: token.Span
+
+# The keyword is quoted as WRITTEN, which is the keyword's own spelling
+# everywhere but where the parser reads a foreign word as its swap (defect
+# 133): `const` alone on its line is *after `const`*, the word the author can
+# find, and never *after an unreadable token*.
+function head(@c: cursor.Cursor, text: str, example: str) -> Head?
+    from = c.pos
+    keyword = cursor.current_span(c)
+    doc = cursor.take_docs(@c, text, keyword)
+    kind_text = "`" + cursor.slice_of(text, keyword) + "`"
+    _ = cursor.bump(@c)
+
+    if !cursor.at(c, .ident)
+        if !cursor.at_reported_error(c)
+            cursor.error(
+                @c,
+                code: "expected_name",
+                message: "expected the declared name after " + kind_text + ", found " + cursor.found(c, text) + " — `" + example + "`",
+                span: cursor.current_span(c)
+            )
+        brace_habit.drop_rest_of_line(@c, text, from: from)
+        return fail(code: "expected_name", msg: "the rest of the line is dropped")
+    return ok(Head(keyword: keyword, doc: doc, name: cursor.bump(@c).span))
+
+# A constant's `:` and type after its name, or a failure, reported, where the
+# `:` is missing.
+function constant_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64?
+    if !cursor.expect(@c, text: text, kind: .colon, code: "expected_constant_type", what: "`:` and the constant's type — a `constant` declares a value, so it has one")
+        return fail(code: "expected_constant_type", msg: "no `:` after the name")
+    return ok(type.parse_type(@c, @a, text))
+
+# A test's name after its keyword, a string, or a failure, reported.
+function test_name(@c: cursor.Cursor, text: str) -> token.Span?
+    if !cursor.at(c, .str_lit)
+        if !cursor.at_reported_error(c)
+            cursor.error(
+                @c,
+                code: "expected_test_name",
+                message: "expected the test's name as a string, found " + cursor.found(c, text) + " — `test \"3-4-5 triangle\"`",
+                span: cursor.current_span(c)
+            )
+        return fail(code: "expected_test_name", msg: "no string after `test`")
+    return ok(cursor.bump(@c).span)
+
+## A block of declarations
+
+variant Owes
+    # A body, read as a block under the head that began at `head`.
+    body
+    # A head that failed, begun at `head`: its line dropped, what hangs below
+    # it read; so is a block one deeper, which only a failed head leaves.
+    abandoned
+    # A line no declaration's keyword opens, read as a statement.
+    statement
+    # The block's end.
+    done
+
+record Owed
+    owes: Owes
+    owner: str
+    head: opening.Mark
+
+# The next line of the block of declarations the cursor is inside, read as
+# far as a leaf reads one, and what it owes the grammar.
+function next(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Owed
+    cursor.skip_terminators(@c)
+    began = opening.mark(c)
+    k = cursor.current_kind(c)
+    owner = owner_of(k)
+
+    if k == .dedent || k == .eof
+        _ = cursor.eat(@c, .dedent)
+        return Owed(owes: .done, owner: owner, head: began)
+
+    if k == .indent
+        return Owed(owes: .abandoned, owner: owner, head: began)
+
+    if owner == ""
+        return Owed(owes: .statement, owner: owner, head: began)
+
+    if k == .kw_record || k == .kw_variant
+        members(@c, @a, text, fields: k == .kw_record)
+        return next(@c, @a, text)
+
+    if head_read(@c, @a, text, kind: k)
+        return Owed(owes: .body, owner: owner, head: began)
+    return Owed(owes: .abandoned, owner: owner, head: began)
+
+# Whether the head a body follows was read whole, after its keyword.
+function head_read(@c: cursor.Cursor, @a: ast.Ast, text: str, kind: token.TokenKind) -> bool
+    if kind == .kw_test
+        _ = cursor.bump(@c)
+        return !test_name(@c, text).is_err()
+
+    if head(@c, text: text, example: example_of(kind)).is_err()
+        return false
+
+    if kind == .kw_constant
+        return !constant_type(@c, @a, text).is_err()
+    return !signature.read(@c, @a, text, in_group: false).is_err()
+
+# A record or a variant in the block, its head and then its fields or cases,
+# indented or in braces, told as the top level tells them
+# (`parse/members_below`).
+function members(@c: cursor.Cursor, @a: ast.Ast, text: str, fields: bool)
+    kind: token.TokenKind @ .kw_variant
+
+    if fields
+        kind @ .kw_record
+    named = head(@c, text: text, example: example_of(kind))
+    below: members_below.Below @ members_below.here(c, text)
+
+    if !named.is_err()
+        written = token.Span(start: named.must().keyword.start, end: named.must().name.end)
+        cursor.skip_terminators(@c)
+        below @ .indented
+
+        if !cursor.at(c, .indent) && fields
+            below @ members_below.no_members_below(
+                @c,
+                text: text,
+                head: written,
+                members: "fields",
+                empty: members_below.empty_record(written, in_group: false, partial: false)
+            )
+        else if !cursor.at(c, .indent)
+            below @ members_below.no_members_below(
+                @c,
+                text: text,
+                head: written,
+                members: "cases",
+                empty: members_below.empty_variant(written)
+            )
+
+    if fields
+        _ = members_below.fields_below(@c, @a, text, below: below)
+    else
+        _ = members_below.cases_below(@c, @a, text, below: below)
+
+# Whose body a line opened by `kind` holds, in the block reader's words, or
+# "" where no declaration's keyword opens it.
+function owner_of(kind: token.TokenKind) -> str
+    if kind == .kw_function
+        return "a `function`"
+
+    if kind == .kw_constant
+        return "a `constant`"
+
+    if kind == .kw_test
+        return "a `test`"
+
+    if kind == .kw_record
+        return "a `record`"
+
+    if kind == .kw_variant
+        return "a `variant`"
+    return ""
+
+# What a missing name's message offers, as the top level's heads do.
+function example_of(kind: token.TokenKind) -> str
+    if kind == .kw_function
+        return "function dist2(a: Point, b: Point) -> i64"
+
+    if kind == .kw_constant
+        return "constant MAX_DEPTH: i64"
+
+    if kind == .kw_record
+        return "record Point"
+    return "variant Token"
+
+## Tests
+
+function lexed(text: str) -> cursor.Cursor
+    return cursor.new_cursor(lexer.lex_one(text).tokens)
+
+test "a block of declarations is read line by line, each owing what its keyword opens"
+    text = "class Q\n    function f(x: i64) -> i64\n        return x\n    record R\n        y i64\n    x = 1\n"
+    c: cursor.Cursor @ lexed(text)
+    a: ast.Ast @ ast.new_ast()
+
+    while !cursor.at(c, .indent)
+        _ = cursor.bump(@c)
+
+    _ = cursor.bump(@c)
+
+    # The function's signature is read, and its body is owed to the grammar.
+    first = next(@c, @a, text)
+    assert first.owes == .body
+    assert first.owner == "a `function`"
+    cursor.skip_terminators(@c)
+    _ = cursor.balanced_block(@c)
+
+    # The record's fields are read here, their mistake told, and the line
+    # after them is a statement.
+    second = next(@c, @a, text)
+    assert second.owes == .statement
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "expected_field_type"

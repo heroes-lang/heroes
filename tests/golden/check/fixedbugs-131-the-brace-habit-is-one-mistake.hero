@@ -50,3 +50,10 @@ function first() {  #~ missing_body
 function main() {  #~ missing_body
     print(LIMIT)
 }
+
+# Corrected 2026-09-29 by lane X4 (defect 130's class, lane X1's finding 1):
+# under a `record`, a `variant` or an `extern` group the braced region no
+# longer goes whole, as the header says; the `{` is still the head's one
+# report, and the members inside are read, their own mistakes told
+# (`fixedbugs-130-members-in-braces-are-read`). The members here have none,
+# so this case reads the same.

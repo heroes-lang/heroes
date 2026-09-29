@@ -1,0 +1,45 @@
+# Fixed 2026-09-29, defect 131's class, lane X4. Symptom: a record's fields
+# in braces with the `{` alone on the line below the head, Allman's style,
+# cost `expected the end of the line after record P` with its caret on the
+# `{`, on the line after the one it named, which had ended (lane X1's finding
+# 12): a caret stands on the line whose mistake it names. And the fields
+# inside went unread, their mistakes unsaid; a variant and an `extern` group
+# the same. Cause: a `{` below the head was taken for the head's junk
+# wherever it stood. A `{` alone on the line below a head whose line ended,
+# past blank and comment lines, is now told where it stands in the words of
+# the head's own report where no members are indented below it,
+# `empty_record`, `empty_variant` or `expected_extern_block`, saying where the
+# members go; and the members inside are read. Over junk on the head's line
+# the junk is told on that line, and the `{` below on its own.
+
+record P
+{  #~ empty_record
+    x: i64
+    y i64  #~ expected_field_type
+}
+
+variant C
+{  #~ empty_variant
+    red
+    5  #~ expected_case
+}
+
+extern "m.h"
+{  #~ expected_extern_block
+    function q(x i64) -> i64  #~ expected_parameter_type
+}
+
+record Q )  #~ expected_end_of_line
+{  #~ empty_record
+    z: i64
+}
+
+record R
+
+# the fields of R
+{  #~ empty_record
+    w: i64
+}
+
+function main()
+    print(1)

@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:17:17: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:21:15: error[expected_end_of_line]: expected the end of the line, found a number (`4`) — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:31:12: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:33:15: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:39:18: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:42:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:46:13: error[missing_body]: a `test` needs an indented body — one level deeper, exactly 4 spaces (found `{`)

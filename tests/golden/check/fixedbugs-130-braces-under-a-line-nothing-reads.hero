@@ -50,3 +50,9 @@ function main() {  #~ missing_body
         u i64,  #~ expected_field_type
     }
 }
+
+# Corrected 2026-09-29 by lane X4 (defect 130's class, lane X1's finding 9):
+# a block of declarations in braces, `impl Point {` over `function norm()`,
+# is no group's members gone whole, as the header says, but read as the
+# declarations it holds (`fixedbugs-130-declarations-under-a-refused-head`);
+# its function here has no mistake of its own, so this case reads the same.

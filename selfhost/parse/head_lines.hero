@@ -48,6 +48,29 @@ function joined_at(c: cursor.Cursor, text: str, from: i64) -> token.Span?
 
     return fail(code: "unjoined", msg: "every line of the head ends with a line end")
 
+# Whether the lexer joined two lines of the head begun at token `from`
+# outside its brackets: a break the lexer refused as it joined it, where one
+# inside brackets is the language's own (lane Y's finding, 2026-09-29).
+function joined_outside_brackets(c: cursor.Cursor, text: str, from: i64) -> bool
+    depth: i64 @ 0
+    i: i64 @ from
+
+    while i < c.pos
+        k = c.tokens[i].kind
+        next = c.tokens[i + 1]
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if (k == .rparen || k == .rbracket || k == .rbrace) && depth > 0
+            depth @ depth - 1
+
+        if depth == 0 && !is_line_end(k) && !is_line_end(next.kind) && next.kind != .eof
+            if text_lines.newlines_between(text, from: c.tokens[i].span.end, to: next.span.start) > 0
+                return true
+        i @ i + 1
+
+    return false
+
 function before_the_break(c: cursor.Cursor, from: i64, at: i64) -> i64
     i: i64 @ at
 

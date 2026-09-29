@@ -1,0 +1,63 @@
+# A block where a statement should start that no head opens, an orphan:
+# what it is told and whether its lines are read (design.md §4.17; defect
+# 130's class, 2026-09-29).
+#
+# Moved out of `parse/opening.hero` on 2026-09-29 (lane X4), when an orphan
+# came to be read rather than dropped and that module passed §11's 300. An
+# orphan is `unexpected_block`, once, at its indent (`named`); its lines are
+# read by the caller, the grammar, which is why this module only says whether
+# they are (`read`). Its callers are `grammar_expr.indented_block`,
+# `parse/headless.read_below`, under a refused word that opens no block, and
+# `parse/statement_end.close`, below a line the lexer refused past its head,
+# whose block is the rest of that line and goes whole.
+
+use token
+use cursor
+use parse/opening
+
+# A block where a statement should start, which no head opens: named, once,
+# and read by the caller, its own mistakes told, where until 2026-09-29 it
+# went whole with every mistake in it (lane Y's finding, defect 130's class).
+# **Unless its first line is the line above going on**: one that begins with
+# a token that only ever goes on with a line, `+ b` or `else` below `x = a`,
+# or with a word and then a value no suffix and no operator of the word's
+# joins to it, `and b`, the shape of an operator another language spells as
+# a word. That block is the one mistake its name says, and it goes whole,
+# since read as lines it cost two. Whether the caller reads it.
+function read(@c: cursor.Cursor) -> bool
+    named(@c)
+    first = cursor.peek(c, 1)
+    then = cursor.peek(c, 2)
+    worded = first == .ident && opening.begins_an_expression(then) && then != .lparen && then != .lbracket && then != .dot && then != .minus
+
+    if !continues_a_line(first) && !worded
+        return true
+    _ = cursor.balanced_block(@c)
+    return false
+
+# What an orphan is told, at its indent.
+function named(@c: cursor.Cursor)
+    if !cursor.at_reported_error(c)
+        cursor.error(
+            @c,
+            code: "unexpected_block",
+            message: "this block is indented deeper than anything that opens one",
+            span: cursor.current_span(c)
+        )
+
+# Whether a token only ever goes on with a line above it and begins none of
+# its own: an operator but the three that also begin a value, `-`, `!` and
+# `~`; a separator or a closer; `else` and `in`. Enumerated, so a new token
+# kind is answered for, not defaulted.
+function continues_a_line(kind: token.TokenKind) -> bool
+    return match kind
+        .plus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge      => true
+        .and_and | .or_or | .amp | .pipe | .caret | .shl | .shr | .eq | .at | .comma       => true
+        .colon | .colon_colon | .question | .arrow | .fat_arrow | .rparen | .rbracket      => true
+        .rbrace | .kw_else | .kw_in                                                        => true
+        .minus | .bang | .tilde | .ident | .int_lit | .float_lit | .str_lit | .str_piece   => false
+        .char_lit | .kw_true | .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if         => false
+        .kw_match | .lparen | .lbracket | .lbrace | .dot | .kw_constant | .kw_function     => false
+        .kw_record | .kw_variant | .kw_for | .kw_while | .kw_break | .kw_continue          => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_use | .comment | .terminator => false
+        .indent | .dedent | .eof | .error                                                  => false

@@ -32,6 +32,8 @@ use parse/tails
 use parse/records
 use parse/swap_reading
 use parse/opening
+use parse/braced_lines
+use parse/members_below
 
 ## The extern group
 
@@ -67,20 +69,34 @@ function extern_group(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: 
     head = token.Span(start: keyword.start, end: cursor.previous_significant_span(c).end)
     cursor.skip_terminators(@c)
 
+    linkage: tails.Linkage = .from_c(header: header, library: library)
+
     # Past the line end, the next head is read as its swap (defect 133). Junk
     # on the head's own line over the signatures below is the one report, and
     # the signatures are read (defect 131's class, 2026-09-29): `extern "m.h"
     # )` cost `expected_extern_block` and `expected_declaration` at one `)`.
+    # **So are signatures in braces**, through the view `parse/braced_lines`
+    # lays out, where until that day they went whole, every mistake in them
+    # unsaid (lane X1's finding 1).
     if !cursor.at(c, .indent)
         empty = diag.new_diagnostic(
             code: "expected_extern_block",
             message: "an `extern` group's signatures are indented under it — `extern \"math.h\"` then `    function sqrt(x: f64) -> f64` (§4.19)",
             span: cursor.current_span(c)
         )
+        close = members_below.close_of(
+            members_below.no_members_below(@c, text: text, head: head, members: "signatures", empty: empty)
+        )
 
-        if !records.no_members_below(@c, text: text, head: head, members: "its signatures", empty: empty)
+        if close >= 0
+            lines: cursor.Cursor @ braced_lines.laid_out(c, text)
+            members(@lines, @a, @decls, text, group_doc: doc, linkage: linkage)
+            braced_lines.took(c: @c, view: lines)
             return
-    members(@c, @a, @decls, text, group_doc: doc, linkage: .from_c(header: header, library: library))
+
+        if !cursor.at(c, .indent)
+            return
+    members(@c, @a, @decls, text, group_doc: doc, linkage: linkage)
 
 # The head line's header string. A missing one is where the old headerless
 # spelling lands, so the message repairs THAT program rather than describing

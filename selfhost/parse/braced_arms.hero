@@ -8,7 +8,7 @@
 # arms' own mistakes waited for the braces to go. Now the `{` is the habit's
 # one report, `missing_match_arms` found `{`, and the arms inside are read as
 # arms, laid out as the lexer lays out an indented block
-# (`parse/headless.laid_out`: an indent for the `{`, a dedent for the `}`, a
+# (`parse/braced_lines.laid_out`: an indent for the `{`, a dedent for the `}`, a
 # line end for each line break and each `,` between arms, Rust's separator),
 # their own mistakes said where they stand; the `}` goes silently.
 #
@@ -32,7 +32,7 @@ use token
 use diag
 use cursor
 use parse/opening
-use parse/headless
+use parse/braced_lines
 use parse/brace_habit
 use lexer
 
@@ -41,7 +41,14 @@ use lexer
 # and the lines between the braces laid out for the arms reader.
 function lines_of(@c: cursor.Cursor, text: str, head: opening.Mark, failed: bool, brace: i64) -> cursor.Cursor
     _ = opening.braced(@c, text, head: head, failed: failed, brace: brace, missing: opening.missing_arms())
-    return headless.laid_out(c, text, close: brace_habit.closer(c, open: brace))
+
+    # The view is taken at the `{` itself, wherever `braced` left the cursor:
+    # `braced_lines.laid_out` reads the braces its cursor's `{` opens (the
+    # batch merge of lanes X3 and X4, 2026-09-29, where `laid_out` moved there
+    # from `parse/headless` and stopped taking the closer).
+    at: cursor.Cursor @ c
+    at.pos @ brace
+    return braced_lines.laid_out(at, text)
 
 # What the arms reader said over the laid-out `lines`, said by `c` where it
 # stands, and the cursor past the `}` and its line end. A held report is

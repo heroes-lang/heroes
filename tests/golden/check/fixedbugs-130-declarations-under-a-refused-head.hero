@@ -1,0 +1,43 @@
+# Fixed 2026-09-29, defect 130's class, lane X4. Symptom: a block of
+# declarations under a line whose head nothing reads, `class Q` over
+# `function f()` over its body, went whole, in a body and at the top level,
+# in braces too, so every mistake inside it waited for the word to be fixed
+# (lane X1's finding 9). Cause: the block's shape, a line opened by a
+# declaration's keyword, was taken for an `extern` group's members, which no
+# reader holds without their group's head. It is now read as the
+# declarations it holds (`parse/heads.hero`, `grammar_expr.declarations`): a
+# function's signature and body, a constant's type and value, a test's name
+# and body, a record's fields and a variant's cases, indented or in braces,
+# each told as the top level tells it, a head that failed included, and a line
+# no declaration's keyword opens is a statement. The head of the block stays
+# its one report, and nothing in the block is named for being there.
+
+class Point  #~ reserved_word
+    function norm(p i64) -> i64  #~ expected_parameter_type
+        return 0 )  #~ expected_end_of_line
+
+impl Shape {  #~ expected_declaration
+    function area() -> i64 {  #~ missing_body
+        return 1 )  #~ expected_end_of_line
+    }
+}
+
+function main()
+    class Q  #~ reserved_word
+        function f()
+            y = 3 )  #~ expected_end_of_line
+        function g  #~ expected_params
+            z = 4 )  #~ expected_end_of_line
+        record R
+            a i64  #~ expected_field_type
+        record S {  #~ expected_end_of_line
+            b i64,  #~ expected_field_type
+        }
+        variant V
+            c
+            5  #~ expected_case
+        constant K i64  #~ expected_constant_type
+        test "t"
+            assert 1 == )  #~ expected_expression
+        w = 5 )  #~ expected_end_of_line
+    print(1)
