@@ -111,8 +111,11 @@ constant RUN_ROOTS: [str]
 # **659 from defect 130's lane, 2026-09-29**: its seven `fixedbugs-130-*`
 # cases, whose marks are the statements a failed block used to hide, took
 # the count past the quarter, and the suite printed 659.
+# **844 from the same lane's second round, 2026-09-29**: two cases of defect
+# 130 and six of 131, the tab-margin one alone holding 43 marks, took the
+# count past the quarter again, and the suite printed 844.
 constant LEAST: i64
-    659
+    844
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

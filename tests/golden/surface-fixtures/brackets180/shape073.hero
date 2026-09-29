@@ -2,8 +2,11 @@
 # a break its block.
 # By the spec's opening paragraph, the form carries a block, which needs an
 # INDENT, and inside brackets there is none: refused on one line too, exit 1.
+# Corrected 2026-09-29, defect 131's second round: the call's `)` is no longer
+# asked for at the `1`, where `missing_body` already stands, so the line costs
+# one diagnostic where it cost two at one token.
 function main()
     y = f(if c
-            1  #~ missing_body expected_args_close
+            1  #~ missing_body
         else
             2)

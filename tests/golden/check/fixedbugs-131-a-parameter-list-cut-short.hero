@@ -1,0 +1,29 @@
+# Fixed defect 131's second round, 2026-09-29, a signature whose parameter
+# list is cut short. Symptom: `function f(` over its body cost
+# `expected_parameter_type` and `expected_params_close` at the same token,
+# the `=` of the body's first line, and then `missing_body` at the next
+# declaration, for a body the list's recovery had swallowed; so did a list
+# cut after `x:`, after a `,`, and after a whole parameter, and `(a b)` cost
+# two at `b`. Cause: the list asked for its closer at the token a parameter
+# had just been refused at, and a line break inside brackets carries no line
+# end token, so the head looked as if it had not left its line. A closer is
+# not asked for where a report already stands (`line_end.expect_closer`), and
+# a head's line is read in the text (`opening.crossed_a_line`).
+
+function open_only(
+    y = 3 )  #~ expected_parameter_type
+
+function after_a_colon(x:
+    y = 3 )  #~ expected_params_close
+
+function after_a_comma(x: i64,
+    y = 3 )  #~ expected_parameter_type
+
+function after_a_parameter(x: i64
+    y = 3 )  #~ expected_params_close
+
+function two_names(a b)  #~ expected_parameter_type
+    y = 3 )  #~ expected_end_of_line
+
+function main()
+    z = 4 )  #~ expected_end_of_line

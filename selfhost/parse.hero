@@ -537,3 +537,23 @@ test "a hanging block is read, and an orphan under an arm is named"
     assert codes(orphan.diagnostics) == ["unexpected_block"]
     kept = parse("function main()\n    x = a\n        and b\n")
     assert codes(kept.diagnostics) == ["unexpected_block"]
+
+# Defect 131's second round: a head cut short and a list cut short each
+# report once, and a body whose margin holds a tab is the body, the lexer's
+# refusal of the tab its one report.
+test "a head or a list cut short reports once, and a tabbed body is a body"
+    eol = "expected_end_of_line"
+    bare_for = parse("function main()\n    for\n        x = 1\n")
+    assert codes(bare_for.diagnostics) == ["for_missing_in"]
+    assert bare_for.diagnostics[0].fixes[0].certainty == .guess
+    for_at_the_end = parse("function main()\n    for\n")
+    assert codes(for_at_the_end.diagnostics) == ["for_missing_in"]
+    open_list = parse("function f(\n    y = 3 )\n")
+    assert codes(open_list.diagnostics) == ["expected_parameter_type"]
+    literal = parse("function main()\n    xs = [1 2]\n    m = {1: 2, )}\n")
+    assert codes(literal.diagnostics) == ["expected_separator", "expected_expression"]
+    tabbed = parse("function main()\n    if true\n\ty = 3 )\n    z = 4 )\n")
+    assert codes(tabbed.diagnostics) == ["tab_in_indentation", eol, eol]
+    assert codes(tabbed.control) == ["tab_in_indentation", eol, eol]
+    whole = parse("function main()\n\tprint(1)\n")
+    assert codes(whole.diagnostics) == ["tab_in_indentation"]

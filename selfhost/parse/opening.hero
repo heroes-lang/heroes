@@ -17,13 +17,21 @@
 # |---|---|---|---|
 # | refused nothing, and its line ends | none | parsed | named missing at the next line |
 # | refused nothing, and its line goes on | named missing, then dropped | parsed | named missing |
-# | refused something | dropped, as debris | parsed | named missing at the next line, unless the head crossed a line end |
+# | refused something | dropped, as debris | parsed | named missing at the next line, unless the head crossed a line or refused that very token |
 # | any, over a line the lexer joined | as above | parsed | held back (`diag.Held`) |
 #
-# **A line end crossed silences an absent body**, because the head's own
-# recovery can run past its line: `if (n > 0` over `y = 3 )` is a group the
-# body's `)` closes, and the body's absence is then the recovery's doing,
-# not the author's.
+# A body whose margin holds a tab is read as the body too (`Body.tabbed`):
+# the lexer refuses the margin and opens no block, so the line reaches the
+# parser at the head's own level, and naming the body missing named the tab
+# a second time. The missing body is held back against that refusal.
+#
+# **A line crossed silences an absent body**, because the head's own recovery
+# can run past its line: `if (n > 0` over `y = 3 )` is a group the body's `)`
+# closes, and the body's absence is then the recovery's doing, not the
+# author's. The line is read in the text, since inside brackets a line break
+# carries no line end token. **So does the head's own refusal at the same
+# token**: `for` alone at a file's end, refused as found at the end of the
+# block, is not refused there again as a `for` with no body.
 #
 # **A joined line holds back an absent body rather than naming it.** The
 # lexer joins a line that cannot end over the deeper one below it
@@ -63,40 +71,79 @@ record Missing
     lead: str
     tail: str
 
-# Whether an indented body now stands under the cursor, after the head that
-# began at `head`. Says what the table above says, and moves the cursor to the
-# indent when it answers yes.
-function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, missing: Missing) -> bool
-    crossed = crossed_a_line(c, head)
+function missing_body(owner: str) -> Missing
+    return Missing(
+        code: "missing_body",
+        lead: owner + " needs an indented body — one level deeper, exactly 4 spaces (found ",
+        tail: ")"
+    )
+
+function missing_arms() -> Missing
+    return Missing(
+        code: "missing_match_arms",
+        lead: "a `match` needs its arms indented one level below it, found ",
+        tail: ""
+    )
+
+# What stands where a head's body begins.
+variant Body
+    # An indent: the block the lexer opened.
+    indented
+    # A line whose margin holds a tab. The lexer refuses the margin
+    # (`tab_in_indentation`) and opens no block for it, so the line reaches
+    # the parser at the head's own level; it is where the author wrote the
+    # body, and it is read as the body (point 3 of defect 131's second round).
+    tabbed
+    # Nothing that opens one.
+    none
+
+# What stands where the body begins after the head that began at `head`, the
+# table above applied; the cursor stands on the body's first token, or on its
+# indent, when the answer is not `.none`.
+function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, missing: Missing) -> Body
+    crossed = crossed_a_line(c, text, head)
 
     if failed
         cursor.drop_rest_of_line(@c, from: head.pos)
     cursor.skip_terminators(@c)
+    found = opening_at(@c, text, missing)
 
-    if cursor.at(c, .indent)
-        return true
+    if found != .none
+        return found
     absent(@c, text, head: head, silent: failed && crossed, missing: missing)
 
     if cursor.at_fresh_line(c)
-        return false
+        return .none
 
     # The head refused nothing and its line goes on: what goes on was named,
     # and a body below it is still its body, whose mistakes are owed.
     cursor.drop_rest_of_line(@c, from: head.pos)
     cursor.skip_terminators(@c)
-    return cursor.at(c, .indent)
+    return opening_at(@c, text, missing)
+
+# An indent, or a line with a tab in its margin, under the cursor. The second
+# holds back the report of a missing body, placed by `parse` against the
+# lexer's refusal of the margin: that refusal says it in both arms, and were
+# it not there the missing body would be said, the loud direction.
+function opening_at(@c: cursor.Cursor, text: str, missing: Missing) -> Body
+    if cursor.at(c, .indent)
+        return .indented
+
+    if !tabbed_line(c, text)
+        return .none
+    here = cursor.current_span(c)
+    margin = token.Span(start: here.start - margin_width(text, at: here.start), end: here.start)
+    c.held @ c.held.push(diag.Held(at: c.diagnostics.len(), cause: margin, diagnostic: missing_here(c, text, missing)))
+    return .tabbed
 
 # No body where one is owed: named at the cursor, as it always was, unless the
 # lexer already spoke there, the head's recovery ran past its line (`silent`),
-# or the head's line was joined.
+# the head's own refusal stands on this very token, or the head's line was
+# joined.
 function absent(@c: cursor.Cursor, text: str, head: Mark, silent: bool, missing: Missing)
-    if cursor.at_reported_error(c) || silent
+    if cursor.at_reported_error(c) || silent || refused_here(c, head)
         return
-    d = diag.new_diagnostic(
-        code: missing.code,
-        message: missing.lead + cursor.found(c, text) + missing.tail,
-        span: cursor.current_span(c)
-    )
+    d = missing_here(c, text, missing)
     seam = joined_at(c, text, head)
 
     if !seam.is_err()
@@ -104,17 +151,82 @@ function absent(@c: cursor.Cursor, text: str, head: Mark, silent: bool, missing:
         return
     c.diagnostics @ c.diagnostics.push(d)
 
-# Whether a line end, an indent or a dedent lies between the head's first
-# token and the cursor: the head, or its recovery, went on past its line.
-function crossed_a_line(c: cursor.Cursor, head: Mark) -> bool
-    i: i64 @ head.pos
+function missing_here(c: cursor.Cursor, text: str, missing: Missing) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: missing.code,
+        message: missing.lead + cursor.found(c, text) + missing.tail,
+        span: cursor.current_span(c)
+    )
 
-    while i < c.pos
-        if is_line_end(c.tokens[i].kind)
+# Whether the head already refused the token under the cursor: `for` alone at
+# a file's end is refused as found at the end of the block, and a missing body
+# named there is the same mistake at the same column.
+function refused_here(c: cursor.Cursor, head: Mark) -> bool
+    here = cursor.current_span(c).start
+    i: i64 @ head.said
+
+    while i < c.diagnostics.len()
+        if c.diagnostics[i].span.start == here
             return true
         i @ i + 1
 
     return false
+
+# Whether the head, from its first token to its last one read, spans more than
+# one line of the text: it, or its recovery, went on past its line. Asked of
+# the text and not of the tokens, because inside brackets a line break carries
+# no line end: `function f(` over `y = 3 )` is one list the body's `)` closes.
+function crossed_a_line(c: cursor.Cursor, text: str, head: Mark) -> bool
+    last = cursor.previous_significant_span(c)
+    return text_lines.newlines_between(text, from: c.tokens[head.pos].span.start, to: last.end) > 0
+
+# Whether the token under the cursor begins its line of the text and that
+# line's margin holds a tab.
+function tabbed_line(c: cursor.Cursor, text: str) -> bool
+    k = cursor.current_kind(c)
+
+    if k == .eof || is_line_end(k)
+        return false
+    at = cursor.current_span(c).start
+    width = margin_width(text, at: at)
+
+    if width < 0
+        return false
+    i: i64 @ at - width
+
+    while i < at
+        if text[i] == '\t'
+            return true
+        i @ i + 1
+
+    return false
+
+# How many bytes of blank margin stand before `at` on its line, or -1 where
+# something else does and `at` does not begin its line.
+function margin_width(text: str, at: i64) -> i64
+    i: i64 @ at - 1
+
+    while i >= 0 && text[i] != '\n'
+        if text[i] != ' ' && text[i] != '\t'
+            return -1
+        i @ i - 1
+
+    return at - 1 - i
+
+# What a failed construct begun at token `from` drops, as
+# `cursor.drop_rest_of_line` does, but never into the next line of the text:
+# after an `=>` or an `else` over a line whose margin holds a tab the lexer
+# puts no line end, and dropping to the next one took that line too.
+function drop_line(@c: cursor.Cursor, text: str, from: i64)
+    if c.pos != from && cursor.at_fresh_line(c)
+        return
+
+    while !cursor.at(c, .eof) && !cursor.at(c, .indent) && !cursor.at(c, .dedent)
+        if c.pos != from && margin_width(text, at: cursor.current_span(c).start) >= 0
+            return
+
+        if cursor.bump(@c).kind == .terminator
+            return
 
 # Whether the line under the indent the cursor stands on holds a `=>` outside
 # brackets: the block is arms, and a block below a failed line is read as what
