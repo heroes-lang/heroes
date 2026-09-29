@@ -1,0 +1,30 @@
+# Fixed defect 133, 2026-09-29. Symptom: `struct Point {` cost
+# `reserved_word` alone, and only once `check --apply` had written
+# `record Point {` did the next run report `empty_record`; a field missing
+# its colon under `struct` waited the same way. Cause: the lexer emits the
+# refused word as an `error` token, and at a top-level line's head the
+# parser's recovery dropped the whole declaration with its fields. The
+# parser now reads `struct`, whose certain swap is `record`, as `record`
+# (`parse/swap_reading.hero`). The `}` is refused as it is after the swap.
+# A record with no fields above a `struct` line is empty all the same: the
+# guard that stayed silent at the lexer's `error` token reads the next
+# line's head as its swap, `record`, and says so.
+
+record Size
+    w: i64
+
+struct Point {  #~ reserved_word empty_record
+    x: i64
+}  #~ expected_declaration
+
+struct Pair  #~ reserved_word
+    left i64  #~ expected_field_type
+    right: i64
+
+record Nothing  #~ empty_record
+
+struct Whole  #~ reserved_word
+    x: i64
+
+function main()
+    print(1)

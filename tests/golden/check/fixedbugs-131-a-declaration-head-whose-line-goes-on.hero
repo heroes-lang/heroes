@@ -6,14 +6,21 @@
 # recovery after the report, `cursor.recover_to_next_decl`, drops the block
 # under the line. The rest of the line is dropped and what is below read, as
 # after a statement head whose line goes on; the message is the one it was.
+#
+# Moved 2026-09-29 by defect 133's lane, given defect 131's class from this
+# case's own lane: over fields and cases that are there, `empty_record` and
+# `empty_variant` named them missing, so the record's and the variant's
+# report is now the head's junk, `expected_end_of_line`, with where the
+# members go. The `test` line keeps `missing_body` (found `)`): its message
+# is `parse/opening.hero`'s, which that lane's repair did not reach.
 
 test "a name and more" )  #~ missing_body
     y = 3 )  #~ expected_end_of_line
 
-record Point )  #~ empty_record
+record Point )  #~ expected_end_of_line
     x: )  #~ expected_type
 
-variant Token )  #~ empty_variant
+variant Token )  #~ expected_end_of_line
     a
     )  #~ expected_case
 

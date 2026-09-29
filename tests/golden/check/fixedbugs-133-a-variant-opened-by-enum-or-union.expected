@@ -1,0 +1,5 @@
+tests/golden/check/fixedbugs-133-a-variant-opened-by-enum-or-union.hero:16:1: error[reserved_word]: `enum` is not a word in this language — use `variant`: `variant Token`
+tests/golden/check/fixedbugs-133-a-variant-opened-by-enum-or-union.hero:18:1: error[reserved_word]: `union` is not a word in this language — use `variant`: `variant Token`
+tests/golden/check/fixedbugs-133-a-variant-opened-by-enum-or-union.hero:23:1: error[reserved_word]: `enum` is not a word in this language — use `variant`: `variant Token`
+tests/golden/check/fixedbugs-133-a-variant-opened-by-enum-or-union.hero:18:1: error[empty_variant]: a `variant` needs at least one case, indented one level below it
+tests/golden/check/fixedbugs-133-a-variant-opened-by-enum-or-union.hero:20:11: error[expected_field_type]: expected `:` and the field's type, found a name (`f64`)

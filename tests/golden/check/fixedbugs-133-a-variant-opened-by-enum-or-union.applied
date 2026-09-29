@@ -1,0 +1,28 @@
+# Fixed defect 133, 2026-09-29. Symptom: `enum Color` with no cases cost
+# `reserved_word` alone, and only once `check --apply` had written
+# `variant Color` did the next run report `empty_variant`; a case field
+# missing its colon under `union` waited the same way. Cause: the lexer
+# emits the refused word as an `error` token, and at a top-level line's head
+# the parser's recovery dropped the whole declaration with its cases. The
+# parser now reads `enum` and `union`, whose certain swap is `variant`, as
+# `variant` (`parse/swap_reading.hero`). An empty `variant` is refused at
+# the next line's first token, as it is after the swap, so the one under
+# `enum Color` lands on the `union` line.
+
+variant Ok
+    yes
+    no
+
+variant Color  #~ reserved_word
+
+variant Shape  #~ reserved_word empty_variant
+    circle
+        r f64  #~ expected_field_type
+    square
+
+variant Suit  #~ reserved_word
+    hearts
+    spades
+
+function main()
+    print(1)

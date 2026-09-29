@@ -24,6 +24,7 @@ use ast
 use cursor
 use data_errors
 use parse/line_end
+use parse/swap_reading
 
 ## The entry point
 
@@ -65,10 +66,11 @@ function parse_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
 ## The six shapes, each decided by its first token
 
+# `int` reads as the named type its certain swap writes (defect 133).
 function prefix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     k = cursor.current_kind(c)
 
-    if k == .ident
+    if k == .ident || swap_reading.reads_as_name(c, text)
         return named(@c, @a, text)
 
     if k == .lbracket
@@ -170,7 +172,7 @@ function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         close = cursor.bump(@c).span
         return ast.push_type(@a.types, ast.TypeNode(kind: .unit, span: token.Span(start: open.start, end: close.end)))
 
-    if !cursor.expect(@c, text: text, kind: .kw_function, code: "expected_function_type", what: "`function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`")
+    if !swap_reading.eat_as(@c, text, .kw_function) && !cursor.expect(@c, text: text, kind: .kw_function, code: "expected_function_type", what: "`function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`")
         # This `(` was consumed here, so its `)` is this function's to find:
         # leaving it for the caller made a signature containing one bad type
         # report the mistake three times.
@@ -548,3 +550,53 @@ test "a type that cannot be read is a node, so the errors after it are found"
 
     # Not consumed: the caller's recovery decides where the line ends.
     assert cursor.current_kind(c) == .plus
+
+# Defect 133: a foreign word whose certain swap the type grammar can read is
+# read as written by the swap, and consumed, so the signature goes on.
+test "a foreign word in a type reads as its certain swap and is consumed"
+    # (fn(i64) -> i64), the lexer having refused `fn`
+    stream: [token.Token] = [
+        tok(.lparen, start: 0, end: 1)
+        tok(.error, start: 1, end: 3)
+        tok(.lparen, start: 3, end: 4)
+        tok(.ident, start: 4, end: 7)
+        tok(.rparen, start: 7, end: 8)
+        tok(.arrow, start: 9, end: 11)
+        tok(.ident, start: 12, end: 15)
+        tok(.rparen, start: 15, end: 16)
+        tok(.eof, start: 16, end: 16)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_type(@c, @a, "(fn(i64) -> i64)")
+
+    match a.types[at].kind
+        .function_type f                                                   => assert f.params.len() == 1
+        .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => assert false
+
+    assert c.diagnostics.len() == 0
+    assert cursor.at(c, .eof)
+
+    # `int` reads as the NAMED type the swap writes, over the span written.
+    named_stream: [token.Token] = [
+        tok(.error, start: 0, end: 3)
+        tok(.terminator, start: 3, end: 3)
+        tok(.eof, start: 3, end: 3)
+    ]
+    n: cursor.Cursor @ cursor.new_cursor(named_stream)
+    na: ast.Ast @ ast.new_ast()
+    nat = parse_type(@n, @na, "int")
+    assert na.types[nat].kind == .named
+    assert na.types[nat].span == token.Span(start: 0, end: 3)
+    assert n.diagnostics.len() == 0
+    assert cursor.at(n, .terminator)
+
+    # A word with no certain swap is left where it stands, and said nothing of:
+    # the lexer spoke, and the caller's recovery decides where the line ends.
+    guided: [token.Token] = [tok(.error, start: 0, end: 4), tok(.eof, start: 4, end: 4)]
+    g: cursor.Cursor @ cursor.new_cursor(guided)
+    ga: ast.Ast @ ast.new_ast()
+    gat = parse_type(@g, @ga, "None")
+    assert ga.types[gat].kind == .error
+    assert g.diagnostics.len() == 0
+    assert cursor.at(g, .error)

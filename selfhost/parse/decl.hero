@@ -40,7 +40,10 @@ use lexer
 use parse/members as parse_members
 use parse/use_line
 use parse/tails
+use parse/records
 use parse/group
+use parse/swap_reading
+use parse/headless
 use grammar_expr
 use parse/opening
 
@@ -48,12 +51,18 @@ use parse/opening
 
 # Read declarations until end of file. Every path either builds a declaration
 # or recovers past one, so this loop always makes progress.
+#
+# **A foreign word whose certain swap is a declaration's keyword opens that
+# declaration** (defect 133): `fn main() {` is read as `function main() {`,
+# so the brace is reported in the same run as the `fn`. Every declaration
+# below consumes its keyword without asking its kind, which is what lets the
+# `error` token the lexer left there stand for the keyword the swap writes.
 function file(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], @uses: [ast.Use], text: str)
     done: bool @ false
 
     while !done
         cursor.skip_terminators(@c)
-        k = cursor.current_kind(c)
+        k = swap_reading.opens_line_as(c, text)
 
         if k == .eof
             done @ true
@@ -72,9 +81,9 @@ function file(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], @uses: [ast.Us
         else if k == .kw_use
             use_line.declaration(@c, @uses, text)
         else
-            unexpected_top_level(@c, text)
+            unexpected_top_level(@c, @a, text)
 
-function unexpected_top_level(@c: cursor.Cursor, text: str)
+function unexpected_top_level(@c: cursor.Cursor, @a: ast.Ast, text: str)
     if !cursor.at_reported_error(c)
         cursor.error(
             @c,
@@ -87,11 +96,27 @@ function unexpected_top_level(@c: cursor.Cursor, text: str)
     # only drops the REST of a broken line, and the dispatcher must always
     # move. An indented block at top level belongs to no declaration, so it is
     # dropped whole — and nothing else is, because the next line is innocent.
+    #
+    # **A block under the refused line is read, never dropped** (defect 130's
+    # class, 2026-09-29): `recrod Point` over its fields owes the fields'
+    # mistakes in this run, and `expected_declaration` stays the one report
+    # of the head. `parse/headless.hero` reads it by the shape of its lines.
+    # Only where the refused word OPENS its line: in the middle of one, past a
+    # head that failed and left it (`extern "m.h" )`), the block is that
+    # head's, and it goes whole with it, as it always did.
     if cursor.at(c, .indent)
         _ = cursor.balanced_block(@c)
-    else
-        _ = cursor.bump(@c)
-        cursor.recover_to_next_decl(@c)
+        return
+    opens = cursor.at_fresh_line(c)
+    from = c.pos
+    _ = cursor.bump(@c)
+    cursor.drop_rest_of_line(@c, from: from)
+    cursor.skip_terminators(@c)
+
+    if opens
+        headless.read(@c, @a, text)
+    else if cursor.at(c, .indent)
+        _ = cursor.balanced_block(@c)
 
 ## The shared head
 
@@ -109,11 +134,15 @@ record Head
     doc: [token.Span]
     name: token.Span
 
+# The keyword is quoted as WRITTEN, which is the keyword's own spelling
+# everywhere but where the parser reads a foreign word as its swap (defect
+# 133): `const` alone on its line is *after `const`*, the word the author can
+# find, and never *after an unreadable token*.
 function head(@c: cursor.Cursor, text: str, example: str) -> Head?
     from = c.pos
     keyword = cursor.current_span(c)
     doc = cursor.take_docs(@c, text, keyword)
-    kind_text = cursor.found(c, text)
+    kind_text = "`" + cursor.slice_of(text, keyword) + "`"
     _ = cursor.bump(@c)
 
     if !cursor.at(c, .ident)
@@ -221,7 +250,7 @@ function record_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], 
             _ = parse_members.field_block(@c, @a, text)
         return
     hd = h.must()
-    tails.record_tail(@c, @a, @decls, text, keyword: hd.keyword, doc: hd.doc, name: hd.name, linkage: linkage)
+    records.record_tail(@c, @a, @decls, text, keyword: hd.keyword, doc: hd.doc, name: hd.name, linkage: linkage)
 
 ## variant
 
@@ -238,19 +267,37 @@ function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl],
     grammar_expr.eat_python_colon(@c)
     cursor.skip_terminators(@c)
 
+    # Past the line end, the next head is read as its swap (defect 133). What
+    # goes on past the head is dropped and cases below it are read, as a
+    # record's fields are (defect 131's second round, lane 130), and over
+    # cases that are there the report is the head's own junk, never
+    # `empty_variant` (defect 131's class, 2026-09-29; `records.record_tail`).
     if !cursor.at(c, .indent)
-        if !cursor.at_reported_error(c)
-            cursor.error(
-                @c,
-                code: "empty_variant",
-                message: "a `variant` needs at least one case, indented one level below it",
-                span: tails.here_or(c, hd.keyword)
-            )
+        junk = cursor.current_span(c)
+        found = swap_reading.found(c, text)
+        spoke = swap_reading.at_reported_error(c, text)
+        goes_on = !cursor.at_fresh_line(c)
+        empty_at = tails.here_or(c, hd.keyword)
 
-        # What goes on past the head is dropped, and cases below it are
-        # still read, as a record's fields are (defect 131's second round).
-        if !cursor.at_fresh_line(c)
+        if goes_on
             cursor.skip_line(@c)
+
+        if !spoke
+            if goes_on && cursor.at(c, .indent)
+                records.junk_after_head(
+                    @c,
+                    head: cursor.slice_of(text, token.Span(start: hd.keyword.start, end: hd.name.end)),
+                    found: found,
+                    span: junk,
+                    members: "its cases"
+                )
+            else
+                cursor.error(
+                    @c,
+                    code: "empty_variant",
+                    message: "a `variant` needs at least one case, indented one level below it",
+                    span: empty_at
+                )
 
         if !cursor.at(c, .indent)
             return
@@ -399,3 +446,51 @@ test "an absolute path in a group head is the machine's, not the program's"
     assert p.diagnostics.len() == 1
     assert p.diagnostics[0].code == "machine_locked_path"
     assert p.decls.len() == 1
+
+# Defect 133. `parse_source` returns the PARSER's diagnostics, so each case
+# counts what the construct itself costs beside the lexer's `reserved_word`.
+test "a foreign word whose certain swap is a declaration's keyword opens that declaration"
+    braced = parse_source("fn main() {\n    print(1)\n}\n")
+    assert braced.diagnostics.len() >= 1
+    assert braced.diagnostics[0].code == "missing_body"
+
+    untyped = parse_source("const MAX = 5\n")
+    assert untyped.diagnostics.len() == 1
+    assert untyped.diagnostics[0].code == "expected_constant_type"
+
+    # A correct rest is a whole declaration, and the one after it is untouched.
+    text = "struct Point\n    x: i64\nenum Color\n    red\nimport geom\nfunction f()\n    return\n"
+    whole = parse_source(text)
+    assert whole.diagnostics.len() == 0
+    assert whole.decls.len() == 3
+    assert whole.uses.len() == 1
+    assert cursor.slice_of(text, whole.decls[0].name) == "Point"
+    assert cursor.slice_of(text, whole.decls[2].name) == "f"
+
+    # And a group member reads the same way.
+    member = parse_source("extern \"m.h\"\n    fn q(x: f64) -> f64\n    const K: i64\n")
+    assert member.diagnostics.len() == 0
+    assert member.decls.len() == 2
+
+test "a swap is read only where its keyword is what the grammar expects"
+    # `fn` as a NAME: the swap writes `function function(`, a new error of
+    # the fix's own (defect 015's class), so it is not read and the lexer's
+    # diagnostic stands alone.
+    named = parse_source("function fn(x: i64)\n    return\n")
+    assert named.diagnostics.len() == 0
+
+    # Guidance is never read: `class` might be a record, and the parser does
+    # not guess.
+    guided = parse_source("class Point\n    x: i64\n")
+    assert guided.diagnostics.len() == 0
+    assert guided.decls.len() == 0
+
+    # `enum` writes `variant`, which no group holds.
+    grouped = parse_source("extern \"m.h\"\n    enum E\n")
+    assert grouped.diagnostics.len() == 0
+
+    # And the keyword is quoted as written.
+    bare = parse_source("const\n")
+    assert bare.diagnostics.len() == 1
+    said = "expected the declared name after `const`,"
+    assert bare.diagnostics[0].message.slice(from: 0, to: said.len()) == said

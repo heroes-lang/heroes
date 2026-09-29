@@ -1,0 +1,5 @@
+tests/golden/check/fixedbugs-133-a-function-opened-by-def-and-its-colon.hero:12:1: error[reserved_word]: `def` is not a word in this language — use `function`
+tests/golden/check/fixedbugs-133-a-function-opened-by-def-and-its-colon.hero:12:12: error[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`
+tests/golden/check/fixedbugs-133-a-function-opened-by-def-and-its-colon.hero:12:20: error[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`
+tests/golden/check/fixedbugs-133-a-function-opened-by-def-and-its-colon.hero:12:28: error[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`
+tests/golden/check/fixedbugs-133-a-function-opened-by-def-and-its-colon.hero:12:31: error[trailing_colon]: a block is opened by the indentation alone — drop the `:` (this is not Python)
