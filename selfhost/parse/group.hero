@@ -23,6 +23,7 @@
 # function_tail` was a ring, and Heroes refuses module cycles.
 
 use token
+use diag
 use cursor
 use ast
 use keywords
@@ -63,18 +64,22 @@ function extern_group(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: 
         return
     header = h.must()
     library = library_clause(@c, text)
+    head = token.Span(start: keyword.start, end: cursor.previous_significant_span(c).end)
     cursor.skip_terminators(@c)
 
-    # Past the line end, the next head is read as its swap (defect 133).
+    # Past the line end, the next head is read as its swap (defect 133). Junk
+    # on the head's own line over the signatures below is the one report, and
+    # the signatures are read (defect 131's class, 2026-09-29): `extern "m.h"
+    # )` cost `expected_extern_block` and `expected_declaration` at one `)`.
     if !cursor.at(c, .indent)
-        if !swap_reading.at_reported_error(c, text)
-            cursor.error(
-                @c,
-                code: "expected_extern_block",
-                message: "an `extern` group's signatures are indented under it — `extern \"math.h\"` then `    function sqrt(x: f64) -> f64` (§4.19)",
-                span: cursor.current_span(c)
-            )
-        return
+        empty = diag.new_diagnostic(
+            code: "expected_extern_block",
+            message: "an `extern` group's signatures are indented under it — `extern \"math.h\"` then `    function sqrt(x: f64) -> f64` (§4.19)",
+            span: cursor.current_span(c)
+        )
+
+        if !records.no_members_below(@c, text: text, head: head, members: "its signatures", empty: empty)
+            return
     members(@c, @a, @decls, text, group_doc: doc, linkage: .from_c(header: header, library: library))
 
 # The head line's header string. A missing one is where the old headerless
@@ -294,7 +299,13 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
                     span: cursor.current_span(c)
                 )
 
+            # A block under the refused line is that line's, `enum Mode` over
+            # its cases: it goes with it, and is never a member of its own
+            # (defect 130's class, 2026-09-29).
             if cursor.at(c, .indent)
                 _ = cursor.balanced_block(@c)
             else
                 cursor.skip_line(@c)
+
+                if cursor.at(c, .indent)
+                    _ = cursor.balanced_block(@c)

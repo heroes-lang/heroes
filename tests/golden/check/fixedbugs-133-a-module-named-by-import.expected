@@ -1,5 +1,4 @@
-tests/golden/check/fixedbugs-133-a-module-named-by-import.hero:12:1: error[reserved_word]: `import` and `include` are not words in this language — a module is named with `use`: `use geom`
-tests/golden/check/fixedbugs-133-a-module-named-by-import.hero:13:1: error[reserved_word]: `import` and `include` are not words in this language — a module is named with `use`: `use geom`
-tests/golden/check/fixedbugs-133-a-module-named-by-import.hero:14:1: error[reserved_word]: `import` and `include` are not words in this language — a module is named with `use`: `use geom`
-tests/golden/check/fixedbugs-133-a-module-named-by-import.hero:12:12: error[module_path_has_no_parts]: a module path is written with `/`, not `.` — `use geom/…`, and every `use` starts at the directory of the file you compile
-tests/golden/check/fixedbugs-133-a-module-named-by-import.hero:13:1: error[expected_module_name]: expected the module's name after `use`, found end of line — `use geom`, which reads `geom.hero` beside this file
+tests/golden/check/fixedbugs-133-a-module-named-by-import.hero:18:1: error[reserved_word]: `import` and `include` are not words in this language — a module is named with `use`: `use geom`
+tests/golden/check/fixedbugs-133-a-module-named-by-import.hero:19:1: error[reserved_word]: `import` is not a word in this language — use `use`, followed by the module it names: `use geom`
+tests/golden/check/fixedbugs-133-a-module-named-by-import.hero:20:1: error[reserved_word]: `import` and `include` are not words in this language — a module is named with `use`: `use geom`
+tests/golden/check/fixedbugs-133-a-module-named-by-import.hero:18:12: error[module_path_has_no_parts]: a module path is written with `/`, not `.` — `use geom/…`, and every `use` starts at the directory of the file you compile

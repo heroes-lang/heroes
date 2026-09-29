@@ -21,6 +21,14 @@
 # diagnostic. Those three are a certain fix that writes a new error, which is
 # defect 015's class and not this one.
 #
+# **Since the second round, 2026-09-29, the swap is not even certain there**:
+# `foreign_at` offers it as certain only where the word it writes is right
+# in the place the word stands, and this module reads what `foreign_at`
+# calls certain, so the reading and the fix cannot part. One reading goes
+# past certainty, on purpose: a bare function type where a type goes,
+# `g: fn(i64) -> i64`, is read as the type it means (`reads_as_function`),
+# because its swap is withheld only for the parentheses it still wants.
+#
 # **The token stays `error`, and that is the design rather than a shortcut.**
 # The other way, the lexer emitting the keyword's token for the word, was
 # built and measured on 2026-09-29 and refused: every reader of the stream
@@ -32,7 +40,9 @@
 # saw before, and so does every `cursor.at_reported_error` guard but the four
 # that stand past a declaration's line end, at the next line's first token:
 # an empty `record`, `variant` or `extern` group and an absent body. Those
-# ask `at_reported_error` below, because the next head is read as its swap.
+# ask `at_reported_error` below, which keeps its silence only on the head's
+# own line, since the lexer's report on the next line's first token says
+# nothing of the declaration above it.
 #
 # A leaf: it reads the cursor and the word tables, and nothing it calls reads
 # the parser. Its callers: `parse/decl.hero` (`file`, `variant_declaration`),
@@ -45,6 +55,7 @@ use bytes
 use cursor
 use keywords
 use foreign_at
+use word_place
 
 ## Reading
 
@@ -77,24 +88,65 @@ function opens_line_as(c: cursor.Cursor, text: str) -> token.TokenKind
         return cursor.current_kind(c)
     return reads_as(c, text)
 
-# `cursor.at_reported_error`, asked of what the token READS AS where it opens
-# its line. A guard that has crossed its declaration's line end is looking
-# at the NEXT line's first token, and a foreign word the parser reads as its
-# swap is a keyword there: `record P` over `struct Q` is still an empty
-# record, as it is once the swap writes `record Q` (defect 133). On the
-# head's own line the word is junk the lexer has reported, and that report
-# is the one message: `function f() fn` costs `reserved_word` alone. Every
-# other `error` token keeps its silence.
+# `cursor.at_reported_error`, for a guard that has crossed its declaration's
+# line end. There the cursor stands on the NEXT line's first token, and the
+# lexer's report on that token is about that token: it says nothing of the
+# record with no fields, the variant with no cases, the group with no
+# members or the head with no body above it, which are mistakes of their
+# own. So such a guard keeps its silence only on the head's own line, where
+# the refused word is junk the lexer has reported (`function f() fn`). Until
+# 2026-09-29 it kept it at every `error` token: `record P` over `class Q`,
+# `let x` or `€` was never told it was empty, before or after `--apply`
+# (defect 130's class), and a swap the parser reads as its keyword spoke
+# only because the swap made it a keyword (defect 133).
+#
+# "The head's own line" is the text's: the token stands in the middle of the
+# line it is on, which a line the lexer joined onto the head's still is.
 function at_reported_error(c: cursor.Cursor, text: str) -> bool
-    return cursor.at(c, .error) && opens_line_as(c, text) == .error
+    if !cursor.at(c, .error)
+        return false
+    here = cursor.current_span(c).start
+    return !word_place.only_margin(text, from: word_place.line_start(text, at: here), to: here)
 
-# `cursor.found`, for a word read as its swap: the word as WRITTEN, `fn`,
-# which the author can find, rather than *an unreadable token*, which the
-# parser has just read.
+# `cursor.found`, for a word or a character the lexer refused: as WRITTEN,
+# `fn`, `class` or `€`, which the author can find, rather than *an
+# unreadable token*, which it is not: the lexer read it, and said what it
+# is. A longer refusal, a literal the lexer could not decode, keeps the
+# cursor's words.
 function found(c: cursor.Cursor, text: str) -> str
-    if cursor.at(c, .error) && reads_as(c, text) != .error
-        return "`" + cursor.slice_of(text, cursor.current_span(c)) + "`"
+    if !cursor.at(c, .error)
+        return cursor.found(c, text)
+    span = cursor.current_span(c)
+    one_character = bytes.char_at(text, span.start).len() == span.end - span.start
+
+    if one_character || !foreign_at.repair_at(text, span).is_err()
+        return "`" + cursor.slice_of(text, span) + "`"
     return cursor.found(c, text)
+
+# Whether the current token opens a function type as its author meant it:
+# `function`, or a foreign word whose swap is `function` in the table, where
+# it stands or not. Asked only where a type goes (`type.prefix`), so that
+# `g: fn(i64) -> i64`, whose swap is not certain there because the type
+# still wants its parentheses, is read as the type it means and the
+# signature goes on (defect 133's second round).
+function reads_as_function(c: cursor.Cursor, text: str) -> bool
+    if cursor.at(c, .kw_function)
+        return true
+
+    if !cursor.at(c, .error)
+        return false
+    span = cursor.current_span(c)
+    called = span.end < text.len() && text[span.end] == '('
+    entry = keywords.foreign_word(text: cursor.slice_of(text, span), called: called)
+
+    if entry.is_err()
+        return false
+
+    return match entry.must().repair
+        .swap fix => fix.word == "function"
+        .hint _   => false
+        .drop     => false
+        .guidance => false
 
 # Consume the current token when it reads as `kind`, as `cursor.eat` does
 # when it IS that kind.
@@ -144,56 +196,83 @@ function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
     return token.Token(kind: kind, span: token.Span(start: start, end: end))
 
 test "a certain swap to a keyword reads as that keyword, and nothing else does"
-    text = "fn struct let int elif main"
+    text = "fn f\nrecord P struct\nlet\nx: int\nelif\nmain\n"
     tokens = [
         tok(.error, start: 0, end: 2)
-        tok(.error, start: 3, end: 9)
-        tok(.error, start: 10, end: 13)
-        tok(.error, start: 14, end: 17)
-        tok(.error, start: 18, end: 22)
-        tok(.ident, start: 23, end: 27)
-        tok(.eof, start: 27, end: 27)
+        tok(.ident, start: 3, end: 4)
+        tok(.terminator, start: 4, end: 4)
+        tok(.kw_record, start: 5, end: 11)
+        tok(.ident, start: 12, end: 13)
+        tok(.error, start: 14, end: 20)
+        tok(.terminator, start: 20, end: 20)
+        tok(.error, start: 21, end: 24)
+        tok(.terminator, start: 24, end: 24)
+        tok(.ident, start: 25, end: 26)
+        tok(.colon, start: 26, end: 27)
+        tok(.error, start: 28, end: 31)
+        tok(.terminator, start: 31, end: 31)
+        tok(.error, start: 32, end: 36)
+        tok(.terminator, start: 36, end: 36)
+        tok(.ident, start: 37, end: 41)
+        tok(.terminator, start: 41, end: 41)
+        tok(.eof, start: 42, end: 42)
     ]
     c: cursor.Cursor @ cursor.new_cursor(tokens)
-    assert reads_as(c, text) == .kw_function
-    assert !reads_as_name(c, text)
 
-    # A guard past a line end reads it as the keyword, and quotes it as written.
+    # `fn` opens its line at the margin, where `function` is right.
+    assert reads_as(c, text) == .kw_function
+    assert opens_line_as(c, text) == .kw_function
+    assert !reads_as_name(c, text)
     assert !at_reported_error(c, text)
     assert found(c, text) == "`fn`"
-    _ = cursor.bump(@c)
-    assert reads_as(c, text) == .kw_record
 
-    # In the middle of a line the same word is junk the lexer reported: no
-    # dispatcher opens a declaration on it, and no guard speaks over it.
+    # In the middle of a line `struct` is junk the lexer reported: `record`
+    # is not right there, no dispatcher opens a declaration on it, and no
+    # guard speaks over it.
+    c.pos @ 5
+    assert reads_as(c, text) == .error
     assert opens_line_as(c, text) == .error
     assert at_reported_error(c, text)
 
-    # `let` is guidance, so it reads as the `error` it is, and keeps its silence.
-    _ = cursor.bump(@c)
+    # `let` is guidance and reads as the `error` it is, and a guard past a
+    # line end speaks over it all the same, quoting it as written.
+    c.pos @ 7
     assert reads_as(c, text) == .error
     assert !reads_as_name(c, text)
-    assert at_reported_error(c, text)
-    assert found(c, text) == cursor.found(c, text)
+    assert !at_reported_error(c, text)
+    assert found(c, text) == "`let`"
 
-    # `int` reads as a name and never as a keyword.
-    _ = cursor.bump(@c)
+    # `int` in a type's place reads as a name and never as a keyword.
+    c.pos @ 11
     assert reads_as(c, text) == .error
     assert reads_as_name(c, text)
 
-    # `elif` writes two words, which no one token can stand for.
-    _ = cursor.bump(@c)
+    # `elif` at the margin continues no `if`, and it writes two words.
+    c.pos @ 13
     assert reads_as(c, text) == .error
     assert !reads_as_name(c, text)
 
     # A plain name is its own kind.
-    _ = cursor.bump(@c)
+    c.pos @ 15
     assert reads_as(c, text) == .ident
     assert !reads_as_name(c, text)
 
+test "a bare function type reads as the type it means, certain or not"
+    text = "g: fn(i64) -> i64"
+    tokens = [
+        tok(.ident, start: 0, end: 1)
+        tok(.colon, start: 1, end: 2)
+        tok(.error, start: 3, end: 5)
+        tok(.eof, start: 17, end: 17)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    c.pos @ 2
+    assert reads_as(c, text) == .error
+    assert reads_as_function(c, text)
+
 test "eat_as consumes only what reads as the kind asked for"
-    text = "fn(i64)"
-    tokens = [tok(.error, start: 0, end: 2), tok(.lparen, start: 2, end: 3), tok(.eof, start: 7, end: 7)]
+    text = "x: (fn(i64)"
+    tokens = [tok(.error, start: 4, end: 6), tok(.lparen, start: 6, end: 7), tok(.eof, start: 11, end: 11)]
     c: cursor.Cursor @ cursor.new_cursor(tokens)
     assert !eat_as(@c, text, .kw_record)
     assert eat_as(@c, text, .kw_function)

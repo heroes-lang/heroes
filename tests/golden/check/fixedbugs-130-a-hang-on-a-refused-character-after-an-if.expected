@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-130-a-hang-on-a-refused-character-after-an-if.hero:16:5: error[unexpected_character]: `€` (U+20AC) is not part of the language's syntax

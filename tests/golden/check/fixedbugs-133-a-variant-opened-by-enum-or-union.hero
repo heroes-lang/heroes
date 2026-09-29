@@ -8,14 +8,19 @@
 # `variant` (`parse/swap_reading.hero`). An empty `variant` is refused at
 # the next line's first token, as it is after the swap, so the one under
 # `enum Color` lands on the `union` line.
+#
+# Moved the same day, a second round (defect 131's class): `empty_variant`
+# points at its own head now, `enum Color`, as `empty_record` does, and no
+# longer at the next line's first token, a line the author did nothing wrong
+# on.
 
 variant Ok
     yes
     no
 
-enum Color  #~ reserved_word
+enum Color  #~ reserved_word empty_variant
 
-union Shape  #~ reserved_word empty_variant
+union Shape  #~ reserved_word
     circle
         r f64  #~ expected_field_type
     square

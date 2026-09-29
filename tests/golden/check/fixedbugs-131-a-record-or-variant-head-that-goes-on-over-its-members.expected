@@ -1,6 +1,8 @@
-tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:13:14: error[expected_end_of_line]: expected the end of the line after `record Point`, found `)` — its fields go on the lines below it, one level deeper
-tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:15:7: error[expected_field_type]: expected `:` and the field's type, found a name (`i64`)
-tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:17:1: error[empty_record]: a `record` needs at least one field, indented one level below it
-tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:19:15: error[expected_end_of_line]: expected the end of the line after `variant Token`, found `)` — its cases go on the lines below it, one level deeper
-tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:22:11: error[expected_field_type]: expected `:` and the field's type, found a name (`f64`)
-tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:24:17: error[empty_variant]: a `variant` needs at least one case, indented one level below it
+tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:19:14: error[expected_end_of_line]: expected the end of the line after `record Point`, found `)` — its fields go on the lines below it, one level deeper
+tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:21:7: error[expected_field_type]: expected `:` and the field's type, found a name (`i64`)
+tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:23:1: error[empty_record]: a `record` needs at least one field, indented one level below it
+tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:25:15: error[expected_end_of_line]: expected the end of the line after `variant Token`, found `)` — its cases go on the lines below it, one level deeper
+tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:28:11: error[expected_field_type]: expected `:` and the field's type, found a name (`f64`)
+tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:30:1: error[empty_variant]: a `variant` needs at least one case, indented one level below it
+tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:32:14: error[expected_end_of_line]: expected the end of the line after `extern "m.h"`, found `)` — its signatures go on the lines below it, one level deeper
+tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero:35:14: error[expected_extern_block]: an `extern` group's signatures are indented under it — `extern "math.h"` then `    function sqrt(x: f64) -> f64` (§4.19)

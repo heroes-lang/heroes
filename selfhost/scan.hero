@@ -154,11 +154,23 @@ function ident(@l: state.LexState, text: str)
             .hint fix => d.fixes.push(
                 diag.Fix(title: "`" + fix.word + "` is where to look", replacement: fix.word, span: span, certainty: .guess)
             )
+            .drop => d.fixes.push(
+                diag.Fix(title: "drop `" + word + "`", replacement: "", span: token.Span(start: start, end: past_spaces(text, from: l.pos)), certainty: .guess)
+            )
             .guidance => d.fixes
 
         state.error_token(@l, d)
         return
     state.emit(@l, .ident, start)
+
+# The offset past the spaces that follow `from` on its line.
+function past_spaces(text: str, from: i64) -> i64
+    i: i64 @ from
+
+    while i < text.len() && text[i] == ' '
+        i @ i + 1
+
+    return i
 
 ## The punctuation
 
@@ -234,12 +246,22 @@ test "longest match wins and the hole beats the question mark"
 
 test "a keyword is not an identifier and a foreign word repairs itself"
     l: state.LexState @ state.new_state()
-    line_body(@l, "while fn x")
-    assert l.tokens[0].kind == .kw_while
-    assert l.tokens[1].kind == .error
+    line_body(@l, "fn main()")
+    assert l.tokens[0].kind == .error
     assert l.diagnostics[0].code == "reserved_word"
     assert l.diagnostics[0].fixes[0].replacement == "function"
-    assert l.tokens[2].kind == .ident
+    assert l.diagnostics[0].fixes[0].certainty == .certain
+    assert l.tokens[1].kind == .ident
+
+    # Where the word it writes is wrong, the swap is not offered as certain
+    # (defect 133's second round): `while function x` is no program.
+    w: state.LexState @ state.new_state()
+    line_body(@w, "while fn x")
+    assert w.tokens[0].kind == .kw_while
+    assert w.tokens[1].kind == .error
+    assert w.diagnostics[0].code == "reserved_word"
+    assert w.diagnostics[0].fixes.len() == 0
+    assert w.tokens[2].kind == .ident
 
 test "a comment is retained and plants no terminator"
     l: state.LexState @ state.new_state()
