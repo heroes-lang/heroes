@@ -1,0 +1,43 @@
+# A literal the lexer refused, which is still a literal (design.md §4.17;
+# defect 130's class, lane Y's finding, 2026-09-29).
+#
+# The lexer refuses a number or a quoted literal by its spelling, `0X10`,
+# `0b102`, `'ab'`, and hands the parser an `error` token for it, its report
+# already made. The spelling is the literal's one mistake, and its place is
+# a value's: where a line's end is owed after it, the end is still owed,
+# since the line its certain fix writes is refused there, `x = 1 0X10` and
+# `dark 0X10` after a case's name alike. So the parser asks whether the
+# token under the cursor is one, and names it as the literal it is.
+#
+# Moved out of `parse/statement_end.hero` on 2026-09-30 (lane recovery-b1),
+# when a member's line came to ask the same question
+# (`parse/member_lines.hero`), a module that one cannot reach without a
+# cycle through `parse/headless.hero`. A leaf: it reads the cursor and the
+# text.
+
+use token
+use cursor
+use describe
+
+# Whether the cursor stands on a literal the lexer refused, a number or a
+# quoted literal: an `error` token whose first byte is a digit or a quote.
+function here(c: cursor.Cursor, text: str) -> bool
+    if !cursor.at(c, .error)
+        return false
+    first = text[cursor.current_span(c).start]
+    return first >= '0' && first <= '9' || first == '"' || first == '\''
+
+# The token under the cursor as "expected X, found Y" names it: a refused
+# literal as the literal it is, in the words the line its certain fix writes
+# is told in, where the lexer's word for it is an unreadable token.
+function found(c: cursor.Cursor, text: str) -> str
+    if !here(c, text)
+        return cursor.found(c, text)
+    first = text[cursor.current_span(c).start]
+    kind: token.TokenKind @ .int_lit
+
+    if first == '"'
+        kind @ .str_lit
+    else if first == '\''
+        kind @ .char_lit
+    return describe.describe(kind) + " (`" + cursor.slice_of(text, cursor.current_span(c)) + "`)"

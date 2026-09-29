@@ -38,18 +38,18 @@
 # 2026-09-29). Its spelling is its one mistake, `0X10`, and its place is a
 # value's: where the grammar asked an operand of it, `x = 0X10 + f(1) )`, the
 # line is read past it (`refused_operand`), and where the line's end goes, `x
-# = 1 0X10`, the end is still owed (`refused_literal`). The line its certain
-# fix writes, `0x10`, is refused for that `)` or that `0x10`, which the first
-# run hid, so a certain fix wrote a program with a mistake no run had told.
+# = 1 0X10`, the end is still owed (`parse/refused_literal`, whose question
+# a member's line asks too). The line its certain fix writes, `0x10`, is
+# refused for that `)` or that `0x10`, which the first run hid, so a certain
+# fix wrote a program with a mistake no run had told.
 
-use token
 use cursor
-use describe
 use ast
 use parse/brace_habit
 use parse/headless
 use parse/orphans
 use parse/refused_heads
+use parse/refused_literal
 
 # What hangs below the line a statement ended on, for the grammar to read.
 variant Below
@@ -75,7 +75,7 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
 
     if ended || cursor.at(c, .dedent) || cursor.at(c, .eof) || cursor.eat(@c, .terminator)
         return .nothing
-    said = !cursor.at_reported_error(c) || refused_literal(c, text)
+    said = !cursor.at_reported_error(c) || refused_literal.here(c, text)
 
     # A line a refused word heads that binds, `let x = 5 )` or `let m = {`
     # over a map's entries: past the word the rest is a statement, read as
@@ -88,7 +88,7 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
         cursor.error(
             @c,
             code: "expected_end_of_line",
-            message: "expected the end of the line, found " + found(c, text) + " — one statement per line, no semicolons",
+            message: "expected the end of the line, found " + refused_literal.found(c, text) + " — one statement per line, no semicolons",
             span: cursor.current_span(c)
         )
     brace_habit.skip_line(@c, text)
@@ -115,19 +115,11 @@ function hangs_below(c: cursor.Cursor, text: str) -> Below
         return .read
     return .nothing
 
-# Whether the cursor stands on a literal the lexer refused, a number or a
-# quoted literal: an `error` token whose first byte is a digit or a quote.
-function refused_literal(c: cursor.Cursor, text: str) -> bool
-    if !cursor.at(c, .error)
-        return false
-    first = text[cursor.current_span(c).start]
-    return first >= '0' && first <= '9' || first == '"' || first == '\''
-
 # Whether the cursor stands on a refused literal the grammar asked an operand
 # of and could not read: an `error` expression at its span, built since the
 # statement's first, `exprs`.
 function refused_operand(c: cursor.Cursor, a: ast.Ast, text: str, exprs: i64) -> bool
-    if !refused_literal(c, text)
+    if !refused_literal.here(c, text)
         return false
     here = cursor.current_span(c)
     i: i64 @ exprs
@@ -138,18 +130,3 @@ function refused_operand(c: cursor.Cursor, a: ast.Ast, text: str, exprs: i64) ->
         i @ i + 1
 
     return false
-
-# The token under the cursor as "expected X, found Y" names it: a refused
-# literal as the literal it is, in the words the line its certain fix writes
-# is told in, where the lexer's word for it is an unreadable token.
-function found(c: cursor.Cursor, text: str) -> str
-    if !refused_literal(c, text)
-        return cursor.found(c, text)
-    first = text[cursor.current_span(c).start]
-    kind: token.TokenKind @ .int_lit
-
-    if first == '"'
-        kind @ .str_lit
-    else if first == '\''
-        kind @ .char_lit
-    return describe.describe(kind) + " (`" + cursor.slice_of(text, cursor.current_span(c)) + "`)"

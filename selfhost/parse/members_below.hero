@@ -22,7 +22,7 @@ use cursor
 use ast
 use diag
 use text_lines
-use parse/members as parse_members
+use parse/member_lines
 use parse/swap_reading
 use parse/brace_habit
 use parse/braced_lines
@@ -141,9 +141,9 @@ function fields_below(@c: cursor.Cursor, @a: ast.Ast, text: str, below: Below) -
         return none
 
     if close < 0
-        return parse_members.field_block(@c, @a, text)
+        return member_lines.field_block(@c, @a, text)
     lines: cursor.Cursor @ braced_lines.laid_out(c, text)
-    fields = parse_members.field_block(@lines, @a, text)
+    fields = member_lines.field_block(@lines, @a, text)
     braced_lines.took(c: @c, view: lines)
     return fields
 
@@ -156,9 +156,9 @@ function cases_below(@c: cursor.Cursor, @a: ast.Ast, text: str, below: Below) ->
         return none
 
     if close < 0
-        return parse_members.case_block(@c, @a, text)
+        return member_lines.case_block(@c, @a, text)
     lines: cursor.Cursor @ braced_lines.laid_out(c, text)
-    cases = parse_members.case_block(@lines, @a, text)
+    cases = member_lines.case_block(@lines, @a, text)
     braced_lines.took(c: @c, view: lines)
     return cases
 

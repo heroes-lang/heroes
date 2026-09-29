@@ -17,9 +17,9 @@
 # is parsed:
 #
 # - a FIELD is `name: type`, and a block with one such line is a record's
-#   fields, read by `parse_members.field_block`;
+#   fields, read by `member_lines.field_block`;
 # - a CASE is a name alone on its line, and a block whose first line is one
-#   is a variant's cases, read by `parse_members.case_block`;
+#   is a variant's cases, read by `member_lines.case_block`;
 # - a line opened by a declaration's keyword makes it a block of
 #   declarations, `class Q` over its methods, which the caller reads as the
 #   declarations it holds (`grammar_expr.declarations`, `parse/heads`); it
@@ -53,7 +53,7 @@ use ast
 use cursor
 use word_place
 use lexer
-use parse/members as parse_members
+use parse/member_lines
 use parse/brace_habit
 use parse/braced_lines
 use parse/refused_heads
@@ -101,9 +101,9 @@ function read_below(@c: cursor.Cursor, @a: ast.Ast, text: str, word: i64) -> Lef
 # names, and say what is left for the caller.
 function read_shaped(@c: cursor.Cursor, @a: ast.Ast, text: str, shape: Shape) -> Left
     if shape == .fields
-        _ = parse_members.field_block(@c, @a, text)
+        _ = member_lines.field_block(@c, @a, text)
     else if shape == .cases
-        _ = parse_members.case_block(@c, @a, text)
+        _ = member_lines.case_block(@c, @a, text)
     else if shape == .members
         return .declarations
     else

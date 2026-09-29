@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-130-a-member-line-past-a-refused-word.hero:13:10: error[base_prefix_case]: `0X10` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-130-a-member-line-past-a-refused-word.hero:13:10: error[expected_end_of_line]: expected the end of the line after the case `dark`, found a number (`0X10`) — one case per line, its fields on the lines below it, one level deeper
+tests/golden/check/fixedbugs-130-a-member-line-past-a-refused-word.hero:14:9: error[trailing_colon]: a block is opened by the indentation alone — drop the `:` (this is not Python)
