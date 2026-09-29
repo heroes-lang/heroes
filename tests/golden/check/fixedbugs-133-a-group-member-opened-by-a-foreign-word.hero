@@ -1,0 +1,27 @@
+# Fixed defect 133, 2026-09-29. Symptom: inside an `extern` group, `struct
+# Pair` over a field missing its colon cost `reserved_word` and then
+# `expected_extern_signature` at the field block, which the group took for
+# a member of its own; only once `check --apply` had written `record Pair`
+# was the field's own mistake, `expected_field_type`, reported. An `extern`
+# with no members above a `fn` line was silent the same way. Cause: the
+# lexer emits the refused word as an `error` token, and the group's member
+# loop recovered past it. A member opened by `fn`, `func`, `const` or
+# `struct` is now read as the `function`, `constant` or `record` its
+# certain swap writes (`parse/swap_reading.hero`). `enum` writes `variant`,
+# which no group holds, so it is read as nothing there and costs the word
+# alone. An empty group is refused at the next line's first token, as it
+# is after the swap.
+
+extern "math.h"
+    fn sqrt(x: f64) -> f64  #~ reserved_word
+    const M_PI: f64  #~ reserved_word
+    struct Pair  #~ reserved_word
+        a i32  #~ expected_field_type
+    enum Mode  #~ reserved_word
+    func cbrt(x: f64) f64  #~ reserved_word expected_extern_signature
+    function floor(x: f64) -> f64
+
+extern "stdio.h"
+
+fn main()  #~ reserved_word expected_extern_block
+    print(1)

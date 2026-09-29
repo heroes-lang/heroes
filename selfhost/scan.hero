@@ -19,6 +19,7 @@ use diag
 use state
 use layout
 use keywords
+use foreign_at
 use number
 use literals
 use lex_interp
@@ -132,11 +133,17 @@ function ident(@l: state.LexState, text: str)
     # `error[unknown_name]`, and `--apply` wrote it. The lexer cannot know a
     # position, but it can read the next byte, and that is a fact about the text
     # in hand rather than a premise about the program around it (CLAUDE.md §11).
-    called = l.pos < text.len() && text[l.pos] == '('
-    foreign = keywords.foreign_word(text: word, called: called)
+    # `foreign_at.repair_at` reads that byte, and the parser asks the same
+    # function when it reads a construct as the swap writes it (defect 133).
+    #
+    # **The token stays `error` even where the swap is certain** (defect 133):
+    # the parser reads the swap only where it dispatches on the keyword the
+    # swap writes (`parse/swap_reading.hero`), and every other reader of the
+    # stream goes on seeing a word the lexer refused.
+    span = token.Span(start: start, end: l.pos)
+    foreign = foreign_at.repair_at(text, span)
 
     if !foreign.is_err()
-        span = token.Span(start: start, end: l.pos)
         found = foreign.must()
         d: diag.Diagnostic @ diag.new_diagnostic(code: "reserved_word", message: found.message, span: span)
 

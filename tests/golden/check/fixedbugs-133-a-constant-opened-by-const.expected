@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-133-a-constant-opened-by-const.hero:14:1: error[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
+tests/golden/check/fixedbugs-133-a-constant-opened-by-const.hero:20:1: error[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
+tests/golden/check/fixedbugs-133-a-constant-opened-by-const.hero:22:1: error[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
+tests/golden/check/fixedbugs-133-a-constant-opened-by-const.hero:27:1: error[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
+tests/golden/check/fixedbugs-133-a-constant-opened-by-const.hero:20:11: error[expected_constant_type]: expected `:` and the constant's type — a `constant` declares a value, so it has one, found `=`
+tests/golden/check/fixedbugs-133-a-constant-opened-by-const.hero:22:18: error[missing_body]: a `constant` needs an indented body — one level deeper, exactly 4 spaces (found `=`)

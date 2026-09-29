@@ -1,0 +1,17 @@
+# Fixed defect 133, 2026-09-29. Symptom: `import geom.shapes` cost
+# `reserved_word` alone, and only once `check --apply` had written
+# `use geom.shapes` did the next run say that a module path is written with
+# `/`; a bare `import` hid its own the same way.
+# Cause: the lexer emits the refused word as an `error` token, and at a
+# top-level line's head the parser's recovery dropped the line. The parser
+# now reads `import` and `include`, whose certain swap is `use`, as `use`
+# (`parse/swap_reading.hero`), so the line's own mistake is reported beside
+# the word. The messages name `use`, the word the swap writes and the one
+# the `reserved_word` asks for.
+
+use geom.shapes  #~ reserved_word module_path_has_no_parts
+use  #~ reserved_word expected_module_name
+use geom  #~ reserved_word
+
+function main()
+    print(1)

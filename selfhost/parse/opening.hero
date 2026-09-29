@@ -50,6 +50,7 @@ use token
 use diag
 use cursor
 use text_lines
+use parse/swap_reading
 
 # Where a head began: how many diagnostics the parser had said, and the
 # token its first word stands on.
@@ -139,9 +140,11 @@ function opening_at(@c: cursor.Cursor, text: str, missing: Missing) -> Body
 # No body where one is owed: named at the cursor, as it always was, unless the
 # lexer already spoke there, the head's recovery ran past its line (`silent`),
 # the head's own refusal stands on this very token, or the head's line was
-# joined.
+# joined. A foreign word the parser reads as its swap where it opens its line
+# is the keyword it writes to this guard, so `fn g()` below a bodiless head
+# names that body missing, as `function g()` does (defect 133).
 function absent(@c: cursor.Cursor, text: str, head: Mark, silent: bool, missing: Missing)
-    if cursor.at_reported_error(c) || silent || refused_here(c, head)
+    if swap_reading.at_reported_error(c, text) || silent || refused_here(c, head)
         return
     d = missing_here(c, text, missing)
     seam = joined_at(c, text, head)
@@ -154,7 +157,7 @@ function absent(@c: cursor.Cursor, text: str, head: Mark, silent: bool, missing:
 function missing_here(c: cursor.Cursor, text: str, missing: Missing) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: missing.code,
-        message: missing.lead + cursor.found(c, text) + missing.tail,
+        message: missing.lead + swap_reading.found(c, text) + missing.tail,
         span: cursor.current_span(c)
     )
 
