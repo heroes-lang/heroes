@@ -18,54 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 5**
-
-- [ ] **129 — a line holding `-` alone draws two certain joins, and applied together they write a program `check` refuses** | in `function main()`, `x = a` over a line holding `-` alone over `print(x)` costs two `continuation_outside_brackets`, and `check --apply` writes `x = a -` over `print(x)`, which `check` refuses again; in a `match`, `0 => 5` over `-` over `"=>"` has both joins applied, `0 => 5 - "=>"`, which is `bad_operand` | `selfhost/open_line.hero` (`goes_on_at_head`, `refuse_the_end`)
-
-    **Origin:** lane 123's agent, 2026-09-28, attacking the positions beside
-    defect 126 (a statement where 126 has an arm, and a string where it has a
-    pattern; reproducers `shapes/x04_stmt_minus_alone.hero` and
-    `shapes/x07_arrow_in_string.hero`, applied in `shapes/apbase/`, in
-    `/Users/joseph/Temp/heroes-lane-123-scratch/`); reproduced by the
-    coordinator on the trunk's compiler at `6b81e993` at 18:14
-    (`stmt_minus_alone.hero`, `x07_arrow_in_string.hero` and their applied
-    files in `/Users/joseph/Temp/heroes-recovery-2026-09-26/defect129/`).
-
-    **Why it is a defect.** Panel 181's item 3: a `certain` fix that fails to
-    compile is a defect of the landing. Each join is certain alone; the line
-    holding `-` alone draws one at its head and one at its end, and nothing
-    judges the two together. Defect 126 is the same shape on an arm; this is
-    it at the statement and before a value that is not a pattern.
-
-    **Carried to the next milestone**, by the author's instruction of
-    2026-09-28 16:40 (`docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md`):
-    found after the eight M-agreed-retention repairs before its tag, and
-    not repaired in it.
-
-    **Widened 2026-09-28 at 23:00 by the coordinator, on the trunk's compiler
-    at `79aeeffa`, to two classes, neither of them the `-`'s.** The
-    directories cited above were gone by 22:55, removed by nobody in this
-    conversation; `stmt_minus_alone.hero` and `x07_arrow_in_string.hero` were
-    copied at 22:47 and the shapes below written beside them
-    (`/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/d129/`, 2026-09-28).
-    (A) **The joins of one statement broken at two or more line ends are
-    judged one at a time**, so a `certain` one applied without the others
-    writes a line the same code refuses: `+`, `&&` and `+ b *` alone on the
-    line do what `-` does (`p1`, `p4`, `p3`), and so does a statement with no
-    line holding an operator alone, `x = y +` over `z +` over `print(x)`,
-    joined to `x = y + z +` (`q12`), `x = y` over `+ z +` (`q14`), and a
-    chain whose second break carries a comment and so no fix (`q15`); where
-    every join is `certain`, `x = a` over `-` over `b`, the three-line join
-    is right and compiles (`x05`, `p2`, `q13`). (B) **A `certain` join writes
-    an operator against a literal it can take under no type**: `x07`'s
-    `5 - "=>"`, `x = a` over `- "s"` (`q10`), `x = a &&` over `1` (`q11`), and,
-    beside defect 126, the sign join `-"a" => 10` on a `str` match (`p5`);
-    `-'a'` on an `i64` match compiles (`p6`), since a character is an integer.
-
-    **Corrected 2026-09-28 at 23:17**: the directories were removed by the
-    author, who took them for old lanes, and restored from the trash the
-    same evening, so the paths above resolve again; the copies in the
-    scratchpad are what the lanes read.
+**OPEN: 4**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -165,6 +118,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     not a subset (`i4/e8.hero`, `e12.hero`), both in
     `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-y/`, 2026-09-29.
 
+    **Batch gate 2026-09-30 00:07** (`53a5e0a9`, lanes X3 and X4 beside the trunk's
+    129 to 133, X1, X2 and Y): the full net, every suite at 0 failed. The shapes
+    still open are the next batch lane's items, found beside the repairs, and
+    this item stays open until they are repaired and a batch gate reads them.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
@@ -252,6 +210,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     same-margin `0 => 1` costs `expected_end_of_line` at the `=>`
     (`i3/match_n_arm_same.hero`, `i3c/b8.hero` in `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-y/`, 2026-09-29).
 
+    **Batch gate 2026-09-30 00:07** (`53a5e0a9`, lanes X3 and X4 beside the trunk's
+    129 to 133, X1, X2 and Y): the full net, every suite at 0 failed. The shapes
+    still open are the next batch lane's items, found beside the repairs, and
+    this item stays open until they are repaired and a batch gate reads them.
+
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
     **Origin:** lane 129's agent, 2026-09-29, beside defect 129 (its finding 2,
@@ -304,6 +267,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     one token in the normal arm (`s2/b13` in
     `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-x2/`, 2026-09-29).
 
+    **Batch gate 2026-09-30 00:07** (`53a5e0a9`, lanes X3 and X4 beside the trunk's
+    129 to 133, X1, X2 and Y): the full net, every suite at 0 failed. The shapes
+    still open are the next batch lane's items, found beside the repairs, and
+    this item stays open until they are repaired and a batch gate reads them.
+
 - [ ] **133 — after a declaration head the lexer refuses as a foreign word with a certain swap, the declaration's own mistakes are reported only once the swap is applied** | `const MAX = 5` costs `reserved_word` alone, and `check --apply` writes `constant MAX = 5`, which then costs `expected_constant_type`; `const MAX: i64 = 5` then costs `missing_body`, `fn main() {` then `missing_body`, `struct Point {` then `empty_record`: two turns for one habit | `selfhost/scan.hero` (the foreign word emitted as an `error` token) · `selfhost/keywords.hero` (`foreign_word`) · `selfhost/parse/decl.hero` · `cursor.recover_to_next_decl`
 
     **Origin:** lane 129's agent, 2026-09-29, reading `check/reserved-words`'s
@@ -340,5 +308,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `final/elif_ok.hero`, `shapes/elif_brace.hero`,
     `shapes/switch_expr.hero`, `more/fntype_noparens.hero` in
     `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-133/`, 2026-09-29.
+
+    **Batch gate 2026-09-30 00:07** (`53a5e0a9`, lanes X3 and X4 beside the trunk's
+    129 to 133, X1, X2 and Y): the full net, every suite at 0 failed. The shapes
+    still open are the next batch lane's items, found beside the repairs, and
+    this item stays open until they are repaired and a batch gate reads them.
 
 *******************************************************************************
