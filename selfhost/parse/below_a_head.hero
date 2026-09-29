@@ -1,0 +1,154 @@
+# The line below a bodiless head, where the lexer refused the head's line
+# break (design.md §4.15, §4.17; defect 132).
+#
+# `if` alone over a same-margin `print(1)` lacks its body read either way:
+# apart, the head's line ends at the break and the body is missing at the
+# `print`; joined, the line runs on and the parser holds the missing body
+# back farther along it, as a join's (`parse/opening`). That report is the
+# author's (`agreed`), and the line below it has three readings: apart, a
+# statement beside the head or the next arm; as the head's body, one level
+# deeper (`lexer.lex_bodies`), what the head was likely meant to open; and
+# joined, the rest of the head's own line. What one of them refuses there may
+# be only that reading's debris, so the line is read as what it is, the
+# reading that reads it furthest (`read_as_what_it_is`), and its reports on
+# the line are the line's own.
+#
+# | entry | called by |
+# |---|---|
+# | `Below`, `Reading`, `lines_below`, `agreed`, `region_at`, `own` | `parse/apart` |
+
+use diag
+use lexer
+use parse/readings
+use parse/joined_lines as seams
+
+# Which reading a line below a bodiless head is read as: the head's body, one
+# level deeper (`body`); a line beside the head, apart (`beside`); or the
+# rest of the head's own line, joined (`joined`).
+variant Reading
+    body
+    beside
+    joined
+
+# The lines below a bodiless head, in the order of the text: where the head's
+# missing body both readings say stands (`froms`, `agreed`), where the line it
+# stands before ends (`ends`), at the next line below a break or at the joined
+# line's end, and which reading that line is read as (`read_as`).
+record Bodied
+    froms: [i64]
+    ends: [i64]
+    read_as: [Reading]
+
+# The lines below a bodiless head of one file, each read as what it is, and
+# the file's lines read as bodies (`lexer.lex_bodies`), empty where no line is
+# below a bodiless head.
+record Below
+    chosen: Bodied
+    bodies: readings.Sorted
+
+# The lines below the file's bodiless heads, read as what they are. Read as
+# bodies only below a bodiless head, which no program that compiles has.
+function lines_below(lines: [seams.Line], froms: [i64], r: readings.Readings, apart: lexer.LexOutput, text: str, root_end: i64) -> Below
+    b = bodied_lines(lines, froms: froms, r: r)
+    bodies: readings.Sorted @ readings.sorted([])
+
+    if b.froms.len() > 0
+        bodies @ readings.sorted(readings.read_bodies(apart, text: text, root_end: root_end))
+    return Below(chosen: read_as_what_it_is(lines, froms: froms, b: b, r: r, bodies: bodies), bodies: bodies)
+
+# Is `d`, the apart reading's, a head's missing body the joined reading holds
+# back as well? Apart, it stands at the first word of a line below a break,
+# where that reading ends the head's line; joined, the parser holds one of its
+# code farther along the joined line or at the first word after it, where the
+# join ends that line (`parse/opening`). Both readings then lack the body,
+# which is the author's mistake and not the join's: `if` alone over a
+# same-margin `print(1)` lacks it apart at the `print` and joined at the end of
+# the block, and is told once, where the lines put it.
+function agreed(line: seams.Line, d: diag.Diagnostic, r: readings.Readings) -> bool
+    at = d.span.start
+
+    if !seams.opens_a_line_below(line, at: at)
+        return false
+    i: i64 @ seams.last_at_most(r.held.starts, at: at) + 1
+
+    while i < r.held.starts.len() && r.held.starts[i] <= line.after
+        if r.held.diagnostics[i].code == d.code
+            return true
+        i @ i + 1
+
+    return false
+
+# The lines below a bodiless head: where the apart reading says a missing body
+# the joined one holds as well, and where that line ends.
+function bodied_lines(lines: [seams.Line], froms: [i64], r: readings.Readings) -> Bodied
+    starts: [i64] @ []
+    ends: [i64] @ []
+    read_as: [Reading] @ []
+
+    for d in r.other.diagnostics
+        at = seams.line_at(lines, froms: froms, at: d.span.start)
+
+        if at >= 0 && agreed(lines[at], d: d, r: r) && (starts.len() == 0 || starts[starts.len() - 1] != d.span.start)
+            starts @ starts.push(d.span.start)
+            ends @ ends.push(seams.line_below_ends(lines[at], at: d.span.start))
+            read_as @ read_as.push(.body)
+
+    return Bodied(froms: starts, ends: ends, read_as: read_as)
+
+# Each line below a bodiless head read as what it is, the reading of the
+# three that reads it furthest, its first refusal on the line standing
+# latest: the head's body on a tie, then the line beside the head, whose
+# refusal is of the line itself, where joined it may be the missing body held
+# where the joined head's line ends. `for` over a same-margin `print(1) )` is
+# a body whose `)` is refused, where joined its `print` is; `for` over
+# `x in )` is the head broken, which joined reads to the `)`, where read as a
+# statement its `in` is refused; and `match` over `print(1) )` is a line
+# beside it, which as arms is refused at its first word.
+function read_as_what_it_is(lines: [seams.Line], froms: [i64], b: Bodied, r: readings.Readings, bodies: readings.Sorted) -> Bodied
+    read_as: [Reading] @ []
+    i: i64 @ 0
+
+    while i < b.froms.len()
+        line = lines[seams.line_at(lines, froms: froms, at: b.froms[i])]
+        as_body = first_refusal(line, s: bodies, from: b.froms[i], to: b.ends[i], r: r)
+        beside = first_refusal(line, s: r.other, from: b.froms[i], to: b.ends[i], r: r)
+        joined = first_refusal(line, s: r.joined, from: b.froms[i], to: b.ends[i], r: r)
+        reading: Reading @ .beside
+
+        if as_body >= beside && as_body >= joined
+            reading @ .body
+        else if joined > beside
+            reading @ .joined
+        read_as @ read_as.push(reading)
+        i @ i + 1
+
+    return Bodied(froms: b.froms, ends: b.ends, read_as: read_as)
+
+# Where the first of `s`'s reports on the line below a bodiless head stands,
+# the head's missing body and the breaks' own reports aside, or `to` where
+# there is none.
+function first_refusal(line: seams.Line, s: readings.Sorted, from: i64, to: i64, r: readings.Readings) -> i64
+    i: i64 @ seams.last_at_most(s.starts, at: from - 1) + 1
+
+    while i < s.starts.len() && s.starts[i] < to
+        d = s.diagnostics[i]
+
+        if !seams.inside_a_break(line, at: d.span.start) && !agreed(line, d: d, r: r)
+            return d.span.start
+        i @ i + 1
+
+    return to
+
+# The line below a bodiless head that `at` stands on, or -1.
+function region_at(b: Bodied, at: i64) -> i64
+    i = seams.last_at_most(b.froms, at: at)
+
+    if i >= 0 && at < b.ends[i]
+        return i
+    return -1
+
+# Is `d`, said on a line below a bodiless head by the reading that reads it
+# as what it is, that line's own mistake: neither a break's report nor the
+# head's missing body, and not one the joined reading says?
+function own(line: seams.Line, d: diag.Diagnostic, r: readings.Readings) -> bool
+    return !seams.inside_a_break(line, at: d.span.start) && !agreed(line, d: d, r: r) && !readings.says(r.joined, d)
