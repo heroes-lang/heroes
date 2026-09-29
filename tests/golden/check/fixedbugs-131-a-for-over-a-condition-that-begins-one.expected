@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-131-a-for-over-a-condition-that-begins-one.hero:9:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `!` — a loop over a condition is `while`

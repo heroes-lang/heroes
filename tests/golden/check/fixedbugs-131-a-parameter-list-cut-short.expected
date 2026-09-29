@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-131-a-parameter-list-cut-short.hero:14:7: error[expected_parameter_type]: expected `:` and the parameter's type — signatures are always explicit, found `=`
+tests/golden/check/fixedbugs-131-a-parameter-list-cut-short.hero:17:7: error[expected_params_close]: expected `)`, or `,` and another parameter, found `=`
+tests/golden/check/fixedbugs-131-a-parameter-list-cut-short.hero:20:7: error[expected_parameter_type]: expected `:` and the parameter's type — signatures are always explicit, found `=`
+tests/golden/check/fixedbugs-131-a-parameter-list-cut-short.hero:23:5: error[expected_params_close]: expected `)`, or `,` and another parameter, found a name (`y`)
+tests/golden/check/fixedbugs-131-a-parameter-list-cut-short.hero:25:22: error[expected_parameter_type]: expected `:` and the parameter's type — signatures are always explicit, found a name (`b`)
+tests/golden/check/fixedbugs-131-a-parameter-list-cut-short.hero:26:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-parameter-list-cut-short.hero:29:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

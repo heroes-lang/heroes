@@ -11,6 +11,11 @@
 # the head, whether the word is one edit from a keyword or none, a bare
 # name, or followed by junk; a word the lexer refuses with no certain swap
 # (`class`) is read the same way under its `reserved_word`.
+#
+# And a body whose margin holds a tab is read as the body it is, as lane
+# 130's third round reads one under any head that failed: `fucntion tabbed()`
+# over a tab-indented line costs the tab and the line's own mistake, and no
+# second `expected_declaration` for the line the tab left at the margin.
 
 recrod Point  #~ expected_declaration
     x: i64
@@ -41,6 +46,9 @@ varaint Shape  #~ expected_declaration
 class Holder  #~ reserved_word
     v: i64
     w i64  #~ expected_field_type
+
+fucntion tabbed()  #~ expected_declaration
+	y = 3 )  #~ tab_in_indentation expected_end_of_line
 
 function main()
     print(1)

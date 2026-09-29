@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-131-a-declaration-head-whose-line-goes-on.hero:17:24: error[missing_body]: a `test` needs an indented body — one level deeper, exactly 4 spaces (found `)`)
+tests/golden/check/fixedbugs-131-a-declaration-head-whose-line-goes-on.hero:18:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-declaration-head-whose-line-goes-on.hero:20:14: error[expected_end_of_line]: expected the end of the line after `record Point`, found `)` — its fields go on the lines below it, one level deeper
+tests/golden/check/fixedbugs-131-a-declaration-head-whose-line-goes-on.hero:21:8: error[expected_type]: expected a type, found `)` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+tests/golden/check/fixedbugs-131-a-declaration-head-whose-line-goes-on.hero:23:15: error[expected_end_of_line]: expected the end of the line after `variant Token`, found `)` — its cases go on the lines below it, one level deeper
+tests/golden/check/fixedbugs-131-a-declaration-head-whose-line-goes-on.hero:25:5: error[expected_case]: expected a case name, found `)` — a variant case is a name on its own line, with its fields indented below it

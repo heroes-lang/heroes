@@ -113,20 +113,19 @@ function unexpected_top_level(@c: cursor.Cursor, @a: ast.Ast, text: str)
     cursor.drop_rest_of_line(@c, from: from)
     cursor.skip_terminators(@c)
 
-    if !cursor.at(c, .indent)
-        return
-
     if opens
         headless.read(@c, @a, text)
-    else
+    else if cursor.at(c, .indent)
         _ = cursor.balanced_block(@c)
 
 ## The shared head
 
 # The shared head of every named declaration: the kind keyword —
 # documentation attaches to it, since it opens the line — then the declared
-# name. The error side is already recovered when this fails, so a failing
-# head costs the caller one `return`.
+# name. When it fails, the rest of its line is already dropped, and what
+# hangs below it is the caller's to read, since the caller knows what a body
+# of its kind holds (defect 131's second round: it used to go whole, with
+# every mistake inside it).
 #
 # Port note: Rust returns `Option<(Span, Vec<Span>, Span)>`; Heroes has no
 # tuples, so the three travel as a record and the `Option` is a fallible.
@@ -140,6 +139,7 @@ record Head
 # 133): `const` alone on its line is *after `const`*, the word the author can
 # find, and never *after an unreadable token*.
 function head(@c: cursor.Cursor, text: str, example: str) -> Head?
+    from = c.pos
     keyword = cursor.current_span(c)
     doc = cursor.take_docs(@c, text, keyword)
     kind_text = "`" + cursor.slice_of(text, keyword) + "`"
@@ -153,8 +153,8 @@ function head(@c: cursor.Cursor, text: str, example: str) -> Head?
                 message: "expected the declared name after " + kind_text + ", found " + cursor.found(c, text) + " — `" + example + "`",
                 span: cursor.current_span(c)
             )
-        cursor.recover_to_next_decl(@c)
-        return fail(code: "expected_name", msg: "recovered to the next declaration")
+        cursor.drop_rest_of_line(@c, from: from)
+        return fail(code: "expected_name", msg: "the rest of the line is dropped")
     return ok(Head(keyword: keyword, doc: doc, name: cursor.bump(@c).span))
 
 ## constant
@@ -165,6 +165,7 @@ function constant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl]
     h = head(@c, text: text, example: "constant MAX_DEPTH: i64")
 
     if h.is_err()
+        grammar_expr.hanging(@c, @a, text)
         return
     hd = h.must()
     tails.constant_tail(
@@ -187,6 +188,7 @@ function function_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl]
     h = head(@c, text: text, example: "function dist2(a: Point, b: Point) -> i64")
 
     if h.is_err()
+        grammar_expr.hanging(@c, @a, text)
         return
     hd = h.must()
     tails.function_tail(
@@ -219,7 +221,7 @@ function test_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], te
                 message: "expected the test's name as a string, found " + cursor.found(c, text) + " — `test \"3-4-5 triangle\"`",
                 span: cursor.current_span(c)
             )
-        cursor.recover_to_next_decl(@c)
+        grammar_expr.abandon(@c, @a, text, from: began.pos)
         return
     name = cursor.bump(@c).span
     b = grammar_expr.block(@c, @a, text: text, owner: "a `test`", head: began)
@@ -244,6 +246,8 @@ function record_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], 
     h = head(@c, text: text, example: "record Point")
 
     if h.is_err()
+        if cursor.at(c, .indent)
+            _ = parse_members.field_block(@c, @a, text)
         return
     hd = h.must()
     records.record_tail(@c, @a, @decls, text, keyword: hd.keyword, doc: hd.doc, name: hd.name, linkage: linkage)
@@ -256,6 +260,8 @@ function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl],
     h = head(@c, text: text, example: "variant Token")
 
     if h.is_err()
+        if cursor.at(c, .indent)
+            _ = parse_members.case_block(@c, @a, text)
         return
     hd = h.must()
     grammar_expr.eat_python_colon(@c)

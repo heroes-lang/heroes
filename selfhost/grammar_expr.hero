@@ -161,17 +161,18 @@ function binary_op(kind: token.TokenKind) -> Operator?
 function parse_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     return binary(@c, @a, text, 0)
 
-# Does this operand carry a block, so that the expression ends with it?
+# Does this operand carry a block, so that the expression ends with it, or
+# could it not be read, so that `while >` is not refused twice (defect 131)?
 #
 # ENUMERATED, never a catch-all: the day a new expression kind carries a
 # block, this must answer for it, and a `_ => false` would answer "no"
 # silently — which is the shape panel 060 paid for in the formatter.
 function ends_the_expression(a: ast.Ast, id: i64) -> bool
     return match a.exprs[id].kind
-        .if_expr | .match_expr                                                         => true
+        .if_expr | .match_expr | .error                                                => true
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => false
         .name | .hole | .unary | .binary | .field | .field_name | .index               => false
-        .call | .method | .variant_case | .array | .map | .try_expr | .error           => false
+        .call | .method | .variant_case | .array | .map | .try_expr                    => false
 
 # Everything at `min_power` or tighter. All of Heroes' binary operators are
 # left-associative, so the recursive call asks for `power + 1`.
@@ -223,6 +224,7 @@ function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i6
                     @a.exprs,
                     ast.Expr(kind: .binary(op: operator.op, left: left, right: right), span: span)
                 )
+                climbing @ a.exprs[right].kind != .error
 
     return left
 
@@ -395,7 +397,7 @@ function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     simple = atom_kind(k)
 
     if simple.is_err()
-        if !cursor.at_reported_error(c)
+        if !cursor.at_reported_error(c) && !line_end.said_here(c)
             cursor.error(
                 @c,
                 code: "expected_expression",
@@ -495,7 +497,7 @@ function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
     close = cursor.current_span(c)
 
-    if !cursor.expect(@c, text: text, kind: .rbracket, code: "expected_array_close", what: "`]` to close the list")
+    if line_end.said_here(c) || !cursor.expect(@c, text: text, kind: .rbracket, code: "expected_array_close", what: "`]` to close the list")
         cursor.recover_past_closer(@c, opener: .lbracket, closer: .rbracket)
     return ast.push_expr(
         @a.exprs,
@@ -530,7 +532,7 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
     close = cursor.current_span(c)
 
-    if !cursor.expect(@c, text: text, kind: .rbrace, code: "expected_map_close", what: "`}` to close the map")
+    if line_end.said_here(c) || !cursor.expect(@c, text: text, kind: .rbrace, code: "expected_map_close", what: "`}` to close the map")
         cursor.recover_past_closer(@c, opener: .lbrace, closer: .rbrace)
     return ast.push_expr(
         @a.exprs,
@@ -560,7 +562,7 @@ function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: 
     if comma || newline
         return true
 
-    if !cursor.at_reported_error(c)
+    if !cursor.at_reported_error(c) && !line_end.said_here(c)
         cursor.error(
             @c,
             code: "expected_separator",
@@ -696,7 +698,8 @@ function misplaced_mutable_marker(@c: cursor.Cursor)
 # `:` is never legal at a block boundary — annotations, named arguments and map
 # literals all live inside other structure — so this can never misfire.
 function eat_python_colon(@c: cursor.Cursor)
-    if !cursor.at(c, .colon)
+    # Where a report stands on the `:` (`while :`), the habit is not a second.
+    if !cursor.at(c, .colon) || line_end.said_here(c)
         return
     s = cursor.current_span(c)
     d: diag.Diagnostic @ diag.new_diagnostic(
@@ -715,14 +718,17 @@ function eat_python_colon(@c: cursor.Cursor)
 function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: opening.Mark) -> ast.Block?
     failed = opening.refused(c, head)
     eat_python_colon(@c)
-    missing = opening.Missing(
-        code: "missing_body",
-        lead: owner + " needs an indented body — one level deeper, exactly 4 spaces (found ",
-        tail: ")"
-    )
+    found = opening.body_follows(@c, text, head: head, failed: failed, missing: opening.missing_body(owner))
 
-    if !opening.body_follows(@c, text, head: head, failed: failed, missing: missing)
-        return fail(code: "missing_body", msg: owner)
+    if found == .indented
+        return ok(indented_block(@c, @a, text))
+
+    if found == .tabbed
+        return ok(tabbed_block(@c, @a, text))
+    return fail(code: "missing_body", msg: owner)
+
+# The statements of the block whose indent is under the cursor.
+function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
     open = cursor.bump(@c).span
     stmts: [i64] @ []
     reading: bool @ true
@@ -737,8 +743,8 @@ function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: open
         else if k == .eof
             reading @ false
         else if k == .indent
-            # A block one level deeper than any statement asked for. It belongs
-            # to nothing, so it goes whole rather than one diagnostic per line.
+            # After a line that ended well: named, and gone whole, since read as
+            # lines a continuation the lexer lets through, `and b`, cost two.
             if !cursor.at_reported_error(c)
                 cursor.error(
                     @c,
@@ -750,7 +756,37 @@ function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: open
         else
             stmts @ stmts.push(statement(@c, @a, text))
 
-    return ok(ast.Block(span: token.Span(start: open.end, end: cursor.previous_significant_span(c).end), stmts: stmts))
+    return ast.Block(span: token.Span(start: open.end, end: cursor.previous_significant_span(c).end), stmts: stmts)
+
+# The statements of a body whose margin holds a tab (`opening.tabbed_line`),
+# and of a block below them, which the lexer opened one level too deep.
+function tabbed_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
+    open = cursor.current_span(c)
+    stmts: [i64] @ []
+
+    while opening.tabbed_line(c, text) || cursor.at(c, .indent)
+        if cursor.at(c, .indent)
+            for s in indented_block(@c, @a, text).stmts
+                stmts @ stmts.push(s)
+        else
+            stmts @ stmts.push(statement(@c, @a, text))
+
+    return ast.Block(span: token.Span(start: open.start, end: cursor.previous_significant_span(c).end), stmts: stmts)
+
+# A block below a line that already said what is wrong: read for its own
+# mistakes, not named (defect 130); arms as arms (`opening.arms_below`).
+function hanging(@c: cursor.Cursor, @a: ast.Ast, text: str)
+    if cursor.at(c, .indent) && opening.arms_below(c)
+        _ = arms_of(@c, @a, text, tabbed: false)
+    else if cursor.at(c, .indent)
+        _ = indented_block(@c, @a, text)
+    else if opening.tabbed_line(c, text)
+        _ = tabbed_block(@c, @a, text)
+
+# A failed declaration head begun at `from`: its line dropped, its body read.
+function abandon(@c: cursor.Cursor, @a: ast.Ast, text: str, from: i64)
+    cursor.drop_rest_of_line(@c, from: from)
+    hanging(@c, @a, text)
 
 function statement(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     start = cursor.current_span(c)
@@ -808,11 +844,13 @@ function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, fr
         # off it, which is how a depth-zero line continuation used to cost three
         # diagnostics instead of one. **Only ITS line** (defect 130): one that
         # ended with its own block or line end has none left, and the line
-        # under the cursor, which this dropped, was the next statement's.
+        # under the cursor, which this dropped, was the next statement's. A
+        # block hanging below is READ, not named: the continuation that cost
+        # three is joined by the lexer since panel 181.
         cursor.drop_rest_of_line(@c, from: from)
 
         if cursor.at(c, .indent)
-            _ = cursor.balanced_block(@c)
+            hanging(@c, @a, text)
         return ast.push_stmt(@a.stmts, ast.Stmt(kind: kind, span: span))
 
     # A statement that ended with a block — a loop, an `if`, a `match` —
@@ -821,7 +859,9 @@ function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, fr
     ended = c.pos > from && cursor.at_fresh_line(c)
 
     if !ended && !cursor.at(c, .dedent) && !cursor.at(c, .eof) && !cursor.eat(@c, .terminator)
-        if !cursor.at_reported_error(c)
+        said = !cursor.at_reported_error(c)
+
+        if said
             cursor.error(
                 @c,
                 code: "expected_end_of_line",
@@ -829,6 +869,11 @@ function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, fr
                 span: cursor.current_span(c)
             )
         cursor.skip_line(@c)
+
+        # As below a failed line, `iff x > 1` over its body; not below one only
+        # the lexer refused, whose block is the rest of it (`f"a {` over `x}`).
+        if said && cursor.at(c, .indent)
+            hanging(@c, @a, text)
     return ast.push_stmt(@a.stmts, ast.Stmt(kind: kind, span: span))
 
 # `return e`, or bare `return` where the function returns nothing.
@@ -874,7 +919,8 @@ function for_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     if !cursor.at_reported_error(c)
         certainty: diag.Certainty @ .certain
 
-        if cursor.at(c, .ident)
+        # `while >` is no loop, so the fix is a guess (§ 8, `begins_an_expression`).
+        if cursor.at(c, .ident) || !opening.begins_an_expression(cursor.current_kind(c))
             certainty @ .guess
         d: diag.Diagnostic @ diag.new_diagnostic(
             code: "for_missing_in",
@@ -886,9 +932,10 @@ function for_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
         )
         c.diagnostics @ c.diagnostics.push(d)
 
-    # Parse the rest as the condition loop it most likely was: one mistake, one
-    # diagnostic, and the body still gets checked.
-    cond = parse_expr(@c, @a, text)
+    # The rest is not read as the condition it may have been, which refused
+    # again at the same column (`for` alone, `for >`, defect 131): one mistake,
+    # one diagnostic, and `block` still reads the body.
+    cond = ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: cursor.current_span(c)))
     recovered = block(@c, @a, text: text, owner: "a `for`", head: head)
 
     if recovered.is_err()
@@ -1018,43 +1065,66 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     scrutinee = parse_expr(@c, @a, text)
     failed = opening.refused(c, head)
     eat_python_colon(@c)
-    missing = opening.Missing(
-        code: "missing_match_arms",
-        lead: "a `match` needs its arms indented one level below it, found ",
-        tail: ""
-    )
+    found = opening.body_follows(@c, text, head: head, failed: failed, missing: opening.missing_arms())
 
-    if !opening.body_follows(@c, text, head: head, failed: failed, missing: missing)
+    if found == .none
         return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
-    _ = cursor.bump(@c)
+    arms = arms_of(@c, @a, text, tabbed: found == .tabbed)
+    span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
+    return ast.push_expr(@a.exprs, ast.Expr(kind: .match_expr(scrutinee: scrutinee, arms: arms), span: span))
+
+# The arms of a `match`: the block whose indent is under the cursor, or the
+# lines whose margin holds a tab and a block below them, as `tabbed_block`.
+function arms_of(@c: cursor.Cursor, @a: ast.Ast, text: str, tabbed: bool) -> [ast.Arm]
+    if !tabbed
+        _ = cursor.bump(@c)
     arms: [ast.Arm] @ []
     reading: bool @ true
+    failed: bool @ false
+    in_tabs: bool @ tabbed
 
     while reading
         cursor.skip_terminators(@c)
         k = cursor.current_kind(c)
 
-        if k == .dedent
+        if in_tabs && k == .indent
+            _ = cursor.bump(@c)
+            in_tabs @ false
+        else if in_tabs && !opening.tabbed_line(c, text)
+            reading @ false
+        else if failed && !in_tabs && opening.tabbed_line(c, text)
+            # The body of a failed arm whose `=>` the lexer joined to it.
+            hanging(@c, @a, text)
+        else if k == .dedent
             _ = cursor.bump(@c)
             reading @ false
         else if k == .eof
             reading @ false
         else if k == .indent
-            # A block where an arm should start: it belongs to an arm that
-            # failed, so it goes whole. Without this case the loop can spin
-            # forever — `skip_line` deliberately stops BEFORE an indent (it must
-            # not leave the block it is cleaning), so a failed arm followed by an
-            # indented body consumed nothing at all and the parser never
-            # terminated (panel 014, found while costing it).
-            _ = cursor.balanced_block(@c)
+            # Where an arm should start: below a failed arm, its body, read and
+            # not named; below a whole one, an orphan, named and gone whole (it
+            # went unnamed, and `0 => print(1)` over `print(99)` printed 1). Else
+            # the loop spins: `skip_line` stops BEFORE an indent (panel 014).
+            if failed
+                hanging(@c, @a, text)
+            else
+                if !cursor.at_reported_error(c)
+                    cursor.error(
+                        @c,
+                        code: "unexpected_block",
+                        message: "this block is indented deeper than anything that opens one",
+                        span: cursor.current_span(c)
+                    )
+                _ = cursor.balanced_block(@c)
         else
             from = c.pos
             one = arm(@c, @a, text)
+            failed @ one.is_err()
 
             if one.is_err()
                 # A pattern or `=>` that failed consumed nothing reusable, and
                 # the rest of its line is all that goes (defect 130).
-                cursor.drop_rest_of_line(@c, from: from)
+                opening.drop_line(@c, text, from: from)
             else
 
                 # A body that failed has already dropped the rest of its line
@@ -1062,8 +1132,7 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
                 # skip again — that ate the arm below it.
                 arms @ arms.push(one.must())
 
-    span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
-    return ast.push_expr(@a.exprs, ast.Expr(kind: .match_expr(scrutinee: scrutinee, arms: arms), span: span))
+    return arms
 
 # One arm: patterns joined by `|`, `=>`, then one statement on the same line or
 # a block below it (§4.7, panel 014).
@@ -1096,7 +1165,7 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
     # that cannot render a block under a control head.
     body: ast.ArmBody @ .one_stmt(at: 0)
 
-    if cursor.at(c, .indent)
+    if cursor.at(c, .indent) || opening.tabbed_line(c, text)
         inner = block(@c, @a, text: text, owner: "a `match` arm", head: head)
 
         if inner.is_err()
@@ -1586,3 +1655,86 @@ test "only a place can be passed as @"
     _ = statement(@c, @a, "f(@g(x))")
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "not_a_place"
+
+# `opening.begins_an_expression` is what a `certain` *use `while`* rests on
+# (defect 131's third round), and it is a second copy of what `unary` and
+# `primary` accept: this is where the two are held to agree, token by token.
+# `.error` is the lexer's and `.comment` never reaches the grammar.
+test "an expression begins exactly where begins_an_expression says it can"
+    kinds: [token.TokenKind] = [
+        .ident
+        .int_lit
+        .float_lit
+        .str_lit
+        .str_piece
+        .char_lit
+        .kw_constant
+        .kw_function
+        .kw_record
+        .kw_variant
+        .kw_match
+        .kw_if
+        .kw_else
+        .kw_for
+        .kw_while
+        .kw_in
+        .kw_break
+        .kw_continue
+        .kw_return
+        .kw_test
+        .kw_assert
+        .kw_extern
+        .kw_nullptr
+        .kw_use
+        .kw_true
+        .kw_false
+        .kw_fail
+        .eq
+        .at
+        .colon
+        .colon_colon
+        .comma
+        .dot
+        .question
+        .hole
+        .arrow
+        .fat_arrow
+        .pipe
+        .lparen
+        .rparen
+        .lbracket
+        .rbracket
+        .lbrace
+        .rbrace
+        .plus
+        .minus
+        .star
+        .slash
+        .percent
+        .eq_eq
+        .bang_eq
+        .lt
+        .le
+        .gt
+        .ge
+        .and_and
+        .or_or
+        .bang
+        .amp
+        .caret
+        .tilde
+        .shl
+        .shr
+        .terminator
+        .indent
+        .dedent
+        .eof
+    ]
+
+    for k in kinds
+        stream: [token.Token] = [tok(k, start: 0, end: 1), tok(.eof, start: 1, end: 1)]
+        c: cursor.Cursor @ cursor.new_cursor(stream)
+        a: ast.Ast @ ast.new_ast()
+        _ = parse_expr(@c, @a, "x ")
+        refused_first = c.diagnostics.len() > 0 && c.diagnostics[0].code == "expected_expression" && c.diagnostics[0].span.start == 0
+        assert refused_first == !opening.begins_an_expression(k)
