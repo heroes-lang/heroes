@@ -28,7 +28,9 @@ use ast
 use keywords
 use parse/use_line
 use parse/tails
+use parse/records
 use parse/swap_reading
+use parse/opening
 
 ## The extern group
 
@@ -234,7 +236,7 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
             if !first
                 doc @ cursor.take_docs(@c, text, keyword)
             first @ false
-            tails.record_with_doc(@c, @a, @decls, text, doc: doc, linkage: linkage)
+            records.record_with_doc(@c, @a, @decls, text, doc: doc, linkage: linkage)
         else if k == .kw_function || k == .kw_constant
             is_constant = k == .kw_constant
             keyword = cursor.current_span(c)
@@ -260,9 +262,29 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
             name = cursor.bump(@c).span
 
             if is_constant
-                tails.constant_tail(@c, @a, @decls, text, keyword: keyword, doc: doc, name: name, linkage: linkage)
+                tails.constant_tail(
+                    @c,
+                    @a,
+                    @decls,
+                    text,
+                    keyword: keyword,
+                    doc: doc,
+                    name: name,
+                    linkage: linkage,
+                    head: opening.mark(c)
+                )
             else
-                tails.function_tail(@c, @a, @decls, text, keyword: keyword, doc: doc, name: name, linkage: linkage)
+                tails.function_tail(
+                    @c,
+                    @a,
+                    @decls,
+                    text,
+                    keyword: keyword,
+                    doc: doc,
+                    name: name,
+                    linkage: linkage,
+                    head: opening.mark(c)
+                )
         else
             if !cursor.at_reported_error(c)
                 cursor.error(

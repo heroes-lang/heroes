@@ -1,0 +1,9 @@
+tests/golden/check/fixedbugs-131-a-lexer-refusal-in-a-head.hero:13:12: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/fixedbugs-131-a-lexer-refusal-in-a-head.hero:18:13: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-lexer-refusal-in-a-head.hero:23:12: error[unexpected_character]: `$` is not part of the language's syntax
+tests/golden/check/fixedbugs-131-a-lexer-refusal-in-a-head.hero:14:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-lexer-refusal-in-a-head.hero:15:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-lexer-refusal-in-a-head.hero:19:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-lexer-refusal-in-a-head.hero:20:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-lexer-refusal-in-a-head.hero:24:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-lexer-refusal-in-a-head.hero:25:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

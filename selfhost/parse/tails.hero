@@ -24,17 +24,19 @@
 # group's head line read (§4.19, panel 036) — a copy per member rather than
 # a shared index, because the group exists only in the source text and
 # every later pass sees N ordinary declarations.
+#
+# Since 2026-09-29 a record's tail, its markers and fields, is
+# `parse/records.hero` (defect 133), which reads `Linkage` and `here_or` from
+# here; this module reads nothing there.
 
 use token
 use cursor
 use ast
-use handles
-use keywords
 use parse/type
 use parse/members as parse_members
 use parse/marks as parse_marks
-use parse/swap_reading
 use grammar_expr
+use parse/opening
 
 ## Linkage — where a declaration's implementation comes from
 
@@ -91,7 +93,7 @@ function here_or(c: cursor.Cursor, fallback: token.Span) -> token.Span
 # The symmetry is the whole rule this form rests on: **inside a group a
 # declaration is a signature, not a definition**, so `constant` gives up its
 # body for the same reason `function` gives up its own — C has the thing.
-function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage)
+function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage, head: opening.Mark)
     if !cursor.expect(@c, text: text, kind: .colon, code: "expected_constant_type", what: "`:` and the constant's type — a `constant` declares a value, so it has one")
         cursor.recover_to_next_decl(@c)
         return
@@ -104,7 +106,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     if is_from_c(linkage)
         body_check(@c, "constant")
     else
-        b = grammar_expr.block(@c, @a, text: text, owner: "a `constant`")
+        b = grammar_expr.block(@c, @a, text: text, owner: "a `constant`", head: head)
 
         if b.is_err()
             cursor.recover_to_next_decl(@c)
@@ -120,7 +122,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
 
 # Everything after a function's name: generics, the signature, and — for a
 # non-extern — the body. Shared by `function` and a group's members.
-function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage)
+function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage, head: opening.Mark)
     is_extern = is_from_c(linkage)
     generic_names = parse_members.generics(@c, text)
 
@@ -166,7 +168,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     if is_extern
         body_check(@c, "function")
     else
-        b = grammar_expr.block(@c, @a, text: text, owner: "a `function`")
+        b = grammar_expr.block(@c, @a, text: text, owner: "a `function`", head: head)
 
         if b.is_err()
             cursor.recover_to_next_decl(@c)
@@ -194,125 +196,6 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     decls @ decls.push(
         ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .function_decl(value: f))
     )
-
-# The same declaration when the caller has **already taken the doc comment** —
-# which is what a group member needs, because a group's own doc documents its
-# first member and `head` would take the run a second time (§4.1's adjacency
-# rule, applied to a block).
-function record_with_doc(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, doc: [token.Span], linkage: Linkage)
-    keyword = cursor.current_span(c)
-    _ = cursor.bump(@c)
-
-    if !cursor.at(c, .ident)
-        if !cursor.at_reported_error(c)
-            cursor.error(
-                @c,
-                code: "expected_name",
-                message: "expected the C struct's name after `record`, found " + cursor.found(c, text) + " — `record Color`",
-                span: cursor.current_span(c)
-            )
-        cursor.skip_line(@c)
-        return
-    name = cursor.bump(@c).span
-    record_tail(@c, @a, @decls, text, keyword: keyword, doc: doc, name: name, linkage: linkage)
-
-# `tag stat` after a group `record`'s name, if it is there (panel 074).
-#
-# **Contextual exactly like `partial`, and for the same reason**: it is
-# consumed only in this position, so `tag` stays an ordinary identifier
-# everywhere in the language and a field named `tag` goes on compiling. What
-# follows it must be an identifier — C's tag — and a missing one is reported
-# here rather than left to the field block, which would say something about
-# indentation.
-#
-# **Order is `tag <name>` then `partial`**, and the other order is a parse
-# error on purpose: one order that parses is one order to learn.
-function tag_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_TAG
-        return fail(code: "absent", msg: "no tag clause")
-    keyword = cursor.bump(@c).span
-
-    if !cursor.at(c, .ident)
-        cursor.error(
-            @c,
-            code: "expected_declaration",
-            message: "`tag` names the struct tag C uses for this type: `record FileStat tag stat`",
-            span: here_or(c, keyword)
-        )
-        return fail(code: "absent", msg: "the tag's name is missing")
-    return ok(cursor.bump(@c).span)
-
-# `partial` after a group `record`'s name, if it is there.
-#
-# **A contextual keyword and not a reserved word** (panel 061). It is consumed
-# only here, in the one position where a declaration can carry it, so
-# `partial` stays an ordinary identifier everywhere in the language.
-# **Only inside a group**: an ordinary `record` has no header behind it, so
-# there is no struct for its field list to be a subset OF.
-function partial_marker(@c: cursor.Cursor, text: str, in_group: bool) -> bool
-    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_PARTIAL
-        return false
-    _ = cursor.bump(@c)
-    return true
-
-# A group `record` with a `tag` and NO fields is a HANDLE: a pointer to a type
-# the header names and leaves opaque (panel 145, ratified 2026-09-13).
-# `handles.is_handle_parts` is the one place that says which three facts make
-# one, and this is one of its four callers.
-#
-# **The caret no longer asks the cursor where it is.** By the time the refusal
-# below runs, `skip_terminators` has crossed the record's own line end and the
-# current token is the NEXT declaration's first, so `empty_record` underlined a
-# line the author had done nothing wrong on — measured 2026-09-13, and it is the
-# repair panel 145 owed this step. It underlines `record <Name> tag <tag>`
-# instead, which is the text to change.
-function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage)
-    in_group = is_from_c(linkage)
-    tag = tag_marker(@c, text, in_group: in_group)
-    partial = partial_marker(@c, text, in_group: in_group)
-    head_end: token.Span @ name
-
-    if !tag.is_err()
-        head_end @ tag.must()
-    is_handle = handles.is_handle_parts(in_group: in_group, tagged: !tag.is_err(), partial: partial, field_count: 0)
-    grammar_expr.eat_python_colon(@c)
-    cursor.skip_terminators(@c)
-
-    if !cursor.at(c, .indent) && !is_handle
-        if !swap_reading.at_reported_error(c, text)
-            cursor.error(
-                @c,
-                code: "empty_record",
-                message: empty_record_message(in_group: in_group, partial: partial),
-                span: token.Span(start: keyword.start, end: head_end.end)
-            )
-        cursor.recover_to_next_decl(@c)
-        return
-    fields: [ast.Field] @ []
-    finish: token.Span @ head_end
-
-    if cursor.at(c, .indent)
-        finish @ cursor.current_span(c)
-        fields @ parse_members.field_block(@c, @a, text)
-
-    if fields.len() > 0
-        finish @ fields[fields.len() - 1].name
-    decls @ decls.push(
-        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: linkage_header(linkage), library: linkage_library(linkage), partial: partial, tag: tag))
-    )
-
-# What `empty_record` says. Three messages rather than one, because the repair
-# differs and §4.17 asks a diagnostic to carry it: outside a group there is no
-# header, so fields are the only answer; inside one, a `tag` and no fields is the
-# handle form; and a `partial` record with no fields names nothing at all, which
-# is the case a reader reaches by deleting a field block and forgetting the word.
-function empty_record_message(in_group: bool, partial: bool) -> str
-    if !in_group
-        return "a `record` needs at least one field, indented one level below it"
-
-    if partial
-        return "`partial` names only SOME of the header's fields, so a `partial` `record` with none names nothing — give it its fields, or drop `partial` and name the type for a HANDLE: `record Db tag sqlite3` is C's `sqlite3 *`"
-    return "a `record` needs at least one field, indented one level below it — or, in an `extern` group, a `tag` and no fields make it a HANDLE, a pointer to a type the header leaves opaque: `record Db tag sqlite3` is C's `sqlite3 *`"
 
 # An `extern` with a body is a mistake worth naming: the body would never be
 # compiled, and silently ignoring it is the class of thing this language

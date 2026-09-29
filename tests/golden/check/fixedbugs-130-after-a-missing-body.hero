@@ -1,0 +1,14 @@
+# Fixed defect 130, 2026-09-28, a body that is not there. Symptom: a head with
+# no body at all, `while n > 0` over a line at its own margin, was named
+# `missing_body` at that line, and the line itself, `z = 4 )`, was then dropped
+# with its mistake. Cause: looking for the body, the head had consumed its own
+# line end, and `grammar_expr.finish`, keyed on the report, dropped the next
+# line as if it were the rest of the head's. The line after a head whose body
+# is missing is read as the statement it is.
+
+function missing(n: i64)
+    while n > 0
+    z = 4 )  #~ missing_body #~ expected_end_of_line
+
+function main()
+    missing(1)
