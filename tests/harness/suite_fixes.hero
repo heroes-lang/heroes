@@ -74,8 +74,14 @@ constant LEAST_FIXTURES: i64
 
 # The golden tree's own answer, with the directory and the floor as
 # parameters so the tests below can point it at a tree they built.
-function run_default(scratch: str, compiler: str) -> report.Report?
-    single = run_all(scratch: scratch, compiler: compiler, dir: CHECK_DIR, least: LEAST)?
+# `only` narrows the single-file half to the cases whose name holds it, and
+# skips the fixtures and the names, which are not cases; a narrowed run asks
+# no floor.
+function run_default(scratch: str, compiler: str, only: str) -> report.Report?
+    single = run_cases(scratch: scratch, compiler: compiler, dir: CHECK_DIR, least: LEAST, only: only)?
+
+    if only != ""
+        return ok(single)
     multi = run_fixtures(scratch: scratch, compiler: compiler, dir: FIXTURES_DIR, least: LEAST_FIXTURES)?
 
     # **The TEXT of a fix, which nothing watched until 2026-09-16.** This
@@ -88,6 +94,9 @@ function run_default(scratch: str, compiler: str) -> report.Report?
     return ok(report.tally(one: report.tally(one: single, two: multi), two: named))
 
 function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Report?
+    return run_cases(scratch: scratch, compiler: compiler, dir: dir, least: least, only: "")
+
+function run_cases(scratch: str, compiler: str, dir: str, least: i64, only: str) -> report.Report?
     # One directory walk answers "does this case have a .fixed?" for every
     # case, where `test -e` would be sixty-five more processes.
     present: {str: bool} @ {}
@@ -98,7 +107,7 @@ function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Re
     r: report.Report @ report.empty()
     seen: i64 @ 0
 
-    for item in cases.collect(scratch: scratch, dir: dir)?
+    for item in cases.matching(found: cases.collect(scratch: scratch, dir: dir)?, only: only)
         stem = strings.without_suffix(text: item.source, suffix: ".hero")
         repaired = stem + ".fixed"
         pinned = stem + ".applied"
@@ -145,7 +154,7 @@ function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Re
         else
             judge_untouched(@r, label: label, source: item.source, out: applied.must().out)
 
-    if seen < least
+    if only == "" && seen < least
         report.keep_failure(
             @r,
             label: "fixes",

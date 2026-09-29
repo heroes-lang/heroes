@@ -138,13 +138,15 @@ function shape_unsupported() -> Shape
         library_skip: true
     )
 
-function run_all(scratch: str, compiler: str, shape: Shape) -> report.Report?
-    found = cases.collect(scratch: scratch, dir: shape.dir)?
+# `only` narrows the form to the cases whose name holds it (cases.matching);
+# a narrowed run is not the whole form, so its floor is not asked.
+function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report.Report?
+    found = cases.matching(found: cases.collect(scratch: scratch, dir: shape.dir)?, only: only)
     r: report.Report @ report.empty()
 
-    if shape.watched
+    if only == "" && shape.watched
         floors.check(@r, label: shape.name, found: found.len(), floor: shape.least, what: "cases in " + shape.dir)
-    else if found.len() < shape.least
+    else if only == "" && found.len() < shape.least
         report.keep_failure(
             @r,
             label: shape.name,
@@ -278,7 +280,7 @@ test "a diagnostics suite passes on a match and fails on either half"
 
     right = stub(scratch: scratch, name: "stub-right.sh", says: SAID, on_stderr: true, ends: 1)
     assert !right.is_err()
-    green = run_all(scratch: scratch, compiler: right.must(), shape: form)
+    green = run_all(scratch: scratch, compiler: right.must(), shape: form, only: "")
     assert !green.is_err()
     assert green.must().passed == 1
     assert green.must().failed == 0
@@ -291,7 +293,7 @@ test "a diagnostics suite passes on a match and fails on either half"
         ends: 1
     )
     assert !wrong.is_err()
-    red = run_all(scratch: scratch, compiler: wrong.must(), shape: form)
+    red = run_all(scratch: scratch, compiler: wrong.must(), shape: form, only: "")
     assert !red.is_err()
     assert red.must().passed == 0
     assert red.must().failed == 1
@@ -300,7 +302,7 @@ test "a diagnostics suite passes on a match and fails on either half"
     # answered, but as if the program were clean.
     quiet = stub(scratch: scratch, name: "stub-exit0.sh", says: SAID, on_stderr: true, ends: 0)
     assert !quiet.is_err()
-    silent = run_all(scratch: scratch, compiler: quiet.must(), shape: form)
+    silent = run_all(scratch: scratch, compiler: quiet.must(), shape: form, only: "")
     assert !silent.is_err()
     assert silent.must().failed == 1
 
@@ -327,7 +329,7 @@ test "an artifact suite reads stdout, and a diagnostic on stderr does not save i
 
     right = stub(scratch: scratch, name: "stub-dump.sh", says: "fn main:\n  bb0:\n", on_stderr: false, ends: 0)
     assert !right.is_err()
-    green = run_all(scratch: scratch, compiler: right.must(), shape: form)
+    green = run_all(scratch: scratch, compiler: right.must(), shape: form, only: "")
     assert !green.is_err()
     assert green.must().passed == 1
 
@@ -335,7 +337,7 @@ test "an artifact suite reads stdout, and a diagnostic on stderr does not save i
     # it, so this is a mismatch against an empty stdout.
     misplaced = stub(scratch: scratch, name: "stub-misplaced.sh", says: "fn main:\n  bb0:\n", on_stderr: true, ends: 0)
     assert !misplaced.is_err()
-    red = run_all(scratch: scratch, compiler: misplaced.must(), shape: form)
+    red = run_all(scratch: scratch, compiler: misplaced.must(), shape: form, only: "")
     assert !red.is_err()
     assert red.must().failed == 1
 
@@ -366,7 +368,7 @@ test "a refusal that writes an artifact fails, and so does a suite below its flo
     assert !write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + inside_a_script(SAID) + " 1>&2\nprintf 'x'\nexit 1\n").is_err()
     made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])
     assert !made.is_err()
-    leaky = run_all(scratch: scratch, compiler: path, shape: refuse)
+    leaky = run_all(scratch: scratch, compiler: path, shape: refuse, only: "")
     assert !leaky.is_err()
     assert leaky.must().failed == 1
 
@@ -385,7 +387,7 @@ test "a refusal that writes an artifact fails, and so does a suite below its flo
     )
     right = stub(scratch: scratch, name: "stub-refuse.sh", says: SAID, on_stderr: true, ends: 1)
     assert !right.is_err()
-    short = run_all(scratch: scratch, compiler: right.must(), shape: floored)
+    short = run_all(scratch: scratch, compiler: right.must(), shape: floored, only: "")
     assert !short.is_err()
     assert short.must().passed == 1
     assert short.must().failed == 1
@@ -418,7 +420,7 @@ test "a machine missing the library skips, but a machine missing every library f
         ends: 1
     )
     assert !absent.is_err()
-    got = run_all(scratch: scratch, compiler: absent.must(), shape: refuse)
+    got = run_all(scratch: scratch, compiler: absent.must(), shape: refuse, only: "")
     assert !got.is_err()
 
     # One case, one skip: that is 100% skipped, which the floor refuses.
