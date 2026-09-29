@@ -200,6 +200,15 @@ run the six invocations side by side.
 work may proceed — a subagent, a panel's judges, a second worktree — because
 nothing another process does changes whether an assertion holds.
 
+**Measured 2026-09-29, and now a rule of the batch gate**: the 26 suites run
+six at a time in separate harness processes (`xargs -P 6`, each with its own
+`build/harness-<pid>`) agree with the sequential run on every one of the 26
+count lines, exit 0 each, 729 s of wall beside two other lanes' work; the
+sequential run the same day read `real 13997.37` against `user 1092.31` on a
+machine at load 30 and is discarded as a duration (the ratio). So a batch gate
+runs its suites in parallel, and its duration is not a number anyone writes
+down while it does.
+
 **Forbidden: anything while a clock runs.** CL-025 is unchanged and it is the
 half that bites: time before and after with `/usr/bin/time -p`, and while a
 clock runs the machine stays still. Paid for again on 2026-09-08, when a run

@@ -208,6 +208,42 @@ is a full panel.
    historian could not be audited. Recorded here 2026-09-13 as what the procedure
    has done, so the skill describes the sittings that actually sat.
 
+   **3c. What a sitting's clock is spent on, measured over sittings 160 to
+   182 (2026-09-29, author instruction, CL-079).** An incident-free sitting
+   took 36 to 111 minutes, median 50, the seats 14 to 44 of them in parallel
+   and the critic the longest phase; four sittings took 135 to 947 minutes,
+   every one of those hours lost to rate limits, the 600 s watchdog, a Mac
+   asleep for three and a half hours (177) and a reboot that emptied the
+   scratchpad (179), not to judging; in 13 of 22 sittings the seats found two
+   to seven errors in their briefs and paid for them in their own time; and in
+   7 of 22 the adopted resolution was narrowed, corrected or measured false
+   before it landed, three of them (165, 166, 167) on a mechanism that did not
+   build, which convened 168. So, from that day:
+   - **the critic reads the briefs FIRST, before any seat is launched**, and
+     returns the framing facts it could not verify with a command; the
+     coordinator repairs the brief and only then launches the seats. Its
+     second pass, over the reports, stays as 3b says. A brief is the one
+     document nobody was assigned to check, and the seats were paying for it;
+   - **a seat with Bash builds the adopted route in its own copy and runs the
+     cases the sitting named, before the synthesis is written** (31 to 61 s
+     to rebuild, § 2 above). A route that does not build is not adopted; this
+     is the one point where the sitting gets MORE robust and faster at once;
+   - **every seat writes its own report file** under
+     `docs/panel/NNN-reports/<seat>.md`, as it goes and not only at the end,
+     so a killed or stalled seat leaves what it had; `compiler-engineer`,
+     `spec-warden` and `historian` gained `Write` for this on 2026-09-29, and
+     the historian's report no longer passes through the coordinator's hands
+     (the 3b sentence about it stands as history);
+   - **the seats are launched staggered, a few seconds apart, and nobody
+     polls while they run**: the coordinator waits on the notification. A
+     seat the watchdog killed is relaunched from its own report file, not from
+     another seat's findings (160, 172);
+   - **the sitting runs under `caffeinate -i`** (`.claude/rules/verification.md`
+     § A long run holds the machine awake): this Mac sleeps after one minute
+     idle, and sitting 177 lost three and a half hours to it;
+   - the seats' working copies stay in the scratchpad, which a reboot empties;
+     what must survive is in the sitting's own briefs and reports directories
+     under `docs/panel/`, in the tree.
 4. **Synthesize** into `docs/panel/NNN-<topic>.md`:
    - the proposal, verbatim
    - the verdict table (verdict · section · cost/delta · prediction ·

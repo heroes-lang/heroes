@@ -15,7 +15,19 @@
       "Bash(echo \"push win exit=$?\")",
       "Bash(echo \"push=$?\")",
       "Bash(echo \"push win=$?\")",
-      "Bash(echo \"push tag=$?\")"
+      "Bash(echo \"push tag=$?\")",
+      "Bash(git worktree add *)",
+      "Bash(git worktree list*)",
+      "Bash(git merge --ff-only *)",
+      "Bash(git merge lane-*)",
+      "Bash(git bisect *)",
+      "Bash(docker run *)",
+      "Bash(docker build *)",
+      "Bash(/usr/bin/time -p ./heroes *)",
+      "Bash(/usr/bin/time -p ./heroes-next *)",
+      "Bash(xargs -P 8 ./heroes *)",
+      "Bash(xargs -P 8 ./heroes-next *)",
+      "Bash(caffeinate -i *)"
     ],
     "deny": [
       "Bash(git add -A*)",
