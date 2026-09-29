@@ -140,6 +140,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     (`next/fbody_class.hero`); both in
     `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-133/`, 2026-09-29.
 
+    **Widened 2026-09-29 by lanes 132 and 133 at their last rounds**: the
+    fields and cases inside a record's or variant's braces are skipped, so
+    their own mistakes wait for the braces to go; a nested `if x == 1 {`
+    inside a braced body loses its first line (`r2/brace/nested.hero` in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-133/`, 2026-09-29); and
+    `for` over a same-margin `print(1) )` hides the `)`, where `if` alone over
+    the same line does not name its missing body (lane 132's report).
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
@@ -188,6 +196,21 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     stands on the next line's first token where `empty_record` points at its
     own head; all in `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-133/`, 2026-09-29.
 
+    **Widened 2026-09-29 by lanes 132 and 133 at their last rounds**: a block
+    under a line headed by a refused word is named `unexpected_block`
+    beside the word's own report, for a block that is its body
+    (`stray_elif.hero`, `const_nested_deeper.hero` in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-132/findings/`, 2026-09-29; `fn` or `struct`
+    nested in a body, `r2/matrix/fn__body_decl.hero` in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-133/`, 2026-09-29); `n: 2 @ 3` costs
+    two messages at one token; an arm at its `match`'s own margin costs
+    `missing_match_arms` and `expected_end_of_line`; `0` over `=> 5` costs
+    two; an opening brace on the line below its head, Allman's style, costs
+    three (`r2/brace/allman.hero`); and `parse/records.hero` quotes a head
+    across a joined line break in the control arm
+    (`record_head_quoted_across_a_join.hero`), all reproduced in the two
+    lanes' scratch directories named here.
+
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
     **Origin:** lane 129's agent, 2026-09-29, beside defect 129 (its finding 2,
@@ -229,6 +252,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     applied (`next/ctype_then_const.hero`, `field_then_struct.hero`,
     `use_then_import.hero`, `more/open_line_fn2.hero` in
     `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-133/`, 2026-09-29).
+
+    **Widened 2026-09-29 by lane 133 at its last round**: `include <stdio.h>`
+    leaves its line open at the `>`, so the next line costs
+    `continuation_outside_brackets` beside `reserved_word` (the case it was
+    cut from is `fixedbugs-133-a-swap-certain-only-where-its-word-is-right`).
 
 - [ ] **133 — after a declaration head the lexer refuses as a foreign word with a certain swap, the declaration's own mistakes are reported only once the swap is applied** | `const MAX = 5` costs `reserved_word` alone, and `check --apply` writes `constant MAX = 5`, which then costs `expected_constant_type`; `const MAX: i64 = 5` then costs `missing_body`, `fn main() {` then `missing_body`, `struct Point {` then `empty_record`: two turns for one habit | `selfhost/scan.hero` (the foreign word emitted as an `error` token) · `selfhost/keywords.hero` (`foreign_word`) · `selfhost/parse/decl.hero` · `cursor.recover_to_next_decl`
 
