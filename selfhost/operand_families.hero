@@ -29,7 +29,9 @@ use token
 ## The literals
 
 # The family of types a literal can take, and `none` for a token that is no
-# literal, which nothing here judges.
+# literal, which nothing here judges. `refused` is no literal's: it is what
+# `literal_operands` gives a run of literals no type admits, `1 + "s"` or
+# `-"s"`, which no operator takes.
 variant Family
     none
     integer
@@ -37,6 +39,7 @@ variant Family
     text
     truth
     pointer
+    refused
 
 function family(kind: token.TokenKind) -> Family
     return match kind
@@ -104,6 +107,7 @@ function admits(t: Takes, f: Family) -> bool
         .text    => t == .unjudged || t == .anything || t == .sum || t == .pattern || t == .scrutinee
         .truth   => t == .unjudged || t == .anything || t == .truth
         .pointer => t == .unjudged || t == .anything || t == .scrutinee
+        .refused => false
 
 ## How tightly
 
@@ -171,3 +175,5 @@ test "an operator takes the families the checker accepts beside it, and no other
     assert admits(takes(.eq), .text)
     assert family(.hole) == .none
     assert admits(takes(.kw_assert), .none)
+    assert !admits(takes(.eq_eq), .refused)
+    assert !admits(.unjudged, .refused)

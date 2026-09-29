@@ -31,7 +31,10 @@ constant ERR_NO_SIGNIFICANT: str
 # while the lexer joins. `head` when the line below began with the token that
 # can only go on, so that token is the operator the join writes; else the
 # line above ended with it, just before `after`. `line_joins` weighs the
-# joins from these once the file is lexed (defect 129).
+# joins from these once the file is lexed (defect 129). `diagnostic` is -1 for
+# a line left open that the lexer ends rather than refuses, before a fresh
+# statement or at the file's end: the parser says what it lacks, no join
+# repairs it, and it weighs as a break with no join.
 record Break
     diagnostic: i64
     after: i64

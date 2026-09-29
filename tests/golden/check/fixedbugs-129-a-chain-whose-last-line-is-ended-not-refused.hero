@@ -1,0 +1,29 @@
+# Fixed defect 129, 2026-09-29, a shape beside the coordinator's widening. A
+# statement's line left open that the lexer ends rather than refuses, because
+# the next line begins a statement of its own (`return`, a binding), is a break
+# too: the parser refuses it with `expected_expression`, and no join repairs
+# it. Its statement's other joins were `certain`, so `check --apply` wrote
+# `x = a + b +` over `return x`, refused again. They are a `guess` now
+# (`selfhost/open_line.hero`'s `ended`); a line left open at the file's end is
+# the same, in `selfhost/lexer.hero`'s unit test.
+#
+# Every join here is a `guess`, so `check --apply` writes the file back
+# unchanged, and `tests/harness/suite_fixes.hero` asserts exactly that of a
+# case with no `.fixed` or `.applied`: a join that turned `certain` again goes
+# red there.
+
+function before_a_return(a: i64, b: i64) -> i64
+    #~v continuation_outside_brackets
+    x = a +
+    b +  #~ expected_expression
+    return x
+
+function before_a_binding(a: i64, b: i64) -> i64
+    #~v continuation_outside_brackets
+    x = a +
+    b +  #~ expected_expression
+    y = 2
+    return x + y
+
+function main()
+    print(before_a_return(a: 1, b: 2) + before_a_binding(a: 1, b: 2))
