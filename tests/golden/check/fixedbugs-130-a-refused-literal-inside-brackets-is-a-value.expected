@@ -1,0 +1,19 @@
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:17:11: error[base_prefix_case]: `0X10` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:18:10: error[base_prefix_case]: `0X20` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:19:10: error[base_prefix_case]: `0X30` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:20:11: error[base_prefix_case]: `0X40` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:21:10: error[base_prefix_case]: `0X5` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:22:17: error[digit_not_in_base]: `2` is not a binary digit
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:23:16: error[misplaced_separator]: `_` groups digits, so it goes between two of them
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:24:11: error[char_literal]: a character literal holds exactly one character — one ASCII character ('a', '0', ' ') or one escape ('\n', '\t') — `'ab'` does not
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:25:8: error[base_prefix_case]: `0X60` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:27:11: error[base_prefix_case]: `0X70` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:17:18: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:18:16: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:19:17: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:20:19: error[expected_args_close]: expected `)`, or `,` and another argument, found a number (`3`)
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:21:17: error[expected_separator]: expected `,` or a new line between one entry and the next, found a number (`3`)
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:22:20: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:23:20: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:24:18: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-a-refused-literal-inside-brackets-is-a-value.hero:25:17: error[expected_end_of_line]: expected the end of the line, found `)` — an `if`'s body goes on the lines below its head, one level deeper
