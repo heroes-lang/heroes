@@ -10,6 +10,12 @@
 # `int` as the named type `i64` its certain swap writes, over the span that
 # was written (`parse/swap_reading.hero`); nothing reads that name, because
 # the `reserved_word` stops the compilation after the parse.
+#
+# Measured again the same day over trunk `0ba7b084`, whose failed head reads
+# its body: the two bodies below `-> int` and `: int` were reported there,
+# and what the head's own line held after `int` was still dropped as its
+# debris. `constant RATE: int = 5` is that line: the trunk cost the word
+# alone, and its `= 5`, a `missing_body`, waited for the swap.
 
 function apply(f: (fn(i64) -> ), x: i64) -> i64  #~ reserved_word expected_type
     return f(x)
@@ -19,6 +25,8 @@ function twice(x: i64) -> int  #~ reserved_word
 
 constant LIMIT: int  #~ reserved_word
     5 -  #~ expected_expression
+
+constant RATE: int = 5  #~ reserved_word missing_body
 
 function main()
     print(1)
