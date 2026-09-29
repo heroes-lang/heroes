@@ -49,11 +49,13 @@ constant RUN_DIR: str
 constant LEAST: i64
     87
 
-function run_all(scratch: str, compiler: str) -> report.Report?
-    found = cases.collect(scratch: scratch, dir: RUN_DIR)?
+# `only` narrows the suite to the cases whose name holds it (cases.matching);
+# a narrowed run is not the whole suite, so its floor is not asked.
+function run_all(scratch: str, compiler: str, only: str) -> report.Report?
+    found = cases.matching(found: cases.collect(scratch: scratch, dir: RUN_DIR)?, only: only)
     r: report.Report @ report.empty()
 
-    if found.len() < LEAST
+    if only == "" && found.len() < LEAST
         report.keep_failure(
             @r,
             label: "run",

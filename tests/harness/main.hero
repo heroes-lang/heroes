@@ -121,6 +121,24 @@ function main()
 
     if given.len() > 1
         only @ given[1]
+    pick: str @ ""
+
+    if given.len() > 2
+        pick @ given[2]
+
+    # The third word narrows a suite to the cases whose name holds it, for the
+    # gate of one repair (CLAUDE.md § Verification, 2026-09-29). It binds only
+    # the suites that walk cases: over any other it would run the whole suite
+    # and read as a filtered green, which is `-- <compiler> golden` selecting
+    # nothing (CL-072) in a new coat. So it needs a suite name, the suite must
+    # take it, and a filter that selects nothing exits 2 below.
+    if pick != "" && only == ""
+        print("harness: a case filter needs a suite name: -- <compiler> <suite> " + pick)
+        exit(2)
+
+    if pick != "" && !takes_cases(only)
+        print("harness: " + only + " walks no cases, so it takes no case filter")
+        exit(2)
 
     # The scratch directory holds the captured streams and the directory
     # listings. It is under build/ because that is the one directory this
@@ -157,13 +175,13 @@ function main()
 
     for form in forms
         if only == "" || only == form.name
-            got = suite_golden.run_all(scratch: scratch, compiler: compiler, shape: form)
+            got = suite_golden.run_all(scratch: scratch, compiler: compiler, shape: form, only: pick)
 
             if got.is_err()
                 print("harness: the " + form.name + "/ suite could not run")
                 exit(2)
             print(
-                "  " + form.name + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
+                "  " + shown(name: form.name, pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
             )
             total @ report.tally(one: total, two: got.must())
             ran @ ran + 1
@@ -172,12 +190,14 @@ function main()
     # question in each of three configurations, so it carries its own
     # runner rather than a row in the table above.
     if only == "" || only == "run"
-        got = suite_run.run_all(scratch: scratch, compiler: compiler)
+        got = suite_run.run_all(scratch: scratch, compiler: compiler, only: pick)
 
         if got.is_err()
             print("harness: the run/ suite could not run")
             exit(2)
-        print("  run: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print(
+            "  " + shown(name: "run", pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
+        )
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -185,12 +205,14 @@ function main()
     # it takes no compiler at all — it is about whether the goldens agree
     # with themselves.
     if only == "" || only == "annotations"
-        got = suite_annotations.run_all(scratch: scratch, compiler: compiler)
+        got = suite_annotations.run_all(scratch: scratch, compiler: compiler, only: pick)
 
         if got.is_err()
             print("harness: the annotations sweep could not run")
             exit(2)
-        print("  annotations: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print(
+            "  " + shown(name: "annotations", pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
+        )
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -268,12 +290,14 @@ function main()
         ran @ ran + 1
 
     if only == "" || only == "fixes"
-        got = suite_fixes.run_default(scratch: scratch, compiler: compiler)
+        got = suite_fixes.run_default(scratch: scratch, compiler: compiler, only: pick)
 
         if got.is_err()
             print("harness: the fixes suite could not run")
             exit(2)
-        print("  fixes: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print(
+            "  " + shown(name: "fixes", pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
+        )
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -362,12 +386,14 @@ function main()
         ran @ ran + 1
 
     if only == "" || only == "layout"
-        got = suite_layout.run_all(scratch)
+        got = suite_layout.run_all(scratch: scratch, only: pick)
 
         if got.is_err()
             print("harness: the layout check could not run")
             exit(2)
-        print("  layout: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print(
+            "  " + shown(name: "layout", pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
+        )
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -427,6 +453,12 @@ function main()
         print("harness: no suite named " + only)
         exit(2)
 
+    if pick != "" && total.passed + total.failed == 0
+        print(
+            "harness: no case of " + only + " matches " + pick + " — a run that selected nothing is a green run that tested nothing"
+        )
+        exit(2)
+
     clean = report.verdict(total, "harness")
 
     # This run's directory is its own (the pid is in the name), so removing
@@ -442,3 +474,34 @@ function main()
 
     if !clean
         exit(1)
+
+# The suites the third word may narrow: the ones that walk cases (the four
+# golden forms, `run`, `fixes`, `annotations`) and `layout`, which walks
+# modules and is asked about one file by the write-time hook.
+function takes_cases(suite: str) -> bool
+    for name in ["check", "ir", "emit", "unsupported", "run", "fixes", "annotations", "layout"]
+        if name == suite
+            return true
+
+    return false
+
+# The suite's line says when it was narrowed, so a filtered count is never
+# read as the whole suite's.
+function shown(name: str, pick: str) -> str
+    if pick == ""
+        return name
+
+    return name + " (only " + pick + ")"
+
+test "the third word binds the suites that walk cases and no other"
+    assert takes_cases("check")
+    assert takes_cases("run")
+    assert takes_cases("fixes")
+    assert takes_cases("layout")
+    assert !takes_cases("records")
+    assert !takes_cases("emission")
+    assert !takes_cases("")
+
+test "a narrowed suite says so on its line"
+    assert shown(name: "check", pick: "") == "check"
+    assert shown(name: "check", pick: "fixedbugs-133") == "check (only fixedbugs-133)"

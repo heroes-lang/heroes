@@ -144,13 +144,16 @@ constant RUN_ROOTS: [str]
 constant LEAST: i64
     1261
 
-function run_all(scratch: str, compiler: str) -> report.Report?
+# `only` narrows the sweep to the cases whose name holds it (cases.matching);
+# a narrowed run asks neither the thesis witnesses, nor the groups, nor the
+# floor, which are questions about the whole.
+function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     r: report.Report @ report.empty()
     annotated: i64 @ 0
     witnessed: {str: bool} @ {}
 
     for dir in DIRECTORIES
-        found = cases.collect(scratch: scratch, dir: dir)?
+        found = cases.matching(found: cases.collect(scratch: scratch, dir: dir)?, only: only)
 
         for item in found
             source = read_file(item.source)
@@ -181,6 +184,8 @@ function run_all(scratch: str, compiler: str) -> report.Report?
                 else
                     report.keep_pass(@r)
 
+    if only != ""
+        return ok(r)
     every_thesis_rule_has_a_witness(@r, witnessed: witnessed)
     stepped_aside: i64 @ 0
 

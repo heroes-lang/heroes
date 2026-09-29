@@ -509,7 +509,11 @@ constant GROWTH_ALLOWED: [str]
         "selfhost/emit/container.hero lvalue"
     ]
 
-function run_all(scratch: str) -> report.Report?
+# `only` narrows the walk to the modules whose path holds it, which is how the
+# write-time hook asks about one file with the instrument's own unit
+# (`.claude/rules/verification.md` § A suite is the last judge); a narrowed run
+# asks no floor.
+function run_all(scratch: str, only: str) -> report.Report?
     r: report.Report @ report.empty()
 
     # **`list_tree`, not `list_entries`, and the difference is 133 files.**
@@ -533,10 +537,11 @@ function run_all(scratch: str) -> report.Report?
     modules: [str] @ []
 
     for path in files
-        if strings.ends_with(text: path, suffix: ".hero")
+        if strings.ends_with(text: path, suffix: ".hero") && (only == "" || strings.contains(text: path, needle: only))
             modules @ modules.push(path)
 
-    floors.check(@r, label: "layout", found: modules.len(), floor: LEAST, what: "modules")
+    if only == ""
+        floors.check(@r, label: "layout", found: modules.len(), floor: LEAST, what: "modules")
     over: [str] @ []
     slow: [str] @ []
     grown_keys: [str] @ []
@@ -571,25 +576,30 @@ function run_all(scratch: str) -> report.Report?
                     "    " + path + ": " + lines.to_str() + " lines of code, past the " + limit.to_str() + " it measured when this check was written — a file already over the ceiling may not grow further"
                 )
 
-    if slow.len() > 0
-        report.keep_failure(
-            @r,
-            label: "layout/appends",
-            detail: "  the lexer's growing arrays are appended through `state.push_token(@l.tokens, t)` and `state.push_diagnostic(@l.diagnostics, d)`, never through the field itself, which copies the whole array at every append (defect 103, design.md Part 8 wart 8):\n" + slow.join("\n")
-        )
-    else
-        report.keep_pass(@r)
+    # A narrowed walk (`only`) sees one file, so the two questions about the
+    # whole tree, the lexer's appends and the grown texts against their
+    # allow-lists, are not asked: an allow-list entry for a file that was not
+    # walked would read as *no longer grown there*, which is a false red.
+    if only == ""
+        if slow.len() > 0
+            report.keep_failure(
+                @r,
+                label: "layout/appends",
+                detail: "  the lexer's growing arrays are appended through `state.push_token(@l.tokens, t)` and `state.push_diagnostic(@l.diagnostics, d)`, never through the field itself, which copies the whole array at every append (defect 103, design.md Part 8 wart 8):\n" + slow.join("\n")
+            )
+        else
+            report.keep_pass(@r)
 
-    grown = unallowed(found: grown_keys, written: grown_lines, allowed: GROWTH_ALLOWED)
+        grown = unallowed(found: grown_keys, written: grown_lines, allowed: GROWTH_ALLOWED)
 
-    if grown.len() > 0
-        report.keep_failure(
-            @r,
-            label: "layout/concat",
-            detail: "  a text is grown by pushing its pieces onto a `[str]` and joining once, never by `+` at every step, which copies all of it each time (defect 105, design.md Part 8 wart 8):\n" + grown.join("\n")
-        )
-    else
-        report.keep_pass(@r)
+        if grown.len() > 0
+            report.keep_failure(
+                @r,
+                label: "layout/concat",
+                detail: "  a text is grown by pushing its pieces onto a `[str]` and joining once, never by `+` at every step, which copies all of it each time (defect 105, design.md Part 8 wart 8):\n" + grown.join("\n")
+            )
+        else
+            report.keep_pass(@r)
 
     if over.len() > 0
         report.keep_failure(
