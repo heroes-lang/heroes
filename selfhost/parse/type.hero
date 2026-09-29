@@ -27,6 +27,7 @@ use data_errors
 use parse/line_end
 use parse/fixed_length
 use parse/swap_reading
+use parse/unclosed
 
 ## The entry point
 
@@ -87,7 +88,10 @@ function prefix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     if swap_reading.reads_as_function(c, text) && cursor.peek(c, 1) == .lparen
         return bare_function(@c, @a, text)
 
-    if !cursor.at_reported_error(c)
+    # A type asked for at a token a report already stands on is that report's
+    # mistake a second time: `{2: i64}` refused the `2` as its key's type and,
+    # the key never moving past it, as its value's (defect 131's class).
+    if !cursor.at_reported_error(c) && !line_end.said_here(c)
         cursor.error(
             @c,
             code: "expected_type",
@@ -121,27 +125,23 @@ function named(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
 # `[T]` — the dynamic array, and Heroes' only indirection (§4.10).
 function array_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    at = c.pos
     open = cursor.bump(@c).span
     element = parse_type(@c, @a, text)
-    cursor.skip_terminators(@c)
-    close = cursor.current_span(c)
-    _ = line_end.expect_closer(
-        @c,
-        text: text,
-        holds: .one_type,
-        kind: .rbracket,
-        code: "expected_array_close",
-        what: "`]` to close the array type"
-    )
+    close = unclosed.type_closer(@c, text: text, open: at)
     return ast.push_type(
         @a.types,
         ast.TypeNode(kind: .array_of(element: element), span: token.Span(start: open.start, end: close.end))
     )
 
-# `{K: V}` — the map. Access returns `V?`, always (§4.9).
+# `{K: V}` — the map. Access returns `V?`, always (§4.9). A key that refused
+# leaves the map to resume at its own `:` (`past_a_refused_key`).
 function map_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    at = c.pos
     open = cursor.bump(@c).span
+    said = c.diagnostics.len()
     key = parse_type(@c, @a, text)
+    past_a_refused_key(@c, said: said, from: at + 1)
     _ = line_end.expect_after(
         @c,
         text: text,
@@ -150,20 +150,40 @@ function map_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         what: "`:` between the map's key and value types"
     )
     value = parse_type(@c, @a, text)
-    cursor.skip_terminators(@c)
-    close = cursor.current_span(c)
-    _ = line_end.expect_closer(
-        @c,
-        text: text,
-        holds: .one_type,
-        kind: .rbrace,
-        code: "expected_map_close",
-        what: "`}` to close the map type"
-    )
+    close = unclosed.type_closer(@c, text: text, open: at)
     return ast.push_type(
         @a.types,
         ast.TypeNode(kind: .map_of(key: key, value: value), span: token.Span(start: open.start, end: close.end))
     )
+
+# Where the map's key, begun at token `from`, refused, the cursor moves to the
+# map's own `:`, the first on its line outside the brackets the key opened and
+# before the map's `}`: what it passes is the key's, and the key's refusal
+# spoke of it, so `{2: i64}` costs one `expected_type` and reads its value.
+function past_a_refused_key(@c: cursor.Cursor, said: i64, from: i64)
+    if !cursor.refused_since(c, said)
+        return
+    depth: i64 @ 0
+    i: i64 @ from
+
+    while c.tokens[i].kind != .eof && !(depth == 0 && ends_the_key(c.tokens[i].kind))
+        k = c.tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth - 1
+        else if k == .colon && depth == 0 && i >= c.pos
+            while c.pos < i
+                _ = cursor.bump(@c)
+
+            return
+        i @ i + 1
+
+# What ends a map type's key where no `:` came first: a line end, a block's
+# edge, or a closer at the map's own depth, its `}` or another's.
+function ends_the_key(kind: token.TokenKind) -> bool
+    return kind == .terminator || kind == .indent || kind == .dedent || kind == .rparen || kind == .rbracket || kind == .rbrace
 
 # `()` or `(function(A, B) -> C)`.
 #
@@ -171,6 +191,7 @@ function map_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # everywhere (panel 013). The parentheses are mandatory because declarations
 # dropped theirs: `f: function A -> B -> [B]` would be ambiguous (§4.13).
 function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    at = c.pos
     open = cursor.bump(@c).span
 
     if cursor.at(c, .rparen)
@@ -180,20 +201,13 @@ function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     if !swap_reading.eat_as(@c, text, .kw_function) && !cursor.expect(@c, text: text, kind: .kw_function, code: "expected_function_type", what: "`function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`")
         # This `(` was consumed here, so its `)` is this function's to find:
         # leaving it for the caller made a signature containing one bad type
-        # report the mistake three times.
-        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+        # report the mistake three times. One that never closes has none, and
+        # looking took the rest of the file (`parse/unclosed`).
+        if !unclosed.never_closed(c, open: at)
+            cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
         return ast.push_type(@a.types, ast.TypeNode(kind: .error, span: open))
     parts = function_parts(@c, @a, text)
-    cursor.skip_terminators(@c)
-    close = cursor.current_span(c)
-    _ = line_end.expect_closer(
-        @c,
-        text: text,
-        holds: .one_type,
-        kind: .rparen,
-        code: "expected_function_type_close",
-        what: "`)` to close the function type"
-    )
+    close = unclosed.type_closer(@c, text: text, open: at)
     return ast.push_type(
         @a.types,
         ast.TypeNode(kind: .function_type(params: parts.params, labels: parts.labels, result: parts.result), span: token.Span(start: open.start, end: close.end))
@@ -261,6 +275,7 @@ function bare_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # lookahead, and a name that is not a plain name is refused where it stands.
 function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [token.Span]) -> [i64]
     params: [i64] @ []
+    at = c.pos
 
     if !cursor.expect(@c, text: text, kind: .lparen, code: "expected_function_type_params", what: "`(` and the parameter types")
         return params
@@ -286,6 +301,9 @@ function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [to
 
         if !cursor.eat(@c, .comma)
             reading @ false
+
+    if unclosed.never_closed(c, open: at)
+        return params
 
     if !line_end.expect_closer(@c, text: text, holds: .type_list, kind: .rparen, code: "expected_function_type_params_close", what: "`)`, or `,` and another parameter type")
         cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)

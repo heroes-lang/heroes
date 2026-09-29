@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow-beside-it.hero:32:9: error[continuation_outside_brackets]: a line outside brackets ends its statement, and this one cannot end with `=>`: the next line goes on with it at the same margin, where a new statement begins; write the statement on one line, or break it inside parentheses
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow-beside-it.hero:18:11: error[expected_arm_arrow]: expected `=>` and the arm's value, found a number (`7`)
+tests/golden/check/fixedbugs-131-an-arm-broken-before-its-arrow-beside-it.hero:24:33: error[expected_arm_arrow]: expected `=>` and the arm's value, found end of line

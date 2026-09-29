@@ -1,0 +1,249 @@
+# The Python suite colon, `if n > 0:`, and where it is the habit (design.md
+# §4.17, CLAUDE.md § 8; panel 018; defect 131's class, 2026-09-29).
+#
+# A `:` is never legal where a block opens, so the habit is met with
+# `trailing_colon` wherever a head's body, arms or members begin. Its fix,
+# *drop the `:`*, is the whole repair only where the `:` ENDS the head's line
+# before its body, a comment aside, or stands before a `{` that opens the body
+# in braces. It was certain everywhere, and a `:` in mid-line is not that:
+# `if n > 0: print(1)` dropped to `if n > 0 print(1)`, still refused, and the
+# line cost the colon and then the missing body, two messages for one
+# mistake; `record P: i64` cost the colon and then its junk. So:
+#
+# | the `:` | what is said |
+# |---|---|
+# | ends the head's line, or stands before a `{` | `trailing_colon`, *drop the `:`*, certain (`eat`) |
+# | in mid-line, at a head that owes statements or arms, with no block below | `trailing_colon`, and what follows it is read as the body written on the line below, one level deeper; the fix writes it there, certain (`read_below`) |
+# | in mid-line anywhere else | nothing here: the head names what goes on past its line, once, the `:` included, and reads a block below as its body |
+#
+# The second row is the Python one-line suite, `if c: stmt`, and it is read as
+# the program the fix writes, which is what makes that fix certain: the tokens
+# are laid out as the lexer lays out a body one level below its head, the `:`
+# becoming the block's indent and the line's end its dedent, so the body's own
+# mistakes are said in the first run and the fixed program says nothing the
+# first run did not. No token is added or removed, so no index another reader
+# holds into the stream moves (a body in braces holds its `}`'s). With a block
+# below the line, the fix would give it a first line it does not have, and the
+# third row stands.
+#
+# `read_below` needs the text, for the margin the fix writes, and is called
+# only by the heads that pass it: `grammar_expr.if_expr`, `for_stmt`,
+# `while_stmt` and `match_expr`. The heads that call `eat` alone, a
+# declaration's through `grammar_expr.block` and a `record`'s or `variant`'s,
+# get the third row for a `:` in mid-line.
+#
+# A leaf: it reads the tokens and the text, and nothing of the parser.
+#
+# | entry | called by |
+# |---|---|
+# | `eat` | `grammar_expr.eat_python_colon` |
+# | `read_below` | `grammar_expr.if_expr`, `for_stmt`, `while_stmt`, `match_expr` |
+
+use token
+use diag
+use cursor
+use parse/line_end
+use word_place
+use lexer
+
+## The `:` that ends its line
+
+# The habit where the cursor's `:` ends the head's line or stands before a
+# `{`: eaten, with its certain fix. Where a report stands on the `:` (`while
+# :`), the habit is not a second.
+function eat(@c: cursor.Cursor)
+    if !cursor.at(c, .colon) || line_end.said_here(c) || !ends_its_line(c)
+        return
+    s = cursor.current_span(c)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "trailing_colon",
+        message: "a block is opened by the indentation alone — drop the `:` (this is not Python)",
+        span: s
+    )
+    d.fixes @ d.fixes.push(diag.Fix(title: "drop the `:`", replacement: "", span: s, certainty: .certain))
+    c.diagnostics @ c.diagnostics.push(d)
+    _ = cursor.bump(@c)
+
+# Whether the cursor's `:` is the last thing on its line, a comment aside, or
+# stands before a `{`, where dropping it leaves the body where it was.
+function ends_its_line(c: cursor.Cursor) -> bool
+    k = cursor.peek(c, 1)
+    return k == .terminator || k == .indent || k == .dedent || k == .eof || k == .lbrace
+
+## The one-line suite
+
+# The cursor's `:` in mid-line, as the one-line suite `if c: stmt`, where the
+# head's line is not inside brackets, ends where its last bracket closes, and
+# has no block below it: said once, and what follows it laid out as the body
+# on the line below, which the head then reads as its body. Anything else is
+# left as it stands.
+function read_below(@c: cursor.Cursor, text: str)
+    if !cursor.at(c, .colon) || line_end.said_here(c) || ends_its_line(c)
+        return
+    colon = c.pos
+    first = line_head(c, colon: colon)
+    end = line_end_after(c, colon: colon)
+
+    if first < 0 || end < 0 || inside_a_bracket(c, at: first) || block_below(c, end: end)
+        return
+    rest = c.tokens[colon + 1].span
+    start = word_place.line_start(text, at: c.tokens[first].span.start)
+    margin = text.slice(from: start, to: c.tokens[first].span.start)
+
+    if !word_place.only_margin(text, from: start, to: c.tokens[first].span.start)
+        return
+    written = token.Span(start: c.tokens[colon].span.start, end: rest.start)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "trailing_colon",
+        message: "a block is opened by the indentation alone — drop the `:` and write what follows it on the line below, one level deeper (this is not Python)",
+        span: c.tokens[colon].span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write it on the line below, one level deeper", replacement: line_break(text, at: rest.start) + margin + "    ", span: written, certainty: .certain)
+    )
+    c.diagnostics @ c.diagnostics.push(d)
+    c.tokens[colon] @ token.Token(kind: .indent, span: token.Span(start: rest.start, end: rest.start))
+    c.tokens[end] @ token.Token(kind: .dedent, span: c.tokens[end].span)
+
+# The index of the first token of the line the `:` at `colon` stands on,
+# walking back over the brackets closed before it and past a line the lexer
+# joined to it; -1 where the `:` stands inside a bracket.
+function line_head(c: cursor.Cursor, colon: i64) -> i64
+    depth: i64 @ 0
+    i: i64 @ colon - 1
+
+    while i >= 0
+        k = c.tokens[i].kind
+
+        if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth + 1
+        else if k == .lparen || k == .lbracket || k == .lbrace
+            if depth == 0
+                return -1
+            depth @ depth - 1
+        else if depth == 0 && (k == .terminator || k == .indent || k == .dedent)
+            return past_comments(c, at: i + 1)
+        i @ i - 1
+
+    return past_comments(c, at: 0)
+
+# Whether token `at` stands inside a bracket not closed before it, walking
+# back to the block's edge, an indent or a dedent, which no bracket spans. In
+# brackets the lexer lays out no block, so a body in braces holds no line the
+# fix could write one level deeper: `function main() {` over `if c: x`.
+function inside_a_bracket(c: cursor.Cursor, at: i64) -> bool
+    depth: i64 @ 0
+    i: i64 @ at - 1
+
+    while i >= 0 && c.tokens[i].kind != .indent && c.tokens[i].kind != .dedent
+        k = c.tokens[i].kind
+
+        if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth + 1
+        else if k == .lparen || k == .lbracket || k == .lbrace
+            if depth == 0
+                return true
+            depth @ depth - 1
+        i @ i - 1
+
+    return false
+
+function past_comments(c: cursor.Cursor, at: i64) -> i64
+    i: i64 @ at
+
+    while c.tokens[i].kind == .comment
+        i @ i + 1
+
+    return i
+
+# The index of the line end that ends what follows the `:` at `colon`, outside
+# its brackets; -1 where a block's edge or the stream's end comes first.
+function line_end_after(c: cursor.Cursor, colon: i64) -> i64
+    depth: i64 @ 0
+    i: i64 @ colon + 1
+
+    while c.tokens[i].kind != .eof
+        k = c.tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth - 1
+        else if k == .indent || k == .dedent
+            return -1
+        else if depth == 0 && k == .terminator
+            return i
+        i @ i + 1
+
+    return -1
+
+# Whether a block stands below the line whose line end is at `end`.
+function block_below(c: cursor.Cursor, end: i64) -> bool
+    i: i64 @ end + 1
+
+    while c.tokens[i].kind == .comment || c.tokens[i].kind == .terminator
+        i @ i + 1
+
+    return c.tokens[i].kind == .indent
+
+# The line break the text uses on the line that holds `at`.
+function line_break(text: str, at: i64) -> str
+    i: i64 @ at
+
+    while i < text.len() && text[i] != '\n'
+        i @ i + 1
+
+    if i > 0 && i < text.len() && text[i - 1] == '\r'
+        return "\r\n"
+    return "\n"
+
+## Tests
+
+# The cursor on the `:` of `text`'s first line, in the lexer's own stream.
+function on_the_colon(text: str) -> cursor.Cursor
+    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+
+    while !cursor.at(c, .colon)
+        _ = cursor.bump(@c)
+
+    return c
+
+test "a colon that ends its line is eaten with its certain fix, and one in mid-line is not"
+    ended: cursor.Cursor @ on_the_colon("if c:  # a note\n    x = 1\n")
+    eat(@ended)
+    assert ended.diagnostics.len() == 1
+    assert ended.diagnostics[0].fixes[0].certainty == .certain
+    assert cursor.at(ended, .indent)
+
+    # `record P: i64` over its fields: left for the head, which names its junk.
+    mid: cursor.Cursor @ on_the_colon("record P: i64\n    x: i64\n")
+    eat(@mid)
+    assert mid.diagnostics.len() == 0
+    assert cursor.at(mid, .colon)
+
+test "the one-line suite is laid out as the body below, and the fix writes it there"
+    text = "    if c: f(1,\n        2)  # a note\n    y = 2\n"
+    c: cursor.Cursor @ on_the_colon(text)
+    before = c.tokens.len()
+    read_below(@c, text)
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].fixes[0].replacement == "\n        "
+    assert c.diagnostics[0].fixes[0].certainty == .certain
+    assert c.tokens.len() == before
+    assert cursor.at(c, .indent)
+
+    # The line end after `2)`, past the comment, is the body's dedent.
+    i: i64 @ c.pos
+
+    while c.tokens[i].kind != .dedent
+        i @ i + 1
+
+    assert c.tokens[i - 1].kind == .comment
+
+    # A block below the line, a `:` that ends its line, and one inside a body
+    # in braces: left as they stand.
+    for kept in ["if c: x\n    y\n", "if c:\n    y\n", "function f() {\n    if c: x\n}\n"]
+        k: cursor.Cursor @ on_the_colon(kept)
+        read_below(@k, kept)
+        assert k.diagnostics.len() == 0
+        assert cursor.at(k, .colon)

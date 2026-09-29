@@ -1,0 +1,30 @@
+# Fixed defect 131's class, 2026-09-29, the `for` beside the one whose token
+# after `for` begins an expression (`fixedbugs-131-a-for-over-a-condition-
+# that-begins-one`). Symptom: C's `for (i = 0)` and `for {` each got
+# `for_missing_in` with a `certain` *use `while`*, since `(` and `{` can
+# begin an expression, and `check --apply` wrote `while (i = 0)`, refused at
+# its `=` as a group left open, and `while {`, a map literal that refused the
+# body inside it; `for !done x` wrote `while !done x`, refused at the `x`.
+# Cause: the certainty asked only the token after `for`. It asks the `while`
+# now: the rest of the line is read as its condition, on a copy of the
+# cursor, and the fix is certain only where that reading refused nothing and
+# ended where the head's line ends (`selfhost/parse/loop_habit.hero`). Here
+# each is a guess, and `check --apply` leaves the file as it is.
+
+function c_style()
+    for (i = 0)  #~ for_missing_in
+        print(1)
+
+function in_braces()
+    for {  #~ for_missing_in
+        print(2)
+    }
+
+function a_condition_that_goes_on(done: bool)
+    for !done x  #~ for_missing_in
+        print(3)
+
+function main()
+    c_style()
+    in_braces()
+    a_condition_that_goes_on(done: true)

@@ -1,0 +1,21 @@
+# Fixed defect 131's class, 2026-09-29, C's `do { ... } while (c)`. Symptom:
+# the braces after `do` were read as the block they stand for, their `{`
+# named once, and then `while (x < 3)` after the `}` was read as a loop of its
+# own with no body, `missing_body` at the line below it: one habit, two
+# messages. Cause: nothing asked where that `while` stands. A `while` on the
+# line of the `}` that closes braces whose `{` a report names is their tail:
+# its condition is read, and says its own mistakes, and where no body follows
+# it none is asked for (`selfhost/parse/loop_habit.hero`).
+
+function main()
+    x: i64 @ 0
+
+    do {  #~ expected_end_of_line
+        x @ x + 1
+    } while (x < 3)
+    print(x)
+
+    do {  #~ expected_end_of_line
+        x @ x + 1
+    } while (x < )  #~ expected_expression
+    print(x)

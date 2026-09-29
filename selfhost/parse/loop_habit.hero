@@ -1,0 +1,111 @@
+# `for` over what is not an iteration, and how sure its *use `while`* is
+# (design.md §4.7, §4.17, CLAUDE.md § 8; defect 131's class, 2026-09-29).
+#
+# `for x in xs` iterates and `while c` loops on a condition (§4.7), so a
+# condition after `for` is met with `for_missing_in` and the fix *use
+# `while`*. A `certain` fix repairs what it names and writes a program whose
+# parser says nothing new, and *use `while`* was certain wherever the token
+# after `for` could begin an expression: C's `for (i = 0; i < 3; i++) {` got
+# `while (i = 0; ...`, refused at its `=` as a group left open, and `for {`
+# got `while {`, a map literal that refused the body inside it. The fix is
+# certain now only where the `while` it writes is a loop, and that is asked
+# of the `while` itself: the rest of the line is read as its condition, on a
+# copy of the cursor, by `grammar_expr.for_stmt`, and the fix is certain where
+# that reading refused nothing, held nothing back, and ended where the head's
+# line ends or at a `{` that ends it, where a body begins.
+#
+# A name after `for` keeps the fix a guess whatever the reading says: `for x
+# of xs`, a mangled iteration, reads as the condition `x`, and `while x`
+# would not be what its author meant.
+#
+# **C's `do { ... } while (c)`** is one habit too, and its tail cost a second
+# message: the braces after `do` are read as the block they stand for, their
+# `{` named once (`parse/brace_habit`), and then `while (c)` after the `}` was
+# a loop of its own with no body, `missing_body` found what came next. A
+# `while` on the line of the `}` that closes such braces is their tail: its
+# condition is read for its own mistakes, and where no body follows it, none
+# is asked for (`do_tail`). Only where that `{` was named: no other `while`
+# stands after a `}` on its line and reaches a statement's reader.
+#
+# A leaf: it reads the cursors and the text, and nothing of the parser.
+#
+# | entry | called by |
+# |---|---|
+# | `refuse` | `grammar_expr.for_stmt` |
+# | `do_tail` | `grammar_expr.while_stmt` |
+
+use token
+use diag
+use cursor
+use parse/brace_habit
+use parse/opening
+use parse/line_end
+use text_lines
+
+# `for_missing_in` at the cursor, which stands where the loop variable
+# should, with *use `while`* over `keyword`; `read` is the cursor after the
+# rest was read as the `while`'s condition.
+function refuse(@c: cursor.Cursor, text: str, keyword: token.Span, read: cursor.Cursor)
+    certainty: diag.Certainty @ .guess
+
+    if !cursor.at(c, .ident) && a_loop(c: c, text: text, read: read)
+        certainty @ .certain
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "for_missing_in",
+        message: "`for` iterates — `for x in xs`; found " + cursor.found(c, text) + " — a loop over a condition is `while`",
+        span: cursor.current_span(c)
+    )
+    d.fixes @ d.fixes.push(diag.Fix(title: "use `while`", replacement: "while", span: keyword, certainty: certainty))
+    c.diagnostics @ c.diagnostics.push(d)
+
+# Whether `read`, the cursor `c` after the condition a `while` would read,
+# read one: it moved, refused nothing, held nothing back, and stands where
+# the head's line ends or on a `{` that ends it.
+function a_loop(c: cursor.Cursor, text: str, read: cursor.Cursor) -> bool
+    if read.pos == c.pos || cursor.refused_since(read, c.diagnostics.len()) || read.held.len() != c.held.len()
+        return false
+    k = cursor.current_kind(read)
+    return k == .terminator || k == .indent || k == .dedent || k == .eof || brace_habit.opens_here(read, text)
+
+## The tail of `do { ... } while (c)`
+
+# Whether the `while` at token `head`, whose condition the cursor stands
+# after, is the tail of braces whose `}` stands before it on its line and
+# whose `{` a report names, with no body after it.
+function do_tail(c: cursor.Cursor, text: str, head: i64) -> bool
+    close: i64 @ head - 1
+
+    while close > 0 && c.tokens[close].kind == .comment
+        close @ close - 1
+
+    if close < 0 || c.tokens[close].kind != .rbrace || text_lines.newlines_between(text, from: c.tokens[close].span.end, to: c.tokens[head].span.start) > 0
+        return false
+
+    if cursor.at(c, .indent) || opening.tabbed_line(c, text) || brace_habit.ending(c, text) >= 0
+        return false
+    return line_end.said_here(on(c, at: opener_of(c, close: close)))
+
+# The index of the `{` the `}` at `close` closes, by depth, or `close` itself
+# where none does.
+function opener_of(c: cursor.Cursor, close: i64) -> i64
+    depth: i64 @ 0
+    i: i64 @ close
+
+    while i >= 0
+        k = c.tokens[i].kind
+
+        if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth + 1
+        else if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth - 1
+
+            if depth == 0
+                return i
+        i @ i - 1
+
+    return close
+
+function on(c: cursor.Cursor, at: i64) -> cursor.Cursor
+    moved: cursor.Cursor @ c
+    moved.pos @ at
+    return moved

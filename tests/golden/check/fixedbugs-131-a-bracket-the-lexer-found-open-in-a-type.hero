@@ -1,0 +1,17 @@
+# Fixed defect 131's class, 2026-09-29, one missing `]` in a type. Symptom:
+# `n: [i64 @ [3]` cost the lexer's `unclosed_bracket` at the `[` and the
+# parser's `expected_array_close` at the `@`: one missing closer, two
+# messages. Cause: the lexer names every opener still open at the file's
+# end, and the parser, reading the same brackets, named the closer it met
+# missing too. Now the parser asks the tokens the lexer's own question, by
+# the lexer's own stack, and where no closer closes the opener it names no
+# closer and recovers past none, so the lexer's report is the one message
+# (`selfhost/parse/unclosed.hero`). The lexer reads every line after an
+# opener that never closes as inside it, so this case holds one, on its
+# last line.
+
+function main()
+    print(1)
+
+function g()
+    n: [i64 @ [3]  #~ unclosed_bracket

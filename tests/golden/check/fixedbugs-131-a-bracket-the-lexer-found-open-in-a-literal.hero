@@ -1,0 +1,16 @@
+# Fixed defect 131's class, 2026-09-29, one missing `]` in a literal, beside
+# `fixedbugs-131-a-bracket-the-lexer-found-open-in-a-type`. Symptom: `x =
+# [1, 2` over `print(x)` cost the lexer's `unclosed_bracket`, and the lines
+# below were read as the list's elements, since past an opener that never
+# closes the lexer reads every line inside it, so `y = 3` below cost
+# `expected_separator` at its `=`, and over `print(x)` alone the end of the
+# block cost `expected_expression`. Now a literal whose opener the lexer
+# found never closed ends at the first line end with no `,` before it, where
+# its author ended it, and names no closer: the lexer's report is the one
+# message (`selfhost/parse/unclosed.hero`).
+
+function main()
+    x = [1, 2  #~ unclosed_bracket
+    y = 3
+    print(x)
+    print(y)
