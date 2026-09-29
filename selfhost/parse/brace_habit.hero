@@ -28,7 +28,8 @@
 # the lexer puts no line end until the braces' first line has gone by, or,
 # with its members separated by `,`, until the `}`. The braces are then the
 # block under that line, and read as one is (`grammar_expr.hanging`,
-# `parse/headless.members`); `pass` moves past them.
+# `parse/headless.read_below`), through the view `parse/braced_lines` lays
+# out; `pass` moves past them.
 #
 # A `{` that is not the last thing on its line opens a map or a map type, or
 # a habit written on one line (`function f() { return 1 }`), and is never a
@@ -53,14 +54,14 @@ function ending(c: cursor.Cursor, text: str) -> i64
     i: i64 @ c.pos
 
     while !ends_a_line(c.tokens[i].kind)
-        if c.tokens[i].kind == .lbrace && ends_line(text, c.tokens[i].span)
+        if c.tokens[i].kind == .lbrace && ends_line(text, c.tokens[i].span) && !opens_a_value(c, at: i)
             return i
         i @ i + 1
 
     while c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
         i @ i + 1
 
-    if c.tokens[i].kind == .lbrace && alone(text, c.tokens[i].span)
+    if c.tokens[i].kind == .lbrace && alone(text, c.tokens[i].span) && !opens_a_value(c, at: i)
         return i
     return -1
 
@@ -76,7 +77,32 @@ function ends_line(text: str, span: token.Span) -> bool
 
 # Whether the cursor stands on a `{` that ends its line.
 function opens_here(c: cursor.Cursor, text: str) -> bool
-    return cursor.at(c, .lbrace) && ends_line(text, cursor.current_span(c))
+    return cursor.at(c, .lbrace) && ends_line(text, cursor.current_span(c)) && !opens_a_value(c, at: c.pos)
+
+# Whether the `{` at token `at` stands where a value goes: after `=` or `@`,
+# an operator, an opening bracket or a `,`, `return`, `assert` or `in`. It
+# opens a map there, never a body in braces: `let m = {` over its entries
+# was read as a body, each entry's `:` a second mistake (lane X4,
+# 2026-09-29).
+function opens_a_value(c: cursor.Cursor, at: i64) -> bool
+    i: i64 @ at - 1
+
+    while i > 0 && c.tokens[i].kind == .comment
+        i @ i - 1
+
+    if i < 0
+        return false
+
+    return match c.tokens[i].kind
+        .eq | .at | .lparen | .lbracket | .lbrace | .comma | .kw_return | .kw_assert | .kw_in => true
+        .plus | .minus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt      => true
+        .ge | .and_and | .or_or | .amp | .pipe | .caret | .shl | .shr | .bang | .tilde        => true
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit | .kw_true         => false
+        .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if | .kw_match | .dot | .rparen      => false
+        .rbracket | .rbrace | .kw_constant | .kw_function | .kw_record | .kw_variant          => false
+        .kw_else | .kw_for | .kw_while | .kw_break | .kw_continue | .kw_test | .kw_extern     => false
+        .kw_use | .colon | .colon_colon | .question | .arrow | .fat_arrow | .comment          => false
+        .terminator | .indent | .dedent | .eof | .error                                       => false
 
 # Whether a `{` at `span` stands alone on its line: only a margin before it,
 # and it ends the line.
@@ -131,6 +157,15 @@ function pass(@c: cursor.Cursor, close: i64)
     if c.pos == close && cursor.at(c, .rbrace)
         _ = cursor.bump(@c)
         _ = cursor.eat(@c, .terminator)
+
+# Whether the token before the cursor is a `}` that begins its line of the
+# text: the close of braces opened on a line above, so that what follows it on
+# its line is no part of the line the braces were opened on.
+function after_a_close(c: cursor.Cursor, text: str) -> bool
+    if c.pos == 0 || c.tokens[c.pos - 1].kind != .rbrace
+        return false
+    at = c.tokens[c.pos - 1].span.start
+    return word_place.only_margin(text, from: word_place.line_start(text, at: at), to: at)
 
 function ends_a_line(kind: token.TokenKind) -> bool
     return kind == .terminator || kind == .indent || kind == .dedent || kind == .eof

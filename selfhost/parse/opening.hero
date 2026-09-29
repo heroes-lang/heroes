@@ -17,7 +17,7 @@
 # |---|---|---|---|
 # | refused nothing, and its line ends | none | parsed | named missing at the next line |
 # | refused nothing, and its line goes on | named as junk, then dropped | parsed | the body named missing, found the junk |
-# | refused something | dropped, as debris | parsed | named missing at the next line, unless the head crossed a line or refused that very token |
+# | refused something | dropped, as debris | parsed | named missing at the next line, unless the head crossed a line inside brackets or refused that very token |
 # | any, over a line the lexer joined | as above | parsed | held back (`diag.Held`) |
 # | any, its line ending with `{` or over a `{` alone | as above, up to the `{` | the `{` named missing, the braces parsed | — |
 #
@@ -36,9 +36,12 @@
 # can run past its line: `if (n > 0` over `y = 3 )` is a group the body's `)`
 # closes, and the body's absence is then the recovery's doing, not the
 # author's. The line is read in the text, since inside brackets a line break
-# carries no line end token. **So does the head's own refusal at the same
-# token**: `for` alone at a file's end, refused as found at the end of the
-# block, is not refused there again as a `for` with no body.
+# carries no line end token. **Not a line the lexer joined outside brackets**:
+# `if` over `print(1 +)` failed on the joined line, and the `if` still has no
+# body, which was never said (lane Y's finding, 2026-09-29); it is held back
+# as over any join. **So does the head's own refusal at the same token**:
+# `for` alone at a file's end, refused as found at the end of the block, is
+# not refused there again as a `for` with no body.
 #
 # **A joined line holds back an absent body rather than naming it.** The
 # lexer joins a line that cannot end over the deeper one below it
@@ -52,8 +55,8 @@
 # the held diagnostic accordingly (`parse.ParseOutput.control`). The join is
 # read off the head's own text, two of its tokens on two lines with no line
 # end between them, never off a list of which lexer codes join. What the text
-# says of a head's lines is `parse/head_lines`; and a block that no head
-# opens, under a line that ended well, is named here too (`orphan`).
+# says of a head's lines is `parse/head_lines`; and what a block that no head
+# opens is told is `parse/orphans`.
 
 use token
 use diag
@@ -156,7 +159,13 @@ function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, mi
     if goes_on && body_below(c, text)
         junk(@c, text, missing: missing)
     else
-        absent(@c, text, head: head, silent: failed && crossed, missing: missing)
+        absent(
+            @c,
+            text,
+            head: head,
+            silent: failed && crossed && !head_lines.joined_outside_brackets(c, text, from: head.pos),
+            missing: missing
+        )
 
     if !goes_on
         return .none
@@ -257,19 +266,6 @@ function refused_here(c: cursor.Cursor, head: Mark) -> bool
         i @ i + 1
 
     return false
-
-# A block where a statement should start, under a line that ended well, which
-# no head opens: named, and gone whole, since read as lines a continuation the
-# lexer lets through, `and b`, cost two.
-function orphan(@c: cursor.Cursor)
-    if !cursor.at_reported_error(c)
-        cursor.error(
-            @c,
-            code: "unexpected_block",
-            message: "this block is indented deeper than anything that opens one",
-            span: cursor.current_span(c)
-        )
-    _ = cursor.balanced_block(@c)
 
 # Whether the token under the cursor begins its line of the text and that
 # line's margin holds a tab.

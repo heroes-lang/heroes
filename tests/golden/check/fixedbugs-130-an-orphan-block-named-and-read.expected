@@ -1,0 +1,15 @@
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:16:1: error[expected_declaration]: expected a declaration, found an indented block — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test "…"`, or `extern`
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:16:14: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:20:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:20:18: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:21:15: error[expected_end_of_line]: expected the end of the line, found a number (`3`) — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:23:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:24:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:24:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:26:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:28:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:30:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:32:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:34:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:34:9: error[expected_expression]: expected an expression, found `function` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-an-orphan-block-named-and-read.hero:35:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

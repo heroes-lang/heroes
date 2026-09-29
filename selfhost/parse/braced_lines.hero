@@ -1,0 +1,216 @@
+# The lines inside braces, laid out as the lexer lays out an indented block
+# (design.md §4.17; defects 130 and 131, 2026-09-29).
+#
+# Inside `(` `[` `{` the lexer makes no indent and no dedent, and puts no line
+# end after a `,` or a `{` (the spec's opening paragraph; panel 007). So a
+# body, a record's fields or a group's members written in braces, the habit
+# of the languages a model has read most, reach the parser as one run of
+# tokens, and read that way they lost their structure twice: members
+# separated by `,` ran together, and a block indented inside the braces, `if
+# x == 1` over its body, was no block, so each inner body was named missing
+# (lane X1's finding 3). The braces are read instead through a VIEW of them,
+# their own tokens unchanged and laid out as an indented block is:
+#
+# - an `indent` for the `{` and a `dedent` for the `}`;
+# - a line end at each line break and each `,` at the braces' own depth, a
+#   `,` inside a member's brackets, `m: {str: i64}`, being the member's: the
+#   `,` is the habit's debris, one member per line being this language's
+#   separator;
+# - an `indent` and a `dedent` where a line's margin goes one level deeper or
+#   back, counted as the lexer counts a level, four spaces rounded to the
+#   nearest and one level at a time, and never shallower than the braces'
+#   first line, whose `}` is the braces' own dedent.
+#
+# The margin is not the lexer's to refuse inside brackets, where it is not
+# structural, and nothing here says anything: a view is read, never told.
+# Braces nested inside keep their tokens, and the head they belong to reads
+# them through a view of their own. What the view's reading says is the
+# cursor's, which is then past the braces (`took`).
+#
+# A leaf: it reads the tokens and the text, and nothing that reads the
+# parser. `laid_out` moved here from `parse/headless.hero` on 2026-09-29
+# (lane X4), when bodies in braces came to be read through it too.
+
+use token
+use diag
+use cursor
+use lexer
+use parse/head_lines
+use parse/brace_habit
+
+## The view
+
+# The braces the cursor's `{` opens, laid out as the lexer lays out an
+# indented block.
+function laid_out(c: cursor.Cursor, text: str) -> cursor.Cursor
+    close = brace_habit.closer(c, open: c.pos)
+    tokens: [token.Token] @ [token.Token(kind: .indent, span: c.tokens[c.pos].span)]
+    base: i64 @ -1
+    level: i64 @ -1
+    ended: bool @ true
+    last: i64 @ c.tokens[c.pos].span.end
+    depth: i64 @ 0
+    i: i64 @ c.pos + 1
+
+    while i < close
+        t = c.tokens[i]
+        width: i64 @ -1
+
+        if depth == 0 && !cursor.is_invisible(t.kind)
+            width @ head_lines.margin_width(text, at: t.span.start)
+
+        if width >= 0 && base < 0
+            base @ (width + 2) / 4
+            level @ base
+        else if width >= 0
+            # A line of its own: the end the line above owes, at that line's
+            # last token as the lexer puts it, then the levels its margin opens
+            # or closes.
+            margin = token.Span(start: t.span.start - width, end: t.span.start)
+
+            if !ended
+                tokens @ tokens.push(token.Token(kind: .terminator, span: token.Span(start: last, end: last)))
+
+            if (width + 2) / 4 > level
+                tokens @ tokens.push(token.Token(kind: .indent, span: margin))
+                level @ level + 1
+
+            while level > base && (width + 2) / 4 < level
+                tokens @ tokens.push(token.Token(kind: .dedent, span: margin))
+                level @ level - 1
+
+        # An `indent` or a `dedent` of the lexer's own is its margin read past a
+        # stray closer, `y = 3 )`, which it took for the braces' close: the
+        # margins are laid out here, once.
+        if depth == 0 && t.kind == .comma
+            tokens @ tokens.push(token.Token(kind: .terminator, span: t.span))
+        else if depth > 0 || t.kind != .indent && t.kind != .dedent
+            tokens @ tokens.push(t)
+
+        if t.kind != .comment
+            ended @ depth == 0 && (t.kind == .comma || cursor.is_invisible(t.kind))
+            last @ t.span.end
+
+        if t.kind == .lparen || t.kind == .lbracket || t.kind == .lbrace
+            depth @ depth + 1
+        else if (t.kind == .rparen || t.kind == .rbracket || t.kind == .rbrace) && depth > 0
+            depth @ depth - 1
+        i @ i + 1
+
+    end = c.tokens[close].span
+
+    if !ended
+        tokens @ tokens.push(token.Token(kind: .terminator, span: token.Span(start: last, end: last)))
+
+    while level > base
+        tokens @ tokens.push(token.Token(kind: .dedent, span: end))
+        level @ level - 1
+
+    tokens @ tokens.push(token.Token(kind: .dedent, span: end))
+    tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: end.end, end: end.end)))
+    return cursor.bounded_cursor(tokens: tokens, root_end: c.root_end)
+
+# What the view's reading said, said by the cursor, held reports included and
+# kept in the order they were held; and the cursor past the braces its `{`
+# opens, which the view laid out, and past the `}`'s line end.
+function took(@c: cursor.Cursor, view: cursor.Cursor)
+    said = c.diagnostics.len()
+
+    for d in view.diagnostics
+        c.diagnostics @ c.diagnostics.push(d)
+
+    for h in view.held
+        c.held @ c.held.push(diag.Held(at: said + h.at, cause: h.cause, diagnostic: h.diagnostic, apart: h.apart))
+
+    brace_habit.pass(@c, close: brace_habit.closer(c, open: c.pos))
+
+## Tests
+
+function lexed(text: str) -> cursor.Cursor
+    return cursor.new_cursor(lexer.lex_one(text).tokens)
+
+function kinds(c: cursor.Cursor) -> [token.TokenKind]
+    out: [token.TokenKind] @ []
+
+    for t in c.tokens
+        if t.kind != .comment
+            out @ out.push(t.kind)
+
+    return out
+
+test "braces are laid out as the block their lines' margins make, commas as line ends"
+    # {  /  if x  /      y()  /  z()  /  }: the inner body is a block of its own.
+    text = "{\n    if x\n        y()\n    z()\n}\n"
+    c: cursor.Cursor @ lexed(text)
+    view = laid_out(c, text)
+    view_kinds: [token.TokenKind] = [
+        .indent
+        .kw_if
+        .ident
+        .terminator
+        .indent
+        .ident
+        .lparen
+        .rparen
+        .terminator
+        .dedent
+        .ident
+        .lparen
+        .rparen
+        .terminator
+        .dedent
+        .eof
+    ]
+    assert kinds(view) == view_kinds
+
+    # {  /  red, green,  /  blue # a note  /  }: a comma ends a member, and a
+    # comment is no line of its own.
+    cases = "{\n    red, green,\n    blue # a note\n}\n"
+    d: cursor.Cursor @ lexed(cases)
+    shown = laid_out(d, cases)
+    shown_kinds: [token.TokenKind] = [
+        .indent
+        .ident
+        .terminator
+        .ident
+        .terminator
+        .ident
+        .terminator
+        .dedent
+        .eof
+    ]
+    assert kinds(shown) == shown_kinds
+
+    # A `,` inside a member's brackets is the member's, and a line shallower
+    # than the first is never shallower than the braces.
+    typed = "{\n        m: {str: i64},\n    n: i64\n}\n"
+    e: cursor.Cursor @ lexed(typed)
+    held = laid_out(e, typed)
+    held_kinds: [token.TokenKind] = [
+        .indent
+        .ident
+        .colon
+        .lbrace
+        .ident
+        .colon
+        .ident
+        .rbrace
+        .terminator
+        .ident
+        .colon
+        .ident
+        .terminator
+        .dedent
+        .eof
+    ]
+    assert kinds(held) == held_kinds
+
+test "what the view's reading said is the cursor's, and the cursor is past the braces"
+    text = "{\n    x\n}\ny\n"
+    c: cursor.Cursor @ lexed(text)
+    view: cursor.Cursor @ laid_out(c, text)
+    cursor.error(@view, code: "one", message: "one", span: token.Span(start: 6, end: 7))
+    took(c: @c, view: view)
+    assert c.diagnostics.len() == 1
+    assert cursor.at(c, .ident)
+    assert cursor.slice_of(text, cursor.current_span(c)) == "y"

@@ -1,0 +1,31 @@
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:16:1: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:20:5: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:22:5: error[reserved_word]: `var` is not a word in this language — declare a mutable with `@`: `v: i64 @ 0`
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:24:5: error[reserved_word]: `import` is not a word in this language — a module is named by `use`, on a line of its own at the top level of a file: `use geom`
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:26:5: error[reserved_word]: `const` is not a word in this language — inside a body a value is bound with `=`: `x = 5`, and a `constant` is declared at the top level of a file
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:28:5: error[reserved_word]: `int` is not a word in this language — an integer type says its width, `i64`, and a type is written where a type goes: after a name and `:`, or after `->`
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:30:5: error[reserved_word]: there are no exceptions in this language — errors are values: `fail(code, msg)`, propagate with `?`
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:32:5: error[reserved_word]: there is no null in this language — absence is a fallible type: `i64?`, and a C pointer's zero is `nullptr`
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:34:5: error[unexpected_character]: `€` (U+20AC) is not part of the language's syntax
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:36:5: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:38:5: error[reserved_word]: `const` is not a word in this language — inside a body a value is bound with `=`: `x = 5`, and a `constant` is declared at the top level of a file
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:17:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:17:14: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:21:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:21:18: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:23:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:23:18: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:25:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:25:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:27:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:27:18: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:29:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:29:18: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:31:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:31:18: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:33:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:33:18: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:35:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:35:18: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:37:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:39:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

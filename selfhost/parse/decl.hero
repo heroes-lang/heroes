@@ -12,10 +12,11 @@
 #
 # **What is here and what is next door.** A declaration is a HEAD — the
 # keyword, the doc comment above it, the name — and then a TAIL, which is
-# everything after the name and differs per kind. The heads and the shared
-# `head` reader are here. The tails are `parse/tails.hero`, because an
-# `extern` group's member has the same tails and a different head, and the
-# `extern` group itself is `parse/group.hero`.
+# everything after the name and differs per kind. The heads are here, and
+# the shared `head` reader is `parse/heads.hero` since 2026-09-29, where a
+# block of declarations under a refused head reads it too. The tails are
+# `parse/tails.hero`, because an `extern` group's member has the same tails
+# and a different head, and the `extern` group itself is `parse/group.hero`.
 #
 # **That split is what opened a ring this module's doc called unsplittable**
 # (M-declared-freer step 1). The doc said the four Rust files were "one
@@ -28,22 +29,23 @@
 # along — *"move what both modules need into a third one that neither
 # uses"*.
 #
-# The edges that leave this module and stay other modules: `parse_type`
-# (types), `parse_members` (params, fields, cases — leaf), `grammar_expr`
-# (bodies), `parse_use` (the one declaration that names a file).
+# The edges that leave this module and stay other modules: `parse/heads` (the
+# shared head), `parse/records` (fields and cases, indented or in braces),
+# `grammar_expr` (bodies), `parse_use` (the one declaration that names a
+# file).
 
 use token
 use cursor
 use ast
 use diag
 use lexer
-use parse/members as parse_members
 use parse/use_line
 use parse/tails
 use parse/records
+use parse/members_below
 use parse/group
 use parse/swap_reading
-use parse/headless
+use parse/heads
 use parse/braces
 use parse/brace_habit
 use grammar_expr
@@ -96,24 +98,23 @@ function unexpected_top_level(@c: cursor.Cursor, @a: ast.Ast, text: str)
 
     # The one arm that has consumed nothing yet, so it consumes here: recovery
     # only drops the REST of a broken line, and the dispatcher must always
-    # move. An indented block at top level belongs to no declaration, so it is
-    # dropped whole — and nothing else is, because the next line is innocent.
+    # move. An indented block at top level belongs to no declaration, and it
+    # is named and read by the shape of its lines, as a body's orphan is,
+    # since 2026-09-29 (lane X4): it went whole, every mistake in it unsaid;
+    # so are braces where a declaration should start.
     #
     # **A block under the refused line is read, never dropped** (defect 130's
     # class, 2026-09-29): `recrod Point` over its fields owes the fields'
     # mistakes in this run, and `expected_declaration` stays the one report
-    # of the head. `parse/headless.hero` reads it by the shape of its lines.
+    # of the head, the block read as `grammar_expr.under` reads the block
+    # under a line whose head nothing reads, a block of declarations too.
     # Only where the refused word OPENS its line: in the middle of one, past a
     # head that failed and left it (`extern "m.h" )`), the block is that
     # head's, and it goes whole with it, as it always did. **And braces that
     # end the line are its block as an indent is** (`parse/brace_habit`):
     # `class Point {` over its fields, where the drop stops.
-    if cursor.at(c, .indent)
-        _ = cursor.balanced_block(@c)
-        return
-
-    if braces.opens(c, text)
-        braces.skip(@c)
+    if cursor.at(c, .indent) || braces.opens(c, text)
+        grammar_expr.under(@c, @a, text, word: c.pos)
         return
     opens = cursor.at_fresh_line(c)
     from = c.pos
@@ -121,58 +122,19 @@ function unexpected_top_level(@c: cursor.Cursor, @a: ast.Ast, text: str)
     brace_habit.drop_rest_of_line(@c, text, from: from)
     cursor.skip_terminators(@c)
 
-    if opens && !headless.members(@c, @a, text)
-        grammar_expr.hanging(@c, @a, text)
-    else if !opens && cursor.at(c, .indent)
+    if opens
+        grammar_expr.under(@c, @a, text, word: from)
+    else if cursor.at(c, .indent)
         _ = cursor.balanced_block(@c)
-    else if !opens && braces.opens(c, text)
+    else if braces.opens(c, text)
         braces.skip(@c)
-
-## The shared head
-
-# The shared head of every named declaration: the kind keyword —
-# documentation attaches to it, since it opens the line — then the declared
-# name. When it fails, the rest of its line is already dropped, and what
-# hangs below it is the caller's to read, since the caller knows what a body
-# of its kind holds (defect 131's second round: it used to go whole, with
-# every mistake inside it).
-#
-# Port note: Rust returns `Option<(Span, Vec<Span>, Span)>`; Heroes has no
-# tuples, so the three travel as a record and the `Option` is a fallible.
-record Head
-    keyword: token.Span
-    doc: [token.Span]
-    name: token.Span
-
-# The keyword is quoted as WRITTEN, which is the keyword's own spelling
-# everywhere but where the parser reads a foreign word as its swap (defect
-# 133): `const` alone on its line is *after `const`*, the word the author can
-# find, and never *after an unreadable token*.
-function head(@c: cursor.Cursor, text: str, example: str) -> Head?
-    from = c.pos
-    keyword = cursor.current_span(c)
-    doc = cursor.take_docs(@c, text, keyword)
-    kind_text = "`" + cursor.slice_of(text, keyword) + "`"
-    _ = cursor.bump(@c)
-
-    if !cursor.at(c, .ident)
-        if !cursor.at_reported_error(c)
-            cursor.error(
-                @c,
-                code: "expected_name",
-                message: "expected the declared name after " + kind_text + ", found " + cursor.found(c, text) + " — `" + example + "`",
-                span: cursor.current_span(c)
-            )
-        cursor.drop_rest_of_line(@c, from: from)
-        return fail(code: "expected_name", msg: "the rest of the line is dropped")
-    return ok(Head(keyword: keyword, doc: doc, name: cursor.bump(@c).span))
 
 ## constant
 
 # `constant MAX_DEPTH: i64` + the value, indented (§4.2). Constants use
 # SCREAMING_CASE by convention; the parser does not police it.
 function constant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
-    h = head(@c, text: text, example: "constant MAX_DEPTH: i64")
+    h = heads.head(@c, text: text, example: "constant MAX_DEPTH: i64")
 
     if h.is_err()
         grammar_expr.hanging(@c, @a, text)
@@ -195,7 +157,7 @@ function constant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl]
 # `function dist2(a: Point, b: Point) -> i64` + body (§4.2). The parameter
 # list attaches to the name, as at the call site.
 function function_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
-    h = head(@c, text: text, example: "function dist2(a: Point, b: Point) -> i64")
+    h = heads.head(@c, text: text, example: "function dist2(a: Point, b: Point) -> i64")
 
     if h.is_err()
         grammar_expr.hanging(@c, @a, text)
@@ -222,18 +184,12 @@ function test_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], te
     keyword = cursor.current_span(c)
     doc = cursor.take_docs(@c, text, keyword)
     _ = cursor.bump(@c)
+    named = heads.test_name(@c, text)
 
-    if !cursor.at(c, .str_lit)
-        if !cursor.at_reported_error(c)
-            cursor.error(
-                @c,
-                code: "expected_test_name",
-                message: "expected the test's name as a string, found " + cursor.found(c, text) + " — `test \"3-4-5 triangle\"`",
-                span: cursor.current_span(c)
-            )
+    if named.is_err()
         grammar_expr.abandon(@c, @a, text, from: began.pos)
         return
-    name = cursor.bump(@c).span
+    name = named.must()
     b = braces.body_or_block(@c, @a, text: text, owner: "a `test`", head: began)
 
     if b.is_err()
@@ -253,11 +209,10 @@ function test_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], te
 # question a later pass asks reads `header` rather than re-deriving it from
 # where the declaration was parsed.
 function record_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, linkage: tails.Linkage)
-    h = head(@c, text: text, example: "record Point")
+    h = heads.head(@c, text: text, example: "record Point")
 
     if h.is_err()
-        if cursor.at(c, .indent)
-            _ = parse_members.field_block(@c, @a, text)
+        _ = members_below.fields_below(@c, @a, text, below: members_below.here(c, text))
         return
     hd = h.must()
     records.record_tail(@c, @a, @decls, text, keyword: hd.keyword, doc: hd.doc, name: hd.name, linkage: linkage)
@@ -267,11 +222,10 @@ function record_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], 
 # `variant Token` + one case per line, each case optionally carrying fields —
 # a case with fields IS a small record (§4.2).
 function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
-    h = head(@c, text: text, example: "variant Token")
+    h = heads.head(@c, text: text, example: "variant Token")
 
     if h.is_err()
-        if cursor.at(c, .indent)
-            _ = parse_members.case_block(@c, @a, text)
+        _ = members_below.cases_below(@c, @a, text, below: members_below.here(c, text))
         return
     hd = h.must()
     grammar_expr.eat_python_colon(@c)
@@ -285,18 +239,22 @@ function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl],
     # `empty_variant` points at its own head, `variant Token`, as
     # `empty_record` does: it pointed at the next line's first token, a line
     # the author did nothing wrong on, until 2026-09-29 (defect 131's class).
+    below: members_below.Below @ .indented
+
     if !cursor.at(c, .indent)
         written = token.Span(start: hd.keyword.start, end: hd.name.end)
-        empty = diag.new_diagnostic(
-            code: "empty_variant",
-            message: "a `variant` needs at least one case, indented one level below it",
-            span: written
+        below @ members_below.no_members_below(
+            @c,
+            text: text,
+            head: written,
+            members: "cases",
+            empty: members_below.empty_variant(written)
         )
 
-        if !records.no_members_below(@c, text: text, head: written, members: "its cases", empty: empty)
+        if below == .none
             return
     start = cursor.current_span(c)
-    cases = parse_members.case_block(@c, @a, text)
+    cases = members_below.cases_below(@c, @a, text, below: below)
     finish: token.Span @ start
 
     if cases.len() > 0
@@ -488,3 +446,25 @@ test "a swap is read only where its keyword is what the grammar expects"
     # message names the word and the name it owes.
     bare = parse_source("const\n")
     assert bare.diagnostics.len() == 0
+
+# Lane Y's finding, 2026-09-29 (defect 130's class): a head the lexer joined
+# to a line at its margin that fails still owes its body, held back for the
+# control arm, which reads the join as the program; a crossed line silences
+# an absent body only inside brackets, where a head's recovery ran past it.
+test "a head joined to a line that fails holds its missing body back"
+    for text in ["function main()\n    if\n    print(1 +)\n", "function main()\n    for\n    x in )\n", "function main()\n    y = match\n    print(1 +)\n"]
+        c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+        a: ast.Ast @ ast.new_ast()
+        decls: [ast.Decl] @ []
+        uses: [ast.Use] @ []
+        file(@c, @a, @decls, @uses, text)
+        assert c.held.len() == 1
+        assert c.held[0].diagnostic.code == "missing_body" || c.held[0].diagnostic.code == "missing_match_arms"
+
+    crossed = "function main()\n    if (1 > 0\n    y = 3 )\n"
+    d: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(crossed).tokens)
+    b: ast.Ast @ ast.new_ast()
+    none: [ast.Decl] @ []
+    nothing: [ast.Use] @ []
+    file(@d, @b, @none, @nothing, crossed)
+    assert d.held.len() == 0

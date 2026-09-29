@@ -1,0 +1,25 @@
+# Fixed 2026-09-29, defect 130's class, lane X4, on lane Y's finding.
+# Symptom: a head alone at a line's end over a line at its own margin that
+# fails, `if` over `print(1 +)`, `for` over `x in )`, `y = match` over
+# `print(1 +)`, never told its missing body in the control arm, `check
+# --permissive`, which reads the join as the program and so passed a
+# bodiless `if` on. Cause: the head crossed a line, and a crossed line
+# silences an absent body, since inside brackets a head's own recovery can
+# run past its line; the lexer's join outside them is no recovery. The
+# silence now asks for the break to be inside brackets
+# (`parse/head_lines.joined_outside_brackets`), and the missing body is held
+# as over any join: said in the control arm, where the lexer's refusal of the
+# join is dropped, and in this arm the refusal and the line's own mistake are
+# the report, as here.
+
+function main()
+    if  #~ continuation_outside_brackets
+    print(1 +)  #~ expected_expression
+
+function loop()
+    for  #~ continuation_outside_brackets
+    x in )  #~ expected_expression
+
+function bound()
+    y = match  #~ continuation_outside_brackets
+    print(1 +)  #~ expected_expression

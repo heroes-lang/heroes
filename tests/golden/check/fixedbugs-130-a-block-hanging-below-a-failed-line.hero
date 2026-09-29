@@ -63,3 +63,11 @@ function after_a_line_that_ended_well(a: bool, b: bool) -> bool
 
 function main()
     print(1)
+
+# Corrected 2026-09-29 by lane X4, on lane Y's finding (defect 130's class):
+# below a line that ended well an orphan is now named once and READ, its
+# lines' own mistakes told (`fixedbugs-130-an-orphan-block-named-and-read`),
+# where the header says it is dropped. What it says of `x = a` over `and b`
+# still holds: a first line that is the line above going on, a word and then
+# a value with no operator between them, or a token no statement begins
+# with, goes whole, and this case reads the same.
