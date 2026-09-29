@@ -1,0 +1,48 @@
+# Fixed defect 129, 2026-09-28, the chain with a comment in it. Symptom: in a
+# statement broken at two line ends, a comment at one break takes its join
+# away (a join would carry the comment into the statement), and the other
+# join stayed `certain`, so `check --apply` wrote a line the rule refuses
+# again: `x = y +` over `z +  # note` over `w` became `x = y + z +  # note`
+# over `w`. The shapes here: a comment after the second operator, a comment
+# line between the breaks, a line that begins and ends with an operator and
+# ends with a comment, and a comment line before such a line. Cause: each join
+# was judged alone. A break that offers no join makes every other join of its
+# statement a `guess` now, since applying them leaves it standing
+# (`selfhost/line_joins.hero`).
+#
+# A golden cannot hold a `guess`: this `.expected` is `--brief`, which prints
+# no certainty, and a `.fixed` must check clean. So what this file pins is one
+# diagnostic per break; the certainties are held by `selfhost/lexer.hero`'s
+# defect 129 tests, which lex the same shapes.
+
+function comment_after_the_second(y: i64, z: i64, w: i64) -> i64
+    #~v continuation_outside_brackets
+    x = y +
+    z +  # note #~ continuation_outside_brackets
+    w
+    return x
+
+function comment_line_between(y: i64, z: i64, w: i64) -> i64
+    #~v continuation_outside_brackets
+    x = y +
+    #~v continuation_outside_brackets
+    z +
+    w
+    return x
+
+function head_line_ends_commented(y: i64, z: i64, w: i64) -> i64
+    x = y
+    + z +  # note #~ continuation_outside_brackets continuation_outside_brackets
+    w
+    return x
+
+function comment_before_the_head(y: i64, z: i64, w: i64) -> i64
+    x = y
+    #~v continuation_outside_brackets continuation_outside_brackets
+    + z +
+    w
+    return x
+
+function main()
+    print(comment_after_the_second(y: 1, z: 2, w: 3) + comment_line_between(y: 1, z: 2, w: 3))
+    print(head_line_ends_commented(y: 1, z: 2, w: 3) + comment_before_the_head(y: 1, z: 2, w: 3))

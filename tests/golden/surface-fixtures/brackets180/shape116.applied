@@ -1,0 +1,16 @@
+# Panel 180 R5, shape 116 of the compiler-engineer's 117 (generics (not a
+# bracket)): a break after ,.
+# By the spec's opening paragraph, `<` and `>` are not brackets, so the
+# NEWLINE after the `,` is not inside `(` `[` `{` and the next line's margin
+# is structural: refused, exit 1.
+#
+# Correction, 2026-09-28 (panel 181, provisional): refused with one
+# diagnostic now where it took five, `continuation_outside_brackets` at the
+# `,`: outside brackets a line ends its statement, and this one cannot end
+# with a `,`. The annotation moved from the second line to the first.
+#~v continuation_outside_brackets
+function f<A, B>(a: A, b: B)
+    print(1)
+
+function main()
+    print(1)

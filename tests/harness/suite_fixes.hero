@@ -26,6 +26,29 @@
 # directory copied to scratch with `X.hero` replaced by it checks clean —
 # EVERY `.hero` in the copy, because the fix is applied to one file and the
 # program is all of them.
+#
+# **And since 2026-09-28 a case with no `.fixed` is judged as well** (defect
+# 129, the coordinator's finding). It used to be skipped, so a join that
+# turned `certain` in a case whose every fix is a `guess` passed green, and
+# nothing asserted what a case with no answer promised. Every case now has one
+# answer and `--apply` is held to it:
+#
+#   - `x.fixed`, above: the repaired program checks clean;
+#   - `x.applied`: the case keeps a diagnostic no `certain` fix repairs, so no
+#     repaired program can check clean. The bytes `--apply` writes are pinned,
+#     which catches a `guess` turned `certain` and a `certain` turned `guess`;
+#     the pinned text does not check clean (else its answer is the `.fixed`,
+#     which promises more); and a second `--apply` changes nothing, so no
+#     `certain` fix leaves one behind;
+#   - none: `--apply` leaves the file exactly as it is.
+#
+# A fixture root is judged in a copy of its whole case, subdirectories
+# included, and one with no `.fixed` is applied in place there, so a hole
+# report or a file with no diagnostic reads as the nothing it is. The day it
+# landed, the walk turned 43 cases red, 15 in `check/` and 28 fixture roots,
+# and each diff was read: four were a missing `.fixed`, and 39 keep another
+# diagnostic, most of them a fragment whose later stages speak once its syntax
+# is repaired, and were pinned as `.applied`.
 
 use cases
 use fix_names
@@ -76,15 +99,17 @@ function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Re
     seen: i64 @ 0
 
     for item in cases.collect(scratch: scratch, dir: dir)?
-        repaired = strings.without_suffix(text: item.source, suffix: ".hero") + ".fixed"
+        stem = strings.without_suffix(text: item.source, suffix: ".hero")
+        repaired = stem + ".fixed"
+        pinned = stem + ".applied"
+        label = "fixes/" + item.name
 
-        if present[repaired].is_err()
-            continue
-        seen @ seen + 1
-        want = read_file(repaired)
-
-        if want.is_err()
-            report.keep_failure(@r, label: "fixes/" + item.name, detail: "  cannot read " + repaired)
+        if !present[repaired].is_err() && !present[pinned].is_err()
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  " + item.source + " carries both a `.fixed` and an `.applied`, and a case has one answer: its repaired program checks clean, or it does not"
+            )
             continue
         applied = shell.run(
             scratch: scratch,
@@ -93,34 +118,32 @@ function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Re
         )
 
         if applied.is_err()
-            report.keep_failure(@r, label: "fixes/" + item.name, detail: "  cannot run the compiler on " + item.source)
+            report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + item.source)
             continue
 
-        if applied.must().out != want.must()
-            report.keep_failure(
+        if !present[repaired].is_err()
+            seen @ seen + 1
+            judge_fixed(
                 @r,
-                label: "fixes/" + item.name,
-                detail: report.mismatch(what: item.source + " --apply", expected: want.must(), actual: applied.must().out)
+                scratch: scratch,
+                compiler: compiler,
+                label: label,
+                source: item.source,
+                repaired: repaired,
+                out: applied.must().out
             )
-            continue
-        rechecked = shell.run(
-            scratch: scratch,
-            program: compiler,
-            words: [compiler, "check", repaired, "--brief"]
-        )
-
-        if rechecked.is_err()
-            report.keep_failure(@r, label: "fixes/" + item.name, detail: "  cannot run the compiler on " + repaired)
-            continue
-
-        if rechecked.must().code != 0
-            report.keep_failure(
+        else if !present[pinned].is_err()
+            judge_pinned(
                 @r,
-                label: "fixes/" + item.name,
-                detail: "  " + repaired + " does not check clean after its fixes — a `certain` fix that leaves the file broken is a `guess` that lied:\n" + rechecked.must().err
+                scratch: scratch,
+                compiler: compiler,
+                label: label,
+                source: item.source,
+                pinned: pinned,
+                out: applied.must().out
             )
-            continue
-        report.keep_pass(@r)
+        else
+            judge_untouched(@r, label: label, source: item.source, out: applied.must().out)
 
     if seen < least
         report.keep_failure(
@@ -130,8 +153,134 @@ function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Re
         )
     return ok(r)
 
-# The multi-file half: one directory per case under `dir`, and inside it
-# an `X.fixed` beside the `X.hero` it repairs.
+# The `.fixed` half, as it has always been: the text `--apply` writes, and the
+# repaired program checks clean.
+function judge_fixed(@r: report.Report, scratch: str, compiler: str, label: str, source: str, repaired: str, out: str)
+    want = read_file(repaired)
+
+    if want.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + repaired)
+        return
+
+    if out != want.must()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: report.mismatch(what: source + " --apply", expected: want.must(), actual: out)
+        )
+        return
+    rechecked = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "check", repaired, "--brief"]
+    )
+
+    if rechecked.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + repaired)
+        return
+
+    if rechecked.must().code != 0
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  " + repaired + " does not check clean after its fixes — a `certain` fix that leaves the file broken is a `guess` that lied:\n" + rechecked.must().err
+        )
+        return
+    report.keep_pass(@r)
+
+# The `.applied` half: a case that keeps a diagnostic no `certain` fix
+# repairs, so its repaired program cannot check clean and no `.fixed` can be
+# written for it. The bytes `--apply` writes are pinned instead, which is what
+# catches a `guess` that turned `certain` there, and a `certain` that turned
+# `guess`; the pinned text does not check clean (or it would be a `.fixed`,
+# the stronger promise); and a second `--apply` writes it again unchanged, so
+# no `certain` fix left a `certain` fix behind (`needs_qualifying`'s
+# `window.window.destroy()`, the one lie this half can see in general).
+function judge_pinned(@r: report.Report, scratch: str, compiler: str, label: str, source: str, pinned: str, out: str)
+    want = read_file(pinned)
+
+    if want.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + pinned)
+        return
+
+    if out != want.must()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: report.mismatch(what: source + " --apply", expected: want.must(), actual: out)
+        )
+        return
+    rechecked = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "check", pinned, "--brief"]
+    )
+    again = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "check", pinned, "--apply"]
+    )
+
+    if rechecked.is_err() || again.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + pinned)
+        return
+    report_pinned(
+        @r,
+        label: label,
+        pinned: pinned,
+        want: want.must(),
+        clean: rechecked.must().code == 0,
+        again: again.must().out
+    )
+
+function report_pinned(@r: report.Report, label: str, pinned: str, want: str, clean: bool, again: str)
+    if clean
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  " + pinned + " checks clean, so every diagnostic it repairs had a `certain` fix and its answer is a `.fixed`, which promises more"
+        )
+        return
+
+    if again != want
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  a second `--apply` on " + pinned + " writes more, so a `certain` fix left a `certain` fix behind:\n" + report.mismatch(what: pinned + " --apply", expected: want, actual: again)
+        )
+        return
+    report.keep_pass(@r)
+
+# A case with no answer file promises that no `certain` fix applies to it:
+# `--apply` writes the source back unchanged. Until 2026-09-28 such a case was
+# skipped, so a join that turned `certain` in a case whose every fix is a
+# `guess` passed green (defect 129, the coordinator's finding).
+function judge_untouched(@r: report.Report, label: str, source: str, out: str)
+    text = read_file(source)
+
+    if text.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + source)
+        return
+
+    if out != text.must()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  a `certain` fix applies to " + source + " and no answer pins what it writes: a `.fixed` where the repaired program checks clean, an `.applied` where it keeps a diagnostic no `certain` fix repairs:\n" + report.mismatch(what: source + " --apply", expected: text.must(), actual: out)
+        )
+        return
+    report.keep_pass(@r)
+
+# The multi-file half: one directory per case under `dir`, and inside it an
+# `X.fixed` or an `X.applied` beside the `X.hero` it answers for, or neither.
+# Every `.hero` directly inside a case is a root and is judged, in a copy of
+# the whole case in scratch, subdirectories included, so its modules resolve as
+# they do in the tree. A root with no answer file is applied IN PLACE in the
+# copy and compared byte for byte, which is the shipped path and the one that
+# reads right for every shape a fixture holds: a file with no diagnostic, a
+# file whose `check` prints a hole report rather than a program, and a root
+# whose `certain` fix lives in another module (`applyx/main.hero`, which is
+# left as it is, while `applyx/geom.hero` is judged as its own root).
 function run_fixtures(scratch: str, compiler: str, dir: str, least: i64) -> report.Report?
     r: report.Report @ report.empty()
     seen: i64 @ 0
@@ -143,87 +292,50 @@ function run_fixtures(scratch: str, compiler: str, dir: str, least: i64) -> repo
         for entry in entries
             present[entry] @ true
 
+        copy = scratch + "/fixed/" + strings.base_name(path: case_dir)
+
+        why = match copy_case(scratch: scratch, from: case_dir, to: copy)
+            .ok _  => ""
+            .err e => e.msg
+
+        if why != ""
+            report.keep_failure(
+                @r,
+                label: "fixes/" + strings.base_name(path: case_dir),
+                detail: "  cannot copy the case: " + why
+            )
+            continue
+
         for entry in entries
-            if !strings.ends_with(text: entry, suffix: ".fixed")
-                continue
-            seen @ seen + 1
             name = strings.base_name(path: case_dir) + "/" + strings.base_name(path: entry)
-            source = strings.without_suffix(text: entry, suffix: ".fixed") + ".hero"
 
-            if present[source].is_err()
-                report.keep_failure(
-                    @r,
-                    label: "fixes/" + name,
-                    detail: "  " + entry + " repairs nothing: there is no " + source
-                )
-                continue
-            want = read_file(entry)
+            if strings.ends_with(text: entry, suffix: ".fixed") || strings.ends_with(text: entry, suffix: ".applied")
+                answered = strings.without_suffix(text: strings.without_suffix(text: entry, suffix: ".fixed"), suffix: ".applied") + ".hero"
 
-            if want.is_err()
-                report.keep_failure(@r, label: "fixes/" + name, detail: "  cannot read " + entry)
-                continue
-            applied = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", source, "--apply"])
-
-            if applied.is_err()
-                report.keep_failure(@r, label: "fixes/" + name, detail: "  cannot run the compiler on " + source)
+                if present[answered].is_err()
+                    report.keep_failure(
+                        @r,
+                        label: "fixes/" + name,
+                        detail: "  " + entry + " answers for nothing: there is no " + answered
+                    )
                 continue
 
-            if applied.must().out != want.must()
-                report.keep_failure(
-                    @r,
-                    label: "fixes/" + name,
-                    detail: report.mismatch(what: source + " --apply", expected: want.must(), actual: applied.must().out)
-                )
+            if !strings.ends_with(text: entry, suffix: ".hero")
                 continue
+            stem = strings.without_suffix(text: entry, suffix: ".hero")
 
-            # The repaired PROGRAM checks clean: the directory, with the one
-            # file replaced, and every `.hero` in it re-checked.
-            copy = scratch + "/fixed/" + strings.base_name(path: case_dir)
-            shell.remove_tree(copy)?
-            shell.mkdir_all(copy)?
-            broken: str @ ""
-
-            for file in entries
-                if !strings.ends_with(text: file, suffix: ".hero")
-                    continue
-                text: str @ ""
-
-                if file == source
-                    text @ want.must()
-                else
-                    original = read_file(file)
-
-                    if original.is_err()
-                        broken @ "cannot read " + file
-                        continue
-                    text @ original.must()
-
-                if write_file(path: copy + "/" + strings.base_name(path: file), text: text).is_err()
-                    broken @ "cannot write the copy of " + file
-
-            if broken != ""
-                report.keep_failure(@r, label: "fixes/" + name, detail: "  " + broken)
-                continue
-
-            for file in entries
-                if !strings.ends_with(text: file, suffix: ".hero") || broken != ""
-                    continue
-                placed = copy + "/" + strings.base_name(path: file)
-                rechecked = shell.run(
-                    scratch: scratch,
-                    program: compiler,
-                    words: [compiler, "check", placed, "--brief"]
-                )
-
-                if rechecked.is_err()
-                    broken @ "cannot run the compiler on " + placed
-                else if rechecked.must().code != 0
-                    broken @ placed + " does not check clean after the fix in " + strings.base_name(path: source) + " — a `certain` fix that leaves the program broken is a `guess` that lied:\n" + rechecked.must().err
-
-            if broken != ""
-                report.keep_failure(@r, label: "fixes/" + name, detail: "  " + broken)
-                continue
-            report.keep_pass(@r)
+            if !present[stem + ".fixed"].is_err()
+                seen @ seen + 1
+            judge_root(
+                @r,
+                scratch: scratch,
+                compiler: compiler,
+                label: "fixes/" + name,
+                source: entry,
+                copy: copy,
+                entries: entries,
+                present: present
+            )
 
     if seen < least
         report.keep_failure(
@@ -232,6 +344,189 @@ function run_fixtures(scratch: str, compiler: str, dir: str, least: i64) -> repo
             detail: "  only " + seen.to_str() + " fixture(s) carry a `.fixed`, and there were " + least.to_str() + " — the module class of §8's promise is tested by these and nothing else"
         )
     return ok(r)
+
+# One root of a fixture: its `.fixed` as it has always been judged, its
+# `.applied`, or the promise that no `certain` fix applies. The copy is put
+# back as it was before the next root is judged.
+function judge_root(@r: report.Report, scratch: str, compiler: str, label: str, source: str, copy: str, entries: [str], present: {str: bool})
+    stem = strings.without_suffix(text: source, suffix: ".hero")
+    has_fixed = !present[stem + ".fixed"].is_err()
+    has_pinned = !present[stem + ".applied"].is_err()
+
+    if has_fixed && has_pinned
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  " + source + " carries both a `.fixed` and an `.applied`, and a root has one answer"
+        )
+        return
+    text = read_file(source)
+
+    if text.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + source)
+        return
+    placed = copy + "/" + strings.base_name(path: source)
+
+    if has_fixed
+        judge_fixture_fixed(
+            @r,
+            scratch: scratch,
+            compiler: compiler,
+            label: label,
+            source: source,
+            repaired: stem + ".fixed",
+            copy: copy,
+            entries: entries
+        )
+    else
+        judge_in_place(
+            @r,
+            scratch: scratch,
+            compiler: compiler,
+            label: label,
+            source: source,
+            pinned: stem + ".applied",
+            has_pinned: has_pinned,
+            placed: placed,
+            text: text.must(),
+            copy: copy,
+            entries: entries
+        )
+
+    if write_file(path: placed, text: text.must()).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot put back the copy of " + source)
+
+# A root with no `.fixed`, applied in place in the copy: the bytes it holds
+# afterwards are the source's, or its `.applied`, which is judged as
+# `judge_pinned` judges one in `check/`.
+function judge_in_place(@r: report.Report, scratch: str, compiler: str, label: str, source: str, pinned: str, has_pinned: bool, placed: str, text: str, copy: str, entries: [str])
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", placed, "--apply", "--in-place"])
+    after = read_file(placed)
+
+    if ran.is_err() || after.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot apply the fixes of the copy of " + source)
+        return
+
+    if !has_pinned
+        if after.must() != text
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  a `certain` fix applies to " + source + " and no answer pins what it writes: a `.fixed` where the repaired program checks clean, an `.applied` where it keeps a diagnostic no `certain` fix repairs:\n" + report.mismatch(what: source + " --apply", expected: text, actual: after.must())
+            )
+            return
+        report.keep_pass(@r)
+        return
+    want = read_file(pinned)
+
+    if want.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + pinned)
+        return
+
+    if after.must() != want.must()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: report.mismatch(what: source + " --apply", expected: want.must(), actual: after.must())
+        )
+        return
+
+    # Clean is what a `.fixed` promises of a fixture, every root of the copy
+    # checking clean with this one applied, so an `.applied` is the case where
+    # some root does not. A directory of separate programs each refused on
+    # purpose (`continuation181/`) is such a case even where this root's own
+    # program would check.
+    clean = clean_roots(scratch: scratch, compiler: compiler, copy: copy, entries: entries)
+    again = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", placed, "--apply", "--in-place"])
+    twice = read_file(placed)
+
+    if clean.is_err() || again.is_err() || twice.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot run the compiler on the copy of " + source)
+        return
+    report_pinned(@r, label: label, pinned: pinned, want: want.must(), clean: clean.must(), again: twice.must())
+
+# Does every `.hero` directly inside the copy check clean, as it stands?
+function clean_roots(scratch: str, compiler: str, copy: str, entries: [str]) -> bool?
+    for file in entries
+        if !strings.ends_with(text: file, suffix: ".hero")
+            continue
+        rechecked = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", copy + "/" + strings.base_name(path: file), "--brief"])?
+
+        if rechecked.code != 0
+            return ok(false)
+
+    return ok(true)
+
+# A root with a `.fixed`: the text `check <case>/X.hero --apply` writes, and
+# the copy with that one file replaced checks clean, every `.hero` directly
+# inside it, because the fix is applied to one file and the program is all of
+# them.
+function judge_fixture_fixed(@r: report.Report, scratch: str, compiler: str, label: str, source: str, repaired: str, copy: str, entries: [str])
+    want = read_file(repaired)
+
+    if want.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + repaired)
+        return
+    applied = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", source, "--apply"])
+
+    if applied.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + source)
+        return
+
+    if applied.must().out != want.must()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: report.mismatch(what: source + " --apply", expected: want.must(), actual: applied.must().out)
+        )
+        return
+
+    if write_file(path: copy + "/" + strings.base_name(path: source), text: want.must()).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot write the copy of " + source)
+        return
+    broken: str @ ""
+
+    for file in entries
+        if !strings.ends_with(text: file, suffix: ".hero") || broken != ""
+            continue
+        placed = copy + "/" + strings.base_name(path: file)
+        rechecked = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", placed, "--brief"])
+
+        if rechecked.is_err()
+            broken @ "cannot run the compiler on " + placed
+        else if rechecked.must().code != 0
+            broken @ placed + " does not check clean after the fix in " + strings.base_name(path: source) + " — a `certain` fix that leaves the program broken is a `guess` that lied:\n" + rechecked.must().err
+
+    if broken != ""
+        report.keep_failure(@r, label: label, detail: "  " + broken)
+        return
+    report.keep_pass(@r)
+
+# The whole case, subdirectories included, into `to`, so a root resolves its
+# modules in the copy as it does in the tree.
+function copy_case(scratch: str, from: str, to: str) -> ()?
+    shell.remove_tree(to)?
+    shell.mkdir_all(to)?
+    nothing: [str] = []
+
+    for path in shell.list_tree(scratch: scratch, dir: from, skip: nothing)?
+        target = to + "/" + strings.without_prefix(text: path, prefix: from + "/")
+        shell.mkdir_all(parent_of(target))?
+        text = read_file(path)?
+        write_file(path: target, text: text)?
+
+    return ok()
+
+# Everything before the last `/`, or `.` where there is none.
+function parent_of(path: str) -> str
+    at: i64 @ path.len() - 1
+
+    while at >= 0 && path[at] != '/'
+        at @ at - 1
+
+    if at <= 0
+        return "."
+    return path.slice(from: 0, to: at)
 
 test "the fixes suite catches a wrong application and a repair that does not check clean"
     scratch = "build/harness-selftest"
@@ -301,7 +596,10 @@ test "the fixtures half applies across two files, re-checks the whole program, a
     assert !write_file(path: tree + "/typo/main.fixed", text: applied.must().out).is_err()
     green = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 1)
     assert !green.is_err()
-    assert green.must().passed == 1
+
+    # Two roots since 2026-09-28: `geom.hero` is judged as well, and it has no
+    # diagnostic, so `--apply` leaves it as it is.
+    assert green.must().passed == 2
     assert green.must().failed == 0
 
     # The floor.
@@ -313,15 +611,137 @@ test "the fixtures half applies across two files, re-checks the whole program, a
     assert !write_file(path: tree + "/typo/main.fixed", text: "use geom\n\nfunction main()\n    print(geom.dist3(a: 1, b: 2))\n").is_err()
     red = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 1)
     assert !red.is_err()
-    assert red.must().passed == 0
+    assert red.must().failed == 1
+    assert strings.contains(text: red.must().failures[0], needle: "typo/main.hero")
     assert strings.contains(text: red.must().failures[0], needle: "--apply")
 
     # A `.fixed` the compiler WOULD produce that does not check clean with its
     # module: the second half, which is the one that makes the tag mean
-    # something. `geom.hero` loses `dist2`, so the applied text is right and
-    # the program is still broken.
+    # something. `geom.hero` keeps `dist2` and gives it `str` parameters, so
+    # the applied text is the same, byte for byte, and only the re-check can
+    # see that the program is still broken. (A `geom.hero` that loses `dist2`
+    # makes the fix name another function, and the first half catches that
+    # before this one is reached.)
     assert !write_file(path: tree + "/typo/main.fixed", text: applied.must().out).is_err()
-    assert !write_file(path: tree + "/typo/geom.hero", text: "function dist3(a: i64, b: i64) -> i64\n    return a + b\n").is_err()
+    assert !write_file(path: tree + "/typo/geom.hero", text: "function dist2(a: str, b: str) -> i64\n    return a.len() + b.len()\n").is_err()
     lied = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 1)
     assert !lied.is_err()
-    assert lied.must().passed == 0
+    assert lied.must().failed == 1
+    assert strings.contains(text: lied.must().failures[0], needle: "does not check clean")
+
+# Defect 129, 2026-09-28: a case with no answer file was skipped, so a join
+# that turned `certain` in a case whose every fix is a `guess` passed green.
+# Now such a case must come back from `--apply` unchanged, and a case that keeps
+# a diagnostic no `certain` fix repairs pins what `--apply` writes in an
+# `.applied`, which must not check clean and must not change a second time.
+test "a case with no answer is left as it is by --apply, and an applied answer is pinned"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/untouched"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    compiler = shell.some_compiler()
+    assert compiler.len() > 0
+
+    # An unused binding: its fix is a `guess`, so nothing is applied.
+    assert !write_file(path: tree + "/g.hero", text: "function main()\n    x = 1\n").is_err()
+    assert !write_file(path: tree + "/g.expected", text: "").is_err()
+    green = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 0)
+    assert !green.is_err()
+    assert green.must().passed == 1
+    assert green.must().failed == 0
+
+    # An upper-case base prefix: its fix is `certain`, and no answer pins it.
+    assert !write_file(path: tree + "/c.hero", text: "function main()\n    mask = 0XFF\n    print(mask)\n").is_err()
+    assert !write_file(path: tree + "/c.expected", text: "").is_err()
+    loose = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 0)
+    assert !loose.is_err()
+    assert loose.must().passed == 1
+    assert loose.must().failed == 1
+    assert strings.contains(text: loose.must().failures[0], needle: "no answer pins")
+
+    # Pinned as `.applied` while its repaired program checks clean: its answer
+    # is a `.fixed`, and the suite says so.
+    applied = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", tree + "/c.hero", "--apply"])
+    assert !applied.is_err()
+    assert !write_file(path: tree + "/c.applied", text: applied.must().out).is_err()
+    clean = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 0)
+    assert !clean.is_err()
+    assert clean.must().failed == 1
+    assert strings.contains(text: clean.must().failures[0], needle: "is a `.fixed`")
+
+    # Both answers at once.
+    assert !write_file(path: tree + "/c.fixed", text: applied.must().out).is_err()
+    both = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 0)
+    assert !both.is_err()
+    assert both.must().failed == 1
+    assert strings.contains(text: both.must().failures[0], needle: "both")
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+
+    # A `certain` fix beside a diagnostic it cannot repair: pinned, green; and
+    # the same pin against a compiler that no longer applies the fix, red.
+    mixed = "function main()\n    mask = 0XFF\n    x = 1\n    print(mask)\n"
+    assert !write_file(path: tree + "/m.hero", text: mixed).is_err()
+    assert !write_file(path: tree + "/m.expected", text: "").is_err()
+    pinned = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", tree + "/m.hero", "--apply"])
+    assert !pinned.is_err()
+    assert strings.contains(text: pinned.must().out, needle: "0xFF")
+    assert !write_file(path: tree + "/m.applied", text: pinned.must().out).is_err()
+    held = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 0)
+    assert !held.is_err()
+    assert held.must().passed == 1
+    assert held.must().failed == 0
+    assert !write_file(path: tree + "/m.applied", text: mixed).is_err()
+    moved = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 0)
+    assert !moved.is_err()
+    assert moved.must().failed == 1
+    assert strings.contains(text: moved.must().failures[0], needle: "--apply")
+
+test "a fixture root with no answer is applied in a copy of its whole case and must be left as it is"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/untouched-fixtures"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree + "/typo/lib").is_err()
+    assert !shell.mkdir_all(tree + "/holey").is_err()
+    compiler = shell.some_compiler()
+    assert compiler.len() > 0
+
+    # A root whose `certain` fix exists only where its module resolves, and the
+    # module sits in a subdirectory: a copy that lost the subdirectory would
+    # see `unknown_module`, which has no fix, and pass. It must go red.
+    assert !write_file(path: tree + "/typo/main.hero", text: "use lib/geom\n\nfunction main()\n    print(geom.dist(a: 1, b: 2))\n").is_err()
+    assert !write_file(path: tree + "/typo/lib/geom.hero", text: "function dist2(a: i64, b: i64) -> i64\n    return a * a + b * b\n").is_err()
+
+    # A root with a hole: `check` prints a report and no program, and nothing
+    # is applied.
+    assert !write_file(path: tree + "/holey/main.hero", text: "function main()\n    print(???)\n").is_err()
+    red = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 0)
+    assert !red.is_err()
+    assert red.must().passed == 1
+    assert red.must().failed == 1
+    assert strings.contains(text: red.must().failures[0], needle: "typo/main.hero")
+    assert strings.contains(text: red.must().failures[0], needle: "no answer pins")
+
+    # Pinned as an `.applied`, the root is green: its case directory keeps a
+    # second program, refused on purpose, so the repaired copy is not clean,
+    # which is what separates an `.applied` from a `.fixed` in a fixture.
+    applied = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "check", tree + "/typo/main.hero", "--apply"]
+    )
+    assert !applied.is_err()
+    assert strings.contains(text: applied.must().out, needle: "geom.dist2(")
+    assert !write_file(path: tree + "/typo/main.applied", text: applied.must().out).is_err()
+    assert !write_file(path: tree + "/typo/other.hero", text: "function main()\n    x = 1\n").is_err()
+    pinned = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 0)
+    assert !pinned.is_err()
+    assert pinned.must().failed == 0
+    assert pinned.must().passed == 3
+
+    # And without the refused sibling the same pin is a `.fixed` by right.
+    assert !shell.remove_tree(tree + "/typo/other.hero").is_err()
+    promoted = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 0)
+    assert !promoted.is_err()
+    assert promoted.must().failed == 1
+    assert strings.contains(text: promoted.must().failures[0], needle: "is a `.fixed`")

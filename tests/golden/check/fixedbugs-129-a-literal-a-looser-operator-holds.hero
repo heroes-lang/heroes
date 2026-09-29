@@ -1,0 +1,37 @@
+# Fixed defect 129, 2026-09-28, class (B), found beside it. Symptom: a literal
+# that a looser operator leaves whole was taken for part of a larger operand,
+# and the join stayed `certain`: `x = a && true` over `+ 1` joins to
+# `a && true + 1`, where `+` takes `true`; `x = a -` over `"s" + "t"` to
+# `a - "s" + "t"`, where `-` takes `"s"`; and `x = a &&` over `true` over
+# `== 1` to `a && true == 1`. Each is refused. Cause: only a literal alone on
+# its line was judged. A literal is the whole operand wherever nothing beside
+# it binds tighter, by spec § 7's precedence (`operand_families.power`, which
+# `selfhost/cli/grammar.hero`'s test holds to the parser's), so these are a
+# `guess`.
+#
+# A golden cannot hold a `guess`: this `.expected` is `--brief`, which prints
+# no certainty, and a `.fixed` must check clean. So what this file pins is one
+# diagnostic per break; the certainties are held by `selfhost/lexer.hero`'s
+# defect 129 tests, which lex the same shapes.
+
+function true_plus_one(a: bool) -> bool
+    x = a && true
+    + 1  #~ continuation_outside_brackets
+    return x
+
+function minus_a_string_sum(a: i64) -> i64
+    #~v continuation_outside_brackets
+    x = a -
+    "s" + "t"
+    return x
+
+function true_equals_one(a: bool) -> bool
+    #~v continuation_outside_brackets
+    x = a &&
+    true
+    == 1  #~ continuation_outside_brackets
+    return x
+
+function main()
+    print(true_plus_one(a: true) || true_equals_one(a: true))
+    print(minus_a_string_sum(a: 1))
