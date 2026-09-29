@@ -1,0 +1,109 @@
+# A `match`'s arms in braces, the brace habit, `match n {` over its arms over
+# `}` (design.md §4.7, §4.17; defect 131's class, 2026-09-29).
+#
+# Rust writes a match's arms in braces, and so does a model that has read it.
+# `parse/opening` names the `{` as the arms the `match` owes, found `{`, and
+# until 2026-09-29 that was all: a `match`'s arms were not read in braces, so
+# the block reader read them as statements, each refused at its `=>`, and the
+# arms' own mistakes waited for the braces to go. Now the `{` is the habit's
+# one report, `missing_match_arms` found `{`, and the arms inside are read as
+# arms, laid out as the lexer lays out an indented block
+# (`parse/headless.laid_out`: an indent for the `{`, a dedent for the `}`, a
+# line end for each line break and each `,` between arms, Rust's separator),
+# their own mistakes said where they stand; the `}` goes silently.
+#
+# The arms reader is the knot's, so `grammar_expr.match_expr` reads the laid
+# out lines itself, between the two calls here.
+#
+# **An arm's body in braces** is the same habit, `0 => {` over its body over
+# `}`: until 2026-09-29 it was read as a map literal, whose entries its
+# statements are not, `expected_map_entry_colon` at the first. It is read now
+# as the body in braces every head reads (`parse/opening.body_follows`), unless
+# the braces' first line is a map's entry, a `:` outside brackets and no `@`
+# or `=`, or the braces hold nothing: then they are the map the arm's value
+# is, as `0 => {` over `"a": 1` over `}` has always been (`body_opens`).
+#
+# | entry | called by |
+# |---|---|
+# | `lines_of`, `taken` | `grammar_expr.match_expr` |
+# | `body_opens` | `grammar_expr.arm` |
+
+use token
+use diag
+use cursor
+use parse/opening
+use parse/headless
+use parse/brace_habit
+use lexer
+
+# The arms in the braces whose `{` is at `brace`, after the `match` that began
+# at `head`: the `{` named as the arms it stands for, the cursor left on it,
+# and the lines between the braces laid out for the arms reader.
+function lines_of(@c: cursor.Cursor, text: str, head: opening.Mark, failed: bool, brace: i64) -> cursor.Cursor
+    _ = opening.braced(@c, text, head: head, failed: failed, brace: brace, missing: opening.missing_arms())
+    return headless.laid_out(c, text, close: brace_habit.closer(c, open: brace))
+
+# What the arms reader said over the laid-out `lines`, said by `c` where it
+# stands, and the cursor past the `}` and its line end. A held report is
+# placed among `c`'s own, after those said before the braces.
+function taken(@c: cursor.Cursor, lines: cursor.Cursor)
+    before = c.diagnostics.len()
+
+    for h in lines.held
+        c.held @ c.held.push(diag.Held(at: h.at + before, cause: h.cause, diagnostic: h.diagnostic, apart: h.apart))
+
+    for d in lines.diagnostics
+        c.diagnostics @ c.diagnostics.push(d)
+
+    brace_habit.pass(@c, close: brace_habit.closer(c, open: c.pos))
+
+## An arm's body in braces
+
+# Whether the cursor's `{` ends its line and opens an arm's body in braces:
+# the first line inside is no map entry and the braces are not empty.
+function body_opens(c: cursor.Cursor, text: str) -> bool
+    if !brace_habit.opens_here(c, text)
+        return false
+    i: i64 @ c.pos + 1
+
+    while c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
+        i @ i + 1
+
+    return c.tokens[i].kind != .rbrace && !an_entry(c.tokens, at: i)
+
+# Whether the line of a map that begins at token `at` is an entry, `key:
+# value`: a `:` outside its brackets before its line end or `,`, and no `@` or
+# `=`, which make `v: i64 @ 0` a statement.
+function an_entry(tokens: [token.Token], at: i64) -> bool
+    depth: i64 @ 0
+    colon: bool @ false
+    i: i64 @ at
+
+    while tokens[i].kind != .eof && !(depth == 0 && (tokens[i].kind == .terminator || tokens[i].kind == .comma))
+        k = tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth - 1
+
+            if depth < 0
+                return colon
+        else if depth == 0 && (k == .at || k == .eq)
+            return false
+        else if depth == 0 && k == .colon
+            colon @ true
+        i @ i + 1
+
+    return colon
+
+## Tests
+
+test "an arm's braces are its body unless they hold a map's entries or nothing"
+    for text in ["{\n    print(0)\n}\n", "{\n    v: i64 @ 0\n}\n"]
+        c = cursor.new_cursor(lexer.lex_one(text).tokens)
+        assert body_opens(c, text)
+
+    for text in ["{\n    \"a\": 1\n}\n", "{\n}\n", "{1: 2}\n"]
+        c = cursor.new_cursor(lexer.lex_one(text).tokens)
+        assert !body_opens(c, text)

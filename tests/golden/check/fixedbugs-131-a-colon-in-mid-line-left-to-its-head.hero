@@ -1,0 +1,29 @@
+# Fixed defect 131's class, 2026-09-29, beside the one-line suite: a `:` in
+# mid-line where no body is written after it on its line. Symptom: `record
+# P: i64` over its fields cost `trailing_colon` and then the head's junk, at
+# the `i64`, and its certain fix wrote `record P i64`, still refused; a
+# `function` head's `: i64`, TypeScript's result type, and an `if c: x`
+# over a deeper block went the same way. Cause: the habit's reader took any
+# `:` after a head. A `:` in mid-line is not the habit its fix repairs, and
+# where it is not the suite over no block (`fixedbugs-131-a-colon-in-mid-line-
+# over-no-block`), it is left to the head, whose own report of what goes on
+# past its line names it once, the `:` first, and whose members or body
+# below are read; no fix is certain, and `check --apply` leaves the file as
+# it is (`selfhost/parse/colon_habit.hero`).
+
+record P: i64  #~ expected_end_of_line
+    x: i64
+
+variant T: a  #~ empty_variant
+
+function result_after_a_colon(): i64  #~ expected_end_of_line
+    return 1
+
+function a_body_on_its_head() -> i64: return 1  #~ missing_body
+
+function a_block_below(n: i64)
+    if n > 0: print(1)  #~ expected_end_of_line
+        print(2)
+
+function main()
+    print(result_after_a_colon())

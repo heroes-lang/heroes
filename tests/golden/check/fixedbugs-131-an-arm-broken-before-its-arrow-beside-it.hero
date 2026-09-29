@@ -1,0 +1,38 @@
+# Fixed defect 131's class, 2026-09-29, beside
+# `fixedbugs-131-an-arm-broken-before-its-arrow`: three more ways to break an
+# arm before its `=>`. Symptom: `0 7` over `=> 5` cost `expected_arm_arrow`
+# at the `7` and `expected_pattern` at the `=>` below; `_` over a `=> 5` at
+# the `match`'s own margin, past the arms' dedent, cost `expected_arm_arrow`
+# and then `expected_expression` at the `=>`; and `0` over a `=>` alone at
+# its line's end, which the lexer joins to the next arm, cost the lexer's
+# `continuation_outside_brackets` and `expected_arm_arrow`. Cause: the arm
+# went on at a `=>` below only where its line ended right after the pattern,
+# and inside the arms' block. Now it goes on past the junk its report names,
+# and past the arms' own dedent, whose line then ends the arms; and a `=>`
+# the lexer joined past holds its missing arrow back against the lexer's
+# refusal, said in the control arm, `check --permissive`, which drops it
+# (`selfhost/parse/broken_arm.hero`).
+
+function junk_before_the_break(n: i64) -> i64
+    return match n
+        0 7  #~ expected_arm_arrow
+        => 5
+        _ => 20
+
+function an_arrow_past_the_arms(n: i64) -> i64
+    k = match n
+        _  #~ expected_arm_arrow
+    => 5
+    return k
+
+function an_arrow_alone(n: i64) -> i64
+    return match n
+        0
+        #~v continuation_outside_brackets
+        =>
+        _ => 20
+
+function main()
+    print(junk_before_the_break(n: 0))
+    print(an_arrow_past_the_arms(n: 0))
+    print(an_arrow_alone(n: 0))

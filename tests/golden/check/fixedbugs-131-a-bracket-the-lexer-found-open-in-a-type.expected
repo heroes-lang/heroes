@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-131-a-bracket-the-lexer-found-open-in-a-type.hero:17:8: error[unclosed_bracket]: `[` opened here is never closed
