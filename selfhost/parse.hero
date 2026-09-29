@@ -557,3 +557,16 @@ test "a head or a list cut short reports once, and a tabbed body is a body"
     assert codes(tabbed.control) == ["tab_in_indentation", eol, eol]
     whole = parse("function main()\n\tprint(1)\n")
     assert codes(whole.diagnostics) == ["tab_in_indentation"]
+
+# Defect 131's third round: `while` is a `certain` repair of a `for` only
+# before a token that begins an expression, and an operand that could not be
+# read ends its expression, so `while >` is refused once.
+test "a for over what begins no expression is a guess, and while > is refused once"
+    over_an_operator = parse("function main()\n    for >\n        x = 1\n")
+    assert codes(over_an_operator.diagnostics) == ["for_missing_in"]
+    assert over_an_operator.diagnostics[0].fixes[0].certainty == .guess
+    over_a_condition = parse("function main()\n    for !done\n        x = 1\n")
+    assert over_a_condition.diagnostics[0].fixes[0].certainty == .certain
+    assert codes(parse("function main()\n    while >\n        x = 1\n").diagnostics) == ["expected_expression"]
+    assert codes(parse("function main()\n    while :\n        x = 1\n").diagnostics) == ["expected_expression"]
+    assert codes(parse("function main()\n    x = 1 + >\n").diagnostics) == ["expected_expression"]
