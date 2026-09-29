@@ -104,6 +104,12 @@ function line_start(@l: state.LexState, text: str)
     if l.open_line >= 0 && open_line.goes_on(@l, text, spaces: spaces)
         return
 
+    # Read as bodies, the line below a same-margin break is one level deeper
+    # (`LexState.bodies`).
+    if l.deeper
+        spaces @ spaces + 4
+        l.deeper @ false
+
     # The terminator the line above owes, planted here inline for every line
     # that begins with a word or a literal, or opens a block, which is every
     # line of a program that compiles: a call per line costs this lexer more

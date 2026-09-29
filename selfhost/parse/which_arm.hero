@@ -12,7 +12,7 @@
 #
 # | entry | called by |
 # |---|---|
-# | `placed` | `parse.parse_source`, `parse.parse_bounded`, `parse/apart.read_apart` |
+# | `placed` | `parse.parse_source`, `parse.parse_bounded`, `parse/readings.read_apart` |
 
 use token
 use diag
