@@ -1,0 +1,27 @@
+# Fixed 2026-09-29, defect 131's class, given to defect 133's lane. Symptom:
+# `record Point )` over its fields was named `empty_record`, "a `record`
+# needs at least one field, indented one level below it", while the fields
+# stood one level down, and `variant Token )` over its cases was named
+# `empty_variant` the same way: a message that names missing something that
+# is there. Cause: the head's refusal asked only whether an indent followed
+# the head, and junk on the head's own line stood in front of the one that
+# did. The head's junk is now the one report, `expected_end_of_line` as a
+# statement's line gets it, with where the members go, and the members are
+# read as they stand, their own mistakes too. A head with junk and nothing
+# below it is empty all the same, and says so.
+
+record Point )  #~ expected_end_of_line
+    x: i64
+    y i64  #~ expected_field_type
+
+record Lone )  #~ empty_record
+
+variant Token )  #~ expected_end_of_line
+    word
+    number
+        n f64  #~ expected_field_type
+
+variant Nothing )  #~ empty_variant
+
+function main()
+    print(1)

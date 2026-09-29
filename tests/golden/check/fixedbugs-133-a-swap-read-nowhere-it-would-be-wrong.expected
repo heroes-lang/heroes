@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-133-a-swap-read-nowhere-it-would-be-wrong.hero:25:10: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`
+tests/golden/check/fixedbugs-133-a-swap-read-nowhere-it-would-be-wrong.hero:28:8: error[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
+tests/golden/check/fixedbugs-133-a-swap-read-nowhere-it-would-be-wrong.hero:32:5: error[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
+tests/golden/check/fixedbugs-133-a-swap-read-nowhere-it-would-be-wrong.hero:35:17: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`
+tests/golden/check/fixedbugs-133-a-swap-read-nowhere-it-would-be-wrong.hero:38:13: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`
+tests/golden/check/fixedbugs-133-a-swap-read-nowhere-it-would-be-wrong.hero:41:14: error[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`

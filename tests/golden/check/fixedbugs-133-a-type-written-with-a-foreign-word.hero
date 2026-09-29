@@ -1,0 +1,32 @@
+# Fixed defect 133, 2026-09-29. Symptom: `(fn(i64) -> )` cost
+# `reserved_word` alone, and only once `check --apply` had written
+# `(function(i64) -> )` did the next run report the missing result,
+# `expected_type`; `-> int` over a body ending in an operator, and a
+# constant typed `int` over a broken value, hid the body the same way.
+# Cause: the type grammar left the lexer's `error` token where it stood, so
+# a function type gave up at its `(`, and a result or constant type left
+# the token at its line's end, where the body under it was dropped. The
+# type grammar now reads `fn` as the `function` its certain swap writes, and
+# `int` as the named type `i64` its certain swap writes, over the span that
+# was written (`parse/swap_reading.hero`); nothing reads that name, because
+# the `reserved_word` stops the compilation after the parse.
+#
+# Measured again the same day over trunk `0ba7b084`, whose failed head reads
+# its body: the two bodies below `-> int` and `: int` were reported there,
+# and what the head's own line held after `int` was still dropped as its
+# debris. `constant RATE: int = 5` is that line: the trunk cost the word
+# alone, and its `= 5`, a `missing_body`, waited for the swap.
+
+function apply(f: (fn(i64) -> ), x: i64) -> i64  #~ reserved_word expected_type
+    return f(x)
+
+function twice(x: i64) -> int  #~ reserved_word
+    return x *  #~ expected_expression
+
+constant LIMIT: int  #~ reserved_word
+    5 -  #~ expected_expression
+
+constant RATE: int = 5  #~ reserved_word missing_body
+
+function main()
+    print(1)

@@ -1,0 +1,16 @@
+# Fixed defect 133, 2026-09-29. Symptom: `def add(a: int, b: int) -> int:`,
+# the whole of Python's habit on one line, cost the four `reserved_word`s
+# alone, and only once `check --apply` had written `function` and `i64` did
+# the next run report the colon, `trailing_colon`: a second turn for a
+# mistake whose certain fix was known from the start. Cause: the lexer emits
+# the refused word as an `error` token, and at a top-level line's head the
+# parser's recovery dropped the whole declaration. The parser now reads
+# `def` as the `function` its certain swap writes and `int` in a type's
+# place as the `i64` it writes (`parse/swap_reading.hero`), so every fix is
+# offered in the first run and `--apply` leaves a program that checks clean.
+
+function add(a: i64, b: i64) -> i64  #~ reserved_word reserved_word reserved_word reserved_word trailing_colon
+    return a + b
+
+function main()
+    print(add(a: 1, b: 2))
