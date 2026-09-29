@@ -152,6 +152,19 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `"m.h" )` never reports the `)` in the normal arm, the second reading
     holding it (`s4/d13` in `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-x2/`, 2026-09-29).
 
+    **Widened 2026-09-29 by lanes X1 and Y at their reports**: a braced record,
+    variant or `extern` group still goes whole, so a mistake inside is never
+    reported (`f1*`); a block under a refused line that cannot open one
+    (`let x = 5`, `import geom`) is read silently where it is a mistake of its
+    own (`f7*`); a block of declarations under a refused head goes whole
+    (`f9*`), all in `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-x1/findings/`, 2026-09-29; a
+    missing body is not told when the line below fails the joined head, `if`
+    over `print(1 +)` (`i3d/c1.hero`, `c2`, `c3`, `i3b/a13.hero`); and an
+    unexpected block is dropped whole with its mistakes unsaid, `x = 1` over a
+    deeper `print(1) )`, where with `x = 0X10 +` above it the certain fix is
+    not a subset (`i4/e8.hero`, `e12.hero`), both in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-y/`, 2026-09-29.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
@@ -226,6 +239,18 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     cost two (`s2/b09`, `s3/c20`); junk before a broken arm's line end still
     reports `expected_pattern` at the `=>` (`s3/c19`); and a `=>` alone at a
     line's end over the next arm costs two (`s3/c14`, `c21`).
+
+    **Widened 2026-09-29 by lanes X1 and Y at their reports**: `match x {` arms
+    and `0 => {` bodies in braces are misread (`f2*`); mixed style, braces
+    outside and indentation inside, names each inner body missing (`f3*`); in
+    `} x` the `x` goes unsaid (`f4*`); `do {` ... `} while (c)` costs a second
+    `missing_body` (`f5*`); `for`'s certain *use `while`* before `(` or `{`
+    writes a program with new parse errors (`f6*`); `let x = if c` over a
+    body, then `else`, refuses the `else` (`f8*`); an Allman record's caret
+    points at the next line's `{` (`f12*`), all in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-x1/findings/`, 2026-09-29; and `k = match n` over a
+    same-margin `0 => 1` costs `expected_end_of_line` at the `=>`
+    (`i3/match_n_arm_same.hero`, `i3c/b8.hero` in `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-y/`, 2026-09-29).
 
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
