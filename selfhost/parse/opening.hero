@@ -116,6 +116,29 @@ function crossed_a_line(c: cursor.Cursor, head: Mark) -> bool
 
     return false
 
+# Whether the line under the indent the cursor stands on holds a `=>` outside
+# brackets: the block is arms, and a block below a failed line is read as what
+# it is, so that `mach n` over its arms costs one diagnostic and not one per arm.
+function arms_below(c: cursor.Cursor) -> bool
+    i: i64 @ c.pos + 1
+    depth: i64 @ 0
+
+    while i < c.tokens.len()
+        k = c.tokens[i].kind
+
+        if depth == 0 && (is_line_end(k) || k == .eof)
+            return false
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth - 1
+        else if k == .fat_arrow && depth == 0
+            return true
+        i @ i + 1
+
+    return false
+
 # Where the lexer joined two lines inside the head: two adjacent tokens on two
 # lines with no line end between them. The span runs from the last token
 # before the break that is not a comment to the first one after it, which is

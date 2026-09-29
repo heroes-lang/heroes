@@ -723,6 +723,10 @@ function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: open
 
     if !opening.body_follows(@c, text, head: head, failed: failed, missing: missing)
         return fail(code: "missing_body", msg: owner)
+    return ok(indented_block(@c, @a, text))
+
+# The statements of the block whose indent is under the cursor.
+function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
     open = cursor.bump(@c).span
     stmts: [i64] @ []
     reading: bool @ true
@@ -737,8 +741,10 @@ function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: open
         else if k == .eof
             reading @ false
         else if k == .indent
-            # A block one level deeper than any statement asked for. It belongs
-            # to nothing, so it goes whole rather than one diagnostic per line.
+            # A block one level deeper than any statement asked for, after one
+            # that ended well: it belongs to nothing, so it is named once and
+            # goes whole, since read as lines a continuation the lexer lets
+            # through, `x = a` over `and b`, cost two.
             if !cursor.at_reported_error(c)
                 cursor.error(
                     @c,
@@ -750,7 +756,16 @@ function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: open
         else
             stmts @ stmts.push(statement(@c, @a, text))
 
-    return ok(ast.Block(span: token.Span(start: open.end, end: cursor.previous_significant_span(c).end), stmts: stmts))
+    return ast.Block(span: token.Span(start: open.end, end: cursor.previous_significant_span(c).end), stmts: stmts)
+
+# A block below a line that already said what is wrong: read for its own
+# mistakes and not named, the line above being the one (defect 130). Arms are
+# read as arms (`opening.arms_below`); the tree keeps neither.
+function hanging(@c: cursor.Cursor, @a: ast.Ast, text: str)
+    if cursor.at(c, .indent) && opening.arms_below(c)
+        _ = arms_of(@c, @a, text)
+    else if cursor.at(c, .indent)
+        _ = indented_block(@c, @a, text)
 
 function statement(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     start = cursor.current_span(c)
@@ -808,11 +823,13 @@ function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, fr
         # off it, which is how a depth-zero line continuation used to cost three
         # diagnostics instead of one. **Only ITS line** (defect 130): one that
         # ended with its own block or line end has none left, and the line
-        # under the cursor, which this dropped, was the next statement's.
+        # under the cursor, which this dropped, was the next statement's. A
+        # block hanging below is READ, not named: the continuation that cost
+        # three is joined by the lexer since panel 181.
         cursor.drop_rest_of_line(@c, from: from)
 
         if cursor.at(c, .indent)
-            _ = cursor.balanced_block(@c)
+            hanging(@c, @a, text)
         return ast.push_stmt(@a.stmts, ast.Stmt(kind: kind, span: span))
 
     # A statement that ended with a block — a loop, an `if`, a `match` —
@@ -821,7 +838,9 @@ function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, fr
     ended = c.pos > from && cursor.at_fresh_line(c)
 
     if !ended && !cursor.at(c, .dedent) && !cursor.at(c, .eof) && !cursor.eat(@c, .terminator)
-        if !cursor.at_reported_error(c)
+        said = !cursor.at_reported_error(c)
+
+        if said
             cursor.error(
                 @c,
                 code: "expected_end_of_line",
@@ -829,6 +848,11 @@ function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, fr
                 span: cursor.current_span(c)
             )
         cursor.skip_line(@c)
+
+        # As below a failed line, `iff x > 1` over its body; not below one only
+        # the lexer refused, whose block is the rest of it (`f"a {` over `x}`).
+        if said && cursor.at(c, .indent)
+            hanging(@c, @a, text)
     return ast.push_stmt(@a.stmts, ast.Stmt(kind: kind, span: span))
 
 # `return e`, or bare `return` where the function returns nothing.
@@ -1026,9 +1050,16 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
     if !opening.body_follows(@c, text, head: head, failed: failed, missing: missing)
         return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
+    arms = arms_of(@c, @a, text)
+    span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
+    return ast.push_expr(@a.exprs, ast.Expr(kind: .match_expr(scrutinee: scrutinee, arms: arms), span: span))
+
+# The arms of a `match`: the block whose indent is under the cursor.
+function arms_of(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arm]
     _ = cursor.bump(@c)
     arms: [ast.Arm] @ []
     reading: bool @ true
+    failed: bool @ false
 
     while reading
         cursor.skip_terminators(@c)
@@ -1040,16 +1071,25 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         else if k == .eof
             reading @ false
         else if k == .indent
-            # A block where an arm should start: it belongs to an arm that
-            # failed, so it goes whole. Without this case the loop can spin
-            # forever — `skip_line` deliberately stops BEFORE an indent (it must
-            # not leave the block it is cleaning), so a failed arm followed by an
-            # indented body consumed nothing at all and the parser never
-            # terminated (panel 014, found while costing it).
-            _ = cursor.balanced_block(@c)
+            # Where an arm should start: below a failed arm, its body, read and
+            # not named; below a whole one, an orphan, named and gone whole (it
+            # went unnamed, and `0 => print(1)` over `print(99)` printed 1). Else
+            # the loop spins: `skip_line` stops BEFORE an indent (panel 014).
+            if failed
+                hanging(@c, @a, text)
+            else
+                if !cursor.at_reported_error(c)
+                    cursor.error(
+                        @c,
+                        code: "unexpected_block",
+                        message: "this block is indented deeper than anything that opens one",
+                        span: cursor.current_span(c)
+                    )
+                _ = cursor.balanced_block(@c)
         else
             from = c.pos
             one = arm(@c, @a, text)
+            failed @ one.is_err()
 
             if one.is_err()
                 # A pattern or `=>` that failed consumed nothing reusable, and
@@ -1062,8 +1102,7 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
                 # skip again — that ate the arm below it.
                 arms @ arms.push(one.must())
 
-    span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
-    return ast.push_expr(@a.exprs, ast.Expr(kind: .match_expr(scrutinee: scrutinee, arms: arms), span: span))
+    return arms
 
 # One arm: patterns joined by `|`, `=>`, then one statement on the same line or
 # a block below it (§4.7, panel 014).
