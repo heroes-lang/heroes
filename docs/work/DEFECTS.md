@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 5**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -337,5 +337,52 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     129 to 133, X1, X2 and Y): the full net, every suite at 0 failed. The shapes
     still open are the next batch lane's items, found beside the repairs, and
     this item stays open until they are repaired and a batch gate reads them.
+
+- [ ] **134 — two builds at once in one tree fail each other with a false internal error** | on a cold `build/`, six `heroes run p.hero` started together fail five in six, 25 of 30 over five rounds, with `internal error: the runtime did not compile` or `internal error: cannot publish build/tu-<key>/p.o` then `error: clang refused the generated C`, where clang refused nothing; two DIFFERENT programs built together in a fresh tree fail one of the two in 5 rounds of 5 | `selfhost/cli/units.hero` (`tu_object`, `link_objects`) · `selfhost/cli/toolchain.hero` (`runtime_object`, `link`) · `selfhost/cli/produce.hero` (the words)
+
+    **Origin:** lane recovery-b1's agent, 2026-09-30, reading why `canonical`
+    went red in its batch gate's parallel pass: six harness processes raced
+    to publish one `build/<hash>/main`. Reproduced by the coordinator at
+    01:55 in a scratch tree with the trunk's compiler at `1fc77e31`, `p.hero`
+    being `function main()` over `    print(1)`.
+
+    **Measured on macOS arm64**, each round from `rm -rf build`, six
+    processes started together: `heroes run p.hero`, 25 of 30 exit 2 (24
+    `the runtime did not compile` then `error: no runtime object`, one
+    `cannot publish build/tu-4dc4140d0e94dae5/p.o` then `clang refused the
+    generated C`); the runtime object warm and the program cold, 26 of 30
+    (`cannot publish` of `p.o` 25 times, of `library.o` once, each followed
+    by `clang refused the generated C`); `p.hero` and `q.hero` together, one
+    of the two in every round of five; `heroes build p.hero -o o-<i>`, 15 of
+    18; `-o same`, 15 of 18, the published binary running; `build --emit-c`,
+    10 of 18.
+
+    **The cause, read and not yet proved by a repair.** Every artifact a
+    build publishes is staged under ONE name, `object + ".tmp"` or `binary +
+    ".tmp"`, and the translation unit's C is written in place, so two
+    processes on one key write one file: the first `rename_over` moves that
+    one staged file into place, the second finds its own gone, and a clang
+    may read the C while another process truncates it. The words then
+    misname it: `produce.hero` answers every failure of the link rounds as
+    `clang refused the generated C`.
+
+    **Why it is a defect.** A build that fails because another build of the
+    same thing ran beside it is a false failure, and its message sends the
+    reader to their program or to clang. Two builds in one tree are
+    ordinary: an editor's build on save beside a terminal, `make -j`, a
+    script over several programs, and the net's own parallel pass, whose
+    rule *a suite red in the parallel pass is re-run alone*
+    (`.claude/rules/verification.md`) is this defect's cost paid by hand.
+    Defect 057's record says *the one collision left is named rather than
+    hidden: two builds compiling the identical TU do share its directory,
+    and their clang output is identical too*; they share the staged names
+    and the C file as well.
+
+    **Unrun, questions rather than premises**: Windows, where `MoveFileExA`
+    over a binary another process is running fails where a POSIX rename
+    does not; `heroes test` of one program twice at once; a warm cache's
+    replay files (`warnings.txt`, the dependency listings) read by one
+    process while a second rewrites them, which would lose a warning from
+    every later replay, 057's class.
 
 *******************************************************************************
