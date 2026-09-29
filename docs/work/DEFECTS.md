@@ -161,6 +161,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     while they are there (`shapes3/f37`, `f38` in
     `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/`, 2026-09-29); given to lane 133.
 
+    **Widened again 2026-09-29 by the `fixes` suite lane 129 landed, at the
+    coordinator's gate of lane 130's second round (`3ecb7ac9`)**: `for >`
+    gets `for_missing_in` with the `certain` fix *use `while`*, and
+    `--apply` writes `while >`, which is no loop and costs
+    `expected_expression` twice on its one line. Measured on the compiler
+    of `a6eab736` as well, so it was there before tonight; a `certain` fix
+    that does not repair, and one mistake with two messages. Sent back to
+    lane 130.
+
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
     **Origin:** lane 129's agent, 2026-09-29, beside defect 129 (its finding 2,
