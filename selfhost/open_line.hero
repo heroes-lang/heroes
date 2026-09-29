@@ -36,6 +36,7 @@
 # | `left_open` | `layout.maybe_terminator`, at a line end, where the line is left open (a line that owes its terminator is recorded there) |
 # | `goes_on`, `goes_on_below` | `layout.line_start`, at the next line with words: refused and joined, or ended there |
 # | `abandon`, `settle` | `layout.line_start` where a tab or a stray carriage return leaves the margin unread, and `lexer.lex_one` at the file's end |
+# | `ended` | `lexer.lex_one`, for a line still left open at the file's end |
 use token
 use state
 use diag
@@ -210,6 +211,7 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     split = fresh || binding || left.kind == .kw_else && (first.is_err() || first.must() != .kw_if)
 
     if split && left.kind != .fat_arrow
+        ended(@l)
         plant(@l)
         return false
     where: str @ "at the same margin, where a new statement begins"
@@ -290,6 +292,11 @@ function refuse_the_head(@l: state.LexState, text: str, at: i64, spaces: i64, co
 function refused(@l: state.LexState, d: diag.Diagnostic, head: bool)
     state.push_diagnostic(@l.diagnostics, d)
     state.push_break(@l.breaks, state.Break(diagnostic: l.diagnostics.len() - 1, after: l.tokens.len(), head: head))
+
+# A line left open that is ended here rather than refused: the parser refuses
+# it, so its statement's joins cannot repair it alone (defect 129).
+function ended(@l: state.LexState)
+    state.push_break(@l.breaks, state.Break(diagnostic: -1, after: l.tokens.len(), head: false))
 
 function joined(glue: str, from: i64, to: i64, certainty: diag.Certainty) -> diag.Fix
     return diag.Fix(
