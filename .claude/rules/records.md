@@ -234,6 +234,41 @@ lanes ran at once, one per defect, and they met in **merges rather than
 conflicts** because each touched files the others did not. A lane per DEFECT,
 not per file — that is what makes the independence real and checkable in advance.
 
+**A lane holds a CLUSTER, and works it in sequence** — author instruction
+2026-09-29, choosing between the two shapes put in front of them (CL-079). On
+the night of 2026-09-28 to 29 five defects whose repairs shared
+`open_line.hero` and `grammar_expr.hero` ran as five lanes, and cost 11 merges
+for 10 repair commits, 3 of them with `seed/heroes.c` in conflict; over the two
+weeks before, 21 of 58 merges carried that conflict. So: **one lane per group of
+defects whose repairs share files, the defects taken one after another inside
+it; parallel lanes only for groups whose file sets are disjoint**, which `git
+diff --stat` against the base shows before the second lane opens. A widening
+found beside a defect is the lane's next item, not a filing on the trunk. The
+lane is the batch of `.claude/rules/verification.md` § The batch: repairs gated
+by their cases, the full net once at its close. Four more rules from the same
+reading:
+
+- **`git merge --ff-only` first; a merge commit only when it refuses.** Three of
+  the seven trunk merges of that night were made over a trunk that had not
+  moved. A fast-forward rewrites no hash, so *merge, not rebase* is untouched.
+- **The trunk is merged into the lane once, before the batch's gate**, and
+  `seed/heroes.c` is never resolved by hand: take one side, build, regenerate,
+  verify the fixpoint by `cmp`. The seed is regenerated at the batch's close
+  and travels in the closing commit; a repair commit does not carry it.
+- **A repair commit's body is about fifteen lines**: the class, the cases, the
+  gate line. The story is written once, in the `docs/records/done/` entry at
+  the batch's close. Measured on that night: repair bodies of 101, 114 and 48
+  lines, and `docs/work/DEFECTS.md` at 2,936 words for five items.
+- **A lane is taken over only once its agent is known to have stopped**
+  (journal 061: a lane resumed an hour before was still working when the
+  coordinator committed, and the trunk's seed was not its source's fixpoint).
+
+**And one thing measured NOT to help, 2026-09-29**: copying the trunk's
+`build/` cache into a fresh lane (`cp -c -R`, 0.27 s for 316 entries) bought
+nothing, `heroes build selfhost/main.hero` reading 41.6 s of CPU cold and 43.2 s
+after the copy. A fresh lane pays one cold build of under a minute; the cache
+is the lane's own from then on.
+
 Five things a lane needs that this tree has and a fresh worktree does not:
 
 - **its own compiler.** `clang -I runtime seed/heroes.c runtime/runtime.c -o

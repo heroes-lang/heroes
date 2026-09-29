@@ -265,3 +265,170 @@ push.** The value of the map above is that "the named suites" stops being a
 judgement call. Read the map, run those, and keep the thirteen-minute net for
 the push — where its cost buys something, because it is the last thing between
 the work and a public branch.
+
+**Superseded on 2026-09-29 in its first half**: a repair or a step is gated by
+the golden form that holds its cases and by the compiler's own tests, and
+the full net runs once per BATCH of at most five, which is what a push carries
+(§ The batch, above; CL-079). The map keeps its other job: it says which form a
+change's cases live in, and which suites the batch's census and platforms owe.
+
+## The batch: repairs gated by their cases, one gate for five
+
+Author instruction 2026-09-29, in these words (meant as): *it is unsustainable
+to go at the speed we are going; a repair gets its own test, on one platform,
+and is queued; the next repair the same; only at the end of a batch of four or
+five are they all tested together, on one platform first and on the others
+after; there must be one point, and only one, where everything is tested in the
+net; two or three repairs tested together can contaminate each other, and that
+is a risk we take.* What it cost to learn is CL-079, and this section is the
+rule's only home. CL-063 already said the named suites gate a sub-step and the
+full net runs once before a push; the practice had eaten the rule. Counted on
+the commit bodies of the night of 2026-09-28 to 29, nine and a half hours: 31
+commits, 11 merges each with a coordinator's gate, 10 repair commits, 8 gates of
+10 to 21 suites **every one reporting 0 failed**, 0 defects closed.
+
+**Per repair or step**, in the lane that holds its batch, in sequence:
+
+- the golden case per shape, `fixedbugs-NNN-<slug>` under `tests/golden/check/` or
+  `tests/golden/run/`, annotated in its source;
+- **the golden form that holds those cases**, whole where the cost column below
+  says it costs under a minute (`check`), filtered to the defect's cases where
+  it does not (`run`, `fixes`): `heroes run tests/harness/main.hero --
+  <compiler> <form> [<case-substring>]`. The third argument is the harness's
+  own, and zero matches exit 2 (a run that selected nothing is a green run that
+  tested nothing, this file's first warning). The whole form costs what the
+  filtered one does, and it sees at once a contamination of the batch's earlier
+  repairs, whose cases live in the same form. CL-074 binds the invocation: the
+  gate's own command, never a `diff` by hand;
+- the compiler's own tests, `heroes test selfhost/main.hero`: 880 tests, 69 s of
+  CPU warm on 2026-09-29 beside another net, 35 s on a still machine (CL-025).
+  Not `heroes test <module>`: a nested module resolves its `use` lines from its
+  own directory and cannot be tested or checked alone, measured 2026-09-29 on
+  `selfhost/measure/pinned.hero`, and 251 of the compiler's 308 modules are
+  nested;
+- **no seed, no fixpoint, no whole suite, no census, no platform.** The seed is
+  regenerated once, at the batch's close, and travels in the closing commit:
+  measured over 2026-09-15 to 29, 93 commits touched `seed/heroes.c`, 22.9
+  million lines of churn, about 21 whole-file rewrites, and **21 of 58 merges
+  carried a seed conflict**, every one settled by rebuilding. A repair commit's
+  body says *seed not regenerated, awaiting the batch gate*, in about fifteen
+  lines: the class, the cases, the gate line. Its `docs/work/DEFECTS.md` item
+  stays `- [ ]` and gains one dated body line, *Repaired at `<hash>`, gated by
+  its cases and the compiler's own tests; the net is owed at the batch's
+  close*, so that no sentence says closed before the net has said it.
+
+**Before the first repair of a cluster, attack the shapes beside all of its
+defects in one pass** (CL-061, CL-078): on the night counted above the shapes
+were sought after each repair and reopened a round each time, six filings and
+widenings for ten repairs. A widening found beside a defect becomes the next
+item of the same lane, never a filing on the trunk.
+
+**Per batch**, which closes at the first of: five repairs queued, the cluster's
+last open defect repaired, before any push, or when the author asks. A batch
+never spans a tag. The gate is what a push already owed, on the tree that will
+BE the trunk (merge the trunk into the lane once, gate the merged tree, then
+fast-forward the trunk: same tree, no second gate):
+
+1. the seed regenerated, the compiler built from it, the fixpoint by `cmp`;
+2. the compiler's own tests, the net's own tests, **the full net**, its counts
+   in the closing commit's body; the suites may run six at a time in separate
+   processes (§ What may run beside a gate, below), and nothing is timed while
+   they do;
+3. the census of `check` over the tracked `.hero` files, trunk against batch,
+   where the batch changed what the compiler refuses (the rule *a new checker
+   rule is judged by every golden tree*, done with one instrument), run with
+   `xargs -P 8`;
+4. the formatter's probe by hand if `selfhost/print/` moved, the site's build if
+   a file `claims.ts` reads moved (both above);
+5. then the Linux x86-64 container (`.claude/rules/platforms.md`).
+
+**Red**: the batch's commits are linear in its lane, one per defect. `git bisect`
+between the batch's base and head, at each step the compiler rebuilt from
+`selfhost/` with the base's compiler (`heroes build selfhost/main.hero`, about
+30 s warm) and the one red suite; five repairs are three steps. The culprit
+alone is redone, with the other repairs' cases in view; where the culprit is
+the interaction of two repairs, the later one is redone and the record says so.
+**Green**: the items are ticked and moved to `docs/records/done/`, one file
+each, the banner moves, the closing commit carries the counts.
+
+**CL-054 is discharged at the batch, not per repair**: *run the suite you did
+not expect to move* is what the full net is, and a repair defers it knowingly,
+in writing. **CL-063's half about the sub-step is superseded by this section**;
+its half about the full net before a push stands, and the push is a batch
+closed.
+
+## A suite is the last judge, never the first finder
+
+Author instruction 2026-09-29: *prevent the trivial mistakes before any suite
+runs; a file over the ceiling, a file that does not parse: check the touched
+files and only those, so that the suite never finds what something simpler
+could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
+`heroes fmt` on a module **0.02 s**, `heroes check selfhost/open_line.hero`
+**0.18 s**, `heroes check selfhost/grammar_expr.hero`, the largest module,
+**0.48 s**. Five layers, each with an executor, cheapest first:
+
+- **Layer 0, at the moment of writing** (`.claude/hooks/fmt_check.py`, on the
+  touched file only): a `.hero` that does not parse puts the compiler's message
+  in front (exit 2) instead of waiting for a build; a `tests/harness/` module
+  goes through `heroes check <file>`, and a `selfhost/` module through
+  `heroes check selfhost/main.hero`, the whole compiler's names and types in
+  **5.8 s** (measured 2026-09-29), because a nested module cannot be checked
+  alone and a root module checked alone does not see its callers; a `selfhost/` module's
+  line ceiling is judged in two stages, the file's non-blank lines first (a
+  count that is always at least the instrument's, so under 300 it is silent)
+  and the harness's own `layout` filtered to the file when that count passes
+  300 or the file is in `DECIDED`; a `tests/golden/` case's `#~` annotations
+  are held to its `.expected`. The hook notices and never rewrites (CL-025).
+- **Layer 1, before a commit** (`.claude/hooks/guard_bash.py`): a harness run
+  whose named compiler is older than `seed/heroes.c` or the newest file under
+  `selfhost/` or `runtime/` is refused (2026-09-18 cost 31 minutes and two nets
+  to this, above); a `git commit` on the same command line as a gate is refused
+  (two commits went past a red `records` in one week, `f22c8baf`, `efaf5564`,
+  because the chain read the pipe's last exit); a gate piped into `head` or
+  `tail` is refused (seven `emit` goldens stayed red for two steps behind an
+  output cut at forty lines).
+- **Layer 2, per repair**: the form that holds its cases and the compiler's own
+  tests.
+- **Layer 3, per batch**: the seed, the fixpoint, the full net, the census.
+- **Layer 4, before a push**: Linux arm64, Windows, the probe, the site's build.
+
+What the record says the suites found, 2026-09-04 to 29, every case: a file
+written and not formatted (twice), a blank line in the harness, a `DECIDED`
+table at 17 against an assert at 16, an item moved and a sitting no longer
+cited, a stale binary, seven `emit` goldens behind a cut output, `warnings` 204
+and 1 written as 204 and 0, two commits past a red `records`. Every one is a
+layer 0 or layer 1 catch. Of the **59 defects** closed between 2026-09-15 and
+29, **a suite found two** (074 by CI's Windows leg, 115 by `run` on the Windows
+box) and 57 were found by a person, a seat or a probe.
+
+## The map's cost column
+
+The rule above says *under a minute* and *filtered otherwise*, so the cost of a
+suite is a measurement and not a memory. The command, machine still (CL-025),
+compiler warm, and its answer beneath with the date:
+
+```sh
+for s in $(grep -oE 'only == "[a-z_]+"' tests/harness/main.hero | grep -oE '[a-z_]+"' | tr -d '"'; echo check ir emit unsupported); do
+  printf "%-14s" "$s"; /usr/bin/time -p ./heroes run tests/harness/main.hero -- ./heroes "$s" 2>&1 >/dev/null | grep -E '^(real|user)' | tr '\n' ' '; echo
+done
+```
+
+**2026-09-29: the column is owed, unrun, at the first quiet hour**; two other
+sessions' gates and builds ran on this machine all day, and a number taken
+beside them is discarded by the ratio. What stands: the whole net read
+`real 948.31` on 2026-09-18
+(`docs/records/log/2026-09-18-2327-the-number-had-a-platform-in-it.md`), `run` 65 s
+on 2026-09-28 (journal 061), and three rule files gave it three durations, 13,
+15 and 20 minutes, which is CL-064 on the number that decides how a session is
+planned. This section is that number's one home from today.
+
+## A long run holds the machine awake
+
+Measured 2026-09-29 with `pmset -g custom`: this Mac sleeps after **one minute**
+idle, on battery and on power alike, and a third-party assertion (Amphetamine)
+is what has kept it awake. Journal 061 records the Mac asleep from 10:27 to
+13:57 under panel 177 and every lane stalled under a closed lid, and two
+wakeups that did not fire. So a gate, a sitting or a loop that expects to run
+longer than a minute holds its own assertion: `caffeinate -i <command>`, or
+`caffeinate -i -w <pid>` beside a run already started. It costs nothing and
+depends on no application.

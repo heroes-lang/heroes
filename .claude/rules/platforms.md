@@ -15,7 +15,22 @@ rule cost to learn is in `docs/records/contract/case-law.md`, cited as `CL-NNN`.
 ## A platform fact is run on a platform, or it is an inference
 
 **The three platforms are measured from this Mac, before the commit**, and CI
-stays the judge (CL-048). macOS is this machine. Windows is a real box,
+stays the judge (CL-048).
+
+**Two moments since 2026-09-29, by author instruction** (*Windows and arm Linux
+before the push*; CL-079): **Linux x86-64 runs when a batch closes**, from this
+Mac, in the container below, since it is CI's own architecture and the leg
+where LeakSanitizer lives (CL-055); **Linux arm64 and Windows run once, before
+the push**, with CI as the judge after it. Until that day this paragraph said
+*before the commit*, and the practice had already moved: 31 commits that no
+platform but this Mac had seen stood on the trunk on 2026-09-28
+(`docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md`).
+What the record shows the other platforms finding, every case, is a fact at the
+C boundary: a mechanism with no Windows arm, a missing include under the Linux
+sanitiser, 40 leaked bytes, a sharing violation on the Windows runner. So the
+one exception keeps that shape: **a defect found on a platform, or a repair
+under `runtime/`, `seed/` or an `examples/` program with an `extern`, runs its
+own cases on that platform when it is repaired**, not at the push. macOS is this machine. Windows is a real box,
 `docs/ref/environment/windows/WINDOWS-MACHINE.md`. Linux is a container of the CI
 leg's own architecture, `docs/ref/environment/linux/LINUX-MACHINE.md`, built from
 the `Dockerfile` beside it.
