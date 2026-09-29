@@ -113,6 +113,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     same evening, so the paths above resolve again; the copies in the
     scratchpad are what the lanes read.
 
+    **Widened 2026-09-29 by lane 130's agent, reported beside its repair and
+    assigned here by the coordinator**: a statement that failed drops the
+    over-indented block hanging below it silently, the mistakes inside it
+    too, where after a statement that did not fail the same block is
+    `unexpected_block` (`o01_failed_then_orphan.hero` against
+    `o02`, in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/shapes/`, 2026-09-29).
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
@@ -129,6 +137,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** design.md §4.17: one mistake, one message. The
     second names a body that is there, one level down, as missing, so a
     model that reads it as a second mistake repairs a block that was right.
+
+    **Widened 2026-09-29 by lane 130's agent, reported beside its repair and
+    assigned here by the coordinator**: a `for` with nothing after it costs
+    `for_missing_in` and `expected_expression` at the same column
+    (`o03_bare_for.hero`), and a body indented with a tab costs
+    `tab_in_indentation` and then `missing_body` on the same line, for a
+    body that is there (`l06_tab_body.hero`), both in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/shapes/`, 2026-09-29.
 
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
@@ -148,6 +164,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     parser handed the line the author broke. Here the line it is handed holds
     the next arm's `=>`, which no join can make part of an arm's body, so the
     parser's refusal is the break's debris and not a second mistake.
+
+    **Widened 2026-09-29 by lane 130's agent, assigned here by the
+    coordinator**: an arm with nothing after its `=>`, over the next arm at
+    the same margin, is joined by the lexer and the parser then refuses the
+    joined `=>`, two messages for one mistake (`o05_empty_arm.hero` and
+    `s12`, in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/shapes/`, 2026-09-29).
 
 - [ ] **133 — after a declaration head the lexer refuses as a foreign word with a certain swap, the declaration's own mistakes are reported only once the swap is applied** | `const MAX = 5` costs `reserved_word` alone, and `check --apply` writes `constant MAX = 5`, which then costs `expected_constant_type`; `const MAX: i64 = 5` then costs `missing_body`, `fn main() {` then `missing_body`, `struct Point {` then `empty_record`: two turns for one habit | `selfhost/scan.hero` (the foreign word emitted as an `error` token) · `selfhost/keywords.hero` (`foreign_word`) · `selfhost/parse/decl.hero` · `cursor.recover_to_next_decl`
 

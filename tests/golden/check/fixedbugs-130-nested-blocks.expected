@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-130-nested-blocks.hero:12:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-nested-blocks.hero:13:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-nested-blocks.hero:14:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-nested-blocks.hero:20:23: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-nested-blocks.hero:21:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-nested-blocks.hero:22:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-nested-blocks.hero:23:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
