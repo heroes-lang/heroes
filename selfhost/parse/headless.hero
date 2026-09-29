@@ -1,0 +1,169 @@
+# The block under a top-level line that no declaration opens (design.md
+# §4.17; defect 130's class, given to defect 133's lane on 2026-09-29).
+#
+# `recrod Point` over its fields, `fucntion f()` over its body and `varaint
+# T` over its cases each cost `expected_declaration`, which is the one report
+# of the head, and until that day the recovery dropped the indented block
+# with it, every mistake inside it too. Those mistakes are owed in the same
+# run: the author fixes the word and meets them next, which is the second
+# turn §4.17 exists to save. The head's word has no certain swap (a word
+# that has one is read as its swap, `parse/swap_reading.hero`), so nothing
+# says what the block IS but the block itself. It is read by the shape its
+# lines have, before any of them is parsed:
+#
+# - a FIELD is `name: type`, and a block with one such line is a record's
+#   fields, read by `parse_members.field_block`;
+# - a CASE is a name alone on its line, and a block whose first line is one
+#   is a variant's cases, read by `parse_members.case_block`;
+# - anything else is a statement, and the block is a body, read by
+#   `grammar_expr.hanging` as the body under any head that failed.
+#
+# **A field line wins over a first line that looks like a case**, because a
+# record's first field can be the broken one (`y i64` over `x: i64`), and a
+# broken field reads as a statement too. And **`x: i64 @ 0` is a
+# statement**, a mutable binding: a field has no `@` and no `=`.
+#
+# What each reader reports is what it reports under the head it belongs to,
+# so no message here is new: the block is read, never named. The trees it
+# builds belong to no declaration and are left in the arena, as a failed
+# statement's are.
+#
+# A leaf: the three readers are the parser's own, and nothing here is read
+# back by them.
+
+use token
+use ast
+use cursor
+use parse/members as parse_members
+use grammar_expr
+use parse/opening
+
+## Reading
+
+variant Shape
+    fields
+    cases
+    statements
+
+# Read the indented block the cursor stands on, by the shape its lines have.
+function read(@c: cursor.Cursor, @a: ast.Ast, text: str)
+    shape = shape_below(c)
+
+    if shape == .fields
+        _ = parse_members.field_block(@c, @a, text)
+    else if shape == .cases
+        _ = parse_members.case_block(@c, @a, text)
+    else
+        if grammar_expr.block(@c, @a, text: text, owner: "a body", head: opening.mark(c)).is_err()
+            return
+
+## The shape, read from the tokens
+
+# The shape of the block whose `indent` the cursor stands on: its own lines
+# only, since a deeper block belongs to the line above it.
+function shape_below(c: cursor.Cursor) -> Shape
+    starts = line_starts(c)
+
+    for start in starts
+        if field_shaped(c.tokens, start)
+            return .fields
+
+    if starts.len() > 0 && case_shaped(c.tokens, starts[0])
+        return .cases
+    return .statements
+
+# Where each line of the block begins, at the block's own depth.
+function line_starts(c: cursor.Cursor) -> [i64]
+    starts: [i64] @ []
+    depth: i64 @ 0
+    fresh: bool @ true
+    i: i64 @ c.pos + 1
+
+    while i < c.tokens.len()
+        kind = c.tokens[i].kind
+
+        if kind == .eof
+            return starts
+
+        if kind == .indent
+            depth @ depth + 1
+        else if kind == .dedent
+            if depth == 0
+                return starts
+            depth @ depth - 1
+            fresh @ depth == 0
+        else if kind == .terminator
+            fresh @ fresh || depth == 0
+        else if kind != .comment
+            if fresh && depth == 0
+                starts @ starts.push(i)
+            fresh @ false
+        i @ i + 1
+
+    return starts
+
+# `name: type`, and nothing a binding writes: no `@` and no `=`.
+function field_shaped(tokens: [token.Token], start: i64) -> bool
+    if tokens[start].kind != .ident || next_kind(tokens, start) != .colon
+        return false
+    i: i64 @ start
+
+    while i < tokens.len() && !ends_a_line(tokens[i].kind)
+        if tokens[i].kind == .at || tokens[i].kind == .eq
+            return false
+        i @ i + 1
+
+    return true
+
+# A name alone on its line: what follows it ends the line.
+function case_shaped(tokens: [token.Token], start: i64) -> bool
+    return tokens[start].kind == .ident && ends_a_line(next_kind(tokens, start))
+
+# The kind of the first token after `at` that is not a comment.
+function next_kind(tokens: [token.Token], at: i64) -> token.TokenKind
+    i: i64 @ at + 1
+
+    while i < tokens.len() && tokens[i].kind == .comment
+        i @ i + 1
+
+    if i >= tokens.len()
+        return .eof
+    return tokens[i].kind
+
+function ends_a_line(kind: token.TokenKind) -> bool
+    return kind == .terminator || kind == .indent || kind == .dedent || kind == .eof
+
+## Tests
+
+function tok(kind: token.TokenKind, start: i64) -> token.Token
+    return token.Token(kind: kind, span: token.Span(start: start, end: start + 1))
+
+function shape_of(kinds: [token.TokenKind]) -> Shape
+    tokens: [token.Token] @ []
+    i: i64 @ 0
+
+    for kind in kinds
+        tokens @ tokens.push(tok(kind, i))
+        i @ i + 1
+
+    return shape_below(cursor.new_cursor(tokens))
+
+test "a block is read as fields, cases or a body by the shape of its lines"
+    # x: i64 / y i64 (the broken field second)
+    assert shape_of([.indent, .ident, .colon, .ident, .terminator, .ident, .ident, .terminator, .dedent, .eof]) == .fields
+
+    # y i64 / x: i64 (the broken field first): a field line anywhere wins
+    assert shape_of([.indent, .ident, .ident, .terminator, .ident, .colon, .ident, .terminator, .dedent, .eof]) == .fields
+
+    # a / b: two cases
+    assert shape_of([.indent, .ident, .terminator, .ident, .terminator, .dedent, .eof]) == .cases
+
+    # circle over its own field, then square: the deeper line is the case's,
+    # so the block's own lines are two cases
+    assert shape_of([.indent, .ident, .terminator, .indent, .ident, .colon, .ident, .terminator, .dedent, .ident, .terminator, .dedent, .eof]) == .cases
+
+    # x = 3 / print(x): a body
+    assert shape_of([.indent, .ident, .eq, .int_lit, .terminator, .ident, .lparen, .ident, .rparen, .terminator, .dedent, .eof]) == .statements
+
+    # v: i64 @ 0 is a binding, not a field
+    assert shape_of([.indent, .ident, .colon, .ident, .at, .int_lit, .terminator, .dedent, .eof]) == .statements

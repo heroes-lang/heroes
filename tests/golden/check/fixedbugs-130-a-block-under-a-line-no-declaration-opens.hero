@@ -1,0 +1,46 @@
+# Fixed 2026-09-29, defect 130's class, given to defect 133's lane. Symptom:
+# a top-level line opened by a word that is not the language's, `recrod
+# Point` over its fields, `fucntion f()` over its body, `varaint Shape` over
+# its cases, cost `expected_declaration` and dropped its whole indented
+# block, every mistake inside it too: the author fixed the word and met them
+# in the next run. Cause: the dispatcher's recovery dropped the rest of the
+# line and then the block, as it drops a stray one. The block is now read
+# by the shape its lines have (`parse/headless.hero`): a `name: type` line
+# makes it fields, a name alone on the first line makes it cases, and
+# anything else is a body. `expected_declaration` stays the one report of
+# the head, whether the word is one edit from a keyword or none, a bare
+# name, or followed by junk; a word the lexer refuses with no certain swap
+# (`class`) is read the same way under its `reserved_word`.
+
+recrod Point  #~ expected_declaration
+    x: i64
+    y i64  #~ expected_field_type
+
+banana Pair  #~ expected_declaration
+    left i64  #~ expected_field_type
+    right: i64
+
+Size  #~ expected_declaration
+    w: i64
+    h i64  #~ expected_field_type
+
+recrod Junk )  #~ expected_declaration
+    x: i64
+    y i64  #~ expected_field_type
+
+fucntion show()  #~ expected_declaration
+    if 1 == 1
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+varaint Shape  #~ expected_declaration
+    circle
+        r f64  #~ expected_field_type
+    square
+
+class Holder  #~ reserved_word
+    v: i64
+    w i64  #~ expected_field_type
+
+function main()
+    print(1)
