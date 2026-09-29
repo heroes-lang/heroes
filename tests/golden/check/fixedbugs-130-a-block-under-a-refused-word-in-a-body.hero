@@ -1,0 +1,51 @@
+# Fixed 2026-09-29, defect 130's class, lane X1. Symptom: in a body, a line
+# whose first word the lexer refuses, `elif x == 2` with no `if` above it,
+# `fn inner()`, `struct Local`, `enum Shade`, `const B: i64`, `try` and
+# `catch`, cost the word's `reserved_word` and then `unexpected_block` for the
+# block below it, a second message for a block that is the line's body; and
+# the block went whole, so every mistake inside it waited for the word to be
+# fixed. Cause: the statement stopped on the refused word and dropped its
+# line, and the block loop named what hung below it as it names a block under
+# a line that ended well. The block is now that line's body, read by the
+# shape of its lines (`parse/headless.hero`), as the block under a top-level
+# line no declaration opens is: a `name: type` line makes it fields, a name
+# alone on its first line makes it cases, a line opened by a declaration's
+# keyword makes it a group's members, which go whole, and anything else makes
+# it a body of statements. Its own mistakes are told, and it is never named.
+
+function stray()
+    x = 1
+    elif x == 2  #~ reserved_word
+        y = 3 )  #~ expected_end_of_line
+
+function nested()
+    fn inner()  #~ reserved_word
+        y = 3 )  #~ expected_end_of_line
+        fn deeper()  #~ reserved_word
+            z = 4 )  #~ expected_end_of_line
+    print(2)
+
+function local_record()
+    struct Local  #~ reserved_word
+        x: i64
+        y i64  #~ expected_field_type
+    print(3)
+
+function local_variant()
+    enum Shade  #~ reserved_word
+        light
+        dark
+    print(4)
+
+function constant_in_a_body()
+    const B: i64  #~ reserved_word
+        y = 3 )  #~ expected_end_of_line
+
+function exceptions()
+    try  #~ reserved_word
+        y = 3 )  #~ expected_end_of_line
+    catch e  #~ reserved_word
+        z = 4 )  #~ expected_end_of_line
+
+function main()
+    print(0)

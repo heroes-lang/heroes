@@ -1,0 +1,139 @@
+# The lines of the text a head stands on (design.md §4.17; defects 130 and
+# 131, 2026-09-28).
+#
+# `parse/opening.hero` decides what a head owes its body from what the head
+# said and what stands below it. Three of the facts it decides on are about
+# the TEXT and not about the parse, and they are here:
+#
+# - whether the head, or its recovery, **crossed a line**: inside brackets a
+#   line break carries no line end token, so only the text can say it;
+# - where the lexer **joined** two of its lines (`continuation_outside_brackets`):
+#   two adjacent tokens on two lines with no line end between them;
+# - what a line's **margin** holds: how wide it is, and whether a tab is in
+#   it, which the lexer refuses and opens no block for.
+#
+# A leaf: it reads the tokens and the text, and nothing that reads the
+# parser. Moved out of `parse/opening.hero` on 2026-09-29, when that module
+# reached its 300 lines and the brace habit's reading had to go in.
+
+use token
+use cursor
+use text_lines
+
+## Crossing and joining
+
+# Whether the head begun at token `from`, from its first token to its last
+# one read, spans more than one line of the text: it, or its recovery, went
+# on past its line. `function f(` over `y = 3 )` is one list the body's `)`
+# closes.
+function crossed_a_line(c: cursor.Cursor, text: str, from: i64) -> bool
+    last = cursor.previous_significant_span(c)
+    return text_lines.newlines_between(text, from: c.tokens[from].span.start, to: last.end) > 0
+
+# Where the lexer joined two lines inside the head begun at token `from`: two
+# adjacent tokens on two lines with no line end between them. The span runs
+# from the last token before the break that is not a comment to the first one
+# after it, which is where the lexer's refusal of the join stands.
+function joined_at(c: cursor.Cursor, text: str, from: i64) -> token.Span?
+    i: i64 @ from
+
+    while i < c.pos
+        here = c.tokens[i]
+        next = c.tokens[i + 1]
+
+        if !is_line_end(here.kind) && !is_line_end(next.kind) && next.kind != .eof
+            if text_lines.newlines_between(text, from: here.span.end, to: next.span.start) > 0
+                return ok(token.Span(start: before_the_break(c, from: from, at: i), end: next.span.end))
+        i @ i + 1
+
+    return fail(code: "unjoined", msg: "every line of the head ends with a line end")
+
+function before_the_break(c: cursor.Cursor, from: i64, at: i64) -> i64
+    i: i64 @ at
+
+    while i > from && c.tokens[i].kind == .comment
+        i @ i - 1
+
+    return c.tokens[i].span.start
+
+function is_line_end(kind: token.TokenKind) -> bool
+    return kind == .terminator || kind == .indent || kind == .dedent
+
+## Margins
+
+# Whether `at` begins its line of the text and that line's margin holds a tab.
+function margin_has_tab(text: str, at: i64) -> bool
+    width = margin_width(text, at: at)
+
+    if width < 0
+        return false
+    i: i64 @ at - width
+
+    while i < at
+        if text[i] == '\t'
+            return true
+        i @ i + 1
+
+    return false
+
+# How many bytes of blank margin stand before `at` on its line, or -1 where
+# something else does and `at` does not begin its line.
+function margin_width(text: str, at: i64) -> i64
+    i: i64 @ at - 1
+
+    while i >= 0 && text[i] != '\n'
+        if text[i] != ' ' && text[i] != '\t'
+            return -1
+        i @ i - 1
+
+    return at - 1 - i
+
+## Tests
+
+function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
+    return token.Token(kind: kind, span: token.Span(start: start, end: end))
+
+test "a margin is measured to the line's start, and a tab in it is seen"
+    text = "a\n    b\n\tc\n  x y\n"
+    assert margin_width(text, at: 0) == 0
+    assert margin_width(text, at: 6) == 4
+    assert !margin_has_tab(text, at: 6)
+    assert margin_width(text, at: 9) == 1
+    assert margin_has_tab(text, at: 9)
+
+    # `y` does not begin its line.
+    assert margin_width(text, at: 15) == -1
+    assert !margin_has_tab(text, at: 15)
+
+test "a join is two tokens on two lines with no line end between them"
+    # if n >  /  print(1): the lexer planted no line end at the break.
+    text = "if n >\n    print(1)\n"
+    tokens = [
+        tok(.kw_if, start: 0, end: 2)
+        tok(.ident, start: 3, end: 4)
+        tok(.gt, start: 5, end: 6)
+        tok(.ident, start: 11, end: 16)
+        tok(.terminator, start: 19, end: 19)
+        tok(.eof, start: 20, end: 20)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    c.pos @ 4
+    seam = joined_at(c, text, from: 0)
+    assert !seam.is_err()
+    assert seam.must() == token.Span(start: 5, end: 16)
+    assert crossed_a_line(c, text, from: 0)
+
+    # The same head on one line crossed none and was joined nowhere.
+    one = "if n > m\n"
+    flat = [
+        tok(.kw_if, start: 0, end: 2)
+        tok(.ident, start: 3, end: 4)
+        tok(.gt, start: 5, end: 6)
+        tok(.ident, start: 7, end: 8)
+        tok(.terminator, start: 8, end: 8)
+        tok(.eof, start: 9, end: 9)
+    ]
+    d: cursor.Cursor @ cursor.new_cursor(flat)
+    d.pos @ 4
+    assert joined_at(d, one, from: 0).is_err()
+    assert !crossed_a_line(d, one, from: 0)

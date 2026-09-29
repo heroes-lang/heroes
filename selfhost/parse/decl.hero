@@ -45,6 +45,7 @@ use parse/group
 use parse/swap_reading
 use parse/headless
 use parse/braces
+use parse/brace_habit
 use grammar_expr
 use parse/opening
 
@@ -104,20 +105,28 @@ function unexpected_top_level(@c: cursor.Cursor, @a: ast.Ast, text: str)
     # of the head. `parse/headless.hero` reads it by the shape of its lines.
     # Only where the refused word OPENS its line: in the middle of one, past a
     # head that failed and left it (`extern "m.h" )`), the block is that
-    # head's, and it goes whole with it, as it always did.
+    # head's, and it goes whole with it, as it always did. **And braces that
+    # end the line are its block as an indent is** (`parse/brace_habit`):
+    # `class Point {` over its fields, where the drop stops.
     if cursor.at(c, .indent)
         _ = cursor.balanced_block(@c)
+        return
+
+    if braces.opens(c, text)
+        braces.skip(@c)
         return
     opens = cursor.at_fresh_line(c)
     from = c.pos
     _ = cursor.bump(@c)
-    cursor.drop_rest_of_line(@c, from: from)
+    brace_habit.drop_rest_of_line(@c, text, from: from)
     cursor.skip_terminators(@c)
 
-    if opens
-        headless.read(@c, @a, text)
-    else if cursor.at(c, .indent)
+    if opens && !headless.members(@c, @a, text)
+        grammar_expr.hanging(@c, @a, text)
+    else if !opens && cursor.at(c, .indent)
         _ = cursor.balanced_block(@c)
+    else if !opens && braces.opens(c, text)
+        braces.skip(@c)
 
 ## The shared head
 

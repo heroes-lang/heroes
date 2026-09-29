@@ -1,0 +1,58 @@
+# Fixed 2026-09-29, defect 131's class, lane X1. Symptom: inside a body in
+# braces, `if x == 1 {` lost the first line of its own braces, and every
+# mistake on it; `} else {` cost `expected_expression` at its `}` or at its
+# `else`, and so did `else {` on the line after a `}`; a head whose line went
+# on, `if x == 1 ) {`, or failed, `if x == ) {`, lost that first line too, and
+# a `for` or a `while` the same. Cause: the lexer puts no line end after a `{` that ends
+# its line, and a head that finds no indented body drops the rest of its line
+# to the next line end, which is past the braces' first line; and braces were
+# read as a body only under a declaration's head, so a nested one's `}` stood
+# where a statement goes, and the `else` after it. The habit is now read under
+# every head that owes a body (`parse/brace_habit.hero`,
+# `parse/opening.body_follows`): the `{` is named as the missing body it
+# stands for, once per `{`, and what stands before it on the head's line is
+# dropped, or named as the head's junk, as over an indented body; the
+# statements inside are read to the `}` that closes it, their own mistakes
+# too, and the `}` goes silently with its line end, so that an `else` below
+# it is still the `if`'s. A `match`'s arms are not read in braces.
+
+function branches() {  #~ missing_body
+    x = 1
+    if x == 1 {  #~ missing_body
+        y = 3 4  #~ expected_end_of_line
+    } else if x == 2 {  #~ missing_body
+        z = 4 5  #~ expected_end_of_line
+    }
+    else {  #~ missing_body
+        w = 5 6  #~ expected_end_of_line
+    }
+}
+
+function loops() {  #~ missing_body
+    n: i64 @ 0
+    while n < 3 {  #~ missing_body
+        n @ n + 1
+        y = 3 4  #~ expected_end_of_line
+    }
+    for i in [1, 2] {  #~ missing_body
+        z = 4 5  #~ expected_end_of_line
+    }
+}
+
+function heads_that_went_on() {  #~ missing_body
+    x = 1
+    if x == 1 ) {  #~ expected_end_of_line missing_body
+        y = 3 4  #~ expected_end_of_line
+    }
+    if x == ) {  #~ expected_expression missing_body
+        z = 4 5  #~ expected_end_of_line
+    }
+}
+
+function main()
+    x = if 1 == 1 {  #~ missing_body
+        5
+    } else {  #~ missing_body
+        6
+    }
+    print(x)

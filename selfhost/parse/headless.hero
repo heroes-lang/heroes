@@ -1,15 +1,20 @@
-# The block under a top-level line that no declaration opens (design.md
-# §4.17; defect 130's class, given to defect 133's lane on 2026-09-29).
+# The block under a line whose head nothing reads (design.md §4.17; defect
+# 130's class, given to defect 133's lane and then lane X1's on 2026-09-29).
 #
+# Two lines have such a head. At the top level, a line no declaration opens:
 # `recrod Point` over its fields, `fucntion f()` over its body and `varaint
-# T` over its cases each cost `expected_declaration`, which is the one report
-# of the head, and until that day the recovery dropped the indented block
-# with it, every mistake inside it too. Those mistakes are owed in the same
-# run: the author fixes the word and meets them next, which is the second
-# turn §4.17 exists to save. The head's word has no certain swap (a word
-# that has one is read as its swap, `parse/swap_reading.hero`), so nothing
-# says what the block IS but the block itself. It is read by the shape its
-# lines have, before any of them is parsed:
+# T` over its cases each cost `expected_declaration`, the one report of the
+# head. In a body, a line whose first word the lexer refused: `elif x == 2`
+# with no `if` above it, `fn inner()` or `struct P` inside a function, `const
+# B: i64` over its value, each the lexer's `reserved_word`. Until 2026-09-29
+# the block under the first was dropped with it, and the block under the
+# second was named `unexpected_block`, a second message for a block that is
+# the line's body; either way its own mistakes waited for the word to be
+# fixed, the second turn §4.17 exists to save. The head's word has no
+# certain swap there (one that has is read as its swap,
+# `parse/swap_reading.hero`), so nothing says what the block IS but the
+# block itself. It is read by the shape its lines have, before any of them
+# is parsed:
 #
 # - a FIELD is `name: type`, and a block with one such line is a record's
 #   fields, read by `parse_members.field_block`;
@@ -18,8 +23,8 @@
 # - a line opened by a declaration's keyword makes it an `extern` group's
 #   members, under a head the word misspelled; no reader holds members
 #   without their group's head, so the block goes whole, as it did before;
-# - anything else is a statement, and the block is a body, read by
-#   `grammar_expr.hanging` as the body under any head that failed.
+# - anything else is a statement, and the block is a body, which the caller
+#   reads with `grammar_expr.hanging`, as the body under any head that failed.
 #
 # **A field line wins over a first line that looks like a case**, because a
 # record's first field can be the broken one (`y i64` over `x: i64`), and a
@@ -31,14 +36,19 @@
 # builds belong to no declaration and are left in the arena, as a failed
 # statement's are.
 #
-# A leaf: the three readers are the parser's own, and nothing here is read
-# back by them.
+# A leaf below the knot: the statement reader is `grammar_expr`'s, which
+# reads this module, so a body is left to the caller (`members`). Its callers
+# are `parse/decl.unexpected_top_level` and `grammar_expr.finish`, and
+# `grammar_expr.hanging`, which asks `arms_below` whether a block is arms.
 
 use token
 use ast
 use cursor
+use word_place
+use text_lines
+use lexer
 use parse/members as parse_members
-use grammar_expr
+use parse/brace_habit
 
 ## Reading
 
@@ -48,24 +58,103 @@ variant Shape
     members
     statements
 
-# Read the block the cursor stands on, if one is there, by the shape its
-# lines have. A body whose margin holds a tab has no `indent` to read shapes
-# under, and `grammar_expr.hanging` reads it as the body it is, as it does
-# under any head that failed (lane 130's third round).
-function read(@c: cursor.Cursor, @a: ast.Ast, text: str)
-    if !cursor.at(c, .indent)
-        grammar_expr.hanging(@c, @a, text)
-        return
-    shape = shape_below(c)
+# Read the block the cursor stands on as members where its lines have their
+# shape, fields, cases or a group's members, and say whether it did. A block
+# of statements, and a body whose margin holds a tab, which has no `indent`
+# to read shapes under, are the caller's (lane 130's third round). A block in
+# braces, `class Point {` over its fields, is read the same way (`braced`).
+function members(@c: cursor.Cursor, @a: ast.Ast, text: str) -> bool
+    if brace_habit.opens_here(c, text)
+        return braced(@c, @a, text)
 
+    if !cursor.at(c, .indent)
+        return false
+    return read_shaped(@c, @a, text, shape: shape_below(c))
+
+# Read the block under the cursor's indent as the members its shape names;
+# whether it is members at all.
+function read_shaped(@c: cursor.Cursor, @a: ast.Ast, text: str, shape: Shape) -> bool
     if shape == .fields
         _ = parse_members.field_block(@c, @a, text)
     else if shape == .cases
         _ = parse_members.case_block(@c, @a, text)
     else if shape == .members
         _ = cursor.balanced_block(@c)
-    else
-        grammar_expr.hanging(@c, @a, text)
+    return shape != .statements
+
+## A block in braces
+
+# The block in braces the cursor's `{` opens, read as members where its lines
+# are: through `laid_out`, which the two readers read as they read a block,
+# their own mistakes reported where they stand, and the cursor then past the
+# `}` (`brace_habit.pass`). A block of statements is the caller's, and the
+# cursor is left on the `{`.
+function braced(@c: cursor.Cursor, @a: ast.Ast, text: str) -> bool
+    close = brace_habit.closer(c, open: c.pos)
+    lines: cursor.Cursor @ laid_out(c, text, close: close)
+
+    if !read_shaped(@lines, @a, text, shape: shape_below(lines))
+        return false
+
+    for d in lines.diagnostics
+        c.diagnostics @ c.diagnostics.push(d)
+
+    brace_habit.pass(@c, close: close)
+    return true
+
+# The braces the cursor's `{` opens, closed at `close`, laid out as the lexer
+# lays out an indented block: an `indent` for the `{`, a `dedent` for the
+# `}`, and a line end for each line break and each `,` between members. The
+# `,` is the habit's debris, one member per line being this language's
+# separator, and inside brackets the lexer puts no line end after a `,` or a
+# `{`, so the breaks are read in the text. Only at the braces' own depth: a
+# `,` inside a member's brackets, `m: {str: i64}`, is the member's.
+function laid_out(c: cursor.Cursor, text: str, close: i64) -> cursor.Cursor
+    open = c.pos
+    tokens: [token.Token] @ [token.Token(kind: .indent, span: c.tokens[open].span)]
+    depth: i64 @ 0
+    i: i64 @ open + 1
+
+    while i < close
+        t = c.tokens[i]
+
+        if depth == 0 && i > open + 1 && breaks_before(c.tokens, text, at: i)
+            tokens @ tokens.push(
+                token.Token(kind: .terminator, span: token.Span(start: t.span.start, end: t.span.start))
+            )
+
+        if depth == 0 && t.kind == .comma
+            tokens @ tokens.push(token.Token(kind: .terminator, span: t.span))
+        else
+            tokens @ tokens.push(t)
+
+        if t.kind == .lparen || t.kind == .lbracket || t.kind == .lbrace
+            depth @ depth + 1
+        else if t.kind == .rparen || t.kind == .rbracket || t.kind == .rbrace
+            depth @ depth - 1
+        i @ i + 1
+
+    end = c.tokens[close].span
+    tokens @ tokens.push(token.Token(kind: .dedent, span: end))
+    tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: end.end, end: end.end)))
+    return cursor.bounded_cursor(tokens: tokens, root_end: c.root_end)
+
+# Whether a line of the text breaks between token `at` and the one before it
+# with no line end between them.
+function breaks_before(tokens: [token.Token], text: str, at: i64) -> bool
+    before = tokens[at - 1]
+
+    if ends_a_line(before.kind) || ends_a_line(tokens[at].kind)
+        return false
+    return text_lines.newlines_between(text, from: before.span.end, to: tokens[at].span.start) > 0
+
+# Whether the statement begun at token `at` opens its line of the text with a
+# token the lexer refused: a word from another language, or a character that
+# is not this one's. Such a line has said what is wrong with it, and the
+# block under it is its body.
+function refused_head(c: cursor.Cursor, text: str, at: i64) -> bool
+    here = c.tokens[at].span.start
+    return c.tokens[at].kind == .error && word_place.only_margin(text, from: word_place.line_start(text, at: here), to: here)
 
 ## The shape, read from the tokens
 
@@ -86,6 +175,30 @@ function shape_below(c: cursor.Cursor) -> Shape
             return .members
 
     return .statements
+
+# Whether the line under the indent the cursor stands on holds a `=>` outside
+# brackets: the block is arms, and a block below a failed line is read as what
+# it is, so that `mach n` over its arms costs one diagnostic and not one per arm
+# (`grammar_expr.hanging`).
+function arms_below(c: cursor.Cursor) -> bool
+    i: i64 @ c.pos + 1
+    depth: i64 @ 0
+
+    while i < c.tokens.len()
+        k = c.tokens[i].kind
+
+        if depth == 0 && ends_a_line(k)
+            return false
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth - 1
+        else if k == .fat_arrow && depth == 0
+            return true
+        i @ i + 1
+
+    return false
 
 function opens_a_declaration(kind: token.TokenKind) -> bool
     return kind == .kw_function || kind == .kw_constant || kind == .kw_record || kind == .kw_variant
@@ -188,3 +301,37 @@ test "a block is read as fields, cases or a body by the shape of its lines"
 
     # function q() -> i64: a group's member, whose head is not here to read it
     assert shape_of([.indent, .kw_function, .ident, .lparen, .rparen, .arrow, .ident, .terminator, .dedent, .eof]) == .members
+
+function lexed(text: str) -> cursor.Cursor
+    return cursor.new_cursor(lexer.lex_one(text).tokens)
+
+test "a block in braces is read as the fields or cases its lines are, its commas the habit's debris"
+    # {  /  x: i64,  /  y i64,  /  }: the broken field is told, and the cursor
+    # is past the braces and their line end.
+    fields = "{\n    x: i64,\n    y i64,\n}\n"
+    c: cursor.Cursor @ lexed(fields)
+    a: ast.Ast @ ast.new_ast()
+    assert members(@c, @a, fields)
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "expected_field_type"
+    assert cursor.at(c, .eof)
+
+    # {  /  red, green,  /  blue  /  }: three cases, one of them on a line of
+    # its own, and nothing to tell.
+    cases = "{\n    red, green,\n    blue\n}\n"
+    d: cursor.Cursor @ lexed(cases)
+    assert members(@d, @a, cases)
+    assert d.diagnostics.len() == 0
+    assert cursor.at(d, .eof)
+
+    # {  /  x = 1  /  }: a body, left to the caller on its `{`.
+    body = "{\n    x = 1\n}\n"
+    e: cursor.Cursor @ lexed(body)
+    assert !members(@e, @a, body)
+    assert cursor.at(e, .lbrace)
+
+test "a line's head the lexer refused is told from one it read"
+    text = "elif x\nx = 1\n"
+    c: cursor.Cursor @ lexed(text)
+    assert refused_head(c, text, at: 0)
+    assert !refused_head(c, text, at: 3)
