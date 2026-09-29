@@ -5,7 +5,7 @@
 #
 # | entry | called by |
 # |---|---|
-# | `lines_of`, `line_at`, `inside_a_break`, `apart_line_start`, `cause_of`, `last_at_most` | `parse/apart` |
+# | `lines_of`, `line_at`, `inside_a_break`, `apart_line_start`, `opens_a_line_below`, `line_below_ends`, `cause_of`, `last_at_most` | `parse/apart` |
 
 use token
 use lexer
@@ -174,6 +174,20 @@ function apart_line_start(line: Line, at: i64) -> i64
     if i < 0
         return line.from
     return line.belows[i]
+
+# Whether `at` is where the line below one of the line's breaks begins.
+function opens_a_line_below(line: Line, at: i64) -> bool
+    i = last_at_most(line.belows, at: at)
+    return i >= 0 && line.belows[i] == at
+
+# Where the line below the break whose line below begins at `at` ends: at the
+# line below the next break, or at the joined line's end.
+function line_below_ends(line: Line, at: i64) -> i64
+    i = last_at_most(line.belows, at: at)
+
+    if i + 1 < line.belows.len()
+        return line.belows[i + 1]
+    return line.to
 
 # The refusal of the last break before `at` on the line, else of its first.
 function cause_of(line: Line, at: i64) -> token.Span
