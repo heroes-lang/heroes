@@ -1,0 +1,89 @@
+# Fixed defect 131's class, 2026-09-29, arms written at their `match`'s own
+# margin. Symptom: `match n` over `_ => print(1)` at the same margin cost
+# `missing_match_arms` at the arm and then `expected_end_of_line` at its
+# `=>`, one mistake and a message more for every arm, and a mistake inside
+# an arm went unreported. Cause: a `match` with no arms indented below it
+# ended there, and each arm below was read as a statement. The lines that
+# begin at its margin and hold a `=>` outside brackets, or are an arm broken
+# before its `=>`, are its arms, misplaced: `missing_match_arms` is their
+# one report and they are read as arms (`parse/margin_arms.hero`). Not taken
+# are the arms at the margin of a `match` that is an arm's own value, which
+# are the enclosing `match`'s, and the lines below a `match` inside a
+# bracket, which have no margin. One shape per function.
+
+function a_statement_match(n: i64)
+    match n
+    0 => print(1)  #~ missing_match_arms
+    _ => print(2)
+    print(3)
+
+function a_bound_match(n: i64) -> i64
+    k = match n
+    0 => 5  #~ missing_match_arms
+    _ => 20
+    return k
+
+function a_returned_match(n: i64) -> i64
+    return match n
+    0 => 5  #~ missing_match_arms
+    _ => 20
+
+function past_a_comment_line(n: i64)
+    match n
+    # the arms
+    _ => print(1)  #~ missing_match_arms
+
+function an_arm_with_its_own_mistake(n: i64)
+    match n
+    0 => print(1 +)  #~ missing_match_arms expected_expression
+    _ => print(2)
+
+function an_arm_with_a_block(n: i64)
+    match n
+    0 =>  #~ missing_match_arms
+        print(1)
+    _ => print(2)
+
+function an_orphan_below_an_arm(n: i64)
+    match n
+    0 => print(1)  #~ missing_match_arms
+        print(99)  #~ unexpected_block
+    _ => print(2)
+
+function an_arm_broken_before_its_arrow(n: i64) -> i64
+    k = match n
+    0  #~ missing_match_arms expected_arm_arrow
+    => 5
+    _ => 20
+    return k
+
+function a_head_that_failed(n: i64)
+    match )  #~ expected_expression
+    _ => print(1)  #~ missing_match_arms
+
+function a_statement_after_them(n: i64)
+    match n
+    _ => print(1)  #~ missing_match_arms
+    y = 3 )  #~ expected_end_of_line
+
+function in_an_arm_s_block(n: i64, m: i64)
+    match n
+        0 =>
+            match m
+            _ => print(5)  #~ missing_match_arms
+        _ => print(6)
+
+function the_enclosing_match_keeps_its_arms(n: i64, m: i64) -> i64
+    k = match n
+        0 => match m
+        _ => 5  #~ missing_match_arms
+    return k
+
+function inside_a_bracket_opened_above(t: i64) -> i64
+    y = f(
+        match t
+        _ => 1)  #~ missing_match_arms
+    return y
+
+function main()
+    a_statement_match(0)
