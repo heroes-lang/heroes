@@ -469,8 +469,13 @@ constant DECIDED: [str]
 # **257 on 2026-09-26**, re-based when `floors.check` said so: the fourth round
 # of defects 099 and 101 added `print/headline.hero` and `print/groups.hero`
 # to a tree of 255, and 257 is past 204 by more than a quarter.
+#
+# **322 on 2026-09-29**, re-based when `floors.check` said so at the batch
+# gate of lanes X3 and X4: tonight's lanes of defects 129 to 133 added
+# their modules, the batch's eleven among them, and 322 is past 257 by more
+# than a quarter.
 constant LEAST: i64
-    257
+    322
 
 # THE LEXER'S GROWING ARRAYS ARE APPENDED ONLY THROUGH ITS TWO HELPERS
 # (defect 103, 2026-09-26). `l.tokens @ l.tokens.push(t)` is a field place,
