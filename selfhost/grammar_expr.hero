@@ -75,6 +75,8 @@ use parse/swap_reading
 use parse/annotation
 use parse/margin_arms
 use parse/broken_arm
+use parse/headless
+use parse/brace_habit
 use operators
 
 ## The precedence table — §4.14, read from the bottom up
@@ -724,21 +726,22 @@ function eat_python_colon(@c: cursor.Cursor)
 # The indented body of a declaration, a loop, an `if` or a `match` arm, after
 # the head that began at `head`. A failure is `.is_err()` and the caller gives
 # up on that construct — where Rust returns `Option<Block>`. What a head that
-# failed still owes its body is `parse/opening`'s (defect 131).
+# failed owes its body, and one in braces, is `parse/opening`'s (defect 131).
 function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: opening.Mark) -> ast.Block?
     failed = opening.refused(c, head)
     eat_python_colon(@c)
     found = opening.body_follows(@c, text, head: head, failed: failed, missing: opening.missing_body(owner))
 
-    if found == .indented
-        return ok(indented_block(@c, @a, text))
+    return match found
+        .indented => ok(indented_block(@c, @a, text, close: -1))
+        .braced b => ok(indented_block(@c, @a, text, close: b.close))
+        .tabbed   => ok(tabbed_block(@c, @a, text))
+        .none     => fail(code: "missing_body", msg: owner)
 
-    if found == .tabbed
-        return ok(tabbed_block(@c, @a, text))
-    return fail(code: "missing_body", msg: owner)
-
-# The statements of the block whose indent is under the cursor.
-function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
+# The statements of the block whose opener is under the cursor: an indent, or
+# the `{` of a body in braces, read to the `}` at `close` (-1 for an indent),
+# whose line end goes with it as a dedent's does: an `else` below is the `if`'s.
+function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str, close: i64) -> ast.Block
     open = cursor.bump(@c).span
     stmts: [i64] @ []
     reading: bool @ true
@@ -750,19 +753,17 @@ function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
         if k == .dedent
             _ = cursor.bump(@c)
             reading @ false
-        else if k == .eof
+        else if c.pos == close
+            _ = cursor.bump(@c)
+            _ = cursor.eat(@c, .terminator)
             reading @ false
+        else if k == .eof || close >= 0 && c.pos > close
+            reading @ false
+        else if k == .rbrace && close >= 0
+            # A nested `{`'s, which its head's recovery dropped.
+            _ = cursor.bump(@c)
         else if k == .indent
-            # After a line that ended well: named, and gone whole, since read as
-            # lines a continuation the lexer lets through, `and b`, cost two.
-            if !cursor.at_reported_error(c)
-                cursor.error(
-                    @c,
-                    code: "unexpected_block",
-                    message: "this block is indented deeper than anything that opens one",
-                    span: cursor.current_span(c)
-                )
-            _ = cursor.balanced_block(@c)
+            opening.orphan(@c)
         else
             stmts @ stmts.push(statement(@c, @a, text))
 
@@ -776,7 +777,7 @@ function tabbed_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
 
     while opening.tabbed_line(c, text) || cursor.at(c, .indent)
         if cursor.at(c, .indent)
-            for s in indented_block(@c, @a, text).stmts
+            for s in indented_block(@c, @a, text, close: -1).stmts
                 stmts @ stmts.push(s)
         else
             stmts @ stmts.push(statement(@c, @a, text))
@@ -784,18 +785,21 @@ function tabbed_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
     return ast.Block(span: token.Span(start: open.start, end: cursor.previous_significant_span(c).end), stmts: stmts)
 
 # A block below a line that already said what is wrong: read for its own
-# mistakes, not named (defect 130); arms as arms (`opening.arms_below`).
+# mistakes, not named (defect 130); arms as arms (`headless.arms_below`), and
+# braces that end the line as the block they stand for (`parse/brace_habit`).
 function hanging(@c: cursor.Cursor, @a: ast.Ast, text: str)
-    if cursor.at(c, .indent) && opening.arms_below(c)
+    if cursor.at(c, .indent) && headless.arms_below(c)
         _ = arms_of(@c, @a, text, tabbed: false)
     else if cursor.at(c, .indent)
-        _ = indented_block(@c, @a, text)
+        _ = indented_block(@c, @a, text, close: -1)
+    else if brace_habit.opens_here(c, text)
+        _ = indented_block(@c, @a, text, close: brace_habit.closer(c, open: c.pos))
     else if opening.tabbed_line(c, text)
         _ = tabbed_block(@c, @a, text)
 
 # A failed declaration head begun at `from`: its line dropped, its body read.
 function abandon(@c: cursor.Cursor, @a: ast.Ast, text: str, from: i64)
-    cursor.drop_rest_of_line(@c, from: from)
+    brace_habit.drop_rest_of_line(@c, text, from: from)
     hanging(@c, @a, text)
 
 function statement(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
@@ -856,10 +860,11 @@ function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, fr
         # ended with its own block or line end has none left, and the line
         # under the cursor, which this dropped, was the next statement's. A
         # block hanging below is READ, not named: the continuation that cost
-        # three is joined by the lexer since panel 181.
-        cursor.drop_rest_of_line(@c, from: from)
+        # three is joined by the lexer since panel 181. So are braces that end
+        # the line, where the drop stops (`parse/brace_habit`).
+        brace_habit.drop_rest_of_line(@c, text, from: from)
 
-        if cursor.at(c, .indent)
+        if cursor.at(c, .indent) || brace_habit.opens_here(c, text)
             hanging(@c, @a, text)
         return ast.push_stmt(@a.stmts, ast.Stmt(kind: kind, span: span))
 
@@ -878,11 +883,17 @@ function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, fr
                 message: "expected the end of the line, found " + cursor.found(c, text) + " — one statement per line, no semicolons",
                 span: cursor.current_span(c)
             )
-        cursor.skip_line(@c)
+        brace_habit.skip_line(@c, text)
 
-        # As below a failed line, `iff x > 1` over its body; not below one only
-        # the lexer refused, whose block is the rest of it (`f"a {` over `x}`).
-        if said && cursor.at(c, .indent)
+        # As below a failed line, `iff x > 1` over its body or braces that end
+        # it, `loop {`; not below one only the lexer refused, whose block is the
+        # rest of it (`f"a {` over `x}`), unless it refused the line's first
+        # word, `elif x` or `fn inner()`: that block is the line's body, read by
+        # the shape of its lines and never named (`parse/headless`).
+        if !said && headless.refused_head(c, text, at: from)
+            if !headless.members(@c, @a, text)
+                hanging(@c, @a, text)
+        else if said && cursor.at(c, .indent) || brace_habit.opens_here(c, text)
             hanging(@c, @a, text)
     return ast.push_stmt(@a.stmts, ast.Stmt(kind: kind, span: span))
 

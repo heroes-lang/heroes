@@ -19,6 +19,13 @@
 # | refused nothing, and its line goes on | named as junk, then dropped | parsed | the body named missing, found the junk |
 # | refused something | dropped, as debris | parsed | named missing at the next line, unless the head crossed a line or refused that very token |
 # | any, over a line the lexer joined | as above | parsed | held back (`diag.Held`) |
+# | any, its line ending with `{` or over a `{` alone | as above, up to the `{` | the `{` named missing, the braces parsed | — |
+#
+# **A body in braces is read as the body** (defect 131's class, 2026-09-29;
+# `parse/brace_habit`): the `{` is the one report of the habit, in this
+# table's words, and the drop stops at it, since the lexer puts no line end
+# after it and dropping to one took the body's first line. A `match`'s arms
+# are not read in braces: `missing_arms` says so (`Missing.braces`).
 #
 # A body whose margin holds a tab is read as the body too (`Body.tabbed`):
 # the lexer refuses the margin and opens no block, so the line reaches the
@@ -44,13 +51,16 @@
 # the resolver. `parse` asks which refusal stands at the break and places
 # the held diagnostic accordingly (`parse.ParseOutput.control`). The join is
 # read off the head's own text, two of its tokens on two lines with no line
-# end between them, never off a list of which lexer codes join.
+# end between them, never off a list of which lexer codes join. What the text
+# says of a head's lines is `parse/head_lines`; and a block that no head
+# opens, under a line that ended well, is named here too (`orphan`).
 
 use token
 use diag
 use cursor
-use text_lines
 use parse/swap_reading
+use parse/head_lines
+use parse/brace_habit
 use foreign_at
 
 # Where a head began: how many diagnostics the parser had said, and the
@@ -68,14 +78,17 @@ function refused(c: cursor.Cursor, head: Mark) -> bool
     return cursor.refused_since(c, head.said)
 
 # How an absent body is named: its code, and the words around what was found;
-# and whose body it is and what it holds, for `junk`, which alone makes the
-# sentence of them, so that no head of a program that compiles pays for it.
+# whose body it is and what it holds, for `junk`, which alone makes the
+# sentence of them, so that no head of a program that compiles pays for it;
+# and whether a body in braces is read as the body, which a block of
+# statements is and a `match`'s arms are not, their reader being the block's.
 record Missing
     code: str
     lead: str
     tail: str
     owner: str
     members: str
+    braces: bool
 
 function missing_body(owner: str) -> Missing
     return Missing(
@@ -83,7 +96,8 @@ function missing_body(owner: str) -> Missing
         lead: owner + " needs an indented body — one level deeper, exactly 4 spaces (found ",
         tail: ")",
         owner: owner,
-        members: "body goes"
+        members: "body goes",
+        braces: true
     )
 
 function missing_arms() -> Missing
@@ -92,7 +106,8 @@ function missing_arms() -> Missing
         lead: "a `match` needs its arms indented one level below it, found ",
         tail: "",
         owner: "a `match`",
-        members: "arms go"
+        members: "arms go",
+        braces: false
     )
 
 # What stands where a head's body begins.
@@ -104,6 +119,10 @@ variant Body
     # the parser at the head's own level; it is where the author wrote the
     # body, and it is read as the body (point 3 of defect 131's second round).
     tabbed
+    # A `{` that opens the body in braces, the brace habit: the cursor stands
+    # on it, and `close` is the index of the `}` that closes it.
+    braced
+        close: i64
     # Nothing that opens one.
     none
 
@@ -111,7 +130,14 @@ variant Body
 # table above applied; the cursor stands on the body's first token, or on its
 # indent, when the answer is not `.none`.
 function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, missing: Missing) -> Body
-    crossed = crossed_a_line(c, text, head)
+    crossed = head_lines.crossed_a_line(c, text, from: head.pos)
+    brace: i64 @ -1
+
+    if missing.braces
+        brace @ brace_habit.ending(c, text)
+
+    if brace >= 0
+        return braced(@c, text, head: head, failed: failed, brace: brace, missing: missing)
 
     if failed
         cursor.drop_rest_of_line(@c, from: head.pos)
@@ -138,6 +164,22 @@ function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, mi
     cursor.skip_terminators(@c)
     return opening_at(@c, text, missing)
 
+# A body in braces, whose `{` is at `brace` (`parse/brace_habit`): what stands
+# before the `{` on the head's line is dropped, and named as the head's junk
+# where the head refused nothing, as over an indented body; the `{` is named
+# as the missing body it stands for, unless the head refused that very token
+# (`for {`). The cursor is left on the `{`.
+function braced(@c: cursor.Cursor, text: str, head: Mark, failed: bool, brace: i64, missing: Missing) -> Body
+    if !failed && !is_line_end(cursor.current_kind(c)) && c.pos < brace
+        junk(@c, text, missing: missing)
+
+    while c.pos < brace
+        _ = cursor.bump(@c)
+
+    if !refused_here(c, head)
+        c.diagnostics @ c.diagnostics.push(missing_here(c, text, missing))
+    return .braced(close: brace_habit.closer(c, open: brace))
+
 # What goes on past a head over its body, named, unless the lexer spoke there.
 function junk(@c: cursor.Cursor, text: str, missing: Missing)
     if swap_reading.at_reported_error(c, text)
@@ -159,7 +201,7 @@ function body_below(c: cursor.Cursor, text: str) -> bool
         i @ i + 1
 
     k = c.tokens[i].kind
-    return k == .indent || !is_line_end(k) && k != .eof && margin_has_tab(text, at: c.tokens[i].span.start)
+    return k == .indent || !is_line_end(k) && k != .eof && head_lines.margin_has_tab(text, at: c.tokens[i].span.start)
 
 # An indent, or a line with a tab in its margin, under the cursor. The second
 # holds back the report of a missing body, placed by `parse` against the
@@ -172,7 +214,7 @@ function opening_at(@c: cursor.Cursor, text: str, missing: Missing) -> Body
     if !tabbed_line(c, text)
         return .none
     here = cursor.current_span(c)
-    margin = token.Span(start: here.start - margin_width(text, at: here.start), end: here.start)
+    margin = token.Span(start: here.start - head_lines.margin_width(text, at: here.start), end: here.start)
     c.held @ c.held.push(
         diag.Held(at: c.diagnostics.len(), cause: margin, diagnostic: missing_here(c, text, missing), apart: false)
     )
@@ -188,7 +230,7 @@ function absent(@c: cursor.Cursor, text: str, head: Mark, silent: bool, missing:
     if swap_reading.at_reported_error(c, text) || silent || refused_here(c, head)
         return
     d = missing_here(c, text, missing)
-    seam = joined_at(c, text, head)
+    seam = head_lines.joined_at(c, text, from: head.pos)
 
     if !seam.is_err()
         c.held @ c.held.push(diag.Held(at: c.diagnostics.len(), cause: seam.must(), diagnostic: d, apart: false))
@@ -216,13 +258,18 @@ function refused_here(c: cursor.Cursor, head: Mark) -> bool
 
     return false
 
-# Whether the head, from its first token to its last one read, spans more than
-# one line of the text: it, or its recovery, went on past its line. Asked of
-# the text and not of the tokens, because inside brackets a line break carries
-# no line end: `function f(` over `y = 3 )` is one list the body's `)` closes.
-function crossed_a_line(c: cursor.Cursor, text: str, head: Mark) -> bool
-    last = cursor.previous_significant_span(c)
-    return text_lines.newlines_between(text, from: c.tokens[head.pos].span.start, to: last.end) > 0
+# A block where a statement should start, under a line that ended well, which
+# no head opens: named, and gone whole, since read as lines a continuation the
+# lexer lets through, `and b`, cost two.
+function orphan(@c: cursor.Cursor)
+    if !cursor.at_reported_error(c)
+        cursor.error(
+            @c,
+            code: "unexpected_block",
+            message: "this block is indented deeper than anything that opens one",
+            span: cursor.current_span(c)
+        )
+    _ = cursor.balanced_block(@c)
 
 # Whether the token under the cursor begins its line of the text and that
 # line's margin holds a tab.
@@ -231,34 +278,7 @@ function tabbed_line(c: cursor.Cursor, text: str) -> bool
 
     if k == .eof || is_line_end(k)
         return false
-    return margin_has_tab(text, at: cursor.current_span(c).start)
-
-# Whether `at` begins its line of the text and that line's margin holds a tab.
-function margin_has_tab(text: str, at: i64) -> bool
-    width = margin_width(text, at: at)
-
-    if width < 0
-        return false
-    i: i64 @ at - width
-
-    while i < at
-        if text[i] == '\t'
-            return true
-        i @ i + 1
-
-    return false
-
-# How many bytes of blank margin stand before `at` on its line, or -1 where
-# something else does and `at` does not begin its line.
-function margin_width(text: str, at: i64) -> i64
-    i: i64 @ at - 1
-
-    while i >= 0 && text[i] != '\n'
-        if text[i] != ' ' && text[i] != '\t'
-            return -1
-        i @ i - 1
-
-    return at - 1 - i
+    return head_lines.margin_has_tab(text, at: cursor.current_span(c).start)
 
 # What a failed construct begun at token `from` drops, as
 # `cursor.drop_rest_of_line` does, but never into the next line of the text:
@@ -269,60 +289,11 @@ function drop_line(@c: cursor.Cursor, text: str, from: i64)
         return
 
     while !cursor.at(c, .eof) && !cursor.at(c, .indent) && !cursor.at(c, .dedent)
-        if c.pos != from && margin_width(text, at: cursor.current_span(c).start) >= 0
+        if c.pos != from && head_lines.margin_width(text, at: cursor.current_span(c).start) >= 0
             return
 
         if cursor.bump(@c).kind == .terminator
             return
-
-# Whether the line under the indent the cursor stands on holds a `=>` outside
-# brackets: the block is arms, and a block below a failed line is read as what
-# it is, so that `mach n` over its arms costs one diagnostic and not one per arm.
-function arms_below(c: cursor.Cursor) -> bool
-    i: i64 @ c.pos + 1
-    depth: i64 @ 0
-
-    while i < c.tokens.len()
-        k = c.tokens[i].kind
-
-        if depth == 0 && (is_line_end(k) || k == .eof)
-            return false
-
-        if k == .lparen || k == .lbracket || k == .lbrace
-            depth @ depth + 1
-        else if k == .rparen || k == .rbracket || k == .rbrace
-            depth @ depth - 1
-        else if k == .fat_arrow && depth == 0
-            return true
-        i @ i + 1
-
-    return false
-
-# Where the lexer joined two lines inside the head: two adjacent tokens on two
-# lines with no line end between them. The span runs from the last token
-# before the break that is not a comment to the first one after it, which is
-# where the lexer's refusal of the join stands.
-function joined_at(c: cursor.Cursor, text: str, head: Mark) -> token.Span?
-    i: i64 @ head.pos
-
-    while i < c.pos
-        here = c.tokens[i]
-        next = c.tokens[i + 1]
-
-        if !is_line_end(here.kind) && !is_line_end(next.kind) && next.kind != .eof
-            if text_lines.newlines_between(text, from: here.span.end, to: next.span.start) > 0
-                return ok(token.Span(start: before_the_break(c, head, at: i), end: next.span.end))
-        i @ i + 1
-
-    return fail(code: "unjoined", msg: "every line of the head ends with a line end")
-
-function before_the_break(c: cursor.Cursor, head: Mark, at: i64) -> i64
-    i: i64 @ at
-
-    while i > head.pos && c.tokens[i].kind == .comment
-        i @ i - 1
-
-    return c.tokens[i].span.start
 
 # Whether a token can begin an expression, spec § 7's `Unary` and
 # `Primary`: what `while` needs after it to be a loop, so what a `certain`

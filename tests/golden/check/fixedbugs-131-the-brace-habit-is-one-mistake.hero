@@ -14,6 +14,11 @@
 # The `}` is the habit's debris and costs nothing. A `{` that is not the
 # last thing on its line is no habit, and a `{` on the line below its head
 # is not read as one.
+# Corrected 2026-09-29 by lane X1 (defect 131's class): a `{` alone on the
+# line below its head is read as the habit too, and so is one under a head
+# inside a body, `if x == 1 {`, by the block reader under every head, as in
+# `fixedbugs-131-a-brace-on-the-line-below-its-head` and
+# `fixedbugs-131-a-brace-habit-nested-in-a-body`.
 
 constant LIMIT: i64 {  #~ missing_body
     5
