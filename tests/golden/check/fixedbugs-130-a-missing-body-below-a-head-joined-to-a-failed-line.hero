@@ -11,15 +11,19 @@
 # as over any join: said in the control arm, where the lexer's refusal of the
 # join is dropped, and in this arm the refusal and the line's own mistake are
 # the report, as here.
+# Corrected 2026-09-29 at the batch gate of lanes X3 and X4: lane Y's rule
+# that a missing body both readings agree on is told once, in the normal
+# arm, meets this case, and the body IS missing whichever way the lines are
+# read, so it is told here too: one real mistake, never held.
 
 function main()
     if  #~ continuation_outside_brackets
-    print(1 +)  #~ expected_expression
+    print(1 +)  #~ expected_expression missing_body
 
 function loop()
     for  #~ continuation_outside_brackets
-    x in )  #~ expected_expression
+    x in )  #~ expected_expression missing_body
 
 function bound()
     y = match  #~ continuation_outside_brackets
-    print(1 +)  #~ expected_expression
+    print(1 +)  #~ expected_expression missing_match_arms
