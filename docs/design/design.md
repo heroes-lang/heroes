@@ -1946,7 +1946,7 @@ invents:**
   Trailing-operator continuation at depth zero (Nim's rule) was considered and deferred: it enters
   only if the measurement baseline shows models actually produce that break shape. (Panel 007,
   predictions on record.)
-- **Outside brackets a line ends its statement, in both directions** (panel 181, provisional,
+- **Outside brackets a line ends its statement, in both directions** (panel 181, ratified
   2026-09-28), the ruling of the bullet above made true where the compiler had not: until that
   sitting a line that planted no terminator ran on into the next at the same margin (defect 116),
   the consequence of Go's ender list with nothing to refuse it. A depth-zero line whose last token
@@ -1986,7 +1986,11 @@ invents:**
     broken before its operator, which is how PEP 8 and Black break a line. `-1` and `-fee`, the
     spelling `fmt` prints, stay elements, and the one-per-line column of negatives with them; the
     unspaced `[a` / `-b]` stays two elements, its `-` a sign, as Swift reads the same spacing.
-    Both readings are `guess` fixes, where both parse.
+    Both readings are `guess` fixes, where both parse. The spec's sentence carries no bracket
+    limit, and the same code refuses a line that opens a `match` arm with a `-` set apart from its
+    literal, since a NEWLINE separates every arm from the line above: there the fix, the `-`
+    written against its literal, is `certain`, because in a pattern a `-` can only be its
+    literal's sign (defect 123, 2026-09-28; extended at this sitting's ratification).
   - **A token that would have gone on with the line above is refused with the line end named as
     the cause** (`line_end_before_continuation`, R3): a binary operator, `.`, `::`, `?`, `(`, `[`,
     and the `:` or `->` a production writes there. The fix moves the token to the end of the line
@@ -1995,7 +1999,7 @@ invents:**
     missing `,` is the other reading and writing it is the second fix.
   Refused rather than read on: reading on is the route that sitting vetoed, because a call has no
   NEWLINE separator and `print(f(a` / `-1))` would then print a sum at exit 0 where it was an
-  error. (Panel 180, provisional.)
+  error. (Panel 180, ratified 2026-09-28.)
 - **No parens around conditions.** `if x > 3`, not `if (x > 3)`. Zero information, two tokens saved,
   and Go/Rust/Swift already do it, so no familiarity cost.
 - **Canonical formatter, mandatory, `gofmt`-style: there is exactly one correct way to write any

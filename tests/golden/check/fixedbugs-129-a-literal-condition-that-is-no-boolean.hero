@@ -1,0 +1,50 @@
+# Fixed defect 129, 2026-09-28, class (B), found beside it on the keywords that
+# take an expression. Symptom: `if` over `1`, `while` over `"s"`, `assert`
+# over `1`, `for c in` over `"abc"` and `match` over `true` had their joins
+# `certain`, and each program `check --apply` wrote is refused (`not_bool`,
+# `not_iterable`, and a `match` over a boolean, which no arm matches). Cause:
+# the join did not ask what the keyword takes. A condition takes `true` or
+# `false`, `for` no literal, `match` any literal but those two
+# (`selfhost/operand_families.hero`), so these joins are a `guess`.
+#
+# A golden cannot hold a `guess`: this `.expected` is `--brief`, which prints
+# no certainty, and a `.fixed` must check clean. So what this file pins is one
+# diagnostic per break; the certainties are held by `selfhost/lexer.hero`'s
+# defect 129 tests, which lex the same shapes.
+
+function literal_if()
+    #~v continuation_outside_brackets
+    if
+    1
+        print(1)
+
+function literal_while()
+    #~v continuation_outside_brackets
+    while
+    "s"
+        break
+
+function literal_assert()
+    #~v continuation_outside_brackets
+    assert
+    1
+
+function literal_for()
+    #~v continuation_outside_brackets
+    for c in
+    "abc"
+        print(c)
+
+function literal_match() -> i64
+    #~v continuation_outside_brackets
+    k = match
+    true
+        _ => 1
+    return k
+
+function main()
+    literal_if()
+    literal_while()
+    literal_assert()
+    literal_for()
+    print(literal_match())

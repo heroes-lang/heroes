@@ -32,6 +32,7 @@ use token
 use keywords
 use grammar_expr
 use operators
+use operand_families
 
 constant SPEC: str
     "spec/heroes-spec.md"
@@ -230,6 +231,22 @@ test "every operator in the list is in the table, and the table's name travels w
     assert operators.spelling(percent.op) == "%"
     assert operators.name(percent.op) == "rem"
     assert percent.power == 9
+
+# A premise with a dependant in another module, held here where both copies
+# can be read: `line_joins` judges whether a literal is a join's whole operand
+# by `operand_families.power`, the lexer's copy of these powers, and a copy
+# that drifted would take a literal for the whole operand where a tighter
+# operator holds it, and certify a join that writes a refused program (defect
+# 129).
+test "the lexer's binding powers are the climber's, which line_joins weighs a join's operands by"
+    for kind in operators.binary_tokens()
+        assert operand_families.power(kind) == grammar_expr.binary_op(kind).must().power
+
+    others: [token.TokenKind] = [.bang, .tilde, .eq, .fat_arrow, .question]
+
+    for kind in others
+        assert grammar_expr.binary_op(kind).is_err()
+        assert operand_families.power(kind) == 0
 
 test "the printed report names every keyword, every contextual word and every operator"
     out = keyword_block() + contextual_block() + power_block()

@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 3 defects · 7 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 5 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -24,7 +24,7 @@ against a banner reading 3.
 | The spec | **6838** on the vendored ranks and **9060** on the reader's own, against a ceiling of **10240**. The milestone spent six rows of `docs/measurements/010-spec-budget-ledger.md`: four in § 13 for what a C call does with a handle (panels 175 to 177, 8270 to 8861 real) and two for where a line breaks inside brackets and ends outside them (panels 180 and 181, 8861 to 9060) |
 | The contract | **7875** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-28 when § Verification gained the author's rule that a lane lives under `.claude/worktrees/` |
 | Records | sittings **179** · journals **62**, numbered files only · milestone files **51** · measurements **37** · entries: `docs/records/log/` **721**, `docs/records/done/` **631**, `docs/records/book/beats/` **129** |
-| Waiting on the author | **the ratifications of panels 175, 176, 177, 179, 180, 181 and 182**, the seven items in `DECIDE.md`; the author declined the first three "for now" on 2026-09-24, and the work proceeds on every provisional resolution, 175 to 177 landed by steps 10 and 11 and 180 by step 21. The two open defects, 129 and 130, are carried to the next milestone by the author's waiver of 16:40 |
+| Waiting on the author | **nothing on the decision list**: panels 175, 176, 177, 179, 180, 181 and 182 were ratified in one act on the evening of 2026-09-28, as a reading, each with its recommendation (`docs/records/log/2026-09-28-2311-seven-sittings-ratified-and-the-blind-seat-reads-a-copy.md`). The three open defects, 129, 130 and 131, are being repaired in lanes 129 and 130; 129 and 130 were carried to the next milestone by the author's waiver of 16:40, and 131 was filed beside 130 |
 
 **Re-measured 2026-09-28 at the close, the full net on a compiler built from
 the regenerated seed, which is CI's own configuration: 3144 passed, 0 failed**,

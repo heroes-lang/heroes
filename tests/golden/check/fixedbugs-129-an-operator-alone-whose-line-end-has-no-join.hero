@@ -1,0 +1,45 @@
+# Fixed defect 129, 2026-09-28. Symptom: a line holding an operator alone
+# between a line that ended its statement and the rest of it, `x = a` over
+# `-` over `print(x)`, cost two `continuation_outside_brackets`, and `check --apply`
+# applied the head's `certain` join without the end's, writing `x = a -` over
+# `print(x)`, which the same rule refuses again. Here each operator line ends
+# with its annotation, a comment, so the line end offers no join at all, and
+# the trunk's compiler at `a6eab736` applied the head's join into that line,
+# `x = a -  #~ ...`, refused again. Cause: `open_line` judged each join of
+# one statement alone. The joins of one statement take one certainty now, the
+# weakest, and a break with no join makes the others a `guess`
+# (`selfhost/line_joins.hero`), so nothing here is applied.
+#
+# A golden cannot hold a `guess`: this `.expected` is `--brief`, which prints
+# no certainty, and a `.fixed` must check clean. So what this file pins is one
+# diagnostic per break; the certainties are held by `selfhost/lexer.hero`'s
+# defect 129 tests, which lex the same shapes.
+
+function minus_alone(a: i64) -> i64
+    x = a
+    -  #~ continuation_outside_brackets continuation_outside_brackets
+    print(x)
+    return x
+
+function plus_alone(a: i64) -> i64
+    x = a
+    +  #~ continuation_outside_brackets continuation_outside_brackets
+    print(x)
+    return x
+
+function and_alone(a: bool) -> bool
+    x = a
+    &&  #~ continuation_outside_brackets continuation_outside_brackets
+    print(1)
+    return x
+
+function star_in_an_arm(n: i64) -> i64
+    return match n
+        0 => 5
+        *  #~ continuation_outside_brackets continuation_outside_brackets
+        2
+        _ => 20
+
+function main()
+    print(minus_alone(a: 1) + plus_alone(a: 1) + star_in_an_arm(n: 0))
+    print(and_alone(a: true))

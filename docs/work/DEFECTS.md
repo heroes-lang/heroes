@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 5**
 
 - [ ] **129 — a line holding `-` alone draws two certain joins, and applied together they write a program `check` refuses** | in `function main()`, `x = a` over a line holding `-` alone over `print(x)` costs two `continuation_outside_brackets`, and `check --apply` writes `x = a -` over `print(x)`, which `check` refuses again; in a `match`, `0 => 5` over `-` over `"=>"` has both joins applied, `0 => 5 - "=>"`, which is `bad_operand` | `selfhost/open_line.hero` (`goes_on_at_head`, `refuse_the_end`)
 
@@ -62,6 +62,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     beside defect 126, the sign join `-"a" => 10` on a `str` match (`p5`);
     `-'a'` on an `i64` match compiles (`p6`), since a character is an integer.
 
+    **Corrected 2026-09-28 at 23:17**: the directories were removed by the
+    author, who took them for old lanes, and restored from the trash the
+    same evening, so the paths above resolve again; the copies in the
+    scratchpad are what the lanes read.
+
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
     **Origin:** lane 123's agent, 2026-09-28, beside defect 124, on the
@@ -103,6 +108,28 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     body does not (`w9`): `cursor.recover_to_next_decl` asks whether the
     cursor already stands at a fresh line, which `finish` never asks.
 
+    **Corrected 2026-09-28 at 23:17**: the directories were removed by the
+    author, who took them for old lanes, and restored from the trash the
+    same evening, so the paths above resolve again; the copies in the
+    scratchpad are what the lanes read.
+
+    **Widened 2026-09-29 by lane 130's agent, reported beside its repair and
+    assigned here by the coordinator**: a statement that failed drops the
+    over-indented block hanging below it silently, the mistakes inside it
+    too, where after a statement that did not fail the same block is
+    `unexpected_block` (`o01_failed_then_orphan.hero` against
+    `o02`, in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/shapes/`, 2026-09-29).
+
+    **Widened again 2026-09-29 by lane 130's agent at its second round, and
+    assigned by the coordinator**: under an arm written inline, `0 => print(1)`
+    over a deeper `print(99)` compiled and ran and printed 1, the deeper line
+    thrown away at exit 0, a wrong answer and not only a silence (repaired
+    in lane 130, `47849cc9`); and a misspelled keyword at a top-level head,
+    `recrod Point` over its fields, drops its whole block silently (given to
+    lane 133, whose files it is in; reproducers in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/`, 2026-09-29).
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
@@ -119,5 +146,85 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** design.md §4.17: one mistake, one message. The
     second names a body that is there, one level down, as missing, so a
     model that reads it as a second mistake repairs a block that was right.
+
+    **Widened 2026-09-29 by lane 130's agent, reported beside its repair and
+    assigned here by the coordinator**: a `for` with nothing after it costs
+    `for_missing_in` and `expected_expression` at the same column
+    (`o03_bare_for.hero`), and a body indented with a tab costs
+    `tab_in_indentation` and then `missing_body` on the same line, for a
+    body that is there (`l06_tab_body.hero`), both in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/shapes/`, 2026-09-29.
+
+    **Widened again 2026-09-29 by lane 130's agent at its second round**:
+    `record Point )` and `variant Token )` over their bodies are named
+    `empty_record` and `empty_variant`, which says the fields are missing
+    while they are there (`shapes3/f37`, `f38` in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/`, 2026-09-29); given to lane 133.
+
+    **Widened again 2026-09-29 by the `fixes` suite lane 129 landed, at the
+    coordinator's gate of lane 130's second round (`3ecb7ac9`)**: `for >`
+    gets `for_missing_in` with the `certain` fix *use `while`*, and
+    `--apply` writes `while >`, which is no loop and costs
+    `expected_expression` twice on its one line. Measured on the compiler
+    of `a6eab736` as well, so it was there before tonight; a `certain` fix
+    that does not repair, and one mistake with two messages. Sent back to
+    lane 130.
+
+- [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
+
+    **Origin:** lane 129's agent, 2026-09-29, beside defect 129 (its finding 2,
+    `cascade_next_arms_pattern.hero`, copied to
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/d132/`, 2026-09-29);
+    reproduced by the coordinator on the trunk's compiler at `7d3cd33b`: two
+    breaks, four diagnostics, and on the trunk both joins `certain`, writing
+    programs that do not parse (defect 129's class, which lane 129 repairs; the
+    second diagnostic stays after that repair, by the lane's own report).
+
+    **The shape, whole, since the file above lives in a session's scratchpad:**
+    a function `return match n` whose arms are `0 => 5 -` / `1 => 10` /
+    `_ => 20`, and one whose arms are `0 => 5` / `| 1 => 10` / `_ => 20`.
+
+    **Why it is a defect.** Panel 181 item 2: one diagnostic per break, the
+    parser handed the line the author broke. Here the line it is handed holds
+    the next arm's `=>`, which no join can make part of an arm's body, so the
+    parser's refusal is the break's debris and not a second mistake.
+
+    **Widened 2026-09-29 by lane 130's agent, assigned here by the
+    coordinator**: an arm with nothing after its `=>`, over the next arm at
+    the same margin, is joined by the lexer and the parser then refuses the
+    joined `=>`, two messages for one mistake (`o05_empty_arm.hero` and
+    `s12`, in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/shapes/`, 2026-09-29).
+
+    **Widened again 2026-09-29 by lane 130's agent at its second round**: the
+    lexer joins a line into a block head and the parser reports the join's
+    debris, `for` alone over a deeper `print(1)` costing
+    `continuation_outside_brackets` and `for_missing_in` (`bf.hero`),
+    `record`, `variant` and `constant` alone at a line's end (`shapes2/f18`,
+    `f19`, `f14`), and `function` alone over a tab-indented body
+    (`shapes3/t19`), all in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/`, 2026-09-29.
+
+- [ ] **133 — after a declaration head the lexer refuses as a foreign word with a certain swap, the declaration's own mistakes are reported only once the swap is applied** | `const MAX = 5` costs `reserved_word` alone, and `check --apply` writes `constant MAX = 5`, which then costs `expected_constant_type`; `const MAX: i64 = 5` then costs `missing_body`, `fn main() {` then `missing_body`, `struct Point {` then `empty_record`: two turns for one habit | `selfhost/scan.hero` (the foreign word emitted as an `error` token) · `selfhost/keywords.hero` (`foreign_word`) · `selfhost/parse/decl.hero` · `cursor.recover_to_next_decl`
+
+    **Origin:** lane 129's agent, 2026-09-29, reading `check/reserved-words`'s
+    applied text while building the `fixes` suite's judgement of cases with no
+    `.fixed` (`85066233`, reported and not changed); widened by the
+    coordinator on the trunk's compiler at `ee1b648b` to every declaration
+    keyword a swap names (`const.hero`, `const_typed.hero`, `fn_brace.hero`,
+    `struct_brace.hero` in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/d133/`, 2026-09-29).
+    Beside it and not of it: every foreign word the LEXER refuses is reported
+    in the first run (`fn add(a: int, b: int) -> int` costs four, clean after
+    `--apply`), and `let`, whose repair is guidance, has no certain swap.
+    The cause is read and unrun: the lexer emits the word as an `error` token
+    (`state.error_token`), and at a top-level line's head the parser's
+    recovery drops the whole declaration, its body included.
+
+    **Why it is a defect.** The same as 130's: a mistake present and
+    unreported is a silence where a message is owed, and design.md §4.17 asks
+    that a model fix a program in one turn. `const MAX = 5`, `fn main() {`
+    and `struct Point {` are the habits of the three languages a model has
+    read most.
 
 *******************************************************************************

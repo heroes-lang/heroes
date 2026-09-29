@@ -324,6 +324,33 @@ to ratifying today's behaviour is the resolution.
 
 ## Author's verdict
 
+**RATIFIED 2026-09-28**, in one act with every sitting
+`docs/work/DECIDE.md` held, panels 175, 176, 177, 179, 180, 181 and 182,
+on the author's instruction of that evening, meant as: *ratify every
+decision on the list*. **Recorded as a reading of this file**, CLAUDE.md
+§ 4's default, which the author asked on 2026-09-21 to be taken for
+granted; not `by delegation`. The recommendations the list carried are
+taken with it. Each sentence below was verified against the tree at
+`a6eab736` before it was written.
+
+**What the yes settles**: route (a) final as landed with defects 116, 118, 119
+and 120, and item 1 (ii) as narrowed at 04:03. **The two points the list put to
+the author**, both taken as landed: `continuation_outside_brackets` stays on
+the thesis list (`selfhost/diag.hero`), so `check --permissive` reads the join;
+and § 12's default stays reversed on § 1's clause, which reads *a condition
+needs no parentheses*. **And the third point**, added at defect 126's landing:
+a line that holds a whole arm does not stand alone under item 3, so the join
+after an arm's split `-` stays `certain`, the recommendation.
+
+**What it does not settle**: defect 129, open at the ratification, is item 3's
+own criterion failing on a statement broken at more than one line end, and a
+certain join that writes an operator against a literal it takes under no type.
+It is repaired under item 3 as ratified, in lane 129, and recorded in its own
+entry.
+
+**What this section said while the sitting was open**, kept because a
+record is not rewritten:
+
 *Pending: `docs/work/DECIDE.md` carries this sitting as `panel 181`. Work
 proceeds on the provisional resolution: the landing lane repairs defects 116,
 118, 119 and 120 on it, with the spec and design.md amendments in their own

@@ -198,6 +198,31 @@ artifact class.
 
 ## Author's verdict
 
+**RATIFIED 2026-09-28**, in one act with every sitting
+`docs/work/DECIDE.md` held, panels 175, 176, 177, 179, 180, 181 and 182,
+on the author's instruction of that evening, meant as: *ratify every
+decision on the list*. **Recorded as a reading of this file**, CLAUDE.md
+§ 4's default, which the author asked on 2026-09-21 to be taken for
+granted; not `by delegation`. The recommendations the list carried are
+taken with it. Each sentence below was verified against the tree at
+`a6eab736` before it was written.
+
+**What the yes settles**: `heroes probe [path]` as the command's thirteenth verb
+(`selfhost/cli/table.hero`), in process, over every family, with two judges;
+the three open cases as ruled (a comma crossing kept, a comment on a dropped
+parenthesis kept, the ascending-run rule the canonical form); exit 2 for a
+failing variant; the fixtures in the net under every family, at `--stride 2`
+since the unstrided row measured past the sitting's 60 s, and the whole tree
+under the thin one. **And the reader's second exception**, found at the landing
+and named in the list's item: rule (d), *a head the output does not have is no
+logical line in the variant either* (`selfhost/probe/reader.hero`). The by-hand
+run the landing wrote into `.claude/rules/verification.md` ran at
+M-agreed-retention's close, before its push: 1,287,836 variants that parse,
+none refused (`docs/ROADMAP.md` § Where we are).
+
+**What this section said while the sitting was open**, kept because a
+record is not rewritten:
+
 *Pending: `docs/work/DECIDE.md` carries this sitting as `panel 179`. Work
 proceeds on the provisional resolution: lane g repairs the 17 refusals first,
 then the probe lands in its own lane.*
