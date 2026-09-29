@@ -519,3 +519,21 @@ test "a failed head reads its body, and a joined one leaves its report to the co
     assert codes(joined.diagnostics) == ["continuation_outside_brackets", "expected_end_of_line"]
     assert codes(joined.control) == ["continuation_outside_brackets", "missing_body", "expected_end_of_line"]
     assert joined.control[1].span.start == joined.control[2].span.start - 6
+
+# Defect 130's second round: a block below a line that reported is read and
+# not named, and one below a whole arm is named, where it was dropped from a
+# program that ran.
+test "a hanging block is read, and an orphan under an arm is named"
+    eol = "expected_end_of_line"
+    hanging = parse("function main()\n    x = )\n        z = 4 )\n")
+    assert codes(hanging.diagnostics) == ["expected_expression", eol]
+    misspelled = parse("function main()\n    iff x > 1\n        z = 4 )\n")
+    assert codes(misspelled.diagnostics) == [eol, eol]
+    arms = parse("function main()\n    mach n\n        0 => print(0) )\n        _ => print(1)\n")
+    assert codes(arms.diagnostics) == [eol, eol]
+    orphan = parse(
+        "function main()\n    match 0\n        0 => print(1)\n            print(99)\n        _ => print(2)\n"
+    )
+    assert codes(orphan.diagnostics) == ["unexpected_block"]
+    kept = parse("function main()\n    x = a\n        and b\n")
+    assert codes(kept.diagnostics) == ["unexpected_block"]
