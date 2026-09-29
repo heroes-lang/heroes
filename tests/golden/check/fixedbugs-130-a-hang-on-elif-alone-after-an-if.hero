@@ -12,9 +12,14 @@
 # its own the swap to `else if` is not certain, and the message says what an
 # `else if` owes; the `unexpected_block` below is grammar_expr's, as in the
 # case beside this one.
+# Corrected 2026-09-29 by lane X1 (defect 130's class): that block is the
+# `elif` line's body, and it is read as one since that day, by the shape of
+# its lines, and never named, as in
+# `fixedbugs-130-a-block-under-a-refused-word-in-a-body`; the
+# `unexpected_block` was a second message for the one mistake.
 
 function main()
     if 1 == 1
         print(1)
     elif  #~ reserved_word
-        print(2)  #~ unexpected_block
+        print(2)

@@ -1,0 +1,34 @@
+# Fixed 2026-09-29, defect 131's class, lane X1. Symptom: a `{` alone on the
+# line below its head, Allman's style, cost under a declaration the `{`'s
+# report as the missing body and then `expected_declaration` at the `{`, at
+# the `}` and at the body's lines between them, read as lines of the top
+# level; under an `if` in a body the braces were read as a map literal, whose
+# `:` each line then owed, and the `else` below them was refused. Cause: the habit was read only where its `{` ends
+# the head's own line, and `fixedbugs-131-the-brace-habit-is-one-mistake`
+# said so. A `{` alone on the line below a head whose line ended, past blank
+# and comment lines, is now the habit too (`parse/brace_habit.ending`): named
+# once, as the missing body it stands for, and its body read.
+
+function main()
+{  #~ missing_body
+    x = 1
+    if x == 1
+    {  #~ missing_body
+        y = 3 4  #~ expected_end_of_line
+    }
+    else
+    {  #~ missing_body
+        print(2)
+    }
+}
+
+test "adds"
+# the case
+{  #~ missing_body
+    assert 1 + 1 == 2
+}
+
+constant LIMIT: i64
+{  #~ missing_body
+    5
+}
