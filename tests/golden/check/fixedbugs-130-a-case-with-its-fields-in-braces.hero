@@ -1,0 +1,35 @@
+# Fixed 2026-09-30, defect 130's class, lane recovery-b1 (lane X4's finding
+# n2). Symptom: a case's fields in braces, `circle {` over `r f64,` over `},`
+# inside a braced variant, cost *expected a case name, found `{`* and the
+# fields went unread, `r f64` never told; in an indented variant the `}`
+# below cost a second `expected_case`, and so did braces alone on the line
+# below a case, Allman's style. Cause: nothing past a case's name read braces
+# as its fields, where a record's in braces were read. Now the `{` is told
+# once, as any junk past a case's name is, the fields are read through the
+# view of the braces (`selfhost/parse/braced_lines.hero`), and what stands
+# past the `}` on its line is junk past the case
+# (`selfhost/parse/member_lines.hero`).
+
+variant Shape {  #~ expected_end_of_line
+    circle {  #~ expected_end_of_line
+        r f64,  #~ expected_field_type
+    },
+    square,
+}
+
+variant Figure
+    ring {  #~ expected_end_of_line
+        r: f64
+        w f64  #~ expected_field_type
+    }
+    dot { x: f64, y f64 }  #~ expected_end_of_line expected_field_type
+    empty {}  #~ expected_end_of_line
+    arc
+    {  #~ expected_case
+        a f64  #~ expected_field_type
+    }
+    blob { r: f64 } x  #~ expected_end_of_line expected_end_of_line
+    last
+
+function main()
+    print(1)

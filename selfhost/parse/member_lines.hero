@@ -33,6 +33,9 @@ use parse/type
 use parse/line_end
 use parse/colon_habit
 use parse/refused_literal
+use parse/brace_habit
+use parse/braced_lines
+use parse/unclosed
 
 ## Fields and cases
 
@@ -90,7 +93,8 @@ function field_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
     return fields
 
 # The cases of a `variant`: a name on its own line, optionally followed by an
-# indented field block.
+# indented field block, or by its fields in braces, on its line or alone on
+# the line below it (`braced_fields`).
 function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
     cases: [ast.Case] @ []
     _ = cursor.bump(@c)
@@ -110,18 +114,34 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
             doc = cursor.take_docs(@c, text, name)
             _ = cursor.bump(@c)
             colon_habit.eat(@c)
+            which = "the case `" + cursor.slice_of(text, name) + "`"
+            fields: [ast.Field] @ []
+
+            if braces_close(c)
+                told(@c, text: text, member: which, rule: CASE_RULE)
+                fields @ braced_fields(@c, @a, text)
+            line_ends(@c, text: text, member: which, rule: CASE_RULE)
+            cursor.skip_terminators(@c)
+
+            if cursor.at(c, .indent)
+                for field in field_block(@c, @a, text)
+                    fields @ fields.push(field)
+            cases @ cases.push(ast.Case(name: name, fields: fields, doc: doc))
+        else if k == .lbrace && cases.len() > 0 && brace_habit.alone(text, cursor.current_span(c)) && braces_close(c)
+            # Allman's braces, alone on the line below a case: its fields,
+            # told where the next case's name was owed and read as the case's.
+            refused_case(@c, text)
+            last = cases.len() - 1
+
+            for field in braced_fields(@c, @a, text)
+                cases[last].fields @ cases[last].fields.push(field)
+
             line_ends(
                 @c,
                 text: text,
-                member: "the case `" + cursor.slice_of(text, name) + "`",
-                rule: "one case per line, its fields on the lines below it, one level deeper"
+                member: "the case `" + cursor.slice_of(text, cases[last].name) + "`",
+                rule: CASE_RULE
             )
-            cursor.skip_terminators(@c)
-            fields: [ast.Field] @ []
-
-            if cursor.at(c, .indent)
-                fields @ field_block(@c, @a, text)
-            cases @ cases.push(ast.Case(name: name, fields: fields, doc: doc))
         else if k == .indent
             # The payload of a case whose NAME was refused on the line above.
             # The ident arm is the only one that consumes a payload block, so
@@ -132,29 +152,72 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
             # costs one diagnostic, and the case name already spent it.
             _ = cursor.balanced_block(@c)
         else
-            if !cursor.at_reported_error(c) && !line_end.said_here(c)
-                cursor.error(
-                    @c,
-                    code: "expected_case",
-                    message: "expected a case name, found " + cursor.found(c, text) + " — a variant case is a name on its own line, with its fields indented below it",
-                    span: cursor.current_span(c)
-                )
+            refused_case(@c, text)
             cursor.skip_line(@c)
 
     return cases
 
+# What a case's line is told where its name was owed and something else
+# stands, where no report stands on it already.
+function refused_case(@c: cursor.Cursor, text: str)
+    if !cursor.at_reported_error(c) && !line_end.said_here(c)
+        cursor.error(
+            @c,
+            code: "expected_case",
+            message: "expected a case name, found " + cursor.found(c, text) + " — a variant case is a name on its own line, with its fields indented below it",
+            span: cursor.current_span(c)
+        )
+
+## Members in braces
+
+# A case's fields in braces, `circle {` over `r: f64` over `}` or `dot { x:
+# f64 }` on one line (defect 130's class, lane X4's finding n2): until
+# 2026-09-30 the `{` was refused as a missing case name and the fields went
+# unread, their own mistakes unsaid, and the `}` below was refused again.
+# The `{` is told once, as any junk past a case's name is, and the fields are
+# read through the view `parse/braced_lines` lays out, as a record's in
+# braces are; what stands past the `}` on its line is junk past the case.
+# Braces the lexer found never closed are not read, since the view would
+# reach the file's end (`parse/unclosed`).
+function braces_close(c: cursor.Cursor) -> bool
+    return cursor.at(c, .lbrace) && !unclosed.never_closed(c, open: c.pos)
+
+# The fields in the braces the cursor's `{` opens, and the cursor past them.
+function braced_fields(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
+    lines: cursor.Cursor @ braced_lines.laid_out(c, text)
+    fields = field_block(@lines, @a, text)
+    braced_lines.took(c: @c, view: lines)
+    return fields
+
+# The cases in the braces the cursor's `{` opens, a variant's written in
+# braces, and the cursor past them.
+function braced_cases(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
+    lines: cursor.Cursor @ braced_lines.laid_out(c, text)
+    cases = case_block(@lines, @a, text)
+    braced_lines.took(c: @c, view: lines)
+    return cases
+
 ## A member's line ends after it
 
-# The end of the line after `member`, a case's name or a field's type: at a
-# line end, a block below or the block's end, nothing; else the one report,
-# `expected_end_of_line` in `rule`'s words, where no report stands on the
-# token, and the rest of the line dropped, stopping before a block below it.
+constant CASE_RULE: str
+    "one case per line, its fields on the lines below it, one level deeper"
+
+# The end of the line after `member`, a case's name or a field's type, or a
+# case's braces: at a line end, a block below, the block's end or a fresh
+# line past the braces, nothing; else the one report, and the rest of the
+# line dropped, stopping before a block below it.
 function line_ends(@c: cursor.Cursor, text: str, member: str, rule: str)
     k = cursor.current_kind(c)
 
-    if k == .terminator || k == .indent || k == .dedent || k == .eof
+    if k == .terminator || k == .indent || k == .dedent || k == .eof || cursor.at_fresh_line(c)
         return
+    told(@c, text: text, member: member, rule: rule)
+    cursor.skip_line(@c)
 
+# `expected_end_of_line` at what stands past `member`, in `rule`'s words,
+# where no report stands on it already: a literal the lexer refused still
+# owes the line's end, as a statement's does.
+function told(@c: cursor.Cursor, text: str, member: str, rule: str)
     if (!cursor.at_reported_error(c) || refused_literal.here(c, text)) && !line_end.said_here(c)
         cursor.error(
             @c,
@@ -162,7 +225,6 @@ function line_ends(@c: cursor.Cursor, text: str, member: str, rule: str)
             message: "expected the end of the line after " + member + ", found " + refused_literal.found(c, text) + " — " + rule,
             span: cursor.current_span(c)
         )
-    cursor.skip_line(@c)
 
 ## Tests
 
@@ -309,3 +371,19 @@ test "a refused literal past a case still owes the line's end, and a colon endin
     assert c.diagnostics[0].code == "expected_end_of_line"
     assert c.diagnostics[0].message == "expected the end of the line after the case `dark`, found a number (`0X10`) — one case per line, its fields on the lines below it, one level deeper"
     assert c.diagnostics[1].code == "trailing_colon"
+
+test "a case's fields in braces are its own, and each brace is told once"
+    # On the case's line or alone below it, Allman's style: the `{` is one
+    # report, a field's mistake inside is its own, and no `}` is refused.
+    text = "variant S\n    circle { r: f64, d f64 }\n    ring\n    {\n        w: f64\n    }\n    dot\n"
+    c: cursor.Cursor @ below_head(text)
+    a: ast.Ast @ ast.new_ast()
+    cases = case_block(@c, @a, text)
+    assert cases.len() == 3
+    assert cases[0].fields.len() == 1
+    assert cases[1].fields.len() == 1
+    assert cursor.slice_of(text, cases[1].fields[0].name) == "w"
+    assert c.diagnostics.len() == 3
+    assert c.diagnostics[0].code == "expected_end_of_line"
+    assert c.diagnostics[1].code == "expected_field_type"
+    assert c.diagnostics[2].code == "expected_case"
