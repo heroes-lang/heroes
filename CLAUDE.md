@@ -293,10 +293,18 @@ CL-060.
 **The three suites** are in § Commands. Their counts live in `docs/ROADMAP.md`
 § Where we are and nowhere else (CL-064).
 
-- **A sub-step is gated by the named suites**, one at a time, plus the
-  compiler's own tests and the net's own tests. **The full net runs once, before
-  a push** (CL-063), and which suites those are is
-  `.claude/rules/verification.md` (CL-072).
+- **A repair or a step is gated by the golden form that holds its cases and by
+  the compiler's own tests. A BATCH of at most five is gated once**: the seed regenerated and its fixpoint, the compiler's own tests, the
+  net's own tests, the full net, on this Mac and then Linux x86-64; a red batch
+  is bisected by commit and only the culprit is redone. The batch is one lane
+  per cluster of defects sharing files, worked in sequence; it closes at five,
+  at the cluster's last defect, or before a push (CL-063, CL-079). Which form a
+  change's cases live in is `.claude/rules/verification.md` (CL-072).
+- **A suite is the last judge, never the first finder.** What a hook can see on
+  the touched file at the moment of writing, a parse error, a name or type
+  error, a line over the ceiling, a case's missing annotation, a compiler older
+  than the seed, never waits for a suite (CL-079, `.claude/rules/verification.md`
+  § A suite is the last judge).
 - **Run the suite you did not expect to move, after the last edit rather than
   after the last interesting one.** *My change cannot have touched that* is an
   inference. A ticked item is a question, not a task (CL-054).
@@ -319,9 +327,10 @@ CL-060.
   exists, so the exception is named rather than the rule weakened. The executor
   is `records/tagged` and it reads the newest `m-*` tag's own commit, so an open
   defect mid-milestone stays legal and a tag over one does not.
-- **A platform fact is run on a platform or it is an inference**, and the three
-  are measured from this Mac before the commit: `.claude/rules/platforms.md`
-  (CL-048, CL-049, CL-050, CL-055).
+- **A platform fact is run on a platform or it is an inference**; Linux x86-64
+  is measured from this Mac when a batch closes, arm64 and Windows once before
+  the push, and a repair at the C boundary on its platform at once:
+  `.claude/rules/platforms.md` (CL-048, CL-049, CL-050, CL-055, CL-079).
 
 ## Commands
 ```

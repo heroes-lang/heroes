@@ -1895,3 +1895,86 @@ and they are cheap: each of the three above cost one probe program.
 landed, and fifteen of those files were blessing C that does not compile — a
 consequence no reading of the entry would have predicted, because the entry was
 about a tag.
+
+## CL-079 — A repair is gated by its cases, a batch by the net once, and a suite is the last judge
+2026-09-29 · author instruction · § Verification
+
+*"It is unsustainable to go at the speed we are going now. I am convinced we
+can avoid running the whole suite every time; it has to be done more
+optimistically, more speculatively, without harming the robustness of the
+solutions. A defect gets a test of its own, tested on one platform of the four,
+and is queued; then the next defect, the same; only at the end of a batch of
+four or five are all the resolutions tested together, on one platform, and if
+that passes, on the others. There must be one point, and only one, where
+everything is tested in the net. Two or three defects tested together can
+contaminate each other, and that is a risk we can carry."* And later the same
+day: *"prevent the trivial mistakes: if a file has to be under 300 lines, do
+not wait for the suite to say so; check the touched files, and only those, for
+the ceiling and for their syntax. The suite must really be the last thing: it
+must not find what something much simpler could have found."* And: *"look at
+the set of commits we have to push; I see a great many merge commits, and they
+take time and create errors."*
+
+**CL-063 said this on 2026-09-06, and the practice had eaten it.** Counted on
+the commit bodies of the night before the instruction, 2026-09-28 23:19 to
+2026-09-29 08:45: 31 commits, 11 merges each followed by a coordinator's gate
+(the fixpoint, the eight suites no lane runs, a census of 1,278 files in two
+modes against two compilers), 10 repair commits, 8 lane gates of 10 to 21
+suites, **all reporting 0 failed**, and 0 defects closed, the five open ones
+each widened three or four times. The map of `.claude/rules/verification.md`,
+honestly applied to a parser defect, fans out to every golden tree, and a lane
+per defect on shared files produces a merge per round, each gated. The full net
+had three durations in three rule files, 13, 15 and 20 minutes, against one
+measurement in the window, 948 s on 2026-09-18.
+
+**What the two weeks before it measured**, from the git history 2026-09-15 to
+29, the journals 057 to 061, the records and the sittings 160 to 182: 311
+commits, 58 of them merges; **125 of 253 non-merge commits touched only
+records**, 103,427 lines of documentation against 60,913 of hand-written code
+and tests; `seed/heroes.c` in 93 commits, 22.9 million lines of churn, 21 of 58
+merges with the seed in conflict; repair bodies at a median of 51.5 lines;
+**of 59 defects closed, a suite found two** (074, CI's Windows leg; 115, `run`
+on the Windows box) and 57 were found by a seat, a person or a probe; 22
+sittings, an incident-free one at a median of 50 minutes and four of them at
+135 to 947 minutes under rate limits, a 600 s watchdog and a Mac asleep for
+three and a half hours, with `pmset` reading `sleep 1` on power; CI silent from
+2026-09-22 to 28 over 104 trunk commits, its Windows leg red in all 8 red runs
+and the critical path at 39 minutes. And every catch the suites made, from
+CL-039 and CL-054 to journal 061, was a file not formatted, a table pin, a
+stale binary, an output cut at forty lines, a commit past a red `records`:
+things a hook on the touched file sees at the moment of writing.
+
+**The rule**, in four shapes, whose one home is `.claude/rules/verification.md`
+§ The batch and § A suite is the last judge: a repair or a step is gated by
+the golden form that holds its cases and by the compiler's own tests (a nested
+module cannot be tested alone, so not `heroes test <module>`); a
+batch of at most five, one lane per cluster of defects sharing files and worked
+in sequence, is gated once by the seed's fixpoint, the compiler's own tests, the
+net's own tests and the full net, then Linux x86-64, with arm64 and Windows
+before the push (the author's choice, *Windows and arm Linux before the push*);
+a red batch is bisected by commit and only the culprit is redone; and a suite is
+the last judge, so a parse error, a name or type error, a line over the ceiling,
+a missing annotation or a compiler older than the seed is caught by the hooks
+before any suite runs. The two shapes put to the author, and their answers: one
+sequential lane per cluster (taken) against parallel lanes per defect merged
+into a batch; Windows per batch against before the push (before the push
+taken, arm64 with it).
+
+**What it costs, said plainly.** A contamination between two repairs of one
+batch reaches the batch gate instead of the repair; the batch's commits are
+linear, so it costs three bisect steps of one suite. A repair commit carries no
+regenerated seed, so a commit never pushed and marked *awaiting the batch gate*
+does not rebuild itself from C alone; every pushed commit does, because a push
+is a closed batch. **What it does not touch**: the full net before anything
+goes out, the seats with a veto, the probe before a push touching the printer,
+the platforms before the push, the shapes beside (CL-078), which are where the
+defects came from.
+
+**Measured while it was written.** `heroes fmt` on a module 0.02 s, `heroes
+check` 0.18 s on `open_line.hero` and 0.48 s on `grammar_expr.hero`, so the
+hooks cost under half a second a write. Copying the trunk's `build/` into a
+fresh lane bought nothing: 41.6 s of CPU cold, 43.2 s after the copy, so that
+idea is recorded here as measured false and is not a rule. The cost column of
+the map is owed at the first quiet hour, unrun on the day, because two other
+sessions' gates ran on the machine throughout. What the rule bought is written
+beneath this entry by the first batch that runs under it.

@@ -73,9 +73,16 @@ fails when any of it is not done.
   the four failures that stopped a full net on 2026-09-06 were a file written
   and not formatted, which costs nothing here and thirteen minutes there
   (`docs/records/contract/case-law.md` CL-063). A `PostToolUse` hook notices it too.
-- Run the tests. **The gate for a SUB-STEP is the named suites, one at a time,
-  plus the compiler's own tests and the net's own tests**; the full net runs
-  once before a push and not at every commit (CLAUDE.md § Verification, CL-063).
+- Run the tests. **Since 2026-09-29 the gate for a repair or a step is the
+  golden form that holds its cases and the compiler's own tests; the seed, the fixpoint and the full net run once per BATCH of at
+  most five, in the lane that holds it** (CLAUDE.md § Verification;
+  `.claude/rules/verification.md` § The batch; CL-079). What a hook can see on
+  the touched file (parse, names and types, the line ceiling, a case's
+  annotations) never waits for a suite. Until that day this bullet read: *the
+  gate for a SUB-STEP is the named suites, one at a time, plus the compiler's
+  own tests and the net's own tests; the full net runs once before a push and
+  not at every commit* (CL-063), and the night before it changed, 8 gates of
+  10 to 21 suites reported 0 failed for 0 defects closed.
   Naming a suite runs only that one, which is what makes a fast loop possible:
   `-- <compiler> records`. The three suites since **M-bootstrap-archive**
   (2026-08-19), with their counts in `docs/ROADMAP.md` § Where we are and
@@ -107,7 +114,10 @@ fails when any of it is not done.
   that one, which is what makes a fast loop possible: `-- <compiler> records`.
 
 ## 3. On failure
-Diagnose and fix autonomously. Record symptom → cause → fix in the milestone
+**A red batch gate is bisected, not re-run**: `git bisect` over the batch's
+linear commits, the compiler rebuilt from `selfhost/` at each step, the one red
+suite; the culprit alone is redone (`.claude/rules/verification.md` § The
+batch). Diagnose and fix autonomously. Record symptom → cause → fix in the milestone
 journal, and queue the **raw symptom only** (golden diff, clang error, panic)
 plus the fixing commit's hash — so the author can hypothesise in `/learn`
 before reading the fix.
