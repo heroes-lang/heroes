@@ -22,7 +22,9 @@
 # — the one edge that leaves the knot and the reason `parse_type` stays its own
 # file. `arm` reads its patterns with `parse/arm_pattern`, which since defect
 # 124 reaches nothing here either, and refuses a declaration as its body with
-# `parse/arm_body`, which reaches nothing here.
+# `parse/arm_body`, which reaches nothing here; nor do `parse/annotation`,
+# `parse/margin_arms` and `parse/broken_arm`, which `annotated`, `match_expr`
+# and `arm` ask what a failed type, a misplaced arm or a broken one owes.
 #
 # **The entry points**, and they are the whole public surface:
 #
@@ -70,6 +72,9 @@ use parse/arm_pattern
 use parse/arm_body
 use parse/opening
 use parse/swap_reading
+use parse/annotation
+use parse/margin_arms
+use parse/broken_arm
 use operators
 
 ## The precedence table — §4.14, read from the bottom up
@@ -958,25 +963,21 @@ function bind_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
 
 # `v: i64 @ 0` — a mutable cell, type mandatory. `xs: [i64] = []` — an
 # immutable binding that needs its annotation because an empty literal cannot
-# say what it holds (§4.5).
+# say what it holds (§4.5). A type that failed is one mistake, and what it
+# owes the `@` or `=` after it is `parse/annotation`'s (defect 131's class).
 function annotated(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     name = cursor.bump(@c).span
     _ = cursor.bump(@c)
+    typed = opening.mark(c)
     ty = type.parse_type(@c, @a, text)
+    annotation.past_a_refused_type(@c, typed)
 
     if cursor.eat(@c, .at)
         return .declare(name: name, ty: ty, value: parse_expr(@c, @a, text))
 
     if cursor.eat(@c, .eq)
         return .bind(name: name, ty: ok(ty), value: parse_expr(@c, @a, text))
-
-    if !cursor.at_reported_error(c)
-        cursor.error(
-            @c,
-            code: "expected_binding_symbol",
-            message: "expected `@` to declare a mutable, or `=` to bind, found " + cursor.found(c, text) + " — `v: i64 @ 0` declares a cell, `xs: [i64] = []` binds once",
-            span: cursor.current_span(c)
-        )
+    annotation.no_binding_symbol(@c, text, typed)
     return .error
 
 # Everything else: an expression alone on its line, or the place on the left of
@@ -1076,15 +1077,21 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     found = opening.body_follows(@c, text, head: head, failed: failed, missing: opening.missing_arms())
 
     if found == .none
+        # Arms at its own margin are its arms, read as arms (`parse/margin_arms`).
+        if margin_arms.below(c, head.pos)
+            _ = arms_of(@c, @a, text, tabbed: false)
         return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
     arms = arms_of(@c, @a, text, tabbed: found == .tabbed)
     span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
     return ast.push_expr(@a.exprs, ast.Expr(kind: .match_expr(scrutinee: scrutinee, arms: arms), span: span))
 
 # The arms of a `match`: the block whose indent is under the cursor, or the
-# lines whose margin holds a tab and a block below them, as `tabbed_block`.
+# lines whose margin holds a tab and a block below them, as `tabbed_block`;
+# with neither, those at its own margin that hold an arm (`parse/margin_arms`).
 function arms_of(@c: cursor.Cursor, @a: ast.Ast, text: str, tabbed: bool) -> [ast.Arm]
-    if !tabbed
+    at_margin = !tabbed && !cursor.at(c, .indent)
+
+    if !tabbed && !at_margin
         _ = cursor.bump(@c)
     arms: [ast.Arm] @ []
     reading: bool @ true
@@ -1103,6 +1110,8 @@ function arms_of(@c: cursor.Cursor, @a: ast.Ast, text: str, tabbed: bool) -> [as
         else if failed && !in_tabs && opening.tabbed_line(c, text)
             # The body of a failed arm whose `=>` the lexer joined to it.
             hanging(@c, @a, text)
+        else if at_margin && margin_arms.end_here(c)
+            reading @ false
         else if k == .dedent
             _ = cursor.bump(@c)
             reading @ false
@@ -1163,7 +1172,8 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
             return fail(code: "no_pattern", msg: "a joined pattern is missing")
         patterns @ patterns.push(more.must())
 
-    if !cursor.expect(@c, text: text, kind: .fat_arrow, code: "expected_arm_arrow", what: "`=>` and the arm's value")
+    # An arm broken before its `=>` goes on at it (`parse/broken_arm`).
+    if !cursor.expect(@c, text: text, kind: .fat_arrow, code: "expected_arm_arrow", what: "`=>` and the arm's value") && !broken_arm.onto_its_arrow(@c)
         return fail(code: "no_arrow", msg: "the arm has no `=>`")
 
     # One statement, or a block — the same two shapes every other body has
@@ -1183,6 +1193,7 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
         at = statement(@c, @a, text)
         arm_body.reject_declaration(@c, a, text, at)
         body @ .one_stmt(at: at)
+    broken_arm.close_its_block(@c, from: head.pos)
     return ok(
         ast.Arm(patterns: patterns, body: body, span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
     )

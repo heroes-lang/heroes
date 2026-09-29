@@ -1,0 +1,18 @@
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:16:5: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a number (`0`)
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:22:5: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a number (`0`)
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:28:5: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a number (`0`)
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:34:5: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a name (`_`)
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:38:5: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a number (`0`)
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:38:19: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:43:5: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a number (`0`)
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:49:5: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a number (`0`)
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:50:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:55:5: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a number (`0`)
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:55:48: error[expected_arm_arrow]: expected `=>` and the arm's value, found end of line
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:61:11: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:62:5: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a name (`_`)
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:66:5: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a name (`_`)
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:67:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:73:13: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a name (`_`)
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:79:9: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a name (`_`)
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:85:9: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a name (`_`)
