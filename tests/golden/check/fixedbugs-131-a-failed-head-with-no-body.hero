@@ -1,0 +1,30 @@
+# Fixed defect 131, 2026-09-28, a failed head with no body at all. Symptom: the
+# body a failed head does not have was named missing at the column of the
+# head's own mistake, `found )`, where the body would have begun on the line
+# below. Cause: the check for a body asked the token the failed head had left
+# the cursor on. With the rest of the head's line dropped, the question is the
+# one any head is asked, at the line below: it names the body missing there,
+# as it does after a head that did not fail. Only where the head's recovery
+# ran past its own line does it say nothing (`parse/opening`).
+
+function if_alone(n: i64)
+    if n > )  #~ expected_expression
+    print(2)  #~ missing_body
+    z = 4 )  #~ expected_end_of_line
+
+function before_an_else(n: i64)
+    if n > )  #~ expected_expression
+    else  #~ missing_body
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function an_else_if_before_an_else(n: i64)
+    if n > 0
+        print(1)
+    else if n < )  #~ expected_expression
+    else  #~ missing_body
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function main()
+    print(1)

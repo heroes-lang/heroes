@@ -210,6 +210,33 @@ own note suggests, and refusing a correct module checked alone.
 
 ## Author's verdict
 
+**RATIFIED 2026-09-28**, in one act with every sitting
+`docs/work/DECIDE.md` held, panels 175, 176, 177, 179, 180, 181 and 182,
+on the author's instruction of that evening, meant as: *ratify every
+decision on the list*. **Recorded as a reading of this file**, CLAUDE.md
+§ 4's default, which the author asked on 2026-09-21 to be taken for
+granted; not `by delegation`. The recommendations the list carried are
+taken with it. Each sentence below was verified against the tree at
+`a6eab736` before it was written.
+
+**What the yes settles**, all of it landed: the set (item 1, defect 075), the
+transfer that names where the life goes and is checked against the set (item
+2), the success clause that makes a transfer count only on success (item 3,
+spelled `when` on the result by panel 177's item 6), and `retains` (item 4, defect
+079), each a sentence of § 13 and a production of its `Member` and `CParam`.
+Item 5's call-site rule did not land. Item 6 is `contract_differs` and item 8
+is `ffi_owned_const_cell`, with 5 and 2 golden files. Item 7 is the record
+`docs/records/done/2026-09-25-1151-one-declaration-cannot-reach-all-three-of-sqlite3-bind-text-modes.md`.
+The conservative route, V1 unchecked with the call-site rule, stays refused on
+the critic's measurement.
+
+**What it does not settle**: the limit item 4 writes down, a reference taken
+on a freed address admitted because no record of a borrowed handle exists, and
+the unpriced route that would record one.
+
+**What this section said while the sitting was open**, kept because a
+record is not rewritten:
+
 *Pending: `docs/work/DECIDE.md` carries this sitting as `panel 176`. Work
 proceeds on the provisional resolution: panel 177 on defects 077 and 088 and on
 the reader test of item 9, then the landing.*

@@ -239,6 +239,30 @@ standing.
 
 ## Author's verdict
 
+**RATIFIED 2026-09-28**, in one act with every sitting
+`docs/work/DECIDE.md` held, panels 175, 176, 177, 179, 180, 181 and 182,
+on the author's instruction of that evening, meant as: *ratify every
+decision on the list*. **Recorded as a reading of this file**, CLAUDE.md
+§ 4's default, which the author asked on 2026-09-21 to be taken for
+granted; not `by delegation`. The recommendations the list carried are
+taken with it. Each sentence below was verified against the tree at
+`a6eab736` before it was written.
+
+**What the yes settles**: R1 to R6 as landed with defects 104 and 106, and
+`spaced_minus_element` on the thesis list, the coordinator's ruling of
+2026-09-27 written above, which this yes covers. **And the extension the list
+recommended at defect 123's landing**: design.md §4.15's bullet now names the
+arm, where the same code refuses a line that opens a `match` arm with a `-`
+set apart from its literal, and the fix is `certain`, because in a pattern the
+`-` can only be its literal's sign. Measured before it was written, on the
+trunk's compiler at `a6eab736`: `- 1 => 10` under `match n` draws
+`spaced_minus_element` with the `certain` fix *write the `-` against its
+value*.
+The bullet's ruling mark reads *ratified 2026-09-28*.
+
+**What this section said while the sitting was open**, kept because a
+record is not rewritten:
+
 Pending. Queued as `panel 180` in `docs/work/DECIDE.md`. Work proceeds on the
 provisional resolution: one lane lands R1 to R6 with defects 104 and 106.
 

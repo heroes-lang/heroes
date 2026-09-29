@@ -1,0 +1,61 @@
+# Fixed defect 131, 2026-09-28, the shape it was found in. Symptom: a block
+# head whose line failed reported its body as missing, a second mistake at
+# the same column, for a body that was there one level down: `if n > )` over
+# an indented line cost `expected_expression` and then `missing_body` at the
+# `)`, and so did the heads of `else if`, `while` and `for`, and `match )`
+# cost `missing_match_arms`. The body, never parsed, then hid every mistake
+# inside it, and a `match`'s its bad arms. Cause: the check for a body asked
+# the token under the cursor, and a failed head leaves it on the token it
+# could not read; the guard before it, `cursor.at_reported_error`, asks
+# whether that token is the lexer's `error` token, not whether the head
+# reported. A head that refused something now drops the rest of its line and
+# reads the body below it (`parse/opening`). One shape per function.
+
+function under_if(n: i64)
+    if n > )  #~ expected_expression
+        y = 3 )  #~ expected_end_of_line
+    print(2)
+
+function under_while(n: i64)
+    while n > )  #~ expected_expression
+        y = 3 )  #~ expected_end_of_line
+    print(2)
+
+function under_for()
+    for i in )  #~ expected_expression
+        y = 3 )  #~ expected_end_of_line
+    print(2)
+
+function under_else_if(n: i64)
+    if n > 0
+        print(1)
+    else if n < )  #~ expected_expression
+        y = 3 )  #~ expected_end_of_line
+    else
+        z = 4 )  #~ expected_end_of_line
+    print(2)
+
+function under_match()
+    match )  #~ expected_expression
+        + => print(1)  #~ expected_pattern
+        _ => print(2)
+    z = 4 )  #~ expected_end_of_line
+
+function under_a_bound_if(n: i64) -> i64
+    k = if n > )  #~ expected_expression
+        y = 3 )  #~ expected_end_of_line
+        1
+    else
+        2
+    z = 4 )  #~ expected_end_of_line
+    return k
+
+function under_an_arm(n: i64)
+    match n
+        0 => if n > )  #~ expected_expression
+            y = 3 )  #~ expected_end_of_line
+        _ => print(2)
+    z = 4 )  #~ expected_end_of_line
+
+function main()
+    print(1)

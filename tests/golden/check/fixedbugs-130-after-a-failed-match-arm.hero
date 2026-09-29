@@ -1,0 +1,44 @@
+# Fixed defect 130, 2026-09-28, the shape it was found in. Symptom: after a
+# `match` whose arm failed to parse, the statement below it was skipped whole
+# and every mistake in it went unreported. Three bound matches over the arm
+# `+ => 10` reported the first and the third and never the second, two
+# statement matches reported only the first, and `y = 3 )` after one such
+# match was never reported where `z = 4 )` below it was. Cause:
+# `grammar_expr.finish` dropped the rest of the line of any statement that had
+# reported, and a statement whose last part is a block has already consumed
+# its own dedent, so the line it dropped was the next statement's, and the
+# block under that line went with it. A statement that failed now drops only
+# what is left of its own line (`cursor.drop_rest_of_line`), which after its
+# block is nothing.
+
+function bound(n: i64) -> i64
+    a = match n
+        + => 10  #~ expected_pattern
+        _ => 20
+    b = match n
+        + => 10  #~ expected_pattern
+        _ => 20
+    c = match n
+        + => 10  #~ expected_pattern
+        _ => 20
+    return a + b + c
+
+function statements(n: i64)
+    match n
+        + => print(1)  #~ expected_pattern
+        _ => print(2)
+    match n
+        + => print(1)  #~ expected_pattern
+        _ => print(2)
+
+function plain(n: i64) -> i64
+    k = match n
+        + => 10  #~ expected_pattern
+        _ => 20
+    y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+    return k + y + z
+
+function main()
+    statements(1)
+    print(bound(1) + plain(1))

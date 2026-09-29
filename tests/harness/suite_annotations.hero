@@ -112,8 +112,16 @@ constant RUN_ROOTS: [str]
 # **668 from 2026-09-28**, the same way: defect 129's twelve goldens, which
 # annotate 60 diagnostics, took the tree past 527 by more than a quarter, and
 # the suite printed 668.
+#
+# **659 from defect 130's lane, 2026-09-29**: its seven `fixedbugs-130-*`
+# cases, whose marks are the statements a failed block used to hide, took
+# the count past the quarter, and the suite printed 659.
+#
+# **819 where the two lanes met, 2026-09-29**: defect 129's lane merged the
+# trunk at `0ba7b084`, which carried lane 130's cases, and on the merged tree
+# the suite printed 819.
 constant LEAST: i64
-    668
+    819
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

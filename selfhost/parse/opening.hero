@@ -1,0 +1,146 @@
+# Where a block's body begins, asked once for every head that opens one
+# (design.md §4.17; defects 130 and 131, 2026-09-28).
+#
+# A HEAD is the line that opens a block: `if c`, `else if c`, `else`,
+# `while c`, `for x in xs`, `match e`, an arm's `=>`, a declaration's
+# signature. Its body begins at an indent on the line below. Every head used
+# to ask that of the token under the cursor, and a head that had FAILED left
+# the cursor on the token it could not read: `if n > )` over its body cost
+# `expected_expression` and then `missing_body` at the same column, for a
+# body that was there one level down, and the body, never parsed, hid every
+# mistake inside it.
+#
+# What is owed now depends on what the head already said, and "said" means a
+# refusal: a thesis rule is not one (`cursor.refused_since`).
+#
+# | the head | the rest of its line | an indented body | no body |
+# |---|---|---|---|
+# | refused nothing, and its line ends | none | parsed | named missing at the next line |
+# | refused nothing, and its line goes on | named missing, then dropped | parsed | named missing |
+# | refused something | dropped, as debris | parsed | named missing at the next line, unless the head crossed a line end |
+# | any, over a line the lexer joined | as above | parsed | held back (`diag.Held`) |
+#
+# **A line end crossed silences an absent body**, because the head's own
+# recovery can run past its line: `if (n > 0` over `y = 3 )` is a group the
+# body's `)` closes, and the body's absence is then the recovery's doing,
+# not the author's.
+#
+# **A joined line holds back an absent body rather than naming it.** The
+# lexer joins a line that cannot end over the deeper one below it
+# (`continuation_outside_brackets`), so `if n >` over `print(1)` reaches the
+# parser as `if n > print(1)`, and the body the author wrote IS the joined
+# line: naming it missing names the first mistake a second time. It is held
+# back and not dropped because the control arm, `check --permissive`, drops
+# that refusal, a thesis rule, and reads the join as the program, which for it
+# has no body; without the report the arm would pass a bodiless `if` on to
+# the resolver. `parse` asks which refusal stands at the break and places
+# the held diagnostic accordingly (`parse.ParseOutput.control`). The join is
+# read off the head's own text, two of its tokens on two lines with no line
+# end between them, never off a list of which lexer codes join.
+
+use token
+use diag
+use cursor
+use text_lines
+
+# Where a head began: how many diagnostics the parser had said, and the
+# token its first word stands on.
+record Mark
+    said: i64
+    pos: i64
+
+function mark(c: cursor.Cursor) -> Mark
+    return Mark(said: c.diagnostics.len(), pos: c.pos)
+
+# Whether the head refused something. Asked before the `:` habit is eaten,
+# whose own report is not the head failing.
+function refused(c: cursor.Cursor, head: Mark) -> bool
+    return cursor.refused_since(c, head.said)
+
+# How an absent body is named: its code, and the words around what was found.
+record Missing
+    code: str
+    lead: str
+    tail: str
+
+# Whether an indented body now stands under the cursor, after the head that
+# began at `head`. Says what the table above says, and moves the cursor to the
+# indent when it answers yes.
+function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, missing: Missing) -> bool
+    crossed = crossed_a_line(c, head)
+
+    if failed
+        cursor.drop_rest_of_line(@c, from: head.pos)
+    cursor.skip_terminators(@c)
+
+    if cursor.at(c, .indent)
+        return true
+    absent(@c, text, head: head, silent: failed && crossed, missing: missing)
+
+    if cursor.at_fresh_line(c)
+        return false
+
+    # The head refused nothing and its line goes on: what goes on was named,
+    # and a body below it is still its body, whose mistakes are owed.
+    cursor.drop_rest_of_line(@c, from: head.pos)
+    cursor.skip_terminators(@c)
+    return cursor.at(c, .indent)
+
+# No body where one is owed: named at the cursor, as it always was, unless the
+# lexer already spoke there, the head's recovery ran past its line (`silent`),
+# or the head's line was joined.
+function absent(@c: cursor.Cursor, text: str, head: Mark, silent: bool, missing: Missing)
+    if cursor.at_reported_error(c) || silent
+        return
+    d = diag.new_diagnostic(
+        code: missing.code,
+        message: missing.lead + cursor.found(c, text) + missing.tail,
+        span: cursor.current_span(c)
+    )
+    seam = joined_at(c, text, head)
+
+    if !seam.is_err()
+        c.held @ c.held.push(diag.Held(at: c.diagnostics.len(), cause: seam.must(), diagnostic: d))
+        return
+    c.diagnostics @ c.diagnostics.push(d)
+
+# Whether a line end, an indent or a dedent lies between the head's first
+# token and the cursor: the head, or its recovery, went on past its line.
+function crossed_a_line(c: cursor.Cursor, head: Mark) -> bool
+    i: i64 @ head.pos
+
+    while i < c.pos
+        if is_line_end(c.tokens[i].kind)
+            return true
+        i @ i + 1
+
+    return false
+
+# Where the lexer joined two lines inside the head: two adjacent tokens on two
+# lines with no line end between them. The span runs from the last token
+# before the break that is not a comment to the first one after it, which is
+# where the lexer's refusal of the join stands.
+function joined_at(c: cursor.Cursor, text: str, head: Mark) -> token.Span?
+    i: i64 @ head.pos
+
+    while i < c.pos
+        here = c.tokens[i]
+        next = c.tokens[i + 1]
+
+        if !is_line_end(here.kind) && !is_line_end(next.kind) && next.kind != .eof
+            if text_lines.newlines_between(text, from: here.span.end, to: next.span.start) > 0
+                return ok(token.Span(start: before_the_break(c, head, at: i), end: next.span.end))
+        i @ i + 1
+
+    return fail(code: "unjoined", msg: "every line of the head ends with a line end")
+
+function before_the_break(c: cursor.Cursor, head: Mark, at: i64) -> i64
+    i: i64 @ at
+
+    while i > head.pos && c.tokens[i].kind == .comment
+        i @ i - 1
+
+    return c.tokens[i].span.start
+
+function is_line_end(kind: token.TokenKind) -> bool
+    return kind == .terminator || kind == .indent || kind == .dedent
