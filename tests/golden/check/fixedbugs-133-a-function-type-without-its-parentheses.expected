@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-133-a-function-type-without-its-parentheses.hero:14:19: error[reserved_word]: `fn` is not a word in this language — a function type is `function`, written in parentheses: `(function(i64) -> i64)`
+tests/golden/check/fixedbugs-133-a-function-type-without-its-parentheses.hero:15:42: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-133-a-function-type-without-its-parentheses.hero:17:19: error[expected_type]: expected a type, found `function` without its parentheses — a function type is written in them, `(function(i64) -> i64)`
+tests/golden/check/fixedbugs-133-a-function-type-without-its-parentheses.hero:18:20: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

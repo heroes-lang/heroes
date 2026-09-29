@@ -8,13 +8,17 @@
 # swap is `function`, as `function` (`parse/swap_reading.hero`), so each
 # body's own mistake is reported beside the word. The `}` below the brace is
 # refused as it is after the swap: `function main() {` costs the same two.
+#
+# Moved the same day, a second round (defect 131's class): the brace habit is
+# one mistake, and the `}` that closes it is its debris, so it costs nothing
+# now, in the swap's program as in this one.
 
 function helper() -> i64
     return 1
 
 fn main() {  #~ reserved_word missing_body
     print(helper())
-}  #~ expected_declaration
+}
 
 func show()  #~ reserved_word
     print(helper() +)  #~ expected_expression

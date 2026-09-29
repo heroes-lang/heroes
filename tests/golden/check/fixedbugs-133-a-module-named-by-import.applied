@@ -8,9 +8,15 @@
 # (`parse/swap_reading.hero`), so the line's own mistake is reported beside
 # the word. The messages name `use`, the word the swap writes and the one
 # the `reserved_word` asks for.
+#
+# Moved the same day, a second round: a swap is certain only where the word
+# it writes is right, and `use` with no module after it is not, so a bare
+# `import` is no longer read as `use` and costs one message, the lexer's,
+# which now names the module it owes. `expected_module_name` was the same
+# mistake said twice.
 
 use geom.shapes  #~ reserved_word module_path_has_no_parts
-use  #~ reserved_word expected_module_name
+import  #~ reserved_word
 use geom  #~ reserved_word
 
 function main()

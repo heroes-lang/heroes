@@ -21,6 +21,13 @@
 # its line (`swap_reading.opens_line_as`), and each of these costs its
 # `reserved_word` alone; the certain fix writes a keyword where none can
 # stand, which is defect 015's class again.
+#
+# Repaired the same day, a second round: a swap is `certain` only where the
+# word it writes is right where it stands (`foreign_at.hero`,
+# `word_place.hero`), so none of the six lines below offers one any more,
+# and each message says what is right there: a name that cannot be the
+# word, a value bound with `=`, a word that has no place on its line.
+# `--apply` writes the file back unchanged.
 
 function fn(x: i64) -> i64  #~ reserved_word
     return x

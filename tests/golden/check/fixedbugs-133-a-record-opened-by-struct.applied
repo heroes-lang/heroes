@@ -9,13 +9,20 @@
 # A record with no fields above a `struct` line is empty all the same: the
 # guard that stayed silent at the lexer's `error` token reads the next
 # line's head as its swap, `record`, and says so.
+#
+# Moved the same day, a second round (defect 131's class): `struct Point {`
+# over its fields is the brace habit, one mistake. Its `{` is the head's junk,
+# named as such with where the fields go, `expected_end_of_line`, where it
+# was `empty_record`, which said the fields were missing while they stood in
+# the braces; and the `}` that closes them is the habit's debris, no longer
+# `expected_declaration`.
 
 record Size
     w: i64
 
-record Point {  #~ reserved_word empty_record
+record Point {  #~ reserved_word expected_end_of_line
     x: i64
-}  #~ expected_declaration
+}
 
 record Pair  #~ reserved_word
     left i64  #~ expected_field_type

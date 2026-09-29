@@ -44,6 +44,7 @@ use parse/records
 use parse/group
 use parse/swap_reading
 use parse/headless
+use parse/braces
 use grammar_expr
 use parse/opening
 
@@ -224,7 +225,7 @@ function test_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], te
         grammar_expr.abandon(@c, @a, text, from: began.pos)
         return
     name = cursor.bump(@c).span
-    b = grammar_expr.block(@c, @a, text: text, owner: "a `test`", head: began)
+    b = braces.body_or_block(@c, @a, text: text, owner: "a `test`", head: began)
 
     if b.is_err()
         cursor.recover_to_next_decl(@c)
@@ -272,34 +273,18 @@ function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl],
     # record's fields are (defect 131's second round, lane 130), and over
     # cases that are there the report is the head's own junk, never
     # `empty_variant` (defect 131's class, 2026-09-29; `records.record_tail`).
+    # `empty_variant` points at its own head, `variant Token`, as
+    # `empty_record` does: it pointed at the next line's first token, a line
+    # the author did nothing wrong on, until 2026-09-29 (defect 131's class).
     if !cursor.at(c, .indent)
-        junk = cursor.current_span(c)
-        found = swap_reading.found(c, text)
-        spoke = swap_reading.at_reported_error(c, text)
-        goes_on = !cursor.at_fresh_line(c)
-        empty_at = tails.here_or(c, hd.keyword)
+        written = token.Span(start: hd.keyword.start, end: hd.name.end)
+        empty = diag.new_diagnostic(
+            code: "empty_variant",
+            message: "a `variant` needs at least one case, indented one level below it",
+            span: written
+        )
 
-        if goes_on
-            cursor.skip_line(@c)
-
-        if !spoke
-            if goes_on && cursor.at(c, .indent)
-                records.junk_after_head(
-                    @c,
-                    head: cursor.slice_of(text, token.Span(start: hd.keyword.start, end: hd.name.end)),
-                    found: found,
-                    span: junk,
-                    members: "its cases"
-                )
-            else
-                cursor.error(
-                    @c,
-                    code: "empty_variant",
-                    message: "a `variant` needs at least one case, indented one level below it",
-                    span: empty_at
-                )
-
-        if !cursor.at(c, .indent)
+        if !records.no_members_below(@c, text: text, head: written, members: "its cases", empty: empty)
             return
     start = cursor.current_span(c)
     cases = parse_members.case_block(@c, @a, text)
@@ -489,8 +474,8 @@ test "a swap is read only where its keyword is what the grammar expects"
     grouped = parse_source("extern \"m.h\"\n    enum E\n")
     assert grouped.diagnostics.len() == 0
 
-    # And the keyword is quoted as written.
+    # And a keyword with no name after it heads nothing, so `const` alone is
+    # not read as a `constant` (defect 133's second round): the lexer's
+    # message names the word and the name it owes.
     bare = parse_source("const\n")
-    assert bare.diagnostics.len() == 1
-    said = "expected the declared name after `const`,"
-    assert bare.diagnostics[0].message.slice(from: 0, to: said.len()) == said
+    assert bare.diagnostics.len() == 0
