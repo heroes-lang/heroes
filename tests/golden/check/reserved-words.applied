@@ -1,0 +1,14 @@
+# Foreign keywords: each fails with the repair pre-written.
+#
+# Moved 2026-09-29 (defect 133): the `const` line also costs
+# `expected_constant_type` now, because the parser reads `const MAX = 5` as
+# its certain swap writes it, `constant MAX = 5`, and a constant states its
+# type. Until that day the second mistake was reported only after
+# `check --apply` had written `constant`, a second turn for one line.
+# `struct Point` is read as `record Point` and costs nothing more here, as it
+# costs nothing more after the swap: the line under it opens with the
+# lexer's `let`, so `empty_record` stays silent in both. `let` has no certain
+# swap and is read as nothing.
+record Point  #~ reserved_word
+let x = 5  #~ reserved_word
+constant MAX = 5  #~ reserved_word expected_constant_type

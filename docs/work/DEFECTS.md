@@ -121,6 +121,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `o02`, in
     `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/shapes/`, 2026-09-29).
 
+    **Widened again 2026-09-29 by lane 130's agent at its second round, and
+    assigned by the coordinator**: under an arm written inline, `0 => print(1)`
+    over a deeper `print(99)` compiled and ran and printed 1, the deeper line
+    thrown away at exit 0, a wrong answer and not only a silence (repaired
+    in lane 130, `47849cc9`); and a misspelled keyword at a top-level head,
+    `recrod Point` over its fields, drops its whole block silently (given to
+    lane 133, whose files it is in; reproducers in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/`, 2026-09-29).
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
@@ -145,6 +154,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `tab_in_indentation` and then `missing_body` on the same line, for a
     body that is there (`l06_tab_body.hero`), both in
     `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/shapes/`, 2026-09-29.
+
+    **Widened again 2026-09-29 by lane 130's agent at its second round**:
+    `record Point )` and `variant Token )` over their bodies are named
+    `empty_record` and `empty_variant`, which says the fields are missing
+    while they are there (`shapes3/f37`, `f38` in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/`, 2026-09-29); given to lane 133.
 
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
@@ -171,6 +186,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     joined `=>`, two messages for one mistake (`o05_empty_arm.hero` and
     `s12`, in
     `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/shapes/`, 2026-09-29).
+
+    **Widened again 2026-09-29 by lane 130's agent at its second round**: the
+    lexer joins a line into a block head and the parser reports the join's
+    debris, `for` alone over a deeper `print(1)` costing
+    `continuation_outside_brackets` and `for_missing_in` (`bf.hero`),
+    `record`, `variant` and `constant` alone at a line's end (`shapes2/f18`,
+    `f19`, `f14`), and `function` alone over a tab-indented body
+    (`shapes3/t19`), all in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/`, 2026-09-29.
 
 - [ ] **133 — after a declaration head the lexer refuses as a foreign word with a certain swap, the declaration's own mistakes are reported only once the swap is applied** | `const MAX = 5` costs `reserved_word` alone, and `check --apply` writes `constant MAX = 5`, which then costs `expected_constant_type`; `const MAX: i64 = 5` then costs `missing_body`, `fn main() {` then `missing_body`, `struct Point {` then `empty_record`: two turns for one habit | `selfhost/scan.hero` (the foreign word emitted as an `error` token) · `selfhost/keywords.hero` (`foreign_word`) · `selfhost/parse/decl.hero` · `cursor.recover_to_next_decl`
 

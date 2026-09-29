@@ -1,0 +1,63 @@
+# Fixed defect 129, 2026-09-29, the coordinator's widening of its class (A).
+# Symptom: a statement broken before a block of its own and again after it,
+# `x = a +` over `a + if a > 0`, the block, `else`, its block, and `- a`, had
+# its first join `certain` and the one after the block a `guess`, so
+# `check --apply` wrote `x = a + a + if a > 0` and left `- a` refused. Cause:
+# the chain of one statement's breaks ended at the indent the statement opened.
+# It ends now only at the statement's own terminator, at its own level, or
+# where its block closes on anything but `else` (`selfhost/line_joins.hero`);
+# the `guess` after the block stays, and the break before the block shares it.
+# The same with a `match` for a value, with a block inside the block, and with
+# `else if`.
+#
+# Every join here is a `guess`, so `check --apply` writes the file back
+# unchanged, and `tests/harness/suite_fixes.hero` asserts exactly that of a
+# case with no `.fixed` or `.applied`: a join that turned `certain` again goes
+# red there.
+
+function if_else(a: i64) -> i64
+    #~v continuation_outside_brackets
+    x = a +
+    a + if a > 0
+        a
+    else
+        a
+    - a  #~ continuation_outside_brackets
+    return x
+
+function match_value(a: i64) -> i64
+    #~v continuation_outside_brackets
+    x = a +
+    a + match a
+        0 => 1
+        _ => 2
+    - a  #~ continuation_outside_brackets
+    return x
+
+function nested(a: i64) -> i64
+    #~v continuation_outside_brackets
+    x = a +
+    a + if a > 0
+        if a > 1
+            a
+        else
+            a
+    else
+        a
+    - a  #~ continuation_outside_brackets
+    return x
+
+function else_if(a: i64) -> i64
+    #~v continuation_outside_brackets
+    x = a +
+    a + if a > 0
+        a
+    else if a > 1
+        a
+    else
+        a
+    - a  #~ continuation_outside_brackets
+    return x
+
+function main()
+    print(if_else(a: 1) + match_value(a: 1) + nested(a: 1) + else_if(a: 1))

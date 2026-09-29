@@ -25,6 +25,21 @@ constant ERR_NO_SIGNIFICANT: str
 
 ## The state
 
+# A depth-zero line break `open_line` refused (panel 181): the index in
+# `diagnostics` of its refusal, and the index in `tokens` of the first token
+# after the break, which is the next one pushed because nothing is planted
+# while the lexer joins. `head` when the line below began with the token that
+# can only go on, so that token is the operator the join writes; else the
+# line above ended with it, just before `after`. `line_joins` weighs the
+# joins from these once the file is lexed (defect 129). `diagnostic` is -1 for
+# a line left open that the lexer ends rather than refuses, before a fresh
+# statement or at the file's end: the parser says what it lacks, no join
+# repairs it, and it weighs as a break with no join.
+record Break
+    diagnostic: i64
+    after: i64
+    head: bool
+
 record LexState
     pos: i64
     # Current indentation level (one level == 4 spaces).
@@ -54,6 +69,8 @@ record LexState
     # meanwhile are `held`, so they follow the terminator as they always did.
     owed: i64
     held: [token.Token]
+    # Every break refused so far, in the order refused (`Break`).
+    breaks: [Break]
 
 function new_state() -> LexState
     brackets: [token.Span] = []
@@ -61,6 +78,7 @@ function new_state() -> LexState
     tokens: [token.Token] = []
     diagnostics: [diag.Diagnostic] = []
     held: [token.Token] = []
+    breaks: [Break] = []
     return LexState(
         pos: 0,
         level: 0,
@@ -72,7 +90,8 @@ function new_state() -> LexState
         open_line: -1,
         open_end: -1,
         owed: -1,
-        held: held
+        held: held,
+        breaks: breaks
     )
 
 ## Emitting
@@ -110,10 +129,15 @@ function push_token(@tokens: [token.Token], t: token.Token)
 # `l.diagnostics @ l.diagnostics.push(d)` is a field place and copies every
 # diagnostic already recorded, so a file with many errors was quadratic in
 # them. Every append to a growing array of the lexer's state goes through one
-# of these two, and the test at the bottom of this file reads the lexer's
-# modules for the other spelling.
+# of these three, and `tests/harness/suite_layout.hero`'s `SLOW_APPENDS` reads
+# every module for the other spelling.
 function push_diagnostic(@diagnostics: [diag.Diagnostic], d: diag.Diagnostic)
     diagnostics @ diagnostics.push(d)
+
+# The same spelling for the refused breaks, a file of broken lines being a
+# file of many of them.
+function push_break(@breaks: [Break], b: Break)
+    breaks @ breaks.push(b)
 
 # Error recovery in one move: record why, emit an `error` token over the same
 # span, keep lexing. The lexer never stops.

@@ -1,0 +1,26 @@
+# Fixed defect 133, 2026-09-29, the shape beside it. Symptom: a function, a
+# constant or a test with no body, over a line opened by `fn`, `const` or
+# `def`, cost the next line's `reserved_word` alone, and only once `check
+# --apply` had written the swap there did the next run report the body above
+# as missing. Cause: the absent body is
+# named at the next line's first token, and the guard that stays silent where
+# the lexer has already spoken saw its `error` token. That guard now reads a
+# word the parser reads as its swap as the keyword it writes
+# (`parse/swap_reading.hero`), and quotes it as written. An empty `record`,
+# `variant` or `extern` group over such a line is in the cases beside this
+# one.
+
+function stub() -> i64
+
+function main()  #~ reserved_word missing_body
+    print(1)
+
+constant LIMIT: i64
+
+constant MAX: i64  #~ reserved_word missing_body
+    5
+
+test "empty"
+
+function helper()  #~ reserved_word missing_body
+    return
