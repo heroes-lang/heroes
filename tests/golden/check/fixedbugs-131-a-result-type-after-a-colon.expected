@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-131-a-result-type-after-a-colon.hero:13:14: error[expected_end_of_line]: expected `->` or the end of the line, found `:` — a `function`'s result type is written after `->`: `-> i64`
+tests/golden/check/fixedbugs-131-a-result-type-after-a-colon.hero:16:29: error[expected_end_of_line]: expected `->` or the end of the line, found `:` — a `function`'s result type is written after `->`: `-> i64`
+tests/golden/check/fixedbugs-131-a-result-type-after-a-colon.hero:19:17: error[expected_end_of_line]: expected `->` or the end of the line, found `:` — a `function`'s result type is written after `->`: `-> [i64]`
+tests/golden/check/fixedbugs-131-a-result-type-after-a-colon.hero:22:18: error[expected_end_of_line]: expected `->` or the end of the line, found `=>` — a `function`'s result type is written after `->`: `-> str`
+tests/golden/check/fixedbugs-131-a-result-type-after-a-colon.hero:25:21: error[expected_end_of_line]: expected `->` or the end of the line, found `:` — a `function`'s result type is written after `->`: `-> i64`
+tests/golden/check/fixedbugs-131-a-result-type-after-a-colon.hero:25:26: error[trailing_colon]: a block is opened by the indentation alone — drop the `:` (this is not Python)

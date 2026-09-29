@@ -38,3 +38,10 @@ function main()
     const B: i64  #~ reserved_word
         5 )  #~ expected_end_of_line
     print(0)
+
+# Corrected 2026-09-30 by lane recovery-b1 (defect 130's class, lane X4's
+# report): a first line that is the line above going on no longer takes its
+# block whole. The token that goes on is passed over and the rest is read, so
+# its line's own mistakes and every later line's are told
+# (`fixedbugs-130-an-orphan-that-goes-on-with-the-line-above`); `+ 1` here
+# holds none, and this case reads the same.

@@ -34,3 +34,12 @@ function main()
         function inner()  #~ unexpected_block expected_expression
             q = 8 )  #~ expected_end_of_line
     print(x, a, b, c, d, e, f)
+
+# Corrected 2026-09-30 by lane recovery-b1 (defect 130's class, lane X4's
+# report): the header's last sentence no longer holds. One whose first line
+# is the line above going on is still named once, the one mistake its name
+# says, but it no longer goes whole: the token that goes on, `else` or `and`,
+# is passed over and the rest is read, so the `)` of `and c )` and a later
+# line's own mistakes are told
+# (`fixedbugs-130-an-orphan-that-goes-on-with-the-line-above`); `else` and
+# `and c` here hold none, and this case reads the same.

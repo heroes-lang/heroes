@@ -1,0 +1,30 @@
+# Fixed 2026-09-30, defect 131's class, lane recovery-b1 (lane X3's report),
+# beside `fixedbugs-131-a-colon-in-mid-line-left-to-its-head`. Symptom: a
+# function's result type written after `:`, TypeScript's and Kotlin's habit,
+# `function f(): i64`, or after `=>`, was told only *expected the end of the
+# line, found `:`* and that the body goes below, never how a result is
+# written, and no fix was offered; in an `extern` group the same `:` was
+# *expected a `function`, a `constant` or a `record`*. Cause: the signature
+# asked for `->` or nothing, and whatever stood there was the head's junk.
+# Now where what follows reads as a result to the line's end, the token is
+# told once, `-> i64` in its words, with the certain fix that writes `->`,
+# and the result is read as after `->` (`selfhost/parse/signature.hero`).
+
+function ts(): i64  #~ expected_end_of_line
+    return 1
+
+function with_params(x: i64): i64  #~ expected_end_of_line
+    return x
+
+function tight():[i64]  #~ expected_end_of_line
+    return [1]
+
+function arrow() => str  #~ expected_end_of_line
+    return "a"
+
+function colon_too(): i64:  #~ expected_end_of_line trailing_colon
+    return 2
+
+function main()
+    print(ts() + with_params(1) + tight()[0] + colon_too())
+    print(arrow())
