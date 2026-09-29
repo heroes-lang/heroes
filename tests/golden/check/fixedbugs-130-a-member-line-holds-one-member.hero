@@ -1,0 +1,51 @@
+# Fixed 2026-09-30, defect 130's class, lane recovery-b1 (lane X4's finding
+# n1). Symptom: a WRONG PROGRAM COMPILED. Nothing asked a member's line to
+# end after its member, so a name after it began the next one at exit 0:
+# `dark grey` was two cases and a `match` over `.grey` printed 3, `circle
+# f64` was a case named `f64`, `square side` over its fields gave them to
+# `side`, and `left: i64 right: i64` was two fields, in braces, nested under
+# a refused head and in an `extern` group alike; and junk after a case's name
+# was refused as a missing name, *expected a case name, found `(`*. Cause:
+# `case_block` pushed a case at its name and read on, and `field_block` a
+# field at its type. Now what stands past a case's name or a field's type is
+# `expected_end_of_line`, once, and the rest of the line goes, a case's
+# fields below it still its own (`selfhost/parse/member_lines.hero`).
+
+variant Shade
+    light
+    dark grey  #~ expected_end_of_line
+    blue green red  #~ expected_end_of_line
+
+variant Shape
+    circle f64  #~ expected_end_of_line
+    ring of f64  #~ expected_end_of_line
+    square side  #~ expected_end_of_line
+        s: f64
+    dot(r: f64)  #~ expected_end_of_line
+    line = 1  #~ expected_end_of_line
+    point, spot  #~ expected_end_of_line
+    blob )  #~ expected_end_of_line
+    arc
+        r: f64 d: f64  #~ expected_end_of_line
+
+record Pair
+    left: i64 right: i64  #~ expected_end_of_line
+    top: i64 )  #~ expected_end_of_line
+    low: i64 = 0  #~ expected_end_of_line
+    bottom: i64  # a note, and no mistake
+
+variant Tone {  #~ expected_end_of_line
+    warm,
+    dark grey,  #~ expected_end_of_line
+}
+
+extern "m.h"
+    record S tag s
+        a: i32 b: i32  #~ expected_end_of_line
+
+function main()
+    class Q  #~ reserved_word
+        variant V
+            a
+            b c  #~ expected_end_of_line
+    print(1)

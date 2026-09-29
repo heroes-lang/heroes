@@ -1,0 +1,19 @@
+# Fixed 2026-09-30, defect 130's class, lane recovery-b1, beside
+# `fixedbugs-130-a-member-line-holds-one-member`. Symptom: past a case's
+# name, a literal the lexer refused, `dark 0X10`, cost its spelling alone,
+# and the line its certain fix writes, `dark 0x10`, was then refused for its
+# end, a mistake the first run hid; and a `:` ending a case's line over its
+# fields was refused as a missing case name. Now the line's end is still
+# owed past a refused literal, as a statement's is, and the `:` is the
+# Python habit, `trailing_colon`, whose certain fix drops it, as after a
+# record's head (`selfhost/parse/member_lines.hero`).
+
+variant Shade
+    light
+    dark 0x10  #~ base_prefix_case expected_end_of_line
+    grey  #~ trailing_colon
+        r: i64
+    blue
+
+function main()
+    print(1)
