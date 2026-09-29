@@ -511,7 +511,7 @@ constant GROWTH_ALLOWED: [str]
 
 # `only` narrows the walk to the modules whose path holds it, which is how the
 # write-time hook asks about one file with the instrument's own unit
-# (`.claude/rules/verification.md` § A suite is the last judge); a narrowed run
+# (`.claude/rules/verification.md`, the section on the suite as last judge); a narrowed run
 # asks no floor.
 function run_all(scratch: str, only: str) -> report.Report?
     r: report.Report @ report.empty()

@@ -53,7 +53,7 @@ function collect(scratch: str, dir: str) -> [Case]?
 
 # The harness's third word: the cases whose NAME holds `only`, every case when
 # `only` is empty. Added 2026-09-29 for the gate of one repair (CLAUDE.md
-# § Verification; `.claude/rules/verification.md` § The batch), so that the
+# § Verification; `.claude/rules/verification.md`, the section on the batch), so that the
 # form holding a defect's cases can be asked about those cases with the
 # harness's own invocation rather than a `diff` by hand (CL-074). The caller
 # decides what an empty answer means: `main` refuses it, because a run that
