@@ -1,0 +1,9 @@
+tests/golden/check/fixedbugs-132-a-foreign-word-opens-its-line.hero:16:1: error[reserved_word]: `import` and `include` are not words in this language — a module is named with `use`: `use geom`
+tests/golden/check/fixedbugs-132-a-foreign-word-opens-its-line.hero:20:1: error[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
+tests/golden/check/fixedbugs-132-a-foreign-word-opens-its-line.hero:26:1: error[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
+tests/golden/check/fixedbugs-132-a-foreign-word-opens-its-line.hero:35:5: error[reserved_word]: `elif` is not a word in this language — write `else if`
+tests/golden/check/fixedbugs-132-a-foreign-word-opens-its-line.hero:15:1: error[expected_module_name]: expected the module's name after `use`, found end of line — `use geom`, which reads `geom.hero` beside this file
+tests/golden/check/fixedbugs-132-a-foreign-word-opens-its-line.hero:19:12: error[expected_type]: expected a type, found end of line — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+tests/golden/check/fixedbugs-132-a-foreign-word-opens-its-line.hero:20:1: error[missing_body]: a `constant` needs an indented body — one level deeper, exactly 4 spaces (found `const`)
+tests/golden/check/fixedbugs-132-a-foreign-word-opens-its-line.hero:25:7: error[expected_type]: expected a type, found end of line — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+tests/golden/check/fixedbugs-132-a-foreign-word-opens-its-line.hero:34:16: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

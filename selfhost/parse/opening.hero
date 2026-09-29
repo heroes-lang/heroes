@@ -16,7 +16,7 @@
 # | the head | the rest of its line | an indented body | no body |
 # |---|---|---|---|
 # | refused nothing, and its line ends | none | parsed | named missing at the next line |
-# | refused nothing, and its line goes on | named missing, then dropped | parsed | named missing |
+# | refused nothing, and its line goes on | named as junk, then dropped | parsed | the body named missing, found the junk |
 # | refused something | dropped, as debris | parsed | named missing at the next line, unless the head crossed a line or refused that very token |
 # | any, over a line the lexer joined | as above | parsed | held back (`diag.Held`) |
 #
@@ -51,6 +51,7 @@ use diag
 use cursor
 use text_lines
 use parse/swap_reading
+use foreign_at
 
 # Where a head began: how many diagnostics the parser had said, and the
 # token its first word stands on.
@@ -66,24 +67,29 @@ function mark(c: cursor.Cursor) -> Mark
 function refused(c: cursor.Cursor, head: Mark) -> bool
     return cursor.refused_since(c, head.said)
 
-# How an absent body is named: its code, and the words around what was found.
+# How an absent body is named: its code, and the words around what was found;
+# and where the body goes (`below`), which a head whose line goes on over it
+# is told.
 record Missing
     code: str
     lead: str
     tail: str
+    below: str
 
 function missing_body(owner: str) -> Missing
     return Missing(
         code: "missing_body",
         lead: owner + " needs an indented body — one level deeper, exactly 4 spaces (found ",
-        tail: ")"
+        tail: ")",
+        below: owner + "'s body goes on the lines below its head"
     )
 
 function missing_arms() -> Missing
     return Missing(
         code: "missing_match_arms",
         lead: "a `match` needs its arms indented one level below it, found ",
-        tail: ""
+        tail: "",
+        below: "a `match`'s arms go on the lines below its head"
     )
 
 # What stands where a head's body begins.
@@ -111,16 +117,47 @@ function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, mi
 
     if found != .none
         return found
-    absent(@c, text, head: head, silent: failed && crossed, missing: missing)
 
-    if cursor.at_fresh_line(c)
+    # The head refused nothing and its line goes on over a body that is there
+    # (`function f() )` over `x = 3`): what goes on is the one mistake, named
+    # as the junk it is, and the body is read and never called absent, as
+    # `record Point )` over its fields is (defect 131's class, 2026-09-29).
+    goes_on = !failed && !cursor.at_fresh_line(c)
+
+    if goes_on && body_below(c, text)
+        junk(@c, text, missing: missing)
+    else
+        absent(@c, text, head: head, silent: failed && crossed, missing: missing)
+
+    if !goes_on
         return .none
-
-    # The head refused nothing and its line goes on: what goes on was named,
-    # and a body below it is still its body, whose mistakes are owed.
     cursor.drop_rest_of_line(@c, from: head.pos)
     cursor.skip_terminators(@c)
     return opening_at(@c, text, missing)
+
+# What goes on past a head over its body, named where it stands, unless the
+# lexer already spoke there.
+function junk(@c: cursor.Cursor, text: str, missing: Missing)
+    if swap_reading.at_reported_error(c, text)
+        return
+    c.diagnostics @ c.diagnostics.push(
+        diag.new_diagnostic(code: "expected_end_of_line", message: "expected the end of the line, found " + swap_reading.found(c, text) + " — " + missing.below + ", one level deeper", span: cursor.current_span(c))
+    )
+
+# Whether a body stands below the line under the cursor: where dropping the
+# rest of that line leaves the cursor, an indent or a line whose margin holds
+# a tab, read ahead in the tokens without moving.
+function body_below(c: cursor.Cursor, text: str) -> bool
+    i: i64 @ c.pos
+
+    while c.tokens[i].kind != .eof && c.tokens[i].kind != .indent && c.tokens[i].kind != .dedent && c.tokens[i].kind != .terminator
+        i @ i + 1
+
+    while c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
+        i @ i + 1
+
+    k = c.tokens[i].kind
+    return k == .indent || !is_line_end(k) && k != .eof && margin_has_tab(text, at: c.tokens[i].span.start)
 
 # An indent, or a line with a tab in its margin, under the cursor. The second
 # holds back the report of a missing body, placed by `parse` against the
@@ -192,7 +229,10 @@ function tabbed_line(c: cursor.Cursor, text: str) -> bool
 
     if k == .eof || is_line_end(k)
         return false
-    at = cursor.current_span(c).start
+    return margin_has_tab(text, at: cursor.current_span(c).start)
+
+# Whether `at` begins its line of the text and that line's margin holds a tab.
+function margin_has_tab(text: str, at: i64) -> bool
     width = margin_width(text, at: at)
 
     if width < 0
@@ -298,6 +338,18 @@ function begins_an_expression(kind: token.TokenKind) -> bool
         .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge            => false
         .and_and | .or_or | .amp | .caret | .shl | .shr | .comment | .terminator         => false
         .indent | .dedent | .eof | .error                                                => false
+
+# Whether the token under the cursor is `elif` opening its line: a foreign
+# word whose certain swap writes `else if`, which an `if`'s chain reads as
+# that swap writes it (defect 133's class), as the top level reads `fn` as
+# `function` (`parse/swap_reading`). Asked through `foreign_at`, the one place
+# a swap's certainty is decided, so the parser reads only what `--apply`
+# writes.
+function at_elif(c: cursor.Cursor, text: str) -> bool
+    if !cursor.at(c, .error) || !cursor.at_fresh_line(c)
+        return false
+    swap = foreign_at.certain_swap(text, cursor.current_span(c))
+    return !swap.is_err() && swap.must() == "else if"
 
 function is_line_end(kind: token.TokenKind) -> bool
     return kind == .terminator || kind == .indent || kind == .dedent

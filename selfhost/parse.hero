@@ -643,3 +643,35 @@ test "a join the parser refuses only as joined is a guess, with its statement's"
     assert chain.diagnostics[1].fixes[0].certainty == .guess
     own = parse("function main()\n    x = n +\n    n )\n")
     assert own.diagnostics[0].fixes[0].certainty == .certain
+
+# Defect 133's class, lane 133's finding: `elif` opening its line in an `if`'s
+# chain is read as the `else if` its certain swap writes, and `switch` where
+# an expression begins as its `match`, so the construct's own mistakes are
+# told beside the lexer's `reserved_word` and nothing else is.
+test "elif and switch are read as their certain swaps write them"
+    rw = "reserved_word"
+    chain = parse(
+        "function main()\n    if x == 1\n        print(1)\n    elif x == 2\n        print(2)\n    else\n        print(3)\n"
+    )
+    assert codes(chain.diagnostics) == [rw]
+    own = parse("function main()\n    if x == 1\n        print(1)\n    elif x == )\n        print(2)\n")
+    assert codes(own.diagnostics) == [rw, "expected_expression"]
+    stray = parse("function main()\n    elif x == 2\n        print(2)\n")
+    assert codes(stray.diagnostics)[0] == rw
+    switch_arms = parse("function main()\n    y = switch x\n        + => 2\n        _ => 3\n")
+    assert codes(switch_arms.diagnostics) == [rw, "expected_pattern"]
+
+# Defect 131's class, lane 133's finding: what goes on past a head over a body
+# that is there is the one mistake, named as junk, and the body is read and
+# never called absent; with no body below, the body is named missing, found
+# the junk, as before.
+test "junk past a head over its body is named as junk, and the body is read"
+    eol = "expected_end_of_line"
+
+    for text in ["function f() )\n    x = 3\n", "constant K: i64 )\n    5\n", "test \"t\" )\n    assert true\n", "function main()\n    while c )\n        print(1)\n", "function main()\n    match n )\n        _ => print(1)\n"]
+        assert codes(parse(text).diagnostics) == [eol]
+
+    inside = parse("function f() )\n    x = 3 )\n")
+    assert codes(inside.diagnostics) == [eol, eol]
+    assert codes(parse("function f() )\n\nfunction main()\n    print(1)\n").diagnostics) == ["missing_body"]
+    assert codes(parse("function main()\n    if c )\n    print(1)\n").diagnostics) == ["missing_body"]

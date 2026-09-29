@@ -1,0 +1,11 @@
+tests/golden/check/fixedbugs-133-elif-and-switch-read-as-their-swaps.hero:17:5: error[reserved_word]: `elif` is not a word in this language — write `else if`
+tests/golden/check/fixedbugs-133-elif-and-switch-read-as-their-swaps.hero:25:5: error[reserved_word]: `elif` is not a word in this language — write `else if`
+tests/golden/check/fixedbugs-133-elif-and-switch-read-as-their-swaps.hero:27:5: error[reserved_word]: `elif` is not a word in this language — write `else if`
+tests/golden/check/fixedbugs-133-elif-and-switch-read-as-their-swaps.hero:33:5: error[reserved_word]: `elif` is not a word in this language — write `else if`
+tests/golden/check/fixedbugs-133-elif-and-switch-read-as-their-swaps.hero:39:5: error[reserved_word]: `elif` is not a word in this language — write `else if`
+tests/golden/check/fixedbugs-133-elif-and-switch-read-as-their-swaps.hero:45:5: error[reserved_word]: `elif` is not a word in this language — write `else if`
+tests/golden/check/fixedbugs-133-elif-and-switch-read-as-their-swaps.hero:51:12: error[reserved_word]: `switch` is not a word in this language — use `match`
+tests/golden/check/fixedbugs-133-elif-and-switch-read-as-their-swaps.hero:56:12: error[reserved_word]: `switch` is not a word in this language — use `match`
+tests/golden/check/fixedbugs-133-elif-and-switch-read-as-their-swaps.hero:33:15: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-133-elif-and-switch-read-as-their-swaps.hero:40:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-133-elif-and-switch-read-as-their-swaps.hero:57:9: error[expected_pattern]: expected a pattern, found `+` — `.case`, `.case name`, `_` (on `i64`/`str` only), or an integer, a string or a character, with an optional `-`

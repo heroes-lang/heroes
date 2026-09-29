@@ -17,6 +17,7 @@
 use token
 use keywords
 use bytes
+use foreign_at
 
 # Does the line from `from` bind or mutate: a lone `=` or an `@` outside
 # brackets?
@@ -188,6 +189,25 @@ function word_at(text: str, at: i64) -> str
         end @ end + 1
 
     return text.slice(from: at, to: end)
+
+# The keyword the line at `at` opens with: its first word's, or, for a word
+# the lexer refuses as foreign, the first word its certain swap writes, which
+# is how the parser reads it (`parse/swap_reading`). So `const B: i64` opens
+# its line as `constant B: i64` does, and `import geom` as `use geom`, where
+# either went on with an open line above it and was refused under another
+# code once `check --apply` wrote the swap (defect 132's class, lane 133's
+# finding). A hint or guidance names no word, and `int`'s swap is a name.
+function opening_keyword(text: str, at: i64) -> token.TokenKind?
+    word = word_at(text, at: at)
+    own = keywords.keyword(word)
+
+    if !own.is_err()
+        return own
+    swap = foreign_at.certain_swap(text, token.Span(start: at, end: at + word.len()))
+
+    if swap.is_err()
+        return own
+    return keywords.keyword(word_at(swap.must(), at: 0))
 
 # A word that begins a declaration or a statement and can continue nothing:
 # a line that begins with one is never the rest of the line above it.

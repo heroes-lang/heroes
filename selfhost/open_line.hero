@@ -40,7 +40,6 @@
 use token
 use state
 use diag
-use keywords
 use bytes
 use punctuation
 use next_line
@@ -211,7 +210,7 @@ function plant(@l: state.LexState)
 function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> bool
     left = l.tokens[at]
     margin = l.level * 4
-    first = keywords.keyword(next_line.word_at(text, at: l.pos))
+    first = next_line.opening_keyword(text, at: l.pos)
     fresh = !first.is_err() && next_line.starts_afresh(first.must())
 
     if spaces > margin && opens_a_body(left.kind)

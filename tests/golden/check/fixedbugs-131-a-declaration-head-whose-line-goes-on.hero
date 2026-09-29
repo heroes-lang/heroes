@@ -13,8 +13,13 @@
 # report is now the head's junk, `expected_end_of_line`, with where the
 # members go. The `test` line keeps `missing_body` (found `)`): its message
 # is `parse/opening.hero`'s, which that lane's repair did not reach.
+#
+# Moved again 2026-09-29 by defect 132's lane, given this class from lane
+# 133's finding: `parse/opening.hero` is reached now, and the `test` line is
+# told of its junk, `expected_end_of_line`, as the record and the variant
+# are.
 
-test "a name and more" )  #~ missing_body
+test "a name and more" )  #~ expected_end_of_line
     y = 3 )  #~ expected_end_of_line
 
 record Point )  #~ expected_end_of_line
