@@ -1,0 +1,66 @@
+# A foreign word where it STANDS in a text: the repair `keywords.foreign_word`
+# gives it once told whether the byte after it is `(` (defect 015), and the
+# word a certain swap writes over it (defect 133; design.md §4.17).
+#
+# **One module for a question two stages ask.** The lexer asks it to write
+# the `reserved_word` diagnostic and its fix (`scan.ident`); the parser asks
+# it to read a construct as the certain swap writes it
+# (`parse/swap_reading.hero`). Read in one place, the byte that decides
+# whether a swap is certain cannot be read two ways, so the parser never
+# reads a swap `check --apply` would not write. `keywords.hero` keeps the
+# tables and the answer; this module keeps where in a text they are asked.
+
+use token
+use keywords
+
+## Error codes
+
+constant ERR_NO_SWAP: str
+    "no_swap"
+
+## Where the word stands
+
+# The repair the word at `span` gets where it stands in `text`.
+function repair_at(text: str, span: token.Span) -> keywords.ForeignWord?
+    called = span.end < text.len() && text[span.end] == '('
+    return keywords.foreign_word(text: text.slice(from: span.start, to: span.end), called: called)
+
+# The word a CERTAIN swap writes over the foreign word at `span`: exactly the
+# replacement `check --apply` machine-applies, and a failure where the repair
+# is a hint or guidance, which nothing applies and so nothing may read as
+# written.
+function certain_swap(text: str, span: token.Span) -> str?
+    found = repair_at(text, span)
+
+    if found.is_err()
+        return fail(code: keywords.ERR_NOT_FOREIGN, msg: text.slice(from: span.start, to: span.end))
+
+    return match found.must().repair
+        .swap fix => ok(fix.word)
+        .hint _   => fail(code: ERR_NO_SWAP, msg: "a hint is shown, never applied")
+        .guidance => fail(code: ERR_NO_SWAP, msg: "guidance names no replacement")
+
+# The parser reads a construct as the certain swap writes it, so the swap it
+# reads must be the one `--apply` writes, decided by the same byte.
+test "a certain swap is read where the word stands, and a hint or guidance never is"
+    text = "fn main() int(x) let y  fn(z)"
+    assert certain_swap(text, token.Span(start: 0, end: 2)).must() == "function"
+    assert certain_swap(text, token.Span(start: 3, end: 7)).is_err()
+
+    # `int(` is a hint and `let` is guidance: neither is applied, so neither
+    # is read as written.
+    assert certain_swap(text, token.Span(start: 10, end: 13)).is_err()
+    assert certain_swap(text, token.Span(start: 17, end: 20)).is_err()
+
+    # `fn(` keeps its swap, because `function` may precede a `(`.
+    assert certain_swap(text, token.Span(start: 24, end: 26)).must() == "function"
+
+    # A word at the text's very end has no byte after it, so it is not called.
+    assert certain_swap("struct", token.Span(start: 0, end: 6)).must() == "record"
+    assert certain_swap("int", token.Span(start: 0, end: 3)).must() == "i64"
+    assert certain_swap("elif", token.Span(start: 0, end: 4)).must() == "else if"
+
+test "the repair where the word stands is the table's answer for that byte"
+    assert repair_at("int(", token.Span(start: 0, end: 3)).must() == keywords.foreign_word(text: "int", called: true).must()
+    assert repair_at("int x", token.Span(start: 0, end: 3)).must() == keywords.foreign_word(text: "int", called: false).must()
+    assert repair_at("main", token.Span(start: 0, end: 4)).is_err()
