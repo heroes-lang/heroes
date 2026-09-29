@@ -181,6 +181,10 @@ variant Repair
     # is not visible to the table below — only to the character after the word.
     hint
         word: str
+    # The word goes, and the spaces after it: shown, never machine-applied,
+    # where what is right is the line without it (`const x = 5` in a body is
+    # `x = 5`; defect 133, 2026-09-29).
+    drop
     guidance
 
 record ForeignWord
@@ -247,6 +251,7 @@ function called_word(text: str) -> ForeignWord?
         else
             ok(ForeignWord(message: one.message, repair: .guidance))
         .hint _   => ok(one)
+        .drop     => ok(one)
         .guidance => ok(one)
 
 function declared_word(text: str) -> ForeignWord?
@@ -348,6 +353,7 @@ test "a foreign word arrives with its repair"
     match foreign_word(text: "let", called: false).must().repair
         .swap _   => assert false
         .hint _   => assert false
+        .drop     => assert false
         .guidance => assert true
 
 test "the three spellings of null share one answer"

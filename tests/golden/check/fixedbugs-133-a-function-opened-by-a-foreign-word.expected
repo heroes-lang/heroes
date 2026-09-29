@@ -1,7 +1,6 @@
-tests/golden/check/fixedbugs-133-a-function-opened-by-a-foreign-word.hero:15:1: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`
-tests/golden/check/fixedbugs-133-a-function-opened-by-a-foreign-word.hero:19:1: error[reserved_word]: `func` is not a word in this language — use `function`
-tests/golden/check/fixedbugs-133-a-function-opened-by-a-foreign-word.hero:22:1: error[reserved_word]: `def` is not a word in this language — use `function`
-tests/golden/check/fixedbugs-133-a-function-opened-by-a-foreign-word.hero:15:11: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
-tests/golden/check/fixedbugs-133-a-function-opened-by-a-foreign-word.hero:17:1: error[expected_declaration]: expected a declaration, found `}` — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test "…"`, or `extern`
-tests/golden/check/fixedbugs-133-a-function-opened-by-a-foreign-word.hero:20:21: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
-tests/golden/check/fixedbugs-133-a-function-opened-by-a-foreign-word.hero:23:39: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-133-a-function-opened-by-a-foreign-word.hero:19:1: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`
+tests/golden/check/fixedbugs-133-a-function-opened-by-a-foreign-word.hero:23:1: error[reserved_word]: `func` is not a word in this language — use `function`
+tests/golden/check/fixedbugs-133-a-function-opened-by-a-foreign-word.hero:26:1: error[reserved_word]: `def` is not a word in this language — use `function`
+tests/golden/check/fixedbugs-133-a-function-opened-by-a-foreign-word.hero:19:11: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-133-a-function-opened-by-a-foreign-word.hero:24:21: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-133-a-function-opened-by-a-foreign-word.hero:27:39: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

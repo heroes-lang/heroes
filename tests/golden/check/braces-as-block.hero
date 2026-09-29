@@ -2,6 +2,12 @@
 # Guards the most plausible C-family import: braces as a block delimiter.
 # Braces exist only as map literals, so `{` here starts a map and fails loudly
 # rather than opening a block.
+#
+# Moved 2026-09-29 (defect 131's class, given to defect 133's lane): the
+# brace habit is one mistake, so the `{` is its one report and the `}` that
+# closes it is its debris, which cost `expected_declaration` again until
+# that day. The statements inside are read as the body they are, their own
+# mistakes too (`parse/braces.hero`).
 function main() {  #~ missing_body
     print(1)
-}  #~ expected_declaration
+}

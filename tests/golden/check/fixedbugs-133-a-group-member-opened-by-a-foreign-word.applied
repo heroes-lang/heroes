@@ -11,13 +11,18 @@
 # which no group holds, so it is read as nothing there and costs the word
 # alone. An empty group is refused at the next line's first token, as it
 # is after the swap.
+#
+# Moved the same day, a second round (defect 133's own class, a certain swap
+# wrong where it stands): `enum` in a group no longer offers `variant` as
+# certain, since no group holds one; its message says what is right there,
+# the group's `constant`s.
 
 extern "math.h"
     function sqrt(x: f64) -> f64  #~ reserved_word
     constant M_PI: f64  #~ reserved_word
     record Pair  #~ reserved_word
         a i32  #~ expected_field_type
-    variant Mode  #~ reserved_word
+    enum Mode  #~ reserved_word
     function cbrt(x: f64) f64  #~ reserved_word expected_extern_signature
     function floor(x: f64) -> f64
 

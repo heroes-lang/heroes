@@ -1,0 +1,37 @@
+# Fixed 2026-09-29, defect 130's class, given to defect 133's lane. Symptom:
+# a function, a constant or a test with no body, and a record, a variant or
+# an `extern` group with no members, above a line opened by a word or a
+# character the lexer refuses (`class`, `let`, `€`), was never told it was
+# empty, before or after `check --apply`. Cause: the guard that names the
+# absence stands at the next line's first token, and it kept its silence at
+# every `error` token, as though the lexer's report on that token said
+# something about the declaration above it. It now keeps its silence only
+# on the head's own line (`swap_reading.at_reported_error`), and quotes a
+# refused word as written.
+
+function stub() -> i64
+
+class Holder  #~ reserved_word missing_body
+
+constant LIMIT: i64
+
+let x = 5  #~ reserved_word missing_body
+
+test "empty"
+
+€ here  #~ unexpected_character missing_body
+
+record Nothing  #~ empty_record
+
+class Other  #~ reserved_word
+
+variant Empty  #~ empty_variant
+
+let y = 1  #~ reserved_word
+
+extern "m.h"
+
+€ there  #~ unexpected_character expected_extern_block
+
+function main()
+    print(1)

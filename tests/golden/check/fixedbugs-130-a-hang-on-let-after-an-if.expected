@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-130-a-hang-on-let-after-an-if.hero:14:5: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/fixedbugs-130-a-hang-on-let-after-an-if.hero:17:5: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
