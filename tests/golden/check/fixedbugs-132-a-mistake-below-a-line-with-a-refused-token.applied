@@ -1,0 +1,27 @@
+# Fixed defect 132's class, 2026-09-29, a mistake on a line joined to one
+# that holds a token the lexer refused. Symptom: `x = 0X10 +` over
+# `print(1) )` cost `base_prefix_case` and `continuation_outside_brackets`,
+# and the `)` was told only once `check --apply` had written `0x10`: a
+# certain fix wrote a program whose parse reported a code the first run had
+# not; `€ +` over `print(2) )` hid its `)` the same way. Cause: the joined
+# reading's recovery drops what follows the `error` token the lexer made of
+# the refused token, and `parse/apart` weighed only the parser's own
+# refusals, so it read the joined reading as having reached the `)` and
+# said nothing. Now an `error` token counts as the refusal it is, in either
+# reading, but a foreign word's the parser reads as its certain swap
+# (`errors_in`), and the lines apart tell the `)`.
+
+function a_malformed_literal_left_open()
+    #~v base_prefix_case continuation_outside_brackets
+    x = 0x10 +
+    print(1) )  #~ expected_end_of_line
+    print(x)
+
+function a_refused_character_left_open()
+    #~v unexpected_character continuation_outside_brackets
+    € +
+    print(2) )  #~ expected_end_of_line
+
+function main()
+    a_malformed_literal_left_open()
+    a_refused_character_left_open()
