@@ -1,0 +1,109 @@
+# The brace habit: a declaration whose head's line ends with `{`, its body or
+# its members inside braces, and a `}` alone on the line after them
+# (design.md §4.17; defect 131's class, 2026-09-29).
+#
+# `fn main() {` over `print(1)` over `}` is the habit of the languages a model
+# has read most, and it is ONE mistake. Until 2026-09-29 it cost the `{`'s
+# report and then `expected_declaration` again at the `}`, and a body inside
+# the braces lost its first line to the head's recovery and sent the rest to
+# the top level, each line a declaration it is not (`if x == 1 {` over its
+# own lines cost three more). The braces are why: inside them the lexer makes
+# no indent, so the body the author wrote is not a block the grammar can
+# find, and the `}` that closes it stands at the margin like a declaration.
+#
+# So the habit is read whole, from the `{` to the `}` that closes it:
+#
+# - under a head that owes a BODY (a `function`, a `constant`, a `test`), the
+#   `{` is refused as the missing body it stands for, in the block reader's
+#   own words (`opening.missing_body`), the statements inside are read as the
+#   body they are, their own mistakes too, and the `}` goes silently;
+# - under a head that owes MEMBERS (a `record`, a `variant`, an `extern`
+#   group), the caller refuses the `{` as its head's junk and the region goes
+#   whole, since fields and cases in braces are written in C's shape, not
+#   this language's, and each line of it would be one more report of the one
+#   habit.
+#
+# A `{` that is not the last thing on its line opens a map or a map type,
+# and is never the habit.
+
+use token
+use ast
+use cursor
+use grammar_expr
+use parse/opening
+
+## The habit
+
+# Whether the cursor stands on a `{` that ends its line: nothing after it on
+# the text's line, or nothing but a comment.
+function opens(c: cursor.Cursor, text: str) -> bool
+    if !cursor.at(c, .lbrace)
+        return false
+    i: i64 @ cursor.current_span(c).end
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\r')
+        i @ i + 1
+
+    return i >= text.len() || text[i] == '\n' || text[i] == '#'
+
+# The index of the token that closes the `{` at `open`, or of the end of the
+# file where nothing does.
+function closer(c: cursor.Cursor, open: i64) -> i64
+    depth: i64 @ 0
+    i: i64 @ open
+
+    while i < c.tokens.len()
+        kind = c.tokens[i].kind
+
+        if kind == .eof
+            return i
+
+        if kind == .lbrace
+            depth @ depth + 1
+        else if kind == .rbrace
+            depth @ depth - 1
+
+            if depth == 0
+                return i
+        i @ i + 1
+
+    return c.tokens.len() - 1
+
+# A head that owes a body: the body in braces, when the habit is what stands
+# there and the head refused nothing, and otherwise the block reader.
+function body_or_block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: opening.Mark) -> ast.Block?
+    if !opens(c, text) || opening.refused(c, head)
+        return grammar_expr.block(@c, @a, text: text, owner: owner, head: head)
+    close = closer(c, open: c.pos)
+    c.diagnostics @ c.diagnostics.push(opening.missing_here(c, text, opening.missing_body(owner)))
+    open = cursor.bump(@c).span
+    stmts: [i64] @ []
+
+    while c.pos < close && !cursor.at(c, .eof)
+        cursor.skip_terminators(@c)
+
+        if c.pos >= close || cursor.at(c, .eof)
+            break
+
+        # A `}` inside is a nested habit's, whose `{` its own head refused.
+        if cursor.at(c, .rbrace)
+            _ = cursor.bump(@c)
+        else
+            stmts @ stmts.push(grammar_expr.statement(@c, @a, text))
+
+    if c.pos == close && cursor.at(c, .rbrace)
+        _ = cursor.bump(@c)
+    return ok(
+        ast.Block(span: token.Span(start: open.start, end: cursor.previous_significant_span(c).end), stmts: stmts)
+    )
+
+# A head that owes members: the braced region goes whole, `{` to `}`, after
+# the caller's one report of the `{`.
+function skip(@c: cursor.Cursor)
+    close = closer(c, open: c.pos)
+
+    while c.pos < close && !cursor.at(c, .eof)
+        _ = cursor.bump(@c)
+
+    if cursor.at(c, .rbrace)
+        _ = cursor.bump(@c)

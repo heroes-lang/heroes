@@ -1,0 +1,86 @@
+# The length inside `i32[4]`, the bracket after a type that makes it a C array
+# member (design.md §4.19, panel 062), read by the type grammar
+# (`parse/type.hero`) and by nothing else.
+#
+# Moved out of `parse/type.hero` on 2026-09-29 (defect 133's second round),
+# along the seam its own section heading drew: the length is a literal and
+# never a type, so this reads the cursor and calls nothing back, and the
+# type grammar it left had grown past §11's 300 lines by the bare function
+# type it now reads.
+
+use token
+use cursor
+
+## Reading it
+
+# **A literal, never an expression.** The length is part of the type, so it is
+# read by the parser and not by the checker — and a language whose array lengths
+# could be computed would need a constant evaluator §1.0 has never asked for. C
+# headers write literals.
+#
+# **Zero is refused**, because C forbids a zero-length array member in standard
+# C (it is a GNU extension), and a Heroes record with a zero-length field would
+# have an index expression with no valid index at all.
+function read(@c: cursor.Cursor, text: str, open: token.Span) -> i64
+    if !cursor.at(c, .int_lit)
+        if !cursor.at_reported_error(c)
+            cursor.error(
+                @c,
+                code: "expected_array_length",
+                message: "expected the array's length after `[`, found " + cursor.found(c, text) + " — a C array member is `i32[4]`, and the length is part of the type (§4.19)",
+                span: cursor.current_span(c)
+            )
+        return 1
+    written = cursor.slice_of(text, cursor.current_span(c))
+    s = cursor.bump(@c).span
+    cursor.skip_terminators(@c)
+
+    if !cursor.at(c, .rbracket)
+        if !cursor.at_reported_error(c)
+            cursor.error(
+                @c,
+                code: "expected_array_length",
+                message: "an array length is one integer, then `]` — `i32[4]`",
+                span: cursor.current_span(c)
+            )
+    else
+        _ = cursor.bump(@c)
+    decoded = decode_length(written)
+
+    if decoded.is_err()
+        return 1
+    n = decoded.must()
+
+    if n > 0
+        return n
+    cursor.error(
+        @c,
+        code: "empty_fixed_array",
+        message: "a fixed array's length is at least 1 — C has no zero-length struct member in standard C, and an index into one could never be in range",
+        span: token.Span(start: open.start, end: s.end)
+    )
+    return 1
+
+# The decoder digits.hero owns, reached without a `use` cycle: a length is
+# always decimal here, because the lexer already refused every other base's
+# prefix inside a bracket.
+function decode_length(written: str) -> i64?
+    value: i64 @ 0
+    i: i64 @ 0
+
+    while i < written.len()
+        b = written[i]
+
+        if b == '_'
+            i @ i + 1
+            continue
+
+        if b < '0' || b > '9'
+            return fail(code: "not_a_length", msg: written)
+
+        if value > (9223372036854775807 - to_i64(b - '0').must()) / 10
+            return fail(code: "does_not_fit", msg: written)
+        value @ value * 10 + to_i64(b - '0').must()
+        i @ i + 1
+
+    return ok(value)

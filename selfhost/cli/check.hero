@@ -303,13 +303,20 @@ test "stages stop on the first noise, apply repairs, holes stay exit 0"
     pinv = argv.Invocation(tag: .check_cmd, file: ok("t.hero"), program_args: [], flags: perm)
     assert run(us, pinv) == .ok_exit
 
-    # apply: the reserved-word fix is certain, and the repaired text
-    # is the artifact.
-    fixable = "function main()\n    fn = 3\n    print(fn)\n"
+    # apply: the reserved-word fix is certain where the word it writes is
+    # right, and the repaired text is the artifact.
+    fixable = "fn main()\n    print(1)\n"
     fs = source.new_source(name: "t.hero", text: fixable)
     parsed = parse.parse(fs.text)
     repaired = apply(parsed.diagnostics, fs)
-    assert has_text(text: repaired, needle: "function = 3")
+    assert has_text(text: repaired, needle: "function main()")
+
+    # And nowhere else (defect 133's second round): `fn = 3` in a body was
+    # repaired to `function = 3`, a program the parser refuses, and this test
+    # asserted it until 2026-09-29. A name's place takes no swap.
+    named = "function main()\n    fn = 3\n    print(fn)\n"
+    ns = source.new_source(name: "t.hero", text: named)
+    assert apply(parse.parse(ns.text).diagnostics, ns) == named
 
 # Defects 130 and 131: the control arm is never left with nothing to say about
 # a program the parser could not read. It drops the thesis rules, so it reads

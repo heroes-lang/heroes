@@ -21,9 +21,11 @@
 
 use token
 use ast
+use diag
 use cursor
 use data_errors
 use parse/line_end
+use parse/fixed_length
 use parse/swap_reading
 
 ## The entry point
@@ -40,7 +42,7 @@ function parse_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     # lookahead.
     while cursor.at(c, .lbracket)
         open = cursor.bump(@c).span
-        length = fixed_length(@c, text, open)
+        length = fixed_length.read(@c, text, open)
         inner @ ast.push_type(
             @a.types,
             ast.TypeNode(kind: .fixed(element: inner, length: length), span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
@@ -81,6 +83,9 @@ function prefix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
     if k == .lparen
         return unit_or_function(@c, @a, text)
+
+    if swap_reading.reads_as_function(c, text) && cursor.peek(c, 1) == .lparen
+        return bare_function(@c, @a, text)
 
     if !cursor.at_reported_error(c)
         cursor.error(
@@ -178,16 +183,7 @@ function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         # report the mistake three times.
         cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
         return ast.push_type(@a.types, ast.TypeNode(kind: .error, span: open))
-    labels: [token.Span] @ []
-    params = function_params(@c, @a, text, @labels)
-    _ = line_end.expect_after(
-        @c,
-        text: text,
-        kind: .arrow,
-        code: "expected_function_type_arrow",
-        what: "`->` and the result type — a function type always states what it returns, `()` when nothing"
-    )
-    result = parse_type(@c, @a, text)
+    parts = function_parts(@c, @a, text)
     cursor.skip_terminators(@c)
     close = cursor.current_span(c)
     _ = line_end.expect_closer(
@@ -200,7 +196,55 @@ function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     )
     return ast.push_type(
         @a.types,
-        ast.TypeNode(kind: .function_type(params: params, labels: labels, result: result), span: token.Span(start: open.start, end: close.end))
+        ast.TypeNode(kind: .function_type(params: parts.params, labels: parts.labels, result: parts.result), span: token.Span(start: open.start, end: close.end))
+    )
+
+# What follows a function type's `function`: its parameters, `->` and its
+# result, shared by the parenthesised type and the bare one.
+record FunctionParts
+    params: [i64]
+    labels: [token.Span]
+    result: i64
+
+function function_parts(@c: cursor.Cursor, @a: ast.Ast, text: str) -> FunctionParts
+    labels: [token.Span] @ []
+    params = function_params(@c, @a, text, @labels)
+    _ = line_end.expect_after(
+        @c,
+        text: text,
+        kind: .arrow,
+        code: "expected_function_type_arrow",
+        what: "`->` and the result type — a function type always states what it returns, `()` when nothing"
+    )
+    return FunctionParts(params: params, labels: labels, result: parse_type(@c, @a, text))
+
+# `function(i64) -> i64` where a type goes, its parentheses left out: read
+# as the type it means, so the signature goes on to its body (defect 133's
+# second round), and refused once, over the whole type, with the parentheses
+# as its certain fix. `fn(i64) -> i64` is read the same way and says nothing
+# more: the lexer's `reserved_word` names the word and the parentheses both,
+# and a second message at one token would be the first one's debris.
+function bare_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    start = cursor.current_span(c)
+    swapped = cursor.at(c, .error)
+    _ = cursor.bump(@c)
+    parts = function_parts(@c, @a, text)
+    span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
+
+    if !swapped
+        written = cursor.slice_of(text, span)
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "expected_type",
+            message: "expected a type, found `function` without its parentheses — a function type is written in them, `(function(i64) -> i64)`",
+            span: span
+        )
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write the parentheses", replacement: "(" + written + ")", span: span, certainty: .certain)
+        )
+        c.diagnostics @ c.diagnostics.push(d)
+    return ast.push_type(
+        @a.types,
+        ast.TypeNode(kind: .function_type(params: parts.params, labels: parts.labels, result: parts.result), span: span)
     )
 
 # The parameter types of a function type, and since defect 026 their NAMES:
@@ -260,80 +304,6 @@ function named_parameter(@c: cursor.Cursor, a: ast.Ast, name: i64) -> token.Span
             return span
 
     return span
-
-## The length inside `i32[4]`, and every way it can be wrong
-
-# **A literal, never an expression.** The length is part of the type, so it is
-# read by the parser and not by the checker — and a language whose array lengths
-# could be computed would need a constant evaluator §1.0 has never asked for. C
-# headers write literals.
-#
-# **Zero is refused**, because C forbids a zero-length array member in standard
-# C (it is a GNU extension), and a Heroes record with a zero-length field would
-# have an index expression with no valid index at all.
-function fixed_length(@c: cursor.Cursor, text: str, open: token.Span) -> i64
-    if !cursor.at(c, .int_lit)
-        if !cursor.at_reported_error(c)
-            cursor.error(
-                @c,
-                code: "expected_array_length",
-                message: "expected the array's length after `[`, found " + cursor.found(c, text) + " — a C array member is `i32[4]`, and the length is part of the type (§4.19)",
-                span: cursor.current_span(c)
-            )
-        return 1
-    written = cursor.slice_of(text, cursor.current_span(c))
-    s = cursor.bump(@c).span
-    cursor.skip_terminators(@c)
-
-    if !cursor.at(c, .rbracket)
-        if !cursor.at_reported_error(c)
-            cursor.error(
-                @c,
-                code: "expected_array_length",
-                message: "an array length is one integer, then `]` — `i32[4]`",
-                span: cursor.current_span(c)
-            )
-    else
-        _ = cursor.bump(@c)
-    decoded = decode_length(written)
-
-    if decoded.is_err()
-        return 1
-    n = decoded.must()
-
-    if n > 0
-        return n
-    cursor.error(
-        @c,
-        code: "empty_fixed_array",
-        message: "a fixed array's length is at least 1 — C has no zero-length struct member in standard C, and an index into one could never be in range",
-        span: token.Span(start: open.start, end: s.end)
-    )
-    return 1
-
-# The decoder digits.hero owns, reached without a `use` cycle: a length is
-# always decimal here, because the lexer already refused every other base's
-# prefix inside a bracket.
-function decode_length(written: str) -> i64?
-    value: i64 @ 0
-    i: i64 @ 0
-
-    while i < written.len()
-        b = written[i]
-
-        if b == '_'
-            i @ i + 1
-            continue
-
-        if b < '0' || b > '9'
-            return fail(code: "not_a_length", msg: written)
-
-        if value > (9223372036854775807 - to_i64(b - '0').must()) / 10
-            return fail(code: "does_not_fit", msg: written)
-        value @ value * 10 + to_i64(b - '0').must()
-        i @ i + 1
-
-    return ok(value)
 
 ## Tests — the parser reading real token streams
 
@@ -552,23 +522,25 @@ test "a type that cannot be read is a node, so the errors after it are found"
     assert cursor.current_kind(c) == .plus
 
 # Defect 133: a foreign word whose certain swap the type grammar can read is
-# read as written by the swap, and consumed, so the signature goes on.
+# read as written by the swap, and consumed, so the signature goes on. The
+# texts put the type where a type goes, after `x: `, since a swap is certain
+# only where the word it writes is right (defect 133's second round).
 test "a foreign word in a type reads as its certain swap and is consumed"
-    # (fn(i64) -> i64), the lexer having refused `fn`
+    # x: (fn(i64) -> i64), the lexer having refused `fn`
     stream: [token.Token] = [
-        tok(.lparen, start: 0, end: 1)
-        tok(.error, start: 1, end: 3)
         tok(.lparen, start: 3, end: 4)
-        tok(.ident, start: 4, end: 7)
-        tok(.rparen, start: 7, end: 8)
-        tok(.arrow, start: 9, end: 11)
-        tok(.ident, start: 12, end: 15)
-        tok(.rparen, start: 15, end: 16)
-        tok(.eof, start: 16, end: 16)
+        tok(.error, start: 4, end: 6)
+        tok(.lparen, start: 6, end: 7)
+        tok(.ident, start: 7, end: 10)
+        tok(.rparen, start: 10, end: 11)
+        tok(.arrow, start: 12, end: 14)
+        tok(.ident, start: 15, end: 18)
+        tok(.rparen, start: 18, end: 19)
+        tok(.eof, start: 19, end: 19)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
-    at = parse_type(@c, @a, "(fn(i64) -> i64)")
+    at = parse_type(@c, @a, "x: (fn(i64) -> i64)")
 
     match a.types[at].kind
         .function_type f                                                   => assert f.params.len() == 1
@@ -579,24 +551,71 @@ test "a foreign word in a type reads as its certain swap and is consumed"
 
     # `int` reads as the NAMED type the swap writes, over the span written.
     named_stream: [token.Token] = [
-        tok(.error, start: 0, end: 3)
-        tok(.terminator, start: 3, end: 3)
-        tok(.eof, start: 3, end: 3)
+        tok(.error, start: 3, end: 6)
+        tok(.terminator, start: 6, end: 6)
+        tok(.eof, start: 6, end: 6)
     ]
     n: cursor.Cursor @ cursor.new_cursor(named_stream)
     na: ast.Ast @ ast.new_ast()
-    nat = parse_type(@n, @na, "int")
+    nat = parse_type(@n, @na, "x: int")
     assert na.types[nat].kind == .named
-    assert na.types[nat].span == token.Span(start: 0, end: 3)
+    assert na.types[nat].span == token.Span(start: 3, end: 6)
     assert n.diagnostics.len() == 0
     assert cursor.at(n, .terminator)
 
     # A word with no certain swap is left where it stands, and said nothing of:
     # the lexer spoke, and the caller's recovery decides where the line ends.
-    guided: [token.Token] = [tok(.error, start: 0, end: 4), tok(.eof, start: 4, end: 4)]
+    guided: [token.Token] = [tok(.error, start: 3, end: 7), tok(.eof, start: 7, end: 7)]
     g: cursor.Cursor @ cursor.new_cursor(guided)
     ga: ast.Ast @ ast.new_ast()
-    gat = parse_type(@g, @ga, "None")
+    gat = parse_type(@g, @ga, "x: None")
     assert ga.types[gat].kind == .error
     assert g.diagnostics.len() == 0
     assert cursor.at(g, .error)
+
+# Defect 133's second round: a function type written without its parentheses
+# is the type it means, refused once over the whole type.
+test "a bare function type is read, and refused once with its parentheses as the fix"
+    # x: function(i64) -> i64
+    written: [token.Token] = [
+        tok(.kw_function, start: 3, end: 11)
+        tok(.lparen, start: 11, end: 12)
+        tok(.ident, start: 12, end: 15)
+        tok(.rparen, start: 15, end: 16)
+        tok(.arrow, start: 17, end: 19)
+        tok(.ident, start: 20, end: 23)
+        tok(.eof, start: 23, end: 23)
+    ]
+    w: cursor.Cursor @ cursor.new_cursor(written)
+    wa: ast.Ast @ ast.new_ast()
+    wat = parse_type(@w, @wa, "x: function(i64) -> i64")
+
+    match wa.types[wat].kind
+        .function_type f                                                   => assert f.params.len() == 1
+        .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => assert false
+
+    assert w.diagnostics.len() == 1
+    assert w.diagnostics[0].code == "expected_type"
+    assert w.diagnostics[0].fixes[0].replacement == "(function(i64) -> i64)"
+    assert w.diagnostics[0].fixes[0].certainty == .certain
+
+    # x: fn(i64) -> i64: the lexer's `reserved_word` says it all.
+    swapped: [token.Token] = [
+        tok(.error, start: 3, end: 5)
+        tok(.lparen, start: 5, end: 6)
+        tok(.ident, start: 6, end: 9)
+        tok(.rparen, start: 9, end: 10)
+        tok(.arrow, start: 11, end: 13)
+        tok(.ident, start: 14, end: 17)
+        tok(.eof, start: 17, end: 17)
+    ]
+    s: cursor.Cursor @ cursor.new_cursor(swapped)
+    sa: ast.Ast @ ast.new_ast()
+    sat = parse_type(@s, @sa, "x: fn(i64) -> i64")
+
+    match sa.types[sat].kind
+        .function_type f                                                   => assert f.params.len() == 1
+        .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => assert false
+
+    assert s.diagnostics.len() == 0
+    assert cursor.at(s, .eof)

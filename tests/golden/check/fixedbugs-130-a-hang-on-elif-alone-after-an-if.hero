@@ -1,0 +1,20 @@
+# Fixed 2026-09-29 by lane 130's merge `0ba7b084` (defect 130); the case is
+# defect 133's lane's, one per shape, so that the hang cannot come back
+# unseen. Symptom: on the compilers of `a6eab736` and `7c0cb024` the parser
+# never returned from this file, measured with a ten-second timeout, and the
+# statement list it was building grew for as long as it ran. Cause, read and
+# not re-run: a statement headed by a token the lexer refused, right after a
+# block, consumed nothing, and the statement's end took the block's own
+# dedent, the token before it, for a statement that had ended with a block,
+# so the block's loop read the same token again, forever. Since `0ba7b084`
+# a failed statement drops what is left of its line.
+# The shape: `elif` alone over a body, after an `if`. With no condition of
+# its own the swap to `else if` is not certain, and the message says what an
+# `else if` owes; the `unexpected_block` below is grammar_expr's, as in the
+# case beside this one.
+
+function main()
+    if 1 == 1
+        print(1)
+    elif  #~ reserved_word
+        print(2)  #~ unexpected_block

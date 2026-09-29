@@ -37,6 +37,7 @@ use parse/members as parse_members
 use parse/marks as parse_marks
 use grammar_expr
 use parse/opening
+use parse/braces
 
 ## Linkage — where a declaration's implementation comes from
 
@@ -106,7 +107,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     if is_from_c(linkage)
         body_check(@c, "constant")
     else
-        b = grammar_expr.block(@c, @a, text: text, owner: "a `constant`", head: head)
+        b = braces.body_or_block(@c, @a, text: text, owner: "a `constant`", head: head)
 
         if b.is_err()
             cursor.recover_to_next_decl(@c)
@@ -168,7 +169,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     if is_extern
         body_check(@c, "function")
     else
-        b = grammar_expr.block(@c, @a, text: text, owner: "a `function`", head: head)
+        b = braces.body_or_block(@c, @a, text: text, owner: "a `function`", head: head)
 
         if b.is_err()
             cursor.recover_to_next_decl(@c)
