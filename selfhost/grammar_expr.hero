@@ -85,6 +85,7 @@ use parse/colon_habit
 use parse/braced_arms
 use parse/braced_lines
 use parse/statement_end
+use parse/refused_literal
 use parse/heads
 use parse/orphans
 use operators
@@ -416,7 +417,10 @@ function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
     if k == .str_piece
         return interpolation(@c, @a, text)
-    simple = atom_kind(k)
+
+    # A literal the lexer refused is read as the literal it stands for, so
+    # the expression goes on past it: `f(0X10 + )` is refused for its `)`.
+    simple = atom_kind(refused_literal.read_as(c, text))
 
     if simple.is_err()
         if !cursor.at_reported_error(c) && !line_end.said_here(c)
@@ -872,16 +876,11 @@ function statement_kind(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKi
     return expression_or_mutation(@c, @a, text)
 
 # Every statement ends at its line end, consumed here; what that owes is
-# `parse/statement_end`'s, once a refused literal where an operand goes is read past.
+# `parse/statement_end`'s, once a literal that never closed, its last
+# operand, is taken.
 function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, from: i64, kind: ast.StmtKind, said: i64, exprs: i64) -> i64
-    while !cursor.refused_since(c, said) && statement_end.refused_operand(c, a, text, exprs: exprs)
+    if !cursor.refused_since(c, said) && statement_end.refused_operand(c, a, text, exprs: exprs)
         _ = cursor.bump(@c)
-
-        if !binary_op(cursor.current_kind(c)).is_err()
-            _ = cursor.bump(@c)
-            _ = parse_expr(@c, @a, text)
-        else if cursor.at(c, .dot)
-            _ = parse_expr(@c, @a, text)
 
     # The last significant token, never a trailing comment, is what the caret underlines.
     span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)

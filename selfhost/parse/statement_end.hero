@@ -36,12 +36,15 @@
 #
 # **A literal the lexer refused is still a value** (lane Y's finding,
 # 2026-09-29). Its spelling is its one mistake, `0X10`, and its place is a
-# value's: where the grammar asked an operand of it, `x = 0X10 + f(1) )`, the
-# line is read past it (`refused_operand`), and where the line's end goes, `x
-# = 1 0X10`, the end is still owed (`parse/refused_literal`, whose question
-# a member's line asks too). The line its certain fix writes, `0x10`, is
-# refused for that `)` or that `0x10`, which the first run hid, so a certain
-# fix wrote a program with a mistake no run had told.
+# value's: where the line's end goes, `x = 1 0X10`, the end is still owed
+# (`parse/refused_literal`, whose question a member's line asks too). The
+# line its certain fix writes, `0x10`, is refused for that `0x10`, which the
+# first run hid, so a certain fix wrote a program with a mistake no run had
+# told. Where an operand goes, `x = 0X10 + f(1) )`, the line was read past
+# the literal here until 2026-09-30, when the expression reader came to read
+# it as the literal it stands for, in brackets too (`grammar_expr.primary`);
+# what is left here is one that never closed, taken as the line's last
+# operand (`refused_operand`).
 
 use cursor
 use ast
@@ -116,8 +119,11 @@ function hangs_below(c: cursor.Cursor, text: str) -> Below
     return .nothing
 
 # Whether the cursor stands on a refused literal the grammar asked an operand
-# of and could not read: an `error` expression at its span, built since the
-# statement's first, `exprs`.
+# of and left there: an `error` expression at its span, built since the
+# statement's first, `exprs`. Only one the lexer found never closed is left
+# (`parse/refused_literal.closed`): it ran to its line's end, so it is the
+# line's last operand and `grammar_expr.finish` takes it, where the line's end
+# asked of it would be refused at the statement's own value.
 function refused_operand(c: cursor.Cursor, a: ast.Ast, text: str, exprs: i64) -> bool
     if !refused_literal.here(c, text)
         return false
