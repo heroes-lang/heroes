@@ -1157,12 +1157,12 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
 
     if !cursor.expect(@c, text: text, kind: .fat_arrow, code: "expected_arm_arrow", what: "`=>` and the arm's value")
         return fail(code: "no_arrow", msg: "the arm has no `=>`")
-    cursor.skip_terminators(@c)
 
     # One statement, or a block — the same two shapes every other body has
     # (panel 014). Going through `statement` is what gives an arm `assert`,
     # `break` and `return`, and what stops the printer from having a second path
-    # that cannot render a block under a control head.
+    # that cannot render a block under a control head. Never across a line
+    # end: an arm's body is on its line or in the block below it.
     body: ast.ArmBody @ .one_stmt(at: 0)
 
     if cursor.at(c, .indent) || opening.tabbed_line(c, text)

@@ -1,0 +1,52 @@
+# Fixed defect 132, 2026-09-29, a join into a block's head. Symptom: `for`
+# alone at its line's end over a deeper `print(1)` cost
+# `continuation_outside_brackets` at the break and `for_missing_in` at the
+# `print` the head took from the line below, and `match >` over its arms cost
+# the refusal and `expected_expression` at the one `>`: one mistake, two
+# messages. Cause: the lexer hands the parser the lines joined, `for print(1)`,
+# and the parser refused that joined head; read apart, `for` alone is refused
+# at its own line's end, which is the break told in the parser's words. Now
+# held for the control arm (`selfhost/parse/apart.hero`). The heads beside
+# them, `if`, `while`, `else if` and `match` alone over a deeper line, already
+# cost the refusal alone, their missing body held by defect 131, and are kept
+# here as they read.
+
+function a_for_over_its_body()
+    #~v continuation_outside_brackets
+    for
+        print(1)
+
+function a_match_over_an_operator()
+    #~v continuation_outside_brackets
+    match >
+        _ => print(1)
+
+function an_if_over_its_body()
+    #~v continuation_outside_brackets
+    if
+        print(1)
+
+function a_while_over_its_body()
+    #~v continuation_outside_brackets
+    while
+        print(1)
+
+function an_else_if_over_its_body(n: i64)
+    if n > 0
+        print(0)
+    #~v continuation_outside_brackets
+    else if
+        print(1)
+
+function a_match_over_its_arms()
+    #~v continuation_outside_brackets
+    match
+        0 => print(1)
+
+function main()
+    a_for_over_its_body()
+    a_match_over_an_operator()
+    an_if_over_its_body()
+    a_while_over_its_body()
+    an_else_if_over_its_body(n: 1)
+    a_match_over_its_arms()

@@ -133,7 +133,9 @@ function opening_at(@c: cursor.Cursor, text: str, missing: Missing) -> Body
         return .none
     here = cursor.current_span(c)
     margin = token.Span(start: here.start - margin_width(text, at: here.start), end: here.start)
-    c.held @ c.held.push(diag.Held(at: c.diagnostics.len(), cause: margin, diagnostic: missing_here(c, text, missing)))
+    c.held @ c.held.push(
+        diag.Held(at: c.diagnostics.len(), cause: margin, diagnostic: missing_here(c, text, missing), apart: false)
+    )
     return .tabbed
 
 # No body where one is owed: named at the cursor, as it always was, unless the
@@ -147,7 +149,7 @@ function absent(@c: cursor.Cursor, text: str, head: Mark, silent: bool, missing:
     seam = joined_at(c, text, head)
 
     if !seam.is_err()
-        c.held @ c.held.push(diag.Held(at: c.diagnostics.len(), cause: seam.must(), diagnostic: d))
+        c.held @ c.held.push(diag.Held(at: c.diagnostics.len(), cause: seam.must(), diagnostic: d, apart: false))
         return
     c.diagnostics @ c.diagnostics.push(d)
 
