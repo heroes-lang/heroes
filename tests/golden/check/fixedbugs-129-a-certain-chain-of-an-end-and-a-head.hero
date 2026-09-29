@@ -1,0 +1,26 @@
+# Defect 129, 2026-09-28, the shape that must NOT move: a statement broken at
+# a line end and again before a line that can only go on, where each join is
+# `certain` alone, is one repair whose weakest join is `certain`, so
+# `check --apply` writes the whole line and the `.fixed` checks clean; in a
+# statement and in a `match` arm (`selfhost/line_joins.hero`). The other
+# all-`certain` chains, `x = a` over `-` over `b` and `x = a +` over `a +`
+# over `a`, keep their certainty in `selfhost/lexer.hero`'s unit tests, since
+# no annotation fits inside them without a comment in the chain.
+
+function end_then_head(a: i64, b: i64, c: i64) -> i64
+    #~v continuation_outside_brackets
+    x = a +
+    b
+    - c  #~ continuation_outside_brackets
+    return x
+
+function in_an_arm(n: i64, a: i64) -> i64
+    return match n
+        #~v continuation_outside_brackets
+        0 => a *
+        a
+        + a  #~ continuation_outside_brackets
+        _ => 0
+
+function main()
+    print(end_then_head(a: 5, b: 2, c: 1) + in_an_arm(n: 0, a: 3))

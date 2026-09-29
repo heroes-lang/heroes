@@ -1,0 +1,321 @@
+# An operand built of literals, read from the finished token stream
+# (design.md §4.17; spec § 2, § 7; defect 129).
+#
+# `line_joins` asks what a join writes beside its operator, and where the
+# operand on either side is made of literals the answer needs no types: `1 + 2`
+# is a number, `"a" + "b"` a `str`, `1 == 2` a `bool`, `-1` a number, `(1)` a
+# number, `1 + "s"` nothing at all. This module reads such a run and gives it
+# its family by `operand_families`' table, which is the checker's own.
+#
+# **A name in the run is read too, as a value of no known family**, `none`,
+# with its fields, calls, indices, `?` and `::` after it. Spec § 7 puts both
+# sides of an operator in one type, so a name beside a literal takes the
+# literal's family whatever its own type, `1 + b` a number; a comparison is a
+# `bool` whatever its sides; and a name alone, or two names, leave the family
+# unknown, and the join keeps the certainty its break gave it, since some
+# typing of the names could make it compile. Anything else, a bracket other
+# than `(`, a case, `fail`, `if`, `match`, ends the reading with no answer.
+#
+# The reading is spec § 7's grammar over the tokens, bounded by what binds
+# tighter than the join's own operator: a right operand runs to the first
+# binary operator that binds no tighter, left associativity's rule, and a left
+# operand back to the first that binds looser, or to where an operand begins.
+#
+# | entry | called by |
+# |---|---|
+# | `right_of`, `left_of` | `line_joins.writes_a_type`, for the two sides of a join's operator |
+# | `binary` | `line_joins.refuses_the_whole`, for the whole expression a join writes |
+# | `no_left_operand` | `line_joins.writes_a_type`, which asks whether a `-` negates |
+# | `past_comments` | `line_joins`, for what follows an operand |
+
+use token
+use operand_families as families
+
+## A reading
+
+# The family of a run of literals, and the index of the token after it; `next`
+# is -1 where the run holds anything but literals, prefix and binary operators
+# and parentheses.
+record Reading
+    family: families.Family
+    next: i64
+
+function nothing() -> Reading
+    return Reading(family: .none, next: -1)
+
+## The two sides of an operator
+
+# The operand after the operator at `o`: a prefix operator's is one unary run,
+# `-1 + 2` negating the `1` alone, and a binary operator's everything that binds
+# tighter than it, to `limit`.
+function right_of(tokens: [token.Token], text: str, o: i64, prefix: bool, level: i64) -> Reading
+    if prefix
+        return unary(tokens, text, at: o + 1, limit: tokens.len())
+    return binary(tokens, text, at: o + 1, least: level + 1, limit: tokens.len())
+
+# The operand before the binary operator at `o`, binding at `level`: back to
+# the first operator that binds looser, or to the token an operand begins
+# after, then read forward and required to end exactly at `o`.
+function left_of(tokens: [token.Token], text: str, o: i64, level: i64) -> families.Family
+    start = operand_start(tokens, text, o: o, level: level)
+
+    if start < 0 || start >= o
+        return .none
+    read = binary(tokens, text, at: start, least: level, limit: o)
+
+    if read.next < 0 || past_comments(tokens, from: read.next) != o
+        return .none
+    return read.family
+
+function operand_start(tokens: [token.Token], text: str, o: i64, level: i64) -> i64
+    depth: i64 @ 0
+    i: i64 @ o - 1
+
+    while i >= 0
+        k = tokens[i].kind
+
+        if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth + 1
+        else if k == .lparen || k == .lbracket || k == .lbrace
+            if depth == 0
+                return i + 1
+            depth @ depth - 1
+        else if depth == 0 && k == .str_piece && closes(text, tokens[i]) && !opens(text, tokens[i])
+            i @ literal_first(tokens, text, last: i)
+
+            if i < 0
+                return -1
+        else if depth == 0 && families.begins_an_operand(k)
+            return i + 1
+        else if depth == 0 && families.power(k) > 0 && families.power(k) < level && binary_at(tokens, at: i)
+            return i + 1
+        i @ i - 1
+
+    return 0
+
+## Spec § 7's grammar, over literals
+
+function binary(tokens: [token.Token], text: str, at: i64, least: i64, limit: i64) -> Reading
+    left: Reading @ unary(tokens, text, at: at, limit: limit)
+
+    while left.next >= 0
+        i = past_comments(tokens, from: left.next)
+
+        if i >= limit
+            return left
+        k = tokens[i].kind
+        binds = families.power(k)
+
+        if binds == 0 || binds < least
+            return left
+        right = binary(tokens, text, at: i + 1, least: binds + 1, limit: limit)
+
+        if right.next < 0
+            return right
+        left @ Reading(family: combined(op: k, left: left.family, right: right.family), next: right.next)
+
+    return left
+
+function unary(tokens: [token.Token], text: str, at: i64, limit: i64) -> Reading
+    if at < 0 || at >= limit
+        return nothing()
+    k = tokens[at].kind
+
+    if k == .minus || k == .bang || k == .tilde
+        inner = unary(tokens, text, at: at + 1, limit: limit)
+
+        if inner.next < 0
+            return inner
+        return Reading(family: negated(op: k, operand: inner.family), next: inner.next)
+
+    if k == .lparen
+        inner = binary(tokens, text, at: past_comments(tokens, from: at + 1), least: 1, limit: limit)
+
+        if inner.next < 0
+            return inner
+        close = past_comments(tokens, from: inner.next)
+
+        if close >= limit || tokens[close].kind != .rparen
+            return nothing()
+        return Reading(family: inner.family, next: close + 1)
+
+    if k == .ident || k == .hole
+        return Reading(family: .none, next: past_the_postfixes(tokens, at: at + 1, limit: limit))
+    last = literal_last(tokens, text, from: at)
+
+    if last < 0 || last >= limit
+        return nothing()
+    return Reading(family: families.family(k), next: last + 1)
+
+# The index after the fields, calls, indices, `?` and `::` that follow a name
+# at `at`, or -1 where one of them is cut short.
+function past_the_postfixes(tokens: [token.Token], at: i64, limit: i64) -> i64
+    i: i64 @ at
+
+    while i < limit
+        k = tokens[i].kind
+
+        if k == .dot || k == .colon_colon
+            if i + 1 >= limit || tokens[i + 1].kind != .ident
+                return -1
+            i @ i + 2
+        else if k == .lparen || k == .lbracket
+            i @ past_the_bracket(tokens, at: i, limit: limit)
+
+            if i < 0
+                return -1
+        else if k == .question
+            i @ i + 1
+        else
+            return i
+
+    return i
+
+# The index after the bracket that `at` opens closes, -1 where it does not
+# close before `limit`.
+function past_the_bracket(tokens: [token.Token], at: i64, limit: i64) -> i64
+    depth: i64 @ 0
+    i: i64 @ at
+
+    while i < limit
+        k = tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth - 1
+
+            if depth == 0
+                return i + 1
+        i @ i + 1
+
+    return -1
+
+# What a binary operator makes of two families: `.refused` where it takes
+# either under no type or they are two known families, else a comparison's and
+# a logical operator's truth, and for the rest the family of the side that has
+# one, both sides being of one type (spec § 7).
+function combined(op: token.TokenKind, left: families.Family, right: families.Family) -> families.Family
+    wants = families.takes(op)
+
+    if !families.admits(wants, left) || !families.admits(wants, right)
+        return .refused
+
+    if left != .none && right != .none && left != right
+        return .refused
+
+    if families.power(op) <= 3
+        return .truth
+
+    if left == .none
+        return right
+    return left
+
+# What a prefix operator makes of its operand's family: `!` a truth whatever
+# it is handed, where it takes it at all.
+function negated(op: token.TokenKind, operand: families.Family) -> families.Family
+    if !families.admits(families.takes(op), operand)
+        return .refused
+
+    if op == .bang
+        return .truth
+    return operand
+
+## A `-` and what stands before it
+
+# A `-` with nothing before it that ends a value negates or signs: at a
+# line's edge, or after `=`, an operator, an opener or a keyword that takes
+# an expression.
+function no_left_operand(tokens: [token.Token], at: i64) -> bool
+    p = before_comments(tokens, at: at - 1)
+
+    if p < 0
+        return true
+    k = tokens[p].kind
+    return families.begins_an_operand(k) || families.power(k) > 0 || k == .bang || k == .tilde
+
+# Is the operator at `at` a binary one? Every operator with a power is, but a
+# `-` with no left operand, which negates.
+function binary_at(tokens: [token.Token], at: i64) -> bool
+    return tokens[at].kind != .minus || !no_left_operand(tokens, at: at)
+
+## An interpolated literal's edges
+
+# The literal that begins at `from`: its last token, which is `from` itself
+# but for an interpolated one, whose pieces and holes run to the piece that
+# closes it. -1 when no literal begins there.
+function literal_last(tokens: [token.Token], text: str, from: i64) -> i64
+    if from < 0 || from >= tokens.len() || families.family(tokens[from].kind) == .none
+        return -1
+
+    if tokens[from].kind != .str_piece
+        return from
+    depth: i64 @ 0
+    i: i64 @ from
+
+    while i < tokens.len()
+        t = tokens[i]
+
+        if t.kind == .str_piece
+            if opens(text, t)
+                depth @ depth + 1
+
+            if closes(text, t)
+                depth @ depth - 1
+
+            if depth <= 0
+                return i
+        i @ i + 1
+
+    return -1
+
+# The literal that ends at `last`: its first token, walking back over an
+# interpolated one to the piece that opens it. -1 when none ends there.
+function literal_first(tokens: [token.Token], text: str, last: i64) -> i64
+    if last < 0 || last >= tokens.len() || families.family(tokens[last].kind) == .none
+        return -1
+
+    if tokens[last].kind != .str_piece
+        return last
+    depth: i64 @ 0
+    i: i64 @ last
+
+    while i >= 0
+        t = tokens[i]
+
+        if t.kind == .str_piece
+            if closes(text, t)
+                depth @ depth + 1
+
+            if opens(text, t)
+                depth @ depth - 1
+
+            if depth <= 0
+                return i
+        i @ i - 1
+
+    return -1
+
+# A piece that opens an interpolated literal, `f"…{` or the whole `f"…"`.
+function opens(text: str, t: token.Token) -> bool
+    return t.span.end - t.span.start >= 2 && text[t.span.start] == 'f' && text[t.span.start + 1] == '"'
+
+# A piece that closes one, `}…"` or the whole `f"…"`.
+function closes(text: str, t: token.Token) -> bool
+    return t.span.end - t.span.start >= 2 && text[t.span.end - 1] == '"'
+
+function past_comments(tokens: [token.Token], from: i64) -> i64
+    i: i64 @ from
+
+    while i < tokens.len() && tokens[i].kind == .comment
+        i @ i + 1
+
+    return i
+
+function before_comments(tokens: [token.Token], at: i64) -> i64
+    i: i64 @ at
+
+    while i >= 0 && tokens[i].kind == .comment
+        i @ i - 1
+
+    return i

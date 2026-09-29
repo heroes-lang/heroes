@@ -1,0 +1,12 @@
+# Panel 180 R5, shape 90 of the compiler-engineer's 117 (qualified type in a
+# param): a break before ..
+# By the spec's opening paragraph, the line ends with `geom`, a name, so it
+# keeps its NEWLINE, which may stand only before a closing bracket or a `,`,
+# or where a production writes it, and none writes it before `.`: refused,
+# exit 1.
+function f(p: geom.
+        Point)  #~ line_end_before_continuation
+    print(1)
+
+function main()
+    print(1)

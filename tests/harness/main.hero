@@ -36,7 +36,9 @@
 #   run/          every program at -O0, -O2 and --sanitize
 #   annotations   §9's `#~` invariant over check/ and unsupported/
 #   determinism   the IR dump twice, the C twice and through -o
-#   fixes         `.fixed` — every certain fix applied, and it checks clean
+#   fixes         `.fixed` — every certain fix applied, and it checks clean;
+#                 `.applied`, what `--apply` writes where it cannot; neither,
+#                 and `--apply` leaves the case as it is
 #   lines         every `#line` lands on a line the author wrote
 #   corpus        examples/ — real programs, tests and output, three ways
 #   warnings      the generated C compiles without a single warning

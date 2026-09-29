@@ -1,0 +1,4 @@
+# Foreign keywords: each fails with the repair pre-written.
+record Point  #~ reserved_word
+let x = 5  #~ reserved_word
+constant MAX = 5  #~ reserved_word

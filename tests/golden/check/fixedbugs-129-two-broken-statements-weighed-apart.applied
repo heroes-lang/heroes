@@ -1,0 +1,30 @@
+# Defect 129, 2026-09-28, the edge of a chain: a terminator planted between two
+# breaks ends the first statement, so the second statement's `guess` is its own
+# and the first join stays `certain`, repairing the statement it names. The
+# program then still holds the second break, refused with its own `guess`, so
+# there is no `.fixed`. The same in a `match`, whose arms are statements.
+#
+# A golden cannot hold a `guess`: this `.expected` is `--brief`, which prints
+# no certainty, and a `.fixed` must check clean. So what this file pins is one
+# diagnostic per break; the certainties are held by `selfhost/lexer.hero`'s
+# defect 129 tests, which lex the same shapes.
+
+function two_statements(a: i64) -> i64
+    #~v continuation_outside_brackets
+    x = a + a
+    #~v continuation_outside_brackets
+    y = a +
+    print(a)
+    return x + y
+
+function two_arms(n: i64, a: i64) -> i64
+    return match n
+        #~v continuation_outside_brackets
+        0 => a + a
+        #~v continuation_outside_brackets
+        1 => a +
+        print(a)
+        _ => 0
+
+function main()
+    print(two_statements(a: 1) + two_arms(n: 0, a: 1))

@@ -1,0 +1,33 @@
+# Fixed defect 129, 2026-09-28, class (B). Symptom: a join wrote `-` against a
+# string, `x = a` over `- "s"` joined to `x = a - "s"` and `x = a -` over `"s"`
+# to the same, each `certain`, and `check --apply` wrote a `bad_operand`
+# program; the coordinator's witness, `0 => 5` over `-` over `"=>"`, is in the
+# unit tests. Cause: a join wrote an operator against a literal it takes under
+# no type. A join is `certain` now only where its operator takes the literal
+# it is written against (`selfhost/operand_families.hero`, the checker's own
+# answers), so these are a `guess`.
+#
+# A golden cannot hold a `guess`: this `.expected` is `--brief`, which prints
+# no certainty, and a `.fixed` must check clean. So what this file pins is one
+# diagnostic per break; the certainties are held by `selfhost/lexer.hero`'s
+# defect 129 tests, which lex the same shapes.
+
+function at_the_head(a: i64) -> i64
+    x = a
+    - "s"  #~ continuation_outside_brackets
+    return x
+
+function at_the_end(a: i64) -> i64
+    #~v continuation_outside_brackets
+    x = a -
+    "s"
+    return x
+
+function in_an_arm(n: i64) -> i64
+    return match n
+        0 => 5
+        - "=>"  #~ continuation_outside_brackets
+        _ => 20
+
+function main()
+    print(at_the_head(a: 1) + at_the_end(a: 1) + in_an_arm(n: 0))

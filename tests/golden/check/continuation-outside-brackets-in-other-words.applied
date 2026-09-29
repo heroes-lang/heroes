@@ -1,0 +1,42 @@
+# Panel 181 (2026-09-28, provisional), the branches where the lexer ends the
+# line and the parser says what it lacks in its own words: a line that
+# begins a statement of its own is never the rest of the one above, whatever
+# that one ended with. One diagnostic each, and none of them is
+# `continuation_outside_brackets` (`selfhost/open_line.hero`). Which
+# diagnostic the author reads is all these branches decide: every one of them
+# is refused, as it was before the rule.
+
+## Below a line that cannot end
+
+# A binding below: no expression goes on into a line that binds.
+function binding_below(a: i64) -> i64
+    y = a +  #~ expected_expression
+    x = 1
+    return x
+
+# A statement keyword below.
+function keyword_below(a: i64) -> i64
+    y = a +  #~ expected_expression
+    return a
+
+## Below a line that ended its statement
+
+# After a bare `return`, which is a whole statement and no value, the next
+# line is its own, and no statement begins with `+`.
+function after_return(a: i64)
+    print(a)
+    return
+    + 1  #~ expected_expression
+
+## Two mistakes on two lines are two diagnostics (item 4 of the sitting)
+
+# A malformed literal ends its line, so the next line's own mistake is
+# reported: it was hidden while the line glued on below the `error` token.
+function malformed_then_broken() -> i64
+    a = 0x10  #~ base_prefix_case
+    b = 1 +* 2  #~ expected_expression
+    return a + b
+
+function main()
+    after_return(a: 1)
+    print(binding_below(a: 1) + keyword_below(a: 1) + malformed_then_broken())

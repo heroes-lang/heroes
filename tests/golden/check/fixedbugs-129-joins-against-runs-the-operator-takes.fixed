@@ -1,0 +1,52 @@
+# Defect 129, 2026-09-29, the widened class (B)'s shapes that must NOT move: a
+# join whose operand is a run of literals, or a name beside one, of a family
+# its operator takes, stays `certain`, `check --apply` writes the joined
+# program, and the `.fixed` checks clean. `&&` over `1 == 2`, over `(1 < 2)`,
+# over `!true` and over `b.len() > 0`; `+` over `-1`; `+` over `"a" + "b"`;
+# `1 * 2` over `+ 3`; and `v ==` over `1 && c`, where `==` binds tighter than
+# `&&` and so writes `(v == 1) && c` (`selfhost/literal_operands.hero`).
+
+function comparison(a: bool) -> bool
+    #~v continuation_outside_brackets
+    x = a && 1 == 2
+    return x
+
+function bracketed(a: bool) -> bool
+    #~v continuation_outside_brackets
+    x = a && (1 < 2)
+    return x
+
+function negated(a: bool) -> bool
+    #~v continuation_outside_brackets
+    x = a && !true
+    return x
+
+function a_call_compared(a: bool, b: str) -> bool
+    #~v continuation_outside_brackets
+    x = a && b.len() > 0
+    return x
+
+function negative(a: i64) -> i64
+    #~v continuation_outside_brackets
+    x = a + -1
+    return x
+
+function strings(s: str) -> str
+    #~v continuation_outside_brackets
+    x = s + "a" + "b"
+    return x
+
+function product(a: i64) -> i64
+    x = 1 * 2 + 3  #~ continuation_outside_brackets
+    return x + a
+
+function equal_then_and(v: i64, c: bool) -> bool
+    #~v continuation_outside_brackets
+    x = v == 1 && c
+    return x
+
+function main()
+    print(comparison(a: true) || bracketed(a: true) || negated(a: true) || a_call_compared(a: true, b: "q"))
+    print(negative(a: 1) + product(a: 1))
+    print(strings(s: "s"))
+    print(equal_then_and(v: 1, c: true))
