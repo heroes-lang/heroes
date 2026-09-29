@@ -277,5 +277,22 @@ function before_the_break(c: cursor.Cursor, head: Mark, at: i64) -> i64
 
     return c.tokens[i].span.start
 
+# Whether a token can begin an expression, spec § 7's `Unary` and
+# `Primary`: what `while` needs after it to be a loop, so what a `certain`
+# *use `while`* for a `for` over a condition needs (defect 131's third
+# round). Enumerated, so a new token kind is answered for, not defaulted.
+function begins_an_expression(kind: token.TokenKind) -> bool
+    return match kind
+        .minus | .bang | .tilde | .ident | .int_lit | .float_lit | .str_lit | .str_piece => true
+        .char_lit | .kw_true | .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if       => true
+        .kw_match | .lparen | .lbracket | .lbrace | .dot                                 => true
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_else | .kw_for      => false
+        .kw_while | .kw_in | .kw_break | .kw_continue | .kw_return | .kw_test            => false
+        .kw_assert | .kw_extern | .kw_use | .eq | .at | .colon | .colon_colon | .comma   => false
+        .question | .arrow | .fat_arrow | .pipe | .rparen | .rbracket | .rbrace | .plus  => false
+        .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge            => false
+        .and_and | .or_or | .amp | .caret | .shl | .shr | .comment | .terminator         => false
+        .indent | .dedent | .eof | .error                                                => false
+
 function is_line_end(kind: token.TokenKind) -> bool
     return kind == .terminator || kind == .indent || kind == .dedent

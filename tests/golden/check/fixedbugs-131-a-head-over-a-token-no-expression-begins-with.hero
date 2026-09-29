@@ -1,0 +1,75 @@
+# Fixed defect 131's third round, 2026-09-29, a head over a token no
+# expression begins with. Symptom: `for >` carried a `certain` fix, *use
+# `while`*, and `--apply` wrote `while >`, which is no loop; `while >`, `if >`
+# and `else if >` cost `expected_expression` at the `>` and again at the
+# line's end, and `while :` cost `expected_expression` and `trailing_colon`
+# at the `:`; so did `x = >`, `x = 1 + >`, `return >`, `print(>)` and
+# `[>, 1]`, twice each. Cause: the fix was `certain` wherever what followed
+# `for` was not a name, and an operator after an operand that could not be
+# read was climbed, its right side refused again. `while` is `certain` only
+# before a token that begins an expression (`opening.begins_an_expression`,
+# spec § 7's `Unary` and `Primary`), an operand that could not be read ends
+# its expression, and the `:` habit is not reported where a report stands.
+# One shape per function.
+
+function for_over_an_operator()
+    for >  #~ for_missing_in
+        y = 3 )  #~ expected_end_of_line
+
+function for_over_a_closer()
+    for )  #~ for_missing_in
+        y = 3 )  #~ expected_end_of_line
+
+function for_over_an_arrow()
+    for =>  #~ for_missing_in
+        y = 3 )  #~ expected_end_of_line
+
+function for_over_a_colon()
+    for :  #~ for_missing_in
+        y = 3 )  #~ expected_end_of_line
+
+function for_over_a_keyword()
+    for else  #~ for_missing_in
+        y = 3 )  #~ expected_end_of_line
+
+function while_over_an_operator()
+    while >  #~ expected_expression
+        y = 3 )  #~ expected_end_of_line
+
+function if_over_an_operator()
+    if >  #~ expected_expression
+        y = 3 )  #~ expected_end_of_line
+
+function else_if_over_an_operator(n: i64)
+    if n > 0
+        print(1)
+    else if >  #~ expected_expression
+        y = 3 )  #~ expected_end_of_line
+
+function while_over_a_colon()
+    while :  #~ expected_expression
+        y = 3 )  #~ expected_end_of_line
+
+function match_over_a_closer()
+    match )  #~ expected_expression
+        _ => print(1) )  #~ expected_end_of_line
+
+function a_binding() -> i64
+    x = >  #~ expected_expression
+    return x
+
+function a_right_side() -> i64
+    x = 1 + >  #~ expected_expression
+    return x
+
+function a_return() -> i64
+    return >  #~ expected_expression
+
+function an_argument()
+    print(>)  #~ expected_expression
+
+function an_element() -> [i64]
+    return [>, 1]  #~ expected_expression
+
+function main()
+    print(1)
