@@ -816,8 +816,7 @@ function under(@c: cursor.Cursor, @a: ast.Ast, text: str, word: i64)
         hanging(@c, @a, text)
 
 # A block of declarations under such a line, `class Q` over `function f()`,
-# indented or in braces: each line read as what its keyword opens, the head
-# by `parse/heads` and the body by `block` (defect 130's class, lane X4).
+# indented or in braces: each line's head by `parse/heads`, its body by `block`.
 function declarations(@c: cursor.Cursor, @a: ast.Ast, text: str)
     if brace_habit.opens_here(c, text)
         lines: cursor.Cursor @ braced_lines.laid_out(c, text)
@@ -878,9 +877,8 @@ function statement_kind(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKi
         return annotated(@c, @a, text)
     return expression_or_mutation(@c, @a, text)
 
-# Every statement ends at its line end, consumed here, in one place; what
-# that owes the rest of the line and the block below is `parse/statement_end`'s,
-# after a literal the lexer refused where an operand goes is read past.
+# Every statement ends at its line end, consumed here; what that owes is
+# `parse/statement_end`'s, once a refused literal where an operand goes is read past.
 function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, from: i64, kind: ast.StmtKind, said: i64, exprs: i64) -> i64
     while !cursor.refused_since(c, said) && statement_end.refused_operand(c, a, text, exprs: exprs)
         _ = cursor.bump(@c)
