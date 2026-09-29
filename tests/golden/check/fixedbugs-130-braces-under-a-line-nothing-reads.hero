@@ -1,0 +1,52 @@
+# Fixed 2026-09-29, defect 130's class, lane X1. Symptom: braces under a line
+# the parser could not read hid what was inside them, or cost it twice. At the
+# top level `class Point {` over its fields cost the word alone, and a broken
+# field inside went unsaid; `recrod Pair {` cost `expected_declaration` again
+# for its second field and for the `}`, `varaint Shade {` for its `}`, and
+# `impl Point {` for its member's body and its `}`. In a body `loop {`, a statement with a `{` at its end, and
+# `fn inner() {` or `struct Local {` inside braces lost the braces' first
+# line, and every mistake on it. Cause: each drops the rest of its line to the
+# next line end, and the lexer puts none after a `{` that ends a line, nor
+# after a `,` inside braces, so the drop took the braces' first line, or all
+# of them. The drop now stops at such a `{` (`parse/brace_habit.hero`), and
+# the braces are the block under the line, read as one is: under a line whose
+# head nothing reads, by the shape of their lines (`parse/headless.hero`),
+# fields and cases through a view of the braces laid out as an indented block,
+# the `,` between them the habit's debris, and a group's members whole; and a
+# body's statements to the `}`, which goes silently.
+
+class Point {  #~ reserved_word
+    x: i64,
+    y i64,  #~ expected_field_type
+}
+
+recrod Pair {  #~ expected_declaration
+    left: i64
+    right i64  #~ expected_field_type
+}
+
+varaint Shade {  #~ expected_declaration
+    light, dark,
+    grey
+}
+
+impl Point {  #~ expected_declaration
+    function norm() -> i64
+        return 0
+}
+
+function main() {  #~ missing_body
+    loop {  #~ expected_end_of_line
+        y = 3 4  #~ expected_end_of_line
+    }
+    print(1) {  #~ expected_end_of_line
+        z = 4 5  #~ expected_end_of_line
+    }
+    fn inner() {  #~ reserved_word
+        w = 5 6  #~ expected_end_of_line
+    }
+    struct Local {  #~ reserved_word
+        v: i64,
+        u i64,  #~ expected_field_type
+    }
+}

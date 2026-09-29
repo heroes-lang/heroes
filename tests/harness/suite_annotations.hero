@@ -138,8 +138,11 @@ constant RUN_ROOTS: [str]
 # **1205 where lanes 132 and X2 met the trunk, 2026-09-29**: lane 132's
 # eight cases, lane 133's second round and lane X2's three took the count past
 # 934 by more than a quarter, and on the merged tree the suite found 1205.
+#
+# **1261 where lane X1 met the trunk, 2026-09-29**: lane X1's four cases on
+# top of lane X2's, and on the merged tree the suite found 1261.
 constant LEAST: i64
-    1205
+    1261
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
