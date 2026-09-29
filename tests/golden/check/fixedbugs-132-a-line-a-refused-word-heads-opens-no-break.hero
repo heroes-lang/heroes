@@ -15,6 +15,10 @@
 # its own (`selfhost/line_above.hero`). A word read as its certain swap heads
 # the line its swap does (`fixedbugs-132-a-swapped-word-breaks-its-line-as-its-swap-does.hero`).
 # Nothing below is certain, so `--apply` writes the file back unchanged.
+# Corrected 2026-09-29 at the batch gate of lanes X3 and X4: lane X4 reads
+# the rest of a refused word's line that binds as a statement, so the
+# dangling `+` of `let x = a +` and the empty value of `var total: i64 =`
+# are told in the first run, real mistakes a second turn would meet.
 
 include <stdio.h>  #~ reserved_word
 
@@ -23,11 +27,11 @@ function a_header_in_a_body()
     print(1) )  #~ expected_end_of_line
 
 function a_binding_left_open(a: i64)
-    let x = a +  #~ reserved_word
+    let x = a +  #~ reserved_word expected_expression
     print(2) )  #~ expected_end_of_line
 
 function a_mutable_left_open()
-    var total: i64 =  #~ reserved_word
+    var total: i64 =  #~ reserved_word expected_expression
     print(3) )  #~ expected_end_of_line
 
 function an_import_in_a_body()
