@@ -1,2 +1,1 @@
-tests/golden/check/fixedbugs-130-a-hang-on-elif-over-a-body-after-an-if.hero:19:5: error[reserved_word]: `elif` is not a word in this language — write `else if`
-tests/golden/check/fixedbugs-130-a-hang-on-elif-over-a-body-after-an-if.hero:20:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-hang-on-elif-over-a-body-after-an-if.hero:23:5: error[reserved_word]: `elif` is not a word in this language — write `else if`

@@ -1,0 +1,19 @@
+# Fixed defect 132, 2026-09-29, beside it: a line left open over a tabbed
+# line. Symptom: `function` alone over a line whose margin holds a tab cost
+# `tab_in_indentation` and then `expected_params` at the `=` of the line below,
+# whose `y` the head had taken for its name; and `x = a +` over a tabbed `b`
+# went on into it with no word said of the break. Cause: where a tab leaves
+# the margin unread the lexer let a line left open go on in silence into the
+# next one. It ends it there, and the parser says what it lacks: the name,
+# and the operand, each once, and the tabbed line is still read, its own `)`
+# reported (`selfhost/open_line.hero`, `abandon`).
+
+#~v expected_name
+function
+	y = 3 )  #~ tab_in_indentation expected_end_of_line
+
+function main()
+    #~v expected_expression
+    x = 1 +
+	print(2)  #~ tab_in_indentation
+    print(x)

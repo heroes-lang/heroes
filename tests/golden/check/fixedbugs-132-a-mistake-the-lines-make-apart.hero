@@ -1,0 +1,58 @@
+# Fixed defect 132, 2026-09-29, a mistake the lines make apart. What the
+# repair must not do is hide a real mistake: where a line the lexer joined
+# holds a mistake of its own, the joined reading may never reach it, having
+# refused the join's debris first, and the lines read apart still say it
+# (`selfhost/parse/apart.hero`). So each of these costs the break and the
+# stray `)`. Measured on the trunk's compiler of 2026-09-29 (`bbd61312`): it
+# reported the `)` of the two sums, and in place of the others the next arm's
+# `=>` twice, `for_missing_in` for the `for` and nothing for the `if`; after
+# `x = ) +` it reported the `)` before the break and not the one below it.
+
+function an_arm_left_open(n: i64) -> i64
+    return match n
+        #~v continuation_outside_brackets
+        0 => 5 -
+        1 => 10 )  #~ expected_end_of_line
+        _ => 20
+
+function a_pipe_over_an_arm(n: i64) -> i64
+    return match n
+        0 => 5
+        | 1 => 10 )  #~ continuation_outside_brackets expected_end_of_line
+        _ => 20
+
+function a_for_over_its_body()
+    #~v continuation_outside_brackets
+    for
+        print(1) )  #~ expected_end_of_line
+
+function an_if_over_its_body()
+    #~v continuation_outside_brackets
+    if
+        print(1) )  #~ expected_end_of_line
+
+function a_sum_left_open(n: i64) -> i64
+    #~v continuation_outside_brackets
+    x = n +
+    n )  #~ expected_end_of_line
+    return x
+
+function a_sum_broken_twice(n: i64) -> i64
+    #~v continuation_outside_brackets
+    x = n +
+    #~v continuation_outside_brackets
+    n +
+    n )  #~ expected_end_of_line
+    return x
+
+function a_mistake_before_the_break(n: i64) -> i64
+    #~v continuation_outside_brackets
+    x = ) +  #~ expected_expression
+    n )  #~ expected_end_of_line
+    return x
+
+function main()
+    print(an_arm_left_open(n: 0) + a_pipe_over_an_arm(n: 0))
+    a_for_over_its_body()
+    an_if_over_its_body()
+    print(a_sum_left_open(n: 1) + a_sum_broken_twice(n: 1) + a_mistake_before_the_break(n: 1))

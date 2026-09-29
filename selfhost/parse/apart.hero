@@ -1,0 +1,282 @@
+# The lines apart: what a line break the lexer refused makes the parser say
+# (design.md §4.15, §4.17; panel 181 item 2; defect 132).
+#
+# Outside brackets a line ends its statement. Where the author broke one, the
+# lexer refuses the break, `continuation_outside_brackets`, and hands the
+# parser the line joined (`open_line.hero`), so that the break costs one
+# diagnostic. The parser, reading the join, can still say a second one that
+# the join alone causes: `0 => 5 -` over `1 => 10` is read as
+# `0 => 5 - 1 => 10`, whose second `=>` ends no line, and `for` alone over a
+# deeper `print(1)` as `for print(1)`, which names no loop variable. **A
+# message the join alone causes is the join's, and it is held; a message the
+# lines would earn apart is the author's, and it is said.**
+#
+# The test is a measurement of the program in hand, never a list of shapes.
+# Where the lexer refused a break, the file is read a second time with its
+# lines APART (`lexer.lex_apart`: a line end at each refused break, the next
+# line's margin read, and a head that could only go on left out, being the
+# break itself), and the two readings' parser diagnostics are compared by
+# code and by the offset they stand at, over each joined line and the first
+# word after it, where a head that took its body into its line looks for one:
+#
+# - one the joined reading says and the apart one says too is the author's,
+#   and it is said; unless the apart reading says it INSIDE the break, at the
+#   line end it plants or on the token the refusal names, where it is the
+#   break told in the parser's words (`match >` over its arms);
+# - one the apart reading does not say, where that reading had refused
+#   nothing on its own line before it, is the join's, and it is held;
+# - one the apart reading could not have said, because it refused something
+#   earlier on that line and its recovery dropped the rest, is said;
+# - and one the apart reading says after the break, on a line it had refused
+#   nothing of before it, where the joined reading refused something earlier
+#   or said something else on that token, is said as well: `0 => 5 -` over
+#   `1 => 10 )` still reports the `)`.
+#
+# The second reading costs one lex and one parse of the one file, and only
+# where its lexer refused a break, which no program that compiles has.
+#
+# A held diagnostic is said where the refusal at its break is not: the
+# control arm, `check --permissive`, drops the refusal, a thesis rule, and
+# reads the join as the program, whose report the held one is. One the apart
+# reading adds is said where the refusal is (`parse/which_arm`).
+#
+# | entry | called by |
+# |---|---|
+# | `weigh` | `parse.parse_source` and `parse.parse_bounded`, for a file whose lexer refused a break |
+
+use token
+use diag
+use ast
+use lexer
+use cursor
+use stable
+use parse/decl
+use parse/which_arm
+use parse/joined_lines as seams
+
+## A reading's diagnostics, in the order of the text
+
+record Sorted
+    diagnostics: [diag.Diagnostic]
+    starts: [i64]
+
+function sorted(diagnostics: [diag.Diagnostic]) -> Sorted
+    starts: [i64] @ []
+
+    for d in diagnostics
+        starts @ starts.push(d.span.start)
+
+    out: [diag.Diagnostic] @ []
+    ascending: [i64] @ []
+
+    for i in stable.order(by: starts)
+        out @ out.push(diagnostics[i])
+        ascending @ ascending.push(starts[i])
+
+    return Sorted(diagnostics: out, starts: ascending)
+
+# Whether `s` holds one of `d`'s code at `d`'s offset.
+function says(s: Sorted, d: diag.Diagnostic) -> bool
+    i: i64 @ seams.last_at_most(s.starts, at: d.span.start - 1) + 1
+
+    while i < s.starts.len() && s.starts[i] == d.span.start
+        if s.diagnostics[i].code == d.code
+            return true
+        i @ i + 1
+
+    return false
+
+# Whether `s` holds one that begins in `from` .. `to`.
+function any_in(s: Sorted, from: i64, to: i64) -> bool
+    i = seams.last_at_most(s.starts, at: from - 1) + 1
+    return i < s.starts.len() && s.starts[i] < to
+
+## The two readings, weighed
+
+# The two readings' diagnostics: the joined one's, said and held; and the
+# apart one's inside a break (`inside`) and outside one (`other`).
+record Readings
+    joined: Sorted
+    inside: Sorted
+    other: Sorted
+
+# One diagnostic of the joined reading in the order it is said, the held ones
+# where `placed` puts them: said as the parser said it, or held back
+# (`entry`, whose place is counted again once the order is whole).
+record Item
+    said: bool
+    entry: diag.Held
+
+# The joined reading's diagnostics, in `c`, weighed against the apart
+# reading's: what is the join's is held, and what the apart reading says that
+# the joined one never reached is held to be said where the refusal is, each
+# in the order the parser said the rest, and the second by its offset.
+function weigh(@c: cursor.Cursor, @lexed: lexer.LexOutput, apart: lexer.LexOutput, text: str)
+    lines = seams.lines_of(c.tokens, lexed: lexed)
+    froms: [i64] @ []
+
+    for line in lines
+        froms @ froms.push(line.from)
+
+    r = readings(c, lines: lines, froms: froms, apart: read_apart(apart, text: text, root_end: c.root_end))
+    items: [Item] @ []
+    next: i64 @ 0
+    i: i64 @ 0
+
+    while i <= c.diagnostics.len()
+        while next < c.held.len() && c.held[next].at == i
+            items @ items.push(Item(said: false, entry: c.held[next]))
+            next @ next + 1
+
+        if i < c.diagnostics.len()
+            d = c.diagnostics[i]
+            at = seams.line_at(lines, froms: froms, at: d.span.start)
+            alone = at >= 0 && join_alone(lines[at], d: d, r: r)
+            cause: token.Span @ d.span
+
+            if alone
+                cause @ seams.cause_of(lines[at], at: d.span.start)
+            items @ items.push(Item(said: !alone, entry: diag.Held(at: 0, cause: cause, diagnostic: d, apart: false)))
+        i @ i + 1
+
+    added: [Item] @ []
+
+    for d in r.other.diagnostics
+        at = seams.line_at(lines, froms: froms, at: d.span.start)
+
+        if at >= 0 && unreached(lines[at], d: d, r: r)
+            added @ added.push(
+                Item(said: false, entry: diag.Held(at: 0, cause: seams.cause_of(lines[at], at: d.span.start), diagnostic: d, apart: true))
+            )
+
+    kept: [diag.Diagnostic] @ []
+    held: [diag.Held] @ []
+
+    for item in merged(items: items, added: added)
+        if item.said
+            kept @ kept.push(item.entry.diagnostic)
+        else
+            held @ held.push(
+                diag.Held(at: kept.len(), cause: item.entry.cause, diagnostic: item.entry.diagnostic, apart: item.entry.apart)
+            )
+
+    c.diagnostics @ kept
+    c.held @ held
+    joins_guessed(@lexed, lines: lines, froms: froms, held: held)
+
+# A line whose joined reading the parser refuses for the join alone is one no
+# join repairs: applied, it is that refusal (`0 =>` over `_ => 2` joined to
+# `0 => _ => 2`). So every join of its statement is a `guess`, as
+# `line_joins` makes the joins of one statement one certainty (panel 181 item
+# 3, `.claude/rules/diagnostics-and-goldens.md`: a `certain` fix repairs the
+# defect it names).
+function joins_guessed(@lexed: lexer.LexOutput, lines: [seams.Line], froms: [i64], held: [diag.Held])
+    refused: [bool] @ []
+
+    for line in lines
+        _ = line
+        refused @ refused.push(false)
+
+    # A report at the first word after one line, which begins the next, may be
+    # either's, a head's missing body or the next head's own; both are marked.
+    for h in held
+        where = h.diagnostic.span.start
+        at = seams.line_at(lines, froms: froms, at: where)
+
+        if !h.apart && at >= 0
+            refused[at] @ true
+
+            if at > 0 && where >= lines[at - 1].to && where <= lines[at - 1].after
+                refused[at - 1] @ true
+
+    statements: [i64] @ []
+    i: i64 @ 0
+
+    for line in lines
+        if refused[i]
+            for one in line.statements
+                if statements.len() == 0 || statements[statements.len() - 1] != one
+                    statements @ statements.push(one)
+        i @ i + 1
+
+    next: i64 @ 0
+
+    for b in lexed.breaks
+        while next < statements.len() && statements[next] < b.statement
+            next @ next + 1
+
+        if next < statements.len() && statements[next] == b.statement && lexed.diagnostics[b.diagnostic].fixes.len() > 0
+            lexed.diagnostics[b.diagnostic].fixes[0].certainty @ .guess
+
+function readings(c: cursor.Cursor, lines: [seams.Line], froms: [i64], apart: [diag.Diagnostic]) -> Readings
+    joined: [diag.Diagnostic] @ c.diagnostics
+
+    for h in c.held
+        joined @ joined.push(h.diagnostic)
+
+    inside: [diag.Diagnostic] @ []
+    other: [diag.Diagnostic] @ []
+
+    for d in apart
+        at = seams.line_at(lines, froms: froms, at: d.span.start)
+
+        if at >= 0 && seams.inside_a_break(lines[at], at: d.span.start)
+            inside @ inside.push(d)
+        else
+            other @ other.push(d)
+
+    return Readings(joined: sorted(joined), inside: sorted(inside), other: sorted(other))
+
+# `items` with each of `added`, which ascend, before the first item that stands
+# after it in the text.
+function merged(items: [Item], added: [Item]) -> [Item]
+    out: [Item] @ []
+    next: i64 @ 0
+
+    for item in items
+        while next < added.len() && added[next].entry.diagnostic.span.start < item.entry.diagnostic.span.start
+            out @ out.push(added[next])
+            next @ next + 1
+
+        out @ out.push(item)
+
+    while next < added.len()
+        out @ out.push(added[next])
+        next @ next + 1
+
+    return out
+
+# The apart reading's parser diagnostics, as its normal arm says them.
+function read_apart(apart: lexer.LexOutput, text: str, root_end: i64) -> [diag.Diagnostic]
+    c: cursor.Cursor @ cursor.bounded_cursor(tokens: apart.tokens, root_end: root_end)
+    a: ast.Ast @ ast.new_ast()
+    decls: [ast.Decl] @ []
+    uses: [ast.Use] @ []
+    decl.file(@c, @a, @decls, @uses, text)
+    return which_arm.placed(c, lexed: apart.diagnostics).normal
+
+# Is the joined reading's `d` the join's? Said apart inside the break, it is
+# the break in the parser's words; said apart elsewhere, it is the author's;
+# not said apart, it is the join's where the apart reading reached it.
+function join_alone(line: seams.Line, d: diag.Diagnostic, r: Readings) -> bool
+    if says(r.inside, d)
+        return true
+
+    if says(r.other, d)
+        return false
+    at = d.span.start
+    return !any_in(r.other, from: seams.apart_line_start(line, at: at), to: at)
+
+# Did the apart reading say `d` after a break, on a line it had refused
+# nothing of before `d`, where the joined reading never reached it, having
+# refused something earlier on the joined line or said something else on that
+# very token (`if` over a deeper `print(1) )`, whose joined reading names its
+# body missing at the `)`)? A line the apart reading had refused something of
+# is its own recovery's to read, whose next report may be that refusal's
+# debris (a same-margin arm read as a statement after `missing_match_arms`).
+function unreached(line: seams.Line, d: diag.Diagnostic, r: Readings) -> bool
+    at = d.span.start
+
+    if at < line.belows[0] || at >= line.to || says(r.joined, d)
+        return false
+    return !any_in(r.other, from: seams.apart_line_start(line, at: at), to: at) && any_in(r.joined, from: line.from, to: at + 1)

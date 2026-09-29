@@ -9,6 +9,11 @@
 # of the signature's line is dropped, and the body below it read, or named
 # missing at the next declaration, where a signature that did not fail has it
 # named (`parse/opening`).
+#
+# Moved 2026-09-29 by defect 132's lane, given this class from lane 133's
+# finding: the `test` whose line goes on over its body is told of the junk,
+# `expected_end_of_line` with where the body goes, and its body is never
+# called absent, as `record Point )` over its fields is.
 
 function result() -> )  #~ expected_type
     y = 3 )  #~ expected_end_of_line
@@ -16,7 +21,7 @@ function result() -> )  #~ expected_type
 constant TYPED: )  #~ expected_type
     3 )  #~ expected_end_of_line
 
-test "a name and more" )  #~ missing_body
+test "a name and more" )  #~ expected_end_of_line
     y = 3 )  #~ expected_end_of_line
 
 function bodiless() -> )  #~ expected_type

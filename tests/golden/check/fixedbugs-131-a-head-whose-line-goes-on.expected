@@ -1,12 +1,12 @@
-tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:12:14: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `)`)
-tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:13:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
-tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:14:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
-tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:19:10: error[missing_body]: an `else` needs an indented body — one level deeper, exactly 4 spaces (found `)`)
+tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:19:14: error[expected_end_of_line]: expected the end of the line, found `)` — an `if`'s body goes on the lines below its head, one level deeper
 tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:20:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:21:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
-tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:24:13: error[missing_match_arms]: a `match` needs its arms indented one level below it, found `)`
-tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:25:9: error[expected_pattern]: expected a pattern, found `+` — `.case`, `.case name`, `_` (on `i64`/`str` only), or an integer, a string or a character, with an optional `-`
-tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:27:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
-tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:32:10: error[missing_body]: an `else` needs an indented body — one level deeper, exactly 4 spaces (found `)`)
-tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:33:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:26:10: error[expected_end_of_line]: expected the end of the line, found `)` — an `else`'s body goes on the lines below its head, one level deeper
+tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:27:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:28:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:31:13: error[expected_end_of_line]: expected the end of the line, found `)` — a `match`'s arms go on the lines below its head, one level deeper
+tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:32:9: error[expected_pattern]: expected a pattern, found `+` — `.case`, `.case name`, `_` (on `i64`/`str` only), or an integer, a string or a character, with an optional `-`
 tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:34:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:39:10: error[expected_end_of_line]: expected the end of the line, found `)` — an `else`'s body goes on the lines below its head, one level deeper
+tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:40:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-head-whose-line-goes-on.hero:41:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

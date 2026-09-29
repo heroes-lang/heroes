@@ -1,0 +1,58 @@
+# Fixed defect 132, 2026-09-29, a join into the next arm. Symptom: inside a
+# `match`, an arm left open at its line's end, `0 => 5 -` over `1 => 10`, an
+# arm with nothing after its `=>` over the next one, and a line that begins
+# with an operator over an arm, `0 => 5` over `| 1 => 10`, each cost
+# `continuation_outside_brackets` at the break and then `expected_end_of_line`
+# at the next arm's `=>`: one mistake, two messages. Cause: the lexer refuses
+# the break and hands the parser the line joined, `0 => 5 - 1 => 10`, which
+# holds two arms, so the parser refused the second one's `=>` only because
+# the lines were joined. The file is now read a second time with its lines
+# apart, and a message the join alone causes is held for the control arm,
+# `check --permissive`, which reads the join as the program
+# (`selfhost/parse/apart.hero`). One shape per function, and the comment line
+# between the two lines too.
+
+function an_arm_left_open(n: i64) -> i64
+    return match n
+        #~v continuation_outside_brackets
+        0 => 5 -
+        1 => 10
+        _ => 20
+
+function an_arm_with_no_body(n: i64) -> i64
+    return match n
+        #~v continuation_outside_brackets
+        0 =>
+        _ => 2
+
+function a_pipe_over_an_arm(n: i64) -> i64
+    return match n
+        0 => 5
+        | 1 => 10  #~ continuation_outside_brackets
+        _ => 20
+
+function an_operator_over_an_arm(n: i64) -> i64
+    return match n
+        0 => 1
+        * 2 => 3  #~ continuation_outside_brackets
+        _ => 20
+
+function a_comment_between(n: i64) -> i64
+    return match n
+        #~v continuation_outside_brackets
+        0 => 5 -
+        # a note between the two lines
+        1 => 10
+        _ => 20
+
+function two_arms_left_open(n: i64) -> i64
+    return match n
+        #~v continuation_outside_brackets
+        0 => 5 -
+        #~v continuation_outside_brackets
+        1 => 10 -
+        _ => 20
+
+function main()
+    print(an_arm_left_open(n: 0) + an_arm_with_no_body(n: 0) + a_pipe_over_an_arm(n: 0))
+    print(an_operator_over_an_arm(n: 0) + a_comment_between(n: 0) + two_arms_left_open(n: 0))

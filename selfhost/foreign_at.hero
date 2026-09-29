@@ -26,6 +26,7 @@
 use token
 use keywords
 use word_place
+use word_neighbours
 
 ## Error codes
 
@@ -55,7 +56,7 @@ function repair_at(text: str, span: token.Span) -> keywords.ForeignWord?
 function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: str, writes: str) -> keywords.ForeignWord
     place = word_place.place_of(text, span)
 
-    if writes == "use" && word_place.header_after(text, end: span.end)
+    if writes == "use" && word_neighbours.header_after(text, end: span.end)
         return keywords.ForeignWord(
             message: "`" + word + "` is not a word in this language — a C header is named by an `extern` group, with the signatures it declares indented below it: `extern \"stdio.h\"`",
             repair: .hint(word: "extern")
@@ -64,7 +65,7 @@ function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: st
     if right_at(text: text, span, writes: writes, place: place)
         return one
 
-    if writes == "else if" && place == .statement && word_place.continues_an_if(text, span)
+    if writes == "else if" && place == .statement && word_neighbours.continues_an_if(text, span)
         return keywords.ForeignWord(
             message: "`" + word + "` is not a word in this language — `else if` continues the `if` above it with a condition of its own: `else if x == 2`",
             repair: .guidance
@@ -80,7 +81,7 @@ function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: st
 # type goes, `match` where a statement or a value goes, and `else if` where
 # an `if` above it continues.
 function right_at(text: str, span: token.Span, writes: str, place: word_place.Place) -> bool
-    named = word_place.name_after(text, end: span.end)
+    named = word_neighbours.name_after(text, end: span.end)
 
     if writes == "record" || writes == "constant"
         return (place == .top || place == .member) && named
@@ -95,10 +96,10 @@ function right_at(text: str, span: token.Span, writes: str, place: word_place.Pl
         return place == .typed
 
     if writes == "match"
-        return (place == .statement || place == .valued) && word_place.arms_below(text, span)
+        return (place == .statement || place == .valued) && word_neighbours.arms_below(text, span)
 
     if writes == "else if"
-        return place == .statement && word_place.continues_an_if(text, span) && word_place.value_after(text, end: span.end)
+        return place == .statement && word_neighbours.continues_an_if(text, span) && word_neighbours.value_after(text, end: span.end)
     return false
 
 # What is right where the word stands, when the swap is not.

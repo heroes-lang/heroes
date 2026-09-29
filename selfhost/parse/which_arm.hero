@@ -1,0 +1,98 @@
+# Each arm's diagnostics: where a diagnostic the parser held back is said
+# (design.md §4.17, Part 11; defects 131 and 132).
+#
+# The parser holds a diagnostic back where the lexer refused something at its
+# cause (`diag.Held`): a missing body over a head the lexer joined to its
+# body, or over a line whose margin holds a tab (`parse/opening`), and what a
+# join alone made it say (`parse/apart`). A held diagnostic is said where
+# that refusal is not, and one the lines say apart where it is. A join's
+# refusal is a thesis rule, which the control arm, `check --permissive`,
+# drops, reading the join as the program: there the held one is said. A tab's
+# is not, and it says the body is misplaced in both.
+#
+# | entry | called by |
+# |---|---|
+# | `placed` | `parse.parse_source`, `parse.parse_bounded`, `parse/apart.read_apart` |
+
+use token
+use diag
+use cursor
+use stable
+
+# One file's parser diagnostics as each arm reads them.
+record Said
+    normal: [diag.Diagnostic]
+    control: [diag.Diagnostic]
+
+# Each held diagnostic goes where the parser would have said it, in the arms
+# the lexer's refusal at its break leaves it to. A refusal that is a thesis
+# rule stands in the normal arm alone, so the held one is said in the control
+# arm alone and one read apart in the normal arm alone; one that is not a
+# thesis rule says it in both, so the held one in neither and one read apart
+# in both; and a join nobody refused leaves it to say it in both, the loud
+# direction.
+function placed(c: cursor.Cursor, lexed: [diag.Diagnostic]) -> Said
+    normal: [diag.Diagnostic] @ []
+    control: [diag.Diagnostic] @ []
+    next: i64 @ 0
+    i: i64 @ 0
+    by_start: [i64] @ []
+
+    if c.held.len() > 0
+        by_start @ in_order(lexed)
+
+    while i <= c.diagnostics.len()
+        while next < c.held.len() && c.held[next].at == i
+            held = c.held[next]
+            refusal = refusal_at(lexed, by_start: by_start, cause: held.cause)
+            thesis = !refusal.is_err() && diag.is_thesis_rule(refusal.must())
+
+            if refusal.is_err() || held.apart
+                normal @ normal.push(held.diagnostic)
+
+            if refusal.is_err() || held.apart && !thesis || !held.apart && thesis
+                control @ control.push(held.diagnostic)
+            next @ next + 1
+
+        if i < c.diagnostics.len()
+            normal @ normal.push(c.diagnostics[i])
+            control @ control.push(c.diagnostics[i])
+        i @ i + 1
+
+    return Said(normal: normal, control: control)
+
+# The lexer's refusal that stands inside `cause`, a break a head was joined
+# at: the first the lexer said of those that begin there. `by_start` is the
+# order of `lexed` by where each begins, searched rather than walked, since a
+# file of many breaks holds many diagnostics back and the lexer refused each.
+function refusal_at(lexed: [diag.Diagnostic], by_start: [i64], cause: token.Span) -> diag.Diagnostic?
+    low: i64 @ 0
+    high: i64 @ by_start.len()
+
+    while low < high
+        middle = (low + high) / 2
+
+        if lexed[by_start[middle]].span.start < cause.start
+            low @ middle + 1
+        else
+            high @ middle
+
+    first: i64 @ -1
+
+    while low < by_start.len() && lexed[by_start[low]].span.start < cause.end
+        if first < 0 || by_start[low] < first
+            first @ by_start[low]
+        low @ low + 1
+
+    if first < 0
+        return fail(code: "unrefused", msg: "the lexer refused nothing at the break")
+    return ok(lexed[first])
+
+# The indices of `lexed` in the order of where each begins, stably.
+function in_order(lexed: [diag.Diagnostic]) -> [i64]
+    starts: [i64] @ []
+
+    for d in lexed
+        starts @ starts.push(d.span.start)
+
+    return stable.order(by: starts)

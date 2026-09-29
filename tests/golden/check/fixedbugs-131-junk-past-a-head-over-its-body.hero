@@ -1,0 +1,46 @@
+# Fixed defect 131's class, 2026-09-29, what goes on past a head over a body
+# that is there (lane 133's finding). Symptom: `function f() )`,
+# `constant K: i64 )` and `test "t" )` over their bodies, and every block
+# head beside them, `if`, `while`, `for`, `else if` and `match`, were named
+# `missing_body` or `missing_match_arms` found `)`, for a body that was there
+# one level down and read. Cause: `parse/opening`'s one reading of a head
+# whose line goes on named the body missing whether or not one stood below.
+# Where one does, the junk is the one mistake and is named as it is,
+# `expected_end_of_line` with where the body goes, as `record Point )` over its
+# fields is; where none does, the body is named missing, found the junk, as
+# before (the last two).
+
+function a_function() )  #~ expected_end_of_line
+    y = 3 )  #~ expected_end_of_line
+
+constant K: i64 )  #~ expected_end_of_line
+    5
+
+test "a test" )  #~ expected_end_of_line
+    assert true
+
+function heads(n: i64)
+    if n > 0 )  #~ expected_end_of_line
+        print(1)
+    while n > 5 )  #~ expected_end_of_line
+        print(2)
+    for i in range(from: 0, to: 2) )  #~ expected_end_of_line
+        print(i)
+
+    if n > 1
+        print(3)
+    else if n < 0 )  #~ expected_end_of_line
+        print(4)
+
+    match n )  #~ expected_end_of_line
+        _ => print(5)
+
+function bodiless() )  #~ missing_body
+
+function heads_with_no_body(n: i64)
+    if n > 0 )  #~ missing_body
+    print(n)
+
+function main()
+    heads(n: 1)
+    heads_with_no_body(n: 1)

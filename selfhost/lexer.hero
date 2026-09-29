@@ -35,6 +35,11 @@ use escape
 record LexOutput
     tokens: [token.Token]
     diagnostics: [diag.Diagnostic]
+    # The line breaks refused and joined (`state.Break`, its `diagnostic` at
+    # least 0), in this file's own token indexes: where the parser reads a
+    # line the author broke, which `parse/apart` weighs (defect 132). The
+    # compilation's one stream carries none, since its indexes are no file's.
+    breaks: [state.Break]
 
 ## The whole compilation's tokens
 
@@ -76,34 +81,38 @@ function lex_files(s: source.Source) -> [LexOutput]
 
     for entry in s.files
         _ = entry
-        offset = s.files[index].start
-        one = lex_one(source_extent.text_of(s, index))
-        tokens: [token.Token] @ []
-
-        for t in one.tokens
-            tokens @ tokens.push(
-                token.Token(kind: t.kind, span: token.Span(start: t.span.start + offset, end: t.span.end + offset))
-            )
-
-        diagnostics: [diag.Diagnostic] @ []
-
-        for d in one.diagnostics
-            moved: diag.Diagnostic @ d
-            moved.span @ token.Span(start: d.span.start + offset, end: d.span.end + offset)
-            fixes: [diag.Fix] @ []
-
-            for fix in d.fixes
-                fixes @ fixes.push(
-                    diag.Fix(title: fix.title, replacement: fix.replacement, span: token.Span(start: fix.span.start + offset, end: fix.span.end + offset), certainty: fix.certainty)
-                )
-
-            moved.fixes @ fixes
-            diagnostics @ diagnostics.push(moved)
-
-        out @ out.push(LexOutput(tokens: tokens, diagnostics: diagnostics))
+        out @ out.push(moved(lex_one(source_extent.text_of(s, index)), offset: s.files[index].start))
         index @ index + 1
 
     return out
+
+# One file's stream moved from its own coordinates into the compilation's,
+# where its text begins at `offset`; a break's indexes are the stream's and
+# do not move.
+function moved(one: LexOutput, offset: i64) -> LexOutput
+    tokens: [token.Token] @ []
+
+    for t in one.tokens
+        tokens @ tokens.push(
+            token.Token(kind: t.kind, span: token.Span(start: t.span.start + offset, end: t.span.end + offset))
+        )
+
+    diagnostics: [diag.Diagnostic] @ []
+
+    for d in one.diagnostics
+        shifted: diag.Diagnostic @ d
+        shifted.span @ token.Span(start: d.span.start + offset, end: d.span.end + offset)
+        fixes: [diag.Fix] @ []
+
+        for fix in d.fixes
+            fixes @ fixes.push(
+                diag.Fix(title: fix.title, replacement: fix.replacement, span: token.Span(start: fix.span.start + offset, end: fix.span.end + offset), certainty: fix.certainty)
+            )
+
+        shifted.fixes @ fixes
+        diagnostics @ diagnostics.push(shifted)
+
+    return LexOutput(tokens: tokens, diagnostics: diagnostics, breaks: one.breaks)
 
 # The files' streams as the compilation's ONE, for every reader but the
 # parser: each file's tokens but its own eof, and one eof at the root's end.
@@ -124,14 +133,27 @@ function joined(s: source.Source, files: [LexOutput]) -> LexOutput
 
     at = source_extent.root_end(s)
     tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: at, end: at)))
-    return LexOutput(tokens: tokens, diagnostics: diagnostics)
+    none: [state.Break] = []
+    return LexOutput(tokens: tokens, diagnostics: diagnostics, breaks: none)
 
 ## One file's tokens
 
 # One file's tokens, in that file's own coordinates. Never fails: errors are
 # in `diagnostics`, and the token stream is always complete through eof.
 function lex_one(text: str) -> LexOutput
+    return lexed(text, apart: false)
+
+# The same file with its lines read APART (defect 132): every break
+# `lex_one` refuses and joins is a line end here, whose next line's margin
+# is read, and a head that could only go on, the break itself, is left out.
+# It is what the author's lines say taken one at a time, which `parse/apart`
+# holds the joined reading against; the diagnostics are not its concern.
+function lex_apart(text: str) -> LexOutput
+    return lexed(text, apart: true)
+
+function lexed(text: str, apart: bool) -> LexOutput
     l: state.LexState @ state.new_state()
+    l.apart @ apart
 
     while true
         layout.line_start(@l, text)
@@ -168,7 +190,37 @@ function lex_one(text: str) -> LexOutput
     # The joins of the lines left open, weighed now that every token of the
     # joined lines exists (defect 129).
     line_joins.weigh(@l, text)
-    return LexOutput(tokens: l.tokens, diagnostics: l.diagnostics)
+    refused: [state.Break] @ []
+
+    for b in l.breaks
+        if b.diagnostic >= 0
+            refused @ refused.push(b)
+
+    if l.heads.len() == 0
+        return LexOutput(tokens: l.tokens, diagnostics: l.diagnostics, breaks: refused)
+    return LexOutput(tokens: without_heads(l.tokens, heads: l.heads), diagnostics: l.diagnostics, breaks: refused)
+
+# The stream without the words that begin at `heads`, which ascend: the heads
+# a reading apart leaves out. Only a word goes, since a dedent begins where
+# its margin does, which at margin zero is the head's own first byte.
+function without_heads(tokens: [token.Token], heads: [i64]) -> [token.Token]
+    out: [token.Token] @ []
+    next: i64 @ 0
+
+    for t in tokens
+        if !is_layout(t.kind)
+            while next < heads.len() && heads[next] < t.span.start
+                next @ next + 1
+
+            if next < heads.len() && heads[next] == t.span.start
+                next @ next + 1
+                continue
+        out @ out.push(t)
+
+    return out
+
+function is_layout(kind: token.TokenKind) -> bool
+    return kind == .terminator || kind == .indent || kind == .dedent || kind == .comment || kind == .eof
 
 ## The stream, named
 
@@ -425,7 +477,7 @@ test "an error token ends a line at depth zero, so the next line is parsed on it
     out = lex_one("a = 0X10\nb = 1\n")
     assert kind_line(out.tokens) == "ident eq error terminator ident eq int terminator eof"
 
-test "after an arm's arrow a line is never ended in silence, since the parser reads across it"
+test "after an arm's arrow a line is refused and joined as its body, never ended"
     out = lex_one(".dot =>\nreturn 1\n")
     assert out.diagnostics.len() == 1
     assert out.diagnostics[0].code == "continuation_outside_brackets"
@@ -530,3 +582,56 @@ test "a join is judged against an operand built of literals alone"
 
         for d in out.diagnostics
             assert d.fixes[0].certainty == .certain
+
+# Defect 132: the lines read apart, which `parse/apart` holds the joined
+# reading against. Each break `lex_one` refuses and joins is a line end, the
+# next line's margin read; a head that could only go on is the break itself,
+# and it is left out; and `lex_one` hands on the breaks it refused.
+test "read apart, a refused break is a line end, and a head that goes on is left out"
+    assert kind_line(lex_apart("y = a +\n1\n").tokens) == "ident eq ident plus terminator int terminator eof"
+    assert kind_line(lex_apart("y = a +\n    1\nz = 2\n").tokens) == "ident eq ident plus terminator indent int terminator dedent ident eq int terminator eof"
+    assert kind_line(lex_apart("total = base\n- fee\n").tokens) == "ident eq ident terminator ident terminator eof"
+    assert kind_line(lex_apart("k = match n\n    0 => 5\n    | 1 => 10\n").tokens) == "ident eq kw_match ident terminator indent int fat_arrow int terminator int fat_arrow int terminator dedent eof"
+    assert kind_line(lex_apart("y = a +\r\n1\r\n").tokens) == "ident eq ident plus terminator int terminator eof"
+    assert lex_apart("y = a +\n1\n").diagnostics.len() == 0
+    broken = lex_one("y = a +\n1\nx = b\n+ c\nz = d +\nreturn 1\n")
+    assert broken.breaks.len() == 2
+    assert !broken.breaks[0].head
+    assert broken.breaks[1].head
+    assert broken.tokens[broken.breaks[0].after].kind == .int_lit
+    assert broken.tokens[broken.breaks[1].after].kind == .plus
+
+    # A line the lexer does not refuse is the same line read apart.
+    for text in ["x = 1\ny = 2\n", "f(a +\n    b)\n", "if a\n    x = 1\nelse\n    x = 2\n", "use a/\n\nfunction main()\n"]
+        assert kind_line(lex_apart(text).tokens) == kind_line(lex_one(text).tokens)
+        assert lex_one(text).breaks.len() == 0
+
+# Defect 132, beside it: a line left open over a line whose margin holds a tab
+# went on into it in silence, the tab the one report; it is ended there, and
+# the parser says what it lacks. A block's head is not ended, since the tabbed
+# line is read as its body.
+test "a line left open over a tabbed line is ended, and a block's head keeps its body"
+    out = lex_one("x = a +\n\tb\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "tab_in_indentation"
+    assert kind_line(out.tokens) == "ident eq ident plus terminator ident terminator eof"
+    named = lex_one("function\n\ty = 3\n")
+    assert kind_line(named.tokens) == "kw_function terminator ident eq int terminator eof"
+    assert kind_line(lex_one("else\n\tx = 1\n").tokens) == "kw_else ident eq int terminator eof"
+    assert kind_line(lex_one(".a =>\n\tx = 1\n").tokens) == "dot ident fat_arrow ident eq int terminator eof"
+    assert kind_line(lex_one("if a:\n\tx = 1\n").tokens) == "kw_if ident colon ident eq int terminator eof"
+
+# Defect 132's class, lane 133's finding: a word the lexer refuses at the head
+# of a line opens that line as its certain swap would, so the line above it
+# is ended there and not joined; a swap that writes a name, and a word with no
+# swap, are asked nothing.
+test "a foreign word at a line's head opens it as its swap would"
+    for text in ["constant A:\nconst B: i64\n    5\n", "record P\n    x:\nstruct Q\n", "use\nimport geom\n", "x = a +\nfn f()\n"]
+        out = lex_one(text)
+        assert out.breaks.len() == 0
+        assert out.diagnostics[0].code == "reserved_word"
+
+    named = lex_one("v:\nint @ 0\n")
+    assert named.breaks.len() == 1
+    guidance = lex_one("record P\n    x:\nclass Q\n")
+    assert guidance.breaks.len() == 1
