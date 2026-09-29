@@ -62,10 +62,14 @@ record Diagnostic
 # is about into a block's head (`parse/opening`, defect 131): `cause` spans
 # the break, where the lexer's refusal of the join stands, and `at` is how
 # many the parser had said before it, which is where it goes if it is said.
+# It is said where that refusal is not; one `apart` is said where it is: what
+# the lines read apart say and the joined reading did not reach
+# (`parse/apart`, defect 132).
 record Held
     at: i64
     cause: token.Span
     diagnostic: Diagnostic
+    apart: bool
 
 # The one constructor, so every diagnostic starts complete and empty-handed.
 function new_diagnostic(code: str, message: str, span: token.Span) -> Diagnostic

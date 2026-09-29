@@ -40,7 +40,6 @@
 use token
 use state
 use diag
-use keywords
 use bytes
 use punctuation
 use next_line
@@ -174,6 +173,12 @@ function goes_on_below(@l: state.LexState, text: str, spaces: i64) -> bool
     if (spaces + 2) / 4 > l.level || bytes.is_alnum(b) || b == '_' || b == '"' || b == '\'' || goes_on_at_head(text, at: l.pos) < 0 || heads_a_declaration(l.tokens)
         settle(@l)
         return false
+
+    # Read apart, the head is the break, and it is left out (`LexState.apart`).
+    if l.apart
+        settle(@l)
+        state.push_offset(@l.heads, at: l.pos)
+        return false
     at = last_significant(l.tokens)
     commented = l.tokens.len() > at + 1 || l.held.len() > 0
     l.owed @ -1
@@ -182,10 +187,21 @@ function goes_on_below(@l: state.LexState, text: str, spaces: i64) -> bool
     return true
 
 # Where a tab leaves the margin unread: a line end that owed its terminator
-# gets it, so nothing goes on in silence.
+# gets it, and a line left open is ended, so nothing goes on in silence and the
+# parser says what that line lacks; not a body's head, whose tabbed line is its
+# body (`parse/opening`, `Body.tabbed`).
 function abandon(@l: state.LexState)
     settle(@l)
+
+    if l.open_line >= 0 && !opens_a_body(l.tokens[l.open_line].kind)
+        ended(@l)
+        plant(@l)
     l.open_line @ -1
+
+# A block head: `else` and `=>` open a body, and a `:` before a deeper line is
+# the Python habit, which the parser refuses with its own fix.
+function opens_a_body(kind: token.TokenKind) -> bool
+    return kind == .kw_else || kind == .fat_arrow || kind == .colon
 
 function plant(@l: state.LexState)
     state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: l.open_end, end: l.open_end)))
@@ -194,24 +210,29 @@ function plant(@l: state.LexState)
 function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> bool
     left = l.tokens[at]
     margin = l.level * 4
-    first = keywords.keyword(next_line.word_at(text, at: l.pos))
+    first = next_line.opening_keyword(text, at: l.pos)
     fresh = !first.is_err() && next_line.starts_afresh(first.must())
 
-    # A block head: `else` and `=>` open a body, and a `:` before a deeper
-    # line is the Python habit, which the parser refuses with its own fix.
-    if spaces > margin && (left.kind == .kw_else || left.kind == .fat_arrow || left.kind == .colon)
+    if spaces > margin && opens_a_body(left.kind)
         return false
 
     # A line that binds or mutates is a statement of its own, which no
     # expression goes on into: only a declaration's `name:` takes one.
     binding = next_line.holds_a_binding(text, from: l.pos) && !names_a_declaration(l.tokens, at: at)
 
-    # Never after `=>`: the parser reads an arm's body across a line end
-    # (`grammar_expr.arm`), so a line ended there would go on in silence.
+    # Never after `=>`: an arm's body is on the arm's line or in the block
+    # below it, so the line the author broke after the arrow is refused and
+    # joined as that body; ended, the arm would be refused for a missing body
+    # written one line down.
     split = fresh || binding || left.kind == .kw_else && (first.is_err() || first.must() != .kw_if)
 
     if split && left.kind != .fat_arrow
         ended(@l)
+        plant(@l)
+        return false
+
+    # Read apart, the line ends here (`LexState.apart`).
+    if l.apart
         plant(@l)
         return false
     where: str @ "at the same margin, where a new statement begins"
@@ -291,12 +312,12 @@ function refuse_the_head(@l: state.LexState, text: str, at: i64, spaces: i64, co
 # break recorded here (defect 129).
 function refused(@l: state.LexState, d: diag.Diagnostic, head: bool)
     state.push_diagnostic(@l.diagnostics, d)
-    state.push_break(@l.breaks, state.Break(diagnostic: l.diagnostics.len() - 1, after: l.tokens.len(), head: head))
+    state.push_break(@l.breaks, diagnostic: l.diagnostics.len() - 1, after: l.tokens.len(), head: head)
 
 # A line left open that is ended here rather than refused: the parser refuses
 # it, so its statement's joins cannot repair it alone (defect 129).
 function ended(@l: state.LexState)
-    state.push_break(@l.breaks, state.Break(diagnostic: -1, after: l.tokens.len(), head: false))
+    state.push_break(@l.breaks, diagnostic: -1, after: l.tokens.len(), head: false)
 
 function joined(glue: str, from: i64, to: i64, certainty: diag.Certainty) -> diag.Fix
     return diag.Fix(

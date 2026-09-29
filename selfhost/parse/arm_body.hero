@@ -1,0 +1,53 @@
+# An arm's body may not declare a name (panel 017 D; design.md §4.7): the
+# refusal `arm` asks of the statement it read as the body. It reads the tree
+# the expression knot built and needs nothing of the knot, so it stands
+# outside it (`grammar_expr.hero`'s map).
+#
+# | entry | called by |
+# |---|---|
+# | `reject_declaration` | `grammar_expr.arm` |
+
+use token
+use ast
+use cursor
+
+# A declaration is not an arm body (panel 017 D). `.a => x = 5` binds a name
+# nothing can read: the arm is one statement, so the binding's scope ends with
+# it.
+#
+# The rejection lives here, in the parser, where Rust puts the same rule — as a
+# GRAMMAR exclusion of `let` from expression position. In the checker it would
+# arrive second: the resolver already reports the name as unused, with a repair
+# the author cannot apply, and the user would get both messages for one mistake.
+#
+# The error guard is not defensive. Without it a body the parser could not read
+# at all reports twice — once as the real syntax error and once as this.
+function reject_declaration(@c: cursor.Cursor, a: ast.Ast, text: str, at: i64)
+    named = declared_name(a, at)
+
+    if named.is_err()
+        return
+    return_if_unreadable = named.must()
+
+    if a.exprs[return_if_unreadable.value].kind == .error
+        return
+    cursor.error(
+        @c,
+        code: "declaration_in_arm",
+        message: "an arm's body may not declare a name — `" + cursor.slice_of(text, return_if_unreadable.name) + "` would be bound where nothing can read it; write the value as the arm's body, or open a block",
+        span: a.stmts[at].span
+    )
+
+record Declared
+    name: token.Span
+    value: i64
+
+function declared_name(a: ast.Ast, at: i64) -> Declared?
+    return match a.stmts[at].kind
+        .bind b                                               => ok(Declared(name: b.name, value: b.value))
+        .declare d                                            => ok(Declared(name: d.name, value: d.value))
+        .mutate | .return_stmt | .break_stmt | .continue_stmt => fail(code: "not_a_declaration", msg: "no name bound")
+        .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error => fail(
+            code: "not_a_declaration",
+            msg: "no name bound"
+        )

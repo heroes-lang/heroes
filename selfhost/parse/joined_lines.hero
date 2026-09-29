@@ -1,0 +1,184 @@
+# The joined lines: where each line the lexer joined across a refused break
+# begins and ends, and where each of its breaks stands (design.md §4.15; panel
+# 181 item 2; defect 132). `parse/apart` weighs the two readings of a file on
+# these offsets, and every question it asks of them is a binary search.
+#
+# | entry | called by |
+# |---|---|
+# | `lines_of`, `line_at`, `inside_a_break`, `apart_line_start`, `cause_of`, `last_at_most` | `parse/apart` |
+
+use token
+use lexer
+
+# One joined line that holds refused breaks, by the offsets the comparison
+# needs: where it begins (`from`), where it ends (`to`) and the first word
+# after it (`after`); and for each break, in the order of the text, where the
+# line below it begins (`belows`), the break itself (`owns` .. `own_ends`:
+# from the token the refusal names to the line below, for a line that cannot
+# end, or from its line end where that token is alone on its line; the line
+# end and the head, for a line below that cannot begin), the refusal
+# (`causes`) and the statement the break is one of (`statements`).
+record Line
+    from: i64
+    to: i64
+    after: i64
+    belows: [i64]
+    owns: [i64]
+    own_ends: [i64]
+    causes: [token.Span]
+    statements: [i64]
+
+# The joined lines of `tokens` that hold the breaks of `lexed`, in the order
+# of the text, each break on the line that holds it: every break before the
+# line's end. A line is walked once and made once its breaks are all in, so a
+# statement broken at a thousand line ends is neither walked nor copied a
+# thousand times.
+function lines_of(tokens: [token.Token], lexed: lexer.LexOutput) -> [Line]
+    out: [Line] @ []
+    at: i64 @ 0
+
+    while at < lexed.breaks.len()
+        first = lexed.breaks[at].after
+        from = line_start(tokens, at: first)
+        end = line_end(tokens, from: first)
+        belows: [i64] @ []
+        owns: [i64] @ []
+        own_ends: [i64] @ []
+        causes: [token.Span] @ []
+        statements: [i64] @ []
+
+        while at < lexed.breaks.len() && lexed.breaks[at].after < end
+            b = lexed.breaks[at]
+            cause = lexed.diagnostics[b.diagnostic].span
+            below = tokens[b.after].span.start
+            causes @ causes.push(cause)
+            statements @ statements.push(b.statement)
+            belows @ belows.push(below)
+
+            if b.head
+                owns @ owns.push(tokens[significant_before(tokens, at: b.after)].span.end)
+                own_ends @ own_ends.push(cause.end)
+            else if cause.start == from
+                # A word alone on its line, `constant` or `for`, is where the
+                # construct before it is reported as found, so it is not the
+                # break's: its line's end is.
+                owns @ owns.push(cause.end)
+                own_ends @ own_ends.push(below)
+            else
+                owns @ owns.push(cause.start)
+                own_ends @ own_ends.push(below)
+            at @ at + 1
+
+        out @ out.push(
+            Line(from: from, to: tokens[end].span.start, after: word_after(tokens, at: end), belows: belows, owns: owns, own_ends: own_ends, causes: causes, statements: statements)
+        )
+
+    return out
+
+function significant_before(tokens: [token.Token], at: i64) -> i64
+    i: i64 @ at - 1
+
+    while i > 0 && tokens[i].kind == .comment
+        i @ i - 1
+
+    return i
+
+# Where the line holding the token at `at` begins: after the last line end
+# outside brackets before it, past any comment.
+function line_start(tokens: [token.Token], at: i64) -> i64
+    depth: i64 @ 0
+    i: i64 @ at - 1
+
+    while i >= 0 && !(depth == 0 && is_line_end(tokens[i].kind))
+        k = tokens[i].kind
+
+        if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth + 1
+        else if (k == .lparen || k == .lbracket || k == .lbrace) && depth > 0
+            depth @ depth - 1
+        i @ i - 1
+
+    i @ i + 1
+
+    while tokens[i].kind == .comment
+        i @ i + 1
+
+    return tokens[i].span.start
+
+# The index of the line end outside brackets that ends the line holding the
+# token at `from`, or of the stream's `eof`.
+function line_end(tokens: [token.Token], from: i64) -> i64
+    depth: i64 @ 0
+    i: i64 @ from
+
+    while i < tokens.len() - 1 && !(depth == 0 && is_line_end(tokens[i].kind))
+        k = tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if (k == .rparen || k == .rbracket || k == .rbrace) && depth > 0
+            depth @ depth - 1
+        i @ i + 1
+
+    return i
+
+function word_after(tokens: [token.Token], at: i64) -> i64
+    i: i64 @ at
+
+    while i < tokens.len() - 1 && (is_line_end(tokens[i].kind) || tokens[i].kind == .comment)
+        i @ i + 1
+
+    return tokens[i].span.start
+
+function is_line_end(kind: token.TokenKind) -> bool
+    return kind == .terminator || kind == .indent || kind == .dedent
+
+# The index of the last of `ascending` that is at most `at`, or -1: a binary
+# search, which every question below is, so that a file of many breaks costs
+# its size times a logarithm.
+function last_at_most(ascending: [i64], at: i64) -> i64
+    low: i64 @ 0
+    high: i64 @ ascending.len()
+
+    while low < high
+        middle = (low + high) / 2
+
+        if ascending[middle] <= at
+            low @ middle + 1
+        else
+            high @ middle
+
+    return low - 1
+
+# The line whose text, or the first word after it, holds `at`, or -1.
+function line_at(lines: [Line], froms: [i64], at: i64) -> i64
+    i = last_at_most(froms, at: at)
+
+    if i < 0 || at > lines[i].after
+        return -1
+    return i
+
+# Whether `at` stands inside one of the line's breaks.
+function inside_a_break(line: Line, at: i64) -> bool
+    i = last_at_most(line.owns, at: at)
+    return i >= 0 && at < line.own_ends[i]
+
+# Where the apart reading's line holding `at` begins: the joined line's start,
+# or the start of the last line below one of its breaks before `at`; and past
+# the joined line's end, `at` itself, the first word of a line of its own.
+function apart_line_start(line: Line, at: i64) -> i64
+    if at >= line.to
+        return at
+    i = last_at_most(line.belows, at: at)
+
+    if i < 0
+        return line.from
+    return line.belows[i]
+
+# The refusal of the last break before `at` on the line, else of its first.
+function cause_of(line: Line, at: i64) -> token.Span
+    i = last_at_most(line.belows, at: at)
+
+    if i < 0
+        return line.causes[0]
+    return line.causes[i]

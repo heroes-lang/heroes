@@ -12,9 +12,13 @@
 # the `elif` is the parser's not reading `elif` as `else if`, which is
 # grammar_expr's and given to lane 132 the same day; the swap itself is
 # certain here, an `if` above it and a condition of its own.
+# Corrected 2026-09-29 at the coordinator's gate of lane 132 merged with the
+# trunk: lane 132 reads `elif` as `else if` where the swap is certain, so
+# the block below it is its body and the `unexpected_block` above is gone;
+# one mistake, one message.
 
 function main()
     if 1 == 1
         print(1)
     else if 2 == 2  #~ reserved_word
-        print(2)  #~ unexpected_block
+        print(2)

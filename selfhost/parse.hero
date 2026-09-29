@@ -12,6 +12,8 @@ use source_extent
 use cursor
 use lexer
 use parse/decl
+use parse/apart
+use parse/which_arm
 use parse/wrap_break
 
 record ParseOutput
@@ -24,9 +26,11 @@ record ParseOutput
     diagnostics: [diag.Diagnostic]
     # The same parse as the control arm reads it, `check --permissive`
     # (defect 131): with what a block's head held back over a line the lexer
-    # joined (`parse/opening`), where the lexer's refusal of the join is a
-    # thesis rule. That arm drops the refusal and reads the join as the
-    # program, for which the held report is the only one.
+    # joined (`parse/opening`) and what the join alone made the parser say
+    # (`parse/apart`, defect 132), where the lexer's refusal of the join is a
+    # thesis rule; and without what the lines say apart. That arm drops the
+    # refusal and reads the join as the program, for which the held report is
+    # the only one.
     control: [diag.Diagnostic]
     tree: ast.Ast
     # Every token the lexer made, the root file's first: `heroes fmt` reads
@@ -69,20 +73,45 @@ function parse_source(s: source.Source) -> ParseOutput
     a: ast.Ast @ ast.new_ast()
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []
-    diagnostics: [diag.Diagnostic] @ lexed.diagnostics
-    control: [diag.Diagnostic] @ lexed.diagnostics
+    lexer_said: [diag.Diagnostic] @ []
+    normal: [diag.Diagnostic] @ []
+    controlled: [diag.Diagnostic] @ []
     bound = source_extent.root_end(s)
+    index: i64 @ 0
 
     for one in files
-        c: cursor.Cursor @ cursor.bounded_cursor(tokens: one.tokens, root_end: bound)
+        lexed_file: lexer.LexOutput @ one
+        c: cursor.Cursor @ cursor.bounded_cursor(tokens: lexed_file.tokens, root_end: bound)
         decl.file(@c, @a, @decls, @uses, s.text)
-        said = placed(c, lexed: one.diagnostics)
+
+        # Where the lexer refused a break, the file is read apart too, and
+        # what the join alone made the parser say is held (defect 132); the
+        # joins it shows no repair are `guess`es, so the lexer's diagnostics
+        # are taken after it.
+        if lexed_file.breaks.len() > 0
+            lines = lexer.moved(lexer.lex_apart(source_extent.text_of(s, index)), offset: s.files[index].start)
+            apart.weigh(@c, lexed: @lexed_file, apart: lines, text: s.text)
+        said = which_arm.placed(c, lexed: lexed_file.diagnostics)
+
+        for d in lexed_file.diagnostics
+            lexer_said @ lexer_said.push(d)
 
         for d in said.normal
-            diagnostics @ diagnostics.push(d)
+            normal @ normal.push(d)
 
         for d in said.control
-            control @ control.push(d)
+            controlled @ controlled.push(d)
+
+        index @ index + 1
+
+    diagnostics: [diag.Diagnostic] @ lexer_said
+    control: [diag.Diagnostic] @ lexer_said
+
+    for d in normal
+        diagnostics @ diagnostics.push(d)
+
+    for d in controlled
+        control @ control.push(d)
 
     return ParseOutput(
         decls: decls,
@@ -99,7 +128,7 @@ function parse_source(s: source.Source) -> ParseOutput
 # reaches plus the library (§1.11), and a diagnostic must never point
 # inside the last of those.
 function parse_bounded(text: str, root_end: i64) -> ParseOutput
-    lexed = lexer.lex_one(text)
+    lexed: lexer.LexOutput @ lexer.lex_one(text)
     comments: [token.Span] @ []
 
     for t in lexed.tokens
@@ -111,9 +140,13 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []
     decl.file(@c, @a, @decls, @uses, text)
+
+    # As `parse_source` does, a text the lexer refused a break in is read apart.
+    if lexed.breaks.len() > 0
+        apart.weigh(@c, lexed: @lexed, apart: lexer.lex_apart(text), text: text)
     diagnostics: [diag.Diagnostic] @ lexed.diagnostics
     control: [diag.Diagnostic] @ lexed.diagnostics
-    said = placed(c, lexed: lexed.diagnostics)
+    said = which_arm.placed(c, lexed: lexed.diagnostics)
 
     for d in said.normal
         diagnostics @ diagnostics.push(d)
@@ -130,49 +163,6 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
         tree: a,
         tokens: lexed.tokens
     )
-
-# One file's parser diagnostics as each arm reads them.
-record Said
-    normal: [diag.Diagnostic]
-    control: [diag.Diagnostic]
-
-# Each held diagnostic goes where the parser would have said it, in the arms
-# the lexer's refusal at its break leaves it to: a refusal that is a thesis
-# rule stands in the normal arm alone, so the held one is said in the control
-# arm alone; one that is not says it in both, so the held one in neither; and
-# a join nobody refused leaves it to say it in both, the loud direction.
-function placed(c: cursor.Cursor, lexed: [diag.Diagnostic]) -> Said
-    normal: [diag.Diagnostic] @ []
-    control: [diag.Diagnostic] @ []
-    next: i64 @ 0
-    i: i64 @ 0
-
-    while i <= c.diagnostics.len()
-        while next < c.held.len() && c.held[next].at == i
-            held = c.held[next]
-            refusal = refusal_at(lexed, cause: held.cause)
-
-            if refusal.is_err()
-                normal @ normal.push(held.diagnostic)
-                control @ control.push(held.diagnostic)
-            else if diag.is_thesis_rule(refusal.must())
-                control @ control.push(held.diagnostic)
-            next @ next + 1
-
-        if i < c.diagnostics.len()
-            normal @ normal.push(c.diagnostics[i])
-            control @ control.push(c.diagnostics[i])
-        i @ i + 1
-
-    return Said(normal: normal, control: control)
-
-# The lexer's refusal that stands inside `cause`, a break a head was joined at.
-function refusal_at(lexed: [diag.Diagnostic], cause: token.Span) -> diag.Diagnostic?
-    for d in lexed
-        if d.span.start >= cause.start && d.span.start < cause.end
-            return ok(d)
-
-    return fail(code: "unrefused", msg: "the lexer refused nothing at the break")
 
 # Which file each diagnostic of a parse points into, in order.
 function files_of(s: source.Source, p: ParseOutput) -> [i64]
@@ -570,3 +560,118 @@ test "a for over what begins no expression is a guess, and while > is refused on
     assert codes(parse("function main()\n    while >\n        x = 1\n").diagnostics) == ["expected_expression"]
     assert codes(parse("function main()\n    while :\n        x = 1\n").diagnostics) == ["expected_expression"]
     assert codes(parse("function main()\n    x = 1 + >\n").diagnostics) == ["expected_expression"]
+
+# Defect 132: a join into a line the parser refuses only because it is joined
+# costs the break alone, and the control arm, which reads the join as the
+# program, says what the join made the parser say; the test is the lines read
+# apart (`parse/apart`), not a list of shapes.
+test "a join the parser refuses only as joined costs the break alone"
+    cob = "continuation_outside_brackets"
+    eol = "expected_end_of_line"
+    arm = "function main()\n    k = match n\n        "
+
+    for shape in ["0 => 5 -\n        1 => 10\n", "0 => 5\n        | 1 => 10\n", "0 =>\n        _ => 2\n", "0 => 1\n        * 2 => 3\n", "0 => 5 -\n        # a note\n        1 => 10\n"]
+        joined = parse(arm + shape + "        _ => 20\n")
+        assert codes(joined.diagnostics) == [cob]
+        assert codes(joined.control) == [cob, eol]
+
+    crlf = parse("function main()\r\n    k = match n\r\n        0 => 5 -\r\n        1 => 10\r\n")
+    assert codes(crlf.diagnostics) == [cob]
+    crlf_head = parse("function main()\r\n    for\r\n        print(1)\r\n")
+    assert codes(crlf_head.diagnostics) == [cob]
+    crlf_empty = parse("function main()\r\n    k = match n\r\n        0 =>\r\n        _ => 2\r\n")
+    assert codes(crlf_empty.diagnostics) == [cob]
+    assert crlf_empty.diagnostics[0].fixes[0].certainty == .guess
+    heads = [
+        "function main()\n    for\n        print(1)\n"
+        "function main()\n    match >\n        _ => print(1)\n"
+        "record\n    x: i64\n"
+        "variant\n    a\n\nfunction main()\n    print(1)\n"
+        "constant\n    3\n"
+        "function\n    print(1)\n\nfunction main()\n    print(2)\n"
+    ]
+
+    for text in heads
+        refused = parse(text)
+        assert codes(refused.diagnostics) == [cob]
+        assert refused.control.len() > 1
+
+    # A body the lines lack apart as well is the author's to be told of.
+    same = parse("function main()\n    for\n    print(1)\n")
+    assert codes(same.diagnostics) == [cob, "missing_body"]
+    assert codes(same.control) == [cob, "for_missing_in", "missing_body"]
+
+# ... and a mistake the lines make apart is said as it would be apart, where
+# the joined reading never reached it: the stray `)` of each line below.
+test "a mistake the lines make apart is still said beside the break"
+    cob = "continuation_outside_brackets"
+    eol = "expected_end_of_line"
+    shapes = [
+        "function main()\n    k = match n\n        0 => 5 -\n        1 => 10 )\n        _ => 20\n"
+        "function main()\n    k = match n\n        0 => 5\n        | 1 => 10 )\n        _ => 20\n"
+        "function main()\n    for\n        print(1) )\n"
+        "function main()\n    if\n        print(1) )\n"
+        "function main()\n    x = n +\n    n )\n"
+        "function main()\n    x = n +\n    n +\n    n )\n"
+        "function main()\n    x = n\n    + n\n    + n )\n"
+        "record\n    x: i64 )\n"
+    ]
+
+    for text in shapes
+        got = parse(text)
+        assert got.diagnostics[0].code == cob
+        last = got.diagnostics[got.diagnostics.len() - 1]
+        assert text.slice(from: last.span.start, to: last.span.end) == ")"
+
+    before = parse("function main()\n    x = ) +\n    n )\n")
+    assert codes(before.diagnostics) == [cob, "expected_expression", eol]
+    tabbed = parse("function\n\ty = 3 )\n")
+    assert codes(tabbed.diagnostics) == ["tab_in_indentation", "expected_name", eol]
+
+# ... and a join whose joined reading the parser refuses for the join alone
+# repairs nothing, so it and every join of its statement are a `guess`, where
+# `0 =>` over `_ => 2` was `certain` and `--apply` wrote `0 => _ => 2`; a join
+# that leaves the author's own mistake standing keeps its certainty.
+test "a join the parser refuses only as joined is a guess, with its statement's"
+    for text in ["function main()\n    k = match n\n        0 =>\n        _ => 2\n", "record\n    x: i64\n", "constant\n    3\n", "variant\n    a\n\nfunction main()\n    print(1)\n"]
+        refused = parse(text)
+        assert refused.diagnostics[0].fixes[0].certainty == .guess
+
+    chain = parse("function main()\n    k = match n\n        0 => a +\n        b +\n        _ => 2\n")
+    assert codes(chain.diagnostics) == ["continuation_outside_brackets", "continuation_outside_brackets"]
+    assert chain.diagnostics[0].fixes[0].certainty == .guess
+    assert chain.diagnostics[1].fixes[0].certainty == .guess
+    own = parse("function main()\n    x = n +\n    n )\n")
+    assert own.diagnostics[0].fixes[0].certainty == .certain
+
+# Defect 133's class, lane 133's finding: `elif` opening its line in an `if`'s
+# chain is read as the `else if` its certain swap writes, and `switch` where
+# an expression begins as its `match`, so the construct's own mistakes are
+# told beside the lexer's `reserved_word` and nothing else is.
+test "elif and switch are read as their certain swaps write them"
+    rw = "reserved_word"
+    chain = parse(
+        "function main()\n    if x == 1\n        print(1)\n    elif x == 2\n        print(2)\n    else\n        print(3)\n"
+    )
+    assert codes(chain.diagnostics) == [rw]
+    own = parse("function main()\n    if x == 1\n        print(1)\n    elif x == )\n        print(2)\n")
+    assert codes(own.diagnostics) == [rw, "expected_expression"]
+    stray = parse("function main()\n    elif x == 2\n        print(2)\n")
+    assert codes(stray.diagnostics)[0] == rw
+    switch_arms = parse("function main()\n    y = switch x\n        + => 2\n        _ => 3\n")
+    assert codes(switch_arms.diagnostics) == [rw, "expected_pattern"]
+
+# Defect 131's class, lane 133's finding: what goes on past a head over a body
+# that is there is the one mistake, named as junk, and the body is read and
+# never called absent; with no body below, the body is named missing, found
+# the junk, as before.
+test "junk past a head over its body is named as junk, and the body is read"
+    eol = "expected_end_of_line"
+
+    for text in ["function f() )\n    x = 3\n", "constant K: i64 )\n    5\n", "test \"t\" )\n    assert true\n", "function main()\n    while c )\n        print(1)\n", "function main()\n    match n )\n        _ => print(1)\n"]
+        assert codes(parse(text).diagnostics) == [eol]
+
+    inside = parse("function f() )\n    x = 3 )\n")
+    assert codes(inside.diagnostics) == [eol, eol]
+    assert codes(parse("function f() )\n\nfunction main()\n    print(1)\n").diagnostics) == ["missing_body"]
+    assert codes(parse("function main()\n    if c )\n    print(1)\n").diagnostics) == ["missing_body"]

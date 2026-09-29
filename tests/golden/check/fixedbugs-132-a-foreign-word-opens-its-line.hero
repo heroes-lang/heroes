@@ -1,0 +1,36 @@
+# Fixed defect 132's class, 2026-09-29, a foreign word at the head of a line
+# below an open one (lane 133's finding). Symptom: `constant A:` over
+# `const B: i64`, `record P` whose field `x:` stands over `struct Q`, and
+# `use` over `import geom` cost `continuation_outside_brackets` beside the
+# lexer's `reserved_word`, and once `check --apply` had written `constant`,
+# `record` or `use` the same open line cost `expected_type` or
+# `expected_module_name`: one mistake under two codes, told in two turns.
+# Cause: the lexer asked the next line's first word whether it starts a
+# statement afresh, and a word it refuses is no keyword, so the line was
+# joined. It now asks what the word's certain swap writes, as the parser reads
+# it (`next_line.opening_keyword`, `foreign_at`), and the open line is ended
+# there and told what it lacks in the parser's words. A hint or guidance
+# names no word and is asked nothing.
+
+use  #~ expected_module_name
+import geom  #~ reserved_word
+
+#~v expected_type
+constant A:
+const B: i64  #~ reserved_word missing_body
+    5
+
+record P
+    #~v expected_type
+    x:
+struct Q  #~ reserved_word
+    y: i64
+
+function main()
+    a = 1
+
+    if a > 0
+        #~v expected_expression
+        x = a +
+    elif a < 0  #~ reserved_word
+        print(2)

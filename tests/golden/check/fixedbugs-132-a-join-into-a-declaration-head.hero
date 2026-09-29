@@ -1,0 +1,32 @@
+# Fixed defect 132, 2026-09-29, a join into a declaration's head. Symptom: a
+# declaration keyword alone at its line's end, over the deeper line of its
+# body, cost `continuation_outside_brackets` and then what the parser said of
+# the head it read with the body's first line taken for its name: `record`
+# over `x: i64` read `record x: i64`, `trailing_colon` and `empty_record`;
+# `variant` over `a`, `empty_variant` at the next declaration; `constant` over
+# `3`, `expected_name` at the `3`; `function` over `print(1)`,
+# `expected_parameter` and `missing_body`. Cause: the lexer joins the lines,
+# and read apart each head is refused at its own line's end, the break told
+# in the parser's words, so what the join made the parser say is held for the
+# control arm (`selfhost/parse/apart.hero`); and the joins, which the joined
+# reading shows repair nothing, are a `guess`, where `check --apply` wrote
+# `record x: i64` and `constant 3`.
+
+#~v continuation_outside_brackets
+record
+    x: i64
+
+#~v continuation_outside_brackets
+variant
+    a
+
+#~v continuation_outside_brackets
+constant
+    3
+
+#~v continuation_outside_brackets
+function
+    print(1)
+
+function main()
+    print(2)

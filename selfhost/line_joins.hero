@@ -73,6 +73,11 @@ function weigh(@l: state.LexState, text: str)
         if any_weak(l, breaks: breaks.slice(from: first, to: last + 1))
             for b in breaks.slice(from: first, to: last + 1)
                 guessed(@l, b)
+        k: i64 @ first
+
+        while k <= last
+            l.breaks[k].statement @ breaks[first].after
+            k @ k + 1
 
         first @ last + 1
 

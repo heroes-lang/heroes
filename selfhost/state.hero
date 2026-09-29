@@ -34,11 +34,15 @@ constant ERR_NO_SIGNIFICANT: str
 # joins from these once the file is lexed (defect 129). `diagnostic` is -1 for
 # a line left open that the lexer ends rather than refuses, before a fresh
 # statement or at the file's end: the parser says what it lacks, no join
-# repairs it, and it weighs as a break with no join.
+# repairs it, and it weighs as a break with no join. `statement` names the
+# statement the break is one of, the `after` of its first break, set when
+# `line_joins` groups them; `parse/apart` makes one statement's joins a
+# `guess` together, as `line_joins` does (defect 132).
 record Break
     diagnostic: i64
     after: i64
     head: bool
+    statement: i64
 
 record LexState
     pos: i64
@@ -71,6 +75,13 @@ record LexState
     held: [token.Token]
     # Every break refused so far, in the order refused (`Break`).
     breaks: [Break]
+    # The lines read APART (`lexer.lex_apart`, defect 132): where this lexer
+    # would refuse a break and join it, it ends the line there instead and
+    # reads the next one's margin. A head that can only go on is the break
+    # itself, so its first byte is kept in `heads`, and the token that starts
+    # there is left out of the stream.
+    apart: bool
+    heads: [i64]
 
 function new_state() -> LexState
     brackets: [token.Span] = []
@@ -79,6 +90,7 @@ function new_state() -> LexState
     diagnostics: [diag.Diagnostic] = []
     held: [token.Token] = []
     breaks: [Break] = []
+    heads: [i64] = []
     return LexState(
         pos: 0,
         level: 0,
@@ -91,7 +103,9 @@ function new_state() -> LexState
         open_end: -1,
         owed: -1,
         held: held,
-        breaks: breaks
+        breaks: breaks,
+        apart: false,
+        heads: heads
     )
 
 ## Emitting
@@ -135,9 +149,14 @@ function push_diagnostic(@diagnostics: [diag.Diagnostic], d: diag.Diagnostic)
     diagnostics @ diagnostics.push(d)
 
 # The same spelling for the refused breaks, a file of broken lines being a
-# file of many of them.
-function push_break(@breaks: [Break], b: Break)
-    breaks @ breaks.push(b)
+# file of many of them: a break as the lexer records it, before `line_joins`
+# names its statement.
+function push_break(@breaks: [Break], diagnostic: i64, after: i64, head: bool)
+    breaks @ breaks.push(Break(diagnostic: diagnostic, after: after, head: head, statement: -1))
+
+# And for the heads a reading apart leaves out.
+function push_offset(@offsets: [i64], at: i64)
+    offsets @ offsets.push(at)
 
 # Error recovery in one move: record why, emit an `error` token over the same
 # span, keep lexing. The lexer never stops.
