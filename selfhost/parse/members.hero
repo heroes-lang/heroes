@@ -272,7 +272,7 @@ function field_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
                 )
             _ = cursor.balanced_block(@c)
         else
-            if !cursor.at_reported_error(c)
+            if !cursor.at_reported_error(c) && !line_end.said_here(c)
                 cursor.error(
                     @c,
                     code: "expected_field",
@@ -319,7 +319,7 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
             # costs one diagnostic, and the case name already spent it.
             _ = cursor.balanced_block(@c)
         else
-            if !cursor.at_reported_error(c)
+            if !cursor.at_reported_error(c) && !line_end.said_here(c)
                 cursor.error(
                     @c,
                     code: "expected_case",

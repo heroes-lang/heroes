@@ -1,0 +1,5 @@
+tests/golden/check/fixedbugs-130-a-block-under-an-arm.hero:15:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-block-under-an-arm.hero:21:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-block-under-an-arm.hero:27:9: error[expected_pattern]: expected a pattern, found `+` — `.case`, `.case name`, `_` (on `i64`/`str` only), or an integer, a string or a character, with an optional `-`
+tests/golden/check/fixedbugs-130-a-block-under-an-arm.hero:28:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-block-under-an-arm.hero:30:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
