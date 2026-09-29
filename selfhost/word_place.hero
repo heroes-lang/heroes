@@ -291,7 +291,9 @@ function header_after(text: str, end: i64) -> bool
 
 # Whether the line the word opens continues an `if` above it: the nearest
 # line above at a margin no deeper, past blank lines and comments, is at the
-# same margin and opens with `if`, `else if` or `elif`.
+# same margin and opens with `if`, `else if` or `elif`, or holds an `if` as
+# the value its line begins (`return if c`, `x = if c`), whose `else` stands
+# at that line's margin too.
 function continues_an_if(text: str, span: token.Span) -> bool
     begins = line_start(text, at: span.start)
     margin = span.start - begins
@@ -310,10 +312,30 @@ function continues_an_if(text: str, span: token.Span) -> bool
             if word == "else"
                 after = first_mark(text, from: first + 4)
                 return text.slice(from: after, to: word_end(text, from: after)) == "if"
-            return word == "if" || word == "elif"
+            return word == "if" || word == "elif" || holds_an_if(text, from: first)
         at @ above
 
     return false
+
+# Whether the line at `from` holds the word `if` outside its strings,
+# characters and comment: the value `return if c` and `x = if c` begin,
+# which the lines below it continue as a chain does.
+function holds_an_if(text: str, from: i64) -> bool
+    i: i64 @ from
+
+    while i + 1 < text.len() && text[i] != '\n' && text[i] != '#'
+        ch = text[i]
+
+        if ch == '"' || ch == '\''
+            i @ past_quoted(text, from: i, quote: ch, limit: text.len())
+        else if ch == 'i' && text[i + 1] == 'f' && (i == from || !is_word_byte(text[i - 1])) && (i + 2 >= text.len() || !is_word_byte(text[i + 2]))
+            return true
+        i @ i + 1
+
+    return false
+
+function is_word_byte(ch: u8) -> bool
+    return bytes.is_alnum(ch) || ch == '_'
 
 # Whether a `match` could stand where the word does: a value follows it on
 # its line, and the next line with words, deeper than this one, holds an
@@ -442,3 +464,19 @@ test "a header follows an include, and an elif continues an if"
     assert !continues_an_if(ended, at_word(text: ended, word: "elif"))
     chained = "function f()\n    if x\n        print(1)\n    else if z\n        print(2)\n    elif y\n"
     assert continues_an_if(chained, at_word(text: chained, word: "elif"))
+
+# An `if` that is a line's value is continued at that line's margin, as
+# `else` continues it (the coordinator's gate of lane 132, 2026-09-29: the
+# rule read only a line that opens with `if`, so `return if` lost its
+# `elif` and cost two messages of debris below it).
+test "an elif continues an if that is its line's value, and no if in a string or a comment"
+    valued = "function f() -> i64\n    return if x == 1\n        1\n    elif x == 2\n"
+    assert continues_an_if(valued, at_word(text: valued, word: "elif"))
+    bound = "function f()\n    y = if x\n        1\n    elif z\n"
+    assert continues_an_if(bound, at_word(text: bound, word: "elif"))
+    quoted = "function f()\n    s = \"if\"\n    elif z\n"
+    assert !continues_an_if(quoted, at_word(text: quoted, word: "elif"))
+    commented = "function f()\n    s = 1  # if\n    elif z\n"
+    assert !continues_an_if(commented, at_word(text: commented, word: "elif"))
+    named = "function f()\n    if_done = true\n    elif z\n"
+    assert !continues_an_if(named, at_word(text: named, word: "elif"))
