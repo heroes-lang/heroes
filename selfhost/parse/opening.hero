@@ -68,20 +68,22 @@ function refused(c: cursor.Cursor, head: Mark) -> bool
     return cursor.refused_since(c, head.said)
 
 # How an absent body is named: its code, and the words around what was found;
-# and where the body goes (`below`), which a head whose line goes on over it
-# is told.
+# and whose body it is and what it holds, for `junk`, which alone makes the
+# sentence of them, so that no head of a program that compiles pays for it.
 record Missing
     code: str
     lead: str
     tail: str
-    below: str
+    owner: str
+    members: str
 
 function missing_body(owner: str) -> Missing
     return Missing(
         code: "missing_body",
         lead: owner + " needs an indented body — one level deeper, exactly 4 spaces (found ",
         tail: ")",
-        below: owner + "'s body goes on the lines below its head"
+        owner: owner,
+        members: "body goes"
     )
 
 function missing_arms() -> Missing
@@ -89,7 +91,8 @@ function missing_arms() -> Missing
         code: "missing_match_arms",
         lead: "a `match` needs its arms indented one level below it, found ",
         tail: "",
-        below: "a `match`'s arms go on the lines below its head"
+        owner: "a `match`",
+        members: "arms go"
     )
 
 # What stands where a head's body begins.
@@ -135,13 +138,12 @@ function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, mi
     cursor.skip_terminators(@c)
     return opening_at(@c, text, missing)
 
-# What goes on past a head over its body, named where it stands, unless the
-# lexer already spoke there.
+# What goes on past a head over its body, named, unless the lexer spoke there.
 function junk(@c: cursor.Cursor, text: str, missing: Missing)
     if swap_reading.at_reported_error(c, text)
         return
     c.diagnostics @ c.diagnostics.push(
-        diag.new_diagnostic(code: "expected_end_of_line", message: "expected the end of the line, found " + swap_reading.found(c, text) + " — " + missing.below + ", one level deeper", span: cursor.current_span(c))
+        diag.new_diagnostic(code: "expected_end_of_line", message: "expected the end of the line, found " + swap_reading.found(c, text) + " — " + missing.owner + "'s " + missing.members + " on the lines below its head, one level deeper", span: cursor.current_span(c))
     )
 
 # Whether a body stands below the line under the cursor: where dropping the
@@ -339,12 +341,9 @@ function begins_an_expression(kind: token.TokenKind) -> bool
         .and_and | .or_or | .amp | .caret | .shl | .shr | .comment | .terminator         => false
         .indent | .dedent | .eof | .error                                                => false
 
-# Whether the token under the cursor is `elif` opening its line: a foreign
-# word whose certain swap writes `else if`, which an `if`'s chain reads as
-# that swap writes it (defect 133's class), as the top level reads `fn` as
-# `function` (`parse/swap_reading`). Asked through `foreign_at`, the one place
-# a swap's certainty is decided, so the parser reads only what `--apply`
-# writes.
+# Whether the token under the cursor is `elif` opening its line, whose certain
+# swap, asked of `foreign_at` as every swap is, writes the `else if` an `if`'s
+# chain reads it as (defect 133's class; `parse/swap_reading`).
 function at_elif(c: cursor.Cursor, text: str) -> bool
     if !cursor.at(c, .error) || !cursor.at_fresh_line(c)
         return false

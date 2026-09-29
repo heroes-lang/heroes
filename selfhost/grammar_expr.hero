@@ -1038,7 +1038,7 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     # And `elif` opening its line is read as the `else if` its certain swap
     # writes, where it cost `unexpected_block` and a stray `else` beside the
     # lexer's `reserved_word` (defect 133's class).
-    while chaining && (cursor.at(c, .kw_else) || opening.at_elif(c, text))
+    while chaining && (cursor.at(c, .kw_else) || cursor.at(c, .error) && opening.at_elif(c, text))
         branch_head = opening.mark(c)
         swapped = cursor.bump(@c).kind == .error
 
