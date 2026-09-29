@@ -7,12 +7,18 @@
 # as the declarations it holds (`parse/member_heads`), and a nested function's
 # head is read as a top-level one is. The body is the caller's, which is what
 # lets this be a leaf: it reads types, parameters and marks, and nothing that
-# reads the grammar.
+# reads the grammar. A result written after `:` or `=>` is told here since
+# 2026-09-30 (`arrow_habit`), where what follows the parameters is decided.
 
 use token
+use diag
+use lexer
 use cursor
 use ast
 use parse/type
+use parse/line_end
+use parse/brace_habit
+use parse/colon_habit
 use parse/members as parse_members
 use parse/marks as parse_marks
 
@@ -51,7 +57,7 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> Sign
     # `when` with no arrow before it is named as such (finding 2).
     marks: parse_members.Marks @ parse_members.no_marks()
 
-    if cursor.eat(@c, .arrow)
+    if cursor.eat(@c, .arrow) || arrow_habit(@c, @a, text, in_group: in_group)
         result @ type.parse_type(@c, @a, text)
         marks @ parse_members.read_marks(@c, text: text, in_group: in_group, on_result: true, holder: "the result")
     else
@@ -64,3 +70,77 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> Sign
     return ok(
         Signature(generics: generic_names, params: parameters, result: result, marks: marks, end: cursor.previous_significant_span(c))
     )
+
+# A result type written after `:`, the habit of TypeScript and Kotlin, or
+# after `=>`, where this language writes `->` (defect 131's class, lane X3's
+# report): `function f(): i64` was told only that its line should end at the
+# `:`, never how a result is written. Where what follows reads as a result to
+# the line's end, its marks, a body's `{` and a Python `:` aside, which a copy of the cursor
+# and the tree tries (value semantics), the token is told once, with the
+# certain fix that writes `->`, and passed, and the caller reads the result as
+# after `->`. A Python one-line suite, `function f(): print(1)`, reads as no
+# result and is left to its head, and so is a `:` that ends the line.
+function arrow_habit(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> bool
+    if !cursor.at(c, .colon) && !cursor.at(c, .fat_arrow) || line_end.said_here(c)
+        return false
+    probe: cursor.Cursor @ c
+    scratch: ast.Ast @ a
+    said = probe.diagnostics.len()
+    _ = cursor.bump(@probe)
+    first = cursor.current_span(probe)
+
+    if cursor.at(probe, .terminator) || cursor.at(probe, .indent) || brace_habit.opens_here(probe, text)
+        return false
+    _ = type.parse_type(@probe, @scratch, text)
+    _ = parse_members.read_marks(@probe, text: text, in_group: in_group, on_result: true, holder: "the result")
+    k = cursor.current_kind(probe)
+    ends = k == .terminator || k == .indent || k == .dedent || k == .eof || brace_habit.opens_here(probe, text) || k == .colon && colon_habit.ends_its_line(probe)
+
+    if probe.diagnostics.len() != said || !ends
+        return false
+    written = cursor.current_span(c)
+    shown = text.slice(from: first.start, to: cursor.previous_significant_span(probe).end)
+    fix: str @ "->"
+
+    if written.start > 0 && text[written.start - 1] != ' '
+        fix @ " " + fix
+
+    if written.end < text.len() && text[written.end] != ' '
+        fix @ fix + " "
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "expected_end_of_line",
+        message: "expected `->` or the end of the line, found `" + cursor.slice_of(text, written) + "` — a `function`'s result type is written after `->`: `-> " + shown + "`",
+        span: written
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write the result type after `->`", replacement: fix, span: written, certainty: .certain)
+    )
+    c.diagnostics @ c.diagnostics.push(d)
+    _ = cursor.bump(@c)
+    return true
+
+## Tests
+
+# A signature read from `text`, whose first two tokens are `function` and the
+# name, and the cursor it leaves.
+function read_of(text: str) -> cursor.Cursor
+    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+    a: ast.Ast @ ast.new_ast()
+    _ = cursor.bump(@c)
+    _ = cursor.bump(@c)
+    assert !read(@c, @a, text, in_group: false).is_err()
+    return c
+
+test "a result written after a colon or a fat arrow is told once, with the fix that writes the arrow"
+    c = read_of("function f(): i64\n")
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "expected_end_of_line"
+    assert c.diagnostics[0].fixes[0].certainty == .certain
+    assert c.diagnostics[0].fixes[0].replacement == " ->"
+    assert cursor.at(c, .terminator)
+    assert read_of("function f() => [i64]\n").diagnostics[0].fixes[0].replacement == "->"
+
+    # A one-line suite reads as no result: the `:` is left to the head.
+    d = read_of("function f(): print(1)\n")
+    assert d.diagnostics.len() == 0
+    assert cursor.at(d, .colon)

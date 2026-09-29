@@ -22,3 +22,13 @@ function main()
     d = 0x40.to_str() )  #~ base_prefix_case expected_end_of_line
     e = 'ab' + )  #~ char_literal expected_expression
     print(a, b, c, d, e)
+
+# Corrected 2026-09-30 by lane recovery-b1 (defect 130's class, lane X4's
+# finding n4): the half this header leaves to the expression reader is its
+# own now. A refused literal whose end the lexer found is read as the literal
+# it stands for at any depth, `grammar_expr.primary` asking
+# `parse/refused_literal.hero`, so the operand half moved out of
+# `parse/statement_end.hero`, which keeps a literal that never closed as its
+# line's last operand; inside brackets, `f(0X10 + )`, the `)` is told
+# (`fixedbugs-130-a-refused-literal-inside-brackets-is-a-value`), and this
+# case reads the same.

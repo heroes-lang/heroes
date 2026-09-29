@@ -27,3 +27,11 @@ function a_block_below(n: i64)
 
 function main()
     print(result_after_a_colon())
+
+# Corrected 2026-09-30 by lane recovery-b1 (defect 131's class, lane X3's
+# report): a `function` head's `: i64` is no longer left to the head. It is
+# the result type's habit, told at the `:` as such, `-> i64` in its words,
+# with the certain fix that writes `->`
+# (`fixedbugs-131-a-result-type-after-a-colon` holds the others), so
+# `check --apply` now writes that fix here and this case pins what it
+# writes; the other colons are left as the header says.
