@@ -1,0 +1,30 @@
+# Fixed defect 131's class, 2026-09-29, beside
+# `fixedbugs-131-arms-at-the-margin-of-their-match`: arms dedented a level
+# too far, past the block the `match` ends. Symptom: `if n > 0` over `match
+# n` over `0 => print(0 +)` at the `if`'s margin cost `missing_match_arms`
+# and then `expected_end_of_line` at every arm's `=>`, each read by the block
+# around them as its statement, and the `)` inside the first arm was never
+# told. Cause: the arms at a `match`'s own margin were read as its arms, and
+# those past a dedent left to the block they stand in, which can be another
+# `match`'s arms. Now they are the `match`'s where that block is no `match`'s
+# arms: read as arms, their one report the arms named missing, their own
+# mistakes told, and to the block around them their lines are the blank
+# lines they are to it (`selfhost/parse/margin_arms.hero`).
+
+function main()
+    n = 1
+
+    if n > 0
+        match n
+    0 => print(0 +)  #~ missing_match_arms expected_expression
+    _ => print(1)
+
+    # Past an arm's own block, at the arms of the `match` around it, a line is
+    # that `match`'s arm, and the one without arms is told so.
+    k = match n
+        0 =>
+            match n
+        #~v missing_match_arms
+        1 => 5
+        _ => 6
+    print(k)

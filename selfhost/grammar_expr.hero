@@ -24,7 +24,9 @@
 # 124 reaches nothing here either, and refuses a declaration as its body with
 # `parse/arm_body`, which reaches nothing here; nor do `parse/annotation`,
 # `parse/margin_arms` and `parse/broken_arm`, which `annotated`, `match_expr`
-# and `arm` ask what a failed type, a misplaced arm or a broken one owes.
+# and `arm` ask what a failed type, a misplaced arm or a broken one owes, nor
+# `parse/colon_habit`, `loop_habit`, `braced_arms` and `unclosed`: the `:`
+# habit, `for`'s and `do`'s, arms in braces, a bracket the lexer found open.
 #
 # **The entry points**, and they are the whole public surface:
 #
@@ -77,6 +79,10 @@ use parse/margin_arms
 use parse/broken_arm
 use parse/headless
 use parse/brace_habit
+use parse/unclosed
+use parse/loop_habit
+use parse/colon_habit
+use parse/braced_arms
 use operators
 
 ## The precedence table — §4.14, read from the bottom up
@@ -492,6 +498,8 @@ function group(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # `[1, 2, 3]`, `[]`, or one element per line (§4.9). The canonical formatter
 # picks between the two by length, so the writer never chooses.
 function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    at = c.pos
+    open_ended = unclosed.never_closed(c, open: at)
     open = cursor.bump(@c).span
     items: [i64] @ []
     reading: bool @ true
@@ -504,13 +512,11 @@ function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         else
             items @ items.push(parse_expr(@c, @a, text))
 
-            if !separator(@c, text: text, closer: .rbracket, what: "element")
+            if !separator(@c, text: text, closer: .rbracket, what: "element", open_ended: open_ended)
                 reading @ false
 
     close = cursor.current_span(c)
-
-    if line_end.said_here(c) || !cursor.expect(@c, text: text, kind: .rbracket, code: "expected_array_close", what: "`]` to close the list")
-        cursor.recover_past_closer(@c, opener: .lbracket, closer: .rbracket)
+    unclosed.end_literal(@c, text: text, open: at)
     return ast.push_expr(
         @a.exprs,
         ast.Expr(kind: .array(elements: items), span: token.Span(start: open.start, end: close.end))
@@ -518,6 +524,8 @@ function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
 # `{ "mario": 30 }`, `{}`, or one entry per line.
 function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    at = c.pos
+    open_ended = unclosed.never_closed(c, open: at)
     open = cursor.bump(@c).span
     entries: [ast.MapEntry] @ []
     reading: bool @ true
@@ -539,13 +547,11 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
             value = parse_expr(@c, @a, text)
             entries @ entries.push(ast.MapEntry(key: key, value: value))
 
-            if !separator(@c, text: text, closer: .rbrace, what: "entry")
+            if !separator(@c, text: text, closer: .rbrace, what: "entry", open_ended: open_ended)
                 reading @ false
 
     close = cursor.current_span(c)
-
-    if line_end.said_here(c) || !cursor.expect(@c, text: text, kind: .rbrace, code: "expected_map_close", what: "`}` to close the map")
-        cursor.recover_past_closer(@c, opener: .lbrace, closer: .rbrace)
+    unclosed.end_literal(@c, text: text, open: at)
     return ast.push_expr(
         @a.exprs,
         ast.Expr(kind: .map(entries: entries), span: token.Span(start: open.start, end: close.end))
@@ -555,8 +561,9 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # newline across several (§4.9), and a newline before a comma is one separator
 # with it (panel 180 R1). Returns false when the list is over — either
 # properly, at the closer, or because the separator is missing, which is
-# reported here, or because `list_line.separates` refused the line end.
-function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: str) -> bool
+# reported here, or because `list_line.separates` refused the line end, or
+# at a line end in a literal the lexer found `open_ended` (`parse/unclosed`).
+function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: str, open_ended: bool) -> bool
     newline = cursor.at(c, .terminator)
     cursor.skip_terminators(@c)
     comma_span = cursor.current_span(c)
@@ -568,7 +575,7 @@ function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: 
             trailing_comma(@c, comma_span)
         return false
 
-    if newline && !comma && !list_line.separates(@c, text: text, closer: closer)
+    if newline && !comma && (open_ended || !list_line.separates(@c, text: text, closer: closer))
         return false
 
     if comma || newline
@@ -705,23 +712,10 @@ function misplaced_mutable_marker(@c: cursor.Cursor)
 ## The statement half of the knot
 
 # `function f():` — the Python suite colon, the one autopilot slip panel 018's
-# blind experiment pre-registered above every other (12-18% of files). Eaten with
-# a certain fix so one habit costs one diagnostic and the block still parses. A
-# `:` is never legal at a block boundary — annotations, named arguments and map
-# literals all live inside other structure — so this can never misfire.
+# blind experiment pre-registered above every other (12-18% of files): where
+# it is the habit, and how it is said, is `parse/colon_habit`'s.
 function eat_python_colon(@c: cursor.Cursor)
-    # Where a report stands on the `:` (`while :`), the habit is not a second.
-    if !cursor.at(c, .colon) || line_end.said_here(c)
-        return
-    s = cursor.current_span(c)
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "trailing_colon",
-        message: "a block is opened by the indentation alone — drop the `:` (this is not Python)",
-        span: s
-    )
-    d.fixes @ d.fixes.push(diag.Fix(title: "drop the `:`", replacement: "", span: s, certainty: .certain))
-    c.diagnostics @ c.diagnostics.push(d)
-    _ = cursor.bump(@c)
+    colon_habit.eat(@c)
 
 # The indented body of a declaration, a loop, an `if` or a `match` arm, after
 # the head that began at `head`. A failure is `.is_err()` and the caller gives
@@ -906,23 +900,23 @@ function return_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     return .return_stmt(value: ok(parse_expr(@c, @a, text)))
 
 # `while cond` — the condition loop (§4.7; panel 018 split it out of the old
-# two-grammar `for`).
+# two-grammar `for`), or C's `do`'s tail (`parse/loop_habit`).
 function while_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     head = opening.mark(c)
     _ = cursor.bump(@c)
     cond = parse_expr(@c, @a, text)
+    colon_habit.read_below(@c, text)
+
+    if loop_habit.do_tail(c, text, head: head.pos)
+        return .error
     body = block(@c, @a, text: text, owner: "a `while`", head: head)
 
     if body.is_err()
         return .error
     return .while_stmt(cond: cond, block: body.must())
 
-# `for x in xs` — iteration only (§4.7). A condition after `for` is the one
-# autopilot mistake this arm exists to catch. The `while` fix is CERTAIN only
-# when no loop variable can be present (`for !done`, `for 0 < x`): no for-in
-# could have produced that line. `for x > 0` gets the same fix as a GUESS,
-# because `for x of xs` — a mangled iteration, not a condition — reaches the
-# identical parse state, and a machine-applied `while` there would not compile.
+# `for x in xs` — iteration only (§4.7). A condition after `for` is met with
+# *use `while`*, as sure as the rest reads as its condition (`parse/loop_habit`).
 function for_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     head = opening.mark(c)
     keyword = cursor.bump(@c).span
@@ -931,6 +925,7 @@ function for_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
         name = cursor.bump(@c).span
         _ = cursor.bump(@c)
         iterable = parse_expr(@c, @a, text)
+        colon_habit.read_below(@c, text)
         body = block(@c, @a, text: text, owner: "a `for`", head: head)
 
         if body.is_err()
@@ -938,20 +933,10 @@ function for_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
         return .for_in(name: name, iterable: iterable, block: body.must())
 
     if !cursor.at_reported_error(c)
-        certainty: diag.Certainty @ .certain
-
-        # `while >` is no loop, so the fix is a guess (§ 8, `begins_an_expression`).
-        if cursor.at(c, .ident) || !opening.begins_an_expression(cursor.current_kind(c))
-            certainty @ .guess
-        d: diag.Diagnostic @ diag.new_diagnostic(
-            code: "for_missing_in",
-            message: "`for` iterates — `for x in xs`; found " + cursor.found(c, text) + " — a loop over a condition is `while`",
-            span: cursor.current_span(c)
-        )
-        d.fixes @ d.fixes.push(
-            diag.Fix(title: "use `while`", replacement: "while", span: keyword, certainty: certainty)
-        )
-        c.diagnostics @ c.diagnostics.push(d)
+        read: cursor.Cursor @ c
+        scratch: ast.Ast @ ast.new_ast()
+        _ = parse_expr(@read, @scratch, text)
+        loop_habit.refuse(c: @c, text: text, keyword: keyword, read: read)
 
     # The rest is not read as the condition it may have been, which refused
     # again at the same column (`for` alone, `for >`, defect 131): one mistake,
@@ -1034,6 +1019,7 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     start = cursor.bump(@c).span
     branches: [ast.Branch] @ []
     cond = parse_expr(@c, @a, text)
+    colon_habit.read_below(@c, text)
     first = block(@c, @a, text: text, owner: "an `if`", head: head)
     whole = !first.is_err()
 
@@ -1056,11 +1042,13 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
         if swapped || cursor.eat(@c, .kw_if)
             more_cond = parse_expr(@c, @a, text)
+            colon_habit.read_below(@c, text)
             more = block(@c, @a, text: text, owner: "an `else if`", head: branch_head)
 
             if !more.is_err()
                 branches @ branches.push(ast.Branch(cond: more_cond, block: more.must()))
         else
+            colon_habit.read_below(@c, text)
             last = block(@c, @a, text: text, owner: "an `else`", head: branch_head)
 
             if !last.is_err()
@@ -1078,23 +1066,44 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         ast.Expr(kind: .if_expr(branches: branches, otherwise: otherwise), span: token.Span(start: start.start, end: end.end))
     )
 
-# `match e` + one arm per line, indented.
+# `match e` + one arm per line, indented; in braces, the brace habit, said
+# once and its arms read (`parse/braced_arms`).
 function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     head = opening.mark(c)
     start = cursor.bump(@c).span
     scrutinee = parse_expr(@c, @a, text)
     failed = opening.refused(c, head)
+    colon_habit.read_below(@c, text)
     eat_python_colon(@c)
-    found = opening.body_follows(@c, text, head: head, failed: failed, missing: opening.missing_arms())
+    brace = brace_habit.ending(c, text)
+    arms: [ast.Arm] @ []
 
-    if found == .none
-        # Arms at its own margin are its arms, read as arms (`parse/margin_arms`).
-        if margin_arms.below(c, head.pos)
-            _ = arms_of(@c, @a, text, tabbed: false)
-        return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
-    arms = arms_of(@c, @a, text, tabbed: found == .tabbed)
+    if brace >= 0
+        lines: cursor.Cursor @ braced_arms.lines_of(@c, text, head: head, failed: failed, brace: brace)
+        arms @ arms_of(@lines, @a, text, tabbed: false)
+        braced_arms.taken(c: @c, lines: lines)
+    else
+        found = opening.body_follows(@c, text, head: head, failed: failed, missing: opening.missing_arms())
+
+        if found == .none
+            misplaced(@c, @a, text, head: head.pos)
+            return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
+        arms @ arms_of(@c, @a, text, tabbed: found == .tabbed)
     span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
     return ast.push_expr(@a.exprs, ast.Expr(kind: .match_expr(scrutinee: scrutinee, arms: arms), span: span))
+
+# The arms of a `match` at token `head` with none under it, where they stand
+# misplaced, at its own margin or past its block: read as arms, their one
+# report the arms named missing (`parse/margin_arms`).
+function misplaced(@c: cursor.Cursor, @a: ast.Ast, text: str, head: i64)
+    past = margin_arms.past_the_block(c, text)
+
+    if margin_arms.below(c, head)
+        _ = arms_of(@c, @a, text, tabbed: false)
+    else if past >= 0
+        lines: cursor.Cursor @ margin_arms.on(c, at: past)
+        _ = arms_of(@lines, @a, text, tabbed: false)
+        margin_arms.taken(c: @c, lines: lines, from: past)
 
 # The arms of a `match`: the block whose indent is under the cursor, or the
 # lines whose margin holds a tab and a block below them, as `tabbed_block`;
@@ -1136,17 +1145,10 @@ function arms_of(@c: cursor.Cursor, @a: ast.Ast, text: str, tabbed: bool) -> [as
             if failed
                 hanging(@c, @a, text)
             else
-                if !cursor.at_reported_error(c)
-                    cursor.error(
-                        @c,
-                        code: "unexpected_block",
-                        message: "this block is indented deeper than anything that opens one",
-                        span: cursor.current_span(c)
-                    )
-                _ = cursor.balanced_block(@c)
+                opening.orphan(@c)
         else
             from = c.pos
-            one = arm(@c, @a, text)
+            one = arm(@c, @a, text, own_block: !at_margin && !tabbed)
             failed @ one.is_err()
 
             if one.is_err()
@@ -1160,11 +1162,14 @@ function arms_of(@c: cursor.Cursor, @a: ast.Ast, text: str, tabbed: bool) -> [as
                 # skip again — that ate the arm below it.
                 arms @ arms.push(one.must())
 
+            # An arm whose `=>` stood past the arms' dedent ended their block.
+            reading @ !broken_arm.crossed_its_dedent(c, from: from)
+
     return arms
 
 # One arm: patterns joined by `|`, `=>`, then one statement on the same line or
 # a block below it (§4.7, panel 014).
-function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
+function arm(@c: cursor.Cursor, @a: ast.Ast, text: str, own_block: bool) -> ast.Arm?
     head = opening.mark(c)
     start = cursor.current_span(c)
     patterns: [ast.Pattern] @ []
@@ -1184,7 +1189,7 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
         patterns @ patterns.push(more.must())
 
     # An arm broken before its `=>` goes on at it (`parse/broken_arm`).
-    if !cursor.expect(@c, text: text, kind: .fat_arrow, code: "expected_arm_arrow", what: "`=>` and the arm's value") && !broken_arm.onto_its_arrow(@c)
+    if !broken_arm.arrow(@c, text, own_block: own_block)
         return fail(code: "no_arrow", msg: "the arm has no `=>`")
 
     # One statement, or a block — the same two shapes every other body has
@@ -1194,7 +1199,7 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
     # end: an arm's body is on its line or in the block below it.
     body: ast.ArmBody @ .one_stmt(at: 0)
 
-    if cursor.at(c, .indent) || opening.tabbed_line(c, text)
+    if cursor.at(c, .indent) || opening.tabbed_line(c, text) || braced_arms.body_opens(c, text)
         inner = block(@c, @a, text: text, owner: "a `match` arm", head: head)
 
         if inner.is_err()
@@ -1556,6 +1561,30 @@ test "for over a condition is met with while, and the certainty says how sure"
     _ = statement(@d, @b, "for x > 0\n    break\n")
     assert d.diagnostics[0].fixes[0].certainty == .guess
 
+    # for (i = 0) — C's loop: `while (i = 0)` refuses its `=`, so it is no
+    # loop and the fix is a GUESS, though `(` can begin an expression
+    # (`parse/loop_habit`, lane X3, 2026-09-29).
+    c_style: [token.Token] = [
+        tok(.kw_for, start: 0, end: 3)
+        tok(.lparen, start: 4, end: 5)
+        tok(.ident, start: 5, end: 6)
+        tok(.eq, start: 7, end: 8)
+        tok(.int_lit, start: 9, end: 10)
+        tok(.rparen, start: 10, end: 11)
+        tok(.terminator, start: 11, end: 11)
+        tok(.indent, start: 12, end: 16)
+        tok(.kw_break, start: 16, end: 21)
+        tok(.terminator, start: 21, end: 21)
+        tok(.dedent, start: 22, end: 22)
+        tok(.eof, start: 22, end: 22)
+    ]
+    e: cursor.Cursor @ cursor.new_cursor(c_style)
+    f: ast.Ast @ ast.new_ast()
+    _ = statement(@e, @f, "for (i = 0)\n    break\n")
+    assert e.diagnostics.len() == 1
+    assert e.diagnostics[0].code == "for_missing_in"
+    assert e.diagnostics[0].fixes[0].certainty == .guess
+
 test "the ring is closed: if is an expression with a block inside it"
     # x = if c
     #         1
@@ -1645,10 +1674,12 @@ test "only a place can be passed as @"
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "not_a_place"
 
-# `opening.begins_an_expression` is what a `certain` *use `while`* rests on
-# (defect 131's third round), and it is a second copy of what `unary` and
-# `primary` accept: this is where the two are held to agree, token by token.
-# `.error` is the lexer's and `.comment` never reaches the grammar.
+# `opening.begins_an_expression` was what a `certain` *use `while`* rested on
+# (defect 131's third round) until lane X3, 2026-09-29, when the rest of the
+# line came to be read as the `while`'s condition (`parse/loop_habit`). It is
+# still a second copy of what `unary` and `primary` accept, and this is where
+# the two are held to agree, token by token. `.error` is the lexer's and
+# `.comment` never reaches the grammar.
 test "an expression begins exactly where begins_an_expression says it can"
     kinds: [token.TokenKind] = [
         .ident

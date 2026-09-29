@@ -1,0 +1,5 @@
+tests/golden/check/fixedbugs-131-a-colon-in-mid-line-left-to-its-head.hero:14:9: error[expected_end_of_line]: expected the end of the line after `record P`, found `:` — its fields go on the lines below it, one level deeper
+tests/golden/check/fixedbugs-131-a-colon-in-mid-line-left-to-its-head.hero:17:1: error[empty_variant]: a `variant` needs at least one case, indented one level below it
+tests/golden/check/fixedbugs-131-a-colon-in-mid-line-left-to-its-head.hero:19:32: error[expected_end_of_line]: expected the end of the line, found `:` — a `function`'s body goes on the lines below its head, one level deeper
+tests/golden/check/fixedbugs-131-a-colon-in-mid-line-left-to-its-head.hero:22:37: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `:`)
+tests/golden/check/fixedbugs-131-a-colon-in-mid-line-left-to-its-head.hero:25:13: error[expected_end_of_line]: expected the end of the line, found `:` — an `if`'s body goes on the lines below its head, one level deeper
