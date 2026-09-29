@@ -21,7 +21,8 @@
 # `annotated` reaches `parse_type` in another module, which reaches nothing here
 # — the one edge that leaves the knot and the reason `parse_type` stays its own
 # file. `arm` reads its patterns with `parse/arm_pattern`, which since defect
-# 124 reaches nothing here either.
+# 124 reaches nothing here either, and refuses a declaration as its body with
+# `parse/arm_body`, which reaches nothing here.
 #
 # **The entry points**, and they are the whole public surface:
 #
@@ -66,7 +67,9 @@ use parse/line_end
 use parse/list_line
 use parse/arm_line
 use parse/arm_pattern
+use parse/arm_body
 use parse/opening
+use parse/swap_reading
 use operators
 
 ## The precedence table — §4.14, read from the bottom up
@@ -389,7 +392,9 @@ function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     if k == .kw_if
         return if_expr(@c, @a, text)
 
-    if k == .kw_match
+    # `switch`, whose certain swap is `match`, is read as the swap writes it
+    # (defect 133's class): its arms are arms, and their mistakes are told.
+    if k == .kw_match || k == .error && swap_reading.reads_as(c, text) == .kw_match
         return match_expr(@c, @a, text)
 
     if k == .str_piece
@@ -1030,11 +1035,14 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     # mistake, at the column of the first (defect 130).
     chaining: bool @ true
 
-    while chaining && cursor.at(c, .kw_else)
+    # And `elif` opening its line is read as the `else if` its certain swap
+    # writes, where it cost `unexpected_block` and a stray `else` beside the
+    # lexer's `reserved_word` (defect 133's class).
+    while chaining && (cursor.at(c, .kw_else) || opening.at_elif(c, text))
         branch_head = opening.mark(c)
-        _ = cursor.bump(@c)
+        swapped = cursor.bump(@c).kind == .error
 
-        if cursor.eat(@c, .kw_if)
+        if swapped || cursor.eat(@c, .kw_if)
             more_cond = parse_expr(@c, @a, text)
             more = block(@c, @a, text: text, owner: "an `else if`", head: branch_head)
 
@@ -1173,52 +1181,11 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
         body @ .block(block: inner.must())
     else
         at = statement(@c, @a, text)
-        reject_declaration(@c, a, text, at)
+        arm_body.reject_declaration(@c, a, text, at)
         body @ .one_stmt(at: at)
     return ok(
         ast.Arm(patterns: patterns, body: body, span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
     )
-
-# A declaration is not an arm body (panel 017 D). `.a => x = 5` binds a name
-# nothing can read: the arm is one statement, so the binding's scope ends with
-# it.
-#
-# The rejection lives here, in the parser, where Rust puts the same rule — as a
-# GRAMMAR exclusion of `let` from expression position. In the checker it would
-# arrive second: the resolver already reports the name as unused, with a repair
-# the author cannot apply, and the user would get both messages for one mistake.
-#
-# The error guard is not defensive. Without it a body the parser could not read
-# at all reports twice — once as the real syntax error and once as this.
-function reject_declaration(@c: cursor.Cursor, a: ast.Ast, text: str, at: i64)
-    named = declared_name(a, at)
-
-    if named.is_err()
-        return
-    return_if_unreadable = named.must()
-
-    if a.exprs[return_if_unreadable.value].kind == .error
-        return
-    cursor.error(
-        @c,
-        code: "declaration_in_arm",
-        message: "an arm's body may not declare a name — `" + cursor.slice_of(text, return_if_unreadable.name) + "` would be bound where nothing can read it; write the value as the arm's body, or open a block",
-        span: a.stmts[at].span
-    )
-
-record Declared
-    name: token.Span
-    value: i64
-
-function declared_name(a: ast.Ast, at: i64) -> Declared?
-    return match a.stmts[at].kind
-        .bind b                                               => ok(Declared(name: b.name, value: b.value))
-        .declare d                                            => ok(Declared(name: d.name, value: d.value))
-        .mutate | .return_stmt | .break_stmt | .continue_stmt => fail(code: "not_a_declaration", msg: "no name bound")
-        .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error => fail(
-            code: "not_a_declaration",
-            msg: "no name bound"
-        )
 
 ## Tests — the precedence table, read back off real token streams
 

@@ -620,3 +620,18 @@ test "a line left open over a tabbed line is ended, and a block's head keeps its
     assert kind_line(lex_one("else\n\tx = 1\n").tokens) == "kw_else ident eq int terminator eof"
     assert kind_line(lex_one(".a =>\n\tx = 1\n").tokens) == "dot ident fat_arrow ident eq int terminator eof"
     assert kind_line(lex_one("if a:\n\tx = 1\n").tokens) == "kw_if ident colon ident eq int terminator eof"
+
+# Defect 132's class, lane 133's finding: a word the lexer refuses at the head
+# of a line opens that line as its certain swap would, so the line above it
+# is ended there and not joined; a swap that writes a name, and a word with no
+# swap, are asked nothing.
+test "a foreign word at a line's head opens it as its swap would"
+    for text in ["constant A:\nconst B: i64\n    5\n", "record P\n    x:\nstruct Q\n", "use\nimport geom\n", "x = a +\nfn f()\n"]
+        out = lex_one(text)
+        assert out.breaks.len() == 0
+        assert out.diagnostics[0].code == "reserved_word"
+
+    named = lex_one("v:\nint @ 0\n")
+    assert named.breaks.len() == 1
+    guidance = lex_one("record P\n    x:\nclass Q\n")
+    assert guidance.breaks.len() == 1
