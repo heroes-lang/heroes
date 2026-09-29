@@ -17,11 +17,21 @@ backstop on a machine without it. Nothing here touches the tree or the network.
 """
 
 import json
+import os
 import re
 import shlex
+import subprocess
 import sys
 
+import ceiling
+
 CONTRACT = "CLAUDE.md § Hard stops"
+LAST_JUDGE = "`.claude/rules/verification.md` § A suite is the last judge (CL-079)"
+HARNESS = "tests/harness/main.hero"
+# What the compiler that judges must be newer than: the seed it is built from
+# and every source the seed is emitted from (`.claude/rules/verification.md`
+# § The compiler that judges is a build artifact).
+SOURCES = ("seed/heroes.c", "selfhost", "runtime")
 
 # The one endpoint the Anthropic key is in `.env` for, and the clients that can
 # actually reach it. A python one-liner is a client; `grep` is a reader.
@@ -165,8 +175,151 @@ def short_flags(w):
     return out
 
 
-def verdict(command):
+def is_harness_run(w):
+    """`heroes run tests/harness/main.hero -- <compiler> ...`, whatever the binary is called."""
+    return HARNESS in w and "run" in w
+
+
+def is_gate(w):
+    """A harness run, or `heroes test <file>`: the commands whose exit is a verdict."""
+    if is_harness_run(w):
+        return True
+    return len(w) > 2 and w[1] == "test" and os.path.basename(w[0]).startswith("heroes")
+
+
+def newest_source(cwd):
+    """The newest mtime under the sources the judging compiler is built from, and its path."""
+    newest, where = 0.0, None
+    for entry in SOURCES:
+        top = os.path.join(cwd, entry)
+        if os.path.isfile(top):
+            candidates = [top]
+        elif os.path.isdir(top):
+            candidates = []
+            for base, _dirs, files in os.walk(top):
+                candidates.extend(os.path.join(base, f) for f in files)
+        else:
+            continue
+        for path in candidates:
+            try:
+                stamp = os.path.getmtime(path)
+            except OSError:
+                continue
+            if stamp > newest:
+                newest, where = stamp, os.path.relpath(path, cwd)
+    return newest, where
+
+
+def stale_compiler(w, cwd):
+    """The refusal when a harness run names a compiler older than the tree, else None.
+
+    **Added 2026-09-29 (CL-079).** On 2026-09-18 the full net was judged by a
+    binary built at 02:08 against a HEAD of 18:17: 1862 passed, 23 failed, none
+    of the 23 saying *your compiler is old*, two full nets for one bit of
+    information (`.claude/rules/verification.md` § The compiler that judges is a
+    build artifact). Rebuilding costs seconds; this asks for it before the gate.
+    `heroes test <file>` is not touched: it compiles the source it is given.
+    """
+    if not is_harness_run(w) or "--" not in w:
+        return None
+    at = w.index("--")
+    if at + 1 >= len(w):
+        return None
+    compiler = os.path.join(cwd, w[at + 1])
+    if not os.path.isfile(compiler):
+        return None
+    try:
+        built = os.path.getmtime(compiler)
+    except OSError:
+        return None
+    newest, where = newest_source(cwd)
+    if where is None or newest <= built + 1.0:
+        return None
+    return (
+        "refused: " + w[at + 1] + " was built before " + where + " was written, so the net "
+        "would judge with a compiler older than the tree. Build it first "
+        "(`clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, or "
+        "`./heroes build selfhost/main.hero -o heroes-next` for the source as it stands). "
+        + LAST_JUDGE
+    )
+
+
+def staged_hero_files(cwd):
+    try:
+        out = subprocess.run(
+            ["git", "diff", "--cached", "--name-only", "--diff-filter=AM", "--", "*.hero"],
+            capture_output=True, timeout=30, cwd=cwd, text=True,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if out.returncode != 0:
+        return []
+    return [line.strip() for line in out.stdout.split("\n") if line.strip()]
+
+
+def staged_offences(cwd):
+    """Staged `.hero` files that are not canonical or are over their ceiling.
+
+    The write-time hook sees a file written through Edit or Write; a file that
+    reached the tree any other way is seen here, at the commit, which is the
+    last moment before a suite would have to find it (CL-079).
+    """
+    compiler = os.path.join(cwd, "heroes")
+    can_fmt = os.path.isfile(compiler) and os.access(compiler, os.X_OK)
+    found = []
+    for rel in staged_hero_files(cwd):
+        path = os.path.join(cwd, rel)
+        if not os.path.isfile(path):
+            continue
+        if can_fmt:
+            try:
+                run = subprocess.run([compiler, "fmt", rel], capture_output=True, timeout=120, cwd=cwd)
+                with open(path, "rb") as handle:
+                    on_disk = handle.read()
+            except (OSError, subprocess.SubprocessError):
+                run = None
+            if run is not None and run.returncode != 0:
+                found.append(rel + " does not parse")
+            elif run is not None and run.stdout != on_disk:
+                found.append(rel + " is not canonical (`heroes fmt " + rel + " --in-place`)")
+        over = ceiling.verdict(cwd, rel)
+        if over is not None:
+            found.append(over.split("\n")[0])
+    return found
+
+
+def verdict(command, cwd=None):
     """Return a refusal string, or None to stay out of the way."""
+    cwd = cwd or os.getcwd()
+    parsed = [words(s) for s in segments(command)]
+    parsed = [w for w in parsed if w]
+
+    # **A gate and a commit never share a command line** (2026-09-29, CL-079).
+    # Twice in one week a commit went past a red `records` because the chain
+    # read the exit status of the pipe's last command (journal 061, `f22c8baf`,
+    # `efaf5564`). The gate's line is read, then the commit is its own command.
+    if any(is_gate(w) for w in parsed) and any(git_args(w, "commit") is not None for w in parsed):
+        return (
+            "refused: a gate and a `git commit` on one command line, so the commit "
+            "cannot wait for the gate's line to be read. Run the gate, read its "
+            "counts, then commit as its own command. " + LAST_JUDGE
+        )
+
+    # **A gate's output is never cut** (2026-09-29, CL-079). Seven `emit`
+    # goldens stayed red for two steps behind an output cut at forty lines
+    # (journal 061). Redirect it to a file and read the file whole.
+    if any(is_harness_run(w) for w in parsed) and any(w[0] in ("head", "tail") for w in parsed):
+        return (
+            "refused: the net's output piped into `" + next(w[0] for w in parsed if w[0] in ("head", "tail")) + "` "
+            "cuts the lines that carry the verdict. Send it to a file and read the "
+            "whole file, or read the terminal as it is. " + LAST_JUDGE
+        )
+
+    for w in parsed:
+        stale = stale_compiler(w, cwd)
+        if stale is not None:
+            return stale
+
     for segment in segments(command):
         w = words(segment)
         if not w:
@@ -211,6 +364,13 @@ def verdict(command):
                 "the commit; only the pathspec does. Write "
                 "`git commit -- <paths>`. " + CONTRACT + " (CL-070)"
             )
+        if rest is not None:
+            offences = staged_offences(cwd)
+            if offences:
+                return (
+                    "refused: a staged `.hero` file would reach the suites with what a "
+                    "hook can see now:\n    " + "\n    ".join(offences) + "\n" + LAST_JUDGE
+                )
 
         rest = git_args(w, "stash")
         if rest is not None:
@@ -312,7 +472,7 @@ def main():
     if not isinstance(command, str):
         return 0
 
-    reason = verdict(command)
+    reason = verdict(command, payload.get("cwd") or os.getcwd())
     if reason is None:
         return 0
 
