@@ -15,39 +15,91 @@
 # line: its value says its own mistakes, the next line is the next arm, and
 # whatever else a block opened for the `=>` holds stands below that one-line
 # arm, deeper, the orphan `grammar_expr.arms_of` names below a whole arm.
+# Three shapes beside it go the same way (lane X3, 2026-09-29):
+#
+# - junk before the line end, `0 7` over `=> 5`: the junk is what the
+#   `expected_arm_arrow` names, and the arm goes on at the `=>` below;
+# - the `=>` line past the arms' own dedent, at the `match`'s margin: the
+#   arms end with that arm, whose line closed their block
+#   (`crossed_its_dedent`), so no line of the block around them is read as
+#   one; only one dedent, and only where the arms have a block of their own;
+# - a `=>` alone at its line's end, which the lexer joins to the line below
+#   and refuses there, `continuation_outside_brackets`: the break before the
+#   `=>` and the break after it are one arm's, and the missing `=>` is held
+#   back against the lexer's refusal (`diag.Held`), said where it is not,
+#   in the control arm, `check --permissive`, which drops it.
 #
 # | entry | called by |
 # |---|---|
-# | `onto_its_arrow`, `close_its_block` | `grammar_expr.arm` |
+# | `arrow`, `close_its_block`, `crossed_its_dedent` | `grammar_expr.arm`, `grammar_expr.arms_of` |
 # | `arrow_below` | `parse/margin_arms` |
 
+use token
+use diag
 use cursor
+use text_lines
 use lexer
 
-# Where the arm's line ends before its `=>` and the next line, or the first of
-# a block below it, begins with one: the cursor moves past that `=>`, which
-# is the arm's, and the answer is yes. The line end was already named, by the
-# `expect` before this, and is not named again.
-function onto_its_arrow(@c: cursor.Cursor) -> bool
-    at = arrow_below(c, end: c.pos)
+# The arm's `=>`, owed at the cursor: taken where it stands; named missing
+# otherwise, and the arm goes on at a `=>` the line below begins with, past
+# what stands before the line's end (`own_block`: past the arms' own dedent
+# too). Whether the arm goes on is the answer.
+function arrow(@c: cursor.Cursor, text: str, own_block: bool) -> bool
+    if cursor.eat(@c, .fat_arrow)
+        return true
+    at = arrow_below(c, end: line_end(c), past_a_dedent: own_block)
+
+    if !cursor.at_reported_error(c)
+        d = diag.new_diagnostic(
+            code: "expected_arm_arrow",
+            message: "expected `=>` and the arm's value, found " + cursor.found(c, text),
+            span: cursor.current_span(c)
+        )
+        seam = joined_after(c, text, at: at)
+
+        if !seam.is_err()
+            c.held @ c.held.push(diag.Held(at: c.diagnostics.len(), cause: seam.must(), diagnostic: d, apart: false))
+        else
+            c.diagnostics @ c.diagnostics.push(d)
 
     while at >= 0 && c.pos <= at
         _ = cursor.bump(@c)
 
     return at >= 0
 
+# The index of the line end at the cursor's line's end, outside brackets, or
+# -1 where a block's edge or the stream's end comes first.
+function line_end(c: cursor.Cursor) -> i64
+    depth: i64 @ 0
+    i: i64 @ c.pos
+
+    while c.tokens[i].kind != .eof && c.tokens[i].kind != .indent && c.tokens[i].kind != .dedent
+        k = c.tokens[i].kind
+
+        if k == .terminator && depth == 0
+            return i
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth - 1
+        i @ i + 1
+
+    return -1
+
 # The index of the `=>` the line below the line end at token `end` begins
-# with, past comment lines and an indent, or -1. `parse/margin_arms` asks it
-# too: a line broken before its arrow is an arm.
-function arrow_below(c: cursor.Cursor, end: i64) -> i64
-    if c.tokens[end].kind != .terminator
+# with, past comment lines and an indent, or one dedent where
+# `past_a_dedent`; or -1. `parse/margin_arms` asks it too: a line broken
+# before its arrow is an arm.
+function arrow_below(c: cursor.Cursor, end: i64, past_a_dedent: bool) -> i64
+    if end < 0 || c.tokens[end].kind != .terminator
         return -1
     i: i64 @ end
 
     while c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
         i @ i + 1
 
-    if c.tokens[i].kind == .indent
+    if c.tokens[i].kind == .indent || past_a_dedent && c.tokens[i].kind == .dedent
         i @ i + 1
 
     while c.tokens[i].kind == .comment
@@ -56,6 +108,38 @@ function arrow_below(c: cursor.Cursor, end: i64) -> i64
     if c.tokens[i].kind == .fat_arrow
         return i
     return -1
+
+# Where the `=>` at token `at` ends its line of the text and the lexer joined
+# the line below to it, with no line end between: the span from the `=>` to
+# the joined token, where the lexer's refusal of the join stands.
+function joined_after(c: cursor.Cursor, text: str, at: i64) -> token.Span?
+    if at < 0
+        return fail(code: "no_arrow", msg: "no `=>` below")
+    next: i64 @ at + 1
+
+    while c.tokens[next].kind == .comment
+        next @ next + 1
+
+    k = c.tokens[next].kind
+
+    if k == .terminator || k == .indent || k == .dedent || k == .eof
+        return fail(code: "ended", msg: "the `=>` line ends with a line end")
+
+    if text_lines.newlines_between(text, from: c.tokens[at].span.end, to: c.tokens[next].span.start) == 0
+        return fail(code: "same_line", msg: "the arm's value is on the `=>`'s line")
+    return ok(token.Span(start: c.tokens[at].span.start, end: c.tokens[next].span.end))
+
+# Whether the arm begun at token `from` read its `=>` past a dedent: the
+# arms' block ended before it, and the arms end with it.
+function crossed_its_dedent(c: cursor.Cursor, from: i64) -> bool
+    i: i64 @ from
+
+    while i < c.pos && c.tokens[i].kind != .fat_arrow
+        if c.tokens[i].kind == .dedent
+            return true
+        i @ i + 1
+
+    return false
 
 # After the value of the arm begun at token `from`, the block the lexer opened
 # for its `=>`, if it opened one: closed at its dedent, and what else it holds
@@ -101,14 +185,39 @@ function past_the_pattern(text: str) -> cursor.Cursor
     return c
 
 test "an arm broken before its `=>` goes on at the `=>` below, and nowhere else"
-    for text in ["0\n=> 5\n", "0\n# a note\n=> 5\n", "0\n\n=> 5\n", "0\n    => 5\n"]
+    # Junk before the line end is what the report names; the arm goes on.
+    for text in ["0\n=> 5\n", "0\n# a note\n=> 5\n", "0\n\n=> 5\n", "0\n    => 5\n", "0 7\n=> 5\n"]
         c: cursor.Cursor @ past_the_pattern(text)
-        assert onto_its_arrow(@c)
+        assert arrow(@c, text, own_block: false)
+        assert c.diagnostics.len() == 1
+        assert c.diagnostics[0].code == "expected_arm_arrow"
         assert cursor.at(c, .int_lit)
 
-    # Junk before the line end, no `=>` below, and no line below at all.
-    for text in ["0 7\n=> 5\n", "0\n5\n", "0\n"]
+    # No `=>` below, and no line below at all.
+    for text in ["0\n5\n", "0\n"]
         c: cursor.Cursor @ past_the_pattern(text)
         stood = c.pos
-        assert !onto_its_arrow(@c)
+        assert !arrow(@c, text, own_block: false)
         assert c.pos == stood
+
+test "a `=>` past the arms' dedent is taken where they have a block of their own"
+    text = "match n\n    0\n=> 5\n"
+    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+
+    while !cursor.at(c, .int_lit)
+        _ = cursor.bump(@c)
+
+    from = c.pos
+    _ = cursor.bump(@c)
+    arms: cursor.Cursor @ c
+    assert arrow(@arms, text, own_block: true)
+    assert crossed_its_dedent(arms, from: from)
+    assert !arrow(@c, text, own_block: false)
+
+test "a `=>` alone at its line's end, joined to the next, holds the missing one back"
+    text = "0\n=>\n_ => 20\n"
+    c: cursor.Cursor @ past_the_pattern(text)
+    assert arrow(@c, text, own_block: false)
+    assert c.diagnostics.len() == 0
+    assert c.held.len() == 1
+    assert c.held[0].diagnostic.code == "expected_arm_arrow"

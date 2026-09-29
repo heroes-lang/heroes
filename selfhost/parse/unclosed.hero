@@ -1,0 +1,115 @@
+# A bracket the lexer found never closed (design.md §4.17; defect 131's
+# class, 2026-09-29).
+#
+# The lexer keeps every opener on one stack, any closer popping the last one,
+# and at a file's end names each opener still on it: `unclosed_bracket`, `[`
+# opened here is never closed. The parser, reading the same brackets, then
+# met the place where the closer was owed and named it too: `n: [i64 @ [3]`
+# cost `unclosed_bracket` and `expected_array_close`, one missing `]` and two
+# messages, and `x = [1, 2` over `print(x)` read the lines below as elements
+# and refused them, since past an opener that never closes the lexer reads
+# every line inside it. So the parser asks the tokens the lexer's own
+# question, by the lexer's own stack, and where no closer closes the opener it
+# names no closer, recovers past none, and a literal ends at the line end
+# where no `,` asks for more: the lexer's report is the mistake's one message.
+#
+# A leaf: it reads the tokens and nothing that reads the parser.
+#
+# | entry | called by |
+# |---|---|
+# | `never_closed` | `grammar_expr.array_literal`, `grammar_expr.map_literal` |
+# | `end_literal` | the same two |
+# | `type_closer` | `parse/type`'s array, map and function types |
+
+use token
+use cursor
+use parse/line_end
+use lexer
+
+# Whether no closer closes the opener at token `open`, as the lexer's stack
+# pairs them: every opener pushed, every closer popping the last one, within
+# the file the opener stands in. The author's text ends at `root_end`, where
+# the lexer ended its file and named what was left open.
+function never_closed(c: cursor.Cursor, open: i64) -> bool
+    depth: i64 @ 0
+    i: i64 @ open
+    bounded = c.root_end >= 0 && c.tokens[open].span.start < c.root_end
+
+    while c.tokens[i].kind != .eof && !(bounded && c.tokens[i].span.start >= c.root_end)
+        k = c.tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth - 1
+
+            if depth == 0
+                return false
+        i @ i + 1
+
+    return true
+
+# A literal's closer at the cursor, the one its opener at `open` owes: taken,
+# or named missing and the rest of the literal passed over to it; and nothing
+# at all where the opener is never closed, whose closer the lexer named and
+# which has none.
+function end_literal(@c: cursor.Cursor, text: str, open: i64)
+    if never_closed(c, open: open)
+        return
+    what: str @ "`}` to close the map"
+    code: str @ "expected_map_close"
+
+    if c.tokens[open].kind == .lbracket
+        what @ "`]` to close the list"
+        code @ "expected_array_close"
+    closer = closer_of(c.tokens[open].kind)
+
+    if line_end.said_here(c) || !cursor.expect(@c, text: text, kind: closer, code: code, what: what)
+        cursor.recover_past_closer(@c, opener: c.tokens[open].kind, closer: closer)
+
+# A type's closer at the cursor, after the line ends before it, the one its
+# opener at `open` owes, taken as `line_end.expect_closer` takes it; the span
+# the type ends at is returned. Where the opener is never closed nothing is
+# named and no line end is crossed: the type ends at its last token.
+function type_closer(@c: cursor.Cursor, text: str, open: i64) -> token.Span
+    if never_closed(c, open: open)
+        return cursor.previous_significant_span(c)
+    kind = closer_of(c.tokens[open].kind)
+    what: str @ "`)` to close the function type"
+    code: str @ "expected_function_type_close"
+
+    if kind == .rbracket
+        what @ "`]` to close the array type"
+        code @ "expected_array_close"
+    else if kind == .rbrace
+        what @ "`}` to close the map type"
+        code @ "expected_map_close"
+    cursor.skip_terminators(@c)
+    close = cursor.current_span(c)
+    _ = line_end.expect_closer(@c, text: text, holds: .one_type, kind: kind, code: code, what: what)
+    return close
+
+# The closer an opener owes.
+function closer_of(opener: token.TokenKind) -> token.TokenKind
+    if opener == .lbracket
+        return .rbracket
+
+    if opener == .lbrace
+        return .rbrace
+    return .rparen
+
+## Tests
+
+test "an opener is never closed where the lexer's stack leaves it open"
+    tokens = lexer.lex_one("n: [i64 @ [3]\nm = (1 + [2, 3])\n").tokens
+
+    # `[` at 2 is left open, the one at 5 is closed by the `]` at 7, and the
+    # `(` at 11 by its `)`, a `[` and its `]` between them.
+    c = cursor.new_cursor(tokens)
+    assert never_closed(c, open: 2)
+    assert !never_closed(c, open: 5)
+    assert !never_closed(c, open: 11)
+
+    # A stray closer of another kind pops the opener, as the lexer's does.
+    d = cursor.new_cursor(lexer.lex_one("x = [1, 2)\n").tokens)
+    assert !never_closed(d, open: 2)

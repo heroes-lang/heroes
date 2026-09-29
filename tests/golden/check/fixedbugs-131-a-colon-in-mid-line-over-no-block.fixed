@@ -1,0 +1,31 @@
+# Fixed defect 131's class, 2026-09-29, the Python one-line suite. Symptom:
+# `if n > 0: print(1)` was taken for the colon that ends a head's line, and
+# its certain fix, *drop the `:`*, wrote `if n > 0 print(1)`, still refused:
+# the line cost `trailing_colon` and then `missing_body` at the `print`, and
+# `check --apply` wrote a program the second stood in. Cause: the habit's
+# reader took any `:` after a head, and the head then found its body on the
+# line it had already begun. Now a `:` in mid-line over no block, at a head
+# that owes statements or arms, is the suite written on one line: said once,
+# and read as the body on the line below, one level deeper, which its
+# certain fix writes there, so the body's own mistakes are said in the same
+# run and the fixed program checks clean (`selfhost/parse/colon_habit.hero`).
+
+function main()
+    n: i64 @ 3
+
+    if n > 0
+        print(1)  #~ trailing_colon
+    else if n < 0
+        print(2)  #~ trailing_colon
+    else
+        print(3)  #~ trailing_colon
+
+    while n > 0
+        n @ n - 1  #~ trailing_colon
+
+    for x in [1, 2]
+        print(x)  #~ trailing_colon
+
+    k = match n
+        _ => 5  #~ trailing_colon
+    print(k)

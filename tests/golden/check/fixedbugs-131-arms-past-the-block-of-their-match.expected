@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-131-arms-past-the-block-of-their-match.hero:19:1: error[missing_match_arms]: a `match` needs its arms indented one level below it, found the end of the block
+tests/golden/check/fixedbugs-131-arms-past-the-block-of-their-match.hero:19:19: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-arms-past-the-block-of-their-match.hero:28:1: error[missing_match_arms]: a `match` needs its arms indented one level below it, found the end of the block

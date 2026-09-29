@@ -12,17 +12,28 @@
 #
 # Two kinds of line are not taken, since they can be another `match`'s arms:
 # the lines below a `match` that is an arm's value on that arm's line,
-# `0 => match m`, and the lines past a dedent, at an enclosing block's margin.
-# Nor are the lines below a `match` inside brackets, which have no margin.
+# `0 => match m`, and the lines past a dedent in a block that is a `match`'s
+# arms. Nor are the lines below a `match` inside brackets, which have no margin.
+#
+# **Arms past the block the `match` ends** are its arms too, dedented a level
+# too far, where the block they stand in is no `match`'s arms (lane X3,
+# 2026-09-29): `if n > 0` over `match n` over `_ => print(1)` at the `if`'s
+# margin cost `missing_match_arms` and then `expected_end_of_line` at the `=>`
+# of each arm, read by the block around them as its statements. They are read
+# as arms, on a copy of the cursor, since the dedents before them are the
+# blocks' own, and to the block around them their lines are then the blank
+# lines they are to it: their tokens become line ends (`taken`), no index
+# moving, the blocks balanced, as a block's indent and dedent go together.
 #
 # | entry | called by |
 # |---|---|
-# | `below` | `grammar_expr.match_expr` |
+# | `below`, `past_the_block`, `taken` | `grammar_expr.match_expr` |
 # | `end_here` | `grammar_expr.arms_of` |
 
 use token
 use cursor
 use parse/broken_arm
+use parse/swap_reading
 use lexer
 
 # Whether the line under the cursor begins at the margin of the `match` whose
@@ -68,7 +79,7 @@ function holds_an_arm(c: cursor.Cursor) -> bool
             return true
         i @ i + 1
 
-    return broken_arm.arrow_below(c, end: i) >= 0
+    return broken_arm.arrow_below(c, end: i, past_a_dedent: false) >= 0
 
 # Whether the `match` at token `head` is an arm's value: a `=>` stands before
 # it on its line.
@@ -108,6 +119,78 @@ function inside_a_bracket(c: cursor.Cursor, head: i64) -> bool
 function is_line_end(kind: token.TokenKind) -> bool
     return kind == .terminator || kind == .indent || kind == .dedent
 
+## Past the block
+
+# Where the cursor stands on the dedent that ends the block whose last line is
+# a `match` with no arms, and the line past it and past any more dedents holds
+# an arm in a block that is no `match`'s arms: the index of that line's first
+# token, where its arms are read; else -1.
+function past_the_block(c: cursor.Cursor, text: str) -> i64
+    if !cursor.at(c, .dedent)
+        return -1
+    i: i64 @ c.pos
+
+    while c.tokens[i].kind == .dedent || c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
+        i @ i + 1
+
+    if c.tokens[i].kind == .eof || in_arms(c, text, at: i) || !holds_an_arm(on(c, at: i))
+        return -1
+    return i
+
+# The cursor `c`, standing on token `at`.
+function on(c: cursor.Cursor, at: i64) -> cursor.Cursor
+    moved: cursor.Cursor @ c
+    moved.pos @ at
+    return moved
+
+# Whether the line whose first token is `at` stands in a block that is a
+# `match`'s arms: the line that opens its block, found by walking back over
+# the blocks closed before it, holds a `match` outside brackets, or a word
+# whose certain swap is `match` (`switch`). At the top level it is none.
+function in_arms(c: cursor.Cursor, text: str, at: i64) -> bool
+    depth: i64 @ 0
+    i: i64 @ at - 1
+
+    while i >= 0
+        k = c.tokens[i].kind
+
+        if k == .dedent
+            depth @ depth + 1
+        else if k == .indent && depth == 0
+            return opens_arms(c, text, indent: i)
+        else if k == .indent
+            depth @ depth - 1
+        i @ i - 1
+
+    return false
+
+# Whether the line before the indent at `indent` holds a `match` outside
+# brackets.
+function opens_arms(c: cursor.Cursor, text: str, indent: i64) -> bool
+    i: i64 @ indent - 1
+
+    while i >= 0 && (c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment)
+        i @ i - 1
+
+    while i >= 0 && !is_line_end(c.tokens[i].kind)
+        if swap_reading.reads_as(on(c, at: i), text) == .kw_match
+            return true
+        i @ i - 1
+
+    return false
+
+# The arms read past the block by `lines`, a copy of `c` put on the token at
+# `from`: their reports are `c`'s, and their lines, to the block around them,
+# are blank, every token from `from` to where `lines` stopped a line end.
+function taken(@c: cursor.Cursor, lines: cursor.Cursor, from: i64)
+    c.diagnostics @ lines.diagnostics
+    c.held @ lines.held
+    i: i64 @ from
+
+    while i < lines.pos && c.tokens[i].kind != .eof
+        c.tokens[i] @ token.Token(kind: .terminator, span: c.tokens[i].span)
+        i @ i + 1
+
 ## Tests
 
 # The cursor on the first token of `text`'s second line, in the lexer's own
@@ -139,3 +222,24 @@ test "a line at a match's margin is its arm where it holds one and the match own
     for text in ["match n\nprint(1)\n", "match n\nf([x => 1])\n", "0 => match m\n_ => 5\n", "f(match t\n.a => 1)\n"]
         p = on_the_second_line(text)
         assert !below(p.c, head: p.head)
+
+# The cursor on the first dedent of `text`, in the lexer's own stream.
+function on_the_dedent(text: str) -> cursor.Cursor
+    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+
+    while !cursor.at(c, .dedent)
+        _ = cursor.bump(@c)
+
+    return c
+
+test "arms past the block a match ends are its own where no match's arms hold them"
+    # Past the `if`'s body, at the function's margin: the `match`'s arms.
+    taken_text = "function f()\n    if c\n        match n\n    _ => 1\n"
+    t = on_the_dedent(taken_text)
+    assert past_the_block(t, taken_text) >= 0
+
+    # Past an arm's block, at the enclosing `match`'s arms, and a line past
+    # the block that holds no arm: not taken.
+    for text in ["k = match m\n    0 =>\n        match n\n    1 => 5\n", "function f()\n    if c\n        match n\n    print(1)\n"]
+        kept = on_the_dedent(text)
+        assert past_the_block(kept, text) < 0
