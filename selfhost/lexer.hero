@@ -26,6 +26,7 @@ use source_extent
 use state
 use layout
 use open_line
+use line_joins
 use scan
 use escape
 
@@ -146,6 +147,11 @@ function lex_one(text: str) -> LexOutput
     layout.maybe_terminator(@l)
     open_line.settle(@l)
 
+    # The last line left open at the file's end is ended by it, and the parser
+    # says what it lacks (defect 129).
+    if l.open_line >= 0
+        open_line.ended(@l)
+
     for span in l.open_brackets
         state.push_diagnostic(
             @l.diagnostics,
@@ -158,6 +164,10 @@ function lex_one(text: str) -> LexOutput
         state.push_token(@l.tokens, token.Token(kind: .dedent, span: end))
 
     state.push_token(@l.tokens, token.Token(kind: .eof, span: end))
+
+    # The joins of the lines left open, weighed now that every token of the
+    # joined lines exists (defect 129).
+    line_joins.weigh(@l, text)
     return LexOutput(tokens: l.tokens, diagnostics: l.diagnostics)
 
 ## The stream, named
@@ -424,3 +434,99 @@ test "after an arm's arrow a line is never ended in silence, since the parser re
 test "inside brackets the rule is not this one"
     out = lex_one("y = (a +\n1)\nz = [1,\n2]\n")
     assert out.diagnostics.len() == 0
+
+# Defect 129 (A): the joins of one statement broken at several line ends are
+# one repair, and they take one certainty, the weakest; a break with no join
+# makes the others a `guess`. The diagnostics stay one per break.
+test "the joins of one statement take the certainty of the weakest among them"
+    for text in ["x = y +\nz +\nprint(x)\n", "x = a\n-\nprint(x)\n", "x = y\n+ z +\nprint(x)\n", "x = y +\r\nz +\r\nprint(x)\r\n"]
+        out = lex_one(text)
+        assert out.diagnostics.len() == 2
+        assert out.diagnostics[0].fixes[0].certainty == .guess
+        assert out.diagnostics[1].fixes[0].certainty == .guess
+
+    commented = lex_one("x = y +\nz +  # note\nw\n")
+    assert commented.diagnostics.len() == 2
+    assert commented.diagnostics[0].fixes[0].certainty == .guess
+    assert commented.diagnostics[1].fixes.len() == 0
+
+    for text in ["x = y +\nz +\nw\n", "x = a\n-\nb\n", "x = a\n+ b\n+ c\n", "k = match n\n    0 => 5\n    *\n    2\n", "x = y +\r\nz +\r\nw\r\n"]
+        whole = lex_one(text)
+        assert whole.diagnostics.len() == 2
+        assert whole.diagnostics[0].fixes[0].certainty == .certain
+        assert whole.diagnostics[1].fixes[0].certainty == .certain
+
+    # A terminator between two breaks ends the first statement, and the second
+    # break's `guess` stays its own.
+    two = lex_one("x = a +\nb\ny = a +\nprint(a)\n")
+    assert two.diagnostics[0].fixes[0].certainty == .certain
+    assert two.diagnostics[1].fixes[0].certainty == .guess
+
+# Defect 129 (B): a join is `certain` only where its operator takes the literal
+# it writes beside it, by the checker's families (`operand_families`), and two
+# literal operands only of one family.
+test "a join is certain only where the operator takes the literal it is written against"
+    for text in ["x = a &&\n1\n", "x = a\n- \"s\"\n", "k = match n\n    0 => 5\n    -\n    \"=>\"\n", "k = match s\n    -\n    \"a\" => 10\n", "x = \"s\"\n- 1\n", "x = \"s\" +\n1\n", "if\n1\n    f()\n", "k = match n\n    0 => 5 -\n    1 => 10\n", "x = a -\n\"s\" + \"t\"\n", "x = a && true\n+ 1\n"]
+        out = lex_one(text)
+        assert out.diagnostics.len() > 0
+
+        for d in out.diagnostics
+            assert d.fixes[0].certainty == .guess
+
+    for text in ["x = s +\n\"b\"\n", "k = match n\n    -\n    'a' => 10\n", "x = a &&\ntrue\n", "x = b &&\n1\n== 1\n", "x = a +\n1 * 2\n", "x = a\n- f(\"s\")\n"]
+        out = lex_one(text)
+        assert out.diagnostics.len() > 0
+
+        for d in out.diagnostics
+            assert d.fixes[0].certainty == .certain
+
+# Defect 129 (A), the coordinator's widening: a statement that opens a block
+# is still one statement after it, so the break before the block and the one
+# the block's last line goes on with are one repair. It ends at its own
+# terminator, at its own level, or where its block closes on anything but
+# `else`; a break in a sibling statement after a block is its own.
+test "the joins of a statement take one certainty across a block of its own"
+    across = lex_one("x = a +\na + if c\n    a\nelse\n    a\n- a\nprint(x)\n")
+    assert across.diagnostics.len() == 2
+    assert across.diagnostics[0].fixes[0].certainty == .guess
+    assert across.diagnostics[1].fixes[0].certainty == .guess
+    arms = lex_one("x = a +\na + match n\n    0 => 1\n    _ => 2\n- a\nprint(x)\n")
+    assert arms.diagnostics[0].fixes[0].certainty == .guess
+    nested = lex_one("x = a +\na + if c\n    if d\n        1\n    else\n        2\nelse\n    3\n- a\n")
+    assert nested.diagnostics[0].fixes[0].certainty == .guess
+    siblings = lex_one("x = a +\nif c\n    1\nelse\n    2\ny = 3 +\n4\n")
+    assert siblings.diagnostics.len() == 2
+    assert siblings.diagnostics[1].fixes[0].certainty == .certain
+
+    # A line left open that the lexer ends rather than refuses, before a fresh
+    # statement or at the file's end, is a break no join repairs: the parser
+    # refuses it, so the statement's other joins are a `guess`.
+    for text in ["x = a +\nb +\nreturn 1\n", "x = a +\na + if c\n    a\nelse\n    a +\n", "x = a +\nb +"]
+        ended = lex_one(text)
+        assert ended.diagnostics.len() == 1
+        assert ended.diagnostics[0].fixes[0].certainty == .guess
+
+    alone = lex_one("x = a +\nb\ny = c +\nreturn 1\n")
+    assert alone.diagnostics[0].fixes[0].certainty == .certain
+
+# Defect 129 (B), widened: an operand made of literals has a family too, a
+# prefix operator's, a bracketed run's and a binary run's that binds tighter
+# than the join, by the checker's table, and a name beside a literal takes the
+# literal's; the whole expression the join writes is judged as well, so a join
+# that re-associates its line is a `guess`. A name alone leaves the join as its
+# break gave it, and so does a side refused on its own, `1 + "s"`, which is
+# that line's defect and not the join's.
+test "a join is judged against an operand built of literals alone"
+    for text in ["x = a &&\n-1\n", "x = a &&\n1 + 2\n", "x = a -\n(\"s\")\n", "x = a &&\n!1\n", "x = a +\n(1 + \"s\")\n", "while\n1 + 2\n    f()\n", "x = \"s\" + \"t\"\n- 1\n", "x = (1)\n+ \"s\"\n", "x = a &&\n1 + b\n", "x = a &&\nxs[0] * 2\n", "x = v ==\n1 == 2\n", "x = v <\n1 < 2\n", "if a +\n1\n    f()\n", "x = a && b\n+ 1\n"]
+        out = lex_one(text)
+        assert out.diagnostics.len() > 0
+
+        for d in out.diagnostics
+            assert d.fixes[0].certainty == .guess
+
+    for text in ["x = a &&\n1 == 2\n", "x = a +\n-1\n", "x = s +\n\"a\" + \"b\"\n", "x = a &&\n(1 < 2)\n", "x = a &&\n!true\n", "x = a +\n-b\n", "x = a &&\nb.len() > 0\n", "x = 1 * 2\n+ 3\n", "x = a +\ns\n", "x = a +\n1 + \"s\"\n", "x = v ==\n1 && c\n"]
+        out = lex_one(text)
+        assert out.diagnostics.len() > 0
+
+        for d in out.diagnostics
+            assert d.fixes[0].certainty == .certain

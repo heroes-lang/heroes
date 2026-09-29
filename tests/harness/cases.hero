@@ -8,8 +8,8 @@
 # the same class of defect as an invariant that cannot fail (CLAUDE.md
 # §9).
 #
-# Anything else in the directory is ignored on purpose: `.fixed` files
-# belong to the certain-fix suite, and `.gitkeep` and editor droppings
+# Anything else in the directory is ignored on purpose: `.fixed` and
+# `.applied` files belong to the certain-fix suite, and `.gitkeep` and editor droppings
 # are not cases.
 
 use shell

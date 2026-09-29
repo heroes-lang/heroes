@@ -1,0 +1,20 @@
+# Adversarial case, ratified by the author 2026-08-04 (panel 015).
+# Guards four shapes of "nobody reads this" in one file, and no
+# `???` anywhere — which is what makes them fire (panel 015 A and B):
+#   a parameter · a cell that is written and never read · a loop variable ·
+#   a pattern payload
+# Two of the four carry a CERTAIN fix, and it is the same one: rename to `_`.
+# That is the escape valve three judges said the rule cannot ship without.
+variant Token
+    num
+        v: i64
+    plus
+
+function describe(t: Token, verbose: bool) -> i64  #~ unused_binding
+    total: i64 @ 0  #~ unused_binding
+    total @ 1
+    for _ in range(from: 0, to: 3)  #~ unused_binding
+        print("tick")
+    return match t
+        .num _ => 1  #~ unused_binding
+        .plus => 2

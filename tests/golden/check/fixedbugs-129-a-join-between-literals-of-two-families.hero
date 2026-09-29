@@ -1,0 +1,38 @@
+# Fixed defect 129, 2026-09-28, class (B), found beside it. Symptom: a join
+# whose two operands are both literals, of two families, was `certain`:
+# `x = "s"` over `- 1`, `x = "s" +` over `1`, `x = 1` over `== "s"` and
+# `x = 1.5` over `+ 1` joined to programs `check` refuses. Cause: nothing
+# judged the literal on the line above. A literal that is the whole operand on
+# either side is judged now, and two check together only within one family, as
+# the checker answers (`selfhost/operand_families.hero`).
+#
+# A golden cannot hold a `guess`: this `.expected` is `--brief`, which prints
+# no certainty, and a `.fixed` must check clean. So what this file pins is one
+# diagnostic per break; the certainties are held by `selfhost/lexer.hero`'s
+# defect 129 tests, which lex the same shapes.
+
+function string_minus_integer() -> str
+    x = "s"
+    - 1  #~ continuation_outside_brackets
+    return x
+
+function string_plus_integer() -> str
+    #~v continuation_outside_brackets
+    x = "s" +
+    1
+    return x
+
+function integer_equals_string() -> bool
+    x = 1
+    == "s"  #~ continuation_outside_brackets
+    return x
+
+function float_plus_integer() -> f64
+    x = 1.5
+    + 1  #~ continuation_outside_brackets
+    return x
+
+function main()
+    print(string_minus_integer() + string_plus_integer())
+    print(integer_equals_string())
+    print(float_plus_integer())
