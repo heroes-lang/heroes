@@ -635,3 +635,21 @@ test "a foreign word at a line's head opens it as its swap would"
     assert named.breaks.len() == 1
     guidance = lex_one("record P\n    x:\nclass Q\n")
     assert guidance.breaks.len() == 1
+
+# Defect 132's class, lane 133's second finding: a line a refused word heads is
+# that word's mistake, which the parser drops whole, so its tokens open no
+# break: its end is a line end, and a line below that can only go on is its
+# own. A word read as its certain swap heads the line its swap does.
+test "a line a refused word heads opens no break"
+    for text in ["include <stdio.h>\nprint(1)\n", "let x = a +\nprint(1) )\n", "function f()\n    import java.util.*\n    x\n", "x = a +\ninclude <stdio.h>\nprint(1)\n", "case 1 =>\nprint(1)\n", "let y = a +\r\nprint(1)\r\n"]
+        out = lex_one(text)
+
+        for d in out.diagnostics
+            assert d.code != "continuation_outside_brackets" || d.span.start == 6
+
+    assert kind_line(lex_one("include <stdio.h>\nprint(1)\n").tokens) == "error lt ident dot ident gt terminator ident lparen int rparen terminator eof"
+    assert kind_line(lex_one("let x = 5\n+ 1\n").tokens) == "error ident eq int terminator plus int terminator eof"
+    assert kind_line(lex_apart("include <stdio.h>\nprint(1)\n").tokens) == kind_line(lex_one("include <stdio.h>\nprint(1)\n").tokens)
+    swapped = lex_one("fn main() ->\ni64\n")
+    assert swapped.diagnostics[1].code == "continuation_outside_brackets"
+    assert kind_line(swapped.tokens) == "error ident lparen rparen arrow ident terminator eof"
