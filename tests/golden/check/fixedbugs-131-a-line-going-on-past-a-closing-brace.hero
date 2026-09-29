@@ -1,0 +1,27 @@
+# Fixed 2026-09-29, defect 131's class, lane X4. Symptom: in `}` followed by
+# `x` on its line, closing an `if 1 == 1 {` body, the `x` went unsaid (lane
+# X1's finding 4): the `{`'s own report, the habit's, made the `if` a
+# statement that had failed, and the rest of a failed statement's line is
+# dropped as its debris. Cause: the drop took the `}`'s line, which is not the
+# line the statement began on. What follows a `}` that begins its line and
+# closes braces opened above is now read as the end of the statement those
+# braces close, told as any statement's end is: after an `if`'s body, after an
+# `else`'s, after a head that failed, and after a map's `}` as before.
+
+function main() {  #~ missing_body
+    if 1 == 1 {  #~ missing_body
+        print(1)
+    } x  #~ expected_end_of_line
+    if 2 == 2 {  #~ missing_body
+        print(2)
+    } else {  #~ missing_body
+        print(3)
+    } y  #~ expected_end_of_line
+    if 3 == ) {  #~ expected_expression missing_body
+        print(4)
+    } z  #~ expected_end_of_line
+    m = {
+        "a": 1
+    } w  #~ expected_end_of_line
+    print(m)
+}

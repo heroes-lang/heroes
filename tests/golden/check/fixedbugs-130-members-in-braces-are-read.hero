@@ -1,0 +1,46 @@
+# Fixed 2026-09-29, defect 130's class, lane X4. Symptom: the members of a
+# record, a variant or an `extern` group written in braces, `record Point {`
+# over `x: i64,` over `y i64,` over `}`, went whole after the `{`'s one
+# report, so `y i64` was never told (lane X1's finding 1); a record in braces
+# on one line, `record Pair { left: i64, right i64 }`, was named empty with
+# its fields there; and junk before the `{`, `record Junk ) {`, cost
+# `empty_record` and then `expected_declaration` at the `}`. Cause: the
+# braced region was skipped `{` to `}`, where a body in braces under any head
+# that owes one was read. The members are now read through a view of the
+# braces laid out as an indented block (`parse/braced_lines.hero`), the `,`
+# between them and the `}` the habit's debris: under the head's one report
+# of the `{`, each member's own mistake is told, a group's signatures and a
+# record nested in a braced group too, and junk before the `{` is told as
+# junk, the `{` then where it stands. Braces that hold nothing hold no member
+# either, and that is told beside them.
+
+record Point {  #~ expected_end_of_line
+    x: i64,
+    y i64,  #~ expected_field_type
+}
+
+variant Shade {  #~ expected_end_of_line
+    light, 5,  #~ expected_case
+    grey
+}
+
+record Pair { left: i64, right i64 }  #~ expected_end_of_line expected_field_type
+
+record Nothing {}  #~ expected_end_of_line empty_record
+
+record Junk ) {  #~ expected_end_of_line empty_record
+    a: i64
+    b i64  #~ expected_field_type
+}
+
+extern "m.h" {  #~ expected_end_of_line
+    function q() -> i64
+    function r(x i64) -> i64  #~ expected_parameter_type
+    record S {  #~ expected_end_of_line
+        a: i32,
+        b i32,  #~ expected_field_type
+    }
+}
+
+function main()
+    print(1)

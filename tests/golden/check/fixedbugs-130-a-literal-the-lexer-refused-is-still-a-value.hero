@@ -1,0 +1,24 @@
+# Fixed 2026-09-29, defect 130's class, lane X4, on lane Y's finding.
+# Symptom: the rest of a line past a literal the lexer refused went unread:
+# `a = 0X10 +` over a deeper `print(1) )`, which the lexer joins, hid the
+# `)`, and `check --apply`, writing `0x10`, wrote a program refused for that
+# `)`, a mistake no run had told; so did `0X20 + )`, `1 0X30` and
+# `0X40.to_str() )`, and a character literal the lexer refused the same.
+# Cause: the grammar reads a refused token as an operand it cannot read,
+# which ends the expression, and the statement's end dropped the rest of its
+# line as the lexer's, saying nothing where the line should have ended. A
+# literal the lexer refused, a number or a quoted literal, is now a value
+# still (`parse/statement_end.hero`): where the grammar asked an operand of
+# it the line is read past it, and where the line's end is owed after one the
+# end is told there, beside the literal's own report. This is a statement's
+# own level: inside brackets, `f(0X10 + )`, the expression reader has it,
+# and that is left to it.
+
+function main()
+    a = 0X10 +  #~ base_prefix_case continuation_outside_brackets
+        print(1) )  #~ expected_end_of_line
+    b = 0X20 + )  #~ base_prefix_case expected_expression
+    c = 1 0X30  #~ base_prefix_case expected_end_of_line
+    d = 0X40.to_str() )  #~ base_prefix_case expected_end_of_line
+    e = 'ab' + )  #~ char_literal expected_expression
+    print(a, b, c, d, e)

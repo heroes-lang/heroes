@@ -1,0 +1,11 @@
+tests/golden/check/fixedbugs-130-a-literal-the-lexer-refused-is-still-a-value.hero:18:9: error[base_prefix_case]: `0X10` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-130-a-literal-the-lexer-refused-is-still-a-value.hero:18:14: error[continuation_outside_brackets]: a line outside brackets ends its statement, and this one cannot end with `+`: the next line goes on with it one level deeper, where a block would begin; write the statement on one line, or break it inside parentheses
+tests/golden/check/fixedbugs-130-a-literal-the-lexer-refused-is-still-a-value.hero:20:9: error[base_prefix_case]: `0X20` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-130-a-literal-the-lexer-refused-is-still-a-value.hero:21:11: error[base_prefix_case]: `0X30` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-130-a-literal-the-lexer-refused-is-still-a-value.hero:22:9: error[base_prefix_case]: `0X40` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-130-a-literal-the-lexer-refused-is-still-a-value.hero:23:9: error[char_literal]: a character literal holds exactly one character — one ASCII character ('a', '0', ' ') or one escape ('\n', '\t') — `'ab'` does not
+tests/golden/check/fixedbugs-130-a-literal-the-lexer-refused-is-still-a-value.hero:19:18: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-literal-the-lexer-refused-is-still-a-value.hero:20:16: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-a-literal-the-lexer-refused-is-still-a-value.hero:21:11: error[expected_end_of_line]: expected the end of the line, found a number (`0X30`) — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-literal-the-lexer-refused-is-still-a-value.hero:22:23: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-literal-the-lexer-refused-is-still-a-value.hero:23:16: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

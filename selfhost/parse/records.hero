@@ -9,7 +9,10 @@
 # 300 and the record half is the concern that could stand alone. Nothing
 # here calls back: `parse/decl.hero` and `parse/group.hero` call in, and this
 # module reads `Linkage` and the clamp from `parse/tails.hero`, which reads
-# nothing here.
+# nothing here. What a head owes where its fields are not indented right
+# below it, junk, braces or nothing, is `parse/members_below.hero` since the
+# same day (lane X4), shared with a variant, a group and a record nested in a
+# block of declarations.
 
 use token
 use cursor
@@ -17,12 +20,8 @@ use ast
 use handles
 use keywords
 use parse/tails
-use parse/members as parse_members
-use parse/swap_reading
-use parse/braces
-use diag
+use parse/members_below
 use grammar_expr
-use text_lines
 use lexer
 
 # The same declaration when the caller has **already taken the doc comment** —
@@ -107,6 +106,7 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
     is_handle = handles.is_handle_parts(in_group: in_group, tagged: !tag.is_err(), partial: partial, field_count: 0)
     grammar_expr.eat_python_colon(@c)
     cursor.skip_terminators(@c)
+    below: members_below.Below @ .indented
 
     if !cursor.at(c, .indent) && !is_handle
         # What goes on past the head is dropped and fields below it are read
@@ -115,104 +115,24 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
         # there, the report is the head's own junk, as `record Point )` over
         # `x: i64` is; `empty_record` is the report where there are none.
         head = token.Span(start: keyword.start, end: head_end.end)
-        _ = no_members_below(
+        below @ members_below.no_members_below(
             @c,
             text: text,
             head: head,
-            members: "its fields",
-            empty: diag.new_diagnostic(code: "empty_record", message: empty_record_message(in_group: in_group, partial: partial), span: head)
+            members: "fields",
+            empty: members_below.empty_record(head, in_group: in_group, partial: partial)
         )
-    fields: [ast.Field] @ []
     finish: token.Span @ head_end
 
     if cursor.at(c, .indent)
         finish @ cursor.current_span(c)
-        fields @ parse_members.field_block(@c, @a, text)
+    fields = members_below.fields_below(@c, @a, text, below: below)
 
     if fields.len() > 0
         finish @ fields[fields.len() - 1].name
     decls @ decls.push(
         ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: tails.linkage_header(linkage), library: tails.linkage_library(linkage), partial: partial, tag: tag))
     )
-
-# What a head that owes members says where none is indented below it, and
-# whether members stand below it once its line is dropped. Over members that
-# are there, or in braces (`parse/braces.hero`), the head's junk is the one
-# report; with nothing below, `empty` is, the caller's own words and caret;
-# and on the head's own line a word the lexer refused is its report
-# already. Shared by a `record`, a `variant` and an `extern` group.
-function no_members_below(@c: cursor.Cursor, text: str, head: token.Span, members: str, empty: diag.Diagnostic) -> bool
-    junk = cursor.current_span(c)
-    found = swap_reading.found(c, text)
-    spoke = swap_reading.at_reported_error(c, text)
-    goes_on = !cursor.at_fresh_line(c)
-    braced = braces.opens(c, text)
-
-    if braced
-        braces.skip(@c)
-    else if goes_on
-        cursor.skip_line(@c)
-
-    if !spoke
-        if braced || goes_on && cursor.at(c, .indent)
-            junk_after_head(@c, head: on_one_line(c, text, head: head), found: found, span: junk, members: members)
-        else
-            c.diagnostics @ c.diagnostics.push(empty)
-    return !braced && cursor.at(c, .indent)
-
-# A head whose line goes on over the members below it: the junk is the one
-# mistake, so it is the one report, and the members are read as they stand.
-# `expected_end_of_line` is the code a statement's line gets for the same
-# mistake, and the message says where the members go.
-function junk_after_head(@c: cursor.Cursor, head: str, found: str, span: token.Span, members: str)
-    cursor.error(
-        @c,
-        code: "expected_end_of_line",
-        message: "expected the end of the line after `" + head + "`, found " + found + " — " + members + " go on the lines below it, one level deeper",
-        span: span
-    )
-
-# The head as it stands on one line: its tokens as the text spells them, one
-# space where a line break stood between two of them, and no comment. The
-# lexer joins `record` over `x: i64`, the control arm, `check --permissive`,
-# reads the join as the program, and the message quoted the head with the
-# break and the margin inside its backticks, `record` + a line end + `x`
-# (defect 131's class, 2026-09-29).
-function on_one_line(c: cursor.Cursor, text: str, head: token.Span) -> str
-    i: i64 @ c.pos
-
-    while i > 0 && c.tokens[i - 1].span.start >= head.start
-        i @ i - 1
-
-    parts: [str] @ []
-    last: i64 @ -1
-
-    while i < c.tokens.len() && c.tokens[i].span.end <= head.end
-        t = c.tokens[i]
-
-        if !cursor.is_invisible(t.kind) && t.kind != .eof
-            if last >= 0 && text_lines.newlines_between(text, from: last, to: t.span.start) > 0
-                parts @ parts.push(" ")
-            else if last >= 0
-                parts @ parts.push(text.slice(from: last, to: t.span.start))
-            parts @ parts.push(cursor.slice_of(text, t.span))
-            last @ t.span.end
-        i @ i + 1
-
-    return parts.join("")
-
-# What `empty_record` says. Three messages rather than one, because the repair
-# differs and §4.17 asks a diagnostic to carry it: outside a group there is no
-# header, so fields are the only answer; inside one, a `tag` and no fields is the
-# handle form; and a `partial` record with no fields names nothing at all, which
-# is the case a reader reaches by deleting a field block and forgetting the word.
-function empty_record_message(in_group: bool, partial: bool) -> str
-    if !in_group
-        return "a `record` needs at least one field, indented one level below it"
-
-    if partial
-        return "`partial` names only SOME of the header's fields, so a `partial` `record` with none names nothing — give it its fields, or drop `partial` and name the type for a HANDLE: `record Db tag sqlite3` is C's `sqlite3 *`"
-    return "a `record` needs at least one field, indented one level below it — or, in an `extern` group, a `tag` and no fields make it a HANDLE, a pointer to a type the header leaves opaque: `record Db tag sqlite3` is C's `sqlite3 *`"
 
 ## Tests
 
