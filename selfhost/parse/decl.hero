@@ -43,6 +43,7 @@ use parse/tails
 use parse/records
 use parse/group
 use parse/swap_reading
+use parse/headless
 use grammar_expr
 use parse/opening
 
@@ -80,9 +81,9 @@ function file(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], @uses: [ast.Us
         else if k == .kw_use
             use_line.declaration(@c, @uses, text)
         else
-            unexpected_top_level(@c, text)
+            unexpected_top_level(@c, @a, text)
 
-function unexpected_top_level(@c: cursor.Cursor, text: str)
+function unexpected_top_level(@c: cursor.Cursor, @a: ast.Ast, text: str)
     if !cursor.at_reported_error(c)
         cursor.error(
             @c,
@@ -95,11 +96,21 @@ function unexpected_top_level(@c: cursor.Cursor, text: str)
     # only drops the REST of a broken line, and the dispatcher must always
     # move. An indented block at top level belongs to no declaration, so it is
     # dropped whole — and nothing else is, because the next line is innocent.
+    #
+    # **A block under the refused line is read, never dropped** (defect 130's
+    # class, 2026-09-29): `recrod Point` over its fields owes the fields'
+    # mistakes in this run, and `expected_declaration` stays the one report
+    # of the head. `parse/headless.hero` reads it by the shape of its lines.
     if cursor.at(c, .indent)
         _ = cursor.balanced_block(@c)
-    else
-        _ = cursor.bump(@c)
-        cursor.recover_to_next_decl(@c)
+        return
+    from = c.pos
+    _ = cursor.bump(@c)
+    cursor.drop_rest_of_line(@c, from: from)
+    cursor.skip_terminators(@c)
+
+    if cursor.at(c, .indent)
+        headless.read(@c, @a, text)
 
 ## The shared head
 
