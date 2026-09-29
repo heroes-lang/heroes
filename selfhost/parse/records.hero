@@ -22,6 +22,8 @@ use parse/swap_reading
 use parse/braces
 use diag
 use grammar_expr
+use text_lines
+use lexer
 
 # The same declaration when the caller has **already taken the doc comment** —
 # which is what a group member needs, because a group's own doc documents its
@@ -153,7 +155,7 @@ function no_members_below(@c: cursor.Cursor, text: str, head: token.Span, member
 
     if !spoke
         if braced || goes_on && cursor.at(c, .indent)
-            junk_after_head(@c, head: cursor.slice_of(text, head), found: found, span: junk, members: members)
+            junk_after_head(@c, head: on_one_line(c, text, head: head), found: found, span: junk, members: members)
         else
             c.diagnostics @ c.diagnostics.push(empty)
     return !braced && cursor.at(c, .indent)
@@ -170,6 +172,35 @@ function junk_after_head(@c: cursor.Cursor, head: str, found: str, span: token.S
         span: span
     )
 
+# The head as it stands on one line: its tokens as the text spells them, one
+# space where a line break stood between two of them, and no comment. The
+# lexer joins `record` over `x: i64`, the control arm, `check --permissive`,
+# reads the join as the program, and the message quoted the head with the
+# break and the margin inside its backticks, `record` + a line end + `x`
+# (defect 131's class, 2026-09-29).
+function on_one_line(c: cursor.Cursor, text: str, head: token.Span) -> str
+    i: i64 @ c.pos
+
+    while i > 0 && c.tokens[i - 1].span.start >= head.start
+        i @ i - 1
+
+    parts: [str] @ []
+    last: i64 @ -1
+
+    while i < c.tokens.len() && c.tokens[i].span.end <= head.end
+        t = c.tokens[i]
+
+        if !cursor.is_invisible(t.kind) && t.kind != .eof
+            if last >= 0 && text_lines.newlines_between(text, from: last, to: t.span.start) > 0
+                parts @ parts.push(" ")
+            else if last >= 0
+                parts @ parts.push(text.slice(from: last, to: t.span.start))
+            parts @ parts.push(cursor.slice_of(text, t.span))
+            last @ t.span.end
+        i @ i + 1
+
+    return parts.join("")
+
 # What `empty_record` says. Three messages rather than one, because the repair
 # differs and §4.17 asks a diagnostic to carry it: outside a group there is no
 # header, so fields are the only answer; inside one, a `tag` and no fields is the
@@ -182,3 +213,40 @@ function empty_record_message(in_group: bool, partial: bool) -> str
     if partial
         return "`partial` names only SOME of the header's fields, so a `partial` `record` with none names nothing — give it its fields, or drop `partial` and name the type for a HANDLE: `record Db tag sqlite3` is C's `sqlite3 *`"
     return "a `record` needs at least one field, indented one level below it — or, in an `extern` group, a `tag` and no fields make it a HANDLE, a pointer to a type the header leaves opaque: `record Db tag sqlite3` is C's `sqlite3 *`"
+
+## Tests
+
+# The junk after a record's head, as the lexer's own stream hands it over:
+# `record` alone at a line's end is joined to the line below, the control
+# arm reads the join as the program, and it is that reading's message whose
+# quote is at issue (defect 131's class, 2026-09-29).
+function junk_said(text: str) -> str
+    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+    a: ast.Ast @ ast.new_ast()
+    decls: [ast.Decl] @ []
+    no_doc: [token.Span] = []
+    record_with_doc(@c, @a, @decls, text, doc: no_doc, linkage: .heroes)
+
+    for d in c.diagnostics
+        if d.code == "expected_end_of_line"
+            return d.message
+
+    return ""
+
+# Whether `said` begins with `prefix`, and is long enough to.
+function opens_with(said: str, prefix: str) -> bool
+    return said.len() >= prefix.len() && said.slice(from: 0, to: prefix.len()) == prefix
+
+test "a head the lexer joined across a line break is quoted as it stands on one line"
+    after = "expected the end of the line after `record x`, found a name (`i64`)"
+    assert opens_with(said: junk_said("record\n    x: i64\n    y: i64\n"), prefix: after)
+
+    # A comment before the break, and a CRLF file: neither reaches the quote.
+    assert opens_with(said: junk_said("record  # a point\n    x: i64\n    y: i64\n"), prefix: after)
+    assert opens_with(said: junk_said("record\r\n    x: i64\r\n    y: i64\r\n"), prefix: after)
+
+    # On one line the text's own spelling stands, two spaces and all.
+    assert opens_with(
+        said: junk_said("record  Point )\n    x: i64\n"),
+        prefix: "expected the end of the line after `record  Point`, found `)`"
+    )

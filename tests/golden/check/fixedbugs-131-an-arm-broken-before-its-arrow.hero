@@ -1,0 +1,82 @@
+# Fixed defect 131's class, 2026-09-29, an arm broken before its `=>`.
+# Symptom: `0` over `=> 5` cost `expected_arm_arrow` at the arm's line end
+# and then `expected_pattern` at the `=>`, one mistake and two messages, and
+# the arm's value was never read. Cause: the lexer does not join a line that
+# begins with `=>` (panel 181's list names what cannot begin a line, and
+# widening it is a language change), and the arms loop read the line below
+# as an arm of its own. The arm now goes on at the `=>` below, on the next
+# line or at the head of a block the lexer opened for it, and is read as it
+# stands written on one line: its value says its own mistakes, and what else
+# a block opened for the `=>` holds is the orphan below a whole arm,
+# `unexpected_block` (`parse/broken_arm.hero`). One shape per function.
+
+variant Shape
+    circle
+        radius: i64
+    dot
+
+function on_the_next_line(n: i64) -> i64
+    k = match n
+        0  #~ expected_arm_arrow
+        => 5
+        _ => 20
+    return k
+
+function in_a_block_below(n: i64) -> i64
+    k = match n
+        0  #~ expected_arm_arrow
+            => 5
+        _ => 20
+    return k
+
+function joined_patterns(n: i64) -> i64
+    k = match n
+        0 | 1  #~ expected_arm_arrow
+        => 5
+        _ => 20
+    return k
+
+function a_case_and_its_binding(s: Shape) -> i64
+    k = match s
+        .circle radius  #~ expected_arm_arrow
+        => radius
+        .dot => 0
+    return k
+
+function past_a_comment_line(n: i64) -> i64
+    k = match n
+        0  #~ expected_arm_arrow
+        # the value
+        => 5
+        _ => 20
+    return k
+
+function with_a_block_for_its_value(n: i64)
+    match n
+        0  #~ expected_arm_arrow
+        =>
+            print(5)
+        _ => print(20)
+
+function the_last_arm(n: i64) -> i64
+    k = match n
+        0 => 5
+        _  #~ expected_arm_arrow
+        => 20
+    return k
+
+function its_value_says_its_own(n: i64)
+    match n
+        0  #~ expected_arm_arrow
+        => print(5 +)  #~ expected_expression
+        _ => print(20)
+
+function more_in_the_block_below(n: i64)
+    match n
+        0  #~ expected_arm_arrow
+            => print(5)
+            print(6)  #~ unexpected_block
+        _ => print(20)
+
+function main()
+    print(on_the_next_line(0))
