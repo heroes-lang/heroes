@@ -1,0 +1,47 @@
+# Fixed 2026-09-29, defect 131's class, given to defect 133's lane. Symptom:
+# a declaration whose head's line ends with `{`, its body or its members in
+# braces and a `}` on the line after them, cost the `{`'s report and then
+# `expected_declaration` again at the `}`; the first line inside the braces
+# went with the head's recovery, and the rest reached the top level, each
+# line a declaration it is not. Cause: inside braces the lexer makes no
+# indent, so the body the author wrote was no block the grammar could find,
+# and the `}` stood at the margin like a declaration. The habit is now read
+# whole, `{` to `}` (`parse/braces.hero`): under a `function`, a `constant`
+# or a `test` the `{` is the missing body it stands for, in the block
+# reader's words, and the statements inside are read, their own mistakes
+# too; under a `record`, a `variant` or an `extern` group the `{` is the
+# head's junk, with where the members go, and the braced region goes whole.
+# The `}` is the habit's debris and costs nothing. A `{` that is not the
+# last thing on its line is no habit, and a `{` on the line below its head
+# is not read as one.
+
+constant LIMIT: i64 {  #~ missing_body
+    5
+}
+
+test "adds" {  #~ missing_body
+    assert 1 + 1 == 2
+}
+
+record Point {  #~ expected_end_of_line
+    x: i64,
+    y: i64,
+}
+
+variant Color {  #~ expected_end_of_line
+    red,
+    green
+}
+
+extern "math.h" {  #~ expected_end_of_line
+    function sqrt(x: f64) -> f64
+}
+
+function first() {  #~ missing_body
+    x = 1
+    print(x +)  #~ expected_expression
+}
+
+function main() {  #~ missing_body
+    print(LIMIT)
+}

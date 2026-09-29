@@ -1,0 +1,8 @@
+tests/golden/check/fixedbugs-131-the-brace-habit-is-one-mistake.hero:18:21: error[missing_body]: a `constant` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-the-brace-habit-is-one-mistake.hero:22:13: error[missing_body]: a `test` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-the-brace-habit-is-one-mistake.hero:26:14: error[expected_end_of_line]: expected the end of the line after `record Point`, found `{` — its fields go on the lines below it, one level deeper
+tests/golden/check/fixedbugs-131-the-brace-habit-is-one-mistake.hero:31:15: error[expected_end_of_line]: expected the end of the line after `variant Color`, found `{` — its cases go on the lines below it, one level deeper
+tests/golden/check/fixedbugs-131-the-brace-habit-is-one-mistake.hero:36:17: error[expected_end_of_line]: expected the end of the line after `extern "math.h"`, found `{` — its signatures go on the lines below it, one level deeper
+tests/golden/check/fixedbugs-131-the-brace-habit-is-one-mistake.hero:40:18: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-the-brace-habit-is-one-mistake.hero:42:14: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-the-brace-habit-is-one-mistake.hero:45:17: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)

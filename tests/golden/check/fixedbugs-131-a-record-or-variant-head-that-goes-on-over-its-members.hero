@@ -9,6 +9,12 @@
 # statement's line gets it, with where the members go, and the members are
 # read as they stand, their own mistakes too. A head with junk and nothing
 # below it is empty all the same, and says so.
+#
+# Widened the same day, a second round: `empty_variant` now points at its
+# own head, `variant Nothing`, as `empty_record` does, where it pointed at
+# the next line's first token; and an `extern` group's head that goes on
+# reports its junk once and reads its signatures, where `extern "m.h" )`
+# cost `expected_extern_block` and `expected_declaration` at one `)`.
 
 record Point )  #~ expected_end_of_line
     x: i64
@@ -22,6 +28,11 @@ variant Token )  #~ expected_end_of_line
         n f64  #~ expected_field_type
 
 variant Nothing )  #~ empty_variant
+
+extern "m.h" )  #~ expected_end_of_line
+    function q() -> i64
+
+extern "n.h" )  #~ expected_extern_block
 
 function main()
     print(1)

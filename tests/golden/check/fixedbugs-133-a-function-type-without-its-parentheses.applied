@@ -1,0 +1,21 @@
+# Fixed defect 133's second round, 2026-09-29. Symptom: `f: fn(i64) -> i64`,
+# Rust's function type, cost `reserved_word` alone, and its missing
+# parentheses waited for the swap, which then wrote `function(i64) -> i64`
+# and cost `expected_type` and `expected_params_close` at one token; the
+# body under the signature was dropped with its own mistakes. Cause: the
+# type grammar read a function type only inside `(`, so a bare one stopped
+# the signature where it stood. A function type written without its
+# parentheses is now read as the type it means, wherever a type goes, and
+# the signature goes on. `fn` there is not a certain swap, since the type
+# still wants its parentheses, and its message says both corrections; a
+# bare `function(i64) -> i64` is refused once, over the whole type, with the
+# parentheses as its certain fix.
+
+function apply(f: fn(i64) -> i64, x: i64) -> i64  #~ reserved_word
+    return f(x) *  #~ expected_expression
+
+function twice(f: (function(i64) -> i64), x: i64) -> i64  #~ expected_type
+    return f(f(x) +)  #~ expected_expression
+
+function main()
+    print(1)
