@@ -1,0 +1,90 @@
+# Fixed defect 131's second round, 2026-09-29, a body whose margin holds a
+# tab. Symptom: a tab-indented body cost `tab_in_indentation`, the lexer's,
+# and then `missing_body` or `missing_match_arms` for a body that was there,
+# and `expected_declaration` too where the body was a function's; `0 =>` over
+# a tabbed line cost `declaration_in_arm`; a tab on the first arm and spaces
+# on the rest cost `unexpected_block` for the rest; and after an `else` or a
+# failed arm's `=>`, the tabbed line was dropped with the line above. Cause:
+# the lexer refuses the margin and opens no block for the line, so it reached
+# the parser at the head's own level, where no body was found. A line whose
+# margin holds a tab is a fact of the text, and where a body is owed it is
+# read as the body, with a block below it as the rest of that body
+# (`opening.tabbed_line`, `grammar_expr.tabbed_block`); the missing body is
+# held back against the lexer's refusal of the margin (`diag.Held`). One
+# shape per function.
+
+function under_an_if(n: i64)
+    if n > 0
+	y = 3 )  #~ tab_in_indentation expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function under_an_else(n: i64)
+    if n > 0
+        print(1)
+    else
+	y = 3 )  #~ tab_in_indentation expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function under_a_for()
+    for i in range(from: 0, to: 3)
+	y = 3 )  #~ tab_in_indentation expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function two_lines_under_a_while(n: i64)
+    while n > 0
+	y = 3 )  #~ tab_in_indentation expected_end_of_line
+	n = 0  #~ tab_in_indentation
+    z = 4 )  #~ expected_end_of_line
+
+function spaces_then_a_tab(n: i64)
+    if n > 0
+    	y = 3 )  #~ tab_in_indentation expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function a_tab_then_spaces(n: i64)
+    if n > 0
+	    y = 3 )  #~ tab_in_indentation expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function under_a_failed_head(n: i64)
+    if n > )  #~ expected_expression
+	y = 3 )  #~ tab_in_indentation expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function under_an_arm(n: i64)
+    match n
+        0 =>
+	    y = 3 )  #~ tab_in_indentation expected_end_of_line
+        _ => print(2)
+    z = 4 )  #~ expected_end_of_line
+
+function as_arms(n: i64)
+    match n
+	0 => print(0)  #~ tab_in_indentation
+	_ => print(1) )  #~ tab_in_indentation expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function a_tabbed_arm_over_spaced_ones(n: i64)
+    match n
+	0 => print(0)  #~ tab_in_indentation
+        _ => print(1) )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function under_a_failed_arm(n: i64)
+    match n
+        + =>  #~ expected_pattern
+	    y = 3 )  #~ tab_in_indentation expected_end_of_line
+        _ => print(2)
+    z = 4 )  #~ expected_end_of_line
+
+function a_whole_function()
+	y = 3 )  #~ tab_in_indentation expected_end_of_line
+
+test "a whole test"
+	y = 3 )  #~ tab_in_indentation expected_end_of_line
+
+constant TABBED: i64
+	3 )  #~ tab_in_indentation expected_end_of_line
+
+function main()
+    print(1)

@@ -116,12 +116,19 @@ constant RUN_ROOTS: [str]
 # **659 from defect 130's lane, 2026-09-29**: its seven `fixedbugs-130-*`
 # cases, whose marks are the statements a failed block used to hide, took
 # the count past the quarter, and the suite printed 659.
+# **844 from the same lane's second round, 2026-09-29**: two cases of defect
+# 130 and six of 131, the tab-margin one alone holding 43 marks, took the
+# count past the quarter again, and the suite printed 844.
 #
 # **819 where the two lanes met, 2026-09-29**: defect 129's lane merged the
 # trunk at `0ba7b084`, which carried lane 130's cases, and on the merged tree
 # the suite printed 819.
+#
+# **934 where they met again, 2026-09-29**: lane 130 merged the trunk at
+# `9b1f1701`, lane 129's cases on it, and on the merged tree the suite
+# printed 934.
 constant LEAST: i64
-    819
+    934
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

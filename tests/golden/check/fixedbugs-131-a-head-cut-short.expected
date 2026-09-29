@@ -1,0 +1,11 @@
+tests/golden/check/fixedbugs-131-a-head-cut-short.hero:15:27: error[for_missing_in]: `for` iterates — `for x in xs`; found end of line — a loop over a condition is `while`
+tests/golden/check/fixedbugs-131-a-head-cut-short.hero:16:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-head-cut-short.hero:17:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-head-cut-short.hero:20:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `>` — a loop over a condition is `while`
+tests/golden/check/fixedbugs-131-a-head-cut-short.hero:21:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-head-cut-short.hero:22:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-head-cut-short.hero:25:10: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-a-head-cut-short.hero:26:1: error[missing_body]: a `while` needs an indented body — one level deeper, exactly 4 spaces (found the end of the block)
+tests/golden/check/fixedbugs-131-a-head-cut-short.hero:30:10: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-a-head-cut-short.hero:31:1: error[missing_match_arms]: a `match` needs its arms indented one level below it, found the end of the block
+tests/golden/check/fixedbugs-131-a-head-cut-short.hero:36:1: error[for_missing_in]: `for` iterates — `for x in xs`; found the end of the block — a loop over a condition is `while`

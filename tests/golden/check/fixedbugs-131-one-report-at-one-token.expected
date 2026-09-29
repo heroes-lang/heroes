@@ -1,0 +1,5 @@
+tests/golden/check/fixedbugs-131-one-report-at-one-token.hero:13:8: error[expected_type]: expected a type, found `)` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+tests/golden/check/fixedbugs-131-one-report-at-one-token.hero:17:15: error[expected_separator]: expected `,` or a new line between one element and the next, found a number (`2`)
+tests/golden/check/fixedbugs-131-one-report-at-one-token.hero:20:16: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-one-report-at-one-token.hero:23:18: error[expected_separator]: expected `,` or a new line between one entry and the next, found a number (`3`)
+tests/golden/check/fixedbugs-131-one-report-at-one-token.hero:26:19: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

@@ -1,0 +1,35 @@
+# Fixed defect 131's second round, 2026-09-29, a declaration whose head fails
+# before its body. Symptom: `function` with no name, `function f` with no
+# parameter list, `test` with no name and `constant 5: i64` each reported the
+# head once and dropped the body below it whole, with every mistake inside;
+# so did `record 5` over its fields and `variant 5` over its cases. Cause:
+# the head's recovery, `cursor.recover_to_next_decl`, drops the rest of the
+# line and the block under it. A failed head drops only its own line, and the
+# body below is read by its kind: statements for a function, a test and a
+# constant (`grammar_expr.abandon`), fields for a record, cases for a
+# variant. One declaration per shape.
+
+function  #~ expected_name
+    y = 3 )  #~ expected_end_of_line
+
+function no_list  #~ expected_params
+    y = 3 )  #~ expected_end_of_line
+
+function closed_before_opened)  #~ expected_params
+    y = 3 )  #~ expected_end_of_line
+
+test  #~ expected_test_name
+    y = 3 )  #~ expected_end_of_line
+
+constant 5: i64  #~ expected_name
+    3 )  #~ expected_end_of_line
+
+record 5  #~ expected_name
+    x: )  #~ expected_type
+
+variant 5  #~ expected_name
+    a
+    )  #~ expected_case
+
+function main()
+    print(1)
