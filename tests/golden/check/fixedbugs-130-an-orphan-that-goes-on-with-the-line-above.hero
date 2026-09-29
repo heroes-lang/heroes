@@ -1,0 +1,50 @@
+# Fixed 2026-09-30, defect 130's class, lane recovery-b1 (lane X4's report:
+# the word-then-value rule). Symptom: an orphan block whose first line goes
+# on with the line above, `and b` below `x = 1`, went whole after its one
+# report, so the `)` of `foo bar )` went unsaid, and so did every mistake on
+# the block's later lines, `y = 3 )` below `and b`; the same under an arm,
+# under a refused word, and for `else if`, `in`, `or` and a lone `else` over
+# its body. Cause: to spare `and b` a second report, the orphan was dropped
+# whole. Now the one token that goes on with the line above is passed over
+# and the rest is read, the block's own mistakes told, and a lone `else`'s
+# body is the orphan's own, not named again (`selfhost/parse/orphans.hero`).
+
+function first_line_junk()
+    x = 1
+        foo bar )  #~ unexpected_block expected_end_of_line
+    print(x)
+
+function later_lines()
+    x = 1
+        and b  #~ unexpected_block
+        y = 3 )  #~ expected_end_of_line
+    print(x)
+
+function an_else_if()
+    x = 1
+        else if x > 0  #~ unexpected_block
+            print(1) )  #~ expected_end_of_line
+    print(x)
+
+function a_lone_else()
+    x = 1
+        else  #~ unexpected_block
+            y = 3 )  #~ expected_end_of_line
+    print(x)
+
+function under_an_arm()
+    n = 1
+    match n
+        0 => print(1)
+            or c )  #~ unexpected_block expected_end_of_line
+        _ => print(2)
+
+function under_a_refused_word()
+    let x = 5  #~ reserved_word
+        in xs )  #~ unexpected_block expected_end_of_line
+    print(2)
+
+function main()
+    x = 1
+        and b  #~ unexpected_block
+    print(x)

@@ -86,8 +86,8 @@ variant Left
 # statements (lane X1's finding 7).
 function read_below(@c: cursor.Cursor, @a: ast.Ast, text: str, word: i64) -> Left
     if !refused_heads.opens_a_block(c, text, at: word)
-        if cursor.at(c, .indent) && !orphans.read(@c)
-            return .nothing
+        if cursor.at(c, .indent)
+            orphans.read(@c)
         return .statements
 
     if brace_habit.opens_here(c, text)

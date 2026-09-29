@@ -757,8 +757,8 @@ function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
         else if k == .eof
             reading @ false
         else if k == .indent
-            if orphans.read(@c)
-                hanging(@c, @a, text)
+            orphans.read(@c)
+            hanging(@c, @a, text)
         else
             stmts @ stmts.push(statement(@c, @a, text))
 
@@ -1146,8 +1146,9 @@ function arms_of(@c: cursor.Cursor, @a: ast.Ast, text: str, tabbed: bool) -> [as
             # as every orphan's are (`parse/orphans`; it went unnamed, and
             # `0 => print(1)` over `print(99)` printed 1). Else the loop spins:
             # `skip_line` stops BEFORE an indent (panel 014).
-            if failed || orphans.read(@c)
-                hanging(@c, @a, text)
+            if !failed
+                orphans.read(@c)
+            hanging(@c, @a, text)
         else
             from = c.pos
             one = arm(@c, @a, text, own_block: !at_margin && !tabbed)

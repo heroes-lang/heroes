@@ -1,0 +1,14 @@
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:43:5: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:14:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:14:17: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:19:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:20:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:25:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:26:22: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:31:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:32:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:39:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:39:18: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:44:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:44:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-that-goes-on-with-the-line-above.hero:49:1: error[unexpected_block]: this block is indented deeper than anything that opens one
