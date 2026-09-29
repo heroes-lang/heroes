@@ -1,0 +1,21 @@
+# Fixed defect 131's second round, 2026-09-29, a declaration head whose line
+# goes on past it. Symptom: `test "t" )`, `record Point )` and
+# `variant Token )` over their bodies were named as a missing body, an empty
+# record and an empty variant, once each, and the body, the fields and the
+# cases below were dropped whole with every mistake inside them. Cause: the
+# recovery after the report, `cursor.recover_to_next_decl`, drops the block
+# under the line. The rest of the line is dropped and what is below read, as
+# after a statement head whose line goes on; the message is the one it was.
+
+test "a name and more" )  #~ missing_body
+    y = 3 )  #~ expected_end_of_line
+
+record Point )  #~ empty_record
+    x: )  #~ expected_type
+
+variant Token )  #~ empty_variant
+    a
+    )  #~ expected_case
+
+function main()
+    print(1)

@@ -1,0 +1,43 @@
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:18:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:25:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:30:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:35:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:36:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:41:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:46:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:51:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:57:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:63:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:64:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:69:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:76:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:81:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:84:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:87:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:18:8: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:19:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:25:8: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:26:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:30:8: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:31:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:35:8: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:37:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:41:12: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:42:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:46:12: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:47:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:50:12: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:51:8: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:52:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:57:12: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:59:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:64:16: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:65:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:70:23: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:71:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:75:9: error[expected_pattern]: expected a pattern, found `+` — `.case`, `.case name`, `_` (on `i64`/`str` only), or an integer, a string or a character, with an optional `-`
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:76:12: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:78:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:81:8: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:84:8: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:87:4: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

@@ -1,0 +1,14 @@
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:12:27: error[expected_name]: expected the declared name after `function`, found end of line — `function dist2(a: Point, b: Point) -> i64`
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:13:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:15:37: error[expected_params]: expected `(` — a signature always has a parameter list, `()` when it takes nothing, found end of line
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:16:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:18:30: error[expected_params]: expected `(` — a signature always has a parameter list, `()` when it takes nothing, found `)`
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:19:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:21:28: error[expected_test_name]: expected the test's name as a string, found end of line — `test "3-4-5 triangle"`
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:22:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:24:10: error[expected_name]: expected the declared name after `constant`, found a number (`5`) — `constant MAX_DEPTH: i64`
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:25:7: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:27:8: error[expected_name]: expected the declared name after `record`, found a number (`5`) — `record Point`
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:28:8: error[expected_type]: expected a type, found `)` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:30:9: error[expected_name]: expected the declared name after `variant`, found a number (`5`) — `variant Token`
+tests/golden/check/fixedbugs-131-a-declaration-head-cut-short.hero:32:5: error[expected_case]: expected a case name, found `)` — a variant case is a name on its own line, with its fields indented below it

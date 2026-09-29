@@ -1,0 +1,35 @@
+# Fixed defect 131's second round, 2026-09-29, a head with nothing, or too
+# little, after its keyword. Symptom: `for` alone over its body cost
+# `for_missing_in` and `expected_expression` at the same column, `for >`
+# three messages at two, and `for` at a file's end three at one; its `certain`
+# fix wrote `while` alone, which is no loop either. Cause: after
+# `for_missing_in`, the rest of the line was read as the condition it might
+# have been, and refused again; and the body's absence was then named at the
+# token the head had already refused. The rest of a `for` that is not an
+# iteration is no longer read as a condition (`grammar_expr.for_stmt`), its fix
+# is a `guess` where nothing follows `for`, and an absent body is not named at
+# the very token the head refused (`opening.refused_here`). A head cut short
+# over nothing names the body missing at the line below, as any head does.
+
+function bare_for()
+    for  #~ for_missing_in
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function for_over_an_operator()
+    for >  #~ for_missing_in
+        y = 3 )  #~ expected_end_of_line
+    z = 4 )  #~ expected_end_of_line
+
+function bare_while()  #~v expected_expression
+    while
+function bare_if()  #~ missing_body
+    print(1)
+
+function bare_match()  #~v expected_expression
+    match
+function main()  #~ missing_match_arms
+    print(1)
+
+function at_the_file_end()
+    for  #~v for_missing_in
