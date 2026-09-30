@@ -56,6 +56,7 @@ use check/consuming
 use check/join
 use check/builtins
 use check/labels
+use check/markers
 use check/generics as check_generics
 use check/discard
 use value_errors
@@ -1224,7 +1225,7 @@ function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
         if arg.mutable && name != "end_lease"
             state.push_diagnostic(
                 @c,
-                data_errors.marker_mismatch(name: name, wants: false, span: a.exprs[arg.value].span)
+                data_errors.marker_mismatch(name: name, wants: false, blocked: "", span: a.exprs[arg.value].span)
             )
 
         # The first argument decides what the rest must be, so from the
@@ -1618,7 +1619,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 if arg.mutable != fd.value.params[position].mutable
                     state.push_diagnostic(
                         @c,
-                        data_errors.marker_mismatch(name: name, wants: fd.value.params[position].mutable, span: a.exprs[arg.value].span)
+                        data_errors.marker_mismatch(name: name, wants: fd.value.params[position].mutable, blocked: markers.blocked(a, r, s, arg.value), span: a.exprs[arg.value].span)
                     )
 
                 if generics == 0
@@ -2193,6 +2194,26 @@ test "two parameters of one type make the labels mandatory"
             assert d.fixes[0].certainty == .guess
 
     assert labels_seen == 2
+
+# Defect 135: the `@` a marked parameter asks stands only before a place the
+# program may write, and where it cannot, a note says what answers instead.
+test "an argument takes the `@` its parameter asks only where it can stand"
+    cell = checked_program(
+        "record C\n    n: i64\n\nfunction bump(@c: C)\n    c.n @ c.n + 1\n\nfunction f()\n    k: C @ C(n: 0)\n    bump(k)\n    print(k.n)\n"
+    )
+    assert cell.out.diagnostics[0].code == "marker_mismatch"
+    assert cell.out.diagnostics[0].fixes.len() == 1
+    assert cell.out.diagnostics[0].fixes[0].certainty == .certain
+    bound = checked_program(
+        "record C\n    n: i64\n\nfunction bump(@c: C)\n    c.n @ c.n + 1\n\nfunction f()\n    k = C(n: 0)\n    bump(k)\n    print(k.n)\n"
+    )
+    assert bound.out.diagnostics[0].code == "marker_mismatch"
+    assert bound.out.diagnostics[0].fixes.len() == 0
+    assert bound.out.diagnostics[0].notes.len() == 1
+    made = checked_program(
+        "record C\n    n: i64\n\nfunction bump(@c: C)\n    c.n @ c.n + 1\n\nfunction f()\n    bump(C(n: 0))\n"
+    )
+    assert made.out.diagnostics[0].fixes.len() == 0
 
 test "a generic call binds, substitutes, and is recorded by its span"
     c = checked_program(

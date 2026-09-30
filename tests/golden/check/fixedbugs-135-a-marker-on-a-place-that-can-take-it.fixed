@@ -1,0 +1,42 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b: the other half of
+# `fixedbugs-135-a-marker-where-the-argument-cannot-take-it`. Where the
+# argument is a place rooted in a cell or an `@` parameter, the call can write
+# its result back there and the `@` is the one repair, so it stays certain:
+# `check --apply` writes it before a cell, a cell's field, a cell's element,
+# an `@` parameter, a second argument and a labelled one, after its label,
+# and the program checks clean and runs.
+
+record Counter
+    n: i64
+
+record Holder
+    inner: Counter
+
+function bump(@c: Counter)
+    c.n @ c.n + 1
+
+function put(v: i64, @xs: [i64])
+    xs @ xs.push(v)
+
+function move_to(@x: i64, @y: i64)
+    x @ x + 1
+    y @ y + 1
+
+function twice(@c: Counter)
+    bump(@c)  #~ marker_mismatch
+    bump(@c)
+
+function main()
+    k: Counter @ Counter(n: 0)
+    bump(@k)  #~ marker_mismatch
+    h: Holder @ Holder(inner: Counter(n: 0))
+    bump(@h.inner)  #~ marker_mismatch
+    cs: [Counter] @ [Counter(n: 0)]
+    bump(@cs[0])  #~ marker_mismatch
+    twice(@k)
+    xs: [i64] @ []
+    put(4, @xs)  #~ marker_mismatch
+    a: i64 @ 0
+    b: i64 @ 0
+    move_to(x: @a, y: @b)  #~ marker_mismatch
+    print(k.n + h.inner.n + cs[0].n + xs.len() + a + b)
