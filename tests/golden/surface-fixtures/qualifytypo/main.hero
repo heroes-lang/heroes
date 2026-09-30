@@ -4,6 +4,12 @@
 # together with its module, so `.fixed` in `check/` could never have tested
 # it. `main.fixed` is what `check main.hero --apply` writes; the fixes suite
 # copies this directory with that text in place and re-checks every file.
+#
+# Corrected 2026-09-30, defect 135, lane 135b: the rename is not certain.
+# `dist` and `dist2` are two names, the digit being what tells them apart, and
+# the distance a program asks for is not its square; the one near name is
+# offered as a guess, `check --apply` leaves this file as it is, and
+# `main.fixed` is gone. The certain module rename is `moduleslip135/slip.hero`.
 use geom
 
 function main()

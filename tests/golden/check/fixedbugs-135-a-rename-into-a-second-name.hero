@@ -1,0 +1,55 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b (the certain-fix audit's
+# R2). Symptom: a name one slip from the one candidate in scope took the
+# rename as a `certain` fix wherever the name had four letters or more, so
+# `printf` became `print`, `origin_y` became `origin_x` and `line2` became
+# `line1`, and `check --apply` wrote programs that checked clean and printed
+# the other binding's value; `count` became `counts` and `Nodes` became
+# `Node`, refused anew. Cause: a slip where two names are told apart, at an
+# end, in a digit, in a part of one or two letters, reads as a second name
+# as readily as a mistyped one. Now a slip reads as the one name only inside
+# a word of the name, and these are the same rename shown as a guess
+# (`near_names.one_reading`).
+
+record Node
+    value: i64
+
+function show(n: i64)
+    print(n)
+
+function c_habit()
+    n = 5
+    printf("n = %d\n", n)  #~ unknown_name
+
+function a_coordinate() -> i64
+    origin_x = 10
+    return origin_x + origin_y  #~ unknown_name
+
+function numbered() -> str
+    line1 = "first"
+    return line1 + line2  #~ unknown_name
+
+function numbered_inside() -> i64
+    v1_len = 3
+    return v1_len + v2_len  #~ unknown_name
+
+function a_short_part_inside() -> i64
+    pos_x_max = 10
+    return pos_x_max + pos_y_max  #~ unknown_name
+
+function a_part_by_case() -> i64
+    originX = 10
+    return originX + originY  #~ unknown_name
+
+function a_plural() -> i64
+    items = [1, 2]
+    return items.len() + item  #~ unknown_name
+
+function a_singular()
+    counts = [1, 2, 3]
+    print(counts.len() + count)  #~ unknown_name
+
+function a_verb_form()
+    shows(3)  #~ unknown_name
+
+function a_type_in_the_plural(ns: Nodes)  #~ unknown_type
+    _ = ns
