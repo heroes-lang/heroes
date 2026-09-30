@@ -14,11 +14,17 @@
 # (-lSDL2main replaces main and opens a window; the corpus timeout is
 # the instrument for that class — DECIDE.md holds the pair).
 #
-# Port note: pkg-config is asked through system() with the answer
-# redirected to a file under build/, and the package name reaches the
-# line only through sq() — one quoted word, never a second command.
+# pkg-config's answer comes back through two files under build/, and the
+# package name reaches it as one argument word, never a second command.
+# **The two files were `build/pkg-config-out.txt` and `-err.txt` for every
+# build in the tree** until 2026-09-30 (defect 134): two programs naming
+# `libzstd` and `liblz4`, built together, read each other's answers, and the
+# author was told at exit 1 that `liblz4` *answered with `td`* (a torn read of
+# the other's `-I`) or that `lz4.h` is not on the include path. They are
+# private names now (`cli/publish.hero`), removed once read.
 
 use cli/process
+use cli/publish
 use cli/strings
 
 # Whether this platform's C runtime already contains a library, so
@@ -169,14 +175,18 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
 
     for package in packages
         process.mkdir_all(build_dir)?
-        answer_path = build_dir + "/pkg-config-out.txt"
-        err_path = build_dir + "/pkg-config-err.txt"
+        answer_path = publish.private_name(build_dir + "/pkg-config-out.txt")
+        err_path = publish.private_name(build_dir + "/pkg-config-err.txt")
         ran = process.run(
             program: "pkg-config",
             words: ["pkg-config", "--cflags", "--libs", package],
             out: answer_path,
             err: err_path
         )
+        answered = read_file(answer_path)
+        complained = read_file(err_path)
+        publish.discard(answer_path)
+        publish.discard(err_path)
 
         # A package name reaches `pkg-config` as one word whatever is in
         # it, so no `.hero` file can hand this program an argument of
@@ -189,16 +199,14 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
 
         if ran.code != 0
             said: str @ ""
-            captured = read_file(err_path)
 
-            if !captured.is_err()
-                said @ strings.trimmed(captured.must())
+            if !complained.is_err()
+                said @ strings.trimmed(complained.must())
             return fail(
                 code: "failed",
                 msg: "heroes-ffi-package `" + package + "` is not installed on this machine\n  pkg-config said: " + said + "\n  install its development files, or name the library directly with `link`"
             )
         said: str @ ""
-        answered = read_file(answer_path)
 
         if !answered.is_err()
             said @ answered.must()
