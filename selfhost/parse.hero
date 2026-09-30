@@ -15,6 +15,7 @@ use parse/decl
 use parse/apart
 use parse/which_arm
 use parse/wrap_break
+use parse/unclosed
 
 record ParseOutput
     decls: [ast.Decl]
@@ -104,8 +105,9 @@ function parse_source(s: source.Source) -> ParseOutput
 
         index @ index + 1
 
-    diagnostics: [diag.Diagnostic] @ lexer_said
-    control: [diag.Diagnostic] @ lexer_said
+    # A brace habit's `{` that never closed is told once, by the parser.
+    diagnostics: [diag.Diagnostic] @ unclosed.withdrawn(lexed: lexer_said, said: normal, text: s.text)
+    control: [diag.Diagnostic] @ unclosed.withdrawn(lexed: lexer_said, said: controlled, text: s.text)
 
     for d in normal
         diagnostics @ diagnostics.push(d)
@@ -144,9 +146,9 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
     # As `parse_source` does, a text the lexer refused a break in is read apart.
     if lexed.breaks.len() > 0
         apart.weigh(@c, lexed: @lexed, apart: lexer.lex_apart(text), text: text)
-    diagnostics: [diag.Diagnostic] @ lexed.diagnostics
-    control: [diag.Diagnostic] @ lexed.diagnostics
     said = which_arm.placed(c, lexed: lexed.diagnostics)
+    diagnostics: [diag.Diagnostic] @ unclosed.withdrawn(lexed: lexed.diagnostics, said: said.normal, text: text)
+    control: [diag.Diagnostic] @ unclosed.withdrawn(lexed: lexed.diagnostics, said: said.control, text: text)
 
     for d in said.normal
         diagnostics @ diagnostics.push(d)
@@ -561,6 +563,17 @@ test "a construct the lexer named never closed ends at its line, and a line goin
 
     for text in ["function main()\n    x = (1\n    + 2\n    print(x)\n", "function main()\n    xs = [1\n    + 2\n    print(xs)\n"]
         assert codes(parse(text).diagnostics) == ["unclosed_bracket", "line_end_before_continuation"]
+
+# Defect 131's class, lane recovery-b2: braces the lexer named never closed at
+# a declaration's line end there, and a brace habit's `{` that never closed
+# is told once, by the parser, in both arms; a `(` beside another report keeps
+# the two, since its report may be another mistake.
+test "a brace habit's never closed brace is told once, and its braces end at the next declaration"
+    braced = parse("record P {\n    x: i64\n\nfunction main()\n    print(1) )\n")
+    assert codes(braced.diagnostics) == ["expected_end_of_line", "expected_end_of_line"]
+    assert codes(braced.control) == ["expected_end_of_line", "expected_end_of_line"]
+    assert codes(parse("function main() {\n    print(1)\n").diagnostics) == ["missing_body"]
+    assert codes(parse("function (a: i64\n").diagnostics) == ["unclosed_bracket", "expected_name"]
 
 # Defect 131's third round: `while` is a `certain` repair of a `for` only
 # before a token that begins an expression, and an operand that could not be

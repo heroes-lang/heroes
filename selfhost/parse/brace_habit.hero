@@ -17,7 +17,8 @@
 # - `ending`: the `{` that opens a head's body in braces, the first on the
 #   rest of the head's line of the text that ends it, or one alone on the
 #   line below a line that ended;
-# - `closer`: the `}` that closes it, by depth;
+# - `closer`: the `}` that closes it, by depth, or where the lexer named it
+#   never closed;
 # - `ends_line` and `opens_here`: whether a `{` is the last thing on its
 #   line, a comment aside.
 #
@@ -41,6 +42,7 @@
 use token
 use cursor
 use word_place
+use parse/unclosed
 
 ## The habit
 
@@ -109,16 +111,19 @@ function opens_a_value(c: cursor.Cursor, at: i64) -> bool
 function alone(text: str, span: token.Span) -> bool
     return ends_line(text, span) && word_place.only_margin(text, from: word_place.line_start(text, at: span.start), to: span.start)
 
-# The index of the token that closes the `{` at `open`, or of the end of the
-# file where nothing does.
+# The index of the token that closes the `{` at `open`, or, where nothing
+# does, of where the lexer named it never closed: the line a declaration
+# opens at column 0 (`parse/unclosed.close_after`), past which the braces read
+# the next declarations as their own members, or the end of the file.
 function closer(c: cursor.Cursor, open: i64) -> i64
     depth: i64 @ 0
     i: i64 @ open
+    named = unclosed.close_after(c, at: c.tokens[open].span.start)
 
     while i < c.tokens.len()
         kind = c.tokens[i].kind
 
-        if kind == .eof
+        if kind == .eof || named >= 0 && c.tokens[i].span.start >= named
             return i
 
         if kind == .lbrace
