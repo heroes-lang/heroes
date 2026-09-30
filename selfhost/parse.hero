@@ -548,6 +548,20 @@ test "a head or a list cut short reports once, and a tabbed body is a body"
     whole = parse("function main()\n\tprint(1)\n")
     assert codes(whole.diagnostics) == ["tab_in_indentation"]
 
+# Defect 131's class, lane recovery-b2: a group, a call's arguments, an index
+# or a literal inside one whose opener the lexer found never closed ends at
+# its line end, which it leaves where it stands, and names no closer; a line
+# below it that goes on with it is refused as it is above a closer.
+test "a construct the lexer named never closed ends at its line, and a line going on is refused"
+    for text in ["function main()\n    x = (1 + 2\n    print(x)\n", "function main()\n    print(1, 2\n    print(3)\n", "function main()\n    x = xs[1\n    print(x)\n", "function main()\n    x = f(1,\n        2\n    print(x)\n"]
+        assert codes(parse(text).diagnostics) == ["unclosed_bracket"]
+
+    nested = parse("function main()\n    xs = [[1], [2\n    print(xs)\n")
+    assert codes(nested.diagnostics) == ["unclosed_bracket", "unclosed_bracket"]
+
+    for text in ["function main()\n    x = (1\n    + 2\n    print(x)\n", "function main()\n    xs = [1\n    + 2\n    print(xs)\n"]
+        assert codes(parse(text).diagnostics) == ["unclosed_bracket", "line_end_before_continuation"]
+
 # Defect 131's third round: `while` is a `certain` repair of a `for` only
 # before a token that begins an expression, and an operand that could not be
 # read ends its expression, so `while >` is refused once.

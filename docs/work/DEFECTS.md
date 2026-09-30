@@ -147,6 +147,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     repaired at `41807577`, gated by its cases and the compiler's own tests;
     the net is owed at the batch's close.
 
+    **2026-09-30, lane recovery-b2, an orphan under a whole arm that holds its
+    own mistake** (lane X4's n3, measured closed by lane recovery-b1): read
+    closed on this tree, and its case added at `04b51f08`; lane X3's 6a reads
+    closed and had its case. The net is owed at the batch's close.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
