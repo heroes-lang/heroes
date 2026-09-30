@@ -50,6 +50,7 @@ use check/lower
 use check/render
 use check/ops
 use check/access
+use check/field_names
 use check/contextual
 use check/consuming
 use check/join
@@ -183,14 +184,11 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 return state.record_expr(@c, at: id, ty: synth_name(@c, a, r, s, decls, id))
 
             # `Room.name` where `Room` names a record and `name` is one of its
-            # fields: the operator is wrong and the repair is `::`, not a
-            # message about construction (panel 132's landing).
+            # fields: the operator is wrong and `::` may be the repair, not a
+            # message about construction (panel 132's landing). Here the
+            # position asks for nothing (defect 135).
 
-            if access.names_a_record(r, decls, base: f.base) && access.record_has_field(s, r, decls, base: f.base, field: source.span_text(s, f.name))
-                state.push_diagnostic(
-                    @c,
-                    access.dot_where_colons_belong(holder: source.span_text(s, a.exprs[f.base].span), field: source.span_text(s, f.name), span: token.Span(start: a.exprs[f.base].span.end, end: f.name.start))
-                )
+            if field_names.dot_on_a_record_name(@c, a, s, r, decls, base: f.base, name: f.name, expected: fail(code: "absent", msg: "synthesised"))
                 return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
             base_ty = synth(@c, a, r, s, decls, f.base)
             return state.record_expr(
@@ -205,7 +203,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         .field_name f => return state.record_expr(
             @c,
             at: id,
-            ty: access.field_name_type(@c, s, r, decls, base: f.base, base_span: a.exprs[f.base].span, field: f.name)
+            ty: field_names.field_name_type(@c, s, r, decls, base: f.base, base_span: a.exprs[f.base].span, field: f.name)
         )
         .index i =>
             base_ty = synth(@c, a, r, s, decls, i.base)
@@ -595,8 +593,15 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             _ = state.record_expr(@c, at: id, ty: got)
             compare(@c, s, decls, expected: expected, got: got, span: span)
             return
+        # `Room.name` where the position asks for a type: what it asks is
+        # what decides whether `::` is the one repair (defect 135).
+
+        .field f =>
+            if field_names.dot_on_a_record_name(@c, a, s, r, decls, base: f.base, name: f.name, expected: ok(expected))
+                _ = state.record_expr(@c, at: id, ty: state.error_ty_of(c))
+                return
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => fall_through()
-        .name | .unary | .binary | .field | .field_name | .index | .hole               => fall_through()
+        .name | .unary | .binary | .field_name | .index | .hole                        => fall_through()
         .try_expr | .error                                                             => fall_through()
 
     got = synth(@c, a, r, s, decls, id)
@@ -1937,8 +1942,8 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
 
         return
     index: i64 @ 0
-    field_names: [str] @ []
-    field_types: [i64] @ []
+    spec_names: [str] @ []
+    spec_types: [i64] @ []
 
     for arg in given
         spec = expected[index]
@@ -1950,8 +1955,8 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
             )
         lowered = lower.lower_ty(@c, a, r, spec.ty)
         check(@c, a, r, s, decls, id: arg.value, expected: lowered)
-        field_names @ field_names.push(spec.name)
-        field_types @ field_types.push(lowered)
+        spec_names @ spec_names.push(spec.name)
+        spec_types @ spec_types.push(lowered)
         index @ index + 1
 
     # A missing label is told once every argument is checked: which other
@@ -1965,8 +1970,8 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
                 c,
                 a,
                 decls,
-                names: field_names,
-                types: field_types,
+                names: spec_names,
+                types: spec_types,
                 at: index,
                 value: arg.value,
                 taken: taken
@@ -1978,7 +1983,7 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
             )
             state.push_diagnostic(
                 @c,
-                label_errors.missing_label(holder: label, expected: field_names[index], others: others, span: a.exprs[arg.value].span, at: front)
+                label_errors.missing_label(holder: label, expected: spec_names[index], others: others, span: a.exprs[arg.value].span, at: front)
             )
         index @ index + 1
 
