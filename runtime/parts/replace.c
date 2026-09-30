@@ -48,16 +48,20 @@
  * the words said when one is refused, are `selfhost/cli/publish.hero`'s. This
  * part answers and does not decide.
  *
- * THE WINDOWS ARM IS WRITTEN AND NOT VERIFIED. The box did not answer on the day
- * this part was written (2026-09-30, `ssh win`, connection timed out), and no
- * Windows header exists on this Mac or in the Linux image to compile it against.
- * It uses no call the runtime does not already make there except
- * `GetFinalPathNameByHandleA`, `GetFileInformationByHandle`, `FlushFileBuffers`,
- * `WriteFile`, `SetFileAttributesA`, `CreateHardLinkA` and
- * `CreateSymbolicLinkA`, and it carries the file's attributes but not its owner,
- * its explicit ACL entries or its alternate data streams: a new file there takes
- * its owner and the inherited entries of its directory. The first run there turns
- * this paragraph into a measurement, or into a defect.
+ * THE WINDOWS ARM, MEASURED ON THE BOX on 2026-09-30 (lane 136, at `9cc3a295`):
+ * the compiler's own tests 947, all passed, and `surface`, `fixes` and `probe`
+ * at 0 failed. `fmt --in-place` on a 16 MB NTFS volume left the file byte for
+ * byte at 8, 32 and 64 KB free (ERROR_DISK_FULL, 112), where the write before
+ * this part left it at 0 bytes. A read-only file and one another process holds
+ * open for reading alone are refused untouched (5 and 32); a hidden, a system
+ * and a hidden system file are rewritten with their attributes, where `fopen`
+ * refused all three; a second name is refused; a link, to a source or as an
+ * `-o`, is written through and stays a link; `-o NUL` is written into. It
+ * carries the file's attributes but not its owner, its explicit ACL entries or
+ * its alternate data streams: a new file there takes its owner and the inherited
+ * entries of its directory, which no case there measured. No kill landed inside
+ * the write there: of 13 per compiler, a Git Bash watcher's came after the write
+ * and the fixed delays before or after it.
  */
 
 #include <errno.h>
