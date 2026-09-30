@@ -166,12 +166,25 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and 0 alone; the census of 1358 files moved the six new cases and nothing
     else. The shapes still open are the next batch's items.
 
+    Linux x86-64 at `e5cc73eb` (the `heroes-linux` image), measured
+    2026-09-30 by 06:21: the compiler's 911 tests and 19 suites, each 0
+    failed.
+
     **2026-09-30, lane recovery-b3, past a closer of another kind the parser
     resumes where the lexer closed the bracket, and an extern group whose
     header failed has its signatures read** (the recovery instrument's
     `wrong-closer`, `single-quotes` and `string-open` as first mistakes):
     repaired at `52b2d378`, gated by its cases and the compiler's own tests;
     the net is owed at the batch's close.
+
+    **Batch gate 2026-09-30 09:38** (`77b8ca98`, the merge gate of lane
+    recovery-b3's batch, closed at `46846f97`, beside defect 134): the full
+    net 3907 passed and 0 failed with no suite re-run, the census moving the
+    lane's ten new cases and nothing else, and the recovery instrument over
+    its 13,594 planted mistakes reading ONE 11,933, EXTRA 1,326, APPLY-NEW 0,
+    APPLY-OTHER 0 and 17 hidden second mistakes where the baseline read 153;
+    then Linux x86-64, 930 tests and 19 suites at 0 failed by 11:40, and the
+    Windows box at `6d781be1`, the same code, 930 and 19 at 0 failed by 11:42.
 
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
@@ -303,6 +316,18 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     once in the parallel pass on defect 134's false `cannot publish` and 55
     and 0 alone; the census of 1358 files moved the six new cases and nothing
     else. The shapes still open are the next batch's items.
+
+    Linux x86-64 at `e5cc73eb` (the `heroes-linux` image), measured
+    2026-09-30 by 06:21: the compiler's 911 tests and 19 suites, each 0
+    failed.
+
+    **Widened 2026-09-30 by panel 183's completeness critic, a regression of
+    batch 3's**: `52b2d378`, which removed `cursor.recover_past_closer`,
+    raises the diagnostics on 42 of 3,000 single missing closers from 101 to
+    253 and `missing_body` from 14 to 142, on bodies that exist (the critic
+    built `52b2d378` and its parent over the same 3,000; one example read,
+    the other 41 counted; `docs/panel/183-reports/completeness-critic.md`
+    § 1). This item's own class; lane recovery-b4's item C4r.
 
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
@@ -512,6 +537,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and the one it found unreachable (`data_errors.hero:177`) are in its
     table. What overlapping certain fixes do to `--apply` itself is not this
     defect's: it is 137.
+
+    **Batch gate 2026-09-30 09:38** (`77b8ca98`, the merge gate of lane
+    recovery-b3's batch, closed at `46846f97`, beside defect 134): the full
+    net 3907 passed and 0 failed with no suite re-run, the census moving the
+    lane's ten new cases and nothing else, and the recovery instrument over
+    its 13,594 planted mistakes reading ONE 11,933, EXTRA 1,326, APPLY-NEW 0,
+    APPLY-OTHER 0 and 17 hidden second mistakes where the baseline read 153;
+    then Linux x86-64, 930 tests and 19 suites at 0 failed by 11:40, and the
+    Windows box at `6d781be1`, the same code, 930 and 19 at 0 failed by 11:42.
 
 - [ ] **136 — `fmt --in-place` and `check --apply --in-place` destroy the author's source when the write fails** | on a disk nearly full, `heroes fmt prog.hero --in-place` answers `error: cannot write`, exit 2, and leaves `prog.hero` at 0 bytes, the 62,706 bytes the author wrote gone; `heroes check --apply --in-place` leaves the file cut mid-token, 57,344 of the 59,312 bytes it meant to write, ending in `retu` | `selfhost/cli/syntax_cmds.hero:66` · `selfhost/cli/check.hero:110` · `runtime/parts/os.c:635` (`hero_file_write`) · `selfhost/cli/publish.hero` (defect 134's publish by rename)
 

@@ -174,3 +174,11 @@
     keys depend on the working directory, since `clang -###` prints it;
     `--emit-c` compiles a runtime object it never links; a killed build's
     private files are never removed.
+
+    **Windows, on the final tree, measured after the close**: at the trunk
+    `6d781be1` (the code of `77b8ca98`: this defect and the recovery cluster's
+    batch 3), the box answering again with 62 GB free, the compiler's 930
+    tests and the 19 suites, each 0 failed, by 11:42 on 2026-09-30; `cache` 7
+    and 0, the six builds started together on six threads among them. The 12
+    suites the box had not run on lane 134's closing tree are in those 19.
+    Linux arm64 on the trunk remains before the push.
