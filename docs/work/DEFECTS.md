@@ -485,4 +485,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     (a value where a value stands, a type where a type does) at the resolver,
     which does not know types.
 
+    **2026-09-30, lane recovery-b3, an escape the language does not have
+    keeps its certain `\\` only where it reads as nothing but a backslash**
+    (the instrument's `\(`, and beside it an escape by a character's code, one
+    written bare, one in a character literal): repaired at `455940f5`, gated
+    by its cases and the compiler's own tests; the net is owed at the batch's
+    close.
+
 *******************************************************************************
