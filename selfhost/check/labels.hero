@@ -13,18 +13,30 @@
 # `heroes mutate --operator swap-args` moves the label WITH its value
 # (`selfhost/mutate/edits.hero:29`), so a swapped `fail(code:, msg:)` is a
 # legal-looking call whose labels are in the wrong order.
+#
+# **And the question every call asks before it writes a missing label**
+# (defect 135): what else the argument could be. A label written in position
+# order is certain only where nothing else could stand there, so each kind of
+# call, a declared function, a function value, a built-in, a record or a case,
+# asks it here of what it holds: the other positions of the argument's type,
+# and marker, that no label of the call has taken.
 
 use token
+use ast
 use source
-use data_errors
+use label_errors
 use resolved
 use inventory
 use check/state
+use check/contextual
 
 # One argument of a built-in call: refuse it if the rule names this position
 # and the call site does not, or names it wrongly. `position` counts the
 # receiver, because `xs.slice(1, 3)` and `slice(xs, 1, 3)` are the same call.
-function check_label(@c: state.Checker, s: source.Source, name: str, position: i64, written: token.Span?, value_span: token.Span)
+# `taken` are the labels the call writes. A built-in's labelled positions share
+# its one type (`inventory.labelled`), so an unlabelled argument could be any
+# of them not taken: `fail("empty", "no first element")` may mean either order.
+function check_label(@c: state.Checker, s: source.Source, name: str, position: i64, written: token.Span?, value_span: token.Span, taken: [str])
     entry = inventory.labelled_of(name)
 
     if entry.is_err()
@@ -39,9 +51,17 @@ function check_label(@c: state.Checker, s: source.Source, name: str, position: i
     wanted = params[position]
 
     if written.is_err()
+        others: [str] @ []
+        q: i64 @ 0
+
+        for label in params
+            if q != position && label.len() > 0 && !listed(taken, label)
+                others @ others.push(label)
+            q @ q + 1
+
         state.push_diagnostic(
             @c,
-            data_errors.needs_label(name: name, expected: wanted, shared: entry.must().shared, span: value_span)
+            label_errors.needs_label(name: name, expected: wanted, shared: entry.must().shared, others: others, span: value_span, at: value_span.start)
         )
         return
     seen = source.span_text(s, written.must())
@@ -49,17 +69,89 @@ function check_label(@c: state.Checker, s: source.Source, name: str, position: i
     if seen != wanted
         state.push_diagnostic(
             @c,
-            data_errors.wrong_label(holder: name, written: seen, expected: wanted, elsewhere: names_a_position(params, seen), span: written.must())
+            label_errors.wrong_label(holder: name, written: seen, expected: wanted, elsewhere: names_a_position(params, seen), span: written.must())
         )
 
 # Whether the label the author wrote names another position of this built-in,
-# which is what makes the fix a guess rather than a repair (`data_errors`).
+# which is what makes the fix a guess rather than a repair (`label_errors`).
 function names_a_position(params: [str], written: str) -> bool
     for p in params
         if p.len() > 0 && p == written
             return true
 
     return false
+
+# The labels a call writes, in order.
+function written_labels(s: source.Source, given: [ast.Arg]) -> [str]
+    out: [str] @ []
+
+    for arg in given
+        if !arg.name.is_err()
+            out @ out.push(source.span_text(s, arg.name.must()))
+
+    return out
+
+function listed(xs: [str], x: str) -> bool
+    for it in xs
+        if it == x
+            return true
+
+    return false
+
+# The other parameters an unlabelled argument at position `at` of a declared
+# function could be: among `ambiguous`, the positions whose type another
+# shares, those of its type, past the UFCS receiver (`from`), whose name no
+# label of the call writes. Its `@` or none tells the positions apart only
+# where it agrees with its own position's: `add_to(@t, 5)` over
+# `add_to(@total, amount)` has one reading, while `swap(x, y)` over
+# `swap(@a, @b)` lacks both markers, which is `marker_mismatch`'s to say and
+# says nothing about the order.
+function other_parameters(s: source.Source, declared: [ast.Param], types: [i64], ambiguous: [i64], at: i64, from: i64, taken: [str], mutable: bool) -> [str]
+    out: [str] @ []
+    marker_tells = declared[at].mutable == mutable
+
+    for q in ambiguous
+        name = source.span_text(s, declared[q].name)
+        same_marker = !marker_tells || declared[q].mutable == mutable
+
+        if q != at && q >= from && types[q] == types[at] && same_marker && !listed(taken, name)
+            out @ out.push(name)
+
+    return out
+
+# The same through a function value, whose type carries the names: a named
+# position of the same type, past the receiver, that no label takes.
+function other_names(names: [str], types: [i64], at: i64, from: i64, taken: [str]) -> [str]
+    out: [str] @ []
+    q: i64 @ from
+
+    while q < names.len() && q < types.len()
+        if q != at && names[q].len() > 0 && types[q] == types[at] && !listed(taken, names[q])
+            out @ out.push(names[q])
+        q @ q + 1
+
+    return out
+
+# The other fields an unlabelled argument at `at` of a construction could
+# fill: those no label takes whose type the argument takes, a literal's by
+# what it adopts (`contextual.adopts`) and anything else's by the type it was
+# checked to have. Asked once every argument is checked, since the fields
+# may be of several types and only the argument tells which it can be.
+function other_fields(c: state.Checker, a: ast.Ast, decls: [ast.Decl], names: [str], types: [i64], at: i64, value: i64, taken: [str]) -> [str]
+    out: [str] @ []
+    q: i64 @ 0
+
+    while q < names.len() && q < types.len()
+        if q != at && !listed(taken, names[q]) && could_take(c, a, decls, value: value, ty: types[q])
+            out @ out.push(names[q])
+        q @ q + 1
+
+    return out
+
+function could_take(c: state.Checker, a: ast.Ast, decls: [ast.Decl], value: i64, ty: i64) -> bool
+    if contextual.contextual(a, value)
+        return contextual.adopts(c, a, decls, id: value, offered: ty)
+    return c.out.expr_types[value] == ty
 
 ## Tests
 
@@ -68,22 +160,50 @@ test "a positional argument of fail is refused with the label to write"
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "    return fail(\"empty_list\", \"there is no first element\")\n")
     none: token.Span? @ fail(code: "absent", msg: "written positionally")
-    check_label(@c, s, name: "fail", position: 0, written: none, value_span: token.Span(start: 16, end: 28))
+    nothing: [str] = []
+    check_label(
+        @c,
+        s,
+        name: "fail",
+        position: 0,
+        written: none,
+        value_span: token.Span(start: 16, end: 28),
+        taken: nothing
+    )
     assert c.out.diagnostics.len() == 1
     assert c.out.diagnostics[0].code == "needs_label"
-    assert c.out.diagnostics[0].message == "two of `fail`'s parameters are `str`, so every one of them is named at the call site — this one is `code`"
-    assert c.out.diagnostics[0].fixes.len() == 1
+
+    # Defect 135: the order written may not be the order meant, so `code:`
+    # is one reading and `msg:` the other, and neither is applied.
+    assert c.out.diagnostics[0].message == "two of `fail`'s parameters are `str`, so every one of them is named at the call site — this one is `code` in the order written, or `msg` in the other order"
+    assert c.out.diagnostics[0].fixes.len() == 2
     assert c.out.diagnostics[0].fixes[0].replacement == "code: "
-    assert c.out.diagnostics[0].fixes[0].certainty == .certain
+    assert c.out.diagnostics[0].fixes[0].certainty == .guess
     assert c.out.diagnostics[0].fixes[0].span.start == 16
     assert c.out.diagnostics[0].fixes[0].span.end == 16
+
+    # With `msg:` written elsewhere, `code` is all this one can be.
+    one: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    taken: [str] = ["msg"]
+    check_label(
+        @one,
+        s,
+        name: "fail",
+        position: 0,
+        written: none,
+        value_span: token.Span(start: 16, end: 28),
+        taken: taken
+    )
+    assert one.out.diagnostics[0].fixes.len() == 1
+    assert one.out.diagnostics[0].fixes[0].certainty == .certain
 
 test "a label in the wrong position is the swap, and it is refused too"
     r = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "fail(msg: \"m\", code: \"c\")\n")
     at: token.Span? @ ok(token.Span(start: 5, end: 8))
-    check_label(@c, s, name: "fail", position: 0, written: at, value_span: token.Span(start: 10, end: 13))
+    taken: [str] = ["msg", "code"]
+    check_label(@c, s, name: "fail", position: 0, written: at, value_span: token.Span(start: 10, end: 13), taken: taken)
     assert c.out.diagnostics.len() == 1
     assert c.out.diagnostics[0].code == "wrong_label"
     assert c.out.diagnostics[0].message == "`fail` has nothing called `msg` at this position — it is `code`"
@@ -94,11 +214,28 @@ test "the receiver's position is exempt and the right label passes"
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "xs.slice(from: 1, to: 3)\n")
     none: token.Span? @ fail(code: "absent", msg: "the receiver is the dot")
-    check_label(@c, s, name: "slice", position: 0, written: none, value_span: token.Span(start: 0, end: 2))
+    taken: [str] = ["from", "to"]
+    check_label(
+        @c,
+        s,
+        name: "slice",
+        position: 0,
+        written: none,
+        value_span: token.Span(start: 0, end: 2),
+        taken: taken
+    )
     right: token.Span? @ ok(token.Span(start: 9, end: 13))
-    check_label(@c, s, name: "slice", position: 1, written: right, value_span: token.Span(start: 15, end: 16))
+    check_label(
+        @c,
+        s,
+        name: "slice",
+        position: 1,
+        written: right,
+        value_span: token.Span(start: 15, end: 16),
+        taken: taken
+    )
     assert c.out.diagnostics.len() == 0
 
     # And a built-in with no same-typed pair says nothing at any position.
-    check_label(@c, s, name: "join", position: 1, written: none, value_span: token.Span(start: 0, end: 2))
+    check_label(@c, s, name: "join", position: 1, written: none, value_span: token.Span(start: 0, end: 2), taken: taken)
     assert c.out.diagnostics.len() == 0

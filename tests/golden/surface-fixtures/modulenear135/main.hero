@@ -1,0 +1,18 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b (the certain-fix audit's
+# R3). Symptom: a name a module does not declare took the rename to the one
+# near name it does as a `certain` fix with no guard at all, so
+# `calc.sub(a: 7, b: 2)` became `calc.sum` and printed 9 where 5 was meant,
+# and `calc.median([1, 2, 9])` became `calc.mean` and printed 4 where 2 was.
+# Cause: the local rename's rule, `one_reading`, was never asked here. Now it
+# is: two edits, a slip where two names are told apart, and a name of fewer
+# than four letters take the rename as a guess, and `check --apply` leaves
+# this file as it is (`module/diagnostics.not_in_module`).
+use calc
+
+function main()
+    print(calc.sub(a: 7, b: 2))  #~ unknown_in_module
+    print(calc.median([1, 2, 9]))  #~ unknown_in_module
+    print(calc.sums(a: 1, b: 2))  #~ unknown_in_module
+    v = calc.Vec3(x: 1, y: 2)  #~ unknown_in_module
+    print(v.x)
+    print(calc.su(a: 1, b: 2))  #~ unknown_in_module

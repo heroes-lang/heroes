@@ -1,0 +1,254 @@
+# How near one name is to another, and whether one slip between them reads
+# as a typing slip or as a second name (design.md §4.17: a rename is certain
+# only where the compiler knows the candidate is the one meant).
+#
+# Split out of `resolve/errors.hero` on 2026-09-30, lane 135b, when that file
+# passed §11's 300 lines with defect 135's refinement of `one_reading`. The
+# seam is the question: the messages there say what is wrong and offer the
+# rename, and this file answers, of two names alone, which names are near
+# enough to offer (`nearest`) and whether the one offered can be applied
+# (`one_reading`). `resolve/errors.suggest` and `module/diagnostics`'s
+# `not_in_module` ask it, one rule for a local name and a module's.
+
+use bytes
+
+# Candidates within the edit distance the name's length allows, capped at
+# three and in the order the caller supplied (innermost scope first), so the
+# list is deterministic — §4.16's rule, applied to every list the compiler
+# prints.
+#
+# A difference in CASE ONLY wins alone, and that is not a tie-breaker: the
+# letters are already right, so it is the one repair that can be handed over
+# as certain even when three other names are one edit away. `point` for
+# `Point` is also one edit from `print`.
+function nearest(name: str, candidates: [str]) -> [str]
+    for c in candidates
+        if c != name && same_ignoring_case(a: name, b: c)
+            return [c]
+
+    allowed: i64 @ 2
+
+    if name.chars().len() < 4
+        allowed @ 1
+    near: [str] @ []
+
+    for candidate in candidates
+        if candidate != name && !already_listed(near, candidate) && near.len() < 3
+            if distance(a: name, b: candidate) <= allowed
+                near @ near.push(candidate)
+
+    return near
+
+function already_listed(xs: [str], x: str) -> bool
+    for it in xs
+        if it == x
+            return true
+
+    return false
+
+# Identifiers are ASCII by the language's own rule (spec: syntax is
+# ASCII-only), so case-folding byte by byte is exact here — this is NOT a
+# general Unicode fold and does not claim to be.
+function same_ignoring_case(a: str, b: str) -> bool
+    if a.len() != b.len()
+        return false
+    i: i64 @ 0
+
+    while i < a.len()
+        if bytes.lower(a[i]) != bytes.lower(b[i])
+            return false
+        i @ i + 1
+
+    return true
+
+# Whether the letters of `name` allow `candidate` and nothing else, asked of
+# the two names alone: the same letters in another case, or one slip, a
+# letter added, dropped or changed, or two neighbours swapped, in a name of
+# four letters or more, so three at least stand as written. Anything further
+# the letters allow as well a name the program never bound, a literal, or
+# another binding: `True` is two edits from `run`, and a one-letter name one
+# from every other one-letter name.
+#
+# **And one slip is a typing slip only inside a word of the name** (defect
+# 135, the certain-fix audit's R2): where two names are told apart, at an
+# end, in a digit, in a part of one or two letters, the slip makes another
+# name as readily as it mistypes this one. `printf` is C's name and not
+# `print` mistyped, `counts` and `Nodes` are plurals, `line2` and `v2_len` are
+# numbered, `origin_y` and `pos_y_max` coordinates, `xmin` a prefix; each was
+# renamed into a program that read another binding or was refused anew. So a
+# change, an addition or a removal keeps both ends and changes a letter
+# within a part of three or more, split at `_`, digits and a case change,
+# and a swap of two letters stays within one such part (`lenght`). What it
+# cannot see is two words one letter apart inside a part, `text` and `test`,
+# which the letters alone do not tell apart.
+function one_reading(name: str, candidate: str) -> bool
+    if same_ignoring_case(a: name, b: candidate)
+        return true
+
+    if name.len() < 4
+        return false
+
+    if swapped(a: name, b: candidate)
+        at = first_difference(a: name, b: candidate)
+        return is_letter(name[at]) && is_letter(name[at + 1]) && same_part(name, left: at, right: at + 1) && part_length(name, at: at) >= 3
+
+    if distance(a: name, b: candidate) != 1
+        return false
+
+    if name[0] != candidate[0] || name[name.len() - 1] != candidate[candidate.len() - 1]
+        return false
+    longer: str @ name
+    other: str @ candidate
+
+    if candidate.len() > name.len()
+        longer @ candidate
+        other @ name
+    at = first_difference(a: longer, b: other)
+
+    if !is_letter(longer[at])
+        return false
+
+    if longer.len() == other.len() && !is_letter(other[at])
+        return false
+    return part_length(longer, at: at) >= 3
+
+# The first byte at which two names differ, or the shorter's length where
+# one begins the other.
+function first_difference(a: str, b: str) -> i64
+    i: i64 @ 0
+
+    while i < a.len() && i < b.len() && a[i] == b[i]
+        i @ i + 1
+
+    return i
+
+function is_letter(b: u8) -> bool
+    return bytes.is_alpha(b)
+
+# Whether two neighbouring bytes of a name belong to one part: no `_`
+# between them, both digits or both not, and no lower case letter followed by
+# an upper case one, where `originX` begins its `X`.
+function same_part(word: str, left: i64, right: i64) -> bool
+    a = word[left]
+    b = word[right]
+
+    if a == '_' || b == '_' || bytes.is_digit(a) != bytes.is_digit(b)
+        return false
+    return !(bytes.lower(a) == a && bytes.is_alpha(a) && bytes.lower(b) != b)
+
+# How many bytes the part of `word` holding byte `at` has.
+function part_length(word: str, at: i64) -> i64
+    start: i64 @ at
+
+    while start > 0 && same_part(word, left: start - 1, right: start)
+        start @ start - 1
+
+    finish: i64 @ at
+
+    while finish + 1 < word.len() && same_part(word, left: finish, right: finish + 1)
+        finish @ finish + 1
+
+    return finish - start + 1
+
+# Whether `b` is `a` with two neighbouring letters swapped, and nothing else
+# changed: `lenght` for `length`.
+function swapped(a: str, b: str) -> bool
+    if a.len() != b.len()
+        return false
+    i: i64 @ 0
+
+    while i < a.len() && a[i] == b[i]
+        i @ i + 1
+
+    if i + 1 >= a.len() || a[i] != b[i + 1] || a[i + 1] != b[i]
+        return false
+    return a.slice(from: i + 2, to: a.len()) == b.slice(from: i + 2, to: b.len())
+
+# Levenshtein distance, two rows, over bytes — exact for the ASCII names it
+# is asked about. Names are short; this is not a hot path.
+function distance(a: str, b: str) -> i64
+    previous: [i64] @ []
+    j: i64 @ 0
+
+    while j <= b.len()
+        previous @ previous.push(j)
+        j @ j + 1
+
+    i: i64 @ 0
+
+    while i < a.len()
+        current: [i64] @ [i + 1]
+        k: i64 @ 0
+
+        while k < b.len()
+            cost: i64 @ 1
+
+            if a[i] == b[k]
+                cost @ 0
+            current @ current.push(min3(a: previous[k] + cost, b: previous[k + 1] + 1, c: current[k] + 1))
+            k @ k + 1
+
+        previous @ current
+        i @ i + 1
+
+    return previous[b.len()]
+
+function min3(a: i64, b: i64, c: i64) -> i64
+    least: i64 @ a
+
+    if b < least
+        least @ b
+
+    if c < least
+        least @ c
+    return least
+
+## Tests
+
+test "a swap and one slip read as one name, two names apart do not"
+    assert swapped(a: "lenght", b: "length")
+    assert !swapped(a: "lenght", b: "lenhtg")
+    assert !one_reading(name: "xs", candidate: "ys")
+    assert one_reading(name: "Poimt", candidate: "Point")
+
+# Defect 135, the audit's R2: a slip where two names are told apart makes
+# another name, and one inside a word of the name mistypes this one.
+test "a slip at a name's end, in a digit or in a short part is a second name"
+    assert !one_reading(name: "printf", candidate: "print")
+    assert !one_reading(name: "origin_y", candidate: "origin_x")
+    assert !one_reading(name: "line2", candidate: "line1")
+    assert !one_reading(name: "count", candidate: "counts")
+    assert !one_reading(name: "Nodes", candidate: "Node")
+    assert !one_reading(name: "v2_len", candidate: "v1_len")
+    assert !one_reading(name: "pos_y_max", candidate: "pos_x_max")
+    assert !one_reading(name: "originY", candidate: "originX")
+    assert !one_reading(name: "ymin", candidate: "xmin")
+    assert !one_reading(name: "dist", candidate: "dist2")
+    assert one_reading(name: "totl", candidate: "total")
+    assert one_reading(name: "tottal", candidate: "total")
+    assert one_reading(name: "lenn", candidate: "len")
+    assert one_reading(name: "averge", candidate: "average")
+    assert one_reading(name: "lenght", candidate: "length")
+    assert part_length("pos_y_max", at: 4) == 1
+    assert part_length("originX", at: 2) == 6
+    assert part_length("originX", at: 6) == 1
+
+test "a case-only difference wins alone even among closer names"
+    candidates: [str] = ["print", "paint", "Point"]
+    assert nearest("point", candidates).join(",") == "Point"
+
+    # Without the case twin, ordinary distance applies, caller's order kept.
+    plain: [str] = ["print", "paint"]
+    assert nearest("point", plain).join(",") == "print,paint"
+
+test "the edit budget follows the name's length"
+    # A short name affords one edit: `fo` reaches `fn` (1) but not `bar` (3).
+    short: [str] = ["fn", "bar"]
+    assert nearest("fo", short).join(",") == "fn"
+
+    # A longer name affords two.
+    long: [str] = ["totale", "wholly"]
+    assert nearest("total", long).join(",") == "totale"
+    assert distance(a: "total", b: "totale") == 1
+    assert distance(a: "kitten", b: "sitting") == 3
+    assert distance(a: "", b: "abc") == 3

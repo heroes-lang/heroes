@@ -14,6 +14,13 @@
 # repaired by writing the one the position owns, which leaves every value where
 # it is. A label naming another position is the twin case, and its fix is a
 # guess (panel 127).
+#
+# Corrected 2026-09-30, defect 135, lane 135b: the paragraph above is false
+# for this call. A label the position owns certifies the order written, and
+# `move("a", "b")` may mean either order, since both arguments are `str`: the
+# certain-fix audit applied Go's `copy(dst, src)` order the same way and the
+# program copied the other way round. Both labels are offered as guesses,
+# each naming the other order, and `check --apply` writes nothing here.
 function copy_text(from: str, to: str) -> str
     return from + " -> " + to
 

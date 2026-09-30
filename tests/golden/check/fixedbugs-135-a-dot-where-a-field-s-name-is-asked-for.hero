@@ -1,0 +1,26 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b: the other half of
+# `fixedbugs-135-a-dot-on-a-record-s-name-read-as-a-value`. Where the
+# position asks for a `str`, a parameter, an annotated binding, an element of
+# a `[str]`, and no value spelled like the record is bound in the declaration,
+# `Room.width` means the field's name and `::` is the one repair: `check
+# --apply` writes every one, and the program checks clean and runs. A value
+# named `room` in another function is not in this one.
+
+record Room
+    name: str
+    width: i64
+
+function quoted(key: str) -> str
+    return "<" + key + ">"
+
+function make() -> Room
+    room = Room(name: "hall", width: 3)
+    return room
+
+function main()
+    print(quoted(Room.width))  #~ dot_on_a_record_name
+    k: str = Room.name  #~ dot_on_a_record_name
+    print(k)
+    names: [str] = [Room.name, Room.width]  #~ dot_on_a_record_name dot_on_a_record_name
+    print(names.len())
+    print(make().width)

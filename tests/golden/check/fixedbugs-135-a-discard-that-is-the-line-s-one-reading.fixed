@@ -1,0 +1,43 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b: the other half of
+# `fixedbugs-135-a-dropped-value-of-a-place-s-own-type`. Where a line is kept
+# for what a call does and its value is the call's by-product, of no place's
+# own type, not a `bool`, not in a `test` and not ending a function that
+# returns a value, the discard is the line's one reading and `_ = ` stays
+# certain: `check --apply` writes it, in a branch, in a loop, after a call
+# whose `@` already wrote its argument back, and in an arm as the block the
+# spec names, since `_ = ` on the arm's own line is `declaration_in_arm`.
+
+function compute(n: i64) -> i64
+    print(n)
+    return n * 2
+
+function note(n: i64) -> str
+    print(n)
+    return n.to_str()
+
+function step(@xs: [i64]) -> [i64]
+    xs @ xs.push(1)
+    return xs
+
+function main()
+    _ = compute(5)  #~ discarded_value
+    xs: [i64] @ []
+    _ = step(@xs)  #~ discarded_value
+    c = true
+
+    if c
+        _ = compute(1)  #~ discarded_value
+    else
+        _ = compute(2)  #~ discarded_value
+    i: i64 @ 0
+
+    while i < 2
+        i @ i + 1
+        _ = note(i)  #~ discarded_value
+
+    match xs.len()
+        0 =>
+            _ = compute(0)  #~ discarded_value
+        _ => print(xs.len())
+
+    print(xs.len())

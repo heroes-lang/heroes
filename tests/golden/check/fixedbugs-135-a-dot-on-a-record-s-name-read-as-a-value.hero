@@ -1,0 +1,53 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b (the certain-fix audit's
+# C10). Symptom: `Point.x`, where `Point` names a record and `x` is one of
+# its fields, took `::` as a `certain` fix wherever it stood, so `check
+# --apply` wrote `Point::x + point.y`, refused anew as `mixed_arithmetic`,
+# where the author meant the value `point`, and `"x=" + Point::x`, which
+# checked clean and printed `x=x` where `x=3` was meant, and read Java's
+# static field `Config.retries.to_str()` as the string `retries`. Cause: the
+# fix asked nothing of the position or the values around it. Now `::`, which
+# gives the field's name, a `str`, is a guess where the position asks for
+# nothing or a value spelled like the record is bound in the declaration, and
+# is not offered where the position asks for another type
+# (`check/field_names.dot_on_a_record_name`).
+
+record Point
+    x: i64
+    y: i64
+
+record Config
+    retries: i64
+
+record Room
+    name: str
+    width: i64
+
+function a_value_of_that_name(point: Point) -> i64
+    return Point.x + point.y  #~ dot_on_a_record_name
+
+function beside_a_string(point: Point) -> str
+    return "x=" + Point.x + ", y=" + point.y.to_str()  #~ dot_on_a_record_name
+
+function a_static_field() -> str
+    return "retries: " + Config.retries.to_str()  #~ dot_on_a_record_name
+
+function printed()
+    print(Point.x)  #~ dot_on_a_record_name
+
+function where_a_str_is_asked_beside_its_value(room: Room) -> str
+    k: str = Room.name  #~ dot_on_a_record_name
+    return k + room.name
+
+function where_its_value_comes_later() -> str
+    k: str = Room.name  #~ dot_on_a_record_name
+    room = Room(name: "hall", width: 3)
+    return k + room.name
+
+function where_another_type_is_asked() -> i64
+    return Config.retries  #~ dot_on_a_record_name
+
+function in_a_hole() -> str
+    return f"key {Room.name}"  #~ dot_on_a_record_name
+
+function compared() -> bool
+    return Room.name == "name"  #~ dot_on_a_record_name

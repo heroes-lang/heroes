@@ -1,0 +1,9 @@
+# The other half of `modulenear135/main.hero` (defect 135, lane 135b): a slip
+# inside a word of the name, a letter dropped or two neighbours swapped,
+# mistypes the one name the module has, so the rename stays certain, and the
+# program `check --apply` writes checks clean with its module and runs.
+use calc
+
+function main()
+    print(calc.averge([2, 4]))  #~ unknown_in_module
+    print(calc.mena([2, 4]))  #~ unknown_in_module

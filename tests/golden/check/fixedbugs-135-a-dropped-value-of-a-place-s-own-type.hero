@@ -1,0 +1,57 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b (the coordinator's audit of
+# every `certain` fix, its C2). Symptom: a line whose value nothing receives
+# took `_ = ` as a `certain` fix wherever the value came from a call on a
+# bare name written with a dot, so `push(xs, 4)`, `b.items.push(4)`,
+# `grid[0].push(1)` and `sort(xs)` were applied into programs that checked
+# clean and printed 0 where the element was meant to be kept, and so were a
+# user's function in either argument, a call through a function value, a
+# chain, and an operator over a cell: `total + x` printed 0 where 5 was
+# meant. Cause: `returns_its_receiver` read one spelling of the call. Now
+# the place the value was computed from that holds the value's own type is
+# searched through the receiver and the arguments in every spelling and
+# through an operator's operands, and where one is found, keeping the result
+# there and discarding it are both offered, neither applied
+# (`check/discard.own_place`).
+
+record Bag
+    items: [i64]
+
+function bumped(n: i64) -> i64
+    return n + 1
+
+function with_item(item: i64, bag: Bag) -> Bag
+    return Bag(items: bag.items.push(item))
+
+function sorted_copy(xs: [i64]) -> [i64]
+    return sort(xs)
+
+function called(xs: [i64])
+    push(xs, 4)  #~ discarded_value
+    sort(xs)  #~ discarded_value
+
+function through_a_field(@b: Bag)
+    b.items.push(4)  #~ discarded_value
+    push(b.items, 4)  #~ discarded_value
+
+function through_an_element(@grid: [[i64]])
+    grid[0].push(1)  #~ discarded_value
+
+function down_a_chain(@xs: [i64])
+    xs.push(4).push(5)  #~ discarded_value
+    sort(xs.slice(from: 0, to: 2))  #~ discarded_value
+
+function in_a_function_of_the_program(@count: i64, @b: Bag)
+    bumped(count)  #~ discarded_value
+    count.bumped()  #~ discarded_value
+    with_item(4, b)  #~ discarded_value
+
+function through_a_function_value(xs: [i64])
+    f: (function([i64]) -> [i64]) = sorted_copy
+    f(xs)  #~ discarded_value
+
+function through_an_operator(@total: i64, @name: str, @flags: i64)
+    x = 5
+    total + x  #~ discarded_value
+    1 + total  #~ discarded_value
+    name + "!"  #~ discarded_value
+    ~flags  #~ discarded_value

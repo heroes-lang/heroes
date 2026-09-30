@@ -1,0 +1,28 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b (the coordinator's audit of
+# every `certain` fix, its C2; reproduced by the coordinator at 10:53).
+# Symptom: in a `test`, `add(a: 1, b: 2) == 3` over an `add` that returns 4
+# took `_ = ` as a `certain` fix, and `heroes test` on what `check --apply`
+# wrote read `1 test, all passed`, where the `assert` the line had lost read
+# `1 test, 1 failed`. Cause: the discard knew nothing of where the line
+# stood. Now a value dropped in a `test` takes `_ = ` as a guess; a `bool`
+# there is offered `assert` first, as a guess too, since which of the two
+# the author meant is theirs to say (`Checker.in_test`).
+
+function add(a: i64, b: i64) -> i64
+    return a + b + 1
+
+function is_even(n: i64) -> bool
+    return n % 2 == 1
+
+test "a comparison that lost its assert"
+    add(a: 1, b: 2) == 3  #~ discarded_value
+
+test "a status that lost its assert"
+    is_even(4)  #~ discarded_value
+
+test "a comparison inside a loop of the test"
+    for i in range(from: 0, to: 3)
+        add(a: i, b: i) == i * 2  #~ discarded_value
+
+test "a value computed and dropped"
+    add(a: 1, b: 2)  #~ discarded_value

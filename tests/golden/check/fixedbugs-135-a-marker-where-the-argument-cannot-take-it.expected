@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-135-a-marker-where-the-argument-cannot-take-it.hero:34:10: error[marker_mismatch]: `bump` changes this argument, so the call site writes `@` too
+tests/golden/check/fixedbugs-135-a-marker-where-the-argument-cannot-take-it.hero:39:10: error[marker_mismatch]: `bump` changes this argument, so the call site writes `@` too
+tests/golden/check/fixedbugs-135-a-marker-where-the-argument-cannot-take-it.hero:43:10: error[marker_mismatch]: `bump` changes this argument, so the call site writes `@` too
+tests/golden/check/fixedbugs-135-a-marker-where-the-argument-cannot-take-it.hero:47:14: error[marker_mismatch]: `bump` changes this argument, so the call site writes `@` too
+tests/golden/check/fixedbugs-135-a-marker-where-the-argument-cannot-take-it.hero:50:10: error[marker_mismatch]: `bump` changes this argument, so the call site writes `@` too
+tests/golden/check/fixedbugs-135-a-marker-where-the-argument-cannot-take-it.hero:55:25: error[marker_mismatch]: `bump` changes this argument, so the call site writes `@` too
+tests/golden/check/fixedbugs-135-a-marker-where-the-argument-cannot-take-it.hero:59:13: error[marker_mismatch]: `add_one` changes this argument, so the call site writes `@` too

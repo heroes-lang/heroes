@@ -1,0 +1,10 @@
+tests/golden/check/fixedbugs-135-a-rename-into-a-second-name.hero:21:5: error[unknown_name]: nothing named `printf` is in scope — did you mean `print`?
+tests/golden/check/fixedbugs-135-a-rename-into-a-second-name.hero:25:23: error[unknown_name]: nothing named `origin_y` is in scope — did you mean `origin_x`?
+tests/golden/check/fixedbugs-135-a-rename-into-a-second-name.hero:29:20: error[unknown_name]: nothing named `line2` is in scope — did you mean `line1`?
+tests/golden/check/fixedbugs-135-a-rename-into-a-second-name.hero:33:21: error[unknown_name]: nothing named `v2_len` is in scope — did you mean `v1_len`?
+tests/golden/check/fixedbugs-135-a-rename-into-a-second-name.hero:37:24: error[unknown_name]: nothing named `pos_y_max` is in scope — did you mean `pos_x_max`?
+tests/golden/check/fixedbugs-135-a-rename-into-a-second-name.hero:41:22: error[unknown_name]: nothing named `originY` is in scope — did you mean `originX`?
+tests/golden/check/fixedbugs-135-a-rename-into-a-second-name.hero:45:26: error[unknown_name]: nothing named `item` is in scope — did you mean `items`?
+tests/golden/check/fixedbugs-135-a-rename-into-a-second-name.hero:49:26: error[unknown_name]: nothing named `count` is in scope — did you mean `counts`?
+tests/golden/check/fixedbugs-135-a-rename-into-a-second-name.hero:52:5: error[unknown_name]: nothing named `shows` is in scope — did you mean `show`?
+tests/golden/check/fixedbugs-135-a-rename-into-a-second-name.hero:54:35: error[unknown_type]: no type named `Nodes` — did you mean `Node`?

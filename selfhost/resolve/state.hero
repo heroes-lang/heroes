@@ -37,6 +37,7 @@ use resolve/vocab
 use resolve/binding as resolve_binding
 use inventory
 use resolve/errors
+use resolve/near_names as nearness
 use module/diagnostics
 
 ## The stack
@@ -256,7 +257,7 @@ function field_in_reach(r: Resolver, text: str) -> bool
 # offered the repair, so a did-you-mean in geom.hero cannot exempt a name
 # in main.hero (a dropped error, 2026-08-12).
 function near_names(@r: Resolver, name: str, candidates: [str]) -> [str]
-    near = errors.nearest(name, candidates)
+    near = nearness.nearest(name, candidates)
 
     for candidate in near
         keyed_add(@r.suggested, module: r.module, name: candidate)

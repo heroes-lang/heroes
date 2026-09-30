@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-135-a-discard-that-is-the-line-s-one-reading.hero:23:5: error[discarded_value]: this line's value has type `i64` and nothing receives it — write `_ = …` to discard it on purpose
+tests/golden/check/fixedbugs-135-a-discard-that-is-the-line-s-one-reading.hero:25:5: error[discarded_value]: this line's value has type `[i64]` and nothing receives it — write `_ = …` to discard it on purpose
+tests/golden/check/fixedbugs-135-a-discard-that-is-the-line-s-one-reading.hero:29:9: error[discarded_value]: this line's value has type `i64` and nothing receives it — write `_ = …` to discard it on purpose
+tests/golden/check/fixedbugs-135-a-discard-that-is-the-line-s-one-reading.hero:31:9: error[discarded_value]: this line's value has type `i64` and nothing receives it — write `_ = …` to discard it on purpose
+tests/golden/check/fixedbugs-135-a-discard-that-is-the-line-s-one-reading.hero:36:9: error[discarded_value]: this line's value has type `str` and nothing receives it — write `_ = …` to discard it on purpose
+tests/golden/check/fixedbugs-135-a-discard-that-is-the-line-s-one-reading.hero:39:14: error[discarded_value]: this line's value has type `i64` and nothing receives it — write `_ = …` to discard it on purpose
