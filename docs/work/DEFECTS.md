@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 6**
+**OPEN: 7**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -470,6 +470,49 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     gated by its cases and the compiler's own tests; the net is owed at the
     batch's close.
 
+    **Widened 2026-09-30 by the coordinator's certain-fix audit**, a measuring
+    lane at `6d781be1` that enumerated every site able to write a `certain`
+    fix (the 31 lines building one with `.certain`, the 78 `Fix(`
+    constructions and the helpers traced to their callers, and the 12 swap
+    rows of `keywords.hero`'s table: 42 sites) and probed each with a second
+    reading, about 165 probes (`scratchpad/certain-audit/`; each breach's
+    reproducer, what `--apply` wrote and the program meant, under
+    `findings/<site>/`). **16 of the 42 breach the rule**, 11 of them writing a
+    program that checks clean and means something else. The discard's `_ = `
+    (`discard_errors.hero:79`) is certain on `push(xs, 4)`, `b.items.push(4)`,
+    `grid[0].push(1)`, `sort(xs)` and a bare `x == 5`, since
+    `returns_its_receiver` reads only the dotted form with a bare receiver,
+    and in a `test` block it turns a comparison that lost its `assert` into a
+    passing test (reproduced by the coordinator at 10:53 on the trunk's
+    compiler: `add(a: 1, b: 2) == 3` over an `add` that returns 4 draws
+    `discarded_value`, `--apply` writes `_ = add(a: 1, b: 2) == 3`, and
+    `heroes test` reads `1 test, all passed`, where the `assert` meant reads
+    `1 failed`). The positional labels of `needs_label` and `missing_label`
+    (`data_errors.hero:193`, `:204`) certify the order written: Go's
+    `copy(dst, src)` order becomes `blit(from: screen, to: sprite)`, and
+    `Size(640, 480)` over fields `height, width` prints 480 where 640 is
+    meant. The rename's one slip between two meaningful names
+    (`resolve/errors.hero:187`: `printf` to `print`, `origin_y` to `origin_x`,
+    `line2` to `line1`), and the module's near name with no such guard at all
+    (`module/diagnostics.hero:85`: `calc.sub` to `calc.sum`, `calc.median` to
+    `calc.mean`). `::` for a dot on a record's name when a value of that name
+    is in scope (`check/access.hero:101`). Python's `\N{...}` and an
+    apostrophe meant as `'\''` (`escape_report.hero:43`, `literals.hero:204`).
+    Refused anew: the `@` of `marker_mismatch` on a place that cannot take it
+    (`data_errors.hero:219`), `while` for a `for` over an array or a string
+    (`parse/loop_habit.hero:52`), the arm sign on a string or a character
+    (`parse/arm_line.hero:50`), the token moved up in `(a` over `(b))`
+    (`parse/line_end.hero:221`), the nested bare function type
+    (`parse/type.hero:255`), `.must()` and `.default()`'s text found by the
+    last `.default(` in the whole call (`check/builtins.hero:413`), `0X` with
+    no digits (`number.hero:80`), and `int` inside an `extern` group made
+    `i64` where C's `int` is the spec's `i32` (`scan.hero:152`'s row). The
+    three sites the audit calls a wrong reading still refused
+    (`literals.hero:89`, `data_errors.hero:89`, `parse/signature.hero:116`)
+    and the one it found unreachable (`data_errors.hero:177`) are in its
+    table. What overlapping certain fixes do to `--apply` itself is not this
+    defect's: it is 137.
+
 - [ ] **136 — `fmt --in-place` and `check --apply --in-place` destroy the author's source when the write fails** | on a disk nearly full, `heroes fmt prog.hero --in-place` answers `error: cannot write`, exit 2, and leaves `prog.hero` at 0 bytes, the 62,706 bytes the author wrote gone; `heroes check --apply --in-place` leaves the file cut mid-token, 57,344 of the 59,312 bytes it meant to write, ending in `retu` | `selfhost/cli/syntax_cmds.hero:66` · `selfhost/cli/check.hero:110` · `runtime/parts/os.c:635` (`hero_file_write`) · `selfhost/cli/publish.hero` (defect 134's publish by rename)
 
     **Origin:** lane 134's agent, 2026-09-30, reading the code while it
@@ -509,5 +552,32 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     (`selfhost/library_source.hero:220`), with the same truncate-first body:
     whether that promise is kept the same way is a question about the
     library, and a change to what it does is the panel's.
+
+- [ ] **137 — `check --apply` applies overlapping certain fixes against the original text, so an enclosing fix overwrites, misaligns or overruns an inner one** | `print(total(xs.must()).must())` as a file's last line: `heroes check --apply` aborts, `panic: string slice out of range`, exit 134; with a line below it, exit 0 and the written text is `print(total(xs.must())rint(0)`, the line break, the margin and the next line's `p` eaten, which `--in-place` writes into the author's file | `selfhost/cli/check.hero:242-280` (`apply`) · the two sites whose span can enclose another fix, `check/builtins.hero:413` and `parse/type.hero:255`
+
+    **Origin:** the coordinator's certain-fix audit, 2026-09-30, at
+    `6d781be1` (`scratchpad/certain-audit/findings/C9-unwrapping_nothing/`,
+    `c9c` and `c9j`, and `P7-bare_function_type/`, `p7b` and `p7c`);
+    reproduced by the coordinator at 10:54 on the trunk's compiler, both
+    shapes, from those files.
+
+    **The cause, the audit's reading of `apply`, not yet proved by a
+    repair.** The fixes of one file are applied back to front, each with the
+    span and the replacement taken from the ORIGINAL text, so a fix whose
+    span encloses another is applied over text an inner fix has already
+    changed: it overwrites the inner edit, it is misaligned by the inner
+    edit's change of length, and where it ends inside that change it slices
+    past the end. `.must()` and `.default()`'s fix spans the whole call and
+    the bare function type's the whole type, the two the audit found able to
+    enclose another fix; its `p7c` shows the overwrite (both inner `int` swaps
+    undone, their `reserved_word` standing after `--apply`).
+
+    **Why it is a defect.** `check --apply` is the one command that writes
+    the compiler's certain fixes into the author's file without a reader, so
+    what it writes must be the fixes and nothing else: here it writes text no
+    fix proposed, joined across a line, or aborts outside the exit-code
+    contract (`.claude/rules/cli-surface.md`). The in-place write of the
+    corrupted text is inferred from `check.hero`'s write path, not run
+    (defect 136 is that write's other half).
 
 *******************************************************************************
