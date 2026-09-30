@@ -33,6 +33,8 @@ use cli/units
 # output another is writing (`ld: open() failed, errno=17`). A directory
 # and not a name, because on Windows the linker names the PDB after its
 # output, so a private file name would leave a new `.pdb` on every build.
+# Inside it the output is the module's own name, never a part of the path
+# asked for: an author's `-o` is not split to find one (`published_as`).
 function link_objects(t: toolchain.Toolchain, objects: [str], module: str, output: str?, level: str, sanitize: bool, search_include: [str], search_library: [str], package_flags: [str], link_names: [str]) -> str?
     line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
     line @ line.push(level)
@@ -72,7 +74,8 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
     stage = publish.private_name(binary)
     process.mkdir_all(stage)?
     err_path = publish.private_name(t.build + "/link-clang-stderr.txt")
-    line @ strings.with_all(list: line, more: ["-o", stage + "/" + base_of(binary)])
+    inner = module + process.exe_suffix()
+    line @ strings.with_all(list: line, more: ["-o", stage + "/" + inner])
     linked = toolchain.run_clang(line: line, what: "linking", err_path: err_path)
     publish.discard(err_path)
 
@@ -86,13 +89,14 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         return fail(code: "not_written", msg: "cannot read what the linker wrote in " + stage)
 
     for made in wrote.must()
-        # Beside the binary, at the name the linker gave it, and in the
-        # directory it made where it made one (a `.dSYM` is a tree).
+        # Where the linker made a directory, a `.dSYM` being a tree, it is
+        # made beside the binary as well.
         relative = made.slice(from: stage.len() + 1, to: made.len())
+        target = published_as(binary: binary, inner: inner, module: module, relative: relative)
 
         if base_of(relative) != relative
-            process.mkdir_all(beside(path: binary, name: beside(path: relative, name: ".")))?
-        published = publish.publish(staged: made, path: beside(path: binary, name: relative), keyed: keyed)
+            process.mkdir_all(beside(path: target, name: "."))?
+        published = publish.publish(staged: made, path: target, keyed: keyed)
 
         if published.is_err()
             _ = process.remove_tree(stage).is_err()
@@ -111,6 +115,20 @@ function binary_home(t: toolchain.Toolchain, line: [str], name: str) -> str
         words @ words.push(word.len().to_str() + ":" + word)
 
     return t.build + "/" + digest.digest(words.join("|")) + "/" + name
+
+# Where a file the linker wrote is published: the binary at the path asked
+# for, verbatim, and anything else under the binary's name and what followed
+# the module's own, `app.exe.pdb` for `p.pdb`, the name it had when the
+# linker wrote `app.exe.tmp`. **The author's path is never split to find a
+# name**: `-o C:\x\app.exe` is Windows' own separator, and a name cut at `/`
+# alone from it put the linker's output in a directory that is not there.
+function published_as(binary: str, inner: str, module: str, relative: str) -> str
+    if relative == inner
+        return binary
+
+    if strings.starts_with(text: relative, prefix: module)
+        return binary + relative.slice(from: module.len(), to: relative.len())
+    return binary + "." + relative
 
 # The last part of a path, and a sibling of it: `-o same` has no directory
 # at all, and a sibling of it is a name in the working directory.
@@ -237,6 +255,13 @@ test "a binary's home is named by every word of its link line, and an author's -
     )
     assert binary == wanted
     assert process.path_exists(wanted)
+
+    # The author's path as written: on Windows `\` is its separator and
+    # elsewhere a byte of a name, and neither is split to name the output.
+    assert !process.mkdir_all(t.build + "/sub").is_err()
+    slashed = t.build + "/sub\\app" + process.exe_suffix()
+    assert link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(slashed), level: "-O0", sanitize: false, search_include: none, search_library: none, package_flags: none, link_names: none).must() == slashed
+    assert process.path_exists(slashed)
     missing = link_objects(
         t,
         objects: [runtime, made],
