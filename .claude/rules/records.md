@@ -263,6 +263,11 @@ reading:
   (journal 061: a lane resumed an hour before was still working when the
   coordinator committed, and the trunk's seed was not its source's fixpoint).
 
+**A lane's agent starts no paid run its brief does not name** (author
+instruction 2026-09-30): no `claude -p` session, API call or cloud run of its
+own initiative. One it finds worth running goes in its report, with its size,
+for the coordinator to decide.
+
 **And one thing measured NOT to help, 2026-09-29**: copying the trunk's
 `build/` cache into a fresh lane (`cp -c -R`, 0.27 s for 316 entries) bought
 nothing, `heroes build selfhost/main.hero` reading 41.6 s of CPU cold and 43.2 s

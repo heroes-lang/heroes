@@ -1,0 +1,11 @@
+function double(n: i64) -> i64
+    return n * 2
+
+function main()
+    total = double(3
+
+    if total > 2
+        print(total)
+
+    print(double(total)))
+    print(total +)
