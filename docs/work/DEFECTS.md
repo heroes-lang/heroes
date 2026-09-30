@@ -185,6 +185,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     APPLY-OTHER 0 and 17 hidden second mistakes where the baseline read 153;
     then Linux x86-64, 930 tests and 19 suites at 0 failed by 11:40, and the
     Windows box at `6d781be1`, the same code, 930 and 19 at 0 failed by 11:42.
+    Before the push, Linux arm64 at `ec1fd0a9`, the same code again, 930 and
+    19 at 0 failed by 14:46.
 
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
@@ -546,6 +548,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     APPLY-OTHER 0 and 17 hidden second mistakes where the baseline read 153;
     then Linux x86-64, 930 tests and 19 suites at 0 failed by 11:40, and the
     Windows box at `6d781be1`, the same code, 930 and 19 at 0 failed by 11:42.
+    Before the push, Linux arm64 at `ec1fd0a9`, the same code again, 930 and
+    19 at 0 failed by 14:46.
 
 - [ ] **136 — `fmt --in-place` and `check --apply --in-place` destroy the author's source when the write fails** | on a disk nearly full, `heroes fmt prog.hero --in-place` answers `error: cannot write`, exit 2, and leaves `prog.hero` at 0 bytes, the 62,706 bytes the author wrote gone; `heroes check --apply --in-place` leaves the file cut mid-token, 57,344 of the 59,312 bytes it meant to write, ending in `retu` | `selfhost/cli/syntax_cmds.hero:66` · `selfhost/cli/check.hero:110` · `runtime/parts/os.c:635` (`hero_file_write`) · `selfhost/cli/publish.hero` (defect 134's publish by rename)
 
