@@ -1,0 +1,277 @@
+# The certain fixes one stage proposed, written into the text they were made
+# from, never two that touch the same bytes (design.md §4.17; CLAUDE.md §8;
+# defect 137). `check --apply` is the one command that writes the compiler's
+# fixes into the author's file with no reader in between, so what it writes
+# must be the fixes and nothing else.
+#
+# **Every fix's span and replacement are the ORIGINAL text's.** A fix whose
+# span encloses another's was made from the text before the inner one ran:
+# `.must()` over a call whose argument holds another `.must()` replaces the
+# call with a receiver that still holds the inner one, and a function type
+# written without its parentheses is wrapped whole, the types inside it as
+# they were. Until this file the fixes that touched were applied back to
+# front, each on the text the later ones had left, so the enclosing one
+# overwrote the inner edit, landed shifted by the inner edit's change of
+# length, and sliced past the text's end where it ended inside it. Measured
+# 2026-09-30: `print(total(xs.must()).must())` as a file's last line aborted
+# `check --apply` at exit 134, `panic: string slice out of range`; with a
+# line below it the text written was `print(total(xs.must())rint(0)`.
+#
+# So where fixes touch, the inner ones are written and the ones enclosing or
+# crossing them are WITHHELD and counted: `cli/check.hero` asks the stage
+# again of the text this left, which is the one place an enclosing fix can
+# be made from the text it will change.
+
+use source
+use source_extent
+use diag
+use token
+use stable
+
+# What one pass wrote, and what it did not.
+record Applied
+    # The root file's text with the chosen fixes written in.
+    text: str
+
+    # How many fixes were written, and how many were withheld because they
+    # touch the bytes of one that was.
+    applied: i64
+    withheld: i64
+
+    # Certain fixes outside the file being written, as `file:line` once each,
+    # and certain fixes whose span is not one (it ends before it starts):
+    # neither is written, and the caller says so.
+    elsewhere: [str]
+    malformed: i64
+
+function applied(diagnostics: [diag.Diagnostic], s: source.Source) -> Applied
+    edits: [diag.Fix] @ []
+    elsewhere: [str] @ []
+    malformed: i64 @ 0
+    limit = source_extent.root_end(s)
+
+    for d in diagnostics
+        for fix in d.fixes
+            if fix.certainty != .certain
+                continue
+
+            if fix.span.start < 0 || fix.span.end < fix.span.start
+                malformed @ malformed + 1
+                continue
+
+            if fix.span.end > limit
+                found = source.locate(s, fix.span.start)
+                at = found.file + ":" + found.line.to_str()
+
+                if !listed(names: elsewhere, name: at)
+                    elsewhere @ elsewhere.push(at)
+                continue
+            edits @ edits.push(fix)
+
+    ordered = in_order(edits)
+    keep = chosen(ordered)
+    whole = source_extent.user_text(s)
+    pieces: [str] @ []
+    cut: i64 @ 0
+    written: i64 @ 0
+    withheld: i64 @ 0
+    at: i64 @ 0
+
+    # The kept fixes in the order of their spans, each piece of the text
+    # between two of them copied once (defect 105: copying the whole text at
+    # every fix was quadratic).
+    while at < ordered.len()
+        if keep[at] == .write
+            fix = ordered[at]
+            pieces @ pieces.push(whole.slice(from: cut, to: fix.span.start))
+            pieces @ pieces.push(fix.replacement)
+            cut @ fix.span.end
+            written @ written + 1
+
+        if keep[at] == .withhold
+            withheld @ withheld + 1
+        at @ at + 1
+
+    pieces @ pieces.push(whole.slice(from: cut, to: whole.len()))
+    return Applied(
+        text: pieces.join(""),
+        applied: written,
+        withheld: withheld,
+        elsewhere: elsewhere,
+        malformed: malformed
+    )
+
+# What becomes of one fix: written, withheld for the next round, or dropped
+# as the twin of one written, the same bytes made into the same text.
+variant Choice
+    write
+    withhold
+    twin
+
+# The fixes by where their span starts, then where it ends, a tie in the
+# order they were found: two stable passes, by end and then by start.
+function in_order(edits: [diag.Fix]) -> [diag.Fix]
+    ends: [i64] @ []
+
+    for fix in edits
+        ends @ ends.push(fix.span.end)
+
+    by_end: [diag.Fix] @ []
+
+    for at in stable.order(by: ends)
+        taken = edits[at]
+        by_end @ by_end.push(taken)
+
+    starts: [i64] @ []
+
+    for fix in by_end
+        starts @ starts.push(fix.span.start)
+
+    ordered: [diag.Fix] @ []
+
+    for at in stable.order(by: starts)
+        taken = by_end[at]
+        ordered @ ordered.push(taken)
+
+    return ordered
+
+# Which of the ordered fixes to write. Fixes that cannot touch are split
+# into runs first, a run ending where the next fix starts at or past every
+# end before it, so a file of fixes that touch nothing costs one pass; inside
+# a run the shortest are taken first, so an inner fix is written and the one
+# enclosing it waits.
+function chosen(ordered: [diag.Fix]) -> [Choice]
+    keep: [Choice] @ []
+
+    for _ in ordered
+        keep @ keep.push(.write)
+
+    first: i64 @ 0
+
+    while first < ordered.len()
+        stop: i64 @ first + 1
+        reach: i64 @ ordered[first].span.end
+
+        while stop < ordered.len() && (ordered[stop].span.start < reach || one_point(one: ordered[stop - 1], two: ordered[stop]))
+            if ordered[stop].span.end > reach
+                reach @ ordered[stop].span.end
+            stop @ stop + 1
+
+        if stop - first > 1
+            keep @ settle_run(ordered, keep: keep, from: first, to: stop)
+        first @ stop
+
+    return keep
+
+# One run of fixes that may touch: the shortest first, each written unless
+# it touches one already written, in which case it waits for the next round;
+# a fix identical to one written, span and text, is its twin and is dropped.
+function settle_run(ordered: [diag.Fix], keep: [Choice], from: i64, to: i64) -> [Choice]
+    out: [Choice] @ keep
+    lengths: [i64] @ []
+
+    for at in range(from: from, to: to)
+        lengths @ lengths.push(ordered[at].span.end - ordered[at].span.start)
+
+    taken: [i64] @ []
+
+    for offset in stable.order(by: lengths)
+        at = from + offset
+        verdict: Choice @ .write
+
+        for other in taken
+            if same(one: ordered[at], two: ordered[other])
+                verdict @ .twin
+            else
+                if verdict == .write && touches(one: ordered[at], two: ordered[other])
+                    verdict @ .withhold
+
+        out[at] @ verdict
+
+        if verdict == .write
+            taken @ taken.push(at)
+
+    return out
+
+# Two fixes touch where one's bytes reach into the other's: two spans that
+# overlap, or two insertions at one place that write different texts, whose
+# order no fix can say. An insertion at either end of a replaced span, or
+# two spans that only meet, do not.
+function touches(one: diag.Fix, two: diag.Fix) -> bool
+    if one.span.start < two.span.end && two.span.start < one.span.end
+        return true
+    return one_point(one: one, two: two)
+
+# Two insertions at one place, which a run must hold together although
+# neither reaches past the other.
+function one_point(one: diag.Fix, two: diag.Fix) -> bool
+    return empty(one.span) && empty(two.span) && one.span.start == two.span.start
+
+function empty(span: token.Span) -> bool
+    return span.end == span.start
+
+function same(one: diag.Fix, two: diag.Fix) -> bool
+    return one.span.start == two.span.start && one.span.end == two.span.end && one.replacement == two.replacement
+
+function listed(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
+
+## Tests
+
+# A diagnostic carrying one certain fix over `start` to `end` of the text.
+function fixing(start: i64, end: i64, text: str) -> diag.Diagnostic
+    fix = diag.Fix(title: "t", replacement: text, span: token.Span(start: start, end: end), certainty: .certain)
+    none: [str] = []
+    return diag.Diagnostic(
+        kind: .error_kind,
+        code: "c",
+        message: "m",
+        span: token.Span(start: start, end: end),
+        fixes: [fix],
+        notes: none
+    )
+
+# The text "abcdefghij", fixed.
+function over(diagnostics: [diag.Diagnostic]) -> Applied
+    return applied(diagnostics, source.new_source(name: "t.hero", text: "abcdefghij"))
+
+test "fixes that touch nothing are all written, in the order of their spans"
+    one = over(
+        [fixing(start: 6, end: 8, text: "X"), fixing(start: 1, end: 2, text: "Y"), fixing(start: 2, end: 2, text: "+")]
+    )
+    assert one.text == "aY+cdefXij"
+    assert one.applied == 3
+    assert one.withheld == 0
+
+test "an inner fix is written and the one enclosing it waits, as does the longer of two that cross"
+    nested = over([fixing(start: 1, end: 8, text: "BCDEFGH"), fixing(start: 3, end: 5, text: "DE")])
+    assert nested.text == "abcDEfghij"
+    assert nested.applied == 1
+    assert nested.withheld == 1
+    crossing = over([fixing(start: 0, end: 5, text: "12345"), fixing(start: 4, end: 7, text: "Z")])
+    assert crossing.text == "abcdZhij"
+    assert crossing.withheld == 1
+
+test "a fix twice is written once, two insertions at one place wait, and one at a span's edge does not"
+    twins = over([fixing(start: 2, end: 4, text: "Q"), fixing(start: 2, end: 4, text: "Q")])
+    assert twins.text == "abQefghij"
+    assert twins.applied == 1
+    assert twins.withheld == 0
+    two = over([fixing(start: 5, end: 5, text: "<"), fixing(start: 5, end: 5, text: ">")])
+    assert two.text == "abcde<fghij"
+    assert two.withheld == 1
+    edge = over(
+        [fixing(start: 5, end: 5, text: "@"), fixing(start: 5, end: 7, text: "FG"), fixing(start: 7, end: 7, text: "!")]
+    )
+    assert edge.text == "abcde@FG!hij"
+    assert edge.withheld == 0
+
+test "a span that ends before it starts is counted and never written"
+    bad = over([fixing(start: 6, end: 3, text: "never"), fixing(start: 0, end: 1, text: "A")])
+    assert bad.text == "Abcdefghij"
+    assert bad.malformed == 1
+    assert bad.applied == 1

@@ -623,6 +623,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     whether that promise is kept the same way is a question about the
     library, and a change to what it does is the panel's.
 
+    **2026-09-30, lane 136, a file the author names is replaced whole or not
+    at all, and a write that fails or is killed leaves it as it was**:
+    repaired at `1f173a42`, gated by its cases and the compiler's own tests;
+    the net is owed at the lane's close.
+
 - [ ] **137 — `check --apply` applies overlapping certain fixes against the original text, so an enclosing fix overwrites, misaligns or overruns an inner one** | `print(total(xs.must()).must())` as a file's last line: `heroes check --apply` aborts, `panic: string slice out of range`, exit 134; with a line below it, exit 0 and the written text is `print(total(xs.must())rint(0)`, the line break, the margin and the next line's `p` eaten, which `--in-place` writes into the author's file | `selfhost/cli/check.hero:242-280` (`apply`) · the two sites whose span can enclose another fix, `check/builtins.hero:413` and `parse/type.hero:255`
 
     **Origin:** the coordinator's certain-fix audit, 2026-09-30, at
@@ -649,6 +654,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     contract (`.claude/rules/cli-surface.md`). The in-place write of the
     corrupted text is inferred from `check.hero`'s write path, not run
     (defect 136 is that write's other half).
+
+    **2026-09-30, lane 136, `check --apply` writes each certain fix into the
+    text it was made for, and asks the stage again until it has none left**
+    (widened by the lane: a chain the checker reports at its first link lost
+    one link per `--apply`): repaired at `5bec1b03`, gated by its cases and
+    the compiler's own tests; the net ran at the lane's close, its counts in
+    the closing commit's body.
 
 - [ ] **138 — a program that declares a C function the Heroes library also binds, with other marks, stops `check` with an internal error** | a five-line file whose `extern "hero_os.h"` group declares `function hero_file_read(path: cstr, @status: i64) -> str`, where the library writes `path: cstr lent`: `heroes check` prints `internal error: a diagnostic landed inside the Heroes library, at its line 112: [contract_differs] ...` and exits 2, with or without `--permissive`, where a `contract_differs` at the author's line 2 and exit 1 are owed | `selfhost/check/contracts.hero:256` (`differs`, which puts the message at `at`) and its caller's choice of `at` · `selfhost/cli/check.hero:73-82` and `selfhost/cli/compile.hero:96` (the guard that turns a diagnostic inside the library into the internal error)
 

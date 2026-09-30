@@ -175,6 +175,66 @@ int64_t hero_fs_rename(const char *from, const char *to);
  * and a file another process holds open. `parts/os.c` holds it. */
 int64_t hero_fs_why(void);
 
+/* REPLACING A FILE WHOSE NAME THE AUTHOR GAVE, WHOLE OR NOT AT ALL (defect
+ * 136): the source `fmt --in-place` and `check --apply --in-place` rewrite, and
+ * an `-o`. `parts/replace.c` carries why a rename owes the file it replaces
+ * everything besides its bytes, and what each call below answers; the policy
+ * that asks them is `selfhost/cli/publish.hero`'s. Each sets `hero_fs_why`. */
+
+/* The file a write to `path` lands in: `path`, or the file its chain of links
+ * finally names, which need not exist. "" when the chain cannot be followed. */
+HeroStr hero_fs_landing(const char *path);
+
+/* What is at `path`, the link itself where it is one. */
+#define HERO_FS_UNKNOWN -1
+#define HERO_FS_ABSENT 0
+#define HERO_FS_FILE 1
+#define HERO_FS_DIRECTORY 2
+#define HERO_FS_LINK 3
+#define HERO_FS_OTHER 4
+int64_t hero_fs_kind(const char *path);
+
+/* How many names the file at `path` has; -1 when it cannot be asked. */
+int64_t hero_fs_links(const char *path);
+
+/* 1 when `path` could be opened for writing, as `fopen` would ask, else 0. */
+int64_t hero_fs_writable(const char *path);
+
+/* `text` into a NEW file at `staged`, flushed, and given the owner, group,
+ * permission bits, flags, ACL and extended attributes of `like` unless `like`
+ * is "". HERO_STAGE_DONE, or the step that failed; a failed stage leaves no
+ * file. */
+#define HERO_STAGE_DONE 0
+#define HERO_STAGE_CREATE 1
+#define HERO_STAGE_WRITE 2
+#define HERO_STAGE_OWNER 3
+#define HERO_STAGE_MODE 4
+#define HERO_STAGE_ATTRIBUTES 5
+#define HERO_STAGE_FLUSH 6
+#define HERO_STAGE_FLAGS 7
+int64_t hero_file_stage(const char *staged, HeroStr text, const char *like);
+
+/* `staged` put in place of `path`, and the directory holding them flushed. */
+int64_t hero_fs_replace(const char *staged, const char *path);
+
+/* A staged file that could not be put in place, removed even where it carries
+ * an ACL that denies deleting it. HERO_OS_OK or HERO_OS_FAILED. */
+int64_t hero_file_unstage(const char *staged);
+
+/* What the cases build their files with: the permission bits (Windows keeps
+ * read-only alone, 0444 or 0666), `chmod`, a second name, a symbolic link, an
+ * ACL entry denying this user the file's deletion, and the one flag each
+ * platform carries that a case can set (nodump; hidden on Windows). A shape a
+ * platform or a filesystem does not have answers HERO_OS_UNSUPPORTED. */
+#define HERO_OS_UNSUPPORTED 4
+int64_t hero_fs_mode(const char *path);
+int64_t hero_fs_set_mode(const char *path, int64_t mode);
+int64_t hero_fs_link(const char *existing, const char *name);
+int64_t hero_fs_symlink(const char *target, const char *name);
+int64_t hero_fs_deny_delete(const char *path);
+int64_t hero_fs_flagged(const char *path);
+int64_t hero_fs_set_flag(const char *path);
+
 /* RUNNING A PROGRAM, BY ARGUMENT LIST RATHER THAN BY SENTENCE.
  *
  * Three calls because one is not writable: `argv: [str]` is `error[ffi_type]`
@@ -237,6 +297,12 @@ void hero_run_arg(HeroStr word);
  * program's answer reads the same number. 0 is no limit and is the default.
  * `parts/run.c` carries the reason this is a runtime call and not a program. */
 void hero_run_limit(int64_t seconds);
+
+/* A ceiling of `bytes` on any file the NEXT child writes, so that a write past
+ * it fails as a full disk fails (defect 136's case in the net). 1 where the
+ * next child will be held to it, 0 where the platform has no such limit
+ * (Windows); 0 bytes clears it. `parts/run.c` carries why. */
+int64_t hero_run_limit_writes(int64_t bytes);
 int64_t hero_run_go(const char *program, const char *in_path,
                     const char *out_path,
                     const char *err_path, int64_t *status);

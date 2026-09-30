@@ -18,6 +18,7 @@ use print/guard
 use cli/table as cli_table
 use cli/argv
 use cli/io
+use cli/publish
 
 # heroes parse <file.hero> [--dump-ast]: without the flag a syntax
 # check, silent on success; with it the tree — but only when the file
@@ -63,10 +64,14 @@ function run_fmt(path: str, s: source.Source, inv: argv.Invocation) -> cli_table
 
     if formatted == source_extent.user_text(s)
         return .ok_exit
-    written = write_file(path: path, text: formatted)
+
+    # Whole or not at all, and the file stays what it was but its bytes
+    # (`cli/publish.hero`, defect 136): this was `write_file` on the author's
+    # own path, which emptied it first, so a full disk left 0 bytes.
+    written = publish.rewrite(path: path, text: formatted)
 
     if written.is_err()
-        io.eprint(text: "error: cannot write `" + path + "`")
+        io.eprint(text: "error: " + publish.message_of(written))
         return .failed_exit
     return .ok_exit
 

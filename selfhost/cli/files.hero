@@ -1,0 +1,204 @@
+# What is at a path, and a file replaced whole: the machine's half of
+# rewriting a file whose name the author gave (design.md §1.12, §3.1; defect
+# 136). Where a write lands once its links are followed, what is there,
+# whether it may be written, and a new file staged with the old one's
+# identity and then put in its place. The C is `runtime/parts/replace.c`,
+# which carries why each call exists and what was measured; the policy that
+# asks these questions, and the words said when one refuses, are
+# `cli/publish.hero`'s.
+#
+# Split out of `cli/process.hero` on 2026-09-30, the day these calls took it
+# past §11's 300 lines: `process` is how the compiler reaches the machine in
+# general, and this is the one question with a part of the runtime of its own.
+
+use cli/process
+
+# `lent` on every path: each call reads it while it runs and keeps nothing
+# of it (panel 171).
+extern "hero_os.h"
+    function hero_fs_landing(path: cstr lent) -> str
+    function hero_fs_kind(path: cstr lent) -> i64
+    function hero_fs_links(path: cstr lent) -> i64
+    function hero_fs_writable(path: cstr lent) -> i64
+    function hero_file_stage(staged: cstr lent, text: str, like: cstr lent) -> i64
+    function hero_fs_replace(staged: cstr lent, path: cstr lent) -> i64
+    function hero_file_unstage(staged: cstr lent) -> i64
+    function hero_fs_mode(path: cstr lent) -> i64
+    function hero_fs_set_mode(path: cstr lent, mode: i64) -> i64
+    function hero_fs_link(existing: cstr lent, name: cstr lent) -> i64
+    function hero_fs_symlink(target: cstr lent, name: cstr lent) -> i64
+    function hero_fs_deny_delete(path: cstr lent) -> i64
+    function hero_fs_flagged(path: cstr lent) -> i64
+    function hero_fs_set_flag(path: cstr lent) -> i64
+    constant HERO_OS_OK: i64
+    constant HERO_OS_UNSUPPORTED: i64
+    constant HERO_FS_ABSENT: i64
+    constant HERO_FS_FILE: i64
+    constant HERO_FS_DIRECTORY: i64
+    constant HERO_FS_LINK: i64
+    constant HERO_FS_OTHER: i64
+    constant HERO_STAGE_DONE: i64
+    constant HERO_STAGE_CREATE: i64
+    constant HERO_STAGE_WRITE: i64
+    constant HERO_STAGE_OWNER: i64
+    constant HERO_STAGE_MODE: i64
+    constant HERO_STAGE_ATTRIBUTES: i64
+    constant HERO_STAGE_FLUSH: i64
+    constant HERO_STAGE_FLAGS: i64
+
+# What is at a path, the link itself where it is one: `other` is what is
+# neither a file, a directory nor a link (a device, a FIFO, `NUL`), and
+# `unknown` a path the question itself failed on, `process.because()` saying
+# why.
+variant Entry
+    absent
+    file
+    directory
+    link
+    other
+    unknown
+
+function entry(path: str) -> Entry
+    kind = hero_fs_kind(path: path.cstr())
+
+    if kind == HERO_FS_ABSENT
+        return .absent
+
+    if kind == HERO_FS_FILE
+        return .file
+
+    if kind == HERO_FS_DIRECTORY
+        return .directory
+
+    if kind == HERO_FS_LINK
+        return .link
+
+    if kind == HERO_FS_OTHER
+        return .other
+    return .unknown
+
+# Whether what is at `path` is neither a file, a directory nor a link: a
+# device, a FIFO, a socket, `NUL`. Nothing there is renamed over.
+function is_special(path: str) -> bool
+    match entry(path)
+        .other                                          => return true
+        .absent | .file | .directory | .link | .unknown => return false
+
+# The file a write to `path` lands in: `path` itself, or the file its chain
+# of symbolic links finally names, which need not exist yet. The failure's
+# message is the operating system's reason alone, for the caller's sentence.
+function landing(path: str) -> str?
+    found = hero_fs_landing(path: path.cstr())
+
+    if found.len() == 0
+        return fail(code: "no_landing", msg: process.because())
+    return ok(found)
+
+# How many names the file at `path` has, following a link; -1 where it
+# cannot be asked.
+function names_of(path: str) -> i64
+    return hero_fs_links(path: path.cstr())
+
+# Whether `path` could be opened for writing, the question `fopen` asked of
+# it, without emptying it. The failure's message is the reason alone.
+function writable(path: str) -> ()?
+    if hero_fs_writable(path: path.cstr()) != 1
+        return fail(code: "not_writable", msg: process.because())
+    return ok()
+
+# `text` into a NEW file at `staged`, flushed to the device, and given the
+# owner, group, permission bits, flags, ACL and extended attributes `like`
+# has, unless `like` is "". A failure leaves no file at `staged`, and its code
+# names the step that failed: `create`, `write`, `owner`, `mode`, `flags`,
+# `attributes` or `flush`; its message is the reason alone.
+function stage(staged: str, text: str, like: str) -> ()?
+    step = hero_file_stage(staged: staged.cstr(), text: text, like: like.cstr())
+
+    if step == HERO_STAGE_DONE
+        return ok()
+    why = process.because()
+
+    # A step the header names and this does not is said by its number, never
+    # passed off as one of these.
+    name: str @ "step " + step.to_str()
+
+    if step == HERO_STAGE_FLUSH
+        name @ "flush"
+
+    if step == HERO_STAGE_CREATE
+        name @ "create"
+
+    if step == HERO_STAGE_WRITE
+        name @ "write"
+
+    if step == HERO_STAGE_OWNER
+        name @ "owner"
+
+    if step == HERO_STAGE_MODE
+        name @ "mode"
+
+    if step == HERO_STAGE_FLAGS
+        name @ "flags"
+
+    if step == HERO_STAGE_ATTRIBUTES
+        name @ "attributes"
+    return fail(code: name, msg: why)
+
+# `staged` put in place of `path` by one rename, and their directory flushed.
+# The failure's message is the reason alone.
+function replace(staged: str, path: str) -> ()?
+    if hero_fs_replace(staged: staged.cstr(), path: path.cstr()) != HERO_OS_OK
+        return fail(code: "not_replaced", msg: process.because())
+    return ok()
+
+# A staged file that could not take its place, removed even where it carries
+# the ACL that refused the rename (measured: a plain removal left it beside
+# the author's file). The failure's message is the reason alone.
+function unstage(staged: str) -> ()?
+    if hero_file_unstage(staged: staged.cstr()) != HERO_OS_OK
+        return fail(code: "not_removed", msg: process.because())
+    return ok()
+
+# The permission bits of the file at `path`, following a link, -1 where there
+# is none; Windows keeps read-only alone, 0444 or 0666. With `set_mode`, a
+# second name and a symbolic link, what a case makes its files with.
+function mode_of(path: str) -> i64
+    return hero_fs_mode(path: path.cstr())
+
+function set_mode(path: str, mode: i64) -> ()?
+    if hero_fs_set_mode(path: path.cstr(), mode: mode) != HERO_OS_OK
+        return fail(code: "chmod_failed", msg: "could not change the mode of " + path + process.because())
+    return ok()
+
+function second_name(existing: str, name: str) -> ()?
+    if hero_fs_link(existing: existing.cstr(), name: name.cstr()) != HERO_OS_OK
+        return fail(code: "link_failed", msg: "could not name " + existing + " also " + name + process.because())
+    return ok()
+
+function symbolic_link(target: str, name: str) -> ()?
+    if hero_fs_symlink(target: target.cstr(), name: name.cstr()) != HERO_OS_OK
+        return fail(code: "link_failed", msg: "could not make " + name + " a link to " + target + process.because())
+    return ok()
+
+# Two shapes only some platforms have, for the cases, each `ok(false)` where
+# this platform or filesystem has no such thing, which a case reads as nothing
+# to hold rather than as a failure: an ACL entry denying this user the file's
+# deletion (Darwin), and the one flag a rewrite carries that a case can set,
+# `nodump` (hidden on Windows), which `flagged` reads back as 1 or 0, or -1
+# where it cannot be asked.
+function deny_delete(path: str) -> bool?
+    return made(answer: hero_fs_deny_delete(path: path.cstr()), what: "deny deleting " + path)
+
+function set_flag(path: str) -> bool?
+    return made(answer: hero_fs_set_flag(path: path.cstr()), what: "flag " + path)
+
+function flagged(path: str) -> i64
+    return hero_fs_flagged(path: path.cstr())
+
+function made(answer: i64, what: str) -> bool?
+    if answer == HERO_OS_UNSUPPORTED
+        return ok(false)
+
+    if answer != HERO_OS_OK
+        return fail(code: "not_made", msg: "could not " + what + process.because())
+    return ok(true)

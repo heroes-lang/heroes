@@ -1,0 +1,12 @@
+# Defect 137: `.must()` over a call whose argument holds another `.must()`,
+# on the file's last line. The two certain fixes enclose each other, and
+# `check --apply` wrote the enclosing one, made from the original text, into
+# the text the inner one had left and past its end: `panic: string slice out
+# of range`, exit 134. `main.fixed` is what one `--apply` writes now.
+function total(n: i64) -> i64
+    return n + 1
+
+function main()
+    xs = 4
+    #~v bad_operand bad_operand
+    print(total(xs.must()).must())
