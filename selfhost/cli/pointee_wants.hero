@@ -1,0 +1,144 @@
+# What the pointee check asks of a header (design.md §4.19, §1.12; panel
+# 103; defect 083): every `@` parameter of an extern whose pointee has a
+# width and a sign to be held to, or a depth. `cli/pointee.hero` asks the
+# header and keeps the answers; this file only decides what is asked, from
+# the declaration in hand. Split out of that file on 2026-09-30, when defect
+# 134's publishing passed it over §11's 300 lines, along the seam its own
+# two headings drew: what is asked, and the check itself.
+
+use ast
+use source
+use widths
+use check/table
+use check/state
+use ir/containers
+use emit/externs as emit_externs
+use handles
+use cli/pointee_ask
+use parse
+use resolve
+use checker
+use ir/lower
+
+# Every extern function of the program with a numeric `@` parameter. The
+# narrowing is a fact about the declaration in hand: mutable, and an
+# integer or a float. A `ptr` points at what the header says and nothing
+# can be asked of it; a `cstr` is the writability check's (panel 058); a
+# record is the header's own struct.
+function pointees(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [pointee_ask.Pointee]
+    out: [pointee_ask.Pointee] @ []
+
+    for f in p.functions
+        if emit_externs.extern_spans(decls, f).header.is_err()
+            continue
+        name = source.span_text(s, decls[f.decl].name)
+        found = source.locate(s, decls[f.decl].name.start)
+        index: i64 @ 0
+
+        for slot_id in f.params
+            slot = f.slots[slot_id]
+            declared = numeric_out(c, slot)
+
+            if !declared.is_err()
+                out @ out.push(
+                    pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: declared.must(), file: found.file, line: found.line, depth: false)
+                )
+            opaque = opaque_out(c, slot, decls)
+
+            if !opaque.is_err()
+                out @ out.push(
+                    pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: opaque.must(), file: found.file, line: found.line, depth: true)
+                )
+            index @ index + 1
+
+    return out
+
+# The C spelling of a numeric `@` parameter's declared type, or absent for
+# any other kind of slot.
+function numeric_out(c: state.Checked, slot: containers.Slot) -> str?
+    mutable: bool @ false
+
+    match slot.kind
+        .param_slot ps =>
+            if ps.mutable
+                mutable @ true
+        .local_slot | .synthetic_slot => mutable @ mutable
+
+    if !mutable
+        return fail(code: "none", msg: "not an @ parameter")
+
+    match table.get(c.types, slot.ty)
+        .int_ty ik                                                 => return ok(widths.int_c_type(ik.kind))
+        .float_ty fk                                               => return ok(widths.float_c_type(fk.kind))
+        .bool | .str | .ptr | .cstr | .unit                        => return fail(code: "none", msg: "not numeric")
+        .array | .fixed | .map | .fallible | .function_ty | .named => return fail(code: "none", msg: "not numeric")
+        .case_ty | .failure | .generic | .error                    => return fail(code: "none", msg: "not numeric")
+
+    return fail(code: "none", msg: "unreached")
+
+# An OPAQUE `@` parameter — a `ptr`, or a handle, which is a pointer already —
+# asks a different question of the header: not the pointee's width but its
+# DEPTH (defect 083, panel 176's llm-ergonomist, reading the specification
+# alone). `@p: Mem` over `record Mem tag void` hands C the address of the
+# program's cell, `void **`, and a header that takes `void *p` accepts it in
+# silence, because C converts any object pointer to `void *`; `@p: ptr` is
+# cast to `(void *)` at the call for panel 103's reason and lands the same
+# way. Measured: `eat(void *p)` freed the cell's address, 134, three of three,
+# and `wipe(void *p)` wrote eight zero bytes into the cell at exit 0. So the
+# header's parameter must point at a POINTER — `T **`, `void **`, a typedef of
+# one — and `check_unit` asks that in C11 with `__builtin_classify_type`,
+# which reads 5 for every pointer type on clang 18, 21 and 22 (measured on
+# Darwin and both Linux legs). A `record` by value stays out: `@rec: Point`
+# over `Point *p` is the correct out-parameter for a struct, and depth one is
+# right there. What is returned is a word for the marker, not a C type: the
+# depth line needs none.
+function opaque_out(c: state.Checked, slot: containers.Slot, decls: [ast.Decl]) -> str?
+    mutable: bool @ false
+
+    match slot.kind
+        .param_slot ps =>
+            if ps.mutable
+                mutable @ true
+        .local_slot | .synthetic_slot => mutable @ mutable
+
+    if !mutable
+        return fail(code: "none", msg: "not an @ parameter")
+
+    match table.get(c.types, slot.ty)
+        .ptr => return ok("ptr")
+        .named n =>
+            if handles.is_handle(decls[n.decl])
+                return ok("handle")
+            return fail(code: "none", msg: "a record by value")
+        .int_ty | .float_ty | .bool | .str | .cstr | .unit => return fail(code: "none", msg: "not opaque")
+        .array | .fixed | .map | .fallible | .function_ty  => return fail(code: "none", msg: "not opaque")
+        .case_ty | .failure | .generic | .error            => return fail(code: "none", msg: "not opaque")
+
+    return fail(code: "none", msg: "unreached")
+
+## Tests
+
+test "a numeric @ parameter is asked its width, an opaque one its depth, and each ask carries its line"
+    text = "extern \"stdio.h\"\n    function getline(@line: ptr, @n: i32, stream: ptr) -> i64\n    function frexp(x: f64, @e: i32) -> f64\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    wanted = pointees(low.program, c, s, parsed.decls)
+    named: [str] @ []
+
+    for one in wanted
+        if one.file == "t.hero"
+            kind: str @ "width"
+
+            if one.depth
+                kind @ "depth"
+            named @ named.push(
+                one.name + "." + one.param + "@" + one.index.to_str() + ":" + one.declared + ":" + one.line.to_str() + ":" + kind
+            )
+
+    # `@line: ptr` is opaque and asks for depth (defect 083); `@n: i32` and `@e: i32`
+    # are numeric and ask for width; `stream: ptr` and `x: f64` are not `@` and ask
+    # nothing.
+    assert named == ["getline.line@0:ptr:2:depth", "getline.n@1:int32_t:2:width", "frexp.e@1:int32_t:3:width"]

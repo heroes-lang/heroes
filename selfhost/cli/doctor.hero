@@ -14,6 +14,7 @@ use cli/table as cli_table
 use cli/io
 use cli/toolchain
 use cli/process
+use cli/publish
 use cli/clang_floor
 
 record Check
@@ -34,18 +35,22 @@ record Check
 #
 # stderr is discarded rather than shown: a `--version` probe that
 # complains is a probe that failed, and its complaint is noise on a
-# report about the machine.
+# report about the machine. The answer lands under a private name
+# (`cli/publish.hero`), removed once read: it was `build/doctor-out.txt`
+# for every doctor in the tree until 2026-09-30 (defect 134), so two at once
+# could read each other's `uname` as a clang version.
 function capture(program: str, words: [str], build_dir: str) -> str?
-    out_path = build_dir + "/doctor-out.txt"
+    out_path = publish.private_name(build_dir + "/doctor-out.txt")
     process.mkdir_all(build_dir)?
     ran = process.run(program: program, words: words, out: out_path, err: process.discard())
+    said = read_file(out_path)
+    publish.discard(out_path)
 
     if !ran.started
         return fail(code: "none", msg: "the program is not on this machine")
 
     if ran.code != 0
         return fail(code: "none", msg: "the command could not run")
-    said = read_file(out_path)
 
     if said.is_err()
         return fail(code: "none", msg: "nothing was said")
@@ -129,11 +134,11 @@ function checks(build_dir: str, runtime_hint: str) -> [Check]
     cache_ok: bool @ false
 
     if !made.is_err()
-        probe = build_dir + "/.doctor-probe"
+        probe = publish.private_name(build_dir + "/.doctor-probe")
 
         if !write_file(path: probe, text: "ok").is_err() && !read_file(probe).is_err()
             cache_ok @ true
-            _ = process.remove_file(probe).is_err()
+        publish.discard(probe)
     detail: str @ "cannot write to " + build_dir + "/"
 
     if cache_ok

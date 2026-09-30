@@ -558,6 +558,25 @@ const char *hero_args_raw(int64_t index) {
     return hero_argv[index + 1];
 }
 
+/* THE OPERATING SYSTEM'S OWN REASON FOR THE LAST FILESYSTEM FAILURE ON THIS
+ * THREAD, `hero_run_why`'s counterpart for the files a build writes (defect
+ * 134). A build that could not publish an object said *cannot publish* and no
+ * more, where the number is the whole difference between a full disk, a
+ * read-only directory and a file another process holds open: three repairs,
+ * one silence.
+ *
+ * `errno` where a C call failed, `GetLastError()` where a Win32 one did; 0
+ * after a call that succeeded, because each call below clears it on the way
+ * in. Defined here rather than in `parts/fs.c` because this part is included
+ * first and `hero_file_write` below sets it too. Thread-local for the reason
+ * `hero_run_why_code` is: two threads' failures are two answers. */
+#include <errno.h>
+static _Thread_local int64_t hero_fs_why_code = 0;
+
+int64_t hero_fs_why(void) {
+    return hero_fs_why_code;
+}
+
 /* The whole file, read with `fseek`/`ftell`/`fread`.
  *
  * A binary read (`"rb"`), because a `str` is bytes: §4.3 measures and indexes a
@@ -633,19 +652,28 @@ HeroStr hero_file_read(const char *path, int64_t *status) {
 }
 
 int64_t hero_file_write(const char *path, HeroStr text) {
+    hero_fs_why_code = 0;
     FILE *file = fopen(path, "wb");
     if (file == NULL) {
+        hero_fs_why_code = (int64_t)errno;
         return HERO_OS_FAILED;
     }
     int64_t len = hero_str_len(text);
     if (len > 0) {
         size_t put = fwrite(hero_str_cstr(text), 1, (size_t)len, file);
         if (put != (size_t)len) {
+            hero_fs_why_code = (int64_t)errno;
             fclose(file);
             return HERO_OS_FAILED;
         }
     }
-    return fclose(file) == 0 ? HERO_OS_OK : HERO_OS_FAILED;
+    /* A full disk is often reported here and not at `fwrite`: the bytes sat in
+     * the stream's buffer until the close tried to write them. */
+    if (fclose(file) != 0) {
+        hero_fs_why_code = (int64_t)errno;
+        return HERO_OS_FAILED;
+    }
+    return HERO_OS_OK;
 }
 
 /* The error stream, written whole. No status, and that absence is the point.

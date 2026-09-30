@@ -443,6 +443,43 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     process while a second rewrites them, which would lose a warning from
     every later replay, 057's class.
 
+    **2026-09-30, lane 134, a private file has a name no other process uses,
+    and a failed filesystem call says why**: repaired at `bc402e8d`, gated by
+    its cases and the compiler's own tests; the net is owed at the lane's close.
+
+    **2026-09-30, lane 134, a cached object, its replay and its record are
+    published as one**: repaired at `e2f475fe`, gated by its cases and the
+    compiler's own tests; the net is owed at the lane's close.
+
+    **2026-09-30, lane 134, a binary is linked under a name of its own and
+    lands where its link line says**: repaired at `3ff8af48`, gated by its
+    cases and the compiler's own tests; the net is owed at the lane's close.
+
+    **2026-09-30, lane 134, a failure that is not clang's refusal is not
+    worded as one**: repaired at `c1f32307`, gated by its cases and the
+    compiler's own tests; the net is owed at the lane's close.
+
+    **2026-09-30, lane 134, the net holds it, six builds of one program
+    started at once all succeed**: `bf2b29ed`, gated by the net's own tests
+    and `cache`; the net is owed at the lane's close.
+
+    **2026-09-30, lane 134, the Windows arm of a removal keeps its answer in
+    the width it was given**: repaired at `ad117d2f`, found and gated on the
+    Windows box; the net is owed at the lane's close.
+
+    **2026-09-30, lane 134, publish's cases force a failed rename the one way
+    every platform refuses**: `b5462c86`, gated by the compiler's own tests
+    on this Mac and on the Windows box; the net is owed at the lane's close.
+
+    **2026-09-30, lane 134, an author's -o is published as written, never
+    split to name the linker's output**: repaired at `d45de7c6`, gated by its
+    cases and the compiler's own tests here and on the Windows box; the net
+    is owed at the lane's close.
+
+    **2026-09-30, lane 134, three comments name what the repairs left**:
+    `722bc973`, the seed byte-identical across it. The lane's gate follows
+    in its closing commit, the net on this Mac, Windows and Linux x86-64.
+
 - [ ] **135 — a `certain` fix chosen from one reading, where another is as likely, writes a program that means something else or is refused anew** | `print("\(n)")` costs `unknown_escape` with the certain fix `\\(`, which checks clean and prints the hole's text where Swift's author meant its value; `True` costs `unknown_name` with the certain rename to the one in-scope name within two edits, `run` or `Value`, which then costs `type_mismatch`; a `,` left out before a mutable argument, `hints: nullptr @res`, costs `misplaced_mutable_marker` with the certain `: ` that writes `nullptr : @res`, refused anew | `selfhost/literals.hero:60` (the escape's fix) · `selfhost/resolve/errors.hero` (`suggest`, `nearest`) · `selfhost/grammar_expr.hero` (`misplaced_mutable_marker`)
 
     **Origin:** the coordinator's measurement lane, 2026-09-30, the parser
