@@ -1,0 +1,17 @@
+# Fixed 2026-09-30, defect 130's class, lane recovery-b4 (panel 183 R1,
+# ratified 2026-09-30; the ffi-pragmatist's prediction). Symptom: design.md §4.19's
+# own sqlite group with `sqlite3_open`'s `)` left out and one `)` too many on
+# `sqlite3_close` drew one message, `expected_params_close` at the end of the
+# first signature, and the stray `)` went unsaid until it was fixed: two
+# turns. The next member's `function` before a name ends the reach at the
+# member's margin, so the opener is named and the stray `)` is told, both in
+# one `check`.
+
+extern "sqlite3.h" link "sqlite3"
+    constant SQLITE_OK: i64
+    record Db tag sqlite3
+    function sqlite3_open(path: cstr lent, @out: Db acquires sqlite3_close -> i64  #~ unclosed_bracket
+    function sqlite3_close(db: Db consumes)) -> i64  #~ expected_extern_signature
+
+function main()
+    print(1)

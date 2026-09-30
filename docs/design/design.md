@@ -1941,8 +1941,14 @@ invents:**
   indent freely (Python's discipline; §4.9's newline-separated literals rely on terminators, which
   are inserted unchanged everywhere, brackets included). At bracket depth zero every line's
   indentation is structural: a long expression is broken inside parentheses or not at all. An
-  unclosed opener is a compile error reported at end of file, citing the opener — without that
-  diagnostic one missing `)` would silently swallow the rest of the file's layout.
+  unclosed opener is a compile error, reported at the opener. Its reach ends at the end of the
+  file, or earlier at the first line inside the brackets whose first word no bracket holds in a
+  program that compiles (a declaration's first word or a statement's, `if`, `match`, `function`
+  before a name, and none of them before a `:`) at a margin no deeper than the statement the
+  brackets opened in, strictly shallower for `else`: there the lexer names every opener still
+  open and lays the line out as what it begins. Without that, one missing `)` would silently
+  swallow the rest of the file's layout, or pair with a stray closer below and never be named.
+  (Panel 183 R1 and R4, ratified 2026-09-30.)
   Trailing-operator continuation at depth zero (Nim's rule) was considered and deferred: it enters
   only if the measurement baseline shows models actually produce that break shape. (Panel 007,
   predictions on record.)

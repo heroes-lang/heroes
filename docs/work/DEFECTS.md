@@ -310,6 +310,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     its cases and the compiler's own tests; the net is owed at the batch's
     close.
 
+    **2026-09-30, lane recovery-b4, a head inside a bracket left open above
+    it names no missing body, and an `else` there is its `if`'s** (panel
+    183's critic, the regression of `52b2d378`): repaired at `3a93d155`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close.
+
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
     **Origin:** lane 129's agent, 2026-09-29, beside defect 129 (its finding 2,
