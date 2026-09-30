@@ -623,6 +623,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     corrupted text is inferred from `check.hero`'s write path, not run
     (defect 136 is that write's other half).
 
+    **2026-09-30, lane 136, `check --apply` writes each certain fix into the
+    text it was made for, and asks the stage again until it has none left**
+    (widened by the lane: a chain the checker reports at its first link lost
+    one link per `--apply`): repaired at `5bec1b03`, gated by its cases and
+    the compiler's own tests; the net ran at the lane's close, its counts in
+    the closing commit's body.
+
 - [ ] **138 — a program that declares a C function the Heroes library also binds, with other marks, stops `check` with an internal error** | a five-line file whose `extern "hero_os.h"` group declares `function hero_file_read(path: cstr, @status: i64) -> str`, where the library writes `path: cstr lent`: `heroes check` prints `internal error: a diagnostic landed inside the Heroes library, at its line 112: [contract_differs] ...` and exits 2, with or without `--permissive`, where a `contract_differs` at the author's line 2 and exit 1 are owed | `selfhost/check/contracts.hero:256` (`differs`, which puts the message at `at`) and its caller's choice of `at` · `selfhost/cli/check.hero:73-82` and `selfhost/cli/compile.hero:96` (the guard that turns a diagnostic inside the library into the internal error)
 
     **Origin:** the coordinator, 2026-09-30 at 16:22, on the trunk's compiler
