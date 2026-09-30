@@ -279,6 +279,13 @@ function before_a_colon(text: str, after: i64) -> bool
 
     return at < text.len() && text[at] == ':' && (at + 1 == text.len() || text[at + 1] != ':')
 
+# Does the line at `at` open with a name, a word that is no keyword
+# (`layout.a_name_after_a_kept_end`, panel 183 R2)?
+function opens_with_a_name(text: str, at: i64) -> bool
+    if at >= text.len() || !(bytes.is_alpha(text[at]) || text[at] == '_')
+        return false
+    return keywords.keyword(word_at(text, at: at)).is_err()
+
 # A word that begins a declaration or a statement and can continue nothing:
 # a line that begins with one is never the rest of the line above it.
 function starts_afresh(kind: token.TokenKind) -> bool
@@ -338,6 +345,9 @@ test "a line ends a reach by its first word and its margin, and a label or a fun
         assert !ends_a_reach(text, at: 4, spaces: 4, margin: 4)
 
     assert ends_a_reach("    constant K: i64\n", at: 4, spaces: 4, margin: 4)
+    assert opens_with_a_name("    y = 3 )\n", at: 4)
+    assert !opens_with_a_name("    if c\n", at: 4)
+    assert !opens_with_a_name("    (x)\n", at: 4)
 
 test "a sign alone on its line, or before a comment, finds the arm's arrow on the next line with words"
     assert arrow_below("-\n        1 => 10\n", from: 1)
