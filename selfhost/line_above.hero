@@ -11,6 +11,7 @@
 # |---|---|
 # | `headed_by_a_refused_word` | `open_line.refuse_the_end` and `open_line.goes_on_below` |
 # | `heads_a_declaration`, `opens_a_line`, `names_a_declaration` | `open_line` |
+# | `closes_type_parameters` | `open_line.refuse_the_end` |
 
 use token
 use state
@@ -35,6 +36,30 @@ function headed_by_a_refused_word(tokens: [token.Token], breaks: [state.Break], 
     if head.kind != .error || foreign_at.repair_at(text, head.span).is_err()
         return false
     return next_line.opening_keyword(text, at: head.span.start).is_err()
+
+# Does the line whose last significant token is at `at` end with the `>` of
+# type parameters written after a `record`'s or a `variant`'s name, `record
+# Pair<T>`? Type parameters are a function's alone (spec § 9), so the line is
+# its head's mistake, which the parser tells once, at the `<`; and the `>` is
+# no operator for a line below to go on from: joined, the fields were read
+# into the head, two messages and a certain join that wrote `variant
+# Shape<T> one` (defect 135's class, lane recovery-b3).
+function closes_type_parameters(tokens: [token.Token], breaks: [state.Break], at: i64) -> bool
+    if tokens[at].kind != .gt
+        return false
+    head = line_head(tokens, breaks: breaks, at: at)
+    k = tokens[head].kind
+
+    if k != .kw_record && k != .kw_variant || head + 2 >= at || tokens[head + 1].kind != .ident || tokens[head + 2].kind != .lt
+        return false
+    i: i64 @ head + 3
+
+    while i < at
+        if tokens[i].kind != .ident && tokens[i].kind != .comma
+            return false
+        i @ i + 1
+
+    return true
 
 # The index of the first token of the line that holds the token at `at`: past
 # the last line end before it, or past the last break the lexer joined, where

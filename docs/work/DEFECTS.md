@@ -498,4 +498,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `4e5ef22e`, gated by its cases and the compiler's own tests; the net is
     owed at the batch's close.
 
+    **2026-09-30, lane recovery-b3, a value then `@` in an argument list reads
+    as a named mutable argument only where the value is a bare name, and as a
+    `,` left out always** (the instrument's `missing-comma`): repaired at
+    `83e77694`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
 *******************************************************************************
