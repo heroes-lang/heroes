@@ -177,7 +177,7 @@ int64_t hero_fs_remove(const char *path) {
     }
     for (int wait_ms = 5; wait_ms <= 320; wait_ms *= 2) {
         Sleep((DWORD)wait_ms);
-        int directory = hero_fs_is_directory(path);
+        int64_t directory = hero_fs_is_directory(path);
         if (directory ? RemoveDirectoryA(path) != 0 : remove(path) == 0) {
             hero_fs_why_code = 0;
             return HERO_OS_OK;
