@@ -1,0 +1,36 @@
+# Fixed 2026-09-30, defect 131's class, lane recovery-b4, beside
+# `fixedbugs-131-a-sigil-before-a-name-is-one-message`. Symptom: `@v` where a
+# value is read, `x = @v`, `if @v == 1`, `for y in @xs`, was one message
+# with no fix; in an f-string's hole it cost four, and doubled in an
+# argument, `bump(@@w)`, three. design.md §4.17: an `@` before a name there
+# is the sigil habit, read as the name, one message whose certain fix
+# deletes it, and every sigil after it on the same line is one more deletion
+# of that message.
+
+function bump(@n: i64)
+    n @ n + 1
+
+function twice(n: i64) -> i64
+    m = n * 2
+    return m  #~ expected_expression
+
+function main()
+    v: i64 @ 1
+    w: i64 @ 2
+    x = v + w  #~ expected_expression
+    print(x)
+
+    if v == 1  #~ expected_expression
+        print(v)
+    xs = [v, w]
+
+    for y in xs  #~ expected_expression
+        print(y)
+
+    while v < 3  #~ expected_expression
+        v @ v + 1
+    print(f"v is {v}")  #~ expected_expression
+    bump(@w)  #~ expected_expression
+    count: i64 @ 0
+    count @ count + 1  #~ expected_expression
+    print(count + twice(w))

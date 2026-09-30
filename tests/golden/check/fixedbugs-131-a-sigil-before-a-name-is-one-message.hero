@@ -1,0 +1,80 @@
+# Fixed 2026-09-30, defect 131's class, lane recovery-b4 (the recovery
+# instrument's `at-prefix`: 134 EXTRA and 18 ELSEWHERE of 152 on the compiler
+# before this repair). Symptom: `@v = e`, Ruby's sigil name, cost
+# `expected_expression` and `not_a_place` at its one `@`; below a block that
+# had just closed, the `@` was taken for the mutation of the statement the
+# block ended, and `not_a_place` landed on that statement's `if` or `match`,
+# lines above the mistake. design.md §4.17 makes `@name` in prefix position a
+# syntax error, always: it is one message now, at the `@`, and the line is
+# read as the statement it is with the sigil gone, which its certain fix
+# writes: the mutation `v @ e`, the discard `_ = e`, the declaration
+# `v: T @ e`.
+
+# The instrument's shape, in a loop's body.
+function total_of(xs: [i64]) -> i64
+    sum: i64 @ 0
+
+    for x in xs
+        @sum = sum + x  #~ expected_expression
+
+    return sum
+
+# First in a body, and through a field and an element.
+function places()
+    v: i64 @ 0
+    @v = v + 1  #~ expected_expression
+    p: Pair @ Pair(a: 0, b: 0)
+    @p.a = 2  #~ expected_expression
+    xs: [i64] @ [0, 0]
+    @xs[1] = 3  #~ expected_expression
+    print(v + p.a + p.b + xs[1])
+
+# The sigil over the language's own `@`, and doubled, Ruby's class variable:
+# only the sigil goes.
+function over_its_own_marker()
+    v: i64 @ 0
+    @v @ v + 4  #~ expected_expression
+    @@v = v + 1  #~ expected_expression
+    print(v)
+
+# The instrument's ELSEWHERE: below a block that just closed, the `@` opens
+# the next statement, and is never the mutation of the one the block ended.
+function below_a_closed_block(n: i64)
+    count: i64 @ 0
+
+    if n % 2 == 1
+        print(n)
+    @count = count + 1  #~ expected_expression
+
+    match n
+        0 => print(0)
+        _ => print(1)
+    @count = count + 2  #~ expected_expression
+
+    while count < 5
+        count @ count + 1
+    @count = count + 3  #~ expected_expression
+    print(count)
+
+# In an arm's body, on the arm's line and in its block.
+function in_an_arm(n: i64)
+    v: i64 @ 0
+
+    match n
+        0 => @v = 1  #~ expected_expression
+        1 =>
+            @v = 2  #~ expected_expression
+        _ => @v = 3  #~ expected_expression
+    print(v)
+
+# A discard, where `_` is never a place, and a cell declared with the sigil
+# over its own `@`: each has the one reading the fix writes.
+function a_discard_and_a_cell()
+    @_ = total_of([1, 2])  #~ expected_expression
+    @w: i64 @ 0  #~ expected_expression
+    w @ w + 1
+    print(w)
+
+record Pair
+    a: i64
+    b: i64
