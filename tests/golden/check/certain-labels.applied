@@ -2,13 +2,6 @@
 # both about §4.9's rule that a field is always named. The position determines
 # which field it is, so the repair is not a guess — and applying both leaves a
 # program that checks clean, which is the property `x.fixed` exists to assert.
-#
-# Corrected 2026-09-30, defect 135, lane 135b: for `Point(3, 4)` the position
-# does not determine it. Both fields are `i64`, so the order written is one
-# reading and the other order another, and `Size(640, 480)` over fields
-# `height, width` printed 480 where 640 was meant; its two labels are
-# guesses. `z` names no field, so its rename stays certain, and the answer is
-# the `.applied` of that one rename.
 record Point
     x: i64
     y: i64
@@ -17,3 +10,11 @@ function main()
     a = Point(x: 1, y: 2)  #~ wrong_label
     b = Point(3, 4)  #~ missing_label missing_label
     print(a.x + b.y)
+
+# Corrected 2026-09-30, defect 135, lane 135b, below the program so the lines
+# `tests/harness/suite_surface.hero` cites stay where they were: for
+# `Point(3, 4)` the position does not determine which field is which. Both
+# fields are `i64`, so the order written is one reading and the other order
+# another, and `Size(640, 480)` over fields `height, width` printed 480 where
+# 640 was meant; its two labels are guesses. `z` names no field, so its rename
+# stays certain, and the answer is the `.applied` of that one rename.
