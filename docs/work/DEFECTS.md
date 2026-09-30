@@ -492,4 +492,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     by its cases and the compiler's own tests; the net is owed at the batch's
     close.
 
+    **2026-09-30, lane recovery-b3, a rename is certain only where the name's
+    own letters allow the one candidate, and `True` is `true`** (the
+    instrument's `python-bool`, and `p` renamed to `s`): repaired at
+    `4e5ef22e`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
 *******************************************************************************

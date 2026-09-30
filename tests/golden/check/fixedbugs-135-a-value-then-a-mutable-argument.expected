@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-135-a-value-then-a-mutable-argument.hero:32:9: error[misplaced_mutable_marker]: a value before `@` is a named mutable argument's name, `name: @value`, or an argument whose `,` was left out, `value, @name` — `:` names the parameter, `@` marks the argument
+tests/golden/check/fixedbugs-135-a-value-then-a-mutable-argument.hero:38:12: error[misplaced_mutable_marker]: a value before `@` is a named mutable argument's name, `name: @value`, or an argument whose `,` was left out, `value, @name` — `:` names the parameter, `@` marks the argument
+tests/golden/check/fixedbugs-135-a-value-then-a-mutable-argument.hero:43:18: error[expected_args_close]: expected `)`, or `,` and another argument, found `@`
+tests/golden/check/fixedbugs-135-a-value-then-a-mutable-argument.hero:50:9: error[expected_args_close]: expected `)`, or `,` and another argument, found `@`
+tests/golden/check/fixedbugs-135-a-value-then-a-mutable-argument.hero:51:13: error[expected_args_close]: expected `)`, or `,` and another argument, found `@`
+tests/golden/check/fixedbugs-135-a-value-then-a-mutable-argument.hero:52:11: error[expected_args_close]: expected `)`, or `,` and another argument, found `@`
+tests/golden/check/fixedbugs-135-a-value-then-a-mutable-argument.hero:53:10: error[expected_args_close]: expected `)`, or `,` and another argument, found `@`

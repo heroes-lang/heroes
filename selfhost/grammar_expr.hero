@@ -88,6 +88,7 @@ use parse/statement_end
 use parse/refused_literal
 use parse/heads
 use parse/orphans
+use parse/argument_marker
 use operators
 
 ## The precedence table — §4.14, read from the bottom up
@@ -661,17 +662,20 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
                     span: a.exprs[value].span
                 )
 
-            if cursor.at(c, .at)
-                # `f(a @ n)`: recovered as the `f(a: @n)` it meant, so the
-                # mistake costs one diagnostic and the tree stays usable.
+            # A value, then `@`: `f(a @ n)` read as the `f(a: @n)` it may mean,
+            # and anything else as the `,` left out before the next argument,
+            # each told once (`parse/argument_marker`).
+            if cursor.at(c, .at) && argument_marker.a_name_before(a, value: value, labelled: !name.is_err(), marked: mutable)
                 named = a.exprs[value].span
-                misplaced_mutable_marker(@c)
+                argument_marker.misplaced(@c, value_end: named.end)
                 repaired = parse_expr(@c, @a, text)
                 arguments @ arguments.push(ast.Arg(name: ok(named), mutable: true, value: repaired))
             else
                 arguments @ arguments.push(ast.Arg(name: name, mutable: mutable, value: value))
 
-            if open_ended && unclosed.ends_at_the_line(c)
+            if cursor.at(c, .at)
+                argument_marker.comma_missing(@c, text: text, value_end: a.exprs[value].span.end)
+            else if open_ended && unclosed.ends_at_the_line(c)
                 reading @ false
             else
                 cursor.skip_terminators(@c)
@@ -680,7 +684,7 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
     unclosed.end_arguments(@c, text: text, open: at)
     return arguments
 
-## The two habits from other languages, each met with a certain fix
+## A habit from other languages, met with a certain fix
 
 # `f(a, b,)` — the Python and JavaScript habit. Heroes has one spelling per
 # program (§4.15), so the trailing comma cannot also be it; the fix is certain
@@ -695,22 +699,6 @@ function trailing_comma(@c: cursor.Cursor, comma: token.Span)
         diag.Fix(title: "delete the trailing comma", replacement: "", span: comma, certainty: .certain)
     )
     c.diagnostics @ c.diagnostics.push(d)
-
-# `f(a @ n)` — `@` where the `:` of a named argument belongs. The two rules
-# compose the other way round: `:` names the parameter (§4.9), `@` marks the
-# argument (§4.8), so it is `f(a: @n)`.
-function misplaced_mutable_marker(@c: cursor.Cursor)
-    at = cursor.current_span(c)
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "misplaced_mutable_marker",
-        message: "a named mutable argument is written `name: @value` — `:` names the parameter, `@` marks the argument",
-        span: at
-    )
-    d.fixes @ d.fixes.push(
-        diag.Fix(title: "write `: @` instead of `@`", replacement: ": @", span: at, certainty: .certain)
-    )
-    c.diagnostics @ c.diagnostics.push(d)
-    _ = cursor.bump(@c)
 
 ## The statement half of the knot
 
@@ -1380,7 +1368,7 @@ test "a trailing comma is refused with the deletion as its fix"
     assert c.diagnostics[0].fixes[0].certainty == .certain
     assert c.diagnostics[0].fixes[0].replacement == ""
 
-test "the two rules compose the other way round: f(a @ n) is f(a: @n)"
+test "a name before `@` reads as f(a: @n) and as f(a, @n), neither certain"
     stream: [token.Token] = [
         tok(.ident, start: 0, end: 1)
         tok(.lparen, start: 1, end: 2)
@@ -1393,8 +1381,12 @@ test "the two rules compose the other way round: f(a @ n) is f(a: @n)"
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
     _ = parse_expr(@c, @a, "f(a @ n)")
+    assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "misplaced_mutable_marker"
     assert c.diagnostics[0].fixes[0].replacement == ": @"
+    assert c.diagnostics[0].fixes[1].replacement == ", @"
+    assert c.diagnostics[0].fixes[0].certainty == .guess
+    assert c.diagnostics[0].fixes[1].certainty == .guess
 
 test "inside brackets a newline is a separator, not a statement end"
     # [1
