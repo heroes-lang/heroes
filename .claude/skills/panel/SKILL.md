@@ -141,6 +141,29 @@ is a full panel.
      context**, and the synthesis records the answer: that is the measurement
      the sitting asked for, and a yes voids the reading until it is re-run
      from a copy.
+
+     **And the seat runs as a fresh session outside the repository, never as
+     a subagent** (author instruction 2026-09-30, given on panel 183's
+     finding). The copy was not enough: at panel 183 the seat, launched as a
+     subagent of the coordinator's session and reading nothing outside its
+     folder, answered `context: yes`, because a subagent is handed the
+     repository's `CLAUDE.md`, the memory index and a git status whose commit
+     subjects named the sitting's own area (*told once*), whatever its brief
+     says. The sitting re-ran it clean, and that is the route from now on:
+     a folder of its own under the scratchpad, outside the repository and
+     outside any git tree, with no `CLAUDE.md` in or above it; in it the
+     spec's copy at the sitting's commit, the tasks, and a brief carrying the
+     seat's method and output structure (`.claude/agents/llm-ergonomist.md`)
+     without the project's names; then `claude -p "Read brief.md in this
+     directory and follow it exactly. Your inputs are the files in this
+     directory only. Write report.md here. Answer in English."
+     --allowedTools "Read,Write" --disallowedTools
+     "Bash,WebFetch,WebSearch,Glob,Grep,Edit,Task,Agent"`, run from that
+     folder, one session per task when the tasks must not see each other.
+     The coordinator copies the report into the sitting's reports directory
+     with a header saying how it was run; panel 183's
+     `llm-ergonomist-clean.md` and `-clean-task2.md` are the first two, and
+     their briefs are in `docs/panel/183-briefs/blind/`.
    - `spec-warden` ← the measured token count of the spec before/after (run
      the counter; if only an estimate exists, say so — its verdict will be
      provisional).
