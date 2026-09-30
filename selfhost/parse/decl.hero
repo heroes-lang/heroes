@@ -36,6 +36,7 @@
 
 use token
 use cursor
+use doc_comments
 use ast
 use diag
 use lexer
@@ -182,7 +183,7 @@ function function_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl]
 function test_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
     began = opening.mark(c)
     keyword = cursor.current_span(c)
-    doc = cursor.take_docs(@c, text, keyword)
+    doc = doc_comments.take_docs(@c, text, keyword)
     _ = cursor.bump(@c)
     named = heads.test_name(@c, text)
 

@@ -7,7 +7,7 @@
 #
 # **THREE OF THE FOUR FUNCTIONS EXIST BECAUSE THE FOURTH WAS THIS
 # COMPILER'S SINGLE LARGEST COST.** `line_col` answers with a line NUMBER,
-# so it walks from byte 0. `cursor.take_docs` asked it once per declaration
+# so it walks from byte 0. `doc_comments.take_docs` asked it once per declaration
 # and once per comment it examined, and the parse runs over the whole
 # concatenated Source (§1.11 appends the library to every compilation) —
 # so on this compiler's own 1.2 MB source each call read up to a million

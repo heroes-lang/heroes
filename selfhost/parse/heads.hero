@@ -24,6 +24,7 @@
 
 use token
 use cursor
+use doc_comments
 use ast
 use lexer
 use parse/type
@@ -56,7 +57,7 @@ record Head
 function head(@c: cursor.Cursor, text: str, example: str) -> Head?
     from = c.pos
     keyword = cursor.current_span(c)
-    doc = cursor.take_docs(@c, text, keyword)
+    doc = doc_comments.take_docs(@c, text, keyword)
     kind_text = "`" + cursor.slice_of(text, keyword) + "`"
     _ = cursor.bump(@c)
 

@@ -209,6 +209,32 @@ function opening_keyword(text: str, at: i64) -> token.TokenKind?
         return own
     return keywords.keyword(word_at(swap.must(), at: 0))
 
+# Does the line at `at`, at column 0, open with a word only a declaration
+# opens with: `record`, `variant`, `constant`, `use`, `extern`, `test`, or
+# `function` before a name? Inside brackets a line goes on at any column
+# (design.md §4.15), and a function TYPE opens with `function` there, but
+# before its `(` and never before a name. Measured 2026-09-30 over the 1350
+# tracked `.hero` files and the specification's examples, by the lexer's own
+# token stream: no such line stands inside brackets, so the lexer names there
+# the brackets a mistake left open, and nothing that compiles moves.
+function opens_a_declaration(text: str, at: i64) -> bool
+    word = word_at(text, at: at)
+    kind = keywords.keyword(word)
+
+    if kind.is_err()
+        return false
+    k = kind.must()
+
+    if k == .kw_function
+        after = at + word.len()
+        name: i64 @ after
+
+        while name < text.len() && text[name] == ' '
+            name @ name + 1
+
+        return name > after && name < text.len() && (bytes.is_alpha(text[name]) || text[name] == '_')
+    return k == .kw_record || k == .kw_variant || k == .kw_constant || k == .kw_use || k == .kw_extern || k == .kw_test
+
 # A word that begins a declaration or a statement and can continue nothing:
 # a line that begins with one is never the rest of the line above it.
 function starts_afresh(kind: token.TokenKind) -> bool
@@ -244,6 +270,13 @@ test "an arm's arrow is found outside brackets and strings only"
     assert !holds_an_arrow("- f(a => b)\n", from: 0)
     assert !holds_an_arrow("- \"=>\"\n", from: 0)
     assert !holds_an_arrow("- fee  # => note\n", from: 0)
+
+test "a line opens a declaration by its first word, and a function type opens none"
+    for text in ["record P\n", "variant V\n", "constant K: i64\n", "use geom\n", "extern \"m.h\"\n", "test \"t\"\n", "function main()\n", "function  f()\n", "function g<T>(x: T)\n", "record\n", "record P {\r\n"]
+        assert opens_a_declaration(text, at: 0)
+
+    for text in ["function(i64) -> i64)\n", "function (i64) -> i64)\n", "function\n", "records = 1\n", "use_count\n", "2]\n", ")\n", "# record\n", "\"record\"\n", "fn main()\n", "match n\n", ""]
+        assert !opens_a_declaration(text, at: 0)
 
 test "a sign alone on its line, or before a comment, finds the arm's arrow on the next line with words"
     assert arrow_below("-\n        1 => 10\n", from: 1)

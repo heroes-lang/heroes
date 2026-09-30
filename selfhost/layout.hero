@@ -22,6 +22,7 @@ use state
 use diag
 use bytes
 use open_line
+use next_line
 
 ## The carriage return
 
@@ -85,9 +86,15 @@ function line_start(@l: state.LexState, text: str)
         )
         return
 
-    # Inside brackets the margin is not structural (panel 007).
+    # Inside brackets the margin is not structural (panel 007), but a line at
+    # column 0 that opens a declaration is inside them in no program that
+    # compiles (`next_line.opens_a_declaration`): the brackets a mistake left
+    # open are named there, and the line is laid out as the declaration it is.
     if l.open_brackets.len() > 0
-        return
+        if spaces > 0 || !next_line.opens_a_declaration(text, at: l.pos)
+            return
+        close_brackets(@l, text)
+        state.push_offset(@l.closes, at: l.pos)
 
     # Layout-neutral lines: empty, or comment-only.
     if l.pos >= text.len()
@@ -157,6 +164,25 @@ function line_start(@l: state.LexState, text: str)
             state.push_token(@l.tokens, token.Token(kind: .dedent, span: span))
 
         l.level @ new_level
+
+## The brackets a mistake left open
+
+# Every opener still open is named never closed, and the stack emptied: at the
+# file's end, where without it one missing `)` would swallow the rest of the
+# file's layout in silence (panel 007), and at a line that opens a declaration
+# at column 0 (`line_start`), where a missing closer took the next declaration
+# inside its bracket and a stray closer further down closed it, the opener
+# never named and the declaration's own mistakes never told (defect 130's
+# class, 2026-09-30).
+function close_brackets(@l: state.LexState, text: str)
+    for span in l.open_brackets
+        state.push_diagnostic(
+            @l.diagnostics,
+            diag.new_diagnostic(code: "unclosed_bracket", message: "`" + text.slice(from: span.start, to: span.end) + "` opened here is never closed", span: span)
+        )
+
+    none: [token.Span] = []
+    l.open_brackets @ none
 
 ## The invisible semicolon
 

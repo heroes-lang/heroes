@@ -108,7 +108,7 @@ function laid_out(c: cursor.Cursor, text: str) -> cursor.Cursor
 
     tokens @ tokens.push(token.Token(kind: .dedent, span: end))
     tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: end.end, end: end.end)))
-    return cursor.bounded_cursor(tokens: tokens, root_end: c.root_end)
+    return cursor.lexed_cursor(tokens: tokens, root_end: c.root_end, closes: c.closes)
 
 # What the view's reading said, said by the cursor, held reports included and
 # kept in the order they were held; and the cursor past the braces its `{`

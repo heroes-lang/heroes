@@ -1,0 +1,66 @@
+# Fixed 2026-09-30, defect 130's class, lane recovery-b2 (lane recovery-b1's
+# report, U2). Symptom: past a bracket the lexer never closed, every line was
+# read inside it, the next declarations included, so their own mistakes went
+# unsaid; and a stray closer further down, which the lexer's stack pairs with
+# any opener, closed it, so `unclosed_bracket` went unsaid too: `x = [1, 2`
+# above `function main()` over `print(1) )` cost one `expected_expression`
+# at `function`. Cause: inside brackets a line goes on at any column, and
+# nothing ended a bracket's reach but a closer or the file's end. A line at
+# column 0 that opens a declaration stands inside brackets in no program
+# that compiles (measured over the 1350 tracked files and the specification's
+# examples), so the lexer now names there every bracket still open and lays
+# the line out as the declaration it is (`selfhost/layout.hero`,
+# `next_line.opens_a_declaration`), and the parser names no closer past it
+# (`parse/unclosed.hero`). A function type at column 0 stays inside its
+# brackets, as the first function shows. One shape per declaration.
+
+function takes(f: (
+function(i64) -> i64)) -> i64
+    return f(1)
+
+function a_list()
+    x = [1, 2  #~ unclosed_bracket
+
+function main()
+    print(1) )  #~ expected_end_of_line
+
+function a_map()
+    m = {1: 2  #~ unclosed_bracket
+
+constant K: i64
+    5 )  #~ expected_end_of_line
+
+function a_type()
+    n: [i64 @ [3]  #~ unclosed_bracket
+
+record P
+    x i64  #~ expected_field_type
+
+function a_list_again()
+    xs = [1  #~ unclosed_bracket
+
+variant V
+    a b  #~ expected_end_of_line
+
+function a_comment_between()
+    ys = [1  #~ unclosed_bracket
+# a note
+test "t"
+    assert 1 == 1 ]  #~ expected_end_of_line
+
+function a_generic_head()
+    zs = {1: 2  #~ unclosed_bracket
+
+function g<T>(v: T) -> T
+    return v }  #~ expected_end_of_line
+
+function before_a_use()
+    ws = [1  #~ unclosed_bracket
+
+use geom )  #~ expected_declaration
+
+function before_a_group()
+    vs = [1  #~ unclosed_bracket
+
+extern "m.h" )  #~ expected_end_of_line
+    function h() -> i64

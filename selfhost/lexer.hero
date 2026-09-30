@@ -40,6 +40,10 @@ record LexOutput
     # line the author broke, which `parse/apart` weighs (defect 132). The
     # compilation's one stream carries none, since its indexes are no file's.
     breaks: [state.Break]
+    # Where the lexer named every bracket still open before the file's end, a
+    # declaration opening its line at column 0 (`state.LexState.closes`), as
+    # offsets in the stream's own coordinates, ascending.
+    closes: [i64]
 
 ## The whole compilation's tokens
 
@@ -112,13 +116,19 @@ function moved(one: LexOutput, offset: i64) -> LexOutput
         shifted.fixes @ fixes
         diagnostics @ diagnostics.push(shifted)
 
-    return LexOutput(tokens: tokens, diagnostics: diagnostics, breaks: one.breaks)
+    closes: [i64] @ []
+
+    for at in one.closes
+        closes @ closes.push(at + offset)
+
+    return LexOutput(tokens: tokens, diagnostics: diagnostics, breaks: one.breaks, closes: closes)
 
 # The files' streams as the compilation's ONE, for every reader but the
 # parser: each file's tokens but its own eof, and one eof at the root's end.
 function joined(s: source.Source, files: [LexOutput]) -> LexOutput
     tokens: [token.Token] @ []
     diagnostics: [diag.Diagnostic] @ []
+    closes: [i64] @ []
 
     for one in files
         for t in one.tokens
@@ -131,10 +141,13 @@ function joined(s: source.Source, files: [LexOutput]) -> LexOutput
         for d in one.diagnostics
             diagnostics @ diagnostics.push(d)
 
+        for close in one.closes
+            closes @ closes.push(close)
+
     at = source_extent.root_end(s)
     tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: at, end: at)))
     none: [state.Break] = []
-    return LexOutput(tokens: tokens, diagnostics: diagnostics, breaks: none)
+    return LexOutput(tokens: tokens, diagnostics: diagnostics, breaks: none, closes: closes)
 
 ## One file's tokens
 
@@ -181,13 +194,7 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
     # says what it lacks (defect 129).
     if l.open_line >= 0
         open_line.ended(@l)
-
-    for span in l.open_brackets
-        state.push_diagnostic(
-            @l.diagnostics,
-            diag.new_diagnostic(code: "unclosed_bracket", message: "`" + text.slice(from: span.start, to: span.end) + "` opened here is never closed", span: span)
-        )
-
+    layout.close_brackets(@l, text)
     end = token.Span(start: l.pos, end: l.pos)
 
     for _ in range(from: 0, to: l.level)
@@ -205,8 +212,13 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
             refused @ refused.push(b)
 
     if l.heads.len() == 0
-        return LexOutput(tokens: l.tokens, diagnostics: l.diagnostics, breaks: refused)
-    return LexOutput(tokens: without_heads(l.tokens, heads: l.heads), diagnostics: l.diagnostics, breaks: refused)
+        return LexOutput(tokens: l.tokens, diagnostics: l.diagnostics, breaks: refused, closes: l.closes)
+    return LexOutput(
+        tokens: without_heads(l.tokens, heads: l.heads),
+        diagnostics: l.diagnostics,
+        breaks: refused,
+        closes: l.closes
+    )
 
 # The stream without the words that begin at `heads`, which ascend: the heads
 # a reading apart leaves out. Only a word goes, since a dedent begins where
@@ -256,6 +268,25 @@ test "an opener that never closes is a diagnostic, not a silent swallow"
     assert out.diagnostics.len() == 1
     assert out.diagnostics[0].code == "unclosed_bracket"
     assert out.diagnostics[0].span == token.Span(start: 1, end: 2)
+
+# Defect 130's class, 2026-09-30: a declaration opening its line at column 0
+# is inside brackets in no program that compiles, so the brackets a mistake
+# left open are named there and the line is laid out as a declaration; a
+# stray closer further down pops nothing. A function type at column 0, and a
+# declaration's word on an indented line, stay inside.
+test "a declaration at column 0 names the brackets still open, and is laid out"
+    out = lex_one("function f()\n    x = [1, 2\n\nfunction main()\n    print(1) )\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "unclosed_bracket"
+    assert out.diagnostics[0].span == token.Span(start: 21, end: 22)
+    assert out.closes == [28]
+    assert kind_line(out.tokens) == "kw_function ident lparen rparen terminator indent ident eq lbracket int comma int terminator dedent kw_function ident lparen rparen terminator indent ident lparen int rparen rparen terminator dedent eof"
+    typed = lex_one("function f()\n    g: (\nfunction(i64) -> i64) = h\n")
+    assert typed.closes.len() == 0
+    assert typed.diagnostics.len() == 0
+    indented = lex_one("x = [1,\n    record P\n")
+    assert indented.closes.len() == 0
+    assert indented.diagnostics[0].code == "unclosed_bracket"
 
 test "inside brackets the margin is free and the level is frozen"
     out = lex_one("f(\n        1,\n        2)\nx = 1\n")

@@ -25,6 +25,7 @@
 use token
 use diag
 use cursor
+use doc_comments
 use ast
 use keywords
 use parse/use_line
@@ -58,7 +59,7 @@ use parse/members_below
 # records that C headers use ordinary words as identifiers 571 times over.
 function extern_group(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
     keyword = cursor.current_span(c)
-    doc = cursor.take_docs(@c, text, keyword)
+    doc = doc_comments.take_docs(@c, text, keyword)
     _ = cursor.bump(@c)
     h = group_header(@c, text)
 
@@ -255,7 +256,7 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
             doc: [token.Span] @ group_doc
 
             if !first
-                doc @ cursor.take_docs(@c, text, keyword)
+                doc @ doc_comments.take_docs(@c, text, keyword)
             first @ false
             records.record_with_doc(@c, @a, @decls, text, doc: doc, linkage: linkage)
         else if k == .kw_function || k == .kw_constant
@@ -267,7 +268,7 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
             doc: [token.Span] @ group_doc
 
             if !first
-                doc @ cursor.take_docs(@c, text, keyword)
+                doc @ doc_comments.take_docs(@c, text, keyword)
             first @ false
             _ = cursor.bump(@c)
 

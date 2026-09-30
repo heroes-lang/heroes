@@ -12,6 +12,9 @@
 # question, by the lexer's own stack, and where no closer closes the opener it
 # names no closer, recovers past none, and a literal ends at the line end
 # where no `,` asks for more: the lexer's report is the mistake's one message.
+# The lexer also names what is open where a declaration opens its line at
+# column 0 (defect 130's class, 2026-09-30), and the parser asks the offsets
+# it did so at, since a stray closer further down pops the same stack.
 #
 # A leaf: it reads the tokens and nothing that reads the parser.
 #
@@ -29,13 +32,18 @@ use lexer
 # Whether no closer closes the opener at token `open`, as the lexer's stack
 # pairs them: every opener pushed, every closer popping the last one, within
 # the file the opener stands in. The author's text ends at `root_end`, where
-# the lexer ended its file and named what was left open.
+# the lexer ended its file and named what was left open; and the lexer named
+# every opener still open at a declaration opening its line at column 0
+# (`cursor.Cursor.closes`), so a closer past one closes nothing before it.
 function never_closed(c: cursor.Cursor, open: i64) -> bool
     depth: i64 @ 0
     i: i64 @ open
     bounded = c.root_end >= 0 && c.tokens[open].span.start < c.root_end
+    closed = close_after(c, at: c.tokens[open].span.start)
 
     while c.tokens[i].kind != .eof && !(bounded && c.tokens[i].span.start >= c.root_end)
+        if closed >= 0 && c.tokens[i].span.start >= closed
+            return true
         k = c.tokens[i].kind
 
         if k == .lparen || k == .lbracket || k == .lbrace
@@ -48,6 +56,15 @@ function never_closed(c: cursor.Cursor, open: i64) -> bool
         i @ i + 1
 
     return true
+
+# The first offset past `at` where the lexer named the brackets still open,
+# or -1 where it named none there.
+function close_after(c: cursor.Cursor, at: i64) -> i64
+    for close in c.closes
+        if close > at
+            return close
+
+    return -1
 
 # A literal's closer at the cursor, the one its opener at `open` owes: taken,
 # or named missing and the rest of the literal passed over to it; and nothing
@@ -113,3 +130,14 @@ test "an opener is never closed where the lexer's stack leaves it open"
     # A stray closer of another kind pops the opener, as the lexer's does.
     d = cursor.new_cursor(lexer.lex_one("x = [1, 2)\n").tokens)
     assert !never_closed(d, open: 2)
+
+test "an opener is never closed past the declaration the lexer named it at"
+    out = lexer.lex_one("function f()\n    x = [1, 2\n\nfunction main()\n    print(1) )\n")
+    assert out.closes == [28]
+
+    # The `[` at 8, and the stray `)` of `print(1) )` that the stack pairs
+    # with it: past the close at 28 it closes nothing before it.
+    told = cursor.lexed_cursor(tokens: out.tokens, root_end: -1, closes: out.closes)
+    assert never_closed(told, open: 8)
+    untold = cursor.new_cursor(out.tokens)
+    assert !never_closed(untold, open: 8)
