@@ -142,6 +142,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     rule): repaired at `2fd79070`, gated by its cases and the compiler's own
     tests; the net is owed at the batch's close.
 
+    **2026-09-30, lane recovery-b2, a declaration opening its line at column 0
+    names the brackets a mistake left open** (lane recovery-b1's report, U2):
+    repaired at `41807577`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
