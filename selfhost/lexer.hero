@@ -288,6 +288,24 @@ test "a declaration at column 0 names the brackets still open, and is laid out"
     assert indented.closes.len() == 0
     assert indented.diagnostics[0].code == "unclosed_bracket"
 
+# Lane recovery-b2, U3: a literal that never closed took the closers on the
+# rest of its line, which pop what they close, and ends its line at any
+# depth; the classic `'\'` ends at its third byte, the rest of the line lexed,
+# and its certain fix spans those three bytes and nothing more.
+test "a literal that never closed takes its line's closers, and the classic ends at its third byte"
+    took = lex_one("x = f(\"abc)\nprint(1)\n")
+    assert took.diagnostics.len() == 1
+    assert took.diagnostics[0].code == "unterminated_string"
+    assert kind_line(took.tokens) == "ident eq ident lparen error terminator ident lparen int rparen terminator eof"
+    kept = lex_one("x = f(\"abc\nprint(1)\n")
+    assert kept.diagnostics.len() == 2
+    assert kept.diagnostics[1].code == "unclosed_bracket"
+    assert kind_line(kept.tokens) == "ident eq ident lparen error terminator ident lparen int rparen terminator eof"
+    classic = lex_one("x = f('\\' + )\n")
+    assert classic.diagnostics.len() == 1
+    assert classic.diagnostics[0].fixes[0].span == token.Span(start: 6, end: 9)
+    assert kind_line(classic.tokens) == "ident eq ident lparen error plus rparen terminator eof"
+
 test "inside brackets the margin is free and the level is frozen"
     out = lex_one("f(\n        1,\n        2)\nx = 1\n")
     assert out.diagnostics.len() == 0

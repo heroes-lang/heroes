@@ -93,6 +93,9 @@ record LexState
     # brackets (`layout.close_brackets`), ascending. The parser is told them,
     # so it names no closer the lexer named and reads the declaration as one.
     closes: [i64]
+    # A literal that never closed ran to this line's end (`literals.swallow`),
+    # so the line end is a line end at any depth.
+    swallowed: bool
 
 function new_state() -> LexState
     brackets: [token.Span] = []
@@ -120,7 +123,8 @@ function new_state() -> LexState
         heads: heads,
         bodies: false,
         deeper: false,
-        closes: closes
+        closes: closes,
+        swallowed: false
     )
 
 ## Emitting

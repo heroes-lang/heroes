@@ -497,7 +497,7 @@ function group(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # picks between the two by length, so the writer never chooses.
 function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     at = c.pos
-    open_ended = unclosed.never_closed(c, open: at)
+    open_ended = unclosed.never_closed(c, text, open: at)
     open = cursor.bump(@c).span
     items: [i64] @ []
     reading: bool @ true
@@ -523,7 +523,7 @@ function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # `{ "mario": 30 }`, `{}`, or one entry per line.
 function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     at = c.pos
-    open_ended = unclosed.never_closed(c, open: at)
+    open_ended = unclosed.never_closed(c, text, open: at)
     open = cursor.bump(@c).span
     entries: [ast.MapEntry] @ []
     reading: bool @ true
@@ -624,7 +624,7 @@ function case_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
     arguments: [ast.Arg] @ []
     at = c.pos
-    open_ended = unclosed.never_closed(c, open: at)
+    open_ended = unclosed.never_closed(c, text, open: at)
     _ = cursor.bump(@c)
     cursor.skip_terminators(@c)
 
