@@ -1,0 +1,84 @@
+# Fixed 2026-09-30, defect 132's class, lane recovery-b4 (the recovery
+# instrument's `backslash`, 157 of 157 EXTRA at batch 3's gate). Symptom: a
+# `\` at a line's end, the line join of Python and of C's macros, cost
+# `unexpected_character` at the `\` and then `unexpected_block` for the line
+# it asked for, one level deeper, read as a block no head opens; the `\` was
+# an `error` token that ended its line. Now a `\` that stands last on a line
+# holding a token before it is no token: the line is left open whatever it
+# ends with, and the next line with words is decided as every line left open
+# is (`open_line`), here joined, under the `\`'s one message, whose certain
+# fix is the join. One mistake, one message, and the program the fix writes
+# checks clean.
+
+# The instrument's shape: broken after an operator, the rest one level deeper.
+function after_an_operator(a: i64, b: i64) -> i64
+    #~v unexpected_character
+    return a * a + b * \
+        b
+
+function at_the_same_margin()
+    #~v unexpected_character
+    x = 1 + \
+    2
+    print(x)
+
+function after_a_shallower_line(c: bool)
+    if c
+        #~v unexpected_character
+        x = 1 + \
+    2
+        print(x)
+
+function before_an_operator(a: i64)
+    #~v unexpected_character
+    x = a \
+        + 2
+    print(x)
+
+function in_a_condition(a: bool, b: bool)
+    #~v unexpected_character
+    if a && \
+        b
+        print(1)
+
+#~v unexpected_character
+function in_a_head() -> \
+    i64
+    return 1
+
+constant IN_A_BODY: i64
+    #~v unexpected_character
+    1 + \
+        2
+
+function with_spaces_after()
+    #~v unexpected_character
+    x = 1 + \   
+        2
+    print(x)
+
+function with_no_space_before()
+    #~v unexpected_character
+    x = 1 +\
+        2
+    print(x)
+
+function across_a_blank_line()
+    #~v unexpected_character
+    x = 1 + \
+
+        2
+    print(x)
+
+function a_string()
+    #~v unexpected_character
+    s = "abc" + \
+        "def"
+    print(s)
+
+# A line that could stand alone is joined all the same: the `\` asked.
+function before_a_call(xs: [i64])
+    #~v unexpected_character
+    n = 1 + \
+        xs.len()
+    print(n)

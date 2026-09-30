@@ -1,0 +1,200 @@
+# The `\` that asks a line to go on (design.md §4.15, §4.17; lane
+# recovery-b4, the recovery instrument's `backslash`).
+#
+# Python joins a line to the next with a `\` at its end, and so do C's macros.
+# This language has no such join: outside brackets a line ends its statement,
+# and inside them a line goes on below with nothing at its end (the spec's
+# opening paragraph). The `\` was refused as a character the syntax does not
+# hold, an `error` token that ended its line, and the line it asked for was
+# then read on its own, a block deeper than anything that opens one: two
+# messages for one habit, and that line's own mistakes unsaid with the block.
+#
+# **The `\` and the line it joins are one message.** A `\` that stands last on
+# its line, but for spaces, a line end's carriage return or a comment, on a
+# line that holds a token before it, becomes no token, and its line is read as
+# the author asked: left open at depth zero whatever it ends with, so that the
+# next line with words decides it as every line left open is (`open_line`),
+# joined under this one message, or ended where it begins a statement of its
+# own, a body below its head, or a line a refused word heads; inside brackets
+# it goes on, as every line there may, unless a value ends it and a value
+# begins the next, where a line end is what separates the two; inside a hole
+# the next line is the hole's, read on at once, since a literal is one line.
+#
+# The fix deletes the `\`, `certain`, where the lines stay apart; where they
+# are joined it is the join, *write the statement on one line*, weighed as
+# every join is (`line_joins`, `parse/apart`), and none where a comment stands
+# after the `\` or on a line between, which the join would carry into the
+# statement. A `\` anywhere else stays the character the syntax does not hold.
+#
+# | entry | called by |
+# |---|---|
+# | `asks_to_go_on`, `asked` | `scan.line_body`, at a `\` |
+# | `word_below`, `begins_a_value`, `closes_or_separates`, `within_brackets` | `layout.maybe_terminator`, at the end of a line a `\` asks to go on inside brackets |
+# | `joined` | `open_line.refused`, where the line below is joined to it |
+
+use token
+use diag
+use state
+use bytes
+
+## At the `\`
+
+# Is the `\` at `at` the last thing on a line that holds a token before it:
+# nothing after it on its line but spaces, a line end's carriage return, or a
+# comment?
+function asks_to_go_on(l: state.LexState, text: str, at: i64) -> bool
+    if l.last_significant.is_err()
+        return false
+    i: i64 @ at + 1
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\r' && i + 1 < text.len() && text[i + 1] == '\n')
+        i @ i + 1
+
+    return i >= text.len() || text[i] == '\n' || text[i] == '#'
+
+# The one message, at the `\` under `l.pos`, with the fix that deletes it; the
+# line is left to the decision its end and the next line make
+# (`layout.maybe_terminator`, `open_line`), which in a hole is taken here.
+function asked(@l: state.LexState, text: str)
+    at = l.pos
+    l.pos @ at + 1
+    rule: str @ "outside brackets a line ends its statement, and a long one breaks inside parentheses"
+
+    if l.holes.len() > 0
+        rule @ "a literal and its holes stand on one line"
+    else if l.open_brackets.len() > 0
+        rule @ "inside brackets a line goes on below with nothing at its end"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unexpected_character",
+        message: "`\\` is not part of the language's syntax, and no line goes on past one: " + rule,
+        span: token.Span(start: at, end: at + 1)
+    )
+    before = l.tokens[last_token(l.tokens)].span.end
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "delete the `\\`", replacement: "", span: token.Span(start: before, end: at + 1), certainty: .certain)
+    )
+    state.push_diagnostic(@l.diagnostics, d)
+    l.backslash @ l.diagnostics.len() - 1
+
+    if l.holes.len() > 0
+        in_a_hole(@l, text)
+
+# The index of the last token that is not a comment.
+function last_token(tokens: [token.Token]) -> i64
+    at: i64 @ tokens.len() - 1
+
+    while at > 0 && tokens[at].kind == .comment
+        at @ at - 1
+
+    return at
+
+# In a hole the line below is the hole's, whose literal the line end would
+# close unterminated: read on at once, from its first word, and the fix is the
+# join. A line below with no word leaves the literal to that report.
+function in_a_hole(@l: state.LexState, text: str)
+    below = next_word(text, from: l.pos)
+
+    if below >= 0
+        offer_join(@l, text, below: below, certainty: .certain)
+        l.pos @ below
+    l.backslash @ -1
+
+## Where the line goes on
+
+# The first byte of the word the line below the `\` begins with, read from
+# the `\` itself, since a comment after it is past by the line's end.
+function word_below(l: state.LexState, text: str) -> i64
+    return next_word(text, from: l.diagnostics[l.backslash].span.end)
+
+# The first byte of the next line's first word, from `from` on a line a `\`
+# asks to go on: -1 where a comment stands after it, or the next line holds
+# no word, its margin a tab, or the text ends.
+function next_word(text: str, from: i64) -> i64
+    i: i64 @ from
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\r')
+        i @ i + 1
+
+    if i >= text.len() || text[i] != '\n'
+        return -1
+    i @ i + 1
+
+    while i < text.len() && text[i] == ' '
+        i @ i + 1
+
+    if i >= text.len() || text[i] == '\n' || text[i] == '\r' || text[i] == '#' || text[i] == '\t'
+        return -1
+    return i
+
+# Does the word at `at` begin a value of its own: a name, a number, a string
+# or a character? A line there that follows a value is its own element or
+# statement, as `layout.line_start` plants the terminator a value owes.
+function begins_a_value(text: str, at: i64) -> bool
+    b = text[at]
+    return bytes.is_alnum(b) || b == '_' || b == '"' || b == '\''
+
+# Does the word at `at` close a bracket or separate a list, before which a
+# line end is a line end's right?
+function closes_or_separates(text: str, at: i64) -> bool
+    b = text[at]
+    return b == ')' || b == ']' || b == '}' || b == ','
+
+# At the end of a line a `\` asks to go on inside brackets: where the line
+# goes on, the fix joins it to the next line's word at `below`, `sure` where
+# nothing else could have been meant; where a value ends it and a value
+# begins the next, `noise`, the line end stands and the fix deletes the `\`.
+function within_brackets(@l: state.LexState, text: str, below: i64, noise: bool, sure: bool)
+    if !noise && below >= 0
+        certainty: diag.Certainty @ .guess
+
+        if sure
+            certainty @ .certain
+        offer_join(@l, text, below: below, certainty: certainty)
+    l.backslash @ -1
+
+# The `\`'s fix made the join: the line written on one, from the end of its
+# last token to the word at `below`, with no space after an opener, a `.`, a
+# `::` or a `/`, or before a closer, a `,` or a `.`.
+function offer_join(@l: state.LexState, text: str, below: i64, certainty: diag.Certainty)
+    left = l.tokens[last_token(l.tokens)]
+    glue: str @ " "
+    k = left.kind
+
+    if k == .lparen || k == .lbracket || k == .lbrace || k == .dot || k == .colon_colon || k == .slash || closes_or_separates(text, at: below) || text[below] == '.'
+        glue @ ""
+    fixes: [diag.Fix] = [
+        diag.Fix(title: "write the statement on one line", replacement: glue, span: token.Span(start: left.span.end, end: below), certainty: certainty)
+    ]
+    l.diagnostics[l.backslash].fixes @ fixes
+
+## Where the line below is joined at depth zero
+
+# The line below joined to the one a `\` asked to go on: the `\`'s message
+# stands for the break (`open_line.refused`), with the join's fixes in place
+# of its own, and the break is recorded against it as every refused one is.
+function joined(@l: state.LexState, fixes: [diag.Fix], head: bool)
+    l.diagnostics[l.backslash].fixes @ fixes
+    state.push_break(@l.breaks, diagnostic: l.backslash, after: l.tokens.len(), head: head)
+    l.backslash @ -1
+
+test "a backslash asks its line to go on only where it stands last on a line with a token before it"
+    l: state.LexState @ state.new_state()
+    l.last_significant @ ok(.plus)
+
+    for text in ["\\\n", "\\   \n", "\\\r\n", "\\  # note\n", "\\"]
+        assert asks_to_go_on(l, text, at: 0)
+
+    for text in ["\\ b\n", "\\\rb\n", "\\x\n"]
+        assert !asks_to_go_on(l, text, at: 0)
+
+    n: state.LexState @ state.new_state()
+    assert !asks_to_go_on(n, "\\\n", at: 0)
+
+test "the next line's word is found past the line end and its margin, and never past a comment"
+    assert next_word("\\\n    b\n", from: 1) == 6
+    assert next_word("\\\r\n  b\n", from: 1) == 5
+    assert next_word("\\ # c\n    b\n", from: 1) == -1
+    assert next_word("\\\n\n    b\n", from: 1) == -1
+    assert next_word("\\\n    # c\n", from: 1) == -1
+    assert next_word("\\\n\tb\n", from: 1) == -1
+    assert next_word("\\", from: 1) == -1

@@ -1,0 +1,32 @@
+# Fixed 2026-09-30, defect 132's class, lane recovery-b4, beside
+# `fixedbugs-132-a-backslash-joins-its-line-to-the-next`. A `\` at a line's
+# end over a line that begins a statement of its own, a binding here, or over
+# the body its head opens, or at the file's end, joins nothing: the line is
+# ended as every line left open is there (`open_line`), and the `\` is its one
+# message, whose certain fix deletes it. Before, the `\` was the one message
+# as well, but no fix went with it, and over a deeper line its `error` token
+# left the body unread.
+
+function over_a_binding()
+    #~v unexpected_character
+    x = 1
+    y = 2
+    print(x + y)
+
+function over_an_arms_body(n: i64) -> i64
+    return match n
+        #~v unexpected_character
+        0 =>
+            5
+        _ => 6
+
+function over_an_else_body(c: bool)
+    if c
+        print(1)
+    #~v unexpected_character
+    else
+        print(2)
+
+function at_the_files_end()
+    #~v unexpected_character
+    print(1)
