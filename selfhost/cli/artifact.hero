@@ -56,6 +56,7 @@ use cli/compile
 use cli/toolchain
 use cli/pointee
 use cli/pointee_ask
+use cli/publish
 
 # The artifact, written or printed, AFTER the build's own rounds have passed. A
 # failure here is the pointee check's and carries its message up so the caller
@@ -108,10 +109,11 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     if options.output.is_err()
         io.print_artifact(text: text)
         return ok()
-    written = write_file(path: options.output.must(), text: text)
 
-    if written.is_err()
-        io.eprint(text: "error: cannot write " + options.output.must())
-        return fail(code: "failed", msg: "cannot write the artifact")
-
-    return ok()
+    # **Written whole under a private name, then published** (defect 134):
+    # it was written in place, so a reader of the author's file, or a second
+    # build to the same `-o`, could meet it half-written, and a build killed
+    # there left it cut. `seed/heroes.c` is regenerated this way. The `-o`
+    # names a place and not a content, so a failure is reported, never
+    # passed over, with the path and the reason; the caller prints it once.
+    return publish.write_whole(path: options.output.must(), text: text, keyed: false)

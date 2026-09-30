@@ -393,4 +393,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     published as one**: repaired at `e2f475fe`, gated by its cases and the
     compiler's own tests; the net is owed at the lane's close.
 
+    **2026-09-30, lane 134, a binary is linked under a name of its own and
+    lands where its link line says**: repaired at `3ff8af48`, gated by its
+    cases and the compiler's own tests; the net is owed at the lane's close.
+
 *******************************************************************************
