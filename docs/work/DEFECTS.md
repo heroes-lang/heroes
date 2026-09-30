@@ -513,6 +513,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     table. What overlapping certain fixes do to `--apply` itself is not this
     defect's: it is 137.
 
+    **2026-09-30, lane 135b, a dropped value takes a certain `_ = ` only where
+    the discard is its line's one reading** (the audit's C2: a place of the
+    value's own type in any spelling, a `bool`, a line in a `test`, the end of
+    a function that returns a value, an arm's inline body): repaired at
+    `8c0f80e7`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
 - [ ] **136 — `fmt --in-place` and `check --apply --in-place` destroy the author's source when the write fails** | on a disk nearly full, `heroes fmt prog.hero --in-place` answers `error: cannot write`, exit 2, and leaves `prog.hero` at 0 bytes, the 62,706 bytes the author wrote gone; `heroes check --apply --in-place` leaves the file cut mid-token, 57,344 of the 59,312 bytes it meant to write, ending in `retu` | `selfhost/cli/syntax_cmds.hero:66` · `selfhost/cli/check.hero:110` · `runtime/parts/os.c:635` (`hero_file_write`) · `selfhost/cli/publish.hero` (defect 134's publish by rename)
 
     **Origin:** lane 134's agent, 2026-09-30, reading the code while it

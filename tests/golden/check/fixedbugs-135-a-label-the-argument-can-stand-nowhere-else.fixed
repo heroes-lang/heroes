@@ -1,0 +1,66 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b: the other half of
+# `fixedbugs-135-a-label-the-order-written-may-not-mean`. Where the argument
+# could stand nowhere else, the label its position gives is the repair and
+# stays certain: one argument alone once the others are labelled, a type only
+# one field takes, a case with one field, a marker only one parameter
+# carries. `check --apply` writes every label here, before an argument's `@`
+# where it has one, and the program it writes checks clean and runs.
+
+record Person
+    name: str
+    age: i64
+
+record Point
+    x: i64
+    y: i64
+
+variant Token
+    num
+        v: i64
+    plus
+
+function blit(from: [i64], to: [i64]) -> [i64]
+    out: [i64] @ to
+    out[0] @ from[0]
+    return out
+
+function copy_text(from: str, to: str) -> str
+    return from + " -> " + to
+
+function add_to(@total: i64, amount: i64)
+    total @ total + amount
+
+function swap(@a: i64, @b: i64)
+    t = a
+    a @ b
+    b @ t
+
+function first(xs: [i64]) -> i64?
+    if xs.len() == 0
+        return fail(code: "empty", msg: "there is no first element")  #~ needs_label
+    return ok(xs[0])
+
+function main()
+    screen = [0, 0, 0]
+    sprite = [7, 8, 9]
+    print(blit(from: sprite, to: screen)[0])  #~ needs_label
+    p = Person(name: "Ann", age: 30)  #~ missing_label missing_label
+    print(p.name)
+    q = Point(x: 1, y: 2)  #~ missing_label
+    print(q.y)
+    t: Token = .num(v: 7)  #~ missing_label
+
+    match t
+        .num n => print(n.v)
+        .plus  => print(0)
+
+    total: i64 @ 1
+    add_to(total: @total, amount: 5)  #~ needs_label needs_label
+    print(total)
+    x: i64 @ 1
+    y: i64 @ 2
+    swap(a: @x, b: @y)  #~ needs_label
+    print(x)
+    move: (function(from: str, to: str) -> str) = copy_text
+    print(move(from: "a", to: "b"))  #~ needs_label
+    print(first([]).default(-1))

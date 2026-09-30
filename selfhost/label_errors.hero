@@ -1,0 +1,227 @@
+# The labels of a call: the messages that name what a call is given (§4.9).
+#
+# Split out of `data_errors.hero` on 2026-09-30, lane 135b, when that file
+# passed §11's 300 lines with defect 135's readings of a missing label. The
+# seam is the family §4.9 governs, one rule seen from four sides: a missing
+# label on a call where two parameters share a type (`needs_label`) and on a
+# construction, whose fields are always named (`missing_label`), a label at
+# the wrong position (`wrong_label`), and a label where the function type
+# names nothing (`label_on_function_value`).
+#
+# Their certainty is one question asked of the call in hand: could the
+# argument stand anywhere else? A label that names another position is a
+# swap, so renaming it keeps the values where they were; a label written in
+# position order certifies the order written. Either is certain only where
+# the position is the one reading (`check/labels.hero` asks it).
+
+use token
+use diag
+
+# The span is the label's IDENTIFIER — the `:` is not in it — so the
+# replacement is the bare name. Applying `y:` here produced `y:: 2`, which
+# the .fixed goldens caught the first time they ran: a certain fix is a
+# claim that the result compiles, and only running it proves the claim.
+# **The certainty asks the value in hand: does the written label name ANOTHER
+# position of this callee?** If it does, the call is a swap — `copy_text(to: "b",
+# from: "a")` — and renaming the label leaves the two values where they are, so
+# the program compiles and does the other thing. That is a fix which leaves the
+# defect standing, and `.claude/rules/diagnostics-and-goldens.md` calls it a
+# `guess` however well it compiles. If the written label names nothing, as `z`
+# does in `Point(x: 1, z: 2)`, the position decides which field it is and the
+# rename is the repair: `certain`. Found by panel 127's compiler seat, which
+# applied the old fix and measured the program printing `b/a`.
+function wrong_label(holder: str, written: str, expected: str, elsewhere: bool, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "wrong_label",
+        message: "`" + holder + "` has nothing called `" + written + "` at this position — it is `" + expected + "`",
+        span: span
+    )
+    certainty: diag.Certainty @ .certain
+
+    if elsewhere
+        certainty @ .guess
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `" + expected + ":`", replacement: expected, span: span, certainty: certainty)
+    )
+    return d
+
+# A label at a call made through a FUNCTION VALUE of a type that carries no
+# names. `f(nonsense: "a")` was accepted and ignored at every function type
+# until panel 128 — a label there was not even a claim. Since defect 026 a type
+# whose parameters CAN be confused carries names and its calls are checked
+# against them, so what is left here is the type where no two positions share a
+# type: it names none, and a label claims a check nobody is doing. The fix is
+# `certain`: the label is removed, the value stays where it is, and the program
+# does what it already did.
+function label_on_function_value(written: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "label_on_function_value",
+        message: "nothing can be confused with this position of the function type, so it has no name — `" + written + ":` names nothing",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "§4.9 names an argument where two parameters share a type; no other parameter of this type has this one's type, so this position carries no name for a label to be checked against"
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "drop the label", replacement: "", span: span, certainty: .certain)
+    )
+    return d
+
+# §4.9's same-typed-argument rule. The message names the REASON — two
+# parameters share a type — because the rule looks arbitrary without it,
+# and a model that does not know why will drop the label again at the
+# next call. (This port dropped it eleven times in one day; the fix was
+# applied eleven times. The message works.)
+#
+# **A label written in position order certifies the order written, so it is
+# certain only where the order cannot be another** (defect 135, the
+# certain-fix audit's C6 and C7): Go's `copy(dst, src)`, written
+# `blit(screen, sprite)` over `blit(from:, to:)`, was applied into
+# `blit(from: screen, to: sprite)`, which checked clean and painted the other
+# way round, and `Size(640, 480)` over fields `height, width` printed 480
+# where 640 was meant. `others` are what else the argument could be: the
+# parameters or fields of a type it takes, and a marker it carries, that no
+# label of the call has taken (`check/labels.other_parameters`). With none,
+# the argument can be this one alone and the label is certain; otherwise the
+# message names every reading and each is offered, none applied. `at` is
+# where the label goes: before an argument's `@`, since `swap(@a: x, …)`
+# does not parse (`argument_front`).
+function needs_label(name: str, expected: str, shared: str, others: [str], span: token.Span, at: i64) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "needs_label",
+        message: "two of `" + name + "`'s parameters are `" + shared + "`, so every one of them is named at the call site — " + which_one(expected, others),
+        span: span
+    )
+    d.fixes @ label_fixes(expected, others: others, at: at)
+    return d
+
+function missing_label(holder: str, expected: str, others: [str], span: token.Span, at: i64) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "missing_label",
+        message: "`" + holder + "`'s fields are always named — " + which_one(expected, others),
+        span: span
+    )
+    d.fixes @ label_fixes(expected, others: others, at: at)
+    return d
+
+# The clause that names the label: the one the position gives, or, where the
+# order written may not be the order meant, every one the argument could be.
+function which_one(expected: str, others: [str]) -> str
+    if others.len() == 0
+        return "this one is `" + expected + "`"
+    quoted: [str] @ []
+
+    for other in others
+        quoted @ quoted.push("`" + other + "`")
+
+    order: str @ "another order"
+
+    if others.len() == 1
+        order @ "the other order"
+    return "this one is `" + expected + "` in the order written, or " + quoted.join(" or ") + " in " + order
+
+# The label the position gives, certain where nothing else could stand
+# there, and beside it as guesses the labels of the other readings.
+function label_fixes(expected: str, others: [str], at: i64) -> [diag.Fix]
+    insertion = token.Span(start: at, end: at)
+    certainty: diag.Certainty @ .certain
+
+    if others.len() > 0
+        certainty @ .guess
+    fixes: [diag.Fix] @ [
+        diag.Fix(title: "write `" + expected + ": `", replacement: expected + ": ", span: insertion, certainty: certainty)
+    ]
+
+    for other in others
+        fixes @ fixes.push(
+            diag.Fix(title: "write `" + other + ": `", replacement: other + ": ", span: insertion, certainty: .guess)
+        )
+
+    return fixes
+
+# Where an argument's label goes: before its `@` where it has one (spec
+# § 9, `Arg = [ ident ":" ] [ "@" ] Expression`), before its value otherwise.
+function argument_front(text: str, value_start: i64, mutable: bool) -> i64
+    i: i64 @ value_start
+
+    if !mutable
+        return i
+
+    while i > 0 && text[i - 1] == ' '
+        i @ i - 1
+
+    if i > 0 && text[i - 1] == '@'
+        return i - 1
+    return value_start
+
+## Tests
+
+test "needs_label carries its reason and a zero-width insertion"
+    none: [str] = []
+    d = needs_label(
+        name: "head",
+        expected: "text",
+        shared: "str",
+        others: none,
+        span: token.Span(start: 20, end: 24),
+        at: 20
+    )
+    assert d.message == "two of `head`'s parameters are `str`, so every one of them is named at the call site — this one is `text`"
+    assert d.fixes[0].replacement == "text: "
+    assert d.fixes[0].span.start == 20 && d.fixes[0].span.end == 20
+    assert d.fixes[0].certainty == .certain
+
+# Defect 135: where the argument could be another parameter as well, the
+# order written is one reading among others and no label is certain.
+test "a label the order written gives is a guess where another could stand there"
+    other: [str] = ["to"]
+    d = needs_label(
+        name: "blit",
+        expected: "from",
+        shared: "[i64]",
+        others: other,
+        span: token.Span(start: 20, end: 26),
+        at: 19
+    )
+    assert d.message == "two of `blit`'s parameters are `[i64]`, so every one of them is named at the call site — this one is `from` in the order written, or `to` in the other order"
+    assert d.fixes.len() == 2
+    assert d.fixes[0].certainty == .guess && d.fixes[1].certainty == .guess
+    assert d.fixes[1].replacement == "to: " && d.fixes[1].span.start == 19
+    three: [str] = ["low", "high"]
+    field = missing_label(holder: "Range", expected: "value", others: three, span: token.Span(start: 5, end: 7), at: 5)
+    assert field.message == "`Range`'s fields are always named — this one is `value` in the order written, or `low` or `high` in another order"
+    assert argument_front("swap(@x, @ y)", value_start: 6, mutable: true) == 5
+    assert argument_front("swap(@x, @ y)", value_start: 11, mutable: true) == 9
+    assert argument_front("swap(x)", value_start: 5, mutable: false) == 5
+
+test "wrong_label replaces the identifier alone, colon left in place"
+    d = wrong_label(
+        holder: "Point",
+        written: "z",
+        expected: "y",
+        elsewhere: false,
+        span: token.Span(start: 10, end: 11)
+    )
+    assert d.fixes[0].replacement == "y"
+    assert d.fixes[0].span.end == 11
+    assert d.message == "`Point` has nothing called `z` at this position — it is `y`"
+
+    # `z` names no field of `Point`, so the position decides and the rename is
+    # the repair.
+    assert d.fixes[0].certainty == .certain
+
+test "a label that names another position is a swap, so its fix is a guess"
+    # `copy_text(to: "b", from: "a")`: renaming `to` to `from` compiles and
+    # leaves the two values exactly where they were, which is a fix that keeps
+    # the defect it names. Measured by panel 127's compiler seat on a running
+    # program, and `.claude/rules/diagnostics-and-goldens.md` is the rule.
+    swap = wrong_label(
+        holder: "copy_text",
+        written: "to",
+        expected: "from",
+        elsewhere: true,
+        span: token.Span(start: 10, end: 12)
+    )
+    assert swap.fixes.len() == 1
+    assert swap.fixes[0].replacement == "from"
+    assert swap.fixes[0].certainty == .guess

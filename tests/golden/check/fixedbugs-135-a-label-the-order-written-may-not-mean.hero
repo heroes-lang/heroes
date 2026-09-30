@@ -1,0 +1,92 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b (the certain-fix audit's C6
+# and C7). Symptom: a label left out where two parameters share a type, or
+# where a record's fields are always named, took the label its position gives
+# as a `certain` fix, so Go's `copy(dst, src)`, written `blit(screen, sprite)`
+# over `blit(from:, to:)`, was applied into a program that checked clean and
+# copied the other way round, `Size(640, 480)` over fields `height, width`
+# printed 480 where 640 was meant, and `swap(@x, @y)` took `swap(@a: x, …)`,
+# which does not parse. Cause: the label written in position order certified
+# the order written. Now a label is certain only where the argument could
+# stand nowhere else, and elsewhere the message names every reading and each
+# label is a guess, written before an argument's `@`
+# (`check/labels.other_parameters`, `label_errors.argument_front`). Here only
+# `label:` is certain, a `str` among `i64`s, and the two `@` on cells.
+
+record Size
+    height: i64
+    width: i64
+
+record Pixel
+    offset: i64
+    level: u8
+
+record Box
+    width: i64
+    height: i64
+    label: str
+
+variant Move
+    step
+        dx: i64
+        dy: i64
+    stay
+
+function blit(from: [i64], to: [i64]) -> [i64]
+    out: [i64] @ to
+    out[0] @ from[0]
+    return out
+
+function clamp(value: i64, low: i64, high: i64) -> i64
+    if value < low
+        return low
+
+    if value > high
+        return high
+    return value
+
+function span_of(from: i64, to: i64, label: str) -> str
+    return label + ": " + (to - from).to_str()
+
+function swap(@a: i64, @b: i64)
+    t = a
+    a @ b
+    b @ t
+
+function go_copy(screen: [i64], sprite: [i64]) -> [i64]
+    return blit(screen, sprite)  #~ needs_label needs_label
+
+function out_of_order(screen: [i64], sprite: [i64]) -> [i64]
+    return blit(to: screen, sprite)  #~ wrong_label needs_label
+
+function three_of_one_type(n: i64) -> i64
+    return clamp(n, 0, 10)  #~ needs_label needs_label needs_label
+
+function two_of_one_type_beside_a_third(n: i64) -> str
+    return span_of(1, n, "width")  #~ needs_label needs_label
+
+function built_ins(xs: [i64]) -> i64?
+    for i in range(0, 3)  #~ needs_label needs_label
+        print(xs.slice(i, 3).len())  #~ needs_label needs_label
+
+    return fail("there is no first element", "empty")  #~ needs_label needs_label
+
+function markers_both_set(@x: i64, @y: i64)
+    swap(@x, @y)  #~ needs_label needs_label
+
+function markers_both_left_out(@x: i64, @y: i64)
+    swap(x, y)  #~ needs_label marker_mismatch needs_label marker_mismatch
+
+function fields_of_one_type() -> i64
+    s = Size(640, 480)  #~ missing_label missing_label
+    return s.width
+
+function literals_of_two_widths() -> i64
+    p = Pixel(1, 2)  #~ missing_label missing_label
+    return p.offset
+
+function a_case_of_one_type() -> Move
+    return .step(1, 2)  #~ missing_label missing_label
+
+function one_field_of_its_type() -> str
+    b = Box(3, 4, "crate")  #~ missing_label missing_label missing_label
+    return b.label
