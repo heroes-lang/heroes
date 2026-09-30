@@ -51,6 +51,14 @@
     left is named rather than hidden**: two builds compiling the identical TU do
     share its directory, and their clang output is identical too.
 
+    **Falsified 2026-09-30, by defect 134's measurement.** The two builds
+    share more than the directory: every artifact is staged under one name,
+    `object + ".tmp"` or `binary + ".tmp"`, and the translation unit's C is
+    written in place, so six `heroes run` of one program started together on
+    a cold `build/` fail 25 times in 30 with a false internal error, measured
+    at `1fc77e31`. Whether the per-TU stderr file this repair made is read
+    back truncated by a second build is unrun; defect 134's entry asks it.
+
     **And the instrument the entry asked for, which is the other half.**
     `suite_warnings.hero` now tells a misattribution from a finding: a warning
     naming a `.hero` file outside the program's own directory is reported as a
