@@ -124,16 +124,21 @@ is `if`, `while`, `for`, `match`, `return`, `assert` or `else`, at any column.
 
 ## Author's verdict
 
-**PENDING**, queued as `panel 183` in `docs/work/DECIDE.md` on 2026-09-30.
-**What a yes settles**: R1 to R6 as the resolution above states them, the
+**RATIFIED 2026-09-30**, on the author's answer of the afternoon to five
+recommendations put to them with their reasons, meant as: *1 yes*, the first
+being this sitting. **Recorded as a reading**, CLAUDE.md § 4's default, which
+the author asked on 2026-09-21 to be taken for granted; not `by delegation`.
+
+**What the yes settles**: R1 to R6 as the resolution above states them, the
 landed column-0 rule ratified as R1's first case and amended with the label
 test, R2's kept-NEWLINE clause on its landing conditions, R3's rule for a
 bracket closed later, and R4's sentence for design.md §4.15, landing with the
-rule. **What it does not settle**: the landing itself, which the recovery
-cluster's next batch owes with its own measurements and may still refuse R2 or
-R3 on them; the regression batch 3 left in `missing_body` and the head class,
-which are defect 131's and the cluster's; and the blind-seat route, already
-taken by the author's instruction of the same morning.
+rule. **What it does not settle**: the landing itself, which lane
+recovery-b4 owes as its fifth repair with its own measurements and may still
+refuse R2 or R3 on them; and the head class, defect 131's and the cluster's.
+The regression batch 3 left in `missing_body`, which this sitting's critic
+found, was repaired the same afternoon in that lane (`3a93d155`), before the
+yes.
 
 ## The critic's two passes
 

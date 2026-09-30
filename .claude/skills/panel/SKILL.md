@@ -261,6 +261,14 @@ is a full panel.
      polls while they run**: the coordinator waits on the notification. A
      seat the watchdog killed is relaunched from its own report file, not from
      another seat's findings (160, 172);
+   - **no seat and no critic starts a paid run its brief does not name**,
+     with the run's size and budget written in the brief (author
+     instruction 2026-09-30, after panel 183's critic launched 80 `claude -p`
+     sessions of its own, 12.62 USD by the CLI's report, to score two
+     predictions a named, bounded experiment could have scored): a `claude
+     -p` session, an API call, a cloud run. A seat that finds one worth
+     running says so in its report, with its size, and the coordinator
+     decides;
    - **the sitting runs under `caffeinate -i`** (`.claude/rules/verification.md`
      § A long run holds the machine awake): this Mac sleeps after one minute
      idle, and sitting 177 lost three and a half hours to it;
