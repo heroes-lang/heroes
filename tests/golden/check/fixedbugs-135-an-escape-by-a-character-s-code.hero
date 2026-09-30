@@ -1,0 +1,22 @@
+# Fixed 2026-09-30, defect 135's class, lane recovery-b3, found beside the
+# instrument's `\(`. Symptom: `"\x41"`, `"\u00e9"`, `"\0"`, `"\a"` cost
+# `unknown_escape` with the certain fix `\\`, so `check --apply` wrote a
+# program that checked clean and printed a backslash where the C, Python or
+# JavaScript habit meant a character. Cause: the escape's one repair was a
+# backslash, whatever followed it. Now an escape that names a character by
+# its code reads as that character as much as a backslash: the message says
+# this language writes a character as itself, the escape's span takes its
+# digits, and the character itself, where it is a visible one, and `\\` are
+# both offered, neither applied (`escape_readings`).
+
+function by_hexadecimal()
+    print("A\x41Z")  #~ unknown_escape
+
+function by_unicode()
+    print("caf\u00e9 and \u{1F600} and \U0001F600")  #~ unknown_escape unknown_escape unknown_escape
+
+function by_octal()
+    print("a\0b \101")  #~ unknown_escape unknown_escape
+
+function by_name()
+    print("\a\b\e\f\v")  #~ unknown_escape unknown_escape unknown_escape unknown_escape unknown_escape

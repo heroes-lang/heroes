@@ -1,0 +1,16 @@
+# Fixed 2026-09-30, defect 135's class, lane recovery-b3, found beside the
+# instrument's `\(`. Symptom: `"\$"`, `"\?"`, `"\/"` and `` "\`" `` cost
+# `unknown_escape` with the certain fix `\\`, a backslash kept where the
+# habit it came from meant the character alone, and inside an `f"…"`
+# literal `\{` took the certain `\\{`, which opens a hole, so `--apply`
+# wrote a program refused three times anew. Cause: the escape's one repair
+# was a backslash. Now these read as the character written bare, and `\{`
+# in an `f"…"` literal as a brace, `{{` there, as much as a backslash: both
+# repairs offered, neither applied (`escape_readings`).
+
+function written_bare()
+    print("costs \$5, why\? a\/b a\`b")  #~ unknown_escape unknown_escape unknown_escape unknown_escape
+
+function a_brace_in_an_f_literal()
+    n = 1
+    print(f"a \{ b {n} \}")  #~ unknown_escape unknown_escape
