@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-135-an-escape-of-a-character-written-bare.hero:12:18: error[unknown_escape]: `\$` is not an escape sequence — `$` needs no escape inside a string, write it bare; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-an-escape-of-a-character-written-bare.hero:12:26: error[unknown_escape]: `\?` is not an escape sequence — `?` needs no escape inside a string, write it bare; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-an-escape-of-a-character-written-bare.hero:12:30: error[unknown_escape]: `\/` is not an escape sequence — `/` needs no escape inside a string, write it bare; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-an-escape-of-a-character-written-bare.hero:12:35: error[unknown_escape]: `` \` `` is not an escape sequence — `` ` `` needs no escape inside a string, write it bare; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-an-escape-of-a-character-written-bare.hero:16:15: error[unknown_escape]: `\{` is not an escape sequence — a brace is written `{{` in an `f"…"` literal; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-an-escape-of-a-character-written-bare.hero:16:24: error[unknown_escape]: `\}` is not an escape sequence — `}` needs no escape inside a string, write it bare; write `\\` for a literal backslash

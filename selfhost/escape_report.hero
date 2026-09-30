@@ -1,0 +1,119 @@
+# The report of an escape the language does not have: the diagnostic, in
+# the escape's own words, and the fixes its reading owes (spec § 2 Literals;
+# design.md §4.17; defect 135's class, lane recovery-b3). What the escape
+# reads as is `escape_readings`, which asks only its bytes; this module turns
+# that answer into what the author reads, so a reading's repair is written
+# once, beside its message. Called by `literals.escape_step`, for every
+# escape `escape.escape_text` refuses that is not the other context's.
+
+use token
+use diag
+use state
+use escape
+use bytes
+use escape_readings
+
+# The diagnostic for the escape whose backslash is at `backslash`, in the
+# escape's own words, its fixes by its reading, pushed; and the position past
+# the escape, which for one by its code is past its digits, so a character
+# literal counts `'\x41'` as the one character it was written as.
+function report(@l: state.LexState, text: str, backslash: i64, literal: i64, ctx: escape.Quoted) -> i64
+    escaped = bytes.char_at(text, backslash + 1)
+    r = escape_readings.reading(text, backslash: backslash, literal: literal, ctx: ctx)
+
+    end = match r
+        .code c                               => c.end
+        .backslash | .hole _ | .bare | .brace => backslash + 1 + escaped.len()
+
+    span = token.Span(start: backslash, end: end)
+    shown = text.slice(from: backslash, to: end)
+    opening = escape_readings.quoted(shown) + " is not an escape sequence — "
+    backslashed = diag.Fix(
+        title: "escape the backslash: " + escape_readings.quoted("\\" + shown),
+        replacement: "\\" + shown,
+        span: span,
+        certainty: .guess
+    )
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "unknown_escape", message: opening, span: span)
+
+    match r
+        .backslash =>
+            d.message @ opening + "the escapes are " + escape.legal(ctx) + "; write `\\\\` for a literal backslash"
+            d.fixes @ d.fixes.push(
+                diag.Fix(title: backslashed.title, replacement: backslashed.replacement, span: span, certainty: .certain)
+            )
+        .hole h =>
+            hole = "{" + text.slice(from: backslash + 2, to: h.close) + "}"
+            d.message @ opening + "a value is written into a string as " + escape_readings.quoted(hole) + " in an `f\"…\"` literal, and `\\\\` writes a backslash"
+            d.fixes @ d.fixes.push(
+                hole_fix(text: text, hole: hole, backslash: backslash, close: h.close, literal: literal)
+            )
+            d.fixes @ d.fixes.push(backslashed)
+        .code c =>
+            value = escape_readings.code_value(text, at: backslash + 1, end: c.end)
+            one = escape_readings.written(value, ctx)
+
+            if ctx == .in_char
+                d.message @ opening + "a character literal is its character's code, an integer, and this language has no escape for a character by its code: write the character, or its number"
+
+                if literal + 1 == backslash && c.end < text.len() && text[c.end] == '\''
+                    d.fixes @ d.fixes.push(
+                        diag.Fix(title: "write the number: `" + value.to_str() + "`", replacement: value.to_str(), span: token.Span(start: literal, end: c.end + 1), certainty: .guess)
+                    )
+            else
+                d.message @ opening + "a string holds its characters as themselves, and this language has no escape for one by its code; write `\\\\` for a literal backslash"
+
+            if !one.is_err()
+                d.fixes @ d.fixes.push(
+                    diag.Fix(title: "write the character itself: " + escape_readings.quoted(one.must()), replacement: one.must(), span: span, certainty: .guess)
+                )
+
+            if ctx == .in_str
+                d.fixes @ d.fixes.push(backslashed)
+        .bare =>
+            d.fixes @ d.fixes.push(
+                diag.Fix(title: "drop the backslash: " + escape_readings.quoted(escaped), replacement: escaped, span: span, certainty: .guess)
+            )
+
+            if ctx == .in_char
+                d.message @ opening + "the escapes are " + escape.legal(ctx) + "; a character literal holds one character, written bare, and a backslash is `'\\\\'`"
+                d.fixes @ d.fixes.push(
+                    diag.Fix(title: "write a backslash: `\\\\`", replacement: "\\\\", span: span, certainty: .guess)
+                )
+            else
+                d.message @ opening + escape_readings.quoted(escaped) + " needs no escape inside a string, write it bare; write `\\\\` for a literal backslash"
+                d.fixes @ d.fixes.push(backslashed)
+        .brace =>
+            d.message @ opening + "a brace is written `{{` in an `f\"…\"` literal; write `\\\\` for a literal backslash"
+            d.fixes @ d.fixes.push(
+                diag.Fix(title: "write the brace: `{{`", replacement: "{{", span: span, certainty: .guess)
+            )
+            d.fixes @ d.fixes.push(backslashed)
+
+    state.push_diagnostic(@l.diagnostics, d)
+    return end
+
+# The value written into the string: in the piece of an `f"…"` literal the
+# hole alone, over the escape to its `)`; in a plain string the whole literal
+# as the `f"…"` one it meant, where it closes on its line; and where it does
+# not, the hole over the escape, which is then only an example.
+function hole_fix(text: str, hole: str, backslash: i64, close: i64, literal: i64) -> diag.Fix
+    here = token.Span(start: backslash, end: close + 1)
+
+    if text[literal] == '"'
+        closes = escape_readings.plain_end(text, literal: literal)
+
+        if closes >= 0
+            rewritten = escape_readings.interpolated(text, from: literal, to: closes)
+            return diag.Fix(
+                title: "write the value into an `f` literal: " + escape_readings.quoted(rewritten),
+                replacement: rewritten,
+                span: token.Span(start: literal, end: closes),
+                certainty: .guess
+            )
+    return diag.Fix(
+        title: "write the value as a hole: " + escape_readings.quoted(hole),
+        replacement: hole,
+        span: here,
+        certainty: .guess
+    )

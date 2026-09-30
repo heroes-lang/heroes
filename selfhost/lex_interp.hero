@@ -82,7 +82,7 @@ function scan_piece(@l: state.LexState, text: str, start: i64)
                 l.holes @ l.holes.push(l.open_brackets.len())
                 return
         else if b == '\\'
-            if !literals.escape_step(@l, text, .in_str)
+            if !literals.escape_step(@l, text, .in_str, literal: start)
                 break
         else
             if b == layout.CR
