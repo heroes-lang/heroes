@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-135-a-test-line-that-lost-its-assert.hero:18:5: error[discarded_value]: this line's value has type `bool` and nothing receives it — a `test` checks only what it asserts: write `assert …`, or `_ = …` to discard it on purpose
+tests/golden/check/fixedbugs-135-a-test-line-that-lost-its-assert.hero:21:5: error[discarded_value]: this line's value has type `bool` and nothing receives it — a `test` checks only what it asserts: write `assert …`, or `_ = …` to discard it on purpose
+tests/golden/check/fixedbugs-135-a-test-line-that-lost-its-assert.hero:25:9: error[discarded_value]: this line's value has type `bool` and nothing receives it — a `test` checks only what it asserts: write `assert …`, or `_ = …` to discard it on purpose
+tests/golden/check/fixedbugs-135-a-test-line-that-lost-its-assert.hero:28:5: error[discarded_value]: this line's value has type `i64` and nothing receives it — write `_ = …` to discard it on purpose
