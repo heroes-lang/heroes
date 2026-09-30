@@ -141,7 +141,7 @@ function read_bodies(apart: lexer.LexOutput, text: str, root_end: i64) -> [diag.
 
 # The apart reading's parser diagnostics, as its normal arm says them.
 function read_apart(apart: lexer.LexOutput, text: str, root_end: i64) -> [diag.Diagnostic]
-    c: cursor.Cursor @ cursor.bounded_cursor(tokens: apart.tokens, root_end: root_end)
+    c: cursor.Cursor @ cursor.lexed_cursor(tokens: apart.tokens, root_end: root_end, closes: apart.closes)
     a: ast.Ast @ ast.new_ast()
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []

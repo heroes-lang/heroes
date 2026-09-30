@@ -27,6 +27,7 @@
 
 use token
 use cursor
+use doc_comments
 use ast
 use lexer
 use parse/type
@@ -57,7 +58,7 @@ function field_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
             reading @ false
         else if k == .ident
             name = cursor.current_span(c)
-            doc = cursor.take_docs(@c, text, name)
+            doc = doc_comments.take_docs(@c, text, name)
             _ = cursor.bump(@c)
 
             if !cursor.expect(@c, text: text, kind: .colon, code: "expected_field_type", what: "`:` and the field's type")
@@ -111,7 +112,7 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
             reading @ false
         else if k == .ident
             name = cursor.current_span(c)
-            doc = cursor.take_docs(@c, text, name)
+            doc = doc_comments.take_docs(@c, text, name)
             _ = cursor.bump(@c)
             colon_habit.eat(@c)
             which = "the case `" + cursor.slice_of(text, name) + "`"

@@ -88,6 +88,11 @@ record LexState
     # break to the margin of the line it stands before.
     bodies: bool
     deeper: bool
+    # Where every bracket still open was named never closed before the file's
+    # end: the offset of each line at column 0 that opens a declaration inside
+    # brackets (`layout.close_brackets`), ascending. The parser is told them,
+    # so it names no closer the lexer named and reads the declaration as one.
+    closes: [i64]
 
 function new_state() -> LexState
     brackets: [token.Span] = []
@@ -97,6 +102,7 @@ function new_state() -> LexState
     held: [token.Token] = []
     breaks: [Break] = []
     heads: [i64] = []
+    closes: [i64] = []
     return LexState(
         pos: 0,
         level: 0,
@@ -113,7 +119,8 @@ function new_state() -> LexState
         apart: false,
         heads: heads,
         bodies: false,
-        deeper: false
+        deeper: false,
+        closes: closes
     )
 
 ## Emitting

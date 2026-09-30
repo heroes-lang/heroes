@@ -6,8 +6,8 @@
 #
 # 1. **Comments never reach the grammar.** The cursor's position never rests on
 #    a comment, but the spans it passes are kept, because a comment directly
-#    above a declaration IS its documentation (design.md §4.1). `take_docs`
-#    hands that run back when a declaration starts.
+#    above a declaration IS its documentation (design.md §4.1).
+#    `doc_comments.take_docs` hands that run back when a declaration starts.
 # 2. **The parser never stops.** A failed expectation is a diagnostic plus a
 #    recovery move, so a broken first declaration cannot hide the nine after it.
 # 3. **Errors are reported once.** At an `error` token the lexer has already
@@ -37,17 +37,22 @@
 use token
 use diag
 use describe
-use text_lines
 
 ## Reading the text
 
 # Line and column live in `text_lines.hero` — a seam, not a squeeze: reading
 # lines out of a text has nothing to do with tokens, and the file that does
 # it imports nothing at all. That module's own doc carries why three of its
-# four functions exist.
+# four functions exist; `doc_comments` is what reads them for the cursor.
 
 function slice_of(text: str, span: token.Span) -> str
     return text.slice(from: span.start, to: span.end)
+
+# Whether a comment is a `##` section heading, which documents the section and
+# not the declaration under it: `doc_comments.take_docs` and the formatter's
+# page ask it alike.
+function starts_a_section(comment: str) -> bool
+    return comment.len() >= 2 && comment[0] == '#' && comment[1] == '#'
 
 ## The cursor
 
@@ -69,6 +74,10 @@ record Cursor
     root_end: i64
     # What a head held back over a joined line, for `parse` to place.
     held: [diag.Held]
+    # Where the lexer named every bracket still open, a declaration opening
+    # its line at column 0 (`lexer.LexOutput.closes`): no closer found past
+    # one of these offsets closes an opener before it (`parse/unclosed`).
+    closes: [i64]
 
 function new_cursor(tokens: [token.Token]) -> Cursor
     return bounded_cursor(tokens: tokens, root_end: -1)
@@ -76,10 +85,24 @@ function new_cursor(tokens: [token.Token]) -> Cursor
 # The same, told where the author's text stops. -1 means "everything is
 # the author's", which is what a single-file parse is.
 function bounded_cursor(tokens: [token.Token], root_end: i64) -> Cursor
+    none: [i64] = []
+    return lexed_cursor(tokens: tokens, root_end: root_end, closes: none)
+
+# The same over a stream the lexer made, told where it closed the brackets a
+# mistake left open.
+function lexed_cursor(tokens: [token.Token], root_end: i64, closes: [i64]) -> Cursor
     said: [diag.Diagnostic] = []
     comments: [token.Span] = []
     held: [diag.Held] = []
-    c: Cursor @ Cursor(tokens: tokens, pos: 0, diagnostics: said, comments: comments, root_end: root_end, held: held)
+    c: Cursor @ Cursor(
+        tokens: tokens,
+        pos: 0,
+        diagnostics: said,
+        comments: comments,
+        root_end: root_end,
+        held: held,
+        closes: closes
+    )
     pass_comments(@c)
     return c
 
@@ -194,61 +217,6 @@ function skip_terminators(@c: Cursor)
     while at(c, .terminator)
         _ = bump(@c)
 
-## Documentation
-
-# The comment lines directly above a declaration, in source order (§4.1).
-#
-# Adjacency is the whole rule, and it is two comparisons: the comment must sit
-# on the line immediately above, and it must start in the same column — which is
-# what tells `# doc` on its own line from the trailing `x = 5  # note` on the
-# line before. A `##` section heading ends the run: it documents the section,
-# not the declaration under it.
-function take_docs(@c: Cursor, text: str, decl: token.Span) -> [token.Span]
-    # Counted UPWARD from the declaration instead of downward from byte 0:
-    # `wanted` is how many lines above it the next doc comment must sit, so
-    # the run is 1, 2, 3 … and nothing here needs a line number at all.
-    decl_col = text_lines.column_of(text, decl.start)
-    wanted: i64 @ 1
-    docs: [token.Span] @ []
-    i: i64 @ c.comments.len() - 1
-
-    while i >= 0
-        s = c.comments[i]
-        above = text_lines.lines_above(text: text, comment: s.start, decl: decl.start)
-
-        if above == 0
-            # A trailing comment on the declaration's own line.
-            i @ i - 1
-            continue
-
-        if above != wanted || text_lines.column_of(text, s.start) != decl_col
-            i @ -1
-            continue
-
-        if starts_a_section(slice_of(text, s))
-            i @ -1
-            continue
-        docs @ docs.push(s)
-        wanted @ wanted + 1
-        i @ i - 1
-
-    empty: [token.Span] = []
-    c.comments @ empty
-    return reversed(docs)
-
-function starts_a_section(comment: str) -> bool
-    return comment.len() >= 2 && comment[0] == '#' && comment[1] == '#'
-
-function reversed(spans: [token.Span]) -> [token.Span]
-    out: [token.Span] @ []
-    i: i64 @ spans.len() - 1
-
-    while i >= 0
-        out @ out.push(spans[i])
-        i @ i - 1
-
-    return out
-
 ## Failing
 
 # How many diagnostics have been reported so far. The statement parser compares
@@ -354,36 +322,6 @@ test "the caret underlines what a reader can see"
     _ = bump(@c)
     _ = bump(@c)
     assert previous_significant_span(c) == token.Span(start: 0, end: 3)
-
-test "a doc comment is the run directly above, in the same column"
-    text = "# one\n# two\nfunction f()\n"
-    tokens: [token.Token] = [
-        token.Token(kind: .comment, span: token.Span(start: 0, end: 5))
-        token.Token(kind: .comment, span: token.Span(start: 6, end: 11))
-        token.Token(kind: .kw_function, span: token.Span(start: 12, end: 20))
-        token.Token(kind: .eof, span: token.Span(start: 24, end: 24))
-    ]
-    c: Cursor @ new_cursor(tokens)
-    docs = take_docs(@c, text, token.Span(start: 12, end: 20))
-    assert docs.len() == 2
-    assert slice_of(text, docs[0]) == "# one"
-    assert slice_of(text, docs[1]) == "# two"
-
-    # The run is consumed once.
-    assert c.comments.len() == 0
-
-test "a section heading ends the run rather than documenting the declaration"
-    text = "## Section\n# doc\nfunction f()\n"
-    tokens: [token.Token] = [
-        token.Token(kind: .comment, span: token.Span(start: 0, end: 10))
-        token.Token(kind: .comment, span: token.Span(start: 11, end: 16))
-        token.Token(kind: .kw_function, span: token.Span(start: 17, end: 25))
-        token.Token(kind: .eof, span: token.Span(start: 29, end: 29))
-    ]
-    c: Cursor @ new_cursor(tokens)
-    docs = take_docs(@c, text, token.Span(start: 17, end: 25))
-    assert docs.len() == 1
-    assert slice_of(text, docs[0]) == "# doc"
 
 ## Recovery — what to drop after a mistake
 

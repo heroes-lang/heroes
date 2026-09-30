@@ -81,7 +81,7 @@ function parse_source(s: source.Source) -> ParseOutput
 
     for one in files
         lexed_file: lexer.LexOutput @ one
-        c: cursor.Cursor @ cursor.bounded_cursor(tokens: lexed_file.tokens, root_end: bound)
+        c: cursor.Cursor @ cursor.lexed_cursor(tokens: lexed_file.tokens, root_end: bound, closes: lexed_file.closes)
         decl.file(@c, @a, @decls, @uses, s.text)
 
         # Where the lexer refused a break, the file is read apart too, and
@@ -135,7 +135,7 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
         if t.kind == .comment
             comments @ comments.push(t.span)
 
-    c: cursor.Cursor @ cursor.bounded_cursor(tokens: lexed.tokens, root_end: root_end)
+    c: cursor.Cursor @ cursor.lexed_cursor(tokens: lexed.tokens, root_end: root_end, closes: lexed.closes)
     a: ast.Ast @ ast.new_ast()
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []

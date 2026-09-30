@@ -1,0 +1,91 @@
+# The documentation of a declaration: the comment lines directly above it
+# (design.md §4.1). The cursor keeps every comment it passes
+# (`cursor.Cursor.comments`, its first job); a declaration takes the run above
+# it when it starts, and the run is consumed once. Out of `cursor.hero` since
+# 2026-09-30, where it was a section of its own and that file had reached its
+# ceiling: which comments document a declaration is a question about the
+# text above it, not about moving through tokens.
+
+use token
+use cursor
+use text_lines
+
+# The comment lines directly above a declaration, in source order (§4.1).
+#
+# Adjacency is the whole rule, and it is two comparisons: the comment must sit
+# on the line immediately above, and it must start in the same column — which is
+# what tells `# doc` on its own line from the trailing `x = 5  # note` on the
+# line before. A `##` section heading ends the run: it documents the section,
+# not the declaration under it.
+function take_docs(@c: cursor.Cursor, text: str, decl: token.Span) -> [token.Span]
+    # Counted UPWARD from the declaration instead of downward from byte 0:
+    # `wanted` is how many lines above it the next doc comment must sit, so
+    # the run is 1, 2, 3 … and nothing here needs a line number at all.
+    decl_col = text_lines.column_of(text, decl.start)
+    wanted: i64 @ 1
+    docs: [token.Span] @ []
+    i: i64 @ c.comments.len() - 1
+
+    while i >= 0
+        s = c.comments[i]
+        above = text_lines.lines_above(text: text, comment: s.start, decl: decl.start)
+
+        if above == 0
+            # A trailing comment on the declaration's own line.
+            i @ i - 1
+            continue
+
+        if above != wanted || text_lines.column_of(text, s.start) != decl_col
+            i @ -1
+            continue
+
+        if cursor.starts_a_section(cursor.slice_of(text, s))
+            i @ -1
+            continue
+        docs @ docs.push(s)
+        wanted @ wanted + 1
+        i @ i - 1
+
+    empty: [token.Span] = []
+    c.comments @ empty
+    return reversed(docs)
+
+function reversed(spans: [token.Span]) -> [token.Span]
+    out: [token.Span] @ []
+    i: i64 @ spans.len() - 1
+
+    while i >= 0
+        out @ out.push(spans[i])
+        i @ i - 1
+
+    return out
+
+test "a doc comment is the run directly above, in the same column"
+    text = "# one\n# two\nfunction f()\n"
+    tokens: [token.Token] = [
+        token.Token(kind: .comment, span: token.Span(start: 0, end: 5))
+        token.Token(kind: .comment, span: token.Span(start: 6, end: 11))
+        token.Token(kind: .kw_function, span: token.Span(start: 12, end: 20))
+        token.Token(kind: .eof, span: token.Span(start: 24, end: 24))
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    docs = take_docs(@c, text, token.Span(start: 12, end: 20))
+    assert docs.len() == 2
+    assert cursor.slice_of(text, docs[0]) == "# one"
+    assert cursor.slice_of(text, docs[1]) == "# two"
+
+    # The run is consumed once.
+    assert c.comments.len() == 0
+
+test "a section heading ends the run rather than documenting the declaration"
+    text = "## Section\n# doc\nfunction f()\n"
+    tokens: [token.Token] = [
+        token.Token(kind: .comment, span: token.Span(start: 0, end: 10))
+        token.Token(kind: .comment, span: token.Span(start: 11, end: 16))
+        token.Token(kind: .kw_function, span: token.Span(start: 17, end: 25))
+        token.Token(kind: .eof, span: token.Span(start: 29, end: 29))
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    docs = take_docs(@c, text, token.Span(start: 17, end: 25))
+    assert docs.len() == 1
+    assert cursor.slice_of(text, docs[0]) == "# doc"
