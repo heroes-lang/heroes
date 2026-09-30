@@ -116,4 +116,10 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     # there left it cut. `seed/heroes.c` is regenerated this way. The `-o`
     # names a place and not a content, so a failure is reported, never
     # passed over, with the path and the reason; the caller prints it once.
-    return publish.write_whole(path: options.output.must(), text: text, keyed: false)
+    #
+    # **And published as the author's file** (defect 136): the rename made a
+    # new file where one was, so it replaced a read-only `-o` that clang's
+    # own `-o` refuses, replaced a link to one instead of writing through it,
+    # reset its mode, and refused `/dev/null`, all four measured. `rewrite`
+    # answers each as `fmt --in-place` does.
+    return publish.rewrite(path: options.output.must(), text: text)

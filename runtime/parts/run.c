@@ -33,6 +33,7 @@
 #else
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/resource.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -328,12 +329,36 @@ static pid_t hero_run_reap(pid_t child, int *wait_status, int nohang) {
 
 static void hero_run_child(const char *program, int report, int tty,
                            const char *in_path, const char *out_path,
-                           const char *err_path) {
+                           const char *err_path, int64_t write_limit) {
     /* Between fork and exec is the only place this can go. The parent cannot
      * know the pid soon enough to win the race against the child's own first
      * spawn, so both sides set it and whichever runs first wins — the
      * documented way to close it. */
     setpgid(0, 0);
+
+    /* The ceiling `hero_run_limit_writes` asked for, on this child alone: the
+     * soft limit only, so the hard one the parent had is left as it was, and
+     * SIGXFSZ ignored, which exec keeps, so a write past it answers EFBIG
+     * rather than killing the child. */
+    if (write_limit > 0) {
+        struct rlimit most;
+        struct sigaction ignore;
+        memset(&ignore, 0, sizeof ignore);
+        ignore.sa_handler = SIG_IGN;
+        sigemptyset(&ignore.sa_mask);
+        int held = getrlimit(RLIMIT_FSIZE, &most) == 0;
+        if (held) {
+            rlim_t asked = (rlim_t)write_limit;
+            most.rlim_cur = most.rlim_max != RLIM_INFINITY && most.rlim_max < asked ? most.rlim_max : asked;
+            held = sigaction(SIGXFSZ, &ignore, NULL) == 0 && setrlimit(RLIMIT_FSIZE, &most) == 0;
+        }
+        if (!held) {
+            int failure = errno;
+            ssize_t ignored = write(report, &failure, sizeof failure);
+            (void)ignored;
+            _exit(126);
+        }
+    }
 
     /* And the same race for the terminal: the child may reach its first read
      * before the parent's `tcsetpgrp` lands. */
@@ -424,6 +449,31 @@ static _Thread_local int64_t hero_run_limit_seconds = 0;
 
 void hero_run_limit(int64_t seconds) {
     hero_run_limit_seconds = seconds > 0 ? seconds : 0;
+}
+
+/* **A CEILING ON WHAT THE NEXT CHILD MAY WRITE**, for the one case in the net
+ * that must make a write fail half-way (defect 136). That case holds that a
+ * verb rewriting the author's file and unable to finish leaves the file as it
+ * was, and the failure it must make is the defect's own: a disk that fills while
+ * the new text is written. A full disk cannot be asked for in a test (the
+ * reproduction used a 2 MB disk image), so the kernel is asked for the nearest
+ * thing: RLIMIT_FSIZE, with SIGXFSZ ignored, makes a write past `bytes` fail
+ * with EFBIG as a full disk fails with ENOSPC, on the child alone, set between
+ * fork and exec. The next `hero_run_go` takes it and clears it, so it never
+ * reaches a second child. Windows keeps no ceiling on the size a process may
+ * write, so there the answer is 0 and the case says it did not run. */
+#if !defined(_WIN32)
+static _Thread_local int64_t hero_run_write_limit = 0;
+#endif
+
+int64_t hero_run_limit_writes(int64_t bytes) {
+#if defined(_WIN32)
+    (void)bytes;
+    return 0;
+#else
+    hero_run_write_limit = bytes > 0 ? bytes : 0;
+    return 1;
+#endif
 }
 
 /* A number no other call in this process will answer, for a caller that needs
@@ -702,6 +752,10 @@ int64_t hero_run_go(const char *program, const char *in_path,
     *status = HERO_OS_OK;
     return (int64_t)code;
 #else
+    /* This child's alone, and never a second one's. */
+    int64_t write_limit = hero_run_write_limit;
+    hero_run_write_limit = 0;
+
     int report[2];
     if (pipe(report) != 0) {
         hero_run_why_code = (int64_t)errno;
@@ -730,7 +784,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
     }
     if (child == 0) {
         close(report[0]);
-        hero_run_child(program, report[1], tty_holder != -1, in_path, out_path, err_path);
+        hero_run_child(program, report[1], tty_holder != -1, in_path, out_path, err_path, write_limit);
     }
 
     /* The other half of the race: EACCES here means the child has already

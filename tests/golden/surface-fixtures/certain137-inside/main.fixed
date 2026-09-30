@@ -1,0 +1,29 @@
+# Defect 137: certain fixes that enclose others, inside a body. Each line
+# used to come out of `check --apply` with text no fix proposed: the next
+# line's first letter eaten, the `@` or the labels the inner fix wrote lost
+# under the enclosing one, a closer left over. And the last line is a chain
+# the checker reports at its first link alone, which one pass cut by one
+# `.must()`. `main.fixed` is what one `--apply` writes now.
+record Counter
+    n: i64
+
+function total(n: i64) -> i64
+    return n + 1
+
+function bump(@c: Counter) -> i64
+    c.n @ c.n + 1
+    return c.n
+
+function copy_text(from: str, to: str) -> str
+    return from + " -> " + to
+
+function one() -> i64
+    return 1
+
+function main()
+    xs = 4
+    print(total(xs))  #~ bad_operand bad_operand
+    k: Counter @ Counter(n: 0)
+    print(bump(@k))  #~ bad_operand marker_mismatch
+    print(copy_text(from: "a", to: "b"))  #~ bad_operand needs_label needs_label
+    print(one())  #~ bad_operand

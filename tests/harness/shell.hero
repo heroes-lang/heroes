@@ -39,6 +39,7 @@ extern "hero_os.h"
     function hero_run_reset()
     function hero_run_arg(word: str)
     function hero_run_limit(seconds: i64)
+    function hero_run_limit_writes(bytes: i64) -> i64
     function hero_run_exe_suffix() -> str
     function hero_os_pid() -> i64
     # `lent`: each call reads the path while it runs and keeps nothing of it
@@ -126,12 +127,32 @@ record Run
 # Windows arm, where the inherited handle already had a probe around it.
 function run_fed(scratch: str, program: str, words: [str], stdin_path: str) -> Run?
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: 0)?,
         program: program
     )
 
 function run(scratch: str, program: str, words: [str]) -> Run?
-    return insisted(ran: spawned(scratch: scratch, program: program, words: words, in_path: "")?, program: program)
+    return insisted(
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: 0)?,
+        program: program
+    )
+
+# **The same call, with every file the child writes held to `bytes`**: a
+# write past it fails as a full disk fails, which is the nearest thing to
+# one a case can ask for (defect 136, `suite_surface`'s in-place cases; the
+# runtime's `hero_run_limit_writes` sets it between fork and exec, on that
+# child alone). Where the platform has no such ceiling, `can_limit_writes`
+# says so first and the caller runs nothing.
+function run_limited(scratch: str, program: str, words: [str], bytes: i64) -> Run?
+    return insisted(
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: bytes)?,
+        program: program
+    )
+
+# Whether a child can be held to a ceiling on what it writes: every POSIX
+# platform, and not Windows. Asking clears any ceiling not yet taken.
+function can_limit_writes() -> bool
+    return hero_run_limit_writes(bytes: 0) == 1
 
 # **The same call for the places that ASK whether a program is there.**
 # Five of them, and each is a case whose SUBJECT is the machine: `git` that
@@ -144,7 +165,7 @@ function run(scratch: str, program: str, words: [str]) -> Run?
 # machine's answer has to say so at the call, which is where a reader of
 # the case will look for it.
 function attempted(scratch: str, program: str, words: [str]) -> Run?
-    return spawned(scratch: scratch, program: program, words: words, in_path: "")
+    return spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: 0)
 
 # Why a `run` came back with no program verdict, for a caller about to print
 # one. "" where it came back with one.
@@ -190,7 +211,7 @@ function insisted(ran: Run, program: str) -> Run?
         msg: program + " could not be started, so it has no exit code; the operating system's own reason is " + ran.why.to_str()
     )
 
-function spawned(scratch: str, program: str, words: [str], in_path: str) -> Run?
+function spawned(scratch: str, program: str, words: [str], in_path: str, write_limit: i64) -> Run?
     # **The scratch directory is this function's to make, not its caller's.**
     # The two streams are files opened under it, so a missing directory makes
     # the child fail to start — and `started: false` then means "the program is
@@ -232,6 +253,11 @@ function spawned(scratch: str, program: str, words: [str], in_path: str) -> Run?
     # `timeout 120`. Nothing this harness runs should be allowed to hang
     # forever, so the limit is not a parameter: it is what `run` means.
     hero_run_limit(seconds: WATCHDOG_SECONDS)
+
+    # Taken by the one `hero_run_go` below and cleared there, so it never
+    # reaches another child; 0 asks for none.
+    if write_limit > 0
+        _ = hero_run_limit_writes(bytes: write_limit)
 
     for word in words
         hero_run_arg(word: word)

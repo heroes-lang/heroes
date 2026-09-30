@@ -6,6 +6,7 @@
 # with its own key.
 
 use cli/digest
+use cli/files
 use cli/flags
 use cli/process
 use cli/publish
@@ -61,18 +62,41 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         line @ line.push("-l" + name)
 
     binary: str @ binary_home(t, line: line, name: module + process.exe_suffix())
+
+    # Where the binary lands, which is `binary` itself but for an author's
+    # `-o` that is a link: that one is written through to the file it names
+    # and stays a link (defect 136), where the rename used to replace it.
+    at: str @ binary
     keyed: bool @ true
 
     if !output.is_err()
         binary @ output.must()
+
+        # Refused before a byte is linked where nothing may be written: a
+        # file that could not be opened for writing, a directory, and a
+        # directory that is not there, which is the author's to make, since
+        # the stage below would make it and the linker never did.
+        at @ publish.landing_for(binary)?
         keyed @ false
 
-        # A directory the author named and that is not there is theirs to
-        # make: the stage below would make it, and the linker never did.
-        if beside(path: binary, name: "").len() > 0 && !process.is_directory(beside(path: binary, name: "."))
-            return fail(code: "not_written", msg: "cannot publish " + binary + ": its directory is not there")
-    stage = publish.private_name(binary)
-    process.mkdir_all(stage)?
+        # Something that is not a file, `-o /dev/null`, cannot be renamed
+        # over and holds nothing to lose: the linker writes into it, as
+        # `clang -o /dev/null` does (measured), where a private name beside
+        # it could not be made and the build was refused.
+        if files.is_special(at)
+            return linked_into(line: line, t: t, at: at, binary: binary)
+    stage = publish.private_name(at)
+    stage_made = process.mkdir_all(stage)
+
+    # Said of the author's file, which is untouched, and not of the private
+    # directory, whose name they never gave (measured: `could not create the
+    # directory ro/out.3932-27.tmp`, for an `-o ro/out` in a read-only one).
+    if stage_made.is_err() && !keyed
+        return publish.refused(
+            path: binary,
+            what: "no directory could be made beside it for the linker's output" + process.because()
+        )
+    stage_made?
     err_path = publish.private_name(t.build + "/link-clang-stderr.txt")
     inner = module + process.exe_suffix()
     line @ strings.with_all(list: line, more: ["-o", stage + "/" + inner])
@@ -92,10 +116,10 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         # Where the linker made a directory, a `.dSYM` being a tree, it is
         # made beside the binary as well.
         relative = made.slice(from: stage.len() + 1, to: made.len())
-        target = published_as(binary: binary, inner: inner, module: module, relative: relative)
+        target = published_as(binary: at, inner: inner, module: module, relative: relative)
 
-        if base_of(relative) != relative
-            process.mkdir_all(beside(path: target, name: "."))?
+        if publish.base_of(relative) != relative
+            process.mkdir_all(publish.beside(path: target, name: "."))?
         published = publish.publish(staged: made, path: target, keyed: keyed)
 
         if published.is_err()
@@ -103,6 +127,21 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
             return fail(code: units.failure_code(published), msg: units.failure_note(published))
 
     _ = process.remove_tree(stage).is_err()
+    return ok(binary)
+
+# The link written straight into `at`, which is not a file. Answers the
+# author's own spelling, as a link published under `build/` does.
+function linked_into(line: [str], t: toolchain.Toolchain, at: str, binary: str) -> str?
+    err_path = publish.private_name(t.build + "/link-clang-stderr.txt")
+    linked = toolchain.run_clang(
+        line: strings.with_all(list: line, more: ["-o", at]),
+        what: "linking",
+        err_path: err_path
+    )
+    publish.discard(err_path)
+
+    if linked.is_err()
+        return fail(code: units.failure_code(linked), msg: units.failure_note(linked))
     return ok(binary)
 
 # Where a binary built from `line` lives under `build/`: one directory per
@@ -129,19 +168,6 @@ function published_as(binary: str, inner: str, module: str, relative: str) -> st
     if strings.starts_with(text: relative, prefix: module)
         return binary + relative.slice(from: module.len(), to: relative.len())
     return binary + "." + relative
-
-# The last part of a path, and a sibling of it: `-o same` has no directory
-# at all, and a sibling of it is a name in the working directory.
-function base_of(path: str) -> str
-    at: i64 @ path.len()
-
-    while at > 0 && path[at - 1] != 47
-        at @ at - 1
-
-    return path.slice(from: at, to: path.len())
-
-function beside(path: str, name: str) -> str
-    return path.slice(from: 0, to: path.len() - base_of(path).len()) + name
 
 ## Tests
 
@@ -274,7 +300,7 @@ test "a binary's home is named by every word of its link line, and an author's -
         package_flags: none,
         link_names: none
     )
-    assert units.failure_text(missing) == "cannot publish " + t.build + "/no-such-directory/app: its directory is not there"
+    assert units.failure_text(missing) == "cannot write " + t.build + "/no-such-directory/app: its directory is not there; " + t.build + "/no-such-directory/app was not created"
 
     for path in process.files_under(t.build).must()
         assert !strings.ends_with(text: path, suffix: ".tmp")
