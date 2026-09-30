@@ -64,6 +64,7 @@ use cursor
 use parse/swap_reading
 use parse/head_lines
 use parse/brace_habit
+use parse/unclosed
 use foreign_at
 
 # Where a head began: how many diagnostics the parser had said, and the
@@ -159,11 +160,13 @@ function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, mi
     if goes_on && body_below(c, text)
         junk(@c, text, missing: missing)
     else
+        # A line crossed, or lines inside a bracket the head left open.
+        silent = failed && crossed && !head_lines.joined_outside_brackets(c, text, from: head.pos)
         absent(
             @c,
             text,
             head: head,
-            silent: failed && crossed && !head_lines.joined_outside_brackets(c, text, from: head.pos),
+            silent: silent || unclosed.swallows_the_body(c, text, from: head.pos),
             missing: missing
         )
 

@@ -24,6 +24,7 @@ use lexer
 use parse/marks as parse_marks
 use parse/type
 use parse/line_end
+use parse/unclosed
 
 ## Type parameters
 
@@ -68,9 +69,14 @@ function generics(@c: cursor.Cursor, text: str) -> [token.Span]
 # what lets `owned` be read after a parameter's type and nowhere else.
 function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [ast.Param]
     out: [ast.Param] @ []
+    at = c.pos
 
     if !cursor.expect(@c, text: text, kind: .lparen, code: "expected_params", what: "`(` — a signature always has a parameter list, `()` when it takes nothing")
         return out
+
+    # A `(` the lexer named never closed ends at its line end no `,` goes on
+    # from, and no closer is named or sought, as a call's (`parse/unclosed`).
+    open_ended = unclosed.never_closed(c, text, open: at)
     cursor.skip_terminators(@c)
 
     if cursor.eat(@c, .rparen)
@@ -113,11 +119,16 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
                 out @ out.push(
                     ast.Param(name: name, ty: ty, mutable: mutable, owned: m.owned, consumes: m.consumes, acquires: m.acquires, transfers: m.transfers, retains: m.retains, borrows: m.borrows, counted_by: m.counted_by, lent: m.lent)
                 )
-                cursor.skip_terminators(@c)
 
-                if !cursor.eat(@c, .comma)
+                if open_ended && unclosed.ends_at_the_line(c)
                     reading @ false
+                else
+                    cursor.skip_terminators(@c)
+                    reading @ cursor.eat(@c, .comma)
 
+    if open_ended
+        unclosed.past_what_goes_on(@c, text: text, holds: .parameters)
+        return out
     cursor.skip_terminators(@c)
 
     if !line_end.expect_closer(@c, text: text, holds: .parameters, kind: .rparen, code: "expected_params_close", what: "`)`, or `,` and another parameter")

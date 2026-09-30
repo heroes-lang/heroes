@@ -32,6 +32,7 @@ use cursor
 use grammar_expr
 use parse/opening
 use parse/brace_habit
+use parse/unclosed
 
 ## The habit
 
@@ -41,9 +42,16 @@ function opens(c: cursor.Cursor, text: str) -> bool
     return brace_habit.opens_here(c, text)
 
 # A head that owes a body: the body, indented or in braces, as the block
-# reader reads it under every head.
+# reader reads it under every head. Where the head's line left a bracket open
+# that the lexer named, the lines below were read inside it and laid out as
+# no body, which is left unsaid (`opening.body_follows`): they are passed
+# over to where the lexer named it (lane recovery-b2, U5).
 function body_or_block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: opening.Mark) -> ast.Block?
-    return grammar_expr.block(@c, @a, text: text, owner: owner, head: head)
+    b = grammar_expr.block(@c, @a, text: text, owner: owner, head: head)
+
+    if b.is_err()
+        unclosed.past_what_was_swallowed(@c, text, from: head.pos)
+    return b
 
 # Braces below a head that failed past a line of its own, `extern "m.h" )`
 # over them, which go whole with that head, `{` to `}`, after the caller's
