@@ -1,0 +1,6 @@
+function main()
+    x = f(1
+    print(x)
+
+extern "math.h"
+    function cos(x: f64) -> f64 junk
