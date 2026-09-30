@@ -1,0 +1,13 @@
+tests/golden/check/fixedbugs-130-an-orphan-under-a-whole-arm-holding-its-own-mistake.hero:13:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-under-a-whole-arm-holding-its-own-mistake.hero:13:23: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-under-a-whole-arm-holding-its-own-mistake.hero:19:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-under-a-whole-arm-holding-its-own-mistake.hero:19:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-under-a-whole-arm-holding-its-own-mistake.hero:26:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-under-a-whole-arm-holding-its-own-mistake.hero:27:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-under-a-whole-arm-holding-its-own-mistake.hero:33:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-under-a-whole-arm-holding-its-own-mistake.hero:34:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-under-a-whole-arm-holding-its-own-mistake.hero:34:23: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-under-a-whole-arm-holding-its-own-mistake.hero:41:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-under-a-whole-arm-holding-its-own-mistake.hero:41:23: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-an-orphan-under-a-whole-arm-holding-its-own-mistake.hero:47:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-an-orphan-under-a-whole-arm-holding-its-own-mistake.hero:47:23: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

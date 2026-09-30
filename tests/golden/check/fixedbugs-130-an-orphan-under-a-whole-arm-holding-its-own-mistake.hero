@@ -1,0 +1,50 @@
+# Verified 2026-09-30 by lane recovery-b2 (lane X4's finding n3, which lane
+# recovery-b1 measured closed). Symptom, until defect 130's second round:
+# below a whole arm, `0 => print(1)` over a deeper `print(99) )`, the orphan
+# went whole with its one `unexpected_block`, and the `)` on its line, a
+# mistake of its own, was never told. It is named once and read now
+# (`parse/orphans.hero`, `grammar_expr.arms_of`). The orphan with nothing
+# wrong in it is `fixedbugs-130-a-block-under-an-arm`; this case holds the
+# ones that hold a mistake, at each place one can stand. No fix.
+
+function under_a_statement_arm(x: i64)
+    match x
+        0 => print(1)
+            print(99) )  #~ unexpected_block expected_end_of_line
+        _ => print(2)
+
+function under_a_bound_arm(n: i64) -> i64
+    k = match n
+        0 => 1
+            y = 3 )  #~ unexpected_block expected_end_of_line
+        _ => 2
+    return k
+
+function on_its_second_line(x: i64)
+    match x
+        0 => print(1)
+            print(98)  #~ unexpected_block
+            y = 3 )  #~ expected_end_of_line
+        _ => print(2)
+
+function deeper_still(x: i64)
+    match x
+        0 => print(1)
+            print(98)  #~ unexpected_block
+                z = 4 )  #~ unexpected_block expected_end_of_line
+        _ => print(2)
+
+function past_a_comment(x: i64)
+    match x
+        0 => print(1)
+            # a note
+            print(99) )  #~ unexpected_block expected_end_of_line
+        _ => print(2)
+
+function under_the_last_arm(x: i64)
+    match x
+        _ => print(1)
+            print(99) )  #~ unexpected_block expected_end_of_line
+
+function main()
+    under_a_statement_arm(0)
