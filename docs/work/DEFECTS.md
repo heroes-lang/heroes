@@ -166,6 +166,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and 0 alone; the census of 1358 files moved the six new cases and nothing
     else. The shapes still open are the next batch's items.
 
+    **2026-09-30, lane recovery-b3, past a closer of another kind the parser
+    resumes where the lexer closed the bracket, and an extern group whose
+    header failed has its signatures read** (the recovery instrument's
+    `wrong-closer`, `single-quotes` and `string-open` as first mistakes):
+    repaired at `52b2d378`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
@@ -506,7 +513,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **2026-09-30, lane recovery-b3, a record's or a variant's type parameters
     end its head's line, told once at the `<`, and its members are read**
-    (lane recovery-b2's report, M1): repaired at `042a14a4`, gated by its
-    cases and the compiler's own tests; the net is owed at the batch's close.
+    (lane recovery-b2's report, its first shape): repaired at `042a14a4`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close.
 
 *******************************************************************************
