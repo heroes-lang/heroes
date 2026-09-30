@@ -25,7 +25,8 @@ use cli/argv
 use cli/io
 use cli/json_text
 use cli/publish
-use stable
+use cli/certain
+use library_source
 
 function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     parsed = parse.parse_source(s)
@@ -36,7 +37,7 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
 
     if argv.has(inv, spelling: "--permissive")
         said @ parsed.control
-    stop = report(said, s, inv)
+    stop = report(said, s, inv, stage: 1)
 
     if !stop.is_err()
         return stop.must()
@@ -44,17 +45,17 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     # The module graph before any name is resolved: a missing module
     # makes every qualified name into it an unknown name, and the
     # cause once beats the consequence nine times (§4.17).
-    stop_g = report(modules.errors(s, parsed.uses), s, inv)
+    stop_g = report(modules.errors(s, parsed.uses), s, inv, stage: 2)
 
     if !stop_g.is_err()
         return stop_g.must()
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    stop_r = report(out.diagnostics, s, inv)
+    stop_r = report(out.diagnostics, s, inv, stage: 3)
 
     if !stop_r.is_err()
         return stop_r.must()
     c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
-    stop_c = report(c.diagnostics, s, inv)
+    stop_c = report(c.diagnostics, s, inv, stage: 4)
 
     if !stop_c.is_err()
         return stop_c.must()
@@ -69,8 +70,9 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     return .ok_exit
 
 # Print a stage's diagnostics in the form the flags asked for, and say
-# whether to stop. Absent means "nothing to report, carry on".
-function report(diagnostics: [diag.Diagnostic], s: source.Source, inv: argv.Invocation) -> cli_table.Exit?
+# whether to stop. Absent means "nothing to report, carry on". `stage` is
+# `run`'s number for it, 1 to 4, which `--apply` asks again (`settle`).
+function report(diagnostics: [diag.Diagnostic], s: source.Source, inv: argv.Invocation, stage: i64) -> cli_table.Exit?
     # A diagnostic pointing into the library is the COMPILER being
     # wrong, not the program: the line it names is in a file the
     # author cannot open, so the message is unactionable however good
@@ -82,12 +84,7 @@ function report(diagnostics: [diag.Diagnostic], s: source.Source, inv: argv.Invo
             )
             return ok(.failed_exit)
 
-    kept: [diag.Diagnostic] @ []
-
-    for d in diagnostics
-        if argv.has(inv, spelling: "--permissive") && diag.is_thesis_rule(d)
-            continue
-        kept @ kept.push(d)
+    kept = kept_of(diagnostics, inv)
 
     if kept.len() == 0
         return fail(code: "none", msg: "nothing to report, carry on")
@@ -95,11 +92,11 @@ function report(diagnostics: [diag.Diagnostic], s: source.Source, inv: argv.Invo
     if argv.has(inv, spelling: "--apply")
         # The repair is the artifact here, so the diagnostics stay
         # quiet: a caller that wants both runs the command twice.
-        repaired = apply(kept, s)
+        repaired = settle(first: kept, s: s, inv: inv, stage: stage)
 
         if argv.has(inv, spelling: "--in-place")
             # The write goes through s.name because that is the file
-            # the text came from — apply returns user_text with the
+            # the text came from; settle returns user_text with the
             # edits, deliberately excluding the library §1.11 appends.
             # THE REPORT IS THE DIFFERENCE, not the diagnostic count
             # (panel 071): a file can have diagnostics and no
@@ -192,96 +189,120 @@ function json(diagnostics: [diag.Diagnostic], s: source.Source) -> str
 function quote(text: str) -> str
     return "\"" + json_text.json_string(text) + "\""
 
-# Applies every certain fix, back to front so the earlier spans stay
-# valid. Only certain — CLAUDE.md §8 rather than caution: a guess is
-# prose for the reader, and a tool that applied one would be writing
-# the program's meaning on the author's behalf. Fixes outside the file
-# being written are skipped AND SAID OUT LOUD: a certain fix in a used
-# module once indexed past the end of the root's text and panicked at
-# exit 101, a code §10 does not have; dropping them silently would be
-# worse, because this flag's contract is EVERY certain fix.
-function apply(diagnostics: [diag.Diagnostic], s: source.Source) -> str
-    edits: [diag.Fix] @ []
-    elsewhere: [str] @ []
-    limit = source_extent.root_end(s)
+# Every certain fix of the stage that spoke, each written into the text it
+# was made from (defect 137; `cli/certain.hero` has the measurement). Only
+# certain: CLAUDE.md §8 rather than caution, since a guess is prose for the
+# reader and a tool that applied one would write the program's meaning on
+# the author's behalf.
+#
+# A ROUND writes the fixes that touch no other, and the stage is then asked
+# again of the text the round left, until it has no certain fix to give.
+# Two shapes need the second asking, measured on the same day: a fix
+# withheld because it enclosed another is made again from the text the inner
+# one left; and a chain, `one().must().must()`, is reported by the checker at
+# its first link alone, so one round removed one `.must()` and left a certain
+# fix for the next `--apply`, which is what the fixes suite holds no case to.
+# A round that writes nothing, or leaves the text as it was, is the last;
+# ROUNDS stops a fix that keeps making others, and a text seen before stops
+# two that undo each other, both said out loud.
+#
+# Fixes outside the file being written are said out loud rather than
+# dropped: a certain fix in a used module once indexed past the end of the
+# root's text and panicked at exit 101, a code §10 does not have, and this
+# flag's contract is EVERY certain fix.
+function settle(first: [diag.Diagnostic], s: source.Source, inv: argv.Invocation, stage: i64) -> str
+    round = certain.applied(first, s)
 
-    for d in diagnostics
-        for fix in d.fixes
-            if fix.certainty != .certain
-                continue
-
-            if fix.span.end > limit
-                found = source.locate(s, fix.span.start)
-                at = found.file + ":" + found.line.to_str()
-                already: bool @ false
-
-                for one in elsewhere
-                    if one == at
-                        already @ true
-
-                if !already
-                    elsewhere @ elsewhere.push(at)
-                continue
-            edits @ edits.push(fix)
-
-    if elsewhere.len() > 0
+    if round.elsewhere.len() > 0
         io.eprint(
-            text: "note: " + elsewhere.len().to_str() + " certain fix(es) are in another module and were not applied: " + elsewhere.join(", ")
+            text: "note: " + round.elsewhere.len().to_str() + " certain fix(es) are in another module and were not applied: " + round.elsewhere.join(", ")
+        )
+    text: str @ round.text
+    seen: [str] @ [source_extent.user_text(s)]
+    malformed: i64 @ round.malformed
+    wrote: i64 @ round.applied
+    count: i64 @ 1
+
+    while wrote > 0 && count < ROUNDS
+        again = modules.load_text(path: s.name, root_text: text, library: library_source.text())
+        next = certain.applied(said_at(again, inv, stage: stage), again)
+        malformed @ malformed + next.malformed
+
+        if next.applied == 0 || next.text == text
+            wrote @ 0
+            break
+
+        if certain.listed(names: seen, name: next.text)
+            io.eprint(
+                text: "internal error: two certain fixes for " + s.name + " undo each other; `--apply` stopped at the text before them"
+            )
+            wrote @ 0
+            break
+        seen @ seen.push(text)
+        text @ next.text
+        wrote @ next.applied
+        count @ count + 1
+
+    if wrote > 0
+        io.eprint(
+            text: "note: certain fixes for " + s.name + " were still being found after " + ROUNDS.to_str() + " rounds; `check --apply` again writes the rest"
         )
 
-    # Ascending by start, a tie in the order found (`stable.order`; defect
-    # 105: the insertion this was copied the list at every fix), then
-    # applied back to front.
-    starts: [i64] @ []
-
-    for fix in edits
-        starts @ starts.push(fix.span.start)
-
-    ordered: [diag.Fix] @ []
-
-    for at in stable.order(by: starts)
-        taken = edits[at]
-        ordered @ ordered.push(taken)
-
-    # Fixes apart, each ending where or before the next begins, give the
-    # same text back to front as front to back, and front to back copies
-    # the file once: the piece before each fix, then the fix, joined. Back
-    # to front copied the whole file at every fix. Fixes that overlap are
-    # applied back to front as ever, each on the text the later ones left.
-    apart: bool @ true
-    next: i64 @ 0
-
-    while next < ordered.len()
-        if ordered[next].span.end < ordered[next].span.start
-            apart @ false
-
-        if next > 0 && ordered[next - 1].span.end > ordered[next].span.start
-            apart @ false
-        next @ next + 1
-
-    if apart
-        pieces: [str] @ []
-        cut: i64 @ 0
-        whole = source_extent.user_text(s)
-
-        for fix in ordered
-            stretch = whole.slice(from: cut, to: fix.span.start)
-            pieces @ pieces.push(stretch)
-            pieces @ pieces.push(fix.replacement)
-            cut @ fix.span.end
-
-        rest = whole.slice(from: cut, to: whole.len())
-        pieces @ pieces.push(rest)
-        return pieces.join("")
-    text: str @ source_extent.user_text(s)
-    index: i64 @ ordered.len() - 1
-
-    while index >= 0
-        fix = ordered[index]
-        text @ text.slice(from: 0, to: fix.span.start) + fix.replacement + text.slice(from: fix.span.end, to: text.len())
-        index @ index - 1
-
+    if malformed > 0
+        io.eprint(
+            text: "internal error: " + malformed.to_str() + " certain fix(es) had a span that ends before it starts, and were not applied"
+        )
     return text
+
+# How many times `settle` asks one stage: far past any chain an author writes,
+# and short of a certain fix that reproduces itself, as `needs_qualifying`'s
+# did once (`window.destroy()` to `window.window.destroy()`, panel 102).
+constant ROUNDS: i64
+    64
+
+# What `report` acts on for `s` at `stage`, `run`'s number for it: that
+# stage's diagnostics with `--permissive`'s filter, or none where that stage
+# says nothing or one before it speaks, since `run` would stop there. The
+# stages and their order are `run`'s, and the round cases below hold them.
+function said_at(s: source.Source, inv: argv.Invocation, stage: i64) -> [diag.Diagnostic]
+    parsed = parse.parse_source(s)
+    said: [diag.Diagnostic] @ parsed.diagnostics
+
+    if argv.has(inv, spelling: "--permissive")
+        said @ parsed.control
+    syntax = kept_of(said, inv)
+
+    if syntax.len() > 0 || stage == 1
+        return at_stage(said: syntax, found: 1, stage: stage)
+    graph = kept_of(modules.errors(s, parsed.uses), inv)
+
+    if graph.len() > 0 || stage == 2
+        return at_stage(said: graph, found: 2, stage: stage)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    names = kept_of(out.diagnostics, inv)
+
+    if names.len() > 0 || stage == 3
+        return at_stage(said: names, found: 3, stage: stage)
+    types = kept_of(checker.check(parsed.tree, out, s, parsed.decls).diagnostics, inv)
+    return at_stage(said: types, found: 4, stage: stage)
+
+function at_stage(said: [diag.Diagnostic], found: i64, stage: i64) -> [diag.Diagnostic]
+    if found == stage
+        return said
+    none: [diag.Diagnostic] = []
+    return none
+
+# A stage's diagnostics as `--permissive` keeps them: without the ones that
+# exist for the thesis, the control arm of Part 11's measurement.
+function kept_of(diagnostics: [diag.Diagnostic], inv: argv.Invocation) -> [diag.Diagnostic]
+    kept: [diag.Diagnostic] @ []
+
+    for d in diagnostics
+        if argv.has(inv, spelling: "--permissive") && diag.is_thesis_rule(d)
+            continue
+        kept @ kept.push(d)
+
+    return kept
 
 ## Tests
 
@@ -312,7 +333,7 @@ test "stages stop on the first noise, apply repairs, holes stay exit 0"
     fixable = "fn main()\n    print(1)\n"
     fs = source.new_source(name: "t.hero", text: fixable)
     parsed = parse.parse(fs.text)
-    repaired = apply(parsed.diagnostics, fs)
+    repaired = certain.applied(parsed.diagnostics, fs).text
     assert has_text(text: repaired, needle: "function main()")
 
     # And nowhere else (defect 133's second round): `fn = 3` in a body was
@@ -320,7 +341,40 @@ test "stages stop on the first noise, apply repairs, holes stay exit 0"
     # asserted it until 2026-09-29. A name's place takes no swap.
     named = "function main()\n    fn = 3\n    print(fn)\n"
     ns = source.new_source(name: "t.hero", text: named)
-    assert apply(parse.parse(ns.text).diagnostics, ns) == named
+    assert certain.applied(parse.parse(ns.text).diagnostics, ns).text == named
+
+# DEFECT 137's reproducers, the certain-fix audit's (2026-09-30), through the
+# rounds: fixes whose spans enclose others, each written into the text it was
+# made for. Before the rounds the first aborted `check --apply` at exit 134,
+# `string slice out of range`; the second wrote `print(total(xs.must())rint(0)`;
+# the third and fourth lost the inner fix under the enclosing one and landed
+# shifted, `print(bump(k)))` and `print(copy_text("a", "b")lt("none"))`; the
+# fifth left `4)` behind the enclosing parentheses; the sixth undid both inner
+# swaps. And the chain the checker reports at its first link only, which one
+# round cut by one `.must()` and left a certain fix behind for the next.
+# `stage` is the stage that speaks, 4 the checker's and 1 the parser's.
+test "a certain fix enclosing another is made again from the text the inner one left"
+    head = "function total(n: i64) -> i64\n    return n + 1\n\nfunction main()\n    xs = 4\n"
+    assert settled_text(text: head + "    print(total(xs.must()).must())\n", stage: 4) == head + "    print(total(xs))\n"
+    assert settled_text(text: head + "    print(total(xs.must()).must())\n    print(0)\n", stage: 4) == head + "    print(total(xs))\n    print(0)\n"
+    counter = "record Counter\n    n: i64\n\nfunction bump(@c: Counter) -> i64\n    c.n @ c.n + 1\n    return c.n\n\nfunction main()\n    k: Counter @ Counter(n: 0)\n"
+    assert settled_text(text: counter + "    print(bump(k).must())\n", stage: 4) == counter + "    print(bump(@k))\n"
+    labels = "function copy_text(from: str, to: str) -> str\n    return from + \" -> \" + to\n\nfunction main()\n"
+    assert settled_text(text: labels + "    print(copy_text(\"a\", \"b\").default(\"none\"))\n", stage: 4) == labels + "    print(copy_text(from: \"a\", to: \"b\"))\n"
+    body = "\n    return n\n\nfunction main()\n    print(1)\n"
+    assert settled_text(text: "function adder(n: i64) -> function(i64) -> function(i64) -> i64" + body, stage: 1) == "function adder(n: i64) -> (function(i64) -> (function(i64) -> i64))" + body
+    assert settled_text(text: "function apply(f: function(int) -> int, x: i64) -> i64\n    return f(x)\n", stage: 1) == "function apply(f: (function(i64) -> i64), x: i64) -> i64\n    return f(x)\n"
+    one = "function one() -> i64\n    return 1\n\nfunction main()\n"
+    assert settled_text(text: one + "    print(one().must().must().must())\n", stage: 4) == one + "    print(one())\n"
+    assert settled_text(text: one + "    x = one().must().default(2)\n    print(x)\n", stage: 4) == one + "    x = one()\n    print(x)\n"
+
+# The text `check --apply` writes for `text`, asked of `stage` as `run` asks
+# it, the library joined as the verb joins it.
+function settled_text(text: str, stage: i64) -> str
+    s = modules.load_text(path: "build/selftest-certain.hero", root_text: text, library: library_source.text())
+    hits: [argv.FlagHit] = [argv.FlagHit(spelling: "--apply", value: fail(code: "none", msg: "no value"))]
+    inv = argv.Invocation(tag: .check_cmd, file: ok("build/selftest-certain.hero"), program_args: [], flags: hits)
+    return settle(first: said_at(s, inv, stage: stage), s: s, inv: inv, stage: stage)
 
 # Defects 130 and 131: the control arm is never left with nothing to say about
 # a program the parser could not read. It drops the thesis rules, so it reads

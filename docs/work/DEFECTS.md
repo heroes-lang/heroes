@@ -594,4 +594,9 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     whether that promise is kept the same way is a question about the
     library, and a change to what it does is the panel's.
 
+    **2026-09-30, lane 136, a file the author names is replaced whole or not
+    at all, and a write that fails or is killed leaves it as it was**:
+    repaired at `1f173a42`, gated by its cases and the compiler's own tests;
+    the net is owed at the lane's close.
+
 *******************************************************************************

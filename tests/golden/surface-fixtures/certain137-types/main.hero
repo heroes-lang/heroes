@@ -1,0 +1,16 @@
+# Defect 137: a function type written without its parentheses, whose
+# certain fix wraps the whole type, over another such type and over two
+# `int`s with their own certain fix. `check --apply` left `4)` behind the
+# enclosing parentheses in the first, and undid both swaps in the second.
+# `main.fixed` is what one `--apply` writes now.
+function adder(n: i64) -> function(i64) -> function(i64) -> i64  #~ expected_type expected_type
+    return ???
+
+function apply(f: function(int) -> int, x: i64) -> i64  #~ reserved_word reserved_word expected_type
+    return f(x)
+
+function double(n: i64) -> i64
+    return n * 2
+
+function main()
+    print(apply(double, 4))
