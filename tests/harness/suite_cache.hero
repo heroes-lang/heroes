@@ -58,6 +58,14 @@
 #    halves of this pair are the same instrument pointed at the two
 #    directions a cache can lie in.
 #
+# 7. **Two builds at once are two correct builds** (defect 134). Every
+#    artifact under `build/` was staged under one name, and the C, the
+#    replay and the record were written in place, so builds of one program
+#    started together failed five in six on a cold `build/`, worded as clang
+#    refusing the C. Six `heroes run` of one program are started at once on
+#    six threads (`hero_thread_spawn`, the runtime's), and every one must
+#    exit 0 and print the program's answer.
+#
 # THE PROGRAM IS WRITTEN HERE rather than kept under
 # `tests/golden/surface-fixtures/`, and the header is why: the case is
 # about EDITING a C header, so the header is test data with three
@@ -68,6 +76,12 @@
 use report
 use shell
 use strings
+
+# Six builds at once need six threads, and a thread body is handed one `i64`
+# (`examples/threads/main.hero`), so what they run is read from a plan file.
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
 
 # Where the two-module program and its header live for the duration.
 # Under the scratch directory, so `heroes build`'s own `build/` (at the
@@ -152,7 +166,99 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     a_reordered_variant_is_not_served_warm(@r, scratch: scratch, compiler: compiler)
     a_warm_cache_never_turns_a_failure_into_a_pass(@r, scratch: scratch, compiler: compiler)
     a_warm_cache_never_replays_a_warning_that_was_repaired(@r, scratch: scratch, compiler: compiler)
+    builds_started_together_all_succeed(@r, scratch: scratch, compiler: compiler)
     return ok(r)
+
+# The program the builds share, beside a binding whose `@` the pointee check
+# asks about, so the check runs too. It lives under the run's scratch, whose
+# name carries the harness's process id: its units, its pointee directory
+# and its binary are cold on every run, since each is keyed on its path.
+# The runtime's object is the one artifact this case cannot make cold, keyed
+# as it is on the runtime and the flags alone; `selfhost/cli/link.hero`'s
+# own test builds that one cold, six at once, in a `build/` of its own.
+constant TOGETHER_HOME: str
+    "cache-together"
+
+constant TOGETHER_PROGRAM: str
+    "extern \"math.h\" link \"m\"\n    function frexp(x: f64, @e: i32) -> f64\n\nfunction main()\n    e: i32 @ 0\n    print(frexp(8.0, @e))\n    print(e)\n"
+
+constant TOGETHER_COUNT: i64
+    6
+
+# Where the threads find their plan: the compiler, the scratch and the
+# program, one per line. Named by the process, which every thread shares.
+function together_plan() -> str
+    return "build/harness-together-" + shell.pid().to_str() + ".plan"
+
+# One of the builds: `heroes run` on the planned program, its stderr kept
+# beside the plan for the report. 0 for a build that ran and printed the
+# answer, the build's exit code otherwise, -1 where it could not start.
+function build_together(index: i64) -> i64
+    plan = read_file(together_plan())
+
+    if plan.is_err()
+        return -2
+    rows = strings.lines(plan.must())
+
+    if rows.len() < 3
+        return -2
+    ran = shell.run(scratch: rows[1], program: rows[0], words: [rows[0], "run", rows[2]])
+
+    if ran.is_err()
+        return -1
+    _ = write_file(path: rows[1] + "/together-" + index.to_str() + ".err", text: ran.must().err).is_err()
+
+    if ran.must().code != 0
+        return ran.must().code
+
+    if ran.must().out != "0.5\n4\n"
+        return 100
+    return 0
+
+# **Six builds of one program started at once all succeed** (direction 7).
+function builds_started_together_all_succeed(@r: report.Report, scratch: str, compiler: str)
+    label = "cache/builds of one program started at once all succeed"
+    dir = scratch + "/" + TOGETHER_HOME
+
+    if shell.remove_tree(dir).is_err() || shell.mkdir_all(dir).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + dir)
+        return
+
+    if write_file(path: dir + "/together.hero", text: TOGETHER_PROGRAM).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot write the program")
+        return
+
+    if write_file(path: together_plan(), text: compiler + "\n" + dir + "\n" + dir + "/together.hero\n").is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot write the plan at " + together_plan())
+        return
+    handles: [i64] @ []
+
+    for i in range(from: 0, to: TOGETHER_COUNT)
+        handles @ handles.push(hero_thread_spawn(body: build_together, arg: i))
+
+    wrong: [str] @ []
+    index: i64 @ 0
+
+    for h in handles
+        got = hero_thread_join(handle: h)
+
+        if got != 0
+            said = read_file(dir + "/together-" + index.to_str() + ".err").default("")
+            wrong @ wrong.push(
+                "    build " + index.to_str() + " of " + TOGETHER_COUNT.to_str() + " answered " + got.to_str() + ":\n      " + strings.trimmed(said)
+            )
+        index @ index + 1
+
+    _ = shell.remove_tree(together_plan()).is_err()
+
+    if wrong.len() > 0
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: wrong.join("\n") + "\n  Builds of one program in one tree share build/, and every artifact there must be written under a name no other process uses and published whole (`selfhost/cli/publish.hero`). An answer of 2 is the build failing, -1 a build that could not start, 100 a wrong answer at exit 0."
+        )
+    else
+        report.keep_pass(@r)
 
 # **A warning a repair silenced stays silenced, on every later build.**
 #
@@ -361,19 +467,31 @@ function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str
     else
         report.keep_pass(@r)
 
-# The module an object belongs to. An object is `<module>-<digest>.o`, the
-# digest naming the headers its compile read, so a header edit is a NEW
-# object beside the old one (defect 134, `selfhost/cli/deps.hero`); the
-# name was `<module>.o` before, and a name of neither shape comes back
-# whole, so a report names it rather than a guess.
+# The module an object belongs to, which is the question and not the
+# layout: `bind-<digest>.o` since defect 134, the digest naming the headers
+# its compile read (`selfhost/cli/deps.hero`), and `bind.o` before it, so
+# the suite reads either compiler the same way. A name of neither shape
+# comes back whole, so a report names it rather than a guess.
 function module_of_object(name: str) -> str
-    if !strings.ends_with(text: name, suffix: ".o") || name.len() < 20
+    if !strings.ends_with(text: name, suffix: ".o")
         return name
-    dash = name.len() - 19
+    stem = name.slice(from: 0, to: name.len() - 2)
 
-    if name[dash] != 45
-        return name
-    return name.slice(from: 0, to: dash)
+    if stem.len() > 17 && stem[stem.len() - 17] == 45 && is_digest_tail(stem)
+        return stem.slice(from: 0, to: stem.len() - 17)
+    return stem
+
+function is_digest_tail(stem: str) -> bool
+    at: i64 @ stem.len() - 16
+
+    while at < stem.len()
+        b = stem[at]
+
+        if !(b >= 48 && b <= 57) && !(b >= 97 && b <= 102)
+            return false
+        at @ at + 1
+
+    return true
 
 # **A reordered variant is not served from a warm object.** Three
 # orderings in a row, the third one seen by neither of the first two, and
