@@ -1,0 +1,7 @@
+extern "math.h"
+    function cos(x: f64 -> f64
+    function sin(x: f64) -> f64
+    function tan(x: f64) -> f64 junk
+
+function main()
+    print(1 +)

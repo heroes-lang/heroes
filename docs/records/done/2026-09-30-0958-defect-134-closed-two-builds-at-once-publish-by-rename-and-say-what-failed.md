@@ -174,3 +174,20 @@
     keys depend on the working directory, since `clang -###` prints it;
     `--emit-c` compiles a runtime object it never links; a killed build's
     private files are never removed.
+
+    **Windows, on the final tree, measured after the close**: at the trunk
+    `6d781be1` (the code of `77b8ca98`: this defect and the recovery cluster's
+    batch 3), the box answering again with 62 GB free, the compiler's 930
+    tests and the 19 suites, each 0 failed, by 11:42 on 2026-09-30; `cache` 7
+    and 0, the six builds started together on six threads among them. The 12
+    suites the box had not run on lane 134's closing tree are in those 19.
+    Linux arm64 on the trunk remains before the push.
+
+    **Linux arm64, on the final tree, measured after the close**: at the
+    trunk `ec1fd0a9`, whose `selfhost/`, `runtime/`, `seed/`, `tests/`,
+    `examples/` and `spec/` are those of `77b8ca98` (`git diff --stat` between
+    the two over those paths prints nothing), in the `heroes-linux-arm64`
+    image with clang 22.1.8, the seed whose SHA-256 begins `4dc43f8a6410e4bf`
+    built there, the compiler's 930 tests and the 19 suites, each 0 failed,
+    by 14:46 on 2026-09-30. This Mac, Linux x86-64, the Windows box and Linux
+    arm64 have now each run this defect's repairs on the code that is pushed.

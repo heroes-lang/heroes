@@ -1,0 +1,17 @@
+error[unclosed_bracket]: `(` opened here is never closed
+  at task2.hero:5:19
+    |
+  5 |     total = double(3
+    |                   ^
+
+error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+  at task2.hero:10:25
+     |
+  10 |     print(double(total)))
+     |                         ^
+
+error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+  at task2.hero:11:18
+     |
+  11 |     print(total +)
+     |                  ^
