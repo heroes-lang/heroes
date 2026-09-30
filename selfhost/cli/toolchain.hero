@@ -144,9 +144,12 @@ function run_clang(line: [str], what: str, err_path: str) -> ()?
     # PATH for every refusal the operating system makes, including one about a
     # file a descendant held, on a machine whose clang had never moved. The
     # number separates them (`docs/panel/174` route G).
+    # **Its own code, too** (defect 134): it said `clang`, the code of a
+    # refusal, so the caller worded a clang that never ran as clang refusing
+    # the generated C. `clang` below means clang ran and exited non-zero.
     if !ran.started
         return fail(
-            code: "clang",
+            code: "not_started",
             msg: "clang could not be started, so " + what + " did not run; the operating system's own reason is " + ran.why.to_str() + ".\n  If it is 2 the program is not on this machine's PATH and `heroes doctor` says what is; any other number is the machine refusing for its own reason"
         )
 

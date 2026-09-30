@@ -29,6 +29,10 @@ use cli/clang_floor
 use cli/artifact
 use cli/assemble
 use cli/libraries
+use cli/input
+use cli/process
+use library_source
+use cli/strings
 
 record Produced
     binary: str
@@ -105,9 +109,16 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     # `build/<hash>/`, a hash of the source alone, computed here.
     object = toolchain.runtime_object(t, level: options.level, sanitize: options.sanitize)
 
+    # **The runtime did not compile only where clang said so** (defect 134):
+    # this line was printed for every failure, a publish that met another
+    # build's object included, five builds in six started together on a cold
+    # `build/`, and clang's own words were never printed at all. Any other
+    # failure is the machine's, said as itself: the path and the reason.
     if object.is_err()
-        io.eprint(text: "internal error: the runtime did not compile")
-        return fail(code: "failed", msg: "no runtime object")
+        if path_code(object) == "clang"
+            io.eprint(text: "internal error: the runtime did not compile\n" + failure_note(object))
+            return fail(code: "failed", msg: "no runtime object")
+        return fail(code: "failed", msg: failure_note(object))
 
     # What the header said each `@` parameter points at (defect 010): filled
     # by the pointee check inside the round, empty for the package failure
@@ -198,8 +209,14 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     if linked.is_err()
         # Some clang failures are the AUTHOR's, and the ffi mapping is
         # the only place that decides which (panel 036 rider 3). The
-        # pipeline pieces ride in the Artifact for exactly this call.
+        # pipeline pieces ride in the Artifact for exactly this call. Only
+        # clang's own words are read for it: a path the author wrote after
+        # `-o` could spell a marker, and a publish that failed there is not
+        # the header disagreeing with anybody.
         message = failure_message(linked)
+
+        if failure_code(linked) != "clang"
+            return fail(code: "failed", msg: message)
 
         if blamed(message, art.must(), s, answered, struct_tags: struct_tags)
             return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
@@ -230,11 +247,12 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         if wrote.is_err()
             message = failure_message(wrote)
 
+            if failure_code(wrote) != "clang"
+                return fail(code: "failed", msg: message)
+
             if blamed(message, art.must(), s, answered, struct_tags: struct_tags)
                 return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
-
-            if message.len() > 0
-                io.eprint(text: "internal error: " + message)
+            io.eprint(text: "internal error: " + message)
             return fail(code: "failed", msg: "the artifact was not written")
         none_e: [str] = []
         return ok(Produced(binary: "", tests: none_e, stopped: true))
@@ -274,3 +292,73 @@ function failure_message(failed: ()?) -> str
     match failed
         .ok    => return ""
         .err e => return e.msg
+
+# Which verdict a failure is: `clang` for clang's refusal and nothing else
+# (`toolchain.run_clang`), so the words below it are chosen by the code.
+function failure_code(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.code
+
+function path_code(failed: str?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.code
+
+function failure_note(failed: str?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
+## Tests
+
+# A build that cannot put its binary or its C where the author asked,
+# with every other step fine: the failure names the path and says why, and
+# is not worded as clang refusing anything (defect 134). Before, a publish
+# that failed was `internal error: cannot publish` and then `error: clang
+# refused the generated C`, where clang had refused nothing.
+test "a failure that is not clang's refusal is not worded as one (defect 134)"
+    library = library_source.text()
+    assert !write_file(path: "build/selftest_words.hero", text: "function main()\n    print(1)\n").is_err()
+    s = input.read_compilation(path: "build/selftest_words.hero", library: library).must()
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-words").must()
+    none: [str] = []
+    assert !process.remove_tree("build/selftest-no-such-directory").is_err()
+
+    for emit_c in [false, true]
+        options = compile.Options(
+            level: "-O0",
+            dump_ir: false,
+            emit_c: emit_c,
+            output: ok("build/selftest-no-such-directory/out"),
+            sanitize: false,
+            target: .program_build,
+            headers_from: none,
+            library: none
+        )
+        made = produce(path: "build/selftest_words.hero", s: s, options: options, t: t, version: "0.0.0-port")
+        said = produced_failure(made)
+
+        # `failed` is exit 2 at the verb (`verbs.exit_of`): the tool could
+        # not do its work, which is what cli-surface.md gives that number.
+        assert produced_code(made) == "failed"
+        assert said != "clang refused the generated C"
+
+        # The operating system's number is its own; that there is one is not.
+        if emit_c
+            assert strings.starts_with(
+                text: said,
+                prefix: "cannot write build/selftest-no-such-directory/out: the operating system's own reason is "
+            )
+        else
+            assert said == "cannot publish build/selftest-no-such-directory/out: its directory is not there"
+
+function produced_failure(made: Produced?) -> str
+    match made
+        .ok    => return ""
+        .err e => return e.msg
+
+function produced_code(made: Produced?) -> str
+    match made
+        .ok    => return ""
+        .err e => return e.code
