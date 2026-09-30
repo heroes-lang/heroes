@@ -23,6 +23,7 @@ use diag
 use bytes
 use open_line
 use next_line
+use backslash
 
 ## The carriage return
 
@@ -79,6 +80,7 @@ function line_start(@l: state.LexState, text: str)
 
     if saw_tab
         open_line.abandon(@l)
+        l.backslash @ -1
         span = token.Span(start: ws_start, end: l.pos)
         state.push_diagnostic(
             @l.diagnostics,
@@ -108,8 +110,14 @@ function line_start(@l: state.LexState, text: str)
             open_line.settle(@l)
         return
 
-    if l.open_line >= 0 && open_line.goes_on(@l, text, spaces: spaces)
-        return
+    # The line left open is decided here, and so is a `\` that asked it to go
+    # on, whose fix stands as that decision left it (`backslash.hero`).
+    if l.open_line >= 0
+        joined = open_line.goes_on(@l, text, spaces: spaces)
+        l.backslash @ -1
+
+        if joined
+            return
 
     # Read as bodies, the line below a same-margin break is one level deeper
     # (`LexState.bodies`).
@@ -194,11 +202,32 @@ function close_brackets(@l: state.LexState, text: str)
 # cannot end is left open, and one that ends with a value owes its
 # terminator until the next line with words shows it is not going on with it
 # (`open_line`); `return`, `break` and `continue` end theirs here.
-function maybe_terminator(@l: state.LexState)
+function maybe_terminator(@l: state.LexState, text: str)
     if l.last_significant.is_err()
         return
     kind = l.last_significant.must()
     ender = is_line_ender(kind)
+
+    # A `\` asks its line to go on (`backslash.hero`): at depth zero it is left
+    # open whatever it ends with, and the next line with words decides; inside
+    # brackets it goes on, unless a value ends it and one begins the next line,
+    # where the line end is what separates them.
+    if l.backslash >= 0
+        if l.open_brackets.len() == 0
+            open_line.left_open(@l)
+            return
+        below = backslash.word_below(l, text)
+        noise = ender && (below < 0 || backslash.begins_a_value(text, at: below))
+        backslash.within_brackets(
+            @l,
+            text,
+            below: below,
+            noise: noise,
+            sure: !ender || below >= 0 && (backslash.closes_or_separates(text, at: below) || open_line.goes_on_at_head(text, at: below) >= 0)
+        )
+
+        if !noise
+            return
 
     # A literal that never closed ran to this line end and took what the line
     # held: the line is over at any depth, as a line an `error` token ends is
@@ -280,7 +309,7 @@ test "the terminator lands only where a line can be over"
     l: state.LexState @ state.new_state()
     l.pos @ 1
     state.emit(@l, .ident, 0)
-    maybe_terminator(@l)
+    maybe_terminator(@l, "x")
     assert l.tokens.len() == 1
     assert l.owed == 1
     open_line.settle(@l)
@@ -289,11 +318,11 @@ test "the terminator lands only where a line can be over"
     p: state.LexState @ state.new_state()
     p.pos @ 1
     state.emit(@p, .plus, 0)
-    maybe_terminator(@p)
+    maybe_terminator(@p, "+")
     assert p.tokens.len() == 1
     assert p.open_line == 0
     e: state.LexState @ state.new_state()
-    maybe_terminator(@e)
+    maybe_terminator(@e, "")
     assert e.tokens.len() == 0
 
 test "every value keyword ends a line"

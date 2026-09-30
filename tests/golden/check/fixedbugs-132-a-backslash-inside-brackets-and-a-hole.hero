@@ -1,0 +1,40 @@
+# Fixed 2026-09-30, defect 132's class, lane recovery-b4, beside
+# `fixedbugs-132-a-backslash-joins-its-line-to-the-next`. Inside brackets a
+# line goes on below with nothing at its end, so a `\` there asks nothing a
+# line end does not give, but for the line end that stands after a value:
+# before an operator it would be refused, and the `\` joins; before a value
+# it separates two elements, and the `\` is only deleted. Inside a hole the
+# literal is one line, so the line below is read on as the hole's at once,
+# where the line end closed the literal unterminated and the rest of the hole
+# opened a second one: three messages and a block for one `\`. The `\` is one
+# message, its fix certain in each.
+
+function in_a_call() -> i64
+    #~v unexpected_character
+    return pair(a: 1, \
+        b: 2)
+
+function before_an_operator_in_a_call() -> i64
+    #~v unexpected_character
+    return one(1 \
+        + 2)
+
+function between_two_elements() -> [i64]
+    #~v unexpected_character
+    return [1 \
+        2]
+
+function with_a_comment_after() -> i64
+    return one(1 + \  #~ unexpected_character
+        2)
+
+function in_a_hole(n: i64) -> str
+    #~v unexpected_character
+    return f"a {n + \
+        1}"
+
+function pair(a: i64, b: i64) -> i64
+    return a + b
+
+function one(a: i64) -> i64
+    return a

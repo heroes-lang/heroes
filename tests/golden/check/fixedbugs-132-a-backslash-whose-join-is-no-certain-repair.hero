@@ -1,0 +1,40 @@
+# Fixed 2026-09-30, defect 132's class, lane recovery-b4, beside
+# `fixedbugs-132-a-backslash-joins-its-line-to-the-next`. The `\` is one
+# message in each of these, where the line below it went as a block no head
+# opens, and no fix is certain: a comment after the `\` or on a line between
+# would go into the line the join writes, which then takes the statement's
+# other join with it (`line_joins`); and where the line joined is refused for
+# the join alone, `if a` taking its body into its head or two values meeting
+# on one line, the join repairs nothing, and deleting the `\` is as likely
+# (`parse/apart`). So `check --apply` leaves the file as it is.
+
+function a_comment_after()
+    x = 1 + \  #~ unexpected_character
+        2
+    print(x)
+
+function a_comment_line_between()
+    #~v unexpected_character
+    x = 1 + \
+        # the second operand
+        2
+    print(x)
+
+function twice_with_a_comment_between()
+    #~v unexpected_character
+    x = 1 + \
+        #~v unexpected_character
+        2 + \
+        3
+    print(x)
+
+function over_the_body_of_its_head(a: bool)
+    #~v unexpected_character
+    if a \
+        print(1)
+
+function a_value_over_a_value()
+    #~v unexpected_character
+    x = 1 \
+        2
+    print(x)

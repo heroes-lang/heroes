@@ -1,0 +1,16 @@
+# Fixed 2026-09-30, defect 132's class, lane recovery-b4, beside
+# `fixedbugs-132-a-backslash-joins-its-line-to-the-next`. Symptom: the line a
+# `\` asked for went as a block no head opens, and its own mistake with it,
+# the `)` below never told. Now the line is joined and read, so its mistake
+# is told beside the `\`'s one message. And a `\` after an operator at the
+# file's end joins nothing: the line is ended there, and what it lacks is
+# told in the parser's words. The certain fixes join the first and delete the
+# second `\`, and the program keeps the two mistakes no fix repairs.
+
+function a_mistake_on_the_line_it_joins()
+    #~v unexpected_character
+    x = 1 + 2 )  #~ expected_end_of_line
+    print(x)
+
+function at_the_files_end_after_an_operator()
+    x = 1 +  #~ unexpected_character #~v expected_expression

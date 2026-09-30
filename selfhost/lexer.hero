@@ -187,7 +187,7 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
     # report every opener that never closed (panel 007: otherwise one missing
     # `)` silently swallows the rest of the file's layout), then close every
     # block still open.
-    layout.maybe_terminator(@l)
+    layout.maybe_terminator(@l, text)
     open_line.settle(@l)
 
     # The last line left open at the file's end is ended by it, and the parser
@@ -710,3 +710,28 @@ test "a line a refused word heads opens no break"
     swapped = lex_one("fn main() ->\ni64\n")
     assert swapped.diagnostics[1].code == "continuation_outside_brackets"
     assert kind_line(swapped.tokens) == "error ident lparen rparen arrow ident terminator eof"
+
+# Lane recovery-b4, the recovery instrument's `backslash`: a `\` last on a line
+# asks it to go on, one message and no token. At depth zero the line below is
+# joined, and a line of its own stays apart, the `\` deleted; inside brackets
+# the line goes on, and in a hole the line below is the hole's.
+test "a backslash at a line's end is one message, and the line it asks for is joined"
+    out = lex_one("x = a + \\\n    b\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "unexpected_character"
+    assert out.diagnostics[0].fixes[0].certainty == .certain
+    assert out.diagnostics[0].fixes[0].replacement == " "
+    assert out.breaks.len() == 1
+    assert kind_line(out.tokens) == "ident eq ident plus ident terminator eof"
+    apart = lex_one("x = 1 \\\ny = 2\n")
+    assert apart.diagnostics[0].fixes[0].replacement == ""
+    assert apart.breaks.len() == 0
+    assert kind_line(apart.tokens) == "ident eq int terminator ident eq int terminator eof"
+    within = lex_one("f(1 \\\n    + 2)\n")
+    assert within.diagnostics.len() == 1
+    assert kind_line(within.tokens) == "ident lparen int plus int rparen terminator eof"
+    hole = lex_one("s = f\"{n + \\\n    1}\"\n")
+    assert hole.diagnostics.len() == 1
+    assert kind_line(hole.tokens) == "ident eq str_piece ident plus int str_piece terminator eof"
+    mid = lex_one("x = 1 \\ 2\n")
+    assert kind_line(mid.tokens) == "ident eq int error int terminator eof"
