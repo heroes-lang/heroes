@@ -1,0 +1,10 @@
+tests/golden/check/fixedbugs-135-a-label-the-argument-can-stand-nowhere-else.hero:40:36: error[needs_label]: two of `fail`'s parameters are `str`, so every one of them is named at the call site — this one is `msg`
+tests/golden/check/fixedbugs-135-a-label-the-argument-can-stand-nowhere-else.hero:46:16: error[needs_label]: two of `blit`'s parameters are `[i64]`, so every one of them is named at the call site — this one is `from`
+tests/golden/check/fixedbugs-135-a-label-the-argument-can-stand-nowhere-else.hero:47:16: error[missing_label]: `Person`'s fields are always named — this one is `name`
+tests/golden/check/fixedbugs-135-a-label-the-argument-can-stand-nowhere-else.hero:47:23: error[missing_label]: `Person`'s fields are always named — this one is `age`
+tests/golden/check/fixedbugs-135-a-label-the-argument-can-stand-nowhere-else.hero:49:21: error[missing_label]: `Point`'s fields are always named — this one is `y`
+tests/golden/check/fixedbugs-135-a-label-the-argument-can-stand-nowhere-else.hero:51:21: error[missing_label]: `Token.num`'s fields are always named — this one is `v`
+tests/golden/check/fixedbugs-135-a-label-the-argument-can-stand-nowhere-else.hero:58:13: error[needs_label]: two of `add_to`'s parameters are `i64`, so every one of them is named at the call site — this one is `total`
+tests/golden/check/fixedbugs-135-a-label-the-argument-can-stand-nowhere-else.hero:58:20: error[needs_label]: two of `add_to`'s parameters are `i64`, so every one of them is named at the call site — this one is `amount`
+tests/golden/check/fixedbugs-135-a-label-the-argument-can-stand-nowhere-else.hero:62:11: error[needs_label]: two of `swap`'s parameters are `i64`, so every one of them is named at the call site — this one is `a`
+tests/golden/check/fixedbugs-135-a-label-the-argument-can-stand-nowhere-else.hero:65:16: error[needs_label]: two of `this function`'s parameters are `str`, so every one of them is named at the call site — this one is `from`

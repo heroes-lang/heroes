@@ -25,6 +25,7 @@
 use ast
 use source
 use token
+use resolved
 use check/state
 use check/table
 use discard_errors
@@ -75,6 +76,98 @@ function refuse(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Dec
         @c,
         discard_errors.discarded_failure(got: state.show(c, s, decls, ty), propagates: c.fallible, has_payload: carries_a_payload(c, ty), span: span, value: a.exprs[value].span)
     )
+
+## What else a dropped value may have meant (defect 135)
+
+# The second readings of a line whose value nothing receives, each a fact
+# about the value in hand or the walk that reached it, never about the
+# world: its type, the place it was computed from, whether the walk is in a
+# `test`, and whether this line ends a function that returns a value
+# (`Checker.tail`, outside any loop, since a loop may run zero times).
+# `discard_errors.discarded_value` decides what they make of `_ = `.
+function readings(c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, value: i64, got: i64) -> discard_errors.Readings
+    ends = c.tail && c.loops == 0
+    return discard_errors.Readings(
+        place: own_place(c, a, r, s, value: value, got: got),
+        decides: got == table.bool_ty(c.out.types),
+        in_test: c.in_test,
+        tail: ends,
+        returns: ends && got == c.result
+    )
+
+# The place this value was computed from that holds the value's own type,
+# through a call's receiver and arguments in any spelling, dotted
+# `xs.push(4)`, called `push(xs, 4)`, through a function value, down a
+# chain `xs.push(4).push(5)`, and through an operator's operands,
+# `total + x`. This was `returns_its_receiver`, which read the dotted form
+# over a bare name alone, so `push(xs, 4)`, `b.items.push(4)` and
+# `grid[0].push(1)` took a certain `_ = ` that lost the element (the
+# coordinator's audit). An argument marked `@` is passed over: the call
+# writes that one back already, and `_ = step(@xs)` keeps what it wrote.
+function own_place(c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, value: i64, got: i64) -> str?
+    for part in parts(a, value)
+        if c.out.expr_types[part] == got
+            if is_place(a, r, part)
+                return ok(source.span_text(s, a.exprs[part].span))
+            deeper = own_place(c, a, r, s, value: part, got: got)
+
+            if !deeper.is_err()
+                return deeper
+
+    return fail(code: "absent", msg: "no place of the value's own type")
+
+# The values a value is computed from: a call's receiver and its unmarked
+# arguments, an operator's operands. A comparison's value is a decision
+# about its operands rather than a new state of one, so it has none here.
+function parts(a: ast.Ast, value: i64) -> [i64]
+    out: [i64] @ []
+
+    match a.exprs[value].kind
+        .method m =>
+            out @ out.push(m.receiver)
+            out @ unmarked(out, m.args)
+        .call cl => out @ unmarked(out, cl.args)
+        .binary b =>
+            if !compares(b.op)
+                out @ out.push(b.left).push(b.right)
+        .unary u                                                                       => out @ out.push(u.operand)
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return out
+        .name | .hole | .field | .field_name | .index | .variant_case                  => return out
+        .array | .map | .try_expr | .if_expr | .match_expr | .error                    => return out
+
+    return out
+
+function unmarked(out: [i64], given: [ast.Arg]) -> [i64]
+    kept: [i64] @ out
+
+    for arg in given
+        if !arg.mutable
+            kept @ kept.push(arg.value)
+
+    return kept
+
+function compares(op: ast.BinaryOp) -> bool
+    return match op
+        .eq | .ne | .lt | .le | .gt | .ge             => true
+        .add | .sub | .mul | .div | .rem | .and | .or => false
+        .bit_and | .bit_or | .bit_xor | .shl | .shr   => false
+
+# `Place = ident { "." ident | "[" Expression "]" }` (spec § 5), rooted in a
+# local: a name the program bound, a field or an element under one. A
+# module's constant is not one, since there are no mutable globals.
+function is_place(a: ast.Ast, r: resolved.Resolved, id: i64) -> bool
+    return match a.exprs[id].kind
+        .name => is_local(r, id)
+        .field f => r.uses[f.base] != .module && is_place(a, r, f.base)
+        .index i => is_place(a, r, i.base)
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
+        .hole | .unary | .binary | .field_name | .call | .method | .variant_case => false
+        .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+
+function is_local(r: resolved.Resolved, id: i64) -> bool
+    return match r.uses[id]
+        .local                                  => true
+        .unresolved | .top | .builtin | .module => false
 
 # A `_` parameter whose declared type is a `T?`. The same hole at the
 # position where nothing can be done about it on the line, since `_`

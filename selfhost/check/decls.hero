@@ -149,7 +149,12 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                         state.push_diagnostic(@c, refused)
 
                 if !fd.value.body.is_err()
+                    # A body that must return a value ends on a line whose
+                    # value may be the one it meant to return (defect 135).
+                    c.tail @ result != table.unit_ty(c.out.types)
+                    c.in_test @ false
                     got = walk.block(@c, a, r, s, decls, body: fd.value.body.must(), want: .nothing)
+                    c.tail @ false
 
                     # §4.7's flow promise: a body is checked with want
                     # nothing because its value comes from `return`, so
@@ -168,7 +173,9 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 clear_generics(@c)
                 c.result @ table.unit_ty(c.out.types)
                 c.fallible @ false
+                c.in_test @ true
                 _ = walk.block(@c, a, r, s, decls, body: t.body, want: .nothing)
+                c.in_test @ false
             # No body, and no Want: only the field types, interned so that
             # the counted pass and the descriptor pass can read them
             # whether or not the program touches the field.
@@ -227,6 +234,23 @@ test "the three body shapes: a constant IS, a function returns, a test acts"
     wrong = checked_file("constant M: i64\n    \"forty-two\"\n")
     assert wrong.out.diagnostics.len() == 1
     assert wrong.out.diagnostics[0].code == "type_mismatch"
+
+# Defect 135: the walk tells the discard where a line stands, and a line in
+# a test or at a function's end takes `_ = ` as a guess beside its reading.
+test "a value dropped in a test or at a function's end names what it may have meant"
+    in_test = checked_file("function g() -> i64\n    return 4\n\ntest \"four\"\n    g() == 3\n")
+    assert in_test.out.diagnostics.len() == 1
+    assert in_test.out.diagnostics[0].fixes[0].replacement == "assert "
+    assert in_test.out.diagnostics[0].fixes[1].certainty == .guess
+    ending = checked_file("function double(n: i64) -> i64\n    n * 2\n")
+    assert ending.missing_returns.len() == 1
+    assert ending.out.diagnostics[0].fixes[0].replacement == "return "
+    assert ending.out.diagnostics[0].fixes[1].certainty == .guess
+    looped = checked_file(
+        "function f(n: i64) -> str\n    while n > 0\n        g(n)\n    return \"\"\n\nfunction g(n: i64) -> str\n    return n.to_str()\n"
+    )
+    assert looped.out.diagnostics[0].fixes.len() == 1
+    assert looped.out.diagnostics[0].fixes[0].certainty == .certain
 
 test "main produces nothing, and the promise line takes the caret"
     c = checked_file("function main() -> i64\n    return 3\n")

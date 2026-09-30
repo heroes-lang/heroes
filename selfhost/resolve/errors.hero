@@ -8,7 +8,7 @@
 # Two shapes of repair, and the line between them is §4.17's:
 #
 # - **certain**, machine-applicable: renaming to the ONE candidate in scope
-#   the name's own letters allow alone (`one_reading`), and renaming an
+#   the name's own letters allow alone (`near_names.one_reading`), and renaming an
 #   unread binding to `_`. Both preserve meaning, and the compiler is the one
 #   that knows the candidate is unique; a candidate the letters do not pin is
 #   the same rename shown as a guess (defect 135).
@@ -23,7 +23,7 @@
 
 use token
 use diag
-use bytes
+use resolve/near_names
 use resolved
 
 ## Names that resolve to nothing
@@ -183,7 +183,7 @@ function suggest(@d: diag.Diagnostic, name: str, near: [str], span: token.Span)
         d.message @ d.message + " — did you mean `" + near[0] + "`?"
         certainty: diag.Certainty @ .guess
 
-        if one_reading(name: name, candidate: near[0])
+        if near_names.one_reading(name: name, candidate: near[0])
             certainty @ .certain
         d.fixes @ d.fixes.push(
             diag.Fix(title: "rename to `" + near[0] + "`", replacement: near[0], span: span, certainty: certainty)
@@ -197,120 +197,6 @@ function suggest(@d: diag.Diagnostic, name: str, near: [str], span: token.Span)
             quoted @ quoted.push("`" + c + "`")
 
         d.message @ d.message + " — the closest names in scope are " + quoted.join(", ")
-
-# Candidates within the edit distance the name's length allows, capped at
-# three and in the order the caller supplied (innermost scope first), so the
-# list is deterministic — §4.16's rule, applied to every list the compiler
-# prints.
-#
-# A difference in CASE ONLY wins alone, and that is not a tie-breaker: the
-# letters are already right, so it is the one repair that can be handed over
-# as certain even when three other names are one edit away. `point` for
-# `Point` is also one edit from `print`.
-function nearest(name: str, candidates: [str]) -> [str]
-    for c in candidates
-        if c != name && same_ignoring_case(a: name, b: c)
-            return [c]
-
-    allowed: i64 @ 2
-
-    if name.chars().len() < 4
-        allowed @ 1
-    near: [str] @ []
-
-    for candidate in candidates
-        if candidate != name && !already_listed(near, candidate) && near.len() < 3
-            if distance(a: name, b: candidate) <= allowed
-                near @ near.push(candidate)
-
-    return near
-
-function already_listed(xs: [str], x: str) -> bool
-    for it in xs
-        if it == x
-            return true
-
-    return false
-
-# Identifiers are ASCII by the language's own rule (spec: syntax is
-# ASCII-only), so case-folding byte by byte is exact here — this is NOT a
-# general Unicode fold and does not claim to be.
-function same_ignoring_case(a: str, b: str) -> bool
-    if a.len() != b.len()
-        return false
-    i: i64 @ 0
-
-    while i < a.len()
-        if bytes.lower(a[i]) != bytes.lower(b[i])
-            return false
-        i @ i + 1
-
-    return true
-
-# Whether the letters of `name` allow `candidate` and nothing else, asked of
-# the two names alone: the same letters in another case, or one slip, a
-# letter added, dropped or changed, or two neighbours swapped, in a name of
-# four letters or more, so three at least stand as written. Anything further
-# the letters allow as well a name the program never bound, a literal, or
-# another binding: `True` is two edits from `run`, and a one-letter name one
-# from every other one-letter name.
-function one_reading(name: str, candidate: str) -> bool
-    if same_ignoring_case(a: name, b: candidate)
-        return true
-    return name.len() >= 4 && (distance(a: name, b: candidate) == 1 || swapped(a: name, b: candidate))
-
-# Whether `b` is `a` with two neighbouring letters swapped, and nothing else
-# changed: `lenght` for `length`.
-function swapped(a: str, b: str) -> bool
-    if a.len() != b.len()
-        return false
-    i: i64 @ 0
-
-    while i < a.len() && a[i] == b[i]
-        i @ i + 1
-
-    if i + 1 >= a.len() || a[i] != b[i + 1] || a[i + 1] != b[i]
-        return false
-    return a.slice(from: i + 2, to: a.len()) == b.slice(from: i + 2, to: b.len())
-
-# Levenshtein distance, two rows, over bytes — exact for the ASCII names it
-# is asked about. Names are short; this is not a hot path.
-function distance(a: str, b: str) -> i64
-    previous: [i64] @ []
-    j: i64 @ 0
-
-    while j <= b.len()
-        previous @ previous.push(j)
-        j @ j + 1
-
-    i: i64 @ 0
-
-    while i < a.len()
-        current: [i64] @ [i + 1]
-        k: i64 @ 0
-
-        while k < b.len()
-            cost: i64 @ 1
-
-            if a[i] == b[k]
-                cost @ 0
-            current @ current.push(min3(a: previous[k] + cost, b: previous[k + 1] + 1, c: current[k] + 1))
-            k @ k + 1
-
-        previous @ current
-        i @ i + 1
-
-    return previous[b.len()]
-
-function min3(a: i64, b: i64, c: i64) -> i64
-    least: i64 @ a
-
-    if b < least
-        least @ b
-
-    if c < least
-        least @ c
-    return least
 
 ## Tests
 
@@ -339,30 +225,6 @@ test "a rename is certain only where the letters allow the one name"
     assert unknown_name("TRUE", literal, span).fixes[0].certainty == .certain
     length: [str] = ["length"]
     assert unknown_name("lenght", length, span).fixes[0].certainty == .certain
-    assert swapped(a: "lenght", b: "length")
-    assert !swapped(a: "lenght", b: "lenhtg")
-    assert !one_reading(name: "xs", candidate: "ys")
-    assert one_reading(name: "Poimt", candidate: "Point")
-
-test "a case-only difference wins alone even among closer names"
-    candidates: [str] = ["print", "paint", "Point"]
-    assert nearest("point", candidates).join(",") == "Point"
-
-    # Without the case twin, ordinary distance applies, caller's order kept.
-    plain: [str] = ["print", "paint"]
-    assert nearest("point", plain).join(",") == "print,paint"
-
-test "the edit budget follows the name's length"
-    # A short name affords one edit: `fo` reaches `fn` (1) but not `bar` (3).
-    short: [str] = ["fn", "bar"]
-    assert nearest("fo", short).join(",") == "fn"
-
-    # A longer name affords two.
-    long: [str] = ["totale", "wholly"]
-    assert nearest("total", long).join(",") == "totale"
-    assert distance(a: "total", b: "totale") == 1
-    assert distance(a: "kitten", b: "sitting") == 3
-    assert distance(a: "", b: "abc") == 3
 
 test "the unused wording follows the kind, and the valve is certain"
     span = token.Span(start: 0, end: 3)

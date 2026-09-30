@@ -586,10 +586,12 @@ test "the fixtures half applies across two files, re-checks the whole program, a
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree + "/typo").is_err()
 
-    # `geom.dist` where geom declares `dist2`: unknown_in_module's one-candidate
-    # repair, which is certain — and it lives in a file that only checks clean
-    # together with its module.
-    main = "use geom\n\nfunction main()\n    print(geom.dist(a: 1, b: 2))\n"
+    # `geom.dsit2` where geom declares `dist2`: unknown_in_module's one-candidate
+    # repair, two letters swapped inside the word, which is certain — and it
+    # lives in a file that only checks clean together with its module. (Until
+    # 2026-09-30 this was `geom.dist`, which defect 135 made a guess: `dist2`
+    # is told from `dist` by its digit, a second name rather than a slip.)
+    main = "use geom\n\nfunction main()\n    print(geom.dsit2(a: 1, b: 2))\n"
     geom = "function dist2(a: i64, b: i64) -> i64\n    return a * a + b * b\n"
     assert !write_file(path: tree + "/typo/main.hero", text: main).is_err()
     assert !write_file(path: tree + "/typo/geom.hero", text: geom).is_err()
@@ -718,7 +720,7 @@ test "a fixture root with no answer is applied in a copy of its whole case and m
     # A root whose `certain` fix exists only where its module resolves, and the
     # module sits in a subdirectory: a copy that lost the subdirectory would
     # see `unknown_module`, which has no fix, and pass. It must go red.
-    assert !write_file(path: tree + "/typo/main.hero", text: "use lib/geom\n\nfunction main()\n    print(geom.dist(a: 1, b: 2))\n").is_err()
+    assert !write_file(path: tree + "/typo/main.hero", text: "use lib/geom\n\nfunction main()\n    print(geom.dsit2(a: 1, b: 2))\n").is_err()
     assert !write_file(path: tree + "/typo/lib/geom.hero", text: "function dist2(a: i64, b: i64) -> i64\n    return a * a + b * b\n").is_err()
 
     # A root with a hole: `check` prints a report and no program, and nothing

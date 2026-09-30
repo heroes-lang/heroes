@@ -1,0 +1,19 @@
+# The module the root beside it names wrongly (defect 135, lane 135b).
+
+function sum(a: i64, b: i64) -> i64
+    return a + b
+
+function mean(xs: [i64]) -> i64
+    return average(xs)
+
+function average(xs: [i64]) -> i64
+    total: i64 @ 0
+
+    for x in xs
+        total @ total + x
+
+    return total / xs.len()
+
+record Vec2
+    x: i64
+    y: i64

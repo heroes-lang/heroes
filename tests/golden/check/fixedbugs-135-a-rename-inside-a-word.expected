@@ -1,0 +1,5 @@
+tests/golden/check/fixedbugs-135-a-rename-inside-a-word.hero:19:18: error[unknown_type]: no type named `Poimt` — did you mean `Point`?
+tests/golden/check/fixedbugs-135-a-rename-inside-a-word.hero:24:11: error[unknown_name]: nothing named `tottal` is in scope — did you mean `total`?
+tests/golden/check/fixedbugs-135-a-rename-inside-a-word.hero:26:11: error[unknown_name]: nothing named `lenght` is in scope — did you mean `length`?
+tests/golden/check/fixedbugs-135-a-rename-inside-a-word.hero:27:11: error[unknown_name]: nothing named `averge` is in scope — did you mean `average`?
+tests/golden/check/fixedbugs-135-a-rename-inside-a-word.hero:29:14: error[unknown_function]: no function named `lenn` — `x.lenn(…)` means `lenn(x, …)`, so `lenn` has to be a top-level function or a built-in — did you mean `len`?

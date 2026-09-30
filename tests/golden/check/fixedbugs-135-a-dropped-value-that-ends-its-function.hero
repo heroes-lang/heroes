@@ -1,0 +1,38 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b (the coordinator's audit of
+# every `certain` fix, its C2). Symptom: a function that returns a value and
+# ends on a value, `n * 2`, the habit of a language whose body is its value,
+# cost `missing_return` and `discarded_value`, and the latter's `certain`
+# `_ = ` was applied into `_ = n * 2`, which still cost `missing_return`; a
+# `match` ending the function had `_ = 0` written into its arms, refused anew
+# as `declaration_in_arm`. Cause: the discard knew nothing of where the line
+# stood. Now a value on the path that ends such a function, outside a loop,
+# takes `_ = ` as a guess, beside a guessed `return` where the value has the
+# type the function returns; inside an arm the `return` stands where the
+# value does and the discard is the block under the arm (`Checker.tail`).
+
+function double(n: i64) -> i64
+    return n * 2
+
+function expression_bodied(n: i64) -> i64  #~ missing_return
+    n * 2  #~ discarded_value
+
+function a_call_that_ends_it(n: i64) -> i64  #~ missing_return
+    double(double(n))  #~ discarded_value
+
+function branches_that_end_it(c: bool) -> i64  #~ missing_return
+    if c
+        double(1)  #~ discarded_value
+    else
+        2  #~ discarded_value
+
+# No `missing_return` here, and that is a defect of its own, found beside this
+# one and not repaired by it: a statement `match` whose arms produce no value
+# is taken for one whose arms all jump, so the function checks as if it
+# returned (lane 135b's report).
+function arms_that_end_it(n: i64) -> i64
+    match n
+        0 => 0  #~ discarded_value
+        _ => double(n)  #~ discarded_value
+
+function a_value_of_another_type(n: i64) -> str  #~ missing_return
+    double(n)  #~ discarded_value

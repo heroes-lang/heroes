@@ -50,16 +50,19 @@ use check/lower
 use check/render
 use check/ops
 use check/access
+use check/field_names
 use check/contextual
 use check/consuming
 use check/join
 use check/builtins
 use check/labels
+use check/markers
 use check/generics as check_generics
 use check/discard
 use value_errors
 use discard_errors
 use data_errors
+use label_errors
 use flow_errors
 use contextless_errors
 use ffi_errors
@@ -182,14 +185,11 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 return state.record_expr(@c, at: id, ty: synth_name(@c, a, r, s, decls, id))
 
             # `Room.name` where `Room` names a record and `name` is one of its
-            # fields: the operator is wrong and the repair is `::`, not a
-            # message about construction (panel 132's landing).
+            # fields: the operator is wrong and `::` may be the repair, not a
+            # message about construction (panel 132's landing). Here the
+            # position asks for nothing (defect 135).
 
-            if access.names_a_record(r, decls, base: f.base) && access.record_has_field(s, r, decls, base: f.base, field: source.span_text(s, f.name))
-                state.push_diagnostic(
-                    @c,
-                    access.dot_where_colons_belong(holder: source.span_text(s, a.exprs[f.base].span), field: source.span_text(s, f.name), span: token.Span(start: a.exprs[f.base].span.end, end: f.name.start))
-                )
+            if field_names.dot_on_a_record_name(@c, a, s, r, decls, base: f.base, name: f.name, expected: fail(code: "absent", msg: "synthesised"))
                 return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
             base_ty = synth(@c, a, r, s, decls, f.base)
             return state.record_expr(
@@ -204,7 +204,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         .field_name f => return state.record_expr(
             @c,
             at: id,
-            ty: access.field_name_type(@c, s, r, decls, base: f.base, base_span: a.exprs[f.base].span, field: f.name)
+            ty: field_names.field_name_type(@c, s, r, decls, base: f.base, base_span: a.exprs[f.base].span, field: f.name)
         )
         .index i =>
             base_ty = synth(@c, a, r, s, decls, i.base)
@@ -594,8 +594,15 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             _ = state.record_expr(@c, at: id, ty: got)
             compare(@c, s, decls, expected: expected, got: got, span: span)
             return
+        # `Room.name` where the position asks for a type: what it asks is
+        # what decides whether `::` is the one repair (defect 135).
+
+        .field f =>
+            if field_names.dot_on_a_record_name(@c, a, s, r, decls, base: f.base, name: f.name, expected: ok(expected))
+                _ = state.record_expr(@c, at: id, ty: state.error_ty_of(c))
+                return
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => fall_through()
-        .name | .unary | .binary | .field | .field_name | .index | .hole               => fall_through()
+        .name | .unary | .binary | .field_name | .index | .hole                        => fall_through()
         .try_expr | .error                                                             => fall_through()
 
     got = synth(@c, a, r, s, decls, id)
@@ -693,12 +700,18 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
     last = body.stmts.len() - 1
     index: i64 @ 0
 
+    # A function's tail runs through the last statement of a body run for
+    # effect, and nowhere else (`Checker.tail`, defect 135).
+    tail = c.tail
+
     for sid in body.stmts
         here: Want @ .nothing
 
         if index == last
             here @ want
+        c.tail @ tail && index == last && want == .nothing
         got = statement(@c, a, r, s, decls, id: sid, want: here)
+        c.tail @ tail
 
         if got.jumps
             jumps @ true
@@ -957,49 +970,18 @@ function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, 
 
             if got != unit && !table.poisoned(c.out.types, got)
                 shown = state.show(c, s, decls, got)
-                receiver = returns_its_receiver(c, a, s, value: value, got: got)
+
+                # What else the line may have meant is read off the value
+                # (`check/discard.hero`), and it decides whether `_ = ` is
+                # certain (defect 135).
+                readings = discard.readings(c, a, r, s, value: value, got: got)
                 state.push_diagnostic(
                     @c,
-                    discard_errors.discarded_value(got: shown, receiver: receiver, fallible: discard.is_fallible(c, got), span: span, text: s.text)
+                    discard_errors.discarded_value(got: shown, fallible: discard.is_fallible(c, got), readings: readings, span: span, text: s.text)
                 )
             return falls_with_nothing()
 
     return falls_with_nothing()
-
-# The name this call was written ON, when the call's result has that
-# name's own type — xs in xs.push(4), where both are [i64]. A fact about
-# the value, not a guess about intent (panel 071): where the types
-# coincide the compiler cannot know which repair was meant, so neither is
-# certain; where they differ nothing is ambiguous. Deliberately shallow.
-function returns_its_receiver(c: state.Checker, a: ast.Ast, s: source.Source, value: i64, got: i64) -> str?
-    match a.exprs[value].kind
-        .method m =>
-            is_name = match a.exprs[m.receiver].kind
-                .name                                                                          => true
-                .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
-                .hole | .unary | .binary | .field | .field_name | .index | .call | .method     => false
-                .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
-
-            if !is_name
-                return fail(code: "absent", msg: "the receiver is not a bare name")
-
-            if c.out.expr_types[m.receiver] != got
-                return fail(code: "absent", msg: "the result is not the receiver's own type")
-            return ok(source.span_text(s, a.exprs[m.receiver].span))
-        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return fail(
-            code: "absent",
-            msg: "not a method call"
-        )
-        .name | .hole | .unary | .binary | .field | .field_name | .index | .call => return fail(
-            code: "absent",
-            msg: "not a method call"
-        )
-        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
-            code: "absent",
-            msg: "not a method call"
-        )
-
-    return fail(code: "absent", msg: "unreached")
 
 ## Arms and patterns — the rule match exists for
 
@@ -1226,6 +1208,7 @@ function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
 function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], index: i64, given: [ast.Arg], receiver: i64?, span: token.Span) -> i64
     name = inventory.table()[index].name
     collected: [i64] @ []
+    taken = labels.written_labels(s, given)
 
     if !receiver.is_err()
         collected @ collected.push(receiver.must())
@@ -1242,7 +1225,7 @@ function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
         if arg.mutable && name != "end_lease"
             state.push_diagnostic(
                 @c,
-                data_errors.marker_mismatch(name: name, wants: false, span: a.exprs[arg.value].span)
+                data_errors.marker_mismatch(name: name, wants: false, blocked: "", span: a.exprs[arg.value].span)
             )
 
         # The first argument decides what the rest must be, so from the
@@ -1255,7 +1238,8 @@ function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
             name: name,
             position: collected.len(),
             written: arg.name,
-            value_span: a.exprs[arg.value].span
+            value_span: a.exprs[arg.value].span,
+            taken: taken
         )
         expected: i64? @ fail(code: "absent", msg: "no first argument yet")
 
@@ -1300,6 +1284,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                 )
                 return state.error_ty_of(c)
             names = table.labels_of(c.out.types, f.labels)
+            taken = labels.written_labels(s, given)
             index: i64 @ 0
 
             for arg in given
@@ -1337,17 +1322,23 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                     if !arg.name.is_err() && carried.len() == 0
                         state.push_diagnostic(
                             @c,
-                            data_errors.label_on_function_value(written: source.span_text(s, arg.name.must()), span: token.Span(start: arg.name.must().start, end: a.exprs[arg.value].span.start))
+                            label_errors.label_on_function_value(written: source.span_text(s, arg.name.must()), span: token.Span(start: arg.name.must().start, end: a.exprs[arg.value].span.start))
                         )
                 else if arg.name.is_err()
+                    others = labels.other_names(names: names, types: params, at: position, from: offset, taken: taken)
+                    front = label_errors.argument_front(
+                        s.text,
+                        value_start: a.exprs[arg.value].span.start,
+                        mutable: arg.mutable
+                    )
                     state.push_diagnostic(
                         @c,
-                        data_errors.needs_label(name: "this function", expected: wanted, shared: state.show(c, s, decls, params[position]), span: a.exprs[arg.value].span)
+                        label_errors.needs_label(name: "this function", expected: wanted, shared: state.show(c, s, decls, params[position]), others: others, span: a.exprs[arg.value].span, at: front)
                     )
                 else if source.span_text(s, arg.name.must()) != wanted
                     state.push_diagnostic(
                         @c,
-                        data_errors.wrong_label(holder: "this function", written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: listed_name(names, source.span_text(s, arg.name.must())), span: arg.name.must())
+                        label_errors.wrong_label(holder: "this function", written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: listed_name(names, source.span_text(s, arg.name.must())), span: arg.name.must())
                     )
 
                 check(@c, a, r, s, decls, id: arg.value, expected: params[position])
@@ -1565,6 +1556,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                     has_generics: generics > 0
                 )
             index: i64 @ 0
+            taken = labels.written_labels(s, given)
 
             for arg in given
                 position = index + offset
@@ -1583,15 +1575,30 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                             callee_generics @ callee_generics.push(source.span_text(s, gspan))
 
                         shared_text = render.render_ty(c.out.types, s, decls, param, callee_generics)
+                        others = labels.other_parameters(
+                            s,
+                            fd.value.params,
+                            types: params,
+                            ambiguous: ambiguous,
+                            at: position,
+                            from: offset,
+                            taken: taken,
+                            mutable: arg.mutable
+                        )
+                        front = label_errors.argument_front(
+                            s.text,
+                            value_start: a.exprs[arg.value].span.start,
+                            mutable: arg.mutable
+                        )
                         state.push_diagnostic(
                             @c,
-                            data_errors.needs_label(name: name, expected: wanted, shared: shared_text, span: a.exprs[arg.value].span)
+                            label_errors.needs_label(name: name, expected: wanted, shared: shared_text, others: others, span: a.exprs[arg.value].span, at: front)
                         )
                     else
                         if source.span_text(s, arg.name.must()) != wanted
                             state.push_diagnostic(
                                 @c,
-                                data_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: names_a_parameter(s, fd.value.params, source.span_text(s, arg.name.must())), span: arg.name.must())
+                                label_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: names_a_parameter(s, fd.value.params, source.span_text(s, arg.name.must())), span: arg.name.must())
                             )
                 else
 
@@ -1604,7 +1611,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                         if source.span_text(s, arg.name.must()) != wanted
                             state.push_diagnostic(
                                 @c,
-                                data_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: names_a_parameter(s, fd.value.params, source.span_text(s, arg.name.must())), span: arg.name.must())
+                                label_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: names_a_parameter(s, fd.value.params, source.span_text(s, arg.name.must())), span: arg.name.must())
                             )
 
                 # §4.8: the marker is repeated at the call site, and a
@@ -1612,7 +1619,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 if arg.mutable != fd.value.params[position].mutable
                     state.push_diagnostic(
                         @c,
-                        data_errors.marker_mismatch(name: name, wants: fd.value.params[position].mutable, span: a.exprs[arg.value].span)
+                        data_errors.marker_mismatch(name: name, wants: fd.value.params[position].mutable, blocked: markers.blocked(a, r, s, arg.value), span: a.exprs[arg.value].span)
                     )
 
                 if generics == 0
@@ -1716,7 +1723,7 @@ record FieldSpec
 # author wrote name ANOTHER position of this callee? If it does, the call is an
 # argument swap wearing labels, and renaming one leaves both values where they
 # are (panel 127's compiler seat applied the old certain fix and measured the
-# program printing the other answer). `data_errors.wrong_label` turns that into
+# program printing the other answer). `label_errors.wrong_label` turns that into
 # a `guess`; a label that names nothing is a typo and the rename is certain.
 function names_a_parameter(s: source.Source, params: [ast.Param], written: str) -> bool
     for p in params
@@ -1899,9 +1906,18 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
         return ok(state.error_ty_of(c))
     str_id = table.str_ty(c.out.types)
     at: i64 @ 0
+    taken = labels.written_labels(s, given)
 
     for arg in given
-        labels.check_label(@c, s, name: "fail", position: at, written: arg.name, value_span: a.exprs[arg.value].span)
+        labels.check_label(
+            @c,
+            s,
+            name: "fail",
+            position: at,
+            written: arg.name,
+            value_span: a.exprs[arg.value].span,
+            taken: taken
+        )
         check(@c, a, r, s, decls, id: arg.value, expected: str_id)
         at @ at + 1
 
@@ -1927,23 +1943,49 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
 
         return
     index: i64 @ 0
+    spec_names: [str] @ []
+    spec_types: [i64] @ []
 
     for arg in given
         spec = expected[index]
 
-        if arg.name.is_err()
+        if !arg.name.is_err() && source.span_text(s, arg.name.must()) != spec.name
             state.push_diagnostic(
                 @c,
-                data_errors.missing_label(holder: label, expected: spec.name, span: a.exprs[arg.value].span)
+                label_errors.wrong_label(holder: label, written: source.span_text(s, arg.name.must()), expected: spec.name, elsewhere: names_a_field(expected, source.span_text(s, arg.name.must())), span: arg.name.must())
             )
-        else
-            if source.span_text(s, arg.name.must()) != spec.name
-                state.push_diagnostic(
-                    @c,
-                    data_errors.wrong_label(holder: label, written: source.span_text(s, arg.name.must()), expected: spec.name, elsewhere: names_a_field(expected, source.span_text(s, arg.name.must())), span: arg.name.must())
-                )
         lowered = lower.lower_ty(@c, a, r, spec.ty)
         check(@c, a, r, s, decls, id: arg.value, expected: lowered)
+        spec_names @ spec_names.push(spec.name)
+        spec_types @ spec_types.push(lowered)
+        index @ index + 1
+
+    # A missing label is told once every argument is checked: which other
+    # fields an argument could fill asks the type it has (defect 135).
+    taken = labels.written_labels(s, given)
+    index @ 0
+
+    for arg in given
+        if arg.name.is_err()
+            others = labels.other_fields(
+                c,
+                a,
+                decls,
+                names: spec_names,
+                types: spec_types,
+                at: index,
+                value: arg.value,
+                taken: taken
+            )
+            front = label_errors.argument_front(
+                s.text,
+                value_start: a.exprs[arg.value].span.start,
+                mutable: arg.mutable
+            )
+            state.push_diagnostic(
+                @c,
+                label_errors.missing_label(holder: label, expected: spec_names[index], others: others, span: a.exprs[arg.value].span, at: front)
+            )
         index @ index + 1
 
 # A field of the receiver whose type is a function — §4.11's first
@@ -2095,13 +2137,83 @@ test "a discarded value names the receiver trap, both repairs guesses"
     assert c.out.diagnostics[0].fixes.len() == 2
     assert c.out.diagnostics[0].fixes[0].certainty == .guess
 
+# Defect 135: the receiver in any spelling, and an operator's operand, are
+# the place the value may have been meant for; a marked argument is not.
+test "a place of the value's own type is found in every spelling of the call"
+    called = checked_program("function f()\n    xs: [i64] @ [1]\n    push(xs, 4)\n    print(xs.len())\n")
+    assert called.out.diagnostics[0].fixes[0].replacement == "xs @ "
+    assert called.out.diagnostics[0].fixes[1].certainty == .guess
+    field = checked_program(
+        "record Bag\n    items: [i64]\n\nfunction f()\n    b: Bag @ Bag(items: [])\n    b.items.push(4).push(5)\n    print(b.items.len())\n"
+    )
+    assert field.out.diagnostics[0].fixes[0].replacement == "b.items @ "
+    summed = checked_program("function f()\n    total: i64 @ 0\n    total + 1\n    print(total)\n")
+    assert summed.out.diagnostics[0].fixes[0].replacement == "total @ "
+    marked = checked_program(
+        "function step(@xs: [i64]) -> [i64]\n    return xs\n\nfunction f()\n    xs: [i64] @ []\n    step(@xs)\n    print(xs.len())\n"
+    )
+    assert marked.out.diagnostics[0].fixes.len() == 1
+    assert marked.out.diagnostics[0].fixes[0].certainty == .certain
+
 test "two parameters of one type make the labels mandatory"
     c = checked_program(
         "function copy_to(from: i64, to: i64) -> i64\n    return from + to\n\nfunction main()\n    print(copy_to(1, 2))\n"
     )
     assert c.out.diagnostics.len() == 2
     assert c.out.diagnostics[0].code == "needs_label"
-    assert c.out.diagnostics[0].message == "two of `copy_to`'s parameters are `i64`, so every one of them is named at the call site — this one is `from`"
+    assert c.out.diagnostics[0].message == "two of `copy_to`'s parameters are `i64`, so every one of them is named at the call site — this one is `from` in the order written, or `to` in the other order"
+
+    # Defect 135: one argument alone, or a type only one position takes,
+    # leaves the order no other reading, and the label is certain.
+    alone = checked_program(
+        "function copy_to(from: i64, to: i64) -> i64\n    return from + to\n\nfunction main()\n    print(copy_to(1, to: 2))\n"
+    )
+    assert alone.out.diagnostics[0].fixes.len() == 1
+    assert alone.out.diagnostics[0].fixes[0].certainty == .certain
+    typed = checked_program(
+        "record Person\n    name: str\n    age: i64\n\nfunction main()\n    p = Person(\"Ann\", 30)\n    print(p.age)\n"
+    )
+    assert typed.out.diagnostics.len() == 2
+    assert typed.out.diagnostics[0].fixes[0].certainty == .certain
+    assert typed.out.diagnostics[1].fixes[0].certainty == .certain
+    marked = checked_program(
+        "function add_to(@total: i64, amount: i64)\n    total @ total + amount\n\nfunction main()\n    t: i64 @ 1\n    add_to(@t, 5)\n    print(t)\n"
+    )
+    assert marked.out.diagnostics[0].fixes[0].certainty == .certain
+    assert marked.out.diagnostics[0].fixes[0].span.start == marked.out.diagnostics[0].span.start - 1
+
+    # And markers both missing tell nothing about the order.
+    unmarked = checked_program(
+        "function swap(@a: i64, @b: i64)\n    t = a\n    a @ b\n    b @ t\n\nfunction main()\n    x: i64 @ 1\n    y: i64 @ 2\n    swap(x, y)\n    print(x + y)\n"
+    )
+    labels_seen: i64 @ 0
+
+    for d in unmarked.out.diagnostics
+        if d.code == "needs_label"
+            labels_seen @ labels_seen + 1
+            assert d.fixes[0].certainty == .guess
+
+    assert labels_seen == 2
+
+# Defect 135: the `@` a marked parameter asks stands only before a place the
+# program may write, and where it cannot, a note says what answers instead.
+test "an argument takes the `@` its parameter asks only where it can stand"
+    cell = checked_program(
+        "record C\n    n: i64\n\nfunction bump(@c: C)\n    c.n @ c.n + 1\n\nfunction f()\n    k: C @ C(n: 0)\n    bump(k)\n    print(k.n)\n"
+    )
+    assert cell.out.diagnostics[0].code == "marker_mismatch"
+    assert cell.out.diagnostics[0].fixes.len() == 1
+    assert cell.out.diagnostics[0].fixes[0].certainty == .certain
+    bound = checked_program(
+        "record C\n    n: i64\n\nfunction bump(@c: C)\n    c.n @ c.n + 1\n\nfunction f()\n    k = C(n: 0)\n    bump(k)\n    print(k.n)\n"
+    )
+    assert bound.out.diagnostics[0].code == "marker_mismatch"
+    assert bound.out.diagnostics[0].fixes.len() == 0
+    assert bound.out.diagnostics[0].notes.len() == 1
+    made = checked_program(
+        "record C\n    n: i64\n\nfunction bump(@c: C)\n    c.n @ c.n + 1\n\nfunction f()\n    bump(C(n: 0))\n"
+    )
+    assert made.out.diagnostics[0].fixes.len() == 0
 
 test "a generic call binds, substitutes, and is recorded by its span"
     c = checked_program(
