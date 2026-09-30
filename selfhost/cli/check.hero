@@ -24,6 +24,7 @@ use cli/table as cli_table
 use cli/argv
 use cli/io
 use cli/json_text
+use cli/publish
 use stable
 
 function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
@@ -106,11 +107,14 @@ function report(diagnostics: [diag.Diagnostic], s: source.Source, inv: argv.Invo
             # file is the surface lying about itself.
             changed = repaired != source_extent.user_text(s)
 
+            # Whole or not at all, as `fmt --in-place` writes (defect 136):
+            # `write_file` here emptied the file first, and a full disk left
+            # it cut mid-token.
             if changed
-                written = write_file(path: s.name, text: repaired)
+                written = publish.rewrite(path: s.name, text: repaired)
 
                 if written.is_err()
-                    io.eprint(text: "error: cannot write " + s.name)
+                    io.eprint(text: "error: " + publish.message_of(written))
                     return ok(.failed_exit)
                 io.eprint(text: "rewrote " + s.name)
             else

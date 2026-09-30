@@ -117,7 +117,98 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     probe.run_table(scratch: scratch, compiler: compiler, probes: ffi_probes(), r: @r)
     probe.run_table(scratch: scratch, compiler: compiler, probes: verb_probes(), r: @r)
     probe.run_table(scratch: scratch, compiler: compiler, probes: bracket_probes(), r: @r)
+    in_place_cases(scratch: scratch, compiler: compiler, r: @r)
     return ok(r)
+
+# **A VERB THAT REWRITES THE AUTHOR'S FILE AND CANNOT FINISH LEAVES IT BYTE
+# FOR BYTE** (defect 136), which no row can hold: the case makes its own file
+# and makes the write fail. It fails the way a full disk does, a ceiling on
+# what the child may write (`shell.run_limited`) below the new text and above
+# the message. Measured before the repair on a 2 MB disk image: `fmt
+# --in-place` left the program at 0 bytes and `check --apply --in-place` cut
+# it mid-token, both at exit 2; under this ceiling the same compiler cuts the
+# file at the ceiling. Windows keeps no such ceiling, so there the two cases
+# do not run and are not counted, and the compiler's own tests hold the
+# refusals every platform can make.
+function in_place_cases(scratch: str, compiler: str, @r: report.Report)
+    if !shell.can_limit_writes()
+        return
+    in_place_case(@r, scratch: scratch, compiler: compiler, verb: "fmt", flags: ["--in-place"], text: unformatted())
+    in_place_case(
+        @r,
+        scratch: scratch,
+        compiler: compiler,
+        verb: "check",
+        flags: ["--apply", "--in-place"],
+        text: fn_swaps()
+    )
+
+# Below what either verb writes and above what it says: `fmt` writes 1,746
+# bytes and `check --apply` 2,232 (measured 2026-09-30), and the message
+# that says the file is untouched fits under it.
+constant IN_PLACE_CEILING: i64
+    1024
+
+function in_place_case(@r: report.Report, scratch: str, compiler: str, verb: str, flags: [str], text: str)
+    label = "surface/" + verb + " " + flags.join(" ") + " under a full disk leaves the author's file byte for byte (defect 136)"
+    dir = scratch + "/in-place-" + verb
+    path = dir + "/p.hero"
+    _ = shell.remove_tree(dir).is_err()
+
+    if shell.mkdir_all(dir).is_err() || write_file(path: path, text: text).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot make " + path)
+        return
+    words: [str] @ [compiler, verb, path]
+
+    for flag in flags
+        words @ words.push(flag)
+
+    ran = shell.run_limited(scratch: scratch, program: compiler, words: words, bytes: IN_PLACE_CEILING)
+    after = read_file(path).default("(unreadable)")
+    left = shell.list_entries(scratch: scratch, dir: dir).default([])
+
+    if ran.is_err()
+        report.keep_failure(@r, label: label, detail: "  " + shell.refusal(ran))
+        return
+    said = ran.must()
+    wrong: [str] @ []
+
+    if said.code != 2
+        wrong @ wrong.push("  exit " + said.code.to_str() + ", where a write that failed is 2")
+
+    if !strings.contains(text: said.err, needle: path + " is untouched")
+        wrong @ wrong.push("  stderr does not say the file is untouched: " + said.err)
+
+    if after != text
+        wrong @ wrong.push(report.mismatch(what: path + " afterwards", expected: text, actual: after))
+
+    if left != [path]
+        wrong @ wrong.push("  beside it: " + left.join(", "))
+
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n"))
+        return
+    report.keep_pass(@r)
+
+# A program of 1,266 bytes `fmt` rewrites into 1,746: eighty `vN=N+N*2`
+# lines.
+function unformatted() -> str
+    lines: [str] @ ["function main()"]
+
+    for n in range(from: 0, to: 80)
+        lines @ lines.push("    v" + n.to_str() + "=" + n.to_str() + "+" + n.to_str() + "*2")
+
+    return lines.join("\n") + "\n"
+
+# A program of 1,872 bytes `check --apply` rewrites into 2,232: sixty `fn` heads,
+# each with the certain swap to `function`.
+function fn_swaps() -> str
+    parts: [str] @ []
+
+    for n in range(from: 0, to: 60)
+        parts @ parts.push("fn f" + n.to_str() + "() -> i64\n    return " + n.to_str() + "\n")
+
+    return parts.join("\n") + "\nfunction main()\n    print(f0())\n"
 
 # **The three exit codes mean three different things** (panel 016): 0 the
 # input is clean, 1 the input has diagnostics, 2 the tool could not run.

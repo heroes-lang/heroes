@@ -32,7 +32,6 @@ use cli/libraries
 use cli/input
 use cli/process
 use library_source
-use cli/strings
 
 record Produced
     binary: str
@@ -344,14 +343,10 @@ test "a failure that is not clang's refusal is not worded as one (defect 134)"
         assert produced_code(made) == "failed"
         assert said != "clang refused the generated C"
 
-        # The operating system's number is its own; that there is one is not.
-        if emit_c
-            assert strings.starts_with(
-                text: said,
-                prefix: "cannot write build/selftest-no-such-directory/out: the operating system's own reason is "
-            )
-        else
-            assert said == "cannot publish build/selftest-no-such-directory/out: its directory is not there"
+        # One sentence for the author's file whichever verb writes it (defect
+        # 136, `publish.landing_for`), where the C said the operating
+        # system's number for a missing directory and the link said this.
+        assert said == "cannot write build/selftest-no-such-directory/out: its directory is not there; build/selftest-no-such-directory/out was not created"
 
 function produced_failure(made: Produced?) -> str
     match made
