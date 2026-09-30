@@ -21,6 +21,7 @@
 # | entry | called by |
 # |---|---|
 # | `never_closed` | `grammar_expr.array_literal`, `grammar_expr.map_literal` |
+# | `recover_past_pair` | the `end_` functions here, `parse/members.params`, `parse/type`'s function types |
 # | `end_literal` | the same two |
 # | `end_group`, `end_arguments`, `end_index` | `grammar_expr.group`, `grammar_expr.call_args`, `grammar_expr.postfix` |
 # | `swallows_the_body`, `past_what_was_swallowed` | `parse/opening.body_follows`, `parse/braces.body_or_block` |
@@ -34,17 +35,17 @@ use parse/line_end
 use literals
 use lexer
 
-# Whether no closer closes the opener at token `open`, as the lexer's stack
-# pairs them: every opener pushed, every closer popping the last one, within
-# the file the opener stands in. The author's text ends at `root_end`, where
-# the lexer ended its file and named what was left open; and the lexer named
-# every opener still open at a declaration opening its line at column 0
+# The index of the closer that closes the opener at token `open`, as the
+# lexer's stack pairs them, whatever its kind, or -1 where none does: every
+# opener pushed, every closer popping the last one, within the file the
+# opener stands in. The author's text ends at `root_end`, where the lexer
+# ended its file and named what was left open; and the lexer named every
+# opener still open at a declaration opening its line at column 0
 # (`cursor.Cursor.closes`), so a closer past one closes nothing before it. A
 # literal that never closed took the closers on the rest of its line
 # (`literals.closers_taken`), popped as the lexer popped them: an opener one
-# of those closed has no closer the parser can take, and is asked as one
-# never closed, which it names none of.
-function never_closed(c: cursor.Cursor, text: str, open: i64) -> bool
+# of those closed has no closer the parser can take.
+function paired_closer(c: cursor.Cursor, text: str, open: i64) -> i64
     depth: i64 @ 0
     i: i64 @ open
     bounded = c.root_end >= 0 && c.tokens[open].span.start < c.root_end
@@ -52,7 +53,7 @@ function never_closed(c: cursor.Cursor, text: str, open: i64) -> bool
 
     while c.tokens[i].kind != .eof && !(bounded && c.tokens[i].span.start >= c.root_end)
         if closed >= 0 && c.tokens[i].span.start >= closed
-            return true
+            return -1
         k = c.tokens[i].kind
 
         if k == .lparen || k == .lbracket || k == .lbrace
@@ -61,15 +62,36 @@ function never_closed(c: cursor.Cursor, text: str, open: i64) -> bool
             depth @ depth - 1
 
             if depth == 0
-                return false
+                return i
         else if k == .error
             depth @ depth - literals.closers_taken(text, c.tokens[i].span)
 
             if depth <= 0
-                return true
+                return -1
         i @ i + 1
 
-    return true
+    return -1
+
+# Whether no closer closes the opener at token `open` (`paired_closer`): one
+# asked as never closed, which the parser names none of.
+function never_closed(c: cursor.Cursor, text: str, open: i64) -> bool
+    return paired_closer(c, text, open: open) < 0
+
+# Past the closer the lexer's stack pairs with the opener at `open`, whatever
+# its kind, where a construct's own closer was not met. Brackets are the one
+# place where recovery has a landmark it cannot misread, and using it is what
+# keeps a single misplaced separator in a signature from turning the rest of
+# the line into declarations, four diagnostics for one mistake. The landmark
+# is the lexer's: `print(2]`'s `]` is the one that closed its `(`, and a
+# search for a `)` of the opener's own kind (`cursor.recover_past_closer`,
+# gone with this) took the lines below into the bracket, the next statement
+# and the next declaration, their own mistakes unsaid (defect 130's class,
+# lane recovery-b3). Where none pairs with it, nothing is passed.
+function recover_past_pair(@c: cursor.Cursor, text: str, open: i64)
+    pair = paired_closer(c, text, open: open)
+
+    while pair >= 0 && c.pos <= pair && !cursor.at(c, .eof)
+        _ = cursor.bump(@c)
 
 # The first offset past `at` where the lexer named the brackets still open,
 # or -1 where it named none there.
@@ -182,7 +204,7 @@ function end_literal(@c: cursor.Cursor, text: str, open: i64)
     closer = closer_of(c.tokens[open].kind)
 
     if line_end.said_here(c) || !cursor.expect(@c, text: text, kind: closer, code: code, what: what)
-        cursor.recover_past_closer(@c, opener: c.tokens[open].kind, closer: closer)
+        recover_past_pair(@c, text, open: open)
 
 # A group's `)` at the cursor, after the line ends before it: taken, or named
 # missing and recovered past; and where the lexer found its `(` never closed
@@ -194,7 +216,7 @@ function end_group(@c: cursor.Cursor, text: str, open: i64)
     cursor.skip_terminators(@c)
 
     if !line_end.expect_closer(@c, text: text, holds: .one_value, kind: .rparen, code: "expected_group_close", what: "`)` to close the group")
-        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+        recover_past_pair(@c, text, open: open)
 
 # The same for an argument list's `)`, which ends where the lexer named its
 # `(` at the line end no `,` goes on from (`ends_at_the_line`), as a literal.
@@ -205,7 +227,7 @@ function end_arguments(@c: cursor.Cursor, text: str, open: i64)
     cursor.skip_terminators(@c)
 
     if !line_end.expect_closer(@c, text: text, holds: .arguments, kind: .rparen, code: "expected_args_close", what: "`)`, or `,` and another argument")
-        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+        recover_past_pair(@c, text, open: open)
 
 # The same for an index's `]`; the span the index ends at is returned, its
 # last token's where the `[` is never closed.
@@ -326,3 +348,14 @@ test "an opener whose closer a literal that never closed took has no closer to t
     kept = "x = f(\"abc\n, 2)\n"
     k = cursor.new_cursor(lexer.lex_one(kept).tokens)
     assert !never_closed(k, kept, open: 3)
+
+# Lane recovery-b3: the opener is recovered past the closer the lexer popped
+# it at, `]` for `f(a b]`, and not past a `)` further down.
+test "a closer of another kind is the one an opener is recovered past"
+    text = "f(a b]\ny = 3 )\n"
+    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+    assert paired_closer(c, text, open: 1) == 4
+    c.pos @ 3
+    recover_past_pair(@c, text, open: 1)
+    assert c.tokens[c.pos].kind == .terminator
+    assert c.pos == 5

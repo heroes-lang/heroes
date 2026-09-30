@@ -504,4 +504,9 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `83e77694`, gated by its cases and the compiler's own tests; the net is
     owed at the batch's close.
 
+    **2026-09-30, lane recovery-b3, a record's or a variant's type parameters
+    end its head's line, told once at the `<`, and its members are read**
+    (lane recovery-b2's report, M1): repaired at `042a14a4`, gated by its
+    cases and the compiler's own tests; the net is owed at the batch's close.
+
 *******************************************************************************

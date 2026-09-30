@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-130-an-extern-group-whose-header-failed.hero:11:8: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-130-an-extern-group-whose-header-failed.hero:14:8: error[char_literal]: a character literal holds exactly one character — one ASCII character ('a', '0', ' ') or one escape ('\n', '\t') — `'single_quoted.h'` does not
+tests/golden/check/fixedbugs-130-an-extern-group-whose-header-failed.hero:12:23: error[expected_end_of_line]: expected `->` or the end of the line, found `:` — a `function`'s result type is written after `->`: `-> i64`
+tests/golden/check/fixedbugs-130-an-extern-group-whose-header-failed.hero:15:23: error[expected_end_of_line]: expected `->` or the end of the line, found `:` — a `function`'s result type is written after `->`: `-> i64`
+tests/golden/check/fixedbugs-130-an-extern-group-whose-header-failed.hero:17:34: error[expected_extern_header]: expected the header's name in quotes after `extern`, found end of line — `extern "sqlite3.h"`
+tests/golden/check/fixedbugs-130-an-extern-group-whose-header-failed.hero:18:23: error[expected_end_of_line]: expected `->` or the end of the line, found `:` — a `function`'s result type is written after `->`: `-> i64`
