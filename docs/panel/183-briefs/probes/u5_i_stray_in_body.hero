@@ -1,0 +1,5 @@
+function f(a: i64
+    print(a) )
+
+function main()
+    print(1)

@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 7**
+**OPEN: 8**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -166,12 +166,27 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and 0 alone; the census of 1358 files moved the six new cases and nothing
     else. The shapes still open are the next batch's items.
 
+    Linux x86-64 at `e5cc73eb` (the `heroes-linux` image), measured
+    2026-09-30 by 06:21: the compiler's 911 tests and 19 suites, each 0
+    failed.
+
     **2026-09-30, lane recovery-b3, past a closer of another kind the parser
     resumes where the lexer closed the bracket, and an extern group whose
     header failed has its signatures read** (the recovery instrument's
     `wrong-closer`, `single-quotes` and `string-open` as first mistakes):
     repaired at `52b2d378`, gated by its cases and the compiler's own tests;
     the net is owed at the batch's close.
+
+    **Batch gate 2026-09-30 09:38** (`77b8ca98`, the merge gate of lane
+    recovery-b3's batch, closed at `46846f97`, beside defect 134): the full
+    net 3907 passed and 0 failed with no suite re-run, the census moving the
+    lane's ten new cases and nothing else, and the recovery instrument over
+    its 13,594 planted mistakes reading ONE 11,933, EXTRA 1,326, APPLY-NEW 0,
+    APPLY-OTHER 0 and 17 hidden second mistakes where the baseline read 153;
+    then Linux x86-64, 930 tests and 19 suites at 0 failed by 11:40, and the
+    Windows box at `6d781be1`, the same code, 930 and 19 at 0 failed by 11:42.
+    Before the push, Linux arm64 at `ec1fd0a9`, the same code again, 930 and
+    19 at 0 failed by 14:46.
 
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
@@ -304,6 +319,18 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and 0 alone; the census of 1358 files moved the six new cases and nothing
     else. The shapes still open are the next batch's items.
 
+    Linux x86-64 at `e5cc73eb` (the `heroes-linux` image), measured
+    2026-09-30 by 06:21: the compiler's 911 tests and 19 suites, each 0
+    failed.
+
+    **Widened 2026-09-30 by panel 183's completeness critic, a regression of
+    batch 3's**: `52b2d378`, which removed `cursor.recover_past_closer`,
+    raises the diagnostics on 42 of 3,000 single missing closers from 101 to
+    253 and `missing_body` from 14 to 142, on bodies that exist (the critic
+    built `52b2d378` and its parent over the same 3,000; one example read,
+    the other 41 counted; `docs/panel/183-reports/completeness-critic.md`
+    § 1). This item's own class; lane recovery-b4's item C4r.
+
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
     **Origin:** lane 129's agent, 2026-09-29, beside defect 129 (its finding 2,
@@ -403,90 +430,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     still open are the next batch lane's items, found beside the repairs, and
     this item stays open until they are repaired and a batch gate reads them.
 
-- [ ] **134 — two builds at once in one tree fail each other with a false internal error** | on a cold `build/`, six `heroes run p.hero` started together fail five in six, 25 of 30 over five rounds, with `internal error: the runtime did not compile` or `internal error: cannot publish build/tu-<key>/p.o` then `error: clang refused the generated C`, where clang refused nothing; two DIFFERENT programs built together in a fresh tree fail one of the two in 5 rounds of 5 | `selfhost/cli/units.hero` (`tu_object`, `link_objects`) · `selfhost/cli/toolchain.hero` (`runtime_object`, `link`) · `selfhost/cli/produce.hero` (the words)
-
-    **Origin:** lane recovery-b1's agent, 2026-09-30, reading why `canonical`
-    went red in its batch gate's parallel pass: six harness processes raced
-    to publish one `build/<hash>/main`. Reproduced by the coordinator at
-    01:55 in a scratch tree with the trunk's compiler at `1fc77e31`, `p.hero`
-    being `function main()` over `    print(1)`.
-
-    **Measured on macOS arm64**, each round from `rm -rf build`, six
-    processes started together: `heroes run p.hero`, 25 of 30 exit 2 (24
-    `the runtime did not compile` then `error: no runtime object`, one
-    `cannot publish build/tu-4dc4140d0e94dae5/p.o` then `clang refused the
-    generated C`); the runtime object warm and the program cold, 26 of 30
-    (`cannot publish` of `p.o` 25 times, of `library.o` once, each followed
-    by `clang refused the generated C`); `p.hero` and `q.hero` together, one
-    of the two in every round of five; `heroes build p.hero -o o-<i>`, 15 of
-    18; `-o same`, 15 of 18, the published binary running; `build --emit-c`,
-    10 of 18.
-
-    **The cause, read and not yet proved by a repair.** Every artifact a
-    build publishes is staged under ONE name, `object + ".tmp"` or `binary +
-    ".tmp"`, and the translation unit's C is written in place, so two
-    processes on one key write one file: the first `rename_over` moves that
-    one staged file into place, the second finds its own gone, and a clang
-    may read the C while another process truncates it. The words then
-    misname it: `produce.hero` answers every failure of the link rounds as
-    `clang refused the generated C`.
-
-    **Why it is a defect.** A build that fails because another build of the
-    same thing ran beside it is a false failure, and its message sends the
-    reader to their program or to clang. Two builds in one tree are
-    ordinary: an editor's build on save beside a terminal, `make -j`, a
-    script over several programs, and the net's own parallel pass, whose
-    rule *a suite red in the parallel pass is re-run alone*
-    (`.claude/rules/verification.md`) is this defect's cost paid by hand.
-    Defect 057's record says *the one collision left is named rather than
-    hidden: two builds compiling the identical TU do share its directory,
-    and their clang output is identical too*; they share the staged names
-    and the C file as well.
-
-    **Unrun, questions rather than premises**: Windows, where `MoveFileExA`
-    over a binary another process is running fails where a POSIX rename
-    does not; `heroes test` of one program twice at once; a warm cache's
-    replay files (`warnings.txt`, the dependency listings) read by one
-    process while a second rewrites them, which would lose a warning from
-    every later replay, 057's class.
-
-    **2026-09-30, lane 134, a private file has a name no other process uses,
-    and a failed filesystem call says why**: repaired at `bc402e8d`, gated by
-    its cases and the compiler's own tests; the net is owed at the lane's close.
-
-    **2026-09-30, lane 134, a cached object, its replay and its record are
-    published as one**: repaired at `e2f475fe`, gated by its cases and the
-    compiler's own tests; the net is owed at the lane's close.
-
-    **2026-09-30, lane 134, a binary is linked under a name of its own and
-    lands where its link line says**: repaired at `3ff8af48`, gated by its
-    cases and the compiler's own tests; the net is owed at the lane's close.
-
-    **2026-09-30, lane 134, a failure that is not clang's refusal is not
-    worded as one**: repaired at `c1f32307`, gated by its cases and the
-    compiler's own tests; the net is owed at the lane's close.
-
-    **2026-09-30, lane 134, the net holds it, six builds of one program
-    started at once all succeed**: `bf2b29ed`, gated by the net's own tests
-    and `cache`; the net is owed at the lane's close.
-
-    **2026-09-30, lane 134, the Windows arm of a removal keeps its answer in
-    the width it was given**: repaired at `ad117d2f`, found and gated on the
-    Windows box; the net is owed at the lane's close.
-
-    **2026-09-30, lane 134, publish's cases force a failed rename the one way
-    every platform refuses**: `b5462c86`, gated by the compiler's own tests
-    on this Mac and on the Windows box; the net is owed at the lane's close.
-
-    **2026-09-30, lane 134, an author's -o is published as written, never
-    split to name the linker's output**: repaired at `d45de7c6`, gated by its
-    cases and the compiler's own tests here and on the Windows box; the net
-    is owed at the lane's close.
-
-    **2026-09-30, lane 134, three comments name what the repairs left**:
-    `722bc973`, the seed byte-identical across it. The lane's gate follows
-    in its closing commit, the net on this Mac, Windows and Linux x86-64.
-
 - [ ] **135 — a `certain` fix chosen from one reading, where another is as likely, writes a program that means something else or is refused anew** | `print("\(n)")` costs `unknown_escape` with the certain fix `\\(`, which checks clean and prints the hole's text where Swift's author meant its value; `True` costs `unknown_name` with the certain rename to the one in-scope name within two edits, `run` or `Value`, which then costs `type_mismatch`; a `,` left out before a mutable argument, `hints: nullptr @res`, costs `misplaced_mutable_marker` with the certain `: ` that writes `nullptr : @res`, refused anew | `selfhost/literals.hero:60` (the escape's fix) · `selfhost/resolve/errors.hero` (`suggest`, `nearest`) · `selfhost/grammar_expr.hero` (`misplaced_mutable_marker`)
 
     **Origin:** the coordinator's measurement lane, 2026-09-30, the parser
@@ -554,6 +497,60 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     gated by its cases and the compiler's own tests; the net is owed at the
     batch's close.
 
+    **Widened 2026-09-30 by the coordinator's certain-fix audit**, a measuring
+    lane at `6d781be1` that enumerated every site able to write a `certain`
+    fix (the 31 lines building one with `.certain`, the 78 `Fix(`
+    constructions and the helpers traced to their callers, and the 12 swap
+    rows of `keywords.hero`'s table: 42 sites) and probed each with a second
+    reading, about 165 probes (`scratchpad/certain-audit/`; each breach's
+    reproducer, what `--apply` wrote and the program meant, under
+    `findings/<site>/`). **16 of the 42 breach the rule**, 11 of them writing a
+    program that checks clean and means something else. The discard's `_ = `
+    (`discard_errors.hero:79`) is certain on `push(xs, 4)`, `b.items.push(4)`,
+    `grid[0].push(1)`, `sort(xs)` and a bare `x == 5`, since
+    `returns_its_receiver` reads only the dotted form with a bare receiver,
+    and in a `test` block it turns a comparison that lost its `assert` into a
+    passing test (reproduced by the coordinator at 10:53 on the trunk's
+    compiler: `add(a: 1, b: 2) == 3` over an `add` that returns 4 draws
+    `discarded_value`, `--apply` writes `_ = add(a: 1, b: 2) == 3`, and
+    `heroes test` reads `1 test, all passed`, where the `assert` meant reads
+    `1 failed`). The positional labels of `needs_label` and `missing_label`
+    (`data_errors.hero:193`, `:204`) certify the order written: Go's
+    `copy(dst, src)` order becomes `blit(from: screen, to: sprite)`, and
+    `Size(640, 480)` over fields `height, width` prints 480 where 640 is
+    meant. The rename's one slip between two meaningful names
+    (`resolve/errors.hero:187`: `printf` to `print`, `origin_y` to `origin_x`,
+    `line2` to `line1`), and the module's near name with no such guard at all
+    (`module/diagnostics.hero:85`: `calc.sub` to `calc.sum`, `calc.median` to
+    `calc.mean`). `::` for a dot on a record's name when a value of that name
+    is in scope (`check/access.hero:101`). Python's `\N{...}` and an
+    apostrophe meant as `'\''` (`escape_report.hero:43`, `literals.hero:204`).
+    Refused anew: the `@` of `marker_mismatch` on a place that cannot take it
+    (`data_errors.hero:219`), `while` for a `for` over an array or a string
+    (`parse/loop_habit.hero:52`), the arm sign on a string or a character
+    (`parse/arm_line.hero:50`), the token moved up in `(a` over `(b))`
+    (`parse/line_end.hero:221`), the nested bare function type
+    (`parse/type.hero:255`), `.must()` and `.default()`'s text found by the
+    last `.default(` in the whole call (`check/builtins.hero:413`), `0X` with
+    no digits (`number.hero:80`), and `int` inside an `extern` group made
+    `i64` where C's `int` is the spec's `i32` (`scan.hero:152`'s row). The
+    three sites the audit calls a wrong reading still refused
+    (`literals.hero:89`, `data_errors.hero:89`, `parse/signature.hero:116`)
+    and the one it found unreachable (`data_errors.hero:177`) are in its
+    table. What overlapping certain fixes do to `--apply` itself is not this
+    defect's: it is 137.
+
+    **Batch gate 2026-09-30 09:38** (`77b8ca98`, the merge gate of lane
+    recovery-b3's batch, closed at `46846f97`, beside defect 134): the full
+    net 3907 passed and 0 failed with no suite re-run, the census moving the
+    lane's ten new cases and nothing else, and the recovery instrument over
+    its 13,594 planted mistakes reading ONE 11,933, EXTRA 1,326, APPLY-NEW 0,
+    APPLY-OTHER 0 and 17 hidden second mistakes where the baseline read 153;
+    then Linux x86-64, 930 tests and 19 suites at 0 failed by 11:40, and the
+    Windows box at `6d781be1`, the same code, 930 and 19 at 0 failed by 11:42.
+    Before the push, Linux arm64 at `ec1fd0a9`, the same code again, 930 and
+    19 at 0 failed by 14:46.
+
 - [ ] **136 — `fmt --in-place` and `check --apply --in-place` destroy the author's source when the write fails** | on a disk nearly full, `heroes fmt prog.hero --in-place` answers `error: cannot write`, exit 2, and leaves `prog.hero` at 0 bytes, the 62,706 bytes the author wrote gone; `heroes check --apply --in-place` leaves the file cut mid-token, 57,344 of the 59,312 bytes it meant to write, ending in `retu` | `selfhost/cli/syntax_cmds.hero:66` · `selfhost/cli/check.hero:110` · `runtime/parts/os.c:635` (`hero_file_write`) · `selfhost/cli/publish.hero` (defect 134's publish by rename)
 
     **Origin:** lane 134's agent, 2026-09-30, reading the code while it
@@ -598,5 +595,66 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     at all, and a write that fails or is killed leaves it as it was**:
     repaired at `1f173a42`, gated by its cases and the compiler's own tests;
     the net is owed at the lane's close.
+
+- [ ] **137 — `check --apply` applies overlapping certain fixes against the original text, so an enclosing fix overwrites, misaligns or overruns an inner one** | `print(total(xs.must()).must())` as a file's last line: `heroes check --apply` aborts, `panic: string slice out of range`, exit 134; with a line below it, exit 0 and the written text is `print(total(xs.must())rint(0)`, the line break, the margin and the next line's `p` eaten, which `--in-place` writes into the author's file | `selfhost/cli/check.hero:242-280` (`apply`) · the two sites whose span can enclose another fix, `check/builtins.hero:413` and `parse/type.hero:255`
+
+    **Origin:** the coordinator's certain-fix audit, 2026-09-30, at
+    `6d781be1` (`scratchpad/certain-audit/findings/C9-unwrapping_nothing/`,
+    `c9c` and `c9j`, and `P7-bare_function_type/`, `p7b` and `p7c`);
+    reproduced by the coordinator at 10:54 on the trunk's compiler, both
+    shapes, from those files.
+
+    **The cause, the audit's reading of `apply`, not yet proved by a
+    repair.** The fixes of one file are applied back to front, each with the
+    span and the replacement taken from the ORIGINAL text, so a fix whose
+    span encloses another is applied over text an inner fix has already
+    changed: it overwrites the inner edit, it is misaligned by the inner
+    edit's change of length, and where it ends inside that change it slices
+    past the end. `.must()` and `.default()`'s fix spans the whole call and
+    the bare function type's the whole type, the two the audit found able to
+    enclose another fix; its `p7c` shows the overwrite (both inner `int` swaps
+    undone, their `reserved_word` standing after `--apply`).
+
+    **Why it is a defect.** `check --apply` is the one command that writes
+    the compiler's certain fixes into the author's file without a reader, so
+    what it writes must be the fixes and nothing else: here it writes text no
+    fix proposed, joined across a line, or aborts outside the exit-code
+    contract (`.claude/rules/cli-surface.md`). The in-place write of the
+    corrupted text is inferred from `check.hero`'s write path, not run
+    (defect 136 is that write's other half).
+
+- [ ] **138 — a program that declares a C function the Heroes library also binds, with other marks, stops `check` with an internal error** | a five-line file whose `extern "hero_os.h"` group declares `function hero_file_read(path: cstr, @status: i64) -> str`, where the library writes `path: cstr lent`: `heroes check` prints `internal error: a diagnostic landed inside the Heroes library, at its line 112: [contract_differs] ...` and exits 2, with or without `--permissive`, where a `contract_differs` at the author's line 2 and exit 1 are owed | `selfhost/check/contracts.hero:256` (`differs`, which puts the message at `at`) and its caller's choice of `at` · `selfhost/cli/check.hero:73-82` and `selfhost/cli/compile.hero:96` (the guard that turns a diagnostic inside the library into the internal error)
+
+    **Origin:** the coordinator, 2026-09-30 at 16:22, on the trunk's compiler
+    at `a294a6ff`, following up what it had noted and not filed the same
+    morning: `check --permissive` over
+    `archive/bootstrap-rs/heroes/src/library/source.hero`, an old copy of the
+    library, exits 2 with the same internal error. Reproducers in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/p184/libclash/`,
+    each `check`ed with and without `--permissive`: `clash-plain.hero` (the
+    shape above), `clash-otherheader.hero` (the same declaration under
+    `extern "stdio.h"`, the same internal error), `n3-mark-added.hero`
+    (`hero_str_try_from_cstr(p: cstr lent, ...)` where the library writes no
+    mark: the same, at the library's line 123), `n6-called.hero` (the shape
+    above, called from `main`: the same). The shapes beside that do NOT stop
+    it, exit 0: the same declaration with the library's own marks
+    (`clash-same.hero`, `hero_exit(code: i64)`), a constant at another type
+    (`constant HERO_OS_OK: i32`), another result type
+    (`hero_args_count() -> i32`), another parameter count, and a plain
+    function named `hero_exit`; whether those three `extern` ones are
+    clang's to refuse at `build`, as a binding's types are, is a question and
+    unrun here.
+
+    **Why it is a defect.** The program is the author's and the mistake is in
+    the author's line, yet the message names a line of a file the author
+    cannot open and the exit says the tool could not run
+    (`.claude/rules/cli-surface.md`: exit 1 is *the input has diagnostics*).
+    The guard's own comment says why it exists: *a diagnostic pointing into
+    the library is the COMPILER being wrong, not the program* (panel 028
+    R5). It fires because `contract_differs` compares two declarations of
+    one C symbol and, when one of them is the library's, may be put at the
+    library's. Read and unrun: which of the two becomes `at` is its caller's
+    choice in `selfhost/check/contracts.hero`, and a declaration of the
+    author's is always the one to name.
 
 *******************************************************************************
