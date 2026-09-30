@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-131-the-value-after-a-sigil-tells-its-own-mistake.hero:10:5: error[expected_expression]: expected an expression, found `@` before `v` — a name is written bare, and a mutation writes it first and `@` after it: `v @ e`
+tests/golden/check/fixedbugs-131-the-value-after-a-sigil-tells-its-own-mistake.hero:10:14: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

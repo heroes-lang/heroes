@@ -169,3 +169,19 @@ function against_its_value(text: str, sign: token.Span, operand: token.Span) -> 
         span: token.Span(start: start, end: operand.start),
         certainty: .guess
     )
+
+# `f(a, b,)` — the Python and JavaScript habit. Heroes has one spelling per
+# program (§4.15), so the trailing comma cannot also be it; the fix is certain
+# because deleting it is the whole repair. Moved here out of the expression
+# knot on 2026-09-30 (lane recovery-b4), when that file stood at its ceiling:
+# it reads the cursor alone, and nothing of the grammar.
+function trailing_comma(@c: cursor.Cursor, comma: token.Span)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "trailing_comma",
+        message: "a trailing comma is not part of the list — write `f(a, b)`, `[1, 2]`",
+        span: comma
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "delete the trailing comma", replacement: "", span: comma, certainty: .certain)
+    )
+    c.diagnostics @ c.diagnostics.push(d)

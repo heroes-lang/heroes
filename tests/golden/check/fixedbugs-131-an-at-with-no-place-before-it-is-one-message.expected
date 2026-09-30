@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-131-an-at-with-no-place-before-it-is-one-message.hero:12:5: error[expected_expression]: expected an expression, found `@` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-an-at-with-no-place-before-it-is-one-message.hero:13:5: error[expected_expression]: expected an expression, found `@` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-an-at-with-no-place-before-it-is-one-message.hero:14:5: error[expected_expression]: expected an expression, found `@` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-an-at-with-no-place-before-it-is-one-message.hero:14:11: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

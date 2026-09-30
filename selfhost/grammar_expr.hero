@@ -62,7 +62,6 @@
 # as `parse/arm_line` does for the `-` that opens an arm (defect 123).
 
 use token
-use diag
 use ast
 use cursor
 use lex_interp
@@ -89,6 +88,7 @@ use parse/refused_literal
 use parse/heads
 use parse/orphans
 use parse/argument_marker
+use parse/at_prefix
 use operators
 
 ## The precedence table — §4.14, read from the bottom up
@@ -388,6 +388,10 @@ function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     s = cursor.current_span(c)
     k = cursor.current_kind(c)
 
+    # `@v` in a value is the sigil habit, read as the name (`parse/at_prefix`).
+    if k == .at && at_prefix.in_value(@c, text)
+        return primary(@c, @a, text)
+
     if k == .lparen
         return group(@c, @a, text)
 
@@ -575,7 +579,7 @@ function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: 
 
     if cursor.at(c, closer) || cursor.at(c, .eof)
         if comma
-            trailing_comma(@c, comma_span)
+            list_line.trailing_comma(@c, comma_span)
         return false
 
     if newline && !comma && !list_line.separates(@c, text: text, closer: closer)
@@ -638,7 +642,7 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
 
         if cursor.at(c, .rparen)
             # Reached only after a comma: `f(a, b,)`.
-            trailing_comma(@c, cursor.previous_significant_span(c))
+            list_line.trailing_comma(@c, cursor.previous_significant_span(c))
             reading @ false
         else
             name: token.Span? @ fail(code: "unnamed", msg: "a bare argument")
@@ -683,22 +687,6 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
 
     unclosed.end_arguments(@c, text: text, open: at)
     return arguments
-
-## A habit from other languages, met with a certain fix
-
-# `f(a, b,)` — the Python and JavaScript habit. Heroes has one spelling per
-# program (§4.15), so the trailing comma cannot also be it; the fix is certain
-# because deleting it is the whole repair.
-function trailing_comma(@c: cursor.Cursor, comma: token.Span)
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "trailing_comma",
-        message: "a trailing comma is not part of the list — write `f(a, b)`, `[1, 2]`",
-        span: comma
-    )
-    d.fixes @ d.fixes.push(
-        diag.Fix(title: "delete the trailing comma", replacement: "", span: comma, certainty: .certain)
-    )
-    c.diagnostics @ c.diagnostics.push(d)
 
 ## The statement half of the knot
 
@@ -963,14 +951,19 @@ function annotated(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     return .error
 
 # Everything else: an expression alone on its line, or the place on the left of
-# an `@`.
+# an `@`; `@v = e`, a sigil before a name, is `prefixed`.
 function expression_or_mutation(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
+    if at_prefix.before_a_place(c)
+        return prefixed(@c, @a, text)
     value = parse_expr(@c, @a, text)
 
-    if !cursor.eat(@c, .at)
+    # A block that just closed ended the statement: an `@` below it opens the
+    # next one, never this one's mutation (`parse/at_prefix`). A place that
+    # could not be read at all was told by what refused it, `@ 5` at its `@`.
+    if cursor.previous_kind(c) == .dedent || !cursor.eat(@c, .at)
         return .expr_stmt(value: value)
 
-    if !is_place(a, value)
+    if !is_place(a, value) && a.exprs[value].kind != .error
         cursor.error(
             @c,
             code: "not_a_place",
@@ -978,6 +971,19 @@ function expression_or_mutation(@c: cursor.Cursor, @a: ast.Ast, text: str) -> as
             span: a.exprs[value].span
         )
     return .mutate(place: value, value: parse_expr(@c, @a, text))
+
+# `@v = e`, told once at its `@` and read as the statement the line is with the
+# sigil gone (`parse/at_prefix`): the mutation `v @ e`, past its `=` or `@`,
+# the discard, the declaration, or the line as it stands.
+function prefixed(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
+    return match at_prefix.told(@c, text)
+        .declaration => annotated(@c, @a, text)
+        .discard     => bind_stmt(@c, @a, text)
+        .value       => expression_or_mutation(@c, @a, text)
+        .mutation =>
+            place = postfix(@c, @a, text)
+            _ = cursor.bump(@c)
+            .mutate(place: place, value: parse_expr(@c, @a, text))
 
 # A PLACE: a name, or a field or index path rooted at one. Since Heroes has no
 # references, every place has exactly one root — which is what makes panel 010's
