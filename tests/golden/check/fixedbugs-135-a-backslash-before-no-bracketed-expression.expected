@@ -1,0 +1,8 @@
+tests/golden/check/fixedbugs-135-a-backslash-before-no-bracketed-expression.hero:9:12: error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-a-backslash-before-no-bracketed-expression.hero:9:15: error[unknown_escape]: `\.` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-a-backslash-before-no-bracketed-expression.hero:9:17: error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-a-backslash-before-no-bracketed-expression.hero:12:12: error[unknown_escape]: `\(` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-a-backslash-before-no-bracketed-expression.hero:12:19: error[unknown_escape]: `\(` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-a-backslash-before-no-bracketed-expression.hero:15:17: error[unknown_escape]: `\(` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-a-backslash-before-no-bracketed-expression.hero:18:14: error[unknown_escape]: `\u` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-a-backslash-before-no-bracketed-expression.hero:21:13: error[unknown_escape]: `\ ` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash

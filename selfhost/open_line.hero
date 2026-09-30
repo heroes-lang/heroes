@@ -218,6 +218,13 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
         plant(@l)
         return false
 
+    # So is a record's or a variant's head that ends with the `>` of type
+    # parameters, which a record or a variant never takes.
+    if line_above.closes_type_parameters(l.tokens, breaks: l.breaks, at: at)
+        ended(@l)
+        plant(@l)
+        return false
+
     # A line that binds or mutates is a statement of its own, which no
     # expression goes on into: only a declaration's `name:` takes one.
     binding = next_line.holds_a_binding(text, from: l.pos) && !line_above.names_a_declaration(l.tokens, at: at)

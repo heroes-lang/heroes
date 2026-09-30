@@ -58,12 +58,13 @@ function no_members_below(@c: cursor.Cursor, text: str, head: token.Span, member
     found = swap_reading.found(c, text)
     spoke = swap_reading.at_reported_error(c, text)
     goes_on = !cursor.at_fresh_line(c)
+    generic = cursor.at(c, .lt)
     brace = opening_brace(c, text, goes_on: goes_on)
     quoted = on_one_line(c, text, head: head)
 
     if brace >= 0
         if goes_on && !spoke
-            junk_after_head(@c, head: quoted, found: found, span: junk, members: members)
+            junk_after_head(@c, head: quoted, found: found, span: junk, members: members, generic: generic)
 
         while c.pos < brace
             _ = cursor.bump(@c)
@@ -85,7 +86,7 @@ function no_members_below(@c: cursor.Cursor, text: str, head: token.Span, member
 
     if !spoke
         if goes_on && cursor.at(c, .indent)
-            junk_after_head(@c, head: quoted, found: found, span: junk, members: members)
+            junk_after_head(@c, head: quoted, found: found, span: junk, members: members, generic: generic)
         else
             c.diagnostics @ c.diagnostics.push(empty)
 
@@ -165,12 +166,18 @@ function close_of(below: Below) -> i64
 # A head whose line goes on over the members below it: the junk is the one
 # mistake, so it is the one report, and the members are read as they stand.
 # `expected_end_of_line` is the code a statement's line gets for the same
-# mistake, and the message says where the members go.
-function junk_after_head(@c: cursor.Cursor, head: str, found: str, span: token.Span, members: str)
+# mistake, and the message says where the members go; and where the junk is
+# a `<`, `record Pair<T>`, that type parameters are a function's alone (spec
+# § 9; defect 135's class, lane recovery-b3).
+function junk_after_head(@c: cursor.Cursor, head: str, found: str, span: token.Span, members: str, generic: bool)
+    rule: str @ ""
+
+    if generic
+        rule @ "type parameters are written on a function only; "
     cursor.error(
         @c,
         code: "expected_end_of_line",
-        message: "expected the end of the line after `" + head + "`, found " + found + " — its " + members + " go on the lines below it, one level deeper",
+        message: "expected the end of the line after `" + head + "`, found " + found + " — " + rule + "its " + members + " go on the lines below it, one level deeper",
         span: span
     )
 

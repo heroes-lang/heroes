@@ -166,6 +166,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and 0 alone; the census of 1358 files moved the six new cases and nothing
     else. The shapes still open are the next batch's items.
 
+    **2026-09-30, lane recovery-b3, past a closer of another kind the parser
+    resumes where the lexer closed the bracket, and an extern group whose
+    header failed has its signatures read** (the recovery instrument's
+    `wrong-closer`, `single-quotes` and `string-open` as first mistakes):
+    repaired at `52b2d378`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
@@ -521,6 +528,31 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     96 operators; whether a rename's certainty can ask the candidate's kind
     (a value where a value stands, a type where a type does) at the resolver,
     which does not know types.
+
+    **2026-09-30, lane recovery-b3, an escape the language does not have
+    keeps its certain `\\` only where it reads as nothing but a backslash**
+    (the instrument's `\(`, and beside it an escape by a character's code, one
+    written bare, one in a character literal): repaired at `455940f5`, gated
+    by its cases and the compiler's own tests; the net is owed at the batch's
+    close.
+
+    **2026-09-30, lane recovery-b3, a rename is certain only where the name's
+    own letters allow the one candidate, and `True` is `true`** (the
+    instrument's `python-bool`, and `p` renamed to `s`): repaired at
+    `4e5ef22e`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
+    **2026-09-30, lane recovery-b3, a value then `@` in an argument list reads
+    as a named mutable argument only where the value is a bare name, and as a
+    `,` left out always** (the instrument's `missing-comma`): repaired at
+    `83e77694`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
+    **2026-09-30, lane recovery-b3, a record's or a variant's type parameters
+    end its head's line, told once at the `<`, and its members are read**
+    (lane recovery-b2's report, its first shape): repaired at `042a14a4`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close.
 
 - [ ] **136 — `fmt --in-place` and `check --apply --in-place` destroy the author's source when the write fails** | on a disk nearly full, `heroes fmt prog.hero --in-place` answers `error: cannot write`, exit 2, and leaves `prog.hero` at 0 bytes, the 62,706 bytes the author wrote gone; `heroes check --apply --in-place` leaves the file cut mid-token, 57,344 of the 59,312 bytes it meant to write, ending in `retu` | `selfhost/cli/syntax_cmds.hero:66` · `selfhost/cli/check.hero:110` · `runtime/parts/os.c:635` (`hero_file_write`) · `selfhost/cli/publish.hero` (defect 134's publish by rename)
 

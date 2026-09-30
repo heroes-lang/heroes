@@ -1,0 +1,5 @@
+tests/golden/check/fixedbugs-135-a-rename-the-letters-do-not-pin.hero:15:12: error[unknown_name]: nothing named `p` is in scope — did you mean `s`?
+tests/golden/check/fixedbugs-135-a-rename-the-letters-do-not-pin.hero:19:12: error[unknown_name]: nothing named `xs` is in scope — did you mean `ys`?
+tests/golden/check/fixedbugs-135-a-rename-the-letters-do-not-pin.hero:23:12: error[unknown_name]: nothing named `taxal` is in scope — did you mean `total`?
+tests/golden/check/fixedbugs-135-a-rename-the-letters-do-not-pin.hero:26:12: error[unknown_name]: nothing named `tru` is in scope — did you mean `true`?
+tests/golden/check/fixedbugs-135-a-rename-the-letters-do-not-pin.hero:28:30: error[unknown_type]: no type named `strng` — did you mean `str`?

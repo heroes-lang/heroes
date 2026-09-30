@@ -1,0 +1,32 @@
+# Fixed 2026-09-30, defect 135's class, lane recovery-b3 (the recovery
+# instrument's A4, `p` renamed to `s`). Symptom: a name out of scope took the
+# certain rename to the one candidate within the distance its length allows,
+# so a one-letter name became the only other one-letter name in scope and
+# `check --apply` wrote a program that checked clean and read another
+# binding, or one refused anew. Cause: any single candidate counted as the
+# one reading. Now a rename is certain only where the letters allow it
+# alone: the same letters in another case, or one slip, a letter added,
+# dropped or changed, or two neighbours swapped, in a name of four letters
+# or more. Every other single candidate is the same rename shown as a
+# guess, applied by nobody but a reader (`errors.one_reading`).
+
+function one_letter() -> i64
+    s = 1
+    return p + s  #~ unknown_name
+
+function two_letters() -> i64
+    ys = [1]
+    return xs.len() + ys.len()  #~ unknown_name
+
+function two_slips() -> i64
+    total = 3
+    return taxal + total  #~ unknown_name
+
+function a_literal_too_short() -> bool
+    return tru  #~ unknown_name
+
+function a_type_two_slips(x: strng) -> i64  #~ unknown_type
+    return x.len()
+
+function main()
+    print(one_letter(), two_letters(), two_slips(), a_literal_too_short(), a_type_two_slips("a"))

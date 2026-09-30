@@ -203,8 +203,7 @@ function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         # leaving it for the caller made a signature containing one bad type
         # report the mistake three times. One that never closes has none, and
         # looking took the rest of the file (`parse/unclosed`).
-        if !unclosed.never_closed(c, text, open: at)
-            cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+        unclosed.recover_past_pair(@c, text, open: at)
         return ast.push_type(@a.types, ast.TypeNode(kind: .error, span: open))
     parts = function_parts(@c, @a, text)
     close = unclosed.type_closer(@c, text: text, open: at)
@@ -306,7 +305,7 @@ function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [to
         return params
 
     if !line_end.expect_closer(@c, text: text, holds: .type_list, kind: .rparen, code: "expected_function_type_params_close", what: "`)`, or `,` and another parameter type")
-        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+        unclosed.recover_past_pair(@c, text, open: at)
     return params
 
 # The name in `(function(x: i64) -> i64)`, which the loop above read as a type

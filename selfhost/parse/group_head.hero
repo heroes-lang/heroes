@@ -1,0 +1,154 @@
+# The head line of an `extern` group: the header it names, and where the
+# library lives, `link "sqlite3"` or `package "raylib"` (design.md §4.19,
+# spec § 13 FFI; panels 036, 055). Moved out of `parse/group.hero` on
+# 2026-09-30 (lane recovery-b3), when reading the signatures past a header
+# that failed took that file past its ceiling: the head line's two strings
+# are one concern, what the group names outside itself, and the group reads
+# them through `header` and `library_clause` and nothing else here. A leaf.
+
+use token
+use cursor
+use ast
+use keywords
+use parse/use_line
+
+# The head line's header string. A missing one is where the old headerless
+# spelling lands, so the message repairs THAT program rather than describing
+# the grammar.
+#
+# **A header the lexer refused, or none before the line's end, is the head's
+# one mistake, and the signatures below are still read** (defect 130's
+# class, lane recovery-b3): `extern "stdio.h` never closed, `extern
+# 'stdio.h'` in single quotes and `extern` alone recovered to the next
+# declaration, every signature's own mistake unsaid. The span handed back
+# then stands for the header in the group's linkage, which nothing past the
+# parser reads, since a program the parser refused goes no further. Any
+# other word where the header goes, the headerless `extern function`
+# spelling among them, recovers to the next declaration as it did.
+function header(@c: cursor.Cursor, text: str) -> token.Span?
+    if cursor.at(c, .str_lit)
+        span = cursor.bump(@c).span
+        machine_locked(@c, text: text, span: span, what: "header")
+        return ok(span)
+
+    if !cursor.at_reported_error(c)
+        message: str @ "expected the header's name in quotes after `extern`, found " + cursor.found(c, text) + " — `extern \"sqlite3.h\"`"
+
+        if cursor.at(c, .kw_function)
+            message @ "an `extern` names the header its signatures come from — `extern \"math.h\"`, then the signatures indented under it. Without the header there is no `#include`, and nothing checks the declaration (§4.19)"
+        cursor.error(@c, code: "expected_extern_header", message: message, span: cursor.current_span(c))
+
+    if cursor.at(c, .error)
+        return ok(cursor.bump(@c).span)
+
+    if cursor.at(c, .terminator)
+        here = cursor.current_span(c)
+        return ok(token.Span(start: here.start, end: here.start))
+    cursor.recover_to_next_decl(@c)
+    return fail(code: "expected_extern_header", msg: "recovered to the next declaration")
+
+# **A string in a group head may not name an absolute path** (panel 055).
+#
+# Only the absolute form is refused, and the narrowing is the point:
+# `extern "sub/bar.h"` resolves against the `.hero` file's own directory
+# (panel 036's `-I <source dir>`), so a vendored header beside the program is
+# portable and correct. *"This string begins with a filesystem root"* is a
+# fact about the value; *"nobody needs a relative path"* would be a premise
+# about the world (CLAUDE.md §11).
+#
+# The repair is not text, so there is no fix: the answer is `CPATH` or a
+# `.pc` on `PKG_CONFIG_PATH`, and a certain fix that rewrote the string would
+# be a lie.
+function machine_locked(@c: cursor.Cursor, text: str, span: token.Span, what: str)
+    value = use_line.unquote(cursor.slice_of(text, span))
+
+    # A leading root, a Windows drive letter, or — for a library only — GNU
+    # `ld`'s `-l:filename` form, which is how a `link` string names a FILE
+    # rather than a library: refused whatever follows the colon, because the
+    # whole point of the form is that the rest is a filename.
+    rooted: bool @ false
+
+    if value.len() > 0
+        first = value[0]
+        rooted @ first == '/' || first == '\\' || first == ':'
+
+    if !rooted && value.len() > 1
+        rooted @ value[1] == ':'
+
+    if !rooted
+        return
+    route: str @ "set `LIBRARY_PATH` to the directory holding it, or name a `package` and let `pkg-config` answer; `link` takes the library's **name**, as `link \"sqlite3\"`"
+
+    if what == "header"
+        route @ "set `CPATH` to the directory holding it, or name a `package` and let `pkg-config` answer; a header beside this file is written relative, as `sub/foo.h`"
+    cursor.error(
+        @c,
+        code: "machine_locked_path",
+        message: "`" + value + "` names a path, and a " + what + " in a group head says what the machine has, not where this machine keeps it — the next machine keeps it elsewhere\n  " + route,
+        span: span
+    )
+
+# `link "sqlite3"` or `package "raylib"` — optional, one or the other, and
+# both matched by text rather than lexed as keywords, for the reason above.
+#
+# **They are alternatives because they are different questions.** `link`
+# tells the linker a name the program already knows; `package` asks the
+# machine, and gets a different answer per platform from one spelling.
+# Writing both would mean the program both knew and did not know, so the
+# second is refused with the first one named.
+function library_clause(@c: cursor.Cursor, text: str) -> ast.Library?
+    first = one_library(@c, text)
+
+    if first.is_err()
+        return first
+    taken = first.must()
+    machine_locked(@c, text: text, span: library_name_span(taken), what: "library")
+
+    # A second clause on the same head line. The message names what is
+    # already there, because the repair is to delete one and the author must
+    # be told which one they wrote first.
+    extra = one_library(@c, text)
+
+    if !extra.is_err()
+        if !cursor.at_reported_error(c)
+            cursor.error(
+                @c,
+                code: "one_library_per_group",
+                message: "this group already says `" + library_word(taken) + "`, so `" + library_word(extra.must()) + "` is a second answer to the same question — a group names a library or asks for a package, never both",
+                span: library_name_span(extra.must())
+            )
+    return ok(taken)
+
+function library_word(l: ast.Library) -> str
+    return match l
+        .link    => keywords.WORD_LINK
+        .package => keywords.WORD_PACKAGE
+
+function library_name_span(l: ast.Library) -> token.Span
+    return match l
+        .link x    => x.name
+        .package x => x.name
+
+function one_library(@c: cursor.Cursor, text: str) -> ast.Library?
+    if !cursor.at(c, .ident)
+        return fail(code: "absent", msg: "no library clause")
+    word = cursor.slice_of(text, cursor.current_span(c))
+
+    if word != keywords.WORD_LINK && word != keywords.WORD_PACKAGE
+        return fail(code: "absent", msg: "no library clause")
+    is_package = word == keywords.WORD_PACKAGE
+    _ = cursor.bump(@c)
+
+    if !cursor.at(c, .str_lit)
+        if !cursor.at_reported_error(c)
+            message: str @ "expected the library's name in quotes after `link`, found " + cursor.found(c, text) + " — `link \"sqlite3\"`, which is `-lsqlite3` to the linker"
+
+            if is_package
+                message @ "expected the package's name in quotes after `package`, found " + cursor.found(c, text) + " — `package \"raylib\"`, which is what the machine is asked about"
+            cursor.error(@c, code: "expected_link_name", message: message, span: cursor.current_span(c))
+        return fail(code: "absent", msg: "the clause's string is missing")
+    span = cursor.bump(@c).span
+
+    if is_package
+        return ok(.package(name: span))
+    return ok(.link(name: span))

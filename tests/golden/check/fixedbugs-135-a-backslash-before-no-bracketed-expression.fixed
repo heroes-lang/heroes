@@ -1,0 +1,21 @@
+# Fixed 2026-09-30, defect 135's class, lane recovery-b3: the other half of
+# `fixedbugs-135-a-backslash-before-a-bracketed-expression`. Where an escape
+# the language does not have reads as nothing but a backslash, a pattern's
+# `\d` or `\.`, a `\(` with no expression after it, `\u` in a Windows path
+# with no code after it, the repair stays `\\`, certain, and `check --apply`
+# writes it (`escape_readings`).
+
+function a_pattern()
+    print("\\d+\\.\\d+")  #~ unknown_escape unknown_escape unknown_escape
+
+function a_parenthesis_alone()
+    print("\\( and \\()")  #~ unknown_escape unknown_escape
+
+function a_parenthesis_never_closed()
+    print("open \\(n and more")  #~ unknown_escape
+
+function a_path()
+    print("C:\\users")  #~ unknown_escape
+
+function a_space()
+    print("a\\ b")  #~ unknown_escape

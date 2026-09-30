@@ -1,0 +1,69 @@
+# Fixed 2026-09-30, defect 130's class, lane recovery-b3 (the coordinator's
+# recovery instrument, its `wrong-closer` operator: as the first mistake it
+# hid the second in 68 of 159 pairs). Symptom: past a closer of another
+# kind, `print(2]`, `(1 + 2]`, `{1: 2]`, `[1, 2, 3)`, the next statement and
+# the next declaration went unsaid; past `if v.is_err(]` and `while i <
+# len(]` the body did; past `function f(a: i64]` the body was read as
+# top-level lines, two false `expected_declaration`; `(function(i64] -> i64)`
+# cost three messages and `print(f(g(1]))` two. Cause: the lexer's stack
+# pops the opener at any closer, and the parser, where a construct's own
+# closer was not met, went looking for one of the opener's kind, past the
+# one the lexer had paired with it, across lines. Now it passes the closer
+# the lexer paired with the opener, whatever its kind
+# (`unclosed.recover_past_pair`), and every line after it is read as it
+# would be without the first mistake.
+
+record P
+    x: i64
+
+function in_a_call()
+    print(2]  #~ expected_args_close
+    y = 3 )  #~ expected_end_of_line
+
+function in_a_group()
+    x = (1 + 2]  #~ expected_group_close
+    y = 3 )  #~ expected_end_of_line
+    print(x)
+
+function in_a_map()
+    m = {1: 2]  #~ expected_separator
+    y = 3 )  #~ expected_end_of_line
+    print(m[1].default(0))
+
+function in_a_construction()
+    p = P(x: 1]  #~ expected_args_close
+    y = 3 )  #~ expected_end_of_line
+    print(p.x)
+
+function nested_calls()
+    print(twice(twice(1]))  #~ expected_args_close
+    y = 3 )  #~ expected_end_of_line
+
+function in_a_list() -> [i64]
+    return [1, 2, 3)  #~ expected_separator
+
+function the_next_declaration() -> i64
+    for n of in_a_list()  #~ for_missing_in
+        print(n)
+    return 0
+
+function under_an_if(v: i64?) -> i64
+    if v.is_err(]  #~ expected_expression
+        return v ?? 0  #~ expected_end_of_line
+    return v.must()
+
+function under_a_while()
+    i: i64 @ 0
+    while i < len(]  #~ expected_expression
+        i @ i + 1 )  #~ expected_end_of_line
+
+function in_the_parameters(a: i64]  #~ expected_params_close
+    y = 3 )  #~ expected_end_of_line
+    print(a)
+
+function in_a_function_type(g: (function(i64] -> i64)) -> i64  #~ expected_function_type_params_close
+    y = 3 )  #~ expected_end_of_line
+    return g(1)
+
+function twice(n: i64) -> i64
+    return n * 2

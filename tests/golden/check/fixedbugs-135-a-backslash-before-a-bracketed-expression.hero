@@ -1,0 +1,36 @@
+# Fixed 2026-09-30, defect 135's class, lane recovery-b3 (the coordinator's
+# recovery instrument, its `interp-swift` operator: 17 of 25 mutants checked
+# clean after `--apply` and 6 were refused anew). Symptom: `"n is \(n)"`,
+# interpolation as Swift writes it, cost `unknown_escape` with the certain fix
+# `\\(`, so `check --apply` wrote a program that checked clean and printed
+# `\(n)`, or one refused anew as `unused_binding`, the hole having been the
+# one read of a binding. Cause: the escape's one repair was a backslash,
+# whatever followed it. Now a `\(` before a bracketed expression reads as a
+# value written into the string as much as a backslash: the message names
+# both, and both repairs are offered and neither applied, the whole literal
+# as the `f"…"` one it meant, or the hole alone inside an `f"…"` literal, and
+# `\\(` (`escape_readings`).
+
+function one_hole()
+    n = 3
+    print("n is \(n)")  #~ unknown_escape
+
+function three_holes()
+    n = 3
+    word = "stars"
+    print("line \(n): \(word) and \(n + 1)")  #~ unknown_escape unknown_escape unknown_escape
+
+function a_call_in_the_hole()
+    print("got \(twice(2)) back")  #~ unknown_escape
+
+function inside_an_f_literal()
+    n = 3
+    m = 4
+    print(f"\(n) and {m}")  #~ unknown_escape
+
+function a_brace_in_the_text()
+    n = 3
+    print("{x} \(n)")  #~ unknown_escape
+
+function twice(x: i64) -> i64
+    return x * 2
