@@ -30,10 +30,10 @@
 #
 # **The comment that stood here said the fused path had the same gap
 # and it was FALSE, measured both ways on the same witness**: the fused
-# path never caches its unit object (`toolchain.link` recompiles the
-# `.c` on every call), so it caught the edit and only this path missed
-# it. An untested "nothing regresses here" is CLAUDE.md §1's inference
-# presented as a measurement.
+# path cached no unit object then, recompiling its `.c` on every call,
+# so it caught the edit and only this path missed it; since defect 134 it
+# is compiled here, records and all. An untested "nothing regresses here"
+# is CLAUDE.md §1's inference presented as a measurement.
 #
 # THE VERDICT ORDER (panel 093 R5): every dirty TU is compiled before
 # any verdict is rendered, so a failure in the declaring module's TU is
@@ -47,6 +47,7 @@ use cli/deps
 use cli/digest
 use cli/flags
 use cli/process
+use cli/publish
 use cli/toolchain
 use cli/strings
 
@@ -70,10 +71,12 @@ function components(s: source.Source) -> [str]
 
     return out
 
-# One TU compiled to its cached object. The .c and .o live under
-# build/<key>/, so a text or configuration change is a different
-# directory and a hit is `test -e` on the object PLUS the headers it
-# read still saying what they said (`deps.fresh`).
+# One TU compiled to its cached object. Everything lives under
+# build/tu-<key>/, so a text or configuration change is a different
+# directory; inside it the record `<m>.deps.txt` names the object
+# `<m>-<digest>.o` and the warnings `warnings-<digest>.txt` of the compile
+# whose headers it lists (`cli/deps.hero`), and a hit is that record still
+# vouching for its files, with both artifacts there.
 #
 # `@memo` is one build's answers about files on disk, threaded through
 # the whole loop: the 39 headers a trivial program reaches are 797 KB,
@@ -85,16 +88,11 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         t.fingerprint + "|tu|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|" + package_flags.join(" ")
     )
     dir = t.build + "/tu-" + key
-    made = process.mkdir_all(dir)
+    process.mkdir_all(dir)?
+    listed = dir + "/" + module + ".deps.txt"
+    known = deps.vouched(listed, @memo)
 
-    if made.is_err()
-        return fail(code: "failed", msg: "cannot create " + dir)
-    c_file = dir + "/" + module + ".c"
-    object = dir + "/" + module + ".o"
-    saved = dir + "/warnings.txt"
-    depfile = dir + "/" + module + ".d"
-
-    if process.path_exists(object) && deps.fresh(deps.record_for(object), @memo)
+    if !known.is_err()
         # A warm object REPLAYS the warnings its compile produced: the
         # flag set exists so a warning can falsify something (§7), and
         # a cache that swallows one on every hit after the first makes
@@ -102,42 +100,30 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         # type's declared limit — visible exactly once per edit.
         # Measured: suite_warnings went red on a warm cache before this
         # existed, on the program whose warnings are the expectation.
-        kept = read_file(saved)
+        kept = read_file(warnings_of(dir: dir, sum: known.must()))
+        object = object_of(dir: dir, module: module, sum: known.must())
 
-        if !kept.is_err() && kept.must().len() > 0
-            io.eprint_raw(text: kept.must())
-        return ok(object)
-    written = write_file(path: c_file, text: tu_text)
+        if process.path_exists(object) && !kept.is_err()
+            if kept.must().len() > 0
+                io.eprint_raw(text: kept.must())
+            return ok(object)
 
-    if written.is_err()
-        return fail(code: "failed", msg: "cannot write " + c_file)
+    # THE C IS PUBLISHED BEFORE CLANG READS IT, and it is keyed: the
+    # directory is named by this very text, so a copy another build put
+    # there is these bytes. It was written in place until defect 134, and
+    # a clang could read it while another build truncated it.
+    c_file = dir + "/" + module + ".c"
+    publish.write_whole(path: c_file, text: tu_text, keyed: true)?
 
-    # **This file belongs to THIS translation unit, and until 2026-09-17 it
-    # belonged to the build directory** (defect 057). Every clang invocation
-    # in a tree wrote `build/clang-stderr.txt`, opened `O_TRUNC`, and then two
-    # readers took it back: `run_clang` prints it as this process's own
-    # stderr, and the line below bakes it into `warnings.txt`, which the warm
-    # hit above REPLAYS on every later build. One `heroes` process in a tree
-    # is safe, because each compile truncates before its own clang writes. Two
-    # are not: a second build between this clang's exit and these reads
-    # substitutes its warnings for ours, and the replay then repeats somebody
-    # else's compile forever, under our program's name.
-    #
-    # Measured, and it is what the defect reported: `warnings/curl under
-    # build` failed naming three warnings from
-    # `tests/golden/ir/regression-extern-parameter-types`, a program curl does
-    # not touch. That TU's directory is made by `heroes build --emit-c`, which
-    # the `ir` and `determinism` suites run, and compiling its `.c` by hand
-    # reproduces the warning text exactly: `-Wabsolute-value` on the
-    # `_Static_assert` the FFI probe emits for `abs`.
-    #
-    # The repair is the name and not a lock: a path nobody else writes cannot
-    # be substituted, and the TU directory is already unique per module, per
-    # text and per flag set. Two builds compiling the identical TU do share
-    # it, and that is the one collision left: their clang output is identical
-    # too, so the file says the same thing either way.
-    err_path = dir + "/clang-stderr.txt"
-    staged = object + ".tmp"
+    # **Clang's three outputs are this compile's alone** (defects 057 and
+    # 134). They were one name per directory, `<m>.o.tmp`, `<m>.d` and
+    # `clang-stderr.txt`: six builds of one key started together failed five
+    # of six, the first rename taking the object the others were about to
+    # publish, and a build could read another's stderr torn, NUL bytes and
+    # half a warning, and bake it into the replay below.
+    err_path = publish.private_name(dir + "/clang-stderr.txt")
+    staged = publish.private_name(dir + "/" + module + ".o")
+    depfile = publish.private_name(dir + "/" + module + ".d")
 
     # `-MT dep` names the listing's target a word rather than a path,
     # so the reader cuts at the first `:` on a fact it chose. The
@@ -160,109 +146,81 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         line @ strings.with_all(list: line, more: ["-I", source_dir])
     line @ strings.with_all(list: line, more: ["-o", staged])
     compiled = toolchain.run_clang(line: line, what: "compiling the generated C", err_path: err_path)
+    captured = read_file(err_path)
+    publish.discard(err_path)
 
     if compiled.is_err()
+        publish.discard(staged)
+        publish.discard(depfile)
+
         # The failing TU's path rides INSIDE the message: emit_ffi's
         # matchers read it line by line and ignore this one, so an
         # author-error still maps to their .hero line with no build/
         # path on screen — printing the path here unconditionally sent
         # `build/tu-…` into diagnostics the surface rows pin as
         # `err_lacks("build/")`, measured on the fixedbugs corpus.
-        return fail(code: "clang", msg: failure_note(compiled) + "\nthe generated C is at " + c_file)
-    captured = read_file(err_path)
+        return fail(code: failure_code(compiled), msg: failure_note(compiled) + "\nthe generated C is at " + c_file)
+    rows = deps.rows_of(depfile: depfile, skip: dir + "/", @memo)
+    publish.discard(depfile)
 
-    # WRITTEN UNCONDITIONALLY, and the empty case is the whole point
-    # (2026-09-14, M-handle-verdict step 8). This read
-    # `if !captured.is_err() && captured.must().len() > 0`, so a CLEAN
-    # recompile left its predecessor's `warnings.txt` on disk and the
-    # warm-hit replay above then reported a compile that no longer
-    # exists. Met live: a golden whose header was repaired to silence
-    # two `-Wunused-function` warnings was clean on every direct run,
-    # cold and warm, and `suite_warnings` still failed it — replaying
-    # the two warnings with the LINE NUMBERS OF THE OLD HEADER, which
-    # is what named the cause.
-    #
-    # It is the exact mirror of the defect the replay was added for.
-    # That one SWALLOWED a warning after the first hit; this one
-    # INVENTS one, and the same instrument catches both — once going
-    # green on a program that warns, once going red on a program that
-    # does not. A stale answer at exit 0 is what `cli/deps.hero`'s own
-    # doc calls the worst outcome a build system has, and this is that
-    # shape in the one output the object file does not carry.
-    #
-    # Unreadable stderr writes EMPTY rather than leaving the old file:
-    # a compile whose warnings could not be read is a compile whose
-    # warnings are unknown, and replaying somebody else's is worse than
-    # replaying none. `deps.fresh` is unaffected either way — it was
-    # measured correct here, a header edit still rebuilds and still
-    # changes the answer.
+    if rows.is_err()
+        publish.discard(staged)
+        return fail(
+            code: "failed",
+            msg: "cannot record what " + module + "'s translation unit read: " + failure_text(rows)
+        )
+    listing = deps.pointer_text(rows.must())
+    sum = listing.slice(from: 0, to: 16)
+
+    # WRITTEN UNCONDITIONALLY, the empty case included (2026-09-14,
+    # M-handle-verdict step 8): a clean recompile that left its
+    # predecessor's file replayed warnings, with the line numbers of a
+    # header that had been repaired, on every warm build after it. That is
+    # the mirror of the swallowed warning the replay exists for, and the
+    # same instrument, `suite_warnings`, catches both. Unreadable stderr
+    # writes EMPTY: a compile whose warnings are unknown replays none
+    # rather than somebody else's.
     kept_text: str @ ""
 
     if !captured.is_err()
         kept_text @ captured.must()
-    write_file(path: saved, text: kept_text)?
 
-    # Recorded BEFORE the object is published: an object on disk with no
-    # record beside it would be a hit this cache cannot justify. The
-    # order makes the failure direction the loud one — a record with no
-    # object is a recompile, an object with no record is a stale answer.
-    recorded = deps.record_deps(record_path: deps.record_for(object), depfile: depfile, skip: dir + "/", @memo)
+    # THE RECORD IS PUBLISHED LAST, so whichever record a reader finds names
+    # an object and warnings already in place, compiled from exactly the
+    # files it lists. Both are keyed: the directory names the text and the
+    # configuration, the digest every file the compile read.
+    object = object_of(dir: dir, module: module, sum: sum)
+    publish.publish(staged: staged, path: object, keyed: true)?
+    publish.write_whole(path: warnings_of(dir: dir, sum: sum), text: kept_text, keyed: true)?
 
-    if recorded.is_err()
-        return fail(code: "failed", msg: "cannot record what " + module + "'s translation unit read")
-
-    if process.rename_over(from: staged, to: object).is_err()
-        return fail(code: "failed", msg: "cannot publish " + object)
+    # Keyed in the one sense a record can be: any record another build
+    # published names artifacts of its own compile, and they are there.
+    publish.write_whole(path: listed, text: listing, keyed: true)?
     return ok(object)
+
+# The object a record's digest names, and the warnings its compile said.
+function object_of(dir: str, module: str, sum: str) -> str
+    return dir + "/" + module + "-" + sum + ".o"
+
+function warnings_of(dir: str, sum: str) -> str
+    return dir + "/warnings-" + sum + ".txt"
 
 function failure_note(failed: ()?) -> str
     match failed
         .ok    => return ""
         .err e => return e.msg
 
-# One link over every object. Re-run on every build, deliberately: it
-# is one clang call, and it is what lets a `link` name change take
-# effect on a fully warm cache.
-function link_objects(t: toolchain.Toolchain, objects: [str], binary: str, level: str, sanitize: bool, search_include: [str], search_library: [str], package_flags: [str], link_names: [str]) -> ()?
-    # Named for the binary it produces, for `tu_object`'s reason (defect 057):
-    # the build directory's one `clang-stderr.txt` was a channel between two
-    # `heroes` processes in one tree. The digest keeps the name inside
-    # `build/` rather than beside the author's `-o`, which may be anywhere.
-    err_path = t.build + "/link-" + digest.digest(binary) + "-clang-stderr.txt"
-    line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
-    line @ line.push(level)
-    line @ strings.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
+# The failure's own code, carried rather than restated: clang's refusal and
+# a clang that could not start are two verdicts (`toolchain.run_clang`).
+function failure_code(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.code
 
-    # The link's own flags, which on Windows is the stack reserve a
-    # recursive frontend needs (flags.link_flags carries the
-    # measurement). Empty everywhere else.
-    line @ strings.with_all(list: line, more: flags.link_flags())
-
-    for dir in search_include
-        line @ strings.with_all(list: line, more: ["-I", dir])
-
-    for dir in search_library
-        line @ strings.with_all(list: line, more: ["-L", dir])
-
-    for object in objects
-        line @ line.push(object)
-
-    for flag in package_flags
-        line @ line.push(flag)
-
-    for name in link_names
-        line @ line.push("-l" + name)
-
-    staged = binary + ".tmp"
-    line @ strings.with_all(list: line, more: ["-o", staged])
-    linked = toolchain.run_clang(line: line, what: "linking", err_path: err_path)
-
-    if linked.is_err()
-        linked?
-
-    if process.rename_over(from: staged, to: binary).is_err()
-        return fail(code: "failed", msg: "cannot publish " + binary)
-    return ok()
+function failure_text(failed: str?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
 
 ## Tests
 
@@ -289,3 +247,39 @@ test "a unit compiled under one clang answer is compiled again under another (de
     again = tu_object(here, module: "keyprobe", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).must(
     )
     assert again == first
+
+# **A record vouches for the object its own compile made, and for no other**
+# (defect 134). The record of a newer compile used to stand beside the
+# older object between two renames, and a build killed there, or two
+# builds of one key taking turns, left a program printing 7 at exit 0 with
+# its header saying 8. Now each header is another object's name, and a
+# record whose object is gone is a recompile.
+test "a record vouches only for the object its own compile made, and one whose object is gone is a recompile (defect 134)"
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-vouch"
+    headers_at = "build/selftest-vouch-include"
+    assert !process.remove_tree(t.build).is_err()
+    assert !process.mkdir_all(headers_at).is_err()
+    text = "#include \"vouch.h\"\nint64_t heroes_vouch(void);\nint64_t heroes_vouch(void) { return VOUCH; }\n"
+    none: [str] = []
+    assert !write_file(path: headers_at + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 1\n").is_err()
+    one: {str: str} @ {}
+    first = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @one).must(
+    )
+    assert !write_file(path: headers_at + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 2\n").is_err()
+    two: {str: str} @ {}
+    second = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @two).must(
+    )
+    assert second != first
+    assert process.path_exists(first)
+    assert !process.remove_file(second).is_err()
+    three: {str: str} @ {}
+    third = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @three).must(
+    )
+    assert third == second
+    assert process.path_exists(third)
+
+    # And nothing private is left: every name in the directory is one a
+    # reader asks for.
+    for path in process.files_under(t.build).must()
+        assert !strings.ends_with(text: path, suffix: ".tmp")

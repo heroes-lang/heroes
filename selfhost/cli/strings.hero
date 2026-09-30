@@ -110,7 +110,30 @@ function starts_with(text: str, prefix: str) -> bool
 
     return true
 
+# Whether `text` ends with `suffix`, asked of the bytes: a path is
+# arbitrary UTF-8 and a cut by characters from the end would be a count
+# of characters, where a suffix is a count of bytes.
+function ends_with(text: str, suffix: str) -> bool
+    if suffix.len() > text.len()
+        return false
+    offset = text.len() - suffix.len()
+    index: i64 @ 0
+
+    while index < suffix.len()
+        if text[offset + index] != suffix[index]
+            return false
+        index @ index + 1
+
+    return true
+
 ## Tests
+
+test "a suffix is asked of the bytes"
+    assert ends_with(text: "build/tu-1/p-0123.o", suffix: ".o")
+    assert !ends_with(text: "build/tu-1/p.o.12-3.tmp", suffix: ".o")
+    assert ends_with(text: "café.tmp", suffix: ".tmp")
+    assert !ends_with(text: "é", suffix: ".tmp")
+    assert ends_with(text: "x", suffix: "")
 
 test "clang's CRLF is normalised, and a multibyte character survives the walk"
     assert starts_with(text: "-I/opt", prefix: "-I")

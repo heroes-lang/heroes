@@ -33,11 +33,18 @@
 # into `ffi_parameter_type` on the parameter, with a `guess` fix naming the
 # header's width.
 #
-# **Cached like an object.** The dump and the check run once per (compiler,
-# declarations, headers, search path); the verdict is a file under
-# `build/pointee-<key>/` recorded with the headers it read (`cli/deps`), so
-# a header that changes re-asks the question and an unchanged one costs a
-# `test -e`.
+# **Cached like an object, and published like one** (defect 134). The dump
+# and the check run once per (compiler, declarations, headers, search path),
+# under `build/pointee-<key>/`, a directory every program with the same asks
+# shares: every program that binds only the library's own externs. The
+# record `dump.deps.txt` names the headers the dump read and, by their
+# digest, the dump's answer `dump-<digest>.json` and the verdict
+# `verdict-<digest>-<unit>.txt`, and it is published last (`cli/deps`,
+# `cli/publish`), so a header that changes re-asks the question and an
+# unchanged one costs a read. Everything here was written in place until
+# 2026-09-30: a verdict emptied by a build killed while writing it failed
+# every build of every program sharing the directory after it, with
+# `internal error:` and nothing after the colon.
 #
 # **Two things this file deliberately does not do.** It does not cast: the
 # emitter passes `(void *)&x` for the argument it has checked here
@@ -50,121 +57,22 @@
 
 use ast
 use source
-use widths
-use check/table
 use check/state
 use ir/containers
 use emit/externs as emit_externs
 use cli/toolchain
 use cli/process
+use cli/publish
 use cli/digest
-use handles
 use cli/deps
 use cli/header_types
 use cli/pointee_ask
+use cli/pointee_wants
+use cli/strings
 use parse
 use resolve
 use checker
 use ir/lower
-use cli/strings
-
-## What is asked
-
-# Every extern function of the program with a numeric `@` parameter. The
-# narrowing is a fact about the declaration in hand: mutable, and an
-# integer or a float. A `ptr` points at what the header says and nothing
-# can be asked of it; a `cstr` is the writability check's (panel 058); a
-# record is the header's own struct.
-function pointees(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [pointee_ask.Pointee]
-    out: [pointee_ask.Pointee] @ []
-
-    for f in p.functions
-        if emit_externs.extern_spans(decls, f).header.is_err()
-            continue
-        name = source.span_text(s, decls[f.decl].name)
-        found = source.locate(s, decls[f.decl].name.start)
-        index: i64 @ 0
-
-        for slot_id in f.params
-            slot = f.slots[slot_id]
-            declared = numeric_out(c, slot)
-
-            if !declared.is_err()
-                out @ out.push(
-                    pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: declared.must(), file: found.file, line: found.line, depth: false)
-                )
-            opaque = opaque_out(c, slot, decls)
-
-            if !opaque.is_err()
-                out @ out.push(
-                    pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: opaque.must(), file: found.file, line: found.line, depth: true)
-                )
-            index @ index + 1
-
-    return out
-
-# The C spelling of a numeric `@` parameter's declared type, or absent for
-# any other kind of slot.
-function numeric_out(c: state.Checked, slot: containers.Slot) -> str?
-    mutable: bool @ false
-
-    match slot.kind
-        .param_slot ps =>
-            if ps.mutable
-                mutable @ true
-        .local_slot | .synthetic_slot => mutable @ mutable
-
-    if !mutable
-        return fail(code: "none", msg: "not an @ parameter")
-
-    match table.get(c.types, slot.ty)
-        .int_ty ik                                                 => return ok(widths.int_c_type(ik.kind))
-        .float_ty fk                                               => return ok(widths.float_c_type(fk.kind))
-        .bool | .str | .ptr | .cstr | .unit                        => return fail(code: "none", msg: "not numeric")
-        .array | .fixed | .map | .fallible | .function_ty | .named => return fail(code: "none", msg: "not numeric")
-        .case_ty | .failure | .generic | .error                    => return fail(code: "none", msg: "not numeric")
-
-    return fail(code: "none", msg: "unreached")
-
-# An OPAQUE `@` parameter — a `ptr`, or a handle, which is a pointer already —
-# asks a different question of the header: not the pointee's width but its
-# DEPTH (defect 083, panel 176's llm-ergonomist, reading the specification
-# alone). `@p: Mem` over `record Mem tag void` hands C the address of the
-# program's cell, `void **`, and a header that takes `void *p` accepts it in
-# silence, because C converts any object pointer to `void *`; `@p: ptr` is
-# cast to `(void *)` at the call for panel 103's reason and lands the same
-# way. Measured: `eat(void *p)` freed the cell's address, 134, three of three,
-# and `wipe(void *p)` wrote eight zero bytes into the cell at exit 0. So the
-# header's parameter must point at a POINTER — `T **`, `void **`, a typedef of
-# one — and `check_unit` asks that in C11 with `__builtin_classify_type`,
-# which reads 5 for every pointer type on clang 18, 21 and 22 (measured on
-# Darwin and both Linux legs). A `record` by value stays out: `@rec: Point`
-# over `Point *p` is the correct out-parameter for a struct, and depth one is
-# right there. What is returned is a word for the marker, not a C type: the
-# depth line needs none.
-function opaque_out(c: state.Checked, slot: containers.Slot, decls: [ast.Decl]) -> str?
-    mutable: bool @ false
-
-    match slot.kind
-        .param_slot ps =>
-            if ps.mutable
-                mutable @ true
-        .local_slot | .synthetic_slot => mutable @ mutable
-
-    if !mutable
-        return fail(code: "none", msg: "not an @ parameter")
-
-    match table.get(c.types, slot.ty)
-        .ptr => return ok("ptr")
-        .named n =>
-            if handles.is_handle(decls[n.decl])
-                return ok("handle")
-            return fail(code: "none", msg: "a record by value")
-        .int_ty | .float_ty | .bool | .str | .cstr | .unit => return fail(code: "none", msg: "not opaque")
-        .array | .fixed | .map | .fallible | .function_ty  => return fail(code: "none", msg: "not opaque")
-        .case_ty | .failure | .generic | .error            => return fail(code: "none", msg: "not opaque")
-
-    return fail(code: "none", msg: "unreached")
 
 ## The check itself
 
@@ -180,7 +88,7 @@ function opaque_out(c: state.Checked, slot: containers.Slot, decls: [ast.Decl]) 
 # on the cached path too — from the dump the cache kept — because a cached
 # failure is explained the same way a fresh one is.
 function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], @answered: [pointee_ask.Answered], search_include: [str], package_flags: [str], source_dir: str) -> ()?
-    wanted = pointees(p, c, s, decls)
+    wanted = pointee_wants.pointees(p, c, s, decls)
 
     if wanted.len() == 0
         return ok()
@@ -196,8 +104,9 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
         t.fingerprint + "|pointee|" + t.compiler_key + "|" + asked.join(",") + "|" + headers.join(",") + "|" + search_include.join(",") + "|" + package_flags.join(" ") + "|" + t.runtime_key
     )
     dir = t.build + "/pointee-" + key
-    dump_json = dir + "/dump.json"
+    listed = dir + "/dump.deps.txt"
     memo: {str: str} @ {}
+    known = deps.vouched(listed, @memo)
 
     # **The verdict is keyed by the check unit's own text, not only by what
     # was asked.** Until 2026-09-04 it was `verdict.txt` under a key of
@@ -206,32 +115,33 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     # assertion differently (defect 010's guard) replayed a verdict the old
     # compiler had reached about the old unit, measured: the repaired
     # compiler answered exit 2 on the defect's own reproducer until
-    # `build/pointee-*` was cleared. The dump is still shared under `dir`
-    # (it depends only on the asks and the headers); the verdict file carries
-    # the digest of the unit clang actually judged, so a unit that changes
-    # shape is asked again and one that does not costs a `test -e`.
-    if process.path_exists(dump_json) && deps.fresh(deps.record_for(dir + "/verdict.txt"), @memo)
-        kept_json = read_file(dump_json)
+    # `build/pointee-*` was cleared. It carries the record's digest as well,
+    # since the check unit compiles the same headers the dump read.
+    if !known.is_err()
+        kept_json = read_file(dump_of(dir: dir, sum: known.must()))
 
         if !kept_json.is_err()
             types = header_types.types_of(kept_json.must(), wanted)
             answered @ header_types.answered(wanted, types)
-            verdict = verdict_path(dir: dir, check_text: header_types.check_unit(headers, wanted, types))
-            kept = read_file(verdict)
+            kept = read_file(
+                verdict_path(dir: dir, sum: known.must(), check_text: header_types.check_unit(headers, wanted, types))
+            )
 
             if !kept.is_err()
                 if kept.must() == "ok\n"
                     return ok()
                 return fail(code: "clang", msg: kept.must())
+    process.mkdir_all(dir)?
 
-    if process.mkdir_all(dir).is_err()
-        return fail(code: "failed", msg: "cannot create " + dir)
-    dump_c = dir + "/dump.c"
-    depfile = dir + "/dump.d"
-    err_path = dir + "/dump-stderr.txt"
-
-    if write_file(path: dump_c, text: header_types.dump_unit(headers, wanted)).is_err()
-        return fail(code: "failed", msg: "cannot write " + dump_c)
+    # Both units are published under the digest of their own text and
+    # compiled from there, so a copy another build put there is these
+    # bytes; clang's outputs are this check's alone.
+    dump_text = header_types.dump_unit(headers, wanted)
+    dump_c = unit_path(dir: dir, stem: "dump", text: dump_text)
+    publish.write_whole(path: dump_c, text: dump_text, keyed: true)?
+    depfile = publish.private_name(dir + "/dump.d")
+    dump_json = publish.private_name(dir + "/dump.json")
+    err_path = publish.private_name(dir + "/dump-stderr.txt")
     line: [str] @ [
         "clang"
         "-std=gnu11"
@@ -255,25 +165,28 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     )
     line @ line.push(dump_c)
     ran = process.run(program: "clang", words: line, out: dump_json, err: err_path)
-
-    if !ran.started || ran.code != 0
-        # The headers did not compile in isolation, or a name is a macro
-        # `__typeof__` cannot take: the build's own compile reports it on
-        # the author's line, and this check has nothing to add.
-        return ok()
     json = read_file(dump_json)
+    publish.discard(dump_json)
+    publish.discard(err_path)
+    rows = deps.rows_of(depfile: depfile, skip: dir + "/", @memo)
+    publish.discard(depfile)
 
-    if json.is_err()
+    # The headers did not compile in isolation, or a name is a macro
+    # `__typeof__` cannot take: the build's own compile reports it on the
+    # author's line, and this check has nothing to add.
+    if !ran.started || ran.code != 0 || json.is_err()
         return ok()
+
+    if rows.is_err()
+        return fail(code: "failed", msg: "cannot record what the pointee check read: " + failure_note(rows))
+    listing = deps.pointer_text(rows.must())
+    sum = listing.slice(from: 0, to: 16)
     types = header_types.types_of(json.must(), wanted)
     answered @ header_types.answered(wanted, types)
     check_text = header_types.check_unit(headers, wanted, types)
-    verdict = verdict_path(dir: dir, check_text: check_text)
-    check_c = dir + "/check.c"
-    check_err = dir + "/check-stderr.txt"
-
-    if write_file(path: check_c, text: check_text).is_err()
-        return fail(code: "failed", msg: "cannot write " + check_c)
+    check_c = unit_path(dir: dir, stem: "check", text: check_text)
+    publish.write_whole(path: check_c, text: check_text, keyed: true)?
+    check_err = publish.private_name(dir + "/check-stderr.txt")
     check_line: [str] @ ["clang", "-std=gnu11", "-fsyntax-only"]
     check_line @ with_search(
         line: check_line,
@@ -288,30 +201,35 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
         what: "checking what the extern out-parameters point at",
         err_path: check_err
     )
-    recorded = deps.record_deps(
-        record_path: deps.record_for(dir + "/verdict.txt"),
-        depfile: depfile,
-        skip: dir + "/",
-        @memo
-    )
-
-    if recorded.is_err()
-        return fail(code: "failed", msg: "cannot record what the pointee check read")
+    publish.discard(check_err)
+    said: str @ "ok\n"
 
     if checked.is_err()
-        text = failure_text(checked)
-        write_file(path: verdict, text: text)?
-        return fail(code: "clang", msg: text)
-    write_file(path: verdict, text: "ok\n")?
+        said @ failure_text(checked)
+
+    # The record last, after the two files it names by its digest: a
+    # reader that finds it finds the answer and the verdict of the headers
+    # it lists, whichever build published them.
+    publish.write_whole(path: dump_of(dir: dir, sum: sum), text: json.must(), keyed: true)?
+    publish.write_whole(path: verdict_path(dir: dir, sum: sum, check_text: check_text), text: said, keyed: true)?
+    publish.write_whole(path: listed, text: listing, keyed: true)?
+
+    if checked.is_err()
+        return fail(code: "clang", msg: said)
     return ok()
 
-# Where a verdict lives: under the dump's directory, named by the digest of
-# the unit clang judged — so two compilers that write the assertion
-# differently never share a verdict, and the dependency record (which
-# headers the dump read) stays one per directory under the name it always
-# had, since the headers are the dump's business and not the unit's.
-function verdict_path(dir: str, check_text: str) -> str
-    return dir + "/verdict-" + digest.digest(check_text) + ".txt"
+# Where the dump's answer and a verdict live: named by the record's digest,
+# the headers they came from, and a verdict by the unit clang judged too, so
+# two compilers that write the assertion differently never share one.
+function dump_of(dir: str, sum: str) -> str
+    return dir + "/dump-" + sum + ".json"
+
+function verdict_path(dir: str, sum: str, check_text: str) -> str
+    return dir + "/verdict-" + sum + "-" + digest.digest(check_text) + ".txt"
+
+# A unit's C, named by its own text.
+function unit_path(dir: str, stem: str, text: str) -> str
+    return dir + "/" + stem + "-" + digest.digest(text) + ".c"
 
 # The include search a unit compiles under, on the two check lines too:
 # the same headers must be found from the same places or the question
@@ -338,29 +256,65 @@ function failure_text(failed: ()?) -> str
         .ok    => return ""
         .err e => return e.msg
 
+function failure_note(failed: str?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
 ## Tests
 
-test "a numeric @ parameter is asked its width, an opaque one its depth, and each ask carries its line"
-    text = "extern \"stdio.h\"\n    function getline(@line: ptr, @n: i32, stream: ptr) -> i64\n    function frexp(x: f64, @e: i32) -> f64\n\nfunction main()\n    print(1)\n"
+# The binding the check exists for, refused, asked twice: the first time
+# cold, the second from what the first published.
+test "the pointee check publishes its answer and its verdict before the record that names them, and reads them back (defect 134)"
+    text = "extern \"math.h\"\n    function frexp(x: f64, @e: i16) -> f64\n\nfunction main()\n    e: i16 @ 0\n    print(frexp(8.0, @e))\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    wanted = pointees(low.program, c, s, parsed.decls)
-    named: [str] @ []
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-pointee"
+    assert !process.remove_tree(t.build).is_err()
+    none: [str] = []
+    first_answers: [pointee_ask.Answered] @ []
+    first = check(
+        t,
+        low.program,
+        c,
+        s,
+        parsed.decls,
+        answered: @first_answers,
+        search_include: none,
+        package_flags: none,
+        source_dir: ""
+    )
+    assert first.is_err()
+    records: i64 @ 0
+    listed = process.files_under(t.build).must()
 
-    for one in wanted
-        if one.file == "t.hero"
-            kind: str @ "width"
+    # The two units, the answer, the verdict and the record: nothing else,
+    # and nothing private.
+    assert listed.len() == 5
 
-            if one.depth
-                kind @ "depth"
-            named @ named.push(
-                one.name + "." + one.param + "@" + one.index.to_str() + ":" + one.declared + ":" + one.line.to_str() + ":" + kind
-            )
+    for path in listed
+        assert !strings.ends_with(text: path, suffix: ".tmp")
 
-    # `@line: ptr` is opaque and asks for depth (defect 083); `@n: i32` and `@e: i32`
-    # are numeric and ask for width; `stream: ptr` and `x: f64` are not `@` and ask
-    # nothing.
-    assert named == ["getline.line@0:ptr:2:depth", "getline.n@1:int32_t:2:width", "frexp.e@1:int32_t:3:width"]
+        if strings.ends_with(text: path, suffix: "/dump.deps.txt")
+            records @ records + 1
+
+    assert records == 1
+    second_answers: [pointee_ask.Answered] @ []
+    second = check(
+        t,
+        low.program,
+        c,
+        s,
+        parsed.decls,
+        answered: @second_answers,
+        search_include: none,
+        package_flags: none,
+        source_dir: ""
+    )
+    assert failure_text(second) == failure_text(first)
+    assert second_answers.len() == first_answers.len()
+    assert process.files_under(t.build).must().len() == 5

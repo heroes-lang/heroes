@@ -1,0 +1,154 @@
+# How a file a build writes comes into being, and the one rule that lets
+# two builds in one tree share `build/` (design.md §3.1, §1.12; defect 134).
+#
+# THE RULE. A file another process may read is written under a name no
+# other process uses, and only then published, by `rename_over`, under the
+# name readers ask for. A reader therefore sees the whole of one version or
+# the whole of another and never a file somebody is still writing, and a
+# build killed half-way leaves only a private name nobody reads. A file
+# only its writer reads (clang's stderr, a dependency listing, a
+# pkg-config answer) needs the first half alone: a private name, removed
+# once read.
+#
+# **Every one of those names used to be one name**, `object + ".tmp"`, a
+# `clang-stderr.txt` per directory, one `build/pkg-config-out.txt` for the
+# whole tree, and the C file written in place. Measured 2026-09-30 on this
+# compiler's predecessor, six `heroes run` of one program started together
+# on a cold `build/`: five of six failed, in each of five rounds, the first
+# publish taking the one staged file the other five were about to publish.
+#
+# THE NAME is this process's id and a number no earlier call in this
+# process has had (`process.serial`), so two processes never share one and
+# neither does one process asking twice. It sits beside its destination,
+# in the same directory, because a rename across two volumes is a copy.
+#
+# WHEN THE PUBLISH FAILS. POSIX `rename` replaces its destination
+# atomically and never refuses because a reader holds it. Windows'
+# `MoveFileEx` does: over a file another process has open, or a binary it
+# is running, it answers 5 or 32. Where the destination is KEYED, named by
+# a digest of everything its bytes depend on, a file another build put
+# there IS this file, so it is kept and the staged copy thrown away. Where
+# it is not, an author's `-o` naming a place rather than a content, nothing
+# is assumed and the failure is reported with the path and the operating
+# system's reason. Which destinations are keyed is the caller's to say,
+# because only the caller knows what the name was derived from.
+
+use cli/process
+
+# A name for `path` that no other process, and no other call in this one,
+# will ever ask for.
+function private_name(path: str) -> str
+    return path + "." + process.pid().to_str() + "-" + process.serial().to_str() + ".tmp"
+
+# `text`, written whole under a private name and then published as `path`.
+function write_whole(path: str, text: str, keyed: bool) -> ()?
+    staged = private_name(path)
+
+    if write_file(path: staged, text: text).is_err()
+        why = process.because()
+        discard(staged)
+        return fail(code: "not_written", msg: "cannot write " + path + why)
+    return publish(staged: staged, path: path, keyed: keyed)
+
+# Move a finished private file into place as `path`. The failure that is
+# accepted is asked of the destination rather than of the reason: a keyed
+# FILE is there, which is another build's copy of these bytes, whatever
+# the platform's number for its refusal. A directory there is no artifact.
+function publish(staged: str, path: str, keyed: bool) -> ()?
+    if !process.rename_over(from: staged, to: path).is_err()
+        return ok()
+    why = process.because()
+    discard(staged)
+
+    if keyed && process.path_exists(path) && !process.is_directory(path)
+        return ok()
+    return fail(code: "not_written", msg: "cannot publish " + path + why)
+
+# A private file this process is finished with. A removal that fails
+# leaves a name nobody will ask for, which is why its answer is dropped.
+function discard(path: str)
+    _ = process.remove_file(path).is_err()
+
+## Tests
+
+function holds(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false
+
+function failure_of(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.code + ": " + e.msg
+
+test "a private name is this process's own, and a second ask is another name"
+    one = private_name("build/x.o")
+    two = private_name("build/x.o")
+    assert one != two
+    assert holds(text: one, needle: "build/x.o." + process.pid().to_str() + "-")
+    assert holds(text: one, needle: ".tmp")
+
+test "a publish replaces what was there with the whole of what was written, and leaves no private name"
+    dir = "build/selftest-publish"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/target", text: "OLD").is_err()
+    assert !write_whole(path: dir + "/target", text: "NEW", keyed: false).is_err()
+    assert read_file(dir + "/target").must() == "NEW"
+    assert process.files_under(dir).must() == [dir + "/target"]
+
+# A rename that fails on every platform with a file already at the
+# destination: a staged name nothing was written to. The destination is the
+# other build's copy. **This case first made the staged name a DIRECTORY,
+# which this comment said nothing renames over a file on any platform; the
+# Windows box renamed it** (2026-09-30, `MoveFileExA` with
+# `MOVEFILE_REPLACE_EXISTING` put the directory where the file was, where
+# POSIX answers ENOTDIR). Nothing a build publishes is a directory, so the
+# case changed and not the rule.
+test "a keyed destination another build published is kept"
+    dir = "build/selftest-publish-keyed"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/artifact", text: "THEIRS").is_err()
+    staged = private_name(dir + "/artifact")
+    assert !publish(staged: staged, path: dir + "/artifact", keyed: true).is_err()
+    assert read_file(dir + "/artifact").must() == "THEIRS"
+
+test "an author's destination is never kept that way: the failure names it and says why"
+    dir = "build/selftest-publish-author"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/app", text: "EARLIER").is_err()
+    staged = private_name(dir + "/app")
+    said = failure_of(publish(staged: staged, path: dir + "/app", keyed: false))
+    assert holds(
+        text: said,
+        needle: "not_written: cannot publish " + dir + "/app: the operating system's own reason is "
+    )
+    assert read_file(dir + "/app").must() == "EARLIER"
+
+# A rename that fails on both platforms with the staged file written: a file
+# over a directory. So this is also the case where the staged copy is there
+# to be thrown away, and is.
+test "a directory where a keyed file belongs is no artifact, and is reported, and the staged copy is thrown away"
+    dir = "build/selftest-publish-dir"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/artifact").is_err()
+    assert !write_file(path: dir + "/artifact/inside", text: "x").is_err()
+    said = failure_of(write_whole(path: dir + "/artifact", text: "MINE", keyed: true))
+    assert holds(text: said, needle: "cannot publish " + dir + "/artifact")
+    assert process.files_under(dir).must() == [dir + "/artifact/inside"]
+
+test "a write that cannot happen names the path and the operating system's reason"
+    said = failure_of(write_whole(path: "build/selftest-publish-none/deeper/x.c", text: "int x;", keyed: true))
+    assert holds(
+        text: said,
+        needle: "not_written: cannot write build/selftest-publish-none/deeper/x.c: the operating system's own reason is "
+    )

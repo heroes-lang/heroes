@@ -1,0 +1,280 @@
+# One link over every object a build made, and where the binary it makes
+# lands (design.md §3.1, §1.12; panel 093; defect 134). Split out of
+# `cli/units.hero` on 2026-09-30, when publishing the link passed that file
+# over §11's 300 lines: `units` answers what one translation unit compiles
+# to, and this answers what the objects of a program become, a question
+# with its own key.
+
+use cli/digest
+use cli/flags
+use cli/process
+use cli/publish
+use cli/strings
+use cli/toolchain
+use cli/units
+
+# One link over every object. Re-run on every build, deliberately: it
+# is one clang call, and it is what lets a `link` name change take
+# effect on a fully warm cache. Answers where the binary landed.
+#
+# **THE BINARY LANDS WHERE ITS OWN LINK LINE SAYS** (defect 134): under
+# `build/`, a directory named by every word of the line but the output, so
+# a binary already there was linked from the same objects, and each object
+# is named by its text and by the headers it read. It was
+# `build/<hash>/<m>`, a hash of the source alone, so two builds of one
+# program shared it whatever their headers said; on Windows a binary
+# another process is running cannot be replaced, and the one there could
+# not be told from this one. The author's `-o` names a place and not a
+# content, so a failure to publish there is reported.
+#
+# **The linker writes into a private directory**, `<binary>.<pid>-<n>.tmp/`,
+# and everything it wrote is published beside the binary: all six builds
+# of one program used to link `<m>.tmp`, and the macOS linker refuses an
+# output another is writing (`ld: open() failed, errno=17`). A directory
+# and not a name, because on Windows the linker names the PDB after its
+# output, so a private file name would leave a new `.pdb` on every build.
+# Inside it the output is the module's own name, never a part of the path
+# asked for: an author's `-o` is not split to find one (`published_as`).
+function link_objects(t: toolchain.Toolchain, objects: [str], module: str, output: str?, level: str, sanitize: bool, search_include: [str], search_library: [str], package_flags: [str], link_names: [str]) -> str?
+    line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
+    line @ line.push(level)
+    line @ strings.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
+
+    # The link's own flags, which on Windows is the stack reserve a
+    # recursive frontend needs (flags.link_flags carries the
+    # measurement). Empty everywhere else.
+    line @ strings.with_all(list: line, more: flags.link_flags())
+
+    for dir in search_include
+        line @ strings.with_all(list: line, more: ["-I", dir])
+
+    for dir in search_library
+        line @ strings.with_all(list: line, more: ["-L", dir])
+
+    for object in objects
+        line @ line.push(object)
+
+    for flag in package_flags
+        line @ line.push(flag)
+
+    for name in link_names
+        line @ line.push("-l" + name)
+
+    binary: str @ binary_home(t, line: line, name: module + process.exe_suffix())
+    keyed: bool @ true
+
+    if !output.is_err()
+        binary @ output.must()
+        keyed @ false
+
+        # A directory the author named and that is not there is theirs to
+        # make: the stage below would make it, and the linker never did.
+        if beside(path: binary, name: "").len() > 0 && !process.is_directory(beside(path: binary, name: "."))
+            return fail(code: "not_written", msg: "cannot publish " + binary + ": its directory is not there")
+    stage = publish.private_name(binary)
+    process.mkdir_all(stage)?
+    err_path = publish.private_name(t.build + "/link-clang-stderr.txt")
+    inner = module + process.exe_suffix()
+    line @ strings.with_all(list: line, more: ["-o", stage + "/" + inner])
+    linked = toolchain.run_clang(line: line, what: "linking", err_path: err_path)
+    publish.discard(err_path)
+
+    if linked.is_err()
+        _ = process.remove_tree(stage).is_err()
+        return fail(code: units.failure_code(linked), msg: units.failure_note(linked))
+    wrote = process.files_under(stage)
+
+    if wrote.is_err()
+        _ = process.remove_tree(stage).is_err()
+        return fail(code: "not_written", msg: "cannot read what the linker wrote in " + stage)
+
+    for made in wrote.must()
+        # Where the linker made a directory, a `.dSYM` being a tree, it is
+        # made beside the binary as well.
+        relative = made.slice(from: stage.len() + 1, to: made.len())
+        target = published_as(binary: binary, inner: inner, module: module, relative: relative)
+
+        if base_of(relative) != relative
+            process.mkdir_all(beside(path: target, name: "."))?
+        published = publish.publish(staged: made, path: target, keyed: keyed)
+
+        if published.is_err()
+            _ = process.remove_tree(stage).is_err()
+            return fail(code: units.failure_code(published), msg: units.failure_note(published))
+
+    _ = process.remove_tree(stage).is_err()
+    return ok(binary)
+
+# Where a binary built from `line` lives under `build/`: one directory per
+# link line, every word counted by its length so no two lines share one,
+# and the layout word and the compiler that links in the key as well.
+function binary_home(t: toolchain.Toolchain, line: [str], name: str) -> str
+    words: [str] @ [t.fingerprint, t.compiler_key, name]
+
+    for word in line
+        words @ words.push(word.len().to_str() + ":" + word)
+
+    return t.build + "/" + digest.digest(words.join("|")) + "/" + name
+
+# Where a file the linker wrote is published: the binary at the path asked
+# for, verbatim, and anything else under the binary's name and what followed
+# the module's own, `app.exe.pdb` for `p.pdb`, the name it had when the
+# linker wrote `app.exe.tmp`. **The author's path is never split to find a
+# name**: `-o C:\x\app.exe` is Windows' own separator, and a name cut at `/`
+# alone from it put the linker's output in a directory that is not there.
+function published_as(binary: str, inner: str, module: str, relative: str) -> str
+    if relative == inner
+        return binary
+
+    if strings.starts_with(text: relative, prefix: module)
+        return binary + relative.slice(from: module.len(), to: relative.len())
+    return binary + "." + relative
+
+# The last part of a path, and a sibling of it: `-o same` has no directory
+# at all, and a sibling of it is a name in the working directory.
+function base_of(path: str) -> str
+    at: i64 @ path.len()
+
+    while at > 0 && path[at - 1] != 47
+        at @ at - 1
+
+    return path.slice(from: at, to: path.len())
+
+function beside(path: str, name: str) -> str
+    return path.slice(from: 0, to: path.len() - base_of(path).len()) + name
+
+## Tests
+
+# THE CONCURRENT CASE's body, run on six threads at once by the test of that
+# name below: its own toolchain, one scratch `build/` for all six, and a
+# whole build, the runtime's object, one unit and the link. One `i64`
+# crosses a thread (`examples/threads/main.hero`), so the answer is 1 for a
+# binary that is there and runs, and 0 for anything else.
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant TOGETHER_BUILD: str
+    "build/selftest-together"
+
+function build_beside(index: i64) -> i64
+    _ = index
+    found = toolchain.locate_toolchain(hint: "", fingerprint: "port-test")
+
+    if found.is_err()
+        return 0
+    t: toolchain.Toolchain @ found.must()
+    t.build @ TOGETHER_BUILD + "-" + process.pid().to_str()
+    none: [str] = []
+    memo: {str: str} @ {}
+    runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false)
+    made = units.tu_object(
+        t,
+        module: "together",
+        tu_text: "int main(void) { return 0; }\n",
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: "",
+        search_include: none,
+        @memo
+    )
+
+    if runtime.is_err() || made.is_err()
+        return 0
+    no_output: str? = fail(code: "none", msg: "no -o")
+    binary = link_objects(
+        t,
+        objects: [runtime.must(), made.must()],
+        module: "together",
+        output: no_output,
+        level: "-O0",
+        sanitize: false,
+        search_include: none,
+        search_library: none,
+        package_flags: none,
+        link_names: none
+    )
+
+    if binary.is_err()
+        return 0
+    ran = process.run(program: binary.must(), words: [binary.must()], out: process.discard(), err: process.discard())
+
+    if !ran.started || ran.code != 0
+        return 0
+    return 1
+
+test "six builds of one cold program started at once all succeed, and publish one object and one binary (defect 134)"
+    dir = TOGETHER_BUILD + "-" + process.pid().to_str()
+    assert !process.remove_tree(dir).is_err()
+    handles: [i64] @ []
+
+    for i in range(from: 0, to: 6)
+        handles @ handles.push(hero_thread_spawn(body: build_beside, arg: i))
+
+    done: i64 @ 0
+
+    for h in handles
+        done @ done + hero_thread_join(handle: h)
+
+    assert done == 6
+    objects: i64 @ 0
+    binaries: i64 @ 0
+
+    for path in process.files_under(dir).must()
+        assert !strings.ends_with(text: path, suffix: ".tmp")
+
+        if strings.ends_with(text: path, suffix: ".o")
+            objects @ objects + 1
+
+        if strings.ends_with(text: path, suffix: "/together" + process.exe_suffix())
+            binaries @ binaries + 1
+
+    # The runtime's object and the unit's; one binary.
+    assert objects == 2
+    assert binaries == 1
+    assert !process.remove_tree(dir).is_err()
+
+test "a binary's home is named by every word of its link line, and an author's -o is theirs (defect 134)"
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-link"
+    assert !process.remove_tree(t.build).is_err()
+    assert binary_home(t, line: ["clang", "a.o"], name: "p") == binary_home(t, line: ["clang", "a.o"], name: "p")
+    assert binary_home(t, line: ["clang", "a.o"], name: "p") != binary_home(t, line: ["clang", "b.o"], name: "p")
+
+    # Two words are never one: each is counted by its length.
+    assert binary_home(t, line: ["a b"], name: "p") != binary_home(t, line: ["a", "b"], name: "p")
+    none: [str] = []
+    memo: {str: str} @ {}
+    runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
+    made = units.tu_object(t, module: "linkprobe", tu_text: "int main(void) { return 0; }\n", level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).must(
+    )
+    wanted = t.build + "/app" + process.exe_suffix()
+    binary = link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(wanted), level: "-O0", sanitize: false, search_include: none, search_library: none, package_flags: none, link_names: none).must(
+    )
+    assert binary == wanted
+    assert process.path_exists(wanted)
+
+    # The author's path as written: on Windows `\` is its separator and
+    # elsewhere a byte of a name, and neither is split to name the output.
+    assert !process.mkdir_all(t.build + "/sub").is_err()
+    slashed = t.build + "/sub\\app" + process.exe_suffix()
+    assert link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(slashed), level: "-O0", sanitize: false, search_include: none, search_library: none, package_flags: none, link_names: none).must() == slashed
+    assert process.path_exists(slashed)
+    missing = link_objects(
+        t,
+        objects: [runtime, made],
+        module: "linkprobe",
+        output: ok(t.build + "/no-such-directory/app"),
+        level: "-O0",
+        sanitize: false,
+        search_include: none,
+        search_library: none,
+        package_flags: none,
+        link_names: none
+    )
+    assert units.failure_text(missing) == "cannot publish " + t.build + "/no-such-directory/app: its directory is not there"
+
+    for path in process.files_under(t.build).must()
+        assert !strings.ends_with(text: path, suffix: ".tmp")
