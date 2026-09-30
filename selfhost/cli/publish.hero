@@ -32,13 +32,64 @@
 # is assumed and the failure is reported with the path and the operating
 # system's reason. Which destinations are keyed is the caller's to say,
 # because only the caller knows what the name was derived from.
+#
+# THE AUTHOR'S OWN FILE (defect 136). A file whose name the author gave, the
+# source `fmt --in-place` and `check --apply --in-place` rewrite and the C
+# an `--emit-c -o` names, is published the same way and for the same reason
+# (`rewrite`): measured 2026-09-30 before this, both in-place verbs wrote
+# with `fopen(path, "wb")`, which empties the file first, and a disk 8 KB
+# from full left 0 bytes of a 62,706-byte program. But a rename makes a NEW
+# file, and the in-place write kept the old one with everything it was
+# besides its bytes: its mode, owner, group, flags, ACL and extended
+# attributes, a symbolic link to it, a second name (`runtime/parts/replace.c`
+# has each measurement). So a link is followed to the file it names, a file
+# that could not be opened for writing or that has a second name is refused,
+# and the new file takes the old one's identity before it takes its name.
+# What cannot be carried is refused, a new text that could not take its place
+# is removed whatever it carries, and every refusal and failure says what
+# failed and that the file is untouched.
+#
+# THE PRICE, measured the same day: a rename needs the whole new text on the
+# disk beside the old one, so a disk with room for the new text but not for
+# both now refuses where the in-place write fitted (`fmt` at 16 to 64 KB
+# free, 80,708 bytes for 62,706); a directory the author may not write, and
+# a file an ACL denies deleting, are refused where they were written in
+# place; and a process killed between the stage and the rename leaves its
+# private name beside the file, whole or cut, and the file as it was.
 
+use cli/files
 use cli/process
 
 # A name for `path` that no other process, and no other call in this one,
-# will ever ask for.
+# will ever ask for. The last part of the path keeps at most NAME_KEPT bytes
+# of its own name, cut at a character, so that what is added never makes a
+# name one part of a path cannot hold: a source named with 245 bytes and
+# `.hero` took 264 with the suffix, past the 255 bytes APFS, ext4 and NTFS
+# allow a part (the premise, and `private_name`'s case below is the test
+# that fires if a part is ever held to fewer than 255 minus the suffix).
 function private_name(path: str) -> str
-    return path + "." + process.pid().to_str() + "-" + process.serial().to_str() + ".tmp"
+    suffix = "." + process.pid().to_str() + "-" + process.serial().to_str() + ".tmp"
+    cut: i64 @ path.len()
+
+    while cut > 0 && path[cut - 1] != 47 && path[cut - 1] != 92
+        cut @ cut - 1
+
+    if path.len() - cut <= NAME_KEPT
+        return path + suffix
+    end: i64 @ cut + NAME_KEPT
+
+    # Back to the first byte of a character: a UTF-8 continuation byte is
+    # 0x80 to 0xBF, and a slice may not split one.
+    while path[end] >= 128 && path[end] < 192
+        end @ end - 1
+
+    return path.slice(from: 0, to: end) + suffix
+
+# How much of a name a private name keeps: 200 bytes, and the suffix is at
+# most 44 (two numbers of at most 19 digits, `.`, `-`, `.tmp`), so a part is
+# never over 244.
+constant NAME_KEPT: i64
+    200
 
 # `text`, written whole under a private name and then published as `path`.
 function write_whole(path: str, text: str, keyed: bool) -> ()?
@@ -68,6 +119,152 @@ function publish(staged: str, path: str, keyed: bool) -> ()?
 # leaves a name nobody will ask for, which is why its answer is dropped.
 function discard(path: str)
     _ = process.remove_file(path).is_err()
+
+# `text` in place of the author's file at `path`, whole or not at all.
+#
+# Something at the landing that is not a file, `/dev/null` as an `-o`, holds
+# no bytes a failed write could lose and cannot be renamed over, so it is
+# written directly, as `fopen` wrote it until defect 134's publish refused
+# it (measured: `--emit-c -o /dev/null` exit 2 since, where clang takes it).
+function rewrite(path: str, text: str) -> ()?
+    at = match landing_for(path)
+        .ok found => found
+        .err e    => return fail(code: e.code, msg: e.msg)
+
+    match files.entry(at)
+        .absent => return staged_over(path: path, at: at, text: text, like: "")
+        .file   => return carried_over(path: path, at: at, text: text)
+        .other =>
+            if write_file(path: at, text: text).is_err()
+                return fail(code: "not_written", msg: "cannot write " + path + process.because())
+            return ok()
+        .directory => return untouched(path: path, what: "a directory is there")
+        .link      => return untouched(path: path, what: "it is still a link once its links are followed")
+        .unknown   => return untouched(path: path, what: "it cannot be looked at" + process.because())
+
+# Where a write to the author's `path` lands, an `-o` of any kind or the
+# source an in-place verb rewrites: the file its links finally name.
+# Refused, in `rewrite`'s words and before anything is written, where
+# nothing may be written there: a chain of links that cannot be followed, a
+# directory, a directory that is not there, which is the author's to make as
+# the linker never made it, and a file that could not be opened for writing.
+# A rename needs only its directory to be writable, so without that last
+# question it replaces what the author protected: `--emit-c -o` and `build
+# -o` both replaced a read-only file from defect 134's repair until this
+# one, where clang's and ld's own `-o` refuse it (measured).
+function landing_for(path: str) -> str?
+    at = match files.landing(path)
+        .ok found => found
+        .err e    => return refused(path: path, what: "the link cannot be followed" + e.msg)
+
+    match files.entry(at)
+        .file =>
+            open = files.writable(at)
+
+            if open.is_err()
+                return refused(path: path, what: "it cannot be opened for writing" + message_of(open))
+            return ok(at)
+        .directory => return refused(path: path, what: "a directory is there")
+        .absent =>
+            if beside(path: at, name: "").len() > 0 && !process.is_directory(beside(path: at, name: "."))
+                return refused(path: path, what: "its directory is not there")
+            return ok(at)
+        .link | .other | .unknown => return ok(at)
+
+# `untouched`'s sentence, as the failure of a question that answers a path.
+function refused(path: str, what: str) -> str?
+    return fail(code: "not_written", msg: message_of(untouched(path: path, what: what)))
+
+# The last part of a path, and a sibling of it: `-o same` has no directory
+# at all, and a sibling of it is a name in the working directory. Cut at `/`
+# alone, which every platform takes: `\` is Windows' separator and a byte of
+# a name elsewhere, so a path is never split at it.
+function base_of(path: str) -> str
+    at: i64 @ path.len()
+
+    while at > 0 && path[at - 1] != 47
+        at @ at - 1
+
+    return path.slice(from: at, to: path.len())
+
+function beside(path: str, name: str) -> str
+    return path.slice(from: 0, to: path.len() - base_of(path).len()) + name
+
+# The author's existing file, replaced by one that is everything it was but
+# its bytes, or refused before a byte is written.
+function carried_over(path: str, at: str, text: str) -> ()?
+    names = files.names_of(at)
+
+    if names < 1
+        return untouched(path: path, what: "its names cannot be counted" + process.because())
+
+    if names > 1
+        return untouched(
+            path: path,
+            what: "it has " + names.to_str() + " names, and a new file under this one would leave the others holding the old text"
+        )
+    return staged_over(path: path, at: at, text: text, like: at)
+
+# The new text under a private name beside `at`, then renamed over it, `at`
+# being the landing of the author's `path`.
+function staged_over(path: str, at: str, text: str, like: str) -> ()?
+    return staged_through(path: path, at: at, staged: private_name(at), text: text, like: like)
+
+# The same through a private name the caller chose, which is how the cases
+# below make a stage and a rename fail on every platform. A stage that fails
+# leaves no file; a rename that fails leaves the staged one, removed here
+# whatever ACL it carried over (`process.unstage`).
+function staged_through(path: str, at: str, staged: str, text: str, like: str) -> ()?
+    made = files.stage(staged: staged, text: text, like: like)
+
+    if made.is_err()
+        return untouched(path: path, what: stage_words(made) + message_of(made))
+    moved = files.replace(staged: staged, path: at)
+
+    if moved.is_err()
+        what = "its new text could not be put in its place" + message_of(moved)
+
+        if files.unstage(staged).is_err()
+            return untouched(path: path, what: what + ", and it is left in " + staged)
+        return untouched(path: path, what: what)
+    return ok()
+
+# What a failed stage could not do, by the step `process.stage` names.
+function stage_words(failed: ()?) -> str
+    step = match failed
+        .ok    => ""
+        .err e => e.code
+
+    match step
+        "create"     => return "no file could be made beside it for its new text"
+        "write"      => return "its new text could not be written whole"
+        "owner"      => return "its new text could not be given its owner and group"
+        "mode"       => return "its new text could not be given its permissions"
+        "flags"      => return "its new text could not be given its flags"
+        "attributes" => return "its new text could not be given its ACL and extended attributes"
+        "flush"      => return "its new text could not be flushed to the disk"
+        _            => return "its new text could not be written, at " + step
+
+# The one sentence every refusal and failure of `rewrite` ends in: the file
+# as it was, or, where nothing was there, still nothing. Asked of the path
+# when the sentence is written, because that is the moment it describes.
+function untouched(path: str, what: str) -> ()?
+    ending: str @ path + " is untouched"
+
+    if nothing_at(path)
+        ending @ path + " was not created"
+    return fail(code: "not_written", msg: "cannot write " + path + ": " + what + "; " + ending)
+
+function nothing_at(path: str) -> bool
+    match files.entry(path)
+        .absent                                        => return true
+        .file | .directory | .link | .other | .unknown => return false
+
+# A failure's message, "" for none: what the verbs print after `error: `.
+function message_of(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
 
 ## Tests
 
@@ -152,3 +349,211 @@ test "a write that cannot happen names the path and the operating system's reaso
         text: said,
         needle: "not_written: cannot write build/selftest-publish-none/deeper/x.c: the operating system's own reason is "
     )
+
+# DEFECT 136's CASES, one per rule `rewrite` keeps. Each builds its shape
+# under `build/`; the modes, the second name and the symbolic link are made
+# through the runtime, the one place that can make them on every platform.
+
+# A directory emptied for a case, its files made writable and removed one by
+# one first: Windows will not remove a read-only file, Darwin will not remove
+# one whose ACL denies it (`process.unstage` clears that), and a case that
+# failed half-way leaves one behind for the next run.
+function fresh(dir: str)
+    if process.is_directory(dir)
+        for file in process.files_under(dir).default([])
+            _ = files.set_mode(path: file, mode: 0o644).is_err()
+            _ = files.unstage(file).is_err()
+    _ = process.remove_tree(dir).is_err()
+    _ = process.mkdir_all(dir).is_err()
+
+function is_link(path: str) -> bool
+    match files.entry(path)
+        .link                                            => return true
+        .absent | .file | .directory | .other | .unknown => return false
+
+test "a rewrite puts the whole new text in the author's file, makes an absent one, and leaves nothing beside either"
+    dir = "build/selftest-rewrite"
+    fresh(dir)
+    assert !write_file(path: dir + "/p.hero", text: "OLD").is_err()
+    assert !rewrite(path: dir + "/p.hero", text: "NEW").is_err()
+    assert read_file(dir + "/p.hero").must() == "NEW"
+    assert !rewrite(path: dir + "/out.c", text: "int x;\n").is_err()
+    assert read_file(dir + "/out.c").must() == "int x;\n"
+    assert process.files_under(dir).must().len() == 2
+
+test "a new text that cannot be written leaves the author's file byte for byte, and says what failed and that it is untouched"
+    dir = "build/selftest-rewrite-unwritten"
+    fresh(dir)
+    assert !write_file(path: dir + "/p.hero", text: "THE AUTHOR'S TEXT").is_err()
+
+    # The private name is taken, by a directory, so the new file cannot be
+    # made; and the directory is not removed, because it was not this
+    # process's to remove.
+    assert !process.mkdir_all(dir + "/taken").is_err()
+    said = failure_of(
+        staged_through(path: dir + "/p.hero", at: dir + "/p.hero", staged: dir + "/taken", text: "NEW", like: dir + "/p.hero")
+    )
+    assert holds(
+        text: said,
+        needle: "not_written: cannot write " + dir + "/p.hero: no file could be made beside it for its new text: the operating system's own reason is "
+    )
+    assert holds(text: said, needle: "; " + dir + "/p.hero is untouched")
+    assert read_file(dir + "/p.hero").must() == "THE AUTHOR'S TEXT"
+    assert process.is_directory(dir + "/taken")
+
+# A file renamed over a directory that holds one fails on every platform
+# (the keyed case above), after the stage has written its whole copy.
+test "a new text that cannot take the file's place leaves it as it was, and its copy is removed"
+    dir = "build/selftest-rewrite-unplaced"
+    fresh(dir)
+    assert !process.mkdir_all(dir + "/p.hero").is_err()
+    assert !write_file(path: dir + "/p.hero/inside", text: "KEPT").is_err()
+    said = failure_of(
+        staged_through(path: dir + "/p.hero", at: dir + "/p.hero", staged: dir + "/staged", text: "NEW", like: "")
+    )
+    assert holds(
+        text: said,
+        needle: ": its new text could not be put in its place: the operating system's own reason is "
+    )
+    assert holds(text: said, needle: "; " + dir + "/p.hero is untouched")
+    assert process.files_under(dir).must() == [dir + "/p.hero/inside"]
+    assert read_file(dir + "/p.hero/inside").must() == "KEPT"
+
+# The world is asked by the route the repair replaced: `fopen` refuses a
+# read-only file to anybody but a superuser, and the Linux container the
+# batch gate runs in is one, where root opens it and the rewrite must too.
+test "a read-only file is refused as fopen refused it and left byte for byte, and keeps its mode either way"
+    dir = "build/selftest-rewrite-readonly"
+    fresh(dir)
+    assert !write_file(path: dir + "/p.hero", text: "OLD").is_err()
+    assert !write_file(path: dir + "/probe", text: "x").is_err()
+    assert !files.set_mode(path: dir + "/p.hero", mode: 0o444).is_err()
+    assert !files.set_mode(path: dir + "/probe", mode: 0o444).is_err()
+    fopen_refuses = write_file(path: dir + "/probe", text: "y").is_err()
+    said = failure_of(rewrite(path: dir + "/p.hero", text: "NEW"))
+    kept = read_file(dir + "/p.hero").must()
+    mode = files.mode_of(dir + "/p.hero")
+    fresh(dir)
+    assert mode == 0o444
+
+    if fopen_refuses
+        assert holds(
+            text: said,
+            needle: "not_written: cannot write " + dir + "/p.hero: it cannot be opened for writing: the operating system's own reason is "
+        )
+        assert holds(text: said, needle: "; " + dir + "/p.hero is untouched")
+        assert kept == "OLD"
+    else
+        assert said == ""
+        assert kept == "NEW"
+
+# 0600, 0640 and 0755, each other than what a file made here gets, 0644 under
+# the usual mask; Windows keeps read-only alone, so there the two sides agree
+# at 0666 and the case holds the same rule with less to see.
+test "a file's permission bits are carried to its new text"
+    dir = "build/selftest-rewrite-mode"
+    fresh(dir)
+
+    for mode in [0o600, 0o640, 0o755]
+        assert !write_file(path: dir + "/p.hero", text: "OLD").is_err()
+        assert !files.set_mode(path: dir + "/p.hero", mode: mode).is_err()
+        before = files.mode_of(dir + "/p.hero")
+        assert !rewrite(path: dir + "/p.hero", text: "NEW").is_err()
+        assert read_file(dir + "/p.hero").must() == "NEW"
+        assert files.mode_of(dir + "/p.hero") == before
+
+# `nodump` on Darwin and Linux, `hidden` on Windows: measured on the first
+# two, the in-place write kept the flag and this repair's first version lost
+# it. A filesystem that keeps no flags gives the case nothing to hold.
+test "a file's flags are carried to its new text"
+    dir = "build/selftest-rewrite-flag"
+    fresh(dir)
+    assert !write_file(path: dir + "/p.hero", text: "OLD").is_err()
+
+    if files.set_flag(dir + "/p.hero").must()
+        assert files.flagged(dir + "/p.hero") == 1
+        assert !rewrite(path: dir + "/p.hero", text: "NEW").is_err()
+        assert read_file(dir + "/p.hero").must() == "NEW"
+        assert files.flagged(dir + "/p.hero") == 1
+
+# Measured on Darwin: an ACL entry denying the file's deletion refuses the
+# rename over it, and the staged copy, which carries the same entry, refused
+# its own removal and stayed beside the file. Where no such entry exists the
+# rewrite simply happens.
+test "a new text that cannot take the place of a file its ACL protects is removed all the same"
+    dir = "build/selftest-rewrite-denied"
+    fresh(dir)
+    assert !write_file(path: dir + "/p.hero", text: "OLD").is_err()
+    denied = files.deny_delete(dir + "/p.hero").must()
+    said = failure_of(rewrite(path: dir + "/p.hero", text: "NEW"))
+    left = process.files_under(dir).must()
+    kept = read_file(dir + "/p.hero").must()
+    fresh(dir)
+
+    if denied
+        assert holds(
+            text: said,
+            needle: "not_written: cannot write " + dir + "/p.hero: its new text could not be put in its place: the operating system's own reason is "
+        )
+        assert holds(text: said, needle: "; " + dir + "/p.hero is untouched")
+        assert !holds(text: said, needle: "left in")
+        assert left == [dir + "/p.hero"]
+        assert kept == "OLD"
+    else
+        assert said == ""
+        assert kept == "NEW"
+
+test "a file whose directory is not there is refused before anything is made"
+    dir = "build/selftest-rewrite-nowhere"
+    fresh(dir)
+    said = failure_of(rewrite(path: dir + "/deeper/out.c", text: "int x;\n"))
+    assert said == "not_written: cannot write " + dir + "/deeper/out.c: its directory is not there; " + dir + "/deeper/out.c was not created"
+    assert !process.is_directory(dir + "/deeper")
+    assert process.files_under(dir).must().len() == 0
+
+test "a file with a second name is refused, and both names keep the old text"
+    dir = "build/selftest-rewrite-names"
+    fresh(dir)
+    assert !write_file(path: dir + "/p.hero", text: "OLD").is_err()
+    assert !files.second_name(existing: dir + "/p.hero", name: dir + "/other.hero").is_err()
+    said = failure_of(rewrite(path: dir + "/p.hero", text: "NEW"))
+    assert said == "not_written: cannot write " + dir + "/p.hero: it has 2 names, and a new file under this one would leave the others holding the old text; " + dir + "/p.hero is untouched"
+    assert read_file(dir + "/p.hero").must() == "OLD"
+    assert read_file(dir + "/other.hero").must() == "OLD"
+
+# A chain of two links, each read from its own directory, all three names in
+# one so that no separator is in a target. Windows makes a link for an
+# administrator or in developer mode, which the box and CI's runner are;
+# anywhere it may not, the fixture's own assert is this case's loud failure.
+test "a symbolic link is written through to the file it names, and stays a link"
+    dir = "build/selftest-rewrite-link"
+    fresh(dir)
+    assert !write_file(path: dir + "/t.hero", text: "OLD").is_err()
+    assert !files.symbolic_link(target: "t.hero", name: dir + "/p.hero").is_err()
+    assert !files.symbolic_link(target: "p.hero", name: dir + "/chain.hero").is_err()
+    assert !rewrite(path: dir + "/chain.hero", text: "NEW").is_err()
+    assert is_link(dir + "/chain.hero")
+    assert is_link(dir + "/p.hero")
+    assert read_file(dir + "/t.hero").must() == "NEW"
+
+    for file in process.files_under(dir).must()
+        assert !holds(text: file, needle: ".tmp")
+
+test "what is not a file is written into, and a directory is refused untouched"
+    assert !rewrite(path: process.discard(), text: "into nothing").is_err()
+    dir = "build/selftest-rewrite-directory"
+    fresh(dir)
+    assert !process.mkdir_all(dir + "/out.c").is_err()
+    said = failure_of(rewrite(path: dir + "/out.c", text: "x"))
+    assert said == "not_written: cannot write " + dir + "/out.c: a directory is there; " + dir + "/out.c is untouched"
+
+# The premise `private_name` rests on, as the test that fires when it dies:
+# one part of a path holds 255 bytes on every filesystem this writes to.
+test "a private name keeps one part of a path within 244 bytes, cut at a character, and a short name whole"
+    named = private_name("build/" + "n".repeat(250) + ".hero")
+    last = named.slice(from: 6, to: named.len())
+    assert last.len() <= 244
+    assert holds(text: named, needle: "build/" + "n".repeat(200) + ".")
+    wide = private_name("build/" + "é".repeat(150))
+    assert wide.slice(from: 6, to: 206) == "é".repeat(100)
+    assert holds(text: private_name("build/x.o"), needle: "build/x.o." + process.pid().to_str() + "-")

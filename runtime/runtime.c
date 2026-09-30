@@ -193,3 +193,8 @@
 #include "parts/fs.c"
 #include "parts/dir.c"
 #include "parts/run.c"
+
+/* Replacing a file whose name the author gave, whole or not at all (defect
+ * 136). After `fs.c`, whose platform arm it shares a reason with, and `os.c`,
+ * whose `hero_fs_why_code` it sets. */
+#include "parts/replace.c"
