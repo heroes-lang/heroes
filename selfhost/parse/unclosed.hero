@@ -25,6 +25,7 @@
 # | `end_literal` | the same two |
 # | `end_group`, `end_arguments`, `end_index` | `grammar_expr.group`, `grammar_expr.call_args`, `grammar_expr.postfix` |
 # | `swallows_the_body`, `past_what_was_swallowed` | `parse/opening.body_follows`, `parse/braces.body_or_block` |
+# | `inside_an_open_bracket` | `swallows_the_body`, `grammar_expr.statement_kind` for an `else` |
 # | `withdrawn` | `parse.parse_source`, `parse.parse_bounded` |
 # | `type_closer` | `parse/type`'s array, map and function types |
 
@@ -34,6 +35,8 @@ use cursor
 use parse/line_end
 use literals
 use lexer
+use next_line
+use parse/head_lines
 
 # The index of the closer that closes the opener at token `open`, as the
 # lexer's stack pairs them, whatever its kind, or -1 where none does: every
@@ -146,10 +149,45 @@ function past_what_goes_on(@c: cursor.Cursor, text: str, holds: line_end.Holds)
 # that opener's reach: the lines the head's body would be, read inside the
 # bracket and laid out as none, so their absence as a body is the opener's,
 # which the lexer named (lane recovery-b2, U5). Where nothing is left in the
-# reach, the body is missing as any is.
+# reach, the body is missing as any is. So is a head that stands inside the
+# reach of such an opener on a line above it (`inside_an_open_bracket`), where
+# the line below begins deeper in the text than the head's: a body written at
+# the head's own margin or shallower is missing as any is, and is told.
 function swallows_the_body(c: cursor.Cursor, text: str, from: i64) -> bool
     open = head_opener(c, text, from: from)
-    return open >= 0 && in_reach(c, open: open)
+
+    if open >= 0 && in_reach(c, open: open)
+        return true
+    below = head_lines.line_margin(text, at: cursor.current_span(c).start)
+    return below > head_lines.line_margin(text, at: c.tokens[from].span.start) && inside_an_open_bracket(c, text, from: from)
+
+# Whether the head at token `from` stands inside the reach of an opener before
+# it that the lexer named never closed, the cursor still in that reach: every
+# line there was read inside the bracket and laid out as none, so no head in it
+# has a block below it however its body is written, and the absence is the
+# opener's (defect 131's class, lane recovery-b4). Since `52b2d378` the parser
+# resumes where the lexer paired a closer, and a `[` left out inside `ok(`
+# left the `(` open over every `if` below, each named without the body it has;
+# before, a search for a `]` passed over those lines, their mistakes unsaid.
+# The walk back stops at a line that opens a declaration at column 0, where
+# the lexer names every opener still open and empties its stack.
+function inside_an_open_bracket(c: cursor.Cursor, text: str, from: i64) -> bool
+    i: i64 @ from - 1
+
+    while i >= 0 && !opens_a_declaration(c, text, at: i)
+        k = c.tokens[i].kind
+
+        if (k == .lparen || k == .lbracket || k == .lbrace) && never_closed(c, text, open: i)
+            return in_reach(c, open: i)
+        i @ i - 1
+
+    return false
+
+# Whether the token at `at` begins a line at column 0 that opens a declaration,
+# as the lexer asks it where it names what is open (`next_line`).
+function opens_a_declaration(c: cursor.Cursor, text: str, at: i64) -> bool
+    s = c.tokens[at].span.start
+    return (s == 0 || text[s - 1] == '\n') && next_line.opens_a_declaration(text, at: s)
 
 # The lines a declaration's head swallowed so (`swallows_the_body`), passed
 # over to where the lexer named the opener, the next declaration's line or
