@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 7**
+**OPEN: 8**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -617,5 +617,39 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     contract (`.claude/rules/cli-surface.md`). The in-place write of the
     corrupted text is inferred from `check.hero`'s write path, not run
     (defect 136 is that write's other half).
+
+- [ ] **138 — a program that declares a C function the Heroes library also binds, with other marks, stops `check` with an internal error** | a five-line file whose `extern "hero_os.h"` group declares `function hero_file_read(path: cstr, @status: i64) -> str`, where the library writes `path: cstr lent`: `heroes check` prints `internal error: a diagnostic landed inside the Heroes library, at its line 112: [contract_differs] ...` and exits 2, with or without `--permissive`, where a `contract_differs` at the author's line 2 and exit 1 are owed | `selfhost/check/contracts.hero:256` (`differs`, which puts the message at `at`) and its caller's choice of `at` · `selfhost/cli/check.hero:73-82` and `selfhost/cli/compile.hero:96` (the guard that turns a diagnostic inside the library into the internal error)
+
+    **Origin:** the coordinator, 2026-09-30 at 16:22, on the trunk's compiler
+    at `a294a6ff`, following up what it had noted and not filed the same
+    morning: `check --permissive` over
+    `archive/bootstrap-rs/heroes/src/library/source.hero`, an old copy of the
+    library, exits 2 with the same internal error. Reproducers in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/p184/libclash/`,
+    each `check`ed with and without `--permissive`: `clash-plain.hero` (the
+    shape above), `clash-otherheader.hero` (the same declaration under
+    `extern "stdio.h"`, the same internal error), `n3-mark-added.hero`
+    (`hero_str_try_from_cstr(p: cstr lent, ...)` where the library writes no
+    mark: the same, at the library's line 123), `n6-called.hero` (the shape
+    above, called from `main`: the same). The shapes beside that do NOT stop
+    it, exit 0: the same declaration with the library's own marks
+    (`clash-same.hero`, `hero_exit(code: i64)`), a constant at another type
+    (`constant HERO_OS_OK: i32`), another result type
+    (`hero_args_count() -> i32`), another parameter count, and a plain
+    function named `hero_exit`; whether those three `extern` ones are
+    clang's to refuse at `build`, as a binding's types are, is a question and
+    unrun here.
+
+    **Why it is a defect.** The program is the author's and the mistake is in
+    the author's line, yet the message names a line of a file the author
+    cannot open and the exit says the tool could not run
+    (`.claude/rules/cli-surface.md`: exit 1 is *the input has diagnostics*).
+    The guard's own comment says why it exists: *a diagnostic pointing into
+    the library is the COMPILER being wrong, not the program* (panel 028
+    R5). It fires because `contract_differs` compares two declarations of
+    one C symbol and, when one of them is the library's, may be put at the
+    library's. Read and unrun: which of the two becomes `at` is its caller's
+    choice in `selfhost/check/contracts.hero`, and a declaration of the
+    author's is always the one to name.
 
 *******************************************************************************
