@@ -1,0 +1,41 @@
+# Fixed 2026-09-30, defect 135's class, lane recovery-b3 (lane recovery-b2's
+# report, M1). Symptom: `record Pair<T>` over its fields cost
+# `continuation_outside_brackets`, the line said to be one that cannot end
+# with `>`, and `expected_end_of_line`, and the certain join wrote the first
+# field into the head, `record Pair<T> a: T`, refused anew; `variant Shape<T,
+# U>` cost four messages and the join `variant Shape<T, U> one`; and `record
+# Braced<T> {` cost `empty_record` and `expected_declaration` at its `}`.
+# Cause: the lexer read the `>` as a comparison no line may end with, and so
+# did the brace habit before a `{`. Now a record's or a variant's head that
+# ends with the `>` of type parameters ends there
+# (`line_above.closes_type_parameters`), the parser tells the `<` once,
+# saying type parameters are a function's alone (spec § 9), and the members
+# below it, or in braces, are read: their own mistakes are told.
+
+record Pair<T>  #~ expected_end_of_line
+    a: T
+    b i64  #~ expected_field_type
+
+record Box<T>  #~ expected_end_of_line
+    v: T
+
+record Nothing<>  #~ expected_end_of_line
+    v: i64
+
+variant Shape<T, U>  #~ expected_end_of_line
+    one
+        v: T
+    two
+        w: U
+
+record Braced<T> {  #~ expected_end_of_line empty_record
+    a: T
+}
+
+function main()
+    print(1)
+
+variant Opt<T>  #~ expected_end_of_line
+    none
+    some
+        v: T
