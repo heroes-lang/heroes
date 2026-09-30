@@ -1,0 +1,61 @@
+# Fixed 2026-09-30, defect 131's class, lane recovery-b2 (lane recovery-b1's
+# report, U4), beside `fixedbugs-131-a-bracket-the-lexer-found-open-in-a-literal`.
+# Symptom: a group, a call's arguments, an index, or a literal inside another,
+# whose opener the lexer found never closed, named the missing closer beside
+# the lexer's `unclosed_bracket`, one mistake and two messages: `x = (1 + 2`
+# over `print(x)` cost `expected_group_close` at `print`, `xs = [[1], [2`
+# cost `expected_separator` at the end of the block, and `foo(1, (2 + 3` four
+# messages for its two openers. Cause: only a literal and a type asked the
+# lexer's question (`parse/unclosed.hero`), and a literal inside another took
+# the line end it ended at, so the one around it found none. Now each ends at
+# the line end no `,` goes on from, leaves it where it stands, and names no
+# closer: the lexer's report is the one message, and a mistake after it on
+# its own line is still told. One shape per function.
+
+function a_group()
+    x = (1 + 2  #~ unclosed_bracket
+    print(x)
+
+function a_call()
+    print(1, 2  #~ unclosed_bracket
+    print(3)
+
+function a_method(p: str)
+    n = p.find("a"  #~ unclosed_bracket
+    print(n)
+
+function an_index(xs: [i64])
+    x = xs[1  #~ unclosed_bracket
+    print(x)
+
+function a_construction()
+    p = Point(x: 1  #~ unclosed_bracket
+    print(p.x)
+
+function a_comma_goes_on()
+    x = f(1,  #~ unclosed_bracket
+        2
+    print(x)
+
+function two_openers()
+    x = foo(1, (2 + 3  #~ unclosed_bracket unclosed_bracket
+    print(x)
+
+function lists_nested()
+    xs = [[1], [2  #~ unclosed_bracket unclosed_bracket
+    print(xs.len())
+
+function a_list_in_a_map()
+    m = {1: [2  #~ unclosed_bracket unclosed_bracket
+    print(m.len())
+
+function a_call_in_a_list()
+    ys = [f(1  #~ unclosed_bracket unclosed_bracket
+    print(ys.len())
+
+function junk_after_it()
+    x = (1 + 2 3  #~ unclosed_bracket expected_end_of_line
+    print(x)
+
+function at_the_end()
+    x = (1 + 2  #~ unclosed_bracket

@@ -314,18 +314,10 @@ function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
             span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
             base @ ast.push_expr(@a.exprs, ast.Expr(kind: .call(callee: base, args: arguments), span: span))
         else if k == .lbracket
+            bracket = c.pos
             _ = cursor.bump(@c)
             index = parse_expr(@c, @a, text)
-            cursor.skip_terminators(@c)
-            close = cursor.current_span(c)
-            _ = line_end.expect_closer(
-                @c,
-                text: text,
-                holds: .one_value,
-                kind: .rbracket,
-                code: "expected_index_close",
-                what: "`]` to close the index"
-            )
+            close = unclosed.end_index(@c, text: text, open: bracket)
             span = token.Span(start: a.exprs[base].span.start, end: close.end)
             base @ ast.push_expr(@a.exprs, ast.Expr(kind: .index(base: base, index: index), span: span))
         else if k == .question
@@ -494,13 +486,11 @@ function atom_kind(k: token.TokenKind) -> ast.ExprKind?
 # is exactly its contents; `()` as a VALUE does not exist either (§4.3: `()` is
 # the type of no value).
 function group(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    at = c.pos
     _ = cursor.bump(@c)
     cursor.skip_terminators(@c)
     inner = parse_expr(@c, @a, text)
-    cursor.skip_terminators(@c)
-
-    if !line_end.expect_closer(@c, text: text, holds: .one_value, kind: .rparen, code: "expected_group_close", what: "`)` to close the group")
-        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+    unclosed.end_group(@c, text: text, open: at)
     return inner
 
 # `[1, 2, 3]`, `[]`, or one element per line (§4.9). The canonical formatter
@@ -572,6 +562,10 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # reported here, or because `list_line.separates` refused the line end, or
 # at a line end in a literal the lexer found `open_ended` (`parse/unclosed`).
 function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: str, open_ended: bool) -> bool
+    # Left where it stands, so nothing below glues to the literal, and the
+    # literal around this one, never closed either, ends at it too.
+    if open_ended && unclosed.ends_at_the_line(c)
+        return false
     newline = cursor.at(c, .terminator)
     cursor.skip_terminators(@c)
     comma_span = cursor.current_span(c)
@@ -583,7 +577,7 @@ function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: 
             trailing_comma(@c, comma_span)
         return false
 
-    if newline && !comma && (open_ended || !list_line.separates(@c, text: text, closer: closer))
+    if newline && !comma && !list_line.separates(@c, text: text, closer: closer)
         return false
 
     if comma || newline
@@ -629,6 +623,8 @@ function case_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # and of a variant case, which are the same thing (§4.9).
 function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
     arguments: [ast.Arg] @ []
+    at = c.pos
+    open_ended = unclosed.never_closed(c, open: at)
     _ = cursor.bump(@c)
     cursor.skip_terminators(@c)
 
@@ -674,15 +670,14 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
                 arguments @ arguments.push(ast.Arg(name: ok(named), mutable: true, value: repaired))
             else
                 arguments @ arguments.push(ast.Arg(name: name, mutable: mutable, value: value))
-            cursor.skip_terminators(@c)
 
-            if !cursor.eat(@c, .comma)
+            if open_ended && unclosed.ends_at_the_line(c)
                 reading @ false
+            else
+                cursor.skip_terminators(@c)
+                reading @ cursor.eat(@c, .comma)
 
-    cursor.skip_terminators(@c)
-
-    if !line_end.expect_closer(@c, text: text, holds: .arguments, kind: .rparen, code: "expected_args_close", what: "`)`, or `,` and another argument")
-        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+    unclosed.end_arguments(@c, text: text, open: at)
     return arguments
 
 ## The two habits from other languages, each met with a certain fix

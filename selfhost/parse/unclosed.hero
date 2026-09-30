@@ -22,6 +22,7 @@
 # |---|---|
 # | `never_closed` | `grammar_expr.array_literal`, `grammar_expr.map_literal` |
 # | `end_literal` | the same two |
+# | `end_group`, `end_arguments`, `end_index` | `grammar_expr.group`, `grammar_expr.call_args`, `grammar_expr.postfix` |
 # | `type_closer` | `parse/type`'s array, map and function types |
 
 use token
@@ -66,12 +67,54 @@ function close_after(c: cursor.Cursor, at: i64) -> i64
 
     return -1
 
+## Where a construct the lexer named ends
+
+# The index of the first token past the line ends and comments at the cursor.
+function past_line_ends(c: cursor.Cursor) -> i64
+    i: i64 @ c.pos
+
+    while c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
+        i @ i + 1
+
+    return i
+
+# Whether a list the lexer named never closed ends at the line end the cursor
+# stands on: no `,` goes on from it, a line end and the `,` after it being one
+# separator in any list (panel 180 R1). The line end is left where it stands.
+function ends_at_the_line(c: cursor.Cursor) -> bool
+    return cursor.at(c, .terminator) && c.tokens[past_line_ends(c)].kind != .comma
+
+# Where the lexer named the opener never closed, a construct ends at its line
+# end, which it leaves for the statement, so nothing on the lines below glues
+# to it; but a line below that begins with what would have gone on with it,
+# `(total` over `+ fee`, is inside the same brackets, and that line end is
+# refused as it is above a closer (`line_end.continued`, panel 180 R3), its
+# line passed over. `holds` is the list the construct is, as
+# `line_end.expect_closer` asks it.
+function past_what_goes_on(@c: cursor.Cursor, text: str, holds: line_end.Holds)
+    while cursor.at(c, .terminator)
+        before = line_end.significant_before(c, at: c.pos)
+        below: cursor.Cursor @ c
+        below.pos @ past_line_ends(c)
+
+        if !line_end.goes_on(below, text: text, holds: holds, before: before)
+            return
+        cursor.skip_terminators(@c)
+        other = holds == .arguments && line_end.begins_a_value(cursor.current_kind(c))
+        line_end.continued(@c, text: text, before: before, other: other)
+
+        while !cursor.at(c, .terminator) && !cursor.at(c, .eof) && !cursor.at(c, .dedent)
+            _ = cursor.bump(@c)
+
+## Where a closer is owed
+
 # A literal's closer at the cursor, the one its opener at `open` owes: taken,
 # or named missing and the rest of the literal passed over to it; and nothing
 # at all where the opener is never closed, whose closer the lexer named and
 # which has none.
 function end_literal(@c: cursor.Cursor, text: str, open: i64)
     if never_closed(c, open: open)
+        past_what_goes_on(@c, text: text, holds: .elements)
         return
     what: str @ "`}` to close the map"
     code: str @ "expected_map_close"
@@ -83,6 +126,48 @@ function end_literal(@c: cursor.Cursor, text: str, open: i64)
 
     if line_end.said_here(c) || !cursor.expect(@c, text: text, kind: closer, code: code, what: what)
         cursor.recover_past_closer(@c, opener: c.tokens[open].kind, closer: closer)
+
+# A group's `)` at the cursor, after the line ends before it: taken, or named
+# missing and recovered past; and where the lexer found its `(` never closed
+# and named it, none is sought, and the group ends where its expression does.
+function end_group(@c: cursor.Cursor, text: str, open: i64)
+    if never_closed(c, open: open)
+        past_what_goes_on(@c, text: text, holds: .one_value)
+        return
+    cursor.skip_terminators(@c)
+
+    if !line_end.expect_closer(@c, text: text, holds: .one_value, kind: .rparen, code: "expected_group_close", what: "`)` to close the group")
+        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+
+# The same for an argument list's `)`, which ends where the lexer named its
+# `(` at the line end no `,` goes on from (`ends_at_the_line`), as a literal.
+function end_arguments(@c: cursor.Cursor, text: str, open: i64)
+    if never_closed(c, open: open)
+        past_what_goes_on(@c, text: text, holds: .arguments)
+        return
+    cursor.skip_terminators(@c)
+
+    if !line_end.expect_closer(@c, text: text, holds: .arguments, kind: .rparen, code: "expected_args_close", what: "`)`, or `,` and another argument")
+        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+
+# The same for an index's `]`; the span the index ends at is returned, its
+# last token's where the `[` is never closed.
+function end_index(@c: cursor.Cursor, text: str, open: i64) -> token.Span
+    if never_closed(c, open: open)
+        close = cursor.previous_significant_span(c)
+        past_what_goes_on(@c, text: text, holds: .one_value)
+        return close
+    cursor.skip_terminators(@c)
+    close = cursor.current_span(c)
+    _ = line_end.expect_closer(
+        @c,
+        text: text,
+        holds: .one_value,
+        kind: .rbracket,
+        code: "expected_index_close",
+        what: "`]` to close the index"
+    )
+    return close
 
 # A type's closer at the cursor, after the line ends before it, the one its
 # opener at `open` owes, taken as `line_end.expect_closer` takes it; the span

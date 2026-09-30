@@ -1,0 +1,37 @@
+# Fixed 2026-09-30, defect 130's class, lane recovery-b2, beside
+# `fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open`. Symptom:
+# below a literal whose opener the lexer found never closed, a line that goes
+# on with it, `xs = [1` over `+ 2`, went unsaid: the literal took its line
+# end, and the expression read `+ 2` as going on, `[1] + 2`, where below a
+# closed literal the same line is refused. Now a construct the lexer named
+# leaves its line end where it stands, and a line below it that goes on with
+# it is inside the same brackets: that line end is refused as it is above a
+# closer (`line_end_before_continuation`, panel 180 R3), with the same fixes,
+# and the line passed over (`parse/unclosed.past_what_goes_on`). The certain
+# fixes write the program on fewer lines and leave the lexer's reports.
+
+function a_list()
+    xs = [1  #~ unclosed_bracket
+    + 2  #~ line_end_before_continuation
+    print(xs.len())
+
+function a_group()
+    x = (1  #~ unclosed_bracket
+    * 2  #~ line_end_before_continuation
+    print(x)
+
+function an_index(xs: [i64])
+    x = xs[0  #~ unclosed_bracket
+    - 1  #~ line_end_before_continuation
+    print(x)
+
+function a_call_going_on()
+    print(f(1  #~ unclosed_bracket unclosed_bracket
+    .len()  #~ line_end_before_continuation
+    print(2)
+
+function two_lines_going_on()
+    y = (1  #~ unclosed_bracket
+    + 2  #~ line_end_before_continuation
+    + 3  #~ line_end_before_continuation
+    print(y)
