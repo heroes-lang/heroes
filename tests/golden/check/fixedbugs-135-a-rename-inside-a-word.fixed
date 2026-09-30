@@ -1,0 +1,31 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b: the other half of
+# `fixedbugs-135-a-rename-into-a-second-name`. A slip inside a word of the
+# name, both its ends kept and no digit touched, a letter doubled, dropped,
+# added or changed, or two neighbours swapped, mistypes the one candidate
+# rather than naming another, so the rename stays certain: `check --apply`
+# writes every one here, for a value, a function, a function after a dot and
+# a type, and the program it writes checks clean and runs.
+
+record Point
+    x: i64
+    y: i64
+
+function average(xs: [i64]) -> i64
+    return xs.fold(0, add) / xs.len()
+
+function add(acc: i64, item: i64) -> i64
+    return acc + item
+
+function norm(p: Point) -> i64  #~ unknown_type
+    return p.x + p.y
+
+function main()
+    total = 10
+    print(total)  #~ unknown_name
+    length = 4
+    print(length)  #~ unknown_name
+    print(average([2, 4]))  #~ unknown_name
+    xs = [1, 2, 3]
+    print(xs.len())  #~ unknown_function
+    print(norm(Point(x: 1, y: 2)))
+    print(total + length)

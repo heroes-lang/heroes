@@ -19,6 +19,7 @@
 use token
 use diag
 use module/names as module_names
+use resolve/near_names
 
 # One module named twice in one file. Not a shadowing error and not a
 # duplicate declaration — it is a line that does nothing, and saying which
@@ -72,6 +73,13 @@ function unused_use(name: str, span: token.Span) -> diag.Diagnostic
 # `qualifier` is what the author WROTE before the dot and `module` is the
 # module's own name; since `as` exists they differ, and the fix has to carry
 # the first one (panel 101 — this fix was `certain` and did not compile).
+#
+# **The one near name is certain only where the name's own letters allow it
+# alone**, the rule a local name's rename asks (`near_names.one_reading`; defect
+# 135, the certain-fix audit's R3, which found this site with no guard at
+# all): `calc.sub(a: 7, b: 2)` became `calc.sum` and printed 9 where 5 was
+# meant, and `calc.median([1, 2, 9])` became `calc.mean` and printed 4 where
+# 2 was, each a meaningful name one slip or two from another.
 function not_in_module(module: str, qualifier: str, name: str, near: [str], span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "unknown_in_module",
@@ -81,8 +89,12 @@ function not_in_module(module: str, qualifier: str, name: str, near: [str], span
 
     if near.len() == 1
         d.message @ "module `" + module + "` declares nothing called `" + name + "` — it has `" + near[0] + "`"
+        certainty: diag.Certainty @ .guess
+
+        if near_names.one_reading(name: name, candidate: near[0])
+            certainty @ .certain
         d.fixes @ d.fixes.push(
-            diag.Fix(title: "write `" + qualifier + "." + near[0] + "`", replacement: near[0], span: span, certainty: .certain)
+            diag.Fix(title: "write `" + qualifier + "." + near[0] + "`", replacement: near[0], span: span, certainty: certainty)
         )
     else if near.len() > 1
         d.message @ "module `" + module + "` declares nothing called `" + name + "` — it has " + listed(near)
@@ -289,10 +301,16 @@ function listed(items: [str]) -> str
 test "one candidate rewrites the line, several stay prose"
     span = token.Span(start: 0, end: 4)
     one: [str] = ["dist2"]
-    d = not_in_module(module: "geom", qualifier: "geom", name: "dist", near: one, span: span)
-    assert d.message == "module `geom` declares nothing called `dist` — it has `dist2`"
+    d = not_in_module(module: "geom", qualifier: "geom", name: "dsit2", near: one, span: span)
+    assert d.message == "module `geom` declares nothing called `dsit2` — it has `dist2`"
     assert d.fixes.len() == 1
     assert d.fixes[0].certainty == .certain
+
+    # Defect 135: the digit is what tells `dist2` from `dist`, so the one
+    # near name is a second function rather than a slip, and a guess.
+    twin = not_in_module(module: "geom", qualifier: "geom", name: "dist", near: one, span: span)
+    assert twin.fixes.len() == 1
+    assert twin.fixes[0].certainty == .guess
     three: [str] = ["a", "b", "c"]
     e = not_in_module(module: "geom", qualifier: "geom", name: "dist", near: three, span: span)
     assert e.fixes.len() == 0
