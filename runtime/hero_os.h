@@ -138,7 +138,9 @@ int64_t hero_word_bits(void);
  * `direct.h` is `ffi_missing_header` off Windows, this language has no `#if`,
  * and `struct stat`'s `st_mode` is two bytes on Darwin against four on glibc,
  * so no `record` spelling passes both. The platform arm lives in
- * `parts/fs.c`; `selfhost/` sees these six names and no platform word.
+ * `parts/fs.c`; `selfhost/` sees the names below and no platform word.
+ * (This said *these six names* until 2026-09-30, when `hero_fs_why` made them
+ * seven; a count in prose expires in silence, so the sentence carries none.)
  *
  * Each answers HERO_OS_OK or HERO_OS_FAILED, and each is the shell utility's
  * meaning rather than the C call's: an existing directory is a successful
@@ -163,6 +165,15 @@ int64_t hero_fs_newer_than(const char *path, const char *reference);
  * `MoveFileEx` for the same guarantee and `parts/fs.c` records that it is NOT
  * VERIFIED there. */
 int64_t hero_fs_rename(const char *from, const char *to);
+
+/* The operating system's OWN number for why the last `hero_fs_rename`,
+ * `hero_fs_mkdir_all`, `hero_fs_remove` or `hero_file_write` on this thread
+ * failed: `errno` where a C call failed, `GetLastError()` where a Win32 one did,
+ * and 0 after one that succeeded. `hero_run_why`'s counterpart for the files a
+ * build writes (defect 134): a publish that failed said *cannot publish* and
+ * nothing else, where the number separates a full disk, a read-only directory
+ * and a file another process holds open. `parts/os.c` holds it. */
+int64_t hero_fs_why(void);
 
 /* RUNNING A PROGRAM, BY ARGUMENT LIST RATHER THAN BY SENTENCE.
  *

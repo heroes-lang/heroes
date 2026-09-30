@@ -25,13 +25,16 @@
  *     Windows' is not, and that is written down below rather than smoothed over.
  */
 
+#include <errno.h>
 #if defined(_WIN32)
 #include <windows.h>
 #include <direct.h>
 #else
 #include <sys/stat.h>
-#include <errno.h>
 #endif
+
+/* Each call below that can fail clears `hero_fs_why_code` on the way in and
+ * sets it where it fails; `parts/os.c` defines it and says why it exists. */
 
 /* Is there a directory at this path? The question `test -d` asked, and the one
  * `mkdir`'s errno cannot answer. */
@@ -65,10 +68,13 @@ static int64_t hero_fs_mkdir_one(const char *path) {
 #else
     if (mkdir(path, 0777) == 0) return HERO_OS_OK;
 #endif
+    /* Kept before the question below, which calls `stat` and may move it. */
+    int failure = errno;
     /* It failed. EEXIST is the same answer for a directory that is already
      * there — which is success — and for a FILE sitting where the directory
      * should be, which is not. Ask the filesystem rather than errno. */
     if (hero_fs_is_directory(path)) return HERO_OS_OK;
+    hero_fs_why_code = (int64_t)failure;
     return HERO_OS_FAILED;
 }
 
@@ -77,9 +83,16 @@ static int64_t hero_fs_mkdir_one(const char *path) {
  * call, which `parts/os.c:104` already records — so no path is rewritten here
  * and panel 057's refusal of `\` as a separator is untouched. */
 int64_t hero_fs_mkdir_all(const char *path) {
+    hero_fs_why_code = 0;
     size_t length = strlen(path);
-    if (length == 0) return HERO_OS_FAILED;
-    if (length >= HERO_FS_PATH_MAX) return HERO_OS_FAILED;
+    if (length == 0) {
+        hero_fs_why_code = (int64_t)ENOENT;
+        return HERO_OS_FAILED;
+    }
+    if (length >= HERO_FS_PATH_MAX) {
+        hero_fs_why_code = (int64_t)ENAMETOOLONG;
+        return HERO_OS_FAILED;
+    }
 
     char work[HERO_FS_PATH_MAX];
     memcpy(work, path, length);
@@ -140,8 +153,13 @@ int64_t hero_fs_newer_than(const char *path, const char *reference) {
  * caller hears it. POSIX never retries: a busy file there deletes anyway
  * (the name goes, the inode lingers), so the loop would be dead code. */
 int64_t hero_fs_remove(const char *path) {
+    hero_fs_why_code = 0;
     if (remove(path) == 0) return HERO_OS_OK;
-    if (!hero_fs_exists(path)) return HERO_OS_OK;
+    hero_fs_why_code = (int64_t)errno;
+    if (!hero_fs_exists(path)) {
+        hero_fs_why_code = 0;
+        return HERO_OS_OK;
+    }
 #if defined(_WIN32)
     /* **MSVC's `remove()` does not remove a DIRECTORY** — C11 leaves it
      * unspecified and POSIX's does, so the difference hid until a suite
@@ -150,12 +168,26 @@ int64_t hero_fs_remove(const char *path) {
      * and the first delete-then-recreate (`cache/`, `units/`) was the first
      * time a directory unlink actually executed. Measured 2026-08-31: five
      * checks red as `cannot lay the program out`, all of them this line. */
-    if (hero_fs_is_directory(path) && RemoveDirectoryA(path)) return HERO_OS_OK;
+    if (hero_fs_is_directory(path)) {
+        if (RemoveDirectoryA(path)) {
+            hero_fs_why_code = 0;
+            return HERO_OS_OK;
+        }
+        hero_fs_why_code = (int64_t)GetLastError();
+    }
     for (int wait_ms = 5; wait_ms <= 320; wait_ms *= 2) {
         Sleep((DWORD)wait_ms);
-        if (hero_fs_is_directory(path) ? RemoveDirectoryA(path) != 0
-                                       : remove(path) == 0) return HERO_OS_OK;
-        if (!hero_fs_exists(path)) return HERO_OS_OK;
+        int directory = hero_fs_is_directory(path);
+        if (directory ? RemoveDirectoryA(path) != 0 : remove(path) == 0) {
+            hero_fs_why_code = 0;
+            return HERO_OS_OK;
+        }
+        /* The last refusal is the one reported. */
+        hero_fs_why_code = directory ? (int64_t)GetLastError() : (int64_t)errno;
+        if (!hero_fs_exists(path)) {
+            hero_fs_why_code = 0;
+            return HERO_OS_OK;
+        }
     }
 #endif
     return HERO_OS_FAILED;
@@ -178,11 +210,18 @@ int64_t hero_fs_remove(const char *path) {
  * that an object on disk is never one the cache cannot justify serving. A
  * remove-then-rename would open a window where the object is simply absent. */
 int64_t hero_fs_rename(const char *from, const char *to) {
+    hero_fs_why_code = 0;
 #if defined(_WIN32)
     if (MoveFileExA(from, to, MOVEFILE_REPLACE_EXISTING)) return HERO_OS_OK;
+    /* The one this compiler meets: ERROR_ACCESS_DENIED (5) or
+     * ERROR_SHARING_VIOLATION (32) where another process holds `to` open or is
+     * running it, which POSIX never refuses. `selfhost/cli/publish.hero` is
+     * what decides whether that is another build's copy of the same file. */
+    hero_fs_why_code = (int64_t)GetLastError();
     return HERO_OS_FAILED;
 #else
     if (rename(from, to) == 0) return HERO_OS_OK;
+    hero_fs_why_code = (int64_t)errno;
     return HERO_OS_FAILED;
 #endif
 }

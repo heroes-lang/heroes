@@ -49,7 +49,10 @@ extern "hero_os.h"
     function hero_fs_mkdir_all(path: cstr lent) -> i64
     function hero_fs_remove(path: cstr lent) -> i64
     function hero_fs_rename(from: cstr lent, to: cstr lent) -> i64
+    function hero_fs_why() -> i64
+    function hero_dir_remove_tree(path: cstr lent) -> i64
     function hero_os_pid() -> i64
+    function hero_run_serial() -> i64
 
 extern "stdlib.h"
     function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
@@ -126,15 +129,27 @@ function discard() -> str
 function exe_suffix() -> str
     return hero_run_exe_suffix()
 
-# The five filesystem questions, each carrying the shell utility's
-# meaning rather than the C call's: an existing directory is a
-# successful `mkdir_all`, and a file that is not there is a successful
-# `remove`. The runtime's C explains why `mkdir` cannot be trusted to
-# say which of those it is looking at.
+# The filesystem questions, each carrying the shell utility's meaning
+# rather than the C call's: an existing directory is a successful
+# `mkdir_all`, and a file that is not there is a successful `remove`. The
+# runtime's C explains why `mkdir` cannot be trusted to say which of those
+# it is looking at. **A refusal carries the operating system's own number**
+# (defect 134): `could not move` alone was one silence for a full disk, a
+# read-only directory and a file another process holds open.
 function mkdir_all(path: str) -> ()?
     if hero_fs_mkdir_all(path: path.cstr()) != RUN_OK
-        return fail(code: "mkdir_failed", msg: "could not create the directory " + path)
+        return fail(code: "mkdir_failed", msg: "could not create the directory " + path + because())
     return ok()
+
+# What the operating system said about the last filesystem call on this
+# thread that failed, as the clause every refusal here ends with.
+function because() -> str
+    return ": the operating system's own reason is " + fs_why().to_str()
+
+# That number itself: `errno`, or `GetLastError()` on Windows, 0 after a
+# call that succeeded (`hero_os.h`, `hero_fs_why`).
+function fs_why() -> i64
+    return hero_fs_why()
 
 function path_exists(path: str) -> bool
     return hero_fs_exists(path: path.cstr()) == 1
@@ -144,16 +159,23 @@ function is_directory(path: str) -> bool
 
 function remove_file(path: str) -> ()?
     if hero_fs_remove(path: path.cstr()) != RUN_OK
+        return fail(code: "remove_failed", msg: "could not remove " + path + because())
+    return ok()
+
+# A directory and everything under it, and one that is not there is
+# success, as `remove_file` says of a file.
+function remove_tree(path: str) -> ()?
+    if hero_dir_remove_tree(path: path.cstr()) != RUN_OK
         return fail(code: "remove_failed", msg: "could not remove " + path)
     return ok()
 
 # Replace `to` with `from`, atomically where the platform allows it.
-# The cache depends on that: an object is published by renaming it into
-# place *after* its dependencies are recorded, so a reader never sees
-# it half-written or absent.
+# The cache depends on that: every file under `build/` that another
+# process reads is published by renaming it into place, so a reader sees
+# the whole of one or the whole of the other (`cli/publish.hero`).
 function rename_over(from: str, to: str) -> ()?
     if hero_fs_rename(from: from.cstr(), to: to.cstr()) != RUN_OK
-        return fail(code: "rename_failed", msg: "could not move " + from + " to " + to)
+        return fail(code: "rename_failed", msg: "could not move " + from + " to " + to + because())
     return ok()
 
 # One environment variable, or "" where it is unset OR unreadable.
@@ -188,9 +210,16 @@ function env(name: str) -> str
 
 # This process's own id, as the operating system numbers it: what makes a
 # file under `build/` one that no other `heroes` process in the same tree
-# writes (defect 057's rule, `cli/clang_floor.identity`'s use of it).
+# writes (defect 057's rule; `cli/publish.hero` names every private file by it).
 function pid() -> i64
     return hero_os_pid()
+
+# A number no earlier call in this process has answered: what makes the
+# same private file, asked for twice by one process, two names (defect
+# 134). It is the runtime's because the language has no mutable global
+# (spec § 2), and `_Atomic` there because two threads must not share one.
+function serial() -> i64
+    return hero_run_serial()
 
 ## Tests
 

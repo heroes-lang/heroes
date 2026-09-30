@@ -18,6 +18,7 @@
 
 use bytes
 use cli/process
+use cli/publish
 use cli/strings
 
 # THE CLANG FLOOR: 18 (author instruction 2026-09-03, panel 103 — *"if you
@@ -93,23 +94,20 @@ function text_after(text: str, marker: str) -> str?
 #
 # The input is the runtime's own `runtime.c`, because the driver refuses an
 # input that is not there and that one is wherever a build can run; `-###`
-# compiles nothing and writes no object. The answer goes to a file named for
-# THIS process, since two builds in one tree under two clangs would otherwise
-# each read the other's (defect 057's shape: a path nobody else writes cannot
-# be substituted), and the file is removed once read. Absent, with what was
-# said, when clang cannot be started or refuses the words; the build's own
-# compile then says why in clang's words.
+# compiles nothing and writes no object. The answer goes to a private file
+# (`cli/publish.hero`), since two builds in one tree under two clangs would
+# otherwise each read the other's (defect 057's shape: a path nobody else
+# writes cannot be substituted), and the file is removed once read. Absent,
+# with what was said, when clang cannot be started or refuses the words; the
+# build's own compile then says why in clang's words.
 function identity(build_dir: str, runtime: str, words: [str]) -> str?
     process.mkdir_all(build_dir)?
-    said_path = build_dir + "/clang-identity-" + process.pid().to_str() + ".txt"
+    said_path = publish.private_name(build_dir + "/clang-identity.txt")
     line: [str] @ strings.with_all(list: ["clang", "-###"], more: words)
     line @ strings.with_all(list: line, more: ["-c", runtime + "/runtime.c", "-o", "identity.o"])
     ran = process.run(program: "clang", words: line, out: process.discard(), err: said_path)
     said = read_file(said_path)
-
-    # A removal that fails leaves a file no later build reads: its name
-    # carries a process id that ends with this process.
-    _ = process.remove_file(said_path).is_err()
+    publish.discard(said_path)
 
     if !ran.started
         return fail(code: "none", msg: "clang could not be started")
