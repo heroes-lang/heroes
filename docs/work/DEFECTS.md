@@ -405,4 +405,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     started at once all succeed**: `bf2b29ed`, gated by the net's own tests
     and `cache`; the net is owed at the lane's close.
 
+    **2026-09-30, lane 134, the Windows arm of a removal keeps its answer in
+    the width it was given**: repaired at `ad117d2f`, found and gated on the
+    Windows box; the net is owed at the lane's close.
+
 *******************************************************************************
