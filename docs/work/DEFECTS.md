@@ -389,4 +389,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and a failed filesystem call says why**: repaired at `bc402e8d`, gated by
     its cases and the compiler's own tests; the net is owed at the lane's close.
 
+    **2026-09-30, lane 134, a cached object, its replay and its record are
+    published as one**: repaired at `e2f475fe`, gated by its cases and the
+    compiler's own tests; the net is owed at the lane's close.
+
 *******************************************************************************

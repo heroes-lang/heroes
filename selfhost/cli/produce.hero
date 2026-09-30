@@ -18,14 +18,12 @@
 # verdict on their failure.
 
 use source
-use module/names as module_names
 use modules
 use emit/ffi
 use emit/ffi_tag
 use cli/io
 use cli/compile
 use cli/toolchain
-use cli/process
 use cli/pointee_ask
 use cli/clang_floor
 use cli/artifact
@@ -95,43 +93,21 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     if art.must().stopped
         none_t: [str] = []
         return ok(Produced(binary: "", tests: none_t, stopped: true))
-    module = module_names.module_of(s.name)
-    level_key: str @ options.level
     is_tests: bool @ false
 
     match options.target
-        .tests_build =>
-            level_key @ options.level + "+tests"
-            is_tests @ true
+        .tests_build   => is_tests @ true
         .program_build => is_tests @ is_tests
 
-    dir = toolchain.dir_for(
-        t,
-        source_name: s.name,
-        text: s.text,
-        level_key: level_key,
-        sanitize: options.sanitize,
-        search: compile.search_key(headers_from: options.headers_from, library: options.library)
-    )
-
-    if dir.is_err()
-        io.eprint(text: "error: cannot create the build directory")
-        return fail(code: "failed", msg: "no build directory")
-
-    # Written only where it is compiled, by the round: the fused unit is the
-    # test binary's, and a program build writes one .c per module instead
-    # (units.tu_object). It used to be written on both paths, which put
-    # 785,323 dead lines on disk for every build of the compiler.
-    c_file = dir.must() + "/" + module + ".c"
+    # Where the binary lands is the round's to learn, from the link line it
+    # runs (`units.link_objects`), and the C of every unit is written where
+    # it is compiled (`units.tu_object`). Both used to live under
+    # `build/<hash>/`, a hash of the source alone, computed here.
     object = toolchain.runtime_object(t, level: options.level, sanitize: options.sanitize)
 
     if object.is_err()
         io.eprint(text: "internal error: the runtime did not compile")
         return fail(code: "failed", msg: "no runtime object")
-    binary: str @ dir.must() + "/" + module + process.exe_suffix()
-
-    if !options.output.is_err()
-        binary @ options.output.must()
 
     # What the header said each `@` parameter points at (defect 010): filled
     # by the pointee check inside the round, empty for the package failure
@@ -176,9 +152,8 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     if source_dir.len() == 0
         source_dir @ "."
     site = assemble.Site(
-        c_file: c_file,
         object: object.must(),
-        binary: binary,
+        output: options.output,
         is_tests: is_tests,
         link: !art.must().emit_c,
         source_dir: source_dir,
@@ -201,10 +176,12 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     # pays only the first.
     struct_tags: {str: bool} @ {}
     linked: ()? @ ok()
+    binary: str @ ""
 
     while true
         went = assemble.round(t, options, art.must(), s, site, answered: @answered, struct_tags: struct_tags)
         linked @ went.verdict
+        binary @ went.binary
 
         if !linked.is_err()
             break
@@ -226,14 +203,10 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
 
         if blamed(message, art.must(), s, answered, struct_tags: struct_tags)
             return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
-        io.eprint(text: "internal error: " + message)
 
-        if is_tests
-            # The per-module branch carries the failing TU's own path
-            # inside the message; only the fused test build still needs
-            # this line, and pointing at the fused unit after a TU
-            # failure would name a file clang never refused.
-            io.eprint(text: "the generated C is at " + c_file)
+        # A unit clang refused carries its own path inside the message
+        # (`units.tu_object`), the fused test unit's included.
+        io.eprint(text: "internal error: " + message)
         return fail(code: "failed", msg: "clang refused the generated C")
 
     # **`--emit-c` WRITES AFTER THE ROUNDS, WHICH COMPILE AND DO NOT LINK FOR

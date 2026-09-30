@@ -28,17 +28,19 @@ use module/names as module_names
 use cli/compile
 use cli/toolchain
 use cli/units
+use cli/link
 use cli/pointee
 use cli/pointee_ask
 use emit
 use emit/unit
 use emit/members
 
-# What one build has settled before any round runs.
+# What one build has settled before any round runs. Where the binary lands
+# is not among it: under `build/` that is named by the link line, which a
+# round learns (`units.link_objects`); `output` is the author's `-o`.
 record Site
-    c_file: str
     object: str
-    binary: str
+    output: str?
     is_tests: bool
     # Whether the round LINKS after it compiles. `--emit-c` says no (defect
     # 049, 2026-09-17): a tag's spelling is learned at the compile, where clang
@@ -59,6 +61,7 @@ record Site
 record Round
     verdict: ()?
     refusals: [str]
+    binary: str
 
 function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, @answered: [pointee_ask.Answered], struct_tags: {str: bool}) -> Round
     # What the extern out-parameters point at, asked of the header before
@@ -79,7 +82,7 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     )
 
     if checked.is_err()
-        return Round(verdict: checked, refusals: messages_of(checked))
+        return Round(verdict: checked, refusals: messages_of(checked), binary: "")
 
     if site.is_tests
         return fused(t, options, art, s, site, struct_tags)
@@ -89,51 +92,40 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
 # block, and the fused path is the artifact path the blessed emissions pin. The
 # text is the pipeline's own on the first round; a round that carries a learned
 # tag emits again, because the tag's spelling is in the text.
+#
+# **It is compiled as a translation unit and linked as one** (defect 134): it
+# was written in place under a directory keyed on the SOURCE, `build/<hash>/`,
+# so the second round's text went over the first's under one name while
+# another build's clang read it, and its object and binary were staged under
+# one name each. Through `units.tu_object` the text names its own directory
+# and the object is cached like every other, a warm `heroes test` included.
 function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}) -> Round
     none: [str] = []
     text: str @ art.c
 
     if struct_tags.len() > 0
         text @ emit.emit_maybe(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: site.version, text: true, struct_tags: struct_tags).c
-    written = write_file(path: site.c_file, text: text)
-
-    if written.is_err()
-        return Round(verdict: fail(code: "failed", msg: "cannot write " + site.c_file), refusals: none)
-
-    # Compile only, through the same cached-object route `per_module` takes
-    # for every TU, so the tag round still meets clang's refusal.
-    if !site.link
-        memo: {str: str} @ {}
-        made = units.tu_object(
-            t,
-            module: module_names.module_of(s.name),
-            tu_text: text,
-            level: options.level,
-            sanitize: options.sanitize,
-            search: compile.search_key(headers_from: options.headers_from, library: options.library),
-            package_flags: site.package_flags,
-            source_dir: site.source_dir,
-            search_include: options.headers_from,
-            @memo
-        )
-
-        if made.is_err()
-            return Round(verdict: carry_failure(made), refusals: [failure_of(made)])
-        return Round(verdict: ok(), refusals: none)
-    linked = toolchain.link(
+    memo: {str: str} @ {}
+    made = units.tu_object(
         t,
-        c_file: site.c_file,
-        object: site.object,
-        binary: site.binary,
+        module: module_names.module_of(s.name),
+        tu_text: text,
         level: options.level,
         sanitize: options.sanitize,
+        search: compile.search_key(headers_from: options.headers_from, library: options.library),
+        package_flags: site.package_flags,
         source_dir: site.source_dir,
         search_include: options.headers_from,
-        search_library: options.library,
-        package_flags: site.package_flags,
-        link_names: site.link_names
+        @memo
     )
-    return Round(verdict: linked, refusals: messages_of(linked))
+
+    if made.is_err()
+        return Round(verdict: carry_failure(made), refusals: [failure_of(made)], binary: "")
+
+    # Compile only, for the reason `Site.link` gives.
+    if !site.link
+        return Round(verdict: ok(), refusals: none, binary: "")
+    return linked_round(t, options, site, objects: [site.object, made.must()], module: module_names.module_of(s.name))
 
 # One .c per module (panel 093): each TU compiled to its own cached object,
 # every dirty TU before any verdict (R5), one link over all of them re-run
@@ -192,16 +184,22 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
             objects @ objects.push(made.must())
 
     if stopped.is_err()
-        return Round(verdict: stopped, refusals: refusals)
+        return Round(verdict: stopped, refusals: refusals, binary: "")
 
     # Every TU compiled and none refused: for a build that does not link, that
     # IS the verdict, and the refusals it met are what a tag round reads.
     if !site.link
-        return Round(verdict: ok(), refusals: refusals)
-    linked = units.link_objects(
+        return Round(verdict: ok(), refusals: refusals, binary: "")
+    return linked_round(t, options, site, objects: objects, module: root)
+
+# The link over a round's objects, and the round it makes: its verdict, the
+# refusal that verdict is, and where the binary landed.
+function linked_round(t: toolchain.Toolchain, options: compile.Options, site: Site, objects: [str], module: str) -> Round
+    linked = link.link_objects(
         t,
         objects: objects,
-        binary: site.binary,
+        module: module,
+        output: site.output,
         level: options.level,
         sanitize: options.sanitize,
         search_include: options.headers_from,
@@ -209,12 +207,19 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
         package_flags: site.package_flags,
         link_names: site.link_names
     )
-    return Round(verdict: linked, refusals: messages_of(linked))
+    return Round(verdict: carry_failure(linked), refusals: refusals_of(linked), binary: linked.default(""))
 
 # The message of a failed `()?`, as the one-element list a round's refusals
 # are; empty for a verdict that is not a failure.
 function messages_of(verdict: ()?) -> [str]
     match verdict
+        .ok    => return []
+        .err e => return [e.msg]
+
+# A fallible path's refusal as the one-element list a round's refusals are;
+# empty for a path that came back.
+function refusals_of(made: str?) -> [str]
+    match made
         .ok    => return []
         .err e => return [e.msg]
 
