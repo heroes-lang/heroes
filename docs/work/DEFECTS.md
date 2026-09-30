@@ -418,4 +418,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     cases and the compiler's own tests here and on the Windows box; the net
     is owed at the lane's close.
 
+    **2026-09-30, lane 134, three comments name what the repairs left**:
+    `722bc973`, the seed byte-identical across it. The lane's gate follows
+    in its closing commit, the net on this Mac, Windows and Linux x86-64.
+
 *******************************************************************************
