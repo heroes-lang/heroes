@@ -132,3 +132,11 @@ suites at a time with `cache` alone after, every one of the 26 at 0 failed
 once `layout`'s floor was raised as it asked; the defect's twenty probes
 re-run there, and no `certain` fix brings a code the first run did not
 report.
+
+And on Linux x86-64 (the `heroes-linux` image, Debian clang 22.1.8), at the
+trunk `38950461` that closed this item, measured 2026-09-30 by 01:24, the
+seed's sha256 beginning `d1e017702ded2935`: the compiler's 896 tests and
+surface 334, canonical 2, annotations 320, check 271, fixes 514, layout 4,
+order 3, lines 208, run 207, emission 626, determinism 237, wholes 303,
+descriptors 303, cache 6, grammar 9, spec 20, probe 24, corpus 53, warnings
+266, each 0 failed.
