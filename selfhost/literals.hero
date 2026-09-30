@@ -14,6 +14,7 @@ use state
 use escape
 use layout
 use bytes
+use escape_report
 
 ## The escape validator
 
@@ -21,8 +22,11 @@ use bytes
 # past it. Returns false when the backslash is the last thing on the line —
 # the caller then reports the literal unterminated. `l.pos` is left ON the
 # newline in that case: consuming it would swallow the line break and destroy
-# every Indent/Dedent that follows (§4.15).
-function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted) -> bool
+# every Indent/Dedent that follows (§4.15). `literal` is where the literal
+# opened, or the piece of an `f"…"` literal the escape stands in, which is
+# what an escape the language does not have is read beside
+# (`escape_readings`).
+function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted, literal: i64) -> bool
     backslash = l.pos
 
     if backslash + 1 >= text.len()
@@ -39,7 +43,10 @@ function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted) -> bool
         return true
     span = token.Span(start: backslash, end: l.pos)
 
-    # Two different mistakes, two different repairs — both certain.
+    # Two different mistakes, two different repairs: the other context's
+    # escape drops its backslash, certain; one the language does not have is
+    # read for what else it could be, and its `\\` is certain only where it
+    # reads as nothing else (`escape_readings`, defect 135's class).
     if escaped == escape.bare_text(ctx)
         d: diag.Diagnostic @ diag.new_diagnostic(
             code: "escape_not_needed",
@@ -51,15 +58,7 @@ function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted) -> bool
         )
         state.push_diagnostic(@l.diagnostics, d)
     else
-        d: diag.Diagnostic @ diag.new_diagnostic(
-            code: "unknown_escape",
-            message: "`\\" + escaped + "` is not an escape sequence — the escapes are " + escape.legal(ctx) + "; write `\\\\` for a literal backslash",
-            span: span
-        )
-        d.fixes @ d.fixes.push(
-            diag.Fix(title: "escape the backslash: `\\\\" + escaped + "`", replacement: "\\\\" + escaped, span: span, certainty: .certain)
-        )
-        state.push_diagnostic(@l.diagnostics, d)
+        l.pos @ escape_report.report(@l, text, backslash: backslash, literal: literal, ctx: ctx)
 
     # The token keeps its kind: poisoning it to `error` would delete the
     # line's Terminator (error is not an ender, panel 007) and turn one
@@ -108,7 +107,7 @@ function string(@l: state.LexState, text: str)
             return
 
         if b == '\\'
-            if !escape_step(@l, text, .in_str)
+            if !escape_step(@l, text, .in_str, literal: start)
                 break
         else
 
@@ -152,7 +151,7 @@ function char_lit(@l: state.LexState, text: str)
             closed @ true
             scanning @ false
         else if text[l.pos] == '\\'
-            if escape_step(@l, text, .in_char)
+            if escape_step(@l, text, .in_char, literal: start)
                 units @ units + 1
             else
                 scanning @ false

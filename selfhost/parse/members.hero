@@ -134,8 +134,9 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
     if !line_end.expect_closer(@c, text: text, holds: .parameters, kind: .rparen, code: "expected_params_close", what: "`)`, or `,` and another parameter")
         # The signature's own closer is the landmark: resume just past it, so
         # the result type and the body are still read (one mistake, one
-        # diagnostic).
-        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+        # diagnostic); its own is the one the lexer paired with its `(`,
+        # whatever its kind, `function f(a: i64]` (`parse/unclosed`).
+        unclosed.recover_past_pair(@c, text, open: at)
     return out
 
 ## The words after a type

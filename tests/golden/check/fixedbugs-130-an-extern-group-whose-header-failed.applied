@@ -1,0 +1,21 @@
+# Fixed 2026-09-30, defect 130's class, lane recovery-b3 (the recovery
+# instrument's pairs: `single-quotes` and `string-open` as the first mistake
+# hid a signature's own). Symptom: an `extern` whose header the lexer refused,
+# a string never closed or one in single quotes, or none at all before the
+# line's end, recovered to the next declaration, and every signature below
+# went unread, its own mistakes unsaid. Cause: `group_header` handed the
+# whole group to the recovery whenever no string stood where the header
+# goes. Now the header's mistake is the head's one message, and the
+# signatures below are read as a group's (`parse/group.group_header`).
+
+extern "never_closed.h  #~ unterminated_string
+    function f(x: i64) -> i64  #~ expected_end_of_line
+
+extern 'single_quoted.h'  #~ char_literal
+    function g(x: i64) -> i64  #~ expected_end_of_line
+
+extern  #~ expected_extern_header
+    function h(x: i64) -> i64  #~ expected_end_of_line
+
+function main()
+    print(1)

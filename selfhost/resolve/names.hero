@@ -24,6 +24,7 @@ use resolve/state
 use resolve/errors
 use resolve/qualified
 use module/diagnostics
+use keywords
 
 function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
     span = a.exprs[id].span
@@ -109,9 +110,27 @@ function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
     if !elsewhere.is_err()
         state.push_diagnostic(@r, elsewhere.must())
         return
-    candidates = value_candidates(r)
+    candidates = read_candidates(r)
     near = state.near_names(@r, text, candidates)
     state.push_diagnostic(@r, errors.unknown_name(text, near, span))
+
+# The candidates for a name READ as a value: the value candidates, and the
+# three keywords that are values, `true`, `false` and `nullptr` (spec § 7
+# Primary), each of which stands wherever a read name does. `True` differs
+# from `true` by case only, so `nearest` hands it back alone and the rename
+# is certain; without them it was two edits from `run`, which took the
+# certain rename and was refused anew (defect 135, lane recovery-b3). A write
+# is not a read: `True @ 1` is offered no literal (`writes.hero`).
+function read_candidates(r: state.Resolver) -> [str]
+    candidates: [str] @ value_candidates(r)
+
+    for literal in LITERALS
+        candidates @ candidates.push(literal)
+
+    return candidates
+
+constant LITERALS: [str]
+    ["true", "false", "nullptr"]
 
 # The name in `x.f(y)`. Locals are deliberately not consulted: a local
 # cannot be reached through a dot, so `f` is a top-level function, a
@@ -207,3 +226,11 @@ function function_candidates(r: state.Resolver, decls: [ast.Decl]) -> [str]
         candidates @ candidates.push(b.name)
 
     return candidates
+
+## Tests
+
+# The premise `LITERALS` rests on, where it can die: each is one of the
+# language's keywords, so a word renamed there names a literal that is gone.
+test "the literals a read name is offered are keywords"
+    for literal in LITERALS
+        assert !keywords.keyword(literal).is_err()

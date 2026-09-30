@@ -7,9 +7,11 @@
 #
 # Two shapes of repair, and the line between them is §4.17's:
 #
-# - **certain**, machine-applicable: renaming to the ONE candidate in scope,
-#   and renaming an unread binding to `_`. Both preserve meaning, and the
-#   compiler is the one that knows the candidate is unique.
+# - **certain**, machine-applicable: renaming to the ONE candidate in scope
+#   the name's own letters allow alone (`one_reading`), and renaming an
+#   unread binding to `_`. Both preserve meaning, and the compiler is the one
+#   that knows the candidate is unique; a candidate the letters do not pin is
+#   the same rename shown as a guess (defect 135).
 # - **guess**, prose for the reader: everything whose repair depends on
 #   intent — removing a parameter (its call sites are elsewhere), deleting a
 #   binding, or writing the type on a cell the resolver cannot infer.
@@ -32,7 +34,7 @@ function unknown_name(name: str, near: [str], span: token.Span) -> diag.Diagnost
         message: "nothing named `" + name + "` is in scope",
         span: span
     )
-    suggest(@d, near, span)
+    suggest(@d, name, near, span)
     return d
 
 # `x.f(y)` is `f(x, y)` and nothing else (§4.11: there are no methods), so
@@ -43,12 +45,12 @@ function unknown_function(name: str, near: [str], span: token.Span) -> diag.Diag
         message: "no function named `" + name + "` — `x." + name + "(…)` means `" + name + "(x, …)`, so `" + name + "` has to be a top-level function or a built-in",
         span: span
     )
-    suggest(@d, near, span)
+    suggest(@d, name, near, span)
     return d
 
 function unknown_type(name: str, near: [str], span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(code: "unknown_type", message: "no type named `" + name + "`", span: span)
-    suggest(@d, near, span)
+    suggest(@d, name, near, span)
     return d
 
 function not_a_type(name: str, what: str, span: token.Span) -> diag.Diagnostic
@@ -169,14 +171,22 @@ function no_mutable_globals(name: str, what: str, span: token.Span) -> diag.Diag
 
 ## Did you mean
 
-# One candidate → a CERTAIN rename (§4.17 names this case explicitly).
-# Several → the names, in prose, and no fix: a tool that picks one of three
-# is guessing, and only certain fixes may be applied.
-function suggest(@d: diag.Diagnostic, near: [str], span: token.Span)
+# One candidate the letters allow alone → a CERTAIN rename (§4.17 names this
+# case explicitly): `one_reading`. One the letters do not pin → the same
+# rename, shown as a guess and never applied: `True` two edits from `run`,
+# `p` one from `s`, `check --apply` wrote a program refused anew or one that
+# read another binding (defect 135, lane recovery-b3). Several → the names,
+# in prose, and no fix: a tool that picks one of three is guessing, and only
+# certain fixes may be applied.
+function suggest(@d: diag.Diagnostic, name: str, near: [str], span: token.Span)
     if near.len() == 1
         d.message @ d.message + " — did you mean `" + near[0] + "`?"
+        certainty: diag.Certainty @ .guess
+
+        if one_reading(name: name, candidate: near[0])
+            certainty @ .certain
         d.fixes @ d.fixes.push(
-            diag.Fix(title: "rename to `" + near[0] + "`", replacement: near[0], span: span, certainty: .certain)
+            diag.Fix(title: "rename to `" + near[0] + "`", replacement: near[0], span: span, certainty: certainty)
         )
         return
 
@@ -237,6 +247,32 @@ function same_ignoring_case(a: str, b: str) -> bool
 
     return true
 
+# Whether the letters of `name` allow `candidate` and nothing else, asked of
+# the two names alone: the same letters in another case, or one slip, a
+# letter added, dropped or changed, or two neighbours swapped, in a name of
+# four letters or more, so three at least stand as written. Anything further
+# the letters allow as well a name the program never bound, a literal, or
+# another binding: `True` is two edits from `run`, and a one-letter name one
+# from every other one-letter name.
+function one_reading(name: str, candidate: str) -> bool
+    if same_ignoring_case(a: name, b: candidate)
+        return true
+    return name.len() >= 4 && (distance(a: name, b: candidate) == 1 || swapped(a: name, b: candidate))
+
+# Whether `b` is `a` with two neighbouring letters swapped, and nothing else
+# changed: `lenght` for `length`.
+function swapped(a: str, b: str) -> bool
+    if a.len() != b.len()
+        return false
+    i: i64 @ 0
+
+    while i < a.len() && a[i] == b[i]
+        i @ i + 1
+
+    if i + 1 >= a.len() || a[i] != b[i + 1] || a[i + 1] != b[i]
+        return false
+    return a.slice(from: i + 2, to: a.len()) == b.slice(from: i + 2, to: b.len())
+
 # Levenshtein distance, two rows, over bytes — exact for the ASCII names it
 # is asked about. Names are short; this is not a hot path.
 function distance(a: str, b: str) -> i64
@@ -290,6 +326,23 @@ test "one candidate is a certain rename, three are prose"
     e = unknown_name("totl", many, span)
     assert e.fixes.len() == 0
     assert e.message == "nothing named `totl` is in scope — the closest names in scope are `tot`, `toll`, `tall`"
+
+test "a rename is certain only where the letters allow the one name"
+    span = token.Span(start: 0, end: 4)
+    run: [str] = ["run"]
+    far = unknown_name("True", run, span)
+    assert far.message == "nothing named `True` is in scope — did you mean `run`?"
+    assert far.fixes[0].certainty == .guess
+    one: [str] = ["s"]
+    assert unknown_name("p", one, span).fixes[0].certainty == .guess
+    literal: [str] = ["true"]
+    assert unknown_name("TRUE", literal, span).fixes[0].certainty == .certain
+    length: [str] = ["length"]
+    assert unknown_name("lenght", length, span).fixes[0].certainty == .certain
+    assert swapped(a: "lenght", b: "length")
+    assert !swapped(a: "lenght", b: "lenhtg")
+    assert !one_reading(name: "xs", candidate: "ys")
+    assert one_reading(name: "Poimt", candidate: "Point")
 
 test "a case-only difference wins alone even among closer names"
     candidates: [str] = ["print", "paint", "Point"]

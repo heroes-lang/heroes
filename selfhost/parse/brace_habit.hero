@@ -42,6 +42,8 @@
 use token
 use cursor
 use word_place
+use state
+use line_above
 use parse/unclosed
 
 ## The habit
@@ -85,7 +87,9 @@ function opens_here(c: cursor.Cursor, text: str) -> bool
 # an operator, an opening bracket or a `,`, `return`, `assert` or `in`. It
 # opens a map there, never a body in braces: `let m = {` over its entries
 # was read as a body, each entry's `:` a second mistake (lane X4,
-# 2026-09-29).
+# 2026-09-29). A `>` that closes a record's or a variant's type parameters
+# is no operator, `record Pair<T> {` (`line_above.closes_type_parameters`,
+# asked of the same tokens; defect 135's class, lane recovery-b3).
 function opens_a_value(c: cursor.Cursor, at: i64) -> bool
     i: i64 @ at - 1
 
@@ -93,6 +97,10 @@ function opens_a_value(c: cursor.Cursor, at: i64) -> bool
         i @ i - 1
 
     if i < 0
+        return false
+    none: [state.Break] = []
+
+    if c.tokens[i].kind == .gt && line_above.closes_type_parameters(c.tokens, breaks: none, at: i)
         return false
 
     return match c.tokens[i].kind

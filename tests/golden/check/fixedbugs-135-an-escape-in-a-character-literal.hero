@@ -1,0 +1,20 @@
+# Fixed 2026-09-30, defect 135's class, lane recovery-b3, found beside the
+# instrument's `\(`. Symptom: an escape the language does not have inside a
+# character literal cost `unknown_escape` with the certain fix `\\`, and
+# `check --apply` wrote `'\\('`, two characters, refused anew as
+# `char_literal`; and `'\x41'` cost that `char_literal` in the first run too,
+# two messages for one mistake. Cause: the escape's one repair was a
+# backslash, which in a character literal is a second character. Now `\\` is
+# never offered there: the character bare and a backslash are both offered,
+# neither applied; an escape by its code takes its digits, so the literal is
+# the one character it was written as, and its number is offered, a
+# character literal being an integer (`escape_readings`).
+
+function a_parenthesis()
+    print('\(')  #~ unknown_escape
+
+function a_letter()
+    print('\d')  #~ unknown_escape
+
+function by_code()
+    print('\0', '\x41', '\a')  #~ unknown_escape unknown_escape unknown_escape
