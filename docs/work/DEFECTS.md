@@ -385,4 +385,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     process while a second rewrites them, which would lose a warning from
     every later replay, 057's class.
 
+    **2026-09-30, lane 134, a private file has a name no other process uses,
+    and a failed filesystem call says why**: repaired at `bc402e8d`, gated by
+    its cases and the compiler's own tests; the net is owed at the lane's close.
+
 *******************************************************************************

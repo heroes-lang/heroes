@@ -33,8 +33,19 @@ use cli/deps
 use cli/digest
 use cli/flags
 use cli/process
+use cli/publish
 use cli/runtime_key
 use cli/strings
+
+# WHAT A BUILD LEAVES UNDER `build/` HAS A SHAPE, AND EVERY KEY NAMES IT.
+# `fingerprint` is the Heroes `VERSION`, which moves at a release, so a
+# compiler that changes what it writes there between releases would read
+# what an older one left: before defect 134 records, replays and C were
+# written in place, and a build killed half-way left files no later build
+# can trust (an empty pointee verdict failed every build after it). A new
+# word here is a new directory for every key; the old ones are never read.
+constant LAYOUT: str
+    "published"
 
 record Toolchain
     runtime: str
@@ -75,7 +86,7 @@ function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
             said = clang_floor.identity(build_dir: "build", runtime: candidate, words: flags.flags())
 
             return ok(
-                Toolchain(runtime: candidate, build: "build", fingerprint: fingerprint, runtime_key: digest.digest(gathered), compiler_key: digest.digest(flags.flags().join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")))
+                Toolchain(runtime: candidate, build: "build", fingerprint: fingerprint + "|" + LAYOUT, runtime_key: digest.digest(gathered), compiler_key: digest.digest(flags.flags().join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")))
             )
 
     return fail(
@@ -159,9 +170,14 @@ function dir_for(t: Toolchain, source_name: str, text: str, level_key: str, sani
 # Compile the runtime once and cache it, keyed on its own contents,
 # the level and the compiler. A stale relink is silent, so the key is
 # the only thing standing between a golden test and passing for the
-# wrong reason. Staged beside and moved into place: mv inside one
-# directory is atomic on POSIX, and whoever wins the race published
-# byte-for-byte our object, because the key covers everything.
+# wrong reason. It is published the way a translation unit's object is
+# (`units.tu_object`, `cli/publish.hero`): clang writes a private name,
+# the object lands as `runtime-<key>-<digest>.o`, named by the headers it
+# read, and the record `runtime-<key>.deps.txt` that names it lands last.
+# **"Whoever wins the race published byte-for-byte our object" was true of
+# the bytes and false of the race** (defect 134): every build in the tree
+# staged it as `runtime-<key>.o.tmp`, and on a cold `build/` five of six
+# started together failed, the first rename taking the others' object.
 #
 # **"The compiler" was the HEROES compiler's version, and "everything" was
 # false** (defect 122, measured by panel 182's critic): the key held no C
@@ -185,17 +201,17 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
     key = digest.digest(
         t.fingerprint + "|" + t.compiler_key + "|" + build_words(level: level, sanitize: sanitize) + "|" + t.runtime_key
     )
-    made = process.mkdir_all(t.build)
-
-    if made.is_err()
-        return fail(code: "failed", msg: "cannot create " + t.build)
-    object = t.build + "/runtime-" + key + ".o"
+    process.mkdir_all(t.build)?
+    stem = t.build + "/runtime-" + key
+    listed = stem + ".deps.txt"
     memo: {str: str} @ {}
+    known = deps.vouched(listed, @memo)
 
-    if process.path_exists(object) && deps.fresh(deps.record_for(object), @memo)
-        return ok(object)
-    depfile = object + ".d"
-    staged = object + ".tmp"
+    if !known.is_err() && process.path_exists(stem + "-" + known.must() + ".o")
+        return ok(stem + "-" + known.must() + ".o")
+    depfile = publish.private_name(stem + ".d")
+    staged = publish.private_name(stem + ".o")
+    err_path = publish.private_name(stem + ".clang-stderr.txt")
     line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
     line @ line.push(level)
     line @ strings.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
@@ -203,27 +219,23 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
         list: line,
         more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, t.runtime + "/runtime.c", "-I", t.runtime, "-o", staged]
     )
-
-    # Beside its object, one file per clang invocation: `units.tu_object` (057).
-    ran = run_clang(line: line, what: "compiling the runtime", err_path: object + ".clang-stderr.txt")
+    ran = run_clang(line: line, what: "compiling the runtime", err_path: err_path)
+    publish.discard(err_path)
 
     if ran.is_err()
+        publish.discard(staged)
+        publish.discard(depfile)
         ran?
+    rows = deps.rows_of(depfile: depfile, skip: t.runtime + "/", @memo)
+    publish.discard(depfile)
 
-    # Recorded before the object is published, so an object on disk is
-    # never one this cache cannot justify serving.
-    recorded = deps.record_deps(
-        record_path: deps.record_for(object),
-        depfile: depfile,
-        skip: t.runtime + "/",
-        @memo
-    )
-
-    if recorded.is_err()
+    if rows.is_err()
+        publish.discard(staged)
         return fail(code: "failed", msg: "cannot record what the runtime's translation unit read")
-
-    if process.rename_over(from: staged, to: object).is_err()
-        return fail(code: "failed", msg: "cannot publish " + object)
+    listing = deps.pointer_text(rows.must())
+    object = stem + "-" + listing.slice(from: 0, to: 16) + ".o"
+    publish.publish(staged: staged, path: object, keyed: true)?
+    publish.write_whole(path: listed, text: listing, keyed: true)?
     return ok(object)
 
 function link(t: Toolchain, c_file: str, object: str, binary: str, level: str, sanitize: bool, source_dir: str, search_include: [str], search_library: [str], package_flags: [str], link_names: [str]) -> ()?
@@ -329,6 +341,23 @@ test "the toolchain finds the real runtime and compiles it through system()"
         .err e =>
             assert e.code == "clang"
             assert has_text(text: e.msg, needle: "undeclared_name")
+
+test "the runtime's object is named by what it read, beside the record that names it, and nothing private is left (defect 134)"
+    t: Toolchain @ locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-runtime-object"
+    assert !process.remove_tree(t.build).is_err()
+    object = runtime_object(t, level: "-O0", sanitize: false).must()
+    listed = process.files_under(t.build).must()
+
+    # The object and the record, and no third name: clang's stderr, its
+    # dependency listing and the staged object were private and are gone.
+    assert listed.len() == 2
+
+    for path in listed
+        assert !strings.ends_with(text: path, suffix: ".tmp")
+        assert path == object || strings.ends_with(text: path, suffix: ".deps.txt")
+
+    assert runtime_object(t, level: "-O0", sanitize: false).must() == object
 
 test "an object compiled under one clang answer is never served under another (defect 122)"
     found = locate_toolchain(hint: "", fingerprint: "port-test")

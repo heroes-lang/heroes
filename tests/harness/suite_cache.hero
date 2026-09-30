@@ -348,18 +348,32 @@ function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str
     names: [str] @ []
 
     for path in moved.must()
-        names @ names.push(strings.base_name(path))
+        names @ names.push(module_of_object(strings.base_name(path)))
 
     only = names.sort()
 
-    if only.len() != 1 || only[0] != "bind.o"
+    if only.len() != 1 || only[0] != "bind"
         report.keep_failure(
             @r,
             label: label,
-            detail: "  the header edit should move `bind.o` and nothing else — it moved:\n    " + only.join("\n    ") + "\n  Nothing means the edit was invisible; everything means the header reached translation units that never declared the `extern`."
+            detail: "  the header edit should move `bind`'s object and nothing else — it moved the objects of:\n    " + only.join("\n    ") + "\n  Nothing means the edit was invisible; everything means the header reached translation units that never declared the `extern`."
         )
     else
         report.keep_pass(@r)
+
+# The module an object belongs to. An object is `<module>-<digest>.o`, the
+# digest naming the headers its compile read, so a header edit is a NEW
+# object beside the old one (defect 134, `selfhost/cli/deps.hero`); the
+# name was `<module>.o` before, and a name of neither shape comes back
+# whole, so a report names it rather than a guess.
+function module_of_object(name: str) -> str
+    if !strings.ends_with(text: name, suffix: ".o") || name.len() < 20
+        return name
+    dash = name.len() - 19
+
+    if name[dash] != 45
+        return name
+    return name.slice(from: 0, to: dash)
 
 # **A reordered variant is not served from a warm object.** Three
 # orderings in a row, the third one seen by neither of the first two, and

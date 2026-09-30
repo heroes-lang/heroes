@@ -65,14 +65,21 @@
 # unreadable record, a short line, a vanished header: every one of them
 # is "not fresh", which recompiles. Nothing here can turn a miss into a
 # hit.
+#
+# **THE RECORD IS A POINTER, AND IT NAMES WHAT IT VOUCHES FOR** (defect 134).
+# It stood beside `<m>.o` and was written before the object was renamed into
+# place, so the record of a NEWER compile could stand beside an OLDER object:
+# measured, a record copied in as a build killed between the two would leave
+# it, and the program printed 7 at exit 0 with its header saying 8. Two
+# builds of one key publishing the two files in turn left the same pair. So
+# the record's first line is the digest of its own rows, every artifact of
+# that compile is named by it (`<m>-<digest>.o`), and the record is published
+# LAST: whichever record a reader finds, the object it names was compiled
+# from exactly the files it lists, and a record whose object is not there is
+# a recompile. One line per dependency after it, `<digest> <path>`.
 
 use cli/digest
 use cli/process
-
-# What a record is called, given the object it stands beside. One line
-# per dependency, `<digest> <path>`.
-function record_for(object: str) -> str
-    return object + ".deps.txt"
 
 # One file's content digest, computed at most once per build.
 #
@@ -172,7 +179,7 @@ function paths_of(text: str) -> [str]
         out @ out.push(path)
     return out
 
-# Write the record beside a freshly built object.
+# The rows of a record, from the dependency listing of a finished compile.
 #
 # **`skip` names what the KEY already covers**, and the caller says what
 # that is because only the caller knows. It is asked of the path rather
@@ -187,7 +194,7 @@ function paths_of(text: str) -> [str]
 # That is safe by construction rather than by luck: the reader treats
 # anything it cannot parse as not fresh, so such an object is rebuilt
 # every time instead of being served stale.
-function record_deps(record_path: str, depfile: str, skip: str, @memo: {str: str}) -> ()?
+function rows_of(depfile: str, skip: str, @memo: {str: str}) -> str?
     listing = read_file(depfile)
 
     if listing.is_err()
@@ -199,7 +206,46 @@ function record_deps(record_path: str, depfile: str, skip: str, @memo: {str: str
             continue
         rows @ rows.push(digest_of(path, @memo) + " " + path)
 
-    return write_file(path: record_path, text: rows.join("\n"))
+    return ok(rows.join("\n"))
+
+# The whole record for those rows: the digest its artifacts are named by,
+# then the rows. The caller publishes it after every artifact it names.
+function pointer_text(rows: str) -> str
+    return digest.digest(rows) + "\n" + rows
+
+# The digest the artifacts a record vouches for are named by, or absent
+# where there is no record, one this format did not write, or one whose
+# files no longer say what they said. The first line is read as written:
+# the record was published whole, by one writer who digested these rows.
+function vouched(record_path: str, @memo: {str: str}) -> str?
+    kept = read_file(record_path)
+
+    if kept.is_err()
+        return fail(code: "none", msg: "no record at " + record_path)
+    text = kept.must()
+
+    # Sixteen digits and a line end, checked by bytes before anything is
+    # sliced, for `fresh_rows`'s reason below.
+    if text.len() < 17 || text[16] != 10 || !is_digest(text: text, length: 16)
+        return fail(code: "none", msg: "not a record this compiler writes")
+
+    if !fresh_rows(text.slice(from: 17, to: text.len()), @memo)
+        return fail(code: "none", msg: "stale")
+    return ok(text.slice(from: 0, to: 16))
+
+# Whether the first `length` bytes are lowercase hex, the only bytes a
+# digest is spelt in.
+function is_digest(text: str, length: i64) -> bool
+    at: i64 @ 0
+
+    while at < length
+        b = text[at]
+
+        if !(b >= '0' && b <= '9') && !(b >= 'a' && b <= 'f')
+            return false
+        at @ at + 1
+
+    return true
 
 # Prefix test by BYTES, never by slicing: a path is arbitrary UTF-8 and
 # `slice` aborts where it would split a character (spec § 10 Strings, arrays, maps), so cutting
@@ -217,16 +263,10 @@ function under(path: str, prefix: str) -> bool
 
     return true
 
-# Whether every file this object was built from still says the same
-# thing. False means recompile — including when there is no record at
-# all, which is what an object built before this existed looks like.
-function fresh(record_path: str, @memo: {str: str}) -> bool
-    kept = read_file(record_path)
-
-    if kept.is_err()
-        return false
-
-    for row in lines(kept.must())
+# Whether every file a record's rows name still says the same thing. False
+# means recompile.
+function fresh_rows(rows: str, @memo: {str: str}) -> bool
+    for row in lines(rows)
         if row.len() == 0
             continue
 
@@ -307,15 +347,15 @@ test "a digest is asked of the file once"
     assert digest_of("runtime/heroes_runtime.h", @memo) == first
     assert memo.len() == 1
 
-test "no record means not fresh"
+test "no record vouches for nothing"
     memo: {str: str} @ {}
-    assert !fresh("selfhost/no-such-directory/deps.txt", @memo)
+    assert vouched("selfhost/no-such-directory/deps.txt", @memo).is_err()
 
 # The invariant itself, made to fire (CLAUDE.md §9): a record written
-# over a file is fresh, and stops being fresh the moment the file's
+# over a file vouches for its artifacts, and stops the moment the file's
 # bytes change. Nothing here goes through clang — the dependency
 # listing is hand-written, because what is under test is the record.
-test "a record goes stale when what it recorded changes"
+test "a record goes stale when what it recorded changes, and names its artifacts by its own rows"
     dir = "build/selftest-deps"
     assert !process.mkdir_all(dir).is_err()
 
@@ -327,12 +367,20 @@ test "a record goes stale when what it recorded changes"
     assert !write_file(path: watched, text: "#define LIMIT 1\n").is_err()
     assert !write_file(path: dir + "/listing.d", text: "dep: " + watched + "\n").is_err()
     writing: {str: str} @ {}
-    assert !record_deps(record_path: dir + "/deps.txt", depfile: dir + "/listing.d", skip: dir + "/", @writing).is_err()
+    rows = rows_of(depfile: dir + "/listing.d", skip: dir + "/", @writing).must()
+    assert !write_file(path: dir + "/deps.txt", text: pointer_text(rows)).is_err()
     reading: {str: str} @ {}
-    assert fresh(dir + "/deps.txt", @reading)
+    first = vouched(dir + "/deps.txt", @reading).must()
+    assert first == digest.digest(rows)
+
+    # Another header, another digest: the second compile's artifacts are
+    # other names, so the first compile's object is never the second's.
     assert !write_file(path: watched, text: "#define LIMIT 2\n").is_err()
     after: {str: str} @ {}
-    assert !fresh(dir + "/deps.txt", @after)
+    assert vouched(dir + "/deps.txt", @after).is_err()
+    again: {str: str} @ {}
+    second = digest.digest(rows_of(depfile: dir + "/listing.d", skip: dir + "/", @again).must())
+    assert second != first
 
 test "a prefix test on a path with an accent in it does not abort"
     assert under(path: "build/tu-1/x.c", prefix: "build/tu-1/")
@@ -351,16 +399,16 @@ test "what the key already names is not recorded"
     assert !write_file(path: dir + "/watched.h", text: "#define X 1\n").is_err()
     assert !write_file(path: dir + "/listing.d", text: "dep: " + dir + "/unit.c " + dir + "/watched.h\n").is_err()
     memo: {str: str} @ {}
-    assert !record_deps(record_path: dir + "/deps.txt", depfile: dir + "/listing.d", skip: dir + "/", @memo).is_err()
 
-    # Both paths are inside the keyed directory, so the record is empty
-    # and the memo was never asked about either.
-    written = read_file(dir + "/deps.txt")
-    assert !written.is_err()
-    assert written.must().len() == 0
+    # Both paths are inside the keyed directory, so the rows are empty
+    # and the memo was never asked about either; the record still vouches.
+    rows = rows_of(depfile: dir + "/listing.d", skip: dir + "/", @memo).must()
+    assert rows.len() == 0
     assert memo.len() == 0
+    assert !write_file(path: dir + "/deps.txt", text: pointer_text(rows)).is_err()
+    assert vouched(dir + "/deps.txt", @memo).must() == digest.digest("")
 
-test "a record line this format did not write is not fresh, and does not abort"
+test "a record this format did not write vouches for nothing, and does not abort"
     dir = "build/selftest-deps-shape"
     assert !process.mkdir_all(dir).is_err()
     memo: {str: str} @ {}
@@ -368,10 +416,14 @@ test "a record line this format did not write is not fresh, and does not abort"
     # A path with a newline in it, which is what `lines` would hand
     # back in two pieces — the second piece has no digest and no space
     # at byte 16, and slicing it at 17 would split the `à`.
-    assert !write_file(path: dir + "/deps.txt", text: "0123456789abcdef /a/b.h\nCartellà-continued-name.h\n").is_err()
-    assert !fresh(dir + "/deps.txt", @memo)
-    assert !write_file(path: dir + "/deps.txt", text: "short\n").is_err()
-    assert !fresh(dir + "/deps.txt", @memo)
+    assert !fresh_rows("0123456789abcdef /a/b.h\nCartellà-continued-name.h\n", @memo)
+    assert !fresh_rows("short\n", @memo)
+
+    # A first line that is not a digest, a record cut before its line
+    # end, an empty file, and the shape of the record this replaced.
+    for text in ["0123456789abcdeZ\n", "0123456789abcdef", "", "0123456789abcdef runtime/heroes_runtime.h\n", "àààààààààààààààààà\n"]
+        assert !write_file(path: dir + "/deps.txt", text: text).is_err()
+        assert vouched(dir + "/deps.txt", @memo).is_err()
 
 test "text splits into lines, the last one without a newline"
     got = lines("a\nbb\nccc")
