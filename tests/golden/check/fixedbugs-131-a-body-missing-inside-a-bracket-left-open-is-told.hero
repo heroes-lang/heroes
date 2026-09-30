@@ -1,0 +1,21 @@
+# Fixed 2026-09-30, defect 131's class, lane recovery-b4, beside
+# `fixedbugs-131-a-body-inside-a-bracket-left-open-above-is-not-missing`. A
+# head inside the reach of a bracket left open above it, whose next line
+# begins at the head's own margin, has no body written at all: that is a
+# mistake of its own, told beside the bracket's, as a body missing where no
+# bracket is open is.
+
+function inside(n: i64) -> i64
+    x = h(n  #~ unclosed_bracket
+    if n > 0
+    return 0  #~ missing_body
+
+function outside(n: i64) -> i64
+    if n > 0
+    return 0  #~ missing_body
+
+function h(n: i64) -> i64
+    return n
+
+function main()
+    print(inside(1) + outside(1))

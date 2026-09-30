@@ -372,6 +372,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `backslash`): repaired at `81348c99`, gated by its cases and the
     compiler's own tests; the net is owed at the batch's close.
 
+    **2026-09-30, lane recovery-b4, a `,` after every member is one message
+    for its declaration, and the line ends at it** (the recovery instrument's
+    `field-commas`): repaired at `68e46a13`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **133 — after a declaration head the lexer refuses as a foreign word with a certain swap, the declaration's own mistakes are reported only once the swap is applied** | `const MAX = 5` costs `reserved_word` alone, and `check --apply` writes `constant MAX = 5`, which then costs `expected_constant_type`; `const MAX: i64 = 5` then costs `missing_body`, `fn main() {` then `missing_body`, `struct Point {` then `empty_record`: two turns for one habit | `selfhost/scan.hero` (the foreign word emitted as an `error` token) · `selfhost/keywords.hero` (`foreign_word`) · `selfhost/parse/decl.hero` · `cursor.recover_to_next_decl`
 
     **Origin:** lane 129's agent, 2026-09-29, reading `check/reserved-words`'s

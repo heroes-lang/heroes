@@ -815,6 +815,16 @@ function statement(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 function statement_kind(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     k = cursor.current_kind(c)
 
+    # An `else` opening a statement inside a bracket the lexer named never
+    # closed is its `if`'s, whose block the bracket laid out as none: passed
+    # over, the rest of its line read (`unclosed.inside_an_open_bracket`).
+    if k == .kw_else && unclosed.inside_an_open_bracket(c, text, from: c.pos)
+        _ = cursor.bump(@c)
+
+        if cursor.at(c, .terminator) || cursor.at(c, .eof) || cursor.at(c, .dedent)
+            return .error
+        return statement_kind(@c, @a, text)
+
     if k == .kw_return
         return return_stmt(@c, @a, text)
 
