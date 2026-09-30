@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 6**
+**OPEN: 7**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -521,5 +521,45 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     96 operators; whether a rename's certainty can ask the candidate's kind
     (a value where a value stands, a type where a type does) at the resolver,
     which does not know types.
+
+- [ ] **136 — `fmt --in-place` and `check --apply --in-place` destroy the author's source when the write fails** | on a disk nearly full, `heroes fmt prog.hero --in-place` answers `error: cannot write`, exit 2, and leaves `prog.hero` at 0 bytes, the 62,706 bytes the author wrote gone; `heroes check --apply --in-place` leaves the file cut mid-token, 57,344 of the 59,312 bytes it meant to write, ending in `retu` | `selfhost/cli/syntax_cmds.hero:66` · `selfhost/cli/check.hero:110` · `runtime/parts/os.c:635` (`hero_file_write`) · `selfhost/cli/publish.hero` (defect 134's publish by rename)
+
+    **Origin:** lane 134's agent, 2026-09-30, reading the code while it
+    enumerated every path a build writes (its report: *`fmt --in-place` and
+    `check --apply --in-place` write the author's source in place*, not run).
+    Reproduced by the coordinator at 06:55 and 06:56 on the trunk's compiler
+    at `e5cc73eb`, and again at 09:08 at `f37ea722`, on a 2 MB HFS+ disk image
+    (`hdiutil create -size 2m`), filled with `dd` to 8 KB and 4 KB free.
+
+    **Measured.** A program of 62,706 bytes that `fmt` writes as 80,708
+    (`v0=0+0*2` over 3000 lines becomes `v0 = 0 + 0 * 2`): `fmt --in-place`
+    exit 2, the file 0 bytes, twice. A program of 50,312 bytes whose 1500
+    certain swaps of `fn` for `function` write 59,312: `check --apply
+    --in-place` exit 2, the file 57,344 bytes, refused at 4358:5 with
+    `unknown_name` for `retu`; the original is in neither.
+
+    **The cause, read and not yet proved by a repair.** `hero_file_write`
+    opens the path with `fopen(path, "wb")`, which empties it before a byte is
+    written, then writes; when the write fails the old text is already gone and
+    the new one is not all there. Both in-place verbs call `write_file` on the
+    author's own path.
+
+    **Why it is a defect.** The tool destroys the program it was asked to
+    rewrite and says only that it could not write, so an author who reads the
+    message and looks at the file finds nothing; a full disk is ordinary (the
+    Windows box stood at 99% on this night, `run` reading 45 false failures),
+    and a killed process or a lost power mid-write is the same shape. Defect
+    134's publish by rename, a private name beside the destination and a
+    rename over it, is the shape that leaves the old text whole whenever the
+    new one cannot be.
+
+    **Unrun, questions rather than premises**: a kill mid-write; Windows;
+    what a rename owes a file's mode, owner and links (a read-only source, a
+    symlinked one: a publish by rename replaces the link, not what it points
+    at); and the library's own `write_file`, which user programs call and whose
+    comment promises *the text, written whole, replacing whatever was there*
+    (`selfhost/library_source.hero:220`), with the same truncate-first body:
+    whether that promise is kept the same way is a question about the
+    library, and a change to what it does is the panel's.
 
 *******************************************************************************
