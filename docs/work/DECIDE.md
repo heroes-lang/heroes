@@ -21,6 +21,15 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 0**
+**OPEN: 1**
+
+- [ ] **panel 184** | ratify, amend or overturn R1 to R8: the brace written both ways in an `f` literal and a lone `}` refused; `unused_binding` pointing at the literal that holds its name; no refusal of a forgotten `f` yet, with the question whether design.md §1.3's locality test reaches a rule of legality; a statement after a jump refused and the return rule stated; the compiler's passes on a thread of its own stack; a floor, not a ceiling, for depth | `docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md` § The resolution
+
+    Until it is answered, the compiler goes on as today: `f"{{x}}"` prints
+    `{x}}`, a forgotten `f` compiles and prints its braces (17 of 25 sites),
+    a statement after a jump is silent, and a deep source aborts the compiler
+    at a depth the machine decides. Two blind readings that would settle R3
+    and R4's last question are sized and not run (the critic's § E, items 6
+    and 7, one session each, a 3 USD cap).
 
 *******************************************************************************

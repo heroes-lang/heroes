@@ -1,0 +1,9 @@
+function main()
+    i: i64 @ 0
+
+    while i < 3
+        i @ i + 1
+        continue
+        print(i)
+
+    print(i)
