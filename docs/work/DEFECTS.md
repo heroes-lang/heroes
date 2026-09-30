@@ -413,4 +413,9 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     every platform refuses**: `b5462c86`, gated by the compiler's own tests
     on this Mac and on the Windows box; the net is owed at the lane's close.
 
+    **2026-09-30, lane 134, an author's -o is published as written, never
+    split to name the linker's output**: repaired at `d45de7c6`, gated by its
+    cases and the compiler's own tests here and on the Windows box; the net
+    is owed at the lane's close.
+
 *******************************************************************************

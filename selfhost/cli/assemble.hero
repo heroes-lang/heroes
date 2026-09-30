@@ -37,7 +37,7 @@ use emit/members
 
 # What one build has settled before any round runs. Where the binary lands
 # is not among it: under `build/` that is named by the link line, which a
-# round learns (`units.link_objects`); `output` is the author's `-o`.
+# round learns (`link.link_objects`); `output` is the author's `-o`.
 record Site
     object: str
     output: str?

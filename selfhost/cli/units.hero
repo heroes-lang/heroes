@@ -30,10 +30,10 @@
 #
 # **The comment that stood here said the fused path had the same gap
 # and it was FALSE, measured both ways on the same witness**: the fused
-# path never caches its unit object (`toolchain.link` recompiles the
-# `.c` on every call), so it caught the edit and only this path missed
-# it. An untested "nothing regresses here" is CLAUDE.md §1's inference
-# presented as a measurement.
+# path cached no unit object then, recompiling its `.c` on every call,
+# so it caught the edit and only this path missed it; since defect 134 it
+# is compiled here, records and all. An untested "nothing regresses here"
+# is CLAUDE.md §1's inference presented as a measurement.
 #
 # THE VERDICT ORDER (panel 093 R5): every dirty TU is compiled before
 # any verdict is rendered, so a failure in the declaring module's TU is

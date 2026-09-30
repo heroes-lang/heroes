@@ -104,7 +104,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         .program_build => is_tests @ is_tests
 
     # Where the binary lands is the round's to learn, from the link line it
-    # runs (`units.link_objects`), and the C of every unit is written where
+    # runs (`link.link_objects`), and the C of every unit is written where
     # it is compiled (`units.tu_object`). Both used to live under
     # `build/<hash>/`, a hash of the source alone, computed here.
     object = toolchain.runtime_object(t, level: options.level, sanitize: options.sanitize)
