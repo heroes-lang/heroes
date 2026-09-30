@@ -125,6 +125,14 @@ record Checker
     fallible: bool
     # Loop nesting, so `break` outside a loop is caught here, not in C.
     loops: i64
+    # Whether the statement being checked ends a function that returns a
+    # value: set for such a body, kept by `block` for its last statement
+    # alone, so an `if`'s or a `match`'s arms at the end inherit it. What
+    # a line nothing receives may have meant is `return` there (defect 135).
+    tail: bool
+    # Whether the walk is inside a `test`, which checks only what it
+    # asserts, so a value dropped there may be an `assert` lost (defect 135).
+    in_test: bool
     # Where each local's binding name starts -> its index. Built once,
     # because the checker must not depend on walking the tree in the same
     # order the resolver did.
@@ -189,6 +197,8 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
         result: 0,
         fallible: false,
         loops: 0,
+        tail: false,
+        in_test: false,
         locals_by_span: locals_by_span,
         generic_names: generic_names,
         missing_returns: missing_returns

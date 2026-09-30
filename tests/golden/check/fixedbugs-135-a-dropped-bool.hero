@@ -1,0 +1,35 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b (the coordinator's audit of
+# every `certain` fix, its C2). Symptom: a `bool` alone on a line took `_ = `
+# as a `certain` fix, so `x == 5`, C's habit for `x = 5`, was applied into a
+# program that checked clean and printed 0, and a status a call returned was
+# dropped as silently as a comparison nobody read. Cause: the discard was
+# certain wherever no receiver was in hand. Now a dropped `bool` takes `_ = `
+# as a guess, and a note says a `bool` is read by `if` and `assert`, and a
+# cell written by `@` (`discard_errors.second_thoughts`).
+
+record Point
+    x: i64
+    y: i64
+
+function is_even(n: i64) -> bool
+    return n % 2 == 0
+
+function a_comparison(x: i64)
+    x == 5  #~ discarded_value
+
+function a_field_compared(p: Point)
+    p.x == 5  #~ discarded_value
+
+function a_status(n: i64)
+    is_even(n)  #~ discarded_value
+
+function a_negation(done: bool)
+    !done  #~ discarded_value
+
+function an_order(a: i64, b: i64)
+    a < b  #~ discarded_value
+
+function main()
+    x: i64 @ 0
+    x @ x + 1
+    x == 1  #~ discarded_value

@@ -15,21 +15,60 @@
 # `bound_unit`. Between them, a value is either received or explicitly
 # discarded, and nothing is silently dropped.
 #
-# The checker side of this rule is `selfhost/check/discard.hero`.
+# The checker side of this rule is `selfhost/check/discard.hero`, and where
+# on its line a repair goes is `selfhost/statement_front.hero` (split out
+# 2026-09-30, defect 135's lane, along that concern's own seam).
 # Message text byte for byte with the Rust side, as everywhere in the port.
 
 use token
 use diag
+use statement_front as front
+
+# What else a line whose value nothing receives may have meant, each one
+# read off the value in hand by `check/discard.hero` (defect 135). Every
+# one is a second reading of the line, so where any holds, `_ = ` is a
+# guess beside it and never certain.
+record Readings
+    # A place the value was computed from that holds the value's own type,
+    # through a call's receiver or arguments in any spelling or through an
+    # operator's operands: `xs` in `push(xs, 4)`, `b.items` in
+    # `b.items.push(4)`, `total` in `total + x`. Every value here is a copy,
+    # so its author may have meant to keep the result there.
+    place: str?
+    # The value is a `bool`: a decision nothing reads.
+    decides: bool
+    # The line is inside a `test`, which checks only what it asserts.
+    in_test: bool
+    # The line ends a function that returns a value, outside any loop.
+    tail: bool
+    # And the value has the very type that function returns.
+    returns: bool
+
+# No second reading at all, for a value whose line is its own business.
+function no_readings() -> Readings
+    none: str? @ fail(code: "absent", msg: "no place of the value's own type")
+    return Readings(place: none, decides: false, in_test: false, tail: false, returns: false)
 
 # A line computed a value and nothing received it (panel 003).
 #
-# `receiver` is the name the call was written on WHEN the call returns
-# that name's own type, and it decides whether `_ = …` is certain or a
-# guess (panel 071, measured): `push` returns the new array and leaves its
-# receiver alone, so `_ = xs.push(4)` compiles at exit 0 and loses the
-# element — a certain fix converting a caught mistake into a silent wrong
-# answer. With a receiver in hand, BOTH repairs are guesses, because the
-# compiler genuinely cannot tell them apart.
+# **`_ = ` is certain only where the discard is the one reading of the
+# line** (defect 135, the coordinator's audit): a line kept for what a call
+# does, its value the call's by-product. Each reading below is a program
+# the author may have meant instead, measured on `check --apply` and `run`:
+#
+# - a place of the value's own type (panel 071, and the audit widened it
+#   to every spelling): `push` returns the new array and leaves its
+#   receiver alone, so `_ = push(xs, 4)`, `_ = b.items.push(4)` and
+#   `_ = total + x` compile at exit 0 and lose what was computed;
+# - a `bool`: `x == 5` alone is C's `x = 5` or a lost `if`, and a lost
+#   check of a status; `_ = ` compiles and decides nothing;
+# - a line in a `test`: `add(a: 1, b: 2) == 3` there lost its `assert`,
+#   and `_ = ` turned a failing test into `1 test, all passed`;
+# - the last line of a function that returns a value: `n * 2` there is
+#   the `return` habit of an expression-bodied language, and `_ = ` left
+#   `missing_return` standing.
+#
+# Each reading offers its own repair as a guess, and `_ = ` beside it.
 #
 # `fallible` DE-CERTIFIES the `_ = …` fix, and it is the third half of
 # panel 118 rather than a refinement: once `_ = e` on a `T?` is refused,
@@ -52,75 +91,106 @@ use diag
 # `text` is the compilation's, which `span` indexes: the line's first byte
 # is read there, because a value's span leaves out the parentheses around
 # it, and `(5)` alone took `_ = ` as `(_ = 5)`, which does not parse (found
-# by the same audit).
-function discarded_value(got: str, receiver: str?, fallible: bool, span: token.Span, text: str) -> diag.Diagnostic
-    opening = line_opening(text, at: span.start)
-    insertion = token.Span(start: opening, end: opening)
-    first = text.slice(from: opening, to: opening + 1)
-    continues = first == "-" || first == "." || first == "(" || first == "["
-    refused: str @ ""
+# by the same audit). A value that does not begin its line is an arm's
+# inline body, where `_ = ` and `x @ ` are refused anew as
+# `declaration_in_arm`, so there they are written as the block an arm that
+# does nothing holds (spec § 8), one level under the arm.
+function discarded_value(got: str, fallible: bool, readings: Readings, span: token.Span, text: str) -> diag.Diagnostic
+    at = front.before(text, at: span.start)
+    first = text.slice(from: at.opening, to: at.opening + 1)
+    continues = at.begins_line && (first == "-" || first == "." || first == "(" || first == "[")
+    reading: str @ main_reading(readings)
 
-    if fallible
-        refused @ ", and `_ = …` will not do either: a `T?` may not be discarded"
-
-    if receiver.is_err()
-        d: diag.Diagnostic @ diag.new_diagnostic(
-            code: "discarded_value",
-            message: "this line's value has type `" + got + "` and nothing receives it" + refused,
-            span: span
-        )
-
-        if fallible
-            d.notes @ d.notes.push(
-                "answer the error instead: `?` sends it to your caller, `.must()` ends the program, `.default(v)` falls back, `.is_err()` drops it on purpose"
-            )
-            return d
-        d.message @ d.message + " — write `_ = …` to discard it on purpose"
-        certainty: diag.Certainty @ .certain
-
-        if continues
-            certainty @ .guess
-            d.notes @ d.notes.push(the_rest_of_the_line_above(first))
-        d.fixes @ d.fixes.push(
-            diag.Fix(title: "discard it explicitly", replacement: "_ = ", span: insertion, certainty: certainty)
-        )
-        return d
-    name = receiver.must()
+    # `-fee` under `total = base` is the rest of that line, and the `fee` it
+    # holds is the continuation's operand rather than a place to keep it in.
+    if continues && reading == "place"
+        reading @ ""
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "discarded_value",
-        message: "this line's value has type `" + got + "` and nothing receives it — every value here is a copy, so `" + name + "` is unchanged: write `" + name + " @ …` to keep the result" + refused,
+        message: "this line's value has type `" + got + "` and nothing receives it",
         span: span
-    )
-    d.fixes @ d.fixes.push(
-        diag.Fix(title: "assign it back to `" + name + "`", replacement: name + " @ ", span: insertion, certainty: .guess)
     )
 
     if fallible
+        # A `T?` offers no `_ = ` (panel 118), so only a place is worth naming.
+        if !readings.place.is_err()
+            name = readings.place.must()
+            d.message @ d.message + " — every value here is a copy, so `" + name + "` is unchanged: write `" + name + " @ …` to keep the result"
+            d.fixes @ d.fixes.push(
+                front.written(at, title: "assign it back to `" + name + "`", words: name + " @ ", statement: true, certainty: .guess)
+            )
+        d.message @ d.message + ", and `_ = …` will not do either: a `T?` may not be discarded"
         d.notes @ d.notes.push(
             "answer the error instead: `?` sends it to your caller, `.must()` ends the program, `.default(v)` falls back, `.is_err()` drops it on purpose"
         )
         return d
-    d.message @ d.message + ", or `_ = …` to discard it on purpose"
+
+    if reading == "return"
+        d.message @ d.message + " — it ends a function that returns `" + got + "`: write `return …`, or `_ = …` to discard it on purpose"
+        d.fixes @ d.fixes.push(
+            front.written(at, title: "return it", words: "return ", statement: false, certainty: .guess)
+        )
+    else if reading == "assert"
+        d.message @ d.message + " — a `test` checks only what it asserts: write `assert …`, or `_ = …` to discard it on purpose"
+        d.fixes @ d.fixes.push(
+            front.written(at, title: "assert it", words: "assert ", statement: false, certainty: .guess)
+        )
+    else if reading == "place"
+        name = readings.place.must()
+        d.message @ d.message + " — every value here is a copy, so `" + name + "` is unchanged: write `" + name + " @ …` to keep the result, or `_ = …` to discard it on purpose"
+        d.fixes @ d.fixes.push(
+            front.written(at, title: "assign it back to `" + name + "`", words: name + " @ ", statement: true, certainty: .guess)
+        )
+    else
+        d.message @ d.message + " — write `_ = …` to discard it on purpose"
+
+    for thought in second_thoughts(readings, reading: reading)
+        d.notes @ d.notes.push(thought)
+
+    certainty: diag.Certainty @ .certain
+
+    if reading != "" || readings.decides || readings.in_test || readings.tail || continues
+        certainty @ .guess
 
     if continues
         d.notes @ d.notes.push(the_rest_of_the_line_above(first))
     d.fixes @ d.fixes.push(
-        diag.Fix(title: "discard it explicitly", replacement: "_ = ", span: insertion, certainty: .guess)
+        front.written(at, title: "discard it explicitly", words: "_ = ", statement: true, certainty: certainty)
     )
     return d
 
-# Where the statement whose value starts at `at` begins: back over the
-# parentheses its value's span leaves out, and forward over the margin.
-function line_opening(text: str, at: i64) -> i64
-    i: i64 @ at
+# The reading the message leads with, most likely first: a value a function
+# ends on is what it returns, a `bool` in a test is what it asserts, and a
+# value of a place's own type is what the place was meant to keep.
+function main_reading(readings: Readings) -> str
+    if readings.returns
+        return "return"
 
-    while i > 0 && i <= text.len() && (text[i - 1] == '(' || text[i - 1] == ' ')
-        i @ i - 1
+    if readings.in_test && readings.decides
+        return "assert"
 
-    while i < at && text[i] == ' '
-        i @ i + 1
+    if !readings.place.is_err()
+        return "place"
+    return ""
 
-    return i
+# Why `_ = ` is a guess where the message names no other repair.
+function second_thoughts(readings: Readings, reading: str) -> [str]
+    out: [str] @ []
+
+    if reading != ""
+        return out
+
+    if readings.decides
+        out @ out.push(
+            "a `bool` computed and dropped decides nothing: `if` and `assert` read one, and `@` writes a cell"
+        )
+    else if readings.in_test
+        out @ out.push(
+            "a `test` checks only what it asserts, and a value computed there and dropped is one no assertion reads"
+        )
+    else if readings.tail
+        out @ out.push("it ends a function that returns a value, and a function's value is what it returns")
+    return out
 
 function the_rest_of_the_line_above(first: str) -> str
     return "a line that begins with `" + first + "` may be the rest of the line above, which ended its statement: outside brackets a long expression breaks after an operator, inside parentheses"
@@ -215,20 +285,16 @@ function bound_unit(name: str, span: token.Span) -> diag.Diagnostic
 
 ## Tests
 
-test "a discarded value splits on the receiver, and certainty follows"
-    span = token.Span(start: 12, end: 20)
+test "a discarded value splits on the place it was computed from, and certainty follows"
+    span = token.Span(start: 20, end: 30)
     text = "function main()\n    xs.push(4)\n"
-    bare = discarded_value(
-        got: "[i64]",
-        receiver: fail(code: "absent", msg: "no receiver"),
-        fallible: false,
-        span: span,
-        text: text
-    )
+    bare = discarded_value(got: "[i64]", fallible: false, readings: no_readings(), span: span, text: text)
     assert bare.fixes.len() == 1
     assert bare.fixes[0].certainty == .certain
-    assert bare.fixes[0].span.start == 12 && bare.fixes[0].span.end == 12
-    named = discarded_value(got: "[i64]", receiver: ok("xs"), fallible: false, span: span, text: text)
+    assert bare.fixes[0].span.start == 20 && bare.fixes[0].span.end == 20
+    kept: Readings @ no_readings()
+    kept.place @ ok("xs")
+    named = discarded_value(got: "[i64]", fallible: false, readings: kept, span: span, text: text)
     assert named.fixes.len() == 2
     assert named.fixes[0].certainty == .guess
     assert named.fixes[1].certainty == .guess
@@ -241,8 +307,8 @@ test "a line that begins like the rest of the line above takes only a guessed di
     text = "function main()\n    y = 1\n    (5)\n    -y\n    x\n"
     paren = discarded_value(
         got: "i64",
-        receiver: fail(code: "absent", msg: "no receiver"),
         fallible: false,
+        readings: no_readings(),
         span: token.Span(start: 31, end: 32),
         text: text
     )
@@ -251,16 +317,30 @@ test "a line that begins like the rest of the line above takes only a guessed di
     assert paren.notes.len() == 1
     minus = discarded_value(
         got: "i64",
-        receiver: fail(code: "absent", msg: "no receiver"),
         fallible: false,
+        readings: no_readings(),
         span: token.Span(start: 38, end: 40),
         text: text
     )
     assert minus.fixes[0].certainty == .guess
+
+    # And the `y` it negates is the continuation's operand, not a place.
+    operand: Readings @ no_readings()
+    operand.place @ ok("y")
+    continued = discarded_value(
+        got: "i64",
+        fallible: false,
+        readings: operand,
+        span: token.Span(start: 38, end: 40),
+        text: text
+    )
+    assert continued.fixes.len() == 1
+    assert continued.fixes[0].replacement == "_ = "
+    assert continued.message == "this line's value has type `i64` and nothing receives it — write `_ = …` to discard it on purpose"
     alone = discarded_value(
         got: "i64",
-        receiver: fail(code: "absent", msg: "no receiver"),
         fallible: false,
+        readings: no_readings(),
         span: token.Span(start: 45, end: 46),
         text: text
     )
@@ -268,23 +348,60 @@ test "a line that begins like the rest of the line above takes only a guessed di
     assert alone.fixes[0].span.start == 45
     assert alone.notes.len() == 0
 
+# Defect 135: each second reading makes `_ = ` a guess, and the one the
+# message leads with offers its own repair first.
+test "a bool, a line in a test and a function's last line each take `_ = ` as a guess"
+    span = token.Span(start: 20, end: 26)
+    text = "function main()\n    x == 5\n"
+    decides: Readings @ no_readings()
+    decides.decides @ true
+    comparison = discarded_value(got: "bool", fallible: false, readings: decides, span: span, text: text)
+    assert comparison.fixes.len() == 1
+    assert comparison.fixes[0].certainty == .guess
+    assert comparison.notes.len() == 1
+    asserted: Readings @ decides
+    asserted.in_test @ true
+    lost = discarded_value(got: "bool", fallible: false, readings: asserted, span: span, text: text)
+    assert lost.fixes.len() == 2
+    assert lost.fixes[0].replacement == "assert "
+    assert lost.fixes[0].certainty == .guess
+    assert lost.fixes[1].certainty == .guess
+    ending: Readings @ no_readings()
+    ending.tail @ true
+    ending.returns @ true
+    ended = discarded_value(got: "i64", fallible: false, readings: ending, span: span, text: text)
+    assert ended.fixes[0].replacement == "return "
+    assert ended.fixes[1].certainty == .guess
+    assert has(text: ended.message, needle: "it ends a function that returns `i64`")
+
+# Inside an arm `_ = ` on the value's own line is `declaration_in_arm`, so
+# the discard is the block the spec names; a `return` stays where it is.
+test "an arm's value is discarded in a block under the arm, and returned where it stands"
+    text = "function main()\n    match n\n        0 => f(0)\n"
+    span = token.Span(start: 41, end: 45)
+    in_arm = discarded_value(got: "i64", fallible: false, readings: no_readings(), span: span, text: text)
+    assert in_arm.fixes[0].certainty == .certain
+    assert in_arm.fixes[0].span.start == 40 && in_arm.fixes[0].span.end == 41
+    assert in_arm.fixes[0].replacement == "\n            _ = "
+    ending: Readings @ no_readings()
+    ending.tail @ true
+    ending.returns @ true
+    returned = discarded_value(got: "i64", fallible: false, readings: ending, span: span, text: text)
+    assert returned.fixes[0].span.start == 41 && returned.fixes[0].replacement == "return "
+
 # Panel 118's third half: once `_ = e` on a fallible is refused, the
 # `_ = ` fix must not be OFFERED, let alone offered as `certain`, or
 # `heroes check --apply` writes a program the next pass rejects.
 test "a discarded FALLIBLE offers no `_ = ` at all, and says what answers an error instead"
-    span = token.Span(start: 12, end: 20)
+    span = token.Span(start: 20, end: 30)
     text = "function main()\n    xs.push(4)\n"
-    bare = discarded_value(
-        got: "()?",
-        receiver: fail(code: "absent", msg: "no receiver"),
-        fallible: true,
-        span: span,
-        text: text
-    )
+    bare = discarded_value(got: "()?", fallible: true, readings: no_readings(), span: span, text: text)
     assert bare.fixes.len() == 0
     assert bare.notes.len() == 1
     assert bare.message == "this line's value has type `()?` and nothing receives it, and `_ = …` will not do either: a `T?` may not be discarded"
-    named = discarded_value(got: "[i64]?", receiver: ok("xs"), fallible: true, span: span, text: text)
+    kept: Readings @ no_readings()
+    kept.place @ ok("xs")
+    named = discarded_value(got: "[i64]?", fallible: true, readings: kept, span: span, text: text)
     assert named.fixes.len() == 1
     assert named.fixes[0].replacement == "xs @ "
     assert named.notes.len() == 1

@@ -1,0 +1,98 @@
+# The front of a statement's line: where a repair written before a
+# statement's value goes, read off the compilation's text (design.md §4.17:
+# a fix carries its own span and replacement).
+#
+# Split out of `discard_errors.hero` on 2026-09-30, lane 135b, when that file
+# passed §11's 300 lines with defect 135's readings. The seam is the concern:
+# the discard's messages decide WHAT to write, and this file says WHERE on the
+# line it goes. Two facts rule it, each found by an audit of the discard's one
+# `certain` fix: a value's span leaves out the parentheses around it, so `(5)`
+# alone took `_ = ` as `(_ = 5)` (panel 181's audit), and a value that does not
+# begin its line is an arm's inline body, where a statement written in front of
+# it is refused anew as `declaration_in_arm` (defect 135), so a statement goes
+# into the block an arm that does nothing holds (spec § 8).
+
+use token
+use diag
+
+# Where a repair is written: the compilation's text, the first byte of the
+# statement's value, and whether that value begins its line.
+record Before
+    text: str
+    opening: i64
+    begins_line: bool
+
+# The front of the statement whose value's span starts at `at`.
+function before(text: str, at: i64) -> Before
+    opening = line_opening(text, at: at)
+    return Before(text: text, opening: opening, begins_line: line_margin(text, at: opening) == opening)
+
+# One repair written before the value: at the line's first byte where the
+# value begins its line; inside an arm, a `return` or an `assert` where the
+# value stands, and a statement as the block under the arm.
+function written(at: Before, title: str, words: str, statement: bool, certainty: diag.Certainty) -> diag.Fix
+    if at.begins_line || !statement
+        return diag.Fix(
+            title: title,
+            replacement: words,
+            span: token.Span(start: at.opening, end: at.opening),
+            certainty: certainty
+        )
+    gap: i64 @ at.opening
+
+    while gap > 0 && at.text[gap - 1] == ' '
+        gap @ gap - 1
+
+    width = line_margin(at.text, at: at.opening) - line_start(at.text, at: at.opening) + 4
+    indent = " ".repeat(width.to_u64().must())
+    return diag.Fix(
+        title: title + ", in a block under the arm",
+        replacement: "\n" + indent + words,
+        span: token.Span(start: gap, end: at.opening),
+        certainty: certainty
+    )
+
+# Where the statement whose value starts at `at` begins: back over the
+# parentheses its value's span leaves out, and forward over the margin.
+function line_opening(text: str, at: i64) -> i64
+    i: i64 @ at
+
+    while i > 0 && i <= text.len() && (text[i - 1] == '(' || text[i - 1] == ' ')
+        i @ i - 1
+
+    while i < at && text[i] == ' '
+        i @ i + 1
+
+    return i
+
+# The first byte of the line holding `at`.
+function line_start(text: str, at: i64) -> i64
+    i: i64 @ at
+
+    while i > 0 && text[i - 1] != '\n'
+        i @ i - 1
+
+    return i
+
+# The first byte past the margin of the line holding `at`.
+function line_margin(text: str, at: i64) -> i64
+    i: i64 @ line_start(text, at: at)
+
+    while i < text.len() && text[i] == ' '
+        i @ i + 1
+
+    return i
+
+## Tests
+
+test "a statement is written at its line's first byte, and under an arm as a block"
+    text = "function main()\n    (5)\n    match n\n        0 => f(0)\n"
+    paren = before(text, at: 21)
+    assert paren.opening == 20 && paren.begins_line
+    arm = before(text, at: 49)
+    assert arm.opening == 49 && !arm.begins_line
+    block = written(arm, title: "t", words: "_ = ", statement: true, certainty: .guess)
+    assert block.span.start == 48 && block.span.end == 49
+    assert block.replacement == "\n            _ = "
+    inline = written(arm, title: "t", words: "return ", statement: false, certainty: .guess)
+    assert inline.span.start == 49 && inline.replacement == "return "
