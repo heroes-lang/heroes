@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 5**
+**OPEN: 6**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -142,6 +142,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     rule): repaired at `2fd79070`, gated by its cases and the compiler's own
     tests; the net is owed at the batch's close.
 
+    **Batch gate 2026-09-30 01:48** (`1fc77e31`, lane recovery-b1, five
+    repairs): the full net, 3852 passed and 0 failed over 26 suites, the
+    compiler's own 903 and the net's own 184; then the compiler's 903 and 19
+    suites at 0 failed on Linux x86-64, Linux arm64 and the Windows box, whose
+    `run` read 160 and 45 with its C: drive at 99% and 205 and 0 re-run alone
+    with 16 GB freed. The shapes still open are lane recovery-b2's items.
+
     **2026-09-30, lane recovery-b2, a declaration opening its line at column 0
     names the brackets a mistake left open** (lane recovery-b1's report, U2):
     repaired at `41807577`, gated by its cases and the compiler's own tests;
@@ -151,6 +158,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     own mistake** (lane X4's n3, measured closed by lane recovery-b1): read
     closed on this tree, and its case added at `04b51f08`; lane X3's 6a reads
     closed and had its case. The net is owed at the batch's close.
+
+    **Batch gate 2026-09-30 04:45** (`e5cc73eb`, lane recovery-b2, five
+    repairs and a verification case): the full net, 3873 passed and 0 failed
+    over 26 suites, the compiler's own 911 and the net's own 184, `corpus` red
+    once in the parallel pass on defect 134's false `cannot publish` and 55
+    and 0 alone; the census of 1358 files moved the six new cases and nothing
+    else. The shapes still open are the next batch's items.
 
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
@@ -249,6 +263,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     report): repaired at `cda5ee4c`, gated by its cases and the compiler's
     own tests; the net is owed at the batch's close.
 
+    **Batch gate 2026-09-30 01:48** (`1fc77e31`, lane recovery-b1, five
+    repairs): the full net, 3852 passed and 0 failed over 26 suites, the
+    compiler's own 903 and the net's own 184; then the compiler's 903 and 19
+    suites at 0 failed on Linux x86-64, Linux arm64 and the Windows box, whose
+    `run` read 160 and 45 with its C: drive at 99% and 205 and 0 re-run alone
+    with 16 GB freed. The shapes still open are lane recovery-b2's items.
+
     **2026-09-30, lane recovery-b2, a group, a call or an index whose opener
     the lexer named never closed ends at its line and names no closer**
     (lane recovery-b1's report, U4): repaired at `de991c25`, gated by its
@@ -268,6 +289,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     once, and the lines it swallowed are no body to be named missing** (lane
     recovery-b1's report, U5): repaired at `ac62cde9`, gated by its cases and
     the compiler's own tests; the net is owed at the batch's close.
+
+    **Batch gate 2026-09-30 04:45** (`e5cc73eb`, lane recovery-b2, five
+    repairs and a verification case): the full net, 3873 passed and 0 failed
+    over 26 suites, the compiler's own 911 and the net's own 184, `corpus` red
+    once in the parallel pass on defect 134's false `cannot publish` and 55
+    and 0 alone; the census of 1358 files moved the six new cases and nothing
+    else. The shapes still open are the next batch's items.
 
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
@@ -414,5 +442,47 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     replay files (`warnings.txt`, the dependency listings) read by one
     process while a second rewrites them, which would lose a warning from
     every later replay, 057's class.
+
+- [ ] **135 — a `certain` fix chosen from one reading, where another is as likely, writes a program that means something else or is refused anew** | `print("\(n)")` costs `unknown_escape` with the certain fix `\\(`, which checks clean and prints the hole's text where Swift's author meant its value; `True` costs `unknown_name` with the certain rename to the one in-scope name within two edits, `run` or `Value`, which then costs `type_mismatch`; a `,` left out before a mutable argument, `hints: nullptr @res`, costs `misplaced_mutable_marker` with the certain `: ` that writes `nullptr : @res`, refused anew | `selfhost/literals.hero:60` (the escape's fix) · `selfhost/resolve/errors.hero` (`suggest`, `nearest`) · `selfhost/grammar_expr.hero` (`misplaced_mutable_marker`)
+
+    **Origin:** the coordinator's measurement lane, 2026-09-30, the parser
+    recovery instrument over 641 programs at `c85bccb8`
+    (`scratchpad/instrument/baseline-c85bccb8/`): of 2,630 texts `--apply`
+    changed, 17 checked clean and meant something else and 23 carried a code
+    the first run did not report. The first three shapes below reproduced by
+    the coordinator at 03:48 on the trunk's compiler; the fourth is read from
+    the instrument's record and not re-run.
+
+    **Measured.** `interp-swift`: 17 of 25 mutants apply into a program that
+    checks clean and prints `\(` and the hole's text, and 6 into one refused
+    anew. `python-bool`: 13 of 152 renames of `True` or `False` pick a record, a
+    variant or a function (`did you mean run?`, `fix (certain): rename to
+    run`, then `expected bool, found (function(str) -> ())`). `missing-comma`:
+    3 of 153. And one rename of a one-letter name to the only other one-letter
+    name in scope (`p` to `s`), where a line over-indented had taken `p` out of
+    scope, which then costs `not_mutable`.
+
+    **The cause, read and not yet proved by a repair.** Each fix encodes one
+    reading of the mistake where another is as likely, so it is not certain in
+    the sense `.claude/rules/diagnostics-and-goldens.md` gives the word, a fix
+    that repairs the defect the diagnostic names, compiling not being the bar.
+    `\(` followed by a bracketed expression reads as Swift's interpolation as
+    much as a literal backslash; `nearest` counts any one candidate within two
+    edits (one below four letters) as certain, and the literals `true` and
+    `false` are not among its candidates, so `True`, two edits from `run`,
+    renames to it; a name and `@` with no `,` between them
+    reads as a missing `,` as much as a misplaced `@`.
+
+    **Why it is a defect.** `check --apply` machine-applies a certain fix, so a
+    wrong one is written into the author's program without a reader, and in
+    the first shape the result compiles and prints the wrong thing: defect
+    120's class (a certain `_ = ` that compiled and printed 100 where 93 was
+    meant), and defect 015's (a context-blind certain replacement).
+
+    **Unrun, questions rather than premises**: every other `certain` fix in
+    `selfhost/` measured by the same instrument's `--apply` pass beyond these
+    96 operators; whether a rename's certainty can ask the candidate's kind
+    (a value where a value stands, a type where a type does) at the resolver,
+    which does not know types.
 
 *******************************************************************************
