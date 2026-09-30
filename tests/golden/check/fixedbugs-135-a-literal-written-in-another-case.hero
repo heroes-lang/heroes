@@ -1,0 +1,37 @@
+# Fixed 2026-09-30, defect 135's class, lane recovery-b3 (the coordinator's
+# recovery instrument, its `python-bool` operator: 13 of 152 mutants took a
+# certain rename refused anew). Symptom: `True` and `False` cost
+# `unknown_name` with the certain rename to the one in-scope name within two
+# edits, a function `run`, a record `Parse`, a variant `Value`, so
+# `check --apply` wrote `while run` and `.x => Parse`, refused anew as
+# `not_bool`, `record_name_alone` or `variant_in_value_position`; and
+# `TRUE`, `Nullptr` were offered nothing. Cause: the literals were no
+# candidates, and any one candidate within the distance was certain. Now a
+# name READ as a value is offered `true`, `false` and `nullptr`, and one that
+# differs from a literal by case only is that literal, certain.
+
+variant Value
+    one
+
+record Parse
+    at: i64
+
+function run(s: str)
+    print(s)
+
+function answers() -> bool
+    run("a")
+    p = Parse(at: 0)
+    while True  #~ unknown_name
+        break
+    return p.at == 0 && False  #~ unknown_name
+
+function shouted() -> bool
+    return TRUE || FALSE || tRUE  #~ unknown_name unknown_name unknown_name
+
+function no_pointer() -> ptr
+    return Nullptr  #~ unknown_name
+
+function main()
+    print(answers(), shouted())
+    _ = no_pointer()

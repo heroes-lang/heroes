@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-135-a-literal-written-in-another-case.hero:25:11: error[unknown_name]: nothing named `True` is in scope — did you mean `true`?
+tests/golden/check/fixedbugs-135-a-literal-written-in-another-case.hero:27:25: error[unknown_name]: nothing named `False` is in scope — did you mean `false`?
+tests/golden/check/fixedbugs-135-a-literal-written-in-another-case.hero:30:12: error[unknown_name]: nothing named `TRUE` is in scope — did you mean `true`?
+tests/golden/check/fixedbugs-135-a-literal-written-in-another-case.hero:30:20: error[unknown_name]: nothing named `FALSE` is in scope — did you mean `false`?
+tests/golden/check/fixedbugs-135-a-literal-written-in-another-case.hero:30:29: error[unknown_name]: nothing named `tRUE` is in scope — did you mean `true`?
+tests/golden/check/fixedbugs-135-a-literal-written-in-another-case.hero:33:12: error[unknown_name]: nothing named `Nullptr` is in scope — did you mean `nullptr`?
