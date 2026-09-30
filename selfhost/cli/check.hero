@@ -359,8 +359,11 @@ test "a certain fix enclosing another is made again from the text the inner one 
     assert settled_text(text: head + "    print(total(xs.must()).must())\n    print(0)\n", stage: 4) == head + "    print(total(xs))\n    print(0)\n"
     counter = "record Counter\n    n: i64\n\nfunction bump(@c: Counter) -> i64\n    c.n @ c.n + 1\n    return c.n\n\nfunction main()\n    k: Counter @ Counter(n: 0)\n"
     assert settled_text(text: counter + "    print(bump(k).must())\n", stage: 4) == counter + "    print(bump(@k))\n"
+
+    # `to:` is written because between two `str` parameters a label is certain
+    # only for the argument left alone once the other is named (defect 135).
     labels = "function copy_text(from: str, to: str) -> str\n    return from + \" -> \" + to\n\nfunction main()\n"
-    assert settled_text(text: labels + "    print(copy_text(\"a\", \"b\").default(\"none\"))\n", stage: 4) == labels + "    print(copy_text(from: \"a\", to: \"b\"))\n"
+    assert settled_text(text: labels + "    print(copy_text(\"a\", to: \"b\").default(\"none\"))\n", stage: 4) == labels + "    print(copy_text(from: \"a\", to: \"b\"))\n"
     body = "\n    return n\n\nfunction main()\n    print(1)\n"
     assert settled_text(text: "function adder(n: i64) -> function(i64) -> function(i64) -> i64" + body, stage: 1) == "function adder(n: i64) -> (function(i64) -> (function(i64) -> i64))" + body
     assert settled_text(text: "function apply(f: function(int) -> int, x: i64) -> i64\n    return f(x)\n", stage: 1) == "function apply(f: (function(i64) -> i64), x: i64) -> i64\n    return f(x)\n"

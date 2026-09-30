@@ -25,5 +25,14 @@ function main()
     print(total(xs.must()).must())  #~ bad_operand bad_operand
     k: Counter @ Counter(n: 0)
     print(bump(k).must())  #~ bad_operand marker_mismatch
-    print(copy_text("a", "b").default("none"))  #~ bad_operand needs_label needs_label
+    print(copy_text("a", to: "b").default("none"))  #~ bad_operand needs_label
     print(one().must().must().must())  #~ bad_operand
+
+# Corrected 2026-09-30, integrating lanes 136 and 135b, below the program so
+# its lines stay where they were. Line 28 wrote `copy_text("a", "b")`, and
+# defect 135's rule (`5ea6b86f`) makes both of its labels guesses: the two
+# parameters are `str`, so either order is a reading. With `to:` written,
+# `from` is the one label the position gives, so it stays certain, and the
+# enclosing `.default("none")` is still made again from the text that label
+# left: before defect 137's repair this line came out as
+# `print(copy_text("a", to: "b")none"))`.
