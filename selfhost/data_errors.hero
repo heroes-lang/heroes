@@ -131,14 +131,23 @@ function named_parameter_in_function_type(written: str, span: token.Span) -> dia
 
 # §4.8: the marker is on the parameter AND at the call site, so a
 # mutating call cannot look like a reading one.
-function marker_mismatch(name: str, wants: bool, span: token.Span) -> diag.Diagnostic
+#
+# **The `@` is certain only where the argument can take it** (defect 135,
+# the certain-fix audit's C8): `blocked` says why it cannot, empty where it
+# can (`check/markers.blocked`). Where it cannot, the `@` alone would be
+# refused anew, so it is not offered, and the note says what answers: the
+# fallible discard's precedent, since a guess that cannot compile is still
+# wrong.
+function marker_mismatch(name: str, wants: bool, blocked: str, span: token.Span) -> diag.Diagnostic
     message: str @ "`" + name + "` does not change this argument — the `@` says it does"
 
     if wants
         message @ "`" + name + "` changes this argument, so the call site writes `@` too"
     d: diag.Diagnostic @ diag.new_diagnostic(code: "marker_mismatch", message: message, span: span)
 
-    if wants
+    if wants && blocked.len() > 0
+        d.notes @ d.notes.push(blocked)
+    else if wants
         d.fixes @ d.fixes.push(
             diag.Fix(title: "mark the argument: `@x`", replacement: "@", span: token.Span(start: span.start, end: span.start), certainty: .certain)
         )
@@ -213,10 +222,20 @@ function needs_wildcard(span: token.Span) -> diag.Diagnostic
 ## Tests
 
 test "the marker fix exists only in the direction that adds the @"
-    wants = marker_mismatch(name: "advance", wants: true, span: token.Span(start: 5, end: 6))
+    wants = marker_mismatch(name: "advance", wants: true, blocked: "", span: token.Span(start: 5, end: 6))
     assert wants.fixes.len() == 1
     assert wants.fixes[0].replacement == "@"
-    stray = marker_mismatch(name: "read", wants: false, span: token.Span(start: 5, end: 6))
+
+    # Defect 135: where the argument cannot take it, no `@`, and a note.
+    fixed = marker_mismatch(
+        name: "advance",
+        wants: true,
+        blocked: "`k` was bound with `=`",
+        span: token.Span(start: 5, end: 6)
+    )
+    assert fixed.fixes.len() == 0
+    assert fixed.notes.len() == 1
+    stray = marker_mismatch(name: "read", wants: false, blocked: "", span: token.Span(start: 5, end: 6))
     assert stray.fixes.len() == 0
     assert stray.message == "`read` does not change this argument — the `@` says it does"
 

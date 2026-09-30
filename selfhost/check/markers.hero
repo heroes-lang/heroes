@@ -1,0 +1,45 @@
+# What the `@` a marked parameter asks of a call site can stand before
+# (design.md §4.8; spec § 9: copy in, copy out).
+#
+# A marked argument is a place the call writes back into, so the `@` it owes
+# stands only before a place whose root the program may write: a cell, or an
+# `@` parameter. Asked of the argument in hand, its root's binding as the
+# resolver recorded it (defect 135, the certain-fix audit's C8): `bump(k)`
+# over `k = Counter(n: 0)` took a certain `@k`, refused anew as
+# `not_mutable`, and `bump(Counter(n: 0))` took `@Counter(…)`, refused as
+# `not_a_place`; a loop variable, a plain parameter, a payload and a constant
+# did the same. `data_errors.marker_mismatch` offers the `@` only where it can
+# stand, and says what answers elsewhere.
+
+use ast
+use source
+use resolved
+use check/leasing
+
+# Why the argument cannot take the `@`, empty where it can. The words follow
+# `not_mutable`'s, the refusal the `@` alone would earn, one per binding; the
+# `@` is quoted before the argument as written, `@h.inner`, and the binding
+# named is its root, `h`, the one that must change.
+function blocked(a: ast.Ast, r: resolved.Resolved, s: source.Source, value: i64) -> str
+    root = leasing.place_root(a, at: value)
+
+    if root.is_err()
+        return "`@` stands before a place the call writes back into, a name, a field or an element, and this is a value: bind it to a cell first, `x: <type> @ …`, and pass `@x`"
+    name = source.span_text(s, a.exprs[root.must()].span)
+    marked = "`@" + source.span_text(s, a.exprs[value].span) + "`"
+
+    match r.uses[root.must()]
+        .local l =>
+            one = r.locals[l.at]
+
+            if one.mutable
+                return ""
+
+            return match one.kind
+                .param => "`" + name + "` is a parameter without `@`, so " + marked + " would be refused: mark it `@" + name + "` in the signature too, and at every call"
+                .loop_var => "`" + name + "` is the loop variable, bound afresh for each element, so " + marked + " would be refused: pass a cell declared outside the loop"
+                .payload => "`" + name + "` is bound by the pattern, so " + marked + " would be refused: bind what you need with `@` outside the `match`"
+                .bind | .cell => "`" + name + "` was bound with `=`, which binds once, so " + marked + " would be refused: declare it a cell, `" + name + ": <type> @ <value>`, and pass " + marked
+        .top | .module | .builtin | .unresolved => return "`" + name + "` is no cell, and there are no mutable globals: pass a cell declared with `@`"
+
+    return ""

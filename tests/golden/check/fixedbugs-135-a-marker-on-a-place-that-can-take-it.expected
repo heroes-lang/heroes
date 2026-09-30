@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-135-a-marker-on-a-place-that-can-take-it.hero:26:10: error[marker_mismatch]: `bump` changes this argument, so the call site writes `@` too
+tests/golden/check/fixedbugs-135-a-marker-on-a-place-that-can-take-it.hero:31:10: error[marker_mismatch]: `bump` changes this argument, so the call site writes `@` too
+tests/golden/check/fixedbugs-135-a-marker-on-a-place-that-can-take-it.hero:33:10: error[marker_mismatch]: `bump` changes this argument, so the call site writes `@` too
+tests/golden/check/fixedbugs-135-a-marker-on-a-place-that-can-take-it.hero:35:10: error[marker_mismatch]: `bump` changes this argument, so the call site writes `@` too
+tests/golden/check/fixedbugs-135-a-marker-on-a-place-that-can-take-it.hero:38:12: error[marker_mismatch]: `put` changes this argument, so the call site writes `@` too
+tests/golden/check/fixedbugs-135-a-marker-on-a-place-that-can-take-it.hero:41:16: error[marker_mismatch]: `move_to` changes this argument, so the call site writes `@` too

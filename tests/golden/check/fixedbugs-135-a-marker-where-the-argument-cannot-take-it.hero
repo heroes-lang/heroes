@@ -1,0 +1,59 @@
+# Fixed 2026-09-30, defect 135's class, lane 135b (the certain-fix audit's
+# C8). Symptom: an argument left without the `@` its parameter asks for took
+# `@` as a `certain` fix wherever it stood, so `check --apply` wrote `@k`
+# over `k = Counter(n: 0)`, refused anew as `not_mutable`, and
+# `@Counter(n: 0)`, refused as `not_a_place`, and the same over a loop
+# variable, a parameter without `@`, a pattern's payload and a constant.
+# Cause: the fix asked nothing of what the argument is. Now the `@` is
+# offered only before a place rooted in a cell or an `@` parameter; elsewhere
+# it is not offered, and a note says what answers, in the words the
+# refusal the `@` alone would earn uses (`check/markers.blocked`).
+
+constant START: i64
+    0
+
+record Counter
+    n: i64
+
+record Holder
+    inner: Counter
+
+variant Slot
+    full
+        c: Counter
+    empty
+
+function bump(@c: Counter)
+    c.n @ c.n + 1
+
+function add_one(@n: i64)
+    n @ n + 1
+
+function bound_once() -> i64
+    k = Counter(n: 0)
+    bump(k)  #~ marker_mismatch
+    return k.n
+
+function a_field_of_one_bound_once() -> i64
+    h = Holder(inner: Counter(n: 0))
+    bump(h.inner)  #~ marker_mismatch
+    return h.inner.n
+
+function a_value_made_there()
+    bump(Counter(n: 0))  #~ marker_mismatch
+
+function the_loop_variable(counters: [Counter])
+    for k in counters
+        bump(k)  #~ marker_mismatch
+
+function a_parameter_without_its_marker(c: Counter) -> i64
+    bump(c)  #~ marker_mismatch
+    return c.n
+
+function a_payload(s: Slot)
+    match s
+        .full f => bump(f.c)  #~ marker_mismatch
+        .empty  => print(0)
+
+function a_constant()
+    add_one(START)  #~ marker_mismatch
