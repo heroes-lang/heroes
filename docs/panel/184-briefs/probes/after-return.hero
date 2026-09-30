@@ -1,0 +1,6 @@
+function f() -> i64
+    return 1
+    print(2)
+
+function main()
+    print(f())

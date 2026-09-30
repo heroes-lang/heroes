@@ -1,0 +1,1 @@
+Built with the same compiler, `task2.hero` gave a program. Run, it printed nothing and was still running after 5 seconds, when it was killed (exit 142, the alarm's signal).

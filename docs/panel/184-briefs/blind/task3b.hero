@@ -1,0 +1,6 @@
+function step(v: i64) -> i64
+    return v + 1
+
+function main()
+    x = step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(step(0))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
+    print(x)

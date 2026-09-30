@@ -1,0 +1,19 @@
+function first_negative(xs: [i64]) -> i64
+    i: i64 @ 0
+
+    while i < xs.len()
+        if xs[i] < 0
+            return i
+            i @ i + 1
+
+    return -1
+
+function main()
+    xs = [4, 0, -2, 7]
+
+    for x in xs
+        if x == 0
+            break
+            print("found a zero")
+
+    print(first_negative(xs))
