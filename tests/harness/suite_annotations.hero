@@ -144,8 +144,13 @@ constant RUN_ROOTS: [str]
 #
 # **1317 where lane Y met the trunk, 2026-09-29**: lane Y's five cases on top
 # of lanes X1 and X2, and on the merged tree the suite found 1317.
+#
+# **1652 at lane recovery-b2's batch gate, 2026-09-30**: its seven cases,
+# which annotate 93 diagnostics, on top of lane recovery-b1's, took the count
+# past 1317 by more than a quarter, and on the merged tree the suite found
+# 1652.
 constant LEAST: i64
-    1317
+    1652
 
 # `only` narrows the sweep to the cases whose name holds it (cases.matching);
 # a narrowed run asks neither the thesis witnesses, nor the groups, nor the
