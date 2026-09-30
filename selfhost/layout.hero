@@ -91,11 +91,14 @@ function line_start(@l: state.LexState, text: str)
     # Inside brackets the margin is not structural (panel 007), but a line that
     # opens with a word no bracket holds in a program that compiles, no deeper
     # than the statement the brackets opened in, the level the lexer last laid
-    # out (`next_line.ends_a_reach`, panel 183 R1), is where a mistake left
-    # them open: they are named there, and the line is laid out as what it
-    # begins.
+    # out (`next_line.ends_a_reach`, panel 183 R1), or inside a `(` a line that
+    # opens with a name there after one that kept its line end
+    # (`a_name_after_a_kept_end`, R2), is where a mistake left them open: they
+    # are named there, and the line is laid out as what it begins.
     if l.open_brackets.len() > 0
-        if !next_line.ends_a_reach(text, at: l.pos, spaces: spaces, margin: l.level * 4)
+        margin = l.level * 4
+
+        if !next_line.ends_a_reach(text, at: l.pos, spaces: spaces, margin: margin) && !a_name_after_a_kept_end(l, text, spaces: spaces, margin: margin)
             return
         close_brackets(@l, text)
         state.push_offset(@l.closes, at: l.pos)
@@ -176,6 +179,18 @@ function line_start(@l: state.LexState, text: str)
         l.level @ new_level
 
 ## The brackets a mistake left open
+
+# Inside a `(`, a line end the line above kept may stand only before a closer
+# or a `,` (the specification's opening paragraph: only `[` and `{` take a
+# line end as a separator), so a line at the statement's margin `margin` that
+# opens with a name after one goes on inside no `(` of a program that compiles
+# (panel 183 R2, the completeness critic's route).
+function a_name_after_a_kept_end(l: state.LexState, text: str, spaces: i64, margin: i64) -> bool
+    if spaces > margin || l.tokens.len() == 0 || l.pos >= text.len()
+        return false
+    kept = l.tokens[l.tokens.len() - 1].kind == .terminator
+    inner = text[l.open_brackets[l.open_brackets.len() - 1].start]
+    return kept && inner == '(' && next_line.opens_with_a_name(text, at: l.pos)
 
 # Every opener still open is named never closed, and the stack emptied: at the
 # file's end, where without it one missing `)` would swallow the rest of the
