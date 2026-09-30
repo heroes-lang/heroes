@@ -26,6 +26,7 @@
 # | `type_closer` | `parse/type`'s array, map and function types |
 
 use token
+use diag
 use cursor
 use parse/line_end
 use lexer
@@ -190,6 +191,33 @@ function type_closer(@c: cursor.Cursor, text: str, open: i64) -> token.Span
     close = cursor.current_span(c)
     _ = line_end.expect_closer(@c, text: text, holds: .one_type, kind: kind, code: code, what: what)
     return close
+
+## Two reports at one `{`
+
+# The lexer's reports without each `unclosed_bracket` at a `{` that a parser
+# diagnostic in `said` stands on. The language writes a `{` only to open a map
+# or a map type, so a `{` the parser speaks at is the brace habit,
+# `record P {` or `function main() {`, whose one message says the braces go,
+# and the `}` they are owed is no second mistake: `record P {` over its
+# fields and nothing more cost `unclosed_bracket` and the habit's message at
+# one token (defect 131's class, 2026-09-30). At a `(` or a `[` the parser's
+# message may be another mistake, `function (a: i64` missing its name, and
+# both stand.
+function withdrawn(lexed: [diag.Diagnostic], said: [diag.Diagnostic], text: str) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+
+    for d in lexed
+        if !(d.code == "unclosed_bracket" && cursor.slice_of(text, d.span) == "{" && spoken_at(said, at: d.span.start))
+            out @ out.push(d)
+
+    return out
+
+function spoken_at(said: [diag.Diagnostic], at: i64) -> bool
+    for d in said
+        if d.span.start == at
+            return true
+
+    return false
 
 # The closer an opener owes.
 function closer_of(opener: token.TokenKind) -> token.TokenKind

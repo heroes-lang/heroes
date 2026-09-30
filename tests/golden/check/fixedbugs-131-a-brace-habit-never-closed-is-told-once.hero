@@ -1,0 +1,51 @@
+# Fixed 2026-09-30, defect 131's class, lane recovery-b2 (lane recovery-b1's
+# report, U1), beside `fixedbugs-130-a-declaration-past-a-bracket-never-closed`.
+# Symptom: a declaration in braces, `record P {` over its fields with no `}`,
+# cost the lexer's `unclosed_bracket` and the habit's own message at one
+# token, and its braces read the rest of the file as members, so `record P {`
+# over `x: i64` above `function main()` cost four messages for one mistake
+# and the declarations below it were never read. Cause: the braces' `}` was
+# sought by counting braces to the file's end, past where the lexer named
+# the `{` never closed, and the two reports at the `{` were both said. Now
+# the braces end where the lexer named them (`brace_habit.closer`), and at a
+# `{` the parser speaks at, which the language writes only for a map, the
+# habit's message is the one said (`parse/unclosed.withdrawn`); the lines
+# after it are read as the declarations they are. No fix.
+
+record P {  #~ expected_end_of_line
+    x: i64
+
+variant C {  #~ expected_end_of_line
+    red
+    green
+
+record Q {  #~ expected_end_of_line
+    x: i64
+    y i64  #~ expected_field_type
+
+extern "m.h" {  #~ expected_end_of_line
+    function g() -> i64
+
+function a_body() {  #~ missing_body
+    print(1)
+
+function an_if_body(n: i64)
+    if n == 1 {  #~ missing_body
+        print(1)
+    print(2)
+
+function a_match(n: i64)
+    match n {  #~ missing_match_arms
+        0 => print(0)
+        _ => print(1)
+
+variant Shape
+    circle {  #~ expected_end_of_line
+        r: f64
+    square
+
+function main()
+    print(1) )  #~ expected_end_of_line
+
+record Z {  #~ expected_end_of_line
+    z: i64
