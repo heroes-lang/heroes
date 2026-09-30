@@ -1,0 +1,54 @@
+# Fixed 2026-09-30, defect 135's class, lane recovery-b3 (the coordinator's
+# recovery instrument, its `missing-comma` operator: 3 of 153 mutants took a
+# certain fix refused anew). Symptom: a value and then `@` in an argument
+# list cost `misplaced_mutable_marker` with the certain fix `: @`, so
+# `check --apply` wrote `hints: nullptr : @res` and `g(1 : @b)`, refused
+# anew, and `g(a @b)` as `g(a: @b)` where the `,` of `g(a, @b)` had been
+# left out and `a` was meant as a value. Cause: the fix read every value
+# before `@` as the name a `:` follows. Now a bare name, with no label and no
+# `@` of its own, reads as that name or as an argument whose `,` was left
+# out, both offered, neither applied; anything else reads only as the `,`
+# left out, told as the argument list tells a missing `,`, the `@` read as
+# the next argument's (`parse/argument_marker`). The `,` is a guess too: the
+# argument after it goes unlabelled, and `g`'s two `i64` parameters are
+# named at every call.
+
+function g(a: i64, @b: i64)
+    b @ a
+
+function h(x: ptr, @y: i64)
+    y @ 1
+    _ = x
+
+record R
+    v: i64
+
+function one() -> i64
+    return 1
+
+function a_bare_name()
+    a = 1
+    b: i64 @ 0
+    g(a @b)  #~ misplaced_mutable_marker
+    print(b)
+
+function a_second_bare_name()
+    a = 1
+    b: i64 @ 0
+    g(a, b @b)  #~ misplaced_mutable_marker
+    print(b)
+
+function after_a_label()
+    n: i64 @ 0
+    h(x: nullptr @n)  #~ expected_args_close
+    print(n)
+
+function after_a_literal_a_call_a_field_a_marker()
+    r = R(v: 1)
+    b: i64 @ 0
+    c: i64 @ 0
+    g(1 @b)  #~ expected_args_close
+    g(one() @b)  #~ expected_args_close
+    g(r.v @b)  #~ expected_args_close
+    g(@c @b)  #~ expected_args_close
+    print(b, c)
