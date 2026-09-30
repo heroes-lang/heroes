@@ -1,0 +1,14 @@
+# Fixed 2026-09-30, defect 132's class, lane recovery-b4, beside
+# `fixedbugs-132-a-comma-after-every-member-is-one-message`: the rule that
+# ends a line at its `,` stops at a deeper line after anything but a lone
+# name. There the `,` is a list broken outside its brackets, a function's
+# type parameters, `<A,` over `B>`, which `<` does not bracket: the line is
+# joined and refused once, as before, and the join is its certain fix.
+
+#~v continuation_outside_brackets
+function pair<A, B>(a: A, b: B) -> A
+    print([b].len())
+    return a
+
+function main()
+    print(pair(a: 1, b: "x"))
