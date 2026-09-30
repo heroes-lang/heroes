@@ -409,4 +409,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the width it was given**: repaired at `ad117d2f`, found and gated on the
     Windows box; the net is owed at the lane's close.
 
+    **2026-09-30, lane 134, publish's cases force a failed rename the one way
+    every platform refuses**: `b5462c86`, gated by the compiler's own tests
+    on this Mac and on the Windows box; the net is owed at the lane's close.
+
 *******************************************************************************
