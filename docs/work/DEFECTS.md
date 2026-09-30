@@ -304,6 +304,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and 0 alone; the census of 1358 files moved the six new cases and nothing
     else. The shapes still open are the next batch's items.
 
+    **2026-09-30, lane recovery-b4, a sigil before a name is one message at
+    its `@`, and the line is read as the statement it is with the sigil gone**
+    (the recovery instrument's `at-prefix`): repaired at `4441148b`, gated by
+    its cases and the compiler's own tests; the net is owed at the batch's
+    close.
+
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
     **Origin:** lane 129's agent, 2026-09-29, beside defect 129 (its finding 2,

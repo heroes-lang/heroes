@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-132-a-comma-after-a-member-beside-its-own-mistake.hero:9:11: error[expected_end_of_line]: expected the end of the line after the field `x`, found `,` — one field per line, `name: type`, and no `,` ends a member's line
+tests/golden/check/fixedbugs-132-a-comma-after-a-member-beside-its-own-mistake.hero:10:8: error[expected_type]: expected a type, found `,` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+tests/golden/check/fixedbugs-132-a-comma-after-a-member-beside-its-own-mistake.hero:14:11: error[expected_end_of_line]: expected the end of the line after the field `a`, found `,` — one field per line, `name: type`, and no `,` ends a member's line
+tests/golden/check/fixedbugs-132-a-comma-after-a-member-beside-its-own-mistake.hero:15:6: error[expected_field_type]: expected `:` and the field's type, found `,`

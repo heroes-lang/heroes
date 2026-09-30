@@ -1,0 +1,19 @@
+# Fixed 2026-09-30, defect 132's class, lane recovery-b4, beside
+# `fixedbugs-132-a-comma-after-every-member-is-one-message`. A member's line
+# that holds a mistake of its own besides the `,` has that mistake told as
+# well, a field's type missing or its `:` left out, and the habit is told
+# once for the declaration: `--apply` deletes the commas it reaches and
+# leaves the member's own mistake standing, which no certain fix repairs.
+
+record P
+    x: i64  #~ expected_end_of_line
+    y: ,  #~ expected_type
+    z: i64
+
+record Q
+    a: i64  #~ expected_end_of_line
+    b,  #~ expected_field_type
+    c: i64
+
+function main()
+    print(1)

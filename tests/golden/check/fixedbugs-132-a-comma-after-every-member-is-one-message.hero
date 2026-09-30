@@ -1,0 +1,49 @@
+# Fixed 2026-09-30, defect 132's class, lane recovery-b4 (the recovery
+# instrument's `field-commas`: 154 of 154 EXTRA at batch 3's gate). Symptom:
+# a `,` after every field or case, Rust's and Swift's separator, left each
+# line open, so the lexer joined it to the next member's,
+# `continuation_outside_brackets` at every break, and the parser then
+# refused the joined line's `,`, `expected_end_of_line`: a message a member,
+# and no fix. A `,` ends no line of a program that compiles at depth zero,
+# so the line ends there now, and the declaration's first member whose line
+# ends with one is told, every later `,` of the declaration one more certain
+# deletion of that report; an `extern` group's members the same.
+
+record Point
+    x: i64,  #~ expected_end_of_line
+    y: i64,
+
+# The last member without one, a comment between, and a space before one.
+record Span
+    # where it starts
+    start: i64 ,  #~ expected_end_of_line
+    end: i64,
+    names: {str: i64}
+
+variant Colour
+    red,  #~ expected_end_of_line
+    green,
+    blue,
+
+# A case's fields below it: the case's name and each field with its `,`.
+variant Shape
+    circle,  #~ expected_end_of_line
+        r: f64,
+    square,
+        side: f64,
+    dot,
+
+extern "stdlib.h"
+    function abs(n: i32) -> i32,  #~ expected_extern_signature
+    function labs(n: i64) -> i64,
+
+# A group's record is a declaration of its own, with its own one report.
+extern "stdio.h"
+    constant EOF: i64,  #~ expected_extern_signature
+    record FileStat tag stat partial
+        size: i64,  #~ expected_end_of_line
+        mode: u16,
+
+function main()
+    p = Point(x: 1, y: 2)
+    print(p.x + p.y)

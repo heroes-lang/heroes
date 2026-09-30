@@ -234,7 +234,7 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     # below it, so the line the author broke after the arrow is refused and
     # joined as that body; ended, the arm would be refused for a missing body
     # written one line down.
-    split = fresh || binding || left.kind == .kw_else && (first.is_err() || first.must() != .kw_if)
+    split = fresh || binding || line_above.ends_with_a_separator(l.tokens, at: at, spaces: spaces, margin: margin) || left.kind == .kw_else && (first.is_err() || first.must() != .kw_if)
 
     if split && left.kind != .fat_arrow
         ended(@l)

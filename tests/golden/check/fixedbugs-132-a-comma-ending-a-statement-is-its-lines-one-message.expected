@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-132-a-comma-ending-a-statement-is-its-lines-one-message.hero:10:15: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-132-a-comma-ending-a-statement-is-its-lines-one-message.hero:15:13: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, no semicolons
