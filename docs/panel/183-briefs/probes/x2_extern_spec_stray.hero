@@ -1,0 +1,8 @@
+extern "sqlite3.h" link "sqlite3"
+    constant SQLITE_OK: i64
+    record Db tag sqlite3
+    function sqlite3_open(path: cstr lent, @out: Db acquires sqlite3_close -> i64
+    function sqlite3_close(db: Db consumes)) -> i64
+
+function main()
+    print(1)
