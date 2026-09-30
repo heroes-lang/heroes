@@ -140,6 +140,25 @@ The regression batch 3 left in `missing_body`, which this sitting's critic
 found, was repaired the same afternoon in that lane (`3a93d155`), before the
 yes.
 
+**The landing, recorded 2026-10-01** (lane recovery-b4: R1 with R4's
+sentence at `e5076b57`, R2 with R4's clause at `ab36aa61`, the batch gate at
+`84430015`, integrated into the trunk at `3cc3b553`): **R3 did not land, on
+its own measurement.** As sat, R3 tells a bracket *closed later in the
+file* as the statement inside it, and Task 2's `(` at 5:19, which the stray
+`)` at 10:25 closes by the lexer's pairing, is such a bracket, while R6 asks
+that this `(` be named: the two cannot both hold. So the shapes are pinned
+as the rule's known cost, as R3's last clause provides, in
+`tests/golden/check/panel-183-a-statement-inside-a-bracket-closed-below-is-the-rules-known-cost.hero`:
+four functions, `g5`, `g6`, `b_if_col0` and R2's `m1`, 4 messages on the
+trunk's compiler before R1 (`a294a6ff`, one per function) and 12 on
+`3cc3b553` (2, 2, 5 and 3), each opener told *never closed* though its
+closer is written, measured again by the coordinator at 00:20 on
+2026-10-01; `g7`, measured by the lane and not in the case, 1 to 4. Against
+it, R6's run at each landing: 1,394 tracked files, 0 outputs moved; 13,594
+single mistakes, none gaining `unclosed_bracket`, 7 and then 8 to fewer
+messages, none to more. **The author chooses**: `docs/work/DECIDE.md`, the
+item `panel 183`.
+
 ## The critic's two passes
 
 `183-reports/completeness-critic-briefs.md` (the briefs, before any seat) and
