@@ -23,6 +23,8 @@
 # | `never_closed` | `grammar_expr.array_literal`, `grammar_expr.map_literal` |
 # | `end_literal` | the same two |
 # | `end_group`, `end_arguments`, `end_index` | `grammar_expr.group`, `grammar_expr.call_args`, `grammar_expr.postfix` |
+# | `swallows_the_body`, `past_what_was_swallowed` | `parse/opening.body_follows`, `parse/braces.body_or_block` |
+# | `withdrawn` | `parse.parse_source`, `parse.parse_bounded` |
 # | `type_closer` | `parse/type`'s array, map and function types |
 
 use token
@@ -116,6 +118,50 @@ function past_what_goes_on(@c: cursor.Cursor, text: str, holds: line_end.Holds)
 
         while !cursor.at(c, .terminator) && !cursor.at(c, .eof) && !cursor.at(c, .dedent)
             _ = cursor.bump(@c)
+
+# Whether a head's line, from token `from` to the cursor, holds an opener the
+# lexer named never closed, and the cursor stands on a line below still in
+# that opener's reach: the lines the head's body would be, read inside the
+# bracket and laid out as none, so their absence as a body is the opener's,
+# which the lexer named (lane recovery-b2, U5). Where nothing is left in the
+# reach, the body is missing as any is.
+function swallows_the_body(c: cursor.Cursor, text: str, from: i64) -> bool
+    open = head_opener(c, text, from: from)
+    return open >= 0 && in_reach(c, open: open)
+
+# The lines a declaration's head swallowed so (`swallows_the_body`), passed
+# over to where the lexer named the opener, the next declaration's line or
+# the file's end: they are no body, and read as the top level they would be
+# each a declaration it is not.
+function past_what_was_swallowed(@c: cursor.Cursor, text: str, from: i64)
+    open = head_opener(c, text, from: from)
+
+    if open < 0
+        return
+
+    while in_reach(c, open: open)
+        _ = cursor.bump(@c)
+
+# The first opener on a head's line, from token `from` to the cursor, that
+# the lexer named never closed, or -1.
+function head_opener(c: cursor.Cursor, text: str, from: i64) -> i64
+    i: i64 @ from
+
+    while i < c.pos
+        k = c.tokens[i].kind
+
+        if (k == .lparen || k == .lbracket || k == .lbrace) && never_closed(c, text, open: i)
+            return i
+        i @ i + 1
+
+    return -1
+
+# Whether the cursor stands inside the reach of the opener at `open`: before
+# where the lexer named it, and inside the author's text.
+function in_reach(c: cursor.Cursor, open: i64) -> bool
+    ends = close_after(c, at: c.tokens[open].span.start)
+    here = cursor.current_span(c).start
+    return !cursor.at(c, .eof) && (ends < 0 || here < ends) && (c.root_end < 0 || here < c.root_end)
 
 ## Where a closer is owed
 

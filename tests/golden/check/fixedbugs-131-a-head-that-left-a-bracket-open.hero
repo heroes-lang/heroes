@@ -1,0 +1,58 @@
+# Fixed 2026-09-30, defect 131's class, lane recovery-b2 (lane recovery-b1's
+# report, U5). Symptom: a signature whose `(` never closed named its missing
+# `)` beside the lexer's `unclosed_bracket`, at the body's first word, and the
+# body, which the lexer read inside the bracket and laid out as no block, was
+# then refused line by line at the top level: `function f(a: i64` over
+# `print(a)` cost `expected_params_close` at `print`, and with a declaration
+# below, `expected_declaration` too. Cause: the parameter list sought its
+# closer as a call's did before
+# `fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open`, and the
+# body's absence was said as any other. Now the list ends at its line end no
+# `,` goes on from and names no closer; a head whose line holds an opener
+# the lexer named, with lines below in that opener's reach, leaves its body
+# unsaid, a declaration's head passing those lines over to where the lexer
+# named it and a statement's reading them as its block's own
+# (`parse/unclosed.swallows_the_body`). A head with nothing in the reach
+# still has its body named missing, at the next declaration, a mistake of
+# its own.
+
+function one_parameter(a: i64  #~ unclosed_bracket
+    print(a)
+
+function two_lines_of_them(a: i64,  #~ unclosed_bracket
+        b: i64
+    print(a + b)
+
+function a_result_on_its_line(a: i64 -> i64  #~ unclosed_bracket
+    return a
+
+function generic<T>(v: T  #~ unclosed_bracket
+    print(1)
+
+constant K: [i64  #~ unclosed_bracket
+    [1]
+
+function nothing_below(a: i64  #~ unclosed_bracket
+
+# The missing body is named at the next declaration's first word.
+function an_if(n: i64)  #~ missing_body
+    if f(n  #~ unclosed_bracket
+        print(n)
+    print(2)
+
+function a_while(n: i64)
+    while (n > 0  #~ unclosed_bracket
+        print(n)
+
+function a_for()
+    for x in [1, 2  #~ unclosed_bracket
+        print(x)
+
+function a_match(n: i64)
+    k = match f(n  #~ unclosed_bracket
+        0 => 1
+        _ => 2
+    print(k)
+
+function main()
+    print(1) )  #~ expected_end_of_line
