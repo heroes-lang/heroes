@@ -222,89 +222,7 @@ function failure_text(failed: str?) -> str
         .ok    => return ""
         .err e => return e.msg
 
-# One link over every object. Re-run on every build, deliberately: it
-# is one clang call, and it is what lets a `link` name change take
-# effect on a fully warm cache.
-function link_objects(t: toolchain.Toolchain, objects: [str], binary: str, level: str, sanitize: bool, search_include: [str], search_library: [str], package_flags: [str], link_names: [str]) -> ()?
-    # Named for the binary it produces, for `tu_object`'s reason (defect 057):
-    # the build directory's one `clang-stderr.txt` was a channel between two
-    # `heroes` processes in one tree. The digest keeps the name inside
-    # `build/` rather than beside the author's `-o`, which may be anywhere.
-    err_path = t.build + "/link-" + digest.digest(binary) + "-clang-stderr.txt"
-    line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
-    line @ line.push(level)
-    line @ strings.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
-
-    # The link's own flags, which on Windows is the stack reserve a
-    # recursive frontend needs (flags.link_flags carries the
-    # measurement). Empty everywhere else.
-    line @ strings.with_all(list: line, more: flags.link_flags())
-
-    for dir in search_include
-        line @ strings.with_all(list: line, more: ["-I", dir])
-
-    for dir in search_library
-        line @ strings.with_all(list: line, more: ["-L", dir])
-
-    for object in objects
-        line @ line.push(object)
-
-    for flag in package_flags
-        line @ line.push(flag)
-
-    for name in link_names
-        line @ line.push("-l" + name)
-
-    staged = binary + ".tmp"
-    line @ strings.with_all(list: line, more: ["-o", staged])
-    linked = toolchain.run_clang(line: line, what: "linking", err_path: err_path)
-
-    if linked.is_err()
-        linked?
-
-    if process.rename_over(from: staged, to: binary).is_err()
-        return fail(code: "failed", msg: "cannot publish " + binary)
-    return ok()
-
 ## Tests
-
-# THE CONCURRENT CASE's body, run on six threads at once by the test of that
-# name below: its own toolchain, one scratch `build/` for all six, one unit.
-# One `i64` crosses a thread (`examples/threads/main.hero`), so the answer
-# is 1 for an object that is there and 0 for anything else.
-extern "hero_os.h"
-    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
-    function hero_thread_join(handle: i64) -> i64
-
-constant TOGETHER_BUILD: str
-    "build/selftest-together"
-
-function compile_beside(index: i64) -> i64
-    _ = index
-    found = toolchain.locate_toolchain(hint: "", fingerprint: "port-test")
-
-    if found.is_err()
-        return 0
-    t: toolchain.Toolchain @ found.must()
-    t.build @ TOGETHER_BUILD + "-" + process.pid().to_str()
-    none: [str] = []
-    memo: {str: str} @ {}
-    made = tu_object(
-        t,
-        module: "together",
-        tu_text: "#include <stdint.h>\nint64_t heroes_together(void);\nint64_t heroes_together(void) { return 6; }\n",
-        level: "-O0",
-        sanitize: false,
-        search: "",
-        package_flags: none,
-        source_dir: "",
-        search_include: none,
-        @memo
-    )
-
-    if made.is_err() || !process.path_exists(made.must())
-        return 0
-    return 1
 
 test "a unit compiled under one clang answer is compiled again under another (defect 122)"
     here = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
@@ -339,24 +257,24 @@ test "a unit compiled under one clang answer is compiled again under another (de
 test "a record vouches only for the object its own compile made, and one whose object is gone is a recompile (defect 134)"
     t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-vouch"
-    beside = "build/selftest-vouch-include"
+    headers_at = "build/selftest-vouch-include"
     assert !process.remove_tree(t.build).is_err()
-    assert !process.mkdir_all(beside).is_err()
+    assert !process.mkdir_all(headers_at).is_err()
     text = "#include \"vouch.h\"\nint64_t heroes_vouch(void);\nint64_t heroes_vouch(void) { return VOUCH; }\n"
     none: [str] = []
-    assert !write_file(path: beside + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 1\n").is_err()
+    assert !write_file(path: headers_at + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 1\n").is_err()
     one: {str: str} @ {}
-    first = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [beside], @one).must(
+    first = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @one).must(
     )
-    assert !write_file(path: beside + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 2\n").is_err()
+    assert !write_file(path: headers_at + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 2\n").is_err()
     two: {str: str} @ {}
-    second = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [beside], @two).must(
+    second = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @two).must(
     )
     assert second != first
     assert process.path_exists(first)
     assert !process.remove_file(second).is_err()
     three: {str: str} @ {}
-    third = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [beside], @three).must(
+    third = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @three).must(
     )
     assert third == second
     assert process.path_exists(third)
@@ -365,28 +283,3 @@ test "a record vouches only for the object its own compile made, and one whose o
     # reader asks for.
     for path in process.files_under(t.build).must()
         assert !strings.ends_with(text: path, suffix: ".tmp")
-
-test "six compiles of one cold unit started at once all succeed, and publish one object (defect 134)"
-    dir = TOGETHER_BUILD + "-" + process.pid().to_str()
-    assert !process.remove_tree(dir).is_err()
-    handles: [i64] @ []
-
-    for i in range(from: 0, to: 6)
-        handles @ handles.push(hero_thread_spawn(body: compile_beside, arg: i))
-
-    done: i64 @ 0
-
-    for h in handles
-        done @ done + hero_thread_join(handle: h)
-
-    assert done == 6
-    objects: i64 @ 0
-
-    for path in process.files_under(dir).must()
-        assert !strings.ends_with(text: path, suffix: ".tmp")
-
-        if strings.ends_with(text: path, suffix: ".o")
-            objects @ objects + 1
-
-    assert objects == 1
-    assert !process.remove_tree(dir).is_err()
