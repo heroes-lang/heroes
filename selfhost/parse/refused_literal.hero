@@ -22,6 +22,7 @@ use token
 use cursor
 use describe
 use lexer
+use literals
 
 # Whether the cursor stands on a literal the lexer refused, a number or a
 # quoted literal: an `error` token whose first byte is a digit or a quote.
@@ -43,7 +44,7 @@ function read_as(c: cursor.Cursor, text: str) -> token.TokenKind
 
 # Whether the refused literal under the cursor ends where its own spelling
 # ends it: a number always, a quoted literal where its own quote closes it,
-# unescaped. One the lexer found never closed, `"abc + )` or `'\'`, ran to
+# unescaped. One the lexer found never closed, `"abc + )` or `'a + )`, ran to
 # its line's end and took any closer on the line with it, so no operand of
 # its line is left past it, and read as a value it had a call look for the
 # `)` it holds (lane recovery-b1, 2026-09-30).
@@ -52,6 +53,12 @@ function closed(c: cursor.Cursor, text: str) -> bool
     quote = text[s.start]
 
     if quote != '"' && quote != '\''
+        return true
+
+    # The classic `'\'`, its backslash before the quote that should close it,
+    # ends there, the rest of its line lexed, and is the character its certain
+    # fix writes, `'\\'` (`literals.unterminated_char`, lane recovery-b2).
+    if quote == '\'' && s.end - s.start == 3 && literals.classic_backslash(text, at: s.start)
         return true
 
     if s.end - s.start < 2 || text[s.end - 1] != quote
@@ -85,14 +92,16 @@ function found(c: cursor.Cursor, text: str) -> str
 ## Tests
 
 test "a refused literal is read as its literal where its own spelling ends it"
-    # `0X10` and `'ab'` end where they are spelled; `"abc` and `'\'` never
-    # closed, and took the rest of their line with them.
-    for text in ["0X10 + )", "'ab' + )", "'a\\\\' + )"]
+    # `0X10` and `'ab'` end where they are spelled, and so does the classic
+    # `'\'` since lane recovery-b2 (U3), at its third byte, read as the `'\\'`
+    # its certain fix writes; `"abc` and `'a` never closed, and took the rest
+    # of their line with them.
+    for text in ["0X10 + )", "'ab' + )", "'a\\\\' + )", "'\\' + )"]
         c = cursor.new_cursor(lexer.lex_one(text).tokens)
         assert here(c, text)
         assert read_as(c, text) != .error
 
-    for text in ["\"abc + )", "'\\' + )"]
+    for text in ["\"abc + )", "'a + )"]
         c = cursor.new_cursor(lexer.lex_one(text).tokens)
         assert here(c, text)
         assert read_as(c, text) == .error

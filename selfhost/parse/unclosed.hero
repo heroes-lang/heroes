@@ -29,6 +29,7 @@ use token
 use diag
 use cursor
 use parse/line_end
+use literals
 use lexer
 
 # Whether no closer closes the opener at token `open`, as the lexer's stack
@@ -36,8 +37,12 @@ use lexer
 # the file the opener stands in. The author's text ends at `root_end`, where
 # the lexer ended its file and named what was left open; and the lexer named
 # every opener still open at a declaration opening its line at column 0
-# (`cursor.Cursor.closes`), so a closer past one closes nothing before it.
-function never_closed(c: cursor.Cursor, open: i64) -> bool
+# (`cursor.Cursor.closes`), so a closer past one closes nothing before it. A
+# literal that never closed took the closers on the rest of its line
+# (`literals.closers_taken`), popped as the lexer popped them: an opener one
+# of those closed has no closer the parser can take, and is asked as one
+# never closed, which it names none of.
+function never_closed(c: cursor.Cursor, text: str, open: i64) -> bool
     depth: i64 @ 0
     i: i64 @ open
     bounded = c.root_end >= 0 && c.tokens[open].span.start < c.root_end
@@ -55,6 +60,11 @@ function never_closed(c: cursor.Cursor, open: i64) -> bool
 
             if depth == 0
                 return false
+        else if k == .error
+            depth @ depth - literals.closers_taken(text, c.tokens[i].span)
+
+            if depth <= 0
+                return true
         i @ i + 1
 
     return true
@@ -114,7 +124,7 @@ function past_what_goes_on(@c: cursor.Cursor, text: str, holds: line_end.Holds)
 # at all where the opener is never closed, whose closer the lexer named and
 # which has none.
 function end_literal(@c: cursor.Cursor, text: str, open: i64)
-    if never_closed(c, open: open)
+    if never_closed(c, text, open: open)
         past_what_goes_on(@c, text: text, holds: .elements)
         return
     what: str @ "`}` to close the map"
@@ -132,7 +142,7 @@ function end_literal(@c: cursor.Cursor, text: str, open: i64)
 # missing and recovered past; and where the lexer found its `(` never closed
 # and named it, none is sought, and the group ends where its expression does.
 function end_group(@c: cursor.Cursor, text: str, open: i64)
-    if never_closed(c, open: open)
+    if never_closed(c, text, open: open)
         past_what_goes_on(@c, text: text, holds: .one_value)
         return
     cursor.skip_terminators(@c)
@@ -143,7 +153,7 @@ function end_group(@c: cursor.Cursor, text: str, open: i64)
 # The same for an argument list's `)`, which ends where the lexer named its
 # `(` at the line end no `,` goes on from (`ends_at_the_line`), as a literal.
 function end_arguments(@c: cursor.Cursor, text: str, open: i64)
-    if never_closed(c, open: open)
+    if never_closed(c, text, open: open)
         past_what_goes_on(@c, text: text, holds: .arguments)
         return
     cursor.skip_terminators(@c)
@@ -154,7 +164,7 @@ function end_arguments(@c: cursor.Cursor, text: str, open: i64)
 # The same for an index's `]`; the span the index ends at is returned, its
 # last token's where the `[` is never closed.
 function end_index(@c: cursor.Cursor, text: str, open: i64) -> token.Span
-    if never_closed(c, open: open)
+    if never_closed(c, text, open: open)
         close = cursor.previous_significant_span(c)
         past_what_goes_on(@c, text: text, holds: .one_value)
         return close
@@ -175,7 +185,7 @@ function end_index(@c: cursor.Cursor, text: str, open: i64) -> token.Span
 # the type ends at is returned. Where the opener is never closed nothing is
 # named and no line end is crossed: the type ends at its last token.
 function type_closer(@c: cursor.Cursor, text: str, open: i64) -> token.Span
-    if never_closed(c, open: open)
+    if never_closed(c, text, open: open)
         return cursor.previous_significant_span(c)
     kind = closer_of(c.tokens[open].kind)
     what: str @ "`)` to close the function type"
@@ -231,26 +241,42 @@ function closer_of(opener: token.TokenKind) -> token.TokenKind
 ## Tests
 
 test "an opener is never closed where the lexer's stack leaves it open"
-    tokens = lexer.lex_one("n: [i64 @ [3]\nm = (1 + [2, 3])\n").tokens
+    text = "n: [i64 @ [3]\nm = (1 + [2, 3])\n"
 
     # `[` at 2 is left open, the one at 5 is closed by the `]` at 7, and the
     # `(` at 11 by its `)`, a `[` and its `]` between them.
-    c = cursor.new_cursor(tokens)
-    assert never_closed(c, open: 2)
-    assert !never_closed(c, open: 5)
-    assert !never_closed(c, open: 11)
+    c = cursor.new_cursor(lexer.lex_one(text).tokens)
+    assert never_closed(c, text, open: 2)
+    assert !never_closed(c, text, open: 5)
+    assert !never_closed(c, text, open: 11)
 
     # A stray closer of another kind pops the opener, as the lexer's does.
-    d = cursor.new_cursor(lexer.lex_one("x = [1, 2)\n").tokens)
-    assert !never_closed(d, open: 2)
+    stray = "x = [1, 2)\n"
+    d = cursor.new_cursor(lexer.lex_one(stray).tokens)
+    assert !never_closed(d, stray, open: 2)
 
 test "an opener is never closed past the declaration the lexer named it at"
-    out = lexer.lex_one("function f()\n    x = [1, 2\n\nfunction main()\n    print(1) )\n")
+    text = "function f()\n    x = [1, 2\n\nfunction main()\n    print(1) )\n"
+    out = lexer.lex_one(text)
     assert out.closes == [28]
 
     # The `[` at 8, and the stray `)` of `print(1) )` that the stack pairs
     # with it: past the close at 28 it closes nothing before it.
     told = cursor.lexed_cursor(tokens: out.tokens, root_end: -1, closes: out.closes)
-    assert never_closed(told, open: 8)
+    assert never_closed(told, text, open: 8)
     untold = cursor.new_cursor(out.tokens)
-    assert !never_closed(untold, open: 8)
+    assert !never_closed(untold, text, open: 8)
+
+# Lane recovery-b2, U3: a literal that never closed took the closers on the
+# rest of its line, and the lexer popped what they close; so does this, and
+# a stray closer on the next line pairs with nothing before the literal.
+test "an opener whose closer a literal that never closed took has no closer to take"
+    text = "x = f(\"abc)\nprint(1) )\n"
+    out = lexer.lex_one(text)
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "unterminated_string"
+    c = cursor.new_cursor(out.tokens)
+    assert never_closed(c, text, open: 3)
+    kept = "x = f(\"abc\n, 2)\n"
+    k = cursor.new_cursor(lexer.lex_one(kept).tokens)
+    assert !never_closed(k, kept, open: 3)

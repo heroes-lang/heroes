@@ -200,6 +200,14 @@ function maybe_terminator(@l: state.LexState)
     kind = l.last_significant.must()
     ender = is_line_ender(kind)
 
+    # A literal that never closed ran to this line end and took what the line
+    # held: the line is over at any depth, as a line an `error` token ends is
+    # at depth zero, so the line below is read as its own.
+    if l.swallowed
+        l.swallowed @ false
+        state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: l.pos, end: l.pos)))
+        return
+
     if l.open_brackets.len() == 0
         # An `error` token ends a line at depth zero (panel 181): the lexer has
         # spoken there, and a line glued on below it went into the recovery

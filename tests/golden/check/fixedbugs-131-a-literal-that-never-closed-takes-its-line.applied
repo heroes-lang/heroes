@@ -1,0 +1,48 @@
+# Fixed 2026-09-30, defect 131's class, lane recovery-b2 (lane recovery-b1's
+# report, U3). Symptom: a string or a character that never closed inside a
+# call took the rest of its line, closers included, and the lexer named the
+# openers they closed never closed: `x = f("abc + )` cost
+# `unterminated_string` and `unclosed_bracket` for one mistake, and
+# `print(f("a" + "b))` three; the line below was read inside the bracket.
+# And the classic `'\'` had a certain fix over the whole rest of its line:
+# `--apply` wrote `f('\' + )` as `f('\\'`, the `+ )` gone and a report the
+# first run never made in its place. Cause: a literal that never closed ran
+# to its line's end and the stack never heard of the closers it took. Now
+# they pop what they close, in the lexer and the parser alike
+# (`literals.swallow`, `literals.closers_taken`), the line end after the
+# literal is a line end at any depth, and `'\'` ends at its third byte, its
+# fix over those bytes alone, the rest of its line lexed and read.
+
+function one_closer_taken()
+    x = f("abc + )  #~ unterminated_string
+    print(x)
+
+function the_closer_alone()
+    y = f("abc)  #~ unterminated_string
+    print(y)
+
+function two_closers_taken()
+    zs = [f("a), 2]  #~ unterminated_string
+    print(zs.len())
+
+function a_second_string()
+    print(f("a" + "b))  #~ unterminated_string
+
+function no_closer_taken()
+    w = f("abc  #~ unterminated_string unclosed_bracket
+    print(w)
+
+function a_stray_closer_below()
+    v = f("abc)  #~ unterminated_string
+    print(1) )  #~ expected_end_of_line
+
+function the_classic_backslash()
+    u = g('\\' + )  #~ unterminated_char expected_expression
+    print(u)
+
+function the_classic_whole()
+    print(g('\\'))  #~ unterminated_char
+
+function outside_brackets()
+    t = "abc  #~ unterminated_string
+    print(t)

@@ -1,0 +1,12 @@
+tests/golden/check/fixedbugs-131-a-literal-that-never-closed-takes-its-line.hero:17:11: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-literal-that-never-closed-takes-its-line.hero:21:11: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-literal-that-never-closed-takes-its-line.hero:25:13: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-literal-that-never-closed-takes-its-line.hero:29:19: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-literal-that-never-closed-takes-its-line.hero:32:11: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-literal-that-never-closed-takes-its-line.hero:32:10: error[unclosed_bracket]: `(` opened here is never closed
+tests/golden/check/fixedbugs-131-a-literal-that-never-closed-takes-its-line.hero:36:11: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-literal-that-never-closed-takes-its-line.hero:40:11: error[unterminated_char]: this character literal never closes — write one character between single quotes: 'a'
+tests/golden/check/fixedbugs-131-a-literal-that-never-closed-takes-its-line.hero:44:13: error[unterminated_char]: this character literal never closes — write one character between single quotes: 'a'
+tests/golden/check/fixedbugs-131-a-literal-that-never-closed-takes-its-line.hero:47:9: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-literal-that-never-closed-takes-its-line.hero:37:14: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-a-literal-that-never-closed-takes-its-line.hero:40:17: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

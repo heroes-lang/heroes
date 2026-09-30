@@ -123,6 +123,7 @@ function string(@l: state.LexState, text: str)
         @l,
         diag.new_diagnostic(code: "unterminated_string", message: "this string never closes — strings are single-line, `\"` to `\"`", span: span)
     )
+    swallow(@l, text, start: start)
 
 ## The character
 
@@ -132,6 +133,7 @@ function string(@l: state.LexState, text: str)
 # an error, not an interpretation.
 function char_lit(@l: state.LexState, text: str)
     start = l.pos
+    said = l.diagnostics.len()
     content_start = start + 1
     l.pos @ content_start
 
@@ -162,6 +164,11 @@ function char_lit(@l: state.LexState, text: str)
             units @ units + 1
 
     if !closed
+        # The classic `'\'` ends at its third byte, and what the scan said
+        # past it is said again when the rest of the line is lexed.
+        if classic_backslash(text, at: start)
+            l.diagnostics @ l.diagnostics.slice(from: 0, to: said)
+            l.pos @ start + 3
         unterminated_char(@l, text, start)
         return
     content = text.slice(from: content_start, to: l.pos)
@@ -178,7 +185,14 @@ function char_lit(@l: state.LexState, text: str)
 
 # No closing quote on this line. `l.pos` is already where the scan stopped
 # (on the newline, never past it).
+#
+# `'\'` is the classic: the backslash escaped the closing quote. The literal
+# is those three bytes, and the rest of the line is lexed after them, so the
+# certain fix, `'\\'`, replaces the three and nothing else: over the whole
+# rest of the line, `f('\' + )` was written `f('\\'`, the `+ )` gone and a
+# report the first run never made in its place (lane recovery-b2, U3).
 function unterminated_char(@l: state.LexState, text: str, start: i64)
+    classic = l.pos == start + 3 && classic_backslash(text, at: start)
     span = token.Span(start: start, end: l.pos)
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "unterminated_char",
@@ -186,12 +200,84 @@ function unterminated_char(@l: state.LexState, text: str, start: i64)
         span: span
     )
 
-    # `'\'` is the classic: the backslash escaped the closing quote.
-    if contains_backslash(text.slice(from: start, to: l.pos))
+    if classic
         d.fixes @ d.fixes.push(
             diag.Fix(title: "escape the backslash: `'\\\\'`", replacement: "'\\\\'", span: span, certainty: .certain)
         )
     state.error_token(@l, d)
+
+    if !classic
+        swallow(@l, text, start: start)
+
+# Whether the character literal at `at` opens with `'\'`, its backslash
+# before the quote that should have closed it.
+function classic_backslash(text: str, at: i64) -> bool
+    return at + 2 < text.len() && text[at + 1] == '\\' && text[at + 2] == '\''
+
+## What a literal that never closed swallowed
+
+# The closers in `swallowed`, the text an unterminated literal ran over to its
+# line's end, that close no opener of its own: what they would have closed of
+# the brackets open before the literal, had it closed where its author meant.
+# The lexer pops that many (`swallow`) and the parser counts the same
+# (`parse/unclosed.never_closed`), so the two agree on every bracket.
+function unmatched_closers(swallowed: str) -> i64
+    depth: i64 @ 0
+    unmatched: i64 @ 0
+    i: i64 @ 0
+
+    while i < swallowed.len()
+        b = swallowed[i]
+
+        if b == '(' || b == '[' || b == '{'
+            depth @ depth + 1
+        else if b == ')' || b == ']' || b == '}'
+            if depth > 0
+                depth @ depth - 1
+            else
+                unmatched @ unmatched + 1
+        i @ i + 1
+
+    return unmatched
+
+# How many of the brackets open before it the literal at `span` took the
+# closers of, read from its `error` token as the lexer popped them: a quoted
+# literal its own quote does not close, `"abc)`, took its unmatched closers;
+# any other token took none. The classic `'\'` ends before anything it could
+# take, so its answer is none either way.
+function closers_taken(text: str, span: token.Span) -> i64
+    quote = text[span.start]
+
+    if quote != '"' && quote != '\''
+        return 0
+
+    if span.end - span.start >= 2 && text[span.end - 1] == quote
+        slashes: i64 @ 0
+        i: i64 @ span.end - 2
+
+        while i > span.start && text[i] == '\\'
+            slashes @ slashes + 1
+            i @ i - 1
+
+        if slashes % 2 == 0
+            return 0
+    return unmatched_closers(text.slice(from: span.start, to: span.end))
+
+# A literal that never closed took every closer on the rest of its line: the
+# brackets those close are popped, as `state.emit` pops for a closer, so none
+# of them is named never closed, `f("abc)` costing `unterminated_string` and
+# `unclosed_bracket` for one mistake; and the line end after it is a line end
+# at any depth (`LexState.swallowed`), so the line below is its own and not
+# the rest of a literal that ended its line (defect 131's class, lane
+# recovery-b2, U3).
+function swallow(@l: state.LexState, text: str, start: i64)
+    left: i64 @ unmatched_closers(text.slice(from: start, to: l.pos))
+
+    while left > 0 && l.open_brackets.len() > 0
+        l.open_brackets @ l.open_brackets.slice(from: 0, to: l.open_brackets.len() - 1)
+        left @ left - 1
+
+    l.swallowed @ true
 
 ## Byte questions the scanners ask
 
@@ -207,16 +293,6 @@ function all_ascii(s: str) -> bool
         i @ i + 1
 
     return true
-
-function contains_backslash(s: str) -> bool
-    i: i64 @ 0
-
-    while i < s.len()
-        if s[i] == '\\'
-            return true
-        i @ i + 1
-
-    return false
 
 test "a string is one token and a bad escape does not poison it"
     l: state.LexState @ state.new_state()

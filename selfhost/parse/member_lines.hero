@@ -118,7 +118,7 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
             which = "the case `" + cursor.slice_of(text, name) + "`"
             fields: [ast.Field] @ []
 
-            if braces_close(c)
+            if braces_close(c, text)
                 told(@c, text: text, member: which, rule: CASE_RULE)
                 fields @ braced_fields(@c, @a, text)
             line_ends(@c, text: text, member: which, rule: CASE_RULE)
@@ -128,7 +128,7 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
                 for field in field_block(@c, @a, text)
                     fields @ fields.push(field)
             cases @ cases.push(ast.Case(name: name, fields: fields, doc: doc))
-        else if k == .lbrace && cases.len() > 0 && brace_habit.alone(text, cursor.current_span(c)) && braces_close(c)
+        else if k == .lbrace && cases.len() > 0 && brace_habit.alone(text, cursor.current_span(c)) && braces_close(c, text)
             # Allman's braces, alone on the line below a case: its fields,
             # told where the next case's name was owed and read as the case's.
             refused_case(@c, text)
@@ -180,8 +180,8 @@ function refused_case(@c: cursor.Cursor, text: str)
 # braces are; what stands past the `}` on its line is junk past the case.
 # Braces the lexer found never closed are not read, since the view would
 # reach the file's end (`parse/unclosed`).
-function braces_close(c: cursor.Cursor) -> bool
-    return cursor.at(c, .lbrace) && !unclosed.never_closed(c, open: c.pos)
+function braces_close(c: cursor.Cursor, text: str) -> bool
+    return cursor.at(c, .lbrace) && !unclosed.never_closed(c, text, open: c.pos)
 
 # The fields in the braces the cursor's `{` opens, and the cursor past them.
 function braced_fields(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
