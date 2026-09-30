@@ -1,0 +1,97 @@
+diff -ru /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/183-compiler-engineer/selfhost/layout.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/183-compiler-engineer/pe-full/selfhost/layout.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/183-compiler-engineer/selfhost/layout.hero	2026-09-30 04:51:11
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/183-compiler-engineer/pe-full/selfhost/layout.hero	2026-09-30 06:06:13
+@@ -86,12 +86,13 @@
+         )
+         return
+ 
+-    # Inside brackets the margin is not structural (panel 007), but a line at
+-    # column 0 that opens a declaration is inside them in no program that
+-    # compiles (`next_line.opens_a_declaration`): the brackets a mistake left
+-    # open are named there, and the line is laid out as the declaration it is.
++    # Inside brackets the margin is not structural (panel 007), but a line
++    # that opens with a word no bracket holds in a program that compiles, at a
++    # margin no deeper than the line the brackets opened on, is where a mistake
++    # left them open (`next_line.ends_a_reach`): they are named there, and the
++    # line is laid out as the declaration or statement it is.
+     if l.open_brackets.len() > 0
+-        if spaces > 0 || !next_line.opens_a_declaration(text, at: l.pos)
++        if !next_line.ends_a_reach(text, at: l.pos, spaces: spaces, margin: l.level * 4)
+             return
+         close_brackets(@l, text)
+         state.push_offset(@l.closes, at: l.pos)
+diff -ru /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/183-compiler-engineer/selfhost/next_line.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/183-compiler-engineer/pe-full/selfhost/next_line.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/183-compiler-engineer/selfhost/next_line.hero	2026-09-30 04:51:11
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/183-compiler-engineer/pe-full/selfhost/next_line.hero	2026-09-30 06:06:13
+@@ -209,15 +209,17 @@
+         return own
+     return keywords.keyword(word_at(swap.must(), at: 0))
+ 
+-# Does the line at `at`, at column 0, open with a word only a declaration
+-# opens with: `record`, `variant`, `constant`, `use`, `extern`, `test`, or
+-# `function` before a name? Inside brackets a line goes on at any column
+-# (design.md §4.15), and a function TYPE opens with `function` there, but
+-# before its `(` and never before a name. Measured 2026-09-30 over the 1350
+-# tracked `.hero` files and the specification's examples, by the lexer's own
+-# token stream: no such line stands inside brackets, so the lexer names there
+-# the brackets a mistake left open, and nothing that compiles moves.
+-function opens_a_declaration(text: str, at: i64) -> bool
++# Does the line at `at`, whose margin is `spaces`, end the reach of the
++# brackets still open, the line holding the outermost of them at `margin`?
++# Its first word is one no bracket holds in a program that compiles: a word
++# that starts afresh (`starts_afresh`), `if` or `match`, whose blocks no
++# bracket holds, and `function` before a name, since a function TYPE opens
++# with `function` before its `(`. And the line stands no deeper than the one
++# the brackets opened on: a deeper one is a continuation the author meant
++# inside them, `for x in xs` below `[x * 2`, which is refused where it stands.
++function ends_a_reach(text: str, at: i64, spaces: i64, margin: i64) -> bool
++    if spaces > margin
++        return false
+     word = word_at(text, at: at)
+     kind = keywords.keyword(word)
+ 
+@@ -225,6 +227,12 @@
+         return false
+     k = kind.must()
+ 
++    # An `else` stands at its `if`'s margin: below the line the brackets
++    # opened on where that `if` is outside them, and at that line's margin
++    # where it is an `if` expression inside them, whose brackets close.
++    if k == .kw_else
++        return spaces < margin
++
+     if k == .kw_function
+         after = at + word.len()
+         name: i64 @ after
+@@ -233,7 +241,7 @@
+             name @ name + 1
+ 
+         return name > after && name < text.len() && (bytes.is_alpha(text[name]) || text[name] == '_')
+-    return k == .kw_record || k == .kw_variant || k == .kw_constant || k == .kw_use || k == .kw_extern || k == .kw_test
++    return k == .kw_if || k == .kw_match || starts_afresh(k)
+ 
+ # A word that begins a declaration or a statement and can continue nothing:
+ # a line that begins with one is never the rest of the line above it.
+@@ -271,12 +279,17 @@
+     assert !holds_an_arrow("- \"=>\"\n", from: 0)
+     assert !holds_an_arrow("- fee  # => note\n", from: 0)
+ 
+-test "a line opens a declaration by its first word, and a function type opens none"
+-    for text in ["record P\n", "variant V\n", "constant K: i64\n", "use geom\n", "extern \"m.h\"\n", "test \"t\"\n", "function main()\n", "function  f()\n", "function g<T>(x: T)\n", "record\n", "record P {\r\n"]
+-        assert opens_a_declaration(text, at: 0)
++test "a line ends a reach by its first word and its margin, and a function type ends none"
++    for text in ["record P\n", "variant V\n", "constant K: i64\n", "use geom\n", "extern \"m.h\"\n", "test \"t\"\n", "function main()\n", "function  f()\n", "function g<T>(x: T)\n", "record\n", "record P {\r\n", "if c\n", "match n\n", "for x in xs\n", "while c\n", "return 1\n", "assert c\n", "break\n", "continue\n"]
++        assert ends_a_reach(text, at: 0, spaces: 0, margin: 0)
+ 
+-    for text in ["function(i64) -> i64)\n", "function (i64) -> i64)\n", "function\n", "records = 1\n", "use_count\n", "2]\n", ")\n", "# record\n", "\"record\"\n", "fn main()\n", "match n\n", ""]
+-        assert !opens_a_declaration(text, at: 0)
++    for text in ["function(i64) -> i64)\n", "function (i64) -> i64)\n", "function\n", "records = 1\n", "use_count\n", "2]\n", ")\n", "# record\n", "\"record\"\n", "fn main()\n", "in xs\n", "true\n", "fail(code: c, msg: m)\n", ""]
++        assert !ends_a_reach(text, at: 0, spaces: 0, margin: 0)
++
++    assert ends_a_reach("    if c\n", at: 4, spaces: 4, margin: 4)
++    assert !ends_a_reach("        for x in xs\n", at: 8, spaces: 8, margin: 4)
++    assert ends_a_reach("    else\n", at: 4, spaces: 4, margin: 8)
++    assert !ends_a_reach("    else\n", at: 4, spaces: 4, margin: 4)
+ 
+ test "a sign alone on its line, or before a comment, finds the arm's arrow on the next line with words"
+     assert arrow_below("-\n        1 => 10\n", from: 1)

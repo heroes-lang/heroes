@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 7 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
+**Open: 8 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
 `docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
@@ -24,7 +24,7 @@ against a banner reading 3.
 | The spec | **6838** on the vendored ranks and **9060** on the reader's own, against a ceiling of **10240**. The milestone spent six rows of `docs/measurements/010-spec-budget-ledger.md`: four in § 13 for what a C call does with a handle (panels 175 to 177, 8270 to 8861 real) and two for where a line breaks inside brackets and ends outside them (panels 180 and 181, 8861 to 9060) |
 | The contract | **7875** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-28 when § Verification gained the author's rule that a lane lives under `.claude/worktrees/` |
 | Records | sittings **179** · journals **62**, numbered files only · milestone files **51** · measurements **37** · entries: `docs/records/log/` **721**, `docs/records/done/` **631**, `docs/records/book/beats/` **129** |
-| Waiting on the author | **nothing on the decision list**: panels 175, 176, 177, 179, 180, 181 and 182 were ratified in one act on the evening of 2026-09-28, as a reading, each with its recommendation (`docs/records/log/2026-09-28-2311-seven-sittings-ratified-and-the-blind-seat-reads-a-copy.md`). **Six open defects on 2026-09-30**: 130 to 133, the parser's recovery, repaired batch by batch in one lane at a time (`1fc77e31` and `e5cc73eb` so far) and measured by an instrument over 13,594 planted mistakes; 134, two builds at once in one tree, in its own lane; 135, a `certain` fix that writes another program, filed from that instrument; 136, an in-place rewrite that destroys the author's source when its write fails |
+| Waiting on the author | **nothing on the decision list**: panels 175, 176, 177, 179, 180, 181 and 182 were ratified in one act on the evening of 2026-09-28, as a reading, each with its recommendation (`docs/records/log/2026-09-28-2311-seven-sittings-ratified-and-the-blind-seat-reads-a-copy.md`). **Seven open defects on 2026-09-30**: 130 to 133, the parser's recovery, repaired batch by batch in one lane at a time (batches 1 to 3 merged, the fourth in its lane) and measured by an instrument over 13,594 planted mistakes; 135, a `certain` fix that writes another program, its first shapes repaired in batch 3 and 16 of the 42 certain-fix sites found breaching by an audit; 136, an in-place rewrite that destroys the author's source when its write fails, in its own lane; 137, `check --apply` corrupting the text where two certain fixes overlap. Defect 134, two builds at once in one tree, closed at `f37ea722`'s merge; its Windows suites on the final tree and Linux arm64 are owed before the push |
 
 **Re-measured 2026-09-28 at the close, the full net on a compiler built from
 the regenerated seed, which is CI's own configuration: 3144 passed, 0 failed**,
