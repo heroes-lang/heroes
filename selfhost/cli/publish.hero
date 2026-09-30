@@ -104,19 +104,22 @@ test "a publish replaces what was there with the whole of what was written, and 
     assert read_file(dir + "/target").must() == "NEW"
     assert process.files_under(dir).must() == [dir + "/target"]
 
-# A rename that fails with a file already at the destination, on every
-# platform: the staged name is a DIRECTORY, which nothing renames over a
-# file. The destination is the other build's copy.
-test "a keyed destination another build published is kept, and the staged copy is thrown away"
+# A rename that fails on every platform with a file already at the
+# destination: a staged name nothing was written to. The destination is the
+# other build's copy. **This case first made the staged name a DIRECTORY,
+# which this comment said nothing renames over a file on any platform; the
+# Windows box renamed it** (2026-09-30, `MoveFileExA` with
+# `MOVEFILE_REPLACE_EXISTING` put the directory where the file was, where
+# POSIX answers ENOTDIR). Nothing a build publishes is a directory, so the
+# case changed and not the rule.
+test "a keyed destination another build published is kept"
     dir = "build/selftest-publish-keyed"
     assert !process.remove_tree(dir).is_err()
     assert !process.mkdir_all(dir).is_err()
     assert !write_file(path: dir + "/artifact", text: "THEIRS").is_err()
     staged = private_name(dir + "/artifact")
-    assert !process.mkdir_all(staged).is_err()
     assert !publish(staged: staged, path: dir + "/artifact", keyed: true).is_err()
     assert read_file(dir + "/artifact").must() == "THEIRS"
-    assert !process.path_exists(staged)
 
 test "an author's destination is never kept that way: the failure names it and says why"
     dir = "build/selftest-publish-author"
@@ -124,21 +127,24 @@ test "an author's destination is never kept that way: the failure names it and s
     assert !process.mkdir_all(dir).is_err()
     assert !write_file(path: dir + "/app", text: "EARLIER").is_err()
     staged = private_name(dir + "/app")
-    assert !process.mkdir_all(staged).is_err()
     said = failure_of(publish(staged: staged, path: dir + "/app", keyed: false))
     assert holds(
         text: said,
         needle: "not_written: cannot publish " + dir + "/app: the operating system's own reason is "
     )
-    assert !process.path_exists(staged)
+    assert read_file(dir + "/app").must() == "EARLIER"
 
-test "a directory where a keyed file belongs is no artifact, and is reported"
+# A rename that fails on both platforms with the staged file written: a file
+# over a directory. So this is also the case where the staged copy is there
+# to be thrown away, and is.
+test "a directory where a keyed file belongs is no artifact, and is reported, and the staged copy is thrown away"
     dir = "build/selftest-publish-dir"
     assert !process.remove_tree(dir).is_err()
     assert !process.mkdir_all(dir + "/artifact").is_err()
     assert !write_file(path: dir + "/artifact/inside", text: "x").is_err()
     said = failure_of(write_whole(path: dir + "/artifact", text: "MINE", keyed: true))
     assert holds(text: said, needle: "cannot publish " + dir + "/artifact")
+    assert process.files_under(dir).must() == [dir + "/artifact/inside"]
 
 test "a write that cannot happen names the path and the operating system's reason"
     said = failure_of(write_whole(path: "build/selftest-publish-none/deeper/x.c", text: "int x;", keyed: true))
