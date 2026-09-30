@@ -216,7 +216,9 @@ function opening_keyword(text: str, at: i64) -> token.TokenKind?
 # before its `(` and never before a name. Measured 2026-09-30 over the 1350
 # tracked `.hero` files and the specification's examples, by the lexer's own
 # token stream: no such line stands inside brackets, so the lexer names there
-# the brackets a mistake left open, and nothing that compiles moves.
+# the brackets a mistake left open, and nothing that compiles moves. Since
+# panel 183 R1 that is one case of `ends_a_reach`, which asks this of
+# `function`; `parse/unclosed` asks it where the lexer emptied its stack.
 function opens_a_declaration(text: str, at: i64) -> bool
     word = word_at(text, at: at)
     kind = keywords.keyword(word)
@@ -234,6 +236,48 @@ function opens_a_declaration(text: str, at: i64) -> bool
 
         return name > after && name < text.len() && (bytes.is_alpha(text[name]) || text[name] == '_')
     return k == .kw_record || k == .kw_variant || k == .kw_constant || k == .kw_use || k == .kw_extern || k == .kw_test
+
+# Does the line at `at`, whose margin is `spaces`, end the reach of the
+# brackets still open, in a statement whose margin is `margin` (panel 183 R1)?
+# Its first word is one no bracket holds in a program that compiles: a word
+# that starts afresh (`starts_afresh`), `if` or `match`, whose blocks no
+# bracket holds, and `function` only before a name, since a function TYPE
+# opens with `function` before its `(`; and none of them directly before a
+# `:`, where it is a label, a parameter's or an argument's name the author
+# took from a C header, libsodium's `variant`. The line stands no deeper than
+# the statement the brackets opened in: a deeper one is a continuation the
+# author meant inside them, `for x in xs` below `[x * 2`, refused where it
+# stands. An `else` stands at its `if`'s margin, and inside brackets at the
+# statement's own where the `if` is an expression there, so it ends a reach
+# only strictly shallower.
+function ends_a_reach(text: str, at: i64, spaces: i64, margin: i64) -> bool
+    if spaces > margin
+        return false
+    word = word_at(text, at: at)
+    kind = keywords.keyword(word)
+
+    if kind.is_err()
+        return false
+    k = kind.must()
+
+    if k == .kw_else
+        return spaces < margin
+
+    if before_a_colon(text, after: at + word.len())
+        return false
+
+    if k == .kw_function
+        return opens_a_declaration(text, at: at)
+    return k == .kw_if || k == .kw_match || starts_afresh(k)
+
+# Is the next thing after `after`, past spaces, one `:` and not a `::`?
+function before_a_colon(text: str, after: i64) -> bool
+    at: i64 @ after
+
+    while at < text.len() && text[at] == ' '
+        at @ at + 1
+
+    return at < text.len() && text[at] == ':' && (at + 1 == text.len() || text[at + 1] != ':')
 
 # A word that begins a declaration or a statement and can continue nothing:
 # a line that begins with one is never the rest of the line above it.
@@ -277,6 +321,23 @@ test "a line opens a declaration by its first word, and a function type opens no
 
     for text in ["function(i64) -> i64)\n", "function (i64) -> i64)\n", "function\n", "records = 1\n", "use_count\n", "2]\n", ")\n", "# record\n", "\"record\"\n", "fn main()\n", "match n\n", ""]
         assert !opens_a_declaration(text, at: 0)
+
+test "a line ends a reach by its first word and its margin, and a label or a function type ends none"
+    for text in ["record P\n", "variant V\n", "constant K: i64\n", "use geom\n", "extern \"m.h\"\n", "test \"t\"\n", "function main()\n", "function g<T>(x: T)\n", "if c\n", "match n\n", "for x in xs\n", "while c\n", "return 1\n", "assert c\n", "break\n", "continue\n"]
+        assert ends_a_reach(text, at: 0, spaces: 0, margin: 0)
+
+    for text in ["function(i64) -> i64)\n", "function\n", "records = 1\n", "use_count\n", "2]\n", ")\n", "# record\n", "\"record\"\n", "fn main()\n", "in xs\n", "true\n", "fail(code: c, msg: m)\n", ""]
+        assert !ends_a_reach(text, at: 0, spaces: 0, margin: 0)
+
+    assert ends_a_reach("    if c\n", at: 4, spaces: 4, margin: 4)
+    assert !ends_a_reach("        for x in xs\n", at: 8, spaces: 8, margin: 4)
+    assert ends_a_reach("    else\n", at: 4, spaces: 4, margin: 8)
+    assert !ends_a_reach("    else\n", at: 4, spaces: 4, margin: 4)
+
+    for text in ["    match: cstr,\n", "    use: cstr, inst: ptr) -> i32\n", "    test : i64\n", "    record: ptr\n", "    variant: i32)\n"]
+        assert !ends_a_reach(text, at: 4, spaces: 4, margin: 4)
+
+    assert ends_a_reach("    constant K: i64\n", at: 4, spaces: 4, margin: 4)
 
 test "a sign alone on its line, or before a comment, finds the arm's arrow on the next line with words"
     assert arrow_below("-\n        1 => 10\n", from: 1)

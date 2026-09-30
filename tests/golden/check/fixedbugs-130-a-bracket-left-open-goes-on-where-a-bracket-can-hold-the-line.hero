@@ -1,0 +1,42 @@
+# Fixed 2026-09-30, defect 130's class, lane recovery-b4, beside
+# `fixedbugs-130-a-bracket-left-open-ends-at-a-statement-no-bracket-holds`
+# (panel 183 R1, ratified 2026-09-30). Where a bracket can hold the line, the reach
+# goes on as before: a line deeper than the statement the bracket opened in
+# is a continuation the author meant inside it, Python's comprehension here,
+# and the opener is the one message; an `else` at that margin may be an `if`
+# expression's inside the bracket, so only a shallower one ends the reach;
+# and a keyword directly before a `:` is a label, a parameter's name taken
+# from a C header, which no declaration or statement opens with.
+
+function deeper(n: i64)
+    xs = [n * 2  #~ unclosed_bracket
+        for x in [1]
+            print(x)
+    print(1)
+
+function an_else_at_the_margin(c: bool)
+    x = f(if c  #~ unclosed_bracket
+        1
+    else
+        2
+    print(x)
+
+function f(n: i64) -> i64
+    return n
+
+extern "libxslt/keys.h"
+    function xsltAddKey(style: ptr, name: cstr, nameURI: cstr,
+    match: cstr,  #~ expected_parameter
+    use: cstr, inst: ptr) -> i32
+    function xsltFreeKeys(style: ptr)
+
+function main()
+    print(1)
+
+# At column 0, where the landed rule named the `(` never closed at `match`
+# and read three more mistakes into the lines below it, the label test keeps
+# `match:` the parameter it is: one message.
+extern "libxslt/keys.h"
+    function xsltAddKey(style: ptr, name: cstr, nameURI: cstr,
+match: cstr,  #~ expected_parameter
+use: cstr, inst: ptr) -> i32
