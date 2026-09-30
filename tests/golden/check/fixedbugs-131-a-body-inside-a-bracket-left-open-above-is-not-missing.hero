@@ -1,0 +1,50 @@
+# Fixed 2026-09-30, defect 131's class, lane recovery-b4 (panel 183's
+# completeness critic, § 1.4 of its report: batch 3's `52b2d378` raised 42 of
+# 3,000 single missing closers from 101 messages to 253, `missing_body` from
+# 14 to 142). Symptom: a bracket left open on a line above, a `[` left out
+# inside `ok(` or a `(` or a `{` never closed, keeps every line below it
+# inside the bracket, where the lexer lays out no block; since the parser
+# resumes where the lexer paired a closer, each head below was named without
+# the body it has, one level down, and an `else` there was refused as a
+# stray. The absence is the opener's, which the lexer names: a head inside
+# that reach whose next line begins deeper in the text is told nothing more,
+# an `else` there is its `if`'s, and the lines are read, their own mistakes
+# told. Where the `[` was left out, its `)` is where the parser meets it.
+
+function code(m: str) -> [i64]?
+    if m == "load"
+        return ok(  #~ unclosed_bracket
+            [1, 2, 3
+        )  #~ expected_expression
+
+    if m == "print"
+        x = 1
+        return ok([x, 0, 0])
+
+    while m == "x"
+        print(1)
+
+    for c in [1, 2]
+        print(c)
+    return ok([0])
+
+function paren(n: i64) -> i64
+    x = g(n  #~ unclosed_bracket
+    if x > 0
+        return 1
+    else
+        return 2
+
+function braces(n: i64) -> i64
+    m = {"a": 1  #~ unclosed_bracket
+    if n > 0
+        if n > 1
+            return 2
+        return 1
+    return 0
+
+function g(n: i64) -> i64
+    return n
+
+function main()
+    print(code("load").must().len())

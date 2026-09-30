@@ -27,6 +27,7 @@ use bytes
 use shown_char
 use punctuation
 use open_line
+use backslash
 
 ## One line of words
 
@@ -60,7 +61,7 @@ function line_body(@l: state.LexState, text: str)
             l.pos @ l.pos + 1
         else if b == '\n'
             lex_interp.line_ends(@l, at: l.pos)
-            layout.maybe_terminator(@l)
+            layout.maybe_terminator(@l, text)
             l.pos @ l.pos + 1
             l.last_significant @ fail(code: state.ERR_NO_SIGNIFICANT, msg: "line ended")
             return
@@ -81,6 +82,9 @@ function line_body(@l: state.LexState, text: str)
         else if b == '}' && lex_interp.closes_a_hole(l)
             # This `}` closes a hole and not a map: the piece after it is text.
             lex_interp.piece(@l, text)
+        else if b == '\\' && backslash.asks_to_go_on(l, text, at: l.pos)
+            # A `\` at a line's end asks it to go on, one message and no token.
+            backslash.asked(@l, text)
         else
             punct(@l, text)
 

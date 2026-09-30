@@ -51,6 +51,7 @@ use bytes
 use punctuation
 use next_line
 use line_above
+use backslash
 
 ## At the line end
 
@@ -233,7 +234,7 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     # below it, so the line the author broke after the arrow is refused and
     # joined as that body; ended, the arm would be refused for a missing body
     # written one line down.
-    split = fresh || binding || left.kind == .kw_else && (first.is_err() || first.must() != .kw_if)
+    split = fresh || binding || line_above.ends_with_a_separator(l.tokens, at: at, spaces: spaces, margin: margin) || left.kind == .kw_else && (first.is_err() || first.must() != .kw_if)
 
     if split && left.kind != .fat_arrow
         ended(@l)
@@ -264,7 +265,8 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     if l.tokens.len() == at + 1
         certainty: diag.Certainty @ .certain
 
-        if spaces < margin || next_line.stands_alone(text, from: l.pos)
+        # Where a `\` asked for the join, it is what the author wrote.
+        if l.backslash < 0 && (spaces < margin || next_line.stands_alone(text, from: l.pos))
             certainty @ .guess
         glue: str @ " "
 
@@ -278,7 +280,7 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
         else if left.kind == .minus && line_above.opens_a_line(l.tokens, at: at) && text[l.pos] != '>'
             glue @ ""
         d.fixes @ d.fixes.push(joined(glue: glue, from: left.span.end, to: l.pos, certainty: certainty))
-    refused(@l, d, head: false)
+    refused(@l, d, head: l.backslash >= 0 && !can_only_go_on(left.kind) && goes_on_at_head(text, at: l.pos) >= 0)
     return true
 
 # The line above could end, and this one begins with a token that can only
@@ -322,6 +324,9 @@ function refuse_the_head(@l: state.LexState, text: str, at: i64, spaces: i64, co
 # against its operator, `line_joins` weighs once the file is lexed, from the
 # break recorded here (defect 129).
 function refused(@l: state.LexState, d: diag.Diagnostic, head: bool)
+    if l.backslash >= 0
+        backslash.joined(@l, fixes: d.fixes, head: head)
+        return
     state.push_diagnostic(@l.diagnostics, d)
     state.push_break(@l.breaks, diagnostic: l.diagnostics.len() - 1, after: l.tokens.len(), head: head)
 

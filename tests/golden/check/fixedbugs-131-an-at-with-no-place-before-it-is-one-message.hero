@@ -1,0 +1,15 @@
+# Fixed 2026-09-30, defect 131's class, lane recovery-b4, beside
+# `fixedbugs-131-a-sigil-before-a-name-is-one-message`. Symptom: an `@` at a
+# statement's start before anything but a name, `@ 5` or `@1`, cost
+# `expected_expression` and then `not_a_place` at the one token: the place
+# the `@` needs is left out, and the place that could not be read was named
+# no place, a second message for the one mistake. It is told once now, by
+# what refused it, and the value after the `@` is still read, so its own
+# mistake is told.
+
+function main()
+    v: i64 @ 0
+    @ 5  #~ expected_expression
+    @1  #~ expected_expression
+    @ 5 + )  #~ expected_expression expected_expression
+    print(v)

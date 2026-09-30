@@ -188,6 +188,16 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     Before the push, Linux arm64 at `ec1fd0a9`, the same code again, 930 and
     19 at 0 failed by 14:46.
 
+    **2026-09-30, lane recovery-b4, the reach of a bracket left open ends at
+    a line no bracket can hold, at its statement's margin** (panel 183 R1,
+    ratified): repaired at `e5076b57`, gated by its cases and the compiler's
+    own tests; the net is owed at the batch's close.
+
+    **2026-09-30, lane recovery-b4, inside a `(` left open, a line that opens
+    with a name after a kept line end ends the reach** (panel 183 R2,
+    ratified): repaired at `ab36aa61`, gated by its cases and the compiler's
+    own tests; the net is owed at the batch's close.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
@@ -331,6 +341,18 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the other 41 counted; `docs/panel/183-reports/completeness-critic.md`
     § 1). This item's own class; lane recovery-b4's item C4r.
 
+    **2026-09-30, lane recovery-b4, a sigil before a name is one message at
+    its `@`, and the line is read as the statement it is with the sigil gone**
+    (the recovery instrument's `at-prefix`): repaired at `4441148b`, gated by
+    its cases and the compiler's own tests; the net is owed at the batch's
+    close.
+
+    **2026-09-30, lane recovery-b4, a head inside a bracket left open above
+    it names no missing body, and an `else` there is its `if`'s** (panel
+    183's critic, the regression of `52b2d378`): repaired at `3a93d155`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close.
+
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
     **Origin:** lane 129's agent, 2026-09-29, beside defect 129 (its finding 2,
@@ -387,6 +409,16 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     129 to 133, X1, X2 and Y): the full net, every suite at 0 failed. The shapes
     still open are the next batch lane's items, found beside the repairs, and
     this item stays open until they are repaired and a batch gate reads them.
+
+    **2026-09-30, lane recovery-b4, a `\` at a line's end is one message, and
+    the line it asks for is joined and read** (the recovery instrument's
+    `backslash`): repaired at `81348c99`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close.
+
+    **2026-09-30, lane recovery-b4, a `,` after every member is one message
+    for its declaration, and the line ends at it** (the recovery instrument's
+    `field-commas`): repaired at `68e46a13`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close.
 
 - [ ] **133 — after a declaration head the lexer refuses as a foreign word with a certain swap, the declaration's own mistakes are reported only once the swap is applied** | `const MAX = 5` costs `reserved_word` alone, and `check --apply` writes `constant MAX = 5`, which then costs `expected_constant_type`; `const MAX: i64 = 5` then costs `missing_body`, `fn main() {` then `missing_body`, `struct Point {` then `empty_record`: two turns for one habit | `selfhost/scan.hero` (the foreign word emitted as an `error` token) · `selfhost/keywords.hero` (`foreign_word`) · `selfhost/parse/decl.hero` · `cursor.recover_to_next_decl`
 

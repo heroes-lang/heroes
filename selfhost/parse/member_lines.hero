@@ -22,10 +22,22 @@
 # `:` that ends a case's line is the Python habit, `trailing_colon`, as it
 # is after a record's head (`parse/colon_habit`).
 #
+# **A `,` after every member is one mistake** (defect 132's class, the
+# recovery instrument's `field-commas`, lane recovery-b4). Rust and Swift end
+# each field and case with one, and the lexer joined each such line to the
+# next, `continuation_outside_brackets` at every break and this module's
+# `expected_end_of_line` at the last: a message a member. The lexer ends the
+# line at its `,` now (`line_above.ends_with_a_separator`), and the first
+# member whose line ends with one is told, every later `,` of the
+# declaration, its cases' fields included, one more fix of that report, all
+# `certain`, deleting each being the whole repair (`comma`). A `,` with more
+# after it on its line is junk past the member, as before.
+#
 # A leaf below the grammar: it reads the cursor, the types and the habits'
 # leaves, and nothing that reads the parser.
 
 use token
+use diag
 use cursor
 use doc_comments
 use ast
@@ -43,6 +55,12 @@ use parse/unclosed
 # One `name: type` per line: a record's fields, and a variant case's payload.
 # Consumes the whole indent … dedent block.
 function field_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
+    habit: i64 @ -1
+    return fields_of(@c, @a, text, @habit)
+
+# The same, where `habit` is the index of the declaration's one report of a
+# `,` ending its members' lines, or -1 before one is told (`comma`).
+function fields_of(@c: cursor.Cursor, @a: ast.Ast, text: str, @habit: i64) -> [ast.Field]
     fields: [ast.Field] @ []
     _ = cursor.bump(@c)
     reading: bool @ true
@@ -70,7 +88,8 @@ function field_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
                     @c,
                     text: text,
                     member: "the field `" + cursor.slice_of(text, name) + "`",
-                    rule: "one field per line, `name: type`"
+                    rule: "one field per line, `name: type`",
+                    @habit
                 )
         else if k == .indent
             if !cursor.at_reported_error(c)
@@ -98,6 +117,7 @@ function field_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
 # the line below it (`braced_fields`).
 function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
     cases: [ast.Case] @ []
+    habit: i64 @ -1
     _ = cursor.bump(@c)
     reading: bool @ true
 
@@ -121,11 +141,11 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
             if braces_close(c, text)
                 told(@c, text: text, member: which, rule: CASE_RULE)
                 fields @ braced_fields(@c, @a, text)
-            line_ends(@c, text: text, member: which, rule: CASE_RULE)
+            line_ends(@c, text: text, member: which, rule: CASE_RULE, @habit)
             cursor.skip_terminators(@c)
 
             if cursor.at(c, .indent)
-                for field in field_block(@c, @a, text)
+                for field in fields_of(@c, @a, text, @habit)
                     fields @ fields.push(field)
             cases @ cases.push(ast.Case(name: name, fields: fields, doc: doc))
         else if k == .lbrace && cases.len() > 0 && brace_habit.alone(text, cursor.current_span(c)) && braces_close(c, text)
@@ -141,7 +161,8 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
                 @c,
                 text: text,
                 member: "the case `" + cursor.slice_of(text, cases[last].name) + "`",
-                rule: CASE_RULE
+                rule: CASE_RULE,
+                @habit
             )
         else if k == .indent
             # The payload of a case whose NAME was refused on the line above.
@@ -205,15 +226,52 @@ constant CASE_RULE: str
 
 # The end of the line after `member`, a case's name or a field's type, or a
 # case's braces: at a line end, a block below, the block's end or a fresh
-# line past the braces, nothing; else the one report, and the rest of the
+# line past the braces, nothing; at a `,` that ends it, the declaration's one
+# report of the habit (`comma`); else the one report, and the rest of the
 # line dropped, stopping before a block below it.
-function line_ends(@c: cursor.Cursor, text: str, member: str, rule: str)
+function line_ends(@c: cursor.Cursor, text: str, member: str, rule: str, @habit: i64)
     k = cursor.current_kind(c)
 
     if k == .terminator || k == .indent || k == .dedent || k == .eof || cursor.at_fresh_line(c)
         return
+
+    if k == .comma && ends_a_line(cursor.peek(c, 1))
+        comma(@c, text: text, member: member, rule: rule, @habit)
+        return
     told(@c, text: text, member: member, rule: rule)
     cursor.skip_line(@c)
+
+function ends_a_line(k: token.TokenKind) -> bool
+    return k == .terminator || k == .indent || k == .dedent || k == .eof
+
+# The `,` under the cursor ends `member`'s line: told where it is the
+# declaration's first, `habit` then its report's index, and its deletion one
+# more certain fix of that report either way; the `,` passed over. Where a
+# report stands on it already, the member's own, `y: ,` for a type left out,
+# it is that mistake's: deleted, it would leave `y:` ending the line, which
+# the lexer refuses anew.
+function comma(@c: cursor.Cursor, text: str, member: str, rule: str, @habit: i64)
+    if line_end.said_here(c)
+        _ = cursor.bump(@c)
+        return
+    at = cursor.current_span(c)
+    gone = diag.Fix(
+        title: "delete the `,`",
+        replacement: "",
+        span: token.Span(start: cursor.previous_significant_span(c).end, end: at.end),
+        certainty: .certain
+    )
+
+    if habit < 0
+        before = c.diagnostics.len()
+        told(@c, text: text, member: member, rule: rule + ", and no `,` ends a member's line")
+
+        if c.diagnostics.len() > before
+            habit @ before
+
+    if habit >= 0
+        c.diagnostics[habit].fixes @ c.diagnostics[habit].fixes.push(gone)
+    _ = cursor.bump(@c)
 
 # `expected_end_of_line` at what stands past `member`, in `rule`'s words,
 # where no report stands on it already: a literal the lexer refused still
