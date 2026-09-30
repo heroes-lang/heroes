@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 8**
+**OPEN: 14**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -198,6 +198,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     ratified): repaired at `ab36aa61`, gated by its cases and the compiler's
     own tests; the net is owed at the batch's close.
 
+    **Batch gate, lane recovery-b4, 2026-09-30 20:12** (`84430015`, the trunk
+    `cf943ddf` merged at `acd80b8b`): the seed regenerated once, the fixpoint
+    by `cmp`; the compiler's own tests 934 and the net's own 184, all passed;
+    the full net 3,970 passed and 0 failed over 26 suites (`probe` red once on
+    a timeout, 24 and 0 alone); the census over 1,412 files moving only files
+    added since `77b8ca98`; the recovery instrument against batch 3: ONE
+    11,955 to 12,448, EXTRA 1,336 to 861, ELSEWHERE 32 to 14, APPLY-NEW and
+    APPLY-OTHER 0, no class risen for any operator; Linux x86-64 on
+    `84430015`, 934 tests and 19 suites at 0 failed. **Integrated** with lanes
+    136 and 135b at `3cc3b553`, the trunk fast-forwarded to it at 00:03 on
+    2026-10-01 (the full net 4,023 and 0, Linux x86-64 3,899 and 0; defect
+    136's record carries the integration). The item stays open for the shapes
+    the audit of 2026-09-30 found open (`scratchpad/audit-130-133/`).
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
@@ -353,6 +367,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     gated by its cases and the compiler's own tests; the net is owed at the
     batch's close.
 
+    **Batch gate, lane recovery-b4, 2026-09-30 20:12** (`84430015`, the trunk
+    `cf943ddf` merged at `acd80b8b`): the seed regenerated once, the fixpoint
+    by `cmp`; the compiler's own tests 934 and the net's own 184, all passed;
+    the full net 3,970 passed and 0 failed over 26 suites (`probe` red once on
+    a timeout, 24 and 0 alone); the census over 1,412 files moving only files
+    added since `77b8ca98`; the recovery instrument against batch 3: ONE
+    11,955 to 12,448, EXTRA 1,336 to 861, ELSEWHERE 32 to 14, APPLY-NEW and
+    APPLY-OTHER 0, no class risen for any operator; Linux x86-64 on
+    `84430015`, 934 tests and 19 suites at 0 failed. **Integrated** with lanes
+    136 and 135b at `3cc3b553`, the trunk fast-forwarded to it at 00:03 on
+    2026-10-01 (the full net 4,023 and 0, Linux x86-64 3,899 and 0; defect
+    136's record carries the integration). The item stays open for the shapes
+    the audit of 2026-09-30 found open (`scratchpad/audit-130-133/`).
+
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
     **Origin:** lane 129's agent, 2026-09-29, beside defect 129 (its finding 2,
@@ -419,6 +447,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     for its declaration, and the line ends at it** (the recovery instrument's
     `field-commas`): repaired at `68e46a13`, gated by its cases and the
     compiler's own tests; the net is owed at the batch's close.
+
+    **Batch gate, lane recovery-b4, 2026-09-30 20:12** (`84430015`, the trunk
+    `cf943ddf` merged at `acd80b8b`): the seed regenerated once, the fixpoint
+    by `cmp`; the compiler's own tests 934 and the net's own 184, all passed;
+    the full net 3,970 passed and 0 failed over 26 suites (`probe` red once on
+    a timeout, 24 and 0 alone); the census over 1,412 files moving only files
+    added since `77b8ca98`; the recovery instrument against batch 3: ONE
+    11,955 to 12,448, EXTRA 1,336 to 861, ELSEWHERE 32 to 14, APPLY-NEW and
+    APPLY-OTHER 0, no class risen for any operator; Linux x86-64 on
+    `84430015`, 934 tests and 19 suites at 0 failed. **Integrated** with lanes
+    136 and 135b at `3cc3b553`, the trunk fast-forwarded to it at 00:03 on
+    2026-10-01 (the full net 4,023 and 0, Linux x86-64 3,899 and 0; defect
+    136's record carries the integration). The item stays open for the shapes
+    the audit of 2026-09-30 found open (`scratchpad/audit-130-133/`).
 
 - [ ] **133 — after a declaration head the lexer refuses as a foreign word with a certain swap, the declaration's own mistakes are reported only once the swap is applied** | `const MAX = 5` costs `reserved_word` alone, and `check --apply` writes `constant MAX = 5`, which then costs `expected_constant_type`; `const MAX: i64 = 5` then costs `missing_body`, `fn main() {` then `missing_body`, `struct Point {` then `empty_record`: two turns for one habit | `selfhost/scan.hero` (the foreign word emitted as an `error` token) · `selfhost/keywords.hero` (`foreign_word`) · `selfhost/parse/decl.hero` · `cursor.recover_to_next_decl`
 
@@ -615,84 +657,16 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `8ee4efeb`, gated by its cases and the compiler's own tests; the net is
     owed at the batch's close.
 
-- [ ] **136 — `fmt --in-place` and `check --apply --in-place` destroy the author's source when the write fails** | on a disk nearly full, `heroes fmt prog.hero --in-place` answers `error: cannot write`, exit 2, and leaves `prog.hero` at 0 bytes, the 62,706 bytes the author wrote gone; `heroes check --apply --in-place` leaves the file cut mid-token, 57,344 of the 59,312 bytes it meant to write, ending in `retu` | `selfhost/cli/syntax_cmds.hero:66` · `selfhost/cli/check.hero:110` · `runtime/parts/os.c:635` (`hero_file_write`) · `selfhost/cli/publish.hero` (defect 134's publish by rename)
-
-    **Origin:** lane 134's agent, 2026-09-30, reading the code while it
-    enumerated every path a build writes (its report: *`fmt --in-place` and
-    `check --apply --in-place` write the author's source in place*, not run).
-    Reproduced by the coordinator at 06:55 and 06:56 on the trunk's compiler
-    at `e5cc73eb`, and again at 09:08 at `f37ea722`, on a 2 MB HFS+ disk image
-    (`hdiutil create -size 2m`), filled with `dd` to 8 KB and 4 KB free.
-
-    **Measured.** A program of 62,706 bytes that `fmt` writes as 80,708
-    (`v0=0+0*2` over 3000 lines becomes `v0 = 0 + 0 * 2`): `fmt --in-place`
-    exit 2, the file 0 bytes, twice. A program of 50,312 bytes whose 1500
-    certain swaps of `fn` for `function` write 59,312: `check --apply
-    --in-place` exit 2, the file 57,344 bytes, refused at 4358:5 with
-    `unknown_name` for `retu`; the original is in neither.
-
-    **The cause, read and not yet proved by a repair.** `hero_file_write`
-    opens the path with `fopen(path, "wb")`, which empties it before a byte is
-    written, then writes; when the write fails the old text is already gone and
-    the new one is not all there. Both in-place verbs call `write_file` on the
-    author's own path.
-
-    **Why it is a defect.** The tool destroys the program it was asked to
-    rewrite and says only that it could not write, so an author who reads the
-    message and looks at the file finds nothing; a full disk is ordinary (the
-    Windows box stood at 99% on this night, `run` reading 45 false failures),
-    and a killed process or a lost power mid-write is the same shape. Defect
-    134's publish by rename, a private name beside the destination and a
-    rename over it, is the shape that leaves the old text whole whenever the
-    new one cannot be.
-
-    **Unrun, questions rather than premises**: a kill mid-write; Windows;
-    what a rename owes a file's mode, owner and links (a read-only source, a
-    symlinked one: a publish by rename replaces the link, not what it points
-    at); and the library's own `write_file`, which user programs call and whose
-    comment promises *the text, written whole, replacing whatever was there*
-    (`selfhost/library_source.hero:220`), with the same truncate-first body:
-    whether that promise is kept the same way is a question about the
-    library, and a change to what it does is the panel's.
-
-    **2026-09-30, lane 136, a file the author names is replaced whole or not
-    at all, and a write that fails or is killed leaves it as it was**:
-    repaired at `1f173a42`, gated by its cases and the compiler's own tests;
-    the net is owed at the lane's close.
-
-- [ ] **137 — `check --apply` applies overlapping certain fixes against the original text, so an enclosing fix overwrites, misaligns or overruns an inner one** | `print(total(xs.must()).must())` as a file's last line: `heroes check --apply` aborts, `panic: string slice out of range`, exit 134; with a line below it, exit 0 and the written text is `print(total(xs.must())rint(0)`, the line break, the margin and the next line's `p` eaten, which `--in-place` writes into the author's file | `selfhost/cli/check.hero:242-280` (`apply`) · the two sites whose span can enclose another fix, `check/builtins.hero:413` and `parse/type.hero:255`
-
-    **Origin:** the coordinator's certain-fix audit, 2026-09-30, at
-    `6d781be1` (`scratchpad/certain-audit/findings/C9-unwrapping_nothing/`,
-    `c9c` and `c9j`, and `P7-bare_function_type/`, `p7b` and `p7c`);
-    reproduced by the coordinator at 10:54 on the trunk's compiler, both
-    shapes, from those files.
-
-    **The cause, the audit's reading of `apply`, not yet proved by a
-    repair.** The fixes of one file are applied back to front, each with the
-    span and the replacement taken from the ORIGINAL text, so a fix whose
-    span encloses another is applied over text an inner fix has already
-    changed: it overwrites the inner edit, it is misaligned by the inner
-    edit's change of length, and where it ends inside that change it slices
-    past the end. `.must()` and `.default()`'s fix spans the whole call and
-    the bare function type's the whole type, the two the audit found able to
-    enclose another fix; its `p7c` shows the overwrite (both inner `int` swaps
-    undone, their `reserved_word` standing after `--apply`).
-
-    **Why it is a defect.** `check --apply` is the one command that writes
-    the compiler's certain fixes into the author's file without a reader, so
-    what it writes must be the fixes and nothing else: here it writes text no
-    fix proposed, joined across a line, or aborts outside the exit-code
-    contract (`.claude/rules/cli-surface.md`). The in-place write of the
-    corrupted text is inferred from `check.hero`'s write path, not run
-    (defect 136 is that write's other half).
-
-    **2026-09-30, lane 136, `check --apply` writes each certain fix into the
-    text it was made for, and asks the stage again until it has none left**
-    (widened by the lane: a chain the checker reports at its first link lost
-    one link per `--apply`): repaired at `5bec1b03`, gated by its cases and
-    the compiler's own tests; the net ran at the lane's close, its counts in
-    the closing commit's body.
+    **Batch gate, lane 135b, 2026-09-30 21:32** (`f3942bac`, the trunk
+    `cf943ddf` merged at `827dcd92`): the seed regenerated once, the fixpoint
+    by `cmp`; the compiler's own tests 939 and the net's own 184, all passed;
+    the full net 3,952 passed and 0 failed; the census over 1,411 files, no
+    exit moved, 8 texts reworded by the batch; the certain-fix audit's probes,
+    167 certain fixes in 136 probes before and 123 in 105 after, none into a
+    new refusal; Linux x86-64 on `f3942bac`, 939 tests and 19 suites at 0
+    failed. **Integrated** at `3cc3b553` (defect 136's record carries the
+    integration). The item stays open for the next batch's sites: P4 to P7,
+    C9's span, L3 to L5, and L6.
 
 - [ ] **138 — a program that declares a C function the Heroes library also binds, with other marks, stops `check` with an internal error** | a five-line file whose `extern "hero_os.h"` group declares `function hero_file_read(path: cstr, @status: i64) -> str`, where the library writes `path: cstr lent`: `heroes check` prints `internal error: a diagnostic landed inside the Heroes library, at its line 112: [contract_differs] ...` and exits 2, with or without `--permissive`, where a `contract_differs` at the author's line 2 and exit 1 are owed | `selfhost/check/contracts.hero:256` (`differs`, which puts the message at `at`) and its caller's choice of `at` · `selfhost/cli/check.hero:73-82` and `selfhost/cli/compile.hero:96` (the guard that turns a diagnostic inside the library into the internal error)
 
@@ -727,5 +701,98 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     library's. Read and unrun: which of the two becomes `at` is its caller's
     choice in `selfhost/check/contracts.hero`, and a declaration of the
     author's is always the one to name.
+
+- [ ] **139 — a block holding a `match` statement counts as leaving whatever its arms do, so `check` passes a function with no `return` and `build` fails** | `function f(c: Color) -> i64` whose body is a `match` with printing arms, then `print(3)`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed ... non-void function should return a value*; the same with the `match` inside one branch of an `if` | `selfhost/check/walk.hero:898-904` (no arm with a value read as every arm jumping) · `arms` at `:1041-1050` · `check/join.hero`'s `Branch`
+
+    **Origin:** panel 184's compiler-engineer and lane 135b's batch gate,
+    apart, 2026-09-30; widened by the sitting's critic to a `match` inside a
+    branch (`docs/panel/184-reports/completeness-critic.md` B1); reproduced by
+    the coordinator at 21:21 on the trunk's compiler at `a294a6ff`
+    (`scratchpad/p184/matchleave/match-then-falls.hero`, `match-prints.hero`);
+    again at 00:17 on 2026-10-01 on the integrated trunk at `3cc3b553`, both
+    `check` 0 and `build` 2 on the same clang message.
+    A `match` in a VALUE block is not affected (the critic's case c).
+
+    **Why it is a defect.** A program `missing_return` exists to refuse is
+    accepted, and the compiler then fails on its own emitted C with exit 2,
+    which says the tool is wrong. Panel 184's R4 reads the same predicate and
+    waits on this repair.
+
+- [ ] **140 — records nested by value a thousand deep abort `build`** | 1,000 flat declarations, `record R<i>` holding `R<i-1>`, reached by `xs: [R999] = []`: `check` exit 0, `build` exit 134, `panic: stack exhausted in emitsynth.collect`; at 10,000 under a larger stack clang itself crashes on the C | `selfhost/emit/` (`emitsynth.collect`) · `selfhost/check/decls.hero` (`.record_decl`, where a bound would stand)
+
+    **Origin:** panel 184's compiler-engineer (`184-reports/compiler-engineer.md`
+    § A fourth kind of deep), 2026-09-30; reproduced by the coordinator at
+    00:10 on 2026-10-01 on the integrated trunk at `3cc3b553`
+    (`scratchpad/p184/newdef/deep1000.hero`; `deep700.hero` builds). No line of
+    the source nests anything, so no counter of openers sees it.
+
+    **Why it is a defect.** A program `check` accepts aborts `build`, outside
+    the exit contract; panel 184's R7 files it apart from the source's depth.
+
+- [ ] **141 — `check --apply` writes bytes no fix proposed: the newline the loader adds to a root file's open last line** | `fn main()` over `    print(1)` with no final newline, 22 bytes: `check --apply` prints 29 where its one certain fix makes 28, the last byte a `\n`; `--apply --in-place` writes it into the author's file | `source.from_files` · `source_extent.user_text` · `selfhost/cli/check.hero` (what `--apply` prints)
+
+    **Origin:** lane 136 at its close, 2026-09-30, on the trunk's compiler as
+    on its own (`scratchpad/lane-136/r2/nl/`); reproduced by the coordinator
+    at 00:05 on 2026-10-01 on `3cc3b553` (`scratchpad/p184/newdef/certain.hero`,
+    `od -c` of the output). Beside it and to be judged with it: a refused
+    file with no fix prints its text with the added newline, and a clean file
+    prints nothing.
+
+    **Why it is a defect.** What `--apply` writes must be exactly the fixes
+    it applied, the rule defect 137's repair holds; here a byte no fix
+    proposed reaches the author's file.
+
+- [ ] **142 — `missing_return`'s note sends the author to a form the checker refuses** | the note says *every path must end in a `return`, or the last statement must be the value*; a function whose last line is the bare value then costs `missing_return` again and `discarded_value` | `selfhost/flow_errors.hero:157-163`
+
+    **Origin:** lane 135b's final report, 2026-09-30; reproduced by the
+    coordinator at 00:11 on 2026-10-01 on `3cc3b553`
+    (`scratchpad/p184/newdef/mr.hero`, `mr-note-followed.hero`).
+
+    **Why it is a defect.** design.md §4.17: a diagnostic carries what is
+    needed to fix the program; this one's advice, followed, is refused.
+
+- [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe)
+
+    **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (a header of its own
+    and `sys/wait.h:144-146`); reproduced by the coordinator at 20:44 on the
+    trunk's compiler at `a294a6ff` (`scratchpad/p184/ffi-side/macro.hero`);
+    again at 00:17 on 2026-10-01 on `3cc3b553`, exit 1 and `ffi_unknown_name`.
+
+    **Why it is a defect.** A program calling `waitpid` needs `WEXITSTATUS`,
+    and the design says it is reachable; the FFI is to be complete (CL-028).
+
+- [ ] **144 — a result wider than C's is refused** | `extern "arpa/inet.h"` with `function htonl(x: u32) -> u64`: `build` exit 1, `ffi_return_type`, *`htonl` does not return `u64`*, where spec § 13 says *a result may be wider than C's* | `selfhost/emit/extern_assert.hero:50-79` (*wider* read for `i64` and `f64` only, the seat's reading)
+
+    **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (`dbus_bool_t`, a
+    `uint32_t`); reproduced by the coordinator at 20:44 on `a294a6ff`
+    (`scratchpad/p184/ffi-side/wider.hero`); again at 00:17 on 2026-10-01 on
+    `3cc3b553`, exit 1 and `ffi_return_type`.
+
+    **Why it is a defect.** Spec beats compiler (CLAUDE.md § 12).
+
+- [ ] **145 — `ffi_unknown_tag`'s note offers two repairs for a typedef of an anonymous struct, and neither is right: the handle repair builds and aborts at run** | a binding written `record Regex tag regex_t partial` for `typedef struct { ... } regex_t;` is refused with the note's two repairs, a misspelled tag or a handle; the handle checks, builds and aborts at run, *panic: a null pointer was read through, at offset 0x8*; the spelling that works, a record named `regex_t` with no `tag`, is not offered (`div_t`, `ldiv_t`, `lldiv_t` have the same shape) | `selfhost/emit/ctype.hero:149` · the note of `ffi_unknown_tag`
+
+    **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (its
+    `work/q1/regex/`, copied to `scratchpad/p184/ffi-side/regex-from-seat/`);
+    the handle's abort reproduced by the coordinator at 20:44 on `a294a6ff`;
+    both again at 00:17 on 2026-10-01 on `3cc3b553`, the handle `check` 0,
+    `build` 0 and its run 134 (`ffi-side/handle.hero`), the note with one
+    field under the record (`ffi-side/tag1.hero`; with none, `empty_record`
+    speaks first).
+
+    **Why it is a defect.** A §4.17 defect in a note: the repair it offers
+    leads to a run-time abort, and the right one is left out.
+
+- [ ] **146 — the parser is quadratic on declaration heads written with a foreign word** | 1,500 `fn f<i>() {` heads parse in 0.80 s and 3,000 in 3.18 s, where 3,000 clean `function` heads take 0.06 s; lane 136 measured 6,000 at 28.5 s | the recovery after a foreign-word head (`selfhost/scan.hero`'s error token, `cursor.recover_to_next_decl`)
+
+    **Origin:** lane 136 at its close, 2026-09-30
+    (`scratchpad/lane-136/r2/big/`); timed by the coordinator at 00:09 on
+    2026-10-01 on `3cc3b553`, load 1.6 (`scratchpad/p184/newdef/fn1500.hero`,
+    `fn3000.hero`, `ok3000.hero`).
+
+    **Why it is a defect.** A file of Rust habits a model writes whole costs
+    time that grows with its square (twice the heads, 4.0 times the time,
+    measured); at 30,000 heads that square gives about five minutes, an
+    inference, unrun.
 
 *******************************************************************************
