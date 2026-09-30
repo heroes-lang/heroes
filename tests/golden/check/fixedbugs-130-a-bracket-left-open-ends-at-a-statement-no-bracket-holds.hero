@@ -1,0 +1,63 @@
+# Fixed 2026-09-30, defect 130's class, lane recovery-b4 (panel 183 R1,
+# ratified 2026-09-30). Symptom: a bracket left open
+# took every line below it inside, to the file's end or to the next
+# declaration at column 0, where no block is laid out: the heads there were
+# refused, and a stray closer further down closed the bracket, so the opener
+# was never named and the mistakes between went unsaid (panel 183's Task 2:
+# `expected_args_close` at the `if` and nothing at the stray `)`). The reach
+# now ends at a line whose first word no bracket holds in a program that
+# compiles, a declaration's or a statement's, `if` and `match` among them,
+# at a margin no deeper than the statement the bracket opened in: the lexer
+# names the opener never closed there, and the line is laid out as what it
+# begins.
+
+function double(n: i64) -> i64
+    return n * 2
+
+# Panel 183's Task 2: all three mistakes, each once.
+function task(n: i64)
+    total = double(n  #~ unclosed_bracket
+
+    if total > 2
+        print(total)
+
+    print(double(total)))  #~ expected_end_of_line
+    print(total +)  #~ expected_expression
+
+function at_a_for(n: i64)
+    xs = [n, 1  #~ unclosed_bracket
+    for x in xs
+        print(x)
+
+function at_a_while(n: i64)
+    m = double(n  #~ unclosed_bracket
+    while m > 3
+        print(m)
+
+function at_a_match(n: i64)
+    k = {"a": n  #~ unclosed_bracket
+    match n
+        0 => print(0)
+        _ => print(1)
+
+function at_a_return(n: i64) -> i64
+    k = double(n  #~ unclosed_bracket
+    return k
+
+function at_an_assert(n: i64)
+    k = double(n  #~ unclosed_bracket
+    assert k > 0
+
+function at_a_break(n: i64)
+    while true
+        k = double(n  #~ unclosed_bracket
+        break
+
+function at_an_else(n: i64)
+    if n > 0
+        k = double(n  #~ unclosed_bracket
+    else
+        print(0)
+
+function main()
+    task(1)

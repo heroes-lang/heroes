@@ -96,6 +96,10 @@ record LexState
     # A literal that never closed ran to this line's end (`literals.swallow`),
     # so the line end is a line end at any depth.
     swallowed: bool
+    # A `\` that asks its line to go on (`backslash.hero`): the index in
+    # `diagnostics` of its one message, whose fix the line below decides, and
+    # -1 when the line holds none or that decision is taken.
+    backslash: i64
 
 function new_state() -> LexState
     brackets: [token.Span] = []
@@ -124,7 +128,8 @@ function new_state() -> LexState
         bodies: false,
         deeper: false,
         closes: closes,
-        swallowed: false
+        swallowed: false,
+        backslash: -1
     )
 
 ## Emitting

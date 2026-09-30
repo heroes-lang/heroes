@@ -34,6 +34,7 @@ use parse/opening
 use parse/braced_lines
 use parse/members_below
 use parse/group_head
+use parse/line_end
 
 ## The extern group
 
@@ -114,6 +115,7 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
     _ = cursor.bump(@c)
     first: bool @ true
     done: bool @ false
+    habit: i64 @ -1
 
     while !done
         cursor.skip_terminators(@c)
@@ -182,6 +184,8 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
                     linkage: linkage,
                     head: opening.mark(c)
                 )
+        else if k == .comma && trailing(c)
+            comma(@c, @habit)
         else
             if !cursor.at_reported_error(c)
                 cursor.error(
@@ -201,3 +205,36 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
 
                 if cursor.at(c, .indent)
                     _ = cursor.balanced_block(@c)
+
+# Is the `,` under the cursor the last token of its line?
+function trailing(c: cursor.Cursor) -> bool
+    k = cursor.peek(c, 1)
+    return k == .terminator || k == .indent || k == .dedent || k == .eof
+
+# A `,` that ends a member's line, the habit of a separator after every
+# member: told at the group's first, `habit` then that report's index, and its
+# deletion one more certain fix of it either way, as a record's fields are
+# (defect 132's class, `parse/member_lines`); the `,` passed over. A report
+# standing on it already is the signature's own, which it is left to.
+function comma(@c: cursor.Cursor, @habit: i64)
+    if line_end.said_here(c)
+        _ = cursor.bump(@c)
+        return
+    at = cursor.current_span(c)
+    gone = diag.Fix(
+        title: "delete the `,`",
+        replacement: "",
+        span: token.Span(start: cursor.previous_significant_span(c).end, end: at.end),
+        certainty: .certain
+    )
+
+    if habit < 0
+        cursor.error(
+            @c,
+            code: "expected_extern_signature",
+            message: "expected a `function`, a `constant` or a `record`, found `,` — an `extern` group holds what the header declares, one per line, and no `,` ends a member's line",
+            span: at
+        )
+        habit @ c.diagnostics.len() - 1
+    c.diagnostics[habit].fixes @ c.diagnostics[habit].fixes.push(gone)
+    _ = cursor.bump(@c)

@@ -1,0 +1,42 @@
+# Fixed 2026-09-30, defect 130's class, lane recovery-b4 (panel 183 R2,
+# ratified 2026-09-30, the completeness critic's route). Symptom: inside a
+# `(` left open, a line at its statement's margin that opens with a name, the
+# next statement, was read as the call going on, and a stray `)` below then
+# closed the `(`: `x = f(1, 2` over `y = 3 )` cost `expected_args_close` at
+# the `y`, and the `)` went untold. The specification lets a line end kept
+# inside a `(` stand only before a closer or a `,`, so such a line goes on
+# inside no `(` of a program that compiles: the reach ends there, the opener
+# is named, and each mistake below is told once.
+
+function f(a: i64, b: i64) -> i64
+    return a + b
+
+function double(n: i64) -> i64
+    return n * 2
+
+function g(b: bool) -> bool
+    return b
+
+# The sitting's `u4_k`.
+function next_statement()
+    x = f(1, 2  #~ unclosed_bracket
+    y = 3 )  #~ expected_end_of_line
+    print(x + y)
+
+# Task 2 with a mistake of its own between: all four told, where two were.
+function four()
+    total = double(3  #~ unclosed_bracket
+
+    y = total +  #~ continuation_outside_brackets
+    print(double(total)))  #~ expected_end_of_line
+    print(total +)  #~ expected_expression
+
+# A head's own `(` left open, its body a jump: three mistakes, three messages.
+function head(x: i64)
+    if g(x > 2  #~ unclosed_bracket
+        return
+    print(g(x)))  #~ expected_end_of_line
+    print(x +)  #~ expected_expression
+
+function main()
+    next_statement()

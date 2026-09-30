@@ -23,6 +23,7 @@ use diag
 use bytes
 use open_line
 use next_line
+use backslash
 
 ## The carriage return
 
@@ -79,6 +80,7 @@ function line_start(@l: state.LexState, text: str)
 
     if saw_tab
         open_line.abandon(@l)
+        l.backslash @ -1
         span = token.Span(start: ws_start, end: l.pos)
         state.push_diagnostic(
             @l.diagnostics,
@@ -86,12 +88,17 @@ function line_start(@l: state.LexState, text: str)
         )
         return
 
-    # Inside brackets the margin is not structural (panel 007), but a line at
-    # column 0 that opens a declaration is inside them in no program that
-    # compiles (`next_line.opens_a_declaration`): the brackets a mistake left
-    # open are named there, and the line is laid out as the declaration it is.
+    # Inside brackets the margin is not structural (panel 007), but a line that
+    # opens with a word no bracket holds in a program that compiles, no deeper
+    # than the statement the brackets opened in, the level the lexer last laid
+    # out (`next_line.ends_a_reach`, panel 183 R1), or inside a `(` a line that
+    # opens with a name there after one that kept its line end
+    # (`a_name_after_a_kept_end`, R2), is where a mistake left them open: they
+    # are named there, and the line is laid out as what it begins.
     if l.open_brackets.len() > 0
-        if spaces > 0 || !next_line.opens_a_declaration(text, at: l.pos)
+        margin = l.level * 4
+
+        if !next_line.ends_a_reach(text, at: l.pos, spaces: spaces, margin: margin) && !a_name_after_a_kept_end(l, text, spaces: spaces, margin: margin)
             return
         close_brackets(@l, text)
         state.push_offset(@l.closes, at: l.pos)
@@ -108,8 +115,14 @@ function line_start(@l: state.LexState, text: str)
             open_line.settle(@l)
         return
 
-    if l.open_line >= 0 && open_line.goes_on(@l, text, spaces: spaces)
-        return
+    # The line left open is decided here, and so is a `\` that asked it to go
+    # on, whose fix stands as that decision left it (`backslash.hero`).
+    if l.open_line >= 0
+        joined = open_line.goes_on(@l, text, spaces: spaces)
+        l.backslash @ -1
+
+        if joined
+            return
 
     # Read as bodies, the line below a same-margin break is one level deeper
     # (`LexState.bodies`).
@@ -167,13 +180,26 @@ function line_start(@l: state.LexState, text: str)
 
 ## The brackets a mistake left open
 
+# Inside a `(`, a line end the line above kept may stand only before a closer
+# or a `,` (the specification's opening paragraph: only `[` and `{` take a
+# line end as a separator), so a line at the statement's margin `margin` that
+# opens with a name after one goes on inside no `(` of a program that compiles
+# (panel 183 R2, the completeness critic's route).
+function a_name_after_a_kept_end(l: state.LexState, text: str, spaces: i64, margin: i64) -> bool
+    if spaces > margin || l.tokens.len() == 0 || l.pos >= text.len()
+        return false
+    kept = l.tokens[l.tokens.len() - 1].kind == .terminator
+    inner = text[l.open_brackets[l.open_brackets.len() - 1].start]
+    return kept && inner == '(' && next_line.opens_with_a_name(text, at: l.pos)
+
 # Every opener still open is named never closed, and the stack emptied: at the
 # file's end, where without it one missing `)` would swallow the rest of the
-# file's layout in silence (panel 007), and at a line that opens a declaration
-# at column 0 (`line_start`), where a missing closer took the next declaration
-# inside its bracket and a stray closer further down closed it, the opener
-# never named and the declaration's own mistakes never told (defect 130's
-# class, 2026-09-30).
+# file's layout in silence (panel 007), and at a line whose first word no
+# bracket holds (`line_start`), a declaration's at column 0 since defect 130's
+# class (2026-09-30) and a statement's at its statement's margin since panel
+# 183 R1, where a missing closer took the lines below inside its bracket and a
+# stray closer further down closed it, the opener never named and the lines'
+# own mistakes never told.
 function close_brackets(@l: state.LexState, text: str)
     for span in l.open_brackets
         state.push_diagnostic(
@@ -194,11 +220,32 @@ function close_brackets(@l: state.LexState, text: str)
 # cannot end is left open, and one that ends with a value owes its
 # terminator until the next line with words shows it is not going on with it
 # (`open_line`); `return`, `break` and `continue` end theirs here.
-function maybe_terminator(@l: state.LexState)
+function maybe_terminator(@l: state.LexState, text: str)
     if l.last_significant.is_err()
         return
     kind = l.last_significant.must()
     ender = is_line_ender(kind)
+
+    # A `\` asks its line to go on (`backslash.hero`): at depth zero it is left
+    # open whatever it ends with, and the next line with words decides; inside
+    # brackets it goes on, unless a value ends it and one begins the next line,
+    # where the line end is what separates them.
+    if l.backslash >= 0
+        if l.open_brackets.len() == 0
+            open_line.left_open(@l)
+            return
+        below = backslash.word_below(l, text)
+        noise = ender && (below < 0 || backslash.begins_a_value(text, at: below))
+        backslash.within_brackets(
+            @l,
+            text,
+            below: below,
+            noise: noise,
+            sure: !ender || below >= 0 && (backslash.closes_or_separates(text, at: below) || open_line.goes_on_at_head(text, at: below) >= 0)
+        )
+
+        if !noise
+            return
 
     # A literal that never closed ran to this line end and took what the line
     # held: the line is over at any depth, as a line an `error` token ends is
@@ -280,7 +327,7 @@ test "the terminator lands only where a line can be over"
     l: state.LexState @ state.new_state()
     l.pos @ 1
     state.emit(@l, .ident, 0)
-    maybe_terminator(@l)
+    maybe_terminator(@l, "x")
     assert l.tokens.len() == 1
     assert l.owed == 1
     open_line.settle(@l)
@@ -289,11 +336,11 @@ test "the terminator lands only where a line can be over"
     p: state.LexState @ state.new_state()
     p.pos @ 1
     state.emit(@p, .plus, 0)
-    maybe_terminator(@p)
+    maybe_terminator(@p, "+")
     assert p.tokens.len() == 1
     assert p.open_line == 0
     e: state.LexState @ state.new_state()
-    maybe_terminator(@e)
+    maybe_terminator(@e, "")
     assert e.tokens.len() == 0
 
 test "every value keyword ends a line"

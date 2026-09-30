@@ -1,0 +1,56 @@
+# Recorded 2026-09-30, lane recovery-b4: the known cost of panel 183's R1
+# (ratified 2026-09-30), not its intent. Each function
+# writes an `if`, a `match` or a `return` at its statement's margin inside a
+# bracket the author did close below; the rule ends the bracket's reach at
+# that word and names it never closed, where before one message stood. R3,
+# which would tell these as the statement inside the bracket, did not land:
+# written as the sitting wrote it, *closed later in the file*, it also takes
+# Task 2's `(`, which the stray `)` below closes by the lexer's pairing and
+# which R6 asks be named never closed. These are the sitting's `g5`, `g6`,
+# `g7` and `b_if_col0`, and the author chooses.
+
+function g5()
+    c = true
+    x: i64 = f(0,  #~ unclosed_bracket
+    if c
+        1
+    else
+        2)  #~ expected_end_of_line
+    print(x)
+
+function g6()
+    n = 1
+    print(  #~ unclosed_bracket
+    match n
+        1 => "a"
+        _ => "b"
+    )  #~ expected_expression
+
+function f(a: i64, b: i64) -> i64
+    return a + b
+
+function b_if_col0()
+    c = true
+    x = f(  #~ unclosed_bracket
+#~v expected_expression expected_declaration
+if c
+    1
+#~v expected_declaration
+else
+    2
+    )  #~ expected_expression
+    print(x)
+
+function main()
+    g5()
+
+# R2's own known cost, the sitting's `m1_at_arg_line`: an argument written on
+# the line below its call, `@y`, then the `)` at the end of the line after, is
+# read as a name after a kept line end, the `(` named never closed.
+function m1()
+    x = h(1, 2  #~ unclosed_bracket
+    @y  #~ expected_expression
+    print(x))  #~ expected_end_of_line
+
+function h(a: i64, @b: i64) -> i64
+    return a

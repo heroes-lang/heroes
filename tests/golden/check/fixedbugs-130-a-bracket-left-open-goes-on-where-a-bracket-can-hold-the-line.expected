@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-130-a-bracket-left-open-goes-on-where-a-bracket-can-hold-the-line.hero:12:10: error[unclosed_bracket]: `[` opened here is never closed
+tests/golden/check/fixedbugs-130-a-bracket-left-open-goes-on-where-a-bracket-can-hold-the-line.hero:18:10: error[unclosed_bracket]: `(` opened here is never closed
+tests/golden/check/fixedbugs-130-a-bracket-left-open-goes-on-where-a-bracket-can-hold-the-line.hero:29:5: error[expected_parameter]: expected a parameter name, found `match` — a parameter is `name: type`, or `@name: type` when the callee may change it
+tests/golden/check/fixedbugs-130-a-bracket-left-open-goes-on-where-a-bracket-can-hold-the-line.hero:41:1: error[expected_parameter]: expected a parameter name, found `match` — a parameter is `name: type`, or `@name: type` when the callee may change it
