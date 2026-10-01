@@ -37,8 +37,20 @@ function in_a_map_type()
     n: {str: [i64} @ {}  #~ unclosed_bracket
     print(n.len())
 
+function an_index_left_open_over_a_line_going_on()
+    xs = [1, 2]
+    i = 0
+    print(xs[i  #~ unclosed_bracket
+        + 1)  #~ line_end_before_continuation
+
 function a_closer_of_no_open_kind()
     print(pair(a: 1, b: 2])  #~ expected_args_close
 
 function main()
     on_one_line()
+
+# Added 2026-10-01 at lane recovery-b5's batch gate, where the trunk's
+# `parse/line_end_readings` met C3's rule: `xs[i` over a line going on with
+# `+ 1)` names the `[`, the `)` closing the call, and the line going on stops
+# before that `)`, so the call takes it (`parse/unclosed.named_here`); the
+# line end before `+` is a mistake of its own, told with its certain fix.
