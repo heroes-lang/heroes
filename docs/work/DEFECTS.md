@@ -795,4 +795,9 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     measured); at 30,000 heads that square gives about five minutes, an
     inference, unrun.
 
+    **2026-10-01, lane recovery-b5, a file of foreign heads is read once to
+    place its words, and the parser grows its arrays in place**: repaired at
+    `a2af2a3f`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
 *******************************************************************************

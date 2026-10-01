@@ -1,0 +1,83 @@
+# Fixed defect 131's class, 2026-10-01, ruling 5 of the recovery batches (lane
+# recovery-b5's C1). Symptom: a body, a record's fields, a variant's cases, an
+# `extern` group's members or a match's arms indented with tabs cost one
+# `tab_in_indentation` a line, and the lexer kept the level of the line above
+# for every tabbed line, so a block nested in tabs collapsed into its head: an
+# `else` read as a statement, a record named empty and its fields read as
+# declarations, a group's member as a body (3 to 6 messages for one habit over
+# batch 4's first-pass shapes; `indent-tab` 121 EXTRA of 158). Cause:
+# `layout.line_start` refused a tabbed margin and laid out nothing for it.
+# Repair: the tabbed lines in a row are one run, told once at its first line,
+# and each is laid out at the level its fix writes, a tab as four columns
+# (`selfhost/indent_runs.hero`); the fix re-indents every line the run holds,
+# a comment and a line inside brackets with them, and is certain here, where
+# tabs alone map onto the levels. `check --apply` writes a program that
+# checks clean (`.fixed`).
+
+function body()
+	x = 1  #~ tab_in_indentation
+	y = 2
+	print(x + y)
+
+function nested(x: i64)
+	if x == 1  #~ tab_in_indentation
+		print(x)
+	else
+		print(0)
+
+record Point
+	x: i64  #~ tab_in_indentation
+	y: i64
+
+variant Shape
+	circle  #~ tab_in_indentation
+		r: f64
+	square
+
+extern "stdlib.h"
+	function abs(n: i32) -> i32  #~ tab_in_indentation
+
+function arms(n: i64) -> i64
+	return match n  #~ tab_in_indentation
+		0 => 1
+		_ => 2
+
+function between()
+	x = 1  #~ tab_in_indentation
+	# a note
+
+	print(x)
+
+function in_brackets(a: i64, b: i64) -> i64
+	return add(  #~ tab_in_indentation
+		a: a,
+		b: b
+	)
+
+function add(a: i64, b: i64) -> i64
+    return a + b
+
+function under_a_head_in_spaces(x: i64)
+    if x == 1
+		print(x)  #~ tab_in_indentation
+    print(0)
+
+test "a test"
+	assert 1 == 1  #~ tab_in_indentation
+
+constant LIMIT: i64
+	3  #~ tab_in_indentation
+
+function main()
+    body()
+    nested(x: 1)
+    print(arms(0))
+    between()
+    print(in_brackets(a: 1, b: 2))
+    under_a_head_in_spaces(x: 2)
+    print(abs(n: -1))
+    print(LIMIT)
+    p = Point(x: 1, y: 2)
+    print(p.x + p.y)
+    s: Shape = .square
+    print(s == .square)

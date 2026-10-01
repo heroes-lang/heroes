@@ -10,12 +10,12 @@
 
 #~v expected_name
 function
-	y = 3 )  #~ tab_in_indentation expected_end_of_line
+    y = 3 )  #~ tab_in_indentation expected_end_of_line
 
 function main()
     #~v continuation_outside_brackets
     x = 1 +
-	print(2)  #~ tab_in_indentation
+    print(2)  #~ tab_in_indentation
     print(x)
 
 # Read again 2026-10-01, lane recovery-b5 (ruling 5, `selfhost/indent_runs.hero`):

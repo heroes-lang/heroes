@@ -24,6 +24,7 @@ use bytes
 use open_line
 use next_line
 use backslash
+use indent_runs
 
 ## The carriage return
 
@@ -65,28 +66,21 @@ function is_line_ender(kind: token.TokenKind) -> bool
 
 # Consume the line's leading whitespace and emit Indent/Dedent. Every error
 # path recovers by keeping the current level: the line still lexes, the
-# diagnostic tells the author what the margin meant.
+# diagnostic tells the author what the margin meant. A margin written in an
+# indentation habit, tabs or two spaces a level, is read as its run's fix
+# writes it and told once for the run (`indent_runs.hero`, ruling 5).
 function line_start(@l: state.LexState, text: str)
     ws_start = l.pos
-    spaces: i64 @ 0
-    saw_tab: bool @ false
+    m = indent_runs.margin_at(text, at: l.pos)
+    l.pos @ m.end
 
-    while l.pos < text.len() && (text[l.pos] == ' ' || text[l.pos] == '\t')
-        if text[l.pos] == ' '
-            spaces @ spaces + 1
-        else
-            saw_tab @ true
-        l.pos @ l.pos + 1
+    # A margin with no tab, and no run open, is read as it is written: every
+    # line of a program that compiles takes this path, and asks no more.
+    habit = m.tabs > 0 || l.run[0].kind != .none
+    spaces: i64 @ m.spaces
 
-    if saw_tab
-        open_line.abandon(@l)
-        l.backslash @ -1
-        span = token.Span(start: ws_start, end: l.pos)
-        state.push_diagnostic(
-            @l.diagnostics,
-            diag.new_diagnostic(code: "tab_in_indentation", message: "a tab in indentation is a compile error — indent with spaces, exactly 4 per level", span: span)
-        )
-        return
+    if habit
+        spaces @ indent_runs.through(l.run[0], m)
 
     # Inside brackets the margin is not structural (panel 007), but a line that
     # opens with a word no bracket holds in a program that compiles, no deeper
@@ -99,21 +93,31 @@ function line_start(@l: state.LexState, text: str)
         margin = l.level * 4
 
         if !next_line.ends_a_reach(text, at: l.pos, spaces: spaces, margin: margin) && !a_name_after_a_kept_end(l, text, spaces: spaces, margin: margin)
+            if habit
+                indent_runs.quiet(@l, text, m, line: ws_start, blank: blank_at(text, at: l.pos))
             return
         close_brackets(@l, text)
         state.push_offset(@l.closes, at: l.pos)
 
     # Layout-neutral lines: empty, or comment-only.
     if l.pos >= text.len()
+        if habit
+            indent_runs.quiet(@l, text, m, line: ws_start, blank: true)
         return
     b = text[l.pos]
 
     if b == '\n' || b == CR || b == '#'
+        if habit
+            indent_runs.quiet(@l, text, m, line: ws_start, blank: blank_at(text, at: l.pos))
+
         # A stray carriage return with words after it takes no margin, so what
         # it holds follows the terminator its line end owed.
         if b == CR && (l.pos + 1 >= text.len() || text[l.pos + 1] != '\n')
             open_line.settle(@l)
         return
+
+    if habit || m.spaces == l.level * 4 + 2
+        spaces @ indent_runs.with_words(@l, text, m, line: ws_start)
 
     # The line left open is decided here, and so is a `\` that asked it to go
     # on, whose fix stands as that decision left it (`backslash.hero`).
@@ -177,6 +181,11 @@ function line_start(@l: state.LexState, text: str)
             state.push_token(@l.tokens, token.Token(kind: .dedent, span: span))
 
         l.level @ new_level
+
+# Whether the line at `at`, past its margin, holds nothing: its end, a
+# carriage return before it, or the text's.
+function blank_at(text: str, at: i64) -> bool
+    return at >= text.len() || text[at] == '\n' || text[at] == CR && at + 1 < text.len() && text[at + 1] == '\n'
 
 ## The brackets a mistake left open
 
@@ -304,10 +313,13 @@ test "a wrong margin is an error that still recovers a structure"
     assert j.diagnostics.len() == 1
     assert j.diagnostics[0].code == "indentation_jump"
     assert j.level == 1
+
+    # A tab is read as the level its fix writes, four columns, and told
+    # (`indent_runs.hero`): the line is laid out one level in.
     t: state.LexState @ state.new_state()
     line_start(@t, "\tx")
     assert t.diagnostics[0].code == "tab_in_indentation"
-    assert t.level == 0
+    assert t.level == 1
 
 test "inside brackets and on neutral lines the margin means nothing"
     l: state.LexState @ state.new_state()

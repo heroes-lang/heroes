@@ -1,5 +1,5 @@
 tests/golden/check/fixedbugs-132-a-line-left-open-over-a-tab.hero:13:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
 tests/golden/check/fixedbugs-132-a-line-left-open-over-a-tab.hero:18:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-132-a-line-left-open-over-a-tab.hero:17:11: error[continuation_outside_brackets]: a line outside brackets ends its statement, and this one cannot end with `+`: the next line goes on with it at the same margin, where a new statement begins; write the statement on one line, or break it inside parentheses
 tests/golden/check/fixedbugs-132-a-line-left-open-over-a-tab.hero:12:9: error[expected_name]: expected the declared name after `function`, found end of line — `function dist2(a: Point, b: Point) -> i64`
 tests/golden/check/fixedbugs-132-a-line-left-open-over-a-tab.hero:13:8: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
-tests/golden/check/fixedbugs-132-a-line-left-open-over-a-tab.hero:17:12: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

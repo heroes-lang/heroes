@@ -48,7 +48,7 @@ class Holder  #~ reserved_word
     w i64  #~ expected_field_type
 
 fucntion tabbed()  #~ expected_declaration
-	y = 3 )  #~ tab_in_indentation expected_end_of_line
+    y = 3 )  #~ tab_in_indentation expected_end_of_line
 
 function main()
     print(1)

@@ -30,6 +30,7 @@ use line_joins
 use scan
 use escape
 use swap_words
+use indent_runs
 
 ## The output
 
@@ -196,6 +197,9 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
         if l.pos >= text.len()
             break
         scan.line_body(@l, text)
+
+    # An indentation run the file's end ends is told as every run is.
+    indent_runs.finish(@l, text)
 
     # EOF: terminate the last line if the file ended without a newline,
     # report every opener that never closed (panel 007: otherwise one missing
@@ -685,19 +689,20 @@ test "read apart, a refused break is a line end, and a head that goes on is left
         assert lex_one(text).breaks.len() == 0
 
 # Defect 132, beside it: a line left open over a line whose margin holds a tab
-# went on into it in silence, the tab the one report; it is ended there, and
-# the parser says what it lacks. A block's head is not ended, since the tabbed
-# line is read as its body.
-test "a line left open over a tabbed line is ended, and a block's head keeps its body"
+# went on into it in silence, the tab the one report, and from defect 132's
+# repair it was ended there. Read again under ruling 5 (2026-10-01,
+# `indent_runs.hero`): the tabbed line is read as it is at the margin its fix
+# writes, four spaces a level, so a line left open over it goes on, or is
+# ended, as over that margin, a block's head keeps its body, and the tab is
+# told once beside whatever that reading tells.
+test "a line left open over a tabbed line is read as over the margin its fix writes"
     out = lex_one("x = a +\n\tb\n")
-    assert out.diagnostics.len() == 1
+    assert out.diagnostics.len() == 2
     assert out.diagnostics[0].code == "tab_in_indentation"
-    assert kind_line(out.tokens) == "ident eq ident plus terminator ident terminator eof"
-    named = lex_one("function\n\ty = 3\n")
-    assert kind_line(named.tokens) == "kw_function terminator ident eq int terminator eof"
-    assert kind_line(lex_one("else\n\tx = 1\n").tokens) == "kw_else ident eq int terminator eof"
-    assert kind_line(lex_one(".a =>\n\tx = 1\n").tokens) == "dot ident fat_arrow ident eq int terminator eof"
-    assert kind_line(lex_one("if a:\n\tx = 1\n").tokens) == "kw_if ident colon ident eq int terminator eof"
+    assert out.diagnostics[1].code == "continuation_outside_brackets"
+
+    for pair in [["x = a +\n\tb\n", "x = a +\n    b\n"], ["function\n\ty = 3\n", "function\n    y = 3\n"], ["else\n\tx = 1\n", "else\n    x = 1\n"], [".a =>\n\tx = 1\n", ".a =>\n    x = 1\n"], ["if a:\n\tx = 1\n", "if a:\n    x = 1\n"]]
+        assert kind_line(lex_one(pair[0]).tokens) == kind_line(lex_one(pair[1]).tokens)
 
 # Defect 132's class, lane 133's finding: a word the lexer refuses at the head
 # of a line opens that line as its certain swap would, so the line above it
@@ -756,3 +761,104 @@ test "a backslash at a line's end is one message, and the line it asks for is jo
     assert kind_line(hole.tokens) == "ident eq str_piece ident plus int str_piece terminator eof"
     mid = lex_one("x = 1 \\ 2\n")
     assert kind_line(mid.tokens) == "ident eq int error int terminator eof"
+
+## Indentation habits (ruling 5, `indent_runs.hero`)
+
+# `text` with every fix of `d` written, back to front: what `check --apply`
+# writes where they are certain.
+function fixed_by(text: str, d: diag.Diagnostic) -> str
+    out: str @ text
+    i: i64 @ d.fixes.len() - 1
+
+    while i >= 0
+        f = d.fixes[i]
+        out @ out.slice(from: 0, to: f.span.start) + f.replacement + out.slice(from: f.span.end, to: out.len())
+        i @ i - 1
+
+    return out
+
+function all_certain(d: diag.Diagnostic) -> bool
+    for f in d.fixes
+        if f.certainty != .certain
+            return false
+
+    return true
+
+# A body in two spaces a level, or in tabs, is one message at the run's first
+# line, and its lines are laid out as the text its fix writes: the same
+# tokens, and that text lexes clean.
+test "an indentation habit is one message, and its lines are laid out as its fix writes them"
+    two = "function main()\n  x = 1\n  if x == 1\n    print(x)\n  else\n    print(0)\n"
+    told = lex_one(two)
+    assert told.diagnostics.len() == 1
+    assert told.diagnostics[0].code == "indentation_not_multiple_of_4"
+    assert told.diagnostics[0].message == "indentation must be exactly 4 spaces per level; found 2, and this line and the 4 below it indent 2 spaces a level"
+    assert told.diagnostics[0].fixes.len() == 5
+    assert all_certain(told.diagnostics[0])
+    written = fixed_by(two, told.diagnostics[0])
+    assert written == "function main()\n    x = 1\n    if x == 1\n        print(x)\n    else\n        print(0)\n"
+    assert lex_one(written).diagnostics.len() == 0
+    assert kind_line(told.tokens) == kind_line(lex_one(written).tokens)
+    tabs = "function main()\n\tx = 1\n\tif x == 1\n\t\tprint(x)\n\telse\n\t\tprint(0)\n"
+    tabbed = lex_one(tabs)
+    assert tabbed.diagnostics.len() == 1
+    assert tabbed.diagnostics[0].code == "tab_in_indentation"
+    assert tabbed.diagnostics[0].message == "a tab in indentation is a compile error, and this line and the 4 below it indent with tabs — indent with spaces, exactly 4 per level"
+    assert all_certain(tabbed.diagnostics[0])
+    assert fixed_by(tabs, tabbed.diagnostics[0]) == written
+    assert kind_line(tabbed.tokens) == kind_line(lex_one(written).tokens)
+
+    # A file's first declaration below a heading has no line end above it,
+    # and its body in two spaces is one run all the same.
+    headed = lex_one("# a heading\nfunction main()\n  x = 1\n  print(x)\n")
+    assert headed.diagnostics.len() == 1
+    assert all_certain(headed.diagnostics[0])
+
+# What the run holds beside its lines with words: a comment line and a line
+# inside brackets re-indented with them, a blank line's tab deleted, a
+# comment indented with spaces left as it is; and one line alone keeps the
+# message it always had, with its fix.
+test "a run re-indents its comments and its lines inside brackets, and one line keeps its message"
+    text = "function main()\n\tx = f(1,\n\t\t2)\n\t# a note\n\t\n    # spaced\n\tprint(x)\n"
+    told = lex_one(text)
+    assert told.diagnostics.len() == 1
+    assert all_certain(told.diagnostics[0])
+    assert fixed_by(text, told.diagnostics[0]) == "function main()\n    x = f(1,\n        2)\n    # a note\n\n    # spaced\n    print(x)\n"
+    one = lex_one("function main()\n    if true\n      print(1)\n    print(2)\n")
+    assert one.diagnostics.len() == 1
+    assert one.diagnostics[0].message == "indentation must be exactly 4 spaces per level; found 6"
+    assert one.diagnostics[0].fixes.len() == 1
+    assert one.diagnostics[0].fixes[0].replacement == "        "
+    assert all_certain(one.diagnostics[0])
+
+# Where the habit's reading is not one to one the fix is a guess: a margin of
+# a tab and spaces, a jump read through the habit (laid out one level in and
+# not told as a jump), a body in tabs at its head's own margin (read one level
+# under it, a tab's width being the editor's).
+test "a run that maps onto its levels by a guess is told so, and a jump through it is its own"
+    mixed = lex_one("function main()\n\tx = 1\n\t  y = 2\n\tprint(x + y)\n")
+    assert mixed.diagnostics.len() == 1
+    assert !all_certain(mixed.diagnostics[0])
+    jump = lex_one("function main()\n\t\t\tx = 1\n\tprint(x)\n")
+    assert jump.diagnostics.len() == 1
+    assert jump.diagnostics[0].code == "tab_in_indentation"
+    assert !all_certain(jump.diagnostics[0])
+    assert kind_line(jump.tokens) == kind_line(lex_one("function main()\n    x = 1\n    print(x)\n").tokens)
+    shifted = lex_one("function main(n: i64)\n    if n > 0\n\tprint(n)\n    print(0)\n")
+    assert shifted.diagnostics.len() == 1
+    assert !all_certain(shifted.diagnostics[0])
+    assert kind_line(shifted.tokens) == kind_line(lex_one("function main(n: i64)\n    if n > 0\n        print(n)\n    print(0)\n").tokens)
+
+# The two-space reading yields where it would put a line one level under a
+# line that opens nothing: a slip at six over a correct line at eight is the
+# slip's message alone, and two spaces over a statement stay an over-indent,
+# told as they always were (batch 4's first pass, `s09`, `s25`).
+test "two spaces under a line that opens nothing are read as four, out of the run"
+    slip = "function main()\n    if true\n      print(1)\n        print(3)\n    print(2)\n"
+    told = lex_one(slip)
+    assert told.diagnostics.len() == 1
+    assert told.diagnostics[0].fixes.len() == 1
+    assert fixed_by(slip, told.diagnostics[0]) == "function main()\n    if true\n        print(1)\n        print(3)\n    print(2)\n"
+    over = lex_one("function main()\n    x = 1\n      y = 2\n    print(x + y)\n")
+    assert over.diagnostics.len() == 1
+    assert over.diagnostics[0].fixes.len() == 0
