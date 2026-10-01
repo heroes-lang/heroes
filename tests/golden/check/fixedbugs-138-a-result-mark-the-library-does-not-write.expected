@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-138-a-result-mark-the-library-does-not-write.hero:10:14: error[contract_differs]: `hero_args_raw` is declared here and in the Heroes library, and the two disagree about the marks on the result: here `owned free`, in the library no mark — one C function has one contract

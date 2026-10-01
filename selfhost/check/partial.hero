@@ -59,61 +59,73 @@ function reaches(c: state.Checker, decls: [ast.Decl], ty: i64) -> i64?
 # old comment named is answered rather than bounded. A type already
 # walked returned absence then and returns it now, so the memo is
 # correct as well as terminating.
+#
+# **AND IT IS FLAT SINCE DEFECT 140 (2026-10-01)**: total is not the same
+# as shallow. The set ended the walk at every id but the walk still went
+# one frame per record, so `xs == xs` over records nested by value seven
+# hundred deep stopped `check` itself at 134, *stack exhausted in
+# checkpartial.reaches_within*. A stack of its own goes as deep as the
+# records do; the children are pushed last to first, so the walk enters
+# them in the recursion's order and names the partial record it named.
 function reaches_within(c: state.Checker, decls: [ast.Decl], ty: i64, @seen: {i64: bool}) -> i64?
-    if !seen[ty].is_err()
-        return fail(code: "absent", msg: "this type was already walked")
-    seen[ty] @ true
+    stack: [i64] @ [ty]
+    live: i64 @ 1
 
-    match table.get(c.out.types, ty)
-        .named n =>
-            if is_partial(decls, n.decl)
-                return ok(n.decl)
+    while live > 0
+        live @ live - 1
+        at = stack[live]
 
-            match decls[n.decl].kind
-                .record_decl r =>
-                    for field in r.fields
-                        found = through_field(c, decls, field_ty: field.ty, @seen)
+        if !seen[at].is_err()
+            continue
+        seen[at] @ true
+        inner: [i64] @ []
 
-                        if !found.is_err()
-                            return found
-                .variant_decl v =>
-                    for one_case in v.cases
-                        for field in one_case.fields
-                            found = through_field(c, decls, field_ty: field.ty, @seen)
+        match table.get(c.out.types, at)
+            .named n =>
+                if is_partial(decls, n.decl)
+                    return ok(n.decl)
+                inner @ field_types(c, decls, decl: n.decl)
+            .array a                                                                => inner @ [a.element]
+            .fallible o                                                             => inner @ [o.payload]
+            .map m                                                                  => inner @ [m.key, m.value]
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr                       => continue
+            .unit | .fixed | .function_ty | .case_ty | .failure | .generic | .error => continue
 
-                            if !found.is_err()
-                                return found
-                .constant_decl | .function_decl | .test_decl => return fail(
-                    code: "absent",
-                    msg: "not a data declaration"
-                )
+        back: i64 @ inner.len() - 1
 
-            return fail(code: "absent", msg: "no partial inside")
-        .array a    => return reaches_within(c, decls, ty: a.element, @seen)
-        .fallible o => return reaches_within(c, decls, ty: o.payload, @seen)
-        .map m =>
-            in_key = reaches_within(c, decls, ty: m.key, @seen)
+        while back >= 0
+            if live < stack.len()
+                stack[live] @ inner[back]
+            else
+                stack @ stack.push(inner[back])
+            live @ live + 1
+            back @ back - 1
 
-            if !in_key.is_err()
-                return in_key
-            return reaches_within(c, decls, ty: m.value, @seen)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr => return fail(
-            code: "absent",
-            msg: "a scalar reaches nothing"
-        )
-        .unit | .fixed | .function_ty | .case_ty | .failure | .generic | .error => return fail(
-            code: "absent",
-            msg: "this shape reaches nothing"
-        )
+    return fail(code: "absent", msg: "no partial inside")
 
-    return fail(code: "absent", msg: "unreached")
+# The written types of a record's fields, or of every case's fields of a
+# variant, in declaration order. A field whose type was never lowered
+# already carries its own diagnostic and is left out.
+function field_types(c: state.Checker, decls: [ast.Decl], decl: i64) -> [i64]
+    out: [i64] @ []
 
-function through_field(c: state.Checker, decls: [ast.Decl], field_ty: i64, @seen: {i64: bool}) -> i64?
-    written = state.written_type(c.out, field_ty)
+    match decls[decl].kind
+        .record_decl r =>
+            for field in r.fields
+                written = state.written_type(c.out, field.ty)
 
-    if written.is_err()
-        return fail(code: "absent", msg: "the field's type was never lowered")
-    return reaches_within(c, decls, ty: written.must(), @seen)
+                if !written.is_err()
+                    out @ out.push(written.must())
+        .variant_decl v =>
+            for one_case in v.cases
+                for field in one_case.fields
+                    written = state.written_type(c.out, field.ty)
+
+                    if !written.is_err()
+                        out @ out.push(written.must())
+        .constant_decl | .function_decl | .test_decl => return out
+
+    return out
 
 ## Tests
 

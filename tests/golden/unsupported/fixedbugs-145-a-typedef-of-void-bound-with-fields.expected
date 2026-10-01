@@ -1,0 +1,6 @@
+error[ffi_unknown_tag]: `void_t` is `void` in `fixedbugs-145-types.h`, and the header gives it no fields — clang read the header and cannot lay the type out
+  at tests/golden/unsupported/fixedbugs-145-a-typedef-of-void-bound-with-fields.hero:17:12
+     |
+  17 |     record void_t  #~ ffi_unknown_tag
+     |            ^^^^^^
+  note: the header keeps the type opaque: a program never holds one by value, only C's pointer to it, which is a HANDLE. Drop the field block and give the record the typedef as its tag, `record void_t tag void_t` (§ 13)

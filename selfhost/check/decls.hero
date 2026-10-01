@@ -51,9 +51,18 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                     # produces it, unlike a function, which returns.
                     got = walk.block(@c, a, r, s, decls, body: k.body.must(), want: .value(ty: declared))
 
-                    if got.value.is_err()
-                        want = state.show(c, s, decls, declared)
-                        state.push_diagnostic(@c, flow_errors.no_value(want, k.body.must().span))
+                    # Asked of the outcome, never of the missing value: a body
+                    # that ends on a statement has none either, and its block
+                    # has already said so (`branch_without_value`). Until
+                    # 2026-10-01 this read the absent value, so such a body
+                    # was told twice, the second time *every branch jumps*
+                    # (defect 139's class).
+                    if got.jumps
+                        name = source.span_text(s, decl.name)
+                        state.push_diagnostic(
+                            @c,
+                            flow_errors.constant_without_value(name: name, span: k.body.must().span)
+                        )
                 else
                     if !k.header.is_err()
                         # No body: the value is the header's. What IS

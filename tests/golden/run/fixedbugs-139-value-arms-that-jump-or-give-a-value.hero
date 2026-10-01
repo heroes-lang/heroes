@@ -1,0 +1,124 @@
+# Fixed 2026-10-01, defect 139's class, lane flow. The shapes beside the
+# refusal of a value arm that ends on a statement, which must stay legal and
+# build: a `match` used as a value whose arms jump or give a value, in every
+# position it stands in (bound, typed, returned), an arm that is a `match` of
+# its own, a `continue` arm inside a loop, an `if` used as a value with a
+# branch that returns, an `if` used as a value whose branch holds a `match`
+# statement before its value (the critic's case c, panel 184's
+# `184-reports/completeness-critic.md` B1), and arms that are statements in a
+# `match` that is itself a statement.
+
+variant Color
+    red
+    blue
+
+function bound(c: Color) -> i64
+    x = match c
+        .red  => return 0
+        .blue => 5
+
+    return x
+
+function typed(c: Color) -> i64
+    x: i64 = match c
+        .red  => 7
+        .blue => return 8
+
+    return x
+
+function returned(c: Color) -> i64
+    return match c
+        .red  => 1
+        .blue => 2
+
+function nested(c: Color, d: Color) -> i64
+    x = match c
+        .red  => match d
+            .red  => 11
+            .blue => 12
+        .blue => 13
+
+    return x
+
+function first_nonzero(xs: [i64]) -> i64
+    found: i64 @ 0
+
+    for x in xs
+        y = match x
+            0 => continue
+            _ => x * 10
+
+        found @ y
+        break
+
+    return found
+
+function bound_if(b: bool) -> i64
+    x = if b
+        return 3
+    else
+        4
+    return x
+
+function typed_if(b: bool) -> i64
+    x: i64 = if b
+        5
+    else
+        return 6
+    return x
+
+function statement_before_value(b: bool) -> i64
+    x = if b
+        match 1
+            1 => print(20)
+            _ => print(29)
+
+        21
+    else
+        22
+    return x
+
+function typed_statements_before_values(b: bool) -> i64
+    x: i64 = if b
+        match 1
+            1 => print(30)
+            _ => print(39)
+
+        31
+    else
+        match 2
+            2 => print(32)
+            _ => print(39)
+
+        33
+    return x
+
+function statement_arms(c: Color) -> i64
+    n: i64 @ 0
+
+    match c
+        .red  => while n < 3
+            n @ n + 1
+        .blue => n @ 40
+
+    return n
+
+function main()
+    print(bound(c: .red))
+    print(bound(c: .blue))
+    print(typed(c: .red))
+    print(typed(c: .blue))
+    print(returned(c: .blue))
+    print(nested(c: .red, d: .blue))
+    print(nested(c: .blue, d: .red))
+    print(first_nonzero(xs: [0, 0, 4, 5]))
+    print(bound_if(b: true))
+    print(bound_if(b: false))
+    print(typed_if(b: true))
+    print(typed_if(b: false))
+    print(statement_before_value(b: true))
+    print(statement_before_value(b: false))
+    print(typed_statements_before_values(b: true))
+    print(typed_statements_before_values(b: false))
+    print(statement_arms(c: .red))
+    print(statement_arms(c: .blue))
