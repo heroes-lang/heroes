@@ -154,12 +154,36 @@ is a full panel.
      outside any git tree, with no `CLAUDE.md` in or above it; in it the
      spec's copy at the sitting's commit, the tasks, and a brief carrying the
      seat's method and output structure (`.claude/agents/llm-ergonomist.md`)
-     without the project's names; then `claude -p "Read brief.md in this
-     directory and follow it exactly. Your inputs are the files in this
-     directory only. Write report.md here. Answer in English."
-     --allowedTools "Read,Write" --disallowedTools
-     "Bash,WebFetch,WebSearch,Glob,Grep,Edit,Task,Agent"`, run from that
-     folder, one session per task when the tasks must not see each other.
+     without the project's names; then, run from that folder, one session
+     per task when the tasks must not see each other:
+
+     ```
+     claude -p "Read brief.md in this directory and follow it exactly. Your inputs are the files in this directory only. Write report.md here. Answer in English." \
+       --restricted --safe-mode --strict-mcp-config \
+       --tools "Read,Write" --allowedTools "Read,Write" \
+       --disallowedTools "Bash,WebFetch,WebSearch,Glob,Grep,Edit,Task,Agent,ListAgents,SendMessage" \
+       --max-budget-usd 3 --output-format json > run.json 2> run.err
+     ```
+
+     **This command replaced panel 183's on 2026-10-01** (author instruction,
+     on what panel 184's blind seat cost to learn, three attempts,
+     `docs/panel/184-briefs/llm-ergonomist.md`). Panel 183's ran with
+     `--allowedTools` and the short `--disallowedTools` alone. `--restricted`
+     ignores the user, project and local settings and confines the file tools to
+     the folder (the user's settings carry a language and 22 extra
+     directories); `--safe-mode` disables `CLAUDE.md`, skills, hooks and output
+     styles; `--strict-mcp-config` loads no MCP server. `--tools` names the
+     tools a session HAS, and `ListAgents` and `SendMessage` were among them,
+     able to reach another session on this machine. `--allowedTools` APPROVES
+     them, and without it every `Write` waited for a permission print mode
+     cannot give, so the reports landed in each session's own scratchpad.
+     `--max-budget-usd` is the paid run's bound the brief names. **And the
+     brief asks for *every place where the specification left you a choice,
+     the choice you made, and what the other would produce*** (`choice_points`),
+     never for the seat's hesitations or its tools: the first wording was
+     stopped by the API's safeguards as a request for the model's own
+     reasoning. The `claude` command must support the sitting's model, or the
+     seat runs on another (2.1.274 refused `claude-opus-5-5`).
      The coordinator copies the report into the sitting's reports directory
      with a header saying how it was run; panel 183's
      `llm-ergonomist-clean.md` and `-clean-task2.md` are the first two, and

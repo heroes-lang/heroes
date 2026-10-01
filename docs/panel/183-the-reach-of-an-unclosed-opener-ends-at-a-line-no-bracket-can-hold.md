@@ -159,6 +159,17 @@ single mistakes, none gaining `unclosed_bracket`, 7 and then 8 to fewer
 messages, none to more. **The author chooses**: `docs/work/DECIDE.md`, the
 item `panel 183`.
 
+**The author's choice, 2026-10-01** (the evening's answer, meant as *3b*,
+recorded as a reading): route (b), the opener's message reworded to say what
+the rule measured, the line and the word where the bracket's reach ended, a
+sentence true in Task 2 and in the shapes alike, the count of messages
+unchanged; and route (c), a narrower R3, prototyped in the recovery lane and
+measured on the shapes, Task 2 and the recovery instrument before any sitting
+sees it. Measured by lane recovery-b5 the same evening and landing with its
+batch: its C3 (`df2e13ca`) removes one of the case's twelve messages, the
+`expected_expression` at 36:1 in `b_if_col0`, which is the audit's BH-009
+shape that C3 repairs.
+
 ## The critic's two passes
 
 `183-reports/completeness-critic-briefs.md` (the briefs, before any seat) and
