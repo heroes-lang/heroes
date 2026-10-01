@@ -1,0 +1,15 @@
+# Fixed 2026-10-01 by lane 135c (defect 135, the certain-fix audit's C9).
+# Symptom: `.must()` and `.default(v)` on a value that cannot fail take a
+# certain removal, and the receiver it writes was found by the last
+# `.default(` in the call's text: on the compiler of `9d1c209d` a string
+# argument holding `.default(` cut the call inside the string, writing
+# `print(label.default("use ` with the string left open. Cause: a search of
+# the text for the method's name. Now the receiver is read from the call's
+# own tokens, what stands before the `.name` whose `(` the call's last `)`
+# closes; the `.fixed` is this text with each call reduced to its receiver.
+
+function main()
+    label = "x"
+    xs = [1, 2]
+    print(label)  #~ bad_operand
+    print((xs.len() + 1))  #~ bad_operand
