@@ -61,7 +61,7 @@ function eat(@c: cursor.Cursor)
         span: s
     )
     d.fixes @ d.fixes.push(diag.Fix(title: "drop the `:`", replacement: "", span: s, certainty: .certain))
-    c.diagnostics @ c.diagnostics.push(d)
+    cursor.push_diagnostic(@c.diagnostics, d)
     _ = cursor.bump(@c)
 
 # Whether the cursor's `:` is the last thing on its line, a comment aside, or
@@ -101,7 +101,7 @@ function read_below(@c: cursor.Cursor, text: str)
     d.fixes @ d.fixes.push(
         diag.Fix(title: "write it on the line below, one level deeper", replacement: line_break(text, at: rest.start) + margin + "    ", span: written, certainty: .certain)
     )
-    c.diagnostics @ c.diagnostics.push(d)
+    cursor.push_diagnostic(@c.diagnostics, d)
     c.tokens[colon] @ token.Token(kind: .indent, span: token.Span(start: rest.start, end: rest.start))
     c.tokens[end] @ token.Token(kind: .dedent, span: c.tokens[end].span)
 

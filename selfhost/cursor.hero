@@ -37,6 +37,7 @@
 use token
 use diag
 use describe
+use swap_words
 
 ## Reading the text
 
@@ -78,6 +79,15 @@ record Cursor
     # its line at column 0 (`lexer.LexOutput.closes`): no closer found past
     # one of these offsets closes an opener before it (`parse/unclosed`).
     closes: [i64]
+    # Every certain swap the lexer wrote for a word it refused, where the word
+    # begins (`lexer.LexOutput.swaps`): what the parser reads that word as,
+    # decided once, by the stage that writes the fix (defect 146).
+    swaps: [swap_words.Swap]
+    # Whether a lexer made the stream and told the cursor its swaps
+    # (`lexed_cursor`). A stream no lexer made, a test's tokens written by
+    # hand, has none to tell, and its words are read from the text as the
+    # lexer reads them (`parse/swap_reading.swap_at`).
+    lexed: bool
 
 function new_cursor(tokens: [token.Token]) -> Cursor
     return bounded_cursor(tokens: tokens, root_end: -1)
@@ -86,11 +96,14 @@ function new_cursor(tokens: [token.Token]) -> Cursor
 # the author's", which is what a single-file parse is.
 function bounded_cursor(tokens: [token.Token], root_end: i64) -> Cursor
     none: [i64] = []
-    return lexed_cursor(tokens: tokens, root_end: root_end, closes: none)
+    no_swaps: [swap_words.Swap] = []
+    c: Cursor @ lexed_cursor(tokens: tokens, root_end: root_end, closes: none, swaps: no_swaps)
+    c.lexed @ false
+    return c
 
 # The same over a stream the lexer made, told where it closed the brackets a
-# mistake left open.
-function lexed_cursor(tokens: [token.Token], root_end: i64, closes: [i64]) -> Cursor
+# mistake left open and what each word it refused reads as.
+function lexed_cursor(tokens: [token.Token], root_end: i64, closes: [i64], swaps: [swap_words.Swap]) -> Cursor
     said: [diag.Diagnostic] = []
     comments: [token.Span] = []
     held: [diag.Held] = []
@@ -101,7 +114,9 @@ function lexed_cursor(tokens: [token.Token], root_end: i64, closes: [i64]) -> Cu
         comments: comments,
         root_end: root_end,
         held: held,
-        closes: closes
+        closes: closes,
+        swaps: swaps,
+        lexed: true
     )
     pass_comments(@c)
     return c
@@ -119,7 +134,7 @@ function here_or(c: Cursor, fallback: token.Span) -> token.Span
 
 function pass_comments(@c: Cursor)
     while c.tokens[c.pos].kind == .comment
-        c.comments @ c.comments.push(c.tokens[c.pos].span)
+        push_span(@c.comments, c.tokens[c.pos].span)
         c.pos @ c.pos + 1
 
 ## Reading
@@ -183,6 +198,12 @@ function is_invisible(kind: token.TokenKind) -> bool
 function at_reported_error(c: Cursor) -> bool
     return at(c, .error)
 
+# The word the lexer's certain swap writes over the word it refused at
+# `span`, or a failure where it wrote none: a hint, guidance, a swap wrong
+# where the word stands, or no foreign word at all (`swap_words.hero`).
+function certain_swap(c: Cursor, span: token.Span) -> str?
+    return swap_words.word_at(c.swaps, at: span.start)
+
 ## Moving
 
 # Consume the current token and return it. Stops at `eof`, forever: every
@@ -239,7 +260,27 @@ function refused_since(c: Cursor, said: i64) -> bool
     return false
 
 function error(@c: Cursor, code: str, message: str, span: token.Span)
-    c.diagnostics @ c.diagnostics.push(diag.new_diagnostic(code: code, message: message, span: span))
+    push_diagnostic(@c.diagnostics, diag.new_diagnostic(code: code, message: message, span: span))
+
+# Append one diagnostic said, in place. **The array is the parameter, and
+# that is the whole reason this exists**, `state.push_token`'s rule (§4.10):
+# `c.diagnostics @ c.diagnostics.push(d)` is a FIELD place, which the in-place
+# store never reaches, so every diagnostic the parser said copied every one
+# said before it, and a file of N mistakes cost N² copies (defect 146,
+# measured 2026-10-01 on the trunk's compiler: 3,000 `function f() {` heads
+# 0.19 s and 24,000 8.02 s of user time to parse, and `sample` under the
+# array's push). Every parser module appends through this.
+function push_diagnostic(@diagnostics: [diag.Diagnostic], d: diag.Diagnostic)
+    diagnostics @ diagnostics.push(d)
+
+# The same for what a head holds back (`Cursor.held`).
+function push_held(@held: [diag.Held], h: diag.Held)
+    held @ held.push(h)
+
+# And for the comment spans passed, a block of many comment lines being
+# many of them.
+function push_span(@spans: [token.Span], s: token.Span)
+    spans @ spans.push(s)
 
 # How the current token is named in "expected X, found Y". Tokens whose text
 # carries information show it; punctuation and keywords are their own text

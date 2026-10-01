@@ -70,7 +70,8 @@ function no_members_below(@c: cursor.Cursor, text: str, head: token.Span, member
             _ = cursor.bump(@c)
 
         if !goes_on || junk.start != cursor.current_span(c).start
-            c.diagnostics @ c.diagnostics.push(
+            cursor.push_diagnostic(
+                @c.diagnostics,
                 diag.new_diagnostic(code: empty.code, message: "the " + members + " of `" + quoted + "` go on the lines below it, one level deeper, and never in braces (found `{`)", span: cursor.current_span(c))
             )
         close = brace_habit.closer(c, open: brace)
@@ -78,7 +79,7 @@ function no_members_below(@c: cursor.Cursor, text: str, head: token.Span, member
         # Braces that hold nothing hold no member either, which is a mistake
         # the braces' report does not name.
         if holds_nothing(c, from: brace, to: close)
-            c.diagnostics @ c.diagnostics.push(empty)
+            cursor.push_diagnostic(@c.diagnostics, empty)
         return .braced(close: close)
 
     if goes_on
@@ -88,7 +89,7 @@ function no_members_below(@c: cursor.Cursor, text: str, head: token.Span, member
         if goes_on && cursor.at(c, .indent)
             junk_after_head(@c, head: quoted, found: found, span: junk, members: members, generic: generic)
         else
-            c.diagnostics @ c.diagnostics.push(empty)
+            cursor.push_diagnostic(@c.diagnostics, empty)
 
     if cursor.at(c, .indent)
         return .indented

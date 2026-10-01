@@ -1,0 +1,52 @@
+# Fixed defect 146, 2026-10-01. Symptom: a file of declaration heads written
+# with a foreign word, `fn f() {` over and over as a model writes it whole,
+# took time that grew with its square: 1,500 heads 0.94 s and 3,000 4.10 s of
+# user time to check, the lexer 2.65 s of it where 3,000 clean heads lex in
+# 0.05 s; so did `const` lines in a body, the `fn` members of one `extern`
+# group and `import` lines, the worst an `elif` chain, 3,000 lexed in 11.66 s.
+# Causes, each found with `sample`: a foreign word that opens its line was
+# placed by counting the brackets of the text from its first byte, and one
+# level in by a walk back to the margin, several times per word, the parser's
+# times over the whole compilation's text; every diagnostic the parser said
+# was appended through a field place, which copies the array; an `if`
+# chain's branches and a `match`'s arms were pushed with a `.must()` inside
+# the push, which keeps it from growing in place. Repair: the text's outline
+# is read once, at the first word that asks (`selfhost/text_outline.hero`);
+# the parser reads the certain swap the lexer wrote for each word
+# (`selfhost/swap_words.hero`); every append grows in place. Nothing said
+# moves: this case pins each shape's diagnostics, and the compiler's own
+# tests witness what is read once.
+
+function f1() {  #~ reserved_word missing_body
+}
+function f2() {  #~ reserved_word missing_body
+}
+
+function g1() -> i64  #~ reserved_word
+    return 1
+
+record P1  #~ reserved_word
+    x: i64
+
+variant C1  #~ reserved_word
+    red
+
+constant MAX: i64  #~ reserved_word
+    5
+
+use geom  #~ reserved_word
+
+extern "m.h"
+    function q1() -> i64  #~ reserved_word
+    function q2() -> i64  #~ reserved_word
+
+function main()
+    const x = 1  #~ reserved_word
+    const y = 2  #~ reserved_word
+
+    if x == y
+        print(x)
+    else if x == 2  #~ reserved_word
+        print(2)
+    else if x == 3  #~ reserved_word
+        print(3)

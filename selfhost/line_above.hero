@@ -17,6 +17,7 @@ use token
 use state
 use foreign_at
 use next_line
+use text_outline
 
 ## A line a refused word heads
 
@@ -30,12 +31,12 @@ use next_line
 # reads as its certain swap heads the line its swap does, `fn main() ->` as
 # `function main() ->`, so the same mistake takes the same codes before and
 # after `check --apply` writes the swap (`next_line.opening_keyword`).
-function headed_by_a_refused_word(tokens: [token.Token], breaks: [state.Break], text: str, at: i64) -> bool
+function headed_by_a_refused_word(tokens: [token.Token], breaks: [state.Break], text: str, at: i64, @outline: text_outline.Outline) -> bool
     head = tokens[line_head(tokens, breaks: breaks, at: at)]
 
-    if head.kind != .error || foreign_at.repair_at(text, head.span).is_err()
+    if head.kind != .error || !foreign_at.is_foreign(text, head.span)
         return false
-    return next_line.opening_keyword(text, at: head.span.start).is_err()
+    return next_line.opening_keyword(text, at: head.span.start, @outline).is_err()
 
 # Does the line whose last significant token is at `at` end with the `>` of
 # type parameters written after a `record`'s or a `variant`'s name, `record

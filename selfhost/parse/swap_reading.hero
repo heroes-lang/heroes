@@ -56,8 +56,29 @@ use cursor
 use keywords
 use foreign_at
 use word_place
+use text_outline
+use lexer
 
 ## Reading
+
+# What the foreign word at `span` reads as: the certain swap the lexer wrote
+# for it where it stands (`cursor.certain_swap`, `swap_words.hero`), and a
+# failure for every token the tables do not refuse as foreign. Read from what
+# the lexer kept rather than placed again (defect 146): the place was read
+# from the text's first byte, and over the whole compilation's text, where
+# the lexer reads one file's.
+function swap_at(c: cursor.Cursor, text: str, span: token.Span) -> str?
+    if !foreign_at.is_foreign(text, span)
+        return fail(code: keywords.ERR_NOT_FOREIGN, msg: cursor.slice_of(text, span))
+
+    if c.lexed
+        return cursor.certain_swap(c, span)
+
+    # A stream no lexer made (`cursor.Cursor.lexed`), a test's: the word is
+    # placed in the text as the lexer places it, its outline read for the one
+    # question.
+    outline: text_outline.Outline @ text_outline.unread()
+    return foreign_at.certain_swap(text, span, @outline)
 
 # The kind the current token reads as: its own, or, for a foreign word whose
 # certain swap is ONE keyword, that keyword's. `int` -> `i64` is a name and
@@ -67,7 +88,7 @@ function reads_as(c: cursor.Cursor, text: str) -> token.TokenKind
 
     if k != .error
         return k
-    word = foreign_at.certain_swap(text, cursor.current_span(c))
+    word = swap_at(c, text, cursor.current_span(c))
 
     if word.is_err()
         return k
@@ -119,7 +140,7 @@ function found(c: cursor.Cursor, text: str) -> str
     span = cursor.current_span(c)
     one_character = bytes.char_at(text, span.start).len() == span.end - span.start
 
-    if one_character || !foreign_at.repair_at(text, span).is_err()
+    if one_character || foreign_at.is_foreign(text, span)
         return "`" + cursor.slice_of(text, span) + "`"
     return cursor.found(c, text)
 
@@ -165,7 +186,7 @@ function eat_as(@c: cursor.Cursor, text: str, kind: token.TokenKind) -> bool
 function reads_as_name(c: cursor.Cursor, text: str) -> bool
     if !cursor.at(c, .error)
         return false
-    word = foreign_at.certain_swap(text, cursor.current_span(c))
+    word = swap_at(c, text, cursor.current_span(c))
 
     if word.is_err()
         return false
@@ -195,6 +216,12 @@ function is_identifier(word: str) -> bool
 function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
     return token.Token(kind: kind, span: token.Span(start: start, end: end))
 
+# A cursor over `tokens`, told the swaps the lexer writes for `text`, which is
+# what a stream the lexer made carries (`lexer.LexOutput.swaps`).
+function told(tokens: [token.Token], text: str) -> cursor.Cursor
+    none: [i64] = []
+    return cursor.lexed_cursor(tokens: tokens, root_end: -1, closes: none, swaps: lexer.lex_one(text).swaps)
+
 test "a certain swap to a keyword reads as that keyword, and nothing else does"
     text = "fn f\nrecord P struct\nlet\nx: int\nelif\nmain\n"
     tokens = [
@@ -217,7 +244,7 @@ test "a certain swap to a keyword reads as that keyword, and nothing else does"
         tok(.terminator, start: 41, end: 41)
         tok(.eof, start: 42, end: 42)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    c: cursor.Cursor @ told(tokens, text)
 
     # `fn` opens its line at the margin, where `function` is right.
     assert reads_as(c, text) == .kw_function
@@ -265,7 +292,7 @@ test "a bare function type reads as the type it means, certain or not"
         tok(.error, start: 3, end: 5)
         tok(.eof, start: 17, end: 17)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    c: cursor.Cursor @ told(tokens, text)
     c.pos @ 2
     assert reads_as(c, text) == .error
     assert reads_as_function(c, text)
@@ -273,7 +300,7 @@ test "a bare function type reads as the type it means, certain or not"
 test "eat_as consumes only what reads as the kind asked for"
     text = "x: (fn(i64)"
     tokens = [tok(.error, start: 4, end: 6), tok(.lparen, start: 6, end: 7), tok(.eof, start: 11, end: 11)]
-    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    c: cursor.Cursor @ told(tokens, text)
     assert !eat_as(@c, text, .kw_record)
     assert eat_as(@c, text, .kw_function)
     assert cursor.at(c, .lparen)

@@ -40,6 +40,7 @@ use doc_comments
 use ast
 use diag
 use lexer
+use source
 use parse/use_line
 use parse/tails
 use parse/records
@@ -278,7 +279,7 @@ record Parsed
 
 function parse_source(text: str) -> Parsed
     out = lexer.lex_one(text)
-    c: cursor.Cursor @ cursor.new_cursor(out.tokens)
+    c: cursor.Cursor @ cursor.lexed_cursor(tokens: out.tokens, root_end: -1, closes: out.closes, swaps: out.swaps)
     a: ast.Ast @ ast.new_ast()
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []
@@ -399,6 +400,48 @@ test "an absolute path in a group head is the machine's, not the program's"
     assert p.diagnostics.len() == 1
     assert p.diagnostics[0].code == "machine_locked_path"
     assert p.decls.len() == 1
+
+# Defect 146: the parser reads a foreign word as the swap the lexer wrote for
+# the word's own file. It placed the word again itself, over the WHOLE
+# compilation's text from its first byte, so a bracket the root left open,
+# which the module's lexer never saw, made the module's `fn` no function to
+# the parser: its brace habit went untold until the root's bracket was closed
+# (measured on the trunk's compiler at `9d1c209d`).
+test "a module's foreign head is read as its own lexer swapped it, past a bracket the root left open"
+    inputs: [source.InputFile] = [
+        source.user_file(name: "main.hero", text: "use b\n\nfunction main()\n    x = (1 + 2\n")
+        source.user_file(name: "b.hero", text: "fn g() -> i64 {\n    return 1\n}\n")
+    ]
+    s = source.from_files(inputs)
+    module = lexer.lex_files(s)[1]
+    assert module.swaps.len() == 1
+    c: cursor.Cursor @ cursor.lexed_cursor(
+        tokens: module.tokens,
+        root_end: -1,
+        closes: module.closes,
+        swaps: module.swaps
+    )
+    a: ast.Ast @ ast.new_ast()
+    decls: [ast.Decl] @ []
+    uses: [ast.Use] @ []
+    file(@c, @a, @decls, @uses, s.text)
+    assert decls.len() == 1
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "missing_body"
+
+# Defect 146: a file of foreign heads has each word decided once, by its
+# lexer, one swap per head, and the parser reads every head as the function
+# the swap writes.
+test "every foreign head is swapped once by the lexer and read as written by the parser"
+    text = repeat("fn f() {\n}\n", 40)
+    out = lexer.lex_one(text)
+    assert out.swaps.len() == 40
+    p = parse_source(text)
+    assert p.decls.len() == 40
+    assert p.diagnostics.len() == 40
+
+    for d in p.diagnostics
+        assert d.code == "missing_body"
 
 # Defect 133. `parse_source` returns the PARSER's diagnostics, so each case
 # counts what the construct itself costs beside the lexer's `reserved_word`.

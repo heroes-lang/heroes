@@ -1,0 +1,255 @@
+# What each line of a text stands in, read in one pass for the whole text: a
+# bracket some line above it left open, or the margin (design.md §4.17;
+# defect 146, 2026-10-01).
+#
+# `word_place` reads where a foreign word stands from the characters around
+# it, and two of its questions reach past the word's own line: whether that
+# line goes on inside a bracket a line above it left open, and which line
+# above it opens at the margin, which says whether a word one level in is a
+# member of an `extern` group. Until 2026-10-01 each was a walk, over the text
+# from its first byte and back to the margin, for every word that opens its
+# line, and one word was placed several times, by the lexer and again by the
+# parser: a file of `fn f() {` heads, the habit a model writes whole, cost
+# time that grew with its square (`heroes lex` 2.65 s of user time over 3,000
+# heads and 0.05 s over 3,000 clean ones; `check` 0.94 s at 1,500 and 4.10 s
+# at 3,000), and `sample` put 2,095 of 2,526 samples in that one walk. `text_lines.hero` records the rule
+# this broke, one module over: ask for the distance you need, not for the
+# position you could derive it from.
+#
+# So the text is read once, at the first word that asks, and every question
+# after it is a binary search. A file with no foreign word at a line's head
+# is never read here at all.
+#
+# **The count is the walk's, kept exactly**, since the repair moves no
+# diagnostic: the brackets of the text before the line, outside comments,
+# strings and characters, a closer counted only while one is open, a string's
+# `\` taking the byte after it. A quoted run that a `\` carries past a line
+# end leaves that line where the walk bounded at it would: at the depth the
+# run began at.
+#
+# | entry | called by |
+# |---|---|
+# | `unread`, `read`, `inside`, `top_above` | `word_place.place_of` |
+# | `unread` | `state.new_state`, the tests of `foreign_at` and `word_place` |
+
+## The outline
+
+record Outline
+    # Whether the text has been read. An outline is read once, at the first
+    # word that asks, so a text no word asks about costs nothing.
+    read: bool
+    # The length of the text it was read from: the text itself is never a
+    # field (the Cyclone rule), so this is what tells an outline asked about
+    # another text, which `read` refuses aloud.
+    length: i64
+    # The start of every line inside a bracket some line above it left open,
+    # by the count above, ascending.
+    opens: [i64]
+    # The start of every line that opens at the margin with a mark of its own,
+    # no space or tab before it and neither blank nor a comment, ascending.
+    tops: [i64]
+
+# An outline nothing has read yet.
+function unread() -> Outline
+    none: [i64] = []
+    return Outline(read: false, length: 0, opens: none, tops: none)
+
+# Read the outline of `text` into `o`, unless it holds it already.
+function read(@o: Outline, text: str)
+    if o.read
+        # One outline belongs to one text, and nothing but a mistake in this
+        # compiler hands it another: aloud, rather than answers about the
+        # wrong lines.
+        assert o.length == text.len()
+        return
+    o @ outline_of(text)
+
+# Whether the line that begins at `at` goes on inside a bracket some line
+# above it left open. `at` is a line's start.
+function inside(o: Outline, at: i64) -> bool
+    i = last_at_most(o.opens, at: at)
+    return i >= 0 && o.opens[i] == at
+
+# The start of the nearest line above the line at `line` that opens at the
+# margin with a mark of its own, or -1 where none does.
+function top_above(o: Outline, line: i64) -> i64
+    i = last_at_most(o.tops, at: line - 1)
+
+    if i < 0
+        return -1
+    return o.tops[i]
+
+## Reading it
+
+# Both lists, in one pass over the text.
+function outline_of(text: str) -> Outline
+    opens: [i64] @ []
+    depth: i64 @ 0
+    i: i64 @ 0
+
+    while i < text.len()
+        if depth > 0 && begins_a_line(text, at: i)
+            opens @ opens.push(i)
+        ch = text[i]
+
+        if ch == '#'
+            while i < text.len() && text[i] != '\n'
+                i @ i + 1
+        else if ch == '"' || ch == '\''
+            # A quoted run, to its closing quote or its line's end; a line it
+            # is carried into by a `\` is a line at the depth it began at.
+            i @ i + 1
+
+            while i < text.len() && text[i] != ch && text[i] != '\n'
+                if text[i] == '\\'
+                    i @ i + 1
+
+                    if depth > 0 && i + 1 < text.len() && text[i] == '\n'
+                        opens @ opens.push(i + 1)
+                i @ i + 1
+        else if ch == '(' || ch == '[' || ch == '{'
+            depth @ depth + 1
+        else if (ch == ')' || ch == ']' || ch == '}') && depth > 0
+            depth @ depth - 1
+        i @ i + 1
+
+    return Outline(read: true, length: text.len(), opens: opens, tops: margin_lines(text))
+
+# Whether a line begins at `at`.
+function begins_a_line(text: str, at: i64) -> bool
+    return at == 0 || text[at - 1] == '\n'
+
+# The start of every line that opens at the margin with a mark of its own.
+function margin_lines(text: str) -> [i64]
+    out: [i64] @ []
+    at: i64 @ 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b != ' ' && b != '\t' && b != '\n' && b != '#'
+            out @ out.push(at)
+
+        while at < text.len() && text[at] != '\n'
+            at @ at + 1
+
+        at @ at + 1
+
+    return out
+
+# The index of the last of `ascending` that is at most `at`, or -1.
+function last_at_most(ascending: [i64], at: i64) -> i64
+    low: i64 @ 0
+    high: i64 @ ascending.len()
+
+    while low < high
+        middle = (low + high) / 2
+
+        if ascending[middle] <= at
+            low @ middle + 1
+        else
+            high @ middle
+
+    return low - 1
+
+## Tests
+
+# The walk this module replaces, kept as the definition its answers are held
+# to: the brackets of the text before `at`, counted from its first byte.
+function walked_inside(text: str, at: i64) -> bool
+    depth: i64 @ 0
+    i: i64 @ 0
+
+    while i < at
+        ch = text[i]
+
+        if ch == '#'
+            while i < at && text[i] != '\n'
+                i @ i + 1
+        else if ch == '"' || ch == '\''
+            i @ i + 1
+
+            while i < at && text[i] != ch && text[i] != '\n'
+                if text[i] == '\\'
+                    i @ i + 1
+                i @ i + 1
+        else if ch == '(' || ch == '[' || ch == '{'
+            depth @ depth + 1
+        else if (ch == ')' || ch == ']' || ch == '}') && depth > 0
+            depth @ depth - 1
+        i @ i + 1
+
+    return depth > 0
+
+# The walk back to the margin this module replaces: the nearest line above
+# that opens there with a mark of its own.
+function walked_top(text: str, line: i64) -> i64
+    at: i64 @ line
+
+    while at > 0
+        above: i64 @ at - 1
+
+        while above > 0 && text[above - 1] != '\n'
+            above @ above - 1
+
+        first: i64 @ above
+
+        while first < text.len() && (text[first] == ' ' || text[first] == '\t')
+            first @ first + 1
+
+        if first < text.len() && text[first] != '\n' && text[first] != '#' && first == above
+            return above
+        at @ above
+
+    return -1
+
+function agrees_with_the_walks(text: str) -> bool
+    o = outline_of(text)
+    at: i64 @ 0
+
+    while at < text.len()
+        if inside(o, at: at) != walked_inside(text, at: at) || top_above(o, line: at) != walked_top(text, line: at)
+            return false
+
+        while at < text.len() && text[at] != '\n'
+            at @ at + 1
+
+        at @ at + 1
+
+    return true
+
+test "the outline answers at every line what the walks from the text's start answered"
+    # Brackets across lines, closed and left open, and a stray closer.
+    assert agrees_with_the_walks("function f(x: i64\nfn g()\n)\nfn h()\n] ) }\n[\n    1,\n")
+
+    # A bracket in a comment, a string or a character is no bracket.
+    assert agrees_with_the_walks("x = \"(\"\nfn g()\n# (\nc = '('\nfn h()\ns = \"a#(\"\n")
+
+    # A string a `\` carries past its line's end, inside a bracket and out.
+    assert agrees_with_the_walks("f(\"ab\\\nc(\" )\nfn g()\n\"x\\\n(\ny\n")
+
+    # A string that never closes takes only its line.
+    assert agrees_with_the_walks("f(\"abc\nfn g()\n)\n'(\nfn h()\n")
+
+    # Margins: blank lines, a comment, spaces, a tab, a carriage return.
+    assert agrees_with_the_walks("extern \"m.h\"\n\n# c\n    fn q()\n\t\n  x\r\n\r\n    fn r()\n")
+
+    # The text's own end, with and without a line end.
+    assert agrees_with_the_walks("(\n")
+    assert agrees_with_the_walks("a\n(b")
+    assert agrees_with_the_walks("")
+
+test "one pass reads the outline, and a second read keeps it"
+    text = "function f(x: i64\nfn g()\n"
+    o: Outline @ unread()
+    assert !o.read
+    read(@o, text)
+    assert o.read
+    assert o.length == text.len()
+    assert inside(o, at: 18)
+    assert !inside(o, at: 0)
+    assert top_above(o, line: 18) == 0
+    assert top_above(o, line: 0) == -1
+    kept = o
+    read(@o, text)
+    assert o == kept

@@ -143,13 +143,19 @@ function ident(@l: state.LexState, text: str)
     # **The token stays `error` even where the swap is certain** (defect 133):
     # the parser reads the swap only where it dispatches on the keyword the
     # swap writes (`parse/swap_reading.hero`), and every other reader of the
-    # stream goes on seeing a word the lexer refused.
+    # stream goes on seeing a word the lexer refused. What it reads is the
+    # swap written here, kept where the word begins (`LexState.swaps`, defect
+    # 146), so the parser reads the word as `--apply` writes it.
     span = token.Span(start: start, end: l.pos)
-    foreign = foreign_at.repair_at(text, span)
+    entry = foreign_at.foreign_word_at(text, span)
 
-    if !foreign.is_err()
-        found = foreign.must()
+    if !entry.is_err()
+        found = foreign_at.repair_of(text, span, entry.must(), @l.outline)
         d: diag.Diagnostic @ diag.new_diagnostic(code: "reserved_word", message: found.message, span: span)
+        swap = foreign_at.swap_of(found.repair)
+
+        if !swap.is_err()
+            state.push_swap(@l.swaps, at: start, word: swap.must())
 
         d.fixes @ match found.repair
             .swap fix => d.fixes.push(

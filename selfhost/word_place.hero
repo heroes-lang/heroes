@@ -23,9 +23,15 @@
 # a type or a value somewhere else is a place this reading calls `other`,
 # which only ever withholds a `certain` fix. That is the loud direction: a
 # fix withheld costs a turn, a fix wrongly certain writes a broken program.
+#
+# Two answers reach past the word's own line, a bracket a line above left
+# open and the nearest line at the margin, and those are read from the text's
+# outline, read once for the whole text (`text_outline.hero`, defect 146):
+# read by a walk for every word, a file of foreign heads cost its square.
 
 use token
 use bytes
+use text_outline
 
 ## The places
 
@@ -39,22 +45,24 @@ variant Place
     valued
     other
 
-# Where the word at `span` stands in `text`.
-function place_of(text: str, span: token.Span) -> Place
+# Where the word at `span` stands in `text`, whose outline `outline` holds
+# or is read into, the first time a word that opens its line asks.
+function place_of(text: str, span: token.Span, @outline: text_outline.Outline) -> Place
     begins = line_start(text, at: span.start)
 
-    # A line that begins inside a bracket left open above it goes on with
-    # that bracket's list, and nothing heads it.
-    if only_margin(text, from: begins, to: span.start) && inside_brackets(text, at: begins)
-        return .other
-
     if only_margin(text, from: begins, to: span.start)
+        text_outline.read(@outline, text)
+
+        # A line that begins inside a bracket left open above it goes on with
+        # that bracket's list, and nothing heads it.
+        if text_outline.inside(outline, at: begins)
+            return .other
         margin = span.start - begins
 
         if margin == 0
             return .top
 
-        if margin == 4 && under_a_group(text, line: begins)
+        if margin == 4 && under_a_group(text, outline, line: begins)
             return .member
         return .statement
     before = significant_before(text, at: span.start, floor: begins)
@@ -198,18 +206,9 @@ function names_a_function_type(word: str) -> bool
 # Whether the line at `line` is one level under an `extern` group's head:
 # the nearest line above it that opens at the margin, past blank lines and
 # comments, begins with `extern`.
-function under_a_group(text: str, line: i64) -> bool
-    at: i64 @ line
-
-    while at > 0
-        above = line_start(text, at: at - 1)
-        first = first_mark(text, from: above)
-
-        if first < text.len() && text[first] != '\n' && text[first] != '#' && first == above
-            return text.slice(from: first, to: word_end(text, from: first)) == "extern"
-        at @ above
-
-    return false
+function under_a_group(text: str, outline: text_outline.Outline, line: i64) -> bool
+    top = text_outline.top_above(outline, line: line)
+    return top >= 0 && text.slice(from: top, to: word_end(text, from: top)) == "extern"
 
 # The first character on the line at `from` that is not a space or a tab.
 function first_mark(text: str, from: i64) -> i64
@@ -227,30 +226,6 @@ function word_end(text: str, from: i64) -> i64
         i @ i + 1
 
     return i
-
-# Whether `at` stands inside a bracket some earlier line left open: the
-# brackets of the text before it counted, past comments, strings and
-# characters. Asked only of a word that opens its line, which is rare: a
-# foreign word is.
-function inside_brackets(text: str, at: i64) -> bool
-    depth: i64 @ 0
-    i: i64 @ 0
-
-    while i < at
-        ch = text[i]
-
-        if ch == '#'
-            while i < at && text[i] != '\n'
-                i @ i + 1
-        else if ch == '"' || ch == '\''
-            i @ past_quoted(text, from: i, quote: ch, limit: at)
-        else if ch == '(' || ch == '[' || ch == '{'
-            depth @ depth + 1
-        else if (ch == ')' || ch == ']' || ch == '}') && depth > 0
-            depth @ depth - 1
-        i @ i + 1
-
-    return depth > 0
 
 # The offset of the quote that closes the one at `from`, or of the line's
 # end where none does: a string never runs past its line.
@@ -276,33 +251,67 @@ function at_word(text: str, word: str) -> token.Span
 
     return token.Span(start: 0, end: 0)
 
+# Where `word`, its first whole occurrence, stands in `text`, the text's
+# outline read for the one question.
+function place_in(text: str, word: str) -> Place
+    outline: text_outline.Outline @ text_outline.unread()
+    return place_of(text, at_word(text: text, word: word), @outline)
+
 test "a word that opens its line stands at the margin, in a group or in a block"
-    assert place_of("fn main()\n", at_word(text: "fn main()\n", word: "fn")) == .top
+    assert place_in(text: "fn main()\n", word: "fn") == .top
     group = "extern \"m.h\"\n    fn q() -> f64\n"
-    assert place_of(group, at_word(text: group, word: "fn")) == .member
+    assert place_in(text: group, word: "fn") == .member
     body = "function main()\n    const x = 5\n"
-    assert place_of(body, at_word(text: body, word: "const")) == .statement
+    assert place_in(text: body, word: "const") == .statement
     fields = "extern \"m.h\"\n    record P\n        struct Q\n"
-    assert place_of(fields, at_word(text: fields, word: "struct")) == .statement
+    assert place_in(text: fields, word: "struct") == .statement
 
 test "in the middle of a line a word stands where a name, a type or a value goes"
     named = "function fn(x: i64)\n"
-    assert place_of(named, at_word(text: named, word: "fn")) == .named
-    assert place_of("f(x: int)", at_word(text: "f(x: int)", word: "int")) == .typed
-    assert place_of("f() -> int", at_word(text: "f() -> int", word: "int")) == .typed
-    assert place_of("f(xs: [int])", at_word(text: "f(xs: [int])", word: "int")) == .typed
-    assert place_of("g: (fn(i64) -> i64)", at_word(text: "g: (fn(i64) -> i64)", word: "fn")) == .function_type
-    assert place_of("g: fn(i64) -> i64", at_word(text: "g: fn(i64) -> i64", word: "fn")) == .typed
-    assert place_of("(function(int, int) -> i64)", at_word(text: "(function(int, int) -> i64)", word: "int")) == .typed
-    assert place_of("y = switch x", at_word(text: "y = switch x", word: "switch")) == .valued
-    assert place_of("return switch x", at_word(text: "return switch x", word: "switch")) == .valued
-    assert place_of("print(int)", at_word(text: "print(int)", word: "int")) == .other
-    assert place_of("record P fn", at_word(text: "record P fn", word: "fn")) == .other
+    assert place_in(text: named, word: "fn") == .named
+    assert place_in(text: "f(x: int)", word: "int") == .typed
+    assert place_in(text: "f() -> int", word: "int") == .typed
+    assert place_in(text: "f(xs: [int])", word: "int") == .typed
+    assert place_in(text: "g: (fn(i64) -> i64)", word: "fn") == .function_type
+    assert place_in(text: "g: fn(i64) -> i64", word: "fn") == .typed
+    assert place_in(text: "(function(int, int) -> i64)", word: "int") == .typed
+    assert place_in(text: "y = switch x", word: "switch") == .valued
+    assert place_in(text: "return switch x", word: "switch") == .valued
+    assert place_in(text: "print(int)", word: "int") == .other
+    assert place_in(text: "record P fn", word: "fn") == .other
 
 test "a line inside an open bracket heads nothing"
     params = "function f(x: i64\nfn g()\n"
-    assert place_of(params, at_word(text: params, word: "fn")) == .other
+    assert place_in(text: params, word: "fn") == .other
     shut = "function f(x: i64)\nfn g()\n"
-    assert place_of(shut, at_word(text: shut, word: "fn")) == .top
+    assert place_in(text: shut, word: "fn") == .top
     quoted = "x = \"(\"\nfn g()\n"
-    assert place_of(quoted, at_word(text: quoted, word: "fn")) == .top
+    assert place_in(text: quoted, word: "fn") == .top
+
+# Defect 146: a word that opens its line takes what stands above it from the
+# text's outline and from nothing else, so placing every word of a file reads
+# the file once. Witnessed with two texts of one length that the outline
+# tells apart and the word's own line does not: placed in the second with
+# the first's outline, the word is where the first says, which a walk over
+# the second text would have contradicted.
+test "a word's place takes the lines above it from the outline alone"
+    shut = "f(x)\nfn g()\n"
+    open = "f(x \nfn g()\n"
+    at = at_word(text: open, word: "fn")
+    read_shut: text_outline.Outline @ text_outline.unread()
+    text_outline.read(@read_shut, shut)
+    assert place_of(open, at, @read_shut) == .top
+    read_open: text_outline.Outline @ text_outline.unread()
+    assert place_of(open, at, @read_open) == .other
+
+    # The nearest line at the margin, which says whether a word one level in
+    # is a group's member, comes from the outline too: here a line between
+    # stands at the margin in one text and one level in in the other.
+    group = "extern \"m.h\"\n    fn p()\n    fn q()\n"
+    other = "extern \"m.h\"\nfn     p()\n    fn q()\n"
+    member = at_word(text: other, word: "fn q")
+    read_group: text_outline.Outline @ text_outline.unread()
+    text_outline.read(@read_group, group)
+    assert place_of(other, token.Span(start: member.start, end: member.start + 2), @read_group) == .member
+    read_other: text_outline.Outline @ text_outline.unread()
+    assert place_of(other, token.Span(start: member.start, end: member.start + 2), @read_other) == .statement

@@ -17,6 +17,8 @@
 
 use token
 use diag
+use text_outline
+use swap_words
 
 ## Error codes
 
@@ -100,6 +102,13 @@ record LexState
     # `diagnostics` of its one message, whose fix the line below decides, and
     # -1 when the line holds none or that decision is taken.
     backslash: i64
+    # The text's outline, read at the first foreign word that opens its line
+    # and asks where it stands (`text_outline.hero`, defect 146): one pass for
+    # the file, where a walk per word cost the file's square.
+    outline: text_outline.Outline
+    # Every certain swap written for a word this lexer refused, where the word
+    # begins, ascending (`swap_words.hero`): what the parser reads the word as.
+    swaps: [swap_words.Swap]
 
 function new_state() -> LexState
     brackets: [token.Span] = []
@@ -110,6 +119,7 @@ function new_state() -> LexState
     breaks: [Break] = []
     heads: [i64] = []
     closes: [i64] = []
+    swaps: [swap_words.Swap] = []
     return LexState(
         pos: 0,
         level: 0,
@@ -129,7 +139,9 @@ function new_state() -> LexState
         deeper: false,
         closes: closes,
         swallowed: false,
-        backslash: -1
+        backslash: -1,
+        outline: text_outline.unread(),
+        swaps: swaps
     )
 
 ## Emitting
@@ -181,6 +193,11 @@ function push_break(@breaks: [Break], diagnostic: i64, after: i64, head: bool)
 # And for the heads a reading apart leaves out.
 function push_offset(@offsets: [i64], at: i64)
     offsets @ offsets.push(at)
+
+# And for the certain swaps written, a file of foreign heads being a file of
+# many of them (defect 146).
+function push_swap(@swaps: [swap_words.Swap], at: i64, word: str)
+    swaps @ swaps.push(swap_words.Swap(at: at, word: word))
 
 # Error recovery in one move: record why, emit an `error` token over the same
 # span, keep lexing. The lexer never stops.

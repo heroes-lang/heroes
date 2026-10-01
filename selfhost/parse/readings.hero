@@ -17,7 +17,7 @@ use ast
 use lexer
 use cursor
 use stable
-use foreign_at
+use swap_words
 use parse/decl
 use parse/which_arm
 use parse/joined_lines as seams
@@ -99,19 +99,20 @@ function readings(c: cursor.Cursor, lines: [seams.Line], froms: [i64], apart: le
         held: sorted(held),
         inside: sorted(inside),
         other: sorted(other),
-        joined_errors: errors_in(c.tokens, text: text),
-        apart_errors: errors_in(apart.tokens, text: text)
+        joined_errors: errors_in(c.tokens, swaps: c.swaps),
+        apart_errors: errors_in(apart.tokens, swaps: apart.swaps)
     )
 
 # Where each `error` token of a stream begins, in the order of the text,
 # but a foreign word's whose certain swap the parser reads it as, where it
 # stands (`parse/swap_reading`): `fn two() ->` is a function's head to the
-# parser, whose recovery drops nothing after it.
-function errors_in(tokens: [token.Token], text: str) -> [i64]
+# parser, whose recovery drops nothing after it. The swaps are the ones the
+# lexer of that stream wrote (`swap_words.hero`).
+function errors_in(tokens: [token.Token], swaps: [swap_words.Swap]) -> [i64]
     out: [i64] @ []
 
     for t in tokens
-        if t.kind == .error && foreign_at.certain_swap(text, t.span).is_err()
+        if t.kind == .error && swap_words.word_at(swaps, at: t.span.start).is_err()
             out @ out.push(t.span.start)
 
     return out
@@ -141,7 +142,12 @@ function read_bodies(apart: lexer.LexOutput, text: str, root_end: i64) -> [diag.
 
 # The apart reading's parser diagnostics, as its normal arm says them.
 function read_apart(apart: lexer.LexOutput, text: str, root_end: i64) -> [diag.Diagnostic]
-    c: cursor.Cursor @ cursor.lexed_cursor(tokens: apart.tokens, root_end: root_end, closes: apart.closes)
+    c: cursor.Cursor @ cursor.lexed_cursor(
+        tokens: apart.tokens,
+        root_end: root_end,
+        closes: apart.closes,
+        swaps: apart.swaps
+    )
     a: ast.Ast @ ast.new_ast()
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []

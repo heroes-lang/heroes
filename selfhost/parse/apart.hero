@@ -295,7 +295,12 @@ test "a head alone over a line at its margin is told its body once, and the line
     for shape in shapes
         text = shape[0]
         lexed: lexer.LexOutput @ lexer.lex_one(text)
-        c: cursor.Cursor @ cursor.new_cursor(lexed.tokens)
+        c: cursor.Cursor @ cursor.lexed_cursor(
+            tokens: lexed.tokens,
+            root_end: -1,
+            closes: lexed.closes,
+            swaps: lexed.swaps
+        )
         a: ast.Ast @ ast.new_ast()
         decls: [ast.Decl] @ []
         uses: [ast.Use] @ []

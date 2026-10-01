@@ -1048,7 +1048,8 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
             more = block(@c, @a, text: text, owner: "an `else if`", head: branch_head)
 
             if !more.is_err()
-                branches @ branches.push(ast.Branch(cond: more_cond, block: more.must()))
+                read = more.must()
+                branches @ branches.push(ast.Branch(cond: more_cond, block: read))
         else
             colon_habit.read_below(@c, text)
             last = block(@c, @a, text: text, owner: "an `else`", head: branch_head)
@@ -1153,16 +1154,15 @@ function arms_of(@c: cursor.Cursor, @a: ast.Ast, text: str, tabbed: bool) -> [as
             one = arm(@c, @a, text, own_block: !at_margin && !tabbed)
             failed @ one.is_err()
 
-            if one.is_err()
+            match one
                 # A pattern or `=>` that failed consumed nothing reusable, and
                 # the rest of its line is all that goes (defect 130).
-                opening.drop_line(@c, text, from: from)
-            else
+                .err => opening.drop_line(@c, text, from: from)
 
                 # A body that failed has already dropped the rest of its line
                 # (`finish` does it for every statement), so the loop must NOT
                 # skip again — that ate the arm below it.
-                arms @ arms.push(one.must())
+                .ok taken => arms @ arms.push(taken)
 
             # An arm whose `=>` stood past the arms' dedent ended their block.
             reading @ !broken_arm.crossed_its_dedent(c, from: from)

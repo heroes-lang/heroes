@@ -169,7 +169,7 @@ function climbs(@c: cursor.Cursor, text: str, keyword: token.Span)
     d.notes @ d.notes.push(
         "a module above that directory belongs to a different program: give this one its own root, or move the file in"
     )
-    c.diagnostics @ c.diagnostics.push(d)
+    cursor.push_diagnostic(@c.diagnostics, d)
     skip_rest_of_line(@c, text, from: keyword)
 
 # `use syntax/` and `use syntax /decl` — a separator with no part after it,
@@ -186,7 +186,7 @@ function part_missing(@c: cursor.Cursor, text: str, name: token.Span, slash: tok
         message: "a `/` in a `use` joins two names with nothing between them — `use " + written + "/decl` names one module, and `use " + written + "` names another",
         span: slash
     )
-    c.diagnostics @ c.diagnostics.push(d)
+    cursor.push_diagnostic(@c.diagnostics, d)
     skip_rest_of_line(@c, text, from: name)
 
 # `use syntax/decl as` — the word is there and the name is not. The caret
@@ -194,15 +194,14 @@ function part_missing(@c: cursor.Cursor, text: str, name: token.Span, slash: tok
 # may already be on the next declaration, and naming it blames an innocent
 # line.
 function alias_missing(@c: cursor.Cursor, text: str, word: token.Span)
-    word_line = text_lines.line_col(text, word.start).line
-    found_line = text_lines.line_col(text, cursor.current_span(c).start).line
+    same_line = one_line(text, from: word.start, to: cursor.current_span(c).start)
     message: str @ "`as` renames the module and this line names nothing — `use syntax/decl as sd`, and then this file calls it `sd`"
 
-    if word_line == found_line
+    if same_line
         message @ "expected a name after `as`, found " + cursor.found(c, text) + " — `use syntax/decl as sd`, and then this file calls it `sd`"
     cursor.error(@c, code: "expected_alias_name", message: message, span: word)
 
-    if word_line == found_line
+    if same_line
         skip_rest_of_line(@c, text, from: word)
 
 # Everything still on the line the `use` started on, dropped — and then the
@@ -220,11 +219,10 @@ function alias_missing(@c: cursor.Cursor, text: str, word: token.Span)
 # this is that reasoning as a landmark rather than a special case, because a
 # LINE exists whatever the last token on it happened to be.
 function skip_rest_of_line(@c: cursor.Cursor, text: str, from: token.Span)
-    line = text_lines.line_col(text, from.start).line
     scanning: bool @ true
 
     while scanning && !cursor.at(c, .eof)
-        if text_lines.line_col(text, cursor.current_span(c).start).line != line
+        if !one_line(text, from: from.start, to: cursor.current_span(c).start)
             scanning @ false
         else
             _ = cursor.bump(@c)
@@ -253,7 +251,7 @@ function quoted_module(@c: cursor.Cursor, text: str)
         d.fixes @ d.fixes.push(
             diag.Fix(title: "write `use " + inner + "`", replacement: inner, span: s, certainty: .certain)
         )
-    c.diagnostics @ c.diagnostics.push(d)
+    cursor.push_diagnostic(@c.diagnostics, d)
     cursor.recover_to_next_decl(@c)
 
 # `use` with nothing after it.
@@ -265,11 +263,10 @@ function quoted_module(@c: cursor.Cursor, text: str)
 function missing_name(@c: cursor.Cursor, text: str, keyword: token.Span)
     if cursor.at_reported_error(c)
         return
-    keyword_line = text_lines.line_col(text, keyword.start).line
-    found_line = text_lines.line_col(text, cursor.current_span(c).start).line
+    same_line = one_line(text, from: keyword.start, to: cursor.current_span(c).start)
     message: str @ "`use` names one module and this line names none — `use geom`, which reads `geom.hero` beside this file"
 
-    if keyword_line == found_line
+    if same_line
         message @ "expected the module's name after `use`, found " + cursor.found(c, text) + " — `use geom`, which reads `geom.hero` beside this file"
     cursor.error(@c, code: "expected_module_name", message: message, span: keyword)
 
@@ -277,10 +274,18 @@ function missing_name(@c: cursor.Cursor, text: str, keyword: token.Span)
     # onto the next one, and recovering anyway would eat an innocent
     # declaration whole — the failure panel 018's keyword-first shape exists to
     # prevent. It reappears here because `use` plants no terminator.
-    if keyword_line == found_line
+    if same_line
         cursor.recover_to_next_decl(@c)
 
 ## Two questions about text
+
+# Whether two offsets stand on one line: the distance between them, never
+# each one's line number, a walk from the text's first byte that made a file
+# of broken `use` lines cost its square (defect 146, `text_lines.hero`'s rule).
+function one_line(text: str, from: i64, to: i64) -> bool
+    if from <= to
+        return text_lines.newlines_between(text: text, from: from, to: to) == 0
+    return text_lines.newlines_between(text: text, from: to, to: from) == 0
 
 # Could this text have been written after `use`? The identifier rule, asked
 # of a string's contents so that the fix above is offered only when applying

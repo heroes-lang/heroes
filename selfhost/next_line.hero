@@ -18,6 +18,7 @@ use token
 use keywords
 use bytes
 use foreign_at
+use text_outline
 
 # Does the line from `from` bind or mutate: a lone `=` or an `@` outside
 # brackets?
@@ -197,13 +198,14 @@ function word_at(text: str, at: i64) -> str
 # either went on with an open line above it and was refused under another
 # code once `check --apply` wrote the swap (defect 132's class, lane 133's
 # finding). A hint or guidance names no word, and `int`'s swap is a name.
-function opening_keyword(text: str, at: i64) -> token.TokenKind?
+# The place is read from the lexer's outline of the text (defect 146).
+function opening_keyword(text: str, at: i64, @outline: text_outline.Outline) -> token.TokenKind?
     word = word_at(text, at: at)
     own = keywords.keyword(word)
 
     if !own.is_err()
         return own
-    swap = foreign_at.certain_swap(text, token.Span(start: at, end: at + word.len()))
+    swap = foreign_at.certain_swap(text, token.Span(start: at, end: at + word.len()), @outline)
 
     if swap.is_err()
         return own
