@@ -30,6 +30,7 @@ use ir
 use ir/containers
 use inventory
 use emit/types
+use emit/key_pointer
 use emit/builtins
 use emit/decls as emit_decls
 use diag
@@ -266,7 +267,7 @@ function check_element(@found: [GateNote], c: state.Checked, s: source.Source, d
         .case_ty | .failure | .generic | .error           => fall @ fall
 
     if container == "a map key"
-        reached = reaches_pointer(c, decls, ty: element, depth: 0)
+        reached = key_pointer.reaches_pointer(c, decls, ty: element)
 
         if !reached.is_err()
             note(
@@ -277,52 +278,6 @@ function check_element(@found: [GateNote], c: state.Checked, s: source.Source, d
             )
             return
     check_type(@found, c, s, decls, ty: element, span: span)
-
-# Does this type REACH a ptr or a cstr, through fields, payloads or
-# containers? Depth-bounded as the checker's own partial walk is.
-# Returns what was found, for the message: a reader told "reaches
-# `ptr`" can look for the pointer; one told "not a valid key" cannot.
-function reaches_pointer(c: state.Checked, decls: [ast.Decl], ty: i64, depth: i64) -> str?
-    if depth > 16
-        return fail(code: "none", msg: "past any nesting worth naming")
-
-    match table.get(c.types, ty)
-        .ptr        => return ok("`ptr`")
-        .cstr       => return ok("`cstr`")
-        .array arr  => return reaches_pointer(c, decls, ty: arr.element, depth: depth + 1)
-        .fallible o => return reaches_pointer(c, decls, ty: o.payload, depth: depth + 1)
-        .map m =>
-            in_key = reaches_pointer(c, decls, ty: m.key, depth: depth + 1)
-
-            if !in_key.is_err()
-                return in_key
-            return reaches_pointer(c, decls, ty: m.value, depth: depth + 1)
-        .named n =>
-            all_fields: [ast.Field] @ []
-
-            match decls[n.decl].kind
-                .record_decl rec => all_fields @ rec.fields
-                .variant_decl v =>
-                    for one_case in v.cases
-                        for field in one_case.fields
-                            all_fields @ all_fields.push(field)
-                .constant_decl | .function_decl | .test_decl => return fail(code: "none", msg: "not a data declaration")
-
-            for field in all_fields
-                written = state.written_type(c, field.ty)
-
-                if written.is_err()
-                    continue
-                found = reaches_pointer(c, decls, ty: written.must(), depth: depth + 1)
-
-                if !found.is_err()
-                    return found
-
-            return fail(code: "none", msg: "no pointer inside")
-        .int_ty | .float_ty | .bool | .str | .unit | .fixed    => return fail(code: "none", msg: "no pointer here")
-        .function_ty | .case_ty | .failure | .generic | .error => return fail(code: "none", msg: "no pointer here")
-
-    return fail(code: "none", msg: "unreached")
 
 ## The op table (gate_ops.rs)
 

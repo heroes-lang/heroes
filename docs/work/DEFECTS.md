@@ -791,6 +791,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** A §4.17 defect in a note: the repair it offers
     leads to a run-time abort, and the right one is left out.
 
+    **2026-10-01, lane emit, the note says what clang showed about the header
+    in hand**: repaired at `8a7e69d7`, gated by its cases and the compiler's
+    own tests; the net is owed at the batch's close.
+
 - [ ] **146 — the parser is quadratic on declaration heads written with a foreign word** | 1,500 `fn f<i>() {` heads parse in 0.80 s and 3,000 in 3.18 s, where 3,000 clean `function` heads take 0.06 s; lane 136 measured 6,000 at 28.5 s | the recovery after a foreign-word head (`selfhost/scan.hero`'s error token, `cursor.recover_to_next_decl`)
 
     **Origin:** lane 136 at its close, 2026-09-30
