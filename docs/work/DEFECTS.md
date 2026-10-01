@@ -702,6 +702,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     choice in `selfhost/check/contracts.hero`, and a declaration of the
     author's is always the one to name.
 
+    **2026-10-01, lane emit, the library's declaration is the one the
+    program's are held to**: repaired at `9cd31e88`, gated by its cases and
+    the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **139 — a block holding a `match` statement counts as leaving whatever its arms do, so `check` passes a function with no `return` and `build` fails** | `function f(c: Color) -> i64` whose body is a `match` with printing arms, then `print(3)`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed ... non-void function should return a value*; the same with the `match` inside one branch of an `if` | `selfhost/check/walk.hero:898-904` (no arm with a value read as every arm jumping) · `arms` at `:1041-1050` · `check/join.hero`'s `Branch`
 
     **Origin:** panel 184's compiler-engineer and lane 135b's batch gate,
