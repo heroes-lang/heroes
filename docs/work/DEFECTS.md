@@ -774,6 +774,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** Spec beats compiler (CLAUDE.md § 12).
 
+    **2026-10-01, lane emit, one rule for every width, a result that holds
+    every value of C's type**: repaired at `d4512560`, gated by its cases and
+    the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **145 — `ffi_unknown_tag`'s note offers two repairs for a typedef of an anonymous struct, and neither is right: the handle repair builds and aborts at run** | a binding written `record Regex tag regex_t partial` for `typedef struct { ... } regex_t;` is refused with the note's two repairs, a misspelled tag or a handle; the handle checks, builds and aborts at run, *panic: a null pointer was read through, at offset 0x8*; the spelling that works, a record named `regex_t` with no `tag`, is not offered (`div_t`, `ldiv_t`, `lldiv_t` have the same shape) | `selfhost/emit/ctype.hero:149` · the note of `ffi_unknown_tag`
 
     **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (its
