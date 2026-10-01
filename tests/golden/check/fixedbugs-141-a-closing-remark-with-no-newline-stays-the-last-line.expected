@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-141-a-closing-remark-with-no-newline-stays-the-last-line.hero:6:1: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`

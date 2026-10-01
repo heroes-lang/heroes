@@ -1,0 +1,10 @@
+# Fixed 2026-10-01 by lane 135c (defect 141, a shape beside it). Symptom:
+# this file ends without a newline and holds a mistake no `certain` fix
+# repairs, so `check --apply` owes it back unchanged; on the compiler of
+# `9d1c209d` it printed it with a `\n` after the last line. Cause: defect
+# 141's two, the loader's own newline closing the open last line and the
+# printer's newline after a text without one. It has no `.fixed` and no
+# `.applied`, so the fixes suite holds `--apply` to the file's own bytes.
+
+function main()
+    print(x)  #~ unknown_name

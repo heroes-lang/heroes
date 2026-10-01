@@ -1,0 +1,5 @@
+# The module `main.hero` reads. Its last byte is a stray carriage return.
+
+function two() -> i64
+    #~v stray_carriage_return
+    return 2

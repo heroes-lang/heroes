@@ -1,0 +1,8 @@
+# Defect 141 (2026-10-01): a clean file with a hole. `check --apply` owes
+# the program back as it is; on the compiler of `9d1c209d` it printed the
+# hole's report, `check`'s own artifact and not this flag's, and with
+# `--in-place` it printed that report too.
+
+function main()
+    n: i64 @ ???
+    print(n)

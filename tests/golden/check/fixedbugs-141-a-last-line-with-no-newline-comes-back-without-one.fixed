@@ -1,0 +1,13 @@
+# Fixed 2026-10-01 by lane 135c (defect 141). Symptom: this file ends without
+# a newline, and `check --apply` handed it back with one, a byte no fix
+# proposed: on the compiler of `9d1c209d` it printed the file with `fn`
+# repaired and a `\n` after `print(1)`, and `--in-place` wrote that into the
+# file. Cause: `source.from_files` closed a file's open last line with a
+# newline of its own, inside the file's text, which `--apply` hands back; and
+# `cli/io.print_artifact` printed a text with no final newline through
+# `print`, which adds one. Now the newline that joins two files belongs to
+# neither, and an artifact is printed byte for byte. The `.fixed` is this
+# text with `function` for `fn`, its last line open as here.
+
+function main()  #~ reserved_word
+    print(1)
