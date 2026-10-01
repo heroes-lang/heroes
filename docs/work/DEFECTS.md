@@ -738,6 +738,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     gated by its cases and the compiler's own tests; the net is owed at the
     batch's close.
 
+    **2026-10-01, lane emit, beside it: the union rule's reach descends a
+    variant's cases**: repaired at `24bbb539`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **141 — `check --apply` writes bytes no fix proposed: the newline the loader adds to a root file's open last line** | `fn main()` over `    print(1)` with no final newline, 22 bytes: `check --apply` prints 29 where its one certain fix makes 28, the last byte a `\n`; `--apply --in-place` writes it into the author's file | `source.from_files` · `source_extent.user_text` · `selfhost/cli/check.hero` (what `--apply` prints)
 
     **Origin:** lane 136 at its close, 2026-09-30, on the trunk's compiler as
