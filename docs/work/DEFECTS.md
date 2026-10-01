@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 7**
+**OPEN: 10**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -781,5 +781,36 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     spec never learns the form. Which side moves, the production or the
     parser, is a change to the language, so the repair is a sitting's, with
     defect 143 and the value-block question in `docs/work/DECIDE.md`.
+
+- [ ] **148 — `break` or `continue` as a constant's body costs two messages at one place** | `constant M: i64` over `break`: `jump_outside_loop` and `no_value` (*constant `M` produces no value — its body jumps*), both at 2:5, for one mistake; the same with `continue` | `selfhost/check/decls.hero` (the constant's message, defect 139's last repair) · the checker's outcome, which does not carry the jump's kind
+
+    **Origin:** lane flow's first pass for its batch, 2026-10-01
+    (`scratchpad/lane-flow/k1/k10-break.hero`, `k11-continue.hero`), left
+    open in defect 139's closed record; reproduced by the coordinator at
+    00:35 on 2026-10-02 on the trunk at `b9fdb0a3`.
+
+    **Why it is a defect.** design.md §4.17: one mistake costs one message;
+    both sentences are true, and the second is debris of the first.
+
+- [ ] **149 — a constant's body that ends on a statement is told at the block's first line, not at the line that gives no value** | `constant M: i64` over `x: i64 @ 1`, `x @ x + 1`, `assert x == 2`: `no_value`, *this branch ends on a statement*, at 2:5, where the line that ends the body without a value is line 4 | `branch_without_value` (`selfhost/check/walk.hero`, `check/join.hero`), pinned by `tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement`
+
+    **Origin:** lane flow's first pass, 2026-10-01
+    (`scratchpad/lane-flow/k1/k21-two-statements-then-assert.hero`), left
+    open in defect 139's closed record; reproduced by the coordinator at
+    00:35 on 2026-10-02 on `b9fdb0a3`. The same caret is the rule's for any
+    multi-line value block, by the lane's reading, unrun beyond the constant.
+
+    **Why it is a defect.** design.md §4.17: a diagnostic stands at the
+    mistake; the author is sent to a line that is right.
+
+- [ ] **150 — a correct program that reads a C union naming two members gets clang's warning on the author's line** | `extern "w.h"` with `record W` (two members over a union) and `function make_w() -> W`, `print(w.i)`: `build` exit 0, the program prints 7, and the build prints *warning: excess elements in union initializer* at `read.hero:2:81` | the completeness probe's `{0,0}` for a union record (`selfhost/emit/`, beside defect 140's `{}`)
+
+    **Origin:** lane emit, 2026-10-01 (`scratchpad/lane-emit/pass1/union2/read.hero`
+    and its `w.h`), left open in defect 140's closed record; reproduced by
+    the coordinator at 00:35 on 2026-10-02 on `b9fdb0a3`.
+
+    **Why it is a defect.** The emitted C is the compiler's, and a warning
+    about it reaches the author at a line they wrote correctly
+    (`.claude/rules/generated-c.md`; design.md §4.17).
 
 *******************************************************************************
