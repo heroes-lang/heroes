@@ -53,8 +53,11 @@ record Head
 # The keyword is quoted as WRITTEN, which is the keyword's own spelling
 # everywhere but where the parser reads a foreign word as its swap (defect
 # 133): `const` alone on its line is *after `const`*, the word the author can
-# find, and never *after an unreadable token*.
-function head(@c: cursor.Cursor, text: str, example: str) -> Head?
+# find, and never *after an unreadable token*. Where a `{` stands in the
+# name's place, `record {`, the one report says where the block goes too,
+# its fields below the name and never in braces (`in_braces`; ruling 2 of
+# the recovery batches, 2026-10-01).
+function head(@c: cursor.Cursor, text: str, kind: token.TokenKind) -> Head?
     from = c.pos
     keyword = cursor.current_span(c)
     doc = doc_comments.take_docs(@c, text, keyword)
@@ -66,7 +69,7 @@ function head(@c: cursor.Cursor, text: str, example: str) -> Head?
             cursor.error(
                 @c,
                 code: "expected_name",
-                message: "expected the declared name after " + kind_text + ", found " + cursor.found(c, text) + " — `" + example + "`",
+                message: "expected the declared name after " + kind_text + ", found " + cursor.found(c, text) + " — `" + example_of(kind) + "`" + in_braces(c, block: below_of(kind)),
                 span: cursor.current_span(c)
             )
         brace_habit.drop_rest_of_line(@c, text, from: from)
@@ -80,6 +83,30 @@ function constant_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64?
         return fail(code: "expected_constant_type", msg: "no `:` after the name")
     return ok(type.parse_type(@c, @a, text))
 
+# Where a `{` stands under the cursor in the place of a head's name or
+# header, `record {`: the words that say where the head's block goes,
+# `block`, one level deeper and never in braces; and nothing where anything
+# else stands.
+function in_braces(c: cursor.Cursor, block: str) -> str
+    if !cursor.at(c, .lbrace)
+        return ""
+    return ", " + block + ", one level deeper, and never in braces"
+
+# Where the block below a head of `kind` goes, and what it holds.
+function below_of(kind: token.TokenKind) -> str
+    if kind == .kw_function || kind == .kw_test
+        return "its body on the lines below it"
+
+    if kind == .kw_constant
+        return "its value on the line below it"
+
+    if kind == .kw_record
+        return "its fields on the lines below it"
+
+    if kind == .kw_extern
+        return "its signatures on the lines below it"
+    return "its cases on the lines below it"
+
 # A test's name after its keyword, a string, or a failure, reported.
 function test_name(@c: cursor.Cursor, text: str) -> token.Span?
     if !cursor.at(c, .str_lit)
@@ -87,7 +114,7 @@ function test_name(@c: cursor.Cursor, text: str) -> token.Span?
             cursor.error(
                 @c,
                 code: "expected_test_name",
-                message: "expected the test's name as a string, found " + cursor.found(c, text) + " — `test \"3-4-5 triangle\"`",
+                message: "expected the test's name as a string, found " + cursor.found(c, text) + " — `test \"3-4-5 triangle\"`" + in_braces(c, block: below_of(.kw_test)),
                 span: cursor.current_span(c)
             )
         return fail(code: "expected_test_name", msg: "no string after `test`")
@@ -143,7 +170,7 @@ function head_read(@c: cursor.Cursor, @a: ast.Ast, text: str, kind: token.TokenK
         _ = cursor.bump(@c)
         return !test_name(@c, text).is_err()
 
-    if head(@c, text: text, example: example_of(kind)).is_err()
+    if head(@c, text: text, kind: kind).is_err()
         return false
 
     if kind == .kw_constant
@@ -158,7 +185,7 @@ function members(@c: cursor.Cursor, @a: ast.Ast, text: str, fields: bool)
 
     if fields
         kind @ .kw_record
-    named = head(@c, text: text, example: example_of(kind))
+    named = head(@c, text: text, kind: kind)
     below: members_below.Below @ members_below.here(c, text)
 
     if !named.is_err()

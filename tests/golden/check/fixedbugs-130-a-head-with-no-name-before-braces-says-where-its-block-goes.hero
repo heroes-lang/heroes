@@ -1,0 +1,56 @@
+# Fixed defect 130's class, 2026-10-01, ruling 2 of the recovery batches
+# (lane recovery-b5's C5; the audit's rows 130-B2a and 130-B2b). Symptom:
+# `record {` over its fields was told `expected_name`, whose words named the
+# name and not where the fields go, so the braces were a second turn once
+# the name was written (`expected_end_of_line` at the `{`); the same for
+# `variant {`, `function {`, `constant {`, `test {`, `extern {`, a foreign
+# word's `struct {`; and an `extern` group's nameless `record {` cost a
+# second message, `expected_extern_signature`, at the fields it left below
+# it. Cause: the report for the missing name was written for the name alone.
+# Repair: where a `{` stands in the name's or the header's place, the one
+# report says both, the name and where the block goes, one level deeper and
+# never in braces (`parse/heads.in_braces`, `foreign_at.in_braces`); a
+# group's record whose name is missing reads its fields as a top-level
+# record's are, silently; and `record = {`, a map's braces where the name
+# goes, is dropped whole with its line, where its `}` was refused as a
+# declaration of its own (`parse/brace_habit.skip_line`).
+
+record {  #~ expected_name
+    x: i64
+}
+
+variant {  #~ expected_name
+    red
+}
+
+function {  #~ expected_name
+    print(1)
+}
+
+constant {  #~ expected_name
+    5
+}
+
+test {  #~ expected_test_name
+    assert 1 == 1
+}
+
+extern {  #~ expected_extern_header
+    function abs(n: i32) -> i32
+}
+
+struct {  #~ reserved_word
+    y: i64
+}
+
+record = {  #~ expected_name
+    z: i64
+}
+
+extern "stdlib.h"
+    record {  #~ expected_name
+        quot: i32
+    }
+
+function main()
+    print(1)

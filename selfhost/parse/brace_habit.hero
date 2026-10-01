@@ -153,9 +153,19 @@ function closer(c: cursor.Cursor, open: i64) -> i64
 ## Dropping a line, and passing braces
 
 # Drop the rest of a broken line, as `cursor.skip_line` does, stopping on a
-# `{` that ends it, which is left under the cursor.
+# `{` that ends it, which is left under the cursor. A bracket the line opens
+# and the lexer closes is passed whole, to its closer: a line end inside it,
+# `record = {` over `x: i64` over `}`, separates its items and ends no line
+# (the recovery batches' C5, 2026-10-01; it left the `}` to be refused as a
+# declaration of its own).
 function skip_line(@c: cursor.Cursor, text: str)
     while !cursor.at(c, .eof) && !cursor.at(c, .indent) && !cursor.at(c, .dedent) && !opens_here(c, text)
+        if cursor.at(c, .lparen) || cursor.at(c, .lbracket) || cursor.at(c, .lbrace) && !laid_braces.laid_out_by_lexer(c, open: c.pos)
+            pair = pairing.paired_closer(c, text, open: c.pos)
+
+            while pair > c.pos && !cursor.at(c, .eof)
+                _ = cursor.bump(@c)
+
         if cursor.bump(@c).kind == .terminator
             return
 

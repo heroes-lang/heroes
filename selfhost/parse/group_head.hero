@@ -11,6 +11,7 @@ use cursor
 use ast
 use keywords
 use parse/use_line
+use parse/heads
 
 # The head line's header string. A missing one is where the old headerless
 # spelling lands, so the message repairs THAT program rather than describing
@@ -32,7 +33,7 @@ function header(@c: cursor.Cursor, text: str) -> token.Span?
         return ok(span)
 
     if !cursor.at_reported_error(c)
-        message: str @ "expected the header's name in quotes after `extern`, found " + cursor.found(c, text) + " — `extern \"sqlite3.h\"`"
+        message: str @ "expected the header's name in quotes after `extern`, found " + cursor.found(c, text) + " — `extern \"sqlite3.h\"`" + heads.in_braces(c, block: heads.below_of(.kw_extern))
 
         if cursor.at(c, .kw_function)
             message @ "an `extern` names the header its signatures come from — `extern \"math.h\"`, then the signatures indented under it. Without the header there is no `#include`, and nothing checks the declaration (§4.19)"
