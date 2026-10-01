@@ -135,7 +135,9 @@ function shape_emit() -> Shape
 #
 # **25 in lane emit, 2026-10-01**: defect 144's eleven `fixedbugs-144-` cases,
 # one per declared result type, took the directory from 14 cases to 25, past
-# its floor of 12 by more than a quarter, and the suite asked for 25.
+# its floor of 12 by more than a quarter, and the suite asked for 25. **34 the
+# same day**, defect 145's nine `fixedbugs-145-` cases, one per way a header
+# names a struct.
 function shape_unsupported() -> Shape
     return Shape(
         name: "unsupported",
@@ -144,7 +146,7 @@ function shape_unsupported() -> Shape
         flag: "",
         on_stderr: true,
         want_code: 1,
-        least: 25,
+        least: 34,
         watched: true,
         silent_stdout: true,
         library_skip: true
