@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-135-l4-escapes-that-read-only-as-a-backslash.hero:10:12: error[unknown_escape]: `\s` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-l4-escapes-that-read-only-as-a-backslash.hero:10:15: error[unknown_escape]: `\&` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-l4-escapes-that-read-only-as-a-backslash.hero:13:12: error[unknown_escape]: `\c` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-l4-escapes-that-read-only-as-a-backslash.hero:13:18: error[unknown_escape]: `\c` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-l4-escapes-that-read-only-as-a-backslash.hero:16:13: error[unknown_escape]: `\N` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-l4-escapes-that-read-only-as-a-backslash.hero:19:13: error[unknown_escape]: `\_` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-l4-escapes-that-read-only-as-a-backslash.hero:19:19: error[unknown_escape]: `\!` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash

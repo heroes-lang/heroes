@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-135-l4-a-character-written-bare.hero:12:15: error[unknown_escape]: `\%` is not an escape sequence — `%` needs no escape inside a string, write it bare; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-l4-a-character-written-bare.hero:15:12: error[unknown_escape]: `\#` is not an escape sequence — `#` needs no escape inside a string, write it bare; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-l4-a-character-written-bare.hero:15:25: error[unknown_escape]: `\@` is not an escape sequence — `@` needs no escape inside a string, write it bare; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-l4-a-character-written-bare.hero:18:12: error[unknown_escape]: `\8` is not an escape sequence — `8` needs no escape inside a string, write it bare; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-l4-a-character-written-bare.hero:18:14: error[unknown_escape]: `\9` is not an escape sequence — `9` needs no escape inside a string, write it bare; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-135-l4-a-character-written-bare.hero:22:16: error[unknown_escape]: `\%` is not an escape sequence — `%` needs no escape inside a string, write it bare; write `\\` for a literal backslash
