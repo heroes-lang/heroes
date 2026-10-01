@@ -1,0 +1,46 @@
+# Fixed defect 131's class, 2026-10-01, the recovery batches' C3 (lane
+# recovery-b5). Symptom: a string's closing quote left out mid-line,
+# `g("a, "b")`, made the next quote close it and the one after open a string
+# that ran to the line's end; what stood between was read outside every
+# string, and each piece of it was told: a `\n` or a `§` it held as a
+# character outside the syntax, a foreign word as `reserved_word`, a `)` it
+# held as the call's left open, the words after it as `expected_end_of_line`
+# (the audit's rows BH-019, BH-020, BH-022; up to 14 messages for one quote in
+# the recovery instrument's `string-open`). Cause: nothing read the line as
+# the lost quote's. Repair: on a line that ends inside a literal that never
+# closes, past its first quote, the lexer reports no character, no foreign
+# word and no opener whose closer a string took (`selfhost/lost_quote.hero`),
+# an f-string's piece that never closes takes its closers as a plain string
+# does (`lex_interp`), and the parser holds its own reports there
+# (`parse/quote_held.hero`): the literal's report is the line's one message.
+# Before the line's first quote the line is read as it stands, so a `\` there
+# or a `(` with no closer on the line is a mistake of its own, told. Each
+# line's annotation stands on the line above it, a lost quote's string taking
+# a comment at its line's end.
+
+function g(a: str, b: str) -> str
+    return a
+
+function main()
+    #~v unterminated_string
+    print(g("a, "b"))
+    x = "a"
+    #~v unterminated_string
+    print(x == "  || x == "\t" || x == "\n")
+    #~v unterminated_string
+    assert g(") == "lines: 0\nlongest: 0", "x")
+    #~v unterminated_string
+    s = abc"
+    n = 1
+    #~v unterminated_string
+    print(f"n = {n})
+    #~v unterminated_string
+    print(g(a: "gate, b: "west"))
+    #~v unterminated_string
+    words = ["fn", "struct, "enum", "class", "§"]
+    #~v unterminated_string
+    print(g(a: x, b: "y)
+    #~v unexpected_character unterminated_string
+    print(x \ 1 + "c)
+    #~v unterminated_string unclosed_bracket unclosed_bracket
+    print(g(a: x, b: "y

@@ -1,0 +1,13 @@
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:26:19: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:29:43: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:31:46: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:33:12: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:36:19: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:38:31: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:40:48: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:42:22: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:44:13: error[unexpected_character]: `\` is not part of the language's syntax
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:44:19: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:46:22: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:46:10: error[unclosed_bracket]: `(` opened here is never closed
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:46:12: error[unclosed_bracket]: `(` opened here is never closed

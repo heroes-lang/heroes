@@ -1,0 +1,56 @@
+# Fixed defect 131's class, 2026-10-01, the recovery batches' C3 (lane
+# recovery-b5). Symptom: an opener left at its line's end and never closed,
+# `w = make(` over `assert w == 1`, cost the lexer's `unclosed_bracket` and
+# then the parser's `expected_expression` at the word where the lexer ended
+# the bracket's reach, or at the end of the block before a declaration (the
+# audit's rows BH-008 and BH-009); `assert !f(` over `left: i64 @ 0` read the
+# binding as an argument and said `expected_args_close` and `not_a_place`
+# (131-42's seven at three), `[` over `i: i64 @ 0` `expected_separator`, and
+# `function main(` over its body `expected_parameter_type`. Cause: the lexer
+# put no line end after an opener at its line's end, and each list read
+# past where the lexer had ended its reach. Repair: where the lexer ends a
+# reach it ends the statement the brackets opened in, a line end after its
+# opener (`layout.line_start`); a list, a group or an index the lexer named
+# never closed reads no item past its reach, and a binding or a mutation on
+# a line below its opener, or a line below a signature's `(` that opens no
+# parameter, is the reach's, passed over (`parse/unclosed`). The lexer's
+# report is the one message.
+
+function make() -> i64
+    return 1
+
+function pair(a: i64, b: i64) -> i64
+    return a + b
+
+function before_a_statement()
+    w = make(  #~ unclosed_bracket
+    assert w == 1
+
+function before_a_binding()
+    x = pair(  #~ unclosed_bracket
+    left: i64 @ 0
+    y = 1
+    print(left + y)
+
+function a_list_before_a_binding()
+    handles: [i64] @ [  #~ unclosed_bracket
+    i: i64 @ 0
+    print(i)
+
+function a_group_before_a_return() -> i64
+    x = (  #~ unclosed_bracket
+    return x
+
+function an_index_before_a_return()
+    xs = [1, 2]
+    x = xs[  #~ unclosed_bracket
+    return
+
+function a_signature_before_its_body(  #~ unclosed_bracket
+    print(make())
+
+test "before a declaration"
+    assert make() == pair(  #~ unclosed_bracket
+
+function main()
+    before_a_statement()

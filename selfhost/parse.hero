@@ -14,6 +14,7 @@ use lexer
 use parse/decl
 use parse/apart
 use parse/which_arm
+use parse/quote_held
 use parse/wrap_break
 use parse/unclosed
 
@@ -97,7 +98,11 @@ function parse_source(s: source.Source) -> ParseOutput
         if lexed_file.breaks.len() > 0
             lines = lexer.moved(lexer.lex_apart(source_extent.text_of(s, index)), offset: s.files[index].start)
             apart.weigh(@c, lexed: @lexed_file, apart: lines, text: s.text)
-        said = which_arm.placed(c, lexed: lexed_file.diagnostics)
+        said = quote_held.held(
+            which_arm.placed(c, lexed: lexed_file.diagnostics),
+            lexed: lexed_file.diagnostics,
+            text: s.text
+        )
 
         for d in lexed_file.diagnostics
             lexer_said @ lexer_said.push(d)
@@ -156,7 +161,7 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
     # As `parse_source` does, a text the lexer refused a break in is read apart.
     if lexed.breaks.len() > 0
         apart.weigh(@c, lexed: @lexed, apart: lexer.lex_apart(text), text: text)
-    said = which_arm.placed(c, lexed: lexed.diagnostics)
+    said = quote_held.held(which_arm.placed(c, lexed: lexed.diagnostics), lexed: lexed.diagnostics, text: text)
     diagnostics: [diag.Diagnostic] @ unclosed.withdrawn(lexed: lexed.diagnostics, said: said.normal, text: text)
     control: [diag.Diagnostic] @ unclosed.withdrawn(lexed: lexed.diagnostics, said: said.control, text: text)
 

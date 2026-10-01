@@ -1,4 +1,3 @@
-tests/golden/check/fixedbugs-131-a-body-inside-a-bracket-left-open-above-is-not-missing.hero:16:18: error[unclosed_bracket]: `(` opened here is never closed
+tests/golden/check/fixedbugs-131-a-body-inside-a-bracket-left-open-above-is-not-missing.hero:17:13: error[unclosed_bracket]: `[` opened here is never closed
 tests/golden/check/fixedbugs-131-a-body-inside-a-bracket-left-open-above-is-not-missing.hero:32:10: error[unclosed_bracket]: `(` opened here is never closed
 tests/golden/check/fixedbugs-131-a-body-inside-a-bracket-left-open-above-is-not-missing.hero:39:9: error[unclosed_bracket]: `{` opened here is never closed
-tests/golden/check/fixedbugs-131-a-body-inside-a-bracket-left-open-above-is-not-missing.hero:18:9: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

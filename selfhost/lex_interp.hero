@@ -94,6 +94,7 @@ function scan_piece(@l: state.LexState, text: str, start: i64)
         @l,
         diag.new_diagnostic(code: "unterminated_string", message: "this string never closes — strings are single-line, `\"` to `\"`", span: span)
     )
+    literals.swallow(@l, text, start: start)
 
 # Whether a piece's text closes the literal: its last byte is the quote.
 function ends_closed(text: str) -> bool

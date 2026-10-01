@@ -32,7 +32,7 @@ function f(a: i64, b: i64) -> i64
 function b_if_col0()
     c = true
     x = f(  #~ unclosed_bracket
-#~v expected_expression expected_declaration
+#~v expected_declaration
 if c
     1
 #~v expected_declaration
@@ -54,3 +54,11 @@ function m1()
 
 function h(a: i64, @b: i64) -> i64
     return a
+
+# Read again 2026-10-01, lane recovery-b5 (the recovery batches' C3, the
+# audit's rows BH-008 and BH-009): an opener left at its line's end whose
+# reach the lexer ended at the next line ends its statement there, and a call
+# the lexer named never closed reads no argument past its reach, so
+# `b_if_col0` no longer says `expected_expression` at the end of the block
+# before its `if`; the other eleven messages stand as recorded, R3's choice
+# still the author's.

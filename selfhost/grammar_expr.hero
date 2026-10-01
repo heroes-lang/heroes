@@ -317,7 +317,7 @@ function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         else if k == .lbracket
             bracket = c.pos
             _ = cursor.bump(@c)
-            index = parse_expr(@c, @a, text)
+            index = indexed(@c, @a, text, open: bracket)
             close = unclosed.end_index(@c, text: text, open: bracket)
             span = token.Span(start: a.exprs[base].span.start, end: close.end)
             base @ ast.push_expr(@a.exprs, ast.Expr(kind: .index(base: base, index: index), span: span))
@@ -487,6 +487,14 @@ function atom_kind(k: token.TokenKind) -> ast.ExprKind?
         return ok(.name)
     return fail(code: "not_an_atom", msg: "no one-token expression starts here")
 
+# The index after the `[` at `open`; where the lexer named the `[` never
+# closed at the line end it stands on, or before the cursor, none is read and
+# none is told missing, the lexer's report the mistake's one message.
+function indexed(@c: cursor.Cursor, @a: ast.Ast, text: str, open: i64) -> i64
+    if unclosed.never_closed(c, text, open: open) && (unclosed.ends_at_the_line(c) || !unclosed.in_reach(c, open: open))
+        return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: c.tokens[open].span))
+    return parse_expr(@c, @a, text)
+
 # `(e)` — grouping only. There is no tuple type, so a parenthesised expression
 # is exactly its contents; `()` as a VALUE does not exist either (§4.3: `()` is
 # the type of no value).
@@ -494,6 +502,10 @@ function group(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     at = c.pos
     _ = cursor.bump(@c)
     cursor.skip_terminators(@c)
+
+    # Past where the lexer named the `(` never closed nothing is its group.
+    if unclosed.never_closed(c, text, open: at) && !unclosed.in_reach(c, open: at)
+        return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: c.tokens[at].span))
     inner = parse_expr(@c, @a, text)
     unclosed.end_group(@c, text: text, open: at)
     return inner
@@ -510,12 +522,18 @@ function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     while reading
         cursor.skip_terminators(@c)
 
-        if cursor.at(c, .rbracket) || cursor.at(c, .eof)
+        if cursor.at(c, .rbracket) || cursor.at(c, .eof) || open_ended && !unclosed.in_reach(c, open: at)
             reading @ false
         else
+            first = c.pos
             items @ items.push(parse_expr(@c, @a, text))
 
-            if !separator(@c, text: text, closer: .rbracket, what: "element", open_ended: open_ended)
+            # A binding or a mutation on a line below a `[` the lexer named
+            # never closed is a statement its reach took in (`unclosed`).
+            if open_ended && (cursor.at(c, .colon) || cursor.at(c, .at) || cursor.at(c, .eq)) && unclosed.a_line_below(c, text, open: at, at: first)
+                unclosed.past_the_reach(@c, open: at)
+                reading @ false
+            else if !list_line.separator(@c, text: text, closer: .rbracket, what: "element", open_ended: open_ended, open: at)
                 reading @ false
 
     close = cursor.current_span(c)
@@ -536,7 +554,7 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     while reading
         cursor.skip_terminators(@c)
 
-        if cursor.at(c, .rbrace) || cursor.at(c, .eof)
+        if cursor.at(c, .rbrace) || cursor.at(c, .eof) || open_ended && !unclosed.in_reach(c, open: at)
             reading @ false
         else
             key = parse_expr(@c, @a, text)
@@ -550,7 +568,7 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
             value = parse_expr(@c, @a, text)
             entries @ entries.push(ast.MapEntry(key: key, value: value))
 
-            if !separator(@c, text: text, closer: .rbrace, what: "entry", open_ended: open_ended)
+            if !list_line.separator(@c, text: text, closer: .rbrace, what: "entry", open_ended: open_ended, open: at)
                 reading @ false
 
     close = cursor.current_span(c)
@@ -559,43 +577,6 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         @a.exprs,
         ast.Expr(kind: .map(entries: entries), span: token.Span(start: open.start, end: close.end))
     )
-
-# The separator between elements of a bracketed literal: a comma on one line, a
-# newline across several (§4.9), and a newline before a comma is one separator
-# with it (panel 180 R1). Returns false when the list is over — either
-# properly, at the closer, or because the separator is missing, which is
-# reported here, or because `list_line.separates` refused the line end, or
-# at a line end in a literal the lexer found `open_ended` (`parse/unclosed`).
-function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: str, open_ended: bool) -> bool
-    # Left where it stands, so nothing below glues to the literal, and the
-    # literal around this one, never closed either, ends at it too.
-    if open_ended && unclosed.ends_at_the_line(c)
-        return false
-    newline = cursor.at(c, .terminator)
-    cursor.skip_terminators(@c)
-    comma_span = cursor.current_span(c)
-    comma = cursor.eat(@c, .comma)
-    cursor.skip_terminators(@c)
-
-    if cursor.at(c, closer) || cursor.at(c, .eof)
-        if comma
-            list_line.trailing_comma(@c, comma_span)
-        return false
-
-    if newline && !comma && !list_line.separates(@c, text: text, closer: closer)
-        return false
-
-    if comma || newline
-        return true
-
-    if !cursor.at_reported_error(c) && !line_end.said_here(c)
-        cursor.error(
-            @c,
-            code: "expected_separator",
-            message: "expected `,` or a new line between one " + what + " and the next, found " + cursor.found(c, text),
-            span: cursor.current_span(c)
-        )
-    return false
 
 # `.plus`, `.num(v: 12)` — a variant case whose type comes from context (§4.5's
 # ⇐ mode). Leading dot, because writing `Token.num` would repeat what the
@@ -644,7 +625,10 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
             # Reached only after a comma: `f(a, b,)`.
             list_line.trailing_comma(@c, cursor.previous_significant_span(c))
             reading @ false
+        else if open_ended && !unclosed.in_reach(c, open: at)
+            reading @ false
         else
+            first = c.pos
             name: token.Span? @ fail(code: "unnamed", msg: "a bare argument")
 
             if cursor.at(c, .ident) && cursor.peek(c, 1) == .colon
@@ -652,6 +636,13 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
                 _ = cursor.bump(@c)
             mutable = cursor.eat(@c, .at)
             value = parse_expr(@c, @a, text)
+
+            # A binding or a mutation on a line below a `(` the lexer named
+            # never closed is a statement its reach took in (`unclosed`).
+            if open_ended && (cursor.at(c, .at) || cursor.at(c, .eq)) && unclosed.a_line_below(c, text, open: at, at: first)
+                unclosed.past_the_reach(@c, open: at)
+                reading @ false
+                continue
 
             # `f(@g(x))`, `f(@Bag(items: []))`: the callee copies its result
             # back into the argument (§4.8), so `@` must name where that

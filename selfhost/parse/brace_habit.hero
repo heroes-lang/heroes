@@ -44,8 +44,8 @@ use cursor
 use word_place
 use state
 use line_above
-use parse/unclosed
 use parse/laid_braces
+use parse/pairing
 
 ## The habit
 
@@ -122,7 +122,7 @@ function alone(text: str, span: token.Span) -> bool
 
 # The index of the token that closes the `{` at `open`, or, where nothing
 # does, of where the lexer named it never closed: the line a declaration
-# opens at column 0 (`parse/unclosed.close_after`), past which the braces read
+# opens at column 0 (`parse/pairing.close_after`), past which the braces read
 # the next declarations as their own members, or the end of the file. For a
 # `{` the lexer laid out, the index past the block below it, its `}` being
 # no token.
@@ -131,7 +131,7 @@ function closer(c: cursor.Cursor, open: i64) -> i64
         return laid_braces.laid_block(c, open: open).past
     depth: i64 @ 0
     i: i64 @ open
-    named = unclosed.close_after(c, at: c.tokens[open].span.start)
+    named = pairing.close_after(c, at: c.tokens[open].span.start)
 
     while i < c.tokens.len()
         kind = c.tokens[i].kind

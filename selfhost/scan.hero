@@ -29,6 +29,8 @@ use punctuation
 use open_line
 use backslash
 use brace_layout
+use closers
+use lost_quote
 
 ## One line of words
 
@@ -150,6 +152,12 @@ function ident(@l: state.LexState, text: str)
     span = token.Span(start: start, end: l.pos)
     entry = foreign_at.foreign_word_at(text, span)
 
+    # A foreign word a lost quote left outside every string is that quote's
+    # (`lost_quote.hero`): no report and no swap.
+    if !entry.is_err() && lost_quote.lost_in(text, at: start)
+        state.error_token_at(@l, start)
+        return
+
     if !entry.is_err()
         found = foreign_at.repair_of(text, span, entry.must(), @l.outline)
         d: diag.Diagnostic @ diag.new_diagnostic(code: "reserved_word", message: found.message, span: span)
@@ -201,6 +209,13 @@ function punct(@l: state.LexState, text: str)
     l.pos @ l.pos + ch.len()
     span = token.Span(start: start, end: l.pos)
 
+    # A character a lost quote left outside every string, a `\` or a `§`
+    # its string held, is that quote's, which the literal its line ends in
+    # reports (`lost_quote.hero`).
+    if lost_quote.lost_in(text, at: start)
+        state.error_token_at(@l, start)
+        return
+
     # Not "(ASCII-only)": that read as an encoding fault for `&`, which is
     # ASCII, and sent the reader hunting for one (panel 036). The syntax is
     # ASCII-only, and this character is not in it — two different claims, and
@@ -223,6 +238,7 @@ function finish(@l: state.LexState, text: str, kind: token.TokenKind, start: i64
     if kind == .rbrace && brace_layout.closes(braced: l.braced.len(), brackets: l.open_brackets, holes: l.holes.len(), text, at: start)
         if l.open_brackets.len() > 0
             layout.close_brackets(@l, text)
+            state.push_offset(@l.closes, at: start)
         brace_layout.closed(@l)
         l.pos @ brace_layout.past_the_closer(text, from: l.pos)
 
@@ -231,6 +247,14 @@ function finish(@l: state.LexState, text: str, kind: token.TokenKind, start: i64
         if !brace_layout.ends_its_line(text, from: l.pos)
             state.emit_close_body(@l, start)
         return
+
+    # A closer closes the opener of its own kind where one is open below
+    # another kind's, which is then named never closed (`closers.hero`); a
+    # closer of the innermost's own kind, every one of a program that
+    # compiles, asks nothing more.
+    if (kind == .rparen || kind == .rbracket || kind == .rbrace) && l.open_brackets.len() > 0
+        if text[l.open_brackets[l.open_brackets.len() - 1].start] != closers.opener_of(kind)
+            closers.close_to_its_kind(@l, text, kind, start: start)
     state.emit(@l, kind, start)
 
 # A line that ends with a value owes its terminator until the next line with
