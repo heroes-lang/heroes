@@ -80,3 +80,12 @@
     4,023 and 0, Linux x86-64 3,899 and 0, the trunk fast-forwarded to it at
     00:03 on 2026-10-01. Owed before the push: Linux arm64 and the Windows
     box.
+
+    **Linux arm64, 2026-10-01 11:14**, on the trunk at `9d1c209d`, whose
+    `selfhost/`, `runtime/`, `seed/`, `tests/`, `examples/` and `spec/` are
+    those of `3cc3b553` (`git diff --stat` over those paths prints nothing),
+    in the `heroes-linux-arm64` image with clang 22.1.8, the seed built there
+    (its SHA-256 begins `e4723edfe15d71f7`, the integration's): the compiler's
+    own tests 960, all passed, and the 19 suites each 0 failed, 3,899 passed.
+    **The Windows box is owed still**: its leg refused to start at 10:51, the
+    `ssh` connection to the box timing out, and nothing was sent.
