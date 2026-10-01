@@ -1,0 +1,66 @@
+# Fixed 2026-09-29, defect 130's class, lane X1. Symptom: braces under a line
+# the parser could not read hid what was inside them, or cost it twice. At the
+# top level `class Point {` over its fields cost the word alone, and a broken
+# field inside went unsaid; `recrod Pair {` cost `expected_declaration` again
+# for its second field and for the `}`, `varaint Shade {` for its `}`, and
+# `impl Point {` for its member's body and its `}`. In a body `loop {`, a statement with a `{` at its end, and
+# `fn inner() {` or `struct Local {` inside braces lost the braces' first
+# line, and every mistake on it. Cause: each drops the rest of its line to the
+# next line end, and the lexer puts none after a `{` that ends a line, nor
+# after a `,` inside braces, so the drop took the braces' first line, or all
+# of them. The drop now stops at such a `{` (`parse/brace_habit.hero`), and
+# the braces are the block under the line, read as one is: under a line whose
+# head nothing reads, by the shape of their lines (`parse/headless.hero`),
+# fields and cases through a view of the braces laid out as an indented block,
+# the `,` between them the habit's debris, and a group's members whole; and a
+# body's statements to the `}`, which goes silently.
+
+class Point {  #~ reserved_word
+    x: i64  #~ expected_end_of_line
+    y i64,  #~ expected_field_type
+}
+
+recrod Pair {  #~ expected_declaration
+    left: i64
+    right i64  #~ expected_field_type
+}
+
+varaint Shade {  #~ expected_declaration
+    light, dark,  #~ expected_end_of_line
+    grey
+}
+
+impl Point {  #~ expected_declaration
+    function norm() -> i64
+        return 0
+}
+
+function main() {  #~ missing_body
+    loop {  #~ expected_end_of_line
+        y = 3 4  #~ expected_end_of_line
+    }
+    print(1) {  #~ expected_end_of_line
+        z = 4 5  #~ expected_end_of_line
+    }
+    fn inner() {  #~ reserved_word
+        w = 5 6  #~ expected_end_of_line
+    }
+    struct Local {  #~ reserved_word
+        v: i64  #~ expected_end_of_line
+        u i64,  #~ expected_field_type
+    }
+}
+
+# Corrected 2026-09-29 by lane X4 (defect 130's class, lane X1's finding 9):
+# a block of declarations in braces, `impl Point {` over `function norm()`,
+# is no group's members gone whole, as the header says, but read as the
+# declarations it holds (`fixedbugs-130-declarations-under-a-refused-head`);
+# its function here has no mistake of its own, so this case reads the same.
+
+# Read again 2026-10-01, lane recovery-b5 (ruling 1, `selfhost/brace_layout.hero`):
+# the lexer lays out a body's braces as the block their fix leaves, and the
+# `,` between members is no longer the habit's debris: `x: i64,` and `v:
+# i64,` are each their record's one `,` report, certain, and `light, dark,`
+# under `varaint Shade {` is read as the block below that line is read with
+# no braces, a statement's line that holds two, `expected_end_of_line` at its
+# `,`. `check --apply` deletes the two certain `,` (`.applied`).

@@ -1,0 +1,63 @@
+# Fixed defect 130's class, 2026-10-01, ruling 1 of the recovery batches
+# (lane recovery-b5's C2). Symptom: a `,` after every member of a record, a
+# variant, an `extern` group or a case's fields written in braces, and after
+# a statement in a body in braces, went unsaid behind the `{`'s one report,
+# and was told only once the author had taken the braces away: a second
+# turn for a mistake the first could have named (the audit's rows 130-17a,
+# 17b, 21a, 21c, 27, 30b, B4, H-001, 131-39a and 39b, 133's `enum_brace` and
+# `struct_c`). Cause: the lexer took the body's `{` for a bracket, inside
+# which a line end after a `,` means nothing, and the parser read the lines
+# through a view that took each `,` for a line end. Repair: the lexer reads a
+# `{` that ends its head's line outside every bracket as that line's end, and
+# lays the lines below out as without the braces (`selfhost/brace_layout.hero`),
+# its `}` with a `,` or `;` after it going with the braces; so each `,` is
+# told as it is with no braces, a declaration's members' one report with its
+# certain deletions, two members on a line at its `,`, a statement's at its
+# own, and the braces' report is unchanged. `check --apply` deletes the
+# certain `,` and leaves the braces, the habit's own report (`.applied`).
+
+record Point {  #~ expected_end_of_line
+    x: i64,  #~ expected_end_of_line
+    y: i64,
+}
+
+variant Color {  #~ expected_end_of_line
+    red,  #~ expected_end_of_line
+    green,
+}
+
+variant Shape {  #~ expected_end_of_line
+    circle {  #~ expected_end_of_line
+        r: f64,  #~ expected_end_of_line
+    },
+    square,
+}
+
+enum Tint {  #~ reserved_word expected_end_of_line
+    light,  #~ expected_end_of_line
+    dark
+}
+
+struct Size {  #~ reserved_word expected_end_of_line
+    w: i64,  #~ expected_end_of_line
+    h: i64,
+};
+
+record Pair {  #~ expected_end_of_line
+    a: i64, b: i64  #~ expected_end_of_line
+}
+
+extern "math.h" {  #~ expected_end_of_line
+    function sqrt(x: f64) -> f64,  #~ expected_extern_signature
+}
+
+function body() {  #~ missing_body
+    x = 1,  #~ expected_end_of_line
+    print(x)
+}
+
+record Open {  #~ expected_end_of_line
+    v: i64,  #~ expected_end_of_line
+
+function main()
+    body()

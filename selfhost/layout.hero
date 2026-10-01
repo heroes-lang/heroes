@@ -25,6 +25,7 @@ use open_line
 use next_line
 use backslash
 use indent_runs
+use brace_layout
 
 ## The carriage return
 
@@ -116,7 +117,19 @@ function line_start(@l: state.LexState, text: str)
             open_line.settle(@l)
         return
 
-    if habit || m.spaces == l.level * 4 + 2
+    # A line that holds only a body's `{`, or the `}` that closes one, is not
+    # in the program their fix writes (`brace_layout.hero`): it takes no
+    # margin and lays out no level, and the `{` follows its head's line end.
+    if l.braced.len() > 0 && brace_layout.closer_alone(braced: l.braced.len(), holes: l.holes.len(), text, at: l.pos)
+        if habit
+            indent_runs.quiet(@l, text, m, line: ws_start, blank: false)
+        brace_layout.ended(@l, text, at: l.pos, level: (spaces + 2) / 4)
+        return
+    alone = b == '{' && brace_layout.opens_a_body(l.tokens, open: l.open_brackets.len() + l.holes.len(), text, at: l.pos)
+
+    if alone && habit
+        indent_runs.quiet(@l, text, m, line: ws_start, blank: false)
+    else if !alone && (habit || m.spaces == l.level * 4 + 2)
         spaces @ indent_runs.with_words(@l, text, m, line: ws_start)
 
     # The line left open is decided here, and so is a `\` that asked it to go
@@ -130,7 +143,7 @@ function line_start(@l: state.LexState, text: str)
 
     # Read as bodies, the line below a same-margin break is one level deeper
     # (`LexState.bodies`).
-    if l.deeper
+    if l.deeper && !alone
         spaces @ spaces + 4
         l.deeper @ false
 
@@ -148,6 +161,9 @@ function line_start(@l: state.LexState, text: str)
                 open_line.flush(@l)
         else if open_line.goes_on_below(@l, text, spaces: spaces)
             return
+
+    if alone
+        return
     span = token.Span(start: ws_start, end: l.pos)
 
     # Recovery, and the distinction matters: a wrong margin is always an
@@ -169,6 +185,9 @@ function line_start(@l: state.LexState, text: str)
             diag.new_diagnostic(code: "indentation_jump", message: "indentation jumps from level " + l.level.to_str() + " to level " + new_level.to_str() + "; a block opens one level at a time", span: span)
         )
         new_level @ l.level + 1
+
+    if l.braced.len() > 0
+        brace_layout.ended(@l, text, at: l.pos, level: new_level)
 
     if new_level == l.level + 1
         state.push_token(@l.tokens, token.Token(kind: .indent, span: span))
@@ -270,6 +289,13 @@ function maybe_terminator(@l: state.LexState, text: str)
         # that drops the rest of the statement, so the next line's own mistake
         # was never reported.
         if kind == .error
+            state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: l.pos, end: l.pos)))
+            return
+
+        # A `{` that ends its line outside every bracket is a body's, read as
+        # its head's line end (`brace_layout.hero`): the lines below are laid
+        # out, never joined to it.
+        if kind == .lbrace
             state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: l.pos, end: l.pos)))
             return
 

@@ -15,12 +15,12 @@
 # either, and that is told beside them.
 
 record Point {  #~ expected_end_of_line
-    x: i64,
+    x: i64,  #~ expected_end_of_line
     y i64,  #~ expected_field_type
 }
 
 variant Shade {  #~ expected_end_of_line
-    light, 5,  #~ expected_case
+    light, 5,  #~ expected_end_of_line
     grey
 }
 
@@ -37,10 +37,18 @@ extern "m.h" {  #~ expected_end_of_line
     function q() -> i64
     function r(x i64) -> i64  #~ expected_parameter_type
     record S {  #~ expected_end_of_line
-        a: i32,
+        a: i32,  #~ expected_end_of_line
         b i32,  #~ expected_field_type
     }
 }
 
 function main()
     print(1)
+
+# Read again 2026-10-01, lane recovery-b5 (ruling 1, `selfhost/brace_layout.hero`):
+# the lexer lays out a body's braces as the block their fix leaves, so the
+# `,` after a member is told as it is with no braces, once a declaration:
+# `x: i64,` and `a: i32,`, certain. `light, 5,` is two members on one line,
+# told at its first `,` as it is with no braces, where the view read it as
+# two lines and named the `5`; the `5` waits for the line to hold one case.
+# `check --apply` deletes the two certain `,` (`.applied`).

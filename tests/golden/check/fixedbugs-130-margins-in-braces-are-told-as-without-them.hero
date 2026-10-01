@@ -1,0 +1,57 @@
+# Fixed defect 130's class, 2026-10-01, ruling 1 of the recovery batches
+# (lane recovery-b5's C2). Symptom: a body or a record in braces whose lines
+# stood two spaces a level, eight spaces deep, at the head's own margin, or
+# under braces one level deeper than their head (GNU's style), cost the
+# `{`'s one report and nothing for the margins, which were told only once the
+# braces were gone (the audit's rows 130-H-002, B1a, B1b; batch 2's b1
+# shapes). Cause: inside a `{` the lexer took for a bracket a margin is not
+# structural, and the parser's view of the braces laid their lines out again
+# and said nothing of them. Repair: the lexer lays a body's braces out as the
+# block their fix leaves (`selfhost/brace_layout.hero`): its lines are
+# judged at four spaces a level as every line is, an indentation habit's run
+# told once with its fix, a jump as a jump; a line holding only a body's `{`,
+# Allman's or GNU's, or only its `}`, takes no margin. Each block's braces
+# keep their one report. `check --apply` re-indents the two-space runs and
+# leaves the braces (`.applied`).
+
+function two_spaces() {  #~ missing_body
+  x = 1  #~ indentation_not_multiple_of_4
+  print(x)
+}
+
+record Point {  #~ expected_end_of_line
+  x: i64  #~ indentation_not_multiple_of_4
+  y: i64
+}
+
+function with_a_stray() {  #~ missing_body
+  x = 1  #~ indentation_not_multiple_of_4
+  print(x) )  #~ expected_end_of_line
+}
+
+function allman()
+{  #~ missing_body
+  print(1)  #~ indentation_not_multiple_of_4
+}
+
+function gnu()
+    {  #~ missing_body
+        print(1)  #~ indentation_jump
+    }
+
+function too_deep() {  #~ missing_body
+        print(1)  #~ indentation_jump
+}
+
+function inner_six() {  #~ missing_body
+    if 1 == 1 {  #~ missing_body
+          print(1)  #~ indentation_not_multiple_of_4 indentation_jump
+    }
+}
+
+function closed_anywhere() {  #~ missing_body
+    print(1)
+        }
+
+function main()
+    two_spaces()

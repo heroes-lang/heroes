@@ -14,8 +14,8 @@
 function arms_in_braces(n: i64)
     match n {  #~ missing_match_arms
         0 => print(0 +)  #~ expected_expression
-        1 => print(1),
-        _ => print(2),
+        1 => print(1),  #~ expected_end_of_line
+        _ => print(2),  #~ expected_end_of_line
     }
 
 function a_body_in_braces(n: i64)
@@ -36,3 +36,11 @@ function main()
     arms_in_braces(n: 0)
     a_body_in_braces(n: 0)
     print(a_map_in_braces(n: 0).len())
+
+# Read again 2026-10-01, lane recovery-b5 (ruling 1, `selfhost/brace_layout.hero`):
+# `match n {` is laid out by the lexer as the block its fix leaves, so a `,`
+# after an arm is told as it is with no braces, where it was Rust's
+# separator: `expected_end_of_line`, one an arm, as with no braces around
+# them (the per-line `,`, queued for the next recovery batch). An arm's own
+# braces, after `=>`, stay a bracket the lexer cannot tell from a map's, read
+# as before.

@@ -28,7 +28,7 @@ function main() {  #~ missing_body
     match x
         1 => print(1)
         _ => print(2)
-    z = 1 +  #~ expected_expression
+    z = 1 +  #~ continuation_outside_brackets
         2
     if x == 2 {  #~ missing_body
         if x == 3
@@ -48,3 +48,11 @@ test "adds" {  #~ missing_body
     if n == 1
         assert n + 1 == 2
 }
+
+# Read again 2026-10-01, lane recovery-b5 (ruling 1, `selfhost/brace_layout.hero`):
+# the lexer lays out a body's braces as the block their fix leaves, so `z = 1
+# +` over a deeper `2` is the break the lexer refuses with no braces around
+# it, `continuation_outside_brackets` where its line ends, in the place of
+# the parser's operand named missing. Its join is not offered over the
+# annotation's comment, and its parentheses are a guess, so `check --apply`
+# writes nothing here.

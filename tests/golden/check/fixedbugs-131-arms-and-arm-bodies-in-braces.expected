@@ -1,4 +1,6 @@
 tests/golden/check/fixedbugs-131-arms-and-arm-bodies-in-braces.hero:15:13: error[missing_match_arms]: a `match` needs its arms indented one level below it, found `{`
 tests/golden/check/fixedbugs-131-arms-and-arm-bodies-in-braces.hero:16:23: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-131-arms-and-arm-bodies-in-braces.hero:17:22: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-131-arms-and-arm-bodies-in-braces.hero:18:22: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-131-arms-and-arm-bodies-in-braces.hero:23:14: error[missing_body]: a `match` arm needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-131-arms-and-arm-bodies-in-braces.hero:24:22: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

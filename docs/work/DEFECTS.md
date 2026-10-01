@@ -381,6 +381,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     136's record carries the integration). The item stays open for the shapes
     the audit of 2026-09-30 found open (`scratchpad/audit-130-133/`).
 
+    **2026-10-01, lane recovery-b5, an indentation habit is one message, and
+    its lines are laid out as its fix writes them** (ruling 5, the cluster's
+    C1): repaired at `4f0db097`, gated by its cases and the compiler's own
+    tests; the net is owed at the batch's close.
+
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
     **Origin:** lane 129's agent, 2026-09-29, beside defect 129 (its finding 2,

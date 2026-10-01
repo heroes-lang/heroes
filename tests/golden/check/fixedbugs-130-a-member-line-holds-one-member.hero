@@ -35,7 +35,7 @@ record Pair
     bottom: i64  # a note, and no mistake
 
 variant Tone {  #~ expected_end_of_line
-    warm,
+    warm,  #~ expected_end_of_line
     dark grey,  #~ expected_end_of_line
 }
 
@@ -49,3 +49,9 @@ function main()
             a
             b c  #~ expected_end_of_line
     print(1)
+
+# Read again 2026-10-01, lane recovery-b5 (ruling 1, `selfhost/brace_layout.hero`):
+# the lines of a body in braces are laid out by the lexer as without the
+# braces, so the `,` after `warm` in `variant Tone {` is told as it is with no
+# braces, the variant's one `,` report, certain; `check --apply` deletes it
+# (`.applied`).

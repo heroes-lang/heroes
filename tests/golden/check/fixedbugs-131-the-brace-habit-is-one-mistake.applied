@@ -1,0 +1,65 @@
+# Fixed 2026-09-29, defect 131's class, given to defect 133's lane. Symptom:
+# a declaration whose head's line ends with `{`, its body or its members in
+# braces and a `}` on the line after them, cost the `{`'s report and then
+# `expected_declaration` again at the `}`; the first line inside the braces
+# went with the head's recovery, and the rest reached the top level, each
+# line a declaration it is not. Cause: inside braces the lexer makes no
+# indent, so the body the author wrote was no block the grammar could find,
+# and the `}` stood at the margin like a declaration. The habit is now read
+# whole, `{` to `}` (`parse/braces.hero`): under a `function`, a `constant`
+# or a `test` the `{` is the missing body it stands for, in the block
+# reader's words, and the statements inside are read, their own mistakes
+# too; under a `record`, a `variant` or an `extern` group the `{` is the
+# head's junk, with where the members go, and the braced region goes whole.
+# The `}` is the habit's debris and costs nothing. A `{` that is not the
+# last thing on its line is no habit, and a `{` on the line below its head
+# is not read as one.
+# Corrected 2026-09-29 by lane X1 (defect 131's class): a `{` alone on the
+# line below its head is read as the habit too, and so is one under a head
+# inside a body, `if x == 1 {`, by the block reader under every head, as in
+# `fixedbugs-131-a-brace-on-the-line-below-its-head` and
+# `fixedbugs-131-a-brace-habit-nested-in-a-body`.
+
+constant LIMIT: i64 {  #~ missing_body
+    5
+}
+
+test "adds" {  #~ missing_body
+    assert 1 + 1 == 2
+}
+
+record Point {  #~ expected_end_of_line
+    x: i64  #~ expected_end_of_line
+    y: i64
+}
+
+variant Color {  #~ expected_end_of_line
+    red  #~ expected_end_of_line
+    green
+}
+
+extern "math.h" {  #~ expected_end_of_line
+    function sqrt(x: f64) -> f64
+}
+
+function first() {  #~ missing_body
+    x = 1
+    print(x +)  #~ expected_expression
+}
+
+function main() {  #~ missing_body
+    print(LIMIT)
+}
+
+# Corrected 2026-09-29 by lane X4 (defect 130's class, lane X1's finding 1):
+# under a `record`, a `variant` or an `extern` group the braced region no
+# longer goes whole, as the header says; the `{` is still the head's one
+# report, and the members inside are read, their own mistakes told
+# (`fixedbugs-130-members-in-braces-are-read`). The members here have none,
+# so this case reads the same.
+
+# Read again 2026-10-01, lane recovery-b5 (ruling 1, `selfhost/brace_layout.hero`):
+# the lexer lays out a body's braces as the block their fix leaves, so the
+# `,` after `x: i64` and after `red` are told as they are with no braces,
+# each its declaration's one `,` report, certain; `check --apply` deletes
+# them (`.applied`).

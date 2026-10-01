@@ -29,12 +29,12 @@ test "adds" {  #~ missing_body
 }
 
 record Point {  #~ expected_end_of_line
-    x: i64,
+    x: i64,  #~ expected_end_of_line
     y: i64,
 }
 
 variant Color {  #~ expected_end_of_line
-    red,
+    red,  #~ expected_end_of_line
     green
 }
 
@@ -57,3 +57,9 @@ function main() {  #~ missing_body
 # report, and the members inside are read, their own mistakes told
 # (`fixedbugs-130-members-in-braces-are-read`). The members here have none,
 # so this case reads the same.
+
+# Read again 2026-10-01, lane recovery-b5 (ruling 1, `selfhost/brace_layout.hero`):
+# the lexer lays out a body's braces as the block their fix leaves, so the
+# `,` after `x: i64` and after `red` are told as they are with no braces,
+# each its declaration's one `,` report, certain; `check --apply` deletes
+# them (`.applied`).

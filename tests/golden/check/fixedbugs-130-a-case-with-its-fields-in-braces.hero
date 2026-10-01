@@ -14,7 +14,7 @@ variant Shape {  #~ expected_end_of_line
     circle {  #~ expected_end_of_line
         r f64,  #~ expected_field_type
     },
-    square,
+    square,  #~ expected_end_of_line
 }
 
 variant Figure
@@ -33,3 +33,11 @@ variant Figure
 
 function main()
     print(1)
+
+# Read again 2026-10-01, lane recovery-b5 (ruling 1, `selfhost/brace_layout.hero`):
+# the lexer lays out a body's braces as the block their fix leaves, so the
+# lines in them are judged as without the braces. `square,` is told as it is
+# with no braces, the variant's one `,` report, certain, and the `},` above it
+# goes with its `}`; the case's own braces are read as the block below the
+# case, and its fields' mistakes are told as before. `check --apply` deletes
+# the `,` (`.applied`).

@@ -16,7 +16,7 @@
 # body's statements to the `}`, which goes silently.
 
 class Point {  #~ reserved_word
-    x: i64,
+    x: i64,  #~ expected_end_of_line
     y i64,  #~ expected_field_type
 }
 
@@ -26,7 +26,7 @@ recrod Pair {  #~ expected_declaration
 }
 
 varaint Shade {  #~ expected_declaration
-    light, dark,
+    light, dark,  #~ expected_end_of_line
     grey
 }
 
@@ -46,7 +46,7 @@ function main() {  #~ missing_body
         w = 5 6  #~ expected_end_of_line
     }
     struct Local {  #~ reserved_word
-        v: i64,
+        v: i64,  #~ expected_end_of_line
         u i64,  #~ expected_field_type
     }
 }
@@ -56,3 +56,11 @@ function main() {  #~ missing_body
 # is no group's members gone whole, as the header says, but read as the
 # declarations it holds (`fixedbugs-130-declarations-under-a-refused-head`);
 # its function here has no mistake of its own, so this case reads the same.
+
+# Read again 2026-10-01, lane recovery-b5 (ruling 1, `selfhost/brace_layout.hero`):
+# the lexer lays out a body's braces as the block their fix leaves, and the
+# `,` between members is no longer the habit's debris: `x: i64,` and `v:
+# i64,` are each their record's one `,` report, certain, and `light, dark,`
+# under `varaint Shade {` is read as the block below that line is read with
+# no braces, a statement's line that holds two, `expected_end_of_line` at its
+# `,`. `check --apply` deletes the two certain `,` (`.applied`).

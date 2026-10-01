@@ -240,10 +240,16 @@ test "the one-line suite is laid out as the body below, and the fix writes it th
 
     assert c.tokens[i - 1].kind == .comment
 
-    # A block below the line, a `:` that ends its line, and one inside a body
-    # in braces: left as they stand.
-    for kept in ["if c: x\n    y\n", "if c:\n    y\n", "function f() {\n    if c: x\n}\n"]
+    # A block below the line, and a `:` that ends its line: left as they stand.
+    for kept in ["if c: x\n    y\n", "if c:\n    y\n"]
         k: cursor.Cursor @ on_the_colon(kept)
         read_below(@k, kept)
         assert k.diagnostics.len() == 0
         assert cursor.at(k, .colon)
+
+    # Inside a body in braces, laid out as without them (ruling 1,
+    # 2026-10-01), the suite is the habit it is anywhere.
+    braced = "function f() {\n    if c: x\n}\n"
+    b: cursor.Cursor @ on_the_colon(braced)
+    read_below(@b, braced)
+    assert b.diagnostics.len() == 1
