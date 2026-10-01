@@ -13,15 +13,33 @@
 # Inside one module the resolver's `declared_twice` speaks first, so this rule
 # reads only pairs from two files, and it reports the first disagreement of a
 # pair, once.
+#
+# **The Heroes library is one of the files, and its declaration is the one the
+# others are held to** (defect 138, 2026-10-01). Every program carries the
+# library's eight `extern`s (§1.11), so a program that declares
+# `hero_file_read(path: cstr, ...)` beside the library's `path: cstr lent`
+# meets this rule. The pair used to be read in file order, the library last,
+# and the caret went to the LATER declaration: the library's line 112, which
+# the pipeline rightly refuses to print (panel 028 R5), so `check` said
+# `internal error` at exit 2 for a mistake on the author's own line 2. The
+# library's declaration cannot change and the author's can, so the reference
+# for a C symbol is the library's where the library declares it and the first
+# declaration met everywhere else; every other declaration is compared with
+# it, and the caret is always on that other one. Two declarations of the
+# author's that both disagree with the library are each named in one turn,
+# rather than one per run.
 use ast
 use diag
 use handles
+use parse
+use resolve
 use source
 use token
 use check/state
+use check/decls as declared
 
 function agree(@c: state.Checker, s: source.Source, decls: [ast.Decl])
-    first: {str: i64} @ {}
+    reference: {str: i64} @ {}
     index: i64 @ 0
 
     for decl in decls
@@ -29,13 +47,24 @@ function agree(@c: state.Checker, s: source.Source, decls: [ast.Decl])
             .function_decl fd =>
                 if fd.value.is_extern
                     name = source.span_text(s, decl.name)
-                    seen = first[name]
 
-                    if seen.is_err()
-                        first[name] @ index
-                    else if source.file_of(s, decl.name.start) != source.file_of(s, decls[seen.must()].name.start)
-                        compare(@c, s, decls, earlier: seen.must(), later: index)
-            .constant_decl | .record_decl | .variant_decl | .test_decl => first @ first
+                    if reference[name].is_err() || source.is_library(s, decl.name.start)
+                        reference[name] @ index
+            .constant_decl | .record_decl | .variant_decl | .test_decl => reference @ reference
+
+        index @ index + 1
+
+    index @ 0
+
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.is_extern
+                    held = reference[source.span_text(s, decl.name)].must()
+
+                    if source.file_of(s, decl.name.start) != source.file_of(s, decls[held].name.start)
+                        compare(@c, s, decls, earlier: held, later: index)
+            .constant_decl | .record_decl | .variant_decl | .test_decl => index @ index
 
         index @ index + 1
 
@@ -253,17 +282,86 @@ function result_spelling(s: source.Source, fd: ast.FunctionDecl) -> str
         return "no mark"
     return "`" + key + "`"
 
+# `at` is the declaration the caret lands on and `other` the one it is held to.
+# A declaration in the library is named by what it is and never by a line: its
+# lines are in a file the author cannot open (§1.11, the reason
+# `resolve/state.hero` names no library line either), and it is the one of the
+# two that cannot change, so the note says what is left to the author.
 function differs(@c: state.Checker, s: source.Source, name: str, what: str, here: str, there: str, at: token.Span, other: token.Span)
-    where = source.elsewhere(s, here: at.start, there: other.start)
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "contract_differs",
-        message: "`" + name + "` is declared here and at " + where + ", and the two disagree about " + what + ": here " + here + ", there " + there + " — one C function has one contract",
-        span: at
-    )
-    d.notes @ d.notes.push(
-        "both declarations bind one C symbol, so a position they declare at one type says the same about it: the same `@`, `lent`, `owned`, `consumes`, `transfers`, `acquires`, `retains`, `borrows` and `counted_by`, and a result of one type the same marks and `when`. Change the one that is wrong about C; if C really is called two ways, give the second way a shim with its own name in the header"
-    )
+    message: str @ "`" + name + "` is declared here and at " + source.elsewhere(s, here: at.start, there: other.start) + ", and the two disagree about " + what + ": here " + here + ", there " + there + " — one C function has one contract"
+    advice: str @ "both declarations bind one C symbol, so a position they declare at one type says the same about it: the same `@`, `lent`, `owned`, `consumes`, `transfers`, `acquires`, `retains`, `borrows` and `counted_by`, and a result of one type the same marks and `when`. Change the one that is wrong about C; if C really is called two ways, give the second way a shim with its own name in the header"
+
+    if source.is_library(s, other.start)
+        message @ "`" + name + "` is declared here and in the Heroes library, and the two disagree about " + what + ": here " + here + ", in the library " + there + " — one C function has one contract"
+        advice @ "the library's declaration is in every program and is not this program's to change, so this one says what it says: at a position the two declare at one type the same `@`, `lent`, `owned`, `consumes`, `transfers`, `acquires`, `retains`, `borrows` and `counted_by`, and for a result of one type the same marks and `when`. Or drop this `extern` and call the library function that wraps it"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "contract_differs", message: message, span: at)
+    d.notes @ d.notes.push(advice)
     state.push_diagnostic(@c, d)
+
+# A program of several files, checked as far as the declaration walk (which
+# interns the written types `same_type` reads) and then by this rule alone.
+function agreed(files: [source.InputFile]) -> [diag.Diagnostic]
+    s = source.from_files(files)
+    p = parse.parse(s.text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    declared.file(@c, p.tree, out, s, p.decls)
+    agree(@c, s, p.decls)
+    found: [diag.Diagnostic] @ []
+
+    for d in c.out.diagnostics
+        if d.code == "contract_differs"
+            found @ found.push(d)
+
+    return found
+
+# The library's text in these tests: one group, the binding `hero_os.h` really
+# has, so a disagreement below is one an author can actually write.
+function library_file() -> source.InputFile
+    return source.InputFile(
+        name: source.LIBRARY_FILE,
+        module: source.LIBRARY_MODULE,
+        text: "extern \"hero_os.h\"\n    function hero_file_read(path: cstr lent, @status: i64) -> str\n",
+        is_library: true
+    )
+
+test "the library's declaration is the one a program's are held to, and the caret is the program's"
+    # Defect 138: the root and a module it uses both leave out the library's
+    # `lent`. Each is named, at its own line, in one turn, and neither message
+    # points into the library.
+    files: [source.InputFile] = [
+        source.InputFile(name: "main.hero", module: "main", text: "use osb\n\nextern \"hero_os.h\"\n    function hero_file_read(path: cstr, @status: i64) -> str\n\nfunction main()\n    print(osb.touch())\n", is_library: false)
+        source.InputFile(name: "osb.hero", module: "osb", text: "extern \"hero_os.h\"\n    function hero_file_read(path: cstr, @status: i64) -> str\n\nfunction touch() -> i64\n    return 1\n", is_library: false)
+        library_file()
+    ]
+    s = source.from_files(files)
+    found = agreed(files)
+    assert found.len() == 2
+    assert source.file_of(s, found[0].span.start) == 0
+    assert source.file_of(s, found[1].span.start) == 1
+    assert !source.is_library(s, found[0].span.start)
+    assert !source.is_library(s, found[1].span.start)
+    assert found[0].message == "`hero_file_read` is declared here and in the Heroes library, and the two disagree about the marks on `path`: here no mark, in the library `lent` — one C function has one contract"
+    assert source.span_text(s, found[0].span) == "path"
+
+test "two declarations of the program's own still name the later one, by its file and line"
+    files: [source.InputFile] = [
+        source.InputFile(name: "main.hero", module: "main", text: "use osb\n\nextern \"m.h\"\n    function keep(p: cstr lent)\n\nfunction main()\n    print(osb.touch())\n", is_library: false)
+        source.InputFile(name: "osb.hero", module: "osb", text: "extern \"m.h\"\n    function keep(p: cstr)\n\nfunction touch() -> i64\n    return 1\n", is_library: false)
+        library_file()
+    ]
+    s = source.from_files(files)
+    found = agreed(files)
+    assert found.len() == 1
+    assert source.file_of(s, found[0].span.start) == 1
+    assert found[0].message == "`keep` is declared here and at main.hero:4, and the two disagree about the marks on `p`: here no mark, there `lent` — one C function has one contract"
+
+test "a declaration that says what the library says is not a disagreement"
+    files: [source.InputFile] = [
+        source.InputFile(name: "main.hero", module: "main", text: "extern \"hero_os.h\"\n    function hero_file_read(path: cstr lent, @status: i64) -> str\n\nfunction main()\n    print(1)\n", is_library: false)
+        library_file()
+    ]
+    assert agreed(files).len() == 0
 
 test "a set is one key whatever its order, and a name sorts by its bytes"
     assert sorted(["b", "a", "c"]) == ["a", "b", "c"]
