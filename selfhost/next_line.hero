@@ -282,7 +282,7 @@ function before_a_colon(text: str, after: i64) -> bool
     return at < text.len() && text[at] == ':' && (at + 1 == text.len() || text[at + 1] != ':')
 
 # Does the line at `at` open with a name, a word that is no keyword
-# (`layout.a_name_after_a_kept_end`, panel 183 R2)?
+# (`bracket_reach.a_name_after_a_kept_end`, panel 183 R2)?
 function opens_with_a_name(text: str, at: i64) -> bool
     if at >= text.len() || !(bytes.is_alpha(text[at]) || text[at] == '_')
         return false
