@@ -191,7 +191,22 @@ function reach(@out: {i64: bool}, c: state.Checked, decls: [ast.Decl], ty: i64)
 
                             if !written.is_err()
                                 queue @ queue.push(written.must())
-                    .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+                    # **A VARIANT'S CASES ARE A ROUTE TOO** (2026-10-01,
+                    # found beside defect 140). This arm stopped at a variant,
+                    # so `==` over a variant whose case holds a union was
+                    # built and printed `true`, and a map keyed by one was
+                    # built, the generated eq and hash calling the payload's:
+                    # the transitivity this file's `used` states, missed at
+                    # the one kind `check/partial.hero` names as what a list
+                    # of container kinds would miss.
+                    .variant_decl v =>
+                        for one_case in v.cases
+                            for field in one_case.fields
+                                written = state.written_type(c, field.ty)
+
+                                if !written.is_err()
+                                    queue @ queue.push(written.must())
+                    .constant_decl | .function_decl | .test_decl => continue
             .array a     => queue @ queue.push(a.element)
             .fixed x     => queue @ queue.push(x.element)
             .fallible fl => queue @ queue.push(fl.payload)

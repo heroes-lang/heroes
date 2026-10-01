@@ -10,10 +10,13 @@
 # and flat now, so the refusal holds at every depth.
 # This case: the union, at the first depth that was built.
 
+# The record names ONE member, which binds a union soundly for reading and
+# which `==` and a key still may not walk, at any arity (panel 077): with
+# two, the completeness probe's own `{0,0}` draws clang's *excess elements
+# in union initializer* on this line, a warning that is not this case's.
 extern "fixedbugs-140-a-union-compared-sixteen-deep-is-refused.h"
     record U  #~ ffi_union_field
         i: i32
-        f: f32
 
 record R0
     u: U
