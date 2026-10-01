@@ -730,6 +730,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     pass found affected, against the line above (`x = if` refused with *every
     branch jumps*, or checked clean and built over an uninitialised read).
 
+    **2026-10-01, lane flow, the statement half: a `match` statement leaves
+    its block only when every arm does, and the checked `if` asks it too**
+    (the item as filed; by the coordinator's leave of 12:00 for lane 135c's
+    golden, which gains its `missing_return` under a dated correction):
+    repaired at `3a25b640`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
 - [ ] **140 — records nested by value a thousand deep abort `build`** | 1,000 flat declarations, `record R<i>` holding `R<i-1>`, reached by `xs: [R999] = []`: `check` exit 0, `build` exit 134, `panic: stack exhausted in emitsynth.collect`; at 10,000 under a larger stack clang itself crashes on the C | `selfhost/emit/` (`emitsynth.collect`) · `selfhost/check/decls.hero` (`.record_decl`, where a bound would stand)
 
     **Origin:** panel 184's compiler-engineer (`184-reports/compiler-engineer.md`
