@@ -136,7 +136,7 @@ function unexpected_top_level(@c: cursor.Cursor, @a: ast.Ast, text: str)
 # `constant MAX_DEPTH: i64` + the value, indented (§4.2). Constants use
 # SCREAMING_CASE by convention; the parser does not police it.
 function constant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
-    h = heads.head(@c, text: text, example: "constant MAX_DEPTH: i64")
+    h = heads.head(@c, text: text, kind: .kw_constant)
 
     if h.is_err()
         grammar_expr.hanging(@c, @a, text)
@@ -159,7 +159,7 @@ function constant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl]
 # `function dist2(a: Point, b: Point) -> i64` + body (§4.2). The parameter
 # list attaches to the name, as at the call site.
 function function_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
-    h = heads.head(@c, text: text, example: "function dist2(a: Point, b: Point) -> i64")
+    h = heads.head(@c, text: text, kind: .kw_function)
 
     if h.is_err()
         grammar_expr.hanging(@c, @a, text)
@@ -211,7 +211,7 @@ function test_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], te
 # question a later pass asks reads `header` rather than re-deriving it from
 # where the declaration was parsed.
 function record_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, linkage: tails.Linkage)
-    h = heads.head(@c, text: text, example: "record Point")
+    h = heads.head(@c, text: text, kind: .kw_record)
 
     if h.is_err()
         _ = members_below.fields_below(@c, @a, text, below: members_below.here(c, text))
@@ -224,7 +224,7 @@ function record_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], 
 # `variant Token` + one case per line, each case optionally carrying fields —
 # a case with fields IS a small record (§4.2).
 function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
-    h = heads.head(@c, text: text, example: "variant Token")
+    h = heads.head(@c, text: text, kind: .kw_variant)
 
     if h.is_err()
         _ = members_below.cases_below(@c, @a, text, below: members_below.here(c, text))

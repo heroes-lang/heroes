@@ -109,9 +109,33 @@ function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: st
             repair: .guidance
         )
     return keywords.ForeignWord(
-        message: misplaced(word: word, writes: writes, place: place),
+        message: misplaced(word: word, writes: writes, place: place) + in_braces(text: text, span, writes: writes, place: place),
         repair: repair_there(writes, place: place)
     )
+
+# Where a `{` follows a declaring word with no name after it, `struct {`, the
+# words that say where the declaration's block goes, as the parser's own
+# report says them for `record {` (`parse/heads.in_braces`; ruling 2 of the
+# recovery batches, 2026-10-01); nothing elsewhere.
+function in_braces(text: str, span: token.Span, writes: str, place: word_place.Place) -> str
+    i: i64 @ span.end
+
+    while i < text.len() && text[i] == ' '
+        i @ i + 1
+
+    named_there = place == .top && declares(writes) || place == .member && (writes == "record" || writes == "function" || writes == "constant")
+
+    if i >= text.len() || text[i] != '{' || !named_there || writes == "use"
+        return ""
+    held: str @ "its cases on the lines below it"
+
+    if writes == "record"
+        held @ "its fields on the lines below it"
+    else if writes == "function"
+        held @ "its body on the lines below it"
+    else if writes == "constant"
+        held @ "its value on the line below it"
+    return ", " + held + ", one level deeper, and never in braces"
 
 # Where each word a swap writes is right: a declaration's keyword where a
 # declaration opens, a group's three members one level under its head,

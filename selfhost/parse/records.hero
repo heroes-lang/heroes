@@ -21,6 +21,8 @@ use handles
 use keywords
 use parse/tails
 use parse/members_below
+use parse/heads
+use parse/brace_habit
 use grammar_expr
 use lexer
 
@@ -37,10 +39,14 @@ function record_with_doc(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], tex
             cursor.error(
                 @c,
                 code: "expected_name",
-                message: "expected the C struct's name after `record`, found " + cursor.found(c, text) + " — `record Color`",
+                message: "expected the C struct's name after `record`, found " + cursor.found(c, text) + " — `record Color`" + heads.in_braces(c, block: heads.below_of(.kw_record)),
                 span: cursor.current_span(c)
             )
-        cursor.skip_line(@c)
+
+        # The fields below it, indented or in braces, are the record's, read
+        # as a top-level record's are when its name is missing (`decl`).
+        brace_habit.drop_rest_of_line(@c, text, from: c.pos - 1)
+        _ = members_below.fields_below(@c, @a, text, below: members_below.here(c, text))
         return
     name = cursor.bump(@c).span
     record_tail(@c, @a, @decls, text, keyword: keyword, doc: doc, name: name, linkage: linkage)
