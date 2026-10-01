@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-138-a-mark-the-library-does-not-write.hero:11:37: error[contract_differs]: `hero_str_try_from_cstr` is declared here and in the Heroes library, and the two disagree about the marks on `p`: here `lent`, in the library no mark — one C function has one contract

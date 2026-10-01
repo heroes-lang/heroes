@@ -132,72 +132,89 @@ function refuse(@c: state.Checker, s: source.Source, decls: [ast.Decl], key: i64
 # before returned absence then and returns it now. The runtime guard
 # still sits behind this rule and still fires, but it no longer licenses
 # a silence — that was defect 046.
-function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, @seen: {i64: bool}) -> str?
-    if !seen[ty].is_err()
-        return fail(code: "absent", msg: "this type was already walked")
-    seen[ty] @ true
-
-    match table.get(c.out.types, ty)
-        .float_ty => return ok("")
-        .named n =>
-            owner = source.span_text(s, decls[n.decl].name)
-
-            match decls[n.decl].kind
-                .record_decl rec => return inside(c, s, decls, owner: owner, fields: rec.fields, @seen)
-                .variant_decl v =>
-                    for one_case in v.cases
-                        found = inside(c, s, decls, owner: owner, fields: one_case.fields, @seen)
-
-                        if !found.is_err()
-                            return found
-
-                    return fail(code: "absent", msg: "no payload reaches a float")
-                .constant_decl | .function_decl | .test_decl => return fail(
-                    code: "absent",
-                    msg: "not a data declaration"
-                )
-        .fixed x => return reaches_float(c, s, decls, ty: x.element, @seen)
-        # [T], {K: V} and T? are not key types today — each is refused
-        # before this walk runs — but the arms are here rather than
-        # folded, so the day one becomes a key this rule does not
-        # silently stop applying.
-
-        .array arr  => return reaches_float(c, s, decls, ty: arr.element, @seen)
-        .fallible o => return reaches_float(c, s, decls, ty: o.payload, @seen)
-        .map m =>
-            in_key = reaches_float(c, s, decls, ty: m.key, @seen)
-
-            if !in_key.is_err()
-                return in_key
-            return reaches_float(c, s, decls, ty: m.value, @seen)
-        .int_ty | .bool | .str | .ptr | .cstr | .unit          => return fail(code: "absent", msg: "no float here")
-        .function_ty | .case_ty | .failure | .generic | .error => return fail(code: "absent", msg: "no float here")
-
-    return fail(code: "absent", msg: "unreached")
-
-# The first field or case payload that reaches a float, as a dotted path
+#
+# The path is the first field or case payload that reaches the float,
 # threaded DOWNWARD. The DEEPEST owner wins, not the full path — Wrapper
 # holding a Point reports `Point.y` rather than `Wrapper.inner.y`, and
 # that is deliberate where the ordering walk builds the path instead:
 # sort refuses the whole value and the reader needs the route in, while
 # a map key is repaired by changing ONE declaration, and `Point.y` names
 # the declaration to open.
-function inside(c: state.Checker, s: source.Source, decls: [ast.Decl], owner: str, fields: [ast.Field], @seen: {i64: bool}) -> str?
+#
+# **FLAT SINCE DEFECT 140 (2026-10-01).** The set made the walk total and
+# left it one frame per record, so a key nested by value a thousand
+# records deep would have stopped `check` at 134 here, as the partial walk
+# beside it did first. A stack of its own goes as deep as the records do;
+# each place on it carries the field it was reached through, so the
+# deepest owner still wins, and children are pushed last to first, so the
+# float named is the one the recursion found first.
+function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, @seen: {i64: bool}) -> str?
+    stack: [Standing] @ [Standing(ty: ty, through: "")]
+    live: i64 @ 1
+
+    while live > 0
+        live @ live - 1
+        here = stack[live]
+
+        if !seen[here.ty].is_err()
+            continue
+        seen[here.ty] @ true
+        inner: [Standing] @ []
+
+        match table.get(c.out.types, here.ty)
+            .float_ty => return ok(here.through)
+            .named n =>
+                owner = source.span_text(s, decls[n.decl].name)
+
+                match decls[n.decl].kind
+                    .record_decl rec => inner @ fields_from(c, s, owner: owner, fields: rec.fields)
+                    .variant_decl v =>
+                        for one_case in v.cases
+                            for one in fields_from(c, s, owner: owner, fields: one_case.fields)
+                                inner @ inner.push(one)
+                    .constant_decl | .function_decl | .test_decl => continue
+            .fixed x => inner @ [Standing(ty: x.element, through: here.through)]
+            # [T], {K: V} and T? are not key types today — each is refused
+            # before this walk runs — but the arms are here rather than
+            # folded, so the day one becomes a key this rule does not
+            # silently stop applying.
+
+            .array arr  => inner @ [Standing(ty: arr.element, through: here.through)]
+            .fallible o => inner @ [Standing(ty: o.payload, through: here.through)]
+            .map m =>
+                inner @ [Standing(ty: m.key, through: here.through), Standing(ty: m.value, through: here.through)]
+            .int_ty | .bool | .str | .ptr | .cstr | .unit          => continue
+            .function_ty | .case_ty | .failure | .generic | .error => continue
+
+        back: i64 @ inner.len() - 1
+
+        while back >= 0
+            if live < stack.len()
+                stack[live] @ inner[back]
+            else
+                stack @ stack.push(inner[back])
+            live @ live + 1
+            back @ back - 1
+
+    return fail(code: "absent", msg: "no float here")
+
+# One place the walk stands: a type, and the field of the nearest
+# declaration it was reached through, `Point.y`, or "" for the key itself.
+record Standing
+    ty: i64
+    through: str
+
+# A declaration's fields as places to stand, each through `owner.field`.
+function fields_from(c: state.Checker, s: source.Source, owner: str, fields: [ast.Field]) -> [Standing]
+    out: [Standing] @ []
+
     for field in fields
         written = state.written_type(c.out, field.ty)
 
-        if written.is_err()
-            continue
-        found = reaches_float(c, s, decls, ty: written.must(), @seen)
+        if !written.is_err()
+            out @ out.push(Standing(ty: written.must(), through: owner + "." + source.span_text(s, field.name)))
 
-        if found.is_err()
-            continue
-
-        if found.must() == ""
-            return ok(owner + "." + source.span_text(s, field.name))
-        return found
-
-    return fail(code: "absent", msg: "every field is exact")
+    return out
 
 ## Tests
 

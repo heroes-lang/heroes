@@ -1,0 +1,111 @@
+# Fixed 2026-10-01, defect 144, lane emit.
+# Symptom: a result declared wider than C's was refused at `build`, exit 1,
+# `ffi_return_type`, where spec § 13 says *a result may be wider than C's*:
+# `htonl` declared `-> u64` over C's `uint32_t`, and an unsigned char, an
+# unsigned short or a signed char declared at any wider width, and `char` or
+# `_Bool` declared `-> i64`.
+# Cause: the result assertions read *wider* for `i64` and `f64` only, and
+# every narrower width accepted exactly its own size; `i64`'s set was a list
+# of type NAMES, which on Windows also refused a 32-bit `unsigned long`.
+# The rule now is one for every width: a declared result holds C's when it
+# holds every value of C's type (panel 092's lossless widening). A signed
+# result takes a signed C integer no wider and an unsigned one strictly
+# narrower, an unsigned result an unsigned one no wider, `_Bool` (one bit
+# wide) fits every integer, and `f64` takes `float`, `double`, and `long
+# double` only where it is no wider than `double`.
+# This case holds every pair the rule accepts on all four platforms, each
+# printing the C type's most telling value, which a widening must carry
+# across unchanged. The four pairs whose verdict is the platform's (`long`
+# into `i32`, `unsigned long` into `i64` and `u32`, `long double` into `f64`)
+# cannot be pinned by one expectation and are measured, not held, here.
+extern "fixedbugs-144-every-wider-result-builds.h"
+    function bool_as_i8() -> i8
+    function bool_as_i16() -> i16
+    function bool_as_i32() -> i32
+    function bool_as_i64() -> i64
+    function bool_as_u8() -> u8
+    function bool_as_u16() -> u16
+    function bool_as_u32() -> u32
+    function bool_as_u64() -> u64
+    function bool_as_bool() -> bool
+    function char_as_i8() -> i8
+    function char_as_i16() -> i16
+    function char_as_i32() -> i32
+    function char_as_i64() -> i64
+    function schar_as_i8() -> i8
+    function schar_as_i16() -> i16
+    function schar_as_i32() -> i32
+    function schar_as_i64() -> i64
+    function short_as_i16() -> i16
+    function short_as_i32() -> i32
+    function short_as_i64() -> i64
+    function int_as_i32() -> i32
+    function int_as_i64() -> i64
+    function long_as_i64() -> i64
+    function llong_as_i64() -> i64
+    function uchar_as_i16() -> i16
+    function uchar_as_i32() -> i32
+    function uchar_as_i64() -> i64
+    function uchar_as_u8() -> u8
+    function uchar_as_u16() -> u16
+    function uchar_as_u32() -> u32
+    function uchar_as_u64() -> u64
+    function ushort_as_i32() -> i32
+    function ushort_as_i64() -> i64
+    function ushort_as_u16() -> u16
+    function ushort_as_u32() -> u32
+    function ushort_as_u64() -> u64
+    function uint_as_i64() -> i64
+    function uint_as_u32() -> u32
+    function uint_as_u64() -> u64
+    function ulong_as_u64() -> u64
+    function ullong_as_u64() -> u64
+    function float_as_f32() -> f32
+    function float_as_f64() -> f64
+    function double_as_f64() -> f64
+
+function main()
+    print("_Bool as i8: ", bool_as_i8())
+    print("_Bool as i16: ", bool_as_i16())
+    print("_Bool as i32: ", bool_as_i32())
+    print("_Bool as i64: ", bool_as_i64())
+    print("_Bool as u8: ", bool_as_u8())
+    print("_Bool as u16: ", bool_as_u16())
+    print("_Bool as u32: ", bool_as_u32())
+    print("_Bool as u64: ", bool_as_u64())
+    print("_Bool as bool: ", bool_as_bool())
+    print("char as i8: ", char_as_i8())
+    print("char as i16: ", char_as_i16())
+    print("char as i32: ", char_as_i32())
+    print("char as i64: ", char_as_i64())
+    print("signed char as i8: ", schar_as_i8())
+    print("signed char as i16: ", schar_as_i16())
+    print("signed char as i32: ", schar_as_i32())
+    print("signed char as i64: ", schar_as_i64())
+    print("short as i16: ", short_as_i16())
+    print("short as i32: ", short_as_i32())
+    print("short as i64: ", short_as_i64())
+    print("int as i32: ", int_as_i32())
+    print("int as i64: ", int_as_i64())
+    print("long as i64: ", long_as_i64())
+    print("long long as i64: ", llong_as_i64())
+    print("unsigned char as i16: ", uchar_as_i16())
+    print("unsigned char as i32: ", uchar_as_i32())
+    print("unsigned char as i64: ", uchar_as_i64())
+    print("unsigned char as u8: ", uchar_as_u8())
+    print("unsigned char as u16: ", uchar_as_u16())
+    print("unsigned char as u32: ", uchar_as_u32())
+    print("unsigned char as u64: ", uchar_as_u64())
+    print("unsigned short as i32: ", ushort_as_i32())
+    print("unsigned short as i64: ", ushort_as_i64())
+    print("unsigned short as u16: ", ushort_as_u16())
+    print("unsigned short as u32: ", ushort_as_u32())
+    print("unsigned short as u64: ", ushort_as_u64())
+    print("unsigned int as i64: ", uint_as_i64())
+    print("unsigned int as u32: ", uint_as_u32())
+    print("unsigned int as u64: ", uint_as_u64())
+    print("unsigned long as u64: ", ulong_as_u64())
+    print("unsigned long long as u64: ", ullong_as_u64())
+    print("float as f32: ", float_as_f32())
+    print("float as f64: ", float_as_f64())
+    print("double as f64: ", double_as_f64())

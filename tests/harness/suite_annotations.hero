@@ -149,8 +149,14 @@ constant RUN_ROOTS: [str]
 # which annotate 93 diagnostics, on top of lane recovery-b1's, took the count
 # past 1317 by more than a quarter, and on the merged tree the suite found
 # 1652.
+#
+# **2148 at lane emit's batch gate, 2026-10-01**: its cases for defects 138,
+# 144, 145 and 140, which annotate 140 diagnostics (117 of them defect 144's
+# refusals), on top of 356 that reached the trunk inside the quarter since
+# the last raise, took the count past 1652 by more than a quarter, and on the
+# merged tree the suite found 2148.
 constant LEAST: i64
-    1652
+    2148
 
 # `only` narrows the sweep to the cases whose name holds it (cases.matching);
 # a narrowed run asks neither the thesis witnesses, nor the groups, nor the

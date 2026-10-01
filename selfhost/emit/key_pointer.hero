@@ -1,0 +1,64 @@
+# Whether a type REACHES a `ptr` or a `cstr`: the one question the gate
+# asks of a map key before the emitter writes its hash (design.md §4.20;
+# panels 029, 067, 068). A key reaching an address has no hash this backend
+# can write, and the hash the emitter would write is `hero_unreachable()`,
+# so `emit/gate.hero` refuses the key in its words instead.
+#
+# A file of its own since defect 140 (2026-10-01): the walk became flat and
+# total there, a few lines longer than the recursion, and `gate.hero` is a
+# knot already past §11's ceiling that may not grow. It calls nothing in
+# the gate, so it leaves along the seam it always had.
+
+use ast
+use check/table
+use check/state
+use emit/synth
+
+# Does this type REACH a ptr or a cstr, through fields, payloads or
+# containers? Returns what was found, for the message: a reader told
+# "reaches `ptr`" can look for the pointer; one told "not a valid key"
+# cannot.
+#
+# **TOTAL AND FLAT SINCE DEFECT 140 (2026-10-01).** It stopped at
+# `depth > 16`, citing the checker's partial walk as its model, and that
+# walk had lost its bound to defect 046 on 2026-09-16: so a map key holding
+# a `ptr` seventeen records down was built, measured, where sixteen down was
+# refused, and the generated hash of such a key is `hero_unreachable()`. A
+# set of the type ids walked makes the walk total, a stack of its own makes
+# it as deep as the records go, and the children are pushed last to first,
+# so the pointer found is the one the recursion found first.
+function reaches_pointer(c: state.Checked, decls: [ast.Decl], ty: i64) -> str?
+    seen: {i64: bool} @ {}
+    stack: [i64] @ [ty]
+    live: i64 @ 1
+
+    while live > 0
+        live @ live - 1
+        at = stack[live]
+
+        if !seen[at].is_err()
+            continue
+        seen[at] @ true
+        inner: [i64] @ []
+
+        match table.get(c.types, at)
+            .ptr                                                   => return ok("`ptr`")
+            .cstr                                                  => return ok("`cstr`")
+            .array arr                                             => inner @ [arr.element]
+            .fallible o                                            => inner @ [o.payload]
+            .map m                                                 => inner @ [m.key, m.value]
+            .named n                                               => inner @ synth.field_types(c, decls, decl: n.decl)
+            .int_ty | .float_ty | .bool | .str | .unit | .fixed    => continue
+            .function_ty | .case_ty | .failure | .generic | .error => continue
+
+        back: i64 @ inner.len() - 1
+
+        while back >= 0
+            if live < stack.len()
+                stack[live] @ inner[back]
+            else
+                stack @ stack.push(inner[back])
+            live @ live + 1
+            back @ back - 1
+
+    return fail(code: "none", msg: "no pointer inside")

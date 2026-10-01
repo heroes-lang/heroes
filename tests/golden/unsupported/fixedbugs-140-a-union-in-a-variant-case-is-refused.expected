@@ -1,0 +1,6 @@
+error[ffi_union_field]: `W` is a `union` in `fixedbugs-140-a-union-in-a-variant-case-is-refused.h`, so comparing or hashing one asks about bytes that may hold another member — `i` is only what was written last
+  at tests/golden/unsupported/fixedbugs-140-a-union-in-a-variant-case-is-refused.hero:16:12
+     |
+  16 |     record W  #~ ffi_union_field
+     |            ^
+  note: reading `i` and building one that names it are both sound and stay legal; what has no answer is `==`, `hash` and being a map key, because two values holding different members are equal whenever the bytes match. Mark the `record` `partial` if you want that refusal stated at the declaration
