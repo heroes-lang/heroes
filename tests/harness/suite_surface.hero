@@ -861,7 +861,13 @@ test "the tables are what this module is, so they are counted"
     # 149 -> 151 the same day, defect 125: `patterns125/negative.hero`
     # formatted at exit 0 as its own canonical form, where fmt exited 2, and
     # run.
-    assert verb_probes().len() == 151
+    # 151 -> 156 on 2026-10-01, lane 135c's batch gate, defect 141 (rows added
+    # at `fa64c7da`, this count found by the net's own tests at the gate):
+    # `check --apply` handing back a clean file whose last line is open, a
+    # file of one remark, and a file with a hole, byte for byte, nothing on
+    # stdout with `--in-place`, and a module whose last byte is a stray
+    # carriage return refused there.
+    assert verb_probes().len() == 156
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map
