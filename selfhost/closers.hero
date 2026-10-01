@@ -153,7 +153,7 @@ function never_closed(text: str, span: token.Span) -> diag.Diagnostic
     )
 
 # The report of the opener at `span`, still open at the line `line`, whose
-# first word `word` ended its reach (`layout.end_the_reach`): a word no
+# first word `word` ended its reach (`bracket_reach.end_the_reach`): a word no
 # bracket can hold there (panel 183 R1), or, where `name`, a name after a
 # line that kept its end inside a `(` (R2). Not *never closed*: nothing
 # closed what the opener stands in, and a closer further down may be the one
