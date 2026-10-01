@@ -42,7 +42,7 @@
 # |---|---|
 # | `left_open` | `layout.maybe_terminator`, at a line end, where the line is left open (a line that owes its terminator is recorded there) |
 # | `goes_on`, `goes_on_below` | `layout.line_start`, at the next line with words: refused and joined, or ended there |
-# | `abandon`, `settle` | `layout.line_start` where a tab or a stray carriage return leaves the margin unread, and `lexer.lex_one` at the file's end |
+# | `settle` | `layout.line_start` where a stray carriage return leaves the margin unread, and `lexer.lex_one` at the file's end |
 # | `ended` | `lexer.lex_one`, for a line still left open at the file's end |
 use token
 use state
@@ -181,18 +181,6 @@ function goes_on_below(@l: state.LexState, text: str, spaces: i64) -> bool
     flush(@l)
     refuse_the_head(@l, text, at: at, spaces: spaces, commented: commented)
     return true
-
-# Where a tab leaves the margin unread: a line end that owed its terminator
-# gets it, and a line left open is ended, so nothing goes on in silence and the
-# parser says what that line lacks; not a body's head, whose tabbed line is its
-# body (`parse/opening`, `Body.tabbed`).
-function abandon(@l: state.LexState)
-    settle(@l)
-
-    if l.open_line >= 0 && !opens_a_body(l.tokens[l.open_line].kind)
-        ended(@l)
-        plant(@l)
-    l.open_line @ -1
 
 # A block head: `else` and `=>` open a body, and a `:` before a deeper line is
 # the Python habit, which the parser refuses with its own fix.

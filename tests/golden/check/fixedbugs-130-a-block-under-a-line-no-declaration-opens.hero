@@ -52,3 +52,8 @@ fucntion tabbed()  #~ expected_declaration
 
 function main()
     print(1)
+
+# Read again 2026-10-01, lane recovery-b5 (ruling 5, `selfhost/indent_runs.hero`):
+# the tab under `fucntion tabbed()` is laid out as the margin its fix writes,
+# four columns, one level under the head, and its `tab_in_indentation` carries
+# that fix, certain, which `check --apply` writes (`.applied`).

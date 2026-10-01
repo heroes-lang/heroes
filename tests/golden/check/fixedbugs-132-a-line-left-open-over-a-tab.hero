@@ -13,7 +13,17 @@ function
 	y = 3 )  #~ tab_in_indentation expected_end_of_line
 
 function main()
-    #~v expected_expression
+    #~v continuation_outside_brackets
     x = 1 +
 	print(2)  #~ tab_in_indentation
     print(x)
+
+# Read again 2026-10-01, lane recovery-b5 (ruling 5, `selfhost/indent_runs.hero`):
+# a tabbed line is laid out at the margin its fix writes, a tab as four
+# columns, so a line left open over it goes on, or is ended, as over that
+# margin, and `open_line.abandon` is gone. `function` over a tabbed `y = 3 )`
+# is still told its name; `x = 1 +` over a tabbed `print(2)` at its own
+# margin is the break panel 181 refuses there, `continuation_outside_brackets`,
+# as with spaces, where the line was ended before and the operand named
+# missing. Both tabs are certain fixes, which `check --apply` writes
+# (`.applied`).

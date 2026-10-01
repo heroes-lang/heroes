@@ -1,0 +1,105 @@
+# Fixed defect 131's class, 2026-10-01, ruling 5 of the recovery batches (lane
+# recovery-b5's C1). Symptom: a block indented two spaces a level cost one
+# `indentation_not_multiple_of_4` a line, and the lexer rounded each margin to
+# the nearest four, so a block nested two deep collapsed into its head and the
+# parser named its body missing, a `match`'s arms missing, a case's fields
+# read as cases (3 to 5 messages for one habit over batch 4's first-pass
+# shapes; `indent-2` 99 EXTRA of 158). Cause: the rounding read a two-space
+# level as half of one. Repair: a line two spaces deeper than the line above,
+# which opens a block, opens a run of the lines deeper than that line, told
+# once at its first line, each laid out at the level its fix writes, two
+# spaces a level (`selfhost/indent_runs.hero`); the fix re-indents every line
+# the run holds and is certain where every depth is even. A slip at six
+# under a head is a run of one line, its message as it was, now with its
+# fix. `check --apply` writes a program that checks clean (`.fixed`).
+
+function body()
+  x = 1  #~ indentation_not_multiple_of_4
+  y = 2
+  print(x + y)
+
+function nested(x: i64)
+  if x == 1  #~ indentation_not_multiple_of_4
+    print(x)
+  else
+    print(0)
+
+function three_deep()
+  for i in [1, 2]  #~ indentation_not_multiple_of_4
+    if i == 1
+      print(i)
+
+record Point
+  x: i64  #~ indentation_not_multiple_of_4
+  y: i64
+
+variant Shape
+  circle  #~ indentation_not_multiple_of_4
+    r: f64
+  square
+
+extern "stdlib.h"
+  function abs(n: i32) -> i32  #~ indentation_not_multiple_of_4
+
+function arms(n: i64) -> i64
+  return match n  #~ indentation_not_multiple_of_4
+    0 => 1
+    _ => 2
+
+function arm_blocks(n: i64)
+  match n  #~ indentation_not_multiple_of_4
+    0 =>
+      print(0)
+    _ =>
+      print(1)
+
+function between()
+  x = 1  #~ indentation_not_multiple_of_4
+  # a note
+
+  print(x)
+
+function in_brackets(a: i64, b: i64) -> i64
+  return add(  #~ indentation_not_multiple_of_4
+    a: a,
+    b: b
+  )
+
+function add(a: i64, b: i64) -> i64
+    return a + b
+
+function in_four_then_two(x: i64)
+    if x == 1
+      print(x)  #~ indentation_not_multiple_of_4
+      if x == 1
+        print(2)
+      print(4)
+    print(3)
+
+function a_slip_at_six()
+    if true
+      print(1)  #~ indentation_not_multiple_of_4
+    print(2)
+
+test "a test"
+  assert 1 == 1  #~ indentation_not_multiple_of_4
+
+constant LIMIT: i64
+  3  #~ indentation_not_multiple_of_4
+
+function main()
+    body()
+    nested(x: 1)
+    three_deep()
+    print(arms(0))
+    arm_blocks(1)
+    between()
+    print(in_brackets(a: 1, b: 2))
+    in_four_then_two(x: 1)
+    a_slip_at_six()
+    print(abs(n: -1))
+    print(LIMIT)
+    p = Point(x: 1, y: 2)
+    print(p.x + p.y)
+    s: Shape = .square
+    print(s == .square)

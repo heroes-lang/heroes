@@ -1,0 +1,378 @@
+# An indentation habit read as one mistake (design.md §4.15, §4.17; ruling 5
+# of the recovery batches, `docs/records/log/2026-10-01-0026-seven-rulings-
+# the-recovery-batches-applied-written-where-they-can-be-read.md`; defect
+# 131's class, 2026-10-01).
+#
+# A margin written with tabs, or two spaces a level, is a habit, and a habit
+# is one mistake however many lines carry it. Until 2026-10-01 each line was
+# a message of its own, and the layout read neither habit: a tab kept the
+# level of the line above, and two spaces rounded to the nearest four, so a
+# block nested two deep collapsed into its head, and the parser named bodies
+# missing, arms missing, cases read as fields (3 to 17 messages a habit over
+# batch 4's first-pass shapes; `indent-tab` 121 and `indent-2` 99 of 158
+# planted EXTRA).
+#
+# **A run** is the lines one habit holds, one after another:
+#
+# - a TAB run holds every line whose margin holds a tab, and a line with
+#   words and no tab in its margin ends it, outside brackets; a blank line,
+#   a comment line or a line inside brackets with no tab is in it and no
+#   part of it. A line's columns count a tab to the next multiple of four;
+#   its level is its columns over four, plus a shift decided at the run's
+#   first line with words: where that line is no deeper than the line above
+#   and the line above opens a block, the run is read one level under it,
+#   the body its author wrote at the head's own margin, since a tab's width
+#   is the editor's (defect 131's second round read that line as the body
+#   already, `fixedbugs-131-a-body-in-a-tab-margin`).
+# - a TWO-SPACE run is opened by a line with words and no tab two spaces
+#   deeper than the margin of the line above (its `base`), where that line
+#   opens a block, and holds the lines deeper than its base after it: a
+#   line's level is the base's plus its depth past the base over two,
+#   rounded up. A line the two-space reading would put one level under a
+#   line that opens nothing is read as a four-space line instead, which ends
+#   the run: a slip at 6 over a correct line at 8 (`p1/c4/s09`), and an
+#   over-indent under a statement (`s25`), each told as it was.
+#
+# **One message**, at the run's first line, with the code each of its lines
+# got before (`tab_in_indentation`, `indentation_not_multiple_of_4`), and
+# words that name its extent where it holds more than one line. Every line
+# of the run is laid out at the level the fix writes, so what the lines hold
+# is read as the program the fix makes, and a line's own mistake is told in
+# the same run. A jump read through the habit, more than one level deeper
+# than the line above, is laid out one level deeper and told by the run's
+# message, never as `indentation_jump`: a tab's width is the editor's, and
+# two spaces a level halve every depth.
+#
+# **The fix** re-indents every line the run holds, each its own margin's
+# replacement: a line with words at four spaces a level, a comment line or a
+# line inside brackets at its margin read through the habit (a tab as four
+# columns, two spaces as four), a blank line's margin deleted. It is
+# `certain` where every line maps one to one onto a level, a run of tabs
+# alone with no shift, a two-space run whose every depth is even, and no
+# jump; a `guess` otherwise. A line the lexer joins to the one above keeps its
+# margin's fix: where the join's fix is certain too, `check --apply` writes the
+# margin's, which it encloses, and asks the stage again (`cli/certain`).
+#
+# | entry | called by |
+# |---|---|
+# | `margin_at`, `through`, `quiet`, `with_words`, `finish` | `layout.line_start`, `lexer.lexed` (`finish`) |
+
+use token
+use diag
+use state
+use text_lines
+
+## Error codes
+
+constant TAB_MESSAGE: str
+    "a tab in indentation is a compile error — indent with spaces, exactly 4 per level"
+
+## The margin
+
+# A line's margin: its spaces, its tabs, the columns they make with a tab
+# counted to the next multiple of four, and the offset past them.
+record Margin
+    spaces: i64
+    tabs: i64
+    cols: i64
+    end: i64
+
+function margin_at(text: str, at: i64) -> Margin
+    spaces: i64 @ 0
+    tabs: i64 @ 0
+    cols: i64 @ 0
+    i: i64 @ at
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\t')
+        if text[i] == ' '
+            spaces @ spaces + 1
+            cols @ cols + 1
+        else
+            tabs @ tabs + 1
+            cols @ (cols / 4 + 1) * 4
+        i @ i + 1
+
+    return Margin(spaces: spaces, tabs: tabs, cols: cols, end: i)
+
+# The margin a line stands at as the run open reads it, before its level is
+# decided: a tab's columns, shifted as the run is; a two-space depth past
+# the base doubled; anything else as it is written.
+function through(run: state.IndentRun, m: Margin) -> i64
+    if m.tabs > 0
+        if run.kind == .tabs
+            return m.cols + run.shift
+        return m.cols
+
+    if run.kind == .two && m.spaces > run.base
+        return run.base + 2 * (m.spaces - run.base)
+    return m.spaces
+
+## Lines with no layout
+
+# A blank line, a comment line, or a line inside brackets: in the run it
+# stands in, re-indented by its fix and laid out by nothing. A margin that
+# holds a tab opens a tab run where none is open.
+function quiet(@l: state.LexState, text: str, m: Margin, line: i64, blank: bool)
+    if m.tabs > 0
+        if l.run[0].kind != .tabs
+            open_tabs(@l, text, m, line: line)
+        width: i64 @ m.cols + l.run[0].shift
+
+        if blank
+            width @ 0
+        fix(@l, m, line: line, width: width)
+        l.run[0].last @ line
+        return
+
+    if l.run[0].kind == .two && !blank && m.spaces > l.run[0].base
+        fix(@l, m, line: line, width: through(l.run[0], m))
+        l.run[0].last @ line
+
+## A line with words
+
+# The margin the line with words at `line` is laid out at: four spaces a
+# level where a run holds it, its own margin otherwise, to be read as every
+# line is.
+function with_words(@l: state.LexState, text: str, m: Margin, line: i64) -> i64
+    if m.tabs > 0
+        return tab_line(@l, text, m, line: line)
+
+    if l.run[0].kind == .tabs
+        finish(@l, text)
+
+    if l.run[0].kind == .two
+        depth = m.spaces - l.run[0].base
+
+        if depth <= 0
+            finish(@l, text)
+        else
+            level: i64 @ l.run[0].base / 4 + (depth + 1) / 2
+
+            # Under a line that opens nothing the two-space reading is an
+            # over-indent; the four-space one is read instead, out of the run.
+            if level > l.level && !opens_a_block(l.tokens)
+                finish(@l, text)
+                return m.spaces
+
+            if depth % 2 != 0
+                l.run[0].sure @ false
+            return held(@l, m, line: line, level: level)
+
+    if m.spaces == l.level * 4 + 2 && opens_a_block(l.tokens)
+        open_two(@l, text, m, line: line)
+        return held(@l, m, line: line, level: l.level + 1)
+    return m.spaces
+
+function tab_line(@l: state.LexState, text: str, m: Margin, line: i64) -> i64
+    if l.run[0].kind == .two
+        finish(@l, text)
+
+    if l.run[0].kind != .tabs
+        open_tabs(@l, text, m, line: line)
+    cols = m.cols + l.run[0].shift
+    level: i64 @ cols / 4
+
+    if !l.run[0].decided
+        l.run[0].decided @ true
+
+        if level <= l.level && opens_a_block(l.tokens)
+            l.run[0].shift @ (l.level + 1 - level) * 4
+            l.run[0].sure @ false
+            level @ l.level + 1
+
+    if m.spaces > 0 || cols % 4 != 0
+        l.run[0].sure @ false
+    return held(@l, m, line: line, level: level)
+
+# A line the run holds, at `level`: one level deeper than the line above at
+# most, its margin fixed to four spaces a level.
+function held(@l: state.LexState, m: Margin, line: i64, level: i64) -> i64
+    laid: i64 @ level
+
+    if laid > l.level + 1
+        laid @ l.level + 1
+        l.run[0].sure @ false
+    fix(@l, m, line: line, width: 4 * laid)
+    l.run[0].last @ line
+    return 4 * laid
+
+## Opening and closing a run
+
+function open_tabs(@l: state.LexState, text: str, m: Margin, line: i64)
+    finish(@l, text)
+    said = l.diagnostics.len()
+    none: [diag.Fix] = []
+    state.push_diagnostic(
+        @l.diagnostics,
+        diag.new_diagnostic(code: "tab_in_indentation", message: TAB_MESSAGE, span: token.Span(start: line, end: m.end))
+    )
+    l.run[0] @ state.IndentRun(
+        kind: .tabs,
+        base: 0,
+        shift: 0,
+        decided: false,
+        first: line,
+        last: line,
+        said: said,
+        sure: true,
+        fixes: none
+    )
+
+function open_two(@l: state.LexState, text: str, m: Margin, line: i64)
+    finish(@l, text)
+    said = l.diagnostics.len()
+    none: [diag.Fix] = []
+    state.push_diagnostic(
+        @l.diagnostics,
+        diag.new_diagnostic(code: "indentation_not_multiple_of_4", message: two_message(m.spaces), span: token.Span(start: line, end: m.end))
+    )
+    l.run[0] @ state.IndentRun(
+        kind: .two,
+        base: l.level * 4,
+        shift: 0,
+        decided: true,
+        first: line,
+        last: line,
+        said: said,
+        sure: true,
+        fixes: none
+    )
+
+function two_message(spaces: i64) -> str
+    return "indentation must be exactly 4 spaces per level; found " + spaces.to_str()
+
+# The run that ends here, told: its extent in its message where it holds more
+# than one line, and its fixes, `certain` where every line maps one to one
+# onto a level.
+function finish(@l: state.LexState, text: str)
+    if l.run[0].kind == .none
+        return
+    below = text_lines.newlines_between(text: text, from: l.run[0].first, to: l.run[0].last)
+    d: diag.Diagnostic @ l.diagnostics[l.run[0].said]
+
+    if below > 0
+        d.message @ extended(d.message, kind: l.run[0].kind, below: below)
+    certainty: diag.Certainty @ .guess
+
+    if l.run[0].sure
+        certainty @ .certain
+    fixes: [diag.Fix] @ []
+
+    for f in l.run[0].fixes
+        fixes @ fixes.push(diag.Fix(title: f.title, replacement: f.replacement, span: f.span, certainty: certainty))
+
+    d.fixes @ fixes
+    l.diagnostics[l.run[0].said] @ d
+    l.run[0] @ state.no_run()
+
+function extended(message: str, kind: state.RunKind, below: i64) -> str
+    lines: str @ "the " + below.to_str() + " below it"
+
+    if below == 1
+        lines @ "the one below it"
+
+    return match kind
+        .tabs => "a tab in indentation is a compile error, and this line and " + lines + " indent with tabs — indent with spaces, exactly 4 per level"
+        .two  => message + ", and this line and " + lines + " indent 2 spaces a level"
+        .none => message
+
+# A margin's fix, where the width it writes is not the margin written.
+function fix(@l: state.LexState, m: Margin, line: i64, width: i64)
+    if m.tabs == 0 && m.spaces == width
+        return
+    title: str @ "indent with " + width.to_str() + " spaces"
+
+    if width == 0
+        title @ "delete the margin"
+    state.push_fix(
+        @l.run[0].fixes,
+        diag.Fix(title: title, replacement: " ".repeat(width.to_u64().must()), span: token.Span(start: line, end: m.end), certainty: .guess)
+    )
+
+## What the line above opens
+
+# Whether the last line of `tokens` with words opens a block by its tokens:
+# it ends with `=>`, `else` or `:`; it begins with a keyword that heads a
+# block, or with a word the lexer refused, a foreign head the parser reads
+# as its swap; it holds `if` or `match` outside brackets (`k = match n`,
+# `return if c`); or it is one name alone, a variant's case over its fields.
+function opens_a_block(tokens: [token.Token]) -> bool
+    last: i64 @ tokens.len() - 1
+
+    while last >= 0 && (tokens[last].kind == .comment || tokens[last].kind == .terminator)
+        last @ last - 1
+
+    if last < 0 || is_boundary(tokens[last].kind)
+        return false
+    k = tokens[last].kind
+
+    if k == .fat_arrow || k == .kw_else || k == .colon
+        return true
+    first: i64 @ last
+
+    while first > 0 && !is_boundary(tokens[first - 1].kind)
+        first @ first - 1
+
+    # The comments before the line's first word are no part of it: a file's
+    # first declaration below a heading has no line end above it.
+    while first < last && tokens[first].kind == .comment
+        first @ first + 1
+
+    head = tokens[first].kind
+
+    if heads_a_block(head) || head == .error || first == last && head == .ident
+        return true
+    depth: i64 @ 0
+    i: i64 @ first
+
+    while i <= last
+        t = tokens[i].kind
+
+        if t == .lparen || t == .lbracket || t == .lbrace
+            depth @ depth + 1
+        else if (t == .rparen || t == .rbracket || t == .rbrace) && depth > 0
+            depth @ depth - 1
+        else if depth == 0 && (t == .kw_if || t == .kw_match)
+            return true
+        i @ i + 1
+
+    return false
+
+function is_boundary(kind: token.TokenKind) -> bool
+    return kind == .terminator || kind == .indent || kind == .dedent
+
+function heads_a_block(kind: token.TokenKind) -> bool
+    return match kind
+        .kw_if | .kw_else | .kw_while | .kw_for | .kw_match | .kw_function | .kw_record | .kw_variant => true
+        .kw_extern | .kw_test | .kw_constant                                                          => true
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit | .kw_true | .kw_false     => false
+        .kw_nullptr | .hole | .kw_fail | .kw_in | .kw_break | .kw_continue | .kw_return               => false
+        .kw_assert | .kw_use | .eq | .at | .colon | .colon_colon | .comma | .question | .arrow        => false
+        .fat_arrow | .pipe | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace | .dot     => false
+        .plus | .minus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge        => false
+        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr | .comment                   => false
+        .terminator | .indent | .dedent | .eof | .error                                               => false
+
+## Tests
+
+function tok(kind: token.TokenKind) -> token.Token
+    return token.Token(kind: kind, span: token.Span(start: 0, end: 0))
+
+test "a margin counts a tab to the next multiple of four"
+    m = margin_at("  \t x", at: 0)
+    assert m.spaces == 3
+    assert m.tabs == 1
+    assert m.cols == 5
+    assert m.end == 4
+
+test "a line opens a block by its tokens: a head, a refused word, an arrow, a match in it, a case's name"
+    assert opens_a_block([tok(.kw_function), tok(.ident), tok(.lparen), tok(.rparen)])
+    assert opens_a_block([tok(.comment), tok(.comment), tok(.kw_record), tok(.ident)])
+    assert opens_a_block([tok(.error), tok(.ident), tok(.lparen), tok(.rparen)])
+    assert opens_a_block([tok(.int_lit), tok(.fat_arrow)])
+    assert opens_a_block([tok(.ident), tok(.eq), tok(.kw_match), tok(.ident)])
+    assert opens_a_block([tok(.terminator), tok(.ident)])
+    assert !opens_a_block([tok(.ident), tok(.eq), tok(.int_lit), tok(.terminator)])
+    assert !opens_a_block([tok(.ident), tok(.lparen), tok(.kw_if), tok(.rparen)])
+    none: [token.Token] = []
+    assert !opens_a_block(none)

@@ -1,14 +1,12 @@
 tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:18:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
 tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:25:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
 tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:30:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
-tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:35:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
-tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:36:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:35:1: error[tab_in_indentation]: a tab in indentation is a compile error, and this line and the one below it indent with tabs — indent with spaces, exactly 4 per level
 tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:41:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
 tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:46:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
 tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:51:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
 tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:57:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
-tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:63:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
-tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:64:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
+tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:63:1: error[tab_in_indentation]: a tab in indentation is a compile error, and this line and the one below it indent with tabs — indent with spaces, exactly 4 per level
 tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:69:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
 tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:76:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level
 tests/golden/check/fixedbugs-131-a-body-in-a-tab-margin.hero:81:1: error[tab_in_indentation]: a tab in indentation is a compile error — indent with spaces, exactly 4 per level

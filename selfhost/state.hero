@@ -46,6 +46,47 @@ record Break
     head: bool
     statement: i64
 
+# An indentation habit being read (`indent_runs.hero`, ruling 5): a run of
+# lines whose margins hold a tab, or that indent two spaces a level, told as
+# one mistake and laid out as its fix writes it.
+variant RunKind
+    none
+    tabs
+    two
+
+record IndentRun
+    kind: RunKind
+    # `two`: the margin the run's lines stand deeper than, four times the
+    # level of the line above its first.
+    base: i64
+    # `tabs`: the columns every margin of the run is read deeper by, and
+    # whether its first line with words has decided them.
+    shift: i64
+    decided: bool
+    # The start of the run's first line, and of the last line it holds.
+    first: i64
+    last: i64
+    # The index in `diagnostics` of the run's one message.
+    said: i64
+    # Whether every line the run holds maps one to one onto a level.
+    sure: bool
+    # The margins its fix rewrites so far.
+    fixes: [diag.Fix]
+
+function no_run() -> IndentRun
+    none: [diag.Fix] = []
+    return IndentRun(
+        kind: .none,
+        base: 0,
+        shift: 0,
+        decided: false,
+        first: -1,
+        last: -1,
+        said: -1,
+        sure: true,
+        fixes: none
+    )
+
 record LexState
     pos: i64
     # Current indentation level (one level == 4 spaces).
@@ -109,6 +150,13 @@ record LexState
     # Every certain swap written for a word this lexer refused, where the word
     # begins, ascending (`swap_words.hero`): what the parser reads the word as.
     swaps: [swap_words.Swap]
+    # The indentation habit being read (`indent_runs.hero`), always one: held
+    # in an array so that the state every lexing call copies in and out grows
+    # by one pointer, which a line with no habit never reads past. Measured
+    # 2026-10-01 on a busy machine, `heroes lex selfhost/main.hero`: held
+    # inline the record cost 3 to 6% of the lexer's time, behind the pointer
+    # nothing that six runs could tell from the noise.
+    run: [IndentRun]
 
 function new_state() -> LexState
     brackets: [token.Span] = []
@@ -120,6 +168,7 @@ function new_state() -> LexState
     heads: [i64] = []
     closes: [i64] = []
     swaps: [swap_words.Swap] = []
+    runs: [IndentRun] = [no_run()]
     return LexState(
         pos: 0,
         level: 0,
@@ -141,7 +190,8 @@ function new_state() -> LexState
         swallowed: false,
         backslash: -1,
         outline: text_outline.unread(),
-        swaps: swaps
+        swaps: swaps,
+        run: runs
     )
 
 ## Emitting
@@ -198,6 +248,11 @@ function push_offset(@offsets: [i64], at: i64)
 # many of them (defect 146).
 function push_swap(@swaps: [swap_words.Swap], at: i64, word: str)
     swaps @ swaps.push(swap_words.Swap(at: at, word: word))
+
+# And for the margins an indentation run's fix rewrites, a run being as many
+# lines as a body.
+function push_fix(@fixes: [diag.Fix], f: diag.Fix)
+    fixes @ fixes.push(f)
 
 # Error recovery in one move: record why, emit an `error` token over the same
 # span, keep lexing. The lexer never stops.

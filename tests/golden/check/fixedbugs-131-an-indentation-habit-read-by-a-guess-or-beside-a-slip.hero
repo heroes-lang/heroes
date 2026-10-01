@@ -1,0 +1,70 @@
+# Fixed defect 131's class, 2026-10-01, ruling 5 of the recovery batches (lane
+# recovery-b5's C1), the shapes beside the habit. Where a run maps onto its
+# levels by a guess, its fix is a guess: a body in tabs at its head's own
+# margin, read one level under the head since a tab's width is the editor's;
+# a margin of a tab and spaces; a jump read through the habit, laid out one
+# level deeper and told by the run's one message, never as
+# `indentation_jump`. Where the two-space reading would put a line one level
+# under a line that opens nothing, it is read as a four-space line, out of
+# the run, and told as it always was: a slip at six over a correct line at
+# eight is the slip's message alone, a slip at seven beside one at six is its
+# own, two spaces over a statement stay an over-indent. Three spaces a level
+# are no run, a message a line as before. A line in a run still tells its own
+# mistake: a stray `)`, a tab between words, a line left open. `check
+# --apply` writes the certain fixes and leaves the guesses (`.applied`).
+
+function a_body_at_its_heads_margin(x: i64)
+    if x == 1
+	print(x)  #~ tab_in_indentation
+    print(0)
+
+function a_tab_and_spaces()
+	x = 1  #~ tab_in_indentation
+	  y = 2
+	print(x + y)
+
+function a_jump_in_tabs()
+			x = 1  #~ tab_in_indentation
+	print(x)
+
+function a_jump_in_two_spaces()
+  if true  #~ indentation_not_multiple_of_4
+      print(1)
+  print(3)
+
+function a_slip_over_a_correct_line()
+    if true
+      print(1)  #~ indentation_not_multiple_of_4
+        print(3)
+    print(2)
+
+function an_odd_slip_beside_it()
+    if true
+      print(1)  #~ indentation_not_multiple_of_4
+       print(3)  #~ indentation_not_multiple_of_4
+    print(2)
+
+function over_a_statement()
+    x = 1
+      y = 2  #~ indentation_not_multiple_of_4 unexpected_block
+    print(x + y)
+
+function three_spaces_a_level()
+   x = 1  #~ indentation_not_multiple_of_4
+   print(x)  #~ indentation_not_multiple_of_4
+
+function a_mistake_inside_the_run()
+	x = 1  #~ tab_in_indentation
+	print(x) )  #~ expected_end_of_line
+
+function a_tab_between_words()
+	x =	1  #~ tab_in_indentation tab_in_line
+	print(x)
+
+function a_line_left_open_in_the_run()
+  x = 1  #~ indentation_not_multiple_of_4
+  y = x +  #~ continuation_outside_brackets
+  print(y)
+
+function main()
+    print(1)

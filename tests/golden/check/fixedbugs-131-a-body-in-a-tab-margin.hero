@@ -33,7 +33,7 @@ function under_a_for()
 function two_lines_under_a_while(n: i64)
     while n > 0
 	y = 3 )  #~ tab_in_indentation expected_end_of_line
-	n = 0  #~ tab_in_indentation
+	n = 0
     z = 4 )  #~ expected_end_of_line
 
 function spaces_then_a_tab(n: i64)
@@ -61,7 +61,7 @@ function under_an_arm(n: i64)
 function as_arms(n: i64)
     match n
 	0 => print(0)  #~ tab_in_indentation
-	_ => print(1) )  #~ tab_in_indentation expected_end_of_line
+	_ => print(1) )  #~ expected_end_of_line
     z = 4 )  #~ expected_end_of_line
 
 function a_tabbed_arm_over_spaced_ones(n: i64)
@@ -88,3 +88,14 @@ constant TABBED: i64
 
 function main()
     print(1)
+
+# Read again 2026-10-01, lane recovery-b5 (ruling 5, `selfhost/indent_runs.hero`):
+# the lexer lays a tabbed line out at the level its fix writes, a tab as four
+# columns, and a body written in tabs at its head's own margin one level under
+# the head, so the tabbed bodies here reach the parser indented and
+# `opening.tabbed_line` is not asked for them. The lines one run holds are
+# told once: `two_lines_under_a_while` and `as_arms` each cost one
+# `tab_in_indentation` for their two tabbed lines. A body at a head's own
+# margin is a guess, as is a margin of a tab and spaces; a tab at a
+# declaration's margin is certain, and `check --apply` writes those three
+# (`.applied`).
