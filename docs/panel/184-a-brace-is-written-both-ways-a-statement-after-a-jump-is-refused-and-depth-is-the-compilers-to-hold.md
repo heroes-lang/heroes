@@ -270,6 +270,19 @@ R5 to R7, with R8's sentences priced by `heroes measure --refresh` in the
 landing's tree; and R6's N, measured on this Mac, Linux x86-64 and the Windows
 box under R5 before its sentence is written.
 
+**The two readings, run 2026-10-01 at 22:38** (one session each, `claude`
+2.1.285 on `claude-opus-5-5`, 0.33 and 0.40 USD; `184-reports/llm-ergonomist-task1-second-reading.md`
+and `-task2-second-reading.md`). **Task 2**: S approved, which is R4 as
+resolved, R approved, P objected to, Q, today's silence, vetoed; R4 lands as
+it stands. **Task 1**: K, (1b) with its amended wording, objected to, M
+approved, L objected to; the objection is a locality of COMPILING (whether a
+plain literal compiles depends on which names the function binds, not on the
+line), which the reading itself calls an objection and not a veto. **So the
+author's condition is not met**: (1b) does not land, and its wording goes back
+to a sitting, panel 185, beside the reading's approval of M, route (1a), which
+this sitting measured at 34 false alarms and 0 true ones over the tracked
+files. R1 and R2 land as ratified.
+
 ## The critic's two passes
 
 First pass, on the briefs (`completeness-critic-briefs.md`): sixteen items,
