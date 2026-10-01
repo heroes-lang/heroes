@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-141-a-refused-file-with-no-certain-fix-comes-back-as-it-is.hero:10:11: error[unknown_name]: nothing named `x` is in scope

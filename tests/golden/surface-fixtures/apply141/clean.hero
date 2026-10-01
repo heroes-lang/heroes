@@ -1,0 +1,6 @@
+# Defect 141 (2026-10-01): a clean file whose last line is open. `check
+# --apply` owes it back byte for byte; on the compiler of `9d1c209d` it
+# printed nothing, so `check --apply > file` emptied the file.
+
+function main()
+    print(1)

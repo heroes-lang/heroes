@@ -15,7 +15,8 @@ use source
 # as a whole puts its caret. `text.len()` is not that offset once anything
 # is appended: it lands in whichever file happens to be last, which is how
 # `no_entry_point` came out as a compiler bug at exit 2 for the commonest
-# mistake in the language (2026-08-12).
+# mistake in the language (2026-08-12). It is the root's own length, the
+# offset of the joiner after it, whatever its last line ends with.
 function root_end(s: source.Source) -> i64
     if s.files.len() > 1
         return s.files[1].start - 1
@@ -28,7 +29,9 @@ function root_end(s: source.Source) -> i64
 function user_text(s: source.Source) -> str
     return text_of(s, 0)
 
-# One file's own text, without the blank line that joins it to the next.
+# One file's own text, byte for byte as its author wrote it: the joiner after
+# it belongs to no file (`source.from_files`), and nothing is added inside it,
+# an open last line included (defect 141).
 function text_of(s: source.Source, index: i64) -> str
     start = s.files[index].start
 
@@ -59,5 +62,30 @@ test "a file's own text comes back without the joiner"
     # The LAST file is left exactly as written — nothing appended after it.
     assert text_of(s, 1) == "constant B: i64\n    2\n"
 
-    # The closed first file keeps the newline its closer added, joiner removed.
-    assert text_of(s, 0) == "constant A: i64\n    1\n"
+    # And so is the first, its open last line included (defect 141): until
+    # then it came back with a newline the loader had added to close it.
+    assert text_of(s, 0) == "constant A: i64\n    1"
+
+# DEFECT 141, the rule and the shapes beside the one found: what the author
+# wrote comes back byte for byte however its last line ends, and the root's
+# extent is its own length. The first is what `check --apply` hands back; the
+# second is where the root's eof and its whole-file carets stand. Before the
+# repair an open last line came back one byte longer, a CRLF file's with a
+# bare `\n`, and a stray `\r` at the end as a line ending.
+test "the root's own text comes back exactly, whatever its last line ends with"
+    written: [str] = [
+        "fn main()\n    print(1)"
+        "fn main()\r\n    print(1)"
+        "function main()\n    print(1)\r"
+        "function main()\n    print(1)\r\n"
+        "function main()\n    print(1)\n"
+        "# a comment alone"
+        ""
+    ]
+
+    for text in written
+        s = source.with_library(name: "main.hero", user: text, library: "function range()\n    return\n")
+        assert user_text(s) == text
+        assert root_end(s) == text.len()
+        assert source.is_root(s, root_end(s))
+        assert text_of(s, 1) == "function range()\n    return\n"

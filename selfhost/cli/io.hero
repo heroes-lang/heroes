@@ -35,6 +35,12 @@ extern "hero_os.h"
     function hero_write_err(text: str)
     function hero_word_bits() -> i64
 
+# The bytes of a `str` to stdout, nothing added: the half of `print` before
+# its newline (`runtime/parts/str.c`), on the stream `print` writes, so the
+# two never reorder. Bound for `print_artifact` (defect 141).
+extern "heroes_runtime.h"
+    function hero_print_str(text: str)
+
 # One line to stderr, newline included — the eprintln the commands
 # share.
 function eprint(text: str)
@@ -65,32 +71,23 @@ function word_bits() -> i64
 function eprint_raw(text: str)
     hero_write_err(text: text)
 
-# An ARTIFACT printed exactly as it is. `print` adds exactly one
-# trailing newline (spec § Built-ins), and every blob this compiler
-# hands to stdout — a dump, the formatted file, the generated C —
-# already ends with one, so printing it plainly grows a blank line at
-# the end. The bootstrap's `print!` adds nothing, so the two disagreed
-# on one byte per invocation: measured 2026-08-17 against the corpus,
-# and on `--emit-c` that one byte is the fixpoint.
+# An ARTIFACT printed exactly as it is: its bytes, and not one added. The
+# bootstrap's `print!` adds nothing, and `print` adds exactly one trailing
+# newline (spec § Built-ins), so printing a blob plainly disagreed with it on
+# one byte per invocation: measured 2026-08-17 against the corpus, and on
+# `--emit-c` that one byte is the fixpoint.
 #
-# The last BYTE is asked, never the characters (defect 105): a `\n` is one
-# byte and no byte of a longer character, and splitting the artifact into
-# characters to read its last one made a string per character of the
-# generated C.
-#
-# **An empty artifact is printed as nothing**, found beside defect 109:
-# `print("")` writes the newline `print` always adds, so `heroes fmt` on an
-# empty program, or on one of spaces or blank lines, wrote one byte to stdout
-# where `--in-place` writes none, and the two spellings of the formatter
-# disagreed on the canonical form of an empty file.
+# **This went through `print` until defect 141**, stripping a blob's last
+# `\n` for `print` to put back, and handing `print` a blob with none as it
+# was, so that one came out a byte longer. Every blob it printed then ended
+# with a newline or was empty, a dump, the formatted file, the generated C,
+# and an empty one was printed as nothing (found beside defect 109: `heroes
+# fmt` on an empty program wrote one byte to stdout where `--in-place` writes
+# none). The one that need not end so is the program `check --apply` hands
+# back, whose last line is the author's to end or not, and 22 bytes with one
+# certain fix came out 29 where 28 were owed.
 function print_artifact(text: str)
-    if text.len() == 0
-        return
-
-    if text[text.len() - 1] == '\n'
-        print(text.slice(from: 0, to: text.len() - 1))
-        return
-    print(text)
+    hero_print_str(text: text)
 
 ## Tests
 
