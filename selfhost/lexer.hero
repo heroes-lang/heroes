@@ -29,6 +29,7 @@ use open_line
 use line_joins
 use scan
 use escape
+use swap_words
 
 ## The output
 
@@ -44,6 +45,10 @@ record LexOutput
     # declaration opening its line at column 0 (`state.LexState.closes`), as
     # offsets in the stream's own coordinates, ascending.
     closes: [i64]
+    # Every certain swap the lexer wrote for a word it refused, where the word
+    # begins in the stream's own coordinates, ascending: what the parser reads
+    # that word as (`swap_words.hero`, defect 146).
+    swaps: [swap_words.Swap]
 
 ## The whole compilation's tokens
 
@@ -121,7 +126,12 @@ function moved(one: LexOutput, offset: i64) -> LexOutput
     for at in one.closes
         closes @ closes.push(at + offset)
 
-    return LexOutput(tokens: tokens, diagnostics: diagnostics, breaks: one.breaks, closes: closes)
+    swaps: [swap_words.Swap] @ []
+
+    for swap in one.swaps
+        swaps @ swaps.push(swap_words.Swap(at: swap.at + offset, word: swap.word))
+
+    return LexOutput(tokens: tokens, diagnostics: diagnostics, breaks: one.breaks, closes: closes, swaps: swaps)
 
 # The files' streams as the compilation's ONE, for every reader but the
 # parser: each file's tokens but its own eof, and one eof at the root's end.
@@ -129,6 +139,7 @@ function joined(s: source.Source, files: [LexOutput]) -> LexOutput
     tokens: [token.Token] @ []
     diagnostics: [diag.Diagnostic] @ []
     closes: [i64] @ []
+    swaps: [swap_words.Swap] @ []
 
     for one in files
         for t in one.tokens
@@ -144,10 +155,13 @@ function joined(s: source.Source, files: [LexOutput]) -> LexOutput
         for close in one.closes
             closes @ closes.push(close)
 
+        for swap in one.swaps
+            swaps @ swaps.push(swap)
+
     at = source_extent.root_end(s)
     tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: at, end: at)))
     none: [state.Break] = []
-    return LexOutput(tokens: tokens, diagnostics: diagnostics, breaks: none, closes: closes)
+    return LexOutput(tokens: tokens, diagnostics: diagnostics, breaks: none, closes: closes, swaps: swaps)
 
 ## One file's tokens
 
@@ -212,12 +226,19 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
             refused @ refused.push(b)
 
     if l.heads.len() == 0
-        return LexOutput(tokens: l.tokens, diagnostics: l.diagnostics, breaks: refused, closes: l.closes)
+        return LexOutput(
+            tokens: l.tokens,
+            diagnostics: l.diagnostics,
+            breaks: refused,
+            closes: l.closes,
+            swaps: l.swaps
+        )
     return LexOutput(
         tokens: without_heads(l.tokens, heads: l.heads),
         diagnostics: l.diagnostics,
         breaks: refused,
-        closes: l.closes
+        closes: l.closes,
+        swaps: l.swaps
     )
 
 # The stream without the words that begin at `heads`, which ascend: the heads

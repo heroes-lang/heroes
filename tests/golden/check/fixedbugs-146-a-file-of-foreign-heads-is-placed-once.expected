@@ -1,0 +1,15 @@
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:20:1: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:22:1: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:25:1: error[reserved_word]: `func` is not a word in this language — use `function`
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:28:1: error[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:31:1: error[reserved_word]: `enum` is not a word in this language — use `variant`: `variant Token`
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:34:1: error[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:37:1: error[reserved_word]: `import` and `include` are not words in this language — a module is named with `use`: `use geom`
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:40:5: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:41:5: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:44:5: error[reserved_word]: `const` is not a word in this language — inside a body a value is bound with `=`: `x = 5`, and a `constant` is declared at the top level of a file
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:45:5: error[reserved_word]: `const` is not a word in this language — inside a body a value is bound with `=`: `x = 5`, and a `constant` is declared at the top level of a file
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:49:5: error[reserved_word]: `elif` is not a word in this language — write `else if`
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:51:5: error[reserved_word]: `elif` is not a word in this language — write `else if`
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:20:9: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:22:9: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)

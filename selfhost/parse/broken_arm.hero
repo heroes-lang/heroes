@@ -58,9 +58,12 @@ function arrow(@c: cursor.Cursor, text: str, own_block: bool) -> bool
         seam = joined_after(c, text, at: at)
 
         if !seam.is_err()
-            c.held @ c.held.push(diag.Held(at: c.diagnostics.len(), cause: seam.must(), diagnostic: d, apart: false))
+            cursor.push_held(
+                @c.held,
+                diag.Held(at: c.diagnostics.len(), cause: seam.must(), diagnostic: d, apart: false)
+            )
         else
-            c.diagnostics @ c.diagnostics.push(d)
+            cursor.push_diagnostic(@c.diagnostics, d)
 
     while at >= 0 && c.pos <= at
         _ = cursor.bump(@c)

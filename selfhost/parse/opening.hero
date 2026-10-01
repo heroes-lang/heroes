@@ -65,7 +65,6 @@ use parse/swap_reading
 use parse/head_lines
 use parse/brace_habit
 use parse/unclosed
-use foreign_at
 
 # Where a head began: how many diagnostics the parser had said, and the
 # token its first word stands on.
@@ -189,14 +188,15 @@ function braced(@c: cursor.Cursor, text: str, head: Mark, failed: bool, brace: i
         _ = cursor.bump(@c)
 
     if !refused_here(c, head)
-        c.diagnostics @ c.diagnostics.push(missing_here(c, text, missing))
+        cursor.push_diagnostic(@c.diagnostics, missing_here(c, text, missing))
     return .braced(close: brace_habit.closer(c, open: brace))
 
 # What goes on past a head over its body, named, unless the lexer spoke there.
 function junk(@c: cursor.Cursor, text: str, missing: Missing)
     if swap_reading.at_reported_error(c, text)
         return
-    c.diagnostics @ c.diagnostics.push(
+    cursor.push_diagnostic(
+        @c.diagnostics,
         diag.new_diagnostic(code: "expected_end_of_line", message: "expected the end of the line, found " + swap_reading.found(c, text) + " — " + missing.owner + "'s " + missing.members + " on the lines below its head, one level deeper", span: cursor.current_span(c))
     )
 
@@ -227,7 +227,8 @@ function opening_at(@c: cursor.Cursor, text: str, missing: Missing) -> Body
         return .none
     here = cursor.current_span(c)
     margin = token.Span(start: here.start - head_lines.margin_width(text, at: here.start), end: here.start)
-    c.held @ c.held.push(
+    cursor.push_held(
+        @c.held,
         diag.Held(at: c.diagnostics.len(), cause: margin, diagnostic: missing_here(c, text, missing), apart: false)
     )
     return .tabbed
@@ -245,9 +246,9 @@ function absent(@c: cursor.Cursor, text: str, head: Mark, silent: bool, missing:
     seam = head_lines.joined_at(c, text, from: head.pos)
 
     if !seam.is_err()
-        c.held @ c.held.push(diag.Held(at: c.diagnostics.len(), cause: seam.must(), diagnostic: d, apart: false))
+        cursor.push_held(@c.held, diag.Held(at: c.diagnostics.len(), cause: seam.must(), diagnostic: d, apart: false))
         return
-    c.diagnostics @ c.diagnostics.push(d)
+    cursor.push_diagnostic(@c.diagnostics, d)
 
 function missing_here(c: cursor.Cursor, text: str, missing: Missing) -> diag.Diagnostic
     return diag.new_diagnostic(
@@ -312,12 +313,12 @@ function begins_an_expression(kind: token.TokenKind) -> bool
         .indent | .dedent | .eof | .error                                                => false
 
 # Whether the token under the cursor is `elif` opening its line, whose certain
-# swap, asked of `foreign_at` as every swap is, writes the `else if` an `if`'s
-# chain reads it as (defect 133's class; `parse/swap_reading`).
+# swap, the one the lexer wrote as for every swap, writes the `else if` an
+# `if`'s chain reads it as (defect 133's class; `parse/swap_reading`).
 function at_elif(c: cursor.Cursor, text: str) -> bool
     if !cursor.at(c, .error) || !cursor.at_fresh_line(c)
         return false
-    swap = foreign_at.certain_swap(text, cursor.current_span(c))
+    swap = swap_reading.swap_at(c, text, cursor.current_span(c))
     return !swap.is_err() && swap.must() == "else if"
 
 function is_line_end(kind: token.TokenKind) -> bool

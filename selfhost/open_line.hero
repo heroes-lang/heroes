@@ -166,7 +166,7 @@ function goes_on(@l: state.LexState, text: str, spaces: i64) -> bool
 function goes_on_below(@l: state.LexState, text: str, spaces: i64) -> bool
     b = text[l.pos]
 
-    if (spaces + 2) / 4 > l.level || bytes.is_alnum(b) || b == '_' || b == '"' || b == '\'' || goes_on_at_head(text, at: l.pos) < 0 || line_above.heads_a_declaration(l.tokens) || line_above.headed_by_a_refused_word(l.tokens, breaks: l.breaks, text, at: last_significant(l.tokens))
+    if (spaces + 2) / 4 > l.level || bytes.is_alnum(b) || b == '_' || b == '"' || b == '\'' || goes_on_at_head(text, at: l.pos) < 0 || line_above.heads_a_declaration(l.tokens) || line_above.headed_by_a_refused_word(l.tokens, breaks: l.breaks, text, at: last_significant(l.tokens), @l.outline)
         settle(@l)
         return false
 
@@ -206,7 +206,7 @@ function plant(@l: state.LexState)
 function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> bool
     left = l.tokens[at]
     margin = l.level * 4
-    first = next_line.opening_keyword(text, at: l.pos)
+    first = next_line.opening_keyword(text, at: l.pos, @l.outline)
     fresh = !first.is_err() && next_line.starts_afresh(first.must())
 
     if spaces > margin && opens_a_body(left.kind)
@@ -214,7 +214,7 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
 
     # A line a refused word heads is that word's mistake, and its end is no
     # break: ended here, the next line is read on its own.
-    if line_above.headed_by_a_refused_word(l.tokens, breaks: l.breaks, text, at: at)
+    if line_above.headed_by_a_refused_word(l.tokens, breaks: l.breaks, text, at: at, @l.outline)
         ended(@l)
         plant(@l)
         return false

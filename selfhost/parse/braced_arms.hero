@@ -57,10 +57,13 @@ function taken(@c: cursor.Cursor, lines: cursor.Cursor)
     before = c.diagnostics.len()
 
     for h in lines.held
-        c.held @ c.held.push(diag.Held(at: h.at + before, cause: h.cause, diagnostic: h.diagnostic, apart: h.apart))
+        cursor.push_held(
+            @c.held,
+            diag.Held(at: h.at + before, cause: h.cause, diagnostic: h.diagnostic, apart: h.apart)
+        )
 
     for d in lines.diagnostics
-        c.diagnostics @ c.diagnostics.push(d)
+        cursor.push_diagnostic(@c.diagnostics, d)
 
     brace_habit.pass(@c, close: brace_habit.closer(c, open: c.pos))
 

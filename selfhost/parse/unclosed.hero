@@ -368,7 +368,7 @@ test "an opener is never closed past the declaration the lexer named it at"
 
     # The `[` at 8, and the stray `)` of `print(1) )` that the stack pairs
     # with it: past the close at 28 it closes nothing before it.
-    told = cursor.lexed_cursor(tokens: out.tokens, root_end: -1, closes: out.closes)
+    told = cursor.lexed_cursor(tokens: out.tokens, root_end: -1, closes: out.closes, swaps: out.swaps)
     assert never_closed(told, text, open: 8)
     untold = cursor.new_cursor(out.tokens)
     assert !never_closed(untold, text, open: 8)

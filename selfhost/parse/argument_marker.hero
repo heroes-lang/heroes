@@ -45,7 +45,7 @@ function misplaced(@c: cursor.Cursor, value_end: i64)
     d.fixes @ d.fixes.push(
         diag.Fix(title: "write `, @` instead of `@`", replacement: ", @", span: between, certainty: .guess)
     )
-    c.diagnostics @ c.diagnostics.push(d)
+    cursor.push_diagnostic(@c.diagnostics, d)
     _ = cursor.bump(@c)
 
 # `h(x: nullptr @n)`, the `@` at the cursor: the `,` left out said, and the
@@ -60,4 +60,4 @@ function comma_missing(@c: cursor.Cursor, text: str, value_end: i64)
     d.fixes @ d.fixes.push(
         diag.Fix(title: "write `, @` instead of `@`", replacement: ", @", span: between, certainty: .guess)
     )
-    c.diagnostics @ c.diagnostics.push(d)
+    cursor.push_diagnostic(@c.diagnostics, d)

@@ -1,0 +1,68 @@
+# What a word the lexer refused reads as: the word its certain swap writes,
+# decided once, by the lexer, where it writes the fix (design.md §4.17;
+# defects 133 and 146, 2026-10-01).
+#
+# The parser reads a foreign word as the keyword its certain swap writes
+# (`parse/swap_reading`), so that `fn main() {` is read as the function it
+# means and its second mistake is told in the same run. Until 2026-10-01 the
+# parser decided that swap again for itself, placing the word in the text as
+# the lexer had (`foreign_at`), and placing a word read the text from its
+# first byte (defect 146, `text_outline.hero`). It also read it over the
+# WHOLE compilation's text, where the lexer reads one file's: a bracket an
+# earlier module left open made the parser see no swap where the lexer had
+# written one, and the later module's own second mistake went untold
+# (measured on the trunk's compiler at `9d1c209d`, a module of `fn g() -> i64
+# {` behind a root ending inside `x = (1 + 2`).
+#
+# So the lexer keeps, for every word it refused whose fix is a certain swap,
+# where the word begins and what the swap writes, and the parser looks the
+# word up by where it begins: one decision, made where `check --apply` takes
+# its fix from, so the reading and the fix cannot part.
+#
+# | entry | called by |
+# |---|---|
+# | `Swap` | `state.LexState.swaps`, `lexer.LexOutput.swaps`, `cursor.Cursor.swaps` |
+# | `word_at` | `cursor.certain_swap`, `parse/readings.errors_in` |
+
+## Error codes
+
+constant ERR_NO_SWAP: str
+    "no_swap"
+
+## The swaps
+
+# A word the lexer refused, at `at`, whose certain swap writes `word`.
+record Swap
+    at: i64
+    word: str
+
+# What the word that begins at `at` reads as, where the lexer wrote it a
+# certain swap; a failure where it wrote none. `swaps` ascend by `at`, as the
+# lexer writes them.
+function word_at(swaps: [Swap], at: i64) -> str?
+    low: i64 @ 0
+    high: i64 @ swaps.len()
+
+    while low < high
+        middle = (low + high) / 2
+
+        if swaps[middle].at < at
+            low @ middle + 1
+        else
+            high @ middle
+
+    if low < swaps.len() && swaps[low].at == at
+        return ok(swaps[low].word)
+    return fail(code: ERR_NO_SWAP, msg: "the lexer wrote no certain swap at " + at.to_str())
+
+## Tests
+
+test "a word is read as the swap the lexer wrote where it begins, and nothing else is"
+    swaps: [Swap] = [Swap(at: 0, word: "function"), Swap(at: 20, word: "record"), Swap(at: 41, word: "else if")]
+    assert word_at(swaps, at: 0).must() == "function"
+    assert word_at(swaps, at: 20).must() == "record"
+    assert word_at(swaps, at: 41).must() == "else if"
+    assert word_at(swaps, at: 5).is_err()
+    assert word_at(swaps, at: 50).is_err()
+    none: [Swap] = []
+    assert word_at(none, at: 0).is_err()
