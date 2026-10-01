@@ -1,0 +1,17 @@
+# Fixed 2026-10-01, defect 138, lane emit.
+# Symptom: a program that declares a C function the Heroes library also
+# binds, here `hero_file_read` without the library's `lent` on `path`,
+# stopped `check` with `internal error: a diagnostic landed inside the Heroes
+# library, at its line 112`, at exit 2, with or without `--permissive`, for a
+# mistake on this file's own line.
+# Cause: `contract_differs` compared the two declarations in file order and
+# put the caret on the later one, and the library comes after every file of
+# the program, so the caret landed in it. The library's declaration is now
+# the one every other declaration of its C symbol is held to, so the caret is
+# always the author's, and the message names the library by what it is.
+
+extern "hero_os.h"
+    function hero_file_read(path: cstr, @status: i64) -> str  #~ contract_differs
+
+function main()
+    print("hello")

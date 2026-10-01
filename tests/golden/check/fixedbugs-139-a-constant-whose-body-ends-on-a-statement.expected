@@ -1,0 +1,8 @@
+tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:14:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:17:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:20:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:24:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:29:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:34:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:38:5: error[no_value]: constant `RETURNS` produces no value — its body jumps before it gives one, and a constant's value is its body's last line
+tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:41:5: error[no_value]: constant `LEAVES_BEFORE_ITS_VALUE` produces no value — its body jumps before it gives one, and a constant's value is its body's last line

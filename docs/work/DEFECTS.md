@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 14**
+**OPEN: 15**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -724,6 +724,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     choice in `selfhost/check/contracts.hero`, and a declaration of the
     author's is always the one to name.
 
+    **2026-10-01, lane emit, the library's declaration is the one the
+    program's are held to**: repaired at `9cd31e88`, gated by its cases and
+    the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **139 — a block holding a `match` statement counts as leaving whatever its arms do, so `check` passes a function with no `return` and `build` fails** | `function f(c: Color) -> i64` whose body is a `match` with printing arms, then `print(3)`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed ... non-void function should return a value*; the same with the `match` inside one branch of an `if` | `selfhost/check/walk.hero:898-904` (no arm with a value read as every arm jumping) · `arms` at `:1041-1050` · `check/join.hero`'s `Branch`
 
     **Origin:** panel 184's compiler-engineer and lane 135b's batch gate,
@@ -740,6 +744,34 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     which says the tool is wrong. Panel 184's R4 reads the same predicate and
     waits on this repair.
 
+    **2026-10-01, lane flow, the value half: an arm that ends on a statement,
+    in a `match` used as a value, is told, and *every branch jumps* is said
+    only where every branch did** (beside the item: `.b => assert false` or
+    `.b => n @ 5` there checked at 0 and read the binding uninitialised in
+    the C): repaired at `201b99af`, gated by its cases and the compiler's own
+    tests; the net is owed at the batch's close. The statement half, the item
+    as filed, waits on leave to edit lane 135c's
+    `tests/golden/check/fixedbugs-135-a-dropped-value-that-ends-its-function.hero`;
+    it repairs too a VALUE block holding a `match` statement, which the first
+    pass found affected, against the line above (`x = if` refused with *every
+    branch jumps*, or checked clean and built over an uninitialised read).
+
+    **2026-10-01, lane flow, the statement half: a `match` statement leaves
+    its block only when every arm does, and the checked `if` asks it too**
+    (the item as filed; by the coordinator's leave of 12:00 for lane 135c's
+    golden, which gains its `missing_return` under a dated correction):
+    repaired at `3a25b640`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
+    **2026-10-01, lane flow, the class at a constant: a body that ends on a
+    statement is told once, and one that jumps is named**
+    (`selfhost/check/decls.hero:54`, by the coordinator's leave of 12:00: an
+    `assert`, a loop or a `for` last was told twice, the second time *every
+    branch jumps*): repaired at `a26448c0`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close. A `break` or
+    `continue` there still costs `jump_outside_loop` and the constant's own
+    message, both true.
+
 - [ ] **140 — records nested by value a thousand deep abort `build`** | 1,000 flat declarations, `record R<i>` holding `R<i-1>`, reached by `xs: [R999] = []`: `check` exit 0, `build` exit 134, `panic: stack exhausted in emitsynth.collect`; at 10,000 under a larger stack clang itself crashes on the C | `selfhost/emit/` (`emitsynth.collect`) · `selfhost/check/decls.hero` (`.record_decl`, where a bound would stand)
 
     **Origin:** panel 184's compiler-engineer (`184-reports/compiler-engineer.md`
@@ -750,6 +782,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** A program `check` accepts aborts `build`, outside
     the exit contract; panel 184's R7 files it apart from the source's depth.
+
+    **2026-10-01, lane emit, every walk over a record type keeps its own
+    stack, and the two bounded at 16 are total**: repaired at `4804d3f3`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close.
+
+    **2026-10-01, lane emit, beside it: the union rule's reach descends a
+    variant's cases**: repaired at `24bbb539`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close.
 
 - [ ] **141 — `check --apply` writes bytes no fix proposed: the newline the loader adds to a root file's open last line** | `fn main()` over `    print(1)` with no final newline, 22 bytes: `check --apply` prints 29 where its one certain fix makes 28, the last byte a `\n`; `--apply --in-place` writes it into the author's file | `source.from_files` · `source_extent.user_text` · `selfhost/cli/check.hero` (what `--apply` prints)
 
@@ -781,6 +822,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** design.md §4.17: a diagnostic carries what is
     needed to fix the program; this one's advice, followed, is refused.
 
+    **2026-10-01, lane flow, the notes name only forms the checker accepts**
+    (every path ends in a `return` with a value, past an `if` with no `else`
+    and past any loop; a value at the end of a path is not returned, so
+    `return` goes before it; every repair named builds and runs in
+    `tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero`):
+    repaired at `8d5cedd7`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close. The `match` arm's clause waits with
+    defect 139's statement half, which makes it true.
+
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe)
 
     **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (a header of its own
@@ -800,6 +850,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** Spec beats compiler (CLAUDE.md § 12).
 
+    **2026-10-01, lane emit, one rule for every width, a result that holds
+    every value of C's type**: repaired at `d4512560`, gated by its cases and
+    the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **145 — `ffi_unknown_tag`'s note offers two repairs for a typedef of an anonymous struct, and neither is right: the handle repair builds and aborts at run** | a binding written `record Regex tag regex_t partial` for `typedef struct { ... } regex_t;` is refused with the note's two repairs, a misspelled tag or a handle; the handle checks, builds and aborts at run, *panic: a null pointer was read through, at offset 0x8*; the spelling that works, a record named `regex_t` with no `tag`, is not offered (`div_t`, `ldiv_t`, `lldiv_t` have the same shape) | `selfhost/emit/ctype.hero:149` · the note of `ffi_unknown_tag`
 
     **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (its
@@ -813,6 +867,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** A §4.17 defect in a note: the repair it offers
     leads to a run-time abort, and the right one is left out.
 
+    **2026-10-01, lane emit, the note says what clang showed about the header
+    in hand**: repaired at `8a7e69d7`, gated by its cases and the compiler's
+    own tests; the net is owed at the batch's close.
+
 - [ ] **146 — the parser is quadratic on declaration heads written with a foreign word** | 1,500 `fn f<i>() {` heads parse in 0.80 s and 3,000 in 3.18 s, where 3,000 clean `function` heads take 0.06 s; lane 136 measured 6,000 at 28.5 s | the recovery after a foreign-word head (`selfhost/scan.hero`'s error token, `cursor.recover_to_next_decl`)
 
     **Origin:** lane 136 at its close, 2026-09-30
@@ -824,5 +882,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     time that grows with its square (twice the heads, 4.0 times the time,
     measured); at 30,000 heads that square gives about five minutes, an
     inference, unrun.
+
+- [ ] **147 — spec § 8's `Inline` production refuses one-statement arms the design allows and the compiler builds** | `Inline = ( Expression | "return" [ Expression ] | "break" | "continue" | "assert" Expression ) NEWLINE` leaves out a mutation (`.blue => n @ 5`) and a `while` (`.red => while n < 3` over its body), and both check, build and run on the trunk, where design.md §4.7 says *an arm's body is one statement, inline, or an indented block* (panel 014) | `spec/heroes-spec.md:241-243` · design.md §4.7 (`:1230-1235`) · `selfhost/parse/arm_line.hero`
+
+    **Origin:** lane flow's first pass, 2026-10-01
+    (`scratchpad/lane-flow/p1/a54-statement-arm-mutation.hero`,
+    `a76-inline-while-arm.hero`); built and run by the coordinator at 12:35
+    on 2026-10-01 on the trunk at `e252fda4` (`scratchpad/p185/inline/`),
+    printing 5 and 3.
+
+    **Why it is a defect.** The spec is the language as a reader gets it,
+    and here it refuses programs the language accepts: a reader of one is
+    told by the spec that it cannot compile, and a model writing from the
+    spec never learns the form. Which side moves, the production or the
+    parser, is a change to the language, so the repair is a sitting's, with
+    defect 143 and the value-block question in `docs/work/DECIDE.md`.
 
 *******************************************************************************

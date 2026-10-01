@@ -1,0 +1,28 @@
+# Fixed 2026-10-01, lane emit, found beside defect 140.
+# Symptom: `==` over a variant whose case holds a union was built and ran,
+# printing `true`, and a map keyed by one was built: the generated eq and
+# hash read the union's bytes under two types, the thing `ffi_union_field`
+# refuses for a record holding one, at any depth since defect 140.
+# Cause: the walk that finds the unions a compared or hashed type reaches
+# descended a record's fields and stopped at a variant, the route the
+# partial walk beside it names as the one a list of container kinds would
+# have missed. It descends every case's fields now.
+
+# The record names ONE member, which binds a union soundly for reading and
+# which `==` and a key still may not walk, at any arity (panel 077): with
+# two, the completeness probe's own `{0,0}` draws clang's *excess elements
+# in union initializer* on this line, a warning that is not this case's.
+extern "fixedbugs-140-a-union-in-a-variant-case-is-refused.h"
+    record W  #~ ffi_union_field
+        i: i32
+
+variant V
+    has
+        w: W
+    none
+
+function main()
+    xs: [V] = []
+    print(xs == xs)
+    m: {V: i64} = {}
+    print(len(m))

@@ -49,6 +49,14 @@
 # of the type and not of the path that arrived at it: a declaration that reached
 # nothing the first time reaches nothing the second.
 #
+# **And the walks are FLAT since defect 140 (2026-10-01).** Total is not
+# shallow: the guards end every walk, and a recursion still took one frame per
+# record on the route, so a type nested by value a thousand records deep would
+# stop `check` at 134 the way the partial walk beside it did first. Each walk
+# keeps a stack of its own, which goes as deep as the records do, and pushes
+# what is below a place last to first, so it enters them in the order the
+# recursion did and answers what the recursion answered, route for route.
+#
 # **What was here before was `if depth > 16`, and that was defect 035.** It
 # terminated by GIVING UP, silently, so a handle used as a map key was refused at
 # one nesting depth and accepted at the next. The sentence licensing that bound
@@ -103,68 +111,92 @@ record Reached
 # composite balances, while doing both is a double release the set can name.
 function handle_suffixes(out: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> [str]
     found: [str] @ []
-    seen: {i64: bool} @ {}
+    route: {i64: bool} @ {}
+    stack: [Visit] @ [Visit(ty: ty, prefix: "", leaving: -1)]
+    live: i64 @ 1
 
-    gather(out, s, decls, ty: ty, prefix: "", @found, @seen)
+    while live > 0
+        live @ live - 1
+        here = stack[live]
+
+        # OFF the route again, so a SIBLING may walk this declaration under
+        # its own prefix. A cycle still terminates: a declaration reached from
+        # inside its own subtree is still marked when it arrives.
+        if here.leaving >= 0
+            route[here.leaving] @ false
+            continue
+        inner: [Visit] @ []
+
+        match table.get(out.types, here.ty)
+            .named n =>
+                if handles.is_handle(decls[n.decl])
+                    found @ found.push(here.prefix)
+                    continue
+
+                # ON THE CURRENT ROUTE, and not *anywhere in this walk* — defect
+                # 044. `walk` below may memoise a declaration for the whole walk
+                # because it asks an EXISTENTIAL question and unwinds on the
+                # first hit, so every entry it leaves behind belongs to a subtree
+                # that reached NOTHING. This walk COLLECTS, its answer is the
+                # prefix and the prefix differs per route, so a whole-walk memo
+                # drops every route after the first: `record Pair / a: Inner /
+                # b: Inner` emitted one `hero_handle_acquired(p.a.s)` and the
+                # program that released both slots aborted at 134, while the
+                # program that leaked `b` exited 0. The mark comes off when the
+                # marker pushed under the fields is reached, after every field.
+                if on_route(route, decl: n.decl)
+                    continue
+                route[n.decl] @ true
+                inner @ fields_of(out, s, decls, decl: n.decl, prefix: here.prefix).push(
+                    Visit(ty: -1, prefix: "", leaving: n.decl)
+                )
+            .fixed x =>
+                at: i64 @ 0
+
+                while at < x.length
+                    inner @ inner.push(Visit(ty: x.element, prefix: here.prefix + "[" + at.to_str() + "]", leaving: -1))
+                    at @ at + 1
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .array | .map | .fallible | .function_ty                  => continue
+            .case_ty | .failure | .generic | .error                   => continue
+
+        back: i64 @ inner.len() - 1
+
+        while back >= 0
+            if live < stack.len()
+                stack[live] @ inner[back]
+            else
+                stack @ stack.push(inner[back])
+            live @ live + 1
+            back @ back - 1
+
     return found
 
-function gather(out: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, prefix: str, @found: [str], @seen: {i64: bool})
-    match table.get(out.types, ty)
-        .named n =>
-            if handles.is_handle(decls[n.decl])
-                found @ found.push(prefix)
-                return
+# One place the collecting walk stands, or the moment it leaves a
+# declaration's route: `leaving` is that declaration, and -1 for a type to
+# walk under `prefix`.
+record Visit
+    ty: i64
+    prefix: str
+    leaving: i64
 
-            # ON THE CURRENT ROUTE, and not *anywhere in this walk* — defect 044.
-            # `walk` below may memoise a declaration for the whole walk because it
-            # asks an EXISTENTIAL question and unwinds on the first hit, so every
-            # entry it leaves behind belongs to a subtree that reached NOTHING.
-            # This function COLLECTS, its answer is the prefix and the prefix
-            # differs per route, so a whole-walk memo drops every route after the
-            # first: `record Pair / a: Inner / b: Inner` emitted one
-            # `hero_handle_acquired(p.a.s)` and the program that released both
-            # slots aborted at 134, while the program that leaked `b` exited 0.
-            if on_route(seen, decl: n.decl)
-                return
-            seen[n.decl] @ true
-            fields_of(out, s, decls, decl: n.decl, prefix: prefix, @found, @seen)
+# The fields below one declaration, each under its own prefix. A record's
+# only: a variant's case is not a place a suffix can name.
+function fields_of(out: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, prefix: str) -> [Visit]
+    below: [Visit] @ []
 
-            # OFF the route again, so a SIBLING may walk this declaration under
-            # its own prefix. A cycle still terminates: a declaration reached from
-            # inside its own subtree is still marked when it arrives.
-            seen[n.decl] @ false
-        .fixed x =>
-            at: i64 @ 0
-
-            while at < x.length
-                gather(out, s, decls, ty: x.element, prefix: prefix + "[" + at.to_str() + "]", @found, @seen)
-                at @ at + 1
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-        .array | .map | .fallible | .function_ty                  => return
-        .case_ty | .failure | .generic | .error                   => return
-
-# The fields below one declaration, each under its own prefix. It is a separate
-# function so that `gather`'s mark-descend-unmark is three statements in a row
-# with nothing able to `return` between them: the arm that ends a non-record
-# declaration used to `return` out of `gather` itself, which with a route-scoped
-# mark would leave the declaration marked forever.
-function fields_of(out: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, prefix: str, @found: [str], @seen: {i64: bool})
     match decls[decl].kind
         .record_decl rec =>
             for field in rec.fields
                 written = state.written_type(out, field.ty)
 
                 if !written.is_err()
-                    gather(
-                        out,
-                        s,
-                        decls,
-                        ty: written.must(),
-                        prefix: prefix + "." + source.span_text(s, field.name),
-                        @found,
-                        @seen
+                    below @ below.push(
+                        Visit(ty: written.must(), prefix: prefix + "." + source.span_text(s, field.name), leaving: -1)
                     )
-        .constant_decl | .function_decl | .variant_decl | .test_decl => return
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return below
+
+    return below
 
 # Whether this declaration is on the route the walk is currently standing on.
 # The language has no map removal, so leaving a route writes `false` rather than
@@ -185,89 +217,102 @@ function reaches_handle(c: state.Checker, s: source.Source, decls: [ast.Decl], t
 
     return walk(c, s, decls, ty: ty, anchor: true, @seen)
 
-# The walk. `anchor` decides whether this level writes the declaration's own
-# name in front of the path, and only the outermost level does: the reader wants
-# `Outer.p.s` and not `Outer.p.Pair.s`, so the name is written once, where the
-# route begins. It is a fact about the MESSAGE and not about the world, which is
-# why it is a parameter rather than a second walk.
+# The walk. `anchor` decides whether a place still waits for the declaration
+# that begins the route, and only the outermost declaration is written: the
+# reader wants `Outer.p.s` and not `Outer.p.Pair.s`, so the name is written
+# once, where the route begins. It is a fact about the MESSAGE and not about
+# the world, which is why it is a parameter rather than a second walk.
 function walk(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, anchor: bool, @seen: {i64: bool}) -> Reached?
-    match table.get(c.out.types, ty)
-        .named n =>
-            if handles.is_handle(decls[n.decl])
-                return ok(Reached(decl: n.decl, path: ""))
+    stack: [Step] @ [Step(ty: ty, path: "", anchor: anchor)]
+    live: i64 @ 1
 
-            # Already on this route: a cycle, or the second arm of a diamond.
-            # Either way the answer for this declaration is settled.
-            if !seen[n.decl].is_err()
-                return fail(code: "absent", msg: "this declaration is already on the route")
-            seen[n.decl] @ true
-            inner = below(c, s, decls, decl: n.decl, @seen)
+    while live > 0
+        live @ live - 1
+        here = stack[live]
+        inner: [Step] @ []
 
-            if inner.is_err()
-                return inner
+        match table.get(c.out.types, here.ty)
+            .named n =>
+                if handles.is_handle(decls[n.decl])
+                    return ok(Reached(decl: n.decl, path: here.path))
 
-            if !anchor
-                return inner
+                # Already on this route: a cycle, or the second arm of a diamond.
+                # Either way the answer for this declaration is settled.
+                if !seen[n.decl].is_err()
+                    continue
+                seen[n.decl] @ true
+                start: str @ here.path
 
-            return ok(
-                Reached(decl: inner.must().decl, path: source.span_text(s, decls[n.decl].name) + "." + inner.must().path)
-            )
-        .fixed x    => return walk(c, s, decls, ty: x.element, anchor: anchor, @seen)
-        .array arr  => return walk(c, s, decls, ty: arr.element, anchor: anchor, @seen)
-        .fallible o => return walk(c, s, decls, ty: o.payload, anchor: anchor, @seen)
-        .map m =>
-            in_key = walk(c, s, decls, ty: m.key, anchor: anchor, @seen)
+                if here.anchor
+                    start @ source.span_text(s, decls[n.decl].name)
+                inner @ steps_below(c, s, decls, decl: n.decl, start: start)
+            .fixed x    => inner @ [Step(ty: x.element, path: here.path, anchor: here.anchor)]
+            .array arr  => inner @ [Step(ty: arr.element, path: here.path, anchor: here.anchor)]
+            .fallible o => inner @ [Step(ty: o.payload, path: here.path, anchor: here.anchor)]
+            .map m =>
+                inner @ [
+                    Step(ty: m.key, path: here.path, anchor: here.anchor)
+                    Step(ty: m.value, path: here.path, anchor: here.anchor)
+                ]
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .function_ty | .case_ty | .failure | .generic | .error    => continue
 
-            if !in_key.is_err()
-                return in_key
+        back: i64 @ inner.len() - 1
 
-            return walk(c, s, decls, ty: m.value, anchor: anchor, @seen)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "absent", msg: "no handle here")
-        .function_ty | .case_ty | .failure | .generic | .error    => return fail(code: "absent", msg: "no handle here")
+        while back >= 0
+            if live < stack.len()
+                stack[live] @ inner[back]
+            else
+                stack @ stack.push(inner[back])
+            live @ live + 1
+            back @ back - 1
 
-    return fail(code: "absent", msg: "unreached")
+    return fail(code: "absent", msg: "no handle here")
 
-# The field chain below one declaration, carrying no owner: `s`, or `p.s`. A
-# variant answers for the first case payload that reaches one, because a value
-# of that type may be in any case and the diagnostic needs a route the reader
-# can follow.
-function below(c: state.Checker, s: source.Source, decls: [ast.Decl], decl: i64, @seen: {i64: bool}) -> Reached?
+# One place the existential walk stands: a type, the route that reached it,
+# and whether the route still waits for the declaration that begins it.
+record Step
+    ty: i64
+    path: str
+    anchor: bool
+
+# The places below one declaration, each one field further along the route. A
+# variant offers every case's payload, first case first, because a value of
+# that type may be in any case and the diagnostic needs a route the reader can
+# follow.
+function steps_below(c: state.Checker, s: source.Source, decls: [ast.Decl], decl: i64, start: str) -> [Step]
+    below: [Step] @ []
+
     match decls[decl].kind
-        .record_decl rec => return in_fields(c, s, decls, fields: rec.fields, @seen)
+        .record_decl rec => below @ field_steps(c, s, fields: rec.fields, start: start)
         .variant_decl v =>
             for one_case in v.cases
-                found = in_fields(c, s, decls, fields: one_case.fields, @seen)
+                for one in field_steps(c, s, fields: one_case.fields, start: start)
+                    below @ below.push(one)
+        .constant_decl | .function_decl | .test_decl => return below
 
-                if !found.is_err()
-                    return found
+    return below
 
-            return fail(code: "absent", msg: "no payload reaches a handle")
-        .constant_decl | .function_decl | .test_decl => return fail(code: "absent", msg: "not a data declaration")
+# Each field as a place to stand, its name joined to the route. It asks
+# `written_type` for `ffi_sweep`'s reason: the node is what the author wrote
+# and the interned id is what the checker knows, and only the second can be
+# asked what KIND of type it is.
+function field_steps(c: state.Checker, s: source.Source, fields: [ast.Field], start: str) -> [Step]
+    out: [Step] @ []
 
-    return fail(code: "absent", msg: "unreached")
-
-# The first field that reaches a handle, as a dotted chain of field names. It
-# asks `written_type` for `ffi_sweep`'s reason: the node is what the author
-# wrote and the interned id is what the checker knows, and only the second can
-# be asked what KIND of type it is.
-function in_fields(c: state.Checker, s: source.Source, decls: [ast.Decl], fields: [ast.Field], @seen: {i64: bool}) -> Reached?
     for field in fields
         written = state.written_type(c.out, field.ty)
 
         if written.is_err()
             continue
-        found = walk(c, s, decls, ty: written.must(), anchor: false, @seen)
-
-        if found.is_err()
-            continue
         name = source.span_text(s, field.name)
+        path: str @ name
 
-        if found.must().path == ""
-            return ok(Reached(decl: found.must().decl, path: name))
+        if start != ""
+            path @ start + "." + name
+        out @ out.push(Step(ty: written.must(), path: path, anchor: false))
 
-        return ok(Reached(decl: found.must().decl, path: name + "." + found.must().path))
-
-    return fail(code: "absent", msg: "every field is the program's own")
+    return out
 
 ## Tests
 

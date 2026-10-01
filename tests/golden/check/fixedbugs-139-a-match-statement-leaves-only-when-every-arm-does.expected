@@ -1,0 +1,18 @@
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:23:38: error[missing_return]: `last_statement` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:28:34: error[missing_return]: `then_falls` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:35:40: error[missing_return]: `some_arms_return` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:40:41: error[missing_return]: `a_block_arm_falls` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:48:54: error[missing_return]: `an_arm_if_without_else` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:55:46: error[missing_return]: `in_one_branch` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:63:40: error[missing_return]: `nested` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:71:30: error[missing_return]: `on_a_str` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:76:36: error[missing_return]: `on_a_fallible` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:81:44: error[missing_return]: `generic` must return `T`, and one path through it returns nothing
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:88:48: error[missing_return]: `an_arm_that_does_nothing` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:94:37: error[missing_return]: `with_comments` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:103:43: error[missing_return]: `arms_that_give_values` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:105:14: error[discarded_value]: this line's value has type `i64` and nothing receives it — it ends a function that returns `i64`: write `return …`, or `_ = …` to discard it on purpose
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:106:14: error[discarded_value]: this line's value has type `i64` and nothing receives it — it ends a function that returns `i64`: write `return …`, or `_ = …` to discard it on purpose
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:111:5: error[bound_unit]: `x` would hold `()`, which is no value — keep the call and drop the binding
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:118:9: error[type_mismatch]: expected `()`, found `i64`
+tests/golden/check/fixedbugs-139-a-match-statement-leaves-only-when-every-arm-does.hero:124:14: error[no_value]: this `if` produces no value — every branch jumps, so there is nothing to bind

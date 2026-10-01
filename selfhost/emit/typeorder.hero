@@ -109,18 +109,52 @@ record Ordered
     done: {i64: bool}
     out: [i64]
 
+# Where the walk below stands in one item: the item, what it needs, and
+# how many of those it has already gone into. A recursion keeps the same
+# three in its frame.
+record Frame
+    item: i64
+    needs: [i64]
+    next: i64
+
 # One item, after everything it needs. Post-order, so a dependency
 # reached from two places is written once.
+#
+# **ITS FRAMES ARE A STACK OF ITS OWN, NOT THE MACHINE'S** (defect 140,
+# 2026-10-01): a record holds the one before it by value, so the walk goes
+# as deep as the records nest, and a recursion here would die where
+# `synth.collect`'s did, a thousand records down. The stack keeps what a
+# recursion's frames keep and in the same order, item marked done on the
+# way in and written on the way out, so `out` is the recursion's sequence
+# item for item, and the emitted C is unchanged with it.
 function visit(order: Ordered, c: state.Checked, names: ctype.Names, decls: [ast.Decl], item: i64) -> Ordered
     if !order.done[item].is_err()
         return order
     st: Ordered @ order
     st.done[item] @ true
+    frames: [Frame] @ [Frame(item: item, needs: needs(c, names, decls, item: item), next: 0)]
+    live: i64 @ 1
 
-    for need in needs(c, names, decls, item: item)
-        st @ visit(st, c, names, decls, item: need)
+    while live > 0
+        top = frames[live - 1]
 
-    st.out @ st.out.push(item)
+        if top.next < top.needs.len()
+            need = top.needs[top.next]
+            frames[live - 1].next @ top.next + 1
+
+            if st.done[need].is_err()
+                st.done[need] @ true
+                entered = Frame(item: need, needs: needs(c, names, decls, item: need), next: 0)
+
+                if live < frames.len()
+                    frames[live] @ entered
+                else
+                    frames @ frames.push(entered)
+                live @ live + 1
+        else
+            st.out @ st.out.push(top.item)
+            live @ live - 1
+
     return st
 
 # What an item must be declared AFTER: by-value containment only,

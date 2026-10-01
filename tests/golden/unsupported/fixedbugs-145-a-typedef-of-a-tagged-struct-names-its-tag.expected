@@ -1,0 +1,13 @@
+error[ffi_unknown_tag]: `fixedbugs-145-types.h` has no `struct tagged_t` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
+  at tests/golden/unsupported/fixedbugs-145-a-typedef-of-a-tagged-struct-names-its-tag.hero:17:18
+     |
+  17 |     record T tag tagged_t  #~ ffi_unknown_tag
+     |                  ^^^^^^^^
+  note: `tagged_t` is the name of a typedef in the header, of `struct tagged_s`: the tag is the word the header writes after `struct`, `record T tag tagged_s`, or the record takes the typedef by its own name, with no `tag`, `record tagged_t` (§ 13)
+
+error[ffi_parameter_type]: `p` of `use_tagged` is declared a different kind of thing from the header's `struct tagged_s *` — clang read the header, and the two do not convert
+  at tests/golden/unsupported/fixedbugs-145-a-typedef-of-a-tagged-struct-names-its-tag.hero:19:5
+     |
+  19 |     function use_tagged(@p: T) -> i32  #~ ffi_parameter_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.19: a parameter is declared as what the header says. `struct tagged_s *` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout
