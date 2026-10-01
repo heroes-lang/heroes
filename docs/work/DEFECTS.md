@@ -742,6 +742,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     it applied, the rule defect 137's repair holds; here a byte no fix
     proposed reaches the author's file.
 
+    **2026-10-01, lane 135c, what `check --apply` hands back is the author's
+    bytes and its fixes, a last line left open included** (beside it, found
+    in the lane's first pass: a stray `\r` ending a file or a module read as a
+    line ending, a CRLF file's bare `\n`, nothing printed for a clean file
+    and the holes report for one with a hole): repaired at `fa64c7da`, gated
+    by its cases and the compiler's own tests; the net is owed at the batch's
+    close.
+
 - [ ] **142 — `missing_return`'s note sends the author to a form the checker refuses** | the note says *every path must end in a `return`, or the last statement must be the value*; a function whose last line is the bare value then costs `missing_return` again and `discarded_value` | `selfhost/flow_errors.hero:157-163`
 
     **Origin:** lane 135b's final report, 2026-09-30; reproduced by the
