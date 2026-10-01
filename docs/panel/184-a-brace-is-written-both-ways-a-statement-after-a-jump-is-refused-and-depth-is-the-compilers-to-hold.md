@@ -245,11 +245,30 @@ where it lists what a mistake costs.
 
 ## Author's verdict
 
-**PENDING.** Queued as `panel 184` in `docs/work/DECIDE.md`, with the
-recommendation that R1 to R8 be ratified as they stand, R3's question ruled
-(does §1.3's locality test reach a rule of legality), and the two sized blind
-readings of the critic's § E (task 1 with (1b) amended; task 2 with (2d))
-made or declined.
+**RATIFIED 2026-10-01**, on the author's answer of the evening to six
+recommendations put to them with their reasons, meant as: *1a*, the first
+being this sitting. **Recorded as a reading**, CLAUDE.md § 4's default; not
+`by delegation`.
+
+**What the yes settles**: R1 to R8 as the resolution above states them, and
+R3's question, ruled by the author: **design.md §1.3's locality test speaks
+of what a program means, not of what is legal**, so it does not bar a refusal
+of a forgotten `f`. Route (1b) as amended therefore lands, after R1, **on one
+condition the author set**: the blind reading of task 1 with (1b)'s amended
+wording and R1's escape stated (the critic's § E, item 6, prepared in the
+coordinator's scratchpad as `rdr/t4/`), one session capped at 3 USD, approves
+the wording; if it does not, the wording goes back to a sitting. The reading of
+task 2 with (2d) (§ E item 7, `rdr/t5/`) is authorized the same way and scores
+R4's last question. Both run once the author has updated the `claude` command
+(the same answer, its sixth item), so that the blind seat runs on the sitting's
+model: the installed 2.1.274 refuses `claude-opus-5-5`.
+
+**What it does not settle**: the landing, a lane after the gates of
+2026-10-01's round, in R1's two stages, then R2, then R4, whose `match`
+predicate defect 139's repair supplied (closed 2026-10-01, `32e9dd18`), then
+R5 to R7, with R8's sentences priced by `heroes measure --refresh` in the
+landing's tree; and R6's N, measured on this Mac, Linux x86-64 and the Windows
+box under R5 before its sentence is written.
 
 ## The critic's two passes
 
