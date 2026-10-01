@@ -718,6 +718,18 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     which says the tool is wrong. Panel 184's R4 reads the same predicate and
     waits on this repair.
 
+    **2026-10-01, lane flow, the value half: an arm that ends on a statement,
+    in a `match` used as a value, is told, and *every branch jumps* is said
+    only where every branch did** (beside the item: `.b => assert false` or
+    `.b => n @ 5` there checked at 0 and read the binding uninitialised in
+    the C): repaired at `201b99af`, gated by its cases and the compiler's own
+    tests; the net is owed at the batch's close. The statement half, the item
+    as filed, waits on leave to edit lane 135c's
+    `tests/golden/check/fixedbugs-135-a-dropped-value-that-ends-its-function.hero`;
+    it repairs too a VALUE block holding a `match` statement, which the first
+    pass found affected, against the line above (`x = if` refused with *every
+    branch jumps*, or checked clean and built over an uninitialised read).
+
 - [ ] **140 — records nested by value a thousand deep abort `build`** | 1,000 flat declarations, `record R<i>` holding `R<i-1>`, reached by `xs: [R999] = []`: `check` exit 0, `build` exit 134, `panic: stack exhausted in emitsynth.collect`; at 10,000 under a larger stack clang itself crashes on the C | `selfhost/emit/` (`emitsynth.collect`) · `selfhost/check/decls.hero` (`.record_decl`, where a bound would stand)
 
     **Origin:** panel 184's compiler-engineer (`184-reports/compiler-engineer.md`

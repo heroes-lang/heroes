@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-142-a-loop-runs-on-to-the-end.hero:11:51: error[missing_return]: `first_at_least` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-142-a-loop-runs-on-to-the-end.hero:16:32: error[missing_return]: `count_down` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-142-a-loop-runs-on-to-the-end.hero:24:30: error[missing_return]: `positive` must return `i64?`, and one path through it returns nothing
