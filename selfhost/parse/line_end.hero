@@ -25,6 +25,7 @@
 # |---|---|
 # | `expect_closer` | a bracket's closer, after the line ends before it were skipped |
 # | `expect_after` | a token a production writes after a line that can end: `:`, `->` |
+# | `continued` | `parse/unclosed`, under an opener the lexer named never closed; `parse/list_line`, between a literal's elements |
 
 use token
 use diag
@@ -33,6 +34,7 @@ use describe
 use keywords
 use operators
 use open_line
+use parse/line_end_readings
 
 ## What the parser is reading
 
@@ -168,8 +170,7 @@ function expect_closer(@c: cursor.Cursor, text: str, holds: Holds, kind: token.T
         before = significant_before(c, at: c.pos)
 
         if goes_on(c, text: text, holds: holds, before: before)
-            other = holds == .arguments && begins_a_value(cursor.current_kind(c))
-            continued(@c, text: text, before: before, other: other)
+            refused(@c, text: text, before: before, other: other_reading(holds, kind: cursor.current_kind(c)))
             to_the_closer(@c, kind)
     return cursor.expect(@c, text: text, kind: kind, code: code, what: what)
 
@@ -208,34 +209,58 @@ function expect_after(@c: cursor.Cursor, text: str, kind: token.TokenKind, code:
 
 ## R3: a token that goes on with the line above
 
+# The other reading a token at the head of the line below has in brackets that
+# hold `holds`, beside going on (`parse/line_end_readings`, defect 135).
+function other_reading(holds: Holds, kind: token.TokenKind) -> line_end_readings.Other
+    if holds == .arguments && begins_a_value(kind)
+        return .argument
+
+    if holds == .one_value && (kind == .lparen || kind == .lbracket)
+        return .operand
+    return .nothing
+
 # The refusal where the line end stands before a token that would have gone on
-# with the line above. `certain` where going on is the only reading; `guess`
-# where a missing `,` is the other (`other`), in a call's arguments before a
-# token that can also begin one, and then the `,` is the second fix.
+# with the line above, a missing `,` the other reading where `other` says so:
+# the entry `parse/unclosed` and `parse/list_line` call.
 function continued(@c: cursor.Cursor, text: str, before: i64, other: bool)
+    reading: line_end_readings.Other @ .nothing
+
+    if other
+        reading @ .argument
+    refused(@c, text: text, before: before, other: reading)
+
+# The refusal itself, its fix `certain` only where going on is the only reading
+# (`parse/line_end_readings`), and a missing `,` the second fix where it is the
+# other reading.
+function refused(@c: cursor.Cursor, text: str, before: i64, other: line_end_readings.Other)
     ender = c.tokens[before]
     found = cursor.current_span(c)
     written = cursor.slice_of(text, found)
-    message: str @ "a line end stands before `" + written + "`: the line above ends with " + named(text, ender) + ", which keeps its line end, and inside brackets a line end may stand only before a closing bracket or a `,`"
-    title: str @ "end the line above with `" + written + "`"
-    certainty: diag.Certainty @ .certain
-
-    if other
-        message @ message + "; to go on with the argument, end the line above with `" + written + "`, and for a new argument, write the `,` there"
-        title @ "go on with the argument: " + title
-        certainty @ .guess
-    else
-        message @ message + "; to break the line here, end the line above with `" + written + "`"
+    kind = cursor.current_kind(c)
+    words = line_end_readings.said(other, written: written, kind: kind, alone: stands_alone(c, text: text, kind: kind))
+    message = "a line end stands before `" + written + "`: the line above ends with " + named(text, ender) + ", which keeps its line end, and inside brackets a line end may stand only before a closing bracket or a `,`" + words.tail
     d: diag.Diagnostic @ diag.new_diagnostic(code: "line_end_before_continuation", message: message, span: found)
     d.fixes @ d.fixes.push(
-        moved_up(text: text, ender: ender.span, found: found, tight: is_tight(cursor.current_kind(c)), title: title, certainty: certainty)
+        moved_up(text: text, ender: ender.span, found: found, tight: is_tight(kind), title: words.title, certainty: words.certainty)
     )
 
-    if other
+    if other == .argument
         d.fixes @ d.fixes.push(
             diag.Fix(title: "a new argument: write the `,`", replacement: ",", span: token.Span(start: ender.span.end, end: ender.span.end), certainty: .guess)
         )
     c.diagnostics @ c.diagnostics.push(d)
+
+# Whether the line below could stand on its own after a closer left out above
+# it: it begins with what also begins a value, a `-` touching its operand
+# (panel 180's question, `open_line.set_apart`), and no closer closes the
+# bracket (`parse/line_end_readings`), whose walk is asked of no other line.
+function stands_alone(c: cursor.Cursor, text: str, kind: token.TokenKind) -> bool
+    if !begins_a_value(kind)
+        return false
+
+    if kind == .minus && open_line.set_apart(text, at: cursor.current_span(c).end)
+        return false
+    return !line_end_readings.closed_below(c, text)
 
 # The tokens written against what they follow, as `fmt` prints them: `xs.len`,
 # `Point::x`, `f()?`, `f(1)`, `xs[0]`, `a: 1`. Every other one moved up is

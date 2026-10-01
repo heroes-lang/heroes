@@ -1,0 +1,137 @@
+# The repair of `.must()` or `.default(v)` on a value that cannot fail
+# (design.md §4.17; panel 043; defect 135): the call less its `.name(…)`,
+# which is its receiver, and how sure that removal is.
+# `check/builtins.unwrapping_nothing` refuses the call and asks this module
+# for its fix.
+#
+# **The receiver is read from the call's own tokens**, where until defect
+# 135's C9 it was found by the last `.name(` in the call's text: in
+# `a.default(m["k"].default(0))` that is the argument's own, and in
+# `label.default("use .default(v) here")` it is inside the string, and each
+# cut the call there into a program that did not parse.
+#
+# **And the removal is certain only where it takes nothing with it**:
+# `.must()`, or `.default(v)` whose `v` is a literal. Any other `v` is
+# computed when the call runs, so removing it leaves a binding unread,
+# `a.default(b)` refused anew as `unused_binding`, or drops what it does,
+# `a.default(fallback())` no longer running `fallback`; there the removal is
+# a `guess`.
+#
+# A leaf: it lexes the call's own text and reads nothing of the checker.
+
+use token
+use diag
+use lexer
+
+# The call less its `.name(…)`, and how sure that removal is.
+record Removal
+    receiver: str
+    certainty: diag.Certainty
+
+# The removal of `.name(…)` from the call `text`: what stands before the
+# `.name` whose `(` the call's last `)` closes. Absent where the call does not
+# end so, UFCS not used, and where a comment stands between the receiver and
+# its `.name`, which the removal would take with it.
+function removal(text: str, name: str) -> Removal?
+    tokens = lexer.lex_one(text).tokens
+    close = significant_before(tokens, at: tokens.len())
+
+    if close < 0 || tokens[close].kind != .rparen
+        return fail(code: "no_call", msg: "the call does not end with its own `)`")
+    open = opener_of(tokens, close: close)
+    word = significant_before(tokens, at: open)
+    dot = significant_before(tokens, at: word)
+
+    if open < 0 || word < 0 || dot < 0 || tokens[word].kind != .ident || tokens[dot].kind != .dot
+        return fail(code: "no_call", msg: "no `.name` before the call's parentheses")
+
+    if text.slice(from: tokens[word].span.start, to: tokens[word].span.end) != name
+        return fail(code: "no_call", msg: "the parentheses are another call's")
+    end = significant_before(tokens, at: dot)
+
+    if end < 0
+        return fail(code: "no_receiver", msg: "nothing before the `.`")
+
+    for i in range(from: end + 1, to: dot)
+        if tokens[i].kind == .comment
+            return fail(code: "comment", msg: "a comment stands between the receiver and its call")
+
+    certainty: diag.Certainty @ .guess
+
+    if holds_nothing_that_runs(tokens, from: open + 1, to: close)
+        certainty @ .certain
+    return ok(Removal(receiver: text.slice(from: 0, to: tokens[end].span.end), certainty: certainty))
+
+# The index of the last token before `at` a reader sees, past comments and the
+# lexer's own line ends and levels, or a negative number where there is none.
+function significant_before(tokens: [token.Token], at: i64) -> i64
+    i: i64 @ at - 1
+
+    while i >= 0 && is_layout(tokens[i].kind)
+        i @ i - 1
+
+    return i
+
+function is_layout(kind: token.TokenKind) -> bool
+    return kind == .comment || kind == .terminator || kind == .indent || kind == .dedent || kind == .eof
+
+# The opener the closer at `close` pairs with, any kind closing any, or -1.
+function opener_of(tokens: [token.Token], close: i64) -> i64
+    depth: i64 @ 0
+    i: i64 @ close
+
+    while i >= 0
+        k = tokens[i].kind
+
+        if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth + 1
+        else if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth - 1
+
+            if depth == 0
+                return i
+        i @ i - 1
+
+    return -1
+
+# Whether the tokens from `from` to `to` are nothing, or one literal, a number
+# signed by a `-` included: what removing them loses nothing of.
+function holds_nothing_that_runs(tokens: [token.Token], from: i64, to: i64) -> bool
+    seen: [token.TokenKind] @ []
+
+    for i in range(from: from, to: to)
+        if !is_layout(tokens[i].kind)
+            seen @ seen.push(tokens[i].kind)
+
+    if seen.len() == 0
+        return true
+
+    if seen.len() == 2 && seen[0] == .minus
+        return seen[1] == .int_lit || seen[1] == .float_lit
+    return seen.len() == 1 && is_literal(seen[0])
+
+function is_literal(kind: token.TokenKind) -> bool
+    return kind == .int_lit || kind == .float_lit || kind == .str_lit || kind == .char_lit || kind == .kw_true || kind == .kw_false || kind == .kw_nullptr
+
+## Tests
+
+# Defect 135's C9 and the shapes beside it: the receiver is the call's own,
+# read from its tokens, and a removal that would drop a read or a call is no
+# certain fix.
+test "the receiver is read from the call's tokens, and a removal that drops what runs is a guess"
+    inner = removal(text: "a.default(m[\"k\"].default(0))", name: "default").must()
+    assert inner.receiver == "a"
+    assert inner.certainty == .guess
+    quoted = removal(text: "label.default(\"use .default(v) here\")", name: "default").must()
+    assert quoted.receiver == "label"
+    assert quoted.certainty == .certain
+    assert removal(text: "x.must()", name: "must").must().certainty == .certain
+    assert removal(text: "a.default(b)", name: "default").must().certainty == .guess
+    assert removal(text: "a.default(fallback())", name: "default").must().certainty == .guess
+    assert removal(text: "a.default(-1)", name: "default").must().certainty == .certain
+    assert removal(text: "(xs\n        .len()).must()", name: "must").must().receiver == "(xs\n        .len())"
+    assert removal(text: "xs.len()\n        .must()", name: "must").must().receiver == "xs.len()"
+
+    # A plain call is no UFCS, and a comment between would go with the call.
+    assert removal(text: "must(n)", name: "must").is_err()
+    assert removal(text: "xs.len()  # c\n        .must()", name: "must").is_err()

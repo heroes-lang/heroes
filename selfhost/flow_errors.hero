@@ -108,6 +108,22 @@ function no_value(what: str, span: token.Span) -> diag.Diagnostic
         span: span
     )
 
+# A constant whose body jumps before it gives a value (§4.2: a constant's
+# body IS its value, its last statement produces it). `return 5` there is a
+# function's habit, and the repair is the value alone. Told once, at the
+# body, and only for a body that jumps: one that ends on a statement was told
+# at its block by `branch_without_value`, and until 2026-10-01 it was told
+# again here, *this `i64` produces no value — every branch jumps*, which no
+# branch had (defect 139's class, an absent value read as a jump).
+function constant_without_value(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "no_value",
+        message: "constant `" + name + "` produces no value — its body jumps before it gives one, and a constant's value is its body's last line",
+        span: span
+    )
+    d.notes @ d.notes.push("a constant has no `return`: write the value itself as the body's last line")
+    return d
+
 # A branch that falls off its end without a value. Distinct from a
 # diverging branch, and the distinction is the point: a jump CANNOT
 # produce a value, a statement simply did not.
@@ -151,16 +167,34 @@ function if_without_else(span: token.Span) -> diag.Diagnostic
 # A function that can run off its end (§4.7; panel 020). The span is the
 # WRITTEN RESULT TYPE — the promise is what was broken, and the promise is
 # on that line; pointing at the last statement would blame a line that may
-# be perfectly correct. No fix: there are two repairs (add a `return`, or
-# make the last statement the value) and neither is certain — a guess that
-# rewrites control flow is worse than no fix at all.
+# be perfectly correct. No fix: which path runs on, and what it should
+# return, are the author's to say, and a guess that rewrites control flow
+# is worse than no fix at all.
+#
+# **The notes name only what the language accepts** (defect 142). Until
+# 2026-10-01 the one note offered a second repair, *or the last statement
+# must be the value*, from a design in which a body's last line was its
+# value, ported with the Rust compiler; followed, it cost this diagnostic
+# again and `discarded_value`. A function hands its value back through
+# `return` and nowhere else: its body is run for effect (`check/decls.hero`,
+# panel 020's item 8), and design.md §4.7 gives a block its last
+# expression's value in two places only, an `if` used as a value and a
+# `match` arm; the spec states no return rule yet (panel 184's critic, B8).
+# So the first note says where a path goes on past the last `return`, and
+# the second answers the habit the old note taught. Every repair they name
+# is a case in `tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero`.
 function missing_return(name: str, want: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "missing_return",
         message: "`" + name + "` must return `" + want + "`, and one path through it returns nothing",
         span: span
     )
-    d.notes @ d.notes.push("every path must end in a `return`, or the last statement must be the value")
+    d.notes @ d.notes.push(
+        "every path must end in a `return` with a value: a path runs on to the end past an `if` with no `else`, out of a `match` arm that does not return, and past any loop, `while true` included, since a loop counts as one that can finish"
+    )
+    d.notes @ d.notes.push(
+        "a value at the end of a path is not returned: a function hands its value back only through `return`, so write `return` before it"
+    )
     return d
 
 ## Tests
@@ -183,8 +217,20 @@ test "the two empty-handed branches stay two messages under one code"
     assert jumps.message == "this `match` produces no value — every branch jumps, so there is nothing to bind"
     assert fell.message == "this branch ends on a statement, so it produces no value — its last line has to be the value"
 
+    # A constant's body that jumps is the third, and names the constant.
+    left = constant_without_value(name: "MAX", span: span)
+    assert left.code == "no_value"
+    assert left.message == "constant `MAX` produces no value — its body jumps before it gives one, and a constant's value is its body's last line"
+    assert left.notes.len() == 1
+
 test "missing_return points at the promise and offers no fix"
     d = missing_return(name: "dist2", want: "i64", span: token.Span(start: 30, end: 33))
     assert d.fixes.len() == 0
-    assert d.notes.len() == 1
     assert d.message == "`dist2` must return `i64`, and one path through it returns nothing"
+
+    # Defect 142: no note may send the author to a form the checker refuses.
+    # Each repair named here is a case that builds and runs, in
+    # `tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero`.
+    assert d.notes.len() == 2
+    assert d.notes[0] == "every path must end in a `return` with a value: a path runs on to the end past an `if` with no `else`, out of a `match` arm that does not return, and past any loop, `while true` included, since a loop counts as one that can finish"
+    assert d.notes[1] == "a value at the end of a path is not returned: a function hands its value back only through `return`, so write `return` before it"

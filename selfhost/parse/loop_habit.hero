@@ -12,7 +12,9 @@
 # of the `while` itself: the rest of the line is read as its condition, on a
 # copy of the cursor, by `grammar_expr.for_stmt`, and the fix is certain where
 # that reading refused nothing, held nothing back, and ended where the head's
-# line ends or at a `{` that ends it, where a body begins.
+# line ends or at a `{` that ends it, where a body begins; and where what it
+# read is a `bool` by its shape (`a_condition`, defect 135), since a list, a
+# string or a call is as likely the `for`'s own iterable, its `x in` left out.
 #
 # A name after `for` keeps the fix a guess whatever the reading says: `for x
 # of xs`, a mangled iteration, reads as the condition `x`, and `while x`
@@ -41,6 +43,7 @@ use parse/brace_habit
 use parse/opening
 use parse/line_end
 use text_lines
+use operators
 
 # `for_missing_in` at the cursor, which stands where the loop variable
 # should, with *use `while`* over `keyword`; `read` is the cursor after the
@@ -48,7 +51,7 @@ use text_lines
 function refuse(@c: cursor.Cursor, text: str, keyword: token.Span, read: cursor.Cursor)
     certainty: diag.Certainty @ .guess
 
-    if !cursor.at(c, .ident) && a_loop(c: c, text: text, read: read)
+    if !cursor.at(c, .ident) && a_loop(c: c, text: text, read: read) && a_condition(c: c, read: read)
         certainty @ .certain
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "for_missing_in",
@@ -66,6 +69,65 @@ function a_loop(c: cursor.Cursor, text: str, read: cursor.Cursor) -> bool
         return false
     k = cursor.current_kind(read)
     return k == .terminator || k == .indent || k == .dedent || k == .eof || brace_habit.opens_here(read, text)
+
+# Whether what a `while` would read as its condition, the tokens from the
+# cursor to `read`, is a `bool` by its shape: a comparison, `&&` or `||`
+# outside every bracket of it, a `!` that begins it, or `true` or `false`
+# alone, the parentheses around the whole of it set aside first. Any other
+# shape is as likely what the `for` meant to iterate, its `x in` left out:
+# `for [1, 2, 3]`, `for (xs)` and `for "abc".chars()` took a certain `while`
+# that was refused anew as `not_bool` (the certain-fix audit's P4), and so did
+# `for 3`, `for ("abc")` and `for {"a": 1}` beside them.
+function a_condition(c: cursor.Cursor, read: cursor.Cursor) -> bool
+    from: i64 @ c.pos
+    to: i64 @ read.pos
+
+    while to > from && (c.tokens[to - 1].kind == .comment || c.tokens[to - 1].kind == .terminator)
+        to @ to - 1
+
+    while to - from >= 2 && c.tokens[from].kind == .lparen && closer_after(c, open: from) == to - 1
+        from @ from + 1
+        to @ to - 1
+
+    if to - from == 1 && (c.tokens[from].kind == .kw_true || c.tokens[from].kind == .kw_false)
+        return true
+    depth: i64 @ 0
+
+    for at in range(from: from, to: to)
+        k = c.tokens[at].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth - 1
+        else if depth == 0 && gives_a_bool(k)
+            return true
+
+    return to > from && c.tokens[from].kind == .bang
+
+# The binary operators whose value is a `bool` (spec § 7): the six comparisons,
+# `&&` and `||`, the eight loosest the language has (the test below).
+function gives_a_bool(kind: token.TokenKind) -> bool
+    return kind == .or_or || kind == .and_and || kind == .eq_eq || kind == .bang_eq || kind == .lt || kind == .le || kind == .gt || kind == .ge
+
+# The index of the closer the opener at `open` pairs with, by depth, or -1.
+function closer_after(c: cursor.Cursor, open: i64) -> i64
+    depth: i64 @ 0
+    i: i64 @ open
+
+    while c.tokens[i].kind != .eof
+        k = c.tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth - 1
+
+            if depth == 0
+                return i
+        i @ i + 1
+
+    return -1
 
 ## The tail of `do { ... } while (c)`
 
@@ -109,3 +171,15 @@ function on(c: cursor.Cursor, at: i64) -> cursor.Cursor
     moved: cursor.Cursor @ c
     moved.pos @ at
     return moved
+
+## Tests
+
+# The premise `gives_a_bool` rests on: the operators that give a `bool` are
+# the eight loosest of the language's one list of them. A new comparison lands
+# in `operators.binary_tokens`, and this names the list `gives_a_bool` must
+# learn it in.
+test "the binary operators a while's condition stands on are the eight loosest"
+    tokens = operators.binary_tokens()
+
+    for at in range(from: 0, to: tokens.len())
+        assert gives_a_bool(tokens[at]) == (at < 8)

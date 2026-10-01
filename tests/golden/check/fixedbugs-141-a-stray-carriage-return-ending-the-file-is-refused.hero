@@ -1,0 +1,13 @@
+# Fixed 2026-10-01 by lane 135c (defect 141, a shape beside it). Symptom:
+# this file's last byte is a carriage return with no line feed after it,
+# which the lexer refuses anywhere else as `stray_carriage_return`; on the
+# compiler of `9d1c209d`, `check` passed it at exit 0 while `fmt`, which
+# reads the file alone, refused it. Cause: `source.from_files` closed the
+# open last line with a newline of its own, so the lexer read `\r\n`, a line
+# ending its author never wrote. A file is now read in a compilation byte
+# for byte as it is read alone. No `certain` fix: `--apply` owes it back
+# as it is.
+
+function main()
+    #~v stray_carriage_return
+    print(1)

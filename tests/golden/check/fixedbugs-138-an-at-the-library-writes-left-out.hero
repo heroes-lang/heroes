@@ -1,0 +1,11 @@
+# Fixed 2026-10-01, defect 138, lane emit: an `@` is a mark too.
+# Symptom: `hero_file_read(path: cstr lent, status: i64)`, where the library
+# writes `@status`, stopped `check` with `internal error` at the library's
+# line 112, exit 2.
+# Cause: the same caret on the later declaration of the pair, the library's.
+
+extern "hero_os.h"
+    function hero_file_read(path: cstr lent, status: i64) -> str  #~ contract_differs
+
+function main()
+    print("hello")

@@ -1,0 +1,27 @@
+# Fixed 2026-10-01 by lane 135c (defect 135, the certain-fix audit's P4).
+# Symptom: `for` over something that is not a condition took a certain *use
+# `while`*: on the compiler of `9d1c209d` `for [1, 2, 3]`, `for (xs)` and `for
+# "abc".chars()` applied into `while [1, 2, 3]` and its kin, refused anew as
+# `not_bool`, and so did `for 3` and `for {"a": 1}` beside them. Cause: the
+# `while` was certain wherever the rest of the line read as an expression,
+# where a list, a string, a number or a call is as likely the iterable of a
+# `for` whose `x in` was left out. It is now certain only where the condition
+# is a `bool` by its shape, and `--apply` leaves this file as it is.
+
+function main()
+    xs = [1, 2, 3]
+
+    for [1, 2, 3]  #~ for_missing_in
+        print("a")
+
+    for (xs)  #~ for_missing_in
+        print("b")
+
+    for "abc".chars()  #~ for_missing_in
+        print("c")
+
+    for 3  #~ for_missing_in
+        print("d")
+
+    for {"a": 1}  #~ for_missing_in
+        print("e")

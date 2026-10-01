@@ -1,0 +1,38 @@
+# Fixed 2026-10-01 by lane 135c (defect 135, the boundary of the certain-fix
+# audit's P4 repair): where what follows `for` is a `bool` by its shape, the
+# *use `while`* stays certain, as on the compiler of `9d1c209d`, and the
+# `.fixed` is this file with each `for` a `while`: a comparison inside
+# parentheses, `true` alone, `&&` outside every bracket of the condition, and
+# a list compared with `==`.
+
+function counting()
+    i: i64 @ 0
+
+    while (i < 3)  #~ for_missing_in
+        i @ i + 1
+    print(i)
+
+function forever()
+    while true  #~ for_missing_in
+        break
+    print(1)
+
+function within()
+    a: i64 @ 0
+
+    while (a < 3) && (a > -1)  #~ for_missing_in
+        a @ a + 1
+    print(a)
+
+function equal()
+    ys = [1]
+
+    while [1] == ys  #~ for_missing_in
+        break
+    print(2)
+
+function main()
+    counting()
+    forever()
+    within()
+    equal()

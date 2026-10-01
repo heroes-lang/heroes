@@ -1,0 +1,184 @@
+# Fixed 2026-10-01, defect 139, lane flow. The shapes beside the refusal that
+# must stay legal and build: a `match` statement every arm of which returns,
+# at a function's end, in both branches of an `if`, in an `else if` chain,
+# nested, with block arms, an `if` in an arm, `|` patterns and `_`; inside
+# loops whose arms `break` and `continue`; two in sequence; and the value
+# blocks the old predicate read as jumping, legal now: an `if` and a `match`
+# used as values whose branches hold a `match` statement before their value,
+# and a checked `if` one branch of which returns.
+
+variant Color
+    red
+    blue
+
+variant Shade
+    red
+    green
+    blue
+
+function all_return(c: Color) -> i64
+    match c
+        .red  => return 1
+        .blue => return 2
+
+function block_arms(c: Color) -> i64
+    match c
+        .red =>
+            print(10)
+            return 3
+        .blue =>
+            print(20)
+            return 4
+
+function arm_if_else(c: Color, n: i64) -> i64
+    match c
+        .red =>
+            if n > 0
+                return 5
+            else
+                return 6
+        .blue => return 7
+
+function both_branches(c: Color, b: bool) -> i64
+    if b
+        match c
+            .red  => return 8
+            .blue => return 9
+    else
+        match c
+            .red  => return 10
+            .blue => return 11
+
+function else_if_chain(c: Color, n: i64) -> i64
+    if n > 0
+        match c
+            .red  => return 12
+            .blue => return 13
+    else if n < 0
+        match c
+            .red  => return 14
+            .blue => return 15
+    else
+        return 16
+
+function nested(c: Color, d: Color) -> i64
+    match c
+        .red =>
+            match d
+                .red  => return 17
+                .blue => return 18
+        .blue => return 19
+
+function shades(c: Shade) -> i64
+    match c
+        .red | .green => return 20
+        .blue         => return 21
+
+function on_an_i64(n: i64) -> i64
+    match n
+        0 => return 22
+        _ => return 23
+
+function in_a_loop(c: Color) -> i64
+    n: i64 @ 0
+
+    while n < 10
+        n @ n + 1
+
+        match c
+            .red  => break
+            .blue => continue
+
+    return n
+
+function in_a_for(xs: [i64]) -> i64
+    total: i64 @ 0
+
+    for x in xs
+        match x
+            0 => continue
+            9 => return -1
+            _ => total @ total + x
+
+    return total
+
+function two_in_sequence(c: Color) -> i64
+    match c
+        .red  => print(24)
+        .blue => print(25)
+
+    match c
+        .red  => return 26
+        .blue => return 27
+
+function value_if(b: bool) -> i64
+    x = if b
+        match 1
+            1 => print(28)
+            _ => print(99)
+
+        29
+    else
+        match 2
+            2 => print(30)
+            _ => print(99)
+
+        31
+
+    return x
+
+function value_match(k: i64) -> i64
+    x = match k
+        0 =>
+            match k
+                0 => print(32)
+                _ => print(99)
+
+            33
+        _ =>
+            match k
+                0 => print(99)
+                _ => print(34)
+
+            35
+
+    return x
+
+function checked_if_one_branch_returns(b: bool) -> i64
+    x: i64 = if b
+        return 36
+    else
+        37
+
+    return x
+
+function main()
+    print(all_return(c: .red))
+    print(all_return(c: .blue))
+    print(block_arms(c: .red))
+    print(block_arms(c: .blue))
+    print(arm_if_else(c: .red, n: 1))
+    print(arm_if_else(c: .red, n: 0))
+    print(arm_if_else(c: .blue, n: 0))
+    print(both_branches(c: .blue, b: true))
+    print(both_branches(c: .red, b: false))
+    print(else_if_chain(c: .blue, n: 1))
+    print(else_if_chain(c: .red, n: -1))
+    print(else_if_chain(c: .red, n: 0))
+    print(nested(c: .red, d: .blue))
+    print(nested(c: .blue, d: .red))
+    print(shades(c: .green))
+    print(shades(c: .blue))
+    print(on_an_i64(n: 0))
+    print(on_an_i64(n: 4))
+    print(in_a_loop(c: .red))
+    print(in_a_loop(c: .blue))
+    print(in_a_for(xs: [1, 0, 2]))
+    print(in_a_for(xs: [1, 9, 2]))
+    print(two_in_sequence(c: .blue))
+    print(value_if(b: true))
+    print(value_if(b: false))
+    print(value_match(k: 0))
+    print(value_match(k: 5))
+    print(checked_if_one_branch_returns(b: true))
+    print(checked_if_one_branch_returns(b: false))

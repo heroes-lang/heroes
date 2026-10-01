@@ -1,0 +1,6 @@
+error[ffi_unknown_tag]: `struct opaque_s` has no fields in `fixedbugs-145-types.h` — clang read the header and cannot lay the type out
+  at tests/golden/unsupported/fixedbugs-145-a-struct-the-header-keeps-opaque-is-a-handle.hero:17:18
+     |
+  17 |     record O tag opaque_s  #~ ffi_unknown_tag
+     |                  ^^^^^^^^
+  note: the header declares `struct opaque_s` and keeps its fields to itself, as `typedef struct sqlite3 sqlite3;` does: a program never holds one by value, only C's pointer to it, which is a HANDLE. Drop the field block and the record becomes that pointer, `record O tag opaque_s` (§ 13)

@@ -1,0 +1,88 @@
+# Fixed 2026-10-01, defect 142, lane flow. Symptom: `missing_return`'s note
+# said *every path must end in a `return`, or the last statement must be the
+# value*, and a function whose last line is the bare value then costs
+# `missing_return` again and `discarded_value`: the note sent the author to a
+# form the checker refuses. Cause: a sentence from a design in which a body's
+# last line was its value, carried through the port from the Rust compiler.
+# Now the notes name only what the language accepts, and this file holds every
+# repair they name, each in the shape it repairs, built and run.
+
+# An `if` with no `else`: the path on which the condition is false reaches
+# the end, so it ends in a `return` of its own.
+function sign(n: i64) -> i64
+    if n > 0
+        return 1
+    return 0
+
+# Or the `if` takes an `else`, and every branch returns.
+function sign_both(n: i64) -> i64
+    if n > 0
+        return 1
+    else
+        return 0
+
+# A loop counts as finishing, whatever its condition: the `return` comes
+# after it.
+function first_at_least(xs: [i64], least: i64) -> i64
+    for x in xs
+        if x >= least
+            return x
+
+    return -1
+
+function count_down(n: i64) -> i64
+    i: i64 @ n
+
+    while i > 0
+        if i == 3
+            return i
+        i @ i - 1
+
+    return 0
+
+function until_found(n: i64) -> i64
+    i: i64 @ 0
+
+    while true
+        if i * i >= n
+            return i
+        i @ i + 1
+
+    return 0
+
+# A value on the last line is not returned: `return` is written before it.
+function double(n: i64) -> i64
+    return n * 2
+
+# `exit(code:)` ends the program, and the path through it still ends in a
+# `return`.
+function checked(n: i64) -> i64
+    if n >= 0
+        return n
+    exit(code: 3)
+    return 0
+
+# A `match` arm that does not return lets a path run out of the `match`, so
+# every arm returns (the clause defect 139's statement half made true).
+variant Color
+    red
+    blue
+
+function shade(c: Color) -> i64
+    match c
+        .red  => return 1
+        .blue => return 2
+
+function main()
+    print(sign(n: 5))
+    print(sign(n: -5))
+    print(sign_both(n: 5))
+    print(sign_both(n: 0))
+    print(first_at_least(xs: [1, 4, 9], least: 3))
+    print(first_at_least(xs: [1], least: 3))
+    print(count_down(n: 5))
+    print(count_down(n: 2))
+    print(until_found(n: 10))
+    print(double(n: 21))
+    print(checked(n: 7))
+    print(shade(c: .blue))

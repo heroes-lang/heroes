@@ -1,0 +1,5 @@
+tests/golden/check/fixedbugs-135-a-for-over-what-is-not-a-condition-takes-no-certain-while.hero:14:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `[` — a loop over a condition is `while`
+tests/golden/check/fixedbugs-135-a-for-over-what-is-not-a-condition-takes-no-certain-while.hero:17:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — a loop over a condition is `while`
+tests/golden/check/fixedbugs-135-a-for-over-what-is-not-a-condition-takes-no-certain-while.hero:20:9: error[for_missing_in]: `for` iterates — `for x in xs`; found a string (`"abc"`) — a loop over a condition is `while`
+tests/golden/check/fixedbugs-135-a-for-over-what-is-not-a-condition-takes-no-certain-while.hero:23:9: error[for_missing_in]: `for` iterates — `for x in xs`; found a number (`3`) — a loop over a condition is `while`
+tests/golden/check/fixedbugs-135-a-for-over-what-is-not-a-condition-takes-no-certain-while.hero:26:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `{` — a loop over a condition is `while`

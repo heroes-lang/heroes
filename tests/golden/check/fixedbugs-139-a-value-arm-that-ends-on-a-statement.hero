@@ -1,0 +1,59 @@
+# Fixed 2026-10-01, defect 139's class, lane flow (the first pass beside the
+# item). Symptom: in a `match` used as a value, an arm that is one statement
+# and neither jumps nor gives a value, `.blue => assert false` or `.blue => n
+# @ 5`, checked clean, and `build` stopped on clang's *variable is used
+# uninitialized*: on that path the binding took its value from nothing, and
+# clang seeing the read was all that refused it. With every arm such a
+# statement, `no_value` said *every branch jumps*, which none did. Cause: a
+# branch carried divergence as an absent value, which an arm that ended on a
+# statement has too, so the join skipped the one as the other (panel 017 R1:
+# one join routine, divergence carried as data). Now `join.Branch` carries
+# `jumps`: an arm that is one statement is told as a block's last line is, and
+# *every branch jumps* is said only where every branch did.
+
+variant Color
+    red
+    blue
+
+function bound(c: Color) -> i64
+    x = match c
+        .red  => 1
+        .blue => assert false  #~ no_value
+
+    return x
+
+function typed(c: Color) -> i64
+    x: i64 = match c
+        .red  => 1
+        .blue => assert false  #~ no_value
+
+    return x
+
+function returned(c: Color) -> i64
+    return match c
+        .red  => 1
+        .blue => assert false  #~ no_value
+
+function mutated(c: Color) -> i64
+    n: i64 @ 0
+
+    x = match c
+        .red  => 1
+        .blue => n @ 5  #~ no_value
+
+    return x + n
+
+# Two arms, two statements, two messages, and no *every branch jumps*.
+function every_arm_a_statement(c: Color) -> i64
+    x = match c
+        .red  => assert false  #~ no_value
+        .blue => assert true  #~ no_value
+
+    return x
+
+function main()
+    print(bound(c: .red))
+    print(typed(c: .red))
+    print(returned(c: .red))
+    print(mutated(c: .red))
+    print(every_arm_a_statement(c: .red))

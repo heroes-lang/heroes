@@ -22,7 +22,6 @@
 
 use token
 use ast
-use bytes
 use source
 use diag
 use resolved
@@ -33,6 +32,7 @@ use check/ordering
 use check/lend_types
 use check/nested
 use value_errors
+use check/unwrap_removal
 
 ## What a built-in expects of an argument
 
@@ -392,25 +392,20 @@ function fallible_builtin(@c: state.Checker, s: source.Source, decls: [ast.Decl]
 # .must() or .default(v) on a value that cannot fail, with the repair
 # attached (panel 043's load-bearing condition, worth more now than when
 # it was written: every such call is a §1.2 round-trip left as a bare
-# diagnostic, or a machine-applied repair instead).
-#
-# The replacement is computed FROM THE CHARACTERS IN HAND — the call's
-# own source text, minus a trailing `.name(…)` — never from a premise
-# about what the caller looks like (CLAUDE.md §11). Where the text does
-# not end that way, UFCS was not used and nothing certain is offered.
+# diagnostic, or a machine-applied repair instead). The repair's text and
+# how sure it is are `check/unwrap_removal`'s: the call's receiver, read from
+# its own tokens, certain only where the removal takes nothing with it.
 function unwrapping_nothing(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, got: i64, span: token.Span) -> i64
     shown = state.show(c, s, decls, got)
     d: diag.Diagnostic @ value_errors.bad_operand(op: name, allowed: "a fallible value", got: shown, span: span)
     d.notes @ d.notes.push(
         "`" + shown + "` cannot fail, so there is no error case to handle — this is the shape `to_str` and `to_f64` hand back, because neither of those can fail either"
     )
-    text = source.span_text(s, span)
-    suffix = "." + name + "("
-    at = bytes.rfind(text: text, needle: suffix)
+    cut = unwrap_removal.removal(text: source.span_text(s, span), name: name)
 
-    if !at.is_err() && text.len() > 0 && text[text.len() - 1] == ')'
+    if !cut.is_err()
         d.fixes @ d.fixes.push(
-            diag.Fix(title: "remove the `." + name + "(…)`", replacement: text.slice(from: 0, to: at.must()), span: span, certainty: .certain)
+            diag.Fix(title: "remove the `." + name + "(…)`", replacement: cut.must().receiver, span: span, certainty: cut.must().certainty)
         )
     state.push_diagnostic(@c, d)
     return state.error_ty_of(c)
@@ -521,9 +516,10 @@ test "must unwraps, and on a sure value offers the certain removal"
     assert !builtin_call(@c, s, d, name: "default", given: mixed, span: token.Span(start: 0, end: 8)).is_err()
     assert c.out.diagnostics[1].message == "expected `i64`, found `str`"
 
-test "the removal is found by its bytes, past characters above ASCII in the call"
+test "the removal is found past characters above ASCII in the call"
     # `5.default("é")` on a value that cannot fail aborted `check` here: the
-    # search for `.default(` sliced its way back through `é`.
+    # search for `.default(` sliced its way back through `é`. The tokens that
+    # replaced the search (defect 135's C9) are held to it too.
     c: state.Checker @ fresh()
     s = plain_source("5.default(\"é€😀\")\n")
     d: [ast.Decl] = []

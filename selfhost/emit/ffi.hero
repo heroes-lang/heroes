@@ -28,6 +28,7 @@ use emit/ffi_call
 use emit/ffi_record
 use emit/ffi_field
 use emit/ffi_tag
+use emit/ffi_incomplete
 use emit/ffi_build
 use emit/ffi_narrowed
 use emit/ffi_mutable
@@ -158,10 +159,18 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !m_tag.is_err()
             found @ ffi_lookup.add_once(found, d: m_tag.must())
-        u_tag = ffi_tag.unknown_tag(s, decls, line: line)
+
+        # The record clang cannot lay out reads the notes beside its line,
+        # which say whether the header declares the struct or C made it up
+        # (defect 145), so it is handed the whole of clang's stderr.
+        u_tag = ffi_incomplete.unknown_tag(s, decls, line: line, stderr: stderr)
 
         if !u_tag.is_err()
             found @ ffi_lookup.add_once(found, d: u_tag.must())
+        u_typedef = ffi_incomplete.incomplete_typedef(s, decls, line: line)
+
+        if !u_typedef.is_err()
+            found @ ffi_lookup.add_once(found, d: u_typedef.must())
         tag_u = ffi_tag.tag_is_a_union(s, decls, line: line)
 
         if !tag_u.is_err()

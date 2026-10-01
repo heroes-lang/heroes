@@ -1,0 +1,9 @@
+# Fixed 2026-10-01 by lane 135c (defect 141, a shape beside it). Symptom:
+# the file's last line is a remark with no newline after it, and on the
+# compiler of `9d1c209d` `check --apply` handed the file back with one, the
+# loader's closer and the printer's. The `.fixed` ends as this file does.
+
+fn main()  #~ reserved_word
+    print(1)
+
+# the remark that ends the file, and no newline after it

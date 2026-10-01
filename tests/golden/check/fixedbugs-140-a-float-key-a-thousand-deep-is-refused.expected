@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-140-a-float-key-a-thousand-deep-is-refused.hero:3010:9: error[float_map_key]: `R999` cannot be a map key, because `R0.v` is a float
