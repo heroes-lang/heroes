@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 14**
+**OPEN: 15**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -794,5 +794,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     time that grows with its square (twice the heads, 4.0 times the time,
     measured); at 30,000 heads that square gives about five minutes, an
     inference, unrun.
+
+- [ ] **147 — spec § 8's `Inline` production refuses one-statement arms the design allows and the compiler builds** | `Inline = ( Expression | "return" [ Expression ] | "break" | "continue" | "assert" Expression ) NEWLINE` leaves out a mutation (`.blue => n @ 5`) and a `while` (`.red => while n < 3` over its body), and both check, build and run on the trunk, where design.md §4.7 says *an arm's body is one statement, inline, or an indented block* (panel 014) | `spec/heroes-spec.md:241-243` · design.md §4.7 (`:1230-1235`) · `selfhost/parse/arm_line.hero`
+
+    **Origin:** lane flow's first pass, 2026-10-01
+    (`scratchpad/lane-flow/p1/a54-statement-arm-mutation.hero`,
+    `a76-inline-while-arm.hero`); built and run by the coordinator at 12:35
+    on 2026-10-01 on the trunk at `e252fda4` (`scratchpad/p185/inline/`),
+    printing 5 and 3.
+
+    **Why it is a defect.** The spec is the language as a reader gets it,
+    and here it refuses programs the language accepts: a reader of one is
+    told by the spec that it cannot compile, and a model writing from the
+    spec never learns the form. Which side moves, the production or the
+    parser, is a change to the language, so the repair is a sitting's, with
+    defect 143 and the value-block question in `docs/work/DECIDE.md`.
 
 *******************************************************************************
