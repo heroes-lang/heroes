@@ -108,6 +108,22 @@ function no_value(what: str, span: token.Span) -> diag.Diagnostic
         span: span
     )
 
+# A constant whose body jumps before it gives a value (§4.2: a constant's
+# body IS its value, its last statement produces it). `return 5` there is a
+# function's habit, and the repair is the value alone. Told once, at the
+# body, and only for a body that jumps: one that ends on a statement was told
+# at its block by `branch_without_value`, and until 2026-10-01 it was told
+# again here, *this `i64` produces no value — every branch jumps*, which no
+# branch had (defect 139's class, an absent value read as a jump).
+function constant_without_value(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "no_value",
+        message: "constant `" + name + "` produces no value — its body jumps before it gives one, and a constant's value is its body's last line",
+        span: span
+    )
+    d.notes @ d.notes.push("a constant has no `return`: write the value itself as the body's last line")
+    return d
+
 # A branch that falls off its end without a value. Distinct from a
 # diverging branch, and the distinction is the point: a jump CANNOT
 # produce a value, a statement simply did not.
@@ -200,6 +216,12 @@ test "the two empty-handed branches stay two messages under one code"
     assert jumps.code == "no_value" && fell.code == "no_value"
     assert jumps.message == "this `match` produces no value — every branch jumps, so there is nothing to bind"
     assert fell.message == "this branch ends on a statement, so it produces no value — its last line has to be the value"
+
+    # A constant's body that jumps is the third, and names the constant.
+    left = constant_without_value(name: "MAX", span: span)
+    assert left.code == "no_value"
+    assert left.message == "constant `MAX` produces no value — its body jumps before it gives one, and a constant's value is its body's last line"
+    assert left.notes.len() == 1
 
 test "missing_return points at the promise and offers no fix"
     d = missing_return(name: "dist2", want: "i64", span: token.Span(start: 30, end: 33))
