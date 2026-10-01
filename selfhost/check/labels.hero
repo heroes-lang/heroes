@@ -22,6 +22,7 @@
 # and marker, that no label of the call has taken.
 
 use token
+use diag
 use ast
 use source
 use label_errors
@@ -50,15 +51,9 @@ function check_label(@c: state.Checker, s: source.Source, name: str, position: i
         return
     wanted = params[position]
 
+    others = unwritten(params: params, position: position, taken: taken)
+
     if written.is_err()
-        others: [str] @ []
-        q: i64 @ 0
-
-        for label in params
-            if q != position && label.len() > 0 && !listed(taken, label)
-                others @ others.push(label)
-            q @ q + 1
-
         state.push_diagnostic(
             @c,
             label_errors.needs_label(name: name, expected: wanted, shared: entry.must().shared, others: others, span: value_span, at: value_span.start)
@@ -67,10 +62,31 @@ function check_label(@c: state.Checker, s: source.Source, name: str, position: i
     seen = source.span_text(s, written.must())
 
     if seen != wanted
+        # A label naming another position is a swap, and offers its own
+        # position's name alone; one naming nothing could be any position
+        # no label writes, all of one type here.
+        elsewhere = names_a_position(params, seen)
+        readings: [str] @ others
+
+        if elsewhere
+            readings @ []
         state.push_diagnostic(
             @c,
-            label_errors.wrong_label(holder: name, written: seen, expected: wanted, elsewhere: names_a_position(params, seen), span: written.must())
+            label_errors.wrong_label(holder: name, written: seen, expected: wanted, elsewhere: elsewhere, doubled: listed(taken, wanted), others: readings, span: written.must())
         )
+
+# The labelled positions of a built-in other than `position` that no label of
+# the call writes: what else its argument could be.
+function unwritten(params: [str], position: i64, taken: [str]) -> [str]
+    others: [str] @ []
+    q: i64 @ 0
+
+    for label in params
+        if q != position && label.len() > 0 && !listed(taken, label)
+            others @ others.push(label)
+        q @ q + 1
+
+    return others
 
 # Whether the label the author wrote names another position of this built-in,
 # which is what makes the fix a guess rather than a repair (`label_errors`).
@@ -97,6 +113,112 @@ function listed(xs: [str], x: str) -> bool
             return true
 
     return false
+
+function holds(xs: [i64], x: i64) -> bool
+    for it in xs
+        if it == x
+            return true
+
+    return false
+
+# A label that is not its position's name, at a declared function, a function
+# value or a construction (`check/walk.hero`; a built-in's is `check_label`).
+# What its fix's certainty rests on is a fact about the call in hand: a label
+# naming ANOTHER position is an argument swap wearing labels, and renaming it
+# leaves both values where they are (panel 127's compiler seat measured the
+# program printing the other answer); one naming nothing is renamed by its
+# position only where nothing else could stand there (`other_labels`).
+# `every` is each position's name and `open` the same with "" where only its
+# own argument can stand (`open_names`). Asked once the argument is checked,
+# because what else a label naming nothing could be asks its type.
+function misnamed(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, label: token.Span, every: [str], open: [str], types: [i64], at: i64, from: i64, value: i64, taken: [str]) -> diag.Diagnostic
+    written = source.span_text(s, label)
+    expected = every[at]
+    elsewhere = listed(every, written)
+    others: [str] @ []
+
+    if !elsewhere
+        others @ other_labels(c, a, decls, names: open, types: types, at: at, from: from, value: value, taken: taken)
+    return label_errors.wrong_label(
+        holder: holder,
+        written: written,
+        expected: expected,
+        elsewhere: elsewhere,
+        doubled: listed(taken, expected),
+        others: others,
+        span: label
+    )
+
+# What else a label that names no position could be (defect 135, C3): a
+# position past the receiver (`from`) with a name, that no label of the call
+# writes, of the type this position has or of one the argument can take. With
+# none, the position the label stands at is all the argument can be, and its
+# rename is certain: `Size(height: 640, widht: 480)`. With one,
+# `Size(widht: 640, heigth: 480)` may be the two names swapped as much as
+# misspelt, and renaming by position binds 640 to `height` in a program that
+# checks clean. The position's own type counts as well as the argument's,
+# because a type parameter's position takes what the argument's type does
+# not name.
+function other_labels(c: state.Checker, a: ast.Ast, decls: [ast.Decl], names: [str], types: [i64], at: i64, from: i64, value: i64, taken: [str]) -> [str]
+    out: [str] @ []
+    q: i64 @ from
+
+    while q < names.len() && q < types.len()
+        fits = types[q] == types[at] || could_take(c, a, decls, value: value, ty: types[q])
+
+        if q != at && names[q].len() > 0 && !listed(taken, names[q]) && fits
+            out @ out.push(names[q])
+        q @ q + 1
+
+    return out
+
+# The same at a declared function, whose names are its parameters'.
+function misnamed_parameter(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, label: token.Span, declared: [ast.Param], types: [i64], ambiguous: [i64], given: [ast.Arg], at: i64, from: i64, value: i64, taken: [str]) -> diag.Diagnostic
+    return misnamed(
+        c,
+        a,
+        s,
+        decls,
+        holder: holder,
+        label: label,
+        every: parameter_names(s, declared),
+        open: open_names(s, declared, ambiguous: ambiguous, given: given, from: from),
+        types: types,
+        at: at,
+        from: from,
+        value: value,
+        taken: taken
+    )
+
+# A declared function's parameter names, and the same with "" where a label
+# could not mean that position: a parameter called `_`, and a position whose
+# type no other shares holding an unlabelled argument, which stands there by
+# §4.9's rule and not by the order written.
+function parameter_names(s: source.Source, declared: [ast.Param]) -> [str]
+    out: [str] @ []
+
+    for p in declared
+        out @ out.push(source.span_text(s, p.name))
+
+    return out
+
+function open_names(s: source.Source, declared: [ast.Param], ambiguous: [i64], given: [ast.Arg], from: i64) -> [str]
+    out: [str] @ []
+    q: i64 @ 0
+
+    for p in declared
+        name: str @ source.span_text(s, p.name)
+        argument = q - from
+
+        if name == "_"
+            name @ ""
+
+        if argument >= 0 && argument < given.len() && given[argument].name.is_err() && !holds(ambiguous, q)
+            name @ ""
+        out @ out.push(name)
+        q @ q + 1
+
+    return out
 
 # The other parameters an unlabelled argument at position `at` of a declared
 # function could be: among `ambiguous`, the positions whose type another
@@ -239,3 +361,45 @@ test "the receiver's position is exempt and the right label passes"
     # And a built-in with no same-typed pair says nothing at any position.
     check_label(@c, s, name: "join", position: 1, written: none, value_span: token.Span(start: 0, end: 2), taken: taken)
     assert c.out.diagnostics.len() == 0
+
+# Defect 135, C3: `fail(msg: "m", cdoe: "e")`. `cdoe` names nothing, and its
+# position's name, `msg`, is written by the first label, while `code` is
+# written by none: the order written is one reading of two, and neither
+# rename is applied. With `msg` in its place, `code` is all `cdoe` can be.
+test "a built-in's label naming nothing is certain only where nothing else could stand there"
+    r = resolved.new_resolved()
+    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    s = source.new_source(name: "t.hero", text: "fail(msg: \"m\", cdoe: \"e\")\n")
+    at: token.Span? @ ok(token.Span(start: 15, end: 19))
+    swapped: [str] = ["msg", "cdoe"]
+    check_label(
+        @c,
+        s,
+        name: "fail",
+        position: 1,
+        written: at,
+        value_span: token.Span(start: 21, end: 24),
+        taken: swapped
+    )
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].message == "`fail` has nothing called `cdoe` at this position — it is `msg` in the order written, or `code` in the other order"
+    assert c.out.diagnostics[0].fixes.len() == 2
+    assert c.out.diagnostics[0].fixes[0].certainty == .guess
+    assert c.out.diagnostics[0].fixes[1].replacement == "code"
+    placed: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    t = source.new_source(name: "t.hero", text: "fail(cdoe: \"e\", msg: \"m\")\n")
+    first: token.Span? @ ok(token.Span(start: 5, end: 9))
+    in_place: [str] = ["cdoe", "msg"]
+    check_label(
+        @placed,
+        t,
+        name: "fail",
+        position: 0,
+        written: first,
+        value_span: token.Span(start: 11, end: 14),
+        taken: in_place
+    )
+    assert placed.out.diagnostics[0].fixes.len() == 1
+    assert placed.out.diagnostics[0].fixes[0].replacement == "code"
+    assert placed.out.diagnostics[0].fixes[0].certainty == .certain
+    assert unwritten(params: ["code", "msg"], position: 0, taken: in_place).len() == 0

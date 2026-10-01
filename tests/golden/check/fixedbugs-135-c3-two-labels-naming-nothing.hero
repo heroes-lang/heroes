@@ -1,0 +1,64 @@
+# Fixed 2026-10-02, defect 135's C3, lane checker, the shape beside it and
+# worse than it. Symptom: two labels that name no position, written in the
+# order of each other's fields, were each renamed by its position with
+# certainty, and `R(barvo: 11, aplha: 22)` over fields `alpha, bravo` was
+# applied into `R(alpha: 11, bravo: 22)`, which checks clean and binds 11 to
+# `alpha` where the author's labels gave it to `bravo` (the lane's first pass:
+# 32 such programs in 690, over every kind of call). Cause: the position
+# decided alone, and a second label naming nothing leaves its field unnamed,
+# so the first could be either. Now each is a guess between its position's
+# name and the field the call leaves unnamed, and `--apply` leaves the call as
+# written. The order written is no evidence either when it is the declared
+# one: `Rgb(r: 1, gg: 2, bb: 3)` may as well be `g` and `b` swapped, and pays
+# a guess for it.
+
+record R
+    alpha: i64
+    bravo: i64
+
+record Rgb
+    r: i64
+    g: i64
+    b: i64
+
+variant Shape
+    box
+        alpha: i64
+        bravo: i64
+    dot
+
+function f(alpha: i64, bravo: i64) -> i64
+    return alpha * 10 + bravo
+
+function g(n: f64, alpha: i64, bravo: i64) -> f64
+    return n + to_f64(alpha * 10 + bravo)
+
+function k(base: i64, alpha: i64, bravo: i64) -> i64
+    return base + alpha * 10 + bravo
+
+function failing() -> i64?
+    return fail(mgs: "m", cdoe: "e")  #~ wrong_label wrong_label
+
+function main()
+    v = R(barvo: 11, aplha: 22)  #~ wrong_label wrong_label
+    shape: Shape = .box(barvo: 11, aplha: 22)  #~ wrong_label wrong_label
+    print(f(barvo: 11, aplha: 22))  #~ wrong_label wrong_label
+    x = 7
+    print(x.k(barvo: 11, aplha: 22))  #~ wrong_label wrong_label
+    h = g
+    print(h(1.5, barvo: 11, aplha: 22))  #~ wrong_label wrong_label
+    xs = [1, 2, 3, 4]
+    print(slice(xs, ot: 3, form: 1).len())  #~ wrong_label wrong_label
+    w = R(
+        # the second field first
+        barvo: 11,  #~ wrong_label
+        aplha: 22  #~ wrong_label
+    )
+    nested = [R(barvo: 1, aplha: 2), R(alpha: 3, bravo: 4)]  #~ wrong_label wrong_label
+    c = Rgb(r: 1, gg: 2, bb: 3)  #~ wrong_label wrong_label
+    print(v.alpha + w.alpha + nested[0].alpha + c.g)
+    print(failing().is_err())
+
+    match shape
+        .box s => print(s.alpha)
+        .dot   => print(0)
