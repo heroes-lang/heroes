@@ -62,3 +62,11 @@ function h(a: i64, @b: i64) -> i64
 # `b_if_col0` no longer says `expected_expression` at the end of the block
 # before its `if`; the other eleven messages stand as recorded, R3's choice
 # still the author's.
+
+# Read again 2026-10-02, lane recovery-b6 (panel 183 R3, the author's route
+# (b) of 2026-10-01): the four openers above are no longer told *never
+# closed*, which was false of a bracket closed below. Each is named still
+# open at the line and the word where the rule ended its reach, `if` at 15
+# and 36, `match` at 24, the name `print` at 53, a sentence true whether the
+# closer below is the author's or a stray; the eleven messages keep their
+# places, and the count is the author's known cost still.

@@ -94,12 +94,13 @@ function line_start(@l: state.LexState, text: str)
     # are named there, and the line is laid out as what it begins.
     if l.open_brackets.len() > 0
         margin = l.level * 4
+        word = next_line.ends_a_reach(text, at: l.pos, spaces: spaces, margin: margin)
 
-        if !next_line.ends_a_reach(text, at: l.pos, spaces: spaces, margin: margin) && !a_name_after_a_kept_end(l, text, spaces: spaces, margin: margin)
+        if !word && !a_name_after_a_kept_end(l, text, spaces: spaces, margin: margin)
             if habit
                 indent_runs.quiet(@l, text, m, line: ws_start, blank: blank_at(text, at: l.pos))
             return
-        close_brackets(@l, text)
+        end_the_reach(@l, text, name: !word)
         state.push_offset(@l.closes, at: l.pos)
 
         # The statement they were opened in is over at the line end above,
@@ -230,15 +231,33 @@ function a_name_after_a_kept_end(l: state.LexState, text: str, spaces: i64, marg
 
 # Every opener still open is named never closed, and the stack emptied: at the
 # file's end, where without it one missing `)` would swallow the rest of the
-# file's layout in silence (panel 007), and at a line whose first word no
-# bracket holds (`line_start`), a declaration's at column 0 since defect 130's
-# class (2026-09-30) and a statement's at its statement's margin since panel
-# 183 R1, where a missing closer took the lines below inside its bracket and a
+# file's layout in silence (panel 007), and at the `}` that closes the body in
+# braces the openers stand in (`scan.finish`). At a line whose first word no
+# bracket holds, a declaration's at column 0 since defect 130's class
+# (2026-09-30) and a statement's at its statement's margin since panel 183
+# R1, where a missing closer took the lines below inside its bracket and a
 # stray closer further down closed it, the opener never named and the lines'
-# own mistakes never told.
+# own mistakes never told, they are named by `end_the_reach`.
 function close_brackets(@l: state.LexState, text: str)
     for span in l.open_brackets
         state.push_diagnostic(@l.diagnostics, closers.never_closed(text, span))
+
+    none: [token.Span] = []
+    l.open_brackets @ none
+
+# The same at the line under `l.pos`, whose first word ended the reach of
+# every opener still open (`line_start`, panel 183 R1, or R2 where `name`):
+# each is named still open there, at that line and that word, since a
+# closer below may be the one the author wrote for it (R3's route (b)).
+function end_the_reach(@l: state.LexState, text: str, name: bool)
+    line = state.line_of(@l, text, at: l.pos)
+    word = next_line.word_at(text, at: l.pos)
+
+    for span in l.open_brackets
+        state.push_diagnostic(
+            @l.diagnostics,
+            closers.still_open(text: text, span: span, line: line, word: word, name: name)
+        )
 
     none: [token.Span] = []
     l.open_brackets @ none

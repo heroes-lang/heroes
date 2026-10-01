@@ -142,11 +142,31 @@ function opener_of(kind: token.TokenKind) -> u8
         return '['
     return '{'
 
-# The report of the opener at `span`, never closed.
+# The report of the opener at `span`, never closed: at the file's end, and
+# at a closer that closes what the opener stands in (`close_to_its_kind`, a
+# body's `}`), past which no closer can be its own.
 function never_closed(text: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "unclosed_bracket",
         message: "`" + text.slice(from: span.start, to: span.end) + "` opened here is never closed",
+        span: span
+    )
+
+# The report of the opener at `span`, still open at the line `line`, whose
+# first word `word` ended its reach (`layout.end_the_reach`): a word no
+# bracket can hold there (panel 183 R1), or, where `name`, a name after a
+# line that kept its end inside a `(` (R2). Not *never closed*: nothing
+# closed what the opener stands in, and a closer further down may be the one
+# the author wrote for it, a statement inside the bracket (R3, the author's
+# route (b), 2026-10-01).
+function still_open(text: str, span: token.Span, line: i64, word: str, name: bool) -> diag.Diagnostic
+    why: str @ "`" + word + "` begins a line no bracket can hold"
+
+    if name
+        why @ "the name `" + word + "` begins a line after one that ended without a `,`"
+    return diag.new_diagnostic(
+        code: "unclosed_bracket",
+        message: "`" + text.slice(from: span.start, to: span.end) + "` opened here is still open at line " + line.to_str() + ", where " + why,
         span: span
     )
 

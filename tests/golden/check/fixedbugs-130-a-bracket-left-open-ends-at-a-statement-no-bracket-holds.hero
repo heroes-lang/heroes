@@ -61,3 +61,8 @@ function at_an_else(n: i64)
 
 function main()
     task(1)
+
+# Read again 2026-10-02, lane recovery-b6 (panel 183 R3, route (b)): the
+# lexer no longer names the opener *never closed* there, a sentence false of
+# a bracket the author closes below, but still open at that line and at the
+# word that ended its reach; the messages keep their places.

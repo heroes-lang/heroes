@@ -313,6 +313,26 @@ test "a declaration at column 0 names the brackets still open, and is laid out"
     assert indented.closes.len() == 0
     assert indented.diagnostics[0].code == "unclosed_bracket"
 
+# Panel 183 R3, the author's route (b), 2026-10-02: where the rule ends the
+# reach, the opener is named still open at the line and the word that ended
+# it, lines counted as the reader's editor counts them, a carriage return
+# before each newline included; at the file's end it is never closed.
+test "an opener the rule ended is named at the line and the word that ended it"
+    crlf = lex_one("function f()\r\n    x = g(1,\r\n\r\n    if c\r\n        y = 2\r\n")
+    assert crlf.diagnostics.len() == 1
+    assert crlf.diagnostics[0].message == "`(` opened here is still open at line 4, where `if` begins a line no bracket can hold"
+    named = lex_one("x = g(1, 2\ny = 3\n")
+    assert named.diagnostics[0].message == "`(` opened here is still open at line 2, where the name `y` begins a line after one that ended without a `,`"
+    ended = lex_one("x = g(1, 2\n")
+    assert ended.diagnostics[0].message == "`(` opened here is never closed"
+
+    # Asked of an offset before the last one asked, the count starts again.
+    l: state.LexState @ state.new_state()
+    text = "a\nb\nc\n"
+    assert state.line_of(@l, text, at: 4) == 3
+    assert state.line_of(@l, text, at: 2) == 2
+    assert state.line_of(@l, text, at: 5) == 3
+
 # Lane recovery-b2, U3: a literal that never closed took the closers on the
 # rest of its line, which pop what they close, and ends its line at any
 # depth; the classic `'\'` ends at its third byte, the rest of the line lexed,
