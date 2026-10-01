@@ -277,7 +277,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             for branch in branches.branches
                 condition(@c, a, r, s, decls, branch.cond)
                 got = block(@c, a, r, s, decls, body: branch.block, want: .unknown)
-                collected @ collected.push(join.Branch(value: got.value, span: branch.block.span))
+                collected @ collected.push(join.Branch(value: got.value, jumps: got.jumps, span: branch.block.span))
 
             if branches.otherwise.is_err()
                 # Without an else the value is missing whenever the
@@ -285,7 +285,9 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 state.push_diagnostic(@c, flow_errors.if_without_else(span))
                 return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
             got = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .unknown)
-            collected @ collected.push(join.Branch(value: got.value, span: branches.otherwise.must().span))
+            collected @ collected.push(
+                join.Branch(value: got.value, jumps: got.jumps, span: branches.otherwise.must().span)
+            )
             return state.record_expr(
                 @c,
                 at: id,
@@ -563,14 +565,10 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 want: .value(ty: expected),
                 span: span
             )
-            produced: bool @ false
 
-            for b in branches
-                if !b.value.is_err()
-                    produced @ true
-
-            if branches.len() > 0 && !produced
-                state.push_diagnostic(@c, flow_errors.no_value("match", span))
+            # Every arm jumped, which is not *no arm produced a value*: an
+            # arm that ended on a statement was told at the arm (defect 139).
+            join.refuse_leaving(@c, leaves: join.every_branch_jumps(branches), what: "match", span: span)
             _ = state.record_expr(@c, at: id, ty: expected)
             return
         # A UFCS call takes the same expectation as a call (panel 105, the
@@ -986,7 +984,10 @@ function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, 
 ## Arms and patterns — the rule match exists for
 
 # Every arm of a match: what its patterns bind, whether the set is
-# exhaustive, and what value it produces.
+# exhaustive, what value it produces, and whether control leaves through
+# it. The last two are separate answers (`join.Branch`): an arm with no
+# value either jumped or ended on a statement, and only the first may
+# stand in a `match` used as a value.
 function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], match_arms: [ast.Arm], subject: i64, want: Want, span: token.Span) -> [join.Branch]
     branches: [join.Branch] @ []
     covered: [i64] @ []
@@ -1018,23 +1019,35 @@ function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 .error     => continue
 
         value: i64? @ fail(code: "none", msg: "nothing produced yet")
+        jumps: bool @ false
 
         match arm.body
             .one_stmt one =>
+                # A jump's outcome carries no value already.
                 got = statement(@c, a, r, s, decls, id: one.at, want: want)
-
-                if got.jumps
-                    value @ fail(code: "jumps", msg: "a jumping arm has no value")
-                else
-                    value @ got.value
+                jumps @ got.jumps
+                value @ got.value
+                refuse_statement_arm(@c, a, want: want, got: got, at: one.at)
             .block bb =>
                 got = block(@c, a, r, s, decls, body: bb.block, want: want)
+                jumps @ got.jumps
                 value @ got.value
 
-        branches @ branches.push(join.Branch(value: value, span: arm.span))
+        branches @ branches.push(join.Branch(value: value, jumps: jumps, span: arm.span))
 
     reach.exhaustive(@c, s, decls, subject: subject, covered: covered, wildcard_seen: wildcard_seen, span: span)
     return branches
+
+# An arm that is one statement answers the value rule as a block's last line
+# does in `block`: `.b => assert false` or `.b => n @ 5`, in a `match` used
+# as a value, neither jumps nor gives a value, and the join, which skips what
+# has none, let the binding take its value from nothing (defect 139). A
+# function of its own because `arms` is on the path every nested `match`
+# recurses through, and the C this compiles to keeps every temporary of a
+# function in its frame: the diagnostic built here would widen each level.
+function refuse_statement_arm(@c: state.Checker, a: ast.Ast, want: Want, got: Outcome, at: i64)
+    if want != .nothing && !got.jumps && got.value.is_err()
+        state.push_diagnostic(@c, flow_errors.branch_without_value(a.stmts[at].span))
 
 # A literal arm, checked against the subject's type, which is the type its
 # context asks for (spec § 2), the sign folded into the literal as a
