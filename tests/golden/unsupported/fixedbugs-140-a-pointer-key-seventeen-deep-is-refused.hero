@@ -1,0 +1,66 @@
+# Fixed 2026-10-01, defect 140, lane emit: the walks that stopped at a depth.
+# Symptom: two walks over a record type were bounded at `depth > 16`, and
+# past the bound they said nothing: a map key holding a `ptr` seventeen
+# records down was built, and inserting one aborted at run with *entered
+# unreachable code — this is a compiler bug*; `==` over values holding a
+# union sixteen records down was built and read the union's bytes under two
+# types.
+# Cause: the bounds cited the checker's partial walk as their model, and
+# that walk had been made total by defect 046 on 2026-09-16. Both are total
+# and flat now, so the refusal holds at every depth.
+# This case: the pointer, at the first depth that was built.
+
+record R0
+    p: ptr
+
+record R1
+    inner: R0
+
+record R2
+    inner: R1
+
+record R3
+    inner: R2
+
+record R4
+    inner: R3
+
+record R5
+    inner: R4
+
+record R6
+    inner: R5
+
+record R7
+    inner: R6
+
+record R8
+    inner: R7
+
+record R9
+    inner: R8
+
+record R10
+    inner: R9
+
+record R11
+    inner: R10
+
+record R12
+    inner: R11
+
+record R13
+    inner: R12
+
+record R14
+    inner: R13
+
+record R15
+    inner: R14
+
+record R16
+    inner: R15
+
+function main()
+    m: {R16: i64} = {}  #~ pointer_element
+    print(len(m))

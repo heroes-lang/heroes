@@ -1,0 +1,22 @@
+# Fixed 2026-10-01, defect 145, lane emit.
+# Symptom: a group record with fields whose C type clang cannot lay out got
+# one note for every shape, with two repairs, a misspelled tag or a handle,
+# so `record Regex tag regex_t partial` over `typedef struct { ... } regex_t;`
+# was told to become a handle, which checks, builds and aborts at run, and
+# the spelling that works, a record named `regex_t` with no `tag`, was never
+# offered.
+# Cause: the note was written once for every shape, though clang tells them
+# apart: where it first saw `struct T` (the header, or the program's own
+# line), and how the header spells the type where a parameter or a result of
+# it is refused.
+# This shape: a typedef of a TAGGED struct named as the tag. Clang's `aka`
+# names the struct behind it, so the note gives its tag, `tag tagged_s`, or
+# the typedef's own name with no `tag`.
+
+extern "fixedbugs-145-types.h"
+    record T tag tagged_t  #~ ffi_unknown_tag
+        a: i32
+    function use_tagged(@p: T) -> i32  #~ ffi_parameter_type
+
+function main()
+    print(1)

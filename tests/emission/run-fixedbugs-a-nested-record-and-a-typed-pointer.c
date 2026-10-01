@@ -51,11 +51,11 @@ _Static_assert(_Generic(&((Camera2D *)0)->zoom, float *: 1, default: 0) && sizeo
 #line 35 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 __attribute__((unused)) static void hero_ffi_complete_h_fixedbugsanestedrecordandatypedpointer_Texture(void) { Texture v = {0,0,0,0,0}; (void)v; }
 #line 41 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
-__attribute__((unused)) static void hero_ffi_complete_h_fixedbugsanestedrecordandatypedpointer_Font(void) { Font v = {0,0,0,{0},0,0}; (void)v; }
+__attribute__((unused)) static void hero_ffi_complete_h_fixedbugsanestedrecordandatypedpointer_Font(void) { Font v = {0,0,0,{},0,0}; (void)v; }
 #line 48 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 __attribute__((unused)) static void hero_ffi_complete_h_fixedbugsanestedrecordandatypedpointer_Vector2(void) { Vector2 v = {0,0}; (void)v; }
 #line 51 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
-__attribute__((unused)) static void hero_ffi_complete_h_fixedbugsanestedrecordandatypedpointer_Camera2D(void) { Camera2D v = {{0},{0},0,0}; (void)v; }
+__attribute__((unused)) static void hero_ffi_complete_h_fixedbugsanestedrecordandatypedpointer_Camera2D(void) { Camera2D v = {{},{},0,0}; (void)v; }
 #line 60 "fixedbugsanestedrecordandatypedpointer.c"
 #pragma clang diagnostic pop
 
@@ -71,18 +71,18 @@ _Static_assert(__builtin_classify_type(*(Camera2D *)0) != 13, "heroes-ffi-union 
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
-#define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
+#define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
 #define HERO_C_UNSIGNED(c) _Generic((c), unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0)
-#define HERO_RET_I8(c) (HERO_C_INTEGER(c) && !HERO_C_UNSIGNED(c) && sizeof(c) == 1)
-#define HERO_RET_I16(c) (HERO_C_INTEGER(c) && !HERO_C_UNSIGNED(c) && sizeof(c) == 2)
-#define HERO_RET_I32(c) (HERO_C_INTEGER(c) && !HERO_C_UNSIGNED(c) && sizeof(c) == 4)
+#define HERO_RET_I8(c) (HERO_C_INTEGER(c) && (_Generic((c), _Bool:1, default:0) || (!HERO_C_UNSIGNED(c) && sizeof(c) == 1)))
+#define HERO_RET_I16(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 2 : sizeof(c) <= 2))
+#define HERO_RET_I32(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 4 : sizeof(c) <= 4))
 #define HERO_RET_U8(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 1)
-#define HERO_RET_U16(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 2)
-#define HERO_RET_U32(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 4)
-#define HERO_RET_U64(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 8)
+#define HERO_RET_U16(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) <= 2)
+#define HERO_RET_U32(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) <= 4)
+#define HERO_RET_U64(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) <= 8)
 #define HERO_RET_F32(c) _Generic((c), float:1, default:0)
-#define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:1, default:0)
+#define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:(__LDBL_MANT_DIG__ <= __DBL_MANT_DIG__ && __LDBL_MAX_EXP__ <= __DBL_MAX_EXP__ && __LDBL_MIN_EXP__ >= __DBL_MIN_EXP__), default:0)
 #define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)

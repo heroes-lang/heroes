@@ -1,0 +1,44 @@
+_Bool as i8: 1
+_Bool as i16: 1
+_Bool as i32: 1
+_Bool as i64: 1
+_Bool as u8: 1
+_Bool as u16: 1
+_Bool as u32: 1
+_Bool as u64: 1
+_Bool as bool: true
+char as i8: -128
+char as i16: -128
+char as i32: -128
+char as i64: -128
+signed char as i8: -128
+signed char as i16: -128
+signed char as i32: -128
+signed char as i64: -128
+short as i16: -32768
+short as i32: -32768
+short as i64: -32768
+int as i32: -2147483648
+int as i64: -2147483648
+long as i64: -2147483648
+long long as i64: -9223372036854775808
+unsigned char as i16: 255
+unsigned char as i32: 255
+unsigned char as i64: 255
+unsigned char as u8: 255
+unsigned char as u16: 255
+unsigned char as u32: 255
+unsigned char as u64: 255
+unsigned short as i32: 65535
+unsigned short as i64: 65535
+unsigned short as u16: 65535
+unsigned short as u32: 65535
+unsigned short as u64: 65535
+unsigned int as i64: 4294967295
+unsigned int as u32: 4294967295
+unsigned int as u64: 4294967295
+unsigned long as u64: 4294967295
+unsigned long long as u64: 18446744073709551615
+float as f32: 0.5
+float as f64: 0.5
+double as f64: 0.25
