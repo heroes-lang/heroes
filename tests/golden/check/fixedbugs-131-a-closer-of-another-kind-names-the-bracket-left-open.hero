@@ -1,0 +1,44 @@
+# Fixed defect 131's class, 2026-10-01, the recovery batches' C3 (lane
+# recovery-b5). Symptom: a `]` left out inside a call, `run(words: ["a", "b"`
+# over the call's `)`, cost two messages, and the first named the wrong
+# bracket: the call's `(` never closed, lines below, and then
+# `expected_expression` at the `)` among the list's elements (the audit's row
+# 131-42: 35 single missing closers at two messages, 7 at three); `{str:
+# [i64}` named the `{` and said `expected_array_close`. Cause: the lexer's
+# stack let any closer pop the innermost opener, whatever its kind, so the
+# `)` closed the `[` and left the `(` open. Repair: a closer of another kind
+# than the innermost opener, where one of its own kind is open below it,
+# closes that one, and the openers above it are named never closed there
+# (`selfhost/closers.hero`); the parser's pairing reads the same
+# (`parse/unclosed.paired_closer`), so the list ends at the `)` and says
+# nothing more. A closer no open opener shares a kind with closes the
+# innermost as before, and is told by the parser: `print(2]`.
+
+function run(scratch: str, words: [str]) -> i64
+    return words.len()
+
+function first(xs: [i64]) -> i64
+    return xs[0]
+
+function pair(a: i64, b: i64) -> i64
+    return a + b
+
+function a_list_left_open_over_the_call_close()
+    said = run(
+        scratch: "/tmp",
+        words: ["/bin/sh", "-c"  #~ unclosed_bracket
+    )
+    print(said)
+
+function on_one_line()
+    print(pair(a: first(xs: [1, 2), b: 3))  #~ unclosed_bracket
+
+function in_a_map_type()
+    n: {str: [i64} @ {}  #~ unclosed_bracket
+    print(n.len())
+
+function a_closer_of_no_open_kind()
+    print(pair(a: 1, b: 2])  #~ expected_args_close
+
+function main()
+    on_one_line()

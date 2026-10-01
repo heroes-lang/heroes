@@ -13,9 +13,9 @@
 
 function code(m: str) -> [i64]?
     if m == "load"
-        return ok(  #~ unclosed_bracket
-            [1, 2, 3
-        )  #~ expected_expression
+        return ok(
+            [1, 2, 3  #~ unclosed_bracket
+        )
 
     if m == "print"
         x = 1
@@ -48,3 +48,10 @@ function g(n: i64) -> i64
 
 function main()
     print(code("load").must().len())
+
+# Read again 2026-10-01, lane recovery-b5 (the recovery batches' C3,
+# `selfhost/closers.hero`): a closer of another kind than the innermost
+# opener closes the opener of its own kind below it, so the `)` closes `ok(`
+# and the `[` it was the left-out `]` of is the one named never closed, the
+# parser's pairing reading the same; the `)` is no longer where the parser
+# meets the `[`, and the case costs one message where it cost two.

@@ -15,12 +15,15 @@
 #
 # Out of the expression knot for `parse/line_end`'s reason, and a module of its
 # own because the question is the literal's: where a line end separates, what
-# the next line may begin with.
+# the next line may begin with. The separator a literal reads between its
+# elements, `separator`, came here from `grammar_expr` on 2026-10-01 (the
+# recovery batches' C3), the same question asked from the literal's side.
 
 use token
 use diag
 use cursor
 use parse/line_end
+use parse/unclosed
 
 # Whether the line end the parser just crossed may separate a literal's element
 # from what follows (§4.9). Asked only where a line end separates with no `,`,
@@ -185,3 +188,43 @@ function trailing_comma(@c: cursor.Cursor, comma: token.Span)
         diag.Fix(title: "delete the trailing comma", replacement: "", span: comma, certainty: .certain)
     )
     cursor.push_diagnostic(@c.diagnostics, d)
+
+## Between two elements
+
+# The separator between elements of a bracketed literal: a comma on one line, a
+# newline across several (§4.9), and a newline before a comma is one separator
+# with it (panel 180 R1). Returns false when the list is over — either
+# properly, at the closer, or because the separator is missing, which is
+# reported here, or because `list_line.separates` refused the line end, or
+# at a line end in a literal the lexer found `open_ended` (`parse/unclosed`),
+# or past where it named the literal's opener at `open`.
+function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: str, open_ended: bool, open: i64) -> bool
+    # Left where it stands, so nothing below glues to the literal, and the
+    # literal around this one, never closed either, ends at it too.
+    if open_ended && (unclosed.ends_at_the_line(c) || !unclosed.in_reach(c, open: open))
+        return false
+    newline = cursor.at(c, .terminator)
+    cursor.skip_terminators(@c)
+    comma_span = cursor.current_span(c)
+    comma = cursor.eat(@c, .comma)
+    cursor.skip_terminators(@c)
+
+    if cursor.at(c, closer) || cursor.at(c, .eof)
+        if comma
+            trailing_comma(@c, comma_span)
+        return false
+
+    if newline && !comma && !separates(@c, text: text, closer: closer)
+        return false
+
+    if comma || newline
+        return true
+
+    if !cursor.at_reported_error(c) && !line_end.said_here(c)
+        cursor.error(
+            @c,
+            code: "expected_separator",
+            message: "expected `,` or a new line between one " + what + " and the next, found " + cursor.found(c, text),
+            span: cursor.current_span(c)
+        )
+    return false

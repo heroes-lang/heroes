@@ -26,6 +26,8 @@ use next_line
 use backslash
 use indent_runs
 use brace_layout
+use closers
+use lost_quote
 
 ## The carriage return
 
@@ -99,6 +101,12 @@ function line_start(@l: state.LexState, text: str)
             return
         close_brackets(@l, text)
         state.push_offset(@l.closes, at: l.pos)
+
+        # The statement they were opened in is over at the line end above,
+        # one that ended with an opener owing no terminator of its own.
+        if l.owed < 0 && l.tokens.len() > 0 && l.tokens[l.tokens.len() - 1].kind != .terminator
+            at = l.tokens[l.tokens.len() - 1].span.end
+            state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: at, end: at)))
 
     # Layout-neutral lines: empty, or comment-only.
     if l.pos >= text.len()
@@ -230,10 +238,7 @@ function a_name_after_a_kept_end(l: state.LexState, text: str, spaces: i64, marg
 # own mistakes never told.
 function close_brackets(@l: state.LexState, text: str)
     for span in l.open_brackets
-        state.push_diagnostic(
-            @l.diagnostics,
-            diag.new_diagnostic(code: "unclosed_bracket", message: "`" + text.slice(from: span.start, to: span.end) + "` opened here is never closed", span: span)
-        )
+        state.push_diagnostic(@l.diagnostics, closers.never_closed(text, span))
 
     none: [token.Span] = []
     l.open_brackets @ none
@@ -280,6 +285,7 @@ function maybe_terminator(@l: state.LexState, text: str)
     # at depth zero, so the line below is read as its own.
     if l.swallowed
         l.swallowed @ false
+        lost_quote.ended(@l, text)
         state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: l.pos, end: l.pos)))
         return
 

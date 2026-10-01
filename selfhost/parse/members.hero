@@ -85,6 +85,13 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
 
     while reading
         cursor.skip_terminators(@c)
+
+        # Past where the lexer named the `(` never closed, or on a line below
+        # it that opens no parameter, `name: type`, nothing is a parameter:
+        # those lines are its reach's, the body it took in (`parse/unclosed`).
+        if open_ended && (!unclosed.in_reach(c, open: at) || unclosed.a_line_below(c, text, open: at, at: c.pos) && !opens_a_parameter(c))
+            reading @ false
+            continue
         mutable = cursor.eat(@c, .at)
 
         if !cursor.at(c, .ident)
@@ -138,6 +145,12 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
         # whatever its kind, `function f(a: i64]` (`parse/unclosed`).
         unclosed.recover_past_pair(@c, text, open: at)
     return out
+
+# Whether a parameter, `name:` or `@name:`, begins under the cursor.
+function opens_a_parameter(c: cursor.Cursor) -> bool
+    if cursor.at(c, .at)
+        return cursor.peek(c, 1) == .ident && cursor.peek(c, 2) == .colon
+    return cursor.at(c, .ident) && cursor.peek(c, 1) == .colon
 
 ## The words after a type
 

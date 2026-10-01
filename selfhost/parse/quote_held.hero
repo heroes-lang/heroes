@@ -1,0 +1,78 @@
+# The parser's reports a lost quote's line holds, held (design.md §4.17;
+# defect 131's class, the recovery batches' C3, 2026-10-01; the lexer's half
+# is `lost_quote.hero`).
+#
+# On a line that ends inside a literal that never closed, the lexer's
+# `unterminated_string` or `unterminated_char` running to the line's end,
+# every quote past the line's first may pair with the wrong one, and what
+# the parser read there, a word after a string, a call a string took the `)`
+# of, an arm's arrow, is the quote's: `g("a, "b")` cost the literal's report
+# and `expected_end_of_line` at `b`. So a parser report that starts on such a
+# line, at or past its first quote, is held; one before that quote stands, a
+# mistake of its own, and so does every one on a line whose literal ended
+# before it, the classic `'\'` at its third byte. A leaf: it reads the
+# reports and the text.
+#
+# | entry | called by |
+# |---|---|
+# | `held` | `parse.parse_source`, `parse.parse_bounded` |
+
+use token
+use diag
+use lost_quote
+use parse/which_arm
+
+# `said` without the reports a lost quote's line holds past its first quote,
+# the lines `lexed` names a literal never closed on.
+function held(said: which_arm.Said, lexed: [diag.Diagnostic], text: str) -> which_arm.Said
+    lost: [token.Span] @ []
+
+    for d in lexed
+        ends = line_end(text, at: d.span.start)
+
+        if (d.code == "unterminated_string" || d.code == "unterminated_char") && d.span.end == ends
+            line = lost_quote.line_start(text, at: d.span.start)
+            quote = lost_quote.first_quote(text, from: line, to: d.span.start + 1)
+            lost @ lost.push(token.Span(start: quote, end: ends))
+
+    if lost.len() == 0
+        return said
+    return which_arm.Said(normal: kept(said.normal, lost: lost), control: kept(said.control, lost: lost))
+
+function kept(said: [diag.Diagnostic], lost: [token.Span]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+
+    for d in said
+        if !inside(lost, at: d.span.start)
+            out @ out.push(d)
+
+    return out
+
+function inside(spans: [token.Span], at: i64) -> bool
+    for s in spans
+        if at >= s.start && at <= s.end
+            return true
+
+    return false
+
+function line_end(text: str, at: i64) -> i64
+    i: i64 @ at
+
+    while i < text.len() && text[i] != '\n'
+        i @ i + 1
+
+    return i
+
+## Tests
+
+test "a report past a lost quote's first quote on its line is held, and one before it stands"
+    text = "    print(g(\"a, \"b\"))\n    x = 1 2\n"
+    lexed = [diag.new_diagnostic(code: "unterminated_string", message: "m", span: token.Span(start: 18, end: 21))]
+    past = diag.new_diagnostic(code: "expected_end_of_line", message: "m", span: token.Span(start: 17, end: 18))
+    before = diag.new_diagnostic(code: "expected_args_close", message: "m", span: token.Span(start: 4, end: 9))
+    below = diag.new_diagnostic(code: "expected_end_of_line", message: "m", span: token.Span(start: 32, end: 33))
+    said = held(which_arm.Said(normal: [past, before, below], control: [past]), lexed: lexed, text: text)
+    assert said.normal.len() == 2
+    assert said.normal[0].span.start == 4
+    assert said.normal[1].span.start == 32
+    assert said.control.len() == 0

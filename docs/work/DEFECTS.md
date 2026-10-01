@@ -212,6 +212,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     136's record carries the integration). The item stays open for the shapes
     the audit of 2026-09-30 found open (`scratchpad/audit-130-133/`).
 
+    **2026-10-01, lane recovery-b5, a body's braces are laid out by the lexer
+    as their fix leaves them, so the lines in them are judged as without the
+    braces** (ruling 1, the cluster's C2): repaired at `d422815d`, gated by
+    its cases and the compiler's own tests; the net is owed at the batch's
+    close.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
