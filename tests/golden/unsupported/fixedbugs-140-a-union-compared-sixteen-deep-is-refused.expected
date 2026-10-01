@@ -1,0 +1,10 @@
+tests/golden/unsupported/fixedbugs-140-a-union-compared-sixteen-deep-is-refused.hero:14:123: warning: excess elements in union initializer [-Wexcess-initializers]
+   14 | __attribute__((unused)) static void hero_ffi_complete_h_fixedbugs140aunioncomparedsixteendeepisrefused_U(void) { U v = {0,0}; (void)v; }
+      |                                                                                                                           ^
+1 warning generated.
+error[ffi_union_field]: `U` is a `union` in `fixedbugs-140-a-union-compared-sixteen-deep-is-refused.h`, so `i` and `f` are the same bytes — building one or comparing it would answer about whichever was written last
+  at tests/golden/unsupported/fixedbugs-140-a-union-compared-sixteen-deep-is-refused.hero:14:12
+     |
+  14 |     record U  #~ ffi_union_field
+     |            ^
+  note: a `record` over a union may name ONE member, and that binds it soundly: reading through it is correct and construction sets the member it names. Two or more is what has no answer — C keeps the last one written, so `==` and `hash` walk the same bytes twice

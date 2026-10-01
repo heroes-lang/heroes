@@ -123,7 +123,7 @@ function completeness_probes(@w: writer.Writer, c: state.Checked, names: ctype.N
         c_type = ctype.of(names, decl: decl_at)
         probe = extern_field.COMPLETE_PROBE + ctype.satellite(names, decl: decl_at)
 
-        # A nested record's slot is {0}, not 0 (brace elision spends a
+        # A nested record's slot is braced, not 0 (brace elision spends a
         # flat list into the inner struct, and clang then reports a
         # field missing on a record that names ALL of its fields — ten
         # of raylib's thirty-five structs unbindable, with a note
@@ -171,8 +171,21 @@ function completeness_probes(@w: writer.Writer, c: state.Checked, names: ctype.N
                             .array | .map | .fallible | .function_ty                  => aggregate @ aggregate
                             .case_ty | .failure | .generic | .error                   => aggregate @ aggregate
 
+                    # **`{}` and not `{0}` since defect 140 (2026-10-01).**
+                    # `{0}` names the first scalar at the bottom of the
+                    # nested struct, and clang finds it by brace elision one
+                    # struct at a time: a record holding the one before it
+                    # by value a thousand deep made `clang -fsyntax-only`
+                    # die of SIGSEGV on this line alone (700 deep compiled;
+                    # 1,000 and 2,000 did not), so `build` said `internal
+                    # error` for a program clang compiles. `{}` names no
+                    # scalar, is GNU C under this compiler's `-std=gnu11`,
+                    # and gives the same verdicts: measured on a nested
+                    # record, a fixed array, a handle beside them and a
+                    # union, complete and missing a field, `{0}` against
+                    # `{}`, the same three errors and the same silences.
                     if aggregate
-                        zeros @ zeros.push("{0}")
+                        zeros @ zeros.push("{}")
                     else
                         zeros @ zeros.push("0")
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
@@ -241,9 +254,9 @@ test "assertions land on the field's line, the probe counts positionally"
     assert has(text: got, needle: "heroes-ffi-field Color r")
     assert has(text: got, needle: "#line 3 \"t.hero\"")
 
-    # The probe: Color's nested record slot is {0}, Point's single
+    # The probe: Color's nested record slot is {}, Point's single
     # scalar is parenthesised, and partial Font gets NO probe.
-    assert has(text: got, needle: "hero_ffi_complete_h_t_Color(void) { Color v = {0,{0}}; (void)v; }")
+    assert has(text: got, needle: "hero_ffi_complete_h_t_Color(void) { Color v = {0,{}}; (void)v; }")
     assert has(text: got, needle: "hero_ffi_complete_h_t_Point(void) { Point v = {(0)}; (void)v; }")
     assert !has(text: got, needle: "hero_ffi_complete_h_t_Font")
     assert has(text: got, needle: "#pragma clang diagnostic error \"-Wmissing-field-initializers\"")
@@ -266,8 +279,8 @@ test "a handle field is a scalar in the probe, and the record beside it is not"
     extern_record_assertions(@w, c, names, s, parsed.decls)
     got = writer.finish(w)
 
-    # The handle is `0`, the nested record is `{0}`, the number is `0`.
-    assert has(text: got, needle: "hero_ffi_complete_h_t_Slot(void) { Slot v = {0,{0},0}; (void)v; }")
+    # The handle is `0`, the nested record is `{}`, the number is `0`.
+    assert has(text: got, needle: "hero_ffi_complete_h_t_Slot(void) { Slot v = {0,{},0}; (void)v; }")
 
     # And a fieldless handle gets no probe of its own: it has nothing to be
     # complete about, which is what makes it a handle.

@@ -141,48 +141,65 @@ function used(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Use
                     .construct co =>
                         match co.shape
                             .record_shape r => constructed[r.decl] @ true
-                            .map_shape => reach(@operated, c, decls, ty: inst.ty, depth: 0)
+                            .map_shape => reach(@operated, c, decls, ty: inst.ty)
                             .case_shape | .array_shape | .ok_shape | .fail_shape | .err_shape => continue
                     .binary b =>
                         if b.op == .eq || b.op == .ne
-                            reach(@operated, c, decls, ty: containers.value_type(f, b.left), depth: 0)
+                            reach(@operated, c, decls, ty: containers.value_type(f, b.left))
                     .map_get mg =>
-                        reach(@operated, c, decls, ty: containers.value_type(f, mg.map), depth: 0)
-                        reach(@operated, c, decls, ty: containers.value_type(f, mg.key), depth: 0)
+                        reach(@operated, c, decls, ty: containers.value_type(f, mg.map))
+                        reach(@operated, c, decls, ty: containers.value_type(f, mg.key))
                     .lit | .load | .store | .push_owned | .unary | .cast | .call | .func_ref    => continue
                     .field | .index | .len_of | .tag_of | .payload                              => continue
                     .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
     return Used(constructed: constructed, operated: operated)
 
-# The extern records a type reaches by value, bounded like the
-# bootstrap's partial walk and for its reason: a generic type in the
-# arena can still be cyclic through a type parameter, and a depth-16
-# nest of extern records does not exist.
-function reach(@out: {i64: bool}, c: state.Checked, decls: [ast.Decl], ty: i64, depth: i64)
-    if depth > 16
-        return
+# The extern records a type reaches by value: a SET, which the caller
+# reads sorted, so the order the queue drains in reaches nothing.
+#
+# **TOTAL SINCE DEFECT 140 (2026-10-01).** It stopped at `depth > 16`,
+# saying it was bounded like the checker's partial walk and that a nest of
+# extern records sixteen deep does not exist. The partial walk lost its
+# bound to defect 046 on 2026-09-16, and the nest needs no extern record
+# but the last: `==` over a value holding a union sixteen PLAIN records
+# down was built, measured, and printed `true`, the generated eq reading
+# the union's bytes under two types, where fifteen down was refused. A set
+# of the type ids walked makes it total, and a cyclic generic the old
+# comment feared ends there too, since every id is entered once.
+function reach(@out: {i64: bool}, c: state.Checked, decls: [ast.Decl], ty: i64)
+    seen: {i64: bool} @ {}
+    queue: [i64] @ [ty]
+    next: i64 @ 0
 
-    match table.get(c.types, ty)
-        .named n =>
-            out[n.decl] @ true
+    while next < queue.len()
+        at = queue[next]
+        next @ next + 1
 
-            match decls[n.decl].kind
-                .record_decl rec =>
-                    for field in rec.fields
-                        written = state.written_type(c, field.ty)
+        if !seen[at].is_err()
+            continue
+        seen[at] @ true
 
-                        if !written.is_err()
-                            reach(@out, c, decls, ty: written.must(), depth: depth + 1)
-                .constant_decl | .function_decl | .variant_decl | .test_decl => return
-        .array a     => reach(@out, c, decls, ty: a.element, depth: depth + 1)
-        .fixed x     => reach(@out, c, decls, ty: x.element, depth: depth + 1)
-        .fallible fl => reach(@out, c, decls, ty: fl.payload, depth: depth + 1)
-        .map m =>
-            reach(@out, c, decls, ty: m.key, depth: depth + 1)
-            reach(@out, c, decls, ty: m.value, depth: depth + 1)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-        .function_ty | .case_ty | .failure | .generic | .error    => return
+        match table.get(c.types, at)
+            .named n =>
+                out[n.decl] @ true
+
+                match decls[n.decl].kind
+                    .record_decl rec =>
+                        for field in rec.fields
+                            written = state.written_type(c, field.ty)
+
+                            if !written.is_err()
+                                queue @ queue.push(written.must())
+                    .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+            .array a     => queue @ queue.push(a.element)
+            .fixed x     => queue @ queue.push(x.element)
+            .fallible fl => queue @ queue.push(fl.payload)
+            .map m =>
+                queue @ queue.push(m.key)
+                queue @ queue.push(m.value)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .function_ty | .case_ty | .failure | .generic | .error    => continue
 
 ## Tests
 
