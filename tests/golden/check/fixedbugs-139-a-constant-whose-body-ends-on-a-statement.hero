@@ -1,0 +1,55 @@
+# Fixed 2026-10-01, defect 139's class, lane flow (the coordinator's next item
+# for the lane, `selfhost/check/decls.hero:54`). Symptom: a constant whose body
+# ends on a statement, an `assert`, a loop, a `for`, was told twice at one
+# place, the block's *this branch ends on a statement* and then *this `i64`
+# produces no value — every branch jumps*, which no branch had; a body that
+# does jump, `return 5`, was told the second sentence alone, naming the type
+# where the construct belongs. Cause: the declaration's walk read the body's
+# absent value as a jump, and a body that ends on a statement has none either.
+# Now it asks whether the body jumped: only that body is told here, naming the
+# constant and its repair, and one that ends on a statement keeps its block's
+# message alone.
+
+constant ENDS_ON_ASSERT: i64
+    assert true  #~ no_value
+
+constant ENDS_ON_ASSERT_FALSE: i64
+    assert false  #~ no_value
+
+constant ENDS_ON_A_LOOP: i64
+    while true  #~ no_value
+        _ = 0
+
+constant ENDS_ON_A_FOR: i64
+    for i in [1, 2]  #~ no_value
+        _ = i
+
+# The block's message stands where the block begins.
+constant AFTER_TWO_LINES: i64
+    x: i64 @ 1  #~ no_value
+    x @ x + 1
+    assert x == 2
+
+constant A_TEXT: str
+    assert true  #~ no_value
+
+# A body that jumps is told once, naming the constant.
+constant RETURNS: i64
+    return 5  #~ no_value
+
+constant LEAVES_BEFORE_ITS_VALUE: i64
+    if true  #~ no_value
+        return 1
+    else
+        return 2
+    7
+
+function main()
+    print(ENDS_ON_ASSERT)
+    print(ENDS_ON_ASSERT_FALSE)
+    print(ENDS_ON_A_LOOP)
+    print(ENDS_ON_A_FOR)
+    print(AFTER_TWO_LINES)
+    print(A_TEXT)
+    print(RETURNS)
+    print(LEAVES_BEFORE_ITS_VALUE)
