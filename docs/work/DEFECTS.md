@@ -763,6 +763,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** design.md §4.17: a diagnostic carries what is
     needed to fix the program; this one's advice, followed, is refused.
 
+    **2026-10-01, lane flow, the notes name only forms the checker accepts**
+    (every path ends in a `return` with a value, past an `if` with no `else`
+    and past any loop; a value at the end of a path is not returned, so
+    `return` goes before it; every repair named builds and runs in
+    `tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero`):
+    repaired at `8d5cedd7`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close. The `match` arm's clause waits with
+    defect 139's statement half, which makes it true.
+
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe)
 
     **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (a header of its own
