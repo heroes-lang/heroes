@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-135-removing-a-default-that-computes-its-value-is-a-guess.hero:20:11: error[bad_operand]: `default` takes a fallible value, found `i64`
+tests/golden/check/fixedbugs-135-removing-a-default-that-computes-its-value-is-a-guess.hero:21:11: error[bad_operand]: `default` takes a fallible value, found `i64`
+tests/golden/check/fixedbugs-135-removing-a-default-that-computes-its-value-is-a-guess.hero:22:11: error[bad_operand]: `default` takes a fallible value, found `i64`

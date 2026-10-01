@@ -668,6 +668,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     integration). The item stays open for the next batch's sites: P4 to P7,
     C9's span, L3 to L5, and L6.
 
+    **2026-10-01, lane 135c, a token moved up to the line above is certain
+    only where going on is its one reading** (the audit's P6, a `(` or `[`
+    below a value in a group or an index; and lane recovery-b4's, a line that
+    can stand on its own inside a bracket no closer closes): repaired at
+    `19fdef87`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close. P7 no longer breaches on the base of this
+    lane, `9d1c209d`: defect 137's rounds write its nested types right (the
+    audit's three probes and eighteen beside them).
+
 - [ ] **138 — a program that declares a C function the Heroes library also binds, with other marks, stops `check` with an internal error** | a five-line file whose `extern "hero_os.h"` group declares `function hero_file_read(path: cstr, @status: i64) -> str`, where the library writes `path: cstr lent`: `heroes check` prints `internal error: a diagnostic landed inside the Heroes library, at its line 112: [contract_differs] ...` and exits 2, with or without `--permissive`, where a `contract_differs` at the author's line 2 and exit 1 are owed | `selfhost/check/contracts.hero:256` (`differs`, which puts the message at `at`) and its caller's choice of `at` · `selfhost/cli/check.hero:73-82` and `selfhost/cli/compile.hero:96` (the guard that turns a diagnostic inside the library into the internal error)
 
     **Origin:** the coordinator, 2026-09-30 at 16:22, on the trunk's compiler
