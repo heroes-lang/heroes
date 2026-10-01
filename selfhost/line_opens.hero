@@ -1,0 +1,100 @@
+# What the line above a margin opens, by its tokens (design.md §4.15; ruling
+# 5 of the recovery batches, defect 131's class, 2026-10-01; ruling 1, defect
+# 130's, the same day): whether the last line the lexer has emitted opens a
+# block, so that a line deeper than it is that block's body. An indentation
+# habit's run asks it where its first line stands (`indent_runs.hero`), and a
+# body's `{` that ends its line is one such opener (`brace_layout.hero`).
+#
+# | entry | called by |
+# |---|---|
+# | `opens_a_block` | `indent_runs.with_words`, `indent_runs.tab_line` |
+
+use token
+use brace_layout
+
+# Whether the last line of `tokens` with words opens a block by its tokens:
+# it ends with `=>`, `else` or `:`; it begins with a keyword that heads a
+# block, or with a word the lexer refused, a foreign head the parser reads
+# as its swap; it holds `if` or `match` outside brackets (`k = match n`,
+# `return if c`); or it is one name alone, a variant's case over its fields;
+# or it ends with a body's `{`, alone on its line below its head included,
+# which no value or type comes before (`brace_layout.hero`).
+function opens_a_block(tokens: [token.Token]) -> bool
+    last: i64 @ tokens.len() - 1
+
+    while last >= 0 && (tokens[last].kind == .comment || tokens[last].kind == .terminator)
+        last @ last - 1
+
+    if last < 0 || is_boundary(tokens[last].kind)
+        return false
+    k = tokens[last].kind
+
+    if k == .fat_arrow || k == .kw_else || k == .colon
+        return true
+
+    if k == .lbrace
+        return last == 0 || !brace_layout.value_follows(tokens[last - 1].kind)
+    first: i64 @ last
+
+    while first > 0 && !is_boundary(tokens[first - 1].kind)
+        first @ first - 1
+
+    # The comments before the line's first word are no part of it: a file's
+    # first declaration below a heading has no line end above it.
+    while first < last && tokens[first].kind == .comment
+        first @ first + 1
+
+    head = tokens[first].kind
+
+    if heads_a_block(head) || head == .error || first == last && head == .ident
+        return true
+    depth: i64 @ 0
+    i: i64 @ first
+
+    while i <= last
+        t = tokens[i].kind
+
+        if t == .lparen || t == .lbracket || t == .lbrace
+            depth @ depth + 1
+        else if (t == .rparen || t == .rbracket || t == .rbrace) && depth > 0
+            depth @ depth - 1
+        else if depth == 0 && (t == .kw_if || t == .kw_match)
+            return true
+        i @ i + 1
+
+    return false
+
+function is_boundary(kind: token.TokenKind) -> bool
+    return kind == .terminator || kind == .indent || kind == .dedent
+
+function heads_a_block(kind: token.TokenKind) -> bool
+    return match kind
+        .kw_if | .kw_else | .kw_while | .kw_for | .kw_match | .kw_function | .kw_record | .kw_variant => true
+        .kw_extern | .kw_test | .kw_constant                                                          => true
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit | .kw_true | .kw_false     => false
+        .kw_nullptr | .hole | .kw_fail | .kw_in | .kw_break | .kw_continue | .kw_return               => false
+        .kw_assert | .kw_use | .eq | .at | .colon | .colon_colon | .comma | .question | .arrow        => false
+        .fat_arrow | .pipe | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace | .dot     => false
+        .plus | .minus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge        => false
+        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr | .comment                   => false
+        .terminator | .indent | .dedent | .eof | .error                                               => false
+
+## Tests
+
+function tok(kind: token.TokenKind) -> token.Token
+    return token.Token(kind: kind, span: token.Span(start: 0, end: 0))
+
+test "a line opens a block by its tokens: a head, a refused word, an arrow, a match in it, a case's name, a body's brace"
+    assert opens_a_block([tok(.kw_function), tok(.ident), tok(.lparen), tok(.rparen)])
+    assert opens_a_block([tok(.comment), tok(.comment), tok(.kw_record), tok(.ident)])
+    assert opens_a_block([tok(.error), tok(.ident), tok(.lparen), tok(.rparen)])
+    assert opens_a_block([tok(.int_lit), tok(.fat_arrow)])
+    assert opens_a_block([tok(.ident), tok(.eq), tok(.kw_match), tok(.ident)])
+    assert opens_a_block([tok(.terminator), tok(.ident)])
+    assert !opens_a_block([tok(.ident), tok(.eq), tok(.int_lit), tok(.terminator)])
+    assert !opens_a_block([tok(.ident), tok(.lparen), tok(.kw_if), tok(.rparen)])
+    none: [token.Token] = []
+    assert opens_a_block([tok(.kw_function), tok(.ident), tok(.lparen), tok(.rparen), tok(.lbrace), tok(.terminator)])
+    assert opens_a_block([tok(.rparen), tok(.terminator), tok(.lbrace), tok(.terminator)])
+    assert !opens_a_block([tok(.ident), tok(.eq), tok(.lbrace)])
+    assert !opens_a_block(none)

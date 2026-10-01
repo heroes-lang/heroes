@@ -35,7 +35,7 @@ record Pair
     bottom: i64  # a note, and no mistake
 
 variant Tone {  #~ expected_end_of_line
-    warm,  #~ expected_end_of_line
+    warm  #~ expected_end_of_line
     dark grey,  #~ expected_end_of_line
 }
 

@@ -14,7 +14,7 @@ variant Shape {  #~ expected_end_of_line
     circle {  #~ expected_end_of_line
         r f64,  #~ expected_field_type
     },
-    square,  #~ expected_end_of_line
+    square  #~ expected_end_of_line
 }
 
 variant Figure

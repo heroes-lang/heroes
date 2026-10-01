@@ -49,6 +49,7 @@ use parse/refused_literal
 use parse/brace_habit
 use parse/braced_lines
 use parse/unclosed
+use parse/laid_braces
 
 ## Fields and cases
 
@@ -140,7 +141,9 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
 
             if braces_close(c, text)
                 told(@c, text: text, member: which, rule: CASE_RULE)
-                fields @ braced_fields(@c, @a, text)
+
+                if !past_laid_braces(@c)
+                    fields @ braced_fields(@c, @a, text)
             line_ends(@c, text: text, member: which, rule: CASE_RULE, @habit)
             cursor.skip_terminators(@c)
 
@@ -153,8 +156,15 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
             # told where the next case's name was owed and read as the case's.
             refused_case(@c, text)
             last = cases.len() - 1
+            laid = past_laid_braces(@c)
+            braced: [ast.Field] @ []
 
-            for field in braced_fields(@c, @a, text)
+            if laid && cursor.at(c, .indent)
+                braced @ fields_of(@c, @a, text, @habit)
+            else if !laid
+                braced @ braced_fields(@c, @a, text)
+
+            for field in braced
                 cases[last].fields @ cases[last].fields.push(field)
 
             line_ends(
@@ -203,6 +213,17 @@ function refused_case(@c: cursor.Cursor, text: str)
 # reach the file's end (`parse/unclosed`).
 function braces_close(c: cursor.Cursor, text: str) -> bool
     return cursor.at(c, .lbrace) && !unclosed.never_closed(c, text, open: c.pos)
+
+# Past the `{` under the cursor where the lexer laid out its braces
+# (`laid_braces.laid_out_by_lexer`, ruling 1), and its line end: the members are
+# the block below it, read as they are without the braces, a `,` after each
+# one the declaration's one report with the members around them.
+function past_laid_braces(@c: cursor.Cursor) -> bool
+    if !laid_braces.laid_out_by_lexer(c, open: c.pos)
+        return false
+    _ = cursor.bump(@c)
+    cursor.skip_terminators(@c)
+    return true
 
 # The fields in the braces the cursor's `{` opens, and the cursor past them.
 function braced_fields(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]

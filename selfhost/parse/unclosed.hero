@@ -32,6 +32,7 @@
 use token
 use diag
 use cursor
+use parse/laid_braces
 use parse/line_end
 use literals
 use lexer
@@ -76,9 +77,10 @@ function paired_closer(c: cursor.Cursor, text: str, open: i64) -> i64
     return -1
 
 # Whether no closer closes the opener at token `open` (`paired_closer`): one
-# asked as never closed, which the parser names none of.
+# asked as never closed, which the parser names none of. A body's `{` the
+# lexer laid out is no opener, and owes no closer.
 function never_closed(c: cursor.Cursor, text: str, open: i64) -> bool
-    return paired_closer(c, text, open: open) < 0
+    return !laid_braces.laid_out_by_lexer(c, open: open) && paired_closer(c, text, open: open) < 0
 
 # Past the closer the lexer's stack pairs with the opener at `open`, whatever
 # its kind, where a construct's own closer was not met. Brackets are the one

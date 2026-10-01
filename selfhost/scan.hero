@@ -28,6 +28,7 @@ use shown_char
 use punctuation
 use open_line
 use backslash
+use brace_layout
 
 ## One line of words
 
@@ -192,7 +193,7 @@ function punct(@l: state.LexState, text: str)
     found = punctuation.punct_at(text, at: start)
 
     if found.width > 0
-        finish(@l, found.kind, start: start, width: found.width)
+        finish(@l, text, found.kind, start: start, width: found.width)
         return
 
     # Not in the language. Skip one whole character, UTF-8-safe.
@@ -209,8 +210,27 @@ function punct(@l: state.LexState, text: str)
         diag.new_diagnostic(code: "unexpected_character", message: shown_char.named(ch) + " is not part of the language's syntax", span: span)
     )
 
-function finish(@l: state.LexState, kind: token.TokenKind, start: i64, width: i64)
+function finish(@l: state.LexState, text: str, kind: token.TokenKind, start: i64, width: i64)
     l.pos @ start + width
+
+    # A `{` that ends its head's line is read as the line's end, a `}` that
+    # closes it as nothing where its line ends (`brace_layout.hero`, ruling 1).
+    if kind == .lbrace && brace_layout.opens_a_body(l.tokens, open: l.open_brackets.len() + l.holes.len(), text, at: start)
+        brace_layout.opened(@l)
+        state.emit_open_body(@l, start)
+        return
+
+    if kind == .rbrace && brace_layout.closes(braced: l.braced.len(), brackets: l.open_brackets, holes: l.holes.len(), text, at: start)
+        if l.open_brackets.len() > 0
+            layout.close_brackets(@l, text)
+        brace_layout.closed(@l)
+        l.pos @ brace_layout.past_the_closer(text, from: l.pos)
+
+        # Where its line goes on, `} else {` or junk, the `}` is a token, so
+        # that what follows it is read as what follows the braces it closes.
+        if !brace_layout.ends_its_line(text, from: l.pos)
+            state.emit_close_body(@l, start)
+        return
     state.emit(@l, kind, start)
 
 # A line that ends with a value owes its terminator until the next line with

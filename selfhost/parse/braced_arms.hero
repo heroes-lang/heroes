@@ -65,7 +65,7 @@ function taken(@c: cursor.Cursor, lines: cursor.Cursor)
     for d in lines.diagnostics
         cursor.push_diagnostic(@c.diagnostics, d)
 
-    brace_habit.pass(@c, close: brace_habit.closer(c, open: c.pos))
+    brace_habit.pass(@c)
 
 ## An arm's body in braces
 
@@ -109,11 +109,19 @@ function an_entry(tokens: [token.Token], at: i64) -> bool
 
 ## Tests
 
-test "an arm's braces are its body unless they hold a map's entries or nothing"
-    for text in ["{\n    print(0)\n}\n", "{\n    v: i64 @ 0\n}\n"]
-        c = cursor.new_cursor(lexer.lex_one(text).tokens)
-        assert body_opens(c, text)
+# The cursor on the `{` after an arm's `=>`, where the lexer reads a map's.
+function after_an_arrow(braces: str) -> cursor.Cursor
+    text = "0 => " + braces
+    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
 
-    for text in ["{\n    \"a\": 1\n}\n", "{\n}\n", "{1: 2}\n"]
-        c = cursor.new_cursor(lexer.lex_one(text).tokens)
-        assert !body_opens(c, text)
+    while !cursor.at(c, .lbrace)
+        _ = cursor.bump(@c)
+
+    return c
+
+test "an arm's braces are its body unless they hold a map's entries or nothing"
+    for braces in ["{\n    print(0)\n}\n", "{\n    v: i64 @ 0\n}\n"]
+        assert body_opens(after_an_arrow(braces), "0 => " + braces)
+
+    for braces in ["{\n    \"a\": 1\n}\n", "{\n}\n", "{1: 2}\n"]
+        assert !body_opens(after_an_arrow(braces), "0 => " + braces)

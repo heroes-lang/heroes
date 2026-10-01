@@ -73,6 +73,13 @@ record IndentRun
     # The margins its fix rewrites so far.
     fixes: [diag.Fix]
 
+# A body in braces the lexer reads as laid out (`brace_layout.hero`, ruling
+# 1): the level of its head's line, and whether a line of it has stood deeper,
+# before which a line at that level is the body at its head's own margin.
+record Braces
+    level: i64
+    deeper: bool
+
 function no_run() -> IndentRun
     none: [diag.Fix] = []
     return IndentRun(
@@ -157,6 +164,9 @@ record LexState
     # inline the record cost 3 to 6% of the lexer's time, behind the pointer
     # nothing that six runs could tell from the noise.
     run: [IndentRun]
+    # Each body in braces open, innermost last: a `{` the lexer reads as the
+    # end of its head's line, no bracket (`brace_layout.hero`).
+    braced: [Braces]
 
 function new_state() -> LexState
     brackets: [token.Span] = []
@@ -169,6 +179,7 @@ function new_state() -> LexState
     closes: [i64] = []
     swaps: [swap_words.Swap] = []
     runs: [IndentRun] = [no_run()]
+    braced: [Braces] = []
     return LexState(
         pos: 0,
         level: 0,
@@ -191,10 +202,21 @@ function new_state() -> LexState
         backslash: -1,
         outline: text_outline.unread(),
         swaps: swaps,
-        run: runs
+        run: runs,
+        braced: braced
     )
 
 ## Emitting
+
+# A body's `{` (`brace_layout.hero`): a token, and no bracket opened; and the
+# `}` that closes it on a line that goes on past it, no bracket closed.
+function emit_open_body(@l: LexState, start: i64)
+    push_token(@l.tokens, token.Token(kind: .lbrace, span: token.Span(start: start, end: l.pos)))
+    l.last_significant @ ok(.lbrace)
+
+function emit_close_body(@l: LexState, start: i64)
+    push_token(@l.tokens, token.Token(kind: .rbrace, span: token.Span(start: start, end: start + 1)))
+    l.last_significant @ ok(.rbrace)
 
 # Emit one token and remember it for terminator insertion. Bracket depth is
 # tracked here, where the kind is known — so brackets inside string literals
@@ -253,6 +275,10 @@ function push_swap(@swaps: [swap_words.Swap], at: i64, word: str)
 # lines as a body.
 function push_fix(@fixes: [diag.Fix], f: diag.Fix)
     fixes @ fixes.push(f)
+
+# And for the bodies in braces, nested as deep as a program's blocks.
+function push_braces(@braced: [Braces], level: i64)
+    braced @ braced.push(Braces(level: level, deeper: false))
 
 # Error recovery in one move: record why, emit an `error` token over the same
 # span, keep lexing. The lexer never stops.

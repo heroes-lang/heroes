@@ -16,7 +16,7 @@
 # body's statements to the `}`, which goes silently.
 
 class Point {  #~ reserved_word
-    x: i64,  #~ expected_end_of_line
+    x: i64  #~ expected_end_of_line
     y i64,  #~ expected_field_type
 }
 
@@ -46,7 +46,7 @@ function main() {  #~ missing_body
         w = 5 6  #~ expected_end_of_line
     }
     struct Local {  #~ reserved_word
-        v: i64,  #~ expected_end_of_line
+        v: i64  #~ expected_end_of_line
         u i64,  #~ expected_field_type
     }
 }

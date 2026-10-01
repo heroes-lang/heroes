@@ -287,20 +287,23 @@ test "a block is read as fields, cases or a body by the shape of its lines"
 function lexed(text: str) -> cursor.Cursor
     return cursor.new_cursor(lexer.lex_one(text).tokens)
 
-test "a block in braces is read as the fields or cases its lines are, its commas the habit's debris"
-    # class P {  /  x: i64,  /  y i64,  /  }: the broken field is told, and
-    # the cursor is past the braces and their line end.
+test "a block in braces is read as the fields or cases its lines are, as without the braces"
+    # class P {  /  x: i64,  /  y i64,  /  }: the `,` is told as it is with no
+    # braces around it, once, the broken field too, and the cursor is past the
+    # braces (ruling 1, 2026-10-01: the habit's debris until then).
     fields = "class P {\n    x: i64,\n    y i64,\n}\n"
     c: cursor.Cursor @ at_brace(fields)
     a: ast.Ast @ ast.new_ast()
     assert read_below(@c, @a, fields, word: 0) == .nothing
-    assert c.diagnostics.len() == 1
-    assert c.diagnostics[0].code == "expected_field_type"
+    assert c.diagnostics.len() == 2
+    assert c.diagnostics[0].code == "expected_end_of_line"
+    assert c.diagnostics[0].fixes[0].certainty == .certain
+    assert c.diagnostics[1].code == "expected_field_type"
     assert cursor.at(c, .eof)
 
-    # class C {  /  red, green,  /  blue  /  }: three cases, one of them on a
-    # line of its own, and nothing to tell.
-    cases = "class C {\n    red, green,\n    blue\n}\n"
+    # class C {  /  red  /  green  /  blue  /  }: three cases, and nothing to
+    # tell.
+    cases = "class C {\n    red\n    green\n    blue\n}\n"
     d: cursor.Cursor @ at_brace(cases)
     assert read_below(@d, @a, cases, word: 0) == .nothing
     assert d.diagnostics.len() == 0

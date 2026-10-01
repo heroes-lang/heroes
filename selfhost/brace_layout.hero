@@ -1,0 +1,171 @@
+# A body in braces laid out as it will be once the braces are gone
+# (design.md §4.15, §4.17; ruling 1 of the recovery batches; defect 130's
+# class, 2026-10-01).
+#
+# `function main() {` over its body over `}` is the habit of the languages a
+# model has read most, and one mistake. The parser tells it, once, at the
+# `{` (`parse/brace_habit`, `parse/opening.braced`). Until 2026-10-01 the
+# lexer took that `{` for a bracket, so every line inside it was inside
+# brackets, where a margin, a line end after a `,` and a bracket left open
+# mean nothing: the parser read the braces through a view that laid them out
+# again and said nothing of them (`parse/braced_lines`), and a `,` after
+# every field, two spaces a level, a `(` never closed were told only once the
+# author had taken the braces away (the audit of defects 130 to 133: 12
+# shapes of item 130, 131's 39a and 39b, 133's `enum_brace`, `struct_c`).
+#
+# So the lexer reads such a `{` as what the fix makes of it, the end of its
+# head's line: it opens no bracket, a line end follows it, and the lines
+# below are laid out, judged and joined as every line is, at four spaces a
+# level, an indentation habit's run included (`indent_runs.hero`). What the
+# parser reads is the program with its braces gone, but for the `{` it
+# tells, and a `}` whose line goes on past it, `} else {` or junk, kept as a
+# token so that what follows it is read as what follows the braces.
+#
+# **Which `{` is a body's**, the parser's own reading of the habit
+# (`parse/brace_habit.ending`, `opens_a_value`), read here first: one that
+# ends its line, a comment aside, outside every bracket and interpolation
+# hole, after a token that no value or type follows, or alone on its line.
+# After `=`, `@`, an operator, an opening bracket, a `,`, `return`,
+# `assert`, `in`, `:`, `->` or `=>` it opens a map or a map type and is a
+# bracket as before, an arm's braces being a body or a map by their first
+# line (`parse/braced_arms`); so is a `{` with words after it on its line,
+# `function f() { return 1 }`, which the parser reads as it did. A line that
+# holds only a body's `{`, Allman's or GNU's, is no line of the program the
+# fix writes: it takes no margin and lays out no level.
+#
+# **Which `}` closes it**: one met outside every bracket while a body's
+# braces are open, or at the head of its line where the body left a bracket
+# open, which is then named never closed; a `,` or `;` after it that ends its
+# line, the habit of a case's fields in braces and of C's `};`, goes with it.
+# A line that holds only that `}` takes no margin either, and closes the
+# innermost braces its margin does not show left open. A line shallower than
+# the head's, or at the head's own level once a line of the body has stood
+# deeper, ends the braces it was owed, the `{` the one report; before that, a
+# line at the head's level is the body at its head's own margin, and is laid
+# out there.
+#
+# | entry | called by |
+# |---|---|
+# | `opens_a_body`, `opened`, `closes`, `closed`, `past_the_closer`, `ends_its_line` | `scan.finish` |
+# | `opens_a_body`, `closer_alone`, `ended` | `layout.line_start` |
+# | `value_follows` | `line_opens.opens_a_block` |
+
+use token
+use state
+
+## The `{`
+
+# Whether the `{` at `at` opens a body in braces, laid out as an indented
+# block: no bracket or hole open (`open` counts both), nothing but a comment
+# after it on its line, and no value or type after the token of `tokens`
+# before it.
+function opens_a_body(tokens: [token.Token], open: i64, text: str, at: i64) -> bool
+    if open > 0 || !ends_its_line(text, from: at + 1)
+        return false
+    i: i64 @ tokens.len() - 1
+
+    while i >= 0 && tokens[i].kind == .comment
+        i @ i - 1
+
+    if i < 0
+        return true
+    return !value_follows(tokens[i].kind)
+
+# Whether a value or a type follows `kind`, so that a `{` after it opens a map
+# or a map type: `parse/brace_habit.opens_a_value`'s list, with `:` and `->`,
+# after which a type goes, and `=>`, after which an arm's value may be a map
+# that only its first line tells from a body (`parse/braced_arms`).
+function value_follows(kind: token.TokenKind) -> bool
+    return match kind
+        .eq | .at | .lparen | .lbracket | .lbrace | .comma | .kw_return | .kw_assert | .kw_in => true
+        .plus | .minus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt      => true
+        .ge | .and_and | .or_or | .amp | .pipe | .caret | .shl | .shr | .bang | .tilde        => true
+        .colon | .arrow | .fat_arrow                                                          => true
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit | .kw_true         => false
+        .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if | .kw_match | .dot | .rparen      => false
+        .rbracket | .rbrace | .kw_constant | .kw_function | .kw_record | .kw_variant          => false
+        .kw_else | .kw_for | .kw_while | .kw_break | .kw_continue | .kw_test | .kw_extern     => false
+        .kw_use | .colon_colon | .question | .comment                                         => false
+        .terminator | .indent | .dedent | .eof | .error                                       => false
+
+# Whether nothing but blanks, or a comment, follows `from` on its line.
+function ends_its_line(text: str, from: i64) -> bool
+    i: i64 @ from
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\t' || text[i] == '\r')
+        i @ i + 1
+
+    return i >= text.len() || text[i] == '\n' || text[i] == '#'
+
+# The braces opened at the current line's level.
+function opened(@l: state.LexState)
+    state.push_braces(@l.braced, level: l.level)
+
+## The `}`
+
+# Whether the `}` at `at` closes a body's braces, `braced` of them open:
+# outside every bracket, or at its line's head where the body left a bracket
+# open, which the caller names never closed (`layout.close_brackets`). Then it
+# is no token.
+function closes(braced: i64, brackets: [token.Span], holes: i64, text: str, at: i64) -> bool
+    if braced == 0 || holes > 0
+        return false
+
+    if brackets.len() == 0
+        return true
+    return text[brackets[brackets.len() - 1].start] != '{' && heads_its_line(text, at: at)
+
+# The innermost braces, closed.
+function closed(@l: state.LexState)
+    l.braced @ l.braced.slice(from: 0, to: l.braced.len() - 1)
+
+function heads_its_line(text: str, at: i64) -> bool
+    i: i64 @ at
+
+    while i > 0 && (text[i - 1] == ' ' || text[i - 1] == '\t')
+        i @ i - 1
+
+    return i == 0 || text[i - 1] == '\n'
+
+# Where the text goes on past a closing `}` that ends at `from`: past a `,` or
+# a `;` after it that ends its line, which the braces' report covers, and at
+# `from` otherwise.
+function past_the_closer(text: str, from: i64) -> i64
+    i: i64 @ from
+
+    while i < text.len() && text[i] == ' '
+        i @ i + 1
+
+    if i < text.len() && (text[i] == ',' || text[i] == ';') && ends_its_line(text, from: i + 1)
+        return i + 1
+    return from
+
+## A line below
+
+# Whether the line whose words begin at `at` holds only a `}` that closes a
+# body's braces, with a `,` or `;` after it at most: no bracket or hole open,
+# which the margin has already settled, and `braced` braces open.
+function closer_alone(braced: i64, holes: i64, text: str, at: i64) -> bool
+    if braced == 0 || holes > 0 || at >= text.len() || text[at] != '}'
+        return false
+    return ends_its_line(text, from: past_the_closer(text, from: at + 1))
+
+# A line with words at `level`, which begins at `at`, ends the bodies in
+# braces it was owed: every one opened deeper than it, and one opened at its
+# level once a line of that body has stood deeper. A line deeper than the
+# innermost is that body's. A line that begins with `}` keeps the braces at
+# its level for it to close, or the outermost left when none is, the margin
+# of a `}` being the mistake braces make the least of.
+function ended(@l: state.LexState, text: str, at: i64, level: i64)
+    closing = at < text.len() && text[at] == '}'
+
+    while l.braced.len() > 0
+        last = l.braced.len() - 1
+
+        if level > l.braced[last].level
+            l.braced[last].deeper @ true
+            return
+
+        if level == l.braced[last].level && (closing || !l.braced[last].deeper) || closing && last == 0
+            return
+        l.braced @ l.braced.slice(from: 0, to: last)

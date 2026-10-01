@@ -1,0 +1,8 @@
+tests/golden/check/fixedbugs-130-a-bracket-left-open-in-braces-is-named.hero:17:9: error[unclosed_bracket]: `(` opened here is never closed
+tests/golden/check/fixedbugs-130-a-bracket-left-open-in-braces-is-named.hero:22:9: error[unclosed_bracket]: `[` opened here is never closed
+tests/golden/check/fixedbugs-130-a-bracket-left-open-in-braces-is-named.hero:16:18: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-a-bracket-left-open-in-braces-is-named.hero:21:17: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-a-bracket-left-open-in-braces-is-named.hero:26:26: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-a-bracket-left-open-in-braces-is-named.hero:27:15: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-a-bracket-left-open-in-braces-is-named.hero:29:12: error[missing_body]: an `else` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-a-bracket-left-open-in-braces-is-named.hero:32:2: error[expected_declaration]: expected a declaration, found `}` — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test "…"`, or `extern`
