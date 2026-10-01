@@ -1,0 +1,158 @@
+# How sure the fix of a line end refused inside brackets is (design.md §4.15,
+# §4.17; panel 180 R3; defect 135). `parse/line_end` refuses a line end that
+# stands before a token which would have gone on with the line above, and its
+# fix moves the token up, which is the program on one line. That fix is
+# `certain` only where going on is the only reading, so this module answers
+# the two questions a `certain` fix owes: what else the token below may have
+# been, and whether a closer closes the bracket at all.
+#
+# A leaf: it reads the cursor, the text and the closers a literal left open
+# took, and nothing of the parser.
+
+use token
+use diag
+use cursor
+use literals
+use lexer
+
+# What else the line end refused before a token may have been, beside going on
+# with the line above, which is what the fix writes:
+#
+# | case | the other reading | where |
+# |---|---|---|
+# | `nothing` | none | |
+# | `argument` | a `,` left out, the second fix | a call's arguments, before a token that also begins one |
+# | `operand` | an operator left out before a bracketed operand | a group or an index, before `(` or `[` |
+#
+# Going on with a `(` or a `[` calls or indexes what the line above ended
+# with, which only a function or a value with elements can take, and the
+# parser cannot see which it is: `(a` over `(b))` was a certain `a(`, refused
+# anew as `not_callable` where `a` was a number, and so were a literal above and
+# an index's own `xs[i` over `(j)]` (the certain-fix audit's P6).
+variant Other
+    nothing
+    argument
+    operand
+
+# What a reading adds to the message, the fix's title, and how sure the fix is.
+record Said
+    tail: str
+    title: str
+    certainty: diag.Certainty
+
+# The words for the token `written`, of kind `kind`, read as `other`, where
+# `alone` says the line below could stand on its own after a closer left out
+# above it: it begins with what also begins a value, and no closer closes the
+# bracket (`closed_below`). There the closer left out is the other reading:
+# moving the `.` of `.ok v` up to `scores[name`, the arm under a `match` whose
+# `]` was left out, wrote `scores[name.` over `ok v`, its bracket still open
+# (lane recovery-b4, on panel 183's critic's plan: one program refused anew,
+# nine leaving `unclosed_bracket` standing). A line that can only go on, `[1`
+# over `+ 2` (defect 130's case), cannot stand alone: its closer is owed after
+# it, and going on stays the only reading.
+function said(other: Other, written: str, kind: token.TokenKind, alone: bool) -> Said
+    title = "end the line above with `" + written + "`"
+
+    if other == .argument
+        return Said(
+            tail: "; to go on with the argument, end the line above with `" + written + "`, and for a new argument, write the `,` there",
+            title: "go on with the argument: " + title,
+            certainty: .guess
+        )
+
+    if other == .operand
+        act = operand_act(kind)
+        return Said(
+            tail: "; to " + act + " what the line above ends with, end that line with `" + written + "`, and where an operator was left out before the `" + written + "`, write the operator there",
+            title: act + " it: " + title,
+            certainty: .guess
+        )
+    certainty: diag.Certainty @ .certain
+
+    if alone
+        certainty @ .guess
+    return Said(
+        tail: "; to break the line here, end the line above with `" + written + "`",
+        title: title,
+        certainty: certainty
+    )
+
+# What going on with a `(` or a `[` does to what the line above ended with.
+function operand_act(kind: token.TokenKind) -> str
+    if kind == .lparen
+        return "call"
+    return "index"
+
+# Whether a closer closes the bracket the cursor stands in, by the lexer's own
+# stack: every opener pushed, every closer popping the last one, inside the
+# author's text and before an offset where the lexer named every bracket still
+# open, a declaration opening its line at column 0; a literal that never closed
+# took the closers on the rest of its line, as the lexer popped them. It is
+# `parse/unclosed.paired_closer`'s walk begun inside the bracket rather than at
+# its opener, since that module reads `parse/line_end` and cannot be read from
+# it; the two must answer alike, and the test below holds the shapes.
+function closed_below(c: cursor.Cursor, text: str) -> bool
+    here = cursor.current_span(c).start
+    bounded = c.root_end >= 0 && here < c.root_end
+    named_at: i64 @ -1
+
+    for close in c.closes
+        if named_at < 0 && close > here
+            named_at @ close
+
+    depth: i64 @ 0
+    i: i64 @ c.pos
+
+    while c.tokens[i].kind != .eof && !(bounded && c.tokens[i].span.start >= c.root_end)
+        if named_at >= 0 && c.tokens[i].span.start >= named_at
+            return false
+        k = c.tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if k == .rparen || k == .rbracket || k == .rbrace
+            if depth == 0
+                return true
+            depth @ depth - 1
+        else if k == .error
+            depth @ depth - literals.closers_taken(text, c.tokens[i].span)
+
+            if depth < 0
+                return false
+        i @ i + 1
+
+    return false
+
+## Tests
+
+# The cursor over `text` as the parser gets it, standing on the first token
+# spelled `word`.
+function standing_on(text: str, word: str) -> cursor.Cursor
+    out = lexer.lex_one(text)
+    c: cursor.Cursor @ cursor.new_cursor(out.tokens)
+    c.closes @ out.closes
+
+    while c.tokens[c.pos].kind != .eof && cursor.slice_of(text, c.tokens[c.pos].span) != word
+        c.pos @ c.pos + 1
+
+    return c
+
+# Whether the bracket around the first token spelled `word` in `text` closes.
+function closed_at(text: str, word: str) -> bool
+    return closed_below(standing_on(text: text, word: word), text)
+
+test "a bracket is closed below the cursor as the lexer's stack pairs it"
+    # Closed, by its own closer and by a stray of another kind the stack pairs.
+    assert closed_at(text: "function main()\n    x = (total\n        - fee)\n", word: "-")
+    assert closed_at(text: "function main()\n    print(xs[i\n        + 1)\n", word: "+")
+
+    # Never closed: the file ends, or a declaration opens its line at column 0.
+    assert !closed_at(text: "function f(m: {str: i64}) -> i64\n    return match m[\"a\"\n        .ok v => v\n        .err e => 0\n", word: ".")
+    assert !closed_at(text: "function main()\n    xs = [a\n        * b\n\nfunction g()\n    print(1)\n", word: "*")
+
+test "a token that also begins an operand keeps its fix a guess, and so does a line that could stand alone"
+    assert said(.nothing, written: ".", kind: .dot, alone: false).certainty == .certain
+    assert said(.nothing, written: ".", kind: .dot, alone: true).certainty == .guess
+    assert said(.operand, written: "(", kind: .lparen, alone: false).certainty == .guess
+    assert said(.operand, written: "[", kind: .lbracket, alone: false).title == "index it: end the line above with `[`"
+    assert said(.argument, written: ".", kind: .dot, alone: false).certainty == .guess

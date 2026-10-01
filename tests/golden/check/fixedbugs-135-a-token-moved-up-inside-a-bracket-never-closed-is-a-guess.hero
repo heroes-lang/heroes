@@ -1,0 +1,31 @@
+# Fixed 2026-10-01 by lane 135c (defect 135, found by lane recovery-b4 on
+# panel 183's critic's plan of 3,000 closers left out). Symptom: an index whose
+# `]` is left out, over the arms of the `match` it heads: each arm's `.` took a
+# `certain` fix that moved it up, and on the compiler of `9d1c209d` `check
+# --apply` wrote `scores[name.` over `ok v => v.to_str().` and `err e`, the
+# arms' patterns gone and `unclosed_bracket` still standing (one such program
+# refused anew, nine leaving the bracket open); a group left open the same
+# way, below. Cause: going on was read as the only reading where no closer
+# closes the bracket, and the closer left out above the line end is the
+# other, wherever the line below can stand on its own, as a line that begins
+# with `.` can. The fix is now a `guess` there; a line that can only go on,
+# `[1` over `+ 2`, keeps its certain fix (defect 130's case pins it).
+
+function describe(scores: {str: i64}, name: str) -> str
+    return match scores[name  #~ unclosed_bracket
+        .ok v => v.to_str()  #~ line_end_before_continuation
+        .err e => e.code  #~ line_end_before_continuation
+
+function head(xs: [i64]) -> i64?
+    if xs.len() == 0
+        return fail(code: "empty", msg: "no first element")
+    return ok(xs[0])
+
+function first_or_zero(xs: [i64]) -> i64
+    return match (head(xs)  #~ unclosed_bracket
+        .ok v => v  #~ line_end_before_continuation
+        .err _ => 0  #~ line_end_before_continuation
+
+function main()
+    print(describe({"a": 1}, name: "a"))
+    print(first_or_zero([3]))

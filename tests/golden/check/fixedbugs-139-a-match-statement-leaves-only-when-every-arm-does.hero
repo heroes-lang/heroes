@@ -1,0 +1,128 @@
+# Fixed 2026-10-01, defect 139, lane flow. Symptom: a function returning a
+# value whose body held a `match` statement checked clean whatever its arms
+# did, and `build` then stopped on clang's *non-void function should return a
+# value*, exit 2, the compiler blaming itself (panel 184's compiler-engineer
+# and lane 135b's gate, apart, 2026-09-30; inside one branch of an `if`, the
+# sitting's critic, B1). The same block counted as jumping inside a value: an
+# `if` used as a value whose branches each held a `match` statement before
+# their value was refused, *every branch jumps*, and one whose branch then
+# ended on a call checked clean and built C that read its binding
+# uninitialised. Cause: the statement `match` asked whether an arm PRODUCED a
+# value, which no arm of a statement does, and read *none did* as *every arm
+# jumps* (`check/walk.hero`, `expression_statement`). Now it asks whether
+# every arm jumps (`join.every_branch_jumps`), the predicate every join reads;
+# and the checked `if`, which never asked, asks it too.
+
+variant Color
+    red
+    blue
+
+function main()
+    print(last_statement(c: .red))
+
+function last_statement(c: Color) -> i64  #~ missing_return
+    match c
+        .red  => print(1)
+        .blue => print(2)
+
+function then_falls(c: Color) -> i64  #~ missing_return
+    match c
+        .red  => print(1)
+        .blue => print(2)
+
+    print(3)
+
+function some_arms_return(c: Color) -> i64  #~ missing_return
+    match c
+        .red  => return 1
+        .blue => print(2)
+
+function a_block_arm_falls(c: Color) -> i64  #~ missing_return
+    match c
+        .red =>
+            print(10)
+            return 1
+        .blue =>
+            print(20)
+
+function an_arm_if_without_else(c: Color, n: i64) -> i64  #~ missing_return
+    match c
+        .red =>
+            if n > 0
+                return 1
+        .blue => return 3
+
+function in_one_branch(c: Color, b: bool) -> i64  #~ missing_return
+    if b
+        match c
+            .red  => print(1)
+            .blue => print(2)
+    else
+        return 2
+
+function nested(c: Color, d: Color) -> i64  #~ missing_return
+    match c
+        .red =>
+            match d
+                .red  => return 1
+                .blue => print(2)
+        .blue => return 3
+
+function on_a_str(s: str) -> i64  #~ missing_return
+    match s
+        "a" => return 1
+        _   => print(s)
+
+function on_a_fallible(n: i64?) -> i64  #~ missing_return
+    match n
+        .ok v  => return v
+        .err e => print(e.code)
+
+function generic<T>(n: i64, x: T, y: T) -> T  #~ missing_return
+    match n
+        0 => return x
+        1 => return y
+        _ => print(0)
+
+# The arm that does nothing, as spec § 8 spells it.
+function an_arm_that_does_nothing(c: Color) -> i64  #~ missing_return
+    match c
+        .red =>
+            _ = 0
+        .blue => return 2
+
+function with_comments(c: Color) -> i64  #~ missing_return
+    # before
+    match c
+        # between the arms
+        .red  => print(1)
+        .blue => print(2)
+    # after
+
+# The arms give values, which a statement drops, so nothing returns.
+function arms_that_give_values(n: i64) -> i64  #~ missing_return
+    match n
+        0 => 0  #~ discarded_value
+        _ => n * 2  #~ discarded_value
+
+# A branch holding a `match` statement and ending on a call: its value is the
+# call's `()`, as it is with no `match` before it.
+function value_block(b: bool) -> i64
+    x = if b  #~ bound_unit
+        match 1
+            1 => print(0)
+            _ => print(9)
+
+        print(5)
+    else
+        6  #~ type_mismatch
+
+    return x
+
+# The checked `if` asks what the synthesised one always asked.
+function checked_if_every_branch_returns(c: bool) -> i64
+    x: i64 = if c  #~ no_value
+        return 1
+    else
+        return 2
+    return x

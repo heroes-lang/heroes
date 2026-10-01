@@ -1,0 +1,31 @@
+# Fixed 2026-10-01, defect 142, lane flow (`missing_return`'s note named a
+# repair the checker refuses). The shapes the corrected notes name as running
+# on to the end that no other case under `check/` holds: a `for` and a `while`
+# with a `return` inside and none after, since a loop counts as finishing, and
+# a function whose result is a `T?`. The notes' text is pinned by
+# `selfhost/flow_errors.hero`'s test; this file is the witness that what they
+# say of a loop is what the checker does. The `if` with no `else` is
+# `missing-return.hero`; the last line's value is the first function of
+# `fixedbugs-135-a-dropped-value-that-ends-its-function.hero`.
+
+function first_at_least(xs: [i64], least: i64) -> i64  #~ missing_return
+    for x in xs
+        if x >= least
+            return x
+
+function count_down(n: i64) -> i64  #~ missing_return
+    i: i64 @ n
+
+    while i > 0
+        if i == 3
+            return i
+        i @ i - 1
+
+function positive(n: i64) -> i64?  #~ missing_return
+    if n > 0
+        return ok(n)
+
+function main()
+    print(first_at_least(xs: [1, 4], least: 3))
+    print(count_down(n: 5))
+    print(positive(n: 1).must())

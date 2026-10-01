@@ -1,0 +1,33 @@
+# Fixed 2026-10-01 by lane 135c (defect 135, the certain-fix audit's P6).
+# Symptom: inside a group or an index, a line end before `(` or `[` took a
+# `certain` fix that moved the bracket up, writing a call or an index of what
+# the line above ended with: on the compiler of `9d1c209d` `(a` over `(b))`
+# applied into `(a(` over `b))`, refused anew as `not_callable` where `a` is a
+# number, and so did a literal above, an index's own `xs[i` over `(j)]`, and
+# `(n` over `[0])`, `not_indexable`. Cause: going on was read as the only
+# reading, where a call or an index needs a function or a value with elements,
+# which the parser cannot see, and an operator left out before a bracketed
+# operand, `a (b)`, is as likely. The fix is now a `guess` there, and the
+# message names both readings; a `.` keeps its certain fix.
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function main()
+    a = 10
+    b = 3
+    xs = [1, 2, 3]
+    i = 1
+    j = 1
+    n = 4
+    x = (a
+        (b))  #~ line_end_before_continuation
+    y = (2
+        (b))  #~ line_end_before_continuation
+    print(xs[i
+        (j)])  #~ line_end_before_continuation
+    z = (n
+        [0])  #~ line_end_before_continuation
+    w = (twice
+        (b))  #~ line_end_before_continuation
+    print(x + y + z + w)

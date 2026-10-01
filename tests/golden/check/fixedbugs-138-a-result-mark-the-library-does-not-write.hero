@@ -1,0 +1,14 @@
+# Fixed 2026-10-01, defect 138, lane emit: the RESULT's half of the rule.
+# Symptom: `hero_args_raw(index: i64) -> cstr owned free`, where the library
+# writes no mark on the result, stopped `check` with `internal error` at the
+# library's line 116, exit 2.
+# Cause: the result's comparison put the caret at the later declaration's
+# name, the library's, as the parameters' did. The caret is now on this
+# declaration's name.
+
+extern "hero_os.h"
+    function hero_args_raw(index: i64) -> cstr owned free  #~ contract_differs
+    function free(p: ptr)
+
+function main()
+    print("hello")

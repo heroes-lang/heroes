@@ -1,0 +1,22 @@
+# Fixed 2026-10-01 by lane 135c (defect 135, the certain-fix audit's C9 and the
+# shapes beside it). Symptom: removing `.default(v)` from a value that cannot
+# fail was certain whatever `v` was, and on the compiler of `9d1c209d` `check
+# --apply` wrote `print(a.default(m["k"]` for the first call below, the
+# `.default(` found inside its argument; `print(a)` for the second, where `b`
+# was then read nowhere, refused anew as `unused_binding`; and `print(a)` for
+# the third, where `fallback()` no longer ran and printed nothing. Cause: the
+# removal takes `v` with it, and `v` is computed when the call runs. It is now
+# a `guess` wherever `v` is not a literal, and `--apply` leaves this file as
+# it is.
+
+function fallback() -> i64
+    print("asked")
+    return 0
+
+function main()
+    a = 5
+    b = 7
+    m = {"k": 1}
+    print(a.default(m["k"].default(0)))  #~ bad_operand
+    print(a.default(b))  #~ bad_operand
+    print(a.default(fallback()))  #~ bad_operand

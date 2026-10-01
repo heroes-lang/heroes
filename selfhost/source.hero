@@ -19,7 +19,9 @@
 #
 # **The root file is `files[0]`, and every offset the author can see is what
 # it would have been if their file were alone.** Files are appended in load
-# order, never sorted, and nothing is ever prepended.
+# order, never sorted, and nothing is ever prepended. Nor is anything added
+# inside a file: each file's own bytes are exactly what its author wrote
+# (`from_files`, defect 141).
 #
 # The library (§1.11 Tier 2) is an ordinary module in every respect but one:
 # a diagnostic pointing into it is a compiler bug, not a user error, and
@@ -99,13 +101,23 @@ function with_library(name: str, user: str, library: str) -> Source
 
 # The general constructor: N files, concatenated in the order given.
 #
-# **One blank line joins each pair**, and it is load-bearing twice: two
-# declarations butted together would be one line to the parser, and the
-# boundary offset has to fall on a line start for the file table to agree
-# with the line numbering. The previous file's last line is closed first if
-# it had no newline — done HERE rather than after each file so that the LAST
-# file is left exactly as written: a trailing newline the author did not
-# type would move the eof token's position.
+# **One newline joins each pair, and it belongs to neither file.** It is
+# load-bearing twice: two declarations butted together would be one line to
+# the parser, and the boundary offset has to fall on a line start for the
+# file table to agree with the line numbering. After a file whose last line
+# ends, it makes a blank line; after one whose last line is open, it ends
+# that line. Either way it stands outside both files, so a file's own text
+# (`source_extent.text_of`) is exactly its author's bytes, and the lexer
+# reads a file in a compilation as it reads the file alone.
+#
+# **Until defect 141 an open last line was first closed with a newline of
+# this function's own**, inside the file's text. The root then held a byte
+# its author never typed: `check --apply` wrote it into the file (22 bytes
+# came out 29 where the one certain fix makes 28), a CRLF file got a bare
+# `\n`, and a stray `\r` ending a file became a line ending the lexer
+# accepts, so `check` passed a file that `fmt`, which reads the root alone,
+# refused at that `\r`. The same closer once read the last byte of a file of
+# none (defect 109).
 function from_files(inputs: [InputFile]) -> Source
     assert inputs.len() > 0
     name = inputs[0].name
@@ -125,24 +137,11 @@ function from_files(inputs: [InputFile]) -> Source
     pieces: [str] @ []
     size: i64 @ 0
 
-    # Whether the text so far ends inside a line: its last byte is not a
-    # newline. **A question about the bytes, answered only where a byte
-    # exists** (defect 109): this read the last byte of the last file, and a
-    # first file of zero bytes has none, so every verb that reads a program
-    # died with `string index out of range` before a token was lexed. A text
-    # with no byte in it ends no line, so nothing needs closing.
-    open: bool @ false
-
     for input in inputs
         if table.len() > 0
-            if open
-                pieces @ pieces.push("\n")
-                size @ size + 1
-                newlines @ newlines + 1
             pieces @ pieces.push("\n")
             size @ size + 1
             newlines @ newlines + 1
-            open @ false
         entry = FileEntry(
             name: input.name,
             module: input.module,
@@ -154,9 +153,6 @@ function from_files(inputs: [InputFile]) -> Source
         table @ table.push(entry)
         pieces @ pieces.push(input.text)
         size @ size + input.text.len()
-
-        if input.text.len() > 0
-            open @ input.text[input.text.len() - 1] != '\n'
         newlines @ newlines + newlines_in(input.text)
 
     whole = pieces.join("")
@@ -360,15 +356,19 @@ test "the library is appended and unopenable"
     assert s.files[1].name == "<heroes library>"
     assert s.files[1].module == "library"
 
-test "a file without a trailing newline is closed before the joiner"
+test "a file whose last line is open is joined as written: the joiner ends that line"
     inputs: [InputFile] = [
         user_file(name: "a.hero", text: "constant A: i64\n    1")
         user_file(name: "b.hero", text: "constant B: i64\n    2\n")
     ]
     s = from_files(inputs)
 
-    # a.hero's 21 bytes, the added closer, the blank line: b starts at 23.
-    assert s.files[1].start == 23
+    # a.hero's 21 bytes and the joiner, nothing between them: b starts at 22,
+    # on a line start, and is its own line 1 (defect 141).
+    assert s.files[1].start == 22
+    assert s.text.slice(from: 0, to: 22) == "constant A: i64\n    1\n"
+    assert line_of(s, s.files[1].start) == 3
+    assert file_line_of(s, s.files[1].start) == 1
 
 test "lines_before is the newline count of everything before the file"
     inputs: [InputFile] = [
@@ -382,8 +382,8 @@ test "lines_before is the newline count of everything before the file"
     # a.hero's two lines, then the blank joiner line.
     assert s.files[1].lines_before == 3
 
-    # b.hero's own newline, the closer its missing one costs, the joiner.
-    assert s.files[2].lines_before == 6
+    # b.hero's own newline, then the joiner, which ends its open last line.
+    assert s.files[2].lines_before == 5
 
     # And the numbers agree with what locate answers through them.
     assert file_line_of(s, s.files[2].start) == 1
@@ -407,11 +407,11 @@ test "an empty file between two others is joined like any other, whatever came b
     ]
     s = from_files(inputs)
 
-    # a.hero's 21 bytes, its closer, the joiner: b starts at 23 and holds
-    # nothing, so c follows one joiner later.
-    assert s.files[1].start == 23
-    assert s.files[2].start == 24
-    assert s.files[2].lines_before == 4
+    # a.hero's 21 bytes and the joiner: b starts at 22 and holds nothing, so
+    # c follows one joiner later.
+    assert s.files[1].start == 22
+    assert s.files[2].start == 23
+    assert s.files[2].lines_before == 3
     assert file_line_of(s, s.files[2].start) == 1
     assert locate(s, s.files[2].start).file == "c.hero"
 

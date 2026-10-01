@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-135-a-for-over-a-condition-of-bool-shape-keeps-its-certain-while.hero:11:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — a loop over a condition is `while`
+tests/golden/check/fixedbugs-135-a-for-over-a-condition-of-bool-shape-keeps-its-certain-while.hero:16:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `true` — a loop over a condition is `while`
+tests/golden/check/fixedbugs-135-a-for-over-a-condition-of-bool-shape-keeps-its-certain-while.hero:23:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — a loop over a condition is `while`
+tests/golden/check/fixedbugs-135-a-for-over-a-condition-of-bool-shape-keeps-its-certain-while.hero:30:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `[` — a loop over a condition is `while`

@@ -1,0 +1,9 @@
+# Defect 141 (2026-10-01), a shape beside it: a module whose last byte is a
+# carriage return with no line feed after it. On the compiler of `9d1c209d`
+# `check` passed this root while `fmt strayed.hero` refused the module: the
+# loader closed the module's open last line with a newline of its own.
+
+use strayed
+
+function main()
+    print(strayed.two())

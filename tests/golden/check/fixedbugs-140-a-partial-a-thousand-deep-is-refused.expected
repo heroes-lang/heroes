@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-140-a-partial-a-thousand-deep-is-refused.hero:3015:11: error[ffi_partial_operation]: `div_t` is `partial`, so it cannot be compared with `==` — reached through `[R999]`: the fields it does not name are part of the answer, and this program cannot see them

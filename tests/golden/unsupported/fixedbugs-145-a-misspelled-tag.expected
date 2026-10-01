@@ -1,0 +1,6 @@
+error[ffi_unknown_tag]: `fixedbugs-145-types.h` has no `struct only_tagg` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
+  at tests/golden/unsupported/fixedbugs-145-a-misspelled-tag.hero:16:18
+     |
+  16 |     record Q tag only_tagg  #~ ffi_unknown_tag
+     |                  ^^^^^^^^^
+  note: so the tag is MISSPELLED, and correcting it is the repair; or `only_tagg` is not a tag at all but the name of a typedef, `typedef struct { … } only_tagg;`, and a record takes a typedef by its own name, with no `tag`: `record only_tagg` (§ 13)

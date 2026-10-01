@@ -60,6 +60,17 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     if !stop_c.is_err()
         return stop_c.must()
 
+    # `--apply`'s artifact is the program with every certain fix applied, and a
+    # file no stage speaks of has none to apply: it is handed back as it is,
+    # byte for byte. Until defect 141 nothing was printed, so `check --apply`
+    # into a file emptied a clean one, and a file with a hole got the hole's
+    # report, `check`'s own artifact and not this flag's, which `--in-place`
+    # printed too.
+    if argv.has(inv, spelling: "--apply")
+        if !argv.has(inv, spelling: "--in-place")
+            io.print_artifact(text: source_extent.user_text(s))
+        return .ok_exit
+
     if argv.has(inv, spelling: "--dump-scopes")
         io.print_artifact(text: scopes.dump_scopes(out, s, parsed.decls))
 
