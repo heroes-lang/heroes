@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 9**
+**OPEN: 7**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -223,6 +223,27 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     cluster's C5): repaired at `d6af2934`, gated by its cases and the
     compiler's own tests; the net is owed at the batch's close.
 
+    **Batch gate, lane recovery-b5, 2026-10-01 23:00** (`a8b04ea8`, C1, C2, C3
+    and C5 with `538d70ac`; defect 146 closed by the same gate): the seed
+    regenerated once, the fixpoint by `cmp`; the compiler's own tests 993 and
+    the net's own 184, all passed; the full net 4,240 passed and 0 failed;
+    the census over 1,530 files, every move the batch's own; the recovery
+    instrument EXTRA 850 to 532 (`indent-2` and `indent-tab` 220 to 0,
+    `bracket-open` 44 to 7, `string-open` 28 to 2), ONE 12,427 to 12,745,
+    HIDDEN pairs 16 to 12, no class risen; Linux x86-64, 993 tests and 19
+    suites at 0 failed. The trunk fast-forwarded to it at 00:09 on
+    2026-10-02. The item stays open for the shapes `scratchpad/lane-recovery-b5-items.md`
+    § Queued and `scratchpad/close/next-batches-1001.md` name.
+
+    **Next, by the author's choice of 2026-10-01 on panel 183's R3**
+    (`docs/records/done/2026-10-01-2224-panel-183-r3-the-openers-message-reworded-and-a-narrower-rule-prototyped.md`):
+    the opener's message reworded to name the line and the word where the
+    bracket's reach ended, a sentence true in Task 2 and in the known-cost
+    shapes alike (`tests/golden/check/panel-183-a-statement-inside-a-bracket-closed-below-is-the-rules-known-cost.hero`,
+    11 messages since C3); and a narrower R3 prototyped in this cluster's
+    lane and measured on those shapes, Task 2 and the instrument before any
+    sitting sees it.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
@@ -401,6 +422,18 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     message, and the opener a missing closer was for is the one named** (the
     cluster's C3): repaired at `df2e13ca`, gated by its cases and the
     compiler's own tests; the net is owed at the batch's close.
+
+    **Batch gate, lane recovery-b5, 2026-10-01 23:00** (`a8b04ea8`, C1, C2, C3
+    and C5 with `538d70ac`; defect 146 closed by the same gate): the seed
+    regenerated once, the fixpoint by `cmp`; the compiler's own tests 993 and
+    the net's own 184, all passed; the full net 4,240 passed and 0 failed;
+    the census over 1,530 files, every move the batch's own; the recovery
+    instrument EXTRA 850 to 532 (`indent-2` and `indent-tab` 220 to 0,
+    `bracket-open` 44 to 7, `string-open` 28 to 2), ONE 12,427 to 12,745,
+    HIDDEN pairs 16 to 12, no class risen; Linux x86-64, 993 tests and 19
+    suites at 0 failed. The trunk fast-forwarded to it at 00:09 on
+    2026-10-02. The item stays open for the shapes `scratchpad/lane-recovery-b5-items.md`
+    § Queued and `scratchpad/close/next-batches-1001.md` name.
 
 - [ ] **132 — a join into a line that holds a `match` arm's `=>` costs the break a second diagnostic** | inside `match n`, `0 => 5 -` over `1 => 10`, and `0 => 5` over `| 1 => 10`, each draw `continuation_outside_brackets` at the break and then the parser's `expected_end_of_line` at the next arm's `=>`, since the joined line, `0 => 5 - 1 => 10` or `0 => 5 | 1 => 10`, holds two arms | `selfhost/open_line.hero` (the join handed to the parser) · `selfhost/grammar_expr.hero` (`finish`, `match_expr`)
 
@@ -711,26 +744,18 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     by its cases and the compiler's own tests; the net is owed at the
     batch's close.
 
-- [ ] **141 — `check --apply` writes bytes no fix proposed: the newline the loader adds to a root file's open last line** | `fn main()` over `    print(1)` with no final newline, 22 bytes: `check --apply` prints 29 where its one certain fix makes 28, the last byte a `\n`; `--apply --in-place` writes it into the author's file | `source.from_files` · `source_extent.user_text` · `selfhost/cli/check.hero` (what `--apply` prints)
-
-    **Origin:** lane 136 at its close, 2026-09-30, on the trunk's compiler as
-    on its own (`scratchpad/lane-136/r2/nl/`); reproduced by the coordinator
-    at 00:05 on 2026-10-01 on `3cc3b553` (`scratchpad/p184/newdef/certain.hero`,
-    `od -c` of the output). Beside it and to be judged with it: a refused
-    file with no fix prints its text with the added newline, and a clean file
-    prints nothing.
-
-    **Why it is a defect.** What `--apply` writes must be exactly the fixes
-    it applied, the rule defect 137's repair holds; here a byte no fix
-    proposed reaches the author's file.
-
-    **2026-10-01, lane 135c, what `check --apply` hands back is the author's
-    bytes and its fixes, a last line left open included** (beside it, found
-    in the lane's first pass: a stray `\r` ending a file or a module read as a
-    line ending, a CRLF file's bare `\n`, nothing printed for a clean file
-    and the holes report for one with a hole): repaired at `fa64c7da`, gated
-    by its cases and the compiler's own tests; the net is owed at the batch's
-    close.
+    **Batch gate, lane 135c, 2026-10-01 21:14** (`8025ad15`, P6, C9 and P4;
+    P7 found closed by defect 137's rounds; defect 141 closed by the same
+    gate): the seed regenerated once, the fixpoint by `cmp`; the compiler's
+    own tests 973 and the net's own 184, all passed; the full net 4,207
+    passed and 0 failed; the census over 1,509 files, every move the batch's
+    own; the certain-fix audit's 168 probes, certain fixes 124 to 118 and
+    applied texts carrying a new code 11 to 4; Linux x86-64 18 of 19 suites at
+    0 failed, `probe` on the emulation's timeout and 24 and 0 on the trunk
+    that carries the batch; Windows 973 tests and 19 suites at 0 failed. The
+    item stays open for P5, L2, L3, L4, L5 and C3, each measured wider than
+    the audit found (`scratchpad/lane-135c/next/first-pass.md`), P5 waiting
+    on panel 185's ruling on design.md §4.15's premise.
 
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe)
 
@@ -741,23 +766,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** A program calling `waitpid` needs `WEXITSTATUS`,
     and the design says it is reachable; the FFI is to be complete (CL-028).
-
-- [ ] **146 — the parser is quadratic on declaration heads written with a foreign word** | 1,500 `fn f<i>() {` heads parse in 0.80 s and 3,000 in 3.18 s, where 3,000 clean `function` heads take 0.06 s; lane 136 measured 6,000 at 28.5 s | the recovery after a foreign-word head (`selfhost/scan.hero`'s error token, `cursor.recover_to_next_decl`)
-
-    **Origin:** lane 136 at its close, 2026-09-30
-    (`scratchpad/lane-136/r2/big/`); timed by the coordinator at 00:09 on
-    2026-10-01 on `3cc3b553`, load 1.6 (`scratchpad/p184/newdef/fn1500.hero`,
-    `fn3000.hero`, `ok3000.hero`).
-
-    **Why it is a defect.** A file of Rust habits a model writes whole costs
-    time that grows with its square (twice the heads, 4.0 times the time,
-    measured); at 30,000 heads that square gives about five minutes, an
-    inference, unrun.
-
-    **2026-10-01, lane recovery-b5, a file of foreign heads is read once to
-    place its words, and the parser grows its arrays in place**: repaired at
-    `a2af2a3f`, gated by its cases and the compiler's own tests; the net is
-    owed at the batch's close.
 
 - [ ] **147 — spec § 8's `Inline` production refuses one-statement arms the design allows and the compiler builds** | `Inline = ( Expression | "return" [ Expression ] | "break" | "continue" | "assert" Expression ) NEWLINE` leaves out a mutation (`.blue => n @ 5`) and a `while` (`.red => while n < 3` over its body), and both check, build and run on the trunk, where design.md §4.7 says *an arm's body is one statement, inline, or an indented block* (panel 014) | `spec/heroes-spec.md:241-243` · design.md §4.7 (`:1230-1235`) · `selfhost/parse/arm_line.hero`
 
