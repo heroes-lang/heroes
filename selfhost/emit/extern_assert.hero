@@ -47,20 +47,30 @@ function extern_assertions(@w: writer.Writer, p: containers.Program, c: state.Ch
     if externs.len() == 0
         return
 
-    # The macro family. HERO_RET_INT's set is every signed C integer
-    # plus every unsigned one narrower than 64 bits — a fact about
-    # i64's range and nothing else; a second width must never reuse it
-    # (panel 042).
+    # The macro family, and ONE RULE for every integer width (defect 144,
+    # 2026-10-01): spec § 13's *a result may be wider than C's* means a
+    # declared result that holds every value of C's type, panel 092's
+    # lossless widening. A signed result takes a signed C integer no wider
+    # and an unsigned one strictly narrower; an unsigned result takes an
+    # unsigned one no wider and never a signed one; `_Bool`, whose width is
+    # one bit (C11 6.2.6.2), fits every integer. Until that day each
+    # narrower width accepted exactly its own size, so `htonl` declared
+    # `-> u64` was refused, and HERO_RET_INT, i64's, listed type NAMES,
+    # which left out `char` and `_Bool` everywhere and a 32-bit `unsigned
+    # long` on Windows. Widths are asked of `sizeof`, never of a name, and
+    # each macro stays ONE line: a preamble line shifts every `#line`
+    # restore under it (panel 063), so the rule changed eight lines' text
+    # and no line's count. Measured on arm64 macOS, x86-64 and arm64 Linux
+    # and x86-64 Windows, all 165 pairs of C type and declared type.
     writer.line(
         @w,
-        text: "#define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)"
+        text: "#define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))"
     )
 
-    # The seven other widths: fundamental types never typedefs (size_t
-    # and uintptr_t in one _Generic is a hard error where they alias);
-    # sizeof is load-bearing (i386 and wasm32 ACCEPT a 32-bit unsigned
-    # long as u64 without it — _Generic can say what kind a type is and
-    # not how wide); char's signedness is asked, not assumed.
+    # The two questions the widths are built from: fundamental types never
+    # typedefs (size_t and uintptr_t in one _Generic is a hard error where
+    # they alias); _Generic says what KIND a type is and sizeof how wide;
+    # char's signedness is asked, not assumed.
     writer.line(
         @w,
         text: "#define HERO_C_INTEGER(c) _Generic((c), " + assert_spelling.C_INTEGER_TYPES.join(":1, ") + ":1, default:0)"
@@ -69,20 +79,34 @@ function extern_assertions(@w: writer.Writer, p: containers.Program, c: state.Ch
         @w,
         text: "#define HERO_C_UNSIGNED(c) _Generic((c), unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0)"
     )
-    writer.line(@w, text: "#define HERO_RET_I8(c) (HERO_C_INTEGER(c) && !HERO_C_UNSIGNED(c) && sizeof(c) == 1)")
-    writer.line(@w, text: "#define HERO_RET_I16(c) (HERO_C_INTEGER(c) && !HERO_C_UNSIGNED(c) && sizeof(c) == 2)")
-    writer.line(@w, text: "#define HERO_RET_I32(c) (HERO_C_INTEGER(c) && !HERO_C_UNSIGNED(c) && sizeof(c) == 4)")
+    writer.line(
+        @w,
+        text: "#define HERO_RET_I8(c) (HERO_C_INTEGER(c) && (_Generic((c), _Bool:1, default:0) || (!HERO_C_UNSIGNED(c) && sizeof(c) == 1)))"
+    )
+    writer.line(
+        @w,
+        text: "#define HERO_RET_I16(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 2 : sizeof(c) <= 2))"
+    )
+    writer.line(
+        @w,
+        text: "#define HERO_RET_I32(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 4 : sizeof(c) <= 4))"
+    )
     writer.line(@w, text: "#define HERO_RET_U8(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 1)")
-    writer.line(@w, text: "#define HERO_RET_U16(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 2)")
-    writer.line(@w, text: "#define HERO_RET_U32(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 4)")
-    writer.line(@w, text: "#define HERO_RET_U64(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 8)")
+    writer.line(@w, text: "#define HERO_RET_U16(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) <= 2)")
+    writer.line(@w, text: "#define HERO_RET_U32(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) <= 4)")
+    writer.line(@w, text: "#define HERO_RET_U64(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) <= 8)")
 
-    # f32 accepts float and NOTHING else, where f64 accepts all three:
-    # the spec's "a result may be wider than C's" read in the one
-    # direction it can be read — f64 for a C float widens exactly, f32
-    # for a C double narrows silently at every call.
+    # f32 accepts float and NOTHING else: an f32 for a C double narrows
+    # in silence at every call. f64 accepts float and double, and long
+    # double only where it holds no value a double cannot: on arm64 macOS
+    # and on Windows it is double, and on both Linux targets it is wider
+    # (64 and 113 bits of mantissa against 53, measured with clang
+    # -target), which `long double:1` handed to an f64 in silence.
     writer.line(@w, text: "#define HERO_RET_F32(c) _Generic((c), float:1, default:0)")
-    writer.line(@w, text: "#define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:1, default:0)")
+    writer.line(
+        @w,
+        text: "#define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:(__LDBL_MANT_DIG__ <= __DBL_MANT_DIG__ && __LDBL_MAX_EXP__ <= __DBL_MAX_EXP__ && __LDBL_MIN_EXP__ >= __DBL_MIN_EXP__), default:0)"
+    )
     writer.line(@w, text: "#define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)")
     writer.line(@w, text: "#define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)")
 
