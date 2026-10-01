@@ -12,8 +12,9 @@
 use token
 use diag
 use cursor
-use literals
 use lexer
+use parse/pairing
+use parse/laid_braces
 
 # What else the line end refused before a token may have been, beside going on
 # with the line above, which is what the fix writes:
@@ -84,42 +85,33 @@ function operand_act(kind: token.TokenKind) -> str
     return "index"
 
 # Whether a closer closes the bracket the cursor stands in, by the lexer's own
-# stack: every opener pushed, every closer popping the last one, inside the
-# author's text and before an offset where the lexer named every bracket still
-# open, a declaration opening its line at column 0; a literal that never closed
-# took the closers on the rest of its line, as the lexer popped them. It is
-# `parse/unclosed.paired_closer`'s walk begun inside the bracket rather than at
-# its opener, since that module reads `parse/line_end` and cannot be read from
-# it; the two must answer alike, and the test below holds the shapes.
+# stack: the innermost opener before the cursor whose closer, if it has one,
+# stands past it, paired as `parse/pairing.paired_closer` pairs it, a closer of
+# another kind included that the lexer paired with an opener of its own kind
+# below the innermost (`closers.hero`, the recovery batches' C3, 2026-10-01).
+# Until that day this was the pairing's walk begun inside the bracket, since
+# `parse/unclosed` reads `parse/line_end` and could not be read from it; the
+# walk now lives apart in `parse/pairing`, which reads neither, so the two
+# answer alike by being one.
 function closed_below(c: cursor.Cursor, text: str) -> bool
     here = cursor.current_span(c).start
-    bounded = c.root_end >= 0 && here < c.root_end
-    named_at: i64 @ -1
+    i: i64 @ c.pos - 1
 
-    for close in c.closes
-        if named_at < 0 && close > here
-            named_at @ close
-
-    depth: i64 @ 0
-    i: i64 @ c.pos
-
-    while c.tokens[i].kind != .eof && !(bounded && c.tokens[i].span.start >= c.root_end)
-        if named_at >= 0 && c.tokens[i].span.start >= named_at
-            return false
+    while i >= 0
         k = c.tokens[i].kind
 
-        if k == .lparen || k == .lbracket || k == .lbrace
-            depth @ depth + 1
-        else if k == .rparen || k == .rbracket || k == .rbrace
-            if depth == 0
-                return true
-            depth @ depth - 1
-        else if k == .error
-            depth @ depth - literals.closers_taken(text, c.tokens[i].span)
+        if (k == .lparen || k == .lbracket || k == .lbrace) && !laid_braces.laid_out_by_lexer(c, open: i)
+            pair = pairing.paired_closer(c, text, open: i)
 
-            if depth < 0
-                return false
-        i @ i + 1
+            if pair >= c.pos
+                return true
+
+            if pair < 0
+                named = pairing.close_after(c, at: c.tokens[i].span.start)
+
+                if named < 0 || named > here
+                    return false
+        i @ i - 1
 
     return false
 
@@ -142,9 +134,14 @@ function closed_at(text: str, word: str) -> bool
     return closed_below(standing_on(text: text, word: word), text)
 
 test "a bracket is closed below the cursor as the lexer's stack pairs it"
-    # Closed, by its own closer and by a stray of another kind the stack pairs.
+    # Closed, by its own closer and by a stray of another kind the stack pairs
+    # with the innermost, `]` after `(` with no `[` open.
     assert closed_at(text: "function main()\n    x = (total\n        - fee)\n", word: "-")
-    assert closed_at(text: "function main()\n    print(xs[i\n        + 1)\n", word: "+")
+    assert closed_at(text: "function main()\n    print(f(i\n        + 1]\n", word: "+")
+
+    # Never closed where a closer of another kind closes the opener of its own
+    # kind below, `print(xs[i` over `+ 1)` naming the `[` (2026-10-01).
+    assert !closed_at(text: "function main()\n    print(xs[i\n        + 1)\n", word: "+")
 
     # Never closed: the file ends, or a declaration opens its line at column 0.
     assert !closed_at(text: "function f(m: {str: i64}) -> i64\n    return match m[\"a\"\n        .ok v => v\n        .err e => 0\n", word: ".")

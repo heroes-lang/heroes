@@ -1,4 +1,6 @@
 tests/golden/check/fixedbugs-131-a-closer-of-another-kind-names-the-bracket-left-open.hero:29:16: error[unclosed_bracket]: `[` opened here is never closed
 tests/golden/check/fixedbugs-131-a-closer-of-another-kind-names-the-bracket-left-open.hero:34:29: error[unclosed_bracket]: `[` opened here is never closed
 tests/golden/check/fixedbugs-131-a-closer-of-another-kind-names-the-bracket-left-open.hero:37:14: error[unclosed_bracket]: `[` opened here is never closed
-tests/golden/check/fixedbugs-131-a-closer-of-another-kind-names-the-bracket-left-open.hero:41:26: error[expected_args_close]: expected `)`, or `,` and another argument, found `]`
+tests/golden/check/fixedbugs-131-a-closer-of-another-kind-names-the-bracket-left-open.hero:43:13: error[unclosed_bracket]: `[` opened here is never closed
+tests/golden/check/fixedbugs-131-a-closer-of-another-kind-names-the-bracket-left-open.hero:44:9: error[line_end_before_continuation]: a line end stands before `+`: the line above ends with a name (`i`), which keeps its line end, and inside brackets a line end may stand only before a closing bracket or a `,`; to break the line here, end the line above with `+`
+tests/golden/check/fixedbugs-131-a-closer-of-another-kind-names-the-bracket-left-open.hero:47:26: error[expected_args_close]: expected `)`, or `,` and another argument, found `]`

@@ -40,8 +40,8 @@ function in_a_map_type()
 function an_index_left_open_over_a_line_going_on()
     xs = [1, 2]
     i = 0
-    print(xs[i  #~ unclosed_bracket
-        + 1)  #~ line_end_before_continuation
+    print(xs[i +  #~ unclosed_bracket
+        1)  #~ line_end_before_continuation
 
 function a_closer_of_no_open_kind()
     print(pair(a: 1, b: 2])  #~ expected_args_close

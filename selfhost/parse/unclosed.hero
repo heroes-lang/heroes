@@ -97,8 +97,16 @@ function past_what_goes_on(@c: cursor.Cursor, text: str, holds: line_end.Holds)
         other = holds == .arguments && line_end.begins_a_value(cursor.current_kind(c))
         line_end.continued(@c, text: text, before: before, other: other)
 
-        while !cursor.at(c, .terminator) && !cursor.at(c, .eof) && !cursor.at(c, .dedent)
+        while !cursor.at(c, .terminator) && !cursor.at(c, .eof) && !cursor.at(c, .dedent) && !named_here(c)
             _ = cursor.bump(@c)
+
+# Whether the token under the cursor is a closer the lexer met as one of
+# another kind, which closed an opener of its own kind outside the construct
+# and named this one's never closed there (`closers.hero`): the line going on
+# ends before it, the outer construct's to take.
+function named_here(c: cursor.Cursor) -> bool
+    at = cursor.current_span(c).start
+    return pairing.is_closer(cursor.current_kind(c)) && pairing.close_after(c, at: at - 1) == at
 
 # Whether a head's line, from token `from` to the cursor, holds an opener the
 # lexer named never closed, and the cursor stands on a line below still in
