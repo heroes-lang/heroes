@@ -1080,17 +1080,6 @@ function literal_pattern(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
 # str) -> str) @ report` where `report` is `(code, msg)` — and the call site
 # would obey the annotation while the callee obeyed itself. With the names in
 # the type's identity (`check/table.hero`) that assignment is a mismatch.
-# Whether a label the call wrote names ANOTHER position of this type, which is
-# what decides the certainty of the `wrong_label` fix: renaming a label that
-# belongs elsewhere leaves the values where they are, so the repair is a guess
-# rather than a certainty (panel 127).
-function listed_name(names: [str], written: str) -> bool
-    for one in names
-        if one == written
-            return true
-
-    return false
-
 function declared_labels(s: source.Source, params: [ast.Param], lowered: [i64]) -> [str]
     names: [str] @ []
     none: [str] = []
@@ -1335,6 +1324,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                 # `str`* — is not even true.
                 if table.shared_at(params, at: position)
                     wanted @ carried
+                misnamed: bool @ false
 
                 if wanted.len() == 0
 
@@ -1357,13 +1347,18 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                         @c,
                         label_errors.needs_label(name: "this function", expected: wanted, shared: state.show(c, s, decls, params[position]), others: others, span: a.exprs[arg.value].span, at: front)
                     )
-                else if source.span_text(s, arg.name.must()) != wanted
-                    state.push_diagnostic(
-                        @c,
-                        label_errors.wrong_label(holder: "this function", written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: listed_name(names, source.span_text(s, arg.name.must())), span: arg.name.must())
-                    )
+                else
+                    misnamed @ source.span_text(s, arg.name.must()) != wanted
 
                 check(@c, a, r, s, decls, id: arg.value, expected: params[position])
+
+                # Told once the argument is checked, since what else a label
+                # naming nothing could be asks its type (defect 135, C3).
+                if misnamed
+                    state.push_diagnostic(
+                        @c,
+                        labels.misnamed(c, a, s, decls, holder: "this function", label: arg.name.must(), every: names, open: names, types: params, at: position, from: offset, value: arg.value, taken: taken)
+                    )
                 index @ index + 1
 
             return f.result
@@ -1584,57 +1579,42 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 position = index + offset
                 param = params[position]
 
-                if listed(ambiguous, position)
+                # A label is its position's name, where the signature needs
+                # one and where it does not: a wrong one is a wrong argument
+                # with a comment on it. Told once the argument is checked.
+                misnamed = !arg.name.is_err() && source.span_text(s, arg.name.must()) != source.span_text(s, fd.value.params[position].name)
+
+                if listed(ambiguous, position) && arg.name.is_err()
                     wanted = source.span_text(s, fd.value.params[position].name)
 
-                    if arg.name.is_err()
-                        # Rendered with the CALLEE's type-parameter names:
-                        # at a call site the enclosing function's letters
-                        # are the wrong dictionary, and #0 is nobody's type.
-                        callee_generics: [str] @ []
+                    # Rendered with the CALLEE's type-parameter names: at a
+                    # call site the enclosing function's letters are the
+                    # wrong dictionary, and #0 is nobody's type.
+                    callee_generics: [str] @ []
 
-                        for gspan in fd.value.generics
-                            callee_generics @ callee_generics.push(source.span_text(s, gspan))
+                    for gspan in fd.value.generics
+                        callee_generics @ callee_generics.push(source.span_text(s, gspan))
 
-                        shared_text = render.render_ty(c.out.types, s, decls, param, callee_generics)
-                        others = labels.other_parameters(
-                            s,
-                            fd.value.params,
-                            types: params,
-                            ambiguous: ambiguous,
-                            at: position,
-                            from: offset,
-                            taken: taken,
-                            mutable: arg.mutable
-                        )
-                        front = label_errors.argument_front(
-                            s.text,
-                            value_start: a.exprs[arg.value].span.start,
-                            mutable: arg.mutable
-                        )
-                        state.push_diagnostic(
-                            @c,
-                            label_errors.needs_label(name: name, expected: wanted, shared: shared_text, others: others, span: a.exprs[arg.value].span, at: front)
-                        )
-                    else
-                        if source.span_text(s, arg.name.must()) != wanted
-                            state.push_diagnostic(
-                                @c,
-                                label_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: names_a_parameter(s, fd.value.params, source.span_text(s, arg.name.must())), span: arg.name.must())
-                            )
-                else
-
-                    # A label where the signature does not need one still
-                    # has to be the right label: a wrong one is a wrong
-                    # argument with a comment on it.
-                    if !arg.name.is_err()
-                        wanted = source.span_text(s, fd.value.params[position].name)
-
-                        if source.span_text(s, arg.name.must()) != wanted
-                            state.push_diagnostic(
-                                @c,
-                                label_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: names_a_parameter(s, fd.value.params, source.span_text(s, arg.name.must())), span: arg.name.must())
-                            )
+                    shared_text = render.render_ty(c.out.types, s, decls, param, callee_generics)
+                    others = labels.other_parameters(
+                        s,
+                        fd.value.params,
+                        types: params,
+                        ambiguous: ambiguous,
+                        at: position,
+                        from: offset,
+                        taken: taken,
+                        mutable: arg.mutable
+                    )
+                    front = label_errors.argument_front(
+                        s.text,
+                        value_start: a.exprs[arg.value].span.start,
+                        mutable: arg.mutable
+                    )
+                    state.push_diagnostic(
+                        @c,
+                        label_errors.needs_label(name: name, expected: wanted, shared: shared_text, others: others, span: a.exprs[arg.value].span, at: front)
+                    )
 
                 # §4.8: the marker is repeated at the call site, and a
                 # marked argument must meet a marked parameter.
@@ -1655,6 +1635,14 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                     if table.poisoned(c.out.types, got)
                         tainted @ true
                     check_generics.bind(@c, s, decls, @bindings, param: param, got: got, span: a.exprs[arg.value].span)
+
+                # What else a label naming nothing could be asks the
+                # argument's type, now known (defect 135, C3).
+                if misnamed
+                    state.push_diagnostic(
+                        @c,
+                        labels.misnamed_parameter(c, a, s, decls, holder: name, label: arg.name.must(), declared: fd.value.params, types: params, ambiguous: ambiguous, given: given, at: position, from: offset, value: arg.value, taken: taken)
+                    )
                 index @ index + 1
 
             # THE CONTEXT BINDS WHAT THE ARGUMENTS LEFT (panel 105, ratified
@@ -1739,27 +1727,6 @@ function bind_argument(@c: state.Checker, s: source.Source, decls: [ast.Decl], @
 record FieldSpec
     name: str
     ty: i64
-
-# **What the certainty of a `wrong_label` fix rests on**, and it is a fact about
-# the call in hand rather than a premise about the world: does the label the
-# author wrote name ANOTHER position of this callee? If it does, the call is an
-# argument swap wearing labels, and renaming one leaves both values where they
-# are (panel 127's compiler seat applied the old certain fix and measured the
-# program printing the other answer). `label_errors.wrong_label` turns that into
-# a `guess`; a label that names nothing is a typo and the rename is certain.
-function names_a_parameter(s: source.Source, params: [ast.Param], written: str) -> bool
-    for p in params
-        if source.span_text(s, p.name) == written
-            return true
-
-    return false
-
-function names_a_field(expected: [FieldSpec], written: str) -> bool
-    for f in expected
-        if f.name == written
-            return true
-
-    return false
 
 # Point(x: 3, y: 4) — §4.9 makes every field name mandatory, always,
 # which is why there is no positional form to get wrong.
@@ -1970,24 +1937,25 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
 
     for arg in given
         spec = expected[index]
-
-        if !arg.name.is_err() && source.span_text(s, arg.name.must()) != spec.name
-            state.push_diagnostic(
-                @c,
-                label_errors.wrong_label(holder: label, written: source.span_text(s, arg.name.must()), expected: spec.name, elsewhere: names_a_field(expected, source.span_text(s, arg.name.must())), span: arg.name.must())
-            )
         lowered = lower.lower_ty(@c, a, r, spec.ty)
         check(@c, a, r, s, decls, id: arg.value, expected: lowered)
         spec_names @ spec_names.push(spec.name)
         spec_types @ spec_types.push(lowered)
         index @ index + 1
 
-    # A missing label is told once every argument is checked: which other
-    # fields an argument could fill asks the type it has (defect 135).
+    # A missing or a wrong label is told once every argument is checked:
+    # which other fields an argument could fill asks the type it has (defect
+    # 135), and the label must be the field at its position.
     taken = labels.written_labels(s, given)
     index @ 0
 
     for arg in given
+        if !arg.name.is_err() && source.span_text(s, arg.name.must()) != spec_names[index]
+            state.push_diagnostic(
+                @c,
+                labels.misnamed(c, a, s, decls, holder: label, label: arg.name.must(), every: spec_names, open: spec_names, types: spec_types, at: index, from: 0, value: arg.value, taken: taken)
+            )
+
         if arg.name.is_err()
             others = labels.other_fields(
                 c,
