@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 11**
+**OPEN: 9**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -690,50 +690,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     by its cases and the compiler's own tests; the net is owed at the
     batch's close.
 
-- [ ] **139 — a block holding a `match` statement counts as leaving whatever its arms do, so `check` passes a function with no `return` and `build` fails** | `function f(c: Color) -> i64` whose body is a `match` with printing arms, then `print(3)`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed ... non-void function should return a value*; the same with the `match` inside one branch of an `if` | `selfhost/check/walk.hero:898-904` (no arm with a value read as every arm jumping) · `arms` at `:1041-1050` · `check/join.hero`'s `Branch`
-
-    **Origin:** panel 184's compiler-engineer and lane 135b's batch gate,
-    apart, 2026-09-30; widened by the sitting's critic to a `match` inside a
-    branch (`docs/panel/184-reports/completeness-critic.md` B1); reproduced by
-    the coordinator at 21:21 on the trunk's compiler at `a294a6ff`
-    (`scratchpad/p184/matchleave/match-then-falls.hero`, `match-prints.hero`);
-    again at 00:17 on 2026-10-01 on the integrated trunk at `3cc3b553`, both
-    `check` 0 and `build` 2 on the same clang message.
-    A `match` in a VALUE block is not affected (the critic's case c).
-
-    **Why it is a defect.** A program `missing_return` exists to refuse is
-    accepted, and the compiler then fails on its own emitted C with exit 2,
-    which says the tool is wrong. Panel 184's R4 reads the same predicate and
-    waits on this repair.
-
-    **2026-10-01, lane flow, the value half: an arm that ends on a statement,
-    in a `match` used as a value, is told, and *every branch jumps* is said
-    only where every branch did** (beside the item: `.b => assert false` or
-    `.b => n @ 5` there checked at 0 and read the binding uninitialised in
-    the C): repaired at `201b99af`, gated by its cases and the compiler's own
-    tests; the net is owed at the batch's close. The statement half, the item
-    as filed, waits on leave to edit lane 135c's
-    `tests/golden/check/fixedbugs-135-a-dropped-value-that-ends-its-function.hero`;
-    it repairs too a VALUE block holding a `match` statement, which the first
-    pass found affected, against the line above (`x = if` refused with *every
-    branch jumps*, or checked clean and built over an uninitialised read).
-
-    **2026-10-01, lane flow, the statement half: a `match` statement leaves
-    its block only when every arm does, and the checked `if` asks it too**
-    (the item as filed; by the coordinator's leave of 12:00 for lane 135c's
-    golden, which gains its `missing_return` under a dated correction):
-    repaired at `3a25b640`, gated by its cases and the compiler's own tests;
-    the net is owed at the batch's close.
-
-    **2026-10-01, lane flow, the class at a constant: a body that ends on a
-    statement is told once, and one that jumps is named**
-    (`selfhost/check/decls.hero:54`, by the coordinator's leave of 12:00: an
-    `assert`, a loop or a `for` last was told twice, the second time *every
-    branch jumps*): repaired at `a26448c0`, gated by its cases and the
-    compiler's own tests; the net is owed at the batch's close. A `break` or
-    `continue` there still costs `jump_outside_loop` and the constant's own
-    message, both true.
-
 - [ ] **141 — `check --apply` writes bytes no fix proposed: the newline the loader adds to a root file's open last line** | `fn main()` over `    print(1)` with no final newline, 22 bytes: `check --apply` prints 29 where its one certain fix makes 28, the last byte a `\n`; `--apply --in-place` writes it into the author's file | `source.from_files` · `source_extent.user_text` · `selfhost/cli/check.hero` (what `--apply` prints)
 
     **Origin:** lane 136 at its close, 2026-09-30, on the trunk's compiler as
@@ -754,24 +710,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and the holes report for one with a hole): repaired at `fa64c7da`, gated
     by its cases and the compiler's own tests; the net is owed at the batch's
     close.
-
-- [ ] **142 — `missing_return`'s note sends the author to a form the checker refuses** | the note says *every path must end in a `return`, or the last statement must be the value*; a function whose last line is the bare value then costs `missing_return` again and `discarded_value` | `selfhost/flow_errors.hero:157-163`
-
-    **Origin:** lane 135b's final report, 2026-09-30; reproduced by the
-    coordinator at 00:11 on 2026-10-01 on `3cc3b553`
-    (`scratchpad/p184/newdef/mr.hero`, `mr-note-followed.hero`).
-
-    **Why it is a defect.** design.md §4.17: a diagnostic carries what is
-    needed to fix the program; this one's advice, followed, is refused.
-
-    **2026-10-01, lane flow, the notes name only forms the checker accepts**
-    (every path ends in a `return` with a value, past an `if` with no `else`
-    and past any loop; a value at the end of a path is not returned, so
-    `return` goes before it; every repair named builds and runs in
-    `tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero`):
-    repaired at `8d5cedd7`, gated by its cases and the compiler's own tests;
-    the net is owed at the batch's close. The `match` arm's clause waits with
-    defect 139's statement half, which makes it true.
 
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe)
 
