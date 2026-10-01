@@ -167,6 +167,13 @@ record LexState
     # Each body in braces open, innermost last: a `{` the lexer reads as the
     # end of its head's line, no bracket (`brace_layout.hero`).
     braced: [Braces]
+    # The line ends in the text before `counted_to`, `line_ends` of them, for
+    # a message that names a line (`line_of`): counted forward from where the
+    # last count stopped, so a file's lines are read once however many
+    # messages name one, where a count from the first byte per message cost
+    # a file of `print(x` lines its square.
+    counted_to: i64
+    line_ends: i64
 
 function new_state() -> LexState
     brackets: [token.Span] = []
@@ -203,8 +210,27 @@ function new_state() -> LexState
         outline: text_outline.unread(),
         swaps: swaps,
         run: runs,
-        braced: braced
+        braced: braced,
+        counted_to: 0,
+        line_ends: 0
     )
+
+# The 1-based line of the text that holds the offset `at`. The lexer asks in
+# reading order, so the count goes on from the last one; asked of an offset
+# before it, the count starts again from the first byte, slower and as true.
+function line_of(@l: LexState, text: str, at: i64) -> i64
+    if at < l.counted_to
+        l.counted_to @ 0
+        l.line_ends @ 0
+    i: i64 @ l.counted_to
+
+    while i < at && i < text.len()
+        if text[i] == '\n'
+            l.line_ends @ l.line_ends + 1
+        i @ i + 1
+
+    l.counted_to @ i
+    return l.line_ends + 1
 
 ## Emitting
 

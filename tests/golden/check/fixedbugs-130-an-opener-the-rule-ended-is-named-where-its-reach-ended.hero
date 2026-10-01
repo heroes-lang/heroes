@@ -1,0 +1,56 @@
+# Fixed 2026-10-02, defect 130's class, lane recovery-b6 (panel 183 R3, the
+# author's route (b) of 2026-10-01). Symptom: where panel 183's rule ended
+# the reach of a bracket left open, at a line whose first word no bracket
+# can hold (R1) or at a name after a line that kept its end inside a `(`
+# (R2), the opener was told *never closed*, which is false of a bracket the
+# author closes below it (the rule's known cost, in
+# `panel-183-a-statement-inside-a-bracket-closed-below-is-the-rules-known-cost`).
+# Cause: the lexer had one message for every opener it found open, written
+# for the file's end. Each opener is now named still open at the line and
+# the word where the rule ended its reach, counted over the blank and comment
+# lines between; at the file's end, and at a closer that closes what the
+# opener stands in, a body's `}` or the `)` of a call around a `[`, it is
+# still never closed, since past that closer no closer can be its own.
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+# Two openers, both named at the one line that ended their reach.
+function two_at_one_line(c: bool)
+    x = g(g(1,  #~ unclosed_bracket unclosed_bracket
+    if c
+        print(1)
+    print(x)
+
+# A blank line and a comment between the opener and the line that ended it.
+function lines_between(c: bool)
+    x = g(1,  #~ unclosed_bracket
+
+    # a note the count passes over
+    while c
+        print(1)
+    print(x)
+
+# A name after a line that kept its end, a blank line between them.
+function a_name_below_a_blank()
+    x = g(1, 2  #~ unclosed_bracket
+
+    y = 3
+    print(x + y)
+
+# A closer that closes what the opener stands in: the `[` is never closed.
+function inside_a_call()
+    print([2, 3)  #~ unclosed_bracket
+    print(4)
+
+# A body in braces: its `}` closes what the `(` stands in.
+function in_braces() {  #~ missing_body
+    x = g(1  #~ unclosed_bracket
+}
+
+function main()
+    two_at_one_line(true)
+
+# At the file's end the opener is never closed.
+function at_the_end()
+    x = g(1  #~ unclosed_bracket
