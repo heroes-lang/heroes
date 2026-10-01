@@ -62,6 +62,17 @@ function checked(n: i64) -> i64
     exit(code: 3)
     return 0
 
+# A `match` arm that does not return lets a path run out of the `match`, so
+# every arm returns (the clause defect 139's statement half made true).
+variant Color
+    red
+    blue
+
+function shade(c: Color) -> i64
+    match c
+        .red  => return 1
+        .blue => return 2
+
 function main()
     print(sign(n: 5))
     print(sign(n: -5))
@@ -74,3 +85,4 @@ function main()
     print(until_found(n: 10))
     print(double(n: 21))
     print(checked(n: 7))
+    print(shade(c: .blue))

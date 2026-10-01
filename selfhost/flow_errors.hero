@@ -174,7 +174,7 @@ function missing_return(name: str, want: str, span: token.Span) -> diag.Diagnost
         span: span
     )
     d.notes @ d.notes.push(
-        "every path must end in a `return` with a value: a path runs on to the end past an `if` with no `else`, and past any loop, `while true` included, since a loop counts as one that can finish"
+        "every path must end in a `return` with a value: a path runs on to the end past an `if` with no `else`, out of a `match` arm that does not return, and past any loop, `while true` included, since a loop counts as one that can finish"
     )
     d.notes @ d.notes.push(
         "a value at the end of a path is not returned: a function hands its value back only through `return`, so write `return` before it"
@@ -210,5 +210,5 @@ test "missing_return points at the promise and offers no fix"
     # Each repair named here is a case that builds and runs, in
     # `tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero`.
     assert d.notes.len() == 2
-    assert d.notes[0] == "every path must end in a `return` with a value: a path runs on to the end past an `if` with no `else`, and past any loop, `while true` included, since a loop counts as one that can finish"
+    assert d.notes[0] == "every path must end in a `return` with a value: a path runs on to the end past an `if` with no `else`, out of a `match` arm that does not return, and past any loop, `while true` included, since a loop counts as one that can finish"
     assert d.notes[1] == "a value at the end of a path is not returned: a function hands its value back only through `return`, so write `return` before it"

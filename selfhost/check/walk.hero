@@ -542,14 +542,23 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         # a .case, an ok(…) or a [] can be written in an arm at all.
 
         .if_expr branches =>
+            all_jump: bool @ !branches.otherwise.is_err()
+
             for branch in branches.branches
                 condition(@c, a, r, s, decls, branch.cond)
-                _ = block(@c, a, r, s, decls, body: branch.block, want: .value(ty: expected))
+                got = block(@c, a, r, s, decls, body: branch.block, want: .value(ty: expected))
+                all_jump @ all_jump && got.jumps
 
             if branches.otherwise.is_err()
                 state.push_diagnostic(@c, flow_errors.if_without_else(span))
             else
-                _ = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .value(ty: expected))
+                got = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .value(ty: expected))
+                all_jump @ all_jump && got.jumps
+
+            # The synthesised `if` asks this in `join_for_value`; the checked
+            # one never did, so `x: i64 = if` with a `return` in every branch
+            # checked where `x = if` was refused (defect 139).
+            join.refuse_leaving(@c, leaves: all_jump, what: "if", span: span)
             _ = state.record_expr(@c, at: id, ty: expected)
             return
         .match_expr m =>
@@ -906,13 +915,13 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
             if want == .nothing
                 subject = synth(@c, a, r, s, decls, m.scrutinee)
                 branches = arms(@c, a, r, s, decls, match_arms: m.arms, subject: subject, want: .nothing, span: span)
-                produced: bool @ false
 
-                for b in branches
-                    if !b.value.is_err()
-                        produced @ true
-
-                all_jump = branches.len() > 0 && !produced
+                # A statement's arms produce no value, so whether one did
+                # says nothing about leaving: this read *no arm produced a
+                # value* until 2026-10-01, which every `match` statement
+                # satisfies, and a function with no `return` checked clean
+                # and stopped in clang (defect 139).
+                all_jump = join.every_branch_jumps(branches)
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
                 return Outcome(jumps: all_jump, value: fail(code: "none", msg: "a statement produces no value"))
             return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
