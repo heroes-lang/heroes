@@ -737,6 +737,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     repaired at `3a25b640`, gated by its cases and the compiler's own tests;
     the net is owed at the batch's close.
 
+    **2026-10-01, lane flow, the class at a constant: a body that ends on a
+    statement is told once, and one that jumps is named**
+    (`selfhost/check/decls.hero:54`, by the coordinator's leave of 12:00: an
+    `assert`, a loop or a `for` last was told twice, the second time *every
+    branch jumps*): repaired at `a26448c0`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close. A `break` or
+    `continue` there still costs `jump_outside_loop` and the constant's own
+    message, both true.
+
 - [ ] **140 — records nested by value a thousand deep abort `build`** | 1,000 flat declarations, `record R<i>` holding `R<i-1>`, reached by `xs: [R999] = []`: `check` exit 0, `build` exit 134, `panic: stack exhausted in emitsynth.collect`; at 10,000 under a larger stack clang itself crashes on the C | `selfhost/emit/` (`emitsynth.collect`) · `selfhost/check/decls.hero` (`.record_decl`, where a bound would stand)
 
     **Origin:** panel 184's compiler-engineer (`184-reports/compiler-engineer.md`
