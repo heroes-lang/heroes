@@ -1,0 +1,14 @@
+# Fixed 2026-10-01, defect 138, lane emit: the shape beside the first, a mark
+# the AUTHOR adds where the library writes none.
+# Symptom: `hero_str_try_from_cstr(p: cstr lent, ...)` against the library's
+# `p: cstr` stopped `check` with `internal error`, at the library's line 123,
+# exit 2.
+# Cause: the one `contract_differs` put at the later declaration of a pair,
+# the library's. The repair holds every declaration to the library's and
+# puts the caret here.
+
+extern "heroes_runtime.h"
+    function hero_str_try_from_cstr(p: cstr lent, @status: i64) -> str  #~ contract_differs
+
+function main()
+    print("hello")
