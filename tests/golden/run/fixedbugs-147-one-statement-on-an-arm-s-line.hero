@@ -1,0 +1,128 @@
+# Fixed 2026-10-02, defects 147 and 153, panel 185 R3, lane arm. Symptom:
+# spec § 8's `Inline` production named an expression, `return`, `break`,
+# `continue` and `assert` after `=>`, and left out a mutation and a loop,
+# which the compiler built and ran (defect 147); and `_ = e` on an arm's line
+# was refused as `declaration_in_arm`, saying `_` would be bound, which spec
+# § 5 denies (defect 153). Cause: the production dropped panel 014's
+# mutation when panel 133 wrote it, and the arm's refusal asked a statement's
+# kind and never its name. Now § 8's `Arm` takes § 5's `Simple`, every
+# statement but a binding of a name other than `_`, and the compiler admits
+# `_`. Each form `Simple` names stands on an arm's line here and runs: a
+# mutation of a name, a field and an element; `while`, `for` and `if` over a
+# block; `return`, `break`, `continue`, `assert`; a call; `_ = e`, `_: T = e`
+# and `_: T @ e`; in arms joined with `|`, on a payload, nested, in a loop.
+
+variant Color
+    red
+    green
+    blue
+
+variant Shape
+    dot
+    line
+        length: i64
+
+record Box
+    v: i64
+
+function twice(k: i64) -> i64
+    return k * 2
+
+function noisy(k: i64) -> i64
+    print(k)
+    return k
+
+function mutations(c: Color) -> i64
+    n: i64 @ 0
+    b: Box @ Box(v: 0)
+    ys: [i64] @ [0, 0]
+
+    match c
+        .red   => n @ 1
+        .green => b.v @ 2
+        .blue  => ys[1] @ 3
+
+    return n + b.v + ys[1]
+
+function loops(c: Color) -> i64
+    n: i64 @ 0
+
+    match c
+        .red   => while n < 3
+            n @ n + 1
+        .green => for x in [4, 5]
+            n @ n + x
+        .blue  => if n == 0
+            n @ 7
+
+    return n
+
+function jumps(n: i64) -> i64
+    total: i64 @ 0
+
+    for i in range(from: 0, to: n)
+        match i % 4
+            0 => continue
+            1 => total @ total + i
+            2 => assert i % 2 == 0
+            _ => _ = 0
+
+        match i
+            6 => break
+            _ => _ = noisy(k: i)
+
+    match total
+        0 => return -1
+        _ => print(total)
+
+    return total
+
+function discards(c: Color) -> i64
+    k: i64 @ 0
+
+    match c
+        .red           => _ = noisy(k: 10)
+        .green | .blue => _: i64 = noisy(k: 20)
+
+    match c
+        .red   => _: i64 @ twice(k: 15)
+        .green => k @ 1
+        .blue  => k @ 2
+
+    return k
+
+function measured(s: Shape) -> i64
+    total: i64 @ 0
+
+    match s
+        .dot    => _ = 0
+        .line l => total @ l.length
+
+    return total
+
+function nested(c: Color, n: i64) -> i64
+    m: i64 @ 0
+
+    match c
+        .red           => match n
+            0 => _ = 0
+            _ => m @ n
+        .green | .blue => m @ -1
+
+    return m
+
+function early(c: Color) -> i64
+    match c
+        .red           => return 100
+        .green | .blue => _ = 0
+
+    return 200
+
+function main()
+    print(mutations(c: .red), " ", mutations(c: .green), " ", mutations(c: .blue))
+    print(loops(c: .red), " ", loops(c: .green), " ", loops(c: .blue))
+    print(jumps(n: 8))
+    print(discards(c: .red), " ", discards(c: .green))
+    print(measured(s: .dot), " ", measured(s: .line(length: 9)))
+    print(nested(c: .red, n: 0), " ", nested(c: .red, n: 5), " ", nested(c: .blue, n: 5))
+    print(early(c: .red), " ", early(c: .green))
