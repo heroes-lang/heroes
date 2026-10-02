@@ -296,6 +296,34 @@ change's cases live in, and which suites the batch's census and platforms owe.
 
 ## The batch: repairs gated by their cases, one gate for five
 
+**Amended 2026-10-02 by author instruction**, meant as: *keep only the Mac
+as the development environment, and the other platforms only as activities
+before the final push, Linux included, above all the emulated one; Linux arm64
+in Docker rather than the emulated Linux.* Given on the breakdown of lane
+recovery-b6's gate that morning, its files' times: 107 minutes, of which the
+seed and fixpoint 2, the full net on this Mac 14, the census 2 and **the
+emulated Linux x86-64 container 83**; and on a catch rate that container had
+not earned (it passed defect 140's variants case at every gate of 2026-10-01
+while the CI's x86-64 leg timed out on it, clang 22.1.8 against 18.1.3). So:
+
+- **one gate per ROUND**, not per lane: the round's lanes, each a batch of at
+  most five, are merged into one tree under `.claude/worktrees/`, one merge
+  commit each, and that tree is gated once by steps 1 to 4 below; red, the
+  lane is found first by the red suite at each merge commit, then the commit
+  inside it by bisect;
+- **step 5 leaves the gate**: no container at a gate. Before a push, Linux
+  arm64 in its Docker container (native on this Mac, 24 and 27 minutes on
+  2026-10-02) and the Windows box; Linux x86-64 is the CI's leg after the
+  push;
+- **a defect at the C boundary** (`runtime/`, `seed/`, `selfhost/emit/ffi*`
+  and `extern*`, an `examples/` program with an `extern`) closes only after
+  the push's platform legs have run its cases; every other defect closes at
+  the round's gate.
+
+The first round under it, 2026-10-02: four lanes, one gate, `e2d59fdb`, the
+full net 4,449 passed and 0 failed. The text below is the rule as it stood
+before, kept.
+
 Author instruction 2026-09-29, in these words (meant as): *it is unsustainable
 to go at the speed we are going; a repair gets its own test, on one platform,
 and is queued; the next repair the same; only at the end of a batch of four or

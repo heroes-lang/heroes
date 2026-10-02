@@ -294,11 +294,13 @@ CL-060.
 § Where we are and nowhere else (CL-064).
 
 - **A repair or a step is gated by the golden form that holds its cases and by
-  the compiler's own tests. A BATCH of at most five is gated once**: the seed regenerated and its fixpoint, the compiler's own tests, the
-  net's own tests, the full net, on this Mac and then Linux x86-64; a red batch
-  is bisected by commit and only the culprit is redone. The batch is one lane
-  per cluster of defects sharing files, worked in sequence; it closes at five,
-  at the cluster's last defect, or before a push (CL-063, CL-079). Which form a
+  the compiler's own tests. A ROUND of lanes is gated once, on this Mac alone**
+  (author instruction 2026-10-02): the lanes merged into one tree, the seed
+  regenerated and its fixpoint, the compiler's own tests, the net's own tests,
+  the full net, the census; a red round is bisected by lane, then by commit,
+  and only the culprit is redone. A lane is one cluster of defects sharing
+  files, a batch of at most five worked in sequence; it closes at five, at the
+  cluster's last defect, or before a push (CL-063, CL-079). Which form a
   change's cases live in is `.claude/rules/verification.md` (CL-072).
 - **A suite is the last judge, never the first finder.** What a hook can see on
   the touched file at the moment of writing, a parse error, a name or type
@@ -327,9 +329,10 @@ CL-060.
   exists, so the exception is named rather than the rule weakened. The executor
   is `records/tagged` and it reads the newest `m-*` tag's own commit, so an open
   defect mid-milestone stays legal and a tag over one does not.
-- **A platform fact is run on a platform or it is an inference**; Linux x86-64
-  is measured from this Mac when a batch closes, arm64 and Windows once before
-  the push, and a repair at the C boundary on its platform at once:
+- **A platform fact is run on a platform or it is an inference**; Linux arm64,
+  in Docker, and Windows are measured once before the push, Linux x86-64 is
+  the CI's (author instruction 2026-10-02), and a defect at the C boundary
+  closes only after them:
   `.claude/rules/platforms.md` (CL-048, CL-049, CL-050, CL-055, CL-079).
 
 ## Commands
