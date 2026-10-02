@@ -1,4 +1,5 @@
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:18:9: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:19:1: error[unexpected_block]: this block is indented deeper than anything that opens one
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:19:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:20:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:23:9: error[expected_end_of_line]: expected the end of the line, found a name (`x`) — one statement per line, no semicolons
@@ -8,16 +9,21 @@ tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:28:10:
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:29:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:30:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:33:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:34:1: error[unexpected_block]: this block is indented deeper than anything that opens one
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:34:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:35:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:38:9: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:39:1: error[unexpected_block]: this block is indented deeper than anything that opens one
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:39:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:40:1: error[unexpected_block]: this block is indented deeper than anything that opens one
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:40:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:41:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:45:13: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:46:1: error[unexpected_block]: this block is indented deeper than anything that opens one
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:46:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:47:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:50:12: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:51:1: error[unexpected_block]: this block is indented deeper than anything that opens one
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:51:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:54:10: error[expected_end_of_line]: expected the end of the line, found a name (`n`) — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-block-hanging-below-a-failed-line.hero:55:23: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

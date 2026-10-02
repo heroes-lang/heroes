@@ -249,6 +249,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     route (b)): repaired at `8c907fa5`, gated by its cases and the compiler's
     own tests; the net is owed at the batch's close.
 
+    **2026-10-02, lane recovery-b6, a comment on its own line hides no kept
+    line end, so a name below it still ends a paren's reach** (a shape beside
+    R3's rewording, found in the lane's first pass): repaired at `d99b12f8`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
