@@ -160,6 +160,17 @@ function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: st
             repair: .hint(word: "extern")
         )
 
+    # In an `extern` group a parameter and a field are at the header's own
+    # width and sign, and the spec's word is *`i32` where C says int* (§ 13),
+    # so `int` there is C's: `i64`, the language's integer, checked clean and
+    # `build` refused it at the header (defect 135's L6, lane recovery-b7). A
+    # result may be wider, and `i32` is right there too.
+    if writes == "i64" && place == .typed && word_place.in_a_group(text, span, @outline)
+        return keywords.ForeignWord(
+            message: "`" + word + "` is not a word in this language — in an `extern` group a type is the header's own width and sign, and C's `" + word + "` is `i32`",
+            repair: .swap(word: "i32")
+        )
+
     if right_at(text: text, span, writes: writes, place: place)
         return one
 
@@ -332,6 +343,19 @@ test "a swap is certain only where the word it writes is right"
     assert swap_in(bare, token.Span(start: 3, end: 5)).is_err()
     assert swap_in("x: int", token.Span(start: 3, end: 6)).must() == "i64"
     assert swap_in("int x", token.Span(start: 0, end: 3)).is_err()
+
+    # In an `extern` group `int` is C's, `i32`, at any depth under the head;
+    # past the group it is the language's integer again (defect 135's L6).
+    member = "extern \"stdlib.h\"\n    function abs(n: int) -> int\n"
+    assert swap_in(member, word_place.at_word(text: member, word: "int")).must() == "i32"
+    field = "extern \"time.h\"\n    record Tm tag tm partial\n        tm_sec: int\n"
+    callback = "extern \"signal.h\"\n    function signal(sig: i32, f: (function(int) -> ())) -> ptr\n"
+    assert swap_in(callback, word_place.at_word(text: callback, word: "int")).must() == "i32"
+    assert swap_in(field, word_place.at_word(text: field, word: "int")).must() == "i32"
+    after = "extern \"m.h\"\n    function q() -> f64\n\nfunction f(n: int)\n"
+    assert swap_in(after, word_place.at_word(text: after, word: "int")).must() == "i64"
+    local = "function main()\n    x: int @ 0\n"
+    assert swap_in(local, word_place.at_word(text: local, word: "int")).must() == "i64"
     named = "function fn(x: i64)"
     assert swap_in(named, token.Span(start: 9, end: 11)).is_err()
     body = "function main()\n    const x = 5\n"

@@ -1,0 +1,29 @@
+# Fixed defect 135's L6, 2026-10-02 (lane recovery-b7; the certain-fix
+# audit's `findings/L6-reserved_word-int/`), `int` inside an `extern` group.
+# Symptom: `function abs(n: int) -> int` and a record's `tm_sec: int` took
+# the certain `i64`, which checks clean, and `build` then refused the
+# program at the header, `ffi_parameter_type` and `ffi_field_type`: C's
+# `int` is not 64 bits. Cause: the swap was read from the word alone, the
+# language's integer, where a group's types are C's own. In a group, at any
+# depth under its head, a parameter and a field are at the header's own
+# width and sign, the spec's `i32` where C says int (§ 13), and the certain
+# swap writes `i32`; a result may be wider, and `i32` is right there too.
+# Outside a group `int` is still `i64`. Measured on this Mac, 2026-10-02:
+# `sizeof(int)` 4, and the applied `abs` built against `stdlib.h` and
+# printed 5; `long`, 8 here and 4 on Windows, is no word the lexer refuses,
+# and takes no fix.
+
+extern "stdlib.h"
+    function abs(n: int) -> int  #~ reserved_word reserved_word
+
+extern "time.h"
+    record Tm tag tm partial
+        tm_sec: int  #~ reserved_word
+
+function twice(n: int) -> int  #~ reserved_word reserved_word
+    local: int @ n  #~ reserved_word
+    return local + n
+
+function main()
+    print(abs(n: -5))
+    print(twice(n: 1))

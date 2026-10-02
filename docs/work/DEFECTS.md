@@ -556,6 +556,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     136's record carries the integration). The item stays open for the shapes
     the audit of 2026-09-30 found open (`scratchpad/audit-130-133/`).
 
+    **2026-10-02, lane recovery-b7, a line that holds an arm's `=>` below an
+    arm or its `match` is an arm, its leading operator told once and the arm
+    read past it, and an alternation broken at a match's margin is read as
+    one arm** (the audit's 132-06, lane X2's `b13`; beside it `| 1 => 10`,
+    `* 2 => 3`, `? =>` at the margin and below a whole arm, and `0` over
+    `| 1 => 10` at the margin): repaired at `4c893c14`, gated by its cases
+    and the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **133 — after a declaration head the lexer refuses as a foreign word with a certain swap, the declaration's own mistakes are reported only once the swap is applied** | `const MAX = 5` costs `reserved_word` alone, and `check --apply` writes `constant MAX = 5`, which then costs `expected_constant_type`; `const MAX: i64 = 5` then costs `missing_body`, `fn main() {` then `missing_body`, `struct Point {` then `empty_record`: two turns for one habit | `selfhost/scan.hero` (the foreign word emitted as an `error` token) · `selfhost/keywords.hero` (`foreign_word`) · `selfhost/parse/decl.hero` · `cursor.recover_to_next_decl`
 
     **Origin:** lane 129's agent, 2026-09-29, reading `check/reserved-words`'s
@@ -597,6 +605,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     129 to 133, X1, X2 and Y): the full net, every suite at 0 failed. The shapes
     still open are the next batch lane's items, found beside the repairs, and
     this item stays open until they are repaired and a batch gate reads them.
+
+    **2026-10-02, lane recovery-b7, a declaration whose head failed, or holds
+    a word the lexer refused, is told the body or the members it lacks in the
+    same run** (the audit's 133-a-fswap2, 133-m-const_alone, 133-m-fn_alone;
+    beside them `$`, `0X` or `let` after a head, `record P fn`, `extern "m.h"
+    fn`, `if true fn` over its margin, and `function`, `function f`,
+    `constant MAX`, `test`, `record`, `variant` that failed over nothing):
+    repaired at `97bbdc68`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
 
 - [ ] **135 — a `certain` fix chosen from one reading, where another is as likely, writes a program that means something else or is refused anew** | `print("\(n)")` costs `unknown_escape` with the certain fix `\\(`, which checks clean and prints the hole's text where Swift's author meant its value; `True` costs `unknown_name` with the certain rename to the one in-scope name within two edits, `run` or `Value`, which then costs `type_mismatch`; a `,` left out before a mutable argument, `hints: nullptr @res`, costs `misplaced_mutable_marker` with the certain `: ` that writes `nullptr : @res`, refused anew | `selfhost/literals.hero:60` (the escape's fix) · `selfhost/resolve/errors.hero` (`suggest`, `nearest`) · `selfhost/grammar_expr.hero` (`misplaced_mutable_marker`)
 
@@ -843,6 +860,28 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     pattern after it, and deleted with certainty, since no `-` signs either**:
     repaired at `45aad99f`, gated by its cases and the compiler's own tests;
     the net is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b7, a result written after `:` or `=>` is a
+    certain `->` only where a body follows the head or none is owed** (the
+    audit's P8, `function stub(): pass` and `=> value` over no body; beside
+    them a stub whose word is a type, `(): i64` over nothing; certain still
+    over an indented, tabbed or braced body and in an `extern` group):
+    repaired at `2e0c53f5`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b7, `int` inside an `extern` group is C's,
+    and its certain swap writes `i32`** (the audit's L6, `t_int_extern_param`
+    and `t_int_extern_field`; beside them a result, a callback's parameter and
+    a field two levels under the head; outside a group `int` is `i64` still):
+    repaired at `c61a1d04`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b7, an `f"…"` literal left open at a CRLF
+    line end is told unterminated once, the line end never written into it**
+    (the site the L2 line above left open, `lex_interp.hero`'s `scan_piece`;
+    lane literals' probes `r2g` and `s2i`, and beside them a later piece, a
+    doubled brace and a call): repaired at `664b283b`, gated by its cases and
+    the compiler's own tests; the net is owed at the batch's close.
 
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe)
 

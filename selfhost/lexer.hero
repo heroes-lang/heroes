@@ -707,7 +707,7 @@ test "read apart, a refused break is a line end, and a head that goes on is left
     assert kind_line(lex_apart("y = a +\n1\n").tokens) == "ident eq ident plus terminator int terminator eof"
     assert kind_line(lex_apart("y = a +\n    1\nz = 2\n").tokens) == "ident eq ident plus terminator indent int terminator dedent ident eq int terminator eof"
     assert kind_line(lex_apart("total = base\n- fee\n").tokens) == "ident eq ident terminator ident terminator eof"
-    assert kind_line(lex_apart("k = match n\n    0 => 5\n    | 1 => 10\n").tokens) == "ident eq kw_match ident terminator indent int fat_arrow int terminator int fat_arrow int terminator dedent eof"
+    assert kind_line(lex_apart("k = match n\n    0\n    | 1 => 10\n").tokens) == "ident eq kw_match ident terminator indent int terminator int fat_arrow int terminator dedent eof"
     assert kind_line(lex_apart("y = a +\r\n1\r\n").tokens) == "ident eq ident plus terminator int terminator eof"
     assert lex_apart("y = a +\n1\n").diagnostics.len() == 0
     broken = lex_one("y = a +\n1\nx = b\n+ c\nz = d +\nreturn 1\n")
@@ -717,8 +717,10 @@ test "read apart, a refused break is a line end, and a head that goes on is left
     assert broken.tokens[broken.breaks[0].after].kind == .int_lit
     assert broken.tokens[broken.breaks[1].after].kind == .plus
 
-    # A line the lexer does not refuse is the same line read apart.
-    for text in ["x = 1\ny = 2\n", "f(a +\n    b)\n", "if a\n    x = 1\nelse\n    x = 2\n", "use a/\n\nfunction main()\n"]
+    # A line the lexer does not refuse is the same line read apart, and so is
+    # an arm whose pattern begins with an operator below a whole arm or below
+    # its `match` (defect 132's last row, `line_above.opens_an_arm`).
+    for text in ["x = 1\ny = 2\n", "f(a +\n    b)\n", "if a\n    x = 1\nelse\n    x = 2\n", "use a/\n\nfunction main()\n", "k = match n\n    0 => 5\n    | 1 => 10\n", "match n\n+ => 1\n"]
         assert kind_line(lex_apart(text).tokens) == kind_line(lex_one(text).tokens)
         assert lex_one(text).breaks.len() == 0
 

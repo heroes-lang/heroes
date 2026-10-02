@@ -1,0 +1,31 @@
+# Fixed defect 133's class, 2026-10-02 (lane recovery-b7, beside the
+# audit's rows 133-m-const_alone and 133-m-fn_alone), a declaration's head
+# that failed before its body, with no body below it. Symptom: `function`
+# alone, `function f` with no list, `constant MAX` with no type, `test`
+# with no name, `record` and `variant` with no name each told the head's
+# mistake alone, and the missing body, fields or cases only once the head
+# was mended: a turn per part, where `if n > )` over nothing and `function
+# f() -> )` over nothing told both. Cause: a failed head dropped its line
+# and read a block below it, and asked nothing where none stood. Now it is
+# asked as under any head that refused something (`selfhost/parse/tails.hero`,
+# `owed_body`; `selfhost/parse/members_below.hero`, `here_or_told`), and
+# told at the next line, or at its head for a record or a variant. Beside
+# it, and unchanged: over a body the body is read, never called absent
+# (`fixedbugs-131-a-declaration-head-cut-short`); `constant MAX = 5` holds
+# its value on its line, which is the head's one report.
+
+#~v expected_name
+function
+function no_list  #~ missing_body expected_params
+constant NO_TYPE  #~ missing_body expected_constant_type
+test  #~ missing_body expected_test_name
+record  #~ missing_body expected_name empty_record
+variant  #~ expected_name empty_variant
+
+constant INLINE = 5  #~ expected_constant_type
+
+function main()
+    print(1)
+
+#~v expected_params
+function at_the_end  #~v missing_body
