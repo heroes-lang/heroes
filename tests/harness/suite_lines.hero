@@ -43,11 +43,14 @@ constant RUN_DIR: str
 # 2026-09-25** (panel 177's landing: fifteen `dead-*` cases, one `limit-*`
 # and a second fault-handler case pinning what the first one used to), re-based
 # to today's count by
-# `floors.check`. The second use below is the SKIP floor and keeps this number
+# `floors.check`; **235 on 2026-10-02**, at the round's gate of lanes
+# recovery-b8, land186 and h158, lane land186's twelve run cases for panel
+# 186 taking the directory from 223 past 181 by more than a quarter, and the
+# suite asking 235. The second use below is the SKIP floor and keeps this number
 # deliberately: what it asks is *did this machine emit as many as the tree
 # holds*, so both sides of that comparison have to be the same tree.
 constant LEAST: i64
-    181
+    235
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
