@@ -743,6 +743,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): exit 2, a correct program refused.
 
+    **2026-10-02, lane h158, every compile is handed a package's `-I -D -U
+    -F` by one rule, and its cache keyed by them**: repaired at `40bf84f2`
+    (`libraries.compile_flags`, called by `selfhost/cli/units.hero` and
+    `selfhost/cli/pointee.hero`'s `with_search`), gated by its cases, unit
+    tests in the three modules, and the reproducers by hand, `dpkg` printing
+    7 and defect 160's framework reproducer building; the net is owed at the
+    batch's close.
+
 - [ ] **162 — a package whose `.pc` gives a path with a space is refused, the compiler naming a fragment of the path as the flag** | a `.pc` with `Cflags: -I"<dir>/inc with space"`: `pkg-config --cflags` prints the path with its spaces escaped by backslashes, and `build` exit 1, `ffi_package`, *the package `spaced` answered with* the fragment `with` and its backslash, *which this compiler does not pass on* | `selfhost/cli/libraries.hero` (the word splitter before `filter_words`) · **class: blocking**
 
     **Origin:** lane h158, 2026-10-02, beside defect 160
