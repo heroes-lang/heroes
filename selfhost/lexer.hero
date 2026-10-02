@@ -494,10 +494,55 @@ test "a map literal inside a hole keeps its own braces, and a nested literal is 
     assert out.diagnostics.len() == 0
     assert kind_line(out.tokens) == "ident eq str_piece ident lbracket str rbracket str_piece lbrace int colon int rbrace lbracket int rbracket str_piece terminator eof"
 
+# Its text is written with both braces doubled since panel 184 R1: until
+# 2026-10-02 this read `{{1: 2}[1]}`, whose two `}` were text then and are
+# each a lone brace now.
 test "a doubled brace at a hole's edge is text, not a hole"
-    out = lex_one("s = f\"{{1: 2}[1]}\"\n")
+    out = lex_one("s = f\"{{1: 2}}[1]}}\"\n")
     assert out.diagnostics.len() == 0
     assert kind_line(out.tokens) == "ident eq str_piece terminator eof"
+
+# Panel 184 R1 (defect 173): `}}` is one brace of text as `{{` is, and a `}`
+# alone in the text is an error, once per brace, with two guesses, the brace
+# written as text and its deletion; the piece keeps its kind, so the tokens
+# around it are the ones a clean literal has.
+test "a doubled closing brace is text, and a lone one is refused once with two guesses"
+    out = lex_one("s = f\"{{x}} {n}}} }}\"\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident eq str_piece ident str_piece terminator eof"
+    lone = lex_one("s = f\"a}b {n}} {{x}\"\n")
+    assert lone.diagnostics.len() == 3
+    assert lone.diagnostics[0].span.start == 7
+    assert lone.diagnostics[1].span.start == 13
+    assert lone.diagnostics[2].span.start == 18
+
+    for d in lone.diagnostics
+        assert d.code == "lone_brace"
+        assert d.span.end == d.span.start + 1
+        assert d.fixes.len() == 2
+        assert d.fixes[0].replacement == "}}"
+        assert d.fixes[0].certainty == .guess
+        assert d.fixes[1].replacement == ""
+        assert d.fixes[1].certainty == .guess
+
+    assert kind_line(lone.tokens) == "ident eq str_piece ident str_piece terminator eof"
+
+    # A plain literal is untouched: its braces are text, doubled or not.
+    plain = lex_one("s = \"a}b }}\"\n")
+    assert plain.diagnostics.len() == 0
+
+# The repairs an escape is offered in an `f` literal write its braces as the
+# literal reads them (panel 184 R1): `\}` is the brace `}}`, where its bare
+# `}` would be refused, and `\x{41}`'s backslash written out doubles both.
+test "an escape's repairs in an f literal write a closing brace doubled"
+    out = lex_one("s = f\"a \\} \\x{41}\"\n")
+    assert out.diagnostics.len() == 2
+    assert out.diagnostics[0].code == "unknown_escape"
+    assert out.diagnostics[0].fixes[0].replacement == "}}"
+    assert out.diagnostics[0].fixes[1].replacement == "\\\\}}"
+    assert out.diagnostics[1].code == "unknown_escape"
+    assert out.diagnostics[1].fixes[0].replacement == "A"
+    assert out.diagnostics[1].fixes[1].replacement == "\\\\x{{41}}"
 
 test "a hole the line does not close is an unterminated string, and the next line starts clean"
     out = lex_one("s = f\"a {n\ny = 1\n")

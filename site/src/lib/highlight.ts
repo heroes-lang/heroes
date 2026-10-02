@@ -95,9 +95,11 @@ function literalEnd(source: string, start: number): number {
 /**
  * Where the piece of a string with holes that starts at `start` ends: after
  * the `{` that opens a hole, after the `"` that closes the literal, or at the
- * end of the line. `{{` is one brace of text and stays inside the piece; a
- * lone `}` is text too, because only the opening brace is ever special
- * (`spec/heroes-spec.md`, "`{{` writes one brace").
+ * end of the line. `{{` and `}}` are one brace of text each and stay inside
+ * the piece. A `}` alone in the text is a compile error (`spec/heroes-spec.md`
+ * § 2), so no program on the page holds one, and it stays inside the piece
+ * too: only an opening brace ever ends a piece, which is why this function
+ * needs no rule for the closing one.
  */
 function pieceEnd(source: string, start: number): { end: number; opensHole: boolean } {
   let end = start;

@@ -10,6 +10,7 @@
     { "include": "#keyword" },
     { "include": "#builtin-type" },
     { "include": "#hole" },
+    { "include": "#interpolated" },
     { "include": "#string" },
     { "include": "#char" },
     { "include": "#number" },
@@ -62,6 +63,40 @@
           "match": "\\\\.",
           "name": "invalid.illegal.unknown-escape.hero"
         }
+      ]
+    },
+    "interpolated": {
+      "comment": "spec § 2: an `f` touching the opening quote makes `{e}` a hole, any expression, ended by the `}` that closes it with nested brackets and literals skipped; `{{` and `}}` each write one brace, and a `}` alone in the text is an error (panel 184 R1, ratified 2026-10-01). This grammar had no rule for the form until 2026-10-02 (`.claude/rules/diagnostics-and-goldens.md` measured it so on 2026-09-10), so a hole's code was painted as text and a quote inside a hole ended the string. The `spec/colouring` check holds the two brace escapes and the lone brace against what the compiler's own lexer accepts and refuses (`selfhost/lex_interp.hero`).",
+      "begin": "(?<![A-Za-z0-9_])f\"",
+      "end": "\"",
+      "name": "string.quoted.double.interpolated.hero",
+      "patterns": [
+        { "match": "\\\\[ntr\\\\\"]", "name": "constant.character.escape.interpolated.hero" },
+        { "match": "\\\\.", "name": "invalid.illegal.unknown-escape.hero" },
+        { "match": "\\{\\{|\\}\\}", "name": "constant.character.escape.brace.hero" },
+        { "match": "\\}", "name": "invalid.illegal.lone-brace.hero" },
+        { "include": "#interpolation-hole" }
+      ]
+    },
+    "interpolation-hole": {
+      "comment": "A hole of an `f` literal: ordinary code up to the `}` that closes it, its content `meta.embedded` so a theme paints it as code rather than as the string around it, a `{ }` inside it (a map literal) taken whole so its `}` closes nothing early, and a literal inside it read as the literal it is, through `$self`.",
+      "begin": "\\{",
+      "end": "\\}",
+      "beginCaptures": { "0": { "name": "punctuation.section.interpolation.begin.hero" } },
+      "endCaptures": { "0": { "name": "punctuation.section.interpolation.end.hero" } },
+      "name": "meta.interpolation.hero",
+      "contentName": "meta.embedded.line.hero",
+      "patterns": [
+        { "include": "#interpolation-braces" },
+        { "include": "$self" }
+      ]
+    },
+    "interpolation-braces": {
+      "begin": "\\{",
+      "end": "\\}",
+      "patterns": [
+        { "include": "#interpolation-braces" },
+        { "include": "$self" }
       ]
     },
     "char": {
