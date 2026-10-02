@@ -765,4 +765,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a correct program refused, with a false message.
 
+    **2026-10-02, lane h158, pkg-config's answer is read as a shell reads
+    it, so a word with a space stays one word**: repaired at `b37bfce1`
+    (`selfhost/cli/shell_split.hero`, and the compile caches keyed by each
+    word's length, `libraries.key_text`), gated by its cases, unit tests in
+    `shell_split` and `libraries`, and the reproducer by hand, `spaced`
+    printing 8; the net is owed at the batch's close.
+
 *******************************************************************************
