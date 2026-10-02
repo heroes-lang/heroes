@@ -20,9 +20,11 @@
 
 use token
 use ast
+use diag
 use cursor
 use lexer
 use grammar_expr
+use escape_readings
 
 # One hole a plain literal holds: the offsets of its two braces in the source,
 # and the names its expression reads, as spans of the source.
@@ -139,6 +141,29 @@ function as_text(text: str, span: token.Span) -> str
     none: [PlainHole] = []
     return with_f(text, span: span, active: none)
 
+# The refusal of the plain literal at `span` whose hole `at` names bindings
+# all bound where it stands (panel 185 R7, decided 2026-10-02, defect 176),
+# at the hole's braces. Two readings and nothing in the program to choose
+# between them, so two guesses: the `f` forgotten, whose rewrite prints each
+# hole of `bound` and keeps every other brace as text, and the braces meant
+# as text, whose rewrite prints what the literal prints now.
+function without_f(text: str, span: token.Span, at: PlainHole, bound: [PlainHole]) -> diag.Diagnostic
+    shown = escape_readings.quoted(text.slice(from: at.open, to: at.close + 1))
+    written = with_f(text, span: span, active: bound)
+    kept = as_text(text, span: span)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "hole_without_f",
+        message: shown + " is in a literal without an `f`, so it prints as it stands, braces and all, and every name in it is bound here — an `f` before the opening quote writes its value",
+        span: token.Span(start: at.open, end: at.close + 1)
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write the `f`: " + escape_readings.quoted(written), replacement: written, span: span, certainty: .guess)
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "keep the braces as text: " + escape_readings.quoted(kept), replacement: kept, span: span, certainty: .guess)
+    )
+    return d
+
 ## Tests
 
 function whole(text: str) -> token.Span
@@ -180,3 +205,17 @@ test "the literal written with an f keeps the holes it is given and doubles ever
     # An escape is copied as written, a doubled backslash before a brace too.
     escaped = "\"\\\\{x}\\\"\""
     assert as_text(escaped, span: whole(escaped)) == "f\"\\\\{{x}}\\\"\""
+
+test "the refusal sits on the hole and offers both readings, neither certain"
+    text = "\"{count} rows {K: V} {0}\""
+    found = holes(text, span: whole(text))
+    assert found.len() == 2
+    bound: [PlainHole] = [found[0]]
+    d = without_f(text, span: whole(text), at: found[0], bound: bound)
+    assert d.code == "hole_without_f"
+    assert text.slice(from: d.span.start, to: d.span.end) == "{count}"
+    assert d.fixes.len() == 2
+    assert d.fixes[0].replacement == "f\"{count} rows {{K: V}} {{0}}\""
+    assert d.fixes[1].replacement == "f\"{{count}} rows {{K: V}} {{0}}\""
+    assert d.fixes[0].certainty == .guess
+    assert d.fixes[1].certainty == .guess

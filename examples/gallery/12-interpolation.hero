@@ -5,7 +5,9 @@
 # field, another `f"…"` — and the hole ends at the `}` that closes it, so a
 # map index or a nested literal inside it is read as it would be anywhere.
 # `{{` and `}}` each write one brace, and a `}` alone is an error. A literal
-# without the `f` is exactly what it was.
+# without the `f` prints its braces as they stand, and is refused where they
+# hold what would be a hole naming only what is bound there: `"{n}"` is a
+# forgotten `f` whenever `n` is.
 #
 # What a hole may hold is what `to_str` renders: an integer, a float, `bool`
 # or `str`. A record or an array has no text of its own, and a map index
