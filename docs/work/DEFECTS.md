@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 10**
+**OPEN: 11**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -612,5 +612,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     (`tests/harness/shell.hero`'s `machine_lacks_the_library`), so the same
     fact also turns a platform's correct skip into a red that would reach
     the CI's Windows leg at the next push.
+
+- [ ] **159 — a `-` alone on the line above an arm's pattern is joined to it with certainty, though deleting it is as likely a reading** | `k = match n` over a line holding only `-` and then `1 => "one"`, `_ => "many"`, with `n = 1`: `continuation_outside_brackets` with the certain fix *write the statement on one line*, and `check --apply` writes `-1 => "one"`, which checks clean and prints `many`; deleting the `-` gives `1 => "one"` and prints `one` | the lexer's join of a line ending in an operator (`continuation_outside_brackets`'s certain fix) · design.md §4.8 (*two readings make two guesses*) · defect 135's class, closed 2026-10-02
+
+    **Origin:** lane arm's first pass, 2026-10-02
+    (`scratchpad/lane-arm/pass1/r6/u14_lexer_split_int.hero`), raised again
+    by lane recovery-b8 as a question; reproduced by the coordinator at
+    17:00 on the trunk at `6c4da49b`
+    (`docs/panel/186-briefs/probes/coordinator/u14_minus_above_an_arm.hero.txt`,
+    kept as text since it does not parse, which is the defect).
+
+    **Why it is a defect.** A `certain` fix is machine-applicable
+    (`.claude/rules/diagnostics-and-goldens.md`), and this one writes a
+    program that checks clean and means something else where another
+    reading is as likely; panel 185's R6 made the same two readings two
+    guesses for a spaced `-` on the arm's own line.
 
 *******************************************************************************
