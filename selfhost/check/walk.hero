@@ -725,7 +725,7 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         # The first statement that leaves is how the block leaves, since
         # nothing after it runs: a refused `break` before a `return` makes
         # the block's leaving the refused one's (defect 148).
-        if leaves == .falls
+        if leaves == .falls && got.leaves != .falls
             leaves @ got.leaves
 
         if index == last
@@ -741,8 +741,22 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
     # statement. NOT the same as diverging — treating the two alike would
     # let `x = if c` with a loop in the branch pass silently.
     if want != .nothing && value.is_err()
-        state.push_diagnostic(@c, flow_errors.branch_without_value(body.span))
+        ended_on_a_statement(@c, a, body)
     return Outcome(leaves: .falls, value: value)
+
+# A value block that ends on a statement, told at that statement: the line
+# that has to be the value (defect 149). Until 2026-10-02 the caret stood at
+# the block's span, which begins at its first line, so every value block of
+# more than one line, a constant's body, a branch of an `if` or a `match`,
+# sent the author to a line that was right. A function of its own so that
+# `block`, which every nested block recurses through, holds no diagnostic in
+# its frame.
+function ended_on_a_statement(@c: state.Checker, a: ast.Ast, body: ast.Block)
+    span: token.Span @ body.span
+
+    if body.stmts.len() > 0
+        span @ a.stmts[body.stmts[body.stmts.len() - 1]].span
+    state.push_diagnostic(@c, flow_errors.branch_without_value(span))
 
 function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, want: Want) -> Outcome
     span = a.stmts[id].span
