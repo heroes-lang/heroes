@@ -144,6 +144,7 @@ record TaggedRecord
     header: str
     name: str
     partial: bool
+    handle: bool
 
 # **IT ANSWERED WITH THE FIRST RECORD ON THE TAG UNTIL 2026-09-15, and that was
 # safe only while one tag meant one record.** `handles.hero` gave this very
@@ -177,7 +178,8 @@ function record_by_tag(s: source.Source, decls: [ast.Decl], tag_name: str, want_
                     span: rec.tag.must(),
                     header: emit_externs.unquoted(s, span: rec.header.must()),
                     name: source.span_text(s, decl.name),
-                    partial: rec.partial
+                    partial: rec.partial,
+                    handle: handles.is_handle(decl)
                 )
 
                 if handles.is_handle(decl) == want_handle
@@ -190,14 +192,20 @@ function record_by_tag(s: source.Source, decls: [ast.Decl], tag_name: str, want_
     return fallback
 
 # clang's "use of 'utag' with tag type that does not match previous
-# declaration" — the tag names a UNION and the emitter spelled struct
-# (panel 077, predicted by its historian from the standard before
+# declaration" — the tag names a UNION or an ENUM and the emitter spelled
+# struct (panel 077, predicted by its historian from the standard before
 # anyone ran it). C11 6.7.2.3#1a is a CONSTRAINT, so clang must refuse
 # `struct utag` against a header's `union utag`: panel 074's marker
 # closes every tagged union for free, and all that was missing was the
 # wiring. It does not reach `typedef union { … } X;`, where there is
 # no tag to mismatch — that shape is emit_extern_union's.
-function tag_is_a_union(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+#
+# **Which kind it is, the line does not say**, and the code's own name says
+# union: an `enum colour` named by `tag colour` met the same words and was
+# told it is a union (lane land186, 2026-10-02, defect 157 widened). The
+# question unit answers it (`emit/ffi_asked.hero`, `typedef colour hero_q;`
+# draws *must use 'enum' tag*), and `types` carries that answer.
+function tag_is_a_union(s: source.Source, decls: [ast.Decl], line: str, types: {str: str}) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: "with tag type that does not match previous declaration")
         return fail(code: "none", msg: "not a tag-mismatch line")
     quoted = ffi_lookup.after(text: line, marker: "use of '")
@@ -209,25 +217,95 @@ function tag_is_a_union(s: source.Source, decls: [ast.Decl], line: str) -> diag.
 
     if found.is_err()
         return fail(code: "none", msg: "no record names this tag")
+    return ok(another_kind(found.must(), tag: tag_name, kind: types[tag_name].default(""), by_name: false))
+
+# clang's "must use 'union' tag to refer to type 'utag'", and its `enum` twin:
+# the bare word a HANDLE spells, `utag *`, names a union's or an enum's tag,
+# and clang says which. Read nowhere until lane land186 (2026-10-02, defect
+# 157 widened): the handle was told *declares no `utag`* through clang's
+# *undeclared identifier* beside it, false, and one named for its tag was
+# `internal error`, exit 2.
+function tag_of_another_kind(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+    for kind in ["union", "enum"]
+        quoted = ffi_lookup.after(text: line, marker: "must use '" + kind + "' tag to refer to type '")
+
+        if !quoted.is_err()
+            tag_name = ffi_lookup.up_to_quote(quoted.must())
+            found: TaggedRecord? @ record_by_tag(s, decls, tag_name: tag_name, want_handle: true)
+            by_name: bool @ false
+
+            # A record NAMED for the tag, with no `tag`: its bare name is the
+            # word C reads, `record utag` over `union utag`.
+            if found.is_err()
+                found @ record_named(s, decls, name: tag_name)
+                by_name @ true
+
+            if found.is_err()
+                return fail(code: "none", msg: "no record names this tag")
+            return ok(another_kind(found.must(), tag: tag_name, kind: kind, by_name: by_name))
+
+    return fail(code: "none", msg: "not a tag-kind line")
+
+# The group record of this Heroes name with no `tag`, as `TaggedRecord` holds
+# one, its span the name the author wrote.
+function record_named(s: source.Source, decls: [ast.Decl], name: str) -> TaggedRecord?
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err() && rec.tag.is_err() && source.span_text(s, decl.name) == name
+                    return ok(
+                        TaggedRecord(span: decl.name, header: emit_externs.unquoted(s, span: rec.header.must()), name: name, partial: rec.partial, handle: false)
+                    )
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return fail(code: "none", msg: "no untagged group record has this name")
+
+# The diagnostic for a `tag` naming a union's or an enum's tag, `kind` being
+# which ("" where nothing said). **The note says what is true, measured**
+# (defect 157, lane land186): a `record` binds a union by a typedef's name,
+# the header's or one of the program's own (`run/fixedbugs-157-*`), and so
+# does a handle; an enum is a C integer, bound by its values and its width.
+# The refusal itself is panel 186's R9 question and stays.
+function another_kind(found: TaggedRecord, tag: str, kind: str, by_name: bool) -> diag.Diagnostic
+    h = found.header
+    name = found.name
+    handle = found.handle
+    said: str @ "a tag of another kind"
+
+    # The question unit's answer for a tag that is also a typedef's name is
+    # `type` (`emit/ffi_asked.hero`), which says no kind.
+
+    if kind == "union"
+        said @ "a `union`"
+    else if kind == "enum"
+        said @ "an `enum`"
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_tag_is_a_union",
-        message: "`" + found.must().header + "` declares `" + tag_name + "` as a `union`, not a struct — C keeps the two in one namespace and will not let one stand for the other",
-        span: found.must().span
+        message: "`" + h + "` declares `" + tag + "` as " + said + ", not a struct — C keeps the two in one namespace and will not let one stand for the other",
+        span: found.span
     )
+    by_typedef = "If `" + h + "` gives `" + tag + "` a typedef, "
+    union_note: str @ "a `tag` names a struct (§4.19), and a `record` binds a union only by a typedef's name, as `record W` over `typedef union { … } W;` does. " + by_typedef + "bind that name; if not, give it one in a header of the program's own, `typedef union " + tag + " " + name + ";`, and bind `record " + name + "`, or reach it as a `ptr` through C functions"
 
-    # **The note says what is true, measured** (defect 157, 2026-10-02, lane
-    # land186). It said *a union has no `record` spelling in this language*,
-    # and `record W` over `typedef union { … } W;` builds and reads; what has
-    # none is a union named ONLY by its tag, `record UI tag utag` here and
-    # `record utag` refused as a name the header lacks. The refusal is panel
-    # 186's R9 question and stays; the routes it names are each a case
-    # (`run/fixedbugs-157-*`), and `ptr` through C functions is the other.
-    h = found.must().header
-    name = found.must().name
-    d.notes @ d.notes.push(
-        "a `tag` names a struct (§4.19), and a `record` binds a union only by a typedef's name, as `record W` over `typedef union { … } W;` does. If `" + h + "` gives `" + tag_name + "` a typedef, bind that name; if not, give it one in a header of the program's own, `typedef union " + tag_name + " " + name + ";`, and bind `record " + name + "`, or reach it as a `ptr` through C functions"
-    )
-    return ok(d)
+    if by_name
+        union_note @ "C reads `" + tag + "` as a type's name, and `" + h + "` has it only as a union's tag, so a `record` binds it by a typedef. " + by_typedef + "bind that name; if not, give it one in a header of the program's own, `typedef union " + tag + " " + tag + ";`, and keep `record " + name + "`, or reach it as a `ptr` through C functions"
+    else if handle
+        union_note @ "a `tag` names a struct (§4.19), and a handle reaches a union by a typedef's name. " + by_typedef + "write that name after `tag`; if not, give it one in a header of the program's own, `typedef union " + tag + " " + name + "_t;`, and write `record " + name + " tag " + name + "_t`, or pass it to C as a `ptr`"
+    enum_note = "an enum is a C integer, not a record or a handle: bind its values as `constant`s, and a value of it as a number at the width and sign of the integer C gives the enum, as any field, parameter or result is (§ 13)"
+
+    if kind == "enum"
+        d.notes @ d.notes.push(enum_note)
+    else if kind == "union"
+        d.notes @ d.notes.push(union_note)
+    else if kind == "type"
+        # The tag is a typedef's name too (`typedef union TU {…} TU;`): the
+        # question unit cannot tell a union's from an enum's by the typedef.
+        d.notes @ d.notes.push(
+            "`" + tag + "` is also the name of a typedef in `" + h + "`: if it is a union, a `record` binds it by that name with no `tag`, `record " + tag + "`; if an enum, " + enum_note
+        )
+    else
+        d.notes @ d.notes.push("if it is a union, " + union_note + "; if an enum, " + enum_note)
+    return d
 
 ## Tests
 
@@ -280,7 +358,9 @@ test "tag_is_a_union lands the caret on the tag token, and record_by_tag answers
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     u = "main.c:8:1: error: use of 'statt' with tag type that does not match previous declaration"
-    k = tag_is_a_union(s, parsed.decls, line: u)
+    asked: {str: str} @ {}
+    asked["statt"] @ "union"
+    k = tag_is_a_union(s, parsed.decls, line: u, types: asked)
     assert k.must().code == "ffi_tag_is_a_union"
     assert source.span_text(s, k.must().span) == "statt"
 
@@ -297,5 +377,30 @@ test "tag_is_a_union lands the caret on the tag token, and record_by_tag answers
     assert found.partial
     assert found.header == "sys/stat.h"
 
+    # An enum's tag is told as an enum, and one nothing answered for as a tag
+    # of another kind, never a union (defect 157 widened).
+    asked["statt"] @ "enum"
+    e = tag_is_a_union(s, parsed.decls, line: u, types: asked)
+    assert ffi_lookup.has(text: e.must().message, needle: "as an `enum`, not a struct")
+    none: {str: str} @ {}
+    n = tag_is_a_union(s, parsed.decls, line: u, types: none)
+    assert ffi_lookup.has(text: n.must().message, needle: "as a tag of another kind, not a struct")
+
     # A tag nobody wrote stays the compiler's.
     assert record_by_tag(s, parsed.decls, tag_name: "ghost", want_handle: false).is_err()
+
+test "a handle over a union's tag is told the tag's kind and the typedef that reaches it"
+    text = "extern \"tags.h\"\n    record UH tag utag\n    function new_u() -> UH\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    k = tag_of_another_kind(s, parsed.decls, line: "m.c:28:41: error: must use 'union' tag to refer to type 'utag'")
+    assert k.must().code == "ffi_tag_is_a_union"
+    assert source.span_text(s, k.must().span) == "utag"
+    assert ffi_lookup.has(text: k.must().notes[0], needle: "`typedef union utag UH_t;`, and write `record UH tag UH_t`")
+    assert tag_of_another_kind(s, parsed.decls, line: "m.c:28:41: error: must use 'union' tag to refer to type 'ghost'").is_err(
+    )
+    assert tag_of_another_kind(s, parsed.decls, line: "m.c:28:41: error: must use 'struct' tag to refer to type 'utag'").is_err(
+    )

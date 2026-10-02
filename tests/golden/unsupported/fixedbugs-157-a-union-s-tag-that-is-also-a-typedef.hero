@@ -1,0 +1,15 @@
+# fixedbugs, defect 157 widened, lane land186, 2026-10-02, the shape beside
+# the handle at depth one: `typedef union TU {…} TU;` gives the tag and the
+# typedef one name, so the question unit answers *a type* and no kind; the
+# message says a tag of another kind, and the note what each kind takes,
+# the union's being `record TU` with no `tag`.
+
+extern "fixedbugs-157-unions.h"
+    record T2 tag TU  #~ ffi_tag_is_a_union
+        i: i32
+
+function touch(t: T2) -> i32
+    return t.i
+
+function main()
+    print(1)

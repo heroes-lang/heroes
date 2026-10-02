@@ -293,7 +293,7 @@ function untagged_record(s: source.Source, decls: [ast.Decl], name: str) -> ffi_
             .record_decl rec =>
                 if !rec.header.is_err() && rec.tag.is_err() && rec.fields.len() > 0 && source.span_text(s, decl.name) == name
                     return ok(
-                        ffi_tag.TaggedRecord(span: decl.name, header: emit_externs.unquoted(s, span: rec.header.must()), name: name, partial: rec.partial)
+                        ffi_tag.TaggedRecord(span: decl.name, header: emit_externs.unquoted(s, span: rec.header.must()), name: name, partial: rec.partial, handle: false)
                     )
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 

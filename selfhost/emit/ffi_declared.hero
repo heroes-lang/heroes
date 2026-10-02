@@ -163,6 +163,11 @@ function unknown_name(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: 
     # name, ffi_missing_tag owns it.
     if ffi_lookup.has(text: stderr, needle: "must use 'struct' tag to refer to type '" + name + "'")
         return fail(code: "none", msg: "the tag class owns this name")
+
+    # The same for a union's or an enum's tag (`ffi_tag.tag_of_another_kind`),
+    # which this told *declares no `utag`* until 2026-10-02 (defect 157).
+    if ffi_lookup.has(text: stderr, needle: "must use 'union' tag to refer to type '" + name + "'") || ffi_lookup.has(text: stderr, needle: "must use 'enum' tag to refer to type '" + name + "'")
+        return fail(code: "none", msg: "the tag class owns this name")
     found = ffi_lookup.declaration(s, decls, name: name)
 
     if found.is_err()

@@ -1,0 +1,6 @@
+error[ffi_tag_is_a_union]: `fixedbugs-157-unions.h` declares `colour` as an `enum`, not a struct — C keeps the two in one namespace and will not let one stand for the other
+  at tests/golden/unsupported/fixedbugs-157-a-handle-over-an-enum-s-tag.hero:6:19
+    |
+  6 |     record CH tag colour  #~ ffi_tag_is_a_union
+    |                   ^^^^^^
+  note: an enum is a C integer, not a record or a handle: bind its values as `constant`s, and a value of it as a number at the width and sign of the integer C gives the enum, as any field, parameter or result is (§ 13)

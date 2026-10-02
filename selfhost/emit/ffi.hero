@@ -184,10 +184,14 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !u_typedef.is_err()
             found @ ffi_lookup.add_once(found, d: u_typedef.must())
-        tag_u = ffi_tag.tag_is_a_union(s, decls, line: line)
+        tag_u = ffi_tag.tag_is_a_union(s, decls, line: line, types: asked.types)
 
         if !tag_u.is_err()
             found @ ffi_lookup.add_once(found, d: tag_u.must())
+        tag_k = ffi_tag.tag_of_another_kind(s, decls, line: line)
+
+        if !tag_k.is_err()
+            found @ ffi_lookup.add_once(found, d: tag_k.must())
         unknown_n = ffi_declared.unknown_name(s, tree, decls, line: line, stderr: text, macros: asked.macros)
 
         if !unknown_n.is_err()
