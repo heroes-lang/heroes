@@ -821,9 +821,10 @@ function anchors(@r: report.Report)
 # no document at all and a title follows: a bare `(§ Widths)` is a citation of
 # nothing, and a bare `(§ Functions and calls)` is judged and holds. A `§ ` in
 # a window that names another document, CLAUDE.md, design.md, the ROADMAP, a
-# README, the reserved-word registry, is that document's business; and a bare
-# `§ Commands` that is one of THEIR headings passes through `other`, read from
-# those files once by `anchors`.
+# README, the reserved-word registry, is that document's business, and so is
+# a `§ ` right after any markdown file's name but the spec's own
+# (`names_a_markdown_file`); and a bare `§ Commands` that is one of THEIR
+# headings passes through `other`, read from those files once by `anchors`.
 function unknown_anchors(line: str, other: [str]) -> [str]
     cs = line.chars()
     out: [str] @ []
@@ -834,7 +835,7 @@ function unknown_anchors(line: str, other: [str]) -> [str]
             before = cs.slice(from: window_start(i), to: i).join("")
             rest = cs.slice(from: i + 2, to: cs.len())
 
-            if names_another_document(before)
+            if names_another_document(before) || names_a_markdown_file(before)
                 i @ i + 1
                 continue
 
@@ -866,6 +867,22 @@ function names_another_document(before: str) -> bool
             return true
 
     return false
+
+# **A `§ ` right after a markdown file's name cites THAT file** (the round of
+# 2026-10-02's third gate): `.claude/rules/verification.md` § Bounded discovery
+# is the rules file's section, and the list above names no rules file, nor
+# could a name in it see one the 32-character window cuts, as it cuts
+# `.claude/rules/diagnostics-and-goldens.md`. So the name is read where the
+# window ends, backticked or quoted or bare, and asked of its own suffix. The
+# spec's own file is the exception: `spec/heroes-spec.md` § 13 is judged as
+# `spec § 13` is.
+function names_a_markdown_file(before: str) -> bool
+    name: str @ strings.trimmed(before)
+
+    while strings.ends_with(text: name, suffix: "`") || strings.ends_with(text: name, suffix: "\"")
+        name @ name.slice(from: 0, to: name.len() - 1)
+
+    return strings.ends_with(text: name, suffix: ".md") && !strings.ends_with(text: name, suffix: "heroes-spec.md")
 
 function opens_with_any(rest: [str], titles: [str]) -> bool
     text = rest.join("")
@@ -1814,6 +1831,16 @@ test "a section citation is judged where it names the spec, by title or by numbe
     assert unknown_anchors("CLAUDE.md § Verification and design.md §4.19", other: none).len() == 0
     assert unknown_anchors("(spec § Types; design.md § 4.3)", other: none).len() == 0
     assert unknown_anchors("from spec/reserved-words.md § keywords", other: none).len() == 0
+
+    # A section cited right after a markdown file's name is that file's,
+    # backticked or bare, however long the name the window cuts; the spec's
+    # own file is judged as the spec is. The first two are the shapes lane
+    # bounded wrote, which this check read as six citations of the spec.
+    assert unknown_anchors("D3a*, `.claude/rules/verification.md` § Bounded discovery): a tag", other: none).len() == 0
+    assert unknown_anchors("the class rule (.claude/rules/records.md § The lists): every item", other: none).len() == 0
+    assert unknown_anchors("as `.claude/rules/diagnostics-and-goldens.md` § Golden discipline says", other: none).len() == 0
+    assert unknown_anchors("see `spec/heroes-spec.md` § Widths", other: none) == ["Widths"]
+    assert unknown_anchors("see `spec/heroes-spec.md` § 13 and \"heroes-spec.md\" § Types", other: none).len() == 0
 
     # A bare `§ Title` with no document named is judged: a real section holds,
     # a made-up one is caught, and another document's heading passes through
