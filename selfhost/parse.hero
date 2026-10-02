@@ -589,7 +589,11 @@ test "a brace habit's never closed brace is told once, and its braces end at the
     assert codes(braced.diagnostics) == ["expected_end_of_line", "expected_end_of_line"]
     assert codes(braced.control) == ["expected_end_of_line", "expected_end_of_line"]
     assert codes(parse("function main() {\n    print(1)\n").diagnostics) == ["missing_body"]
-    assert codes(parse("function (a: i64\n").diagnostics) == ["unclosed_bracket", "expected_name"]
+
+    # A head with no name over nothing lacks its body too, told as after
+    # `function f(a: i64`, nothing being in the bracket's reach (defect 133's
+    # class, lane recovery-b7).
+    assert codes(parse("function (a: i64\n").diagnostics) == ["unclosed_bracket", "expected_name", "missing_body"]
 
 # Defect 131's class, lane recovery-b2 (U5): a signature's `(` the lexer named
 # never closed ends at its line and names no closer; the lines below, read

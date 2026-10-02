@@ -27,6 +27,9 @@
 # `0X10`, opens nothing. A head the PARSER refused, an identifier no
 # declaration opens (`recrod Point`), may be a misspelling of anything, and
 # opens a block.
+#
+# And what such a word declares, the declaration its swap names (`declares`),
+# so that a word alone with nothing below it is told what it lacks there.
 
 use token
 use cursor
@@ -73,6 +76,31 @@ function binds(c: cursor.Cursor, from: i64) -> bool
 function ends_a_line(kind: token.TokenKind) -> bool
     return kind == .terminator || kind == .indent || kind == .dedent || kind == .eof
 
+## What a refused word declares
+
+# The declaration's keyword the refused word `word` swaps for in the
+# registry, `function` for `fn`, `constant` for `const`, `record` for
+# `struct`, or a failure where it swaps for none of the four that owe a
+# block. Asked of a word alone at the top of its line, whose swap is no
+# certain one there, no name following it (`foreign_at.right_at`): what it
+# owes below it is still the declaration's, a body, a value, fields or
+# cases, and none standing there is a mistake of its own (defect 133's
+# class, lane recovery-b7). The registry answers, so this keeps no table.
+function declares(word: str) -> str?
+    found = keywords.foreign_word(text: word, called: false)
+
+    if found.is_err()
+        return fail(code: "not_foreign", msg: word)
+
+    return match found.must().repair
+        .swap fix => if fix.word == "function" || fix.word == "constant" || fix.word == "record" || fix.word == "variant"
+            ok(fix.word)
+        else
+            fail(code: "owes_no_block", msg: fix.word)
+        .hint _   => fail(code: "owes_no_block", msg: word)
+        .drop     => fail(code: "owes_no_block", msg: word)
+        .guidance => fail(code: "owes_no_block", msg: word)
+
 ## Tests
 
 function first_opens(text: str) -> bool
@@ -96,3 +124,14 @@ test "a refused head opens a block where its word heads one and its line binds n
 
     # A head the parser refused may be a misspelling of anything.
     assert first_opens("recrod Point\n")
+
+test "a refused word declares what its swap declares, where that owes a block"
+    assert declares("fn").must() == "function"
+    assert declares("def").must() == "function"
+    assert declares("const").must() == "constant"
+    assert declares("struct").must() == "record"
+    assert declares("enum").must() == "variant"
+    assert declares("import").is_err()
+    assert declares("class").is_err()
+    assert declares("let").is_err()
+    assert declares("main").is_err()

@@ -556,6 +556,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     136's record carries the integration). The item stays open for the shapes
     the audit of 2026-09-30 found open (`scratchpad/audit-130-133/`).
 
+    **2026-10-02, lane recovery-b7, a line that holds an arm's `=>` below an
+    arm or its `match` is an arm, its leading operator told once and the arm
+    read past it, and an alternation broken at a match's margin is read as
+    one arm** (the audit's 132-06, lane X2's `b13`; beside it `| 1 => 10`,
+    `* 2 => 3`, `? =>` at the margin and below a whole arm, and `0` over
+    `| 1 => 10` at the margin): repaired at `4c893c14`, gated by its cases
+    and the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **133 — after a declaration head the lexer refuses as a foreign word with a certain swap, the declaration's own mistakes are reported only once the swap is applied** | `const MAX = 5` costs `reserved_word` alone, and `check --apply` writes `constant MAX = 5`, which then costs `expected_constant_type`; `const MAX: i64 = 5` then costs `missing_body`, `fn main() {` then `missing_body`, `struct Point {` then `empty_record`: two turns for one habit | `selfhost/scan.hero` (the foreign word emitted as an `error` token) · `selfhost/keywords.hero` (`foreign_word`) · `selfhost/parse/decl.hero` · `cursor.recover_to_next_decl`
 
     **Origin:** lane 129's agent, 2026-09-29, reading `check/reserved-words`'s
