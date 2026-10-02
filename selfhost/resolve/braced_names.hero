@@ -1,0 +1,24 @@
+# What a plain literal holds in braces, as the resolver's walk finds it, kept
+# for the note the unused sweep gives a name so held (design.md §4.17; panel
+# 184 R2, ratified 2026-10-01). Apart from `resolve/plain_literal`, which
+# writes and reads these and uses the resolver's state, so that the state can
+# hold them with no cycle between the two.
+
+use token
+
+# One name one hole of a plain literal reads.
+record Braced
+    # The declaration the literal stands in, the resolver's `owner`.
+    owner: i64
+    # The name as written.
+    name: str
+    # The literal's whole span, its quotes included.
+    literal: token.Span
+    # The local the name meant where the literal stands, or -1 where it
+    # meant none.
+    local: i64
+
+# One more, appended in place: through a bare `@` parameter, since a push
+# through a field place copies the whole array.
+function keep(@kept: [Braced], one: Braced)
+    kept @ kept.push(one)

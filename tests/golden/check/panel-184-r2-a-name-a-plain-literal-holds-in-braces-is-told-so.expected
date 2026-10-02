@@ -1,0 +1,6 @@
+tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero:13:15: error[unused_binding]: the parameter `n` is never read — remove it from the signature, or write `???` in the body while the function is unfinished
+tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero:21:5: error[unused_binding]: `early` is bound and never read — remove the binding, or read it
+tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero:24:9: error[unused_binding]: the loop variable `x` is never read — write `for _ in …` when the element is not needed
+tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero:28:13: error[unused_binding]: the payload `v` is never read — write `_` in the pattern when the value is not needed
+tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero:31:5: error[unused_binding]: `taken` is bound and never read — remove the binding, or read it
+tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero:33:5: error[unused_binding]: `label` is bound and never read — remove the binding, or read it

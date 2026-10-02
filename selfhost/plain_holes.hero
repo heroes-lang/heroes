@@ -1,0 +1,182 @@
+# A plain literal read as the `f` literal it would be (design.md §4.17; panel
+# 184's R2, and panel 185's R7 as the author decided it on 2026-10-02, the
+# compiler-engineer seat's prototype of panel 184 landed): the holes its text
+# holds once an `f` is written before its opening quote, cut by the
+# compiler's own lexer (`lex_interp`) and parsed by its own parser, so a rule
+# about a forgotten `f` and the form it is about cannot disagree about what a
+# hole is. Reading changes nothing: a literal without the `f` prints what it
+# holds, braces and all (spec § 2).
+#
+# Two rules read it, both in the resolver, where the names are: the note
+# `unused_binding` gives a name a plain literal holds in braces (R2,
+# `resolve/plain_literal`), and the refusal of a plain literal whose hole
+# names bindings all bound where it stands (R7, the same module).
+#
+# THE TWO REWRITES are the repairs those rules offer, and both are guesses:
+# `with_f` writes the literal as the `f` literal that prints the holes it is
+# given, and `as_text` as the `f` literal that prints what the plain one
+# prints. Every other brace of the text is doubled, `}` as well as `{`, since
+# a `}` alone is refused in an `f` literal (panel 184 R1).
+
+use token
+use ast
+use cursor
+use lexer
+use grammar_expr
+
+# One hole a plain literal holds: the offsets of its two braces in the source,
+# and the names its expression reads, as spans of the source.
+record PlainHole
+    open: i64
+    close: i64
+    names: [token.Span]
+
+# The holes of the plain literal at `span` that the parser reads as one
+# expression each, nothing said about them, once an `f` is written before its
+# quote.
+function holes(text: str, span: token.Span) -> [PlainHole]
+    out: [PlainHole] @ []
+
+    if !has_brace(text, span)
+        return out
+
+    # Offset `o` of `ftext` is offset `span.start + o - 1` of `text`.
+    ftext = "f" + text.slice(from: span.start, to: span.end) + "\n"
+    lexed = lexer.lex_one(ftext)
+    pieces: [i64] @ []
+    i: i64 @ 0
+
+    while i < lexed.tokens.len()
+        if lexed.tokens[i].kind == .str_piece
+            pieces @ pieces.push(i)
+        i @ i + 1
+
+    k: i64 @ 0
+
+    while k + 1 < pieces.len()
+        names = hole(ftext, lexed: lexed, from: pieces[k] + 1, to: pieces[k + 1])
+
+        if !names.is_err()
+            moved: [token.Span] @ []
+
+            for n in names.must()
+                moved @ moved.push(token.Span(start: span.start + n.start - 1, end: span.start + n.end - 1))
+
+            open = span.start + lexed.tokens[pieces[k]].span.end - 2
+            close = span.start + lexed.tokens[pieces[k + 1]].span.start - 1
+            out @ out.push(PlainHole(open: open, close: close, names: moved))
+        k @ k + 1
+
+    return out
+
+function has_brace(text: str, span: token.Span) -> bool
+    i: i64 @ span.start
+
+    while i < span.end
+        if text[i] == '{'
+            return true
+        i @ i + 1
+
+    return false
+
+# The names one hole reads, in `ftext`'s offsets, when its tokens are one
+# expression and nothing was said about them: a hole that does not lex, an
+# empty one, or one that is not an expression is no hole.
+function hole(ftext: str, lexed: lexer.LexOutput, from: i64, to: i64) -> [token.Span]?
+    if from >= to
+        return fail(code: "empty", msg: "an empty hole is not an expression")
+    start = lexed.tokens[from - 1].span.end
+    end = lexed.tokens[to].span.start
+
+    for d in lexed.diagnostics
+        if d.span.start >= start && d.span.start <= end
+            return fail(code: "unlexed", msg: "the hole's text does not lex")
+
+    tokens: [token.Token] @ lexed.tokens.slice(from: from, to: to)
+    tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: end, end: end)))
+    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    a: ast.Ast @ ast.new_ast()
+    _ = grammar_expr.parse_expr(@c, @a, ftext)
+
+    if c.diagnostics.len() > 0 || cursor.current_kind(c) != .eof
+        return fail(code: "unparsed", msg: "the hole's text is not one expression")
+    names: [token.Span] @ []
+
+    for e in a.exprs
+        if e.kind == .name
+            names @ names.push(e.span)
+
+    return ok(names)
+
+# The literal at `span` written as the `f` literal that prints each hole of
+# `active`, given in the order `holes` returns them, and every other brace of
+# its text as the brace it was, doubled. Its escapes are copied as written.
+function with_f(text: str, span: token.Span, active: [PlainHole]) -> str
+    out: [str] @ ["f\""]
+    run: i64 @ span.start + 1
+    at: i64 @ span.start + 1
+    k: i64 @ 0
+
+    while at < span.end - 1
+        if k < active.len() && at == active[k].open
+            at @ active[k].close + 1
+            k @ k + 1
+        else if text[at] == '{' || text[at] == '}'
+            out @ out.push(text.slice(from: run, to: at + 1) + text.slice(from: at, to: at + 1))
+            at @ at + 1
+            run @ at
+        else if text[at] == '\\'
+            at @ at + 2
+        else
+            at @ at + 1
+
+    out @ out.push(text.slice(from: run, to: span.end))
+    return out.join("")
+
+# The literal at `span` written as the `f` literal that prints what it prints
+# now: every brace of its text doubled, no hole.
+function as_text(text: str, span: token.Span) -> str
+    none: [PlainHole] = []
+    return with_f(text, span: span, active: none)
+
+## Tests
+
+function whole(text: str) -> token.Span
+    return token.Span(start: 0, end: text.len())
+
+test "a plain literal's holes are those an f would read, each with the names it reads"
+    text = "\"{count} rows of {xs.len()} and {i + 1}\""
+    found = holes(text, span: whole(text))
+    assert found.len() == 3
+    assert text.slice(from: found[0].open, to: found[0].close + 1) == "{count}"
+    assert found[0].names.len() == 1
+    assert text.slice(from: found[0].names[0].start, to: found[0].names[0].end) == "count"
+    assert text.slice(from: found[1].names[0].start, to: found[1].names[0].end) == "xs"
+    assert found[2].names.len() == 1
+
+    # A literal number names nothing, and is still a hole.
+    zero = "\" = {0}\""
+    assert holes(zero, span: whole(zero)).len() == 1
+    assert holes(zero, span: whole(zero))[0].names.len() == 0
+
+test "braces that hold no expression, or a brace written twice, are no hole"
+    for text in ["\"{K: V} and {}\"", "\"{str: i64}\"", "\"{{count}}\"", "\"{count\"", "\"no brace\""]
+        assert holes(text, span: whole(text)).len() == 0
+
+    # A `}` alone after a hole is refused in the `f` reading and leaves the
+    # hole before it whole: it stands outside the hole.
+    after = "\"{n}}\""
+    assert holes(after, span: whole(after)).len() == 1
+
+test "the literal written with an f keeps the holes it is given and doubles every other brace"
+    text = "\"{count} rows {K: V} {n}}\""
+    found = holes(text, span: whole(text))
+    assert found.len() == 2
+    assert with_f(text, span: whole(text), active: found) == "f\"{count} rows {{K: V}} {n}}}\""
+    first: [PlainHole] = [found[0]]
+    assert with_f(text, span: whole(text), active: first) == "f\"{count} rows {{K: V}} {{n}}}}\""
+    assert as_text(text, span: whole(text)) == "f\"{{count}} rows {{K: V}} {{n}}}}\""
+
+    # An escape is copied as written, a doubled backslash before a brace too.
+    escaped = "\"\\\\{x}\\\"\""
+    assert as_text(escaped, span: whole(escaped)) == "f\"\\\\{{x}}\\\"\""
