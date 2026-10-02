@@ -1,0 +1,36 @@
+# Fixed 2026-10-02, defect 154, lane arm. Symptom: `x = 0x1.5` was told
+# `expected_field_name`, *expected a field or function name after `.`, found
+# a number*, a member access, for a literal; `0x.5` drew `empty_base_literal`
+# and then that, `0x1.5e3` an exponent refusal on `5e3` and an end of line.
+# Cause: a based literal's digits stopped at the `.` and the scanner handed
+# `0x1` back, leaving `.5` to the parser. Now a `.` and a decimal digit after
+# a based literal's digits are its fraction, which only a decimal literal may
+# have: one token and one `digit_not_in_base`, no fix, since `0x1.5` reads as
+# three numbers. In every base, with no digit before the point, a second
+# point, an exponent of C's, separators, after a digit that faulted, in an
+# argument, a constant, a list, an arm's pattern, under a sign, and beside an
+# uppercase prefix, whose lowering stays certain since the fraction is told.
+
+constant HALF: f64
+    0x1.5  #~ digit_not_in_base
+
+function twice(v: f64) -> f64
+    return v * 2.0
+
+function main()
+    a = 0x1.5  #~ digit_not_in_base
+    b = 0b1.0  #~ digit_not_in_base
+    c = 0o7.1  #~ digit_not_in_base
+    d = 0x.5  #~ digit_not_in_base
+    e = 0x1.5.2  #~ digit_not_in_base
+    f = 0x1.8p-3  #~ digit_not_in_base
+    g = 0x1_0.5_0  #~ digit_not_in_base
+    h = 0xG.5  #~ digit_not_in_base
+    i = -0x1.5  #~ digit_not_in_base
+    j = 0x1.5  #~ digit_not_in_base base_prefix_case
+    print(twice(v: 0x1.5), [0x1.5, 2.0])  #~ digit_not_in_base digit_not_in_base
+    n = 1
+
+    match n
+        0x1.5 => print(a, b, c, d, e, f, g, h, i, j, HALF)  #~ digit_not_in_base
+        _ => print(0)

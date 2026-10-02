@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-153-a-discard-on-an-arm-s-line-is-told-as-in-a-block.hero:16:14: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-153-a-discard-on-an-arm-s-line-is-told-as-in-a-block.hero:23:14: error[discarded_failure]: `_ =` would drop the error in this `i64?`, and that is the one discard the type system cannot see through — `.must()` ends the program here, `.default(v)` falls back, `.is_err()` drops the failure on purpose — `?` would need this function to return a `T?` itself
+tests/golden/check/fixedbugs-153-a-discard-on-an-arm-s-line-is-told-as-in-a-block.hero:24:14: error[bound_unit]: `_` would hold `()`, which is no value — keep the call and drop the binding
+tests/golden/check/fixedbugs-153-a-discard-on-an-arm-s-line-is-told-as-in-a-block.hero:25:23: error[type_mismatch]: expected `i64`, found `i64?`

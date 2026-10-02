@@ -1,0 +1,31 @@
+# Fixed 2026-10-02, beside defect 135's P5, panel 185 R6, lane arm (the
+# sitting's t1 and t2). Symptom: a bulleted list of variant arms, `- .red =>`,
+# was told *expected a pattern, found `.`* at the case, which is a pattern,
+# and offered no fix; `- _ =>` the same at the wildcard. Cause: the pattern's
+# reader ate the `-` as a literal's sign and then refused what followed it.
+# Now a `-` before a case or `_` is told at the `-`, and deleted with
+# certainty, since no `-` signs either and the arm without it is its one
+# reading: set apart or touching, before a case with a payload, after a `|`,
+# before the wildcard, and in a nested `match`.
+
+variant Shape
+    dot
+    line
+        length: i64
+    box
+
+function size(s: Shape) -> i64
+    return match s
+        .dot => 0  #~ expected_pattern
+        .line l => l.length  #~ expected_pattern
+        .box => 4  #~ expected_pattern
+
+function kind(s: Shape, n: i64) -> i64
+    return match s
+        .dot | .box => 1  #~ expected_pattern
+        .line l => match n
+            0 => l.length
+            _ => n  #~ expected_pattern
+
+function main()
+    print(size(s: .line(length: 3)), kind(s: .box, n: 0))

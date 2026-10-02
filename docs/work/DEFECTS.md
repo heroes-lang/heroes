@@ -831,6 +831,19 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     a program that checks clean): repaired at `1ef5c8ca`, gated by its cases
     and the compiler's own tests; the net is owed at the batch's close.
 
+    **2026-10-02, lane arm, panel 185 R6: a spaced `-` opening an arm is
+    deleted with certainty before a string, and is two guesses, the sign and
+    the deletion, before an integer or a character** (P5; beside it, a tab
+    setting the `-` apart, which the sign wrote into the margin): repaired at
+    `b76f705e`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
+    **2026-10-02, lane arm, beside P5 (panel 185's t1 and t2): a `-` before a
+    case or `_` opening a pattern is told at the `-`, where it was told at the
+    pattern after it, and deleted with certainty, since no `-` signs either**:
+    repaired at `45aad99f`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe)
 
     **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (a header of its own
@@ -869,6 +882,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     spec never learns the form. Which side moves, the production or the
     parser, is a change to the language, so the repair is a sitting's, with
     defect 143 and the value-block question in `docs/work/DECIDE.md`.
+
+    **2026-10-02, lane arm, panel 185 R3: an arm takes § 5's `Simple`, every
+    statement but a declaration or an `=` of a name other than `_`, and
+    `Inline` is deleted**: repaired at `1ea85b01`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close.
 
 - [ ] **150 — a correct program that reads a C union naming two members gets clang's warning on the author's line** | `extern "w.h"` with `record W` (two members over a union) and `function make_w() -> W`, `print(w.i)`: `build` exit 0, the program prints 7, and the build prints *warning: excess elements in union initializer* at `read.hero:2:81` | the completeness probe's `{0,0}` for a union record (`selfhost/emit/`, beside defect 140's `{}`)
 
@@ -928,6 +946,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** design.md §4.17: a diagnostic is true; this one
     contradicts the spec it cites.
 
+    **2026-10-02, lane arm, panel 185 R3: `_` stands on an arm's line, in
+    `_ = e`, `_: T = e` and `_: T @ e`, and the message is true of every name
+    it still refuses**: repaired at `1ea85b01`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **154 — a hexadecimal number with a fraction is told as a field access** | `x = 0x1.5`: `error[expected_field_name]: expected a field or function name after `.`, found a number (`5`)`, a member-access message for a literal | `selfhost/number.hero` · `selfhost/grammar_expr.hero` (the `.` after a literal)
 
     **Origin:** lane literals' first pass, 2026-10-02
@@ -936,6 +959,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** design.md §4.17: the message names a mistake the
     author did not make; the number's own form is the mistake.
+
+    **2026-10-02, lane arm: a `.` and a decimal digit after a based literal's
+    digits are its fraction, told once as `digit_not_in_base`, the literal
+    one token, with no fix** (beside it `0x.5`, `0x1.5e3`, `0x1.5.2`, C's
+    `0x1.8p-3`, `0xG.5`, an uppercase prefix before one): repaired at
+    `4574e5d3`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close. Left: `1.5.2`, a decimal float with a second
+    point, still told as a field access, since no code's documented meaning
+    covers it (lane arm's report).
 
 - [ ] **155 — the public CI is red on `03e70520`: defect 140's variants case passes a C compiler's own limit** | run 36939966148: Darwin arm64's clang (Apple clang 21.0.0, Xcode 26.6) crashes, *Illegal instruction: 4*, on `run/fixedbugs-140-variants-a-thousand-deep-build`, red in `run`, `determinism` and `emission`; Linux x86-64 and arm64 time out on it at `-O2` (exit 124); Linux arm64 also times out on `probe/selfhost, multi`; Windows green | `tests/golden/run/fixedbugs-140-variants-a-thousand-deep-build.hero` and its trace until 2026-10-02, `tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero` since · `tests/harness/suite_run.hero:151`
 
