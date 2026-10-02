@@ -49,7 +49,10 @@ so a long expression, a condition included, breaks inside parentheses.
 - An `f` before a literal's opening quote makes `{e}` write that value as
   `to_str` does: `f"line {n}: {word}"`. Any expression may stand there, and the
   hole ends at the `}` that closes it, nested brackets and literals skipped;
-  `{{` writes one brace. A literal without the `f` is unchanged.
+  `{{` and `}}` write one brace, and a lone `}` is an error. A literal without
+  the `f` is an error where its braces, read with an `f`, would be a hole
+  naming something and only what is in scope there, as in `"{i + 1}"`; braces
+  meant as text are then `{{` and `}}` in an `f` literal.
 
 ## 3. Types
 | Type | Meaning |
