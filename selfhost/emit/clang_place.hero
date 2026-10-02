@@ -1,9 +1,19 @@
-# Where a clang diagnostic points, read from its own line, and whether the
-# file it names is a header a group wrote (design.md §4.19; defect 158).
-# `emit/ffi_build.hero` asks it which header holds an `#include` this
+# Where a clang diagnostic points, which `#include`s reached that file, and
+# how a group can spell a file clang names (design.md §4.19; defect 158).
+# `emit/header_reach.hero` asks it which group's header reached a header this
 # machine cannot open.
 #
-# clang begins a diagnostic with its place, `path:row:col: fatal error: ...`.
+# clang begins a diagnostic with its place, `path:row:col: fatal error: ...`,
+# and above it, outermost first, which `#include` reached that file: one
+# `In file included from path:row:` per level, the first naming the file
+# clang was asked to compile. **It prints a stack only when it differs from
+# the last one it printed**, so a second diagnostic in one file, a missing
+# include under a `#warning`, stands under no stack, and its stack is the
+# nearest one ABOVE whose diagnostic is in the same file. Measured 2026-10-02
+# on this Mac: a `#warning` above the include at depth one and two, a warning
+# in a sibling header, and a note in a second file between, after which clang
+# printed the stack again.
+#
 # The path is the one clang opened, so it carries the machine's separators:
 # the Windows box writes `tests/golden/run\x.h`, the include directory and
 # the header joined by a backslash. A path is compared to a header with both
@@ -25,6 +35,9 @@ record Tail
     head: str
     number: i64
 
+constant INCLUDED: str
+    "In file included from "
+
 # What follows a diagnostic's place, in every severity clang writes.
 constant SEVERITIES: [str]
     [
@@ -34,6 +47,63 @@ constant SEVERITIES: [str]
         ": note: "
         ": remark: "
     ]
+
+# What ends a framework's directory, and the two folders under it that an
+# `#include <Name/file.h>` opens.
+constant FRAMEWORK: str
+    ".framework"
+
+constant FRAMEWORK_FOLDERS: [str]
+    [
+        "Headers/"
+        "PrivateHeaders/"
+    ]
+
+# The stack above the diagnostic on `line`, outermost first, ending with the
+# diagnostic's own place; empty when `line` names no place. Where clang
+# printed no stack for this file, or `stderr` is the line alone, the stack is
+# the line's own file.
+function stack(stderr: str, line: str) -> [Place]
+    none: [Place] = []
+    own = place(line)
+
+    if own.is_err()
+        return none
+    rows = ffi_lookup.lines(text: stderr)
+    target = without_return(line)
+    at: i64 @ -1
+    index: i64 @ 0
+
+    for row in rows
+        if at < 0 && without_return(row) == target
+            at @ index
+        index @ index + 1
+
+    above: i64 @ at - 1
+
+    while above >= 0
+        if included(rows[above]).is_err()
+            above @ above - 1
+            continue
+        last = above
+
+        while above >= 0 && !included(rows[above]).is_err()
+            above @ above - 1
+
+        # The row under a stack is the diagnostic it was printed for.
+        told = place(rows[last + 1])
+
+        if !told.is_err() && told.must().path == own.must().path
+            steps: [Place] @ []
+            level: i64 @ above + 1
+
+            while level <= last
+                steps @ steps.push(included(rows[level]).must())
+                level @ level + 1
+
+            return steps.push(own.must())
+
+    return [own.must()]
 
 # Where a diagnostic line points: what precedes its severity is
 # `path:row:col`, the path being all before the last two numbers, so a
@@ -57,10 +127,23 @@ function place(line: str) -> Place?
         return fail(code: "none", msg: "no path before the line number")
     return ok(Place(path: row.head, row: row.number))
 
+# The file and line an `In file included from path:row:` line names.
+function included(line: str) -> Place?
+    text = without_return(line)
+
+    if !same_bytes(text: text, from: 0, part: INCLUDED) || text[text.len() - 1] != ':'
+        return fail(code: "none", msg: "not an include line")
+    level = last_number(text.slice(from: INCLUDED.len(), to: text.len() - 1))?
+
+    if level.head.len() == 0
+        return fail(code: "none", msg: "no path before the line number")
+    return ok(Place(path: level.head, row: level.number))
+
 # Every way `extern "<header>"` can spell the file at a path clang printed,
 # longest first: the whole path, then what follows each separator, either
-# separator read as `/`. So `tests/golden/run\x.h` is `x.h` among others,
-# and `lib/x.h` is never `ib/x.h`.
+# separator read as `/`, and a framework's header by its framework. So
+# `tests/golden/run\x.h` is `x.h` among others, and `lib/x.h` is never
+# `ib/x.h`.
 function spellings(path: str) -> [str]
     p = slashed(path)
     out: [str] @ []
@@ -69,9 +152,65 @@ function spellings(path: str) -> [str]
     while cut < p.len()
         if cut == 0 || p[cut - 1] == '/'
             out @ out.push(p.slice(from: cut, to: p.len()))
+            framework = framed(p, cut: cut)
+
+            if !framework.is_err()
+                out @ out.push(framework.must())
         cut @ cut + 1
 
     return out
+
+# The directory a group's header was found in, slashed and ending in `/`:
+# the path with the group's spelling taken off its end, `""` where that
+# spelling does not end the path (it is the whole path, or a framework's).
+function found_in(path: str, spelled: str) -> str
+    p = slashed(path)
+    cut = p.len() - spelled.len()
+
+    if cut <= 0 || p[cut - 1] != '/' || !same_bytes(text: p, from: cut, part: spelled)
+        return ""
+    return p.slice(from: 0, to: cut)
+
+# A file of the stack as an `#include` would name it: a framework's header by
+# its framework, one under the directory the group's header was found in from
+# there, and anything else, a system header among them, as clang printed it.
+function shown(path: str, directory: str) -> str
+    p = slashed(path)
+    cut: i64 @ 0
+
+    while cut < p.len()
+        if cut == 0 || p[cut - 1] == '/'
+            framework = framed(p, cut: cut)
+
+            if !framework.is_err()
+                return framework.must()
+        cut @ cut + 1
+
+    if directory.len() > 0 && p.len() > directory.len() && same_bytes(text: p, from: 0, part: directory)
+        return p.slice(from: directory.len(), to: p.len())
+    return path
+
+# clang opens `#include <Fake/fake.h>` in a framework directory as
+# `Fake.framework/Headers/fake.h` (measured 2026-10-02 with `-F` on this
+# Mac), so a slashed path whose part from `cut` is a framework's header also
+# spells the include that reached it.
+function framed(p: str, cut: i64) -> str?
+    slash: i64 @ cut
+
+    while slash < p.len() && p[slash] != '/'
+        slash @ slash + 1
+
+    if slash >= p.len() || slash - cut <= FRAMEWORK.len() || !same_bytes(text: p, from: slash - FRAMEWORK.len(), part: FRAMEWORK)
+        return fail(code: "none", msg: "not a framework")
+    name = p.slice(from: cut, to: slash - FRAMEWORK.len())
+
+    for folder in FRAMEWORK_FOLDERS
+        start = slash + 1 + folder.len()
+
+        if same_bytes(text: p, from: slash + 1, part: folder) && start < p.len()
+            return ok(name + "/" + p.slice(from: start, to: p.len()))
+
+    return fail(code: "none", msg: "not a framework's headers")
 
 function slashed(path: str) -> str
     out: [str] @ []
@@ -161,6 +300,64 @@ test "a diagnostic's place, on this Mac and on the Windows box"
     # A path that is not ASCII is read whole, never split.
     assert place("café/outer.h:3:10: fatal error: 'gone.h' file not found").must().path == "café/outer.h"
 
+test "the stack above a missing include, at depth two and three"
+    two = "In file included from build/tu-1/main.c:5:\nIn file included from d2/outer.h:2:\nd2/mid.h:1:10: fatal error: 'gone.h' file not found\n    1 | #include <gone.h>\n      |          ^~~~~~\n1 error generated.\n"
+    steps = stack(stderr: two, line: "d2/mid.h:1:10: fatal error: 'gone.h' file not found")
+    assert steps.len() == 3
+    assert steps[0].path == "build/tu-1/main.c"
+    assert steps[0].row == 5
+    assert steps[1].path == "d2/outer.h"
+    assert steps[1].row == 2
+    assert steps[2].path == "d2/mid.h"
+    assert steps[2].row == 1
+    three = "In file included from build/tu-1/main.c:5:\nIn file included from d3/outer.h:2:\nIn file included from d3/mid.h:2:\nd3/inner.h:3:10: fatal error: 'gone.h' file not found\n"
+    deep = stack(stderr: three, line: "d3/inner.h:3:10: fatal error: 'gone.h' file not found")
+    assert deep.len() == 4
+    assert deep[2].path == "d3/mid.h"
+    assert deep[3].row == 3
+
+    # The line alone is a stack of its own file, and a line that names no
+    # place has none.
+    alone = stack(
+        stderr: "d1/outer.h:2:10: fatal error: 'gone.h' file not found",
+        line: "d1/outer.h:2:10: fatal error: 'gone.h' file not found"
+    )
+    assert alone.len() == 1
+    assert alone[0].path == "d1/outer.h"
+    assert stack(stderr: two, line: "1 error generated.").len() == 0
+
+test "a diagnostic clang printed no stack for takes the nearest one for its file"
+    # A warning in the same header printed the stack; the error has none.
+    first = "In file included from build/tu-1/main.c:5:\nw/outer.h:2:2: warning: \"probe\" [-W#warnings]\n    2 | #warning \"probe\"\n      |  ^\nw/outer.h:3:10: fatal error: 'gone.h' file not found\n"
+    steps = stack(stderr: first, line: "w/outer.h:3:10: fatal error: 'gone.h' file not found")
+    assert steps.len() == 2
+    assert steps[0].path == "build/tu-1/main.c"
+    assert steps[1].row == 3
+
+    # A warning in the outer header and one in the inner: the stack nearest
+    # above is the inner file's.
+    mid = "In file included from build/tu-1/main.c:5:\nw/outer.h:2:2: warning: \"outer\" [-W#warnings]\nIn file included from build/tu-1/main.c:5:\nIn file included from w/outer.h:3:\nw/mid.h:1:2: warning: \"mid\" [-W#warnings]\n    1 | #warning \"mid\"\nw/mid.h:2:10: fatal error: 'gone.h' file not found\n"
+    inner = stack(stderr: mid, line: "w/mid.h:2:10: fatal error: 'gone.h' file not found")
+    assert inner.len() == 3
+    assert inner[1].path == "w/outer.h"
+    assert inner[1].row == 3
+    assert inner[2].row == 2
+
+    # A stack whose diagnostic is in another file is not this line's: with no
+    # other, the line stands alone.
+    other = "In file included from build/tu-1/main.c:5:\nw/a.h:1:2: warning: \"a\" [-W#warnings]\nw/b.h:1:10: fatal error: 'gone.h' file not found\n"
+    assert stack(stderr: other, line: "w/b.h:1:10: fatal error: 'gone.h' file not found").len() == 1
+
+test "the Windows box's separators, drive letters and carriage returns in a stack"
+    windows = "In file included from C:\\heroes\\build\\tu-1\\main.c:5:\r\ntests/golden/run\\x.h:7:10: fatal error: 'sys/wait.h' file not found\r\n"
+    steps = stack(stderr: windows, line: "tests/golden/run\\x.h:7:10: fatal error: 'sys/wait.h' file not found\r")
+    assert steps.len() == 2
+    assert steps[0].path == "C:\\heroes\\build\\tu-1\\main.c"
+    assert steps[1].path == "tests/golden/run\\x.h"
+    assert steps[1].row == 7
+    assert included("In file included from :5:").is_err()
+    assert included("In file included from d/x.h:5:").must().row == 5
+
 test "a path is spelled from each separator, either separator, longest first"
     assert spellings("outer.h") == ["outer.h"]
     assert spellings("./outer.h") == ["./outer.h", "outer.h"]
@@ -173,3 +370,19 @@ test "a path is spelled from each separator, either separator, longest first"
         assert one != "outer.h"
 
     assert spellings("").len() == 0
+
+    # A framework's header is also spelled by its framework.
+    assert spellings("fw/Fake.framework/Headers/fake.h") == ["fw/Fake.framework/Headers/fake.h", "Fake.framework/Headers/fake.h", "Fake/fake.h", "Headers/fake.h", "fake.h"]
+    assert framed("Fake.framework/PrivateHeaders/x.h", cut: 0).must() == "Fake/x.h"
+    assert framed(".framework/Headers/x.h", cut: 0).is_err()
+    assert framed("Fake.framework/Resources/x.h", cut: 0).is_err()
+    assert framed("Fake.framework/Headers/", cut: 0).is_err()
+
+test "a file of the stack is shown as an include would name it"
+    assert found_in(path: "tests/golden/unsupported\\outer.h", spelled: "outer.h") == "tests/golden/unsupported/"
+    assert found_in(path: "outer.h", spelled: "outer.h") == ""
+    assert found_in(path: "fw/Fake.framework/Headers/fake.h", spelled: "Fake/fake.h") == ""
+    assert shown(path: "tests/golden/unsupported\\mid.h", directory: "tests/golden/unsupported/") == "mid.h"
+    assert shown(path: "/usr/include/sys/x.h", directory: "tests/") == "/usr/include/sys/x.h"
+    assert shown(path: "fw/Fake.framework/Headers/inner.h", directory: "") == "Fake/inner.h"
+    assert shown(path: "mid.h", directory: "") == "mid.h"

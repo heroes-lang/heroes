@@ -205,7 +205,7 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !m_lib.is_err()
             found @ ffi_lookup.add_once(found, d: m_lib.must())
-        m_hdr = ffi_build.missing_header(s, decls, line: line)
+        m_hdr = ffi_build.missing_header(s, decls, line: line, stderr: text)
 
         if !m_hdr.is_err()
             found @ ffi_lookup.add_once(found, d: m_hdr.must())

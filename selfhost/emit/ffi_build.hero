@@ -15,7 +15,7 @@ use source
 use diag
 use emit/externs as emit_externs
 use emit/ffi_lookup
-use emit/clang_place
+use emit/header_reach
 use parse
 use resolve
 use checker
@@ -177,10 +177,16 @@ function strip_colons(text: str) -> str
 # repair the gap — the language still has no way to SAY where a header
 # is — it repairs the BLAME.
 #
+# **And a header the group's own header reaches, directly or through
+# others** (defect 158, 2026-10-02): the group's header was found and one it
+# needs was not, the same machine's fact further in, told by
+# `emit/header_reach.hero` from the line's place and the include stack clang
+# printed in `stderr` above it. It was exit 2 and clang's text until then.
+#
 # The header's name is read after clang's `error: '`, so a quote in a
 # directory's name cannot be taken for the header's (the first quote on the
 # line was read until defect 158).
-function missing_header(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+function missing_header(s: source.Source, decls: [ast.Decl], line: str, stderr: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: "file not found")
         return fail(code: "none", msg: "not a missing-header line")
     opened: str? @ ffi_lookup.after(text: line, marker: "error: '")
@@ -194,7 +200,7 @@ function missing_header(s: source.Source, decls: [ast.Decl], line: str) -> diag.
     span = ffi_lookup.group_head(s, decls, header: header)
 
     if span.is_err()
-        return included_header(s, decls, line: line, missing: header)
+        return header_reach.reached_header(s, decls, line: line, stderr: stderr, missing: header)
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_missing_header",
         message: "`" + header + "` is not on this machine's include path — clang looked and did not find it",
@@ -204,66 +210,6 @@ function missing_header(s: source.Source, decls: [ast.Decl], line: str) -> diag.
         "the group names a header the preprocessor must be able to open: install the library's development files, or pass `--include <dir>` — `package` finds it for you where the library ships a `.pc`, and `CPATH` works too"
     )
     return ok(d)
-
-# **A header the group's OWN header includes, and this machine lacks**
-# (defect 158, 2026-10-02): the group's header was found and one it
-# includes was not, the same machine's fact one `#include` further in. It reached the
-# author as clang's text at exit 2, and the run suite, which skips a case
-# only on `ffi_missing_header`, went red on the Windows box for a header
-# including `sys/wait.h`. clang's line says which header holds the
-# `#include` it could not open, by the place it begins with
-# (`emit/clang_place.hero`); where that header is a group's, the diagnostic
-# lands on the group and names both headers and the line.
-#
-# **One line reaches one level, and that is the narrowing.** A header reached
-# through a second header begins its line with the second header's place,
-# which no group names; only the stack clang prints ABOVE the line
-# (`In file included from`) says which group reached it, so it stays exit 2,
-# the loud direction, rather than land on a group the line does not name.
-# The runtime's own headers name no group either, so a missing header they
-# include stays the compiler's.
-function included_header(s: source.Source, decls: [ast.Decl], line: str, missing: str) -> diag.Diagnostic?
-    at = clang_place.place(line)
-
-    if at.is_err() || !ffi_lookup.has(text: line, needle: "error: '")
-        return fail(code: "none", msg: "not an error clang placed")
-    owner: Owner? @ fail(code: "none", msg: "no group's header holds the include")
-
-    for spelled in clang_place.spellings(at.must().path)
-        span = ffi_lookup.group_head(s, decls, header: spelled)
-
-        if !span.is_err()
-            owner @ ok(Owner(span: span.must(), header: spelled))
-            break
-
-    if owner.is_err()
-        return fail(code: "none", msg: "no group's header holds the include")
-    named = owner.must().header
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "ffi_missing_header",
-        message: "`" + missing + "` is not on this machine's include path, and `" + named + "`, the header this group names, includes it at line " + at.must().row.to_str(),
-        span: owner.must().span
-    )
-
-    # clang's own hint, when the header it could not open sits where a quoted
-    # include would have found it: the library's header is what is wrong, and
-    # the author's repair is the directory.
-    if ffi_lookup.has(text: line, needle: "with <angled> include")
-        d.notes @ d.notes.push(
-            "`" + named + "` names `" + missing + "` in angle brackets, which search only the include path, and clang says a quoted include would find it: pass `--include <dir>` with the directory that holds `" + missing + "`"
-        )
-    else
-        d.notes @ d.notes.push(
-            "the group's header is on this machine and a header it includes is not: install the development files that provide `" + missing + "`, or pass `--include <dir>` with the directory that holds it; `package` asks the machine where it is when the library ships a `.pc`, and `CPATH` works too"
-        )
-    return ok(d)
-
-# The group whose header holds an `#include`: its first declaration, where
-# the class above lands a header the group names itself, and the header as
-# the group wrote it.
-record Owner
-    span: token.Span
-    header: str
 
 # A package this program asked about, and the machine could not answer
 # — not installed, or answering with a flag the allow-list refuses.
@@ -388,9 +334,11 @@ test "the linker's two spellings, the library, the header, the package"
     assert missing_library(s, parsed.decls, line: "ld: library 'curl' not found").is_err()
 
     # The header the preprocessor could not open.
-    hdr = missing_header(s, parsed.decls, line: "main.c:3:10: fatal error: 'raylib.h' file not found")
+    raylib = "main.c:3:10: fatal error: 'raylib.h' file not found"
+    hdr = missing_header(s, parsed.decls, line: raylib, stderr: raylib)
     assert hdr.must().code == "ffi_missing_header"
-    assert missing_header(s, parsed.decls, line: "main.c:3:10: fatal error: 'ghost.h' file not found").is_err()
+    ghost = "main.c:3:10: fatal error: 'ghost.h' file not found"
+    assert missing_header(s, parsed.decls, line: ghost, stderr: ghost).is_err()
 
     # The package: headline keeps its sentence, later lines become
     # notes, the marker becomes plain words.
@@ -403,57 +351,24 @@ test "the linker's two spellings, the library, the header, the package"
     assert pk.must().notes[0] == "install raylib with your package manager"
     assert package_problem(s, parsed.decls, stderr: stderr, line: "heroes-ffi-package `sdl3` missing").is_err()
 
-# Lines as clang printed them in lane h158's first pass (2026-10-02, this
-# Mac) and as the coordinator read the Windows box's.
-test "a header the group's own header includes is told on that group, one level and no further"
-    text = "extern \"fine.h\"\n    function six() -> i32\n\nextern \"outer.h\"\n    function seven() -> i32\n\nextern \"lib/inner.h\"\n    function eight() -> i32\n\nfunction main()\n    print(six() + seven() + eight())\n"
+# Lines as clang printed them in lane h158's first pass (2026-10-02, this Mac).
+test "a header no group names is asked of the stack, and one a group names keeps its words"
+    text = "extern \"outer.h\"\n    function seven() -> i32\n\nfunction main()\n    print(seven())\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
-
-    # The place is the group's header: the diagnostic is on that group.
-    mac = missing_header(s, parsed.decls, line: "d1/outer.h:2:10: fatal error: 'gone.h' file not found")
-    assert mac.must().code == "ffi_missing_header"
-    assert mac.must().message == "`gone.h` is not on this machine's include path, and `outer.h`, the header this group names, includes it at line 2"
-    assert source.span_text(s, mac.must().span) == "function seven() -> i32"
-    assert mac.must().notes.len() == 1
-
-    # The Windows box's backslash and carriage return; a directory the group
-    # wrote, found under an `--include` on a drive.
-    windows = missing_header(
-        s,
-        parsed.decls,
-        line: "tests/golden/run\\outer.h:7:10: fatal error: 'sys/wait.h' file not found\r"
-    )
-    assert windows.must().message == "`sys/wait.h` is not on this machine's include path, and `outer.h`, the header this group names, includes it at line 7"
-    lib = missing_header(s, parsed.decls, line: "C:\\inc\\lib\\inner.h:3:10: fatal error: 'gone.h' file not found")
-    assert source.span_text(s, lib.must().span) == "function eight() -> i32"
-    assert lib.must().message == "`gone.h` is not on this machine's include path, and `lib/inner.h`, the header this group names, includes it at line 3"
+    said = "In file included from build/tu-1/main.c:5:\nIn file included from d2/outer.h:2:\nd2/mid.h:1:10: fatal error: 'gone.h' file not found\n"
+    deep = missing_header(s, parsed.decls, line: "d2/mid.h:1:10: fatal error: 'gone.h' file not found", stderr: said)
+    assert deep.must().message == "`gone.h` is not on this machine's include path, and `outer.h`, the header this group names, includes it through `mid.h`"
 
     # A quote in a directory's name is not the header's.
-    quoted = missing_header(s, parsed.decls, line: "/Users/o'hara/outer.h:2:10: fatal error: 'gone.h' file not found")
-    assert quoted.must().message == mac.must().message
+    quoted = "/Users/o'hara/outer.h:2:10: fatal error: 'gone.h' file not found"
+    assert missing_header(s, parsed.decls, line: quoted, stderr: quoted).must().message == "`gone.h` is not on this machine's include path, and `outer.h`, the header this group names, includes it at line 2"
 
-    # clang's hint for an angled include a quoted one would find is the note.
-    angled = missing_header(
-        s,
-        parsed.decls,
-        line: "inc/lib/inner.h:2:10: error: 'mid.h' file not found with <angled> include; use \"quotes\" instead"
-    )
-    assert angled.must().notes[0] == "`lib/inner.h` names `mid.h` in angle brackets, which search only the include path, and clang says a quoted include would find it: pass `--include <dir>` with the directory that holds `mid.h`"
-
-    # One level and no further: a second header's place, a file whose name
-    # only ends like a group's header, the runtime's own header and the
-    # generated C name no group, and stay the compiler's.
-    assert missing_header(s, parsed.decls, line: "d2/mid.h:1:10: fatal error: 'gone.h' file not found").is_err()
-    assert missing_header(s, parsed.decls, line: "d1/xouter.h:2:10: fatal error: 'gone.h' file not found").is_err()
-    assert missing_header(s, parsed.decls, line: "runtime/hero_os.h:4:10: fatal error: 'unistd.h' file not found").is_err(
-    )
-    assert missing_header(s, parsed.decls, line: "build/tu-1/main.c:5:10: fatal error: 'ghost.h' file not found").is_err(
-    )
-
-    # A header the group names itself keeps its own words.
-    direct = missing_header(s, parsed.decls, line: "build/tu-1/main.c:5:10: fatal error: 'outer.h' file not found")
-    assert direct.must().message == "`outer.h` is not on this machine's include path — clang looked and did not find it"
+    # The line alone reaches no group at depth two.
+    alone = "d2/mid.h:1:10: fatal error: 'gone.h' file not found"
+    assert missing_header(s, parsed.decls, line: alone, stderr: alone).is_err()
+    direct = "build/tu-1/main.c:5:10: fatal error: 'outer.h' file not found"
+    assert missing_header(s, parsed.decls, line: direct, stderr: direct).must().message == "`outer.h` is not on this machine's include path — clang looked and did not find it"

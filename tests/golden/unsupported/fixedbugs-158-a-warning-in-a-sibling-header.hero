@@ -1,0 +1,12 @@
+# fixedbugs, defect 158, lane h158, 2026-10-02.
+#
+# Beside `fixedbugs-158-a-header-the-groups-header-includes-in-angle-brackets`:
+# a warning in one header the group's header includes, and the missing
+# include in the next. The stack above the warning is the sibling's, and the
+# error's own stack is printed again above it.
+
+extern "fixedbugs-158-sibling-outer.h"
+    function seven() -> i32  #~ ffi_missing_header
+
+function main()
+    print(seven())
