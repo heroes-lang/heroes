@@ -1,0 +1,24 @@
+# fixedbugs, defect 152, lane ffi-macro, 2026-10-02.
+#
+# SYMPTOM: `function errno() -> i32` under `extern "errno.h"` stopped `build`
+# with `internal error: compiling the generated C failed`, exit 2, quoting
+# *called object type 'int' is not a function or function pointer* at a line
+# of the generated unit: the compiler blaming itself for the author's
+# declaration. `errno` is an object, a macro over one on every libc here.
+#
+# CAUSE: an `extern` with no parameter has no probe at its declaration's line,
+# and its result assertion carries no `#line`, so clang's words about the call
+# landed where no reader could tie them to a declaration, and no reader knew
+# those words anyway.
+#
+# FIX: a round clang refused asks the header once more (`emit/ffi_asked.hero`):
+# each such call is said again at its declaration's line, and whether the name
+# is a value is asked beside it. `ffi_call_shape` then tells the object, its
+# type as the header spells it, and the function of the program's own that
+# reaches it.
+
+extern "errno.h"
+    function errno() -> i32  #~ ffi_call_shape
+
+function main()
+    print(errno())

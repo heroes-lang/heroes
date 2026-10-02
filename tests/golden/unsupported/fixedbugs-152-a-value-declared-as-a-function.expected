@@ -1,0 +1,13 @@
+error[ffi_call_shape]: `fixedbugs-152-names.h` defines `LIMIT` as a value of type `int`, not a function: clang read the header, and the call this declaration implies does not fit it
+  at tests/golden/unsupported/fixedbugs-152-a-value-declared-as-a-function.hero:16:5
+     |
+  16 |     function LIMIT(scale: i64) -> i64  #~ ffi_call_shape
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a value the header holds is bound as a `constant`, with no parameters and no parentheses where it is read: `constant LIMIT: i64` (§ 13)
+
+error[ffi_call_shape]: `fixedbugs-152-names.h` defines `RED` as a value of type `int`, not a function: clang read the header, and the call this declaration implies does not fit it
+  at tests/golden/unsupported/fixedbugs-152-a-value-declared-as-a-function.hero:15:5
+     |
+  15 |     function RED() -> i32  #~ ffi_call_shape
+     |     ^^^^^^^^^^^^^^^^^^^^^
+  note: a value the header holds is bound as a `constant`, with no parameters and no parentheses where it is read: `constant RED: i32` (§ 13)

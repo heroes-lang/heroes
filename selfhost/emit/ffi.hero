@@ -34,6 +34,7 @@ use emit/ffi_narrowed
 use emit/ffi_mutable
 use emit/ffi_lend
 use emit/ffi_extent
+use emit/ffi_asked
 use cli/pointee_ask
 use parse
 use resolve
@@ -51,7 +52,12 @@ use ir/lower
 # two things about one mistake, and only the tag line names the
 # repair). add_once keeps one diagnostic per span, so whichever runs
 # first wins.
-function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: containers.Program, word_bits: i64, answered: [pointee_ask.Answered], struct_tags: {str: bool}) -> [diag.Diagnostic]
+#
+# `asked` is what a refused round asked the header after it (defect 152,
+# `emit/ffi_asked.hero`): its lines are clang's, at the program's own
+# declarations, and they are read AFTER the round's own, so a diagnostic the
+# round's words already make is the one kept.
+function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: containers.Program, word_bits: i64, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked) -> [diag.Diagnostic]
     # `with_functions`, and it is not decoration: this table is used to
     # REBUILD the probe line clang complained about, so it has to be the
     # same table the emitter wrote it with or the column arithmetic
@@ -73,8 +79,12 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
         p: p
     )
     found: [diag.Diagnostic] @ []
+    text: str @ stderr
 
-    for line in ffi_lookup.lines(text: stderr)
+    if asked.said.len() > 0
+        text @ stderr + "\n" + asked.said
+
+    for line in ffi_lookup.lines(text: text)
         wrong = ffi_declared.wrong_type(s, decls, line: line)
 
         if !wrong.is_err()
@@ -107,6 +117,10 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !shape.is_err()
             found @ ffi_lookup.add_once(found, d: shape.must())
+        not_callable = ffi_call.not_a_function(s, decls, p, c, line: line, values: asked.values)
+
+        if !not_callable.is_err()
+            found @ ffi_lookup.add_once(found, d: not_callable.must())
         not_const = ffi_declared.not_constant(s, decls, line: line)
 
         if !not_const.is_err()
@@ -163,7 +177,7 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
         # The record clang cannot lay out reads the notes beside its line,
         # which say whether the header declares the struct or C made it up
         # (defect 145), so it is handed the whole of clang's stderr.
-        u_tag = ffi_incomplete.unknown_tag(s, decls, line: line, stderr: stderr)
+        u_tag = ffi_incomplete.unknown_tag(s, decls, line: line, stderr: text)
 
         if !u_tag.is_err()
             found @ ffi_lookup.add_once(found, d: u_tag.must())
@@ -175,7 +189,7 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !tag_u.is_err()
             found @ ffi_lookup.add_once(found, d: tag_u.must())
-        unknown_n = ffi_declared.unknown_name(s, decls, line: line, stderr: stderr)
+        unknown_n = ffi_declared.unknown_name(s, decls, line: line, stderr: text)
 
         if !unknown_n.is_err()
             found @ ffi_lookup.add_once(found, d: unknown_n.must())
@@ -191,7 +205,7 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !m_hdr.is_err()
             found @ ffi_lookup.add_once(found, d: m_hdr.must())
-        pkg = ffi_build.package_problem(s, decls, stderr: stderr, line: line)
+        pkg = ffi_build.package_problem(s, decls, stderr: text, line: line)
 
         if !pkg.is_err()
             found @ ffi_lookup.add_once(found, d: pkg.must())
@@ -258,7 +272,8 @@ test "one mistake, several lines, one diagnostic — and the order is the messag
         low.program,
         word_bits: 64,
         answered: none,
-        struct_tags: no_tags
+        struct_tags: no_tags,
+        asked: ffi_asked.nothing()
     )
     assert found.len() == 1
     assert found[0].code == "ffi_return_type"
@@ -276,11 +291,12 @@ test "one mistake, several lines, one diagnostic — and the order is the messag
         low.program,
         word_bits: 64,
         answered: none,
-        struct_tags: no_tags
+        struct_tags: no_tags,
+        asked: ffi_asked.nothing()
     )
     assert kept.len() == 1
     assert kept[0].code == "ffi_flexible_array_member"
 
     # Any other clang failure explains nothing: still the compiler's.
     other = "m.c:1:1: error: expected ';' after top level declarator\n"
-    assert explain(other, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64, answered: none, struct_tags: no_tags).len() == 0
+    assert explain(other, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64, answered: none, struct_tags: no_tags, asked: ffi_asked.nothing()).len() == 0

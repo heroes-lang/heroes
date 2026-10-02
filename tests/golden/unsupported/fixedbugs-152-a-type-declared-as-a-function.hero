@@ -1,0 +1,20 @@
+# fixedbugs, defect 152, lane ffi-macro, 2026-10-02.
+#
+# SYMPTOM: a typedef declared as a function was `internal error`, exit 2,
+# *expected expression* at the result assertion. With a parameter it got
+# further: the probe's `(my_int)(a0)` is a CAST, which compiles, so only the
+# assertion and the call refused it.
+#
+# FIX: the question unit says the name alone at the declaration's line for a
+# declaration with parameters, `(void)my_int;`, which clang refuses as
+# *unexpected type name*, and the call itself for one with none.
+
+extern "fixedbugs-152-names.h"
+    function my_int() -> i32  #~ ffi_call_shape
+
+extern "stdint.h"
+    function int32_t(value: i64) -> i32  #~ ffi_call_shape
+
+function main()
+    print(my_int())
+    print(int32_t(value: 3))

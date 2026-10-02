@@ -137,7 +137,9 @@ function shape_emit() -> Shape
 # one per declared result type, took the directory from 14 cases to 25, past
 # its floor of 12 by more than a quarter, and the suite asked for 25. **34 the
 # same day**, defect 145's nine `fixedbugs-145-` cases, one per way a header
-# names a struct.
+# names a struct. **46 in lane ffi-macro, 2026-10-02**: defect 152's nine
+# `fixedbugs-152-` cases, one per kind of name a header holds that is not a
+# function, and the suite asked for 46.
 function shape_unsupported() -> Shape
     return Shape(
         name: "unsupported",
@@ -146,7 +148,7 @@ function shape_unsupported() -> Shape
         flag: "",
         on_stderr: true,
         want_code: 1,
-        least: 34,
+        least: 46,
         watched: true,
         silent_stdout: true,
         library_skip: true
