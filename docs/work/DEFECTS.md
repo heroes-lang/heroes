@@ -615,6 +615,32 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     at `b7c510c5`, gated by its own cases; the rest is owed at the round's
     gate, and the platform legs before the push.
 
+    **2026-10-02, lane land186, a record over a C union is built naming
+    exactly one member of each union, and `build` judges what a
+    construction leaves out** (panel 186 R7, home (a), read blind by the
+    sitting's third reading): at `8977e7c6`, gated by its own cases; the
+    rest is owed at the round's gate, and the platform legs before the push.
+
+    **2026-10-02, lane land186, spec § 13 says it, O_cover in place of
+    R_build_cover, and design.md §4.19 says where it is judged** (panel 186
+    R7): at `fc0e7284`, gated by its own cases; the rest is owed at the
+    round's gate, and the platform legs before the push.
+
+    **2026-10-02, lane land186, R7's cases, the SDL3 event among them**:
+    at `ec530b54`, gated by its own cases; the rest is owed at the round's
+    gate, and the platform legs before the push.
+
+    **2026-10-02, lane land186, a case that held a GNU fact as everyone's**:
+    the Windows box's pre-push leg at `b48d02b8` refused
+    `run/fixedbugs-151-members-with-no-bytes-left-out`, an empty struct
+    having bytes for MSVC's target, which the compiler was right to refuse
+    (R4); the case now holds only the zero-length array, no bytes on every
+    target measured, and the empty struct is witnessed missing for
+    `x86_64-pc-windows-msvc` and complete for `x86_64-linux-gnu` by
+    `selfhost/cli/layout.hero`'s test: at `bac43e50`, gated by its own cases;
+    the rest is owed at the round's gate, and the platform legs before the
+    push.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a wrong value at the C
     boundary, built from Heroes.
@@ -717,6 +743,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     coordinator on `9faf7462` before 16:49, the widening's commit,
     `docs/panel/186-briefs/probes/coordinator/handle_utag.hero` over
     `tags.h`).
+
+    **2026-10-02, lane land186, a tag naming a union's or an enum's tag told
+    its own kind, a handle's and a bare name's included, with what reaches
+    it** (the widening and three shapes beside it with its cause): repaired
+    at `669fc846`, gated by its own cases; the rest is owed at the round's
+    gate, and the platform legs before the push.
 
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a false note, against
@@ -886,6 +918,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** Exit 2 is the compiler blaming itself for a
     misspelling the author can be told about, and clang's text reaches the
     author (`.claude/rules/c-boundary.md`).
+
+    **2026-10-02, lane land186, a test the repair left stale**: `25b96332`,
+    gated by its own cases, left one of the compiler's own tests stale,
+    `emit/layout_check.hero`'s count of the questions a misspelt field puts
+    under the preprocessor, which the member probe made five where it asked
+    four (1027 passed and 1 failed on that commit's sources, with its
+    compiler); fixed at `ba162242`, 1027 and 0, the rest owed at the round's
+    gate.
 
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): exit 2. Repaired in lane land186 at `25b96332`,

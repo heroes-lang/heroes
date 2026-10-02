@@ -12,13 +12,19 @@
 # FIX: a field the dump does not show is asked about by its own name, which
 # C's `__builtin_offsetof` follows through the macro, and two declared fields
 # sharing bytes are refused at `build` wherever the union sits.
+#
+# **Moved 2026-10-02, panel 186 R7** (lane land186, the author's *2a*): a
+# record over a C union may name both arms and read either, and is built
+# naming exactly one, so the refusal is the construction's, told at it with
+# the two arms it names, a macro's field asked as before by its own name.
+# Until R7 it was told on the record's line.
 
 extern "fixedbugs-151-unions.h"
-    record NUW  #~ ffi_union_field
+    record NUW
         kind: i32
         nu_small: u8
         nu_big: u64
 
 function main()
-    n = NUW(kind: 1, nu_small: 2, nu_big: 3)
+    n = NUW(kind: 1, nu_small: 2, nu_big: 3)  #~ ffi_union_field
     print(n.kind)

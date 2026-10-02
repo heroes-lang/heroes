@@ -1,0 +1,161 @@
+# The labels of a construction of a group's record that names some of its
+# fields (panel 186 R7, home (a); spec § 13; design.md §4.19). A record over
+# a C union is built naming exactly one member of each union, an anonymous
+# struct's fields counting as one, and every field outside them, so such a
+# construction may name fewer fields than the record declares, and which it
+# may leave out is `build`'s, from the header's layout
+# (`emit/layout_sites.hero`). What `check` still holds is §4.9's: every
+# argument is named, each name is a field of the record, none twice, in the
+# order the record declares them.
+#
+# **Each is told as what it is**, and never as the rule of a construction
+# naming every field, which a group's record does not have. R7's prototype
+# fell back to that rule: `SA(kind: 2, ff: 1.5, x: 4)` and
+# `SA(f: 1.5, kind: 2, x: 4)` were told *`SA` is built with every field,
+# named: kind:, i:, f:, x:*, *all of them, always*, false of the record it
+# named, and silent about the misspelling and the order. `check/walk.hero`
+# sends here every construction of a group's record whose count differs from
+# its field count; one naming every field keeps §4.9's own check, the order
+# its position.
+
+use diag
+use ast
+use source
+use label_errors
+use check/state
+use check/labels
+
+# Each argument's field: the index in `names` its label names, or -1 where it
+# has no label or names no field.
+function fields_named(s: source.Source, names: [str], given: [ast.Arg]) -> [i64]
+    out: [i64] @ []
+
+    for arg in given
+        found: i64 @ -1
+
+        if !arg.name.is_err()
+            written = source.span_text(s, arg.name.must())
+            q: i64 @ 0
+
+            for name in names
+                if name == written && found < 0
+                    found @ q
+                q @ q + 1
+
+        out @ out.push(found)
+
+    return out
+
+# What is wrong with the labels, one diagnostic per argument at fault: no
+# label, a label naming no field, a field named twice, a field named after
+# one the record declares after it. `types` are the fields' types, which say
+# what else an argument could be.
+function told(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, names: [str], types: [i64], given: [ast.Arg], at: [i64]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+    taken = labels.written_labels(s, given)
+    seen: [i64] @ []
+    last: i64 @ -1
+    k: i64 @ 0
+
+    for arg in given
+        field = at[k]
+
+        if arg.name.is_err()
+            # The fields this one could be stand between the field named
+            # before it and the one named after it, in the declared order.
+            front = label_errors.argument_front(
+                s.text,
+                value_start: a.exprs[arg.value].span.start,
+                mutable: arg.mutable
+            )
+            open: [str] @ fitting(
+                c,
+                a,
+                decls,
+                names: names,
+                types: types,
+                from: last + 1,
+                to: next_named(at, from: k + 1, beyond: names.len()),
+                value: arg.value,
+                taken: taken
+            )
+
+            # None there: the labels are out of order too, and any field no
+            # label writes is a reading.
+            if open.len() == 0
+                open @ fitting(
+                    c,
+                    a,
+                    decls,
+                    names: names,
+                    types: types,
+                    from: 0,
+                    to: names.len(),
+                    value: arg.value,
+                    taken: taken
+                )
+            out @ out.push(
+                label_errors.unnamed_in_part(holder: holder, candidates: open, span: a.exprs[arg.value].span, at: front)
+            )
+        else if field < 0
+            written = source.span_text(s, arg.name.must())
+            open = fitting(
+                c,
+                a,
+                decls,
+                names: names,
+                types: types,
+                from: 0,
+                to: names.len(),
+                value: arg.value,
+                taken: taken
+            )
+            out @ out.push(
+                label_errors.no_such_field(holder: holder, written: written, fields: names, candidates: open, span: arg.name.must())
+            )
+        else if labels.holds(seen, field)
+            out @ out.push(label_errors.named_twice(holder: holder, written: names[field], span: arg.name.must()))
+        else if field < last
+            out @ out.push(
+                label_errors.out_of_order(holder: holder, written: names[field], after: names[last], span: arg.name.must())
+            )
+
+        if field >= 0
+            seen @ seen.push(field)
+
+            if field > last
+                last @ field
+        k @ k + 1
+
+    return out
+
+# The first field named after argument `from`, or `beyond` where none is.
+function next_named(at: [i64], from: i64, beyond: i64) -> i64
+    k: i64 @ from
+
+    while k < at.len()
+        if at[k] >= 0
+            return at[k]
+        k @ k + 1
+
+    return beyond
+
+# The fields from `from` up to `to` that no label writes and that could take
+# the value; where none could, every one of them no label writes, since the
+# value's own type may be the mistake.
+function fitting(c: state.Checker, a: ast.Ast, decls: [ast.Decl], names: [str], types: [i64], from: i64, to: i64, value: i64, taken: [str]) -> [str]
+    could: [str] @ []
+    free: [str] @ []
+    q: i64 @ from
+
+    while q < to && q < names.len()
+        if !labels.listed(taken, names[q])
+            free @ free.push(names[q])
+
+            if labels.could_take(c, a, decls, value: value, ty: types[q])
+                could @ could.push(names[q])
+        q @ q + 1
+
+    if could.len() > 0
+        return could
+    return free

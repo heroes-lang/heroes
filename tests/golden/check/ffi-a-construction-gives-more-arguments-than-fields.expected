@@ -1,0 +1,1 @@
+tests/golden/check/ffi-a-construction-gives-more-arguments-than-fields.hero:17:24: error[wrong_label]: `PT` has nothing called `z`: its fields are `x` and `y`

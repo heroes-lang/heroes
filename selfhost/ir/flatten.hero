@@ -513,9 +513,10 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
                 # descriptor pass.
                 if questions.is_record(decls, t.at)
                     run = lower_args(@b, a, r, c, s, decls, given: given, callee: fail(code: "none", msg: "a record construction")).run
+                    named = questions.given_fields(s, decls, decl: t.at, given: given)
                     return build.emit(
                         @b,
-                        op: .construct(shape: .record_shape(decl: t.at), arguments: run),
+                        op: .construct(shape: .record_shape(decl: t.at, given: named), arguments: run),
                         ty: ty,
                         span: span
                     )
@@ -662,9 +663,10 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
                 # A record is constructed, not called — the same split
                 # call makes.
                 if questions.is_record(decls, t.at)
+                    named = questions.given_fields(s, decls, decl: t.at, given: given)
                     return build.emit(
                         @b,
-                        op: .construct(shape: .record_shape(decl: t.at), arguments: handed.run),
+                        op: .construct(shape: .record_shape(decl: t.at, given: named), arguments: handed.run),
                         ty: ty,
                         span: span
                     )

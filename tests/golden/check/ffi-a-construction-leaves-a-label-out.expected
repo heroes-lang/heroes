@@ -1,0 +1,1 @@
+tests/golden/check/ffi-a-construction-leaves-a-label-out.hero:20:21: error[missing_label]: `SA`'s fields are always named, and a construction of it may name only some, so the position does not say which field this is: it may be `f`

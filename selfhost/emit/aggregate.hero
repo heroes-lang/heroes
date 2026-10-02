@@ -143,15 +143,32 @@ function place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: contain
     return parts.join("")
 
 # t3 = (h_m_Point){.f_x = t1, .f_y = t2};
-function construct(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str]) -> str?
+function construct(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, given: [i64], arguments: [str]) -> str?
     name = ctype.of(names, decl: decl)
 
     match decls[decl].kind
         .record_decl rec =>
+            # The fields the construction names, which is every one but where
+            # a group's record is built naming one member of each C union
+            # (panel 186 R7): the designated initialiser names those alone,
+            # so it writes no other member of a union over the one named, and
+            # C gives a member it does not name no value the build has not
+            # judged (`emit/layout_sites.hero`). An index the record does not
+            # have is the lowering's fault, and refused here rather than
+            # written as a different construction.
+            named: [ast.Field] @ []
+
+            for k in given
+                if k < 0 || k >= rec.fields.len()
+                    return fail(code: "none", msg: "a construction names a field the record does not have")
+                named @ named.push(rec.fields[k])
+
+            if named.len() != arguments.len()
+                return fail(code: "none", msg: "a construction names a field for every argument, and this one does not")
             parts = designators(
                 c,
                 s,
-                fields: rec.fields,
+                fields: named,
                 arguments: arguments,
                 foreign: !rec.header.is_err(),
                 holder: name
@@ -337,7 +354,7 @@ test "designated construction, a walked place, and the failure's fixed pair"
     got = ready(
         "record Point\n    x: i64\n    y: i64\n\nrecord Line\n    start_at: Point\n\nfunction main()\n    l: Line @ Line(start_at: Point(x: 1, y: 2))\n    l.start_at.x @ 3\n    print(l.start_at.x)\n"
     )
-    built = construct(got.c, got.names, got.s, got.decls, decl: 0, arguments: ["t1", "t2"])
+    built = construct(got.c, got.names, got.s, got.decls, decl: 0, given: [0, 1], arguments: ["t1", "t2"])
     assert built.must() == "(h_t_Point){.f_x = t1, .f_y = t2}"
     line = table.lookup(got.c.types, .named(decl: 1)).must()
     slots: [containers.Slot] = [containers.Slot(name: "l", ty: line, kind: .local_slot(mutable: false))]

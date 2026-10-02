@@ -1,0 +1,6 @@
+error[missing_fields]: this construction of `PT` leaves out `y`, which shares no byte with the fields it names, so C would build it with `y` zero: `ffi-a-construction.h` puts `y` in no union with any of those
+  at tests/golden/unsupported/ffi-a-construction-of-a-plain-struct-leaves-out-a-field.hero:18:9
+     |
+  18 |     p = PT(x: 1)  #~ missing_fields
+     |         ^^^^^^^^
+  note: a group's `record` is built naming every field outside the header's unions and exactly one member of each union, an anonymous struct's fields counting as one (§ 13)

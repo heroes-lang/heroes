@@ -1,0 +1,20 @@
+# Panel 186 R7, lane land186, 2026-10-02: a group's record over a C union is
+# built naming exactly one member of each union, so a construction may name
+# fewer fields than the record declares, and `check` holds only its labels
+# (`selfhost/check/group_fields.hero`); what it leaves out is `build`'s.
+#
+# Every field a construction leaves out that shares no byte with one it names
+# is told in ONE diagnostic, naming each. clang prints one failed assertion
+# per field at the construction's line and the mapper keeps one diagnostic per
+# span, so R7's prototype told `y` and, on the next build, `z`.
+
+extern "ffi-a-construction.h"
+    record PT3
+        x: i32
+        y: i32
+        z: i32
+    function pt3_z(p: PT3) -> i32
+
+function main()
+    p = PT3(x: 1)  #~ missing_fields
+    print(pt3_z(p))

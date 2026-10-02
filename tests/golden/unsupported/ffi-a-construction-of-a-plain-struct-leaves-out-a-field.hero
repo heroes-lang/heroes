@@ -1,0 +1,19 @@
+# Panel 186 R7, lane land186, 2026-10-02: a group's record over a C union is
+# built naming exactly one member of each union, an anonymous struct's fields
+# counting as one, and every field outside them (spec § 13). What a
+# construction leaves out is judged by `build`, from the header's layout, at
+# the construction (`selfhost/emit/layout_sites.hero`).
+#
+# A struct with no union at all: every field is outside the unions, so every
+# one is named. Until R7 this was `check`'s refusal; it is `build`'s now, the
+# cost the author accepted, still at the construction's line.
+
+extern "ffi-a-construction.h"
+    record PT
+        x: i32
+        y: i32
+    function pt_y(p: PT) -> i32
+
+function main()
+    p = PT(x: 1)  #~ missing_fields
+    print(pt_y(p))
