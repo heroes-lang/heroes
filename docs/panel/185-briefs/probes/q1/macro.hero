@@ -1,0 +1,5 @@
+extern "sys/wait.h"
+    function WEXITSTATUS(status: i32) -> i64
+
+function main()
+    print(WEXITSTATUS(status: 256))

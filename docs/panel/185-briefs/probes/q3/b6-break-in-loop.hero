@@ -1,0 +1,15 @@
+function f(xs: [i64]) -> i64
+    total: i64 @ 0
+    for v in xs
+        y = match v
+            0 =>
+                if total > 5
+                    break
+                else
+                    continue
+            _ => v
+        total @ total + y
+    return total
+
+function main()
+    print(f(xs: [1, 2, 0, 9]))

@@ -1,0 +1,18 @@
+variant Color
+    red
+    green
+    blue
+
+function tally(cs: [Color]) -> i64
+    reds: i64 @ 0
+    spins: i64 @ 0
+    for c in cs
+        match c
+            .red => reds @ reds + 1
+            .green => seen: i64 = 1
+            .blue => while spins < 3
+                spins @ spins + 1
+    return reds * 10 + spins
+
+function main()
+    print(tally([.red, .blue, .red]))

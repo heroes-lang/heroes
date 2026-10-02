@@ -1,0 +1,13 @@
+function rank(k: i64, j: i64) -> i64
+    x = match k
+        0 =>
+            match j
+                0 => return 1
+                _ => return 2
+        _ => 20
+    return x
+
+function main()
+    print(rank(k: 0, j: 0))
+    print(rank(k: 0, j: 5))
+    print(rank(k: 3, j: 0))

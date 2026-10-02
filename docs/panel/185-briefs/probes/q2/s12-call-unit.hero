@@ -1,0 +1,18 @@
+variant Color
+    red
+    blue
+
+record Box
+    v: i64
+
+function f(c: Color, xs: [i64]) -> i64
+    n: i64 @ 0
+    b: Box @ Box(v: 0)
+    ys: [i64] @ xs
+    match c
+        .red => return 1
+        .blue => print(3)
+    return n + b.v + ys[0]
+
+function main()
+    print(f(c: .blue, xs: [7, 8]))
