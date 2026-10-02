@@ -129,12 +129,19 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
 # not fail (the audit's row 130-28, lane recovery-b8): until 2026-10-02 it
 # went with the debris, told only once the first mistake was repaired. A
 # closer of another kind inside an opener is that list's junk, its own
-# report's or none, so `[0X20, )]` keeps its `]`.
+# report's or none, so `[0X20, )]` keeps its `]`. **Only a closer the drop
+# takes** (the round's gate of 2026-10-02, redoing `ce5caf89`): past a
+# statement that ended with its own block, `k = match n` over a failed arm,
+# the drop takes nothing and the line under the cursor is the next
+# statement's, which tells its own `)`; read to its line end, the scan told
+# that `)` a second time at the same column.
 function a_closer_too_many(@c: cursor.Cursor, text: str, from: i64)
+    dropped: cursor.Cursor @ c
+    brace_habit.drop_rest_of_line(@dropped, text, from: from)
     open: [token.TokenKind] @ []
     i: i64 @ from
 
-    while i < c.tokens.len() - 1 && !(open.len() == 0 && i >= c.pos && (c.tokens[i].kind == .terminator || c.tokens[i].kind == .indent || c.tokens[i].kind == .dedent))
+    while i < dropped.pos
         k = c.tokens[i].kind
 
         if k == .lparen || k == .lbracket || k == .lbrace
