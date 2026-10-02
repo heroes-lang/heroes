@@ -6,10 +6,25 @@
 #
 # **One process on a cold build, three at most.** The screen runs once per
 # (compiler, records and what the program does with them, headers, search
-# path), under `build/layout-<key>/`, with the headers it read recorded by
-# digest (`cli/deps`), so a header that changes asks again and an unchanged
-# one costs a read. Only a record the screen cannot vouch for is dumped, and
-# the check unit runs only when it holds an assertion.
+# path, the words a probe compiles under), under `build/layout-<key>/`, with
+# the headers it read recorded by digest (`cli/deps`), so a header that
+# changes asks again and an unchanged one costs a read. Only a record the
+# screen cannot vouch for is dumped, and the check unit runs only when it
+# holds an assertion.
+#
+# **The key names the words the three clang runs compile under**, by the
+# rules that hand them over, the pointee check's own (`pointee.with_search`):
+# a package's `-I -D -U -F` (`libraries.compile_flags`, defect 161) after
+# `compile:` and the compiler's own flags but its diagnostics
+# (`pointee.probe_flags`, defect 163) after `probe:`, each word by its length
+# (`libraries.key_text`). Until the round of 2026-10-02's third gate the key
+# held the package's whole answer joined by spaces, and the runs took a
+# package's `-I` alone and `-std=gnu11` alone: so two answers that join to
+# one text, a word holding a space (defect 162) against the two words it
+# spells, read one verdict (the first test below), and a verdict kept by a
+# compiler that passed fewer words was keyed as this one's. The words come
+# after `compile:` and `probe:`, so no key written before names the same
+# text.
 #
 # **What is kept is clang's answers, never this compiler's reading of them**:
 # the screen's stderr and the dump, from which the flagged set, the rows this
@@ -46,6 +61,7 @@ use cli/publish
 use cli/digest
 use cli/deps
 use cli/pointee
+use cli/libraries
 use parse
 use resolve
 use checker
@@ -79,7 +95,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     u = extern_union.used(p, c, decls)
     screen_text = layout_screen.screen_unit(headers, wanted, s, decls, c, u)
     key = digest.digest(
-        t.fingerprint + "|layout|" + t.compiler_key + "|" + screen_text + "|" + search_include.join(",") + "|" + package_flags.join(" ") + "|" + t.runtime_key
+        t.fingerprint + "|layout|" + t.compiler_key + "|" + screen_text + "|" + search_include.join(",") + "|compile:" + libraries.key_text(libraries.compile_flags(package_flags)) + "|probe:" + libraries.key_text(pointee.probe_flags()) + "|" + t.runtime_key
     )
     dir = t.build + "/layout-" + key
     listed = dir + "/screen.deps.txt"
@@ -108,7 +124,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     publish.write_whole(path: screen_c, text: screen_text, keyed: true)?
     depfile = publish.private_name(dir + "/screen.d")
     err_path = publish.private_name(dir + "/screen-stderr.txt")
-    line: [str] @ ["clang", "-std=gnu11", "-fsyntax-only", "-ferror-limit=0", "-MD", "-MT", "dep", "-MF", depfile]
+    line: [str] @ ["clang", "-fsyntax-only", "-ferror-limit=0", "-MD", "-MT", "dep", "-MF", depfile]
     line @ searched(a, line: line)
     line @ line.push(screen_c)
     ran = process.run(program: "clang", words: line, out: process.discard(), err: err_path)
@@ -173,7 +189,7 @@ function dump(a: Asking, dump_text: str) -> str?
     publish.write_whole(path: dump_c, text: dump_text, keyed: true)?
     out_path = publish.private_name(a.dir + "/dump.txt")
     err_path = publish.private_name(a.dir + "/dump-stderr.txt")
-    line: [str] @ ["clang", "-std=gnu11", "-fsyntax-only", "-Xclang", "-fdump-record-layouts"]
+    line: [str] @ ["clang", "-fsyntax-only", "-Xclang", "-fdump-record-layouts"]
     line @ searched(a, line: line)
     line @ line.push(dump_c)
     ran = process.run(program: "clang", words: line, out: out_path, err: err_path)
@@ -200,7 +216,7 @@ function judged(a: Asking, sum: str, text: str) -> ()?
     check_c = pointee.unit_path(dir: a.dir, stem: "check", text: text)
     publish.write_whole(path: check_c, text: text, keyed: true)?
     err_path = publish.private_name(a.dir + "/check-stderr.txt")
-    line: [str] @ ["clang", "-std=gnu11", "-fsyntax-only", "-ferror-limit=0"]
+    line: [str] @ ["clang", "-fsyntax-only", "-ferror-limit=0"]
     line @ searched(a, line: line)
     line @ line.push(check_c)
     checked = toolchain.run_clang(
@@ -237,6 +253,77 @@ function code_of(failed: ()?) -> str
         .err e => return e.code
 
 ## Tests
+
+# **A package's compile words reach the layout check, each one whole, and
+# its verdict is keyed by them** (defects 161 and 162 at the layout check,
+# reconciled at the round of 2026-10-02's third gate). The header gives its
+# record a second member under a macro a package defines. One word holding
+# a space defines another macro and not that one, and the two words it
+# spells define both, so the record is whole under the first answer and
+# leaves a member with bytes out under the second; joined by a space the
+# two answers are one text, and a key made of that text replayed the first's
+# verdict for the second, a record that leaves four bytes out read as
+# complete.
+test "a package's words reach the layout check each one whole, and its verdict is keyed by them (defects 161 and 162)"
+    text = "extern \"extra.h\"\n    record EXTRA\n        x: i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-layout-package"
+    headers_at = "build/selftest-layout-package-include"
+    assert !process.remove_tree(t.build).is_err()
+    assert !process.mkdir_all(headers_at).is_err()
+    header = "#include <stdint.h>\ntypedef struct {\n    int32_t x;\n#ifdef HERO_EXTRA\n    int32_t y;\n#endif\n} EXTRA;\n"
+    assert !write_file(path: headers_at + "/extra.h", text: header).is_err()
+
+    # One word: `HERO_A` means `1 -DHERO_EXTRA`, `HERO_EXTRA` is not
+    # defined, and the record is whole.
+    one_word = check(
+        t,
+        low.program,
+        c,
+        s,
+        parsed.decls,
+        search_include: [headers_at],
+        package_flags: ["-DHERO_A=1 -DHERO_EXTRA"],
+        source_dir: ""
+    )
+    assert !one_word.is_err()
+
+    # The two words it spells, in the same `build/`: `y` is left out with
+    # its four bytes, and clang is asked again and says so.
+    two_words = check(
+        t,
+        low.program,
+        c,
+        s,
+        parsed.decls,
+        search_include: [headers_at],
+        package_flags: ["-DHERO_A=1", "-DHERO_EXTRA"],
+        source_dir: ""
+    )
+    assert two_words.is_err()
+    assert layout_rows.byte_index(text: pointee.failure_text(two_words), needle: "heroes-ffi-missing EXTRA y") > 0
+
+    # A link word is no probe's: the same compile words read the verdict
+    # already published, and nothing new is written.
+    held = process.files_under(t.build).must().len()
+    linked = check(
+        t,
+        low.program,
+        c,
+        s,
+        parsed.decls,
+        search_include: [headers_at],
+        package_flags: ["-DHERO_A=1", "-DHERO_EXTRA", "-lz"],
+        source_dir: ""
+    )
+    assert pointee.failure_text(linked) == pointee.failure_text(two_words)
+    assert process.files_under(t.build).must().len() == held
 
 # **A member with no bytes is complete only where C says it has none**
 # (panel 186 R4; defect 151, the Windows box's pre-push leg, 2026-10-02). An
