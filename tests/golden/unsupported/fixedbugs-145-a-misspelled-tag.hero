@@ -11,6 +11,10 @@
 # it is refused.
 # This shape: a tag the header does not have at all. The note's first
 # reading is the repair, and the handle is not offered.
+# Since 2026-10-02, panel 185 R2, lane ffi-macro: the refused round asks the
+# header `typedef only_tagg hero_q;`, clang answers *unknown type name*, and
+# the note gives the one reading that is true, the misspelling, where it gave
+# a typedef's name beside it.
 
 extern "fixedbugs-145-types.h"
     record Q tag only_tagg  #~ ffi_unknown_tag
