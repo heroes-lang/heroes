@@ -1,0 +1,6 @@
+error[ffi_unknown_field]: `fixedbugs-152-fields.h` declares no `c` in `struct tagged_s`: clang read the header, and that type has no such field
+  at tests/golden/unsupported/fixedbugs-152-a-field-the-header-lacks-in-a-typedef-of-a-tagged-struct.hero:16:9
+     |
+  16 |         c: i32  #~ ffi_unknown_field
+     |         ^
+  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `struct tagged_s` has a `c`
