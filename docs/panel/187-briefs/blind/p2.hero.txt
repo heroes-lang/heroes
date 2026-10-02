@@ -1,0 +1,5 @@
+function seven(): i64 )
+    return 7
+
+function main()
+    print(seven())

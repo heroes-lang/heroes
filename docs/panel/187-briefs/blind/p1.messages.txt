@@ -1,0 +1,24 @@
+error[unexpected_character]: `;` is not part of the language's syntax
+  at p1.hero:2:15
+    |
+  2 |     for (i = 0; i < 3; i++) {
+    |               ^
+
+error[unexpected_character]: `;` is not part of the language's syntax
+  at p1.hero:2:22
+    |
+  2 |     for (i = 0; i < 3; i++) {
+    |                      ^
+
+error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — a loop over a condition is `while`
+  at p1.hero:2:9
+    |
+  2 |     for (i = 0; i < 3; i++) {
+    |         ^
+  fix (guess): use `while`
+
+error[missing_body]: a `for` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+  at p1.hero:2:29
+    |
+  2 |     for (i = 0; i < 3; i++) {
+    |                             ^

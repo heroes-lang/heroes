@@ -1,0 +1,5 @@
+error[expected_end_of_line]: expected the end of the line after `record Point`, found `)` — its fields go on the lines below it, one level deeper
+  at p3.hero:1:14
+    |
+  1 | record Point )
+    |              ^

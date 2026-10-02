@@ -1,0 +1,6 @@
+error[unknown_name]: nothing named `totl` is in scope — did you mean `total`?
+  at p5.hero:3:11
+    |
+  3 |     print(totl)
+    |           ^^^^
+  fix (certain): rename to `total`

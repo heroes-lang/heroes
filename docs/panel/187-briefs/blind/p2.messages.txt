@@ -1,0 +1,5 @@
+error[expected_end_of_line]: expected the end of the line, found `:` — a `function`'s body goes on the lines below its head, one level deeper
+  at p2.hero:1:17
+    |
+  1 | function seven(): i64 )
+    |                 ^

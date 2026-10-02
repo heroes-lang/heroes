@@ -1,0 +1,5 @@
+error[expected_separator]: expected `,` or a new line between one element and the next, found `)`
+  at p4.hero:3:20
+    |
+  3 |     print(x.len()) )
+    |                    ^

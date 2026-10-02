@@ -1,0 +1,11 @@
+error[expected_field]: expected a field name, found `function` — a `record` holds only its fields, one per line, `name: type`, and a `function` in it is declared at the top level of the file, taking the record as a parameter
+  at p3.hero:4:5
+    |
+  4 |     function sum() -> i64
+    |     ^^^^^^^^
+
+error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found the end of the block)
+  at p3.hero:6:1
+    |
+  6 | function main()
+    | ^
