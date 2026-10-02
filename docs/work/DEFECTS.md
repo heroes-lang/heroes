@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 41**
+**OPEN: 33**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -557,29 +557,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and so are Linux x86-64 (the gate's container), Linux arm64 and the
     Windows box, R1 being at the C boundary.
 
+    **2026-10-03, its cases read one by one, held for the Windows box**: on this Mac (00:30 to 00:42 by `date`) and in the Linux arm64 container (one run, 00:36 to 00:54, Debian clang 22.1.8), with a compiler built from the trunk's seed at `2620bed1`, all twelve passed, `run/fixedbugs-143-*` 2 of 2 and `unsupported/fixedbugs-143-*` 10 of 10. Four of them bind `sys/wait.h` or `sys/select.h` (`run/fixedbugs-143-system-macros-through-functions-of-the-programs-own`, `unsupported/fixedbugs-143-a-macro-declared-at-a-wrong-width-drafts-no-width`, `-a-system-macro-is-named-as-a-macro` and `-the-fd-set-macros`), which the Windows box lacks (this list's item 158, whose origin is the first of them red there at `2bb45a96`): there they are told `ffi_missing_header` and skipped, and the leg of `6bec7c8c` read `run` 234 and `unsupported` 113 at 0 failed, short of the Mac's 242 and 119 by exactly the cases that can skip there, these four among them (deduced from the totals; the box did not answer on 2026-10-03). A case skipped on a platform does not close the item: it waits for those four to run on Windows, which needs headers the platform does not have, or for a ruling that a case on a POSIX header is judged where the header exists.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a false message
     (*declares no*) on a header that defines the name; repaired and gated,
     closes after the push's platform legs.
-
-- [ ] **150 — a correct program that reads a C union naming two members gets clang's warning on the author's line** | `extern "w.h"` with `record W` (two members over a union) and `function make_w() -> W`, `print(w.i)`: `build` exit 0, the program prints 7, and the build prints *warning: excess elements in union initializer* at `read.hero:2:81` | the completeness probe's `{0,0}` for a union record (`selfhost/emit/`, beside defect 140's `{}`) · **class: blocking**
-
-    **Origin:** lane emit, 2026-10-01 (`scratchpad/lane-emit/pass1/union2/read.hero`
-    and its `w.h`), left open in defect 140's closed record; reproduced by
-    the coordinator at 00:35 on 2026-10-02 on `b9fdb0a3`.
-
-    **Why it is a defect.** The emitted C is the compiler's, and a warning
-    about it reaches the author at a line they wrote correctly
-    (`.claude/rules/generated-c.md`; design.md §4.17).
-
-    **2026-10-02, lane land186, completeness asked of the header's layout
-    and the positional probe gone** (panel 186 R4): repaired at `f2a08f13`,
-    gated by its cases and the compiler's own tests; the net is owed at the
-    batch's close, and the platform legs before the push.
-
-    **Class: blocking**, 2026-10-02 (the author's *D1a*,
-    `.claude/rules/verification.md` § Bounded discovery): a clang warning on a
-    correct program reaches the author's line.
 
 - [ ] **151 — a C struct holding an anonymous union is bound as separate fields, so a value built from Heroes reads back wrong** | `extern "u.h"` over `typedef struct { int32_t kind; union { int32_t i; float f; }; int32_t x; } SA;` with `record SA` naming `kind`, `i`, `f`, `x`: `s = SA(kind: 1, i: 7, f: 0.5, x: 3)` builds at exit 0 and `print(s.i)` prints 1056964608, the bits of 0.5, where 7 was written; `==` on it is accepted and prints `true` (u18); a field left out of such a struct is not reported, the program printing 12 (u07); and a record naming `a` and `c` of a struct `{a, b, c}` is told *does not name `c`* (u19) | `selfhost/emit/` (the record's layout check, `ffi_union_field`), panels 060 to 077's union rule · **class: blocking**
 
@@ -647,56 +630,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the rest is owed at the round's gate, and the platform legs before the
     push.
 
+    **2026-10-03, its cases read one by one, held for the SDL3 event**: of its 43 cases, `run` 9 and `unsupported` 13 under `fixedbugs-151-` and R7's `ffi-a-construction-` cases this item names (`run` 5, `unsupported` 11, `check` 5), all 43 passed on this Mac (00:30 to 00:42 by `date`) and 42 in the Linux arm64 container (one run, 00:36 to 00:54), where `run/ffi-a-construction-polls-an-sdl3-event` was skipped: alone, *1 of 1 cases were skipped for a missing library*, and built alone, `error[ffi_package]: the package sdl3 is not installed on this machine`. The suites' totals put it skipped on every other leg too, an inference from their arithmetic: the Windows leg's `run` 234 is the Mac's 242 less exactly the eight cases that can skip there, the event among them, and the CI's Linux jobs read 237, less raylib's four and the event, and its Darwin job 241, raylib being installed there and SDL3 not. The event, *the SDL3 event among them*, has run on this Mac alone; the item waits for it to run on another platform, which needs SDL3 installed there (the arm64 image's Debian has no `sdl3` for `pkg-config` today), or for a ruling that a case on a library a leg lacks is judged where the library is.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a wrong value at the C
     boundary, built from Heroes.
-
-- [ ] **152 — a C object declared as an `extern` `function` stops `build` with an internal error** | `extern "errno.h"` with `function errno() -> i32`: `build` exit 2, *internal error: compiling the generated C failed: ... called object type 'int' is not a function or function pointer* at the result probe; the same for `stdin` and `optarg`, with or without parameters, on macOS and Linux (the seat's), where the same names declared `constant` get a clean exit 1 | `selfhost/emit/extern_probe.hero` (the result probe) · the `extern` member's kind check · **class: blocking**
-
-    **Origin:** panel 185's ffi-pragmatist, 2026-10-02
-    (`scratchpad/185-ffi-pragmatist/p185/`); reproduced by the critic and by the
-    coordinator at 02:42 on `03e70520` (`scratchpad/file-0250/errno.hero`).
-
-    **Why it is a defect.** Exit 2 is the compiler blaming itself for a program
-    the author can be told about (`.claude/rules/c-boundary.md`).
-
-    **2026-10-02, lane ffi-macro, a name the header has as an object, a
-    value or a type is told on its declaration, and so is a field the header
-    lacks whatever the header calls its type** (the second found in the
-    lane's first pass, at the field assertion): repaired at `2d5240a0` and
-    `6559facf`, gated by its cases and the compiler's own tests; the net is
-    owed at the batch's close.
-
-    **Class: blocking**, 2026-10-02 (the author's *D1a*,
-    `.claude/rules/verification.md` § Bounded discovery): exit 2 where the
-    author can be told; repaired and gated, closes after the push's platform
-    legs.
-
-- [ ] **155 — the public CI is red on `03e70520`: defect 140's variants case passes a C compiler's own limit** | run 36939966148: Darwin arm64's clang (Apple clang 21.0.0, Xcode 26.6) crashes, *Illegal instruction: 4*, on `run/fixedbugs-140-variants-a-thousand-deep-build`, red in `run`, `determinism` and `emission`; Linux x86-64 and arm64 time out on it at `-O2` (exit 124); Linux arm64 also times out on `probe/selfhost, multi`; Windows green | `tests/golden/run/fixedbugs-140-variants-a-thousand-deep-build.hero` and its trace until 2026-10-02, `tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero` since · `tests/harness/suite_run.hero:151` · **class: blocking**
-
-    **Origin:** the author, 2026-10-02 at 02:31 (*la ci è rotta*), on the push
-    of 01:17; read by the coordinator from `gh run view 36939966148
-    --log-failed`. This Mac and the Linux containers passed the same case at
-    every gate of 2026-10-01.
-
-    **Why it is a defect.** The trunk's own instrument is red on every push
-    until the case witnesses defect 140 without depending on a C compiler's
-    recursion limit or speed; lane ci140 is on it.
-
-    **2026-10-02, lane ci140, the variant chain is built through arrays,
-    where no C type nests, and kept by value in three `check/` cases, where
-    no C compiler reads it**: repaired at `0aa055a9`, gated by its cases and
-    the compiler's own tests; the net is owed at the batch's close.
-
-    **2026-10-02, lane ci-probe, the second half: a probe row over a tree
-    probes its files one at a time, and the files together must read what
-    the probe reads of the whole root**: repaired at `efe2fea2`, gated by
-    the net's own tests and `probe` whole; the net is owed at the batch's
-    close, and Linux arm64 at the push.
-
-    **Class: blocking**, 2026-10-02 (the author's *D1a*,
-    `.claude/rules/verification.md` § Bounded discovery): the public CI is red;
-    both halves repaired, closes on a green CI run.
 
 - [ ] **156 — a C struct with a bit-field member stops `build` with an internal error and clang's text** | `extern "bf.h"` over `typedef struct { int32_t kind; uint32_t flag : 1; uint32_t rest : 31; } BF;` with `record BF` naming `kind: i32`, `flag: u32`, `rest: u32`, reading `make_bf().kind`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: ... invalid application of 'sizeof' to bit-field* at the field assertions and *address of bit-field requested* in the generated hash | `selfhost/emit/` (the field assertion, `heroes-ffi-field`, and the record's descriptor) · panel 073's item 3 (bit-fields filtered before the assertion) · **class: blocking**
 
@@ -719,46 +657,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     leave it to `partial`.*** (panel 186 R6): at `b7c510c5`, gated by its
     own cases; the rest is owed at the round's gate.
 
+    **2026-10-03, its cases read one by one, held for the Windows box**: all eight, `run/fixedbugs-156-records-beside-bit-fields-build` and `unsupported/fixedbugs-156-*` 7 of 7, passed on this Mac (00:30 to 00:42 by `date`) and in the Linux arm64 container (one run, 00:36 to 00:54, `libcurl` 8.14.1 answering there), with `docs/panel/186-briefs/probes/critic/bf.hero` told `ffi_field_type` on each bit-field at exit 1 on both. On the Windows box `unsupported/fixedbugs-156-curl-s-hsts-entry` binds `curl/curl.h`: whether it ran there is unread, the box not answering on 2026-10-03, and the leg of `6bec7c8c` (`unsupported` 113 at 0 failed against 119) leaves exactly one skip between it and defect 158's fourteen cases, if the box has neither `pkg-config` nor raylib as its install list says. The other seven name only their own header over `stdint.h` and passed there, by the same totals. The item waits for the box to say whether the curl case ran.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): exit 2 and clang's
     text for a binding the author can be told about.
-
-- [ ] **157 — `ffi_tag_is_a_union` says a union has no `record` spelling, which a record binding a union falsifies** | `extern "tu.h"` over `union utag { int32_t i; float f; };` with `record UI tag utag` naming `i`: `build` exit 1, `ffi_tag_is_a_union`, its note *a group's `record` is the header's STRUCT (§4.19). A union has no `record` spelling in this language: reach it as a `ptr` and read it through C functions, or bind the one member you need as its own type*, while `record W` over the typedef'd union `W` builds and prints `7` | `selfhost/emit/ffi_tag.hero:200-218` (landed in `8fdd2a3c`) · panel 077's ratified item 4 (*spell `union T` where the header says union*) · panel 073's *one record per arm by `tag`* · **class: blocking**
-
-    **Origin:** panel 186's ffi-pragmatist and compiler-engineer (both
-    measured the refusal, on SDL3's `SDL_Event` and on a minimal `union
-    utag`) and its completeness critic (who read the note against
-    `read.hero` and panel 077, and found no golden holding the code),
-    2026-10-02; reproduced by the coordinator at 14:20 on the trunk at
-    `43520193` (`docs/panel/186-briefs/probes/coordinator/tu1.hero` and
-    `read.hero`).
-
-    **Why it is a defect.** design.md §4.17: a diagnostic is true, and its
-    note sends the author to a `ptr` and C functions for a union the
-    language binds; the refusal itself, of a TAGGED union where a typedef'd
-    one binds, is the question panel 186's R9 leaves open with it.
-
-    **2026-10-02, lane land186, the note says what is true, its two routes
-    built and run**: repaired at `24d3d23d`, gated by its own cases; the
-    rest is owed at the round's gate, and the platform legs before the push.
-
-    **Widened 2026-10-02** by lane land186's first pass, the same cause (a
-    union reached by `tag`): a handle, `record UH tag utag` with no fields
-    over `union utag { int32_t i; float f; };`, is told `ffi_unknown_name`,
-    *`tags.h` declares no `utag`*, which is false (reproduced by the
-    coordinator on `9faf7462` before 16:49, the widening's commit,
-    `docs/panel/186-briefs/probes/coordinator/handle_utag.hero` over
-    `tags.h`).
-
-    **2026-10-02, lane land186, a tag naming a union's or an enum's tag told
-    its own kind, a handle's and a bare name's included, with what reaches
-    it** (the widening and three shapes beside it with its cause): repaired
-    at `669fc846`, gated by its own cases; the rest is owed at the round's
-    gate, and the platform legs before the push.
-
-    **Class: blocking**, 2026-10-02 (the author's *D1a*,
-    `.claude/rules/verification.md` § Bounded discovery): a false note, against
-    panel 077's ratified item 4.
 
 - [ ] **158 — a group's header that includes a header this machine lacks stops `build` with an internal error and clang's text** | `extern "outer.h"` over a header holding `#include <no_such_header_here.h>`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: In file included from ...: ./outer.h:2:10: fatal error: 'no_such_header_here.h' file not found*, where a missing header the group names itself is told `ffi_missing_header` at exit 1 | `selfhost/emit/ffi_build.hero` (where `ffi_missing_header` is told) · `tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero`, red on the Windows box · **class: blocking**
 
@@ -785,142 +688,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     handing clang's whole stderr), gated by their cases, the first also by the
     compiler's own tests; the net is owed at the batch's close.
 
+    **2026-10-03, its cases read one by one, held for the Windows box**: all fourteen `unsupported/fixedbugs-158-*` passed on this Mac (00:30 to 00:42 by `date`) and in the Linux arm64 container (one run, 00:36 to 00:54), and `docs/panel/186-briefs/probes/coordinator/nested.hero` is told `ffi_missing_header` on `outer.h`'s line 2 at exit 1 on both, with the ten tests of `744cdc08` and `7790f2f6` `ok` there and in the four jobs of the CI's run 37065944766. Every one of the fourteen EXPECTS `ffi_missing_header`, so on a machine where one's text differs from its `.expected` the harness skips it rather than failing it (`tests/harness/suite_golden.hero:210`), and the Windows box is the machine this defect was found on: its leg of `6bec7c8c` (`unsupported` 113 at 0 failed against 119) leaves exactly one skip between these fourteen and defect 156's curl case, and the box did not answer on 2026-10-03 to say which. The item waits for the box to read the fourteen one by one.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): exit 2 and clang's
     text for the machine's own fact; it would turn the CI's Windows leg red.
-
-- [ ] **160 — a package whose `.pc` gives `-F <dir>` is refused, its flag read joined as `-F<dir>`, while the note says `-F` is accepted** | `extern "Fake/fake.h" package "fakefw"` over a `.pc` with `Cflags: -F ${pcfiledir}/../frameworks`: `pkg-config --cflags` prints `-F/<dir>`, and `build` exit 1, `ffi_package`, *answered with `-F/...`, which this compiler does not pass on*, its note listing `-F` among the flags accepted | `selfhost/cli/libraries.hero` (`filter_words`, which takes `-F` only as two words) · **class: blocking**
-
-    **Origin:** lane h158, 2026-10-02, measuring framework headers for
-    defect 158 (`scratchpad/lane-h158/shapes/fw/`); reproduced by the
-    coordinator before 16:47, the filing commit's time, on the trunk at
-    `545e0044`
-    (`docs/panel/186-briefs/probes/coordinator/fw/`, run with
-    `PKG_CONFIG_PATH=<that>/pc`).
-
-    **Why it is a defect.** A correct package is refused and the message
-    contradicts itself (design.md §4.17); macOS frameworks reach a program
-    only through `-F`.
-
-    **2026-10-02, lane h158, every accepted flag of a package is read in both
-    its spellings, and a refused one refused in either**: repaired at
-    `fb33a992`, gated by its case (a unit test in
-    `selfhost/cli/libraries.hero` over pkg-config's measured output) and the
-    reproducer by hand; the net is owed at the batch's close. The
-    reproducer's package now passes the filter and its program still does
-    not build: the compile line keeps only a package's `-I` words
-    (`selfhost/cli/units.hero`), so `-F` never reaches clang, a second cause
-    that lane h158's report gives for filing apart.
-
-    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
-    Bounded discovery): a correct program refused, with a false note.
-
-- [ ] **161 — a package's compile flags other than `-I` never reach clang, so a correct package is refused or stops `build` at exit 2** | `extern "valued.h" package "dpkg"` over a `.pc` with `Cflags: -I<dir> -DHERO_PKG_VALUE=7` and a header returning `HERO_PKG_VALUE`: `build` exit 2, *internal error: ... use of undeclared identifier 'HERO_PKG_VALUE'*; a package's `-F` likewise never reaches the compile step, so a framework header it names is told missing | `selfhost/cli/units.hero:139` and `selfhost/cli/pointee.hero:243`, which keep only a package's `-I` · **class: blocking**
-
-    **Origin:** lane h158, 2026-10-02, beside defect 160 (the framework
-    reproducer, once its `-F` was no longer refused, still not built;
-    `scratchpad/lane-h158/d160/dpkg/`); reproduced by the coordinator at
-    16:57 by `date` on the trunk at `0bcd442c`
-    (`docs/panel/186-briefs/probes/coordinator/dpkg/`, run with
-    `PKG_CONFIG_PATH=<that>/pc`).
-
-    **Why it is a defect.** Exit 2 is the compiler blaming itself for a
-    package the author wrote correctly, and the flags a `.pc` gives are the
-    reason `package` exists (design.md §4.19).
-
-    **2026-10-02, lane h158, every compile is handed a package's `-I -D -U
-    -F` by one rule, and its cache keyed by them**: repaired at `40bf84f2`
-    (`libraries.compile_flags`, called by `selfhost/cli/units.hero` and
-    `selfhost/cli/pointee.hero`'s `with_search`), gated by its cases, unit
-    tests in the three modules, and the reproducers by hand, `dpkg` printing
-    7 and defect 160's framework reproducer building; the net is owed at the
-    batch's close.
-
-    **2026-10-02, the round's third gate, lanes land186 and h158 reconciled:
-    the layout check's cache keyed by the same words**: lane land186's
-    `selfhost/cli/layout.hero` (`f2a08f13`), whose three clang runs
-    `pointee.with_search` now hands a package's compile words and the
-    probe's flags (161, 163), kept its verdicts under the package's whole
-    answer joined by spaces (162's collision too); on one `build/` the
-    merged tree replayed a verdict land186's compiler had reached without
-    the package's `-D` and built, at exit 0, a record four bytes short of
-    the header's struct. Keyed by `libraries.compile_flags` and
-    `pointee.probe_flags` at `77cb114a`, with its compiler test; the round's
-    gate is the commit carrying this line.
-
-    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
-    Bounded discovery): exit 2, a correct program refused.
-
-- [ ] **162 — a package whose `.pc` gives a path with a space is refused, the compiler naming a fragment of the path as the flag** | a `.pc` with `Cflags: -I"<dir>/inc with space"`: `pkg-config --cflags` prints the path with its spaces escaped by backslashes, and `build` exit 1, `ffi_package`, *the package `spaced` answered with* the fragment `with` and its backslash, *which this compiler does not pass on* | `selfhost/cli/libraries.hero` (the word splitter before `filter_words`) · **class: blocking**
-
-    **Origin:** lane h158, 2026-10-02, beside defect 160
-    (`scratchpad/lane-h158/d160/pc/spaced.pc`); reproduced by the
-    coordinator at 16:57 by `date` on the trunk at `0bcd442c`
-    (`docs/panel/186-briefs/probes/coordinator/spaced/`, run with
-    `PKG_CONFIG_PATH=<that>/pc`).
-
-    **Why it is a defect.** A correct package is refused, and the message
-    names a piece of a path as a flag (design.md §4.17).
-
-    **2026-10-02, lane h158, pkg-config's answer is read as a shell reads
-    it, so a word with a space stays one word**: repaired at `b37bfce1`
-    (`selfhost/cli/shell_split.hero`, and the compile caches keyed by each
-    word's length, `libraries.key_text`), gated by its cases, unit tests in
-    `shell_split` and `libraries`, and the reproducer by hand, `spaced`
-    printing 8; the net is owed at the batch's close.
-
-    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
-    Bounded discovery): a correct program refused, with a false message.
-
-- [ ] **163 — the pointee check judges a plain `char` without `-fsigned-char`, so on Linux arm64 it refuses the binding the program's own compile agrees with** | `extern "c.h"` over `void fill(char *p)`, bound `function fill(@p: i8)`: on this Mac `build` exit 0, prints `-1`; in the Linux arm64 container on the trunk at `02b29536`, `build` exit 1, `ffi_parameter_type`, *`p` of `fill` is declared `i8`, and the header's `char *` points at a different width or sign*, while `@p: u8` is refused on this Mac and built on arm64; the program itself is compiled with `-fsigned-char` on both (`selfhost/cli/flags.hero:108`, panel 161) | `selfhost/cli/pointee.hero` (its two clang runs, without the compiler's own flags) · panel 161 (*a plain `char` meaning the same thing on four legs*) · **class: blocking**
-
-    **Origin:** lane h158, 2026-10-02, a question raised beside defect 161
-    (the pointee probe's compiles do not use the compiler's own flag list);
-    measured by the coordinator at 17:33 by `date`, on this Mac and in the
-    Linux arm64 container (`docs/panel/186-briefs/probes/coordinator/signchar/`,
-    `s8.hero` and `u8.hero` over `c.h`). A result is held by the program's
-    own compile and agrees on both (a `char` result bound `-> u64` refused on
-    both, 17:34): only the pointee check diverges.
-
-    **Why it is a defect.** A correct binding is refused on one platform and
-    accepted on another, against panel 161's ruling that a plain `char` means
-    one thing on every leg; no value read through it is wrong, the bytes
-    being the same (measured: `u8` on arm64 prints `255`).
-
-    **2026-10-02, lane h158, a probe compiles under the compiler's own flags
-    but its diagnostics, so a plain `char` is signed there too**: repaired at
-    `0235b942` (`pointee.probe_flags`, put on every probe's line by
-    `selfhost/cli/pointee.hero`'s `with_search`), gated by its cases on this
-    Mac, a run case printing -1, an unsupported case refusing `@p: u8` and
-    two unit tests asking clang for Linux arm64's target; its Linux arm64
-    leg, where the defect shows, is owed before the push with the net.
-
-    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
-    Bounded discovery): a correct program refused, on Linux arm64.
-
-- [ ] **164 — a record field misspelt as a name the header defines as a macro stops `build` with an internal error and clang's text** | `extern "macro_field.h"` over `#define size 4` and `typedef struct { int32_t len; int32_t cap; } BUF;`, `record BUF` naming `len` and `size`: `build` exit 2, *internal error: compiling the generated C failed: ... error: expected identifier ... note: expanded from macro 'size'*, at the field assertion; the same with `stdin`, which a libc defines as a macro | `selfhost/emit/` (the field assertion, `heroes-ffi-field`, and the unknown-field mapper) · **class: blocking**
-
-    **Origin:** lane land186's second batch, 2026-10-02, beside panel 186's
-    macro-reached fields (`scratchpad/lane-land186/pass2/macro_field.hero`,
-    `macro_field_stdio.hero`); reproduced by the coordinator at 17:43 by
-    `date` on the trunk at `20652888`
-    (`docs/panel/186-briefs/probes/coordinator/macrofield/`).
-
-    **Why it is a defect.** Exit 2 is the compiler blaming itself for a
-    misspelling the author can be told about, and clang's text reaches the
-    author (`.claude/rules/c-boundary.md`).
-
-    **2026-10-02, lane land186, a test the repair left stale**: `25b96332`,
-    gated by its own cases, left one of the compiler's own tests stale,
-    `emit/layout_check.hero`'s count of the questions a misspelt field puts
-    under the preprocessor, which the member probe made five where it asked
-    four (1027 passed and 1 failed on that commit's sources, with its
-    compiler); fixed at `ba162242`, 1027 and 0, the rest owed at the round's
-    gate.
-
-    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
-    Bounded discovery): exit 2. Repaired in lane land186 at `25b96332`,
-    gated by its own cases; the rest is owed at the round's gate.
 
 - [ ] **166 — a `-` alone above a name or a float pattern is told `expected_pattern` twice at the same place** | `k = match n` over a line holding only `-` and then `x => "one"` (or `1.5 => "one"`): `continuation_outside_brackets`, then `expected_pattern` twice at the name or the number, the same text at the same column | the pattern's refusal after the join of a `-` line (the same on the compiler before lane h158) · **class: adjacent**
 
@@ -1111,6 +883,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** the coordinator, 2026-10-02, reading the Windows leg's log on `6bec7c8c` (`scratchpad/platforms/win-6bec7c8c.log`, 2026-10-02); the same three warnings stand in every Windows leg's log read that day (`b48d02b8`, `2bb45a96`, `8b98bcc7`, `e252fda4`), and `docs/ref/environment/windows/WINDOWS-MACHINE.md:493-497` records them since 2026-09-21 as warnings *whether they are new is unrun*, never filed.
 
     **Why it is a defect.** The emitted C is C11 that clang type-checks clean (CLAUDE.md § 7), and this unit is the compiler itself built by its own first command; any `--emit-c` output compiled by hand on Windows gets the same advice. The runtime already says why the switch is the documented one and not a workaround (`runtime/runtime.c:65-74`).
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
+
+- [ ] **206 — on Linux, a package whose `.pc` gives `-F <dir>` builds with clang's *argument unused during compilation* warning, the link very likely handed the compile's `-F`** | `docs/panel/186-briefs/probes/coordinator/fw/` built with `PKG_CONFIG_PATH` at its `pc/` in the Linux arm64 container (Debian clang 22.1.8): `clang: warning: argument unused during compilation: '-F.../fw/pc/../frameworks' [-Wunused-command-line-argument]`, then the program prints `7` at exit 0; this Mac prints no such line; on this Mac `clang --target=aarch64-linux-gnu -F/tmp/fwdir x.o -o x.bin` prints the same warning and the same flag with `-c` prints nothing | `selfhost/cli/libraries.hero` (the words a package gives the compile and the link) · `selfhost/cli/units.hero` (the link line) · defect 160's closed record · **class: blocking**
+
+    **Origin:** the coordinator's closings agent, 2026-10-03, reading defect 160's cases one by one on Linux arm64 between 00:36 and 00:54 by `date` (`scratchpad/closings/table.txt`, 2026-10-03), and its target probe on this Mac after 01:03 (`scratchpad/closings/fwprobe/`, 2026-10-03). The queue's question *a link step handed compile words, unmeasured on Linux* (lane h158, 2026-10-02) is this, measured. Which of the build's clang calls prints it on Linux is not read: that the link carries `-F` is an inference from the target probe.
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
 
