@@ -20,7 +20,7 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 *******************************************************************************
 **OPEN: 18**
 
-- [ ] **130 — after a unction main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` overecovery · **class: systemic**
+- [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
     **Origin:** lane 123's agent, 2026-09-28, beside defect 124, on the
     trunk's compiler at `aee8b01e` (reproducers `shapes/y01_three_bad.hero`
@@ -78,7 +78,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     assigned by the coordinator**: under an arm written inline, `0 => print(1)`
     over a deeper `print(99)` compiled and ran and printed 1, the deeper line
     thrown away at exit 0, a wrong answer and not only a silence (repaired
-    in lane 130, `47849cc9`); and a misspelled keyword at a by a
+    in lane 130, `47849cc9`); and a misspelled keyword at a top-level head,
+    `recrod Point` over its fields, drops its whole block silently (given to
+    lane 133, whose files it is in; reproducers in
+    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/`, 2026-09-29).
+
+    **Widened 2026-09-29 by lane 133's agent**: on the compilers of
+    `a6eab736` and `7c0cb024` the parser HUNG, forever, on a line headed by a
     refused word after an `if`, `while` or `for` block (`elif`, or `let`
     after an `if`); lane 130's merge `0ba7b084` ended it, measured at exit 1,
     and a case per shape is owed (`hang/o.hero`, `y3`, `y4`, `y8`, `r`, `s`);
