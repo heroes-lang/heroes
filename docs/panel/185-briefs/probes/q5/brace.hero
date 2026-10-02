@@ -1,0 +1,5 @@
+function main()
+    x = 5
+    print(x)
+    print(f"{{x}}")
+    print("{x}")

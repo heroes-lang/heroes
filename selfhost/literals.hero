@@ -5,8 +5,9 @@
 #
 # A bad escape does NOT poison the token: it is reported and the literal stays
 # a str_lit, so one mistake inside a string costs one diagnostic. Both
-# scanners stop at the end of the line — a string is not multi-line in this
-# language, so an unterminated one is a mistake with a known extent.
+# scanners stop at the end of the line, a CRLF's carriage return included
+# (`ends_line`) — a string is not multi-line in this language, so an
+# unterminated one is a mistake with a known extent.
 
 use token
 use diag
@@ -34,7 +35,7 @@ function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted, literal:
         return false
     escaped = bytes.char_at(text, backslash + 1)
 
-    if escaped == "\n"
+    if ends_line(text, at: backslash + 1)
         l.pos @ backslash + 1
         return false
     l.pos @ backslash + 1 + escaped.len()
@@ -97,7 +98,7 @@ function string(@l: state.LexState, text: str)
     l.pos @ l.pos + 1
 
     while true
-        if l.pos >= text.len() || text[l.pos] == '\n'
+        if l.pos >= text.len() || ends_line(text, at: l.pos)
             break
         b = text[l.pos]
 
@@ -113,6 +114,7 @@ function string(@l: state.LexState, text: str)
 
             # Not a line ending here: a string is single-line, so this byte is
             # content — invisible content, which is why it is refused (066).
+            # A CR that begins a CRLF line end never gets here (`ends_line`).
             if b == layout.CR
                 raw_carriage_return(@l, l.pos, .in_str)
             l.pos @ l.pos + 1
@@ -145,7 +147,7 @@ function char_lit(@l: state.LexState, text: str)
     scanning: bool @ true
 
     while scanning
-        if l.pos >= text.len() || text[l.pos] == '\n'
+        if l.pos >= text.len() || ends_line(text, at: l.pos)
             scanning @ false
         else if text[l.pos] == '\''
             closed @ true
@@ -170,6 +172,19 @@ function char_lit(@l: state.LexState, text: str)
             l.pos @ start + 3
         unterminated_char(@l, text, start)
         return
+
+    # **The classic again, where a later quote on its line closed the scan**
+    # (defect 135's L3, lane literals): `c == '\' || c == '"'` read
+    # `'\' || c == '` as one literal, `char_literal`, and then the `"'` left
+    # over as an unterminated string, two messages for one mistake, the first
+    # quoting a literal nobody wrote. When the quote that closed the scan
+    # opens a well-formed character literal of its own, the classic ending at
+    # its third byte is the reading that leaves the rest of the line whole.
+    if units > 1 && classic_backslash(text, at: start) && opens_a_character(text, at: l.pos)
+        l.diagnostics @ l.diagnostics.slice(from: 0, to: said)
+        l.pos @ start + 3
+        unterminated_char(@l, text, start)
+        return
     content = text.slice(from: content_start, to: l.pos)
     l.pos @ l.pos + 1
 
@@ -186,10 +201,16 @@ function char_lit(@l: state.LexState, text: str)
 # (on the newline, never past it).
 #
 # `'\'` is the classic: the backslash escaped the closing quote. The literal
-# is those three bytes, and the rest of the line is lexed after them, so the
-# certain fix, `'\\'`, replaces the three and nothing else: over the whole
-# rest of the line, `f('\' + )` was written `f('\\'`, the `+ )` gone and a
-# report the first run never made in its place (lane recovery-b2, U3).
+# is those three bytes, and the rest of the line is lexed after them, so a
+# fix replaces the three and nothing else: over the whole rest of the line,
+# `f('\' + )` was written `f('\\'`, the `+ )` gone and a report the first run
+# never made in its place (lane recovery-b2, U3).
+#
+# **And neither fix is certain** (defect 135's L3, lane literals). `'\'` is
+# one character short of a backslash, `'\\'`, and of an apostrophe, `'\''`,
+# and only its author knows which: the certain `'\\'` counted the
+# apostrophes of `"it's"` as 0 where 1 was meant, and printed 92 where 39
+# was. Both are shown as guesses, and the note says why.
 function unterminated_char(@l: state.LexState, text: str, start: i64)
     classic = l.pos == start + 3 && classic_backslash(text, at: start)
     span = token.Span(start: start, end: l.pos)
@@ -200,8 +221,14 @@ function unterminated_char(@l: state.LexState, text: str, start: i64)
     )
 
     if classic
+        d.notes @ d.notes.push(
+            "the backslash escaped the quote that would have closed it: a backslash is written `'\\\\'` and an apostrophe `'\\''`"
+        )
         d.fixes @ d.fixes.push(
-            diag.Fix(title: "escape the backslash: `'\\\\'`", replacement: "'\\\\'", span: span, certainty: .certain)
+            diag.Fix(title: "a backslash: `'\\\\'`", replacement: "'\\\\'", span: span, certainty: .guess)
+        )
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "an apostrophe: `'\\''`", replacement: "'\\''", span: span, certainty: .guess)
         )
     state.error_token(@l, d)
 
@@ -212,6 +239,18 @@ function unterminated_char(@l: state.LexState, text: str, start: i64)
 # before the quote that should have closed it.
 function classic_backslash(text: str, at: i64) -> bool
     return at + 2 < text.len() && text[at + 1] == '\\' && text[at + 2] == '\''
+
+# Whether the quote at `at` opens a well-formed character literal: one ASCII
+# character that is neither a quote nor a backslash, or one escape a
+# character literal has, and then its closing quote.
+function opens_a_character(text: str, at: i64) -> bool
+    if at + 2 >= text.len() || text[at] != '\''
+        return false
+    b = text[at + 1]
+
+    if b == '\\'
+        return at + 3 < text.len() && text[at + 3] == '\'' && !escape.escape_text(bytes.char_at(text, at + 2), .in_char).is_err()
+    return b <= 127 && b != '\'' && b != '\n' && b != layout.CR && text[at + 2] == '\''
 
 ## What a literal that never closed swallowed
 
@@ -280,6 +319,18 @@ function swallow(@l: state.LexState, text: str, start: i64)
 
 ## Byte questions the scanners ask
 
+# Whether the line ends at `at`: a line feed, or the carriage return that
+# begins a CRLF line end, as `scan.line_body` reads it between tokens
+# (defect 135's L2, lane literals). The scanners stopped at the line feed
+# alone, so the CR of `\r\n` was a literal's content and
+# `raw_carriage_return`'s certain `\r` wrote the line end into a literal
+# that stayed open. A carriage return before anything else is content
+# still, and refused (panel 066).
+function ends_line(text: str, at: i64) -> bool
+    if at >= text.len()
+        return false
+    return text[at] == '\n' || text[at] == layout.CR && at + 1 < text.len() && text[at + 1] == '\n'
+
 function starts_with_backslash(s: str) -> bool
     return s.len() > 0 && s[0] == '\\'
 
@@ -337,13 +388,60 @@ test "a character literal holds exactly one character"
     assert wide.tokens[0].kind == .error
     assert wide.diagnostics[0].code == "char_literal"
 
-test "the backslash that ate the closing quote gets the classic fix"
+test "the backslash that ate the closing quote gets both readings, neither certain"
+    # Defect 135's L3: a backslash and an apostrophe are one character away.
     l: state.LexState @ state.new_state()
     char_lit(@l, "'\\'")
     assert l.diagnostics[0].code == "unterminated_char"
-    assert l.diagnostics[0].fixes.len() == 1
+    assert l.diagnostics[0].fixes.len() == 2
     assert l.diagnostics[0].fixes[0].replacement == "'\\\\'"
+    assert l.diagnostics[0].fixes[1].replacement == "'\\''"
+    assert l.diagnostics[0].fixes[0].certainty == .guess
+    assert l.diagnostics[0].fixes[1].certainty == .guess
+
+    # A later quote on the line no longer makes it a wider literal, where
+    # that quote opens a character of its own.
+    wide: state.LexState @ state.new_state()
+    char_lit(@wide, "'\\' || c == '\"'")
+    assert wide.diagnostics.len() == 1
+    assert wide.diagnostics[0].code == "unterminated_char"
+    assert wide.pos == 3
+    listed: state.LexState @ state.new_state()
+    char_lit(@listed, "'\\', '\\n']")
+    assert listed.pos == 3
+    word: state.LexState @ state.new_state()
+    char_lit(@word, "'\\'a'")
+    assert word.diagnostics[0].code == "char_literal"
     plain: state.LexState @ state.new_state()
     char_lit(@plain, "'a")
     assert plain.diagnostics[0].code == "unterminated_char"
     assert plain.diagnostics[0].fixes.len() == 0
+
+test "the carriage return that begins a CRLF line end ends a literal and is not its content"
+    # Defect 135's L2: its certain `\r` wrote the line end into an open literal.
+    s: state.LexState @ state.new_state()
+    string(@s, "\"abc\r\nx")
+    assert s.diagnostics.len() == 1
+    assert s.diagnostics[0].code == "unterminated_string"
+    assert s.pos == 4
+    c: state.LexState @ state.new_state()
+    char_lit(@c, "'a\r\n")
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "unterminated_char"
+    b: state.LexState @ state.new_state()
+    string(@b, "\"ab\\\r\nx")
+    assert b.diagnostics.len() == 1
+    assert b.diagnostics[0].code == "unterminated_string"
+    k: state.LexState @ state.new_state()
+    char_lit(@k, "'\\\r\n")
+    assert k.diagnostics.len() == 1
+    assert k.diagnostics[0].code == "unterminated_char"
+
+    # A carriage return before anything else is content, refused, its `\r`
+    # certain: here the first of two, the second beginning the line end.
+    raw: state.LexState @ state.new_state()
+    string(@raw, "\"a\r\r\n")
+    assert raw.diagnostics.len() == 2
+    assert raw.diagnostics[0].code == "raw_carriage_return"
+    assert raw.diagnostics[0].span == token.Span(start: 2, end: 3)
+    assert raw.diagnostics[1].code == "unterminated_string"

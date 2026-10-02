@@ -1,0 +1,7 @@
+function main()
+    n = -1
+    k = match n
+        0 => "zero"
+        - 1 => "minus one"
+        _ => "other"
+    print(k)

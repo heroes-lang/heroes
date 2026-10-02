@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-135-l3-a-later-quote-on-its-line-leaves-the-classic-whole.hero:14:17: error[unterminated_char]: this character literal never closes — write one character between single quotes: 'a'
+tests/golden/check/fixedbugs-135-l3-a-later-quote-on-its-line-leaves-the-classic-whole.hero:17:11: error[unterminated_char]: this character literal never closes — write one character between single quotes: 'a'
+tests/golden/check/fixedbugs-135-l3-a-later-quote-on-its-line-leaves-the-classic-whole.hero:21:11: error[char_literal]: a character literal holds exactly one character — one ASCII character ('a', '0', ' ') or one escape ('\n', '\t') — `'\'a'` does not

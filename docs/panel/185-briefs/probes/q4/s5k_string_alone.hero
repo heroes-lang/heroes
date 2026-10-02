@@ -1,0 +1,5 @@
+function main()
+    s = "a"
+    match s
+        - "a" => print(1)
+        _ => print(2)

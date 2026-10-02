@@ -1,0 +1,412 @@
+1	archive/bootstrap-rs/heroes/src/library/source.hero	error[builtin_name_taken]
+1	docs/panel/172-briefs/consumes070.hero	error[unread_mark]
+1	docs/panel/168-briefs/gallery-example-reordered.hero	error[ffi_missing_header]
+0	docs/panel/172-briefs/control.hero	
+0	docs/panel/172-briefs/lease070.hero	
+1	docs/panel/172-briefs/lend070b.hero	error[lend_kept]
+0	docs/panel/172-briefs/lend070.hero	
+0	docs/panel/173-briefs/assert_lease.hero	
+0	docs/panel/173-briefs/b_callback.hero	
+0	docs/panel/173-briefs/b_later.hero	
+0	docs/panel/173-briefs/b_out.hero	
+0	docs/panel/173-briefs/cabort_lease.hero	
+0	docs/panel/173-briefs/cassert_lease.hero	
+0	docs/panel/173-briefs/control.hero	
+0	docs/panel/173-briefs/lease070.hero	
+0	docs/panel/173-briefs/nullwrite_lease.hero	
+0	docs/panel/173-briefs/panic_lease.hero	
+1	docs/panel/173-briefs/q3_free_ptr.hero	error[type_mismatch]
+1	docs/panel/173-briefs/q3_charstar.hero	error[ffi_writable_parameter]
+1	docs/panel/173-briefs/q3_free_cstr.hero	error[ffi_writable_parameter]
+1	docs/panel/173-briefs/q3_sqlite_ptr.hero	error[type_mismatch]
+1	docs/panel/173-briefs/q3_sqlite_cstr.hero	error[ffi_writable_parameter]
+0	docs/panel/173-briefs/q3_sqlite_later.hero	
+0	docs/panel/173-briefs/q4_ctor.hero	
+0	docs/panel/173-briefs/q4_main.hero	
+0	docs/panel/173-briefs/q5_cabort.hero	
+0	docs/panel/173-briefs/q5_ctrap.hero	
+1	docs/panel/173-briefs/q5_raise.hero	error[reserved_word]
+0	docs/panel/173-briefs/q5_own.hero	
+0	docs/panel/173-briefs/q5_own_interior.hero	
+0	docs/panel/173-briefs/so_lease.hero	
+1	docs/panel/175-briefs/handle.hero	error[handle_used_after_end]
+0	docs/panel/175-briefs/b_out.hero	
+0	docs/panel/175-briefs/bout.hero	
+0	docs/panel/175-briefs/oneacq.hero	
+0	docs/panel/175-briefs/outacq.hero	
+0	docs/panel/175-briefs/p10.hero	
+1	docs/panel/175-briefs/popen_linux.hero	error[ffi_unknown_name]
+1	docs/panel/175-briefs/popen_windows.hero	error[ffi_unknown_name]
+0	docs/panel/175-briefs/popen_darwin.hero	
+1	docs/panel/175-briefs/xacquires/main.hero	error[contract_differs]
+0	docs/panel/175-briefs/xacquires/alt.hero	
+0	docs/panel/176-briefs/getter_wrong.hero	
+0	docs/panel/176-briefs/fn_fn.hero	
+0	docs/panel/176-briefs/getter_wrong_repaired.hero	
+0	docs/panel/176-briefs/popen_fopen.hero	
+0	docs/panel/176-briefs/lent_static.hero	
+0	docs/panel/176-briefs/ptr_transient.hero	
+1	docs/panel/176-briefs/twice_one_module.hero	error[declared_twice]
+1	docs/panel/176-briefs/s4_cstr_owned.hero	error[ffi_owned_const_cell]
+0	docs/panel/176-briefs/refcount.hero	
+1	docs/panel/176-briefs/xfer_jsonc.hero	error[ffi_missing_header]
+0	docs/panel/176-briefs/vk_cross.hero	
+0	docs/panel/176-briefs/xfer_cj.hero	
+1	docs/panel/176-briefs/xmod-lent/main.hero	error[contract_differs]
+1	docs/panel/176-briefs/xfer_ssl.hero	error[ffi_missing_header]
+1	docs/panel/176-briefs/xmod-owned/main.hero	error[contract_differs]
+0	docs/panel/176-briefs/xmod-lent/alt.hero	
+1	docs/panel/176-briefs/xmod-xacquires/main.hero	error[contract_differs]
+0	docs/panel/176-briefs/xmod-owned/alt.hero	
+1	docs/panel/177-briefs/read_after_consume.hero	error[handle_used_after_end]
+1	docs/panel/177-briefs/reuse_malloc.hero	error[handle_used_after_end]
+0	docs/panel/176-briefs/xmod-xacquires/alt.hero	
+1	docs/panel/177-briefs/u1_static.hero	error[handle_used_after_end]
+1	docs/panel/177-briefs/use_after_consume.hero	error[handle_used_after_end]
+1	docs/panel/183-briefs/probes/e17_extern_below.hero	error[unclosed_bracket]
+1	docs/panel/183-briefs/probes/extern_member_eof.hero	error[unclosed_bracket]
+1	docs/panel/183-briefs/probes/extern_member_unclosed.hero	error[unclosed_bracket]
+0	docs/panel/177-briefs/helper_consume_then_use.hero	
+1	docs/panel/183-briefs/probes/x1_extern_stray.hero	error[unclosed_bracket]
+1	docs/panel/183-briefs/probes/x2_extern_spec_stray.hero	error[unclosed_bracket]
+1	docs/panel/183-briefs/probes/x2b_member_mistake.hero	error[unclosed_bracket]
+1	docs/panel/183-briefs/probes/x2c_member_mistake_alone.hero	error[expected_params_close]
+0	examples/collatz/main.hero	
+0	examples/ctime/main.hero	
+0	examples/curl/main.hero	
+0	examples/dotproduct/main.hero	
+0	examples/firsthit/main.hero	
+0	examples/gallery/08-ffi.hero	
+0	examples/gallery/13-lease.hero	
+0	examples/histogram/main.hero	
+0	examples/mandelbrot/main.hero	
+0	examples/matmul/main.hero	
+0	examples/ledger/db/sqlite.hero	
+0	examples/montecarlo/main.hero	
+0	examples/nqueens/main.hero	
+0	examples/nbody/main.hero	
+0	examples/raylib/main.hero	
+0	examples/spectral/main.hero	
+0	examples/tally/main.hero	
+0	examples/sdl/main.hero	
+0	examples/sqlite/main.hero	
+1	selfhost/cli/files.hero	error[unknown_module]
+0	examples/threads/main.hero	
+0	examples/wordbands/main.hero	
+1	selfhost/cli/link.hero	error[unknown_module]
+0	selfhost/cli/io.hero	
+1	selfhost/emit/literal.hero	error[unknown_module]
+1	tests/golden/check/end-lease-takes-only-a-lease.hero	error[end_lease_of_no_lease]
+1	tests/golden/check/ffi-a-group-head-names-not-locates.hero	error[machine_locked_path]
+1	tests/golden/check/ffi-a-lend-parked-in-a-group-record.hero	error[lease_escapes]
+1	tests/golden/check/ffi-a-lend-reaches-only-a-lent-parameter.hero	error[lend_kept]
+1	tests/golden/check/ffi-callback-carries-a-container.hero	error[ffi_type]
+1	tests/golden/check/ffi-a-lent-field-needs-a-place.hero	error[field_lend_escapes]
+1	tests/golden/check/ffi-constant-type.hero	error[ffi_constant_type]
+1	tests/golden/check/ffi-callback-position.hero	error[ffi_type]
+1	tests/golden/check/ffi-consumes-a-borrowed-handle.hero	error[consumed_borrowed_handle]
+1	tests/golden/check/ffi-counted-by-shape.hero	error[counted_by_shape]
+0	selfhost/cli/process.hero	
+1	tests/golden/check/ffi-cstr-has-a-route.hero	error[bad_operand]
+1	tests/golden/check/ffi-fixed-array.hero	error[fixed_outside_a_group]
+1	tests/golden/check/ffi-handle-refusals.hero	error[duplicate_tag]
+1	tests/golden/check/ffi-lent-is-read-on-a-lend-and-nowhere-else.hero	error[lent_shape]
+1	tests/golden/check/ffi-nullptr-is-a-cstr.hero	error[type_mismatch]
+1	tests/golden/check/ffi-parameter-width.hero	error[type_mismatch]
+1	tests/golden/check/ffi-record-field.hero	error[ffi_field_type]
+1	tests/golden/check/ffi-partial-record.hero	error[ffi_partial_operation]
+1	tests/golden/check/ffi-transfers-a-borrowed-handle.hero	error[consumed_borrowed_handle]
+1	tests/golden/check/fixedbugs-130-a-bracket-left-open-goes-on-where-a-bracket-can-hold-the-line.hero	error[unclosed_bracket]
+1	tests/golden/check/ffi-type.hero	error[ffi_type]
+1	tests/golden/check/fixedbugs-130-a-declaration-past-a-bracket-never-closed.hero	error[unclosed_bracket]
+1	tests/golden/check/fixedbugs-130-a-head-with-no-name-before-braces-says-where-its-block-goes.hero	error[reserved_word]
+1	tests/golden/check/fixedbugs-130-a-member-line-holds-one-member.hero	error[reserved_word]
+1	tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero	error[reserved_word]
+1	tests/golden/check/fixedbugs-130-an-extern-group-whose-header-failed.hero	error[unterminated_string]
+1	tests/golden/check/fixedbugs-130-an-extern-member-left-open-ends-at-the-next-member.hero	error[unclosed_bracket]
+1	tests/golden/check/fixedbugs-130-commas-in-braces-are-told-as-without-them.hero	error[reserved_word]
+1	tests/golden/check/fixedbugs-130-members-in-braces-are-read.hero	error[expected_end_of_line]
+1	tests/golden/check/fixedbugs-131-a-brace-alone-below-a-member-head.hero	error[empty_record]
+1	tests/golden/check/fixedbugs-131-a-brace-habit-never-closed-is-told-once.hero	error[expected_end_of_line]
+1	tests/golden/check/fixedbugs-131-a-margin-in-tabs-is-one-message.hero	error[tab_in_indentation]
+1	tests/golden/check/fixedbugs-131-the-brace-habit-is-one-mistake.hero	error[missing_body]
+1	tests/golden/check/fixedbugs-131-a-record-or-variant-head-that-goes-on-over-its-members.hero	error[expected_end_of_line]
+1	tests/golden/check/fixedbugs-131-two-spaces-a-level-is-one-message.hero	
+1	tests/golden/check/fixedbugs-133-a-group-member-opened-by-a-foreign-word.hero	error[reserved_word]
+1	tests/golden/check/fixedbugs-132-a-comma-after-every-member-is-one-message.hero	error[expected_end_of_line]
+1	tests/golden/check/fixedbugs-133-a-swap-certain-only-where-its-word-is-right.hero	error[reserved_word]
+1	tests/golden/check/fixedbugs-138-a-mark-the-library-writes-left-out.hero	error[contract_differs]
+1	tests/golden/check/fixedbugs-138-a-mark-the-library-does-not-write.hero	error[contract_differs]
+1	tests/golden/check/fixedbugs-138-a-result-mark-the-library-does-not-write.hero	error[contract_differs]
+1	tests/golden/check/fixedbugs-138-an-at-the-library-writes-left-out.hero	error[contract_differs]
+1	tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero	error[reserved_word]
+1	tests/golden/check/fixedbugs-140-a-handle-key-a-thousand-deep-is-refused.hero	error[handle_map_key]
+1	tests/golden/check/fixedbugs-a-crossed-free-between-two-void-families.hero	error[type_mismatch]
+1	tests/golden/check/fixedbugs-140-a-partial-a-thousand-deep-is-refused.hero	error[ffi_partial_operation]
+1	tests/golden/check/fixedbugs-a-handle-given-back-after-its-address-was-handed-out-again.hero	error[handle_used_after_end]
+1	tests/golden/check/fixedbugs-a-handle-reached-through-a-field.hero	error[unmarked_handle_producer]
+1	tests/golden/check/fixedbugs-a-handle-read-after-the-call-that-ended-it.hero	error[handle_used_after_end]
+1	tests/golden/check/fixedbugs-a-lend-bound-instead-of-passed.hero	error[cstr_escapes]
+1	tests/golden/check/fixedbugs-a-lend-c-keeps-past-the-frame.hero	error[lend_kept]
+1	tests/golden/check/fixedbugs-a-lend-laundered-through-a-helper.hero	error[cstr_out_of_heroes]
+1	tests/golden/check/fixedbugs-a-lend-parked-in-a-record.hero	error[cstr_in_a_record]
+1	tests/golden/check/fixedbugs-a-lend-that-leaves-its-frame.hero	error[cstr_out_of_heroes]
+1	tests/golden/check/fixedbugs-a-nesting-bound-was-a-silence.hero	error[float_map_key]
+1	tests/golden/check/fixedbugs-a-record-rewritten-under-a-held-address.hero	error[lend_kept]
+1	tests/golden/check/fixedbugs-a-releaser-that-ends-nothing.hero	error[unread_releaser]
+1	tests/golden/check/fixedbugs-at-marker-on-a-builtin.hero	error[marker_mismatch]
+1	tests/golden/check/fixedbugs-owned-asks-the-result-too.hero	error[owned_needs_cstr]
+1	tests/golden/check/fixedbugs-owned-on-a-by-value-parameter.hero	error[owned_needs_cstr]
+1	tests/golden/check/fixedbugs-unit-as-an-extern-parameter.hero	error[ffi_parameter_type]
+1	tests/golden/check/handle-ended-on-every-path-is-refused-at-the-read.hero	error[handle_used_after_end]
+1	tests/golden/check/handle-a-consumed-part-is-dead-for-its-reads-and-the-whole-crossing.hero	error[handle_used_after_end]
+1	tests/golden/check/lease-cell-written-by-another-hand.hero	error[lease_written]
+1	tests/golden/check/lease-copied-out-of-its-cell.hero	error[lease_escapes]
+1	tests/golden/check/marks-in-any-order.hero	error[one_mark_per_position]
+1	tests/golden/check/out-cell-cannot-end.hero	error[cell_cannot_end]
+1	tests/golden/check/owned-freer-must-be-declarable.hero	error[unknown_freer]
+1	tests/golden/check/owned-freer-called.hero	error[owned_freer_called]
+1	tests/golden/check/owned-names-its-freer.hero	error[expected_freer]
+1	tests/golden/check/repeated-mark.hero	error[repeated_mark]
+1	tests/golden/check/success-clause-placement.hero	error[success_needs_result]
+1	tests/golden/check/success-clause-misuse.hero	error[success_without_end]
+1	tests/golden/check/success-value-out-of-range.hero	error[success_value_range]
+1	tests/golden/check/transfer-into-a-sibling-that-does-not-survive.hero	error[transfer_without_receiver]
+1	tests/golden/check/transfer-without-receiver.hero	error[transfer_without_receiver]
+1	tests/golden/check/unmarked-handle-producer.hero	error[unmarked_handle_producer]
+1	tests/golden/check/unread-mark.hero	error[unread_mark]
+1	tests/golden/check/unread-releaser-in-a-set.hero	error[unread_releaser]
+1	tests/golden/check/unread-releaser-names-its-word.hero	error[unread_releaser]
+1	tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero	error[ffi_field_type]
+0	tests/golden/fixedbugs/a-header-field-that-is-not-const.hero	
+0	tests/golden/emit/ffi-lent-emits-nothing.hero	
+1	tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero	error[ffi_freer_type]
+1	tests/golden/fixedbugs/ffi-a-lent-field-c-would-write.hero	error[field_lend_written]
+1	tests/golden/fixedbugs/ffi-a-lent-field-extent-overstated.hero	error[field_lend_extent]
+1	tests/golden/fixedbugs/ffi-call-arity.hero	error[ffi_call_shape]
+1	tests/golden/fixedbugs/ffi-call-format.hero	error[ffi_call_shape]
+0	tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero	
+1	tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero	error[ffi_callback_type]
+1	tests/golden/fixedbugs/ffi-callback-const-pointee.hero	error[ffi_callback_type]
+0	tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero	
+1	tests/golden/fixedbugs/ffi-constant-type.hero	error[ffi_constant_type]
+0	tests/golden/fixedbugs/ffi-const-pointer.hero	
+1	tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero	error[ffi_return_type]
+0	tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero	
+1	tests/golden/fixedbugs/ffi-float-parameters.hero	error[ffi_parameter_type]
+1	tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero	error[ffi_parameter_type]
+1	tests/golden/fixedbugs/ffi-not-constant.hero	error[ffi_not_constant]
+0	tests/golden/fixedbugs/ffi-missing-link.hero	
+1	tests/golden/fixedbugs/ffi-out-cell-on-a-handle-the-header-takes-by-value.hero	error[ffi_parameter_type]
+1	tests/golden/fixedbugs/ffi-out-cell-on-a-ptr-the-header-takes-by-value.hero	error[ffi_parameter_type]
+1	tests/golden/fixedbugs/ffi-owned-on-a-cell-a-typedef-spells-const.hero	error[ffi_owned_const_cell]
+0	tests/golden/fixedbugs/ffi-out-parameter-guard.hero	
+1	tests/golden/fixedbugs/ffi-owned-on-a-cell-the-header-spells-const.hero	error[ffi_owned_const_cell]
+1	tests/golden/fixedbugs/ffi-parameter-width.hero	error[ffi_parameter_type]
+1	tests/golden/fixedbugs/ffi-pointee-opaque.hero	error[ffi_parameter_type]
+1	tests/golden/fixedbugs/ffi-pointee-sign.hero	error[ffi_parameter_type]
+1	tests/golden/fixedbugs/ffi-pointee-void.hero	error[ffi_parameter_type]
+1	tests/golden/fixedbugs/ffi-pointee-width.hero	error[ffi_parameter_type]
+1	tests/golden/fixedbugs/ffi-pointer-return.hero	error[ffi_return_type]
+1	tests/golden/fixedbugs/ffi-return-type.hero	error[ffi_return_type]
+1	tests/golden/fixedbugs/ffi-struct-result-unchecked.hero	error[ffi_return_type]
+1	tests/golden/fixedbugs/ffi-struct-return.hero	error[ffi_return_type]
+1	tests/golden/fixedbugs/ffi-unknown-name.hero	error[ffi_unknown_name]
+1	tests/golden/fixedbugs/ffi-word-width.hero	error[ffi_parameter_type]
+1	tests/golden/fixedbugs/fixedbugs-a-misspelled-handle-tag-stays-refused.hero	error[ffi_unknown_name]
+1	tests/golden/fixedbugs/fixedbugs-a-tag-with-two-kinds-names-the-right-record.hero	error[ffi_unknown_tag]
+1	tests/golden/ir/owned-cell.hero	error[ffi_unknown_name]
+1	tests/golden/ir/regression-extern-parameter-types.hero	error[ffi_parameter_type]
+0	tests/golden/ir/owned-release.hero	
+0	tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero	
+0	tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero	
+0	tests/golden/run/abort-handle-borrows-that-gives-away.hero	
+0	tests/golden/run/abort-handle-given-back-twice.hero	
+0	tests/golden/run/abort-handle-never-given-back.hero	
+0	tests/golden/run/abort-lease-never-ended.hero	
+0	tests/golden/run/abort-null-cstr-into-c.hero	
+0	tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero	
+0	tests/golden/run/c-frees-a-lease-on-a-later-call.hero	
+0	tests/golden/run/c-frees-a-lease-through-a-callback.hero	
+0	tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero	
+0	tests/golden/run/dead-address-copy-in-a-growing-array.hero	
+0	tests/golden/run/dead-address-copy-in-a-record-field.hero	
+0	tests/golden/run/dead-address-copy-inside-a-fallible-value.hero	
+0	tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero	
+0	tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero	
+0	tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero	
+0	tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero	
+0	tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero	
+0	tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero	
+0	tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero	
+0	tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero	
+0	tests/golden/run/dead-handle-read-after-consume-through-one-name.hero	
+0	tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero	
+0	tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero	
+0	tests/golden/run/dead-handle-read-by-c-at-the-last-word-of-the-dead-region.hero	
+0	tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero	
+0	tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero	
+0	tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero	
+0	tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero	
+0	tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero	
+0	tests/golden/run/dead-handle-written-by-c-through-a-cell-it-should-only-write.hero	
+0	tests/golden/run/ffi-a-byte-field-crosses-to-c.hero	
+0	tests/golden/run/ffi-a-c-array-member.hero	
+0	tests/golden/run/ffi-a-char-array-member.hero	
+0	tests/golden/run/ffi-a-char-field-becomes-text.hero	
+0	tests/golden/run/ffi-a-filled-record-is-asked-for.hero	
+0	tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero	
+0	tests/golden/run/ffi-a-lent-field-reads-through-const.hero	
+0	tests/golden/run/ffi-acquires-and-consumes.hero	
+0	tests/golden/run/ffi-callback-c-calls-back.hero	
+0	tests/golden/run/ffi-borrows-owes-nothing.hero	
+0	tests/golden/run/ffi-constant.hero	
+0	tests/golden/run/ffi-cstr.hero	
+0	tests/golden/run/ffi-libm.hero	
+0	tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero	
+0	tests/golden/run/ffi-pointee-at-the-headers-width.hero	
+0	tests/golden/run/ffi-owned-cell-is-freed.hero	
+0	tests/golden/run/ffi-read-back-a-cstr.hero	
+0	tests/golden/run/ffi-variadic-at-a-fixed-arity.hero	
+0	tests/golden/run/fixedbugs-144-every-wider-result-builds.hero	
+0	tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero	
+0	tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero	
+0	tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero	
+0	tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero	
+0	tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero	
+0	tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero	
+0	tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero	
+0	tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero	
+0	tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero	
+0	tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero	
+0	tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero	
+0	tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero	
+0	tests/golden/run/fixedbugs-a-group-record-in-every-container.hero	
+0	tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero	
+0	tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero	
+0	tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero	
+0	tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero	
+0	tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero	
+0	tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero	
+0	tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero	
+0	tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero	
+0	tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero	
+0	tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero	
+0	tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero	
+0	tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero	
+0	tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero	
+0	tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero	
+0	tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero	
+0	tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero	
+0	tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero	
+0	tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero	
+0	tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero	
+0	tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero	
+0	tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero	
+0	tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero	
+0	tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero	
+0	tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero	
+0	tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero	
+0	tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero	
+0	tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero	
+0	tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero	
+0	tests/golden/run/fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero	
+0	tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero	
+0	tests/golden/run/handle-a-discarded-reference-is-still-owed.hero	
+0	tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero	
+0	tests/golden/run/handle-a-reference-through-an-out-cell.hero	
+0	tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero	
+0	tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero	
+0	tests/golden/run/handle-alive-after-an-end-in-one-arm.hero	
+0	tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero	
+0	tests/golden/run/handle-alive-through-a-reference-released-twice.hero	
+0	tests/golden/run/handle-alive-under-when-after-a-failed-end.hero	
+0	tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero	
+0	tests/golden/run/handle-reference-joins-the-life-it-finds.hero	
+0	tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero	
+0	tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero	
+0	tests/golden/run/handle-success-value-at-the-width-of-the-result.hero	
+0	tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero	
+0	tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero	
+0	tests/golden/run/handle-two-references-at-two-consuming-positions.hero	
+0	tests/golden/run/lease-c-keeps-the-pointer.hero	
+0	tests/golden/run/lend-inside-a-loop.hero	
+0	tests/golden/run/lease-tail-points-into-the-bytes.hero	
+0	tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero	
+0	tests/golden/run/limit-a-copy-read-after-a-million-later-ends-is-not-caught.hero	
+0	tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero	
+0	tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero	
+1	tests/golden/surface-fixtures/brackets180/shape109.hero	error[expected_params_close]
+1	tests/golden/surface-fixtures/brackets180/shape110.hero	error[expected_extent]
+1	tests/golden/surface-fixtures/brackets180/shape108.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/brackets180/shape112.hero	error[expected_params_close]
+0	tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero	
+1	tests/golden/surface-fixtures/brackets180/shape113.hero	error[line_end_before_continuation]
+1	tests/golden/surface-fixtures/brackets180/shape114.hero	error[unread_releaser]
+1	tests/golden/surface-fixtures/brackets180/shape111.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/brackets180/shape115.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/comments099/inside.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/comments099/tight.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/comments100/kepthead.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/comments100/members.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/comments101/blankunderhead.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/comments101/openers.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/comments101/remarkdochead.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/comments101/signature.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/comments101/trailinghead.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/comments101/unitinside.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/contract/main.hero	error[contract_differs]
+1	tests/golden/surface-fixtures/comments101/unitresult.hero	error[ffi_missing_header]
+0	tests/golden/surface-fixtures/contract/alt.hero	
+0	tests/golden/surface-fixtures/deepthread/main.hero	
+0	tests/golden/surface-fixtures/externroute/bind.hero	
+1	tests/golden/surface-fixtures/externsignature/bind.hero	error[ffi_return_type]
+1	tests/golden/surface-fixtures/groupremark096/beside.hero	error[ffi_missing_header]
+0	tests/golden/surface-fixtures/externsignature/bindright.hero	
+1	tests/golden/surface-fixtures/handlearming/main.hero	error[unmarked_handle_producer]
+1	tests/golden/surface-fixtures/groupremark096/middle.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/groupremark096/samehead.hero	error[ffi_missing_header]
+1	tests/golden/surface-fixtures/paramcomment095/following.hero	error[ffi_missing_header]
+0	tests/golden/surface-fixtures/handlearming/slots.hero	
+1	tests/golden/surface-fixtures/releaser085/bio.hero	error[unread_releaser]
+1	tests/golden/surface-fixtures/releaser085/main.hero	error[unread_releaser]
+0	tests/golden/surface-fixtures/nullread/main.hero	
+1	tests/golden/surface-fixtures/paramcomment095/last.hero	error[ffi_missing_header]
+0	tests/golden/surface-fixtures/releaser108/commented.hero	
+0	tests/golden/surface-fixtures/releaser108/sets.hero	
+0	tests/golden/surface-fixtures/releaser108/contract.hero	
+0	tests/golden/surface-fixtures/twoarity/as_int.hero	
+0	tests/golden/surface-fixtures/twoarity/as_text.hero	
+0	tests/golden/surface-fixtures/structtag/net.hero	
+1	tests/golden/unsupported/ffi-a-cstr-field-blames-the-field.hero	error[ffi_field_type]
+1	tests/golden/unsupported/ffi-incomplete-record.hero	error[ffi_incomplete_record]
+1	tests/golden/unsupported/ffi-const-member.hero	error[ffi_const_field]
+1	tests/golden/unsupported/fixed-array-flow.hero	
+1	tests/golden/unsupported/ffi-records-only-group-cannot-claim-its-package.hero	error[ffi_package]
+1	tests/golden/unsupported/ffi-writable-parameter.hero	error[ffi_writable_parameter]
+1	tests/golden/unsupported/fixedbugs-140-a-union-compared-sixteen-deep-is-refused.hero	error[ffi_union_field]
+1	tests/golden/unsupported/fixedbugs-140-a-union-in-a-variant-case-is-refused.hero	error[ffi_union_field]
+1	tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero	error[ffi_return_type]
+1	tests/golden/unsupported/fixedbugs-144-what-a-u16-result-refuses.hero	error[ffi_return_type]
+1	tests/golden/unsupported/fixedbugs-144-what-a-u32-result-refuses.hero	error[ffi_return_type]
+1	tests/golden/unsupported/fixedbugs-144-what-a-u64-result-refuses.hero	error[ffi_return_type]
+1	tests/golden/unsupported/fixedbugs-144-what-a-u8-result-refuses.hero	error[ffi_return_type]
+1	tests/golden/unsupported/fixedbugs-144-what-an-f32-result-refuses.hero	error[ffi_return_type]
+1	tests/golden/unsupported/fixedbugs-144-what-an-f64-result-refuses.hero	error[ffi_return_type]
+1	tests/golden/unsupported/fixedbugs-144-what-an-i16-result-refuses.hero	error[ffi_return_type]
+1	tests/golden/unsupported/fixedbugs-144-what-an-i32-result-refuses.hero	error[ffi_return_type]
+1	tests/golden/unsupported/fixedbugs-144-what-an-i64-result-refuses.hero	error[ffi_return_type]
+1	tests/golden/unsupported/fixedbugs-144-what-an-i8-result-refuses.hero	error[ffi_return_type]
+1	tests/golden/unsupported/fixedbugs-145-a-misspelled-tag.hero	error[ffi_unknown_tag]
+1	tests/golden/unsupported/fixedbugs-145-a-result-spells-the-typedef.hero	error[ffi_unknown_tag]
+1	tests/golden/unsupported/fixedbugs-145-a-struct-the-header-keeps-opaque-is-a-handle.hero	error[ffi_unknown_tag]
+1	tests/golden/unsupported/fixedbugs-145-a-typedef-of-a-tagged-struct-names-its-tag.hero	error[ffi_unknown_tag]
+1	tests/golden/unsupported/fixedbugs-145-a-typedef-of-an-anonymous-struct-is-not-a-tag.hero	error[ffi_unknown_tag]
+1	tests/golden/unsupported/fixedbugs-145-a-typedef-of-an-anonymous-union-is-not-a-tag.hero	error[ffi_unknown_tag]
+1	tests/golden/unsupported/fixedbugs-145-a-typedef-of-an-opaque-struct-bound-with-fields.hero	error[ffi_unknown_tag]
+1	tests/golden/unsupported/fixedbugs-pointer-reached-through-a-field.hero	
+1	tests/golden/unsupported/fixedbugs-145-a-typedef-of-void-bound-with-fields.hero	error[ffi_unknown_tag]
+1	tests/golden/unsupported/fixedbugs-pointer-reached-through-a-payload.hero	
+1	tests/golden/unsupported/fixedbugs-145-a-typedef-with-nothing-else-said-of-it.hero	error[ffi_unknown_tag]
+0	tests/harness/shell.hero	
+0	tests/harness/suite_cache.hero	

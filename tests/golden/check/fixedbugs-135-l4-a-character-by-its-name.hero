@@ -1,0 +1,28 @@
+# Fixed 2026-10-02, defect 135's class, lane literals (the certain-fix
+# audit's L4, and the shapes beside it). Symptom: `"\N{EM DASH}"`, Python's
+# and Perl's character by its name, cost `unknown_escape` with the certain
+# fix `\\`, so `check --apply` wrote a program that checked clean and
+# printed `\N{EM DASH}` where a dash was meant; in an `f"…"` literal its `{`
+# opened a hole, a second message for one mistake, and in a character
+# literal `char_literal` came second. Cause: no reading took a name, so the
+# escape read as nothing but a backslash. Now `\N{…}` is a character by its
+# name, to its `}`, or to its `{` where none closes it on the line, and by
+# its code where it is written `\N{U+…}`: the message says this language
+# writes a character as itself, `\\` is a guess, and `--apply` leaves the
+# case as it is (`escape_readings`, `escape_report`).
+
+function in_a_string()
+    print("a\N{EM DASH}b")  #~ unknown_escape
+
+function by_its_code_point()
+    print("a\N{U+2014}b")  #~ unknown_escape
+
+function never_closed()
+    print("a\N{EM DASH")  #~ unknown_escape
+
+function in_an_f_literal()
+    n = 3
+    print(f"{n}\N{EM DASH}")  #~ unknown_escape
+
+function in_a_character()
+    print('\N{EM DASH}')  #~ unknown_escape
