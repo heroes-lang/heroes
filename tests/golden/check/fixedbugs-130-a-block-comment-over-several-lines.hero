@@ -1,0 +1,34 @@
+# Fixed 2026-10-02, defect 130's class, lane recovery-b8 (lane recovery-b6's
+# shape beside its 130 (e), `lc12_block_multi`). Symptom: a C block comment
+# over two lines, `/* one` over `two */`, cost four messages for one comment,
+# the second line's margin, a join, a missing expression and an orphan
+# block, where the same comment on one line costs one. Cause: the lexer read
+# a `/*` as a comment only where its `*/` stood on the same line, and
+# anything else as code. Now a `/*` whose `*/` ends a later line is one
+# comment from one to the other, told once, its certain fix writing a `#`
+# line for each of its lines with words, at the margin of the `/*`'s line,
+# a javadoc `*` dropped.
+
+#~v unexpected_character
+/**
+ * The entry point,
+ * which prints.
+ */
+function main()
+    #~v unexpected_character
+    /* one
+       two */
+    print(1)
+    x = 1
+    print(x)
+    #~v unexpected_character
+    /*
+    y = f(1,
+    */
+    #~v unexpected_character
+    /* a
+       b */  # and a note after it
+    #~v unexpected_character
+    /* c
+       d */
+    print(2)

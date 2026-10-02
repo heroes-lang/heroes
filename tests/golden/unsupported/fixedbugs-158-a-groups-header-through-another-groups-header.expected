@@ -1,0 +1,6 @@
+error[ffi_missing_header]: `no_such_header_here.h` is not on this machine's include path, and `fixedbugs-158-inner-group.h`, the header this group names, includes it at line 4
+  at tests/golden/unsupported/fixedbugs-158-a-groups-header-through-another-groups-header.hero:12:5
+     |
+  12 |     function eight() -> i32  #~ ffi_missing_header
+     |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: the group's header is on this machine and a header it includes is not: install the development files that provide `no_such_header_here.h`, or pass `--include <dir>` with the directory that holds it; `package` asks the machine where it is when the library ships a `.pc`, and `CPATH` works too

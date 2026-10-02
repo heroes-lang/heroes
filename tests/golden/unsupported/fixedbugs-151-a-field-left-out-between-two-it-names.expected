@@ -1,0 +1,6 @@
+error[ffi_incomplete_record]: `S3` does not name `b`, and `fixedbugs-151-unions.h` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero
+  at tests/golden/unsupported/fixedbugs-151-a-field-left-out-between-two-it-names.hero:13:12
+     |
+  13 |     record S3  #~ ffi_incomplete_record
+     |            ^^
+  note: the assertions above check every field you DO name and cannot see one you leave out: a `S3` built here would carry a zero `b` into C, which is a value rather than a crash

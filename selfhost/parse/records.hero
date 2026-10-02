@@ -23,6 +23,7 @@ use parse/tails
 use parse/members_below
 use parse/heads
 use parse/brace_habit
+use parse/headless
 use grammar_expr
 use lexer
 
@@ -132,13 +133,38 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
 
     if cursor.at(c, .indent)
         finish @ cursor.current_span(c)
-    fields = members_below.fields_below(@c, @a, text, below: below)
+    fields: [ast.Field] @ []
+
+    if members_below.close_of(below) < 0 && cursor.at(c, .indent) && headless.declares_inside(c, text)
+        among_fields(@c, @a, text)
+    else
+        fields @ members_below.fields_below(@c, @a, text, below: below)
 
     if fields.len() > 0
         finish @ fields[fields.len() - 1].name
     decls @ decls.push(
         ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: tails.linkage_header(linkage), library: tails.linkage_library(linkage), partial: partial, tag: tag))
     )
+
+# A record's block that holds a declaration, `function f()` among its
+# fields: each line read by `parse/heads.next_member`, a field's as a field,
+# and the first declaration's told once and read as the declaration it is,
+# its body by the grammar (defect 130's class, lane recovery-b8). It was
+# `expected_field` and `unexpected_block`, two messages, its body unread.
+function among_fields(@c: cursor.Cursor, @a: ast.Ast, text: str)
+    _ = cursor.bump(@c)
+    told: bool @ false
+    habit: i64 @ -1
+    owed: heads.Owed @ heads.next_member(@c, @a, text, in_record: true, told: @told, @habit)
+
+    while owed.owes != .done
+        if owed.owes == .body
+            _ = grammar_expr.block(@c, @a, text: text, owner: owed.owner, head: owed.head).is_err()
+        else if owed.owes == .abandoned
+            grammar_expr.abandon(@c, @a, text, from: owed.head.pos)
+        else
+            _ = grammar_expr.statement(@c, @a, text)
+        owed @ heads.next_member(@c, @a, text, in_record: true, told: @told, @habit)
 
 ## Tests
 

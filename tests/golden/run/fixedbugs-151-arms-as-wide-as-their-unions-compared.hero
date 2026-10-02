@@ -1,0 +1,47 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R3).
+#
+# What the one comparison rule leaves legal: a record holding a field in a
+# union compares soundly when the field is an integer, a pointer or an array
+# of them as wide as the union, because every value of the union is a value of
+# that field, bit for bit. `SA` by `i`, which covers the float beside it, is
+# compared inside a record of the program's own and keys a map; `SB` by its
+# 64-bit arm, `SARR` by its bytes and `SPTR` by its pointer are compared where
+# the values differ only in the arm the record names.
+
+extern "fixedbugs-151-unions.h"
+    record SA
+        kind: i32
+        i: i32
+        x: i32
+    record SB
+        kind: i32
+        q: i64
+    record SARR
+        kind: i32
+        bytes: u8[4]
+    record SPTR
+        kind: i32
+        p: ptr
+    function make_sa(i: i32) -> SA
+    function make_sb(q: i64) -> SB
+    function make_sarr(w: u32) -> SARR
+    function make_sptr(n: i64) -> SPTR
+
+record Box
+    s: SA
+
+function main()
+    print(Box(s: make_sa(i: 5)) == Box(s: make_sa(i: 6)), " ", Box(s: make_sa(i: 5)) == Box(s: make_sa(i: 5)))
+    seen: {SA: i64} @ {}
+    seen[make_sa(i: 5)] @ 1
+    seen[make_sa(i: 5)] @ 2
+    seen[make_sa(i: 6)] @ 3
+    print(seen.len())
+    print(
+        make_sb(q: 1) == make_sb(q: 257),
+        " ",
+        make_sarr(w: 1) == make_sarr(w: 256),
+        " ",
+        make_sptr(n: 1) == make_sptr(n: 2)
+    )
+    print(make_sb(q: 257) == make_sb(q: 257), " ", make_sarr(w: 256) == make_sarr(w: 256))

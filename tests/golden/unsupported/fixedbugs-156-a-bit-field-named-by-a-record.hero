@@ -1,0 +1,25 @@
+# fixedbugs, defect 156, lane land186, 2026-10-02 (panel 186 R5), the
+# completeness critic's `bf.hero`.
+#
+# SYMPTOM: a record naming the two bit-fields of `BF` checked at exit 0 and
+# stopped `build` at exit 2, *internal error*, with clang's *invalid
+# application of 'sizeof' to bit-field* and *address of bit-field requested*.
+#
+# CAUSE: the field assertion takes `sizeof` of every field and the record's
+# descriptor takes its address, and C gives a bit-field neither.
+#
+# FIX: the layout check asks C, with `_Generic`, whether a declared field is a
+# bit-field, before the unit that would meet them compiles, and refuses each
+# on its own line at exit 1; `partial` is how the record binds the rest.
+
+extern "fixedbugs-156-bit-fields.h"
+    record BF
+        kind: i32
+        flag: u32  #~ ffi_field_type
+        rest: u32  #~ ffi_field_type
+
+function touch(b: BF) -> i32
+    return b.kind
+
+function main()
+    print(1)

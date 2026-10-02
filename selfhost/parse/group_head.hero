@@ -10,7 +10,7 @@ use token
 use cursor
 use ast
 use keywords
-use parse/use_line
+use parse/module_text
 use parse/heads
 
 # The head line's header string. A missing one is where the old headerless
@@ -23,9 +23,10 @@ use parse/heads
 # 'stdio.h'` in single quotes and `extern` alone recovered to the next
 # declaration, every signature's own mistake unsaid. The span handed back
 # then stands for the header in the group's linkage, which nothing past the
-# parser reads, since a program the parser refused goes no further. Any
-# other word where the header goes, the headerless `extern function`
-# spelling among them, recovers to the next declaration as it did.
+# parser reads, since a program the parser refused goes no further. So does
+# junk where the header goes, `extern )`, its line dropped (lane
+# recovery-b8). A member's keyword there, the headerless `extern function`
+# spelling, recovers to the next declaration as it did.
 function header(@c: cursor.Cursor, text: str) -> token.Span?
     if cursor.at(c, .str_lit)
         span = cursor.bump(@c).span
@@ -45,6 +46,14 @@ function header(@c: cursor.Cursor, text: str) -> token.Span?
     if cursor.at(c, .terminator)
         here = cursor.current_span(c)
         return ok(token.Span(start: here.start, end: here.start))
+
+    # Junk where the header goes, `extern )`, is the head's one mistake too:
+    # its line goes, and the signatures below are read (defect 130's class,
+    # lane recovery-b8), where until 2026-10-02 the recovery took them whole.
+    if !cursor.at(c, .kw_function) && !cursor.at(c, .kw_constant) && !cursor.at(c, .kw_record)
+        here = cursor.current_span(c)
+        cursor.skip_line(@c)
+        return ok(token.Span(start: here.start, end: here.start))
     cursor.recover_to_next_decl(@c)
     return fail(code: "expected_extern_header", msg: "recovered to the next declaration")
 
@@ -61,7 +70,7 @@ function header(@c: cursor.Cursor, text: str) -> token.Span?
 # `.pc` on `PKG_CONFIG_PATH`, and a certain fix that rewrote the string would
 # be a lie.
 function machine_locked(@c: cursor.Cursor, text: str, span: token.Span, what: str)
-    value = use_line.unquote(cursor.slice_of(text, span))
+    value = module_text.unquote(cursor.slice_of(text, span))
 
     # A leading root, a Windows drive letter, or — for a library only — GNU
     # `ld`'s `-l:filename` form, which is how a `link` string names a FILE

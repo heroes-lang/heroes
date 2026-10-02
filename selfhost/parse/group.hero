@@ -194,6 +194,8 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
         else if k == .comma && trailing(c)
             comma(@c, @habit)
         else
+            member = member_of_the_line(c)
+
             if !cursor.at_reported_error(c)
                 cursor.error(
                     @c,
@@ -204,14 +206,49 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
 
             # A block under the refused line is that line's, `enum Mode` over
             # its cases: it goes with it, and is never a member of its own
-            # (defect 130's class, 2026-09-29).
+            # (defect 130's class, 2026-09-29). **Past a signature read whole
+            # on the line, `function f() -> i64 )`, it is that member's body**,
+            # named as under the same signature with nothing after it (lane
+            # recovery-b8): until 2026-10-02 it went with the junk, unsaid.
             if cursor.at(c, .indent)
                 _ = cursor.balanced_block(@c)
             else
                 cursor.skip_line(@c)
 
-                if cursor.at(c, .indent)
+                if cursor.at(c, .indent) && member != ""
+                    tails.body_check(@c, member)
+                else if cursor.at(c, .indent)
                     _ = cursor.balanced_block(@c)
+
+# The member a line was read as before the cursor, which stands past its
+# first token: `function` or `constant` where the line opens with that
+# keyword or a word whose certain swap writes it, `fn q() -> i64 )`; and ""
+# where the cursor opens its line or the line opens with anything else.
+function member_of_the_line(c: cursor.Cursor) -> str
+    i: i64 @ c.pos - 1
+
+    while i >= 0 && !opening.is_line_end(c.tokens[i].kind)
+        i @ i - 1
+
+    first: i64 @ i + 1
+
+    while first < c.pos && c.tokens[first].kind == .comment
+        first @ first + 1
+
+    if first >= c.pos
+        return ""
+    t = c.tokens[first]
+
+    if t.kind == .kw_function
+        return "function"
+
+    if t.kind == .kw_constant
+        return "constant"
+    swap = cursor.certain_swap(c, t.span)
+
+    if t.kind == .error && !swap.is_err() && (swap.must() == "function" || swap.must() == "constant")
+        return swap.must()
+    return ""
 
 # Is the `,` under the cursor the last token of its line?
 function trailing(c: cursor.Cursor) -> bool

@@ -1,0 +1,6 @@
+error[ffi_incomplete_record]: `BF` does not name `flag`, and `fixedbugs-156-bit-fields.h` says the struct has it — `flag` is a bit-field, which no field can bind, so a `record` over this struct leaves it out by being `partial`
+  at tests/golden/unsupported/fixedbugs-156-a-bit-field-left-out-is-left-to-partial.hero:9:12
+    |
+  9 |     record BF  #~ ffi_incomplete_record
+    |            ^^
+  note: mark the `record` `partial`: it binds the fields it names, C keeps the bits of `flag`, and comparing it or using it as a map key is refused, as for every `partial` record

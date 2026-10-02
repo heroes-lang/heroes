@@ -1,0 +1,15 @@
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:20:23: error[unclosed_bracket]: `(` opened here is still open at line 25, where `return` begins a line no bracket can hold
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:27:27: error[unclosed_bracket]: `(` opened here is still open at line 30, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:30:31: error[unclosed_bracket]: `(` opened here is still open at line 35, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:46:35: error[unclosed_bracket]: `[` opened here is still open at line 50, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:22:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:28:14: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:32:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:36:5: error[expected_params_close]: expected `)`, or `,` and another parameter, found a name (`print`)
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:36:14: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:39:5: error[expected_params_close]: expected `)`, or `,` and another parameter, found a name (`x`)
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:40:14: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:44:9: error[expected_group_close]: expected `)` to close the group, found a name (`print`)
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:44:18: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:48:1: error[unexpected_block]: this block is indented deeper than anything that opens one
+tests/golden/check/fixedbugs-130-a-body-its-heads-open-bracket-took-in.hero:51:5: error[expected_params_close]: expected `)`, or `,` and another parameter, found a name (`print`)

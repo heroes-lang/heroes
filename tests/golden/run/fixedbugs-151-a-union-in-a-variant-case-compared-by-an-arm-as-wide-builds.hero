@@ -1,0 +1,25 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R3): panel 077's
+# `unsupported/fixedbugs-140-a-union-in-a-variant-case-is-refused`, moved by
+# hand. `W { int32_t i; uint32_t n; }` bound by `i`, an integer as wide as the
+# union, compares soundly, so a variant whose case holds one is compared and
+# keys a map; the same union by an arm narrower than it stays refused there.
+
+extern "fixedbugs-151-unions.h"
+    record W
+        i: i32
+    function make_w() -> W
+
+variant V
+    has
+        w: W
+    none
+
+function main()
+    a: V = .has(w: make_w())
+    b: V = .none
+    print(a == a, " ", a == b)
+    m: {V: i64} @ {}
+    m[a] @ 1
+    m[b] @ 2
+    m[a] @ 3
+    print(len(m))

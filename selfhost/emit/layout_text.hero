@@ -1,0 +1,402 @@
+# The header's own LAYOUT of every group record, read from clang, and the
+# assertions it lets the compiler ask about a field that lies in a union
+# and a field the record leaves out (design.md §4.19, §1.12; panels 073,
+# 077, 103, 186). `cli/layout.hero` runs clang; this file writes the dump
+# unit and reads the dump back, and `emit/layout_check.hero` writes the
+# assertions it lets the compiler ask.
+#
+# **Why the layout and not a C expression.** A struct holding an anonymous
+# union classifies as a struct (12), so `extern_union.hero`'s predicate
+# passes for `typedef struct { int32_t kind; union { int32_t i; float f; };
+# int32_t x; } SA;`, and nothing C can say about two DECLARED fields sees
+# one declared arm whose sibling is not declared (`SB { kind; union { int8_t
+# b; int64_t q; }; }` named by `kind` and `b`: `==` answered `true` for two
+# values whose `q` differs). The positional completeness probe counted the
+# record's fields where C counts the struct's members, so an anonymous union
+# made it miss a field left out and warn on a correct record (defect 151).
+#
+# **Where the text comes from.** One unit includes the program's headers and
+# wraps each record, `struct hero_ly_<decl> { T v; };`, laid out by a
+# `sizeof` under `clang -fsyntax-only -Xclang -fdump-record-layouts`. The
+# block that opens `0 | struct hero_ly_<decl>` holds T's tree whatever T's
+# spelling, so no name lookup is made here. **Read by its shape**, five facts
+# measured on Apple clang 21 and Homebrew clang 22.1.8: a member line is
+# `<offset> | <two spaces per level><type> <name>`; an anonymous member and an
+# unnamed bit-field have an EMPTY name, the line ending in the space; a member
+# whose next line is deeper is a record whose members follow; a bit-field's
+# offset carries a `:`; a flexible array member's type ends `[]`; an
+# anonymous member's type opens with `union ` or `struct `; and `| [sizeof=`
+# ends the block. A TYPE's text is never read beyond those characters and
+# that first word: the rest is the one part that differs between 21 and 22,
+# and the control below holds every one of them, so a clang that prints any
+# of them otherwise stops the first build that needs the dump.
+#
+# **The verdict is never the text** (panel 103): the dump only proposes
+# NAMES, and every assertion below is C arithmetic on the header's own
+# offsets and sizes. Whether two members share a byte is
+# `__builtin_offsetof` and `sizeof`; whether the header's type is a union is
+# `__builtin_classify_type`. A misread dump makes an assertion name a member
+# that does not exist, which is clang's hard error and the compiler's fault,
+# or ask about two members C keeps apart, which passes. It never makes a
+# false refusal pass for a true one.
+
+use ast
+use source
+use emit/ctype
+use emit/layout_rows
+
+# A group record the dump is asked about: its declaration and its C type.
+record Asked
+    decl: i64
+    c_type: str
+
+# One member line of a record's block, below the `v` line. `depth` 1 is a
+# member C counts at the top of the struct.
+record Member
+    depth: i64
+    name: str
+    nested: bool
+    bitfield: bool
+    flexible: bool
+    # The byte the member starts at, as the dump prints it: the one number
+    # read from the text, and only where C cannot be asked (a bit-field has
+    # no `__builtin_offsetof`).
+    byte: i64
+    # An anonymous member whose type opens with `union `: the one word of a
+    # type's text that is read, because an anonymous member has no name C
+    # can classify (a NAMED member is classified by C through `path`).
+    union_kw: bool
+    # Where an anonymous member is declared, as clang prints it after its last
+    # ` at `: `./u.h:8:32)`. The one part of a type's text both of clang's
+    # spellings of an anonymous union share, its line in a block and its own
+    # block's head, so it is how the union's width is found (`union_sizes`).
+    # Compared for equality only, never read; empty for a named member.
+    place: str
+    # How C names the member on T: the names of its named ancestors and its
+    # own, joined by `.`, an anonymous level adding nothing because C
+    # promotes its members (C11 6.7.2.1p13); empty for an anonymous member.
+    # `__builtin_offsetof(T, path)` and `sizeof(((T *)0)->path)` take it.
+    path: str
+
+# A member a program can name on T: its own, or one an anonymous member
+# promotes (C11 6.7.2.1p13). `group` is the index of the anonymous member it
+# sits in at depth 1, or -1 for a member of T itself.
+record Visible
+    at: i64
+    group: i64
+
+## The dump unit
+
+# Every group record with fields. A handle has none, and a record with none
+# has nothing to lay out.
+function asked(s: source.Source, decls: [ast.Decl]) -> [Asked]
+    names = ctype.new_names(s, decls)
+    out: [Asked] @ []
+    index: i64 @ 0
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err() && rec.fields.len() > 0
+                    out @ out.push(Asked(decl: index, c_type: ctype.of(names, decl: index)))
+            .constant_decl | .function_decl | .variant_decl | .test_decl => index @ index
+
+        index @ index + 1
+
+    return out
+
+function dump_unit(headers: [str], wanted: [Asked]) -> str
+    lines: [str] @ []
+
+    for header in headers
+        lines @ lines.push("#include <" + header + ">")
+
+    for one in wanted
+        wrap = "struct " + layout_rows.PREFIX + one.decl.to_str()
+        lines @ lines.push(wrap + " { " + one.c_type + " v; }; _Static_assert(sizeof(" + wrap + ") > 0, \"\");")
+
+    # The premise-death control, the way `extern_union.hero` carries one for
+    # the classify split: a record of every shape the reader knows, whose
+    # tree `control_holds` must find exactly, so a clang that prints the
+    # dump differently fails the first build that needs it, naming the dump.
+    lines @ lines.push(
+        "struct " + layout_rows.PREFIX + "control { struct { int a; union { int b; float c; }; struct { int g; int h; }; struct { int p; } n; unsigned d : 2; unsigned : 1; int e[0]; } v; }; _Static_assert(sizeof(struct " + layout_rows.PREFIX + "control) > 0, \"\");"
+    )
+    return lines.join("\n") + "\n"
+
+# What the control's tree must read as, member by member: depth, name, path,
+# whether a record follows, whether a bit-field, whether an anonymous union.
+constant CONTROL: str
+    "1:a:a:false:false:false 1:::true:false:true 2:b:b:false:false:false 2:c:c:false:false:false 1:::true:false:false 2:g:g:false:false:false 2:h:h:false:false:false 1:n:n:true:false:false 2:p:n.p:false:false:false 1:d:d:false:true:false 1:::false:true:false 1:e:e:false:false:false"
+
+# Whether the control's tree is the one this reader expects: `a`; an
+# anonymous union holding `b` and `c`; an anonymous struct holding `g` and
+# `h`; a named struct `n` whose `p` is `n.p` to C; the bit-field `d`; an
+# unnamed bit-field; `e`, at the levels and with the flags written.
+function control_holds(rows: [str]) -> bool
+    at: i64 @ 0
+    needle = "| struct " + layout_rows.PREFIX + "control"
+
+    while at < rows.len()
+        row = rows[at]
+        at @ at + 1
+
+        if row.len() >= needle.len() && layout_rows.byte_index(text: row, needle: needle) == row.len() - needle.len()
+            read = members(rows: rows, from: at)
+
+            if read.is_err()
+                return false
+            got: [str] @ []
+
+            for m in read.must()
+                got @ got.push(
+                    m.depth.to_str() + ":" + m.name + ":" + m.path + ":" + m.nested.to_str() + ":" + m.bitfield.to_str() + ":" + m.union_kw.to_str()
+                )
+
+            if got.join(" ") != CONTROL
+                return false
+
+            # The anonymous union's own block states its width, four bytes,
+            # found by the place its line in the tree gives.
+            sizes = union_sizes(rows)
+            found = sizes[read.must()[1].place]
+            return !found.is_err() && found.must() == 4
+
+    return false
+
+## Reading the dump
+
+# Where each wrapper's block opens, read in one pass: the row after the
+# line `0 | struct hero_ly_<decl>`, by declaration.
+function heads(rows: [str]) -> {i64: i64}
+    out: {i64: i64} @ {}
+    needle = "| struct " + layout_rows.PREFIX
+    at: i64 @ 0
+
+    while at < rows.len()
+        row = rows[at]
+        cut = layout_rows.byte_index(text: row, needle: needle)
+
+        if cut >= 0
+            decl = layout_rows.leading_number(row.slice(from: cut + needle.len(), to: row.len()))
+
+            if decl >= 0 && decl.to_str().len() + cut + needle.len() == row.len()
+                out[decl] @ at + 1
+        at @ at + 1
+
+    return out
+
+# The members of one record's block, from the row after its head, in the
+# dump's order. Absent when a line inside the block has no `| `, or the block
+# never closes: a shape this reader does not know is said, never skipped.
+function members(rows: [str], from: i64) -> [Member]?
+    at: i64 @ from
+    depths: [i64] @ []
+    named: [str] @ []
+    bits: [bool] @ []
+    starts_at: [i64] @ []
+    flex: [bool] @ []
+    unions: [bool] @ []
+    places: [str] @ []
+    closed: bool @ false
+
+    while at < rows.len() && !closed
+        row = rows[at]
+        at @ at + 1
+        bar = layout_rows.byte_index(text: row, needle: "| ")
+
+        if bar < 0
+            return fail(code: "none", msg: "a line of the block is not a member line: " + row)
+        rest = row.slice(from: bar + 2, to: row.len())
+
+        if layout_rows.starts(text: rest, prefix: "[sizeof=")
+            closed @ true
+            continue
+        spaces: i64 @ 0
+
+        while spaces < rest.len() && rest[spaces] == ' '
+            spaces @ spaces + 1
+
+        # Level 1 is the `v` line itself; T's own members are level 2.
+        if spaces / 2 < 2
+            continue
+        text = rest.slice(from: spaces, to: rest.len())
+        space = layout_rows.last_space(text)
+        depths @ depths.push(spaces / 2 - 1)
+        bits @ bits.push(layout_rows.byte_index(text: row.slice(from: 0, to: bar), needle: ":") >= 0)
+        starts_at @ starts_at.push(layout_rows.leading_number(row.slice(from: 0, to: bar)))
+
+        if space < 0
+            named @ named.push(text)
+            flex @ flex.push(false)
+            unions @ unions.push(false)
+            places @ places.push("")
+        else
+            named @ named.push(text.slice(from: space + 1, to: text.len()))
+            flexible: bool @ false
+
+            if space >= 2
+                flexible @ text[space - 2] == '[' && text[space - 1] == ']'
+            flex @ flex.push(flexible)
+            unions @ unions.push(space == text.len() - 1 && layout_rows.starts(text: text, prefix: "union "))
+
+            if space == text.len() - 1
+                places @ places.push(place_of(text.slice(from: 0, to: space)))
+            else
+                places @ places.push("")
+
+    if !closed
+        return fail(code: "none", msg: "the block never closes")
+    out: [Member] @ []
+    paths = paths_of(depths, named)
+    k: i64 @ 0
+
+    while k < depths.len()
+        deeper = k + 1 < depths.len() && depths[k + 1] > depths[k]
+        out @ out.push(
+            Member(depth: depths[k], name: named[k], nested: deeper, bitfield: bits[k], flexible: flex[k], byte: starts_at[k], union_kw: unions[k] && deeper, place: places[k], path: paths[k])
+        )
+        k @ k + 1
+
+    return ok(out)
+
+# Each member's C name on T, from the names of the members above it: a stack
+# of the levels still open, an anonymous one contributing nothing.
+function paths_of(depths: [i64], named: [str]) -> [str]
+    out: [str] @ []
+    open_at: [i64] @ []
+    open_names: [str] @ []
+    k: i64 @ 0
+
+    while k < depths.len()
+        while open_at.len() > 0 && open_at[open_at.len() - 1] >= depths[k]
+            open_at @ open_at.slice(from: 0, to: open_at.len() - 1)
+            open_names @ open_names.slice(from: 0, to: open_names.len() - 1)
+
+        parts: [str] @ []
+
+        for one in open_names
+            if one.len() > 0
+                parts @ parts.push(one)
+
+        if named[k].len() == 0
+            out @ out.push("")
+        else
+            parts @ parts.push(named[k])
+            out @ out.push(parts.join("."))
+        open_at @ open_at.push(depths[k])
+        open_names @ open_names.push(named[k])
+        k @ k + 1
+
+    return out
+
+# The width clang gives each anonymous union, by its place: the head of its
+# own block, `0 | union T::(anonymous at <place>)`, and that block's
+# `[sizeof=N, ...` row, as `layout_rows.wrapper_rows` keeps them. A width is
+# only ever asked as one more condition beside C's own offsets
+# (`emit/layout_compare.hero`), so a misread one refuses a sound field or
+# lets one through that holds every member; it never makes an unsound
+# comparison legal.
+function union_sizes(rows: [str]) -> {str: i64}
+    out: {str: i64} @ {}
+    k: i64 @ 0
+
+    while k + 1 < rows.len()
+        row = rows[k]
+        bar = layout_rows.byte_index(text: row, needle: "| union ")
+
+        if bar >= 0 && layout_rows.byte_index(text: rows[k + 1], needle: "| [sizeof=") >= 0
+            place = place_of(row.slice(from: bar + 2, to: row.len()))
+            close = rows[k + 1]
+            at = layout_rows.byte_index(text: close, needle: "[sizeof=")
+            size = layout_rows.leading_number(close.slice(from: at + 8, to: close.len()))
+
+            if place.len() > 0 && size >= 0
+                out[place] @ size
+        k @ k + 1
+
+    return out
+
+# The text after the last ` at ` of an anonymous record's type, or "".
+function place_of(type_text: str) -> str
+    at: i64 @ type_text.len() - 4
+    needle = " at "
+
+    while at >= 0
+        if layout_rows.byte_index(text: type_text.slice(from: at, to: at + 4), needle: needle) == 0
+            return type_text.slice(from: at + 4, to: type_text.len())
+        at @ at - 1
+
+    return ""
+
+# The members a program can name on T, in the dump's order: below a NAMED
+# record member the fields are that member's own, and are skipped.
+function visible(read: [Member]) -> [Visible]
+    out: [Visible] @ []
+    hidden: i64 @ 0
+    group: i64 @ -1
+    k: i64 @ 0
+
+    while k < read.len()
+        m = read[k]
+
+        if hidden > 0 && m.depth > hidden
+            k @ k + 1
+            continue
+        hidden @ 0
+
+        if m.depth == 1
+            group @ -1
+
+            if m.name.len() == 0 && m.nested
+                group @ k
+
+        if m.name.len() > 0
+            out @ out.push(Visible(at: k, group: group))
+
+            if m.nested
+                hidden @ m.depth
+        k @ k + 1
+
+    return out
+
+## Tests
+
+test "a block is read by its shape: depth, the empty name of an anonymous member, a bit-field, a flexible tail"
+    dump = "\n*** Dumping AST Record Layout\n         0 | struct hero_ly_4\n         0 |   DEEP v\n         0 |     int32_t kind\n         4 |     struct DEEP::(anonymous at ./bf.h:4:32) \n         4 |       union DEEP::(anonymous at ./bf.h:4:41) \n         4 |         int32_t i\n         4 |         float f\n         8 |       int32_t y\n    12:0-0 |     uint32_t flag\r\n        16 |     int32_t[] tail\n           | [sizeof=16, align=4]\n"
+    rows = layout_rows.rows_of(dump)
+    got = members(rows: rows, from: heads(rows)[4].must()).must()
+    assert got.len() == 8
+    assert got[0].depth == 1 && got[0].name == "kind" && !got[0].nested
+    assert got[1].depth == 1 && got[1].name == "" && got[1].nested
+    assert got[2].depth == 2 && got[2].name == "" && got[2].nested
+    assert got[3].depth == 3 && got[3].name == "i"
+    assert got[6].bitfield && got[6].name == "flag" && got[6].byte == 12
+    assert got[3].byte == 4
+    assert got[7].flexible && !got[0].flexible
+    assert got[2].union_kw && !got[1].union_kw && !got[3].union_kw
+    assert got[3].path == "i" && got[1].path == "" && got[5].path == "y"
+    assert got[2].place == "./bf.h:4:41)" && got[3].place == ""
+
+    # The width is found by the place, whatever spelling the block's head
+    # gives the union beside it (Homebrew clang 22.1.8's, here).
+    widths = union_sizes(
+        layout_rows.rows_of("         0 | union (unnamed struct)::(unnamed struct)::(anonymous at ./bf.h:4:41)\n           | [sizeof=4, align=4]\n")
+    )
+    assert widths[got[2].place].must() == 4
+    assert heads(rows)[40].is_err() && heads(rows).len() == 1
+    seen = visible(got)
+    assert seen.len() == 6
+    assert seen[1].group == 1 && seen[3].group == 1 && seen[0].group == -1
+
+test "a named record member's own fields are not T's"
+    dump = "         0 | struct hero_ly_0\n         0 |   SN v\n         0 |     int32_t kind\n         4 |     W2 u\n         4 |       int32_t i\n         4 |       uint32_t n\n           | [sizeof=8, align=4]\n"
+    rows = layout_rows.rows_of(dump)
+    read = members(rows: rows, from: heads(rows)[0].must()).must()
+    seen = visible(read)
+    assert seen.len() == 2
+    assert seen[1].at == 1
+
+    # C names the union's members through it, and does not take it for an
+    # anonymous union: a named member is classified by C, never by its text.
+    assert read[2].path == "u.i" && read[3].path == "u.n" && !read[1].union_kw

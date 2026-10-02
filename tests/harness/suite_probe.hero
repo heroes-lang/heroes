@@ -162,11 +162,15 @@ function trees() -> [Tree]
     # modules to selfhost and its goldens to tests. The selfhost row raised
     # 2026-10-02 at lane literals' batch gate, to what the suite asked:
     # `escape_codes.hero` took selfhost from 355 modules to 356, past 284 by
-    # more than a quarter, and its variants to 3204.
+    # more than a quarter, and its variants to 3204. The tests row raised
+    # 2026-10-02 at the round's gate of lanes recovery-b8, land186 and h158,
+    # to what the suite asked: the round's 53 new `.hero` files under `tests/`
+    # took its seeds to 799, past 634 by more than a quarter, and its
+    # variants to 7191.
     none: [str] = []
     return [
         Tree(name: "selfhost, multi", root: "selfhost", seeds: 356, floor: Floor(family: "multi", generated: 3204, parsing: 3204), known: none)
-        Tree(name: "tests, multi", root: "tests", seeds: 634, floor: Floor(family: "multi", generated: 5706, parsing: 5706), known: none)
+        Tree(name: "tests, multi", root: "tests", seeds: 799, floor: Floor(family: "multi", generated: 7191, parsing: 7191), known: none)
         Tree(name: "examples, multi", root: "examples", seeds: 120, floor: Floor(family: "multi", generated: 1080, parsing: 1080), known: none)
     ]
 

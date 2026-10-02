@@ -1,0 +1,7 @@
+error[ffi_missing_header]: `no_such_header_here.h` is not on this machine's include path, and `fixedbugs-158-depth-two-outer.h`, the header this group names, includes it through `fixedbugs-158-depth-two-mid.h`
+  at tests/golden/unsupported/fixedbugs-158-a-header-reached-through-a-second-header.hero:11:5
+     |
+  11 |     function seven() -> i32  #~ ffi_missing_header
+     |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: the includes clang followed: `fixedbugs-158-depth-two-outer.h` line 4 includes `fixedbugs-158-depth-two-mid.h`, then `fixedbugs-158-depth-two-mid.h` line 2 includes `no_such_header_here.h`
+  note: the group's header is on this machine and a header it includes is not: install the development files that provide `no_such_header_here.h`, or pass `--include <dir>` with the directory that holds it; `package` asks the machine where it is when the library ships a `.pc`, and `CPATH` works too
