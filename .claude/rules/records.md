@@ -101,7 +101,12 @@ rule in full and `records/lists` is its executor. **An item of
 `docs/work/DEFECTS.md` ends its line with ` · **class: <name>**`** (`blocking`,
 `adjacent`, `systemic` or `improvement`) and carries a `**Class:**` body line
 with its date and reason, since 2026-10-02 (the author's *D1a*;
-`.claude/rules/verification.md` § Bounded discovery).
+`.claude/rules/verification.md` § Bounded discovery). That body line opens
+`**Class: <name>**, YYYY-MM-DD`, the line's own class and the day it was
+classed in digits, then its reason, and `records/tagged` ages an `adjacent`
+item from that day: it counts as `blocking` from the second tag placed since,
+a tag counting when its day is later or the item stood open at it, the tag
+judged included.
 
 **The first field is what that file's instrument reads**, so it differs by file:
 the milestone in its own `docs/work/milestones/` file, the padded `panel NNN` in

@@ -869,45 +869,86 @@ function run_all(scratch: str) -> report.Report?
 # It binds from the tag it first sees onwards. Older tags are not
 # re-judged, which is not leniency but § 14: a record is not rewritten,
 # and a rule cannot be applied to a commit made before it existed.
+#
+# **Since 2026-10-02 a defect counts by its class** (the author's *D1a D2a
+# D3a*, `.claude/rules/verification.md` § Bounded discovery): a tag stands
+# over zero `blocking` and zero `systemic` items, an `adjacent` one counts
+# as `blocking` from the second tag placed since it was filed, and an
+# `improvement` never counts. **An item with no class at the tag's commit
+# counts as `blocking`**, because every tag before that day was placed under
+# zero of all, and reading an unclassed item as anything weaker would loosen
+# history in silence. `counted_at` below decides it from the list's text and
+# the tags, and nothing here decides anything but what to read. The two
+# excuses, `TAGGED_OVER` and `CARRIED_OVER`, are asked of the items that
+# count, which at every tag placed before that day is every open item, so
+# neither row reads differently; an item a tag may stand over needs none.
 function tagged(@r: report.Report, scratch: str, present: [str])
     listed = shell.run(
         scratch: scratch,
         program: "git",
-        words: ["git", "tag", "--list", "m-*", "--sort=-creatordate"]
+        words: ["git", "tag", "--list", "m-*", "--sort=-creatordate", "--format=%(creatordate:short) %(refname:short)"]
     )
 
     if listed.is_err()
         report.keep_failure(@r, label: "records/tagged", detail: "  cannot list the milestone tags")
         return
-    newest: str @ ""
 
-    for row in strings.lines(listed.must().out)
-        if newest == "" && strings.trimmed(row) != ""
-            newest @ strings.trimmed(row)
+    # A `git` that ran and failed prints nothing on its standard output, and
+    # nothing read as no tag is the first-day pass below: the exit code is
+    # asked first so that a failure is never mistaken for an empty history.
+    if listed.must().code != 0
+        report.keep_failure(
+            @r,
+            label: "records/tagged",
+            detail: "  `git tag --list` exited " + listed.must().code.to_str() + ": " + strings.trimmed(listed.must().err)
+        )
+        return
+    placed = placed_tags(listed.must().out)
 
-    if newest == ""
+    if placed.is_err()
+        report.keep_failure(
+            @r,
+            label: "records/tagged",
+            detail: "  cannot read the milestone tags' days: " + failure_of(placed)
+        )
+        return
+
+    if placed.must().len() == 0
         # No milestone has been tagged yet, which is a true state of this
         # repository's first day and not a failure.
         report.keep_pass(@r)
         return
-    open_defects = open_items_at(scratch: scratch, tag: newest, path: "docs/work/DEFECTS.md")
+    newest = placed.must()[0].name
+    list_then = text_at(scratch: scratch, tag: newest, path: DEFECTS)
 
-    if open_defects.is_err()
+    if list_then.is_err()
         report.keep_failure(@r, label: "records/tagged", detail: "  cannot read DEFECTS.md at " + newest)
         return
+    before = earlier_tags(scratch: scratch, text: list_then.must(), tags: placed.must())
 
-    if open_defects.must().len() > 0
-        refusal: str @ tag_is_excused(tag: newest, open_rows: open_defects.must(), present: present)
+    if before.is_err()
+        report.keep_failure(
+            @r,
+            label: "records/tagged",
+            detail: "  cannot read DEFECTS.md at an earlier tag: " + failure_of(before)
+        )
+        return
+    standing = counted_at(text: list_then.must(), at: placed.must()[0], before: before.must())
+
+    if standing.len() > 0
+        rows: [str] @ []
+        told: [str] @ []
+
+        for one in standing
+            rows @ rows.push(one.row)
+            told @ told.push(one.row + "\n      " + one.why)
+
+        refusal: str @ tag_is_excused(tag: newest, open_rows: rows, present: present)
 
         if refusal != ""
-            list_then = text_at(scratch: scratch, tag: newest, path: "docs/work/DEFECTS.md")
-
-            if list_then.is_err()
-                report.keep_failure(@r, label: "records/tagged", detail: "  cannot read DEFECTS.md at " + newest)
-                return
             carried = tag_is_carried(
                 tag: newest,
-                open_rows: open_defects.must(),
+                open_rows: rows,
                 text: list_then.must(),
                 present: present,
                 rows: CARRIED_OVER
@@ -922,7 +963,7 @@ function tagged(@r: report.Report, scratch: str, present: [str])
             report.keep_failure(
                 @r,
                 label: "records/tagged",
-                detail: "  " + newest + " was placed over " + open_defects.must().len().to_str() + " open defect(s):\n    " + open_defects.must().join("\n    ") + "\n  " + refusal + "\n  A milestone is tagged only over a clean list (CLAUDE.md § Verification).\n  An open defect is something BROKEN, and a tag over one says the opposite."
+                detail: "  " + newest + " was placed over " + standing.len().to_str() + " open defect(s) that count against a tag:\n    " + told.join("\n    ") + "\n  " + refusal + "\n  A milestone is tagged over zero `blocking` and zero `systemic` items (CLAUDE.md § Verification;\n  .claude/rules/verification.md § Bounded discovery). An item with no class counts\n  as `blocking`, and an `adjacent` one counts as `blocking` from the second tag\n  placed since it was filed."
             )
             return
     open_decisions = open_items_at(scratch: scratch, tag: newest, path: "docs/work/DECIDE.md")
@@ -1248,6 +1289,161 @@ function item_region(text: str, number: str) -> str
             region @ region + row + "\n"
 
     return region
+
+# A milestone tag, the day `git` says it was created on, and the defect
+# numbers open in `docs/work/DEFECTS.md` at it. `open` is read only for a tag
+# whose day is not later than the newest `adjacent` item's day, because a tag
+# of a later day counts against such an item by its day alone; everywhere else
+# it is empty and nothing asks it.
+record Placed
+    name: str
+    day: i64
+    open: [str]
+
+# An open defect that counts against the tag it stands at: its line, as
+# `open_items_at` gives it, and why it counts, in words the failure prints.
+record Standing
+    row: str
+    why: str
+
+# An `adjacent` item counts as `blocking` from this many tags placed since it
+# was filed, the tag judged included (`.claude/rules/verification.md` §
+# Bounded discovery: *it becomes `blocking` when two milestone tags have been
+# placed since it was filed*). So one stands at the first tag after its filing
+# and is repaired before the second.
+constant AGED_AT: i64
+    2
+
+# `git tag --format='%(creatordate:short) %(refname:short)'`, newest first,
+# as `Placed`s with nothing read yet. A row this cannot read fails the whole
+# listing rather than dropping out of it: a tag left out is a tag that ages
+# nothing, which is the direction this check refuses to fail in.
+function placed_tags(out: str) -> [Placed]?
+    tags: [Placed] @ []
+
+    for row in strings.lines(out)
+        if strings.trimmed(row) == ""
+            continue
+        day = day_of(row)
+
+        if day.is_err() || row.len() < 12 || row[10] != ' '
+            return fail(code: "shape", msg: "`" + head_of(row) + "` does not open with a day as YYYY-MM-DD and a space")
+        name = strings.trimmed(row.slice(from: 11, to: row.len()))
+
+        if name == ""
+            return fail(code: "shape", msg: "`" + head_of(row) + "` names no tag after its day")
+        none: [str] = []
+        tags @ tags.push(Placed(name: name, day: day.must(), open: none))
+
+    return ok(tags)
+
+# The tags before the newest, each with the defect numbers open at it where an
+# `adjacent` item at the newest needs them (`Placed`). A tag whose tree has no
+# `docs/work/DEFECTS.md` held no item of it; any other failure to read is a
+# failure, never an empty list.
+function earlier_tags(scratch: str, text: str, tags: [Placed]) -> [Placed]?
+    latest: i64 @ 0
+
+    for region in open_regions(text)
+        item = classed(region.text)
+
+        if item.kind == "adjacent" && item.day > latest
+            latest @ item.day
+
+    before: [Placed] @ []
+    i: i64 @ 1
+
+    while i < tags.len()
+        tag = tags[i]
+        held: [str] @ []
+
+        if latest > 0 && tag.day <= latest
+            got = open_items_at(scratch: scratch, tag: tag.name, path: DEFECTS)
+            code = failure_code(got)
+
+            if code == ""
+                for row in got.must()
+                    n = defect_number(row)
+
+                    if n != ""
+                        held @ held.push(n)
+            else if code != "no_such_file"
+                return fail(code: code, msg: tag.name + ": " + failure_of(got))
+
+        before @ before.push(Placed(name: tag.name, day: tag.day, open: held))
+        i @ i + 1
+
+    return ok(before)
+
+# The open items of `text`, `docs/work/DEFECTS.md` at the tag `at`, that count
+# against it, `before` being every earlier tag. **Pure, so the tests below
+# drive it with lists and tags written for them**, the division `list_offences`
+# keeps for the same reason: a check nobody has watched fail is a check
+# nobody has watched.
+function counted_at(text: str, at: Placed, before: [Placed]) -> [Standing]
+    out: [Standing] @ []
+
+    for region in open_regions(text)
+        why = counts_because(item: classed(region.text), number: defect_number(region.head), at: at, before: before)
+
+        if why != ""
+            out @ out.push(Standing(row: region.head, why: why))
+
+    return out
+
+# Why one item counts against the tag `at`, or the empty string where it does
+# not. **The aging of `adjacent` asks the world twice**, and either answer
+# counts a tag: its day is later than the item's `**Class:` day, or the item
+# stood open at it. The second is what the rule's own word, *filed*, needs:
+# an item re-dated to a later day, or classed `adjacent` long after it was
+# filed, still counts every tag that stood over it; and a tag of the item's
+# own day counts only if it came after the filing, which only that tag's tree
+# can say. The tag judged counts by construction, since the item is open at it.
+function counts_because(item: Classed, number: str, at: Placed, before: [Placed]) -> str
+    if item.kind == "improvement"
+        return ""
+
+    if item.kind == ""
+        return "no class this check can read (" + item.complaints.join("; ") + "), and an item without one counts as `blocking`"
+
+    if item.kind != "adjacent"
+        return "`" + item.kind + "`"
+
+    if item.day > at.day
+        return "`adjacent`, classed " + day_text(item.day) + ", after " + at.name + "'s own day " + day_text(at.day) + ", which no item standing at it can be: it counts as `blocking`"
+    since: [str] @ [at.name]
+
+    for tag in before
+        if tag.day > item.day || holds(numbers: tag.open, number: number)
+            since @ since.push(tag.name)
+
+    if since.len() < AGED_AT
+        return ""
+
+    return "`adjacent`, classed " + day_text(item.day) + ", with " + since.len().to_str() + " tags placed since it was filed (" + since.join(" ") + "), the tag judged among them, and an `adjacent` item counts as `blocking` once " + AGED_AT.to_str() + " have been"
+
+function holds(numbers: [str], number: str) -> bool
+    if number == ""
+        return false
+
+    for one in numbers
+        if one == number
+            return true
+
+    return false
+
+# The message of a failed value, or the empty string where it holds one: what
+# `shell.complaint` is for a `Run?`, for any other fallible this check reads.
+function failure_of<T>(got: T?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# Its code, the empty string where it holds a value.
+function failure_code<T>(got: T?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.code
 
 # Whether `newest`'s own tree carried the strict rule. An error means the
 # executor could not be read there and is never read as either answer.
@@ -4027,8 +4223,13 @@ function head_of(row: str) -> str
 # that describes items it does not hold reads exactly like a list that lost one.
 #
 # Four accusations, and each is a shape one of the three files has been in.
+#
+# And a fifth, since 2026-10-02, for `DEFECTS.md` alone: every item carries
+# one class (`class_offences`), and the rule is printed once under the items
+# it refuses, so the message says what to write as well as where.
 function lists(@r: report.Report, present: [str])
     offenders: [str] @ []
+    unclassed: bool @ false
 
     for path in shell.both(first: [DECISIONS, DEFECTS], second: milestone_files(present))
         text = read_file(path)
@@ -4038,6 +4239,14 @@ function lists(@r: report.Report, present: [str])
         else
             for complaint in list_offences(text.must(), ticked_allowed: false)
                 offenders @ offenders.push("    " + path + ": " + complaint)
+
+            if path == DEFECTS
+                for complaint in class_offences(text.must())
+                    offenders @ offenders.push("    " + path + ": " + complaint)
+                    unclassed @ true
+
+    if unclassed
+        offenders @ offenders.push("    " + CLASS_RULE)
 
     for short in [DECISIONS, DEFECTS]
         body = read_file(short)
@@ -4232,6 +4441,309 @@ function count_stated(row: str) -> i64?
         return fail(code: "shape", msg: "the count is not closed")
     return strings.to_number(text: rest.slice(from: 0, to: end.must()))
 
+# THE CLASS OF A DEFECT, READ OFF ITS ITEM (the author's *D1a* of 2026-10-02,
+# `.claude/rules/verification.md` § Bounded discovery).
+#
+# An item of `docs/work/DEFECTS.md` states its class twice: its line ends
+# ` · **class: <name>**`, which is what a reader scanning the list sees, and
+# its body holds one line opening `**Class: <name>**, YYYY-MM-DD` with the
+# reason after the day (`.claude/rules/records.md` § The lists), which is
+# where the day `records/tagged` ages an `adjacent` item from lives. Two
+# places that state one fact are held to state the same one, or the second
+# becomes a place where a different truth lives.
+#
+# **Only `DEFECTS.md` is held to it**: a decision, a milestone's work and a
+# question carry no class, and `lists` asks this of that one file alone.
+constant CLASSES: [str]
+    [
+        "blocking"
+        "adjacent"
+        "systemic"
+        "improvement"
+    ]
+
+# The end of an item's line, before the name and its closing `**`.
+constant CLASS_TOKEN: str
+    " · **class: "
+
+# What opens the body's line. The bare `**Class:` is what is counted, so that
+# a line written `**Class:**`, or with no space, is one more line and not none.
+constant CLASS_LINE: str
+    "**Class:"
+
+# The rule in one line, printed under the items `records/lists` refuses.
+constant CLASS_RULE: str
+    "the class rule (.claude/rules/records.md § The lists): every item of docs/work/DEFECTS.md ends its line with ` · **class: <name>**` and holds one body line opening `**Class: <name>**, YYYY-MM-DD` and its reason, the same `<name>` in both, one of `blocking`, `adjacent`, `systemic` and `improvement`"
+
+# One open item of a list: the line it starts on, its `- [ ] ` line trimmed
+# as `open_items_at` gives it, and that line with the body under it.
+record Region
+    line: i64
+    head: str
+    text: str
+
+# What an item says about its class: the class it is held to, the day its
+# `**Class:` line names as the number YYYYMMDD, and every way the item departs
+# from the shape. **`kind` and `day` are empty unless `complaints` is**, so a
+# reader that asks only the class can never take a malformed item for a
+# classed one: `records/tagged` reads an empty `kind` as `blocking`.
+record Classed
+    kind: str
+    day: i64
+    complaints: [str]
+
+# Every open item of a list's text, wherever it stands: `open_items_at` reads
+# every `- [ ] ` line of the file and so does this, so the two agree on what a
+# tag stood over. A body runs to the next item, to a banner, or to a line at
+# column zero, the three things a body is not.
+function open_regions(text: str) -> [Region]
+    out: [Region] @ []
+    none: [str] = []
+    rows: [str] @ none
+    head: str @ ""
+    start: i64 @ 0
+    number: i64 @ 0
+
+    for row in strings.lines(text)
+        number @ number + 1
+        item = strings.starts_with(text: row, prefix: "- [")
+        column_zero = strings.trimmed(row) != "" && !strings.starts_with(text: row, prefix: "    ")
+
+        if rows.len() > 0 && (item || row == BANNER || column_zero)
+            out @ out.push(Region(line: start, head: head, text: rows.join("\n")))
+            rows @ none
+
+        if strings.starts_with(text: row, prefix: "- [ ] ")
+            head @ strings.trimmed(row)
+            start @ number
+            rows @ [row]
+        else if rows.len() > 0
+            rows @ rows.push(row)
+
+    if rows.len() > 0
+        out @ out.push(Region(line: start, head: head, text: rows.join("\n")))
+
+    return out
+
+# One item's class, from its line and its body (`Classed`).
+function classed(text: str) -> Classed
+    rows = strings.lines(text)
+    complaints: [str] @ []
+
+    if rows.len() == 0
+        return Classed(kind: "", day: 0, complaints: ["there is no item line"])
+    on_line = line_class(rows[0])
+
+    if on_line.is_err()
+        complaints @ complaints.push(failure_of(on_line))
+    marked: [i64] @ []
+    i: i64 @ 1
+
+    while i < rows.len()
+        if strings.starts_with(text: strings.trimmed(rows[i]), prefix: CLASS_LINE)
+            marked @ marked.push(i)
+        i @ i + 1
+
+    day: i64 @ 0
+
+    if marked.len() == 0
+        complaints @ complaints.push("its body holds no line opening `**Class: <name>**, YYYY-MM-DD` and its reason")
+    else if marked.len() > 1
+        complaints @ complaints.push(
+            "its body holds " + marked.len().to_str() + " lines opening `" + CLASS_LINE + "`, and an item carries exactly one"
+        )
+    else
+        stated = class_stated(rows: rows, at: marked[0])
+
+        if stated.is_err()
+            complaints @ complaints.push(failure_of(stated))
+        else if !on_line.is_err() && stated.must().kind != on_line.must()
+            complaints @ complaints.push(
+                "its line says `" + on_line.must() + "` and its `" + CLASS_LINE + "` line says `" + stated.must().kind + "`, and the two state one class"
+            )
+        else
+            day @ stated.must().day
+    none: [str] = []
+
+    if complaints.len() > 0
+        return Classed(kind: "", day: 0, complaints: complaints)
+
+    return Classed(kind: on_line.must(), day: day, complaints: none)
+
+# The class an item's line ends with, or why it ends with none this reads.
+# Trailing spaces are not content, as `scan_where` reads a rule.
+function line_class(row: str) -> str?
+    line = strings.trimmed(row)
+    tokens = strings.split_text(text: line, separator: "**class: ").len() - 1
+
+    if tokens == 0
+        return fail(code: "shape", msg: "its line does not end with ` · **class: <name>**`")
+
+    if tokens > 1
+        return fail(
+            code: "shape",
+            msg: "its line carries " + tokens.to_str() + " class tokens, and an item carries exactly one"
+        )
+    at = strings.index_of(text: line, needle: CLASS_TOKEN)
+
+    if at.is_err()
+        return fail(code: "shape", msg: "its class token is not set off by ` · `, as ` · **class: <name>**` spells it")
+    rest = line.slice(from: at.must() + CLASS_TOKEN.len(), to: line.len())
+    name = strings.without_suffix(text: rest, suffix: "**")
+
+    if !strings.ends_with(text: rest, suffix: "**") || strings.contains(text: name, needle: "**")
+        return fail(code: "shape", msg: "its class token is not the end of its line")
+
+    if !is_class(name)
+        return fail(
+            code: "shape",
+            msg: "its line names the class `" + name + "`, and the classes are " + classes_told()
+        )
+
+    return ok(name)
+
+# The body's `**Class:` line at `rows[at]`, as a `Classed` with nothing to
+# complain of, or why it does not read `**Class: <name>**, YYYY-MM-DD` and a
+# reason. The reason may run on to the lines below, to its paragraph's end.
+function class_stated(rows: [str], at: i64) -> Classed?
+    row = strings.trimmed(rows[at])
+    opening = CLASS_LINE + " "
+
+    if !strings.starts_with(text: row, prefix: opening)
+        return fail(code: "shape", msg: "its `" + CLASS_LINE + "` line does not open `**Class: <name>**`")
+    rest = strings.without_prefix(text: row, prefix: opening)
+    close = strings.index_of(text: rest, needle: "**")
+
+    if close.is_err()
+        return fail(code: "shape", msg: "its `" + CLASS_LINE + "` line never closes the bold around its class")
+    name = rest.slice(from: 0, to: close.must())
+
+    if !is_class(name)
+        return fail(
+            code: "shape",
+            msg: "its `" + CLASS_LINE + "` line names `" + name + "`, and the classes are " + classes_told()
+        )
+    after = rest.slice(from: close.must() + 2, to: rest.len())
+
+    if !strings.starts_with(text: after, prefix: ", ")
+        return fail(
+            code: "shape",
+            msg: "its `**Class: " + name + "**` is not followed by `, YYYY-MM-DD`, the day it was classed"
+        )
+    dated = strings.without_prefix(text: after, prefix: ", ")
+    day = day_of(dated)
+
+    if day.is_err()
+        return fail(
+            code: "shape",
+            msg: "its `" + CLASS_LINE + "` line gives no day after its class: " + failure_of(day)
+        )
+
+    # `day_of` read the first ten bytes as ASCII, so the eleventh starts a
+    # character and the cut is safe.
+    reason: str @ dated.slice(from: 10, to: dated.len())
+    next: i64 @ at + 1
+
+    while next < rows.len() && strings.trimmed(rows[next]) != ""
+        reason @ reason + " " + rows[next]
+        next @ next + 1
+
+    if !has_letter(reason)
+        return fail(code: "shape", msg: "its `" + CLASS_LINE + "` line gives its day and no reason after it")
+    none: [str] = []
+
+    return ok(Classed(kind: name, day: day.must(), complaints: none))
+
+function is_class(name: str) -> bool
+    for one in CLASSES
+        if one == name
+            return true
+
+    return false
+
+function classes_told() -> str
+    return "`" + CLASSES.join("`, `") + "`"
+
+function has_letter(text: str) -> bool
+    i: i64 @ 0
+
+    while i < text.len()
+        byte = text[i]
+
+        if byte >= 'a' && byte <= 'z' || byte >= 'A' && byte <= 'Z'
+            return true
+        i @ i + 1
+
+    return false
+
+# A day written YYYY-MM-DD at the start of `text`, as the number YYYYMMDD, so
+# that two days compare as numbers do (spec § 7 Operators: `<` takes a number
+# only). The ten bytes are read by index and never sliced, so a character of
+# several bytes among them is a refusal rather than an abort, and an eleventh
+# digit is refused, or `2026-10-021` would read as the second of October.
+function day_of(text: str) -> i64?
+    wrong = "`" + head_of(text) + "` does not open with a day written YYYY-MM-DD"
+
+    if text.len() < 10
+        return fail(code: "shape", msg: wrong)
+    digits: i64 @ 0
+    i: i64 @ 0
+
+    while i < 10
+        byte = text[i]
+
+        if i == 4 || i == 7
+            if byte != '-'
+                return fail(code: "shape", msg: wrong)
+        else if byte < '0' || byte > '9'
+            return fail(code: "shape", msg: wrong)
+        else
+            digits @ digits * 10 + (byte - '0').to_i64().must()
+        i @ i + 1
+
+    if text.len() > 10 && text[10] >= '0' && text[10] <= '9'
+        return fail(code: "shape", msg: wrong)
+    year = digits / 10000
+    month = digits / 100 % 100
+    day = digits % 100
+
+    if month < 1 || month > 12 || day < 1 || day > days_in(year: year, month: month)
+        return fail(code: "shape", msg: "`" + head_of(text) + "` names no day of the calendar")
+
+    return ok(digits)
+
+function days_in(year: i64, month: i64) -> i64
+    if month == 2
+        if year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
+            return 29
+        return 28
+
+    if month == 4 || month == 6 || month == 9 || month == 11
+        return 30
+
+    return 31
+
+# YYYYMMDD written back as YYYY-MM-DD, for a message.
+function day_text(day: i64) -> str
+    return (day / 10000).to_str() + "-" + padded_two(day / 100 % 100) + "-" + padded_two(day % 100)
+
+function padded_two(n: i64) -> str
+    if n < 10
+        return "0" + n.to_str()
+
+    return n.to_str()
+
+# Every way the open items of `docs/work/DEFECTS.md` depart from the class
+# rule, one complaint per departure, each naming its item by line and head.
+function class_offences(text: str) -> [str]
+    out: [str] @ []
+
+    for region in open_regions(text)
+        for complaint in classed(region.text).complaints
+            out @ out.push("line " + region.line.to_str() + ": " + head_of(region.head) + ": " + complaint)
+
+    return out
+
 test "a live list in the shape its preamble states has nothing to complain about"
     good = "# T\n\nprose, above the banner, is the rules\n\n" + BANNER + "\n**OPEN: 1**\n\n- [ ] **M-x** | a thing | somewhere\n\n    **Origin:** 2026-09-07.\n\n" + BANNER + "\n"
     assert list_offences(good, ticked_allowed: false).len() == 0
@@ -4335,6 +4847,186 @@ test "prose at column zero between the banners is refused and an indented body i
     assert list_offences(bodied, ticked_allowed: false).len() == 0
     loose = BANNER + "\n**OPEN: 1**\n\n- [ ] **M-x** | a thing | somewhere\n\nAnd this paragraph is not indented.\n\n" + BANNER + "\n"
     assert strings.contains(text: list_offences(loose, ticked_allowed: false)[0], needle: "prose between the banners")
+
+# A one-item `docs/work/DEFECTS.md` for the tests below: the banners, the
+# count, the item's line, and its body indented as the file writes it. The
+# ` — ` after the number is the list's own format, which `defect_number` reads.
+function one_defect(head: str, body: [str]) -> str
+    rows: [str] @ [BANNER, "**OPEN: 1**", "", head]
+
+    for line in body
+        if line == ""
+            rows @ rows.push("")
+        else
+            rows @ rows.push("    " + line)
+
+    rows @ rows.push("")
+    rows @ rows.push(BANNER)
+    return rows.join("\n") + "\n"
+
+# What `class_offences` says of a list when it says exactly one thing, and the
+# empty string otherwise, which contains no needle: a test that expects one
+# complaint fails on two as it fails on none.
+function only_complaint(text: str) -> str
+    said = class_offences(text)
+
+    if said.len() != 1
+        return ""
+
+    return said[0]
+
+test "an item of the defect list states one class on its line and the same in its body"
+    filed = [
+        ""
+        "**Origin:** a lane, 2026-10-02."
+        ""
+        "**Class: adjacent**, 2026-10-02 (the rule): a second message for one"
+        "mistake, found beside the work."
+    ]
+    good = one_defect(
+        head: "- [ ] **161 — a second message for one mistake** | what | where · **class: adjacent**",
+        body: filed
+    )
+    assert class_offences(good).len() == 0
+    assert list_offences(good, ticked_allowed: false).len() == 0
+    item = classed(open_regions(good)[0].text)
+    assert item.kind == "adjacent"
+    assert item.day == 20261002
+
+    # Each of the four is a class, and trailing spaces are not a line's content.
+    for kind in CLASSES
+        spaced = one_defect(
+            head: "- [ ] **162 — x** | a | b · **class: " + kind + "**  ",
+            body: ["", "**Class: " + kind + "**, 2026-10-02, a reason."]
+        )
+        assert class_offences(spaced).len() == 0
+
+    # The reason may run on below its day, to its paragraph's end.
+    run_on = one_defect(
+        head: "- [ ] **163 — x** | a | b · **class: blocking**",
+        body: ["", "**Class: blocking**, 2026-10-02 (", "a crash at exit 0)."]
+    )
+    assert class_offences(run_on).len() == 0
+
+test "an item with no class on its line, two, a fifth, or one out of place is refused by name"
+    body = ["", "**Class: blocking**, 2026-10-02, a crash."]
+
+    # No token, and the token spelt with the body's capital, which is not the
+    # line's spelling. The complaint names the item by its line and its head.
+    bare = one_defect(head: "- [ ] **164 — x** | a | b", body: body)
+    assert strings.contains(text: only_complaint(bare), needle: "does not end with ` · **class: <name>**`")
+    assert strings.starts_with(text: only_complaint(bare), prefix: "line 4: - [ ] **164 — x**")
+    capital = one_defect(head: "- [ ] **164 — x** | a | b · **Class: blocking**", body: body)
+    assert strings.contains(text: only_complaint(capital), needle: "does not end with")
+
+    # Two tokens, a fifth class and an empty one.
+    two = one_defect(head: "- [ ] **164 — x** | a | b · **class: blocking** · **class: adjacent**", body: body)
+    assert strings.contains(text: only_complaint(two), needle: "carries 2 class tokens")
+    fifth = one_defect(head: "- [ ] **164 — x** | a | b · **class: blocker**", body: body)
+    assert strings.contains(text: only_complaint(fifth), needle: "names the class `blocker`")
+    empty = one_defect(head: "- [ ] **164 — x** | a | b · **class: **", body: body)
+    assert strings.contains(text: only_complaint(empty), needle: "names the class ``")
+
+    # Out of place: before the bar rather than at the end, and not set off.
+    inside = one_defect(head: "- [ ] **164 — x** · **class: blocking** | a | b", body: body)
+    assert strings.contains(text: only_complaint(inside), needle: "not the end of its line")
+    unset = one_defect(head: "- [ ] **164 — x** | a | b **class: blocking**", body: body)
+    assert strings.contains(text: only_complaint(unset), needle: "not set off by ` · `")
+
+test "an item's body states its class once, with its day and its reason, and agrees with its line"
+    head = "- [ ] **165 — x** | a | b · **class: blocking**"
+    silent = one_defect(head: head, body: ["", "**Origin:** a lane, 2026-10-02."])
+    assert strings.contains(text: only_complaint(silent), needle: "its body holds no line opening")
+    twice = one_defect(
+        head: head,
+        body: ["", "**Class: blocking**, 2026-10-02, a crash.", "", "**Class: blocking**, 2026-10-03, again."]
+    )
+    assert strings.contains(text: only_complaint(twice), needle: "holds 2 lines opening `**Class:`")
+
+    # The spelling the rule names loosely, `**Class:**`, is a line and a wrong one.
+    unspaced = one_defect(head: head, body: ["", "**Class:** blocking, 2026-10-02, a crash."])
+    assert strings.contains(text: only_complaint(unspaced), needle: "does not open `**Class: <name>**`")
+    fifth = one_defect(head: head, body: ["", "**Class: urgent**, 2026-10-02, a crash."])
+    assert strings.contains(text: only_complaint(fifth), needle: "line names `urgent`")
+    other = one_defect(head: head, body: ["", "**Class: adjacent**, 2026-10-02, a second message."])
+    assert strings.contains(
+        text: only_complaint(other),
+        needle: "its line says `blocking` and its `**Class:` line says `adjacent`"
+    )
+
+    # A malformed item is held to no class and no day, so nothing downstream
+    # can read it as the weaker of the two it states.
+    split = classed(open_regions(other)[0].text)
+    assert split.kind == ""
+    assert split.day == 0
+    undated = one_defect(head: head, body: ["", "**Class: blocking**: a crash."])
+    assert strings.contains(text: only_complaint(undated), needle: "is not followed by `, YYYY-MM-DD`")
+    days = [
+        "2026-10-2, a crash."
+        "02-10-2026, a crash."
+        "2026-13-02, a crash."
+        "2026-02-30, a crash."
+        "2026-10-021, a crash."
+        "2026·10-02, a crash."
+    ]
+
+    for day in days
+        misdated = one_defect(head: head, body: ["", "**Class: blocking**, " + day])
+        assert strings.contains(text: only_complaint(misdated), needle: "gives no day after its class")
+
+    unreasoned = one_defect(head: head, body: ["", "**Class: blocking**, 2026-10-02."])
+    assert strings.contains(text: only_complaint(unreasoned), needle: "gives its day and no reason")
+
+    # A sentence that names the spelling is not a second line of it.
+    naming = one_defect(
+        head: head,
+        body: ["", "**Class: blocking**, 2026-10-02, a crash.", "", "and the `**Class:` line above says so."]
+    )
+    assert class_offences(naming).len() == 0
+
+test "an open item's body runs to the next item, a banner or a line at column zero"
+    rows = [
+        BANNER
+        "**OPEN: 2**"
+        ""
+        "- [ ] **166 — a** | x | y · **class: blocking**"
+        ""
+        "    **Class: blocking**, 2026-10-02, a crash."
+        ""
+        "- [ ] **167 — b** | x | y · **class: blocking**"
+        ""
+        "    the body of b"
+        "loose prose"
+        "    **Class: blocking**, 2026-10-02, under the prose."
+        BANNER
+    ]
+    regions = open_regions(rows.join("\n"))
+    assert regions.len() == 2
+    assert regions[0].line == 4
+    assert regions[1].line == 8
+    assert strings.contains(text: regions[0].text, needle: "a crash")
+    assert !strings.contains(text: regions[0].text, needle: "167")
+
+    # The line under the loose prose belongs to no item, so `b` states none.
+    assert !strings.contains(text: regions[1].text, needle: "under the prose")
+    assert classed(regions[1].text).kind == ""
+
+test "a day is YYYY-MM-DD of the calendar, read without a slice"
+    assert day_of("2026-10-02").must() == 20261002
+    assert day_of("2026-10-02 (the rule)").must() == 20261002
+    assert day_of("2024-02-29").must() == 20240229
+    assert day_of("2026-02-29").is_err()
+    assert day_of("2026-04-31").is_err()
+    assert day_of("2026-10-00").is_err()
+    assert day_of("2026-00-10").is_err()
+    assert day_of("2026-10-2").is_err()
+    assert day_of("2026-10-021").is_err()
+
+    # A character of two bytes where a dash belongs is a refusal, never the
+    # abort a slice through it would be.
+    assert day_of("2026·10-02").is_err()
+    assert day_text(20261002) == "2026-10-02"
+    assert day_text(20260101) == "2026-01-01"
 
 test "the record holds no open item, and it is fenced at the top only"
     good = "# DONE\n\nthe rules\n\n" + BANNER + "\n**THE RECORD BEGINS HERE**\n\n- [x] a thing | done | here\n"
@@ -5136,3 +5828,129 @@ test "a carried defect is excused at its tag only where its own item says so"
     ]
     silent = elsewhere.join("\n")
     assert tag_is_carried(tag: "m-carrying", open_rows: both, text: silent, present: logs, rows: table) != ""
+
+# A `docs/work/DEFECTS.md` holding exactly these items, for the tag tests below.
+function defects_holding(items: [str]) -> str
+    rows: [str] @ [BANNER, "**OPEN: " + items.len().to_str() + "**", ""]
+
+    for item in items
+        rows @ rows.push(item)
+        rows @ rows.push("")
+
+    rows @ rows.push(BANNER)
+    return rows.join("\n") + "\n"
+
+# One item in the list's shape, its class on its line and in its body.
+function defect_item(number: str, kind: str, day: str) -> str
+    return "- [ ] **" + number + " — a defect** | what | where · **class: " + kind + "**\n\n    **Class: " + kind + "**, " + day + ", its reason."
+
+# THE PROOF THAT A ROUND CAN NOW END WHILE ADJACENT ITEMS STAND (the author's
+# *D3a*, `.claude/rules/verification.md` § Bounded discovery). Each tag here is
+# written for the test, so its day is the test's and not the repository's.
+test "a tag stands over young adjacent items and improvements, and over no blocking or systemic one"
+    none: [str] = []
+    no_tags: [Placed] = []
+    judged = Placed(name: "m-judged", day: 20261009, open: none)
+    earlier = [Placed(name: "m-earlier", day: 20260928, open: ["129"])]
+    standing = [
+        defect_item(number: "161", kind: "adjacent", day: "2026-10-02")
+        defect_item(number: "162", kind: "adjacent", day: "2026-10-05")
+        defect_item(number: "163", kind: "improvement", day: "2026-10-02")
+    ]
+    young = defects_holding(standing)
+    assert counted_at(text: young, at: judged, before: earlier).len() == 0
+    assert counted_at(text: young, at: judged, before: no_tags).len() == 0
+
+    # One `blocking` among them counts, and so does one `systemic`, alone.
+    blocking = defects_holding(standing.push(defect_item(number: "164", kind: "blocking", day: "2026-10-02")))
+    told = counted_at(text: blocking, at: judged, before: earlier)
+    assert told.len() == 1
+    assert strings.starts_with(text: told[0].row, prefix: "- [ ] **164 — ")
+    assert told[0].why == "`blocking`"
+    systemic = defects_holding(standing.push(defect_item(number: "165", kind: "systemic", day: "2026-10-02")))
+    held = counted_at(text: systemic, at: judged, before: earlier)
+    assert held.len() == 1
+    assert held[0].why == "`systemic`"
+
+test "an adjacent item counts as blocking from the second tag placed since it was filed"
+    none: [str] = []
+    no_tags: [Placed] = []
+    item = defects_holding([defect_item(number: "161", kind: "adjacent", day: "2026-10-02")])
+    judged = Placed(name: "m-judged", day: 20261009, open: none)
+
+    # A tag of a later day than the item's was placed since it was filed.
+    later = [Placed(name: "m-between", day: 20261005, open: none)]
+    aged = counted_at(text: item, at: judged, before: later)
+    assert aged.len() == 1
+    assert strings.contains(text: aged[0].why, needle: "2 tags placed since it was filed (m-judged m-between)")
+
+    # A tag of its own day counts only where the item stood open at it: the
+    # morning's tag, placed before the filing, does not; the evening's does.
+    morning = [Placed(name: "m-morning", day: 20261002, open: ["129"])]
+    assert counted_at(text: item, at: judged, before: morning).len() == 0
+    evening = [Placed(name: "m-evening", day: 20261002, open: ["129", "161"])]
+    assert counted_at(text: item, at: judged, before: evening).len() == 1
+
+    # Re-dated, or classed `adjacent` long after it was filed: a tag it stood
+    # open at counts whatever day its line names, the rule's word being *filed*.
+    redated = [Placed(name: "m-earlier", day: 20260928, open: ["161"])]
+    assert counted_at(text: item, at: judged, before: redated).len() == 1
+
+    # Classed after the judged tag's own day, which no item at that tag can be.
+    early = Placed(name: "m-early", day: 20261001, open: none)
+    future = counted_at(text: item, at: early, before: no_tags)
+    assert future.len() == 1
+    assert strings.contains(text: future[0].why, needle: "after m-early's own day 2026-10-01")
+
+test "an item without a class at a tag counts as blocking, and the excuses read only what counts"
+    none: [str] = []
+    no_tags: [Placed] = []
+    tag = Placed(name: "m-carrying", day: 20260928, open: none)
+
+    # Every tag before 2026-10-02 was placed over items in this shape.
+    old = defects_holding(["- [ ] **129 — a minus alone** | x | y", "- [ ] **130 — a skipped statement** | x | y"])
+    standing = counted_at(text: old, at: tag, before: no_tags)
+    assert standing.len() == 2
+    assert strings.contains(text: standing[0].why, needle: "no class this check can read")
+    assert strings.contains(text: standing[0].why, needle: "counts as `blocking`")
+
+    # A class this cannot read is no class: two tokens, and `adjacent` with them.
+    twice = "- [ ] **161 — x** | a | b · **class: adjacent** · **class: improvement**"
+    doubled = defects_holding([twice + "\n\n    **Class: adjacent**, 2026-10-02, a reason."])
+    judged = Placed(name: "m-judged", day: 20261009, open: none)
+    assert counted_at(text: doubled, at: judged, before: no_tags).len() == 1
+
+    # The carried pair of the test above with a young `adjacent` item beside
+    # it: the row names the two that count and still carries them, because an
+    # item a tag may stand over needs no excuse.
+    entry = "2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md"
+    table = ["m-carrying | 2026-09-28 | 129 130 | " + entry]
+    logs = ["docs/records/log/" + entry]
+    carried = "\n\n    **Carried to the next milestone**, by the author's instruction of\n    2026-09-28 16:40 (`docs/records/log/" + entry + "`)."
+    pair_and_one = [
+        "- [ ] **129 — a minus alone** | x | y" + carried
+        "- [ ] **130 — a skipped statement** | x | y" + carried
+        defect_item(number: "161", kind: "adjacent", day: "2026-09-27")
+    ]
+    list_then = defects_holding(pair_and_one)
+    rows: [str] @ []
+
+    for one in counted_at(text: list_then, at: tag, before: no_tags)
+        rows @ rows.push(one.row)
+
+    assert rows.len() == 2
+    assert tag_is_carried(tag: "m-carrying", open_rows: rows, text: list_then, present: logs, rows: table) == ""
+
+test "the tags are read with their days, newest first, and a row that has none fails the listing"
+    got = placed_tags("2026-09-28 m-agreed-retention\n2026-09-21 m-declared-extents\n")
+    assert got.must().len() == 2
+    assert got.must()[0].name == "m-agreed-retention"
+    assert got.must()[0].day == 20260928
+    assert got.must()[1].day == 20260921
+    assert placed_tags("").must().len() == 0
+
+    # A tag left out ages nothing, so a row this cannot read is a failure.
+    assert placed_tags("m-agreed-retention\n").is_err()
+    assert placed_tags("2026-09-28\n").is_err()
+    assert placed_tags("2026-09-28 \n").is_err()
+    assert placed_tags("2026-9-28 m-agreed-retention\n").is_err()
