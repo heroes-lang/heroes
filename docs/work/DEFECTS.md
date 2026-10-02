@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 9**
+**OPEN: 10**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -595,5 +595,22 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     note sends the author to a `ptr` and C functions for a union the
     language binds; the refusal itself, of a TAGGED union where a typedef'd
     one binds, is the question panel 186's R9 leaves open with it.
+
+- [ ] **158 — a group's header that includes a header this machine lacks stops `build` with an internal error and clang's text** | `extern "outer.h"` over a header holding `#include <no_such_header_here.h>`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: In file included from ...: ./outer.h:2:10: fatal error: 'no_such_header_here.h' file not found*, where a missing header the group names itself is told `ffi_missing_header` at exit 1 | `selfhost/emit/ffi_build.hero` (where `ffi_missing_header` is told) · `tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero`, red on the Windows box
+
+    **Origin:** the coordinator, 2026-10-02 at 15:55, reading the Windows
+    box's pre-push leg on `2bb45a96` (16 of 19 suites green; `run`,
+    `emission` and `determinism` each 1 failed, all on lane ffi-macro's new
+    run case, whose header includes `sys/wait.h` and `sys/select.h`, absent
+    on Windows), then reproduced on this Mac at 15:57 on the trunk at
+    `4d0f27a1` (`docs/panel/186-briefs/probes/coordinator/nested.hero` and
+    `outer.h`).
+
+    **Why it is a defect.** Exit 2 is the compiler blaming itself for the
+    machine's fact (`.claude/rules/c-boundary.md`), and clang's text reaches
+    the author; the run suite skips a case only on `ffi_missing_header`
+    (`tests/harness/shell.hero`'s `machine_lacks_the_library`), so the same
+    fact also turns a platform's correct skip into a red that would reach
+    the CI's Windows leg at the next push.
 
 *******************************************************************************
