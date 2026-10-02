@@ -1,0 +1,48 @@
+# Fixed 2026-10-02, defect 130's class, lane recovery-b8 (lane recovery-b6's
+# first-pass shapes `d01_use_junk` and `d04_extern_member_junk`, and the heads
+# beside them). Symptom: a line at the top level or in an `extern` group that
+# failed past what it declares, `use geom )` or a member `function f() -> i64
+# )`, took the block below it with its recovery, unsaid: under a `use` the
+# orphan block that `use geom` alone over it names, under a member the body
+# the same member alone over it names `extern_has_body`. So did `use "geom"`,
+# `use` alone and `extern )` over their blocks, and `import geom )`. Cause:
+# the recovery after such a line went on to the next declaration, the block
+# below it included. Now only the line goes: the block under a `use`, which
+# opens none, is named and read as any orphan at the top level is; the block
+# under a member read whole on its line is that member's body; and the
+# signatures under an `extern` whose header is junk are read.
+
+use geom )  #~ expected_declaration
+    y = 4 )  #~ expected_declaration expected_end_of_line
+
+use geom as g x  #~ expected_declaration
+    y = 4  #~ expected_declaration
+
+use "geom" )  #~ use_wants_a_name expected_declaration
+    y = 4  #~ expected_declaration
+
+use "shapes"  #~ use_wants_a_name
+    y = 4  #~ expected_declaration
+
+use  #~ expected_module_name
+    y = 4  #~ expected_declaration
+
+import geom )  #~ reserved_word expected_declaration
+    y = 4  #~ expected_declaration
+
+extern "m.h"
+    function f() -> i64 )  #~ expected_extern_signature
+        return 1  #~ extern_has_body
+    constant K: i64 x  #~ expected_extern_signature
+        1  #~ extern_has_body
+    fn g() -> i64 )  #~ reserved_word expected_extern_signature
+        return 2  #~ extern_has_body
+    function h() -> i64 )  #~ expected_extern_signature
+
+extern )  #~ expected_extern_header
+    function q() -> i64 )  #~ expected_extern_signature
+    record R )  #~ expected_end_of_line
+        x: i32
+
+function main()
+    print(1)
