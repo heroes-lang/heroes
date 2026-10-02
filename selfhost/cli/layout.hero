@@ -148,8 +148,15 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
 
 # From what the screen said: the records it could not vouch for, their
 # layout (kept under the digest of the unit that asked for it), and the
-# check unit that layout gives.
+# check unit that layout gives. A record named after a typedef whose type
+# has no layout is refused first, by the screen's own two answers, unless
+# clang erred outside the screen too: then the headers did not compile
+# alone, and the program's own compile says so on the author's line.
 function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -> ()?
+    opaque = layout_screen.no_layout(said, wanted: wanted)
+
+    if opaque.len() > 0 && !layout_screen.strays(said)
+        return refused_opaque(a, opaque: opaque)
     flagged = layout_screen.flagged(said)
     dumped: [layout_text.Asked] @ []
 
@@ -180,6 +187,46 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
             publish.write_whole(path: kept_path, text: made.must(), keyed: true)?
     text = layout_check.check_unit(a.headers, dump: rows, wanted: dumped, s: a.s, decls: a.decls, u: a.u, c: a.c)?
     return judged(a, sum: sum, text: text)
+
+# **A record named after a typedef whose type has no layout, refused here,
+# before any unit compiles** (defect 191, 2026-10-02): the screen's two
+# questions said where clang erred, which is the verdict, and the type behind
+# the name is read from clang's JSON over `layout_screen.type_unit`, which is
+# only its text. Until then such a record met clang first at the unit's field
+# assertions, and the reader of that refusal found the record only by the
+# typedef's name in clang's words, written by clang 21 and not by clang 18:
+# the public CI's Linux leg stopped at exit 2. Each line is the marker
+# `emit/ffi_incomplete.hero` reads into `ffi_unknown_tag`; a JSON that names
+# no type leaves the type unsaid, never the refusal.
+function refused_opaque(a: Asking, opaque: [layout_text.Asked]) -> ()?
+    text = layout_screen.type_unit(a.headers, wanted: opaque)
+    process.mkdir_all(a.dir)?
+    unit = pointee.unit_path(dir: a.dir, stem: "type", text: text)
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    out_path = publish.private_name(a.dir + "/type.json")
+    line: [str] @ [
+        "clang"
+        "-fsyntax-only"
+        "-Xclang"
+        "-ast-dump=json"
+        "-Xclang"
+        "-ast-dump-filter=" + layout_screen.TYPED
+    ]
+    line @ searched(a, line: line)
+    line @ line.push(unit)
+    ran = process.run(program: "clang", words: line, out: out_path, err: process.discard())
+    json = read_file(out_path)
+    publish.discard(out_path)
+    said: [str] @ []
+
+    for one in opaque
+        behind: str @ ""
+
+        if ran.started && ran.code == 0 && !json.is_err()
+            behind @ layout_screen.behind_of(json.must(), decl: one.decl).default("")
+        said @ said.push(layout_screen.NO_LAYOUT + " " + source.span_text(a.s, a.decls[one.decl].name) + " " + behind)
+
+    return fail(code: "clang", msg: said.join("\n") + "\n")
 
 # clang's record-layout dump for the unit, or absent when it did not compile.
 function dump(a: Asking, dump_text: str) -> str?
@@ -380,6 +427,49 @@ test "the layout check asks each directory's own header, and one that appears ea
     assert !write_file(path: inc + "/xy.h", text: "#include <stdint.h>\ntypedef struct { int32_t x; int32_t y; } XY;\n").is_err()
     shadowed = check(t, low.program, c, s, parsed.decls, probe: probing(t, low.program, s, parsed.decls, under: under))
     assert layout_rows.byte_index(text: pointee.failure_text(shadowed), needle: "heroes-ffi-missing XY y") > 0
+
+# **A record named after a typedef whose type has no layout is refused by
+# the layout check itself, on the screen's two positions** (defect 191). A
+# typedef of an opaque struct and one of `void` are refused naming the type
+# behind them, which clang's JSON gave; a typedef of a whole struct is not;
+# and a record with a tag over the opaque struct is left to the unit's
+# readers, which read what the header spells. Measured before this repair:
+# the check said nothing of the first two, and the unit's field assertions
+# met them, worded apart by clang 18 and 21.
+test "the layout check refuses a record named after a typedef with no layout, naming the type behind it (defect 191)"
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-layout-opaque"
+    headers_at = "build/selftest-layout-opaque-include"
+    assert !process.remove_tree(t.build).is_err()
+    assert !process.mkdir_all(headers_at).is_err()
+    header = "#include <stdint.h>\ntypedef struct opaque_s opaque_t;\ntypedef void void_t;\ntypedef struct { int32_t a; } whole_t;\n"
+    assert !write_file(path: headers_at + "/op.h", text: header).is_err()
+    none: [str] = []
+
+    for named in ["opaque_t", "void_t", "whole_t", "Tagged tag opaque_s"]
+        text = "extern \"op.h\"\n    record " + named + "\n        a: i32\n\nfunction main()\n    print(1)\n"
+        parsed = parse.parse(text)
+        s = source.new_source(name: "t.hero", text: text)
+        out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+        c = checker.check(parsed.tree, out, s, parsed.decls)
+        assert c.diagnostics.len() == 0
+        low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+        under = compiling.Compiling(
+            search_include: [headers_at],
+            package_flags: none,
+            runtime: t.runtime,
+            source_dir: ""
+        )
+        said = pointee.failure_text(
+            check(t, low.program, c, s, parsed.decls, probe: probing(t, low.program, s, parsed.decls, under: under))
+        )
+
+        if named == "opaque_t"
+            assert said == layout_screen.NO_LAYOUT + " opaque_t struct opaque_s\n"
+        else if named == "void_t"
+            assert said == layout_screen.NO_LAYOUT + " void_t void\n"
+        else
+            assert layout_rows.byte_index(text: said, needle: layout_screen.NO_LAYOUT) < 0
 
 # **A member with no bytes is complete only where C says it has none**
 # (panel 186 R4; defect 151, the Windows box's pre-push leg, 2026-10-02). An

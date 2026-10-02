@@ -1,0 +1,6 @@
+error[ffi_unknown_tag]: `void191_t` is `void` in `fixedbugs-191-types.h`, and the header gives it no fields — clang read the header and cannot lay the type out
+  at tests/golden/unsupported/fixedbugs-191-a-void-typedef-record-with-fields.hero:11:12
+     |
+  11 |     record void191_t  #~ ffi_unknown_tag
+     |            ^^^^^^^^^
+  note: the header keeps the type opaque: a program never holds one by value, only C's pointer to it, which is a HANDLE. Drop the field block and give the record the typedef as its tag, `record void191_t tag void191_t` (§ 13)
