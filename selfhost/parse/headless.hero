@@ -54,7 +54,7 @@
 # A leaf below the knot: the statement reader is `grammar_expr`'s, which
 # reads this module, so a body is left to the caller (`read_below`, `Left`).
 # Its caller is `grammar_expr.under`, which `grammar_expr.finish` and
-# `parse/decl.unexpected_top_level` call; and `grammar_expr.hanging` asks
+# `parse/top_level.unexpected` call; and `grammar_expr.hanging` asks
 # `arms_below` whether a block is arms.
 
 use token
