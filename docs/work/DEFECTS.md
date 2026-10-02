@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 11**
+**OPEN: 12**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -684,5 +684,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a `certain` fix that
     writes a program meaning something else.
+
+- [ ] **160 — a package whose `.pc` gives `-F <dir>` is refused, its flag read joined as `-F<dir>`, while the note says `-F` is accepted** | `extern "Fake/fake.h" package "fakefw"` over a `.pc` with `Cflags: -F ${pcfiledir}/../frameworks`: `pkg-config --cflags` prints `-F/<dir>`, and `build` exit 1, `ffi_package`, *answered with `-F/...`, which this compiler does not pass on*, its note listing `-F` among the flags accepted | `selfhost/cli/libraries.hero` (`filter_words`, which takes `-F` only as two words) · **class: blocking**
+
+    **Origin:** lane h158, 2026-10-02, measuring framework headers for
+    defect 158 (`scratchpad/lane-h158/shapes/fw/`); reproduced by the
+    coordinator at 17:25 on the trunk at `545e0044`
+    (`docs/panel/186-briefs/probes/coordinator/fw/`, run with
+    `PKG_CONFIG_PATH=<that>/pc`).
+
+    **Why it is a defect.** A correct package is refused and the message
+    contradicts itself (design.md §4.17); macOS frameworks reach a program
+    only through `-F`.
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): a correct program refused, with a false note.
 
 *******************************************************************************
