@@ -20,7 +20,38 @@
 # push that touches `selfhost/print/` (`.claude/rules/verification.md`). Its
 # directories are the ones a `fmt` row of `suite_surface.hero` reads, and
 # the row checks that the report names each, so a formatter fixture added
-# there and not to the probe's default is red here.
+# there and not to the probe's default is red here. It stays ONE
+# invocation, and defect 155's repair measured why (2026-10-02): its stride
+# is counted across the run, so its files probed one at a time at
+# `--stride 2` judge other variants, of which 3382 `bracket` and 696
+# `paren` parse, under the floors of 3395 and 703, and a floor is never
+# lowered. It read 48.59 s of user time that day, 40% of the watchdog.
+#
+# A TREE ROW PROBES ITS FILES ONE AT A TIME (defect 155's second half,
+# 2026-10-02). The harness stops any one program at 120 s of wall
+# (`shell.WATCHDOG_SECONDS`), and `heroes probe selfhost --family multi` in
+# one invocation measured 97.50 s of user time on this Mac (real 104.34, a
+# busy machine, the gate's unoptimised compiler) and was stopped at exit 124
+# on the CI's Linux arm64 runner (run 36987357726), as it had been in the
+# Linux x86-64 container and in the batch gates' parallel passes since
+# 2026-10-01; `tests` read 46.81 s and `examples` 14.39 s. A row's cost is
+# its tree's lines, between 0.4 and 1.5 ms each in the files measured, so
+# every file added brought the limit closer. So a tree row runs `heroes
+# probe <file> --family multi` once for each `.hero` file under its root:
+# one invocation costs one file, the longest, `suite_records.hero` at 5,138
+# lines, 5.87 s, whatever the tree holds, and every seed is still judged.
+# The row sums what its files report and holds the sums to its floors. What
+# it costs, in instructions retired, which a busy machine's cores do not
+# move as they move its user time: 1470.84 billion for the three tree rows
+# file by file with their censuses, against 1412.72 billion in one
+# invocation each, 4.1% more.
+#
+# NO FILE FALLS BETWEEN THE INVOCATIONS. The row first asks the probe what
+# it reads of the whole root, at the largest stride it takes, which judges
+# one variant and counts every seed, refused file and variant (1.36 s for
+# `selfhost`); the files probed one at a time must read exactly those three
+# counts, so a file the probe reads under the root and the row's walk does
+# not, or one the walk adds, is red.
 #
 # KNOWN FAILURES, each an open defect's and named with it: the row is red
 # when one stops failing, which is the day its entry goes, as well as when
@@ -44,6 +75,43 @@ record Row
     floors: [Floor]
     known: [str]
 
+# A row over a tree: every `.hero` file under `root` probed alone under
+# `floor.family`, the counts summed.
+record Tree
+    name: str
+    root: str
+    seeds: i64
+    floor: Floor
+    known: [str]
+
+# What a tree's files read, summed, the failures they name, and each run
+# no row allows, told as it came.
+record Sum
+    seeds: i64
+    refused: i64
+    generated: i64
+    parsing: i64
+    named: [str]
+    broken: [str]
+
+# The stride of the census: the largest the probe takes, its `counted`
+# refusing an eighth digit. `--stride` judges one variant in that many and
+# counts every one, so under it the probe parses the whole root, judges its
+# first variant and says how many seeds, refused files and variants the
+# root holds.
+constant CENSUS_STRIDE: str
+    "9999999"
+
+# The probe's own words when the one file it is given does not parse
+# (`selfhost/cli/probe.hero`, at exit 1): such a file is no seed, as it is
+# under a directory, where the probe names it on a `note:` line.
+constant REFUSING: str
+    "error: refusing to probe a file with diagnostics"
+
+# How many of a tree's runs no row allows a failure shows.
+constant SHOWN: i64
+    3
+
 # No failure is known, since panel 181's landing (2026-09-28). Defect 116's
 # shape in `comments107/margin.hero`, a comment on a line of its own inside a
 # statement continued at its own margin, was the one: seven variants in the
@@ -66,15 +134,11 @@ record Row
 # variant the guard judges. Measured: 0 refused by the guard in the fixtures
 # row, strided and unstrided, and `paren`'s parsing count 711 -> 703 in the
 # stride (1398 -> 1383 unstrided), the fifteen and nothing else.
-function rows() -> [Row]
+function fixture_row() -> Row
     # Measured 2026-09-28 at panel 181's landing, which added
-    # `surface-fixtures/continuation181/` (two seeds, two files refused), its
-    # four lexer modules to selfhost and its goldens to tests, and took
-    # margin.hero out of the seeds. The fixtures' floors measured again the
-    # same day with `patterns125/negative.hero`, the 65th seed (defect 125).
-    # The selfhost row raised 2026-10-02 at lane literals' batch gate, to what
-    # the suite asked: `escape_codes.hero` took selfhost from 355 modules to
-    # 356, past 284 by more than a quarter, and its variants to 3204.
+    # `surface-fixtures/continuation181/` (two seeds, two files refused). The
+    # floors measured again the same day with `patterns125/negative.hero`,
+    # the 65th seed (defect 125).
     fixtures: [Floor] = [
         Floor(family: "single", generated: 6479, parsing: 3240)
         Floor(family: "multi", generated: 585, parsing: 293)
@@ -84,41 +148,60 @@ function rows() -> [Row]
         Floor(family: "columns", generated: 5500, parsing: 2750)
         Floor(family: "texts", generated: 3254, parsing: 1627)
     ]
-    selfhost: [Floor] = [Floor(family: "multi", generated: 3204, parsing: 3204)]
-    tests: [Floor] = [Floor(family: "multi", generated: 5706, parsing: 5706)]
-    examples: [Floor] = [Floor(family: "multi", generated: 1080, parsing: 1080)]
+    none: [str] = []
+    return Row(
+        name: "the fixtures, every family",
+        words: ["probe", "--stride", "2"],
+        seeds: 65,
+        floors: fixtures,
+        known: none
+    )
+
+function trees() -> [Tree]
+    # Measured 2026-09-28 at panel 181's landing, which added its four lexer
+    # modules to selfhost and its goldens to tests. The selfhost row raised
+    # 2026-10-02 at lane literals' batch gate, to what the suite asked:
+    # `escape_codes.hero` took selfhost from 355 modules to 356, past 284 by
+    # more than a quarter, and its variants to 3204.
     none: [str] = []
     return [
-        Row(name: "the fixtures, every family", words: ["probe", "--stride", "2"], seeds: 65, floors: fixtures, known: none)
-        Row(name: "selfhost, multi", words: ["probe", "selfhost", "--family", "multi"], seeds: 356, floors: selfhost, known: none)
-        Row(name: "tests, multi", words: ["probe", "tests", "--family", "multi"], seeds: 634, floors: tests, known: none)
-        Row(name: "examples, multi", words: ["probe", "examples", "--family", "multi"], seeds: 120, floors: examples, known: none)
+        Tree(name: "selfhost, multi", root: "selfhost", seeds: 356, floor: Floor(family: "multi", generated: 3204, parsing: 3204), known: none)
+        Tree(name: "tests, multi", root: "tests", seeds: 634, floor: Floor(family: "multi", generated: 5706, parsing: 5706), known: none)
+        Tree(name: "examples, multi", root: "examples", seeds: 120, floor: Floor(family: "multi", generated: 1080, parsing: 1080), known: none)
     ]
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
-    index: i64 @ 0
+    row = fixture_row()
+    words: [str] @ [compiler]
 
-    for row in rows()
-        words: [str] @ [compiler]
+    for word in row.words
+        words @ words.push(word)
 
-        for word in row.words
-            words @ words.push(word)
+    ran = shell.run(scratch: scratch, program: compiler, words: words)?
+    judged(@r, row: row, ran: ran)
 
-        ran = shell.run(scratch: scratch, program: compiler, words: words)?
-        judged(@r, row: row, ran: ran)
+    # Every directory a `fmt` row reads is one the fixtures' row probed.
+    for dir in fixture_directories()
+        if !strings.contains(text: ran.out, needle: "\n  " + dir + ": ")
+            report.keep_failure(
+                @r,
+                label: "probe/fixtures",
+                detail: "  `heroes probe`'s default does not read " + dir + ", which a `fmt` row of the surface suite reads: add it to `selfhost/cli/probe.hero`'s FIXTURES"
+            )
 
-        # The first row is the fixtures': every directory a `fmt` row reads
-        # is one it probed.
-        if index == 0
-            for dir in fixture_directories()
-                if !strings.contains(text: ran.out, needle: "\n  " + dir + ": ")
-                    report.keep_failure(
-                        @r,
-                        label: "probe/fixtures",
-                        detail: "  `heroes probe`'s default does not read " + dir + ", which a `fmt` row of the surface suite reads: add it to `selfhost/cli/probe.hero`'s FIXTURES"
-                    )
-        index @ index + 1
+    for tree in trees()
+        family = tree.floor.family
+        census = shell.run(scratch: scratch, program: compiler, words: [compiler, "probe", tree.root, "--family", family, "--stride", CENSUS_STRIDE])?
+        files = shell.found_under(dir: tree.root, suffix: ".hero", reference: "")?
+        none: [str] = []
+        sum: Sum @ Sum(seeds: 0, refused: 0, generated: 0, parsing: 0, named: none, broken: none)
+
+        for file in files
+            one = shell.run(scratch: scratch, program: compiler, words: [compiler, "probe", file, "--family", family])?
+            sum @ added(sum, file: file, family: family, ran: one)
+
+        summed(@r, tree: tree, census: census, sum: sum)
 
     return ok(r)
 
@@ -195,6 +278,133 @@ function judged(@r: report.Report, row: Row, ran: shell.Run)
                 detail: "  `multi` made " + generated.to_str() + " variants of " + seeds.to_str() + " seeds, not nine of each"
             )
 
+## A tree, one file at a time
+
+# What one file's run adds to its tree's sum: a seed and its variants, a
+# file the parser refuses, the failures it names, or a run no row allows.
+# Exit 1 is a refusal only with the probe's own words for one: anything
+# else at 1, and every exit but 0 and a 2 naming its failures, is kept to
+# be told, the watchdog's 124 among them.
+function added(sum: Sum, file: str, family: str, ran: shell.Run) -> Sum
+    out: Sum @ sum
+
+    if ran.code == 1 && strings.contains(text: ran.err, needle: REFUSING)
+        out.refused @ out.refused + 1
+        return out
+    named = failures(ran.err)
+
+    if ran.code != 0 && (ran.code != 2 || named.len() == 0)
+        out.broken @ out.broken.push("  `" + file + "` exited " + ran.code.to_str() + ":\n" + head(ran.err))
+        return out
+    cells = tally(text: ran.out, family: family)
+
+    if cells.len() != 7
+        out.broken @ out.broken.push("  `" + file + "`: the report has no row for " + family + ":\n" + ran.out)
+        return out
+    out.seeds @ out.seeds + seeds_of(ran.out)
+    out.refused @ out.refused + refused_of(ran.out)
+    out.generated @ out.generated + number(cells[1])
+    out.parsing @ out.parsing + number(cells[3])
+
+    for one in named
+        out.named @ out.named.push(one)
+
+    return out
+
+# What a tree's files read together, against what the probe reads of its
+# root and what the row pins.
+function summed(@r: report.Report, tree: Tree, census: shell.Run, sum: Sum)
+    label = "probe/" + tree.name
+    family = tree.floor.family
+
+    # The census judges one variant, so a 2 is a known failure that happens
+    # to be the root's first; its files' runs say whether it is known.
+    if census.code != 0 && census.code != 2
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  the census, `heroes probe " + tree.root + " --family " + family + " --stride " + CENSUS_STRIDE + "`, exited " + census.code.to_str() + ":\n" + head(census.err)
+        )
+        return
+
+    if sum.broken.len() > 0
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: shown(sum.broken) + "\n  (" + sum.broken.len().to_str() + " of the files under " + tree.root + " exited as no row allows)"
+        )
+        return
+
+    for one in sum.named
+        if !listed(tree.known, key: one)
+            report.keep_failure(@r, label: label, detail: "  a failure no open defect names: " + one)
+            return
+
+    for one in tree.known
+        if !listed(sum.named, key: one)
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  " + one + " no longer fails: its defect's repair takes it out of this row's known failures"
+            )
+            return
+
+    cells = tally(text: census.out, family: family)
+
+    if cells.len() != 7
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  the census's report has no row for " + family + ":\n" + census.out
+        )
+        return
+    seeds = seeds_of(census.out)
+    refused = refused_of(census.out)
+    generated = number(cells[1])
+
+    if sum.seeds != seeds || sum.refused != refused || sum.generated != generated
+        report.keep_failure(
+            @r,
+            label: label + "/covered",
+            detail: "  the files under " + tree.root + ", one at a time, read " + counted(seeds: sum.seeds, refused: sum.refused, generated: sum.generated) + ", and `heroes probe " + tree.root + "` reads " + counted(seeds: seeds, refused: refused, generated: generated) + ": a file it reads fell between the runs, or a run read one it does not"
+        )
+        return
+    report.keep_pass(@r)
+    floors.check(@r, label: label + "/seeds", found: sum.seeds, floor: tree.seeds, what: "seeds")
+    floors.check(
+        @r,
+        label: label + "/" + family,
+        found: sum.generated,
+        floor: tree.floor.generated,
+        what: "variants generated"
+    )
+    floors.check(
+        @r,
+        label: label + "/" + family + "/parsing",
+        found: sum.parsing,
+        floor: tree.floor.parsing,
+        what: "variants parsing"
+    )
+
+    # A fact about the value: `multi` rewrites each seed nine ways.
+    if family == "multi" && sum.generated != 9 * sum.seeds
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  `multi` made " + sum.generated.to_str() + " variants of " + sum.seeds.to_str() + " seeds, not nine of each"
+        )
+
+function counted(seeds: i64, refused: i64, generated: i64) -> str
+    return seeds.to_str() + " seeds, " + refused.to_str() + " files the parser refuses and " + generated.to_str() + " variants"
+
+# The first of a tree's runs no row allows, and how many more there were.
+function shown(broken: [str]) -> str
+    if broken.len() <= SHOWN
+        return broken.join("\n")
+    return broken.slice(from: 0, to: SHOWN).join("\n") + "\n  and " + (broken.len() - SHOWN).to_str() + " more"
+
+## Reading the probe's report
+
 # Every failure the report names, as `<file> <family> <variant>`: the first
 # is written `, family F, variant V,` after its file, the next ones `F V,`.
 function failures(err: str) -> [str]
@@ -224,12 +434,21 @@ function failures(err: str) -> [str]
 
     return out
 
+# The report's first line, `probe: S seeds, and R files the parser
+# refuses`, read for S and for R.
 function seeds_of(out: str) -> i64
     words = strings.words(out)
 
     if words.len() < 2 || words[0] != "probe:"
         return 0
     return number(words[1])
+
+function refused_of(out: str) -> i64
+    words = strings.words(out)
+
+    if words.len() < 5 || words[0] != "probe:" || words[3] != "and"
+        return -1
+    return number(words[4])
 
 # The cells of the report's row for `family`, the family first.
 function tally(text: str, family: str) -> [str]
@@ -302,13 +521,15 @@ test "a report's failures, seeds and rows are read as the probe writes them"
     assert failures(err) == ["a/b.hero single O14_0", "a/b.hero multi ALLO"]
     out = "probe: 3 seeds, and 1 files the parser refuses\n  x: 3 seeds\n\n| family | generated | judged | parsing | held | refused by the guard | refused by the reader |\n| multi | 27 | 27 | 27 | 27 | 0 | 0 |\n"
     assert seeds_of(out) == 3
+    assert refused_of(out) == 1
+    assert refused_of("probe: 3 seeds") == -1
     assert tally(text: out, family: "multi") == ["multi", "27", "27", "27", "27", "0", "0"]
     assert tally(text: out, family: "single") == []
     assert directory_of("tests/golden/surface-fixtures/comments101/a.hero") == "tests/golden/surface-fixtures/comments101"
     assert fixture_directories().len() >= 9
 
 test "a row is red on an exit it does not expect, a failure no defect names, and a known one that holds"
-    row = rows()[1]
+    row = fixture_row()
     r: report.Report @ report.empty()
     judged(
         @r,
@@ -316,7 +537,128 @@ test "a row is red on an exit it does not expect, a failure no defect names, and
         ran: shell.Run(code: 2, out: "", err: "error: the first, `x.hero`, family multi, variant ALLO, the guard: it moved", started: true, why: 0)
     )
     assert r.failed == 1
-    known = rows()[2]
+    known = Row(name: "known", words: row.words, seeds: row.seeds, floors: row.floors, known: ["x.hero multi ALLO"])
     k: report.Report @ report.empty()
     judged(@k, row: known, ran: shell.Run(code: 2, out: "", err: "", started: true, why: 0))
     assert k.failed == 1
+
+# A file's run, as the probe writes it: `seeds` seeds of nine variants.
+function file_run(code: i64, seeds: i64, err: str) -> shell.Run
+    variants = (9 * seeds).to_str()
+    out = "probe: " + seeds.to_str() + " seeds, and 0 files the parser refuses\n  f.hero: " + seeds.to_str() + " seeds\n\n| family | generated | judged | parsing | held | refused by the guard | refused by the reader |\n|---|---|---|---|---|---|---|\n| multi | " + variants + " | " + variants + " | " + variants + " | " + variants + " | 0 | 0 |\n"
+    return shell.Run(code: code, out: out, err: err, started: true, why: 0)
+
+function no_sum() -> Sum
+    none: [str] = []
+    return Sum(seeds: 0, refused: 0, generated: 0, parsing: 0, named: none, broken: none)
+
+test "a file's run adds a seed, a file the parser refuses, or a run no row allows"
+    sum: Sum @ added(no_sum(), file: "a.hero", family: "multi", ran: file_run(code: 0, seeds: 1, err: ""))
+    sum @ added(
+        sum,
+        file: "b.hero",
+        family: "multi",
+        ran: shell.Run(code: 1, out: "", err: "a.hero:1:1: error\n" + REFUSING, started: true, why: 0)
+    )
+    assert sum.seeds == 1
+    assert sum.refused == 1
+    assert sum.generated == 9
+    assert sum.parsing == 9
+    assert sum.broken.len() == 0
+
+    # The watchdog's 124, a 1 the probe does not explain as a refusal, and a
+    # 2 that names no failure are each kept, by the file they came from.
+    sum @ added(
+        sum,
+        file: "c.hero",
+        family: "multi",
+        ran: shell.Run(code: 124, out: "", err: "", started: true, why: 0)
+    )
+    sum @ added(
+        sum,
+        file: "d.hero",
+        family: "multi",
+        ran: shell.Run(code: 1, out: "", err: "error: something else", started: true, why: 0)
+    )
+    sum @ added(
+        sum,
+        file: "e.hero",
+        family: "multi",
+        ran: shell.Run(code: 2, out: "", err: "error: cannot read `e.hero`", started: true, why: 0)
+    )
+    assert sum.broken.len() == 3
+    assert strings.starts_with(text: sum.broken[0], prefix: "  `c.hero` exited 124")
+    assert sum.seeds == 1
+
+    # A 2 naming its failures adds them, to be held to the row's known ones.
+    failing = file_run(
+        code: 2,
+        seeds: 1,
+        err: "error: the first, `f.hero`, family multi, variant ALLO, the guard: it moved"
+    )
+    sum @ added(sum, file: "f.hero", family: "multi", ran: failing)
+    assert sum.named == ["f.hero multi ALLO"]
+    assert sum.seeds == 2
+
+test "a tree is red when its files do not read what the probe reads of its root"
+    tree = Tree(name: "t", root: "t", seeds: 2, floor: Floor(family: "multi", generated: 18, parsing: 18), known: [])
+    census = file_run(code: 0, seeds: 2, err: "")
+    whole: Sum @ added(no_sum(), file: "a.hero", family: "multi", ran: file_run(code: 0, seeds: 1, err: ""))
+    whole @ added(whole, file: "b.hero", family: "multi", ran: file_run(code: 0, seeds: 1, err: ""))
+    green: report.Report @ report.empty()
+    summed(@green, tree: tree, census: census, sum: whole)
+    assert green.failed == 0
+    assert green.passed == 4
+
+    # One file short of the root: the census says so, whatever the floors.
+    short = added(no_sum(), file: "a.hero", family: "multi", ran: file_run(code: 0, seeds: 1, err: ""))
+    low = Tree(name: "t", root: "t", seeds: 1, floor: Floor(family: "multi", generated: 9, parsing: 9), known: [])
+    missed: report.Report @ report.empty()
+    summed(@missed, tree: low, census: census, sum: short)
+    assert missed.failed == 1
+    assert strings.contains(text: missed.failures[0], needle: "FAIL probe/t/covered")
+
+    # A census the watchdog stopped, and a file's run no row allows.
+    stopped: report.Report @ report.empty()
+    summed(@stopped, tree: tree, census: shell.Run(code: 124, out: "", err: "", started: true, why: 0), sum: whole)
+    assert stopped.failed == 1
+    killed = added(
+        whole,
+        file: "c.hero",
+        family: "multi",
+        ran: shell.Run(code: 124, out: "", err: "", started: true, why: 0)
+    )
+    broken: report.Report @ report.empty()
+    summed(@broken, tree: tree, census: census, sum: killed)
+    assert broken.failed == 1
+    assert strings.contains(text: broken.failures[0], needle: "`c.hero` exited 124")
+
+test "a tree's failures are held to the ones its row names as known"
+    census = file_run(code: 0, seeds: 1, err: "")
+    failing = added(
+        no_sum(),
+        file: "f.hero",
+        family: "multi",
+        ran: file_run(code: 2, seeds: 1, err: "error: the first, `f.hero`, family multi, variant ALLO, the guard: it moved")
+    )
+    floor = Floor(family: "multi", generated: 9, parsing: 9)
+    unknown: report.Report @ report.empty()
+    summed(@unknown, tree: Tree(name: "t", root: "t", seeds: 1, floor: floor, known: []), census: census, sum: failing)
+    assert unknown.failed == 1
+    named: report.Report @ report.empty()
+    summed(
+        @named,
+        tree: Tree(name: "t", root: "t", seeds: 1, floor: floor, known: ["f.hero multi ALLO"]),
+        census: census,
+        sum: failing
+    )
+    assert named.failed == 0
+    gone: report.Report @ report.empty()
+    clean = added(no_sum(), file: "f.hero", family: "multi", ran: file_run(code: 0, seeds: 1, err: ""))
+    summed(
+        @gone,
+        tree: Tree(name: "t", root: "t", seeds: 1, floor: floor, known: ["f.hero multi ALLO"]),
+        census: census,
+        sum: clean
+    )
+    assert gone.failed == 1
