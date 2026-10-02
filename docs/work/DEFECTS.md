@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 14**
+**OPEN: 15**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -739,5 +739,23 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a correct program refused, with a false message.
+
+- [ ] **163 — the pointee check judges a plain `char` without `-fsigned-char`, so on Linux arm64 it refuses the binding the program's own compile agrees with** | `extern "c.h"` over `void fill(char *p)`, bound `function fill(@p: i8)`: on this Mac `build` exit 0, prints `-1`; in the Linux arm64 container on the trunk at `02b29536`, `build` exit 1, `ffi_parameter_type`, *`p` of `fill` is declared `i8`, and the header's `char *` points at a different width or sign*, while `@p: u8` is refused on this Mac and built on arm64; the program itself is compiled with `-fsigned-char` on both (`selfhost/cli/flags.hero:108`, panel 161) | `selfhost/cli/pointee.hero` (its two clang runs, without the compiler's own flags) · panel 161 (*a plain `char` meaning the same thing on four legs*) · **class: blocking**
+
+    **Origin:** lane h158, 2026-10-02, a question raised beside defect 161
+    (the pointee probe's compiles do not use the compiler's own flag list);
+    measured by the coordinator at 17:33 by `date`, on this Mac and in the
+    Linux arm64 container (`docs/panel/186-briefs/probes/coordinator/signchar/`,
+    `s8.hero` and `u8.hero` over `c.h`). A result is held by the program's
+    own compile and agrees on both (a `char` result bound `-> u64` refused on
+    both, 17:34): only the pointee check diverges.
+
+    **Why it is a defect.** A correct binding is refused on one platform and
+    accepted on another, against panel 161's ruling that a plain `char` means
+    one thing on every leg; no value read through it is wrong, the bytes
+    being the same (measured: `u8` on arm64 prints `255`).
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): a correct program refused, on Linux arm64.
 
 *******************************************************************************
