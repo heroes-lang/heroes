@@ -181,7 +181,7 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
         # The record clang cannot lay out reads the notes beside its line,
         # which say whether the header declares the struct or C made it up
         # (defect 145), so it is handed the whole of clang's stderr.
-        u_tag = ffi_incomplete.unknown_tag(s, decls, line: line, stderr: text)
+        u_tag = ffi_incomplete.unknown_tag(s, decls, line: line, stderr: text, types: asked.types)
 
         if !u_tag.is_err()
             found @ ffi_lookup.add_once(found, d: u_tag.must())
