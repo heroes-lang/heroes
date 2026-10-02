@@ -6,13 +6,13 @@ tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero
 tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:43:1: error[indentation_jump]: indentation jumps from level 0 to level 2; a block opens one level at a time
 tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:48:1: error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per level; found 10
 tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:48:1: error[indentation_jump]: indentation jumps from level 1 to level 3; a block opens one level at a time
-tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:17:23: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:17:23: error[missing_body]: the `function` `two_spaces` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:22:14: error[expected_end_of_line]: expected the end of the line after `record Point`, found `{` — its fields go on the lines below it, one level deeper
-tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:27:25: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:27:25: error[missing_body]: the `function` `with_a_stray` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:29:12: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
-tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:33:1: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
-tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:38:5: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
-tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:42:21: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
-tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:46:22: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:33:1: error[missing_body]: the `function` `allman` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:38:5: error[missing_body]: the `function` `gnu` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:42:21: error[missing_body]: the `function` `too_deep` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:46:22: error[missing_body]: the `function` `inner_six` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:47:15: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
-tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:52:28: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-margins-in-braces-are-told-as-without-them.hero:52:28: error[missing_body]: the `function` `closed_anywhere` needs an indented body — one level deeper, exactly 4 spaces (found `{`)

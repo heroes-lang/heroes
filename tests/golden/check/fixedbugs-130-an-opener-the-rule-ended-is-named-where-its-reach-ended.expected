@@ -5,4 +5,4 @@ tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-rea
 tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-reach-ended.hero:43:11: error[unclosed_bracket]: `[` opened here is never closed
 tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-reach-ended.hero:48:10: error[unclosed_bracket]: `(` opened here is never closed
 tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-reach-ended.hero:56:10: error[unclosed_bracket]: `(` opened here is never closed
-tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-reach-ended.hero:47:22: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-reach-ended.hero:47:22: error[missing_body]: the `function` `in_braces` needs an indented body — one level deeper, exactly 4 spaces (found `{`)

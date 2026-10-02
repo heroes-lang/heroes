@@ -1,1 +1,1 @@
-tests/golden/check/braces-as-block.hero:11:17: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/braces-as-block.hero:11:17: error[missing_body]: the `function` `main` needs an indented body — one level deeper, exactly 4 spaces (found `{`)

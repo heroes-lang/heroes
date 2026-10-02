@@ -11,5 +11,5 @@ tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:44:
 tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:45:5: error[reserved_word]: `const` is not a word in this language — inside a body a value is bound with `=`: `x = 5`, and a `constant` is declared at the top level of a file
 tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:49:5: error[reserved_word]: `elif` is not a word in this language — write `else if`
 tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:51:5: error[reserved_word]: `elif` is not a word in this language — write `else if`
-tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:20:9: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
-tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:22:9: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:20:9: error[missing_body]: the `function` `f1` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-146-a-file-of-foreign-heads-is-placed-once.hero:22:9: error[missing_body]: the `function` `f2` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
