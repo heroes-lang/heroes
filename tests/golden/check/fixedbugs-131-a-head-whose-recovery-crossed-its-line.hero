@@ -7,10 +7,15 @@
 # mistake again. A head whose recovery ran past its own line says nothing
 # about a body it did not find (`parse/opening`), and the statement below it
 # is read.
+#
+# Widened 2026-10-02 (lane recovery-b8, the head class, the audit's row
+# 130-34d): the `)` at the body line's end, one too many, which paired the
+# group, is told too. The lines from the head's to that closer are the
+# body, read as one (`parse/swallowed`), and the closer is its junk.
 
 function unclosed(n: i64)
     if (n > 0
-        y = 3 )  #~ expected_group_close
+        y = 3 )  #~ expected_group_close expected_end_of_line
     z = 4 )  #~ expected_end_of_line
 
 function main()
