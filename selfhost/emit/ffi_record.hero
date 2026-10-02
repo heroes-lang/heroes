@@ -24,11 +24,12 @@ use resolve
 use checker
 
 # A group's record over a C UNION TYPE, at the operations that would answer
-# wrongly (panels 073, 077, 186): building one from two or more fields, which
-# C keeps the last of, and comparing one, hashing it or keying a map by it
-# through a field that is not compared bit for bit or is narrower than the
-# union. Reading is untouched, and a record naming one member, or comparing
-# through an integer as wide as the union, is sound.
+# wrongly (panels 073, 077, 186): comparing one, hashing it or keying a map by
+# it through a field that is not compared bit for bit or is narrower than the
+# union. Reading is untouched, and so is a construction naming one member, or
+# a comparison through an integer as wide as the union. A construction naming
+# two or more members is told where it was written, by
+# `emit/ffi_built.hero` (panel 186 R7), so this reader leaves that marker.
 function union_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
         return fail(code: "none", msg: "not an assertion failure")
@@ -79,28 +80,12 @@ function union_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: 
         d.notes @ d.notes.push(compare_note)
         return ok(d)
 
-    if members.len() <= 1
-        # A record with no field, compared: nothing names the union's bytes.
-        d.message @ "`" + type_name + "` is a `union` in `" + h + "`, and no field names its bytes" + wrong
-        d.notes @ d.notes.push(compare_note)
-        return ok(d)
-    named: str @ ""
+    if members.len() >= 2
+        return fail(code: "none", msg: "a construction naming two members, told at the construction")
 
-    if members.len() == 2
-        named @ "`" + members[0] + "` and `" + members[1] + "`"
-    else
-        heads: [str] @ []
-        at: i64 @ 0
-
-        while at < members.len() - 1
-            heads @ heads.push(members[at])
-            at @ at + 1
-
-        named @ "`" + heads.join("`, `") + "` and `" + members[members.len() - 1] + "`"
-    d.message @ "`" + type_name + "` is a `union` in `" + h + "`, so " + named + " are the same bytes — building one would answer about whichever was written last"
-    d.notes @ d.notes.push(
-        "a `record` over a union that names two or more members is read through any of them and never built, because C keeps the last one written: to build one, name only the member the program writes"
-    )
+    # A record with no field, compared: nothing names the union's bytes.
+    d.message @ "`" + type_name + "` is a `union` in `" + h + "`, and no field names its bytes" + wrong
+    d.notes @ d.notes.push(compare_note)
     return ok(d)
 
 # The type a field of the group record `type_name` is written with, as the
@@ -155,7 +140,7 @@ function record_of(s: source.Source, decls: [ast.Decl], type_name: str) -> Recor
 
 ## Tests
 
-test "union_record reads its markers: two members built, one compared by kind and by width"
+test "union_record reads a union compared by kind and by width, and leaves a construction to ffi_built"
     text = "extern \"m.h\"\n    record UDef\n        i: i64\n        f: i64\n    record One\n        v: f32\n\nfunction touch(u: UDef, o: One)\n    _ = u\n    _ = o\n\nfunction main()\n    print(1)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
@@ -163,9 +148,9 @@ test "union_record reads its markers: two members built, one compared by kind an
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     head = "m.c:9:1: error: static assertion failed due to requirement 'x': "
-    d = union_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-union UDef i f")
-    assert d.must().code == "ffi_union_field"
-    assert d.must().message == "`UDef` is a `union` in `m.h`, so `i` and `f` are the same bytes — building one would answer about whichever was written last"
+
+    # Built from two members: told at the construction (`emit/ffi_built.hero`).
+    assert union_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-union UDef i f").is_err()
     k = union_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-union-kind One v")
     assert k.must().message == "`One` is a `union` in `m.h`, and `v` is a `f32`, which is not compared bit for bit, so comparing a `One` or using one as a map key can call two different values equal"
     w = union_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-union-narrow UDef i")

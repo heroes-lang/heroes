@@ -1,0 +1,140 @@
+# The questions one construction of a group's record asks of the header's
+# layout (panel 186 R7, home (a); spec § 13; design.md §4.19). A record over
+# a C union is built naming exactly one member of each union, an anonymous
+# struct's fields counting as one, and every field outside them, so a
+# construction may name fewer fields than the record declares. `check` holds
+# only its labels (`check/group_fields.hero`); which fields it may leave out
+# is `build`'s, asked here of C at the construction's own `#line`, inside the
+# check unit `emit/layout_check.hero` writes (a record a construction leaves
+# a field out of is always sent there, `emit/layout_screen.hero`):
+#
+# - a field it leaves out shares a byte with a field it names, being another
+#   member of a union whose member it names; one that shares none is a
+#   member C would fill with zero, `OMITTED`;
+# - two fields it names share no byte, or C keeps whichever was written
+#   last, `SHARED`.
+#
+# Every verdict is C arithmetic on the header's own offsets and sizes
+# (`layout_compare.shares`); the dump only says which pairs are worth asking.
+# Two named fields are asked against each other when they sit in one
+# anonymous member, or when one is reached through a macro and has no place
+# the dump shows; any other pair C keeps apart by construction. A union TYPE
+# built from two is `emit/extern_union.hero`'s, said on its declaration, so a
+# pair of its members is not refused twice. What clang says back is read in
+# `emit/ffi_built.hero`, one diagnostic per construction.
+
+use source
+use emit/extern_union
+use emit/layout_compare
+use emit/layout_rows
+use parse
+use resolve
+use checker
+use ir/lower
+
+# The markers, one writer here and one reader (`emit/ffi_built.hero`).
+constant OMITTED: str
+    "heroes-ffi-omitted"
+
+constant SHARED: str
+    "heroes-ffi-shared"
+
+# One construction's assertions, each under its own `#line`. `order` is the
+# record's declared fields, `group_of` the anonymous member the dump puts
+# each shown one in (-1 for the struct's own), and `unsized` the bit-fields
+# and flexible members, which C gives no size to ask about: a declared one
+# is refused on its own line before any construction is judged.
+function site_lines(site: extern_union.Site, t: str, hero_name: str, order: [str], group_of: {str: i64}, unsized: {str: bool}, s: source.Source) -> [str]
+    named: {i64: bool} @ {}
+
+    for k in site.given
+        named[k] @ true
+
+    at = source.locate(s, site.span.start)
+    place = "#line " + at.line.to_str() + " \"" + at.file + "\"\n"
+    is_union = "__builtin_classify_type(*(" + t + " *)0) == 13"
+    out: [str] @ []
+    index: i64 @ 0
+
+    for m in order
+        if named[index].is_err() && unsized[m].is_err()
+            terms: [str] @ [layout_compare.size_of(t: t, m: m) + " == 0"]
+
+            for k in site.given
+                if unsized[order[k]].is_err()
+                    terms @ terms.push(layout_compare.shares(t: t, a: m, b: order[k]))
+
+            out @ out.push(
+                place + "_Static_assert(" + terms.join(" || ") + ", \"" + OMITTED + " " + hero_name + " " + m + "\");"
+            )
+        index @ index + 1
+
+    k1: i64 @ 0
+
+    while k1 < site.given.len()
+        k2: i64 @ k1 + 1
+
+        while k2 < site.given.len()
+            a = order[site.given[k1]]
+            b = order[site.given[k2]]
+
+            if near(group_of, a: a, b: b) && unsized[a].is_err() && unsized[b].is_err()
+                out @ out.push(
+                    place + "_Static_assert(" + is_union + " || !" + layout_compare.shares(t: t, a: a, b: b) + ", \"" + SHARED + " " + hero_name + " " + a + " " + b + "\");"
+                )
+            k2 @ k2 + 1
+
+        k1 @ k1 + 1
+
+    return out
+
+# Whether two named fields can share a byte at all by what the dump shows:
+# one of them reached through a macro, whose place the dump does not show,
+# or both in one anonymous member of the struct.
+function near(group_of: {str: i64}, a: str, b: str) -> bool
+    ga = group_of[a]
+    gb = group_of[b]
+
+    if ga.is_err() || gb.is_err()
+        return true
+    return ga.must() >= 0 && ga.must() == gb.must()
+
+## Tests
+
+test "a construction asks for each field it leaves out, and for two it names in one union"
+    text = "extern \"u.h\"\n    record SA\n        kind: i32\n        i: i32\n        f: f32\n        x: i32\n\nfunction main()\n    s = SA(kind: 1, f: 0.5)\n    t = SA(kind: 1, i: 2, f: 0.5, x: 3)\n    print(s.x + t.x)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    u = extern_union.used(low.program, c, parsed.decls)
+    assert u.sites.len() == 2
+    order: [str] = ["kind", "i", "f", "x"]
+    groups: {str: i64} @ {}
+    groups["kind"] @ -1
+    groups["i"] @ 1
+    groups["f"] @ 1
+    groups["x"] @ -1
+    none: {str: bool} @ {}
+    short = site_lines(u.sites[0], t: "SA", hero_name: "SA", order: order, group_of: groups, unsized: none, s: s)
+
+    # `i` and `x` are left out, each asked against `kind` and `f` at line 9.
+    assert short.len() == 2
+    assert layout_rows.byte_index(text: short[0], needle: "#line 9 \"t.hero\"\n") == 0
+    assert layout_rows.byte_index(text: short[0], needle: "sizeof(((SA *)0)->i) == 0 || ") > 0
+    assert layout_rows.byte_index(text: short[0], needle: "\"heroes-ffi-omitted SA i\"") > 0
+    assert layout_rows.byte_index(text: short[1], needle: "\"heroes-ffi-omitted SA x\"") > 0
+
+    # All four named: nothing is left out, and the one pair in one union is
+    # asked, the union TYPE's own refusal left to `extern_union`.
+    whole = site_lines(u.sites[1], t: "SA", hero_name: "SA", order: order, group_of: groups, unsized: none, s: s)
+    assert whole.len() == 1
+    assert layout_rows.byte_index(text: whole[0], needle: "#line 10 \"t.hero\"\n_Static_assert(__builtin_classify_type(*(SA *)0) == 13 || !(") == 0
+    assert layout_rows.byte_index(text: whole[0], needle: "\"heroes-ffi-shared SA i f\"") > 0
+
+    # A field a macro reaches has no group, and is asked against every other.
+    assert near(groups, a: "kind", b: "alias")
+    assert !near(groups, a: "kind", b: "x")
+    assert near(groups, a: "i", b: "f")

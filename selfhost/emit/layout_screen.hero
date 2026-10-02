@@ -25,6 +25,12 @@
 # none a bit-field, and needs nothing more; every other record is dumped.
 # A `partial` record has no count to prove: it is dumped only when the
 # program builds it from two or more fields, the one check it can need.
+# And a record a construction leaves a field out of is dumped whatever the
+# screen says (panel 186 R7): whether each field left out shares a byte with
+# one the construction names is asked of C per construction
+# (`emit/layout_sites.hero`), on the header's own offsets, so the verdict is
+# C's here as everywhere else on this route, never this file's inference
+# from a screen that passed.
 #
 # Each function sits at `#line <decl + 1> "hero_ly_screen"`, so every line
 # clang prints about it names the record, and nothing is read from clang's
@@ -55,7 +61,8 @@ function screen_unit(headers: [str], wanted: [layout_text.Asked], s: source.Sour
     for one in wanted
         match decls[one.decl].kind
             .record_decl rec =>
-                built = !u.constructed[one.decl].is_err() && rec.fields.len() >= 2
+                built = extern_union.built_from_two(u, decl: one.decl)
+                omitted = extern_union.omits(u, decl: one.decl, count: rec.fields.len())
                 compared = !u.operated[one.decl].is_err()
                 slots: [str] @ []
                 sizes: [str] @ []
@@ -76,12 +83,14 @@ function screen_unit(headers: [str], wanted: [layout_text.Asked], s: source.Sour
                 # question the dump answers, so it is part of this text, and
                 # of the key the answer is cached under.
                 lines @ lines.push(
-                    "/* " + one.decl.to_str() + " built " + built.to_str() + " compared " + compared.to_str() + " */"
+                    "/* " + one.decl.to_str() + " built " + built.to_str() + " omits " + omitted.to_str() + " compared " + compared.to_str() + " */"
                 )
                 lines @ lines.push("#line " + (one.decl + 1).to_str() + " \"" + SCREEN + "\"")
                 text: str @ "__attribute__((unused)) static void " + SCREEN + "_" + one.decl.to_str() + "(void) { " + one.c_type + " v = {" + list + "}; " + sizes.join(" ") + " (void)v; }"
 
-                if rec.partial && built
+                # A construction that leaves a field out is judged per
+                # construction from the layout (panel 186 R7).
+                if rec.partial && built || omitted
                     text @ text + " _Static_assert(0, \"" + SCREEN + "\");"
                 lines @ lines.push(text)
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue

@@ -432,6 +432,17 @@ constant CEILING: i64
 # the one printer of the words after a parameter or a result, shared by `fmt`
 # and `dump`, which held two copies of five functions until today; `fmt.hero`
 # reads 1141 against its 1175 afterwards.
+#
+# **One moved on 2026-10-02, lane land186, for panel 186's R7.** `ir.hero`
+# 310 -> **315** (measured 313): a record over a C union is built naming
+# exactly one member of each union, so a construction of a group's record
+# may name some of its fields, and `record_shape` carries which, `given`, one
+# field and the two comment lines that say what it holds. The file's types
+# are the IR's one vocabulary and have no seam the lowering and the emitter
+# would not both cross, and the rest of the rule went where it has one:
+# `check/group_fields.hero` holds the labels, `emit/layout_sites.hero` asks
+# C what a construction leaves out, and `emit/ffi_built.hero` tells it once
+# per construction.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1870"
@@ -449,7 +460,7 @@ constant DECIDED: [str]
         "selfhost/resolve/cycles.hero 331"
         "selfhost/resolve/state.hero 330"
         "selfhost/emit/inst.hero 350"
-        "selfhost/ir.hero 310"
+        "selfhost/ir.hero 315"
         "selfhost/modules.hero 320"
         "selfhost/parse/use_line.hero 310"
     ]

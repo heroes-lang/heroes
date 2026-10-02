@@ -5,14 +5,14 @@
 # field 'c'* and named a field the record declares when the one left out was
 # in the middle.
 #
-# Nine markers, three codes. `ffi_incomplete_record` for a member left out
+# Eight markers, three codes. `ffi_incomplete_record` for a member left out
 # (a bit-field one says `partial`); `ffi_field_type` on the field's own line
-# for a declared bit-field (defect 156); `ffi_union_field` for two declared
-# fields that are one union's bytes in a record the program builds (R2), and
-# for a field in a union of a record the program compares, which is not an
-# integer, a pointer or an array of them, or is not as wide as the union
-# (R3). Every message says the spec's words: comparing a record and using it
-# as a map key.
+# for a declared bit-field (defect 156); `ffi_union_field` for a field in a
+# union of a record the program compares, which is not an integer, a pointer
+# or an array of them, or is not as wide as the union (R3). Every message
+# says the spec's words: comparing a record and using it as a map key. What
+# a construction names and leaves out (R7) is told per construction, in
+# `emit/ffi_built.hero`.
 
 use ast
 use source
@@ -33,7 +33,7 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
     kind: str @ ""
     rest: str @ ""
 
-    for marker in [layout_check.MISSING, layout_check.MISSING_BITS, layout_check.SHARED, layout_check.BITFIELD, layout_compare.OVERLAP, layout_compare.NARROW, layout_compare.BESIDE_BITS, layout_compare.OVERLAP_IN, layout_compare.NARROW_IN]
+    for marker in [layout_check.MISSING, layout_check.MISSING_BITS, layout_check.BITFIELD, layout_compare.OVERLAP, layout_compare.NARROW, layout_compare.BESIDE_BITS, layout_compare.OVERLAP_IN, layout_compare.NARROW_IN]
         tail = ffi_lookup.after(text: line, marker: marker + " ")
 
         if !tail.is_err() && kind.len() == 0
@@ -100,17 +100,6 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
         )
         return ok(bits)
     other = parts[2]
-
-    if kind == layout_check.SHARED
-        shared: diag.Diagnostic @ diag.new_diagnostic(
-            code: "ffi_union_field",
-            message: "`" + m + "` and `" + other + "` are the same bytes of `" + t + "`: `" + h + "` puts them in one union inside the struct, so building one would answer about whichever was written last",
-            span: span
-        )
-        shared.notes @ shared.notes.push(
-            "a `record` that names both is read through either and never built, because C keeps the last one written: to build a `" + t + "`, name only the one the program writes"
-        )
-        return ok(shared)
     d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_union_field", message: "", span: span)
     held = "`" + t + "` holds `" + m + "` in a union of `" + h + "`"
     wrong = ", so comparing a `" + t + "` or using one as a map key can call two different values equal"
@@ -207,9 +196,10 @@ test "layout_record reads each marker, and a line that is not one is left alone"
     field_bits = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-bitfield S3 a")
     assert field_bits.must().code == "ffi_field_type"
     assert field_bits.must().span.start != missing.must().span.start
-    shared = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-shared S3 a c")
-    assert shared.must().code == "ffi_union_field"
-    assert shared.must().message == "`a` and `c` are the same bytes of `S3`: `s3.h` puts them in one union inside the struct, so building one would answer about whichever was written last"
+
+    # A construction's markers are `emit/ffi_built.hero`'s, told once each.
+    assert layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-shared S3 a c").is_err()
+    assert layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-omitted S3 c").is_err()
     overlap = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-overlap S3 c a")
     assert overlap.must().message == "`S3` holds `c` in a union of `s3.h`, sharing its bytes with `a`, and a `f32` is not compared bit for bit, so comparing a `S3` or using one as a map key can call two different values equal"
     narrow = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-narrow S3 a q")

@@ -27,6 +27,7 @@ use emit/ffi_pointee
 use emit/ffi_call
 use emit/ffi_record
 use emit/ffi_layout
+use emit/ffi_built
 use emit/ffi_field
 use emit/ffi_tag
 use emit/ffi_incomplete
@@ -84,6 +85,11 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
     if asked.said.len() > 0
         text @ stderr + "\n" + asked.said
+
+    # A construction of a group's record, told once per kind with each field
+    # it names or leaves out (panel 186 R7, `emit/ffi_built.hero`), at the
+    # construction: a span no reader below claims, so nothing is dropped.
+    found @ ffi_built.at_constructions(s, decls, c, p, text: text)
 
     for line in ffi_lookup.lines(text: text)
         wrong = ffi_declared.wrong_type(s, decls, line: line)
