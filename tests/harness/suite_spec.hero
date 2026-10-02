@@ -32,7 +32,9 @@
 #   colouring   the editor's grammar admits the escapes the compiler accepts
 #               and calls the words it calls keywords, because that file is a
 #               copy of the language that reads from nothing (added 2026-09-13,
-#               after it painted a correct program as an error for three days).
+#               after it painted a correct program as an error for three days);
+#               and since 2026-10-02 it paints an `f` literal's two brace
+#               escapes and its lone brace as the lexer reads them (`braces`).
 #
 # WHERE THE COMPILER'S SIDE COMES FROM. The two lists — what it reserves and
 # what it refuses — are read out of `selfhost/`'s own source, not copied
@@ -362,6 +364,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     shape(@r, spec: text.must())
     anchors(@r)
     colouring(@r)
+    braces(@r, scratch: scratch, compiler: compiler)
     return ok(r)
 
 # The two gated numbers, and the headroom.
@@ -1222,6 +1225,91 @@ function colouring(@r: report.Report)
         detail: "  the editor's grammar and " + KEYWORD_SOURCE + " disagree about what a keyword is.\n  the compiler reserves and the grammar leaves plain: " + absent.join(" ") + "\n  the grammar paints and the compiler does not reserve: " + extra.join(" ") + "\n  The first kind leaves a real keyword uncoloured. The SECOND is the one that\n  hurts: a word the grammar paints as a keyword and the lexer does not reserve\n  is a legal identifier shown to the author as syntax, so a correct program\n  reads as one that cannot be."
     )
 
+# The braces of an `f` literal, the editor's grammar against the compiler's
+# lexer (panel 184 R1, defect 173, 2026-10-02): the pairs the grammar paints
+# as escapes are the pairs the lexer reads as one brace each, `{{` and `}}`
+# both, and the brace it paints alone as an error is the one the lexer
+# refuses, `lone_brace`. The lexer is asked by lexing each brace inside an
+# `f` literal, the grammar by its own rules, so neither side is pinned here.
+# The grammar had no rule for the form until that day: one painting a pair the
+# lexer refuses shows a mistake as legal, and one painting a brace the lexer
+# reads shows a correct program as an error, this check's first case again.
+function braces(@r: report.Report, scratch: str, compiler: str)
+    text = read_file(GRAMMAR)
+
+    if text.is_err()
+        report.keep_failure(@r, label: "spec/colouring", detail: "  cannot read " + GRAMMAR)
+        return
+    pairs = regex_alternatives(text: text.must(), marker: "constant.character.escape.brace.hero")
+    lone = regex_alternatives(text: text.must(), marker: "invalid.illegal.lone-brace.hero")
+    wrong: [str] @ []
+
+    for brace in ["{", "}"]
+        doubled = brace + brace
+        said = lexed_in_piece(scratch: scratch, compiler: compiler, brace: doubled)
+
+        if said.is_err() || said.must().code != 0
+            wrong @ wrong.push("the lexer does not read `" + doubled + "` as one brace inside an `f` literal")
+
+        if absent_from(want: [doubled], got: pairs).len() > 0
+            wrong @ wrong.push("the grammar does not paint `" + doubled + "` as one brace")
+
+    for pair in pairs
+        said = lexed_in_piece(scratch: scratch, compiler: compiler, brace: pair)
+
+        if said.is_err() || said.must().code != 0
+            wrong @ wrong.push("the grammar paints `" + pair + "` as an escape, and the lexer refuses it")
+
+    if lone != ["}"]
+        wrong @ wrong.push(
+            "the grammar's lone brace is `" + lone.join("|") + "`, where `}` is the one the lexer refuses"
+        )
+    refused = lexed_in_piece(scratch: scratch, compiler: compiler, brace: "}")
+
+    if refused.is_err() || refused.must().code != 1 || !strings.contains(text: refused.must().err, needle: "[lone_brace]")
+        wrong @ wrong.push("the lexer does not refuse a `}` alone inside an `f` literal as `lone_brace`")
+
+    if wrong.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(@r, label: "spec/colouring", detail: "  " + wrong.join("\n  "))
+
+# What the lexer says of `brace` written inside an `f` literal, between two
+# letters, alone in a program of its own under `scratch`.
+function lexed_in_piece(scratch: str, compiler: str, brace: str) -> shell.Run?
+    path = scratch + "/spec-braces.hero"
+    write_file(path: path, text: "function main()\n    print(f\"a" + brace + "b\")\n")?
+    return shell.run(scratch: scratch, program: compiler, words: [compiler, "lex", path])
+
+# The alternatives of a rule's `"match"` whose whole pattern is one or more
+# literal texts joined by `|`, each with its regular expression's backslashes
+# taken off: `\\{\\{|\\}\\}` in the JSON reads as `{{` and `}}`.
+function regex_alternatives(text: str, marker: str) -> [str]
+    found: [str] @ []
+    source = json_unescape(match_value(text: text, marker: marker))
+    opens = strings.index_of(text: source, needle: "\"")
+
+    if opens.is_err()
+        return found
+    rest = source.slice(from: opens.must() + 1, to: source.len())
+    closes = strings.index_of(text: rest, needle: "\"")
+
+    if closes.is_err()
+        return found
+
+    for one in strings.split_text(text: rest.slice(from: 0, to: closes.must()), separator: "|")
+        cs = one.chars()
+        plain: str @ ""
+
+        for c in cs
+            if c != "\\"
+                plain @ plain + c
+
+        if plain.len() > 0
+            found @ found.push(plain)
+
+    return found
+
 # One comparison, in one direction, said twice.
 function escapes_agree(@r: report.Report, want: [str], got: [str], where: str)
     absent = absent_from(want: want, got: got)
@@ -1513,6 +1601,12 @@ test "the grammar's rules are read out of their match, in either layout"
     # borrowing the rule above it: the search stops at the opening brace.
     beginning = "        { \"match\": \"[ntr]\", \"name\": \"other.scope\" },\n        {\n          \"begin\": \"q\",\n          \"name\": \"string.quoted.double.hero\"\n        }\n"
     assert class_members(text: beginning, marker: "string.quoted.double.hero").len() == 0
+
+test "a rule's literal alternatives are read with their backslashes off, and a rule not there reads as none"
+    rows = "        { \"match\": \"\\\\{\\\\{|\\\\}\\\\}\", \"name\": \"constant.character.escape.brace.hero\" },\n        { \"match\": \"\\\\}\", \"name\": \"invalid.illegal.lone-brace.hero\" },\n"
+    assert regex_alternatives(text: rows, marker: "constant.character.escape.brace.hero") == ["{{", "}}"]
+    assert regex_alternatives(text: rows, marker: "invalid.illegal.lone-brace.hero") == ["}"]
+    assert regex_alternatives(text: rows, marker: "no.such.scope").len() == 0
 
 test "the two sides of the colouring check are read out of the compiler's own source"
     # Not pinned here: read from the files, so this test dies with a rename

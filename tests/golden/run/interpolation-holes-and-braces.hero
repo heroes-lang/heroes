@@ -5,6 +5,11 @@
 # the text is text: this is the brace-run case the historian at panel 121
 # predicted would reach `DEFECTS.md` unless the spec stated the scan, and it is
 # pinned here instead. A plain `f"…"` with no hole and an empty one are legal.
+#
+# 2026-10-02, panel 184 R1 (defect 173): the sentence above about `}` is
+# false since the ruling. `{{` and `}}` each write one brace, and a `}`
+# alone in the text is an error, so `{{braces}}` prints `{braces}`, where
+# it printed `{braces}}` until then.
 
 function main()
     n = 3

@@ -1,0 +1,21 @@
+# Defect 173's form for the tools that re-print a program (panel 184 R1,
+# 2026-10-02): `{{` and `}}` in the text of an `f` literal, beside a hole on
+# either side, three in a row around one, and in a literal nested in a hole,
+# with a comment at each place one stands. `fmt` prints this file as it is,
+# each dump reads the literal as the lexer does, `heroes mutate` scores it,
+# and `heroes probe` holds every variant of it under both judges.
+
+# The value between two braces of text.
+function braced(n: i64) -> str
+    # before the literal
+    return f"{{{n}}}"  # after it
+
+function main()
+    x = 5
+    word = "w"
+    print(f"{{x}} {x}}} }}")  # a hole between braces
+    print(
+        # inside the parentheses
+        f"{f"}}{word}{{"} and {"}"}"
+    )
+    print(braced(n: x))
