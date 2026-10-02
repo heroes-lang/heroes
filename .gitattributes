@@ -16,3 +16,8 @@
 *.png binary
 *.ico binary
 *.pdf binary
+
+# A case whose bytes ARE its CRLF line ends (defect 135's L2, 2026-10-02): a
+# literal left open at `\r\n`. Normalised to LF it would test nothing, so git
+# keeps it as written, on every leg.
+tests/golden/check/fixedbugs-135-l2-*.hero -text
