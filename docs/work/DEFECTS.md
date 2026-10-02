@@ -18,9 +18,9 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 16**
+**OPEN: 18**
 
-- [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
+- [ ] **130 — after a unction main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` overecovery · **class: systemic**
 
     **Origin:** lane 123's agent, 2026-09-28, beside defect 124, on the
     trunk's compiler at `aee8b01e` (reproducers `shapes/y01_three_bad.hero`
@@ -78,13 +78,7 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     assigned by the coordinator**: under an arm written inline, `0 => print(1)`
     over a deeper `print(99)` compiled and ran and printed 1, the deeper line
     thrown away at exit 0, a wrong answer and not only a silence (repaired
-    in lane 130, `47849cc9`); and a misspelled keyword at a top-level head,
-    `recrod Point` over its fields, drops its whole block silently (given to
-    lane 133, whose files it is in; reproducers in
-    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/`, 2026-09-29).
-
-    **Widened 2026-09-29 by lane 133's agent**: on the compilers of
-    `a6eab736` and `7c0cb024` the parser HUNG, forever, on a line headed by a
+    in lane 130, `47849cc9`); and a misspelled keyword at a by a
     refused word after an `if`, `while` or `for` block (`elif`, or `let`
     after an `if`); lane 130's merge `0ba7b084` ended it, measured at exit 1,
     and a case per shape is owed (`hang/o.hero`, `y3`, `y4`, `y8`, `r`, `s`);
@@ -773,5 +767,33 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): exit 2. Repaired in lane land186 at `25b96332`,
     gated by its own cases; the rest is owed at the round's gate.
+
+- [ ] **165 — a `+` or `*` alone on the line above an arm's pattern gets a join that no pattern takes, and a second message** | `k = match n` over a line holding only `+` (or `*`) and then `1 => "one"`: `continuation_outside_brackets` with the guess *write the statement on one line*, which writes `+1 => "one"`, then `expected_pattern` at the `+`; no deletion of the line is offered | the join of a line ending in an operator (lane h158's `sign_above.hero`, beside defect 159) · **class: adjacent**
+
+    **Origin:** lane h158's first pass for defect 159, 2026-10-02
+    (`scratchpad/lane-h158/d159/s09_plus.hero`, `s12_star.hero`);
+    reproduced by the coordinator at 18:37 by `date` on the trunk at
+    `4b44f684` (`docs/panel/186-briefs/probes/coordinator/adjacent/`, kept as
+    text since they do not parse).
+
+    **Why it is a defect.** The one fix offered writes a program that is
+    refused anew, and one mistake costs two messages (design.md §4.17).
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): a second message for one mistake and a guess that
+    does not compile; no wrong value and no false message.
+
+- [ ] **166 — a `-` alone above a name or a float pattern is told `expected_pattern` twice at the same place** | `k = match n` over a line holding only `-` and then `x => "one"` (or `1.5 => "one"`): `continuation_outside_brackets`, then `expected_pattern` twice at the name or the number, the same text at the same column | the pattern's refusal after the join of a `-` line (the same on the compiler before lane h158) · **class: adjacent**
+
+    **Origin:** lane h158's first pass for defect 159, 2026-10-02
+    (`scratchpad/lane-h158/d159/s18_name_below.hero`, `s19_float_below.hero`);
+    reproduced by the coordinator at 18:37 by `date` on the trunk at
+    `4b44f684` (`docs/panel/186-briefs/probes/coordinator/adjacent/`).
+
+    **Why it is a defect.** One mistake told twice at one place (design.md
+    §4.17).
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): a second message for one mistake.
 
 *******************************************************************************
