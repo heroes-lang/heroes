@@ -1,0 +1,6 @@
+error[ffi_union_field]: `SB` holds `b` in a union of `fixedbugs-151-unions.h`, and `b` is narrower than that union (`q` is in it too), so comparing a `SB` or using one as a map key can call two different values equal
+  at tests/golden/unsupported/fixedbugs-151-an-arm-narrower-than-its-anonymous-union-compared.hero:17:12
+     |
+  17 |     record SB  #~ ffi_union_field
+     |            ^^
+  note: only an integer, a pointer or an array of them as wide as the union compares a union's bytes: to compare a `SB`, name that member; reading `b` and building a `SB` that names it stay legal

@@ -23,6 +23,16 @@
 # answered 12 for unions before 2019, so two assertions state the
 # 13/12 split directly and a toolchain regression becomes a build
 # failure rather than a silence.
+#
+# **Comparing one is panel 186's R3 since 2026-10-02**, one rule for a union
+# wherever it sits: `==`, `hash` and a map key are refused for a record whose
+# declared field lies in a union, unless that field is an integer, a pointer
+# or an array of them as wide as the union. For a union TYPE the union is T
+# itself, so the width is `sizeof(T)` and the rule is one assertion per
+# field; a union inside a struct is `emit/layout_compare.hero`'s, from the
+# header's layout. Until that day a union type was refused at any arity
+# (panel 077), which refused `U { int32_t i; float f; }` compared by `i`:
+# every value of `U` is a value of `i`, bit for bit.
 
 use ast
 use source
@@ -31,6 +41,7 @@ use check/state
 use ir/containers
 use emit/ctype
 use emit/writer
+use emit/layout_compare
 use parse
 use resolve
 use checker
@@ -41,6 +52,14 @@ use ir/lower
 # reader — the contract FIELD_ASSERTION already keeps.
 constant UNION_ASSERTION: str
     "heroes-ffi-union"
+
+# A compared union type's field that is not compared bit for bit, and one
+# that is but is narrower than the union (R3).
+constant UNION_KIND: str
+    "heroes-ffi-union-kind"
+
+constant UNION_NARROW: str
+    "heroes-ffi-union-narrow"
 
 # What the program does to each extern record, split the way the rule
 # splits: construction is refused only at two or more fields (a
@@ -80,6 +99,7 @@ function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Che
                 if rec.header.is_err()
                     continue
                 c_type = ctype.of(names, decl: decl)
+                not_union = "__builtin_classify_type(*(" + c_type + " *)0) != 13"
 
                 # The marker carries the DECLARATION's name, never
                 # c_type — panel 072 rider 1, which the bootstrap file
@@ -98,11 +118,41 @@ function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Che
                 # builds it.
                 found = source.locate(s, decls[decl].name.start)
                 writer.at_file(@w, file: found.file, at: found.line)
-                writer.line(
-                    @w,
-                    text: "_Static_assert(__builtin_classify_type(*(" + c_type + " *)0) != 13, \"" + UNION_ASSERTION + " " + hero_name + " " + parts.join(" ") + "\");"
-                )
-                wrote @ true
+
+                # Built from two or more fields: C keeps the last one written.
+                if !u.constructed[decl].is_err() && rec.fields.len() >= 2
+                    writer.line(
+                        @w,
+                        text: "_Static_assert(" + not_union + ", \"" + UNION_ASSERTION + " " + hero_name + " " + parts.join(" ") + "\");"
+                    )
+                    wrote @ true
+
+                # Compared, hashed or a map key (R3): each declared field
+                # compares bit for bit and is as wide as the union, or the
+                # walk reads bytes that may hold another member. A handle
+                # has no field and is C's pointer, which is never a union.
+                if !u.operated[decl].is_err() && rec.fields.len() == 0
+                    writer.line(
+                        @w,
+                        text: "_Static_assert(" + not_union + ", \"" + UNION_ASSERTION + " " + hero_name + " \");"
+                    )
+                    wrote @ true
+
+                if !u.operated[decl].is_err()
+                    for field in rec.fields
+                        name = source.span_text(s, field.name)
+                        written = state.written_type(c, field.ty)
+                        holds: str @ not_union
+                        marker: str @ UNION_KIND
+
+                        if !written.is_err() && layout_compare.compares_bitwise(c, decls, ty: written.must())
+                            holds @ not_union + " || sizeof(((" + c_type + " *)0)->" + name + ") == sizeof(" + c_type + ")"
+                            marker @ UNION_NARROW
+                        writer.line(
+                            @w,
+                            text: "_Static_assert(" + holds + ", \"" + marker + " " + hero_name + " " + name + "\");"
+                        )
+                        wrote @ true
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
     if wrote
@@ -265,8 +315,12 @@ test "constructed and compared records are asked, read-only ones are not"
     )
     assert has(text: got, needle: "#line 2 \"t.hero\"")
 
-    # == reaches Cmp at arity one; a read-only record is left alone.
-    assert has(text: got, needle: "heroes-ffi-union Cmp a")
+    # == reaches Cmp at arity one, asked whether its integer is as wide as
+    # the union (R3); a read-only record is left alone.
+    assert has(
+        text: got,
+        needle: "_Static_assert(__builtin_classify_type(*(Cmp *)0) != 13 || sizeof(((Cmp *)0)->a) == sizeof(Cmp), \"heroes-ffi-union-narrow Cmp a\");"
+    )
     assert !has(text: got, needle: "ReadOnly")
 
     # The premise-death pair rides along whenever anything was asked.

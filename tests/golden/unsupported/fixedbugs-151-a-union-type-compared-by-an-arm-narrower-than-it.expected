@@ -1,0 +1,6 @@
+error[ffi_union_field]: `UB` is a `union` in `fixedbugs-151-unions.h`, and `b` is narrower than it, leaving the bytes past it unread, so comparing a `UB` or using one as a map key can call two different values equal
+  at tests/golden/unsupported/fixedbugs-151-a-union-type-compared-by-an-arm-narrower-than-it.hero:9:12
+    |
+  9 |     record UB  #~ ffi_union_field
+    |            ^^
+  note: only an integer, a pointer or an array of them as wide as the union compares a union's bytes; reading through any member, and building one that names one member, stay legal

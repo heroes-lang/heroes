@@ -20,3 +20,23 @@ static inline ZE make_ze(void) { ZE v; memset(&v, 0, sizeof v); v.x = 4; return 
 /* a union holding an anonymous struct, bound by its wide arm */
 typedef struct { int32_t kind; union { struct { int32_t a; int32_t b; }; int64_t q; }; } UAS;
 static inline UAS make_uas(void) { UAS v; memset(&v, 0, sizeof v); v.kind = 2; v.a = 4; v.b = 5; return v; }
+
+/* Compared (panel 186 R3): arms as wide as their unions, an integer, an
+   array of bytes and a pointer, and two a header macro reaches into a named
+   union, the way libc's `s6_addr` and `sa_handler` are reached. */
+typedef struct { int32_t kind; union { int8_t b; int64_t q; }; } SB;
+static inline SB make_sb(int64_t q) { SB s; memset(&s, 0, sizeof s); s.kind = 1; s.q = q; return s; }
+typedef struct { int32_t kind; union { uint8_t bytes[4]; uint32_t word; }; } SARR;
+static inline SARR make_sarr(uint32_t w) { SARR s; memset(&s, 0, sizeof s); s.kind = 1; s.word = w; return s; }
+typedef struct { int32_t kind; union { void *p; intptr_t n; }; } SPTR;
+static inline SPTR make_sptr(int64_t n) { SPTR s; memset(&s, 0, sizeof s); s.kind = 1; s.n = (intptr_t)n; return s; }
+typedef struct { union { uint8_t a8[16]; uint32_t a32[4]; } addr_u; } ADDR;
+#define addr_bytes addr_u.a8
+static inline ADDR make_addr(uint8_t last) { ADDR a; memset(&a, 0, sizeof a); a.addr_u.a8[15] = last; return a; }
+typedef struct { union { void (*one)(int); void (*two)(int, void *); } on_u; int32_t flags; } ACT;
+#define act_one on_u.one
+static inline ACT make_act(int32_t flags) { ACT a; memset(&a, 0, sizeof a); a.flags = flags; return a; }
+
+/* panel 077's two union goldens, compared by an arm as wide as the union */
+typedef union { int32_t i; float f; } U;
+static inline U make_u(int32_t i) { U u; u.i = i; return u; }

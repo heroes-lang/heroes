@@ -1,0 +1,6 @@
+error[ffi_union_field]: `SP` holds `sp_s` in `u`, a union of `fixedbugs-151-unions.h`, and a `Inner` is not compared bit for bit, so comparing a `SP` or using one as a map key can call two different values equal
+  at tests/golden/unsupported/fixedbugs-151-a-record-arm-a-macro-reaches-compared.hero:16:12
+     |
+  16 |     record SP  #~ ffi_union_field
+     |            ^^
+  note: only an integer, a pointer or an array of them as wide as the union compares a union's bytes: to compare a `SP`, name that member; reading `sp_s` and building a `SP` that names it stay legal

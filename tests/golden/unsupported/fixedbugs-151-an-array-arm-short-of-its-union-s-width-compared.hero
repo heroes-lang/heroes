@@ -1,0 +1,19 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R3), a shape
+# beside the rule found in the lane's first pass.
+#
+# `SPAD { kind; union { int8_t c[5]; int32_t i; }; }`: `c` holds every byte
+# of `i`, but the union is eight bytes, `i`'s alignment rounding it up, so
+# `c` is not as wide as the union. An anonymous union has no name C can take
+# `sizeof` of, so its width is asked through its members: the arm holds each
+# member's bytes and its size is a multiple of each member's alignment.
+
+extern "fixedbugs-151-unions.h"
+    record SPAD  #~ ffi_union_field
+        kind: i32
+        c: i8[5]
+
+function same(x: SPAD, y: SPAD) -> bool
+    return x == y
+
+function main()
+    print(1)

@@ -5,7 +5,7 @@
 # The reader of the union assertions `emit/extern_union.hero` writes into
 # the program's own unit, which fault the DECLARATION of a record over a C
 # union TYPE, and the lookups every record class shares: the declaration by
-# its name and a field's span. Each match is a contract
+# its name, a field's span and its written type. Each match is a contract
 # read from this compiler's own marker. What the header's LAYOUT says against
 # a record over a struct, from `cli/layout.hero`'s check unit, is
 # `emit/ffi_layout.hero`'s (panel 186); the positional completeness reader
@@ -23,18 +23,28 @@ use parse
 use resolve
 use checker
 
-# A group's record over a C UNION, at the two operations that would
-# answer wrongly: constructing one, and comparing or hashing one
-# (panel 073). The route back is the finding: reading is untouched,
-# and a record naming ONE member binds it soundly.
-function union_record(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+# A group's record over a C UNION TYPE, at the operations that would answer
+# wrongly (panels 073, 077, 186): building one from two or more fields, which
+# C keeps the last of, and comparing one, hashing it or keying a map by it
+# through a field that is not compared bit for bit or is narrower than the
+# union. Reading is untouched, and a record naming one member, or comparing
+# through an integer as wide as the union, is sound.
+function union_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
         return fail(code: "none", msg: "not an assertion failure")
-    rest = ffi_lookup.after(text: line, marker: extern_union.UNION_ASSERTION)
+    kind: str @ ""
+    rest: str @ ""
 
-    if rest.is_err()
+    for marker in [extern_union.UNION_KIND, extern_union.UNION_NARROW, extern_union.UNION_ASSERTION]
+        tail = ffi_lookup.after(text: line, marker: marker + " ")
+
+        if !tail.is_err() && kind.len() == 0
+            kind @ marker
+            rest @ tail.must()
+
+    if kind.len() == 0
         return fail(code: "none", msg: "not a union assertion")
-    parts = ffi_lookup.words(text: rest.must())
+    parts = ffi_lookup.words(text: rest)
 
     if parts.len() == 0
         return fail(code: "none", msg: "the marker's tail is empty")
@@ -54,41 +64,60 @@ function union_record(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
 
     if found.is_err()
         return fail(code: "none", msg: "no group declares this record")
-
-    # The two cases read differently because they ARE different (panel
-    # 077): with one declared member the record is buildable and
-    # readable and it is ==/hash that has no answer; with two or more,
-    # building it is already wrong, because C keeps the last written.
+    h = found.must().header
     d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_union_field", message: "", span: found.must().span)
+    wrong = ", so comparing a `" + type_name + "` or using one as a map key can call two different values equal"
+    compare_note = "only an integer, a pointer or an array of them as wide as the union compares a union's bytes; reading through any member, and building one that names one member, stay legal"
+
+    if kind != extern_union.UNION_ASSERTION && members.len() == 1
+        m = members[0]
+
+        if kind == extern_union.UNION_KIND
+            d.message @ "`" + type_name + "` is a `union` in `" + h + "`, and `" + m + "` is a `" + field_type_text(s, tree, decls, type_name: type_name, field: m) + "`, which is not compared bit for bit" + wrong
+        else
+            d.message @ "`" + type_name + "` is a `union` in `" + h + "`, and `" + m + "` is narrower than it, leaving the bytes past it unread" + wrong
+        d.notes @ d.notes.push(compare_note)
+        return ok(d)
 
     if members.len() <= 1
-        one: str @ "its member"
+        # A record with no field, compared: nothing names the union's bytes.
+        d.message @ "`" + type_name + "` is a `union` in `" + h + "`, and no field names its bytes" + wrong
+        d.notes @ d.notes.push(compare_note)
+        return ok(d)
+    named: str @ ""
 
-        if members.len() == 1
-            one @ members[0]
-        d.message @ "`" + type_name + "` is a `union` in `" + found.must().header + "`, so comparing or hashing one asks about bytes that may hold another member — `" + one + "` is only what was written last"
-        d.notes @ d.notes.push(
-            "reading `" + one + "` and building one that names it are both sound and stay legal; what has no answer is `==`, `hash` and being a map key, because two values holding different members are equal whenever the bytes match. Mark the `record` `partial` if you want that refusal stated at the declaration"
-        )
+    if members.len() == 2
+        named @ "`" + members[0] + "` and `" + members[1] + "`"
     else
-        named: str @ ""
+        heads: [str] @ []
+        at: i64 @ 0
 
-        if members.len() == 2
-            named @ "`" + members[0] + "` and `" + members[1] + "`"
-        else
-            heads: [str] @ []
-            at: i64 @ 0
+        while at < members.len() - 1
+            heads @ heads.push(members[at])
+            at @ at + 1
 
-            while at < members.len() - 1
-                heads @ heads.push(members[at])
-                at @ at + 1
-
-            named @ "`" + heads.join("`, `") + "` and `" + members[members.len() - 1] + "`"
-        d.message @ "`" + type_name + "` is a `union` in `" + found.must().header + "`, so " + named + " are the same bytes — building one or comparing it would answer about whichever was written last"
-        d.notes @ d.notes.push(
-            "a `record` over a union may name ONE member, and that binds it soundly: reading through it is correct and construction sets the member it names. Two or more is what has no answer — C keeps the last one written, so `==` and `hash` walk the same bytes twice"
-        )
+        named @ "`" + heads.join("`, `") + "` and `" + members[members.len() - 1] + "`"
+    d.message @ "`" + type_name + "` is a `union` in `" + h + "`, so " + named + " are the same bytes — building one would answer about whichever was written last"
+    d.notes @ d.notes.push(
+        "a `record` over a union that names two or more members is read through any of them and never built, because C keeps the last one written: to build one, name only the member the program writes"
+    )
     return ok(d)
+
+# The type a field of the group record `type_name` is written with, as the
+# author wrote it: `f32`, `u8[4]`.
+function field_type_text(s: source.Source, tree: ast.Ast, decls: [ast.Decl], type_name: str, field: str) -> str
+    for decl in decls
+        if source.span_text(s, decl.name) != type_name
+            continue
+
+        match decl.kind
+            .record_decl rec =>
+                for one in rec.fields
+                    if source.span_text(s, one.name) == field
+                        return source.span_text(s, tree.types[one.ty].span)
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return field
 
 # The span of `field` in the group record `type_name`, or `otherwise`.
 function field_span(s: source.Source, decls: [ast.Decl], type_name: str, field: str, otherwise: token.Span) -> token.Span
@@ -126,26 +155,23 @@ function record_of(s: source.Source, decls: [ast.Decl], type_name: str) -> Recor
 
 ## Tests
 
-test "union_record reads its own marker, one member and many apart"
-    text = "extern \"m.h\"\n    record UDef\n        i: i64\n        f: i64\n    record One\n        v: i64\n\nfunction touch(u: UDef, o: One)\n    _ = u\n    _ = o\n\nfunction main()\n    print(1)\n"
+test "union_record reads its markers: two members built, one compared by kind and by width"
+    text = "extern \"m.h\"\n    record UDef\n        i: i64\n        f: i64\n    record One\n        v: f32\n\nfunction touch(u: UDef, o: One)\n    _ = u\n    _ = o\n\nfunction main()\n    print(1)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
-    two = "m.c:9:1: error: static assertion failed due to requirement 'x': heroes-ffi-union UDef i f"
-    d = union_record(s, parsed.decls, line: two)
+    head = "m.c:9:1: error: static assertion failed due to requirement 'x': "
+    d = union_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-union UDef i f")
     assert d.must().code == "ffi_union_field"
-    assert d.must().message == "`UDef` is a `union` in `m.h`, so `i` and `f` are the same bytes — building one or comparing it would answer about whichever was written last"
-    one = "m.c:9:1: error: static assertion failed due to requirement 'x': heroes-ffi-union One v"
-    k = union_record(s, parsed.decls, line: one)
-    assert k.must().message == "`One` is a `union` in `m.h`, so comparing or hashing one asks about bytes that may hold another member — `v` is only what was written last"
-
-    # The interpolated note names the member — the bootstrap shipped
-    # this note with a literal {one} inside it, fixed by this crossing.
-    assert k.must().notes[0] == "reading `v` and building one that names it are both sound and stay legal; what has no answer is `==`, `hash` and being a map key, because two values holding different members are equal whenever the bytes match. Mark the `record` `partial` if you want that refusal stated at the declaration"
+    assert d.must().message == "`UDef` is a `union` in `m.h`, so `i` and `f` are the same bytes — building one would answer about whichever was written last"
+    k = union_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-union-kind One v")
+    assert k.must().message == "`One` is a `union` in `m.h`, and `v` is a `f32`, which is not compared bit for bit, so comparing a `One` or using one as a map key can call two different values equal"
+    w = union_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-union-narrow UDef i")
+    assert w.must().message == "`UDef` is a `union` in `m.h`, and `i` is narrower than it, leaving the bytes past it unread, so comparing a `UDef` or using one as a map key can call two different values equal"
 
     # The premise-death control's own message contains no marker tail
     # that parses: 'a union must classify as 13…' has no record name.
     control = "m.c:9:1: error: static assertion failed due to requirement 'y': a union must classify as 13, or every heroes-ffi-union assertion above is vacuous"
-    assert union_record(s, parsed.decls, line: control).is_err()
+    assert union_record(s, parsed.tree, parsed.decls, line: control).is_err()
