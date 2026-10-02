@@ -62,6 +62,7 @@ use token
 use diag
 use cursor
 use parse/swap_reading
+use text_lines
 use parse/head_lines
 use parse/brace_habit
 use parse/unclosed
@@ -231,7 +232,7 @@ function body_below(c: cursor.Cursor, text: str) -> bool
         i @ i + 1
 
     k = c.tokens[i].kind
-    return k == .indent || !is_line_end(k) && k != .eof && head_lines.margin_has_tab(text, at: c.tokens[i].span.start)
+    return k == .indent || !is_line_end(k) && k != .eof && text_lines.margin_has_tab(text, at: c.tokens[i].span.start)
 
 # An indent, or a line with a tab in its margin, under the cursor. The second
 # holds back the report of a missing body, placed by `parse` against the
@@ -244,7 +245,7 @@ function opening_at(@c: cursor.Cursor, text: str, missing: Missing) -> Body
     if !tabbed_line(c, text)
         return .none
     here = cursor.current_span(c)
-    margin = token.Span(start: here.start - head_lines.margin_width(text, at: here.start), end: here.start)
+    margin = token.Span(start: here.start - text_lines.margin_width(text, at: here.start), end: here.start)
     cursor.push_held(
         @c.held,
         diag.Held(at: c.diagnostics.len(), cause: margin, diagnostic: missing_here(c, text, missing), apart: false)
@@ -296,7 +297,7 @@ function tabbed_line(c: cursor.Cursor, text: str) -> bool
 
     if k == .eof || is_line_end(k)
         return false
-    return head_lines.margin_has_tab(text, at: cursor.current_span(c).start)
+    return text_lines.margin_has_tab(text, at: cursor.current_span(c).start)
 
 # Whether a token can begin an expression, spec § 7's `Unary` and
 # `Primary`: what `while` needs after it to be a loop, so what a `certain`

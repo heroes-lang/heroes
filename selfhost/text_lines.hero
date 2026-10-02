@@ -83,6 +83,50 @@ function lines_above(text: str, comment: i64, decl: i64) -> i64
         return 0
     return newlines_between(text: text, from: comment, to: decl)
 
+## Margins
+
+# Whether `at` begins its line of the text and that line's margin holds a tab.
+function margin_has_tab(text: str, at: i64) -> bool
+    width = margin_width(text, at: at)
+
+    if width < 0
+        return false
+    i: i64 @ at - width
+
+    while i < at
+        if text[i] == '\t'
+            return true
+        i @ i + 1
+
+    return false
+
+# The width of the blank margin of the line that holds byte `at`, wherever on
+# its line `at` stands (`parse/unclosed.swallows_the_body`).
+function line_margin(text: str, at: i64) -> i64
+    start: i64 @ at
+
+    while start > 0 && text[start - 1] != '\n'
+        start @ start - 1
+
+    i: i64 @ start
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\t')
+        i @ i + 1
+
+    return i - start
+
+# How many bytes of blank margin stand before `at` on its line, or -1 where
+# something else does and `at` does not begin its line.
+function margin_width(text: str, at: i64) -> i64
+    i: i64 @ at - 1
+
+    while i >= 0 && text[i] != '\n'
+        if text[i] != ' ' && text[i] != '\t'
+            return -1
+        i @ i - 1
+
+    return at - 1 - i
+
 ## Where one offset stands, said from another
 
 # Where the byte `at` stands, said from the line of the byte `from` at or
@@ -148,3 +192,15 @@ test "a place above is a distance in lines, its column counted in characters"
 
     # `é` is two bytes and one character, and a caret counts characters.
     assert place_above("é[\n)", at: 2, from: 4) == "on the line above, at column 2"
+
+test "a margin is measured to the line's start, and a tab in it is seen"
+    text = "a\n    b\n\tc\n  x y\n"
+    assert margin_width(text, at: 0) == 0
+    assert margin_width(text, at: 6) == 4
+    assert !margin_has_tab(text, at: 6)
+    assert margin_width(text, at: 9) == 1
+    assert margin_has_tab(text, at: 9)
+
+    # `y` does not begin its line.
+    assert margin_width(text, at: 15) == -1
+    assert !margin_has_tab(text, at: 15)
