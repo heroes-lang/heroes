@@ -36,6 +36,7 @@ use token
 use diag
 use state
 use bytes
+use join_fix
 
 ## At the `\`
 
@@ -162,9 +163,7 @@ function offer_join(@l: state.LexState, text: str, below: i64, certainty: diag.C
 
     if k == .lparen || k == .lbracket || k == .lbrace || k == .dot || k == .colon_colon || k == .slash || closes_or_separates(text, at: below) || text[below] == '.'
         glue @ ""
-    fixes: [diag.Fix] = [
-        diag.Fix(title: "write the statement on one line", replacement: glue, span: token.Span(start: left.span.end, end: below), certainty: certainty)
-    ]
+    fixes: [diag.Fix] = [join_fix.made(glue: glue, from: left.span.end, to: below, certainty: certainty)]
     l.diagnostics[l.backslash].fixes @ fixes
 
 ## Where the line below is joined at depth zero

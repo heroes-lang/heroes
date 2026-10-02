@@ -19,10 +19,8 @@ function pick(s: str) -> i64
     return match s
         "p" => 5
         #~v continuation_outside_brackets
-        -
         "a" => 10
         #~v continuation_outside_brackets
-        -
         "b" | "c" => 11
         _ => 20
 

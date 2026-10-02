@@ -9,6 +9,13 @@
 # now, so the break costs one diagnostic, the line that cannot end with `-`,
 # after an inline arm and after a block arm, and its join writes `-1`, the
 # spelling the arm takes.
+#
+# Corrected 2026-10-02, defect 159, lane h158: the join is no longer
+# `certain`. A `-` alone above an integer is a sign or a stray, both readings
+# programs that mean two things, so the join and the deletion of the `-`'s
+# line are both guesses, as panel 185 R6 made them for the same `-` on the
+# arm's own line, and `--apply` writes neither: this case has no `.fixed`
+# now, where its `.fixed` held the two joins.
 
 function pick(n: i64) -> i64
     return match n

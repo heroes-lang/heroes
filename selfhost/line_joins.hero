@@ -50,6 +50,7 @@ use token
 use state
 use operand_families as families
 use literal_operands as operands
+use join_fix
 
 ## The joins, weighed
 
@@ -88,18 +89,25 @@ function operator_of(b: state.Break) -> i64
         return b.after
     return b.after - 1
 
-# Does the refusal carry its join? It carries one fix, the join, or none;
-# and a line ended rather than refused has neither.
+# Does the refusal carry its join, the fix with the join's title
+# (`join_fix`)? A line ended rather than refused carries none, nor does a
+# refusal whose one repair is a deletion (`sign_above`, defect 159), which is
+# no join and is never weighed as one.
 function joined(l: state.LexState, b: state.Break) -> bool
-    return b.diagnostic >= 0 && l.diagnostics[b.diagnostic].fixes.len() > 0
+    return b.diagnostic >= 0 && join_fix.index(l.diagnostics[b.diagnostic]) >= 0
 
 function guessed(@l: state.LexState, b: state.Break)
     if joined(l, b)
-        l.diagnostics[b.diagnostic].fixes[0].certainty @ .guess
+        at = join_fix.index(l.diagnostics[b.diagnostic])
+        l.diagnostics[b.diagnostic].fixes[at].certainty @ .guess
 
 function any_weak(l: state.LexState, breaks: [state.Break]) -> bool
     for b in breaks
-        if !joined(l, b) || l.diagnostics[b.diagnostic].fixes[0].certainty == .guess
+        if !joined(l, b)
+            return true
+        at = join_fix.index(l.diagnostics[b.diagnostic])
+
+        if l.diagnostics[b.diagnostic].fixes[at].certainty == .guess
             return true
 
     return false
