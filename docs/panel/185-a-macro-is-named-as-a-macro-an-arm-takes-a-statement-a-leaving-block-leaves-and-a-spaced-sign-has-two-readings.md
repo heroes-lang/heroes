@@ -251,6 +251,16 @@ x86-64, Linux arm64 and the Windows box before it is called done, R5's seal
 with its `emission` run, and R4's sentence and R3's production priced in the
 landing's tree.
 
+**R7's reading, run 2026-10-02 at 03:34** (one session, 0.40 USD;
+`185-reports/llm-ergonomist-5b-reading.md`): K, (5b) in the short wording,
+objected to, *not a veto, because the meaning is always literal text; only
+whether the program compiles depends on bindings outside the line*; M, (5a),
+approved; L objected to. The reading took *a bound name in braces* to reach
+bare names only, so that `{i + 1}` would pass, where the rule the
+compiler-engineer built refuses any hole whose names are all bound: the short
+wording is narrower than the rule. **The author's condition is not met**, so,
+as the ratification provides, R7 goes back to the author.
+
 ## The critic's two passes
 
 `185-reports/completeness-critic-briefs.md` (the briefs, before any seat:
