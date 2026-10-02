@@ -1,0 +1,4 @@
+tests/golden/check/panel-187-a-closer-the-lexer-pairs-with-another-opener.hero:9:11: error[unclosed_bracket]: `(` opened here is still open at line 12, where `function` begins a line no bracket can hold
+tests/golden/check/panel-187-a-closer-the-lexer-pairs-with-another-opener.hero:9:15: error[unclosed_bracket]: `(` opened here is still open at line 12, where `function` begins a line no bracket can hold
+tests/golden/check/panel-187-a-closer-the-lexer-pairs-with-another-opener.hero:9:29: error[expected_function_type_params_close]: expected `)`, or `,` and another parameter type, found `->`
+tests/golden/check/panel-187-a-closer-the-lexer-pairs-with-another-opener.hero:9:139: error[expected_function_type_arrow]: expected `->` and the result type — a function type always states what it returns, `()` when nothing, found end of line

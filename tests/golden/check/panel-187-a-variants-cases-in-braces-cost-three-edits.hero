@@ -1,0 +1,16 @@
+# Pinned 2026-10-02 by panel 187's compiler engineer, route (1f): a known
+# cost, not an intent; a change in either direction turns this case red.
+# A variant's cases in braces at a deeper margin: the braces, the margin and
+# a field where a case goes are three edits, told by three messages, which
+# ruling 1 reads as one each (`layout.hero:181`,
+# `parse/members_below.hero:76`, `parse/member_lines.hero:322`). Row
+# 131-52a, open by the audit's reading, (f) by ruling 1's.
+
+variant Shape
+    {  #~ empty_variant
+        r: f64  #~ indentation_jump expected_end_of_line
+    }
+    square
+
+function main()
+    print(1)

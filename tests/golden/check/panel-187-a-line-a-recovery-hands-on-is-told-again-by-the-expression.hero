@@ -1,0 +1,30 @@
+# Pinned 2026-10-02 by panel 187's compiler engineer, route (1f): a known
+# cost, not an intent; a change in either direction turns this case red.
+# A recovery that ends its construct hands the next line to the statement
+# reader, and a line no expression begins is told a second time by `primary`
+# (`grammar_expr.hero:429`): after `parse/broken_arm.hero:55` names an arm's
+# `=>` missing two dedents out (rows 131-55a, 131-55b), and after
+# `parse/top_level.hero:82` names a block under `use` (shape `g1/a11`).
+# Class (a): `adjacent`.
+use geom
+    function g()  #~ expected_declaration expected_expression
+        y = 4 )  #~ expected_end_of_line
+
+function an_arrow_past_two_dedents()
+    n = 1
+    if n > 0
+        k = match n
+            0  #~ expected_arm_arrow
+    => 5  #~ expected_expression
+    print(k)
+
+function the_same_with_a_closer_after()
+    n = 1
+    if n > 0
+        k = match n
+            0  #~ expected_arm_arrow
+    => 5 )  #~ expected_expression expected_end_of_line
+    print(k)
+
+function main()
+    print(1)

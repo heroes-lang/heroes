@@ -1,0 +1,1 @@
+tests/golden/check/panel-187-a-closer-of-another-kind-inside-a-list-is-one-message.hero:12:14: error[expected_separator]: expected `,` or a new line between one element and the next, found `)`

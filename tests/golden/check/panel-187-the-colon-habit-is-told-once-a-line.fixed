@@ -1,0 +1,20 @@
+# Pinned 2026-10-02 by panel 187's compiler engineer, route (1f): a known
+# cost, not an intent; a change in either direction turns this case red.
+# Python's one-line suites: the colon habit is told once on a line
+# (`parse/colon_habit.hero:98`, its fix certain), and the next head's colon
+# is named a missing body (`parse/opening.hero:274`), found the `:`. Rows
+# 131-56a and 131-56b. Class (a): `adjacent`.
+
+function two_colons(n: i64)
+    if n > 0
+        if n > 1
+            print(1)  #~ trailing_colon missing_body
+
+function three_colons(n: i64)
+    if n > 0
+        if n > 1
+            if n > 2
+                print(1)  #~ trailing_colon missing_body
+
+function main()
+    print(1)
