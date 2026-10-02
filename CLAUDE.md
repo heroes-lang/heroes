@@ -293,16 +293,13 @@ CL-060.
 **The three suites** are in § Commands. Their counts live in `docs/ROADMAP.md`
 § Where we are and nowhere else (CL-064).
 
-- **A repair or a step is gated by its own cases alone, the forms narrowed to
-  them, and every other check waits for the round. A ROUND of lanes is gated
-  once, on this Mac alone** (author instructions 2026-10-02): the lanes merged
-  into one tree, the seed regenerated and its fixpoint, the compiler's own
-  tests, the net's own tests, the full net, the census; a red round is bisected
-  by lane, then by commit,
-  and only the culprit is redone. A lane is one cluster of defects sharing
-  files, a batch of at most five worked in sequence; it closes at five, at the
-  cluster's last defect, or before a push (CL-063, CL-079). Which form a
-  change's cases live in is `.claude/rules/verification.md` (CL-072).
+- **A repair is gated by its own cases alone; a ROUND of lanes is gated once,
+  on this Mac alone** (author instructions 2026-10-02): the lanes merged, the
+  seed and its fixpoint, the compiler's own tests, the net's own tests, the
+  full net, the census; red is bisected by lane, then commit. A lane is one
+  cluster of defects sharing files, at most five repairs in sequence (CL-063,
+  CL-079). Which form a change's cases live in is
+  `.claude/rules/verification.md` (CL-072).
 - **A suite is the last judge, never the first finder.** What a hook can see on
   the touched file at the moment of writing, a parse error, a name or type
   error, a line over the ceiling, a case's missing annotation, a compiler older
@@ -323,17 +320,18 @@ CL-060.
   **A lane lives under `.claude/worktrees/`, never beside the project**
   (author instruction 2026-09-28; `.claude/rules/records.md` § Working in lanes).
 - **A milestone is tagged only over a clean list** (author instruction
-  2026-09-08): zero open items in `docs/work/DEFECTS.md`, and nothing open in
+  2026-09-08, amended 2026-10-02): zero `blocking` or `systemic` items in
+  `docs/work/DEFECTS.md` (`.claude/rules/verification.md` § Bounded
+  discovery), and nothing open in
   `docs/work/DECIDE.md` that is not a `panel NNN` ratification. The author asked
   for zero of both; a pending sitting is **waiting on the author rather than
   broken**, and § 4's queue catches an unratified one only while that item
   exists, so the exception is named rather than the rule weakened. The executor
   is `records/tagged` and it reads the newest `m-*` tag's own commit, so an open
   defect mid-milestone stays legal and a tag over one does not.
-- **A platform fact is run on a platform or it is an inference**; Linux arm64,
-  in Docker, and Windows are measured once before the push, Linux x86-64 is
-  the CI's (author instruction 2026-10-02), and a defect at the C boundary
-  closes only after them:
+- **A platform fact is run on a platform or it is an inference**; Linux arm64
+  and Windows before the push, x86-64 the CI's (author instruction
+  2026-10-02), a C-boundary defect closed only after them:
   `.claude/rules/platforms.md` (CL-048, CL-049, CL-050, CL-055, CL-079).
 
 ## Commands
