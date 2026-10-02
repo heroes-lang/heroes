@@ -36,8 +36,8 @@
 # Each refusal offers its join with the certainty that break shows, and
 # records the break (`state.Break`); `line_joins.hero` weighs every join once
 # the file is lexed, against the statement's other breaks and against what the
-# join writes beside its operator (defect 129). A `-` alone above an arm is
-# offered its deletion as well, the other reading (`sign_above.hero`).
+# join writes beside its operator (defect 129). An operator alone above an
+# arm is offered its deletion as well (`sign_above.hero`).
 #
 # | entry | called by |
 # |---|---|
@@ -113,10 +113,15 @@ function goes_on_at_head(text: str, at: i64) -> i64
 
     # `-1` and `-fee` against their operand begin a value of their own (panel
     # 180's criterion), and so does a `-` that opens an arm, whose pattern it
-    # signs (`- 1 => …`): the arm's `=>` on the `-`'s own line, or, where
-    # only a comment or the line's end follows the `-`, on the next line with
-    # words, whose line end after the `-` is refused alone (defect 126).
-    if first.kind == .minus && (!set_apart(text, at: at + 1) || next_line.holds_an_arrow(text, from: at) || next_line.arrow_below(text, from: at + 1))
+    # signs (`- 1 => …`), the arm's `=>` on the `-`'s own line.
+    if first.kind == .minus && (!set_apart(text, at: at + 1) || next_line.holds_an_arrow(text, from: at))
+        return -1
+
+    # Nor does an operator alone on its line, a comment at most after it,
+    # whose next line with words holds an arm's `=>`: its line end is refused
+    # alone (`sign_above`), a `-` there since defect 126 and any other since
+    # defect 165, which went on with an arm above and was refused twice.
+    if next_line.arrow_below(text, from: at + first.width)
         return -1
     return at
 
@@ -250,14 +255,10 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     message = "a line outside brackets ends its statement, and this one cannot end with `" + text.slice(from: left.span.start, to: left.span.end) + "`: the next line goes on with it " + where + "; write the statement on one line, or break it inside parentheses"
     d: diag.Diagnostic @ diag.new_diagnostic(code: "continuation_outside_brackets", message: message, span: left.span)
 
-    # A `-` alone above an arm: its deletion beside its join (`sign_above`).
-    if left.kind == .minus && l.backslash < 0 && line_above.opens_a_line(l.tokens, at: at) && next_line.holds_an_arrow(text, from: l.pos)
-        d.fixes @ sign_above.fixes(
-            text,
-            sign: left.span,
-            below: l.pos,
-            commented: l.tokens.len() > at + 1 || l.held.len() > 0
-        )
+    # An operator alone above an arm: its deletion, and its join only where
+    # the join writes a pattern (`sign_above`).
+    if can_only_go_on(left.kind) && l.backslash < 0 && line_above.opens_a_line(l.tokens, at: at) && next_line.holds_an_arrow(text, from: l.pos)
+        sign_above.offer(@l, @d, text, at: at)
         refused(@l, d, head: false)
         return true
 

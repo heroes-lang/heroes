@@ -1,0 +1,77 @@
+# fixedbugs, defect 165, lane h158, 2026-10-02.
+#
+# Beside `fixedbugs-159-a-minus-alone-above-a-pattern-no-minus-signs`: an
+# operator other than `-` alone on its line above an arm. No pattern begins
+# with one (`parse/operator_arm`), so the join writes no pattern and the
+# deletion of the operator's line is the one repair, `certain`, with no join
+# beside it; the parser reads the arm the deletion writes, so nothing else is
+# told, and the `.fixed` beside this file checks clean. Until then `+` over
+# `1 => "one"` was offered only the join, a `guess` writing `+1 => "one"`,
+# and told `expected_pattern` at the `+` as well; over a later arm, or at a
+# shallower margin, the operator was refused twice, once as a line going on
+# with the arm above.
+
+variant Color
+    red
+    blue
+
+function first(n: i64) -> str
+    return match n
+        #~v continuation_outside_brackets
+        +
+        1 => "one"
+        _ => "many"
+
+function later(n: i64) -> str
+    return match n
+        1 => "one"
+        #~v continuation_outside_brackets
+        *
+        _ => "many"
+
+function after_a_block(n: i64) -> str
+    return match n
+        0 =>
+            print(0)
+            "zero"
+        #~v continuation_outside_brackets
+        +
+        1 => "one"
+        _ => "many"
+
+function shallower(n: i64) -> str
+    return match n
+        1 => "one"
+    #~v continuation_outside_brackets
+    +
+        _ => "many"
+
+function word(s: str) -> i64
+    return match s
+        #~v continuation_outside_brackets
+        |
+        "a" => 1
+        _ => 2
+
+function hue(c: Color) -> i64
+    return match c
+        #~v continuation_outside_brackets
+        &&  # a note
+        .red => 1
+        .blue => 2
+
+function field(c: Color) -> i64
+    return match c
+        .red => 1
+        #~v continuation_outside_brackets
+        ::
+        .blue => 2
+
+function main()
+    print(first(1))
+    print(later(2))
+    print(after_a_block(1))
+    print(shallower(3))
+    print(word(s: "a"))
+    print(hue(c: .red))
+    print(field(c: .blue))
