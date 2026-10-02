@@ -1,0 +1,15 @@
+u01_two	exit 0	out 7|	codes 	clang warning: excess elements in union initializer [-Wexcess-initializers];
+u02_three	exit 0	out 8|	codes 	clang warning: excess elements in union initializer [-Wexcess-initializers];
+u03_one	exit 0	out 9|	codes 	clang 
+u04_aggregate_first	exit 0	out 10|	codes 	clang warning: excess elements in union initializer [-Wexcess-initializers];
+u05_aggregate_second	exit 0	out 11|	codes 	clang warning: excess elements in union initializer [-Wexcess-initializers];
+u06_anon_all	exit 0	out 15|	codes 	clang warning: excess elements in struct initializer [-Wexcess-initializers];
+u07_anon_omits_x	exit 0	out 12|	codes 	clang 
+u08_anon_one_member	exit 0	out 15|	codes 	clang 
+u09_named_union_inside	exit 0	out 13|	codes 	clang warning: excess elements in union initializer [-Wexcess-initializers];
+u10_partial	exit 0	out 7|	codes 	clang 
+u12_constructed	exit 1	out -	codes error[ffi_union_field],	clang warning: excess elements in union initializer [-Wexcess-initializers];
+u13_compared	exit 1	out -	codes error[ffi_union_field],	clang warning: excess elements in union initializer [-Wexcess-initializers];
+u14_two_unions	exit 0	out 15|	codes 	clang warning: excess elements in union initializer [-Wexcess-initializers];
+u15_one_of_two	exit 0	out 7|	codes 	clang 
+u16_anon_omits_kind	exit 0	out 15|	codes 	clang 

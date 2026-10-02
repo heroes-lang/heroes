@@ -64,3 +64,10 @@ function main() {  #~ missing_body
 # under `varaint Shade {` is read as the block below that line is read with
 # no braces, a statement's line that holds two, `expected_end_of_line` at its
 # `,`. `check --apply` deletes the two certain `,` (`.applied`).
+
+# Read again 2026-10-02 by lane recovery-b6 (the audit's group (c)): the
+# braces under a head nothing reads are read first as the kind its own words
+# name, a keyword along its line or a first word one slip from one
+# (`parse/head_kind`), and by the shape of their lines only where they name
+# none. `varaint Shade {` is a variant's cases now, its `,` told as a case's
+# where it was told as a statement's.

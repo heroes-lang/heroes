@@ -1,0 +1,58 @@
+# Fixed 2026-10-02, defect 130's class, lane recovery-b6, found beside panel
+# 183 R3's rewording. Symptom: inside a `(` left open, a line that opens
+# with a name after one that kept its line end ends the bracket's reach (R2),
+# but not with a comment on a line of its own between them: `x = g(1, 2` over
+# `# note` over `y = 3 )` took `y = 3` inside the call, its `)` closing it,
+# so the `(` was never named and the stray `)` never told, one message,
+# `expected_args_close` at the `y`, for two mistakes. Cause: R2 asked
+# whether the last token laid out was a kept line end, and the comment's own
+# token stood after it. A comment is no token of the grammar's: the line end
+# asked of is the one before it, whatever comments, blank lines, doc
+# comments or margins stand between, and the lines read as they read with
+# no comment there.
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+function one_comment()
+    x = g(1, 2  #~ unclosed_bracket
+    # the `)` is left out above
+    y = 3 )  #~ expected_end_of_line
+    print(x + y)
+
+function two_comments_and_a_blank_line()
+    x = g(1, 2  #~ unclosed_bracket
+    # one
+
+    # two
+    y = 3 )  #~ expected_end_of_line
+    print(x + y)
+
+function a_doc_comment()
+    x = g(1, 2  #~ unclosed_bracket
+    ## a doc comment
+    y = 3 )  #~ expected_end_of_line
+    print(x + y)
+
+function a_comment_at_column_0()
+    x = g(1, 2  #~ unclosed_bracket
+# at column 0
+    y = 3 )  #~ expected_end_of_line
+    print(x + y)
+
+# The same without the comment line, which the lines above now read as.
+function no_comment()
+    x = g(1, 2  #~ unclosed_bracket
+    y = 3 )  #~ expected_end_of_line
+    print(x + y)
+
+# A line that ended with the opener kept no line end: the next line goes on
+# inside the call, a comment between or not.
+function an_opener_at_the_line_end()
+    x = g(
+    # the arguments below
+    y = 3)  #~ expected_args_close
+    print(x)
+
+function main()
+    one_comment()

@@ -1,0 +1,14 @@
+extern "u.h"
+    record SA
+        kind: i32
+        i: i32
+        x: i32
+    record SAf tag SA
+        kind: i32
+        f: f32
+        x: i32
+    function make_sa() -> SA
+
+function main()
+    s = make_sa()
+    print(s.i)

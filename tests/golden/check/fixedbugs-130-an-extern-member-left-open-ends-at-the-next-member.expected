@@ -1,2 +1,2 @@
-tests/golden/check/fixedbugs-130-an-extern-member-left-open-ends-at-the-next-member.hero:13:26: error[unclosed_bracket]: `(` opened here is never closed
+tests/golden/check/fixedbugs-130-an-extern-member-left-open-ends-at-the-next-member.hero:13:26: error[unclosed_bracket]: `(` opened here is still open at line 14, where `function` begins a line no bracket can hold
 tests/golden/check/fixedbugs-130-an-extern-member-left-open-ends-at-the-next-member.hero:14:44: error[expected_extern_signature]: expected a `function`, a `constant` or a `record`, found `)` — an `extern` group holds what the header declares, one per line

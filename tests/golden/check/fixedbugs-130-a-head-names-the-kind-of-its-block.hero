@@ -1,0 +1,45 @@
+# Fixed 2026-10-02, defect 130's class, lane recovery-b6 (the audit's group
+# (c), rows H-008, H-010 and H-011). Symptom: below a line no declaration
+# opens, the block was read by the shape of its lines alone, so `varaint
+# Token` over a case written `number:` took its cases for a record's fields
+# and told each one `expected_field_type`, and `pub variant Expr` over
+# `num(v: i64)` read its cases as statements, `unexpected_block` and
+# `expected_binding_symbol` at each; the case's own mistake, a `:` or a
+# `(`, waited for a second turn. Cause: `parse/headless` never asked the
+# head. Its own words now name the block's kind where they can, a keyword
+# further along its line or a first word one slip from exactly one keyword
+# (`parse/head_kind`): the block is read as that kind's, its members'
+# mistakes told as under the right head, and the head itself once.
+
+varaint Token  #~ expected_declaration
+    number:  #~ trailing_colon
+        value: i64
+    plus
+    minus
+
+pub variant Expr  #~ expected_declaration
+    num(v: i64)  #~ expected_end_of_line
+    variable
+        name: str
+
+pub variant Either  #~ expected_declaration
+    one:  #~ trailing_colon
+        f: i64
+    none
+
+# A slip of `record`: its block is fields, a broken one told as a field's.
+recrod Point  #~ expected_declaration
+    x: i64
+    y i64  #~ expected_field_type
+
+# A keyword further along: `export function` reads its body.
+export function twice(n: i64) -> i64  #~ expected_declaration
+    return n * 2 )  #~ expected_end_of_line
+
+# A word no keyword is a slip of: the block's shape decides, as before.
+shape Color  #~ expected_declaration
+    red
+    green,  #~ expected_end_of_line
+
+function main()
+    print(1)

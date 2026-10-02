@@ -1,0 +1,8 @@
+extern "one_arm.h"
+    record UB
+        b: i8
+    function make_ua() -> UB
+    function make_ub() -> UB
+
+function main()
+    print(make_ua() == make_ub())

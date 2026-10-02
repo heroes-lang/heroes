@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 13**
+**OPEN: 14**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -243,6 +243,46 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     11 messages since C3); and a narrower R3 prototyped in this cluster's
     lane and measured on those shapes, Task 2 and the instrument before any
     sitting sees it.
+
+    **2026-10-02, lane recovery-b6, an opener the rule ended is named still
+    open at the line and the word that ended its reach** (panel 183 R3,
+    route (b)): repaired at `8c907fa5`, gated by its cases and the compiler's
+    own tests; the net is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b6, a comment on its own line hides no kept
+    line end, so a name below it still ends a paren's reach** (a shape beside
+    R3's rewording, found in the lane's first pass): repaired at `d99b12f8`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close.
+
+    **2026-10-02, lane recovery-b6, an orphan block below a failed line that
+    can open none is named once, and read** (the cluster's C4): repaired at
+    `e85385a9`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
+    **2026-10-02, lane recovery-b6, a block under a head nothing reads is
+    read as the kind the head's own words name** (130's group (c)): repaired
+    at `dc83367b`, gated by its cases and the compiler's own tests; the net
+    is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b6, another language's comment, `//` or `/*
+    */` on one line, is one message and a comment** (130's group (e)):
+    repaired at `6d49b827`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
+    **Batch gate, lane recovery-b6, 2026-10-02 10:25** (the trunk `8b98bcc7`
+    merged at `8a67e4b8`): the seed regenerated once, the fixpoint by `cmp`;
+    the compiler's own tests 1,006 and the net's own 184, all passed;
+    `tests/emission` unmoved, `emission` 654 and 0; the full net 4,318 passed
+    and 0 failed over 26 suites, none re-run, no floor raised; the census over
+    1,642 files in both arms, against the trunk's compiler, moving 70 outputs
+    in 35 files and no exit, the batch's own 25 cases and ten of panel 183's
+    probes whose openers take R3's words; the recovery instrument against the
+    lane's base: ONE 12,745 to 12,838, EXTRA 532 to 439 (`line-comment` 93 to
+    0), HIDDEN pairs 12 to 4, APPLY-NEW and APPLY-OTHER 0, no class risen;
+    Linux x86-64 on the gate tree, 1,006 tests and 19 suites, 4,171 passed and
+    0 failed. The item stays open for the shapes lane recovery-b6's report
+    names.
 
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
@@ -853,6 +893,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     The lane's route, the header's layout read from clang, changes the union
     rule of panels 060 to 077, so the repair is a sitting's (panel 186).
 
+    **Widened 2026-10-02** by panel 186's completeness critic: ONE declared
+    field inside an anonymous union is enough for a wrong answer.
+    `one_arm.h`'s `typedef struct { int32_t kind; union { int8_t b; int64_t
+    q; }; } SB;` with `record SB` naming `kind` and `b`, `print(make_a() ==
+    make_b())` over two values whose `q` differs: `build` exit 0, prints
+    `true` (reproduced by the coordinator at 11:02 on `ae08ed93`), where the
+    same union bound alone by one member is `ffi_union_field`
+    (`docs/panel/186-briefs/probes/critic/one_arm.hero`).
+
 - [ ] **152 — a C object declared as an `extern` `function` stops `build` with an internal error** | `extern "errno.h"` with `function errno() -> i32`: `build` exit 2, *internal error: compiling the generated C failed: ... called object type 'int' is not a function or function pointer* at the result probe; the same for `stdin` and `optarg`, with or without parameters, on macOS and Linux (the seat's), where the same names declared `constant` get a clean exit 1 | `selfhost/emit/extern_probe.hero` (the result probe) · the `extern` member's kind check
 
     **Origin:** panel 185's ffi-pragmatist, 2026-10-02
@@ -903,5 +952,17 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     where no C type nests, and kept by value in three `check/` cases, where
     no C compiler reads it**: repaired at `0aa055a9`, gated by its cases and
     the compiler's own tests; the net is owed at the batch's close.
+
+- [ ] **156 — a C struct with a bit-field member stops `build` with an internal error and clang's text** | `extern "bf.h"` over `typedef struct { int32_t kind; uint32_t flag : 1; uint32_t rest : 31; } BF;` with `record BF` naming `kind: i32`, `flag: u32`, `rest: u32`, reading `make_bf().kind`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: ... invalid application of 'sizeof' to bit-field* at the field assertions and *address of bit-field requested* in the generated hash | `selfhost/emit/` (the field assertion, `heroes-ffi-field`, and the record's descriptor) · panel 073's item 3 (bit-fields filtered before the assertion)
+
+    **Origin:** panel 186's completeness critic, 2026-10-02, in its first
+    pass over the briefs (`docs/panel/186-briefs/probes/critic/bf.h`, `bf.hero`);
+    reproduced by the coordinator at 11:02 on `ae08ed93`.
+
+    **Why it is a defect.** Exit 2 is the compiler blaming itself for a
+    binding the author can be told about, and clang's text reaches the
+    author (`.claude/rules/c-boundary.md`). Panel 073 resolved that a
+    bit-field is filtered before its assertion; what such a field binds to,
+    if anything, is panel 186's question beside defect 151.
 
 *******************************************************************************

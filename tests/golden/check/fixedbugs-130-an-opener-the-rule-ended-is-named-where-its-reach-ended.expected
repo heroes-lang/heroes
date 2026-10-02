@@ -1,0 +1,8 @@
+tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-reach-ended.hero:20:10: error[unclosed_bracket]: `(` opened here is still open at line 21, where `if` begins a line no bracket can hold
+tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-reach-ended.hero:20:12: error[unclosed_bracket]: `(` opened here is still open at line 21, where `if` begins a line no bracket can hold
+tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-reach-ended.hero:27:10: error[unclosed_bracket]: `(` opened here is still open at line 30, where `while` begins a line no bracket can hold
+tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-reach-ended.hero:36:10: error[unclosed_bracket]: `(` opened here is still open at line 38, where the name `y` begins a line after one that ended without a `,`
+tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-reach-ended.hero:43:11: error[unclosed_bracket]: `[` opened here is never closed
+tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-reach-ended.hero:48:10: error[unclosed_bracket]: `(` opened here is never closed
+tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-reach-ended.hero:56:10: error[unclosed_bracket]: `(` opened here is never closed
+tests/golden/check/fixedbugs-130-an-opener-the-rule-ended-is-named-where-its-reach-ended.hero:47:22: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)

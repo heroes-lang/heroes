@@ -1,0 +1,10 @@
+extern "u.h"
+    record SA
+        i: i32
+        f: f32
+        x: i32
+    function make_sa() -> SA
+
+function main()
+    s = make_sa()
+    print(s.i + s.x)
