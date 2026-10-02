@@ -374,13 +374,18 @@ test "a line end before every closer and every comma stands, and is one separato
     assert three.diagnostics.len() == 0
 
 # Defect 123: an arm whose pattern opens with a `-` a space sets apart from
-# its literal is refused once, where it compiled, and its one fix, `certain`,
-# gives a program that parses: a first arm, a later one, one after a block
-# arm, a joined pattern, two spaces, a character, CRLF. And the `-` alone on
+# its literal is refused once, where it compiled, and every fix gives a
+# program that parses: a first arm, a later one, one after a block arm, a
+# joined pattern, two spaces, a character, CRLF. Panel 185 R6: before an
+# integer or a character the sign and a bullet are both readings, so both
+# fixes are guesses, where the sign was `certain` and a bulleted `- 1` beside
+# `_` was applied into `-1` (the sitting's t7); before a string the `-` signs
+# nothing, and its deletion is certain; and a tab setting the `-` apart goes
+# with it, where the sign wrote the tab into the margin. And the `-` alone on
 # the line above an arm, the lexer's, joins without a space, to `-1`, where
 # the join wrote `- 1`, which the rule refuses; the join is asked alone,
 # since the parentheses offered beside it wrap a pattern (defect 126).
-test "an arm opened by a minus set apart from its literal is refused, and its fix parses"
+test "an arm opened by a minus set apart from its literal is refused, and its fixes parse"
     code = "spaced_minus_element"
     shapes = [
         "function main()\n    k = match n\n        - 1 => 10\n        _ => 20\n"
@@ -396,9 +401,36 @@ test "an arm opened by a minus set apart from its literal is refused, and its fi
         assert every_fix_parses(text: text, code: code)
         refused = parse(text)
         assert refused.diagnostics.len() == 1
-        assert refused.diagnostics[0].fixes.len() == 1
-        assert refused.diagnostics[0].fixes[0].certainty == .certain
+        assert refused.diagnostics[0].fixes.len() == 2
+        assert refused.diagnostics[0].fixes[0].certainty == .guess
         assert refused.diagnostics[0].fixes[0].replacement == "-"
+        assert refused.diagnostics[0].fixes[1].certainty == .guess
+        assert refused.diagnostics[0].fixes[1].replacement == ""
+
+    strings = [
+        "function main()\n    k = match s\n        - \"a\" => 10\n        _ => 20\n"
+        "function main()\n    k = match s\n        \"x\" => 5\n        -  \"a\" | \"b\" => 10\n        _ => 20\n"
+    ]
+
+    for text in strings
+        assert every_fix_parses(text: text, code: code)
+        deleted = parse(text)
+        assert deleted.diagnostics.len() == 1
+        assert deleted.diagnostics[0].fixes.len() == 1
+        assert deleted.diagnostics[0].fixes[0].certainty == .certain
+        assert deleted.diagnostics[0].fixes[0].replacement == ""
+
+    tabbed = "function main()\n    k = match n\n        -\t1 => 10\n        _ => 20\n"
+    mended: i64 @ 0
+
+    for d in parse(tabbed).diagnostics
+        if d.code == code
+            for fix in d.fixes
+                written = tabbed.slice(from: 0, to: fix.span.start) + fix.replacement + tabbed.slice(from: fix.span.end, to: tabbed.len())
+                assert parse(written).diagnostics.len() == 0
+                mended @ mended + 1
+
+    assert mended == 2
 
     split = "function main()\n    k = match n\n        -\n        1 => 10\n        _ => 20\n"
     broken = parse(split)

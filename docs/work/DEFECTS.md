@@ -863,6 +863,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     parser, is a change to the language, so the repair is a sitting's, with
     defect 143 and the value-block question in `docs/work/DECIDE.md`.
 
+    **2026-10-02, lane arm, panel 185 R3: an arm takes § 5's `Simple`, every
+    statement but a declaration or an `=` of a name other than `_`, and
+    `Inline` is deleted**: repaired at `1ea85b01`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **150 — a correct program that reads a C union naming two members gets clang's warning on the author's line** | `extern "w.h"` with `record W` (two members over a union) and `function make_w() -> W`, `print(w.i)`: `build` exit 0, the program prints 7, and the build prints *warning: excess elements in union initializer* at `read.hero:2:81` | the completeness probe's `{0,0}` for a union record (`selfhost/emit/`, beside defect 140's `{}`)
 
     **Origin:** lane emit, 2026-10-01 (`scratchpad/lane-emit/pass1/union2/read.hero`
@@ -904,6 +909,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** design.md §4.17: a diagnostic is true; this one
     contradicts the spec it cites.
+
+    **2026-10-02, lane arm, panel 185 R3: `_` stands on an arm's line, in
+    `_ = e`, `_: T = e` and `_: T @ e`, and the message is true of every name
+    it still refuses**: repaired at `1ea85b01`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close.
 
 - [ ] **154 — a hexadecimal number with a fraction is told as a field access** | `x = 0x1.5`: `error[expected_field_name]: expected a field or function name after `.`, found a number (`5`)`, a member-access message for a literal | `selfhost/number.hero` · `selfhost/grammar_expr.hero` (the `.` after a literal)
 

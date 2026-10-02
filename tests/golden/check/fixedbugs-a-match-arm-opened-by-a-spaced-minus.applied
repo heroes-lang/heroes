@@ -13,15 +13,22 @@
 # is the lexer's, refused as a line that cannot end with `-`, and its join
 # now writes `-6`, where it wrote `- 6`, which this rule refuses. The
 # unspaced `-4`, a `-` after a `|` and a `-` in an arm's body are untouched.
+#
+# Corrected 2026-10-02, panel 185 R6, lane arm: the fix is no longer
+# `certain`. Before an integer or a character a bulleted list of arms is a
+# reading too, so the sign and the deletion are both guesses, and `--apply`
+# writes neither: this case's answer is an `.applied` where it was a
+# `.fixed`, the lexer's join alone. Before a string the `-` signs nothing,
+# and its deletion is certain (`fixedbugs-135-p5-*`).
 
 function pick(n: i64) -> i64
     return match n
-        -1 => 10  #~ spaced_minus_element
+        - 1 => 10  #~ spaced_minus_element
         0 => 0
-        -2 | 2 => 20  #~ spaced_minus_element
+        - 2 | 2 => 20  #~ spaced_minus_element
         3 | - 3 => 30
         -4 => 40
-        -5 => 50  #~ spaced_minus_element
+        -  5 => 50  #~ spaced_minus_element
         _ => - 1
 
 function letter(c: i64) -> str
@@ -29,7 +36,7 @@ function letter(c: i64) -> str
         0 =>
             print(0)
             "zero"
-        -'a' => "minus a"  #~ spaced_minus_element
+        - 'a' => "minus a"  #~ spaced_minus_element
         _ => "other"
 
 function split(n: i64) -> i64
@@ -47,9 +54,9 @@ function main()
                 print(1)
             else
                 print(2)
-        -5 =>  #~ spaced_minus_element
+        - 5 =>  #~ spaced_minus_element
             match n + 10
-                -5 => print(0)  #~ spaced_minus_element
+                - 5 => print(0)  #~ spaced_minus_element
                 5 => print(pick(n))
                 _ => print(9)
         _ => print(letter(-97))

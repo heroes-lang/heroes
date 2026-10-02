@@ -13,10 +13,20 @@
 #
 # **One sentence, one code**: `spaced_minus_element`, the list's, and on the
 # thesis list with it (`diag.is_thesis_rule`), since without the rule the arm
-# still has a meaning, the negative pattern. **One fix, and it is
-# `certain`**, where the list's two are guesses: in a pattern a `-` can only
-# be its literal's sign, so the arm has one reading, and the fix writes it
-# the way `fmt` prints it, `-1`.
+# still has a meaning, the negative pattern.
+#
+# **The fixes follow the literal, and only a string's is `certain`** (panel
+# 185 R6; design.md §4.15, and §4.8's *two readings make two guesses*).
+# Before a string the `-` signs nothing, since `-"a"` is refused by its type,
+# so the arm has one reading and the fix deletes the `-`. Before an integer or
+# a character both readings are patterns: the negative literal, `-1`, the way
+# `fmt` prints it, and a bullet, `1`, the habit of a list written as markdown.
+# So both are offered and both are guesses. Until that sitting the sign was
+# `certain` everywhere, on the premise that in a pattern a `-` can only be its
+# literal's sign, and one bulleted arm beside `_` falsified it: `- 1 => "one"`
+# over `_ => "many"` was applied into `-1` and printed `many` (its t7). Both
+# fixes rewrite the `-` and whatever sets it apart, a space or a tab, so a
+# tab there does not go into the margin.
 #
 # **Only the space is this module's.** A comment or a line end after the `-`
 # ends the line with it, which outside brackets the lexer has refused
@@ -28,12 +38,11 @@ use token
 use diag
 use cursor
 use parse/line_end
-use parse/list_line
 
 # At an arm's first pattern: refuse it where it opens with a `-` that a space
 # sets apart from its operand, on the line the `-` begins. Nothing is
-# consumed, so the pattern is read as it always was, the negative literal the
-# fix writes, and the parse goes on.
+# consumed, so the pattern is read as it always was, the negative literal,
+# and the parse goes on.
 function spaced_sign(@c: cursor.Cursor, text: str)
     if !cursor.at(c, .minus)
         return
@@ -45,19 +54,35 @@ function spaced_sign(@c: cursor.Cursor, text: str)
 
     if line_end.has_a_line_end(text.slice(from: sign.end, to: operand.span.start))
         return
-    fix: diag.Fix @ list_line.against_its_value(text: text, sign: sign, operand: operand.span)
-    fix.title @ "write the `-` against its value"
-    fix.certainty @ .certain
+    apart = token.Span(start: sign.start, end: operand.span.start)
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "spaced_minus_element",
-        message: "this arm begins with `- `, a minus set apart from its value by a space, and where a NEWLINE separates, as it does every arm from the line above, the next line may not begin with a `-` that does not touch its operand: in a pattern the `-` can only be its literal's sign, so write it against its value",
+        message: "this arm begins with `- `, a minus set apart from its value by a space, and where a NEWLINE separates, as it does every arm from the line above, the next line may not begin with a `-` that does not touch its operand: " + reading(operand.kind),
         span: sign
     )
-    d.fixes @ d.fixes.push(fix)
+
+    if operand.kind == .str_lit
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "delete the `-`, which signs no string", replacement: "", span: apart, certainty: .certain)
+        )
+    else
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "a negative literal: write the `-` against its value", replacement: "-", span: apart, certainty: .guess)
+        )
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "a bullet: delete the `-`", replacement: "", span: apart, certainty: .guess)
+        )
     c.diagnostics @ c.diagnostics.push(d)
 
-# A literal a pattern's `-` may sign (spec § 8): an integer, a string, a
-# character. After anything else the `-` begins no pattern, which
+# What the `-` can be before this literal, the tail of the message.
+function reading(kind: token.TokenKind) -> str
+    if kind == .str_lit
+        return "before a string the `-` signs nothing, so delete it"
+    return "the `-` is the literal's sign or a bullet, and nothing in the arm says which, so write it against its value, or delete it"
+
+# A literal spec § 8's `Pattern` writes after a `-`: an integer, a string, a
+# character, the string's sign refused by its type, which is why its fix is
+# the deletion. After anything else the `-` begins no pattern, which
 # `parse/arm_pattern` refuses (defect 124), so a second diagnostic here
 # would count one mistake twice; and a comment after the `-` ends its
 # line, which is the lexer's.
