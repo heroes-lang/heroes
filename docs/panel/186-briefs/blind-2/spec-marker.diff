@@ -1,0 +1,6 @@
+360,362c360
+< `record Font partial` names only some, and then comparing it and using it as a
+< map key are compile errors — for it and for any value holding it. Its size stays
+< C's, not the field list's. One with a `tag` and no fields is a **handle**, C's
+---
+> [RULE 1] One with a `tag` and no fields is a **handle**, C's

@@ -1,0 +1,4 @@
+362c362
+< C's, not the field list's. One with a `tag` and no fields is a **handle**, C's
+---
+> C's, not the field list's. [RULE 1] One with a `tag` and no fields is a **handle**, C's
