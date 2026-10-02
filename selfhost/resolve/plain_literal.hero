@@ -1,0 +1,135 @@
+# A plain literal's braces, read where the literal stands (design.md §4.17;
+# panel 184 R2, ratified 2026-10-01, landed 2026-10-02): `count = 3` over
+# `print("{count} rows")` was told only that `count` is never read, the one
+# message that points away from the mistake. Since R2, `unused_binding` says
+# which literal holds the name in braces and offers the `f`, a guess, the
+# literal being text perhaps after all (rustc has shipped the same note since
+# 1.65, the historian's). The walk records what each plain literal's holes
+# name and the local each name means there (`judge`); the note is written
+# after the unused sweep, since whether a binding is read is known only once
+# every body is walked (`unused_notes`, which `resolve.hero` calls).
+#
+# A literal in a pattern is never judged, an `f` literal being no pattern, so
+# a pattern's plain literal is the only spelling its text has
+# (`resolve/walk`); nor is the library's, which no program edits.
+
+use token
+use ast
+use diag
+use source
+use resolved
+use plain_holes
+use escape_readings
+use resolve/state
+use resolve/braced_names
+
+# The plain literal `id` of the walk: every name its holes read, each kept
+# with the local it means where the literal stands.
+function judge(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
+    span = a.exprs[id].span
+
+    if source.is_library(s, span.start)
+        return
+
+    for h in plain_holes.holes(s.text, span: span)
+        for n in h.names
+            name = source.span_text(s, n)
+            local = state.lookup_local(r, name)
+            at: i64 @ -1
+
+            if !local.is_err()
+                at @ local.must()
+            braced_names.keep(@r.braced, braced_names.Braced(owner: r.owner, name: name, literal: span, local: at))
+
+# After the unused sweep: each `unused_binding` whose name a plain literal of
+# its own declaration holds in braces gains a note quoting that literal.
+# Where the literal stands in the binding's scope, the literal written with
+# an `f` is offered, a guess, and a certain rename to `_` beside it becomes a
+# guess too: a loop variable or a payload held in braces has two readings,
+# the value not needed and the `f` forgotten.
+function unused_notes(@r: state.Resolver, s: source.Source)
+    if r.braced.len() == 0
+        return
+    amended: [diag.Diagnostic] @ []
+
+    for d in r.out.diagnostics
+        amended @ amended.push(noted(r, s, d))
+
+    r.out.diagnostics @ amended
+
+function noted(r: state.Resolver, s: source.Source, d: diag.Diagnostic) -> diag.Diagnostic
+    if d.code != "unused_binding"
+        return d
+    at = local_at(r.out, span: d.span)
+
+    if at < 0
+        return d
+    name = source.span_text(s, r.out.locals[at].name)
+    found = held(r, owner: r.out.locals[at].owner, name: name, local: at)
+
+    if found.is_err()
+        return d
+    out: diag.Diagnostic @ d
+    literal = found.must().literal
+    shown = escape_readings.quoted(source.span_text(s, literal))
+
+    if found.must().local != at
+        out.notes @ out.notes.push(
+            "the literal " + shown + " holds `" + name + "` in braces where this binding is not in scope, and a literal without an `f` prints its braces as they stand"
+        )
+        return out
+    out.notes @ out.notes.push(
+        "the literal " + shown + " holds `" + name + "` in braces, and without an `f` before its quote it prints them as they stand"
+    )
+    written = plain_holes.with_f(s.text, span: literal, active: naming(s, literal: literal, name: name))
+    fixes: [diag.Fix] @ [
+        diag.Fix(title: "write the `f`: " + escape_readings.quoted(written), replacement: written, span: literal, certainty: .guess)
+    ]
+
+    for f in d.fixes
+        fixes @ fixes.push(diag.Fix(title: f.title, replacement: f.replacement, span: f.span, certainty: .guess))
+
+    out.fixes @ fixes
+    return out
+
+# The local bound at `span`, or -1.
+function local_at(out: resolved.Resolved, span: token.Span) -> i64
+    i: i64 @ 0
+
+    while i < out.locals.len()
+        if out.locals[i].name == span
+            return i
+        i @ i + 1
+
+    return -1
+
+# The braced name `name` of declaration `owner`: the one that meant `local`
+# where one did, else the first the walk met.
+function held(r: state.Resolver, owner: i64, name: str, local: i64) -> braced_names.Braced?
+    first: braced_names.Braced? @ fail(code: "none", msg: "no plain literal holds the name")
+
+    for b in r.braced
+        if b.owner == owner && b.name == name
+            if b.local == local
+                return ok(b)
+
+            if first.is_err()
+                first @ ok(b)
+
+    return first
+
+# The holes of the literal at `literal` that read `name`.
+function naming(s: source.Source, literal: token.Span, name: str) -> [plain_holes.PlainHole]
+    out: [plain_holes.PlainHole] @ []
+
+    for h in plain_holes.holes(s.text, span: literal)
+        reads: bool @ false
+
+        for n in h.names
+            if source.span_text(s, n) == name
+                reads @ true
+
+        if reads
+            out @ out.push(h)
+
+    return out

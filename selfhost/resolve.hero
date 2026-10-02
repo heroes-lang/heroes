@@ -32,6 +32,7 @@ use stable
 use resolve/top
 use resolve/decls as resolve_decls
 use resolve/cycles
+use resolve/plain_literal
 
 function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use]) -> resolved.Resolved
     r: state.Resolver @ state.new_resolver(expr_count: a.exprs.len(), type_count: a.types.len())
@@ -65,6 +66,10 @@ function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use
 
     top.unused_uses(@r, s, uses)
     state.report_unused(@r, s)
+
+    # A binding a plain literal holds in braces is told so (panel 184 R2),
+    # once the sweep has said which are never read.
+    plain_literal.unused_notes(@r, s)
 
     # Last, because it reads `uses` and `uses` is only complete once every
     # body has been walked: a definitional cycle is a fact about the

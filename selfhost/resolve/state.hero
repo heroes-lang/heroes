@@ -38,6 +38,7 @@ use resolve/binding as resolve_binding
 use inventory
 use resolve/errors
 use resolve/near_names as nearness
+use resolve/braced_names
 use module/diagnostics
 
 ## The stack
@@ -150,6 +151,8 @@ record Resolver
     # `use` lines that were READ, keyed as module_uses is. What is left
     # over is what the unused rule reports.
     module_reads: {str: {str: bool}}
+    # What plain literals hold in braces, for the unused rule's note (R2).
+    braced: [braced_names.Braced]
 
 # The two arenas start full of `.unresolved`, one slot per expression and
 # one per written type in the whole program.
@@ -190,7 +193,8 @@ function new_resolver(expr_count: i64, type_count: i64) -> Resolver
         suggested: suggested,
         owner: 0,
         module: "",
-        module_reads: module_reads
+        module_reads: module_reads,
+        braced: []
     )
 
 function push_diagnostic(@r: Resolver, d: diag.Diagnostic)
