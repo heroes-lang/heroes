@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 40**
+**OPEN: 41**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -1105,5 +1105,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** the coordinator, 2026-10-02, on the damage panel 187's completeness critic found (`docs/records/log/2026-10-02-2141-item-130-cut-in-8349d264-and-restored-what-cut-it-is-unknown-the-commit-did-not-read-its-diff.md`). It would have caught the cut in the item's line, not the one in its body.
 
     **Class: improvement**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): hardening of an instrument; nothing a program does moves.
+
+- [ ] **192 — the compiler built from its seed on Windows, by the seed's own documented command, gets three clang warnings: `getenv` deprecated by the C library's headers** | `clang -I runtime seed/heroes.c runtime/runtime.c -Wl,/STACK:67108864 -o heroes` (`seed/README.md`'s Windows line) on the Windows box: *'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead*, at `seed/heroes.c:50` and, through `#line`, `selfhost/cli/process.hero:64` and `:209`, then *3 warnings generated*; `heroes build` passes `-D_CRT_SECURE_NO_WARNINGS` to every unit it compiles (`selfhost/cli/flags.hero:96`) and `runtime/runtime.c:75` defines it for its own unit, so only a unit compiled outside `heroes build` gets the warnings | `runtime/heroes_runtime.h`, the first include of every emitted unit (`seed/heroes.c:2`) · `seed/README.md` · **class: blocking**
+
+    **Origin:** the coordinator, 2026-10-02, reading the Windows leg's log on `6bec7c8c` (`scratchpad/platforms/win-6bec7c8c.log`, 2026-10-02); the same three warnings stand in every Windows leg's log read that day (`b48d02b8`, `2bb45a96`, `8b98bcc7`, `e252fda4`), and `docs/ref/environment/windows/WINDOWS-MACHINE.md:493-497` records them since 2026-09-21 as warnings *whether they are new is unrun*, never filed.
+
+    **Why it is a defect.** The emitted C is C11 that clang type-checks clean (CLAUDE.md § 7), and this unit is the compiler itself built by its own first command; any `--emit-c` output compiled by hand on Windows gets the same advice. The runtime already says why the switch is the documented one and not a workaround (`runtime/runtime.c:65-74`).
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
 
 *******************************************************************************
