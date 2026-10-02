@@ -634,19 +634,67 @@ test "the joins of one statement take the certainty of the weakest among them"
 # it writes beside it, by the checker's families (`operand_families`), and two
 # literal operands only of one family.
 test "a join is certain only where the operator takes the literal it is written against"
-    for text in ["x = a &&\n1\n", "x = a\n- \"s\"\n", "k = match n\n    0 => 5\n    -\n    \"=>\"\n", "k = match s\n    -\n    \"a\" => 10\n", "x = \"s\"\n- 1\n", "x = \"s\" +\n1\n", "if\n1\n    f()\n", "k = match n\n    0 => 5 -\n    1 => 10\n", "x = a -\n\"s\" + \"t\"\n", "x = a && true\n+ 1\n"]
+    for text in ["x = a &&\n1\n", "x = a\n- \"s\"\n", "k = match n\n    0 => 5\n    -\n    \"=>\"\n", "x = \"s\"\n- 1\n", "x = \"s\" +\n1\n", "if\n1\n    f()\n", "k = match n\n    0 => 5 -\n    1 => 10\n", "x = a -\n\"s\" + \"t\"\n", "x = a && true\n+ 1\n"]
         out = lex_one(text)
         assert out.diagnostics.len() > 0
 
         for d in out.diagnostics
             assert d.fixes[0].certainty == .guess
 
-    for text in ["x = s +\n\"b\"\n", "k = match n\n    -\n    'a' => 10\n", "x = a &&\ntrue\n", "x = b &&\n1\n== 1\n", "x = a +\n1 * 2\n", "x = a\n- f(\"s\")\n"]
+    for text in ["x = s +\n\"b\"\n", "x = a &&\ntrue\n", "x = b &&\n1\n== 1\n", "x = a +\n1 * 2\n", "x = a\n- f(\"s\")\n"]
         out = lex_one(text)
         assert out.diagnostics.len() > 0
 
         for d in out.diagnostics
             assert d.fixes[0].certainty == .certain
+
+    # A `-` alone on the line above an arm (defect 159): over a character the
+    # join and the deletion, two guesses, a sign and a stray being two
+    # programs; over a string the deletion alone and certain, since no `-`
+    # signs one. Both shapes were in the lists above until then, the
+    # character's join `certain` and the string's a `guess` with no deletion.
+    character = lex_one("k = match n\n    -\n    'a' => 10\n")
+    assert character.diagnostics.len() == 1
+    assert character.diagnostics[0].fixes.len() == 2
+    assert character.diagnostics[0].fixes[0].certainty == .guess
+    assert character.diagnostics[0].fixes[1].certainty == .guess
+    quoted = lex_one("k = match s\n    -\n    \"a\" => 10\n")
+    assert quoted.diagnostics.len() == 1
+    assert quoted.diagnostics[0].fixes.len() == 1
+    assert quoted.diagnostics[0].fixes[0].title == "delete the `-`"
+    assert quoted.diagnostics[0].fixes[0].certainty == .certain
+
+    # Over a name, which is no pattern, the join `-x` writes none either: the
+    # deletion alone, certain, the name's own refusal the parser's.
+    named = lex_one("k = match n\n    -\n    x => 10\n")
+    assert named.diagnostics.len() == 1
+    assert named.diagnostics[0].fixes.len() == 1
+    assert named.diagnostics[0].fixes[0].certainty == .certain
+
+# Defects 165 and 166: any other operator alone above an arm is offered its
+# deletion alone, certain, since no pattern begins with one; and wherever the
+# deletion is the one repair the stream is the program it writes, so that the
+# parser tells the arm's own mistakes, once. Where both readings stand, the
+# stream is the join.
+test "an operator alone above an arm is offered its deletion, and the stream is what the deletion writes"
+    shapes = [
+        ["k = match n\n    +\n    1 => 10\n", "k = match n\n    1 => 10\n"]
+        ["k = match n\n    0 => 5\n    *\n    _ => 10\n", "k = match n\n    0 => 5\n    _ => 10\n"]
+        ["k = match c\n    .red => 1\n    ::\n    .blue => 2\n", "k = match c\n    .red => 1\n    .blue => 2\n"]
+        ["k = match s\r\n    |\r\n    \"a\" => 10\r\n", "k = match s\r\n    \"a\" => 10\r\n"]
+        ["k = match n\n    -\n    x => 10\n", "k = match n\n    x => 10\n"]
+        ["k = match n\n    -\n    1.5 => 10\n", "k = match n\n    1.5 => 10\n"]
+    ]
+
+    for shape in shapes
+        out = lex_one(shape[0])
+        assert out.diagnostics.len() == 1
+        assert out.diagnostics[0].fixes.len() == 1
+        assert out.diagnostics[0].fixes[0].certainty == .certain
+        assert kind_line(out.tokens) == kind_line(lex_one(shape[1]).tokens)
+
+    signed = lex_one("k = match n\n    -\n    1 => 10\n")
+    assert kind_line(signed.tokens) == kind_line(lex_one("k = match n\n    -1 => 10\n").tokens)
 
 # Defect 129 (A), the coordinator's widening: a statement that opens a block
 # is still one statement after it, so the break before the block and the one

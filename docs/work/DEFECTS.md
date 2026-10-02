@@ -766,6 +766,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     reading is as likely; panel 185's R6 made the same two readings two
     guesses for a spaced `-` on the arm's own line.
 
+    **2026-10-02, lane h158, a `-` alone above an arm is offered its
+    deletion beside its join, two guesses where both are programs**:
+    repaired at `c936bd28` (`selfhost/sign_above.hero` and
+    `selfhost/join_fix.hero`, called by `selfhost/open_line.hero`), gated by
+    its cases, two `fixedbugs-159-*` goldens and the five that pinned the old
+    join, each corrected under its header; the net is owed at the batch's
+    close.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a `certain` fix that
     writes a program meaning something else.
@@ -783,6 +791,16 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     contradicts itself (design.md §4.17); macOS frameworks reach a program
     only through `-F`.
 
+    **2026-10-02, lane h158, every accepted flag of a package is read in both
+    its spellings, and a refused one refused in either**: repaired at
+    `fb33a992`, gated by its case (a unit test in
+    `selfhost/cli/libraries.hero` over pkg-config's measured output) and the
+    reproducer by hand; the net is owed at the batch's close. The
+    reproducer's package now passes the filter and its program still does
+    not build: the compile line keeps only a package's `-I` words
+    (`selfhost/cli/units.hero`), so `-F` never reaches clang, a second cause
+    that lane h158's report gives for filing apart.
+
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a correct program refused, with a false note.
 
@@ -799,6 +817,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     package the author wrote correctly, and the flags a `.pc` gives are the
     reason `package` exists (design.md §4.19).
 
+    **2026-10-02, lane h158, every compile is handed a package's `-I -D -U
+    -F` by one rule, and its cache keyed by them**: repaired at `40bf84f2`
+    (`libraries.compile_flags`, called by `selfhost/cli/units.hero` and
+    `selfhost/cli/pointee.hero`'s `with_search`), gated by its cases, unit
+    tests in the three modules, and the reproducers by hand, `dpkg` printing
+    7 and defect 160's framework reproducer building; the net is owed at the
+    batch's close.
+
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): exit 2, a correct program refused.
 
@@ -812,6 +838,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** A correct package is refused, and the message
     names a piece of a path as a flag (design.md §4.17).
+
+    **2026-10-02, lane h158, pkg-config's answer is read as a shell reads
+    it, so a word with a space stays one word**: repaired at `b37bfce1`
+    (`selfhost/cli/shell_split.hero`, and the compile caches keyed by each
+    word's length, `libraries.key_text`), gated by its cases, unit tests in
+    `shell_split` and `libraries`, and the reproducer by hand, `spaced`
+    printing 8; the net is owed at the batch's close.
 
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a correct program refused, with a false message.
@@ -830,6 +863,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     accepted on another, against panel 161's ruling that a plain `char` means
     one thing on every leg; no value read through it is wrong, the bytes
     being the same (measured: `u8` on arm64 prints `255`).
+
+    **2026-10-02, lane h158, a probe compiles under the compiler's own flags
+    but its diagnostics, so a plain `char` is signed there too**: repaired at
+    `0235b942` (`pointee.probe_flags`, put on every probe's line by
+    `selfhost/cli/pointee.hero`'s `with_search`), gated by its cases on this
+    Mac, a run case printing -1, an unsupported case refusing `@p: u8` and
+    two unit tests asking clang for Linux arm64's target; its Linux arm64
+    leg, where the defect shows, is owed before the push with the net.
 
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a correct program refused, on Linux arm64.
@@ -861,6 +902,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** The one fix offered writes a program that is
     refused anew, and one mistake costs two messages (design.md §4.17).
 
+    **2026-10-02, lane h158, an operator alone above an arm is offered the
+    deletion of its line alone, `certain`, and the parser reads the arm
+    without it**: repaired at `8cb4ba6c` (`selfhost/sign_above.hero`'s
+    `offer`; `open_line.goes_on_at_head`, where such a line no longer goes
+    on with an arm above it), gated by its case
+    `fixedbugs-165-an-operator-alone-above-an-arm-offers-its-deletion` and
+    the compiler's own tests; the net is owed at the batch's close.
+
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a second message for one mistake and a guess that
     does not compile; no wrong value and no false message.
@@ -874,6 +923,16 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** One mistake told twice at one place (design.md
     §4.17).
+
+    **2026-10-02, lane h158, where the deletion is the one repair the `-` is
+    left out of the stream, and the name or the float is told once**:
+    repaired at `8cb4ba6c` with defect 165, gated by its case
+    `fixedbugs-166-a-minus-alone-above-a-name-or-a-float-is-told-once` and
+    the compiler's own tests; the net is owed at the batch's close. The
+    second message was a failed arm's recovery, `opening.drop_line`, which
+    stops at a line of the text inside a line the lexer joined and reads
+    the part below the break again as an arm: `1 |` over `x => "one"` still
+    meets it, before this repair and after it, and is reported apart.
 
     **Its cause found 2026-10-02** by lane h158 (its repair of the `-` shapes,
     `8cb4ba6c`, keeps them away from the cause, not repaired):

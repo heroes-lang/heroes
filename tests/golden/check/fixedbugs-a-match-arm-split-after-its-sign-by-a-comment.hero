@@ -6,6 +6,11 @@
 # `(-  # the sign` over `1)`, and a pattern takes none. One diagnostic each
 # now, the line that cannot end with `-`, and no fix: a join would carry the
 # comment into the arm, and no `(` stands in a pattern.
+#
+# Corrected 2026-10-02, defect 159, lane h158: a fix is offered now, the
+# deletion of the `-`, which leaves the comment where it stood, and it is a
+# `guess`, the `-` over an integer being a sign or a stray; no join is
+# offered across the comment, and `--apply` writes nothing.
 
 function pick(n: i64) -> i64
     return match n

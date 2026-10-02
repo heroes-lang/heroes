@@ -1,0 +1,46 @@
+# The join a refused line break offers, *write the statement on one line*,
+# and which of a refusal's fixes it is (design.md §4.15, §4.17; panel 181;
+# defects 129 and 159).
+#
+# `open_line` and `backslash` write it, and `line_joins` and `parse/apart`
+# weigh it after the file is lexed. They found it as a refusal's FIRST fix
+# until defect 159, which held while the join was the one repair a break
+# offered. A `-` alone on the line above an arm is offered its deletion as
+# well, and where the arm's pattern is no literal a `-` signs, its deletion
+# alone (`sign_above.hero`): weighed as a join, that deletion would have been
+# judged as one. So the join is the fix with its title, and one place says so.
+
+use token
+use diag
+
+constant TITLE: str
+    "write the statement on one line"
+
+# The join of the line ending at `from` to the word at `to`, with `glue`
+# between: the one constructor every writer of a join calls.
+function made(glue: str, from: i64, to: i64, certainty: diag.Certainty) -> diag.Fix
+    return diag.Fix(title: TITLE, replacement: glue, span: token.Span(start: from, end: to), certainty: certainty)
+
+# The index of the join among `d`'s fixes, or -1 where `d` offers none.
+function index(d: diag.Diagnostic) -> i64
+    at: i64 @ 0
+
+    for fix in d.fixes
+        if fix.title == TITLE
+            return at
+        at @ at + 1
+
+    return -1
+
+## Tests
+
+test "the join is found by its title, wherever it stands among the fixes"
+    span = token.Span(start: 0, end: 1)
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "continuation_outside_brackets", message: "m", span: span)
+    assert index(d) == -1
+    d.fixes @ d.fixes.push(diag.Fix(title: "delete the `-`", replacement: "", span: span, certainty: .certain))
+    assert index(d) == -1
+    d.fixes @ d.fixes.push(made(glue: "", from: 1, to: 3, certainty: .guess))
+    assert index(d) == 1
+    assert d.fixes[1].title == TITLE
+    assert d.fixes[1].span.end == 3

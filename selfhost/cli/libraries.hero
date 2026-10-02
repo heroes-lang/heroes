@@ -26,6 +26,7 @@
 use cli/process
 use cli/publish
 use cli/strings
+use cli/shell_split
 
 # Whether this platform's C runtime already contains a library, so
 # naming it is correct and passing it on would be an error (Zig's
@@ -60,29 +61,52 @@ function in_the_c_runtime(library: str) -> bool
 
     return library == "m" || library == "c"
 
-# The words a package may hand back, and nothing else. -framework and
-# -F take a following argument, so they match as a pair; -D and -U
-# are here on Go's own precedent, measured to unlock 28 of 285 .pc
-# files (SDL2 was bindable through NEITHER clause without them). The
-# two -Wl forms are spellings of things already on the list, checked
-# WHOLE — three comma-parts, the middle one named — which is a fact
-# about the value, not a premise about what packages tend to send.
+# The words a package may hand back, and nothing else. -D and -U are here
+# on Go's own precedent, measured to unlock 28 of 285 .pc files (SDL2 was
+# bindable through NEITHER clause without them). The two -Wl forms are
+# spellings of things already on the list, checked WHOLE — three
+# comma-parts, the middle one named — which is a fact about the value, not
+# a premise about what packages tend to send.
+#
+# **EVERY FLAG IN BOTH ITS SPELLINGS** (defect 160, 2026-10-02): clang reads
+# `-D -U -I -L -l -F` with their value joined or as the next word, and
+# pkg-config prints some of each, measured on this Mac's pkg-config 3.0.7
+# over one `.pc` written both ways: `-F <dir>`, `-I <dir>`, `-D X`,
+# `-L <dir>` and `-l m` come back joined, `-U X`, `-framework X` and
+# `-Wl,-rpath -Wl,<dir>` as two words. Only `-F` as a pair was read until
+# then, so a framework's package was refused with a note listing `-F` as
+# accepted. A value in the next word is a value only when it is not itself a
+# flag, so a refused flag stays refused in that slot too, and every value is
+# handed on JOINED, one word per flag: `compile_flags` below keeps a
+# package's compile words by their prefix, and a separate `-I` would have
+# reached a compile without its directory.
 function filter_words(package: str, said: str) -> [str]?
     flags: [str] @ []
-    parts = split_whitespace(said)
+    parts = shell_split.words(package: package, said: said)?
     index: i64 @ 0
 
     while index < parts.len()
         word = parts[index]
+        next: str @ ""
 
-        if word == "-framework" || word == "-F"
+        if index + 1 < parts.len()
+            next @ parts[index + 1]
+
+        if word == "-framework" || valued(word)
             if index + 1 >= parts.len()
                 return fail(
                     code: "failed",
                     msg: "heroes-ffi-package `" + package + "` answered with `" + word + "` and nothing after it"
                 )
-            flags @ flags.push(word)
-            flags @ flags.push(parts[index + 1])
+
+            if next.len() == 0 || next.chars()[0] == "-"
+                return refused(package: package, said: word + " " + next)
+
+            if word == "-framework"
+                flags @ flags.push(word)
+                flags @ flags.push(next)
+            else
+                flags @ flags.push(word + next)
             index @ index + 2
             continue
 
@@ -90,28 +114,69 @@ function filter_words(package: str, said: str) -> [str]?
             flags @ flags.push(word)
             index @ index + 1
             continue
-        rpath = tail_after(word: word, prefix: "-Wl,-rpath,")
+        rpath = linker_value(word: word, next: next, option: "-rpath")
 
-        if !rpath.is_err() && clean_tail(rpath.must())
-            flags @ flags.push("-Wl,-rpath," + rpath.must())
-            index @ index + 1
+        if !rpath.is_err()
+            flags @ flags.push("-Wl,-rpath," + rpath.must().value)
+            index @ index + rpath.must().words
             continue
-        framed = tail_after(word: word, prefix: "-Wl,-framework,")
+        framed = linker_value(word: word, next: next, option: "-framework")
 
-        if !framed.is_err() && clean_tail(framed.must())
+        if !framed.is_err()
             flags @ flags.push("-framework")
-            flags @ flags.push(framed.must())
-            index @ index + 1
+            flags @ flags.push(framed.must().value)
+            index @ index + framed.must().words
             continue
-        return fail(
-            code: "failed",
-            msg: "heroes-ffi-package `" + package + "` answered with `" + word + "`, which this compiler does not pass on\n  only `-D`, `-U`, `-I`, `-L`, `-l`, `-F`, `-framework`, `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>` are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
-        )
+        return refused(package: package, said: word)
 
     return ok(flags)
 
+# The words of a package's answer a COMPILE needs, `-I -D -U -F`, in the
+# order the package gave them: the one rule for every step that compiles the
+# program's headers, the units (`cli/units.hero`), the pointee and layout
+# probes and the header's questions (`pointee.with_search`), so no step keeps
+# a different subset. The link line takes the whole answer: clang 21 reads
+# a compile word there without a warning (measured 2026-10-02, this Mac),
+# and a link word at a compile warns `'linker' input unused`.
+#
+# **Every step kept `-I` alone until defect 161** (2026-10-02): a `.pc`'s
+# `-D` never reached clang, so a header using it stopped `build` at exit 2
+# with clang's text, and its `-F` never reached a compile, so a framework's
+# header was told missing. The rule reads `filter_words`' own output, whose
+# contract is that a value is joined to its flag and that `-framework`'s
+# name, the one value in a word of its own, never begins with `-`.
+function compile_flags(package_flags: [str]) -> [str]
+    out: [str] @ []
+
+    for flag in package_flags
+        if compiles(flag)
+            out @ out.push(flag)
+
+    return out
+
+function compiles(flag: str) -> bool
+    for prefix in ["-I", "-D", "-U", "-F"]
+        rest = tail_after(word: flag, prefix: prefix)
+
+        if !rest.is_err() && rest.must().len() > 0
+            return true
+
+    return false
+
+# The refusal, naming what the package said and what is accepted. The list
+# in it is the function above, word for word.
+function refused(package: str, said: str) -> [str]?
+    return fail(
+        code: "failed",
+        msg: "heroes-ffi-package `" + package + "` answered with `" + said + "`, which this compiler does not pass on\n  only `-D`, `-U`, `-I`, `-L`, `-l` and `-F`, each with its value joined or as the next word, `-framework <name>`, and `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>`, in one word or split as `-Wl,-rpath -Wl,<dir>`, are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
+    )
+
+# The flags whose value clang reads joined to them or as the next word.
+function valued(word: str) -> bool
+    return word == "-D" || word == "-U" || word == "-I" || word == "-L" || word == "-l" || word == "-F"
+
 function allowed_prefixed(word: str) -> bool
-    prefixes = ["-D", "-U", "-I", "-L", "-l"]
+    prefixes = ["-D", "-U", "-I", "-L", "-l", "-F"]
 
     for prefix in prefixes
         rest = tail_after(word: word, prefix: prefix)
@@ -120,6 +185,26 @@ function allowed_prefixed(word: str) -> bool
             return true
 
     return false
+
+# The value of a `-Wl,<option>,<value>` word, or of `-Wl,<option>` followed
+# by `-Wl,<value>`, and how many words it took.
+record Linked
+    value: str
+    words: i64
+
+function linker_value(word: str, next: str, option: str) -> Linked?
+    whole = tail_after(word: word, prefix: "-Wl," + option + ",")
+
+    if !whole.is_err() && clean_tail(whole.must())
+        return ok(Linked(value: whole.must(), words: 1))
+
+    if word == "-Wl," + option
+        split = tail_after(word: next, prefix: "-Wl,")
+
+        if !split.is_err() && clean_tail(split.must())
+            return ok(Linked(value: split.must(), words: 2))
+
+    return fail(code: "none", msg: "not this linker option")
 
 function tail_after(word: str, prefix: str) -> str?
     ws = word.chars()
@@ -148,21 +233,16 @@ function clean_tail(rest: str) -> bool
 
     return rest.chars()[0] != "-"
 
-function split_whitespace(text: str) -> [str]
-    out: [str] @ []
-    run: [str] @ []
+# Words as a key names them, each by its length, a colon and itself, so a
+# word holding a space is never read as two: the shape `cli/link.hero`'s
+# `binary_home` keys the link line with.
+function key_text(words: [str]) -> str
+    parts: [str] @ []
 
-    for ch in text.chars()
-        if ch == " " || ch == "\t" || ch == "\n"
-            if run.len() > 0
-                out @ out.push(run.join(""))
-                run @ []
-        else
-            run @ run.push(ch)
+    for word in words
+        parts @ parts.push(word.len().to_str() + ":" + word)
 
-    if run.len() > 0
-        out @ out.push(run.join(""))
-    return out
+    return parts.join("|")
 
 # Ask the machine about each package, and let nothing through that is
 # not on the list. The failure is deliberately not silent and not a
@@ -256,6 +336,75 @@ test "the allow-list: the safe words pass, the plugin is refused whole"
 
     # A bare -D with no name is not a flag, it is two characters.
     assert filter_words(package: "trap", said: "-D").is_err()
+
+# What this Mac's pkg-config 3.0.7 printed, 2026-10-02, for one `.pc` whose
+# `Cflags` and `Libs` wrote every accepted flag both ways (lane h158, defect
+# 160): some come back joined and some as two words, and every one reaches
+# clang joined.
+test "every accepted flag in both its spellings, and a refused one refused in either"
+    said = "-F/fw/a -I/inc/a -DNAME_A -U NAME_B -I/inc/b -F/fw/b -DNAME_C=1 -L/lib/a -lm -framework Cocoa -Wl,-rpath -Wl,/rp/a -Wl,-rpath,/rp/b -Wl,-framework -Wl,Metal\n"
+    flags = filter_words(package: "spell", said: said).must()
+    assert flags == ["-F/fw/a", "-I/inc/a", "-DNAME_A", "-UNAME_B", "-I/inc/b", "-F/fw/b", "-DNAME_C=1", "-L/lib/a", "-lm", "-framework", "Cocoa", "-Wl,-rpath,/rp/a", "-Wl,-rpath,/rp/b", "-framework", "Metal"]
+
+    # The separate spelling of each, as a pkg-config that prints what the
+    # file says, or a compiler's own command line, writes it.
+    apart = filter_words(package: "spell", said: "-F /fw -I /inc -D X -U Y -L /lib -l z").must()
+    assert apart == ["-F/fw", "-I/inc", "-DX", "-UY", "-L/lib", "-lz"]
+
+    # A flag in the value's place is a flag: the plugin stays refused, and the
+    # refusal names both words.
+    slotted = filter_words(package: "trap", said: "-I -fplugin=attack.so")
+
+    match slotted
+        .ok => assert false
+        .err e =>
+            assert has_text(text: e.msg, needle: "answered with `-I -fplugin=attack.so`")
+            assert has_text(text: e.msg, needle: "each with its value joined or as the next word")
+
+    assert filter_words(package: "trap", said: "-framework -fplugin=attack.so").is_err()
+    assert filter_words(package: "trap", said: "-Wl,-rpath -Wl,-e,evil").is_err()
+    assert filter_words(package: "trap", said: "-Wl,-rpath").is_err()
+    assert filter_words(package: "trap", said: "-Wl,-framework -L/lib").is_err()
+    assert filter_words(package: "trap", said: "-F").is_err()
+
+    # A word the list does not hold stays refused in either spelling.
+    assert filter_words(package: "trap", said: "-isystem /sys/a").is_err()
+    assert filter_words(package: "trap", said: "-Xlinker -rpath -Xlinker /rp/c").is_err()
+
+# Over the same measured answer: a compile is handed every compile word and
+# no link word, in the package's order (defect 161).
+test "a compile takes a package's -I -D -U -F, and only those, in their order"
+    said = "-F/fw/a -I/inc/a -DNAME_A -U NAME_B -I/inc/b -F/fw/b -DNAME_C=1 -L/lib/a -lm -framework Cocoa -Wl,-rpath -Wl,/rp/a -Wl,-rpath,/rp/b -Wl,-framework -Wl,Metal\n"
+    flags = filter_words(package: "spell", said: said).must()
+    assert compile_flags(flags) == ["-F/fw/a", "-I/inc/a", "-DNAME_A", "-UNAME_B", "-I/inc/b", "-F/fw/b", "-DNAME_C=1"]
+
+    # The framework's name and the libraries stay off a compile.
+    linked = filter_words(package: "sdl", said: "-framework Cocoa -lSDL3 -L/opt/lib -Wl,-framework,Metal").must()
+    assert linked.len() == 6
+    assert compile_flags(linked).len() == 0
+
+# pkgconf 3.0.7's answers on this Mac, 2026-10-02 (lane h158, defect 162),
+# read into the words the list judges: each one word whatever it holds.
+test "a word pkg-config escaped is judged whole, and a key keeps it one"
+    said = "-I/inc/with\\ space -DNAME=a\\ b -DVERSION=\\\"1.0\\\" -L/lib/with\\ space -lz\n"
+    assert filter_words(package: "spaced", said: said).must() == ["-I/inc/with space", "-DNAME=a b", "-DVERSION=\"1.0\"", "-L/lib/with space", "-lz"]
+
+    # A refused flag stays refused whatever escapes it, named whole, and a
+    # quoted space never makes two flags of one word.
+    escaped = filter_words(package: "trap", said: "\\-fplugin=a\\ b.so")
+
+    match escaped
+        .ok    => assert false
+        .err e => assert has_text(text: e.msg, needle: "answered with `-fplugin=a b.so`")
+
+    assert filter_words(package: "trap", said: "-I'/a -fplugin=attack.so'").must() == ["-I/a -fplugin=attack.so"]
+    assert filter_words(package: "trap", said: "-I ''").is_err()
+
+    # A word with a space is one word in a key.
+    assert key_text(["-I/a b"]) != key_text(["-I/a", "b"])
+    assert key_text(["-Ia"]) == "3:-Ia"
+    none: [str] = []
+    assert compile_flags(none).len() == 0
 
 # **The fold-in is asked of the machine, so the case asks the same question.**
 # `-lm` is REQUIRED on POSIX and impossible on MSVC (`LNK1104: cannot open
