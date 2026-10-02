@@ -1,0 +1,16 @@
+# fixedbugs, defect 157, lane land186, 2026-10-02: the two routes
+# `ffi_tag_is_a_union`'s note gives for a union named only by its tag, each
+# built and run, so the note stays true of the compiler. The header beside
+# this case stands for the program's own, giving `union utag` the typedef
+# `UI`, which a `record` binds; and a `ptr` reaches the union through C.
+
+extern "fixedbugs-157-unions.h"
+    record UI
+        i: i32
+    function make_u() -> UI
+    function one_u() -> ptr
+    function read_u(p: ptr) -> i32
+
+function main()
+    print(make_u().i)
+    print(read_u(p: one_u()))
