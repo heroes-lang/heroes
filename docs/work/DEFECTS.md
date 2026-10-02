@@ -582,6 +582,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     at `b7c510c5`, gated by its own cases; the rest is owed at the round's
     gate, and the platform legs before the push.
 
+    **2026-10-02, lane land186, a record over a C union is built naming
+    exactly one member of each union, and `build` judges what a
+    construction leaves out** (panel 186 R7, home (a), read blind by the
+    sitting's third reading): at `8977e7c6`, gated by its own cases; the
+    rest is owed at the round's gate, and the platform legs before the push.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a wrong value at the C
     boundary, built from Heroes.

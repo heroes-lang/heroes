@@ -2390,6 +2390,28 @@ losslessly at all four edges on arm64 and x86-64, compiled both directions
 signatures have no unsigned in them, which is a fact about the corpus and not
 about the mechanism.
 
+**A group's `record` is the header's struct, and a C union inside it is the header's too**
+(panel 186, ratified 2026-10-02 on the author's *1a 2a 3a*). The layout is clang's: a screen of
+positional initialisers lets C vouch for a record that names exactly the struct's members, and every
+other record is read from clang's record-layout dump, which proposes names only, every verdict
+being C arithmetic on the header's own offsets and sizes (`cli/layout.hero`,
+`emit/layout_check.hero`). The union rule is one predicate, a declared field that lies in a union
+shares its bytes, and two operations answer to it. **Comparing** a record, hashing it or keying a
+map by it is refused unless each such field is an integer, a pointer or an array of them as wide as
+the union (R3). **Building** follows the construction-arity rule (R7, home (a)): a record names one
+or more members of each union and reads any, and is built naming exactly one, an anonymous struct's
+fields counting as one, and every field outside the unions. So a construction may name fewer fields
+than its record declares, and which fields it leaves out is **judged by `build`, from clang's
+layout**, at each construction's own line (`emit/layout_sites.hero`): a field left out shares a byte
+with one the construction names, and no two it names share one. `check` holds only the labels,
+named, each a field, once each and in the declared order (`check/group_fields.hero`), because the
+header is read at `build` and never before. **The cost, put to the author in those words before the
+yes**: for an `extern` record, a forgotten field in a construction is told by `build`, not by
+`check`; still a compile error at its line, never a wrong value. What it bought, measured on this
+Mac the day it landed, each at exit 0 with no warning and no C beside the program: `SA` built
+holding `f` while `i` is read, and an SDL3 event built as `SDL_Event(type: 0)`, polled, and read
+through `user.code`.
+
 **The remaining accepted loss:** no automatic binding *generation* — declarations are still written
 by hand, they are merely verified. C++ libraries are still reachable only through a shim.
 
