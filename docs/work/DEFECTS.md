@@ -20,7 +20,7 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 *******************************************************************************
 **OPEN: 11**
 
-- [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
+- [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
     **Origin:** lane 123's agent, 2026-09-28, beside defect 124, on the
     trunk's compiler at `aee8b01e` (reproducers `shapes/y01_three_bad.hero`
@@ -284,7 +284,21 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     0 failed. The item stays open for the shapes lane recovery-b6's report
     names.
 
-- [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
+    **Class: systemic**, 2026-10-02 (the author's *D1a*,
+    `.claude/rules/verification.md` § Bounded discovery): six batches on the
+    trunk's record (recovery-b1 to b6) and a seventh in lane recovery-b8, which
+    leaves one row, `130-34a`, that needs a ruling panel 183's reach rule does
+    not reach (inside an open `[` a name-led line is an element, so the `)`
+    pairs with the `[`); to a sitting with 131 on what a finished recovery is.
+    Seen beside it by lane recovery-b8, for that sitting and not repaired: a
+    function among a variant's cases dropped silently (`g2/r12`), a bodiless
+    method in a record costing two messages (`g2/r09`), `return match f(n` over
+    its arms swallowing them (`hc/h09`), `if f(1 +) )` hiding its stray `)`
+    (`g4/ti`), an extern member whose `(` is left open over a body (`g1/b07`), a
+    function nested in an orphan block costing two messages (`g1/a11`), under
+    `scratchpad/lane-recovery-b8/p1/`.
+
+- [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error` · **class: systemic**
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
     the blocks beside defect 130 on the trunk's compiler at `79aeeffa`
@@ -475,7 +489,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     2026-10-02. The item stays open for the shapes `scratchpad/lane-recovery-b5-items.md`
     § Queued and `scratchpad/close/next-batches-1001.md` name.
 
-- [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe)
+    **Class: systemic**, 2026-10-02 (the author's *D1a*,
+    `.claude/rules/verification.md` § Bounded discovery): four batches
+    (recovery-b1, b2, b4, b5) and 15 rows open on `2bb45a96` by lane
+    recovery-b8's count; to the same sitting as 130.
+
+- [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe) · **class: blocking**
 
     **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (a header of its own
     and `sys/wait.h:144-146`); reproduced by the coordinator at 20:44 on the
@@ -499,7 +518,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and so are Linux x86-64 (the gate's container), Linux arm64 and the
     Windows box, R1 being at the C boundary.
 
-- [ ] **150 — a correct program that reads a C union naming two members gets clang's warning on the author's line** | `extern "w.h"` with `record W` (two members over a union) and `function make_w() -> W`, `print(w.i)`: `build` exit 0, the program prints 7, and the build prints *warning: excess elements in union initializer* at `read.hero:2:81` | the completeness probe's `{0,0}` for a union record (`selfhost/emit/`, beside defect 140's `{}`)
+    **Class: blocking**, 2026-10-02 (the author's *D1a*,
+    `.claude/rules/verification.md` § Bounded discovery): a false message
+    (*declares no*) on a header that defines the name; repaired and gated,
+    closes after the push's platform legs.
+
+- [ ] **150 — a correct program that reads a C union naming two members gets clang's warning on the author's line** | `extern "w.h"` with `record W` (two members over a union) and `function make_w() -> W`, `print(w.i)`: `build` exit 0, the program prints 7, and the build prints *warning: excess elements in union initializer* at `read.hero:2:81` | the completeness probe's `{0,0}` for a union record (`selfhost/emit/`, beside defect 140's `{}`) · **class: blocking**
 
     **Origin:** lane emit, 2026-10-01 (`scratchpad/lane-emit/pass1/union2/read.hero`
     and its `w.h`), left open in defect 140's closed record; reproduced by
@@ -509,7 +533,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     about it reaches the author at a line they wrote correctly
     (`.claude/rules/generated-c.md`; design.md §4.17).
 
-- [ ] **151 — a C struct holding an anonymous union is bound as separate fields, so a value built from Heroes reads back wrong** | `extern "u.h"` over `typedef struct { int32_t kind; union { int32_t i; float f; }; int32_t x; } SA;` with `record SA` naming `kind`, `i`, `f`, `x`: `s = SA(kind: 1, i: 7, f: 0.5, x: 3)` builds at exit 0 and `print(s.i)` prints 1056964608, the bits of 0.5, where 7 was written; `==` on it is accepted and prints `true` (u18); a field left out of such a struct is not reported, the program printing 12 (u07); and a record naming `a` and `c` of a struct `{a, b, c}` is told *does not name `c`* (u19) | `selfhost/emit/` (the record's layout check, `ffi_union_field`), panels 060 to 077's union rule
+    **Class: blocking**, 2026-10-02 (the author's *D1a*,
+    `.claude/rules/verification.md` § Bounded discovery): a clang warning on a
+    correct program reaches the author's line.
+
+- [ ] **151 — a C struct holding an anonymous union is bound as separate fields, so a value built from Heroes reads back wrong** | `extern "u.h"` over `typedef struct { int32_t kind; union { int32_t i; float f; }; int32_t x; } SA;` with `record SA` naming `kind`, `i`, `f`, `x`: `s = SA(kind: 1, i: 7, f: 0.5, x: 3)` builds at exit 0 and `print(s.i)` prints 1056964608, the bits of 0.5, where 7 was written; `==` on it is accepted and prints `true` (u18); a field left out of such a struct is not reported, the program printing 12 (u07); and a record naming `a` and `c` of a struct `{a, b, c}` is told *does not name `c`* (u19) | `selfhost/emit/` (the record's layout check, `ffi_union_field`), panels 060 to 077's union rule · **class: blocking**
 
     **Origin:** lane literals' first pass for defect 150, 2026-10-02
     (`scratchpad/lane-literals/pass1/U150/`, `u.h`, `u17_anon_constructed.hero`,
@@ -531,7 +559,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     same union bound alone by one member is `ffi_union_field`
     (`docs/panel/186-briefs/probes/critic/one_arm.hero`).
 
-- [ ] **152 — a C object declared as an `extern` `function` stops `build` with an internal error** | `extern "errno.h"` with `function errno() -> i32`: `build` exit 2, *internal error: compiling the generated C failed: ... called object type 'int' is not a function or function pointer* at the result probe; the same for `stdin` and `optarg`, with or without parameters, on macOS and Linux (the seat's), where the same names declared `constant` get a clean exit 1 | `selfhost/emit/extern_probe.hero` (the result probe) · the `extern` member's kind check
+    **Class: blocking**, 2026-10-02 (the author's *D1a*,
+    `.claude/rules/verification.md` § Bounded discovery): a wrong value at the C
+    boundary, built from Heroes.
+
+- [ ] **152 — a C object declared as an `extern` `function` stops `build` with an internal error** | `extern "errno.h"` with `function errno() -> i32`: `build` exit 2, *internal error: compiling the generated C failed: ... called object type 'int' is not a function or function pointer* at the result probe; the same for `stdin` and `optarg`, with or without parameters, on macOS and Linux (the seat's), where the same names declared `constant` get a clean exit 1 | `selfhost/emit/extern_probe.hero` (the result probe) · the `extern` member's kind check · **class: blocking**
 
     **Origin:** panel 185's ffi-pragmatist, 2026-10-02
     (`scratchpad/185-ffi-pragmatist/p185/`); reproduced by the critic and by the
@@ -547,7 +579,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `6559facf`, gated by its cases and the compiler's own tests; the net is
     owed at the batch's close.
 
-- [ ] **155 — the public CI is red on `03e70520`: defect 140's variants case passes a C compiler's own limit** | run 36939966148: Darwin arm64's clang (Apple clang 21.0.0, Xcode 26.6) crashes, *Illegal instruction: 4*, on `run/fixedbugs-140-variants-a-thousand-deep-build`, red in `run`, `determinism` and `emission`; Linux x86-64 and arm64 time out on it at `-O2` (exit 124); Linux arm64 also times out on `probe/selfhost, multi`; Windows green | `tests/golden/run/fixedbugs-140-variants-a-thousand-deep-build.hero` and its trace until 2026-10-02, `tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero` since · `tests/harness/suite_run.hero:151`
+    **Class: blocking**, 2026-10-02 (the author's *D1a*,
+    `.claude/rules/verification.md` § Bounded discovery): exit 2 where the
+    author can be told; repaired and gated, closes after the push's platform
+    legs.
+
+- [ ] **155 — the public CI is red on `03e70520`: defect 140's variants case passes a C compiler's own limit** | run 36939966148: Darwin arm64's clang (Apple clang 21.0.0, Xcode 26.6) crashes, *Illegal instruction: 4*, on `run/fixedbugs-140-variants-a-thousand-deep-build`, red in `run`, `determinism` and `emission`; Linux x86-64 and arm64 time out on it at `-O2` (exit 124); Linux arm64 also times out on `probe/selfhost, multi`; Windows green | `tests/golden/run/fixedbugs-140-variants-a-thousand-deep-build.hero` and its trace until 2026-10-02, `tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero` since · `tests/harness/suite_run.hero:151` · **class: blocking**
 
     **Origin:** the author, 2026-10-02 at 02:31 (*la ci è rotta*), on the push
     of 01:17; read by the coordinator from `gh run view 36939966148
@@ -569,7 +606,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the net's own tests and `probe` whole; the net is owed at the batch's
     close, and Linux arm64 at the push.
 
-- [ ] **156 — a C struct with a bit-field member stops `build` with an internal error and clang's text** | `extern "bf.h"` over `typedef struct { int32_t kind; uint32_t flag : 1; uint32_t rest : 31; } BF;` with `record BF` naming `kind: i32`, `flag: u32`, `rest: u32`, reading `make_bf().kind`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: ... invalid application of 'sizeof' to bit-field* at the field assertions and *address of bit-field requested* in the generated hash | `selfhost/emit/` (the field assertion, `heroes-ffi-field`, and the record's descriptor) · panel 073's item 3 (bit-fields filtered before the assertion)
+    **Class: blocking**, 2026-10-02 (the author's *D1a*,
+    `.claude/rules/verification.md` § Bounded discovery): the public CI is red;
+    both halves repaired, closes on a green CI run.
+
+- [ ] **156 — a C struct with a bit-field member stops `build` with an internal error and clang's text** | `extern "bf.h"` over `typedef struct { int32_t kind; uint32_t flag : 1; uint32_t rest : 31; } BF;` with `record BF` naming `kind: i32`, `flag: u32`, `rest: u32`, reading `make_bf().kind`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: ... invalid application of 'sizeof' to bit-field* at the field assertions and *address of bit-field requested* in the generated hash | `selfhost/emit/` (the field assertion, `heroes-ffi-field`, and the record's descriptor) · panel 073's item 3 (bit-fields filtered before the assertion) · **class: blocking**
 
     **Origin:** panel 186's completeness critic, 2026-10-02, in its first
     pass over the briefs (`docs/panel/186-briefs/probes/critic/bf.h`, `bf.hero`);
@@ -581,7 +622,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     bit-field is filtered before its assertion; what such a field binds to,
     if anything, is panel 186's question beside defect 151.
 
-- [ ] **157 — `ffi_tag_is_a_union` says a union has no `record` spelling, which a record binding a union falsifies** | `extern "tu.h"` over `union utag { int32_t i; float f; };` with `record UI tag utag` naming `i`: `build` exit 1, `ffi_tag_is_a_union`, its note *a group's `record` is the header's STRUCT (§4.19). A union has no `record` spelling in this language: reach it as a `ptr` and read it through C functions, or bind the one member you need as its own type*, while `record W` over the typedef'd union `W` builds and prints `7` | `selfhost/emit/ffi_tag.hero:200-218` (landed in `8fdd2a3c`) · panel 077's ratified item 4 (*spell `union T` where the header says union*) · panel 073's *one record per arm by `tag`*
+    **Class: blocking**, 2026-10-02 (the author's *D1a*,
+    `.claude/rules/verification.md` § Bounded discovery): exit 2 and clang's
+    text for a binding the author can be told about.
+
+- [ ] **157 — `ffi_tag_is_a_union` says a union has no `record` spelling, which a record binding a union falsifies** | `extern "tu.h"` over `union utag { int32_t i; float f; };` with `record UI tag utag` naming `i`: `build` exit 1, `ffi_tag_is_a_union`, its note *a group's `record` is the header's STRUCT (§4.19). A union has no `record` spelling in this language: reach it as a `ptr` and read it through C functions, or bind the one member you need as its own type*, while `record W` over the typedef'd union `W` builds and prints `7` | `selfhost/emit/ffi_tag.hero:200-218` (landed in `8fdd2a3c`) · panel 077's ratified item 4 (*spell `union T` where the header says union*) · panel 073's *one record per arm by `tag`* · **class: blocking**
 
     **Origin:** panel 186's ffi-pragmatist and compiler-engineer (both
     measured the refusal, on SDL3's `SDL_Event` and on a minimal `union
@@ -596,7 +641,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     language binds; the refusal itself, of a TAGGED union where a typedef'd
     one binds, is the question panel 186's R9 leaves open with it.
 
-- [ ] **158 — a group's header that includes a header this machine lacks stops `build` with an internal error and clang's text** | `extern "outer.h"` over a header holding `#include <no_such_header_here.h>`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: In file included from ...: ./outer.h:2:10: fatal error: 'no_such_header_here.h' file not found*, where a missing header the group names itself is told `ffi_missing_header` at exit 1 | `selfhost/emit/ffi_build.hero` (where `ffi_missing_header` is told) · `tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero`, red on the Windows box
+    **Class: blocking**, 2026-10-02 (the author's *D1a*,
+    `.claude/rules/verification.md` § Bounded discovery): a false note, against
+    panel 077's ratified item 4.
+
+- [ ] **158 — a group's header that includes a header this machine lacks stops `build` with an internal error and clang's text** | `extern "outer.h"` over a header holding `#include <no_such_header_here.h>`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: In file included from ...: ./outer.h:2:10: fatal error: 'no_such_header_here.h' file not found*, where a missing header the group names itself is told `ffi_missing_header` at exit 1 | `selfhost/emit/ffi_build.hero` (where `ffi_missing_header` is told) · `tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero`, red on the Windows box · **class: blocking**
 
     **Origin:** the coordinator, 2026-10-02 at 15:55, reading the Windows
     box's pre-push leg on `2bb45a96` (16 of 19 suites green; `run`,
@@ -613,7 +662,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     fact also turns a platform's correct skip into a red that would reach
     the CI's Windows leg at the next push.
 
-- [ ] **159 — a `-` alone on the line above an arm's pattern is joined to it with certainty, though deleting it is as likely a reading** | `k = match n` over a line holding only `-` and then `1 => "one"`, `_ => "many"`, with `n = 1`: `continuation_outside_brackets` with the certain fix *write the statement on one line*, and `check --apply` writes `-1 => "one"`, which checks clean and prints `many`; deleting the `-` gives `1 => "one"` and prints `one` | the lexer's join of a line ending in an operator (`continuation_outside_brackets`'s certain fix) · design.md §4.8 (*two readings make two guesses*) · defect 135's class, closed 2026-10-02
+    **Class: blocking**, 2026-10-02 (the author's *D1a*,
+    `.claude/rules/verification.md` § Bounded discovery): exit 2 and clang's
+    text for the machine's own fact; it would turn the CI's Windows leg red.
+
+- [ ] **159 — a `-` alone on the line above an arm's pattern is joined to it with certainty, though deleting it is as likely a reading** | `k = match n` over a line holding only `-` and then `1 => "one"`, `_ => "many"`, with `n = 1`: `continuation_outside_brackets` with the certain fix *write the statement on one line*, and `check --apply` writes `-1 => "one"`, which checks clean and prints `many`; deleting the `-` gives `1 => "one"` and prints `one` | the lexer's join of a line ending in an operator (`continuation_outside_brackets`'s certain fix) · design.md §4.8 (*two readings make two guesses*) · defect 135's class, closed 2026-10-02 · **class: blocking**
 
     **Origin:** lane arm's first pass, 2026-10-02
     (`scratchpad/lane-arm/pass1/r6/u14_lexer_split_int.hero`), raised again
@@ -627,5 +680,9 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     program that checks clean and means something else where another
     reading is as likely; panel 185's R6 made the same two readings two
     guesses for a spaced `-` on the arm's own line.
+
+    **Class: blocking**, 2026-10-02 (the author's *D1a*,
+    `.claude/rules/verification.md` § Bounded discovery): a `certain` fix that
+    writes a program meaning something else.
 
 *******************************************************************************
