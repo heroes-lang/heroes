@@ -593,6 +593,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     R7): at `fc0e7284`, gated by its own cases; the rest is owed at the
     round's gate, and the platform legs before the push.
 
+    **2026-10-02, lane land186, R7's cases, the SDL3 event among them**:
+    at `ec530b54`, gated by its own cases; the rest is owed at the round's
+    gate, and the platform legs before the push.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a wrong value at the C
     boundary, built from Heroes.
