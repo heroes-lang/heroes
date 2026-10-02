@@ -1,0 +1,110 @@
+# What the top level does with a line that opens no declaration (design.md
+# §4.1, §4.17; panel 018): the token told once, `expected_declaration`, and
+# what stands below it read or passed over, never left to cost the next
+# declaration; and what stands on a `use` line past the module it names.
+#
+# Moved out of `parse/decl.hero` on 2026-10-02 (lane recovery-b8), when a
+# `use` line's junk came to drop only its line and that module passed §11's
+# 300: the dispatcher, `decl.file`, reads the seven heads, and this module
+# is the one arm that reads none. Nothing here calls back into `decl`.
+
+use cursor
+use ast
+use grammar_expr
+use parse/opening
+use parse/refused_heads
+use parse/members_below
+use parse/braces
+use parse/brace_habit
+
+# What stands on a `use` line past what it names, `use geom )`: told as
+# anything at the top level that opens no declaration is, and the rest of
+# the line dropped. A block below it is no `use`'s, since a `use` opens none,
+# so it is left to the next turn of `file`, which names it and reads it as it
+# does below `use geom` alone (defect 130's class, lane recovery-b8). Until
+# 2026-10-02 the junk's recovery took the block whole, every mistake in it
+# unsaid.
+function past_a_use(@c: cursor.Cursor, text: str)
+    if cursor.at(c, .eof) || cursor.at_fresh_line(c) || opening.is_line_end(cursor.current_kind(c))
+        return
+    expected_here(@c, text)
+    from = c.pos
+    _ = cursor.bump(@c)
+    brace_habit.drop_rest_of_line(@c, text, from: from)
+
+# The token under the cursor, at the top level, opens no declaration: told,
+# and its line and what stands below it read or passed over.
+function unexpected(@c: cursor.Cursor, @a: ast.Ast, text: str)
+    expected_here(@c, text)
+
+    # The one arm that has consumed nothing yet, so it consumes here: recovery
+    # only drops the REST of a broken line, and the dispatcher must always
+    # move. An indented block at top level belongs to no declaration, and it
+    # is named and read by the shape of its lines, as a body's orphan is,
+    # since 2026-09-29 (lane X4): it went whole, every mistake in it unsaid;
+    # so are braces where a declaration should start.
+    #
+    # **A block under the refused line is read, never dropped** (defect 130's
+    # class, 2026-09-29): `recrod Point` over its fields owes the fields'
+    # mistakes in this run, and `expected_declaration` stays the one report
+    # of the head, the block read as `grammar_expr.under` reads the block
+    # under a line whose head nothing reads, a block of declarations too.
+    # Only where the refused word OPENS its line: in the middle of one, past a
+    # head that failed and left it, the block is that head's, and it goes
+    # whole with it, as it always did; past a `use`, which opens none, it is
+    # the next turn's (`past_a_use`). **And braces that
+    # end the line are its block as an indent is** (`parse/brace_habit`):
+    # `class Point {` over its fields, where the drop stops.
+    if cursor.at(c, .indent) || braces.opens(c, text)
+        grammar_expr.under(@c, @a, text, word: c.pos)
+        return
+    opens = cursor.at_fresh_line(c)
+    from = c.pos
+    began = opening.mark(c)
+    _ = cursor.bump(@c)
+    brace_habit.drop_rest_of_line(@c, text, from: from)
+    cursor.skip_terminators(@c)
+
+    if opens && !bodiless_word(@c, text, word: from, head: began)
+        grammar_expr.under(@c, @a, text, word: from)
+    else if cursor.at(c, .indent)
+        _ = cursor.balanced_block(@c)
+    else if braces.opens(c, text)
+        braces.skip(@c)
+
+# The report of a token at the top level that opens no declaration, where
+# the lexer has not already reported it.
+function expected_here(@c: cursor.Cursor, text: str)
+    if !cursor.at_reported_error(c)
+        cursor.error(
+            @c,
+            code: "expected_declaration",
+            message: "expected a declaration, found " + cursor.found(c, text) + " — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`",
+            span: cursor.current_span(c)
+        )
+
+# A word the lexer refused, opening its line at token `word` with nothing
+# below it, whose swap names a declaration that owes a block
+# (`refused_heads.declares`): that block is missing, told as under the
+# declaration's own head, and true; false where anything else stands, the
+# caller reading it. `const` and `fn` alone over the next declaration were
+# told the word alone, and the value or the body they owed only once the
+# swap was written (defect 133's last rows, lane recovery-b7).
+function bodiless_word(@c: cursor.Cursor, text: str, word: i64, head: opening.Mark) -> bool
+    t = c.tokens[word]
+
+    if t.kind != .error || cursor.at(c, .indent) || braces.opens(c, text) || opening.tabbed_line(c, text) || !refused_heads.opens_a_block(c, text, at: word)
+        return false
+    declared = refused_heads.declares(cursor.slice_of(text, t.span))
+
+    if declared.is_err()
+        return false
+    kind = declared.must()
+
+    if kind == "record"
+        cursor.push_diagnostic(@c.diagnostics, members_below.empty_record(t.span, in_group: false, partial: false))
+    else if kind == "variant"
+        cursor.push_diagnostic(@c.diagnostics, members_below.empty_variant(t.span))
+    else
+        opening.absent(@c, text, head: head, silent: false, missing: opening.missing_body("a `" + kind + "`"))
+    return true

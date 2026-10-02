@@ -1,0 +1,5 @@
+Name: dpkg
+Description: probe
+Version: 1.0
+Cflags: -I${pcfiledir}/../inc -DHERO_PKG_VALUE=7
+Libs:

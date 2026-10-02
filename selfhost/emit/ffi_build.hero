@@ -15,6 +15,7 @@ use source
 use diag
 use emit/externs as emit_externs
 use emit/ffi_lookup
+use emit/header_reach
 use parse
 use resolve
 use checker
@@ -175,10 +176,23 @@ function strip_colons(text: str) -> str
 # for a missing -I on the author's own machine). The class does not
 # repair the gap — the language still has no way to SAY where a header
 # is — it repairs the BLAME.
-function missing_header(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+#
+# **And a header the group's own header reaches, directly or through
+# others** (defect 158, 2026-10-02): the group's header was found and one it
+# needs was not, the same machine's fact further in, told by
+# `emit/header_reach.hero` from the line's place and the include stack clang
+# printed in `stderr` above it. It was exit 2 and clang's text until then.
+#
+# The header's name is read after clang's `error: '`, so a quote in a
+# directory's name cannot be taken for the header's (the first quote on the
+# line was read until defect 158).
+function missing_header(s: source.Source, decls: [ast.Decl], line: str, stderr: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: "file not found")
         return fail(code: "none", msg: "not a missing-header line")
-    opened = ffi_lookup.after(text: line, marker: "'")
+    opened: str? @ ffi_lookup.after(text: line, marker: "error: '")
+
+    if opened.is_err()
+        opened @ ffi_lookup.after(text: line, marker: "'")
 
     if opened.is_err()
         return fail(code: "none", msg: "no quoted header")
@@ -186,7 +200,7 @@ function missing_header(s: source.Source, decls: [ast.Decl], line: str) -> diag.
     span = ffi_lookup.group_head(s, decls, header: header)
 
     if span.is_err()
-        return fail(code: "none", msg: "no group names this header")
+        return header_reach.reached_header(s, decls, line: line, stderr: stderr, missing: header)
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_missing_header",
         message: "`" + header + "` is not on this machine's include path — clang looked and did not find it",
@@ -320,9 +334,11 @@ test "the linker's two spellings, the library, the header, the package"
     assert missing_library(s, parsed.decls, line: "ld: library 'curl' not found").is_err()
 
     # The header the preprocessor could not open.
-    hdr = missing_header(s, parsed.decls, line: "main.c:3:10: fatal error: 'raylib.h' file not found")
+    raylib = "main.c:3:10: fatal error: 'raylib.h' file not found"
+    hdr = missing_header(s, parsed.decls, line: raylib, stderr: raylib)
     assert hdr.must().code == "ffi_missing_header"
-    assert missing_header(s, parsed.decls, line: "main.c:3:10: fatal error: 'ghost.h' file not found").is_err()
+    ghost = "main.c:3:10: fatal error: 'ghost.h' file not found"
+    assert missing_header(s, parsed.decls, line: ghost, stderr: ghost).is_err()
 
     # The package: headline keeps its sentence, later lines become
     # notes, the marker becomes plain words.
@@ -334,3 +350,25 @@ test "the linker's two spellings, the library, the header, the package"
     assert pk.must().notes.len() == 2
     assert pk.must().notes[0] == "install raylib with your package manager"
     assert package_problem(s, parsed.decls, stderr: stderr, line: "heroes-ffi-package `sdl3` missing").is_err()
+
+# Lines as clang printed them in lane h158's first pass (2026-10-02, this Mac).
+test "a header no group names is asked of the stack, and one a group names keeps its words"
+    text = "extern \"outer.h\"\n    function seven() -> i32\n\nfunction main()\n    print(seven())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    said = "In file included from build/tu-1/main.c:5:\nIn file included from d2/outer.h:2:\nd2/mid.h:1:10: fatal error: 'gone.h' file not found\n"
+    deep = missing_header(s, parsed.decls, line: "d2/mid.h:1:10: fatal error: 'gone.h' file not found", stderr: said)
+    assert deep.must().message == "`gone.h` is not on this machine's include path, and `outer.h`, the header this group names, includes it through `mid.h`"
+
+    # A quote in a directory's name is not the header's.
+    quoted = "/Users/o'hara/outer.h:2:10: fatal error: 'gone.h' file not found"
+    assert missing_header(s, parsed.decls, line: quoted, stderr: quoted).must().message == "`gone.h` is not on this machine's include path, and `outer.h`, the header this group names, includes it at line 2"
+
+    # The line alone reaches no group at depth two.
+    alone = "d2/mid.h:1:10: fatal error: 'gone.h' file not found"
+    assert missing_header(s, parsed.decls, line: alone, stderr: alone).is_err()
+    direct = "build/tu-1/main.c:5:10: fatal error: 'outer.h' file not found"
+    assert missing_header(s, parsed.decls, line: direct, stderr: direct).must().message == "`outer.h` is not on this machine's include path — clang looked and did not find it"

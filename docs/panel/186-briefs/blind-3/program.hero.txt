@@ -1,0 +1,19 @@
+extern "sa.h"
+    record SA
+        kind: i32
+        i: i32
+        f: f32
+        x: i32
+    function make_sa() -> SA
+    function sa_f(s: SA) -> f32
+    function sa_x(s: SA) -> i32
+
+function main()
+    s = make_sa()
+    print(s.i)
+    t = SA(kind: 2, f: 1.5, x: 4)
+    print(sa_f(t))
+    print(sa_x(t))
+    a = make_sa()
+    b = make_sa()
+    print(a.kind == b.kind && a.i == b.i && a.x == b.x)

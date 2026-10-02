@@ -48,14 +48,29 @@ use parse/laid_braces
 function laid_out(c: cursor.Cursor, text: str) -> cursor.Cursor
     if laid_braces.laid_out_by_lexer(c, open: c.pos)
         return lexer_laid(c)
-    close = brace_habit.closer(c, open: c.pos)
+    return lines_from(c, text, from: c.pos + 1, close: brace_habit.closer(c, open: c.pos))
+
+# The view of the lines from the cursor to the token at `close`: the braces
+# the cursor's `{` opens where `close` is their `}` (`laid_out`); otherwise
+# the lines a head's own bracket left open swallowed below its line, to where
+# the lexer ended the bracket's reach (`parse/swallowed.lines_to`), laid
+# out as the lexer lays out a block (the head class, lane recovery-b8).
+function view_to(c: cursor.Cursor, text: str, close: i64) -> cursor.Cursor
+    if cursor.at(c, .lbrace) && brace_habit.closer(c, open: c.pos) == close
+        return laid_out(c, text)
+    return lines_from(c, text, from: c.pos, close: close)
+
+# The tokens from `from` to the one at `close`, laid out as an indented
+# block: an `indent` at the cursor's token, the margins below, and a
+# `dedent` at `close`.
+function lines_from(c: cursor.Cursor, text: str, from: i64, close: i64) -> cursor.Cursor
     tokens: [token.Token] @ [token.Token(kind: .indent, span: c.tokens[c.pos].span)]
     base: i64 @ -1
     level: i64 @ -1
     ended: bool @ true
     last: i64 @ c.tokens[c.pos].span.end
     depth: i64 @ 0
-    i: i64 @ c.pos + 1
+    i: i64 @ from
 
     while i < close
         t = c.tokens[i]
@@ -135,6 +150,22 @@ function lexer_laid(c: cursor.Cursor) -> cursor.Cursor
 # kept in the order they were held; and the cursor past the braces its `{`
 # opens, which the view laid out, and past the `}`'s line end.
 function took(@c: cursor.Cursor, view: cursor.Cursor)
+    said_by(c: @c, view: view)
+    brace_habit.pass(@c)
+
+# The same for a view to `close` (`view_to`): past the braces, or to `close`.
+function took_to(@c: cursor.Cursor, view: cursor.Cursor, close: i64)
+    if cursor.at(c, .lbrace) && brace_habit.closer(c, open: c.pos) == close
+        took(c: @c, view: view)
+        return
+    said_by(c: @c, view: view)
+
+    while c.pos < close && !cursor.at(c, .eof)
+        _ = cursor.bump(@c)
+
+# What the view's reading said, said by the cursor, held reports included and
+# kept in the order they were held.
+function said_by(@c: cursor.Cursor, view: cursor.Cursor)
     said = c.diagnostics.len()
 
     for d in view.diagnostics
@@ -142,8 +173,6 @@ function took(@c: cursor.Cursor, view: cursor.Cursor)
 
     for h in view.held
         cursor.push_held(@c.held, diag.Held(at: said + h.at, cause: h.cause, diagnostic: h.diagnostic, apart: h.apart))
-
-    brace_habit.pass(@c)
 
 ## Tests
 

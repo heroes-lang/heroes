@@ -1,0 +1,12 @@
+# fixedbugs, defect 158, lane h158, 2026-10-02.
+#
+# Beside `fixedbugs-158-a-header-the-groups-header-includes-in-angle-brackets`:
+# a macro defined twice, so clang's warning in the second header carries a
+# note pointing back into the group's header, between that warning and the
+# error. clang prints the error's stack again, and it is the one read.
+
+extern "fixedbugs-158-noted-outer.h"
+    function seven() -> i32  #~ ffi_missing_header
+
+function main()
+    print(seven())

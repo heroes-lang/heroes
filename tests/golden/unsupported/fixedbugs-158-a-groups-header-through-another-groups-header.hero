@@ -1,0 +1,15 @@
+# fixedbugs, defect 158, lane h158, 2026-10-02.
+#
+# Beside `fixedbugs-158-a-header-the-groups-header-includes-in-angle-brackets`:
+# the first group's header includes the second group's, and the second's
+# includes the header the machine lacks. The group told is the one whose
+# header holds the `#include`, which is the second.
+
+extern "fixedbugs-158-outer-group.h"
+    function seven() -> i32
+
+extern "fixedbugs-158-inner-group.h"
+    function eight() -> i32  #~ ffi_missing_header
+
+function main()
+    print(seven() + eight())

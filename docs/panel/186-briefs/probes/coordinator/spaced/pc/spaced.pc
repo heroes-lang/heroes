@@ -1,0 +1,5 @@
+Name: spaced
+Description: probe
+Version: 1.0
+Cflags: -I"${pcfiledir}/../inc with space"
+Libs:

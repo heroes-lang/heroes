@@ -44,6 +44,7 @@ import { checkNods, nodCount } from './nods.ts';
 
 const AGENTS_DIR = '.claude/agents';
 const DECL_FILE = 'selfhost/parse/decl.hero';
+const TOP_LEVEL_FILE = 'selfhost/parse/top_level.hero';
 const TABLE_FILE = 'selfhost/cli/table.hero';
 const DOCTOR_FILE = 'selfhost/cli/doctor.hero';
 const CHAPTERS_DIR = 'site/src/html/docs';
@@ -151,14 +152,16 @@ function judges(): { seats: number; vetoes: number } {
  * The words that can begin a top-level line, read TWICE from the parser and
  * asserted equal: once from the keywords its top-level loop dispatches on,
  * once from the `expected_declaration` message that lists them for a reader
- * who typed something else. Both enumerations live in `selfhost/parse/decl.hero`.
+ * who typed something else. The loop is `file` in `selfhost/parse/decl.hero`;
+ * the message is `expected_here` in `selfhost/parse/top_level.hero` since
+ * 2026-10-02, when lane recovery-b8 moved the arm that opens no declaration
+ * there for decl.hero's line ceiling, and this reader went on looking for
+ * `function unexpected_top_level` in decl.hero until the round's gate built
+ * the site. So each enumeration is read from its own function, by name, and a
+ * function that is not where this says is a red naming its file.
  */
 function topLevelWords(): Set<string> {
-  const text = readText(DECL_FILE);
-  const start = text.indexOf('function unexpected_top_level');
-  if (start < 0) throw new Error(`${DECL_FILE}: no \`function unexpected_top_level\` to read the table from.`);
-
-  const loop = text.slice(0, start);
+  const loop = functionText(DECL_FILE, 'file');
   const dispatched = new Set([...loop.matchAll(/if k == \.kw_([a-z]+)/g)].map((m) => m[1]));
 
   // The message reads: ... `use`, `constant`, `function`, `record`, `variant`,
@@ -168,25 +171,45 @@ function topLevelWords(): Set<string> {
   // label that follows it. The first version read from the function to the end
   // of the file and picked up `header` and `return` from unrelated messages
   // further down, which is exactly the kind of premise this file exists to refuse.
-  const after = text.slice(start);
-  const label = after.indexOf('code: "expected_declaration"');
-  const from = label < 0 ? -1 : after.indexOf('message:', label);
-  const to = from < 0 ? -1 : after.indexOf('span:', from);
-  if (from < 0 || to < 0) throw new Error(`${DECL_FILE}: no expected_declaration message to read the words from.`);
-  const listed = new Set([...after.slice(from, to).matchAll(/`([a-z]+)[^`]*`/g)].map((m) => m[1]));
+  // The code is not unique in the parser (`parse/records.hero` tells it too), so
+  // the message is read inside `expected_here` alone.
+  const report = functionText(TOP_LEVEL_FILE, 'expected_here');
+  const label = report.indexOf('code: "expected_declaration"');
+  const from = label < 0 ? -1 : report.indexOf('message:', label);
+  const to = from < 0 ? -1 : report.indexOf('span:', from);
+  if (from < 0 || to < 0) {
+    throw new Error(`${TOP_LEVEL_FILE}: no expected_declaration message in \`function expected_here\` to read the words from.`);
+  }
+  const listed = new Set([...report.slice(from, to).matchAll(/`([a-z]+)[^`]*`/g)].map((m) => m[1]));
 
   const same = dispatched.size === listed.size && [...dispatched].every((w) => listed.has(w));
   if (!same) {
     throw new Error(
-      `${DECL_FILE}: the top-level loop dispatches on {${[...dispatched].sort().join(' ')}} and the\n` +
-        `  expected_declaration message lists {${[...listed].sort().join(' ')}}. The compiler disagrees with\n` +
-        `  itself about which words can begin a line, and the site cannot say a number until it does not.`
+      `${DECL_FILE}: the top-level loop dispatches on {${[...dispatched].sort().join(' ')}} and\n` +
+        `  ${TOP_LEVEL_FILE}'s expected_declaration message lists {${[...listed].sort().join(' ')}}. The compiler\n` +
+        `  disagrees with itself about which words can begin a line, and the site cannot say a number until it does not.`
     );
   }
   if (dispatched.size < 5) {
     throw new Error(`${DECL_FILE}: read ${dispatched.size} top-level words, and the language has seven.`);
   }
   return dispatched;
+}
+
+/**
+ * The text of `function <name>(` in a Heroes module, from its head to the next
+ * line that begins at the margin: a function's body is indented, so the first
+ * unindented line after its head is whatever comes next in the module.
+ */
+function functionText(file: string, name: string): string {
+  // A line end is put in front so that a head on the module's first line is
+  // found the same way as one further down.
+  const text = '\n' + readText(file);
+  const start = text.indexOf(`\nfunction ${name}(`);
+  if (start < 0) throw new Error(`${file}: no \`function ${name}\` to read the table from.`);
+  const rest = text.slice(start + 1);
+  const next = rest.search(/\n\S/);
+  return next < 0 ? rest : rest.slice(0, next);
 }
 
 /** The verbs of the one command: the names in the `Command(` rows of the argv table. */

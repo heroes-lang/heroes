@@ -1,0 +1,7 @@
+extern "c.h"
+    function fill(@p: u8)
+
+function main()
+    v: u8 @ 0
+    fill(@v)
+    print(v)
