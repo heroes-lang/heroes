@@ -1,0 +1,6 @@
+function f(k: i64) -> i64
+    return k
+    print(1)
+
+function main()
+    print(f(k: 5))

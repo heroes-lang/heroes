@@ -1,0 +1,6 @@
+function main()
+    n = 2
+    match n
+        - 1 => print("one")
+        - 2 => print("two")
+        _ => print("many")

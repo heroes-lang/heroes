@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-every-other-name-is-written.hero:18:11: error[wrong_label]: `R` has nothing called `bravo` at this position — it is `alpha`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-every-other-name-is-written.hero:18:21: error[wrong_label]: `R` has nothing called `alpha` at this position — it is `bravo`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-every-other-name-is-written.hero:18:31: error[wrong_label]: `R` has nothing called `cahrlie` at this position — it is `charlie`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-every-other-name-is-written.hero:19:13: error[wrong_label]: `f` has nothing called `nn` at this position — it is `n`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-every-other-name-is-written.hero:19:20: error[wrong_label]: `f` has nothing called `bravo` at this position — it is `alpha`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-every-other-name-is-written.hero:19:32: error[wrong_label]: `f` has nothing called `alpha` at this position — it is `bravo`

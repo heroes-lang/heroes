@@ -1,0 +1,114 @@
+# Fixed 2026-10-02, defect 149, lane checker. Symptom: a value block that
+# ends on a statement, `constant M: i64` over `x: i64 @ 1`, `x @ x + 1`,
+# `assert x == 2`, was told *this branch ends on a statement* at its first
+# line, which is right, where the line that gives no value is the last.
+# Cause: the message took the block's span, which begins at its first
+# statement. Every value block shares the rule, and every one moves: a
+# constant's body, a branch of an `if` used as a value and its `else`, the
+# checked `if`, a `match` arm's block in both forms, an `if` nested in a
+# branch, a constant's own `if`, `return if`, a comment after the last line.
+# Now the caret stands at the statement the block ends on; a block of one
+# line stood there already.
+
+constant ENDS_ON_ASSERT: i64
+    x: i64 @ 1
+    x @ x + 1
+    assert x == 2  #~ no_value
+
+constant ENDS_ON_A_LOOP: i64
+    x: i64 @ 1
+
+    while x < 3  #~ no_value
+        x @ x + 1
+
+constant ENDS_ON_A_MUTATION: i64
+    x: i64 @ 1
+    x @ x + 1  #~ no_value
+
+constant ENDS_ON_A_BRANCH_OF_ITS_OWN: i64
+    if true
+        y = 1
+        assert y == 1  #~ no_value
+    else
+        2
+
+constant ONE_LINE: i64
+    assert true  #~ no_value
+
+function value_if(c: bool) -> i64
+    x = if c
+        y = 1
+        assert y == 1  #~ no_value
+    else
+        2
+    return x
+
+function value_else(c: bool) -> i64
+    x = if c
+        1
+    else
+        y: i64 @ 2
+        y @ y + 1  #~ no_value
+    return x
+
+function checked_if(c: bool) -> i64
+    x: i64 = if c
+        y = 1
+        assert y == 1  #~ no_value
+    else
+        2
+    return x
+
+function value_arm(n: i64) -> i64
+    x = match n
+        0 =>
+            y = 1
+            assert y == 1  #~ no_value
+        _ => 2
+
+    return x
+
+function checked_arm(n: i64) -> i64
+    x: i64 = match n
+        0 =>
+            y = 1
+
+            for i in [1, 2]  #~ no_value
+                print(i + y)
+        _ => 2
+
+    return x
+
+function nested(c: bool) -> i64
+    x = if c
+        if c
+            y = 1
+            assert y == 1  #~ no_value
+        else
+            3
+    else
+        2
+    return x
+
+function returned(c: bool) -> i64
+    return if c
+        y = 1
+        assert y == 1  #~ no_value
+    else
+        2
+
+function a_comment_after(c: bool) -> i64
+    x = if c
+        y = 1
+        assert y == 1  #~ no_value
+        # a comment after the last line
+    else
+        2
+    return x
+
+function main()
+    print(ENDS_ON_ASSERT + ENDS_ON_A_LOOP + ENDS_ON_A_MUTATION)
+    print(ENDS_ON_A_BRANCH_OF_ITS_OWN + ONE_LINE)
+    print(value_if(true) + value_else(true) + checked_if(true))
+    print(value_arm(0) + checked_arm(0) + nested(true) + returned(true))
+    print(a_comment_after(true))

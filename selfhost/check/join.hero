@@ -29,13 +29,14 @@
 # is usable in value position nowhere else. The stated withdrawal
 # condition was "a single shared join routine whose branch list carries
 # divergence as data, with no per-construct branch" — which is what this
-# is: `every_branch_jumps` answers *does this construct leave* over a list
+# is: `every_branch` answers *how does this construct leave* over a list
 # of branches, for the statement `match`, `join_for_value` (both value
 # constructs) and the checked `match`, and `refuse_leaving` refuses a value
 # construct that does (`check/walk.hero`). The statement and the checked
-# `if` ask the same of their blocks without building a list, the `else`
-# required, because they stand on the path every nested `if` recurses
-# through, where a list's temporaries would widen each level's frame.
+# `if` ask the same of their blocks without building a list, folding
+# `both` with the `else` required, because they stand on the path every
+# nested `if` recurses through, where a list's temporaries would widen each
+# level's frame.
 
 use token
 use ast
@@ -46,27 +47,55 @@ use check/state
 use value_errors
 use flow_errors
 
+# How control leaves a statement, a block or a branch, if it does: it
+# `falls` to the next line; it `jumps`, by a `return`, or by a `break` or a
+# `continue` inside a loop; or it leaves by a jump `refused` where it stands,
+# a `break` or a `continue` outside every loop, already told at the jump.
+#
+# **The third is why this is not a `bool`** (defect 148). Whatever asks
+# whether control goes on reads a refused jump as leaving, as it always has:
+# a function whose body is a `break` costs `jump_outside_loop` and no
+# `missing_return`. What may not read it so is a CLAIM to the author that
+# rests on it, *every branch jumps* or *its body jumps before it gives one*:
+# `constant M: i64` over `break` was told both, at one place, for one
+# mistake, and the second is the first one's shadow (design.md §4.17).
+variant Leaves
+    falls
+    jumps
+    refused
+
+# The way a construct with two branches leaves, from the way each does: it
+# falls if either does, and where both leave, by a refused jump if either
+# was, since a claim about the whole would rest on that one.
+function both(first: Leaves, second: Leaves) -> Leaves
+    if first == .falls || second == .falls
+        return .falls
+
+    if first == .refused || second == .refused
+        return .refused
+    return .jumps
+
 # One branch of a join: the type it produces, or absence when it has
-# none, whether control leaves through it, and where to point if it
-# disagrees with the others. A branch with no value and `jumps` false
-# ended on a statement, and whoever built it has already said so.
+# none, how control leaves through it, and where to point if it
+# disagrees with the others. A branch with no value that `falls` ended on
+# a statement, and whoever built it has already said so.
 record Branch
     value: i64?
-    jumps: bool
+    leaves: Leaves
     span: token.Span
 
-# Whether control leaves through every branch: the construct as a whole
-# never completes. False for no branches at all, which is a `match` the
-# parser has already refused for its missing arms.
-function every_branch_jumps(branches: [Branch]) -> bool
+# How control leaves through every branch, the construct as a whole: it
+# falls where any branch does, and for no branches at all, which is a
+# `match` the parser has already refused for its missing arms.
+function every_branch(branches: [Branch]) -> Leaves
     if branches.len() == 0
-        return false
+        return .falls
+    leaves: Leaves @ .jumps
 
     for branch in branches
-        if !branch.jumps
-            return false
+        leaves @ both(first: leaves, second: branch.leaves)
 
-    return true
+    return leaves
 
 # The type of a join, or absence when no branch produced one.
 #
@@ -79,7 +108,7 @@ function join_branches(@c: state.Checker, s: source.Source, decls: [ast.Decl], b
     result: i64? @ fail(code: "diverges", msg: "no branch has produced a value yet")
 
     for branch in branches
-        if branch.jumps || branch.value.is_err()
+        if branch.leaves != .falls || branch.value.is_err()
             continue
         ty = branch.value.must()
 
@@ -99,22 +128,24 @@ function join_branches(@c: state.Checker, s: source.Source, decls: [ast.Decl], b
 # message: an `if` and a `match` fail the same way and say so in their
 # own words. *Every branch jumps* is said only where every branch did; a
 # join left empty by branches that ended on a statement has had each of
-# them told at the branch, and a second message here would be a false one.
+# them told at the branch, and a second message here would be a false one,
+# as it would be where a branch left by a jump refused where it stands.
 function join_for_value(@c: state.Checker, s: source.Source, decls: [ast.Decl], branches: [Branch], what: str, span: token.Span) -> i64
     joined = join_branches(@c, s, decls, branches)
 
     if joined.is_err()
-        refuse_leaving(@c, leaves: every_branch_jumps(branches), what: what, span: span)
+        refuse_leaving(@c, leaves: every_branch(branches), what: what, span: span)
         return state.error_ty_of(c)
     return joined.must()
 
 # §4.7, panel 017 R1: an `if` or a `match` every branch of which jumps
 # produces no value, and is legal only in statement position. Asked by
 # `join_for_value` and by the checked `match` and `if`, so that `x = if`
-# and `x: i64 = if` are one rule; `leaves` is `every_branch_jumps`'s answer,
-# or the same answer an `if` reads off its blocks.
-function refuse_leaving(@c: state.Checker, leaves: bool, what: str, span: token.Span)
-    if leaves
+# and `x: i64 = if` are one rule; `leaves` is `every_branch`'s answer, or
+# the same answer an `if` folds off its blocks with `both`. Told only where
+# every branch jumps: one that left by a refused jump has been told there.
+function refuse_leaving(@c: state.Checker, leaves: Leaves, what: str, span: token.Span)
+    if leaves == .jumps
         state.push_diagnostic(@c, flow_errors.no_value(what, span))
 
 ## Tests
@@ -127,14 +158,14 @@ test "the first branch sets the type and the disagreement is blamed"
     int_id = table.int_ty_id(c.out.types)
     str_id = table.str_ty(c.out.types)
     agreeing: [Branch] = [
-        Branch(value: ok(int_id), jumps: false, span: token.Span(start: 0, end: 1))
-        Branch(value: ok(int_id), jumps: false, span: token.Span(start: 2, end: 3))
+        Branch(value: ok(int_id), leaves: .falls, span: token.Span(start: 0, end: 1))
+        Branch(value: ok(int_id), leaves: .falls, span: token.Span(start: 2, end: 3))
     ]
     assert join_branches(@c, s, d, agreeing).must() == int_id
     assert c.out.diagnostics.len() == 0
     mixed: [Branch] = [
-        Branch(value: ok(int_id), jumps: false, span: token.Span(start: 0, end: 1))
-        Branch(value: ok(str_id), jumps: false, span: token.Span(start: 2, end: 3))
+        Branch(value: ok(int_id), leaves: .falls, span: token.Span(start: 0, end: 1))
+        Branch(value: ok(str_id), leaves: .falls, span: token.Span(start: 2, end: 3))
     ]
     assert !join_branches(@c, s, d, mixed).is_err()
     assert c.out.diagnostics.len() == 1
@@ -150,17 +181,17 @@ test "a diverging branch contributes nothing, and all-diverging is legal"
     d: [ast.Decl] = []
     int_id = table.int_ty_id(c.out.types)
     skipping: [Branch] = [
-        Branch(value: fail(code: "diverges", msg: "a return"), jumps: true, span: token.Span(start: 0, end: 1))
-        Branch(value: ok(int_id), jumps: false, span: token.Span(start: 2, end: 3))
+        Branch(value: fail(code: "diverges", msg: "a return"), leaves: .jumps, span: token.Span(start: 0, end: 1))
+        Branch(value: ok(int_id), leaves: .falls, span: token.Span(start: 2, end: 3))
     ]
     assert join_branches(@c, s, d, skipping).must() == int_id
     assert c.out.diagnostics.len() == 0
     jumps_only: [Branch] = [
-        Branch(value: fail(code: "diverges", msg: "a return"), jumps: true, span: token.Span(start: 0, end: 1))
-        Branch(value: fail(code: "diverges", msg: "a break"), jumps: true, span: token.Span(start: 2, end: 3))
+        Branch(value: fail(code: "diverges", msg: "a return"), leaves: .jumps, span: token.Span(start: 0, end: 1))
+        Branch(value: fail(code: "diverges", msg: "a break"), leaves: .jumps, span: token.Span(start: 2, end: 3))
     ]
     assert join_branches(@c, s, d, jumps_only).is_err()
-    assert every_branch_jumps(jumps_only)
+    assert every_branch(jumps_only) == .jumps
     assert c.out.diagnostics.len() == 0
 
     # Where a value is required, the all-jumps join says so.
@@ -177,14 +208,34 @@ test "a branch that fell through is not one that jumped"
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
     fell: [Branch] = [
-        Branch(value: fail(code: "jumps", msg: "a return"), jumps: true, span: token.Span(start: 0, end: 1))
-        Branch(value: fail(code: "none", msg: "a statement"), jumps: false, span: token.Span(start: 2, end: 3))
+        Branch(value: fail(code: "jumps", msg: "a return"), leaves: .jumps, span: token.Span(start: 0, end: 1))
+        Branch(value: fail(code: "none", msg: "a statement"), leaves: .falls, span: token.Span(start: 2, end: 3))
     ]
-    assert !every_branch_jumps(fell)
+    assert every_branch(fell) == .falls
     no_branches: [Branch] = []
-    assert !every_branch_jumps(no_branches)
+    assert every_branch(no_branches) == .falls
 
     # The join is empty, and the fall-through was told where it fell, so
     # nothing here says *every branch jumps*, which would be false.
     _ = join_for_value(@c, s, d, fell, what: "match", span: token.Span(start: 0, end: 5))
+    assert c.out.diagnostics.len() == 0
+
+# Defect 148: a branch that left by a `break` outside every loop has been
+# told at the `break`, so a construct that leaves through it is not told
+# again that every branch jumps; whatever asks whether control goes on still
+# reads it as leaving.
+test "a jump refused where it stands leaves, and no claim rests on it"
+    assert both(first: .jumps, second: .jumps) == .jumps
+    assert both(first: .jumps, second: .refused) == .refused
+    assert both(first: .refused, second: .falls) == .falls
+    r: resolved.Resolved @ resolved.new_resolved()
+    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    s = source.new_source(name: "t.hero", text: "x\n")
+    d: [ast.Decl] = []
+    refused: [Branch] = [
+        Branch(value: fail(code: "jumps", msg: "a break outside a loop"), leaves: .refused, span: token.Span(start: 0, end: 1))
+        Branch(value: fail(code: "jumps", msg: "a return"), leaves: .jumps, span: token.Span(start: 2, end: 3))
+    ]
+    assert every_branch(refused) == .refused
+    _ = join_for_value(@c, s, d, refused, what: "if", span: token.Span(start: 0, end: 5))
     assert c.out.diagnostics.len() == 0

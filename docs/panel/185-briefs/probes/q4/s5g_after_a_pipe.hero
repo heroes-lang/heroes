@@ -1,0 +1,6 @@
+function main()
+    n = -1
+    k = match n
+        0 | - 1 => 1
+        _ => 2
+    print(k)

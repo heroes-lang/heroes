@@ -26,9 +26,9 @@ constant ENDS_ON_A_FOR: i64
 
 # The block's message stands where the block begins.
 constant AFTER_TWO_LINES: i64
-    x: i64 @ 1  #~ no_value
+    x: i64 @ 1
     x @ x + 1
-    assert x == 2
+    assert x == 2  #~ no_value
 
 constant A_TEXT: str
     assert true  #~ no_value
@@ -53,3 +53,8 @@ function main()
     print(A_TEXT)
     print(RETURNS)
     print(LEAVES_BEFORE_ITS_VALUE)
+
+# Corrected 2026-10-02, defect 149, lane checker, below the program so its
+# lines stay where they were: the message of `AFTER_TWO_LINES` stands at the
+# line that ends the block, `assert x == 2`, which is the line that has to be
+# the value, and not where the block begins, as the comment above it says.

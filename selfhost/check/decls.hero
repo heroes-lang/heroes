@@ -16,6 +16,7 @@
 # answer depend on whether the program happened to read the field — a
 # leak whose cause was a field nobody touched.
 
+use token
 use ast
 use source
 use parse
@@ -25,6 +26,7 @@ use check/table
 use check/state
 use check/lower
 use check/walk
+use check/join
 use check/ffi
 use check/freer as freer
 use check/generics
@@ -49,19 +51,24 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 if !k.body.is_err()
                     # A constant's body IS its value: its last statement
                     # produces it, unlike a function, which returns.
-                    got = walk.block(@c, a, r, s, decls, body: k.body.must(), want: .value(ty: declared))
+                    left = constant_body(@c, a, r, s, decls, body: k.body.must(), ty: declared)
 
-                    # Asked of the outcome, never of the missing value: a body
-                    # that ends on a statement has none either, and its block
-                    # has already said so (`branch_without_value`). Until
+                    # Asked of how the body left, never of the missing value:
+                    # a body that ends on a statement has none either, and its
+                    # walk has already said so (`branch_without_value`). Until
                     # 2026-10-01 this read the absent value, so such a body
                     # was told twice, the second time *every branch jumps*
-                    # (defect 139's class).
-                    if got.jumps
+                    # (defect 139's class). And only of a body that left by a
+                    # jump meaning something: one that left by a `break` or a
+                    # `continue` outside every loop was told at the jump, and
+                    # until 2026-10-02 was told here too (defect 148). Told at
+                    # the statement through which the body left, which until
+                    # the same day was its first line (defect 149).
+                    if !left.is_err()
                         name = source.span_text(s, decl.name)
                         state.push_diagnostic(
                             @c,
-                            flow_errors.constant_without_value(name: name, span: k.body.must().span)
+                            flow_errors.constant_without_value(name: name, span: left.must())
                         )
                 else
                     if !k.header.is_err()
@@ -172,7 +179,7 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                     # clean for three milestones. Held back rather than
                     # pushed, so §4.16's file-wide hole exemption can apply
                     # at the driver.
-                    if !got.jumps && result != table.unit_ty(c.out.types)
+                    if got.leaves == .falls && result != table.unit_ty(c.out.types)
                         want = state.show(c, s, decls, result)
                         name = source.span_text(s, decl.name)
                         c.missing_returns @ c.missing_returns.push(
@@ -219,6 +226,45 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                         _ = lower.lower_ty(@c, a, r, field.ty)
 
         index @ index + 1
+
+# A constant's body (§4.2: its last line is its value), walked as
+# `walk.block` walks a value block, and answering where it left when it left
+# by a jump meaning something, the one statement the constant's message
+# points at (defect 149: `x: i64 @ 1` over `return x` was told at the
+# binding). Absent where it falls, or left by a jump already refused (defect
+# 148). A copy of `block`'s loop rather than a field `block` writes, because a
+# constant's body is walked once, from its declaration, and `block` is on the
+# path every nested block recurses through: carrying the statement there cost
+# one to four levels of the nesting `check` survives (measured 2026-10-02).
+function constant_body(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block, ty: i64) -> token.Span?
+    leaves: join.Leaves @ .falls
+    left: token.Span? @ fail(code: "falls", msg: "the body has not left")
+    value: i64? @ fail(code: "none", msg: "no last value yet")
+    last = body.stmts.len() - 1
+    index: i64 @ 0
+    c.tail @ false
+
+    for sid in body.stmts
+        here: walk.Want @ .nothing
+
+        if index == last
+            here @ .value(ty: ty)
+        got = walk.statement(@c, a, r, s, decls, id: sid, want: here)
+
+        if leaves == .falls && got.leaves != .falls
+            leaves @ got.leaves
+            left @ ok(a.stmts[sid].span)
+
+        if index == last
+            value @ got.value
+        index @ index + 1
+
+    if leaves == .jumps
+        return left
+
+    if leaves == .falls && value.is_err()
+        walk.ended_on_a_statement(@c, a, body)
+    return fail(code: "no_claim", msg: "the body gave its value, or was told where it ended")
 
 function clear_generics(@c: state.Checker)
     empty: [str] = []
