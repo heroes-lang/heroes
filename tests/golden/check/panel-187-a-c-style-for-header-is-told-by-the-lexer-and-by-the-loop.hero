@@ -1,0 +1,23 @@
+# Pinned 2026-10-02 by panel 187's compiler engineer, route (1f): a known
+# cost, not an intent; a change in either direction turns this case red.
+# C's three-clause loop header: the lexer tells each `;` (`scan.hero:299`)
+# and the parser's loop habit the `for (` (`parse/loop_habit.hero:58`), so
+# one habit costs three messages, and a `{` after it a fourth, ruling 4's.
+# Rows 131-33a, 131-54a and 131-54b; the recovery instrument's `c-for`, 52 of
+# its 439 EXTRA. Class (a), a second message for one mistake: `adjacent`.
+
+function c_for_braced()
+    for (i = 0; i < 3; i++) {  #~ unexpected_character unexpected_character for_missing_in missing_body
+        y = 3 4  #~ expected_end_of_line
+    }
+
+function c_for_ever()
+    for (;;)  #~ unexpected_character unexpected_character for_missing_in
+        print(1)
+
+function c_for_three()
+    for (i = 0; i < 3; i++)  #~ unexpected_character unexpected_character for_missing_in
+        print(i)
+
+function main()
+    print(1)

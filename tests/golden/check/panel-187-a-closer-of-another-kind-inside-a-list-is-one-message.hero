@@ -1,0 +1,15 @@
+# Pinned 2026-10-02 by panel 187's compiler engineer, route (1f): a known
+# cost, not an intent; a change in either direction turns this case red.
+# `x = [1, 2` over `print(x) )`: inside the `[` a line that ends with a
+# literal keeps its line end, which the list reads as a separator, so the
+# `)` stands where the `]` goes and is told once, as a closer of another
+# kind (`parse/list_line.hero:227`). Row 130-34a, whose two readings are
+# panel 187's Q2: two mistakes with the `]` untold, or one told in words
+# that name no `[`.
+
+function f()
+    x = [1, 2
+    print(x) )  #~ expected_separator
+
+function main()
+    print(1)

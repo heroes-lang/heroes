@@ -1,0 +1,13 @@
+# Pinned 2026-10-02 by panel 187's compiler engineer, route (1f): a known
+# cost, not an intent; a change in either direction turns this case red.
+# C's do-while in a braced body: the inner braces are passed and the
+# function's braces passed whole after its lines are read
+# (`parse/braced_lines.hero:154`, `brace_habit.pass`), and what follows the
+# inner `}` on its line is not read. Row 131-32: `while (1 == 1)` is told
+# only once the braces are gone. Class (b): `adjacent`.
+
+function main() {  #~ missing_body
+    do {  #~ expected_end_of_line
+        y = 3 4  #~ expected_end_of_line
+    } while (1 == 1)
+}
