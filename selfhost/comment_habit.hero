@@ -1,0 +1,134 @@
+# A comment written as another language writes it, `//` or `/* … */`
+# (design.md §4.15, §4.17; defect 130's group (e), the audit's row H-009 and
+# the recovery instrument's `line-comment`, lane recovery-b6, 2026-10-02).
+#
+# Heroes has one comment, `#` to the line's end (spec § 1). C, Java, JS,
+# Rust, Go and Swift write `//`, and a model writes it in their habit. Until
+# 2026-10-02 the lexer read it as code: two `/` operators and whatever the
+# prose held, so `// the inner (` cost a stray character for each backquote,
+# an `unclosed_bracket` for the `(` and `expected_declaration` for the `/`,
+# four messages for one slip (H-009), and an apostrophe in the prose cost an
+# `unterminated_char`. It is now read as the comment it is, told once: no
+# `//` and no `/*` is anything in a program that compiles, since no value
+# begins with `/` or `*` after an operator (spec § 7).
+#
+# **One reading is not the comment**: Python writes integer division `//`.
+# Inside a bracket whose closer stands later on the same line, `f(a // b)`,
+# the rest of the line is code, the `//` read as the `/` this language
+# divides with; anywhere else it is the comment. The message names both, and
+# its fix is `certain` only where the `//` opens its line, where no value can
+# stand before it.
+#
+# | entry | called by |
+# |---|---|
+# | `opens_at`, `divides_at`, `block_end` | `scan.line_body`, `layout.line_start`, `text_outline.outline_of` |
+
+# Whether a comment in another language's spelling opens at `at`: `//`, or
+# `/*` whose `*/` stands on the same line.
+function opens_at(text: str, at: i64) -> bool
+    if at + 1 >= text.len() || text[at] != '/'
+        return false
+
+    if text[at + 1] == '/'
+        return true
+    return text[at + 1] == '*' && block_end(text, from: at + 2) >= 0
+
+# Whether the `//` at `at`, inside brackets when `inside`, is Python's
+# integer division: inside a bracket whose closer stands later on its line.
+function divides_at(text: str, at: i64, inside: bool) -> bool
+    if !inside || text[at + 1] != '/'
+        return false
+    depth: i64 @ 0
+    i: i64 @ at + 2
+
+    while i < text.len() && text[i] != '\n' && text[i] != '#'
+        b = text[i]
+
+        if b == '"' || b == '\''
+            i @ i + 1
+
+            while i < text.len() && text[i] != b && text[i] != '\n'
+                if text[i] == '\\' && i + 1 < text.len() && text[i + 1] != '\n'
+                    i @ i + 1
+                i @ i + 1
+
+            # A quote its line never closes is prose's, `a local's type`: the
+            # rest of the line is a comment, and no line below is asked.
+            if i >= text.len() || text[i] == '\n'
+                return false
+        else if b == '(' || b == '[' || b == '{'
+            depth @ depth + 1
+        else if b == ')' || b == ']' || b == '}'
+            depth @ depth - 1
+
+            if depth < 0
+                return true
+        i @ i + 1
+
+    return false
+
+# The offset past the `*/` that closes a block comment on the line that
+# holds `from`, or -1 where its line holds none.
+function block_end(text: str, from: i64) -> i64
+    i: i64 @ from
+
+    while i + 1 < text.len() && text[i] != '\n'
+        if text[i] == '*' && text[i + 1] == '/'
+            return i + 2
+        i @ i + 1
+
+    return -1
+
+# Whether the comment that opens at `at` holds the rest of its line: a `//`,
+# or a `/* … */` with nothing but spaces or a `#` comment after it, which
+# leaves the line
+# layout-neutral as a `#` line is (`layout.line_start`).
+function holds_the_line(text: str, at: i64) -> bool
+    if !opens_at(text, at: at)
+        return false
+
+    if text[at + 1] == '/'
+        return true
+    i: i64 @ block_end(text, from: at + 2)
+
+    while i < text.len() && text[i] == ' '
+        i @ i + 1
+
+    return i >= text.len() || text[i] == '\n' || text[i] == '\r' || text[i] == '#'
+
+# The text from `from` to `to`, its spaces off both ends.
+function inner_of(text: str, from: i64, to: i64) -> str
+    a: i64 @ from
+    b: i64 @ to
+
+    while a < b && text[a] == ' '
+        a @ a + 1
+
+    while b > a && text[b - 1] == ' '
+        b @ b - 1
+
+    return text.slice(from: a, to: b)
+
+# How many `/` open the comment at `at`: `//`, or `///` for a doc comment.
+function slashes(text: str, at: i64) -> i64
+    i: i64 @ at
+
+    while i < text.len() && text[i] == '/'
+        i @ i + 1
+
+    return i - at
+
+## Tests
+
+test "a comment in another language's spelling is told from the division it can be"
+    assert opens_at("// note\n", at: 0)
+    assert opens_at("x = 1  /* note */\n", at: 7)
+    assert !opens_at("x = 1  /* note\n*/\n", at: 7)
+    assert !opens_at("x = a / b\n", at: 6)
+    assert divides_at("f(a // b)\n", at: 4, inside: true)
+    assert !divides_at("f(a,  // the count\n", at: 6, inside: true)
+    assert !divides_at("x = a // b\n", at: 6, inside: false)
+    assert !divides_at("f(a // \")\"\n", at: 4, inside: true)
+    assert !divides_at("x: [  // a local's type\n    i64]\n", at: 6, inside: true)
+    assert slashes("/// doc\n", at: 0) == 3
+    assert block_end("/* a */ x\n", from: 2) == 7

@@ -313,6 +313,20 @@ test "a declaration at column 0 names the brackets still open, and is laid out"
     assert indented.closes.len() == 0
     assert indented.diagnostics[0].code == "unclosed_bracket"
 
+# Defect 130's group (e), 2026-10-02: another language's comment is one
+# message and a comment, a line of it laid out as a `#` line is, a carriage
+# return before its newline included, and Python's division `/` in a bracket
+# closed on its line.
+test "a `//` comment is one message and lays out no line"
+    crlf = lex_one("function f()\r\n    x = 1\r\n// at column 0\r\n    y = 2\r\n")
+    assert crlf.diagnostics.len() == 1
+    assert crlf.diagnostics[0].code == "unexpected_character"
+    assert crlf.diagnostics[0].fixes[0].certainty == .certain
+    assert kind_line(crlf.tokens) == "kw_function ident lparen rparen terminator indent ident eq int terminator comment ident eq int terminator dedent eof"
+    divided = lex_one("f(a // 2)\n")
+    assert kind_line(divided.tokens) == "ident lparen ident slash int rparen terminator eof"
+    assert divided.diagnostics[0].fixes[0].replacement == "/"
+
 # Panel 183 R3, the author's route (b), 2026-10-02: where the rule ends the
 # reach, the opener is named still open at the line and the word that ended
 # it, lines counted as the reader's editor counts them, a carriage return

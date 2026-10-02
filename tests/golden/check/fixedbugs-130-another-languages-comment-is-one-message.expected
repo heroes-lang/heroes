@@ -1,0 +1,13 @@
+tests/golden/check/fixedbugs-130-another-languages-comment-is-one-message.hero:17:1: error[unexpected_character]: `//` is not part of the language's syntax — a comment begins with `#`
+tests/golden/check/fixedbugs-130-another-languages-comment-is-one-message.hero:19:1: error[unexpected_character]: `///` is not part of the language's syntax — a comment begins with `#`
+tests/golden/check/fixedbugs-130-another-languages-comment-is-one-message.hero:24:12: error[unexpected_character]: `//` is not part of the language's syntax — a comment begins with `#`, and an integer is divided by `/`
+tests/golden/check/fixedbugs-130-another-languages-comment-is-one-message.hero:25:5: error[unexpected_character]: `//` is not part of the language's syntax — a comment begins with `#`
+tests/golden/check/fixedbugs-130-another-languages-comment-is-one-message.hero:26:1: error[unexpected_character]: `//` is not part of the language's syntax — a comment begins with `#`
+tests/golden/check/fixedbugs-130-another-languages-comment-is-one-message.hero:27:15: error[unexpected_character]: `//` is not part of the language's syntax — a comment begins with `#`, and an integer is divided by `/`
+tests/golden/check/fixedbugs-130-another-languages-comment-is-one-message.hero:29:16: error[unexpected_character]: `//` is not part of the language's syntax — a comment begins with `#`, and an integer is divided by `/`
+tests/golden/check/fixedbugs-130-another-languages-comment-is-one-message.hero:31:13: error[unexpected_character]: `//` is not part of the language's syntax — an integer is divided by `/`, and a comment begins with `#`
+tests/golden/check/fixedbugs-130-another-languages-comment-is-one-message.hero:32:16: error[unexpected_character]: `//` is not part of the language's syntax — an integer is divided by `/`, and a comment begins with `#`
+tests/golden/check/fixedbugs-130-another-languages-comment-is-one-message.hero:33:12: error[unexpected_character]: `/*` is not part of the language's syntax — a comment begins with `#` and runs to its line's end
+tests/golden/check/fixedbugs-130-another-languages-comment-is-one-message.hero:34:5: error[unexpected_character]: `/*` is not part of the language's syntax — a comment begins with `#` and runs to its line's end
+tests/golden/check/fixedbugs-130-another-languages-comment-is-one-message.hero:35:7: error[unexpected_character]: `/*` is not part of the language's syntax — a comment begins with `#` and runs to its line's end
+tests/golden/check/fixedbugs-130-another-languages-comment-is-one-message.hero:39:12: error[unexpected_character]: `//` is not part of the language's syntax — a comment begins with `#`, and an integer is divided by `/`
