@@ -310,6 +310,19 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     gated by its own cases alone (the author's instruction of that
     afternoon); the rest is owed at the round's gate.
 
+    **2026-10-02, the round's gate of lanes recovery-b8, land186 and h158,
+    two of the lane's commits redone**: `ce5caf89`, past a statement that
+    ended with its own block, told the next statement's closer a second
+    time at its column (the compiler's own tests, 3 failed at the gate and
+    at the lane's merge `2dc1a9d7`, 0 at its `276908b3`; the census, 51
+    doubled messages over 19 older goldens), redone at `d105a1e5`, the
+    search bounded by what the drop of the failed line takes; and
+    `525fe2dd` moved the `expected_declaration` arm into
+    `parse/top_level.hero` while the site's claims reader looked for it in
+    `decl.hero` (the site's build, exit 1), followed at `a388a056`. Each
+    gated by its own cases; the round's gate is the commit carrying this
+    line.
+
     **Class: systemic**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): six batches on the
     trunk's record (recovery-b1 to b6) and a seventh in lane recovery-b8, which

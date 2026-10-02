@@ -19,16 +19,16 @@ _Static_assert(__builtin_classify_type(((Color *)0)->b) == 1 && sizeof(((Color *
 _Static_assert(__builtin_classify_type(((Color *)0)->a) == 1 && sizeof(((Color *)0)->a) == sizeof(uint8_t) && (_Generic(((Color *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color a");
 #line 21 "fixedbugsagrouprecordineverycontainer.c"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic error "-Wmissing-field-initializers"
-#pragma clang diagnostic ignored "-Wmissing-braces"
-#line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
-__attribute__((unused)) static void hero_ffi_complete_h_fixedbugsagrouprecordineverycontainer_Color(void) { Color v = {0,0,0,0}; (void)v; }
-#line 28 "fixedbugsagrouprecordineverycontainer.c"
-#pragma clang diagnostic pop
-
 #line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a");
+#line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
+_Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->r) == sizeof(Color), "heroes-ffi-union-narrow Color r");
+#line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
+_Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->g) == sizeof(Color), "heroes-ffi-union-narrow Color g");
+#line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
+_Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->b) == sizeof(Color), "heroes-ffi-union-narrow Color b");
+#line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
+_Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->a) == sizeof(Color), "heroes-ffi-union-narrow Color a");
 #line 33 "fixedbugsagrouprecordineverycontainer.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
