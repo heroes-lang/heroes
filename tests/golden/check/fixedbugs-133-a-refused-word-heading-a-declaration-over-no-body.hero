@@ -1,0 +1,48 @@
+# Fixed defect 133's last rows, 2026-10-02 (the audit's 133-a-fswap2,
+# 133-m-const_alone and 133-m-fn_alone), a declaration whose head holds a
+# word the lexer refused, with nothing below it. Symptom: `fn` and `const`
+# alone, and `function f() fn`, each cost `reserved_word` alone, and the
+# body or the value the declaration lacked was told only once the word was
+# mended, `const` over `constant MAX: i64` costing `missing_body` then: two
+# turns for one declaration. So did `record P fn`, `extern "m.h" fn`, `$`
+# or `let` after a function's head, and `if true fn` over a line at its
+# margin. Cause: the parser stays silent where the lexer spoke, and that
+# silence covered the declaration's own lack: a word alone whose swap is no
+# certain one there was dropped with its line and nothing asked of what it
+# declares, and a head whose line ended at a refused token asked its body
+# at that token. Now a word alone is told what the declaration its swap
+# names owes below it (`selfhost/parse/decl.hero`, `bodiless_word`;
+# `selfhost/parse/refused_heads.hero`, `declares`), and a head whose line
+# goes on into a refused token is one that refused something
+# (`selfhost/parse/opening.hero`, `selfhost/parse/members_below.hero`), its
+# body named missing at the next line, its members at its head. Over a body
+# the word is the one report still, and `class`, whose word swaps for
+# nothing, is told alone.
+
+fn  #~ reserved_word
+const  #~ missing_body reserved_word
+
+def  #~ missing_body reserved_word
+struct  #~ missing_body reserved_word empty_record
+enum  #~ reserved_word empty_variant
+class  #~ reserved_word
+
+function stub() fn  #~ reserved_word
+function dollar() $  #~ missing_body unexpected_character
+function bound() let  #~ missing_body reserved_word
+record P fn  #~ missing_body reserved_word empty_record
+constant K: i64 fn  #~ reserved_word
+extern "m.h" fn  #~ missing_body reserved_word expected_extern_block
+
+function over_a_body() fn  #~ reserved_word
+    print(1)
+
+function at_the_margin()
+    if true fn  #~ reserved_word
+    print(1)  #~ missing_body
+
+function main()
+    print(1)
+
+#~v reserved_word
+fn  #~v missing_body

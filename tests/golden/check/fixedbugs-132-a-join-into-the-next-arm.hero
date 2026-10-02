@@ -28,13 +28,13 @@ function an_arm_with_no_body(n: i64) -> i64
 function a_pipe_over_an_arm(n: i64) -> i64
     return match n
         0 => 5
-        | 1 => 10  #~ continuation_outside_brackets
+        | 1 => 10  #~ expected_pattern
         _ => 20
 
 function an_operator_over_an_arm(n: i64) -> i64
     return match n
         0 => 1
-        * 2 => 3  #~ continuation_outside_brackets
+        * 2 => 3  #~ expected_pattern
         _ => 20
 
 function a_comment_between(n: i64) -> i64
@@ -56,3 +56,12 @@ function two_arms_left_open(n: i64) -> i64
 function main()
     print(an_arm_left_open(n: 0) + an_arm_with_no_body(n: 0) + a_pipe_over_an_arm(n: 0))
     print(an_operator_over_an_arm(n: 0) + a_comment_between(n: 0) + two_arms_left_open(n: 0))
+
+# Corrected 2026-10-02 by lane recovery-b7 (defect 132's last row, the
+# audit's 132-06): a line that holds an arm's `=>` below a line that holds
+# one, or below the `match` itself, no longer goes on with it, since no join
+# makes two arms one or puts an arm in a scrutinee
+# (`selfhost/line_above.hero`, `opens_an_arm`). `| 1 => 10` and `* 2 => 3`
+# are arms whose patterns begin with an operator, told once there as what a
+# pattern may not begin with, `expected_pattern`, and read past it
+# (`selfhost/parse/operator_arm.hero`); still one message each.

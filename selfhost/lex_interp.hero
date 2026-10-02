@@ -62,9 +62,14 @@ function line_ends(@l: state.LexState, at: i64)
         diag.new_diagnostic(code: "unterminated_string", message: "this string never closes — a hole opened with `{` and the line ended before its `}` and the closing `\"`", span: span)
     )
 
+# A piece runs to its quote or its hole's `{` on its own line, and the line
+# ends where a plain literal's does, at a line feed or the carriage return
+# that begins a CRLF line end (`literals.ends_line`; defect 135's L2): read
+# as content, that carriage return took `raw_carriage_return`, whose certain
+# `\r` wrote the line end into a literal that stayed open (lane recovery-b7).
 function scan_piece(@l: state.LexState, text: str, start: i64)
     while true
-        if l.pos >= text.len() || text[l.pos] == '\n'
+        if l.pos >= text.len() || literals.ends_line(text, at: l.pos)
             break
         b = text[l.pos]
 

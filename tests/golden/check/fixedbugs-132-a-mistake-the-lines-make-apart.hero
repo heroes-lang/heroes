@@ -18,7 +18,7 @@ function an_arm_left_open(n: i64) -> i64
 function a_pipe_over_an_arm(n: i64) -> i64
     return match n
         0 => 5
-        | 1 => 10 )  #~ continuation_outside_brackets expected_end_of_line
+        | 1 => 10 )  #~ expected_pattern expected_end_of_line
         _ => 20
 
 function a_for_over_its_body()
@@ -56,3 +56,8 @@ function main()
     a_for_over_its_body()
     an_if_over_its_body()
     print(a_sum_left_open(n: 1) + a_sum_broken_twice(n: 1) + a_mistake_before_the_break(n: 1))
+
+# Corrected 2026-10-02 by lane recovery-b7 (defect 132's last row): `| 1 =>
+# 10 )` below a whole arm is an arm of its own, no break, and its pattern's
+# `|` is told where it stands, `expected_pattern`; the arm is read past the
+# `|`, so the stray `)` is still said, which is what this case keeps.
