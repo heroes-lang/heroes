@@ -1,0 +1,31 @@
+# Fixed 2026-10-02, defect 130's class, lane recovery-b6 (the audit's row
+# 130-23). Symptom: `class Q` inside a function's body, over `function f()`,
+# was told *use `record` (there is no inheritance)*, and the program that
+# followed the message was refused twice anew, `expected_expression` at the
+# `record` a body cannot declare and at the `function` inside it: two
+# mistakes the first run held and never told. Cause: `class` is guidance,
+# no swap, and only a swap's message asked where the word stands. The one
+# message now says so where it matters: in a body, that a `record` is
+# declared at the top level of a file, as `struct` in a body is told; and
+# where functions stand in its block, that a record holds only its fields and
+# each function goes at the top level. Below it, its functions' own
+# mistakes are told as before.
+
+function main()
+    class Q  #~ reserved_word
+        function f()
+            y = 3 )  #~ expected_end_of_line
+    print(1)
+
+function fields_in_a_body()
+    class P  #~ reserved_word
+        x: i64
+    print(2)
+
+class Shape  #~ reserved_word
+    function area() -> i64
+        return 1 )  #~ expected_end_of_line
+
+# Fields alone at the top level: the message is the table's, as before.
+class Point  #~ reserved_word
+    x: i64

@@ -58,6 +58,10 @@ function repair_at(text: str, span: token.Span, @outline: text_outline.Outline) 
 # table refuses.
 function repair_of(text: str, span: token.Span, one: keywords.ForeignWord, @outline: text_outline.Outline) -> keywords.ForeignWord
     writes = swap_of(one.repair)
+    word = text.slice(from: span.start, to: span.end)
+
+    if writes.is_err() && word == "class"
+        return a_class(text: text, span: span, one: one, @outline)
 
     if writes.is_err()
         return one
@@ -69,6 +73,62 @@ function repair_of(text: str, span: token.Span, one: keywords.ForeignWord, @outl
         writes: writes.must(),
         @outline
     )
+
+# `class`, whose guidance is a `record` (the audit's row 130-23, 2026-10-02):
+# where it stands in a body, and where functions stand in its block, the one
+# message says so too, a record being declared at the top level and holding
+# only its fields. Until then `class Q` in a body over `function f()` said
+# *use `record`*, and the program that followed it was refused twice anew,
+# at the `record` in a body and at the function inside it.
+function a_class(text: str, span: token.Span, one: keywords.ForeignWord, @outline: text_outline.Outline) -> keywords.ForeignWord
+    place = word_place.place_of(text, span, @outline)
+    methods = functions_below(text, span: span)
+
+    if place != .statement && !methods
+        return one
+    message: str @ "`class` is not a word in this language — use `record` (there is no inheritance)"
+
+    if place == .statement
+        message @ "`class` is not a word in this language — a `record` is declared at the top level of a file, never inside a body or another declaration (there is no inheritance)"
+
+    if methods
+        message @ message + ", and a `record` holds only its fields: each function in this block is declared at the top level, taking the record as a parameter"
+    return keywords.ForeignWord(message: message, repair: one.repair)
+
+# Whether a line of the block below the word at `span`, deeper than the
+# word's line, opens with a function's word, `function` or another
+# language's.
+function functions_below(text: str, span: token.Span) -> bool
+    begins = word_place.line_start(text, at: span.start)
+    margin = span.start - begins
+    i: i64 @ span.end
+
+    while i < text.len() && text[i] != '\n'
+        i @ i + 1
+
+    while i < text.len()
+        i @ i + 1
+        col: i64 @ 0
+
+        while i + col < text.len() && text[i + col] == ' '
+            col @ col + 1
+
+        at = i + col
+        blank = at >= text.len() || text[at] == '\n' || text[at] == '\r' || text[at] == '#'
+
+        if !blank && col <= margin
+            return false
+
+        if !blank
+            first = text.slice(from: at, to: word_place.word_end(text, from: at))
+
+            if first == "function" || first == "fn" || first == "def" || first == "func"
+                return true
+
+        while i < text.len() && text[i] != '\n'
+            i @ i + 1
+
+    return false
 
 # The table's entry for the word at `span`, told whether the byte after it is
 # `(` (defect 015), before any place is read.
