@@ -875,6 +875,19 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** One mistake told twice at one place (design.md
     §4.17).
 
+    **Its cause found 2026-10-02** by lane h158 (its repair of the `-` shapes,
+    `8cb4ba6c`, keeps them away from the cause, not repaired):
+    `parse/opening.hero`'s `drop_line` stops a failed arm's recovery at the
+    first word of a line of the text even inside a line the lexer joined
+    (the stop defect 131 added at `9811d4cd`, for tab margins), so the part
+    below the break is read again as an arm and told a second time. Shapes
+    that still read two `expected_pattern` at one place, before and after
+    `8cb4ba6c`: `1 |` over `x => "one"`, `1 |` over `1.5 => "one"`, `"a" |`
+    over `x => "one"`, `1 | -` over `x => "one"`
+    (`scratchpad/lane-h158/d166/`). The cause is the recovery cluster's file,
+    so it goes with 130 and 131 to the sitting on what a finished recovery
+    is.
+
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a second message for one mistake.
 
