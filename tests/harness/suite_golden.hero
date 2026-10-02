@@ -87,6 +87,10 @@ record Shape
 # **314 in lane recovery-b4, 2026-09-30**: the recovery cluster's batches took
 # the directory past 250 by more than a quarter at the fourth batch's panel 183
 # cases, and the suite asked for 314.
+#
+# **393 in lane recovery-b7, 2026-10-02**: the batches after it took the
+# directory past 314 by more than a quarter at that lane's eighth case, its
+# CRLF `f` literal, and the suite asked for 393.
 function shape_check() -> Shape
     return Shape(
         name: "check",
@@ -95,7 +99,7 @@ function shape_check() -> Shape
         flag: "--brief",
         on_stderr: true,
         want_code: 1,
-        least: 314,
+        least: 393,
         watched: true,
         silent_stdout: false,
         library_skip: false
