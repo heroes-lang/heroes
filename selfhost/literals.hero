@@ -5,8 +5,9 @@
 #
 # A bad escape does NOT poison the token: it is reported and the literal stays
 # a str_lit, so one mistake inside a string costs one diagnostic. Both
-# scanners stop at the end of the line — a string is not multi-line in this
-# language, so an unterminated one is a mistake with a known extent.
+# scanners stop at the end of the line, a CRLF's carriage return included
+# (`ends_line`) — a string is not multi-line in this language, so an
+# unterminated one is a mistake with a known extent.
 
 use token
 use diag
@@ -34,7 +35,7 @@ function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted, literal:
         return false
     escaped = bytes.char_at(text, backslash + 1)
 
-    if escaped == "\n"
+    if ends_line(text, at: backslash + 1)
         l.pos @ backslash + 1
         return false
     l.pos @ backslash + 1 + escaped.len()
@@ -97,7 +98,7 @@ function string(@l: state.LexState, text: str)
     l.pos @ l.pos + 1
 
     while true
-        if l.pos >= text.len() || text[l.pos] == '\n'
+        if l.pos >= text.len() || ends_line(text, at: l.pos)
             break
         b = text[l.pos]
 
@@ -113,6 +114,7 @@ function string(@l: state.LexState, text: str)
 
             # Not a line ending here: a string is single-line, so this byte is
             # content — invisible content, which is why it is refused (066).
+            # A CR that begins a CRLF line end never gets here (`ends_line`).
             if b == layout.CR
                 raw_carriage_return(@l, l.pos, .in_str)
             l.pos @ l.pos + 1
@@ -145,7 +147,7 @@ function char_lit(@l: state.LexState, text: str)
     scanning: bool @ true
 
     while scanning
-        if l.pos >= text.len() || text[l.pos] == '\n'
+        if l.pos >= text.len() || ends_line(text, at: l.pos)
             scanning @ false
         else if text[l.pos] == '\''
             closed @ true
@@ -280,6 +282,18 @@ function swallow(@l: state.LexState, text: str, start: i64)
 
 ## Byte questions the scanners ask
 
+# Whether the line ends at `at`: a line feed, or the carriage return that
+# begins a CRLF line end, as `scan.line_body` reads it between tokens
+# (defect 135's L2, lane literals). The scanners stopped at the line feed
+# alone, so the CR of `\r\n` was a literal's content and
+# `raw_carriage_return`'s certain `\r` wrote the line end into a literal
+# that stayed open. A carriage return before anything else is content
+# still, and refused (panel 066).
+function ends_line(text: str, at: i64) -> bool
+    if at >= text.len()
+        return false
+    return text[at] == '\n' || text[at] == layout.CR && at + 1 < text.len() && text[at + 1] == '\n'
+
 function starts_with_backslash(s: str) -> bool
     return s.len() > 0 && s[0] == '\\'
 
@@ -347,3 +361,32 @@ test "the backslash that ate the closing quote gets the classic fix"
     char_lit(@plain, "'a")
     assert plain.diagnostics[0].code == "unterminated_char"
     assert plain.diagnostics[0].fixes.len() == 0
+
+test "the carriage return that begins a CRLF line end ends a literal and is not its content"
+    # Defect 135's L2: its certain `\r` wrote the line end into an open literal.
+    s: state.LexState @ state.new_state()
+    string(@s, "\"abc\r\nx")
+    assert s.diagnostics.len() == 1
+    assert s.diagnostics[0].code == "unterminated_string"
+    assert s.pos == 4
+    c: state.LexState @ state.new_state()
+    char_lit(@c, "'a\r\n")
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "unterminated_char"
+    b: state.LexState @ state.new_state()
+    string(@b, "\"ab\\\r\nx")
+    assert b.diagnostics.len() == 1
+    assert b.diagnostics[0].code == "unterminated_string"
+    k: state.LexState @ state.new_state()
+    char_lit(@k, "'\\\r\n")
+    assert k.diagnostics.len() == 1
+    assert k.diagnostics[0].code == "unterminated_char"
+
+    # A carriage return before anything else is content, refused, its `\r`
+    # certain: here the first of two, the second beginning the line end.
+    raw: state.LexState @ state.new_state()
+    string(@raw, "\"a\r\r\n")
+    assert raw.diagnostics.len() == 2
+    assert raw.diagnostics[0].code == "raw_carriage_return"
+    assert raw.diagnostics[0].span == token.Span(start: 2, end: 3)
+    assert raw.diagnostics[1].code == "unterminated_string"
