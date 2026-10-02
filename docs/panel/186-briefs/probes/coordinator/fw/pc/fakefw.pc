@@ -1,0 +1,5 @@
+Name: fakefw
+Description: probe
+Version: 1.0
+Cflags: -F ${pcfiledir}/../frameworks
+Libs:
