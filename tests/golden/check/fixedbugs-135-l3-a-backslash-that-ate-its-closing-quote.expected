@@ -1,0 +1,5 @@
+tests/golden/check/fixedbugs-135-l3-a-backslash-that-ate-its-closing-quote.hero:15:38: error[unterminated_char]: this character literal never closes — write one character between single quotes: 'a'
+tests/golden/check/fixedbugs-135-l3-a-backslash-that-ate-its-closing-quote.hero:21:9: error[unterminated_char]: this character literal never closes — write one character between single quotes: 'a'
+tests/golden/check/fixedbugs-135-l3-a-backslash-that-ate-its-closing-quote.hero:28:16: error[unterminated_char]: this character literal never closes — write one character between single quotes: 'a'
+tests/golden/check/fixedbugs-135-l3-a-backslash-that-ate-its-closing-quote.hero:31:9: error[unterminated_char]: this character literal never closes — write one character between single quotes: 'a'
+tests/golden/check/fixedbugs-135-l3-a-backslash-that-ate-its-closing-quote.hero:35:14: error[unterminated_char]: this character literal never closes — write one character between single quotes: 'a'

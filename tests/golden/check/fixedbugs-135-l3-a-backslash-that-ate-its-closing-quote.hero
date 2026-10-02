@@ -1,0 +1,35 @@
+# Fixed 2026-10-02, defect 135's class, lane literals (the certain-fix
+# audit's L3, and the shapes beside it). Symptom: `'\'` cost
+# `unterminated_char` with the certain fix `'\\'`, so `check --apply` wrote a
+# program that checked clean and counted the apostrophes of `"it's"` as 0
+# where 1 was meant, or printed 92 where 39 was: in a comparison, a pattern,
+# a call, before a comment, in an `f"…"` literal's hole. Cause: `'\'` is one
+# character short of a backslash, `'\\'`, and of an apostrophe, `'\''`, and
+# the fix chose one. Now both are guesses, a note says why, and `--apply`
+# leaves the case as it is (`literals.hero`).
+
+function counts(text: str) -> i64
+    n: i64 @ 0
+
+    for i in range(from: 0, to: text.len())
+        if to_i64(text[i]).must() == '\'  #~ unterminated_char
+            n @ n + 1
+    return n
+
+function in_a_pattern(c: i64) -> i64
+    return match c
+        '\' => 1  #~ unterminated_char
+        _ => 2
+
+function code(c: u8) -> i64
+    return to_i64(c).must()
+
+function in_a_call()
+    print(code('\'))  #~ unterminated_char
+
+function before_a_comment()
+    c = '\'  #~ unterminated_char
+    print(c)
+
+function in_a_hole()
+    print(f"{'\'}")  #~ unterminated_char
