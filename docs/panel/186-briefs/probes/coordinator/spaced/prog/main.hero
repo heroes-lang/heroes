@@ -1,0 +1,5 @@
+extern "eight.h" package "spaced"
+    function eight() -> i32
+
+function main()
+    print(eight())
