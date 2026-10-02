@@ -62,6 +62,7 @@ use ir/containers
 use emit/externs as emit_externs
 use cli/toolchain
 use cli/libraries
+use cli/flags
 use cli/process
 use cli/publish
 use cli/digest
@@ -104,9 +105,11 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     # The key names the package words the two units are compiled with, by the
     # one rule (defect 161): a verdict reached without a package's `-D` was
     # replayed after the compiler learned to pass it, measured 2026-10-02 on
-    # an `@` parameter whose width that `-D` decides.
+    # an `@` parameter whose width that `-D` decides. It names the compiler's
+    # own flags the probe takes as well (defect 163), so a verdict reached
+    # without `-fsigned-char` is never the answer of a probe that has it.
     key = digest.digest(
-        t.fingerprint + "|pointee|" + t.compiler_key + "|" + asked.join(",") + "|" + headers.join(",") + "|" + search_include.join(",") + "|compile:" + libraries.key_text(libraries.compile_flags(package_flags)) + "|" + t.runtime_key
+        t.fingerprint + "|pointee|" + t.compiler_key + "|" + asked.join(",") + "|" + headers.join(",") + "|" + search_include.join(",") + "|compile:" + libraries.key_text(libraries.compile_flags(package_flags)) + "|probe:" + libraries.key_text(probe_flags()) + "|" + t.runtime_key
     )
     dir = t.build + "/pointee-" + key
     listed = dir + "/dump.deps.txt"
@@ -149,7 +152,6 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     err_path = publish.private_name(dir + "/dump-stderr.txt")
     line: [str] @ [
         "clang"
-        "-std=gnu11"
         "-fsyntax-only"
         "-Xclang"
         "-ast-dump=json"
@@ -192,7 +194,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     check_c = unit_path(dir: dir, stem: "check", text: check_text)
     publish.write_whole(path: check_c, text: check_text, keyed: true)?
     check_err = publish.private_name(dir + "/check-stderr.txt")
-    check_line: [str] @ ["clang", "-std=gnu11", "-fsyntax-only"]
+    check_line: [str] @ ["clang", "-fsyntax-only"]
     check_line @ with_search(
         line: check_line,
         search_include: search_include,
@@ -238,9 +240,12 @@ function unit_path(dir: str, stem: str, text: str) -> str
 
 # The include search a unit compiles under, on the two check lines too:
 # the same headers must be found from the same places or the question
-# is asked of a different header.
+# is asked of a different header. Every probe that compiles the program's
+# headers builds its line here (the pointee check's two units, the header's
+# questions, the layout probe), so the flags it compiles under are this
+# function's too, by one rule (`probe_flags`).
 function with_search(line: [str], search_include: [str], package_flags: [str], runtime: str, source_dir: str) -> [str]
-    out: [str] @ line
+    out: [str] @ strings.with_all(list: line, more: probe_flags())
 
     for one in search_include
         out @ strings.with_all(list: out, more: ["-I", one])
@@ -254,6 +259,29 @@ function with_search(line: [str], search_include: [str], package_flags: [str], r
 
     if source_dir.len() > 0
         out @ strings.with_all(list: out, more: ["-I", source_dir])
+
+    return out
+
+# The compiler's own flags a probe compiles under, so it reads a header as
+# the program's compile does (defect 163, 2026-10-02): every flag of
+# `flags.flags()` but its diagnostics, one rule and never a second list.
+# Measured with this Mac's clang 21, preprocessing for the four legs'
+# targets: of the sixteen, `-std=gnu11` (against clang's own gnu17), the two
+# `-D`s and, on Linux arm64 alone, `-fsigned-char` change what C means by a
+# predefined macro; `-g` and the two code-generation flags change none and
+# are kept, so a flag that changes what a type is without a macro is never
+# left out; the diagnostics change none either and decide whether a unit
+# compiles, not what a type is, so a probe never fails on a header's
+# warning. The probes compiled under `-std=gnu11` alone until then, so on
+# Linux arm64, where a plain `char` is unsigned by default, the pointee
+# check refused the `@p: i8` that the program's own compile, under
+# `-fsigned-char`, agrees with, and accepted the `@p: u8` it refuses.
+function probe_flags() -> [str]
+    out: [str] @ []
+
+    for flag in flags.flags()
+        if !strings.starts_with(text: flag, prefix: "-W")
+            out @ out.push(flag)
 
     return out
 
@@ -394,3 +422,63 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
     )
     assert !again.is_err()
     assert process.files_under(t.build).must().len() == held
+
+# **A probe reads a plain `char` as the program's compile does** (defect
+# 163). The leg where the sign differs is Linux arm64, and clang answers for
+# that target on any machine with no header: asked there, a plain `char` is
+# unsigned under clang's own default and signed under the probe's flags, so
+# the case reads the same on every leg, the arm64 container's included.
+test "a probe's flags make a plain char signed for Linux arm64, as the program's compile does (defect 163)"
+    assert !process.mkdir_all("build").is_err()
+    unit = "build/selftest-probe-char.c"
+    assert !write_file(path: unit, text: "_Static_assert((char)-1 < 0, \"a plain char is signed\");\n").is_err()
+    target = "--target=aarch64-linux-gnu"
+    bare = process.run(
+        program: "clang",
+        words: ["clang", target, "-fsyntax-only", unit],
+        out: process.discard(),
+        err: process.discard()
+    )
+    assert bare.started
+    assert bare.code != 0
+    probed: [str] @ strings.with_all(list: ["clang", target], more: probe_flags())
+    probed @ strings.with_all(list: probed, more: ["-fsyntax-only", unit])
+    signed = process.run(program: "clang", words: probed, out: process.discard(), err: process.discard())
+    assert signed.code == 0
+
+# **What a probe leaves out changes no predefined macro** (defect 163), asked
+# of clang on this machine's own target and on Linux arm64's, the leg the
+# rule was written for. A flag of `flags.flags()` that the rule dropped and
+# that moved a macro would fail here, naming nothing but the comparison, and
+# the sign of a plain `char` is shown to move one on that leg, so the
+# comparison is not blind.
+test "every flag a probe leaves out changes no predefined macro, here or on Linux arm64 (defect 163)"
+    none: [str] = []
+    arm = ["--target=aarch64-linux-gnu"]
+
+    for target in [none, arm]
+        base = macros(more: target)
+
+        for flag in flags.flags()
+            kept: bool @ false
+
+            for one in probe_flags()
+                if one == flag
+                    kept @ true
+
+            if !kept
+                assert macros(more: target.push(flag)) == base
+
+    assert macros(more: arm.push("-fsigned-char")) != macros(more: arm)
+
+# What clang predefines for C under `more`, read from an empty unit.
+function macros(more: [str]) -> str
+    assert !process.mkdir_all("build").is_err()
+    empty = "build/selftest-probe-empty.c"
+    said = "build/selftest-probe-macros.txt"
+    assert !write_file(path: empty, text: "").is_err()
+    words: [str] @ strings.with_all(list: ["clang"], more: more)
+    words @ strings.with_all(list: words, more: ["-E", "-dM", "-x", "c", empty])
+    ran = process.run(program: "clang", words: words, out: said, err: process.discard())
+    assert ran.code == 0
+    return read_file(said).must()
