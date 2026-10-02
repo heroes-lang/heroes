@@ -1,0 +1,5 @@
+extern "valued.h" package "dpkg"
+    function seven() -> i32
+
+function main()
+    print(seven())
