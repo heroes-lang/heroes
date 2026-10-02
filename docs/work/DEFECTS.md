@@ -815,6 +815,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** design.md §4.17: a diagnostic stands at the
     mistake; the author is sent to a line that is right.
 
+    **2026-10-02, lane checker, a value block is told at the line that ends
+    it, and a constant at the statement it leaves by** (every value block of
+    more than one line, and beside it the constant's own message at its
+    body's first line; `fixedbugs-139-a-constant-whose-body-ends-on-a-statement`
+    moves under a dated correction): repaired at `f5e239bd`, gated by its
+    cases and the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **150 — a correct program that reads a C union naming two members gets clang's warning on the author's line** | `extern "w.h"` with `record W` (two members over a union) and `function make_w() -> W`, `print(w.i)`: `build` exit 0, the program prints 7, and the build prints *warning: excess elements in union initializer* at `read.hero:2:81` | the completeness probe's `{0,0}` for a union record (`selfhost/emit/`, beside defect 140's `{}`)
 
     **Origin:** lane emit, 2026-10-01 (`scratchpad/lane-emit/pass1/union2/read.hero`
