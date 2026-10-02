@@ -1,0 +1,18 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R4), found in
+# the panel's compiler-engineer's shapes beside the defect.
+#
+# SYMPTOM: a record over `UAS { kind; union { struct { a; b; }; q; }; }`
+# naming `kind` and the union's 64-bit arm `q` was told *does not name `b`*,
+# a false refusal: `q` holds every byte of the anonymous struct.
+#
+# FIX: `a` and `b` share bytes with `q`, the arm the record names, so the
+# layout check calls them complete.
+
+extern "fixedbugs-151-unions.h"
+    record UAS
+        kind: i32
+        q: i64
+    function make_uas() -> UAS
+
+function main()
+    print(make_uas().q)

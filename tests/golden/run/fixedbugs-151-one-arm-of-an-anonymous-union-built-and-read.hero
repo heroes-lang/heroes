@@ -1,0 +1,18 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R2, R4).
+#
+# What the refusal of two arms leaves legal: a record over a struct holding an
+# anonymous union names ONE arm, builds with it and reads it, and the members
+# it leaves out of the union are complete, sharing their bytes with the arm.
+# Built from Heroes, `i` reads back as written; from C, as C wrote it.
+
+extern "fixedbugs-151-unions.h"
+    record SA
+        kind: i32
+        i: i32
+        x: i32
+    function make_sa(i: i32) -> SA
+
+function main()
+    s = SA(kind: 1, i: 7, x: 3)
+    print(s.i)
+    print(make_sa(i: 12).i + make_sa(i: 12).x)

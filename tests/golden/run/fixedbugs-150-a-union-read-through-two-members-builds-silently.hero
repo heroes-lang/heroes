@@ -1,0 +1,23 @@
+# fixedbugs, defect 150, lane land186, 2026-10-02 (panel 186 R4).
+#
+# SYMPTOM: a correct program reading a C union through two of its members
+# built at exit 0 and printed 7, with clang's *excess elements in union
+# initializer* warning at the author's `record` line, twice.
+#
+# CAUSE: the completeness probe wrote one positional zero per declared field,
+# `W v = {0,0};`, and a union takes one.
+#
+# FIX: the probe is gone; completeness is asked of the header's layout before
+# any unit compiles, and a union read through any of its members is complete.
+# The `warnings` suite holds the build's silence.
+
+extern "fixedbugs-151-unions.h"
+    record W
+        i: i32
+        n: u32
+    function make_w() -> W
+
+function main()
+    w = make_w()
+    print(w.i)
+    print(w.n)
