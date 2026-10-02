@@ -968,6 +968,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** lane round1002c's gate, 2026-10-02, a question left unrun (*neither the pointee key nor the layout key names `source_dir`*); measured by the coordinator's agent on `6bec7c8c` (2026-10-02, `scratchpad/file-queue/source-dir-key/`), every experiment from one working directory, each with a fresh-cache control. The width shape (`int32_t v` against `int64_t v`) replays too, and the program's own compile still refuses it (`ffi_field_type`): a member left out has the layout check as its only judge. Unmeasured beside it: the standard library's own pointee asks key alike in both directories, and a header found through `CPATH` or another environment variable is named by no key.
 
+    **2026-10-02, lane cb4, a probe's kept verdict keyed by every word its
+    lines compile under and by what its headers resolve to, a header that
+    appears earlier in the search and the library's own asks included** (the
+    two shapes beside it with its cause, S4 and S6 of the lane's first pass,
+    2026-10-02, `scratchpad/lane-cb4/first-pass.md`): repaired at `cf949d33`,
+    gated by its own cases; the rest is owed at the round's gate, and the
+    platform legs before the push.
+
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a wrong value at exit 0, and an exit 2 on a correct program.
 
 - [ ] **169 — `check` aborts on a correct program of 300 additions** | `total = 1 + 2 + ... + 300` over `print(total)`: `check` exit 134, *panic: stack exhausted in checkwalk.synth* | `selfhost/check/walk.hero:101` (`synth`) · panel 184's R5 (*the compiler runs its passes on a thread whose stack it chooses*) and R6 (*a floor, not a ceiling*), ratified 2026-10-01, not landed (`docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md:197`, `:204-206`) · **class: blocking**
