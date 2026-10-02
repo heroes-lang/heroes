@@ -270,6 +270,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     repaired at `6d49b827`, gated by its cases and the compiler's own tests;
     the net is owed at the batch's close.
 
+    **Batch gate, lane recovery-b6, 2026-10-02 10:25** (the trunk `8b98bcc7`
+    merged at `8a67e4b8`): the seed regenerated once, the fixpoint by `cmp`;
+    the compiler's own tests 1,006 and the net's own 184, all passed;
+    `tests/emission` unmoved, `emission` 654 and 0; the full net 4,318 passed
+    and 0 failed over 26 suites, none re-run, no floor raised; the census over
+    1,642 files in both arms, against the trunk's compiler, moving 70 outputs
+    in 35 files and no exit, the batch's own 25 cases and ten of panel 183's
+    probes whose openers take R3's words; the recovery instrument against the
+    lane's base: ONE 12,745 to 12,838, EXTRA 532 to 439 (`line-comment` 93 to
+    0), HIDDEN pairs 12 to 4, APPLY-NEW and APPLY-OTHER 0, no class risen;
+    Linux x86-64 on the gate tree, 1,006 tests and 19 suites, 4,171 passed and
+    0 failed. The item stays open for the shapes lane recovery-b6's report
+    names.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
