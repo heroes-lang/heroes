@@ -1,0 +1,88 @@
+# The kind of declaration a head nothing reads names in its own words
+# (design.md §4.17; defect 130's class, the audit's group (c), lane
+# recovery-b6, 2026-10-02).
+#
+# Below a line no declaration opens, `parse/headless` reads the block by the
+# shape of its lines, since nothing else says what the block is. Something
+# often does: the head's own words. `pub variant Expr` and `export function
+# f()` hold the keyword after the word another language puts first, and
+# `varaint Token` or `recrod Point` is one slip from the keyword it means.
+# Read by shape, `varaint Token` over `number:` and `plus` took its cases for
+# fields, a case's `:` making the block a record's, and told every case
+# `expected_field_type`; `pub variant Expr` over `num(v: i64)` read its cases
+# as statements; and the case's own mistake, the one a second turn met, went
+# unsaid (the audit's rows H-008, H-010 and H-011). Where the words name a
+# kind, the block is read as that kind's: a record's fields, a variant's
+# cases, a body. Where they name none, its shape decides, as before.
+#
+# A slip is one edit or two neighbouring letters swapped, and counts only
+# where it reaches exactly one keyword of six letters or more: `test` and
+# `use` are one edit from words a line may begin with, `text` and `user`.
+#
+# | entry | called by |
+# |---|---|
+# | `named_by` | `parse/headless.read_below`, `parse/headless.braced` |
+
+use token
+use cursor
+use keywords
+use resolve/near_names
+
+## Error codes
+
+constant ERR_UNNAMED: str
+    "unnamed"
+
+# The declaration keyword the head line begun at token `word` names: one
+# further along the line at its own depth, or the one its first word is a
+# slip of; a failure where it names none.
+function named_by(c: cursor.Cursor, text: str, word: i64) -> token.TokenKind?
+    depth: i64 @ 0
+    i: i64 @ word + 1
+
+    while i < c.tokens.len() && !(depth == 0 && ends_a_line(c.tokens[i].kind))
+        k = c.tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if (k == .rparen || k == .rbracket || k == .rbrace) && depth > 0
+            depth @ depth - 1
+        else if depth == 0 && declares(k)
+            return ok(k)
+        i @ i + 1
+
+    if c.tokens[word].kind != .ident
+        return fail(code: ERR_UNNAMED, msg: "the head is no name")
+    return slip_of(text.slice(from: c.tokens[word].span.start, to: c.tokens[word].span.end))
+
+# The one keyword of six letters or more that `name` is a slip of.
+function slip_of(name: str) -> token.TokenKind?
+    found: [str] @ []
+
+    for one in ["record", "variant", "function", "constant", "extern"]
+        if near_names.distance(a: name, b: one) <= 1 || near_names.swapped(a: name, b: one)
+            found @ found.push(one)
+
+    if found.len() != 1
+        return fail(code: ERR_UNNAMED, msg: "no one keyword is a slip away")
+    return keywords.keyword(found[0])
+
+# A keyword that opens a declaration with a block of its own.
+function declares(kind: token.TokenKind) -> bool
+    return kind == .kw_record || kind == .kw_variant || kind == .kw_function || kind == .kw_constant || kind == .kw_test || kind == .kw_extern
+
+function ends_a_line(kind: token.TokenKind) -> bool
+    return kind == .terminator || kind == .indent || kind == .dedent || kind == .eof
+
+## Tests
+
+test "a head names its kind by a keyword along its line or by a slip of one"
+    for word in ["varaint", "vairant", "variants", "varint"]
+        assert slip_of(word).must() == .kw_variant
+
+    assert slip_of("recrod").must() == .kw_record
+    assert slip_of("fucntion").must() == .kw_function
+    assert slip_of("cosntant").must() == .kw_constant
+
+    for word in ["pub", "export", "test", "tset", "use", "Point", "records_"]
+        assert slip_of(word).is_err()

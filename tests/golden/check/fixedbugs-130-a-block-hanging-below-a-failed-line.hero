@@ -16,7 +16,7 @@
 
 function after_a_failed_line()
     x = )  #~ expected_expression
-        z = 4 )  #~ expected_end_of_line
+        z = 4 )  #~ unexpected_block expected_end_of_line
     w = 5 )  #~ expected_end_of_line
 
 function after_a_misspelled_if(x: i64)
@@ -31,24 +31,24 @@ function after_a_misspelled_while(x: i64)
 
 function after_a_line_that_went_on()
     y = 3 )  #~ expected_end_of_line
-        z = 4 )  #~ expected_end_of_line
+        z = 4 )  #~ unexpected_block expected_end_of_line
     w = 5 )  #~ expected_end_of_line
 
 function two_deep()
     x = )  #~ expected_expression
-        z = 4 )  #~ expected_end_of_line
-            q = 1 )  #~ expected_end_of_line
+        z = 4 )  #~ unexpected_block expected_end_of_line
+            q = 1 )  #~ unexpected_block expected_end_of_line
     w = 5 )  #~ expected_end_of_line
 
 function inside_a_body(n: i64)
     if n > 0
         x = )  #~ expected_expression
-            z = 4 )  #~ expected_end_of_line
+            z = 4 )  #~ unexpected_block expected_end_of_line
     w = 5 )  #~ expected_end_of_line
 
 function after_return() -> i64
     return )  #~ expected_expression
-        z = 4 )  #~ expected_end_of_line
+        z = 4 )  #~ unexpected_block expected_end_of_line
 
 function after_a_misspelled_match(n: i64)
     mach n  #~ expected_end_of_line
@@ -78,3 +78,12 @@ function main()
 # passed over and the rest is read, not dropped whole
 # (`fixedbugs-130-an-orphan-that-goes-on-with-the-line-above`); `and b` holds
 # no other mistake, and this case reads the same.
+
+# Corrected 2026-10-02 by lane recovery-b6 (the recovery cluster's C4, the
+# audit's rows 130-22c, H-007, H-012, H-013, H-014): the header's *read and
+# not named* no longer holds of a block below a line that can open none.
+# `x = )`, `y = 3 )` and `return )` over a deeper block are two mistakes,
+# and the block is named once, `unexpected_block`, as after a line that
+# ended well, and read; two deep, each level is named. Below a misspelled
+# head, `iff x > 1`, `whle x > 1` and `mach n`, a name and then a value, the
+# block may be the head's body and is read unnamed, as the header says.

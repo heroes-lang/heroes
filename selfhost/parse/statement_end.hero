@@ -9,9 +9,15 @@
 # (`Below`).
 #
 # **A statement that failed has said what is wrong**: the rest of its line is
-# debris, not a second mistake, and so is a block hanging below it, which is
-# READ and never named; the continuation that once cost three diagnostics for
-# one is joined by the lexer since panel 181. **Only its line** (defect 130):
+# debris, not a second mistake; the continuation that once cost three
+# diagnostics for one is joined by the lexer since panel 181. **A block
+# hanging below it is read, and named where the line can open none**
+# (`orphan_below`, the recovery cluster's C4, 2026-10-02): `x = 3 )` over a
+# deeper `y = 4` is two mistakes, and until then the second was told only
+# once the `)` went, where after `x = 3` the same block is `unexpected_block`
+# at once. A line that may be a misspelled head, a name and then a value,
+# `iff x > 1` or `x = mtch n`, may open the block, which is read as its body
+# and never named, as today. **Only its line** (defect 130):
 # a statement that ended with its own block or line end has none left, and
 # the line under the cursor, which the drop took, was the next statement's.
 # **And not past braces closed on a line of their own** (lane X1's finding
@@ -53,12 +59,14 @@ use parse/headless
 use parse/orphans
 use parse/refused_heads
 use parse/refused_literal
+use parse/opening
+use token
 
 # What hangs below the line a statement ended on, for the grammar to read.
 variant Below
     nothing
-    # A block or braces below a line that said what is wrong: read, never
-    # named (`grammar_expr.hanging`).
+    # A block or braces below a line that said what is wrong: read
+    # (`grammar_expr.hanging`), a block the line can open none of named first.
     read
     # The block below a line whose first word the lexer refused
     # (`grammar_expr.under`).
@@ -73,7 +81,7 @@ variant Below
 function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
     if failed && !brace_habit.after_a_close(c, text)
         brace_habit.drop_rest_of_line(@c, text, from: from)
-        return hangs_below(c, text)
+        return hangs_below(@c, text, from: from)
     ended = c.pos > from && cursor.at_fresh_line(c)
 
     if ended || cursor.at(c, .dedent) || cursor.at(c, .eof) || cursor.eat(@c, .terminator)
@@ -100,7 +108,7 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
         return .refused
 
     if said
-        return hangs_below(c, text)
+        return hangs_below(@c, text, from: from)
 
     if brace_habit.opens_here(c, text)
         return .read
@@ -113,10 +121,86 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
         _ = cursor.balanced_block(@c)
     return .nothing
 
-function hangs_below(c: cursor.Cursor, text: str) -> Below
+# What hangs below the line begun at token `from`, which said what is wrong:
+# a block it can open none of is an orphan, named here (`parse/orphans`),
+# and either is read by the grammar.
+function hangs_below(@c: cursor.Cursor, text: str, from: i64) -> Below
+    if cursor.at(c, .indent) && orphan_below(c, text, from: from) && !told_at_the_block(c, from: from)
+        orphans.read(@c)
+
     if cursor.at(c, .indent) || brace_habit.opens_here(c, text)
         return .read
     return .nothing
+
+# Whether the block under the cursor's indent, below the line begun at token
+# `from`, is one that line can open none of. A line whose first word the
+# lexer refused opens one where its word heads one (`parse/refused_heads`).
+# A line that holds, at its own depth, a name and then a value no suffix of
+# the name's joins to it may be a misspelled head, `iff x > 1`, `whlie x`,
+# `x = mtch n`, and may open the block, as one with a keyword that heads a
+# block does (`heads_a_block`). Any other line opens none: a binding, a
+# mutation, a call, a `return` or an `assert` is one line.
+function orphan_below(c: cursor.Cursor, text: str, from: i64) -> bool
+    if c.tokens[from].kind == .error
+        return !refused_heads.opens_a_block(c, text, at: from)
+    depth: i64 @ 0
+    i: i64 @ from
+
+    while i < c.pos
+        k = c.tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if (k == .rparen || k == .rbracket || k == .rbrace) && depth > 0
+            depth @ depth - 1
+        else if depth == 0 && (heads_a_block(k) || k == .ident && worded(c, at: i))
+            return false
+        i @ i + 1
+
+    return true
+
+# Whether a keyword heads a block: a declaration's, `function inner()` in a
+# body, which is told as a declaration in a body is, its body below it; or a
+# control form's, whose own reader takes its block, here where its head failed.
+function heads_a_block(kind: token.TokenKind) -> bool
+    return match kind
+        .kw_function | .kw_record | .kw_variant | .kw_constant | .kw_test | .kw_extern => true
+        .kw_if | .kw_else | .kw_for | .kw_while | .kw_match                            => true
+        .kw_use | .kw_in | .kw_return | .kw_break | .kw_continue | .kw_assert          => false
+        .kw_true | .kw_false | .kw_nullptr | .kw_fail | .ident | .int_lit              => false
+        .float_lit | .str_lit | .str_piece | .char_lit | .hole | .question             => false
+        .eq | .at | .colon | .colon_colon | .comma | .dot | .arrow | .fat_arrow        => false
+        .pipe | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace          => false
+        .plus | .minus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le     => false
+        .gt | .ge | .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr   => false
+        .comment | .terminator | .indent | .dedent | .eof | .error                     => false
+
+# Whether the statement begun at token `from` failed at the block under the
+# cursor, `{` alone on its line over it: what it said is the block's report.
+function told_at_the_block(c: cursor.Cursor, from: i64) -> bool
+    at = cursor.current_span(c).start
+    first = c.tokens[from].span.start
+    i: i64 @ c.diagnostics.len() - 1
+
+    while i >= 0 && c.diagnostics[i].span.start >= first
+        if c.diagnostics[i].span.start == at
+            return true
+        i @ i - 1
+
+    return false
+
+# Whether the name at token `at` is followed, past comments, by a token that
+# begins a value no suffix of the name's begins: not `(`, `[`, `.` or `-`.
+function worded(c: cursor.Cursor, at: i64) -> bool
+    j: i64 @ at + 1
+
+    while j < c.pos && c.tokens[j].kind == .comment
+        j @ j + 1
+
+    if j >= c.pos
+        return false
+    then = c.tokens[j].kind
+    return opening.begins_an_expression(then) && then != .lparen && then != .lbracket && then != .dot && then != .minus
 
 # Whether the cursor stands on a refused literal the grammar asked an operand
 # of and left there: an `error` expression at its span, built since the

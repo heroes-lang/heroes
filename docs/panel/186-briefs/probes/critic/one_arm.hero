@@ -1,0 +1,9 @@
+extern "one_arm.h"
+    record SB
+        kind: i32
+        b: i8
+    function make_a() -> SB
+    function make_b() -> SB
+
+function main()
+    print(make_a() == make_b())

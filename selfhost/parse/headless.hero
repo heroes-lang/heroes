@@ -28,6 +28,11 @@
 # - anything else is a statement, and the block is a body, which the caller
 #   reads with `grammar_expr.hanging`, as the body under any head that failed.
 #
+# **Where the head's own words name a kind, the kind wins over the shape**
+# (`parse/head_kind`, 2026-10-02): `pub variant Expr` and `varaint Token` read
+# their block as cases, since a case's `:` or `(` made it look like fields or
+# statements and every case was told a field's or a statement's mistake.
+#
 # **Only where the head can open a block** (`parse/refused_heads`): under
 # `let x = 5` or `import geom` a deeper block is a mistake of its own, named
 # `unexpected_block` and read as statements (lane X1's finding 7).
@@ -58,6 +63,7 @@ use parse/brace_habit
 use parse/braced_lines
 use parse/refused_heads
 use parse/orphans
+use parse/head_kind
 
 ## Reading
 
@@ -91,11 +97,31 @@ function read_below(@c: cursor.Cursor, @a: ast.Ast, text: str, word: i64) -> Lef
         return .statements
 
     if brace_habit.opens_here(c, text)
-        return braced(@c, @a, text)
+        return braced(@c, @a, text, word: word)
 
     if !cursor.at(c, .indent)
         return .statements
-    return read_shaped(@c, @a, text, shape: shape_below(c))
+    return read_shaped(@c, @a, text, shape: shape_of_block(c: c, text: text, word: word, block: c))
+
+# The block's shape: the kind the head's own words name, `pub variant Expr`
+# or `varaint Token` (`parse/head_kind`), and otherwise its lines' shape.
+# `block` is the cursor on the block, the caller's or a braced view of it.
+function shape_of_block(c: cursor.Cursor, text: str, word: i64, block: cursor.Cursor) -> Shape
+    named = head_kind.named_by(c, text, word: word)
+
+    if named.is_err()
+        return shape_below(block)
+    k = named.must()
+
+    if k == .kw_record
+        return .fields
+
+    if k == .kw_variant
+        return .cases
+
+    if k == .kw_function || k == .kw_test || k == .kw_constant
+        return .statements
+    return shape_below(block)
 
 # Read the block under the cursor's indent as the fields or cases its shape
 # names, and say what is left for the caller.
@@ -117,9 +143,9 @@ function read_shaped(@c: cursor.Cursor, @a: ast.Ast, text: str, shape: Shape) ->
 # mistakes reported where they stand, and the cursor then past the `}`. A
 # body or a block of declarations is the caller's, and the cursor is left on
 # the `{`.
-function braced(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Left
+function braced(@c: cursor.Cursor, @a: ast.Ast, text: str, word: i64) -> Left
     lines: cursor.Cursor @ braced_lines.laid_out(c, text)
-    shape = shape_below(lines)
+    shape = shape_of_block(c: c, text: text, word: word, block: lines)
 
     if shape == .members
         return .declarations

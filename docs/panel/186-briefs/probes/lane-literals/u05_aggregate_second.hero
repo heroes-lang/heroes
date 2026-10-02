@@ -1,0 +1,12 @@
+extern "u.h"
+    record P
+        a: i32
+        b: i32
+    record WI
+        i: i32
+        p: P
+    function make_wi() -> WI
+
+function main()
+    w = make_wi()
+    print(w.i)

@@ -1,0 +1,10 @@
+extern "bf.h"
+    record BF
+        kind: i32
+        flag: u32
+        rest: u32
+    function make_bf() -> BF
+
+function main()
+    b = make_bf()
+    print(b.kind)

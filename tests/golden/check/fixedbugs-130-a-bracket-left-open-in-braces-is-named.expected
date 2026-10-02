@@ -1,4 +1,4 @@
-tests/golden/check/fixedbugs-130-a-bracket-left-open-in-braces-is-named.hero:17:9: error[unclosed_bracket]: `(` opened here is never closed
+tests/golden/check/fixedbugs-130-a-bracket-left-open-in-braces-is-named.hero:17:9: error[unclosed_bracket]: `(` opened here is still open at line 18, where the name `print` begins a line after one that ended without a `,`
 tests/golden/check/fixedbugs-130-a-bracket-left-open-in-braces-is-named.hero:22:9: error[unclosed_bracket]: `[` opened here is never closed
 tests/golden/check/fixedbugs-130-a-bracket-left-open-in-braces-is-named.hero:16:18: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-130-a-bracket-left-open-in-braces-is-named.hero:21:17: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)

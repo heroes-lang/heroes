@@ -1,0 +1,8 @@
+extern "u.h"
+    record W2
+        i: i32
+        n: u32
+
+function main()
+    w = W2(i: 7, n: 0)
+    print(w.i)

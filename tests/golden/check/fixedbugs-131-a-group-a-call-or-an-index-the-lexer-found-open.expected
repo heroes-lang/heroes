@@ -1,17 +1,17 @@
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:16:9: error[unclosed_bracket]: `(` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:20:10: error[unclosed_bracket]: `(` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:24:15: error[unclosed_bracket]: `(` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:28:11: error[unclosed_bracket]: `[` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:32:14: error[unclosed_bracket]: `(` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:36:10: error[unclosed_bracket]: `(` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:41:12: error[unclosed_bracket]: `(` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:41:16: error[unclosed_bracket]: `(` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:45:10: error[unclosed_bracket]: `[` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:45:16: error[unclosed_bracket]: `[` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:49:9: error[unclosed_bracket]: `{` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:49:13: error[unclosed_bracket]: `[` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:53:10: error[unclosed_bracket]: `[` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:53:12: error[unclosed_bracket]: `(` opened here is never closed
-tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:57:9: error[unclosed_bracket]: `(` opened here is never closed
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:16:9: error[unclosed_bracket]: `(` opened here is still open at line 17, where the name `print` begins a line after one that ended without a `,`
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:20:10: error[unclosed_bracket]: `(` opened here is still open at line 21, where the name `print` begins a line after one that ended without a `,`
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:24:15: error[unclosed_bracket]: `(` opened here is still open at line 25, where the name `print` begins a line after one that ended without a `,`
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:28:11: error[unclosed_bracket]: `[` opened here is still open at line 31, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:32:14: error[unclosed_bracket]: `(` opened here is still open at line 33, where the name `print` begins a line after one that ended without a `,`
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:36:10: error[unclosed_bracket]: `(` opened here is still open at line 38, where the name `print` begins a line after one that ended without a `,`
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:41:12: error[unclosed_bracket]: `(` opened here is still open at line 42, where the name `print` begins a line after one that ended without a `,`
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:41:16: error[unclosed_bracket]: `(` opened here is still open at line 42, where the name `print` begins a line after one that ended without a `,`
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:45:10: error[unclosed_bracket]: `[` opened here is still open at line 48, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:45:16: error[unclosed_bracket]: `[` opened here is still open at line 48, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:49:9: error[unclosed_bracket]: `{` opened here is still open at line 52, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:49:13: error[unclosed_bracket]: `[` opened here is still open at line 52, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:53:10: error[unclosed_bracket]: `[` opened here is still open at line 54, where the name `print` begins a line after one that ended without a `,`
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:53:12: error[unclosed_bracket]: `(` opened here is still open at line 54, where the name `print` begins a line after one that ended without a `,`
+tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:57:9: error[unclosed_bracket]: `(` opened here is still open at line 58, where the name `print` begins a line after one that ended without a `,`
 tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:61:9: error[unclosed_bracket]: `(` opened here is never closed
 tests/golden/check/fixedbugs-131-a-group-a-call-or-an-index-the-lexer-found-open.hero:57:16: error[expected_end_of_line]: expected the end of the line, found a number (`3`) — one statement per line, no semicolons

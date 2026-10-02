@@ -31,6 +31,12 @@
 # |---|---|
 # | `unread`, `read`, `inside`, `top_above` | `word_place.place_of` |
 # | `unread` | `state.new_state`, the tests of `foreign_at` and `word_place` |
+#
+# A comment is `#` to its line's end, and another language's that the lexer
+# reads as one, `//` or `/* … */` (`comment_habit.hero`), is one here too:
+# brackets in its prose open nothing (2026-10-02).
+
+use comment_habit
 
 ## The outline
 
@@ -92,9 +98,11 @@ function outline_of(text: str) -> Outline
             opens @ opens.push(i)
         ch = text[i]
 
-        if ch == '#'
+        if ch == '#' || ch == '/' && foreign_to_the_end(text, at: i, bracketed: depth > 0)
             while i < text.len() && text[i] != '\n'
                 i @ i + 1
+        else if ch == '/' && comment_habit.opens_at(text, at: i) && text[i + 1] == '*'
+            i @ comment_habit.block_end(text, from: i + 2) - 1
         else if ch == '"' || ch == '\''
             # A quoted run, to its closing quote or its line's end; a line it
             # is carried into by a `\` is a line at the depth it began at.
@@ -152,6 +160,12 @@ function last_at_most(ascending: [i64], at: i64) -> i64
 
     return low - 1
 
+# Whether a `//` at `at` is a comment to its line's end, as the lexer reads
+# it (`comment_habit.hero`, `scan.foreign_comment`), inside brackets where
+# `bracketed`: not Python's division.
+function foreign_to_the_end(text: str, at: i64, bracketed: bool) -> bool
+    return comment_habit.opens_at(text, at: at) && text[at + 1] == '/' && !comment_habit.divides_at(text, at: at, inside: bracketed)
+
 ## Tests
 
 # The walk this module replaces, kept as the definition its answers are held
@@ -163,9 +177,11 @@ function walked_inside(text: str, at: i64) -> bool
     while i < at
         ch = text[i]
 
-        if ch == '#'
+        if ch == '#' || ch == '/' && foreign_to_the_end(text, at: i, bracketed: depth > 0)
             while i < at && text[i] != '\n'
                 i @ i + 1
+        else if ch == '/' && comment_habit.opens_at(text, at: i) && text[i + 1] == '*'
+            i @ comment_habit.block_end(text, from: i + 2) - 1
         else if ch == '"' || ch == '\''
             i @ i + 1
 
