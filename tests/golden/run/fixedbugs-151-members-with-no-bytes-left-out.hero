@@ -9,6 +9,16 @@
 # members C counts but stores nothing in.
 #
 # FIX: a member left out is complete where C says its size is zero.
+#
+# **Narrowed 2026-10-02**, on the Windows box's pre-push leg at `b48d02b8`:
+# with its clang 23.1.1 and the MSVC target the empty struct has 4 bytes, so
+# `record ZE` leaving `e` out was refused `ffi_incomplete_record` there, and
+# rightly (R4: a member left out is complete only where C says it has no
+# bytes). The case stated a GNU fact as everyone's; it holds the zero-length
+# array alone now, 0 bytes on every target measured, and the empty struct is
+# witnessed both ways, missing for MSVC's target and complete for a GNU one,
+# by `selfhost/cli/layout.hero`'s test, which asks this machine's clang for
+# each.
 
 extern "fixedbugs-151-unions.h"
     record ZE
