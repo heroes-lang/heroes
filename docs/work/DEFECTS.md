@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 51**
+**OPEN: 54**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -1213,5 +1213,29 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** One mistake, the body's indentation, told twice at one place (design.md §4.17).
 
     **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake, class (a); both messages true.
+
+- [ ] **203 — a closer of another kind where a literal's separator goes is told in words that name neither the opener nor its closer** | `x = [1, 2` over `print(x) )` in a function: `expected_separator` at the `)`, *expected `,` or a new line between one element and the next, found `)`*, no `[` and no `]` in it; the `)` deleted, a second run tells `unclosed_bracket` at the `[`; the same on one line, `[1, 2)` and `{1: 2]`, and for a `}` in a list | `selfhost/parse/list_line.hero:223-228` (`separator`'s message) · panel 187's Q2 and R6 · **class: adjacent**
+
+    **Origin:** the audit's row 130-34a (`scratchpad/audit-130-133/cases/130-34a/`, 2026-09-30), the one row of item 130 open at panel 187; its R6 rewords the message to name the `[` left open, at its line and column, and both edits, the sitting's pin `tests/golden/check/panel-187-a-closer-of-another-kind-inside-a-list-is-one-message.hero` holding it meanwhile. Filed by lane rec187 before its repair, the shapes beside it read on the head's compiler (2026-10-03, `scratchpad/lane-rec187/pass1/k-r6.txt`).
+
+    **Why it is a defect.** Both readings of the program stand (the grammar's, the line a third element and the `)` its `]`; and the `]` left out above, the `)` a stray), and the message serves the first alone: under the second the repair costs a run more (design.md §4.17's measure).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be.
+
+- [ ] **204 — inside a list whose `[` the lexer paired with a closer of another kind further down, a binding is read as an element and told without the `[`, and the stray closer waits for the `]`** | `x = [1, 2` over `print(x)` over `y = 3 )`: one message, `expected_separator` at the `=` two lines below the `[`, *found `=`*, naming no `[`; with the `]` written, the `)` is told, `expected_end_of_line`, on a second run | `selfhost/parse/unclosed.hero` (panel 183's R1, a binding below a `[` ends its reach only where the lexer named the `[` never closed) · `selfhost/closers.hero` (the closer of another kind paired with the `[`) · **class: adjacent**
+
+    **Origin:** lane rec187's first pass beside defect 203, 2026-10-03, on the head's compiler and on the lane's (`scratchpad/lane-rec187/pass1/r6/r16_closer_two_below.hero` and `r16b_bracket_written.hero`, 2026-10-03). Another cause than 203's: the found token is no closer, and the reach rule is not asked.
+
+    **Why it is a defect.** The `]` left out is told nowhere and the stray `)` only on a second run (design.md §4.17's measure).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a mistake told only once another is fixed, class (b).
+
+- [ ] **205 — a closer of another kind where a map entry's `:` goes is told without the `{` or its closer** | `m = {1: 2` over `print(x) )`: `expected_map_entry_colon` at the `)`, *expected `:` between a map's key and its value, found `)`*, naming no `{` and no `}`; `{1: 2` over `y]` the same | `selfhost/grammar_expr.hero:567` (`map_literal`'s `line_end.expect_after` for the `:`) · defect 203's message, the separator's, which names them (`selfhost/parse/list_line.hero`, `another_kind`) · **class: adjacent**
+
+    **Origin:** lane rec187's first pass beside defect 203, 2026-10-03, on the head's compiler and on the lane's (`scratchpad/lane-rec187/pass1/r6/r04_map_paren.hero` and `r12_map_bracket.hero`, 2026-10-03). The same reading as 203's at another site: the line is read as the map's next key, and the closer stands where its `:` goes.
+
+    **Why it is a defect.** As 203: one reading served, the other's repair a run more (design.md §4.17's measure).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be.
 
 *******************************************************************************
