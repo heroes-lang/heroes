@@ -31,6 +31,7 @@ use cli/units
 use cli/link
 use cli/pointee
 use cli/pointee_ask
+use cli/layout
 use emit
 use emit/unit
 use emit/members
@@ -83,6 +84,23 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
 
     if checked.is_err()
         return Round(verdict: checked, refusals: messages_of(checked), binary: "")
+
+    # The header's layout of every group record (panel 186): a field left
+    # out, and a field that lies in a union where the program builds or
+    # compares the record. Its failure rides the same mapping.
+    laid = layout.check(
+        t,
+        art.program,
+        art.checked,
+        s,
+        art.decls,
+        search_include: options.headers_from,
+        package_flags: site.package_flags,
+        source_dir: site.source_dir
+    )
+
+    if laid.is_err()
+        return Round(verdict: laid, refusals: messages_of(laid), binary: "")
 
     if site.is_tests
         return fused(t, options, art, s, site, struct_tags)

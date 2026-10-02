@@ -1,0 +1,131 @@
+# What the header's layout says against a group record, read back from the
+# markers `cli/layout.hero`'s check unit carries (design.md §4.19, §4.17;
+# panel 186). Each is a contract, read from this compiler's own marker and
+# never from clang's prose: the positional probe this replaced read *missing
+# field 'c'* and named a field the record declares when the one left out was
+# in the middle.
+#
+# Four markers, three codes. `ffi_incomplete_record` for a member left out;
+# `ffi_field_type` on the field's own line for a declared bit-field (defect
+# 156); `ffi_union_field` for two declared fields that are one union's bytes
+# in a record the program builds (R2), and for a field in a union of a record
+# the program compares.
+
+use ast
+use source
+use diag
+use emit/ffi_lookup
+use emit/ffi_record
+use emit/layout_check
+use parse
+use resolve
+use checker
+
+function layout_record(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+        return fail(code: "none", msg: "not an assertion failure")
+    kind: str @ ""
+    rest: str @ ""
+
+    for marker in [layout_check.MISSING, layout_check.SHARED, layout_check.OVERLAP, layout_check.BITFIELD]
+        tail = ffi_lookup.after(text: line, marker: marker + " ")
+
+        if !tail.is_err() && kind.len() == 0
+            kind @ marker
+            rest @ tail.must()
+
+    if kind.len() == 0
+        return fail(code: "none", msg: "not a layout assertion")
+    parts: [str] @ []
+
+    for word in ffi_lookup.words(text: rest)
+        bare: [str] @ []
+
+        for ch in word.chars()
+            if ch != "\""
+                bare @ bare.push(ch)
+
+        if bare.len() > 0
+            parts @ parts.push(bare.join(""))
+
+    pair = kind == layout_check.SHARED
+
+    if parts.len() < 2 || pair && parts.len() < 3
+        return fail(code: "none", msg: "the marker's tail is short")
+    found = ffi_record.record_of(s, decls, type_name: parts[0])
+
+    if found.is_err()
+        return fail(code: "none", msg: "no group declares this record")
+    t = parts[0]
+    h = found.must().header
+    m = parts[1]
+    span = found.must().span
+
+    if kind == layout_check.MISSING
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "ffi_incomplete_record",
+            message: "`" + t + "` does not name `" + m + "`, and `" + h + "` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero",
+            span: span
+        )
+        d.notes @ d.notes.push(
+            "the assertions above check every field you DO name and cannot see one you leave out: a `" + t + "` built here would carry a zero `" + m + "` into C, which is a value rather than a crash"
+        )
+        return ok(d)
+
+    if kind == layout_check.BITFIELD
+        bits: diag.Diagnostic @ diag.new_diagnostic(
+            code: "ffi_field_type",
+            message: "`" + m + "` is a bit-field of `" + t + "` in `" + h + "`: C gives a bit-field no address and no size of its own, so no field can bind it",
+            span: ffi_record.field_span(s, decls, type_name: t, field: m, otherwise: span)
+        )
+        bits.notes @ bits.notes.push(
+            "leave `" + m + "` out and mark the `record` `partial`: it binds the fields it names, and C keeps the bits it does not"
+        )
+        return ok(bits)
+
+    if kind == layout_check.SHARED
+        other = parts[2]
+        shared: diag.Diagnostic @ diag.new_diagnostic(
+            code: "ffi_union_field",
+            message: "`" + m + "` and `" + other + "` are the same bytes of `" + t + "`: `" + h + "` puts them in one union inside the struct, so building one would answer about whichever was written last",
+            span: span
+        )
+        shared.notes @ shared.notes.push(
+            "a `record` that names both is read through either and never built, because C keeps the last one written: to build a `" + t + "`, name only the one the program writes"
+        )
+        return ok(shared)
+    beside: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_union_field",
+        message: "`" + t + "` holds `" + m + "` inside a union in `" + h + "`, so comparing or hashing one asks about bytes that may hold another member — `" + m + "` is only what was written last",
+        span: span
+    )
+    beside.notes @ beside.notes.push(
+        "reading `" + m + "` and building one that names it are both sound and stay legal; what has no answer is `==`, `hash` and being a map key, because two values holding different members are equal whenever the bytes match. Mark the `record` `partial` if you want that refusal stated at the declaration"
+    )
+    return ok(beside)
+
+## Tests
+
+test "layout_record reads each marker, and a line that is not one is left alone"
+    text = "extern \"s3.h\"\n    record S3\n        a: i64\n        c: f32\n\nfunction touch(v: S3)\n    _ = v\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    head = "c.c:2:1: error: static assertion failed due to requirement 'x': "
+    missing = layout_record(s, parsed.decls, line: head + "heroes-ffi-missing S3 b")
+    assert missing.must().code == "ffi_incomplete_record"
+    assert missing.must().message == "`S3` does not name `b`, and `s3.h` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero"
+    field_bits = layout_record(s, parsed.decls, line: head + "heroes-ffi-bitfield S3 a")
+    assert field_bits.must().code == "ffi_field_type"
+    assert field_bits.must().span.start != missing.must().span.start
+    shared = layout_record(s, parsed.decls, line: head + "heroes-ffi-shared S3 a c")
+    assert shared.must().code == "ffi_union_field"
+    assert shared.must().message == "`a` and `c` are the same bytes of `S3`: `s3.h` puts them in one union inside the struct, so building one would answer about whichever was written last"
+    beside = layout_record(s, parsed.decls, line: head + "heroes-ffi-overlap S3 a")
+    assert beside.must().code == "ffi_union_field"
+    assert layout_record(s, parsed.decls, line: head + "heroes-ffi-shared S3 a").is_err()
+    assert layout_record(s, parsed.decls, line: "c.c:2:1: error: missing field 'b' initializer").is_err()
+    assert layout_record(s, parsed.decls, line: "c.c:2:1: error: static assertion failed: heroes-ffi-missing Other b").is_err(
+    )

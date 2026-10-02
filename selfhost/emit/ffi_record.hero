@@ -2,23 +2,15 @@
 # panels 060, 061, 073, 077, 079). Port of
 # archive/bootstrap-rs/heroes/src/emit/ffi_record.rs.
 #
-# Two readers that fault the DECLARATION — a record naming too few of
-# the header's fields, and one whose header type is a union — where a
-# field mistake is repaired on a field line (those live in ffi_field).
-# They differ in mechanism and that is worth seeing side by side:
-# union_record reads an assertion this emitter wrote, so its match is
-# a contract; incomplete_record reads clang's own wording for
-# -Wmissing-field-initializers and finds the declaration through the
-# #LINE MAPPING — the probe's name is echoed on a different line from
-# the message, and holding state across clang's output is a premise
-# about its layout (panel 038 paid for one of those).
-#
-# Port note, and a bootstrap defect fixed by this crossing: the
-# bootstrap matched clang's row against the WHOLE-TEXT line and
-# ignored the path — right for every single-file golden, wrong the
-# moment a program has two files, because the row clang echoes is the
-# #line mapping's, 1-based within its own file. Both sides now ask
-# locate() and compare file and line together.
+# The reader of the union assertions `emit/extern_union.hero` writes into
+# the program's own unit, which fault the DECLARATION of a record over a C
+# union TYPE, and the lookups every record class shares: the declaration by
+# its name and a field's span. Each match is a contract
+# read from this compiler's own marker. What the header's LAYOUT says against
+# a record over a struct, from `cli/layout.hero`'s check unit, is
+# `emit/ffi_layout.hero`'s (panel 186); the positional completeness reader
+# that lived here until then read clang's prose through the #line mapping and
+# named a declared field when the one left out was in the middle.
 
 use token
 use ast
@@ -30,105 +22,6 @@ use emit/ffi_lookup
 use parse
 use resolve
 use checker
-
-# The header's struct has a field the record never names, and C fills
-# it with zero (panel 061). The narrowing is still CLAUDE.md §7's: the
-# record is looked up among THIS program's group declarations, so a
-# "missing field" from anywhere else finds nothing and stays exit 2.
-function incomplete_record(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
-    tail = ffi_lookup.after(text: line, marker: "missing field '")
-
-    if tail.is_err()
-        return fail(code: "none", msg: "not a missing-field line")
-    member = ffi_lookup.up_to_quote(tail.must())
-    place = caret_of(line)
-
-    if place.is_err()
-        return fail(code: "none", msg: "no position on the line")
-    found = record_at_line(s, decls, path: place.must().path, row: place.must().row)
-
-    if found.is_err()
-        return fail(code: "none", msg: "no group record sits on that line")
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "ffi_incomplete_record",
-        message: "`" + found.must().type_name + "` does not name `" + member + "`, and `" + found.must().header + "` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero",
-        span: found.must().span
-    )
-    d.notes @ d.notes.push(
-        "the assertions above check every field you DO name and cannot see one you leave out: a `" + found.must().type_name + "` built here would carry a zero `" + member + "` into C, which is a value rather than a crash"
-    )
-    return ok(d)
-
-# Where clang's caret sits: `path:row:col: error: …` read from the
-# right, so a path may keep its own colons.
-record Caret
-    path: str
-    row: i64
-
-function caret_of(line: str) -> Caret?
-    head = ffi_lookup.char_index_of(text: line, needle: ": error:")
-
-    if head.is_err()
-        return fail(code: "none", msg: "not an error line")
-    cs = line.chars()
-    last: i64 @ -1
-    second: i64 @ -1
-    index: i64 @ head.must() - 1
-
-    while index >= 0
-        if cs[index] == ":"
-            if last == -1
-                last @ index
-            else
-                second @ index
-                break
-        index @ index - 1
-
-    if last == -1 || second == -1
-        return fail(code: "none", msg: "no row and column before the message")
-    path: [str] @ []
-    at: i64 @ 0
-
-    while at < second
-        path @ path.push(cs[at])
-        at @ at + 1
-
-    row_text: [str] @ []
-    at @ second + 1
-
-    while at < last
-        row_text @ row_text.push(cs[at])
-        at @ at + 1
-
-    row = ffi_lookup.number(row_text.join(""))
-
-    if row.is_err()
-        return fail(code: "none", msg: "the row is not a number")
-    return ok(Caret(path: path.join(""), row: row.must()))
-
-# The group record whose name sits on this .hero line — file and line
-# TOGETHER, because the row is file-relative by construction.
-record RecordAt
-    type_name: str
-    header: str
-    span: token.Span
-
-function record_at_line(s: source.Source, decls: [ast.Decl], path: str, row: i64) -> RecordAt?
-    for decl in decls
-        match decl.kind
-            .record_decl rec =>
-                if rec.header.is_err()
-                    continue
-                found = source.locate(s, decl.name.start)
-
-                if found.file != path || found.line != row
-                    continue
-                return ok(
-                    RecordAt(type_name: source.span_text(s, decl.name), header: emit_externs.unquoted(s, span: rec.header.must()), span: decl.name)
-                )
-            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
-
-    return fail(code: "none", msg: "no group record on that line")
 
 # A group's record over a C UNION, at the two operations that would
 # answer wrongly: constructing one, and comparing or hashing one
@@ -197,6 +90,21 @@ function union_record(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
         )
     return ok(d)
 
+# The span of `field` in the group record `type_name`, or `otherwise`.
+function field_span(s: source.Source, decls: [ast.Decl], type_name: str, field: str, otherwise: token.Span) -> token.Span
+    for decl in decls
+        if source.span_text(s, decl.name) != type_name
+            continue
+
+        match decl.kind
+            .record_decl rec =>
+                for one in rec.fields
+                    if source.span_text(s, one.name) == field
+                        return one.name
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return otherwise
+
 # The declaration's own name span, for a class whose fault is the
 # declaration rather than any one field.
 record RecordOf
@@ -217,23 +125,6 @@ function record_of(s: source.Source, decls: [ast.Decl], type_name: str) -> Recor
     return fail(code: "none", msg: "no group record has this name")
 
 ## Tests
-
-test "incomplete_record maps the probe's #line back to the declaration"
-    text = "extern \"raylib.h\"\n    record Color\n        r: i64\n        g: i64\n\nfunction touch(c: Color)\n    _ = c\n\nfunction main()\n    print(1)\n"
-    parsed = parse.parse(text)
-    s = source.new_source(name: "t.hero", text: text)
-    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c = checker.check(parsed.tree, out, s, parsed.decls)
-    assert c.diagnostics.len() == 0
-    line = "t.hero:2:12: error: missing field 'b' initializer [-Wmissing-field-initializers]"
-    d = incomplete_record(s, parsed.decls, line: line)
-    assert d.must().code == "ffi_incomplete_record"
-    assert d.must().message == "`Color` does not name `b`, and `raylib.h` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero"
-
-    # A row where no group record sits, or another file's row, stays
-    # the compiler's problem.
-    assert incomplete_record(s, parsed.decls, line: "t.hero:6:12: error: missing field 'b' initializer").is_err()
-    assert incomplete_record(s, parsed.decls, line: "other.hero:2:12: error: missing field 'b' initializer").is_err()
 
 test "union_record reads its own marker, one member and many apart"
     text = "extern \"m.h\"\n    record UDef\n        i: i64\n        f: i64\n    record One\n        v: i64\n\nfunction touch(u: UDef, o: One)\n    _ = u\n    _ = o\n\nfunction main()\n    print(1)\n"
