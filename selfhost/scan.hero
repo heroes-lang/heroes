@@ -31,6 +31,8 @@ use backslash
 use brace_layout
 use closers
 use lost_quote
+use comment_habit
+use word_place
 
 ## One line of words
 
@@ -88,6 +90,10 @@ function line_body(@l: state.LexState, text: str)
         else if b == '\\' && backslash.asks_to_go_on(l, text, at: l.pos)
             # A `\` at a line's end asks it to go on, one message and no token.
             backslash.asked(@l, text)
+        else if b == '/' && comment_habit.opens_at(text, at: l.pos) && (l.holes.len() == 0 || comment_habit.divides_at(text, at: l.pos, inside: true))
+            # `//` or `/* … */`, another language's comment, told once; in an
+            # interpolation hole only the division `//` can be.
+            foreign_comment(@l, text)
         else
             punct(@l, text)
 
@@ -108,14 +114,78 @@ function comment(@l: state.LexState, text: str)
     # Don't let a trailing \r into the comment's text.
     if end > start && text[end - 1] == layout.CR
         end @ end - 1
+    comment_token(@l, start: start, end: end)
+
+# The comment token from `start` to `end`. A comment line after one that owes
+# its terminator is held, so that it follows the terminator as it always did
+# (`open_line`).
+function comment_token(@l: state.LexState, start: i64, end: i64)
     t = token.Token(kind: .comment, span: token.Span(start: start, end: end))
 
-    # A comment line after one that owes its terminator is held, so that it
-    # follows the terminator as it always did (`open_line`).
     if l.owed >= 0
         state.push_token(@l.held, t)
     else
         state.push_token(@l.tokens, t)
+
+# `//` or `/* … */` at `l.pos`, a comment another language writes
+# (`comment_habit.hero`): told once, `unexpected_character`, and read as the
+# comment it is, nothing in it lexed; or, inside a bracket whose closer stands
+# later on its line, Python's integer division, read as the `/` it is here.
+# Its fix writes `#` where it stands: `certain` where the comment opens its
+# line, or where a block comment ends it, a `guess` after code, where the
+# division is a reading too.
+function foreign_comment(@l: state.LexState, text: str)
+    start = l.pos
+    block = text[start + 1] == '*'
+    after_code = !word_place.only_margin(text, from: word_place.line_start(text, at: start), to: start)
+
+    if !block && comment_habit.divides_at(text, at: start, inside: l.open_brackets.len() + l.holes.len() > 0)
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "unexpected_character",
+            message: "`//` is not part of the language's syntax — an integer is divided by `/`, and a comment begins with `#`",
+            span: token.Span(start: start, end: start + 2)
+        )
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "divide with `/`", replacement: "/", span: token.Span(start: start, end: start + 2), certainty: .guess)
+        )
+        state.push_diagnostic(@l.diagnostics, d)
+        finish(@l, text, .slash, start: start, width: 2)
+        return
+
+    if block
+        end = comment_habit.block_end(text, from: start + 2)
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "unexpected_character",
+            message: "`/*` is not part of the language's syntax — a comment begins with `#` and runs to its line's end",
+            span: token.Span(start: start, end: start + 2)
+        )
+
+        if comment_habit.holds_the_line(text, at: start)
+            inner = comment_habit.inner_of(text, from: start + 2, to: end - 2)
+            d.fixes @ d.fixes.push(
+                diag.Fix(title: "write the comment with `#`", replacement: "# " + inner, span: token.Span(start: start, end: end), certainty: .certain)
+            )
+        state.push_diagnostic(@l.diagnostics, d)
+        comment_token(@l, start: start, end: end)
+        l.pos @ end
+        return
+    width = comment_habit.slashes(text, at: start)
+    message: str @ "`" + text.slice(from: start, to: start + width) + "` is not part of the language's syntax — a comment begins with `#`"
+    certainty: diag.Certainty @ .certain
+
+    if after_code
+        message @ message + ", and an integer is divided by `/`"
+        certainty @ .guess
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unexpected_character",
+        message: message,
+        span: token.Span(start: start, end: start + width)
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "begin the comment with `#`", replacement: "#", span: token.Span(start: start, end: start + width), certainty: certainty)
+    )
+    state.push_diagnostic(@l.diagnostics, d)
+    comment(@l, text)
 
 ## The word
 

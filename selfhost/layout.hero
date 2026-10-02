@@ -28,6 +28,7 @@ use brace_layout
 use closers
 use bracket_reach
 use lost_quote
+use comment_habit
 
 ## The carriage return
 
@@ -94,14 +95,15 @@ function line_start(@l: state.LexState, text: str)
             indent_runs.quiet(@l, text, m, line: ws_start, blank: blank_at(text, at: l.pos))
         return
 
-    # Layout-neutral lines: empty, or comment-only.
+    # Layout-neutral lines: empty, or comment-only, another language's comment
+    # included (`comment_habit.hero`).
     if l.pos >= text.len()
         if habit
             indent_runs.quiet(@l, text, m, line: ws_start, blank: true)
         return
     b = text[l.pos]
 
-    if b == '\n' || b == CR || b == '#'
+    if b == '\n' || b == CR || b == '#' || b == '/' && comment_habit.holds_the_line(text, at: l.pos)
         if habit
             indent_runs.quiet(@l, text, m, line: ws_start, blank: blank_at(text, at: l.pos))
 

@@ -1,0 +1,41 @@
+# Fixed 2026-10-02, defect 130's class, lane recovery-b6 (the audit's group
+# (e), row H-009, and the recovery instrument's `line-comment`). Symptom: a
+# comment written as C, Java, JS, Rust, Go or Swift write it, `//`, was read
+# as code: two `/` operators and whatever its prose held, so a backquote
+# cost a stray character, a `(` an `unclosed_bracket`, an apostrophe an
+# `unterminated_char`, and the line `expected_declaration` or
+# `expected_expression` besides, up to four messages for one slip, and a
+# `//` line at column 0 inside a body ended the body. Cause: the lexer knew
+# one comment, `#`. It now reads `//` and a `/* … */` closed on its line as
+# the comment they are, layout-neutral as a `#` line, nothing in them lexed,
+# and tells each once (`comment_habit.hero`): the fix writes `#`, certain
+# where the comment opens its line and a guess after code, where Python's
+# integer division is a reading too; inside a bracket closed later on its
+# line, and in an interpolation hole, `//` is read as that division, the
+# `/` this language writes, and a quote the line never closes is prose's.
+
+# a file's first comment, with a `(` and a don't in its prose  #~ unexpected_character
+
+# a doc comment above a function  #~ unexpected_character
+function half(n: i64) -> i64
+    return n / 2
+
+function main()
+    x = 1  // the count so far (see above)  #~ unexpected_character
+    # a note on a line of its own  #~ unexpected_character
+# at column 0, inside the body  #~ unexpected_character
+    if x > 0  // always  #~ unexpected_character
+        print(x)
+    y = half(  // the argument  #~ unexpected_character
+        x)
+    print(y // 2)  #~ unexpected_character
+    print(f"{y // 2}")  #~ unexpected_character
+    z = 3  # a block comment  #~ unexpected_character
+    # one of its own line  #~ unexpected_character
+    w /* inside the line */ = 4  #~ unexpected_character
+    print(z + w)
+
+    # Inside a bracket closed on a later line, an apostrophe in the prose.
+    xs: [  // the list's type  #~ unexpected_character
+        i64] = [1]
+    print(xs.len())
