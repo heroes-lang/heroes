@@ -1,0 +1,21 @@
+# fixedbugs, defect 191, lane cb4, 2026-10-02.
+#
+# Symptom: on the public CI's Linux leg (Ubuntu clang 18.1.3) a record named
+# after a typedef of a struct the header keeps opaque, with fields, stopped
+# at exit 2, `internal error`, clang's *incomplete definition of type
+# 'struct opaque_s191'*; on this Mac's clang 21 it was refused,
+# `ffi_unknown_tag`. Cause: the record reached the unit's field assertions,
+# and the reader of clang's refusal found it only by the typedef's name in
+# clang's words, which clang 21 writes beside the struct's and clang 18
+# does not. The layout check now asks, by where clang errs and never by
+# what it says, whether the record's name is a type and whether that type
+# has a layout, and refuses the record itself, on every clang.
+
+extern "fixedbugs-191-types.h"
+    record opaque191_t  #~ ffi_unknown_tag
+        a: i32
+    function hero_191_take(@p: opaque191_t) -> i32
+
+function main()
+    v: opaque191_t @ opaque191_t(a: 1)
+    print(hero_191_take(@v))
