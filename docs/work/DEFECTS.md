@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 12**
+**OPEN: 14**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -726,5 +726,35 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     not build: the compile line keeps only a package's `-I` words
     (`selfhost/cli/units.hero`), so `-F` never reaches clang, a second cause
     that lane h158's report gives for filing apart.
+
+- [ ] **161 — a package's compile flags other than `-I` never reach clang, so a correct package is refused or stops `build` at exit 2** | `extern "valued.h" package "dpkg"` over a `.pc` with `Cflags: -I<dir> -DHERO_PKG_VALUE=7` and a header returning `HERO_PKG_VALUE`: `build` exit 2, *internal error: ... use of undeclared identifier 'HERO_PKG_VALUE'*; a package's `-F` likewise never reaches the compile step, so a framework header it names is told missing | `selfhost/cli/units.hero:139` and `selfhost/cli/pointee.hero:243`, which keep only a package's `-I` · **class: blocking**
+
+    **Origin:** lane h158, 2026-10-02, beside defect 160 (the framework
+    reproducer, once its `-F` was no longer refused, still not built;
+    `scratchpad/lane-h158/d160/dpkg/`); reproduced by the coordinator at
+    16:57 by `date` on the trunk at `0bcd442c`
+    (`docs/panel/186-briefs/probes/coordinator/dpkg/`, run with
+    `PKG_CONFIG_PATH=<that>/pc`).
+
+    **Why it is a defect.** Exit 2 is the compiler blaming itself for a
+    package the author wrote correctly, and the flags a `.pc` gives are the
+    reason `package` exists (design.md §4.19).
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): exit 2, a correct program refused.
+
+- [ ] **162 — a package whose `.pc` gives a path with a space is refused, the compiler naming a fragment of the path as the flag** | a `.pc` with `Cflags: -I"<dir>/inc with space"`: `pkg-config --cflags` prints the path with its spaces escaped by backslashes, and `build` exit 1, `ffi_package`, *the package `spaced` answered with* the fragment `with` and its backslash, *which this compiler does not pass on* | `selfhost/cli/libraries.hero` (the word splitter before `filter_words`) · **class: blocking**
+
+    **Origin:** lane h158, 2026-10-02, beside defect 160
+    (`scratchpad/lane-h158/d160/pc/spaced.pc`); reproduced by the
+    coordinator at 16:57 by `date` on the trunk at `0bcd442c`
+    (`docs/panel/186-briefs/probes/coordinator/spaced/`, run with
+    `PKG_CONFIG_PATH=<that>/pc`).
+
+    **Why it is a defect.** A correct package is refused, and the message
+    names a piece of a path as a flag (design.md §4.17).
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): a correct program refused, with a false message.
 
 *******************************************************************************
