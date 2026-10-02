@@ -671,6 +671,31 @@ test "a join is certain only where the operator takes the literal it is written 
     assert named.diagnostics[0].fixes.len() == 1
     assert named.diagnostics[0].fixes[0].certainty == .certain
 
+# Defects 165 and 166: any other operator alone above an arm is offered its
+# deletion alone, certain, since no pattern begins with one; and wherever the
+# deletion is the one repair the stream is the program it writes, so that the
+# parser tells the arm's own mistakes, once. Where both readings stand, the
+# stream is the join.
+test "an operator alone above an arm is offered its deletion, and the stream is what the deletion writes"
+    shapes = [
+        ["k = match n\n    +\n    1 => 10\n", "k = match n\n    1 => 10\n"]
+        ["k = match n\n    0 => 5\n    *\n    _ => 10\n", "k = match n\n    0 => 5\n    _ => 10\n"]
+        ["k = match c\n    .red => 1\n    ::\n    .blue => 2\n", "k = match c\n    .red => 1\n    .blue => 2\n"]
+        ["k = match s\r\n    |\r\n    \"a\" => 10\r\n", "k = match s\r\n    \"a\" => 10\r\n"]
+        ["k = match n\n    -\n    x => 10\n", "k = match n\n    x => 10\n"]
+        ["k = match n\n    -\n    1.5 => 10\n", "k = match n\n    1.5 => 10\n"]
+    ]
+
+    for shape in shapes
+        out = lex_one(shape[0])
+        assert out.diagnostics.len() == 1
+        assert out.diagnostics[0].fixes.len() == 1
+        assert out.diagnostics[0].fixes[0].certainty == .certain
+        assert kind_line(out.tokens) == kind_line(lex_one(shape[1]).tokens)
+
+    signed = lex_one("k = match n\n    -\n    1 => 10\n")
+    assert kind_line(signed.tokens) == kind_line(lex_one("k = match n\n    -1 => 10\n").tokens)
+
 # Defect 129 (A), the coordinator's widening: a statement that opens a block
 # is still one statement after it, so the break before the block and the one
 # the block's last line goes on with are one repair. It ends at its own
