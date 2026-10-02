@@ -110,7 +110,7 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # author broke, so without the rule `y = a +` over `1` means `y = a + 1`,
 # which the control arm reads, a continuation the language never had.
 # unreachable_statement joined by panel 184's R4 (ratified 2026-10-01, landed
-# 2026-10-02): without it a line after a `return` still has a meaning, a
+# 2026-10-03): without it a line after a `return` still has a meaning, a
 # statement that never runs, which is the silent program the rule exists to
 # refuse (the sitting's blind reading: a loop that never advances).
 function is_thesis_rule(d: Diagnostic) -> bool

@@ -126,7 +126,7 @@ function written_type(out: Checked, id: i64) -> i64?
 # The pass's working state. Owns everything; the tree, the resolver's
 # answers and the source are parameters.
 #
-# **The flags stand last, together, and that is a measurement** (2026-10-02,
+# **The flags stand last, together, and that is a measurement** (2026-10-03,
 # panel 185's R5): every frame of the walk holds copies of this record, and
 # a field that widens it costs levels of the nesting `check` survives (one to
 # three for sixteen bytes, panel 185's engineer). Spread between the eight-byte

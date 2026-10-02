@@ -237,7 +237,7 @@ function if_without_else(span: token.Span) -> diag.Diagnostic
 # `return`, and the second answers the habit the old note taught. Every
 # repair they name is a case in
 # `tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero`, and the
-# three ends of a path the first has named since panel 184's R4 (2026-10-02:
+# three ends of a path the first has named since panel 184's R4 (2026-10-03:
 # `exit(code:)`, `assert false`, a `while true` with no `break` of its own,
 # where the note had said *`while true` included, since a loop counts as one
 # that can finish*) in `tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero`.
