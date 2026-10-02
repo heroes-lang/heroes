@@ -1,0 +1,8 @@
+extern "macro_field.h"
+    record BUF
+        len: i32
+        size: i32
+    function make_buf() -> BUF
+
+function main()
+    print(make_buf().len)

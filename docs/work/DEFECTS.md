@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 15**
+**OPEN: 16**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -757,5 +757,21 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a correct program refused, on Linux arm64.
+
+- [ ] **164 — a record field misspelt as a name the header defines as a macro stops `build` with an internal error and clang's text** | `extern "macro_field.h"` over `#define size 4` and `typedef struct { int32_t len; int32_t cap; } BUF;`, `record BUF` naming `len` and `size`: `build` exit 2, *internal error: compiling the generated C failed: ... error: expected identifier ... note: expanded from macro 'size'*, at the field assertion; the same with `stdin`, which a libc defines as a macro | `selfhost/emit/` (the field assertion, `heroes-ffi-field`, and the unknown-field mapper) · **class: blocking**
+
+    **Origin:** lane land186's second batch, 2026-10-02, beside panel 186's
+    macro-reached fields (`scratchpad/lane-land186/pass2/macro_field.hero`,
+    `macro_field_stdio.hero`); reproduced by the coordinator at 17:43 by
+    `date` on the trunk at `20652888`
+    (`docs/panel/186-briefs/probes/coordinator/macrofield/`).
+
+    **Why it is a defect.** Exit 2 is the compiler blaming itself for a
+    misspelling the author can be told about, and clang's text reaches the
+    author (`.claude/rules/c-boundary.md`).
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): exit 2. Repaired in lane land186 at `25b96332`,
+    gated by its own cases; the rest is owed at the round's gate.
 
 *******************************************************************************
