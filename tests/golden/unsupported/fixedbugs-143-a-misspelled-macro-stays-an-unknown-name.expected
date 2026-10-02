@@ -1,0 +1,6 @@
+error[ffi_unknown_name]: `fixedbugs-143-macros.h` declares no `SQUAR` — clang read the header and could not find it
+  at tests/golden/unsupported/fixedbugs-143-a-misspelled-macro-stays-an-unknown-name.hero:8:5
+    |
+  8 |     function SQUAR(x: i32) -> i32  #~ ffi_unknown_name
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `SQUAR`

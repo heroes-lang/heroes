@@ -1,0 +1,11 @@
+# fixedbugs, defect 143, panel 185 R1, lane ffi-macro, 2026-10-02.
+#
+# `SQUAR` is no macro and no function of the header: the question unit's
+# `#ifdef SQUAR` answers nothing, so the message stays `ffi_unknown_name`'s,
+# the header declares no such name, which is true.
+
+extern "fixedbugs-143-macros.h"
+    function SQUAR(x: i32) -> i32  #~ ffi_unknown_name
+
+function main()
+    print(SQUAR(x: 3))

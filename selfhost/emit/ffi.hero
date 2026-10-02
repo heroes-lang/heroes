@@ -121,6 +121,10 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !not_callable.is_err()
             found @ ffi_lookup.add_once(found, d: not_callable.must())
+        unfed = ffi_call.macro_call(s, tree, decls, p, line: line, macros: asked.macros)
+
+        if !unfed.is_err()
+            found @ ffi_lookup.add_once(found, d: unfed.must())
         not_const = ffi_declared.not_constant(s, decls, line: line)
 
         if !not_const.is_err()
@@ -189,7 +193,7 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !tag_u.is_err()
             found @ ffi_lookup.add_once(found, d: tag_u.must())
-        unknown_n = ffi_declared.unknown_name(s, decls, line: line, stderr: text)
+        unknown_n = ffi_declared.unknown_name(s, tree, decls, line: line, stderr: text, macros: asked.macros)
 
         if !unknown_n.is_err()
             found @ ffi_lookup.add_once(found, d: unknown_n.must())

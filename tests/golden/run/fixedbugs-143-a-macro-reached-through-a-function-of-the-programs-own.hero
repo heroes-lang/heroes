@@ -1,0 +1,14 @@
+# fixedbugs, defect 143, panel 185 R1, lane ffi-macro, 2026-10-02.
+#
+# The repair `ffi_macro_name` names, built and run on every platform: a
+# `static inline` function in a header of the program's own that calls the
+# macro, bound by `extern` like any function. Declared at a wrong width it is
+# refused as any function is
+# (`unsupported/fixedbugs-143-the-programs-own-function-holds-the-declaration-to-its-width`).
+
+extern "fixedbugs-143-a-macro-reached-through-a-function-of-the-programs-own.h"
+    function hero_SQUARE(x: i32) -> i32
+
+function main()
+    print(hero_SQUARE(x: 3))
+    print(hero_SQUARE(x: -4))

@@ -139,7 +139,9 @@ function shape_emit() -> Shape
 # same day**, defect 145's nine `fixedbugs-145-` cases, one per way a header
 # names a struct. **46 in lane ffi-macro, 2026-10-02**: defect 152's nine
 # `fixedbugs-152-` cases, one per kind of name a header holds that is not a
-# function, and the suite asked for 46.
+# function, and the suite asked for 46. **63 the same day**: seven
+# `fixedbugs-152-a-field-the-header-lacks-` cases and defect 143's ten
+# `fixedbugs-143-` cases (panel 185 R1).
 function shape_unsupported() -> Shape
     return Shape(
         name: "unsupported",
@@ -148,7 +150,7 @@ function shape_unsupported() -> Shape
         flag: "",
         on_stderr: true,
         want_code: 1,
-        least: 46,
+        least: 63,
         watched: true,
         silent_stdout: true,
         library_skip: true

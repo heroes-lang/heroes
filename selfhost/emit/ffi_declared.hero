@@ -109,7 +109,13 @@ function not_constant(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
 # exist (§4.17). Two spellings, because C has two: a name used as a
 # call is an undeclared FUNCTION, a name used as a value is an
 # undeclared IDENTIFIER — which is what a misspelled constant produces.
-function unknown_name(s: source.Source, decls: [ast.Decl], line: str, stderr: str) -> diag.Diagnostic?
+#
+# **A name the header defines as a MACRO is not an absent one** (panel 185 R1,
+# defect 143, 2026-10-02): the probe's parenthesised call reaches no macro, so
+# clang calls `WEXITSTATUS` undeclared, and *`sys/wait.h` declares no
+# `WEXITSTATUS`* was false. `macros` is what the refused round's question unit
+# answered (`emit/ffi_asked.hero`), and a name in it is told as a macro.
+function unknown_name(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str, stderr: str, macros: {str: bool}) -> diag.Diagnostic?
     quoted: str @ ""
     caught: bool @ false
     call_form = ffi_lookup.after(text: line, marker: "call to undeclared function '")
@@ -161,6 +167,9 @@ function unknown_name(s: source.Source, decls: [ast.Decl], line: str, stderr: st
 
     if found.is_err()
         return fail(code: "none", msg: "no group declares this name")
+
+    if !macros[name].is_err()
+        return macro_name(s, tree, decls, name: name)
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_unknown_name",
         message: "`" + found.must().header + "` declares no `" + name + "` — clang read the header and could not find it",
@@ -183,6 +192,69 @@ function unknown_name(s: source.Source, decls: [ast.Decl], line: str, stderr: st
                 diag.Fix(title: "the header declares `" + meant.must() + "`", replacement: meant.must(), span: at.must(), certainty: .guess)
             )
     return ok(d)
+
+# The header defines the name as a macro: `ffi_macro_name`, its own code
+# because the cause and the repair are not a misspelling's (panel 185 R1). A
+# macro has no parameter types, so no declaration of it can be checked, and
+# the repair is a function of the program's own that calls it, which clang
+# holds the declaration to like any function's. **The note never writes the
+# declared C types into that function**: a function drafted from a wrong
+# declaration is the hole itself in the author's file (`status: u8` read four
+# bytes of one through `WEXITSTATUS`, AddressSanitizer exit 134, measured by
+# panel 185's ffi-pragmatist), so every type is a placeholder the author fills
+# from the macro's documentation. What the declaration does settle is said:
+# its parameters' names, and whether a value comes back.
+function macro_name(s: source.Source, tree: ast.Ast, decls: [ast.Decl], name: str) -> diag.Diagnostic?
+    found = ffi_lookup.declaration(s, decls, name: name)
+
+    if found.is_err()
+        return fail(code: "none", msg: "no group declares this name")
+    header = found.must().header
+    message: str @ "`" + header + "` defines `" + name + "` as a macro, not a function: a macro has no parameter types for clang to hold this declaration to"
+
+    if found.must().is_constant
+        message @ "`" + header + "` defines `" + name + "` as a macro that takes arguments, not a value: it has none until it is called, and a macro has no parameter types for clang to hold a declaration to"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_macro_name", message: message, span: found.must().span)
+    d.notes @ d.notes.push(
+        "bind a function of the program's own that calls it: in a header beside this file, `" + shim(s, tree, decls, name: name) + "`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_" + name + "` there like any function, and clang holds that declaration to your function (§ 13)"
+    )
+    return ok(d)
+
+# The function the note drafts: the declaration's parameter names, a
+# placeholder for every type, and `void` only where the declaration takes no
+# value back. With no parameters declared, the macro's are the author's to
+# write, since a macro refused here takes some.
+function shim(s: source.Source, tree: ast.Ast, decls: [ast.Decl], name: str) -> str
+    names: [str] @ []
+    typed: [str] @ []
+    gives: bool @ true
+
+    for decl in decls
+        if source.span_text(s, decl.name) != name
+            continue
+
+        match decl.kind
+            .function_decl fd =>
+                if !fd.value.header.is_err()
+                    for param in fd.value.params
+                        names @ names.push(source.span_text(s, param.name))
+                        typed @ typed.push("<C type> " + source.span_text(s, param.name))
+
+                    match tree.types[fd.value.result].kind
+                        .unit                                                                       => gives @ false
+                        .named | .array_of | .fixed | .map_of | .fallible | .function_type | .error => gives @ true
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    head: str @ "(<its parameters, in C>)"
+    call: str @ name + "(<their names>)"
+
+    if names.len() > 0
+        head @ "(" + typed.join(", ") + ")"
+        call @ name + "(" + names.join(", ") + ")"
+
+    if gives
+        return "static inline <C result> hero_" + name + head + " { return " + call + "; }"
+    return "static inline void hero_" + name + head + " { " + call + "; }"
 
 # The name clang suggested instead. Read from the whole of stderr
 # rather than from one line, because the note sits on a line of its
@@ -270,7 +342,8 @@ test "unknown_name reads both clang spellings and takes the guess"
     assert c.diagnostics.len() == 0
     stderr = "main.c:5:9: error: call to undeclared function 'sqrtt'; ISO C99 and later do not support implicit function declarations\nmain.c:5:9: note: did you mean 'sqrt'?\n"
     line = "main.c:5:9: error: call to undeclared function 'sqrtt'; ISO C99 and later do not support implicit function declarations"
-    d = unknown_name(s, parsed.decls, line: line, stderr: stderr)
+    no_macros: {str: bool} = {}
+    d = unknown_name(s, parsed.tree, parsed.decls, line: line, stderr: stderr, macros: no_macros)
     assert d.must().code == "ffi_unknown_name"
     assert d.must().message == "`math.h` declares no `sqrtt` — clang read the header and could not find it"
     assert d.must().fixes.len() == 1
@@ -280,7 +353,7 @@ test "unknown_name reads both clang spellings and takes the guess"
     # A name this program never declared is refused: clang's line
     # stays a statement about the compiler.
     other = "m.c:1:1: error: use of undeclared identifier 'h_t_ghost'"
-    assert unknown_name(s, parsed.decls, line: other, stderr: other).is_err()
+    assert unknown_name(s, parsed.tree, parsed.decls, line: other, stderr: other, macros: no_macros).is_err()
 
 test "a tag-only struct is not an absent one — the tag class owns it"
     text = "extern \"sys/stat.h\"\n    record TagOnly\n        n: i64\n\nfunction touch(v: TagOnly)\n    _ = v\n\nfunction main()\n    print(1)\n"
@@ -291,4 +364,5 @@ test "a tag-only struct is not an absent one — the tag class owns it"
     assert c.diagnostics.len() == 0
     stderr = "m.c:2:1: error: must use 'struct' tag to refer to type 'TagOnly'\nm.c:3:1: error: use of undeclared identifier 'TagOnly'\n"
     line = "m.c:3:1: error: use of undeclared identifier 'TagOnly'"
-    assert unknown_name(s, parsed.decls, line: line, stderr: stderr).is_err()
+    no_macros: {str: bool} = {}
+    assert unknown_name(s, parsed.tree, parsed.decls, line: line, stderr: stderr, macros: no_macros).is_err()

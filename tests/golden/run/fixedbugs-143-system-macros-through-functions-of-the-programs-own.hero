@@ -1,0 +1,27 @@
+# fixedbugs, defect 143, panel 185 R1, lane ffi-macro, 2026-10-02.
+#
+# The system's macros reached the way `ffi_macro_name` says: `WEXITSTATUS`
+# of the status a child exiting 1 leaves (256), and an `fd_set` cleared, one
+# descriptor set and two asked, its life held by the marks § 13 has. On glibc
+# `FD_ZERO` is a statement, which no call form reaches and a function body
+# holds: that half runs in the Linux container at the batch gate, unrun on
+# this Mac, where `FD_ZERO` is an expression. Skipped where the machine has no
+# `sys/wait.h` or `sys/select.h`.
+
+extern "fixedbugs-143-system-macros-through-functions-of-the-programs-own.h"
+    record FdSet tag fd_set
+    function hero_wexitstatus(status: i32) -> i32
+    function hero_fd_new() -> FdSet acquires hero_fd_free
+    function hero_fd_free(s: FdSet consumes)
+    function hero_fd_zero(s: FdSet)
+    function hero_fd_set(fd: i32, s: FdSet)
+    function hero_fd_isset(fd: i32, s: FdSet) -> i32
+
+function main()
+    print(hero_wexitstatus(status: 256))
+    s = hero_fd_new()
+    hero_fd_zero(s: s)
+    hero_fd_set(fd: 3, s: s)
+    print(hero_fd_isset(fd: 3, s: s))
+    print(hero_fd_isset(fd: 4, s: s))
+    hero_fd_free(s: s)

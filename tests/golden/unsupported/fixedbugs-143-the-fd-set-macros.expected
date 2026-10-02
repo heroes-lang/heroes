@@ -1,0 +1,20 @@
+error[ffi_macro_name]: `sys/select.h` defines `FD_ZERO` as a macro, not a function: a macro has no parameter types for clang to hold this declaration to
+  at tests/golden/unsupported/fixedbugs-143-the-fd-set-macros.hero:15:5
+     |
+  15 |     function FD_ZERO(set: ptr)  #~ ffi_macro_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: bind a function of the program's own that calls it: in a header beside this file, `static inline void hero_FD_ZERO(<C type> set) { FD_ZERO(set); }`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_FD_ZERO` there like any function, and clang holds that declaration to your function (§ 13)
+
+error[ffi_macro_name]: `sys/select.h` defines `FD_SET` as a macro, not a function: a macro has no parameter types for clang to hold this declaration to
+  at tests/golden/unsupported/fixedbugs-143-the-fd-set-macros.hero:16:5
+     |
+  16 |     function FD_SET(fd: i32, set: ptr)  #~ ffi_macro_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: bind a function of the program's own that calls it: in a header beside this file, `static inline void hero_FD_SET(<C type> fd, <C type> set) { FD_SET(fd, set); }`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_FD_SET` there like any function, and clang holds that declaration to your function (§ 13)
+
+error[ffi_macro_name]: `sys/select.h` defines `FD_ISSET` as a macro, not a function: a macro has no parameter types for clang to hold this declaration to
+  at tests/golden/unsupported/fixedbugs-143-the-fd-set-macros.hero:17:5
+     |
+  17 |     function FD_ISSET(fd: i32, set: ptr) -> i32  #~ ffi_macro_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: bind a function of the program's own that calls it: in a header beside this file, `static inline <C result> hero_FD_ISSET(<C type> fd, <C type> set) { return FD_ISSET(fd, set); }`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_FD_ISSET` there like any function, and clang holds that declaration to your function (§ 13)
