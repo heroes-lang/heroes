@@ -65,6 +65,20 @@ function seal_join(@b: build.Lowering, meet: i64, result: i64?, span: token.Span
         return build.unit_value()
     return build.load_slot(@b, slot_id: result.must(), span: span)
 
+# Ends a body the checker judged LEAVING at the statement it ends at
+# (`Checked.ends`, panel 185's R5), where the IR still runs on past it: a
+# path that ended on `exit(code:)`, `assert false` or a `while true` nothing
+# breaks is no jump the IR can see, and a value block, a value arm or a
+# function with a result would otherwise store a value no path made, or
+# fall off with no `return` (184's R4 alone measured clang refusing the C,
+# exit 2). Asked only where a value or a return would be read, and only
+# where the checker said *leaves*: elsewhere nothing is sealed, so clang
+# still refuses a value read from nothing, and a function with no result
+# keeps its `return`, which is valid C and what the blessed emissions hold.
+function seal(@b: build.Lowering, ends: {i64: bool}, at: i64)
+    if !build.is_terminated(b) && !ends[at].is_err()
+        build.terminate(@b, .unreachable)
+
 function read_tag(@b: build.Lowering, c: state.Checked, subject: i64, span: token.Span) -> i64
     held = build.load_slot(@b, slot_id: subject, span: span)
     return build.emit(@b, op: .tag_of(value: held), ty: table.int_ty_id(c.types), span: span)

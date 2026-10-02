@@ -1,0 +1,190 @@
+# Fixed 2026-10-02, defect 174, lane flow4, with panel 185's R5, the seal
+# panel 184's R4 lands with. Symptom, on R4 as panel 184 prototyped it: a
+# value arm or a value block ending on `exit(code:)`, `assert false` or a
+# `while true` nothing breaks checked clean, since R4 makes each end a path,
+# and `build` stopped at exit 2 on clang's *variable is used uninitialized*,
+# the compiler blaming itself (panel 185's engineer, lane flow's c1, c2, c3
+# and c6). Cause: the lowering ended a value block only where the IR saw a
+# jump, and none of the three is one. Now the checker's one predicate says
+# where every body that leaves ends (`Checked.ends`), and the lowering ends a
+# value block, a value arm and a function's end there with `unreachable`.
+# Each function is called on a path that gives its value; the arms that end
+# the program are built, and `tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero`
+# ends one run on `exit(code: 0)`.
+
+variant Color
+    red
+    blue
+
+# Lane flow's c1, c2, c3 and c6 (`docs/panel/185-briefs/probes/q3/`).
+function exit_arm(k: i64) -> i64
+    x = match k
+        0 => exit(code: 3)
+        _ => 20
+
+    return x
+
+function assert_false_arm(k: i64) -> i64
+    x = match k
+        0 => assert false
+        _ => 20
+
+    return x
+
+function while_true_block(k: i64) -> i64
+    n: i64 @ 0
+
+    x = match k
+        0 =>
+            while true
+                n @ n + 1
+        _ => 20
+
+    return x + n
+
+function block_exit_last(k: i64) -> i64
+    x = match k
+        0 =>
+            print(0)
+            exit(code: 3)
+        _ => 20
+
+    return x
+
+# The shapes beside them: a value `if`, a checked binding, a `match`
+# returned, a statement after the end, an `if` every branch of which ends
+# then a statement, an `else if` chain, and a `str`.
+function value_if_branch(k: i64) -> i64
+    x = if k == 0
+        exit(code: 3)
+    else
+        20
+
+    return x
+
+function checked_binding(k: i64) -> i64
+    x: i64 = match k
+        0 => exit(code: 3)
+        _ => 21
+
+    return x
+
+function returned_match(k: i64) -> i64
+    return match k
+        0 => exit(code: 3)
+        _ => 22
+
+function returned_assert(c: Color) -> i64
+    return match c
+        .red  => 23
+        .blue => assert false
+
+function a_line_after_the_end(k: i64) -> i64
+    x = match k
+        0 =>
+            exit(code: 3)
+            print(2)
+        _ => 24
+
+    return x
+
+function every_branch_ends_then_a_line(k: i64, j: i64) -> i64
+    x = match k
+        0 =>
+            if j == 0
+                exit(code: 1)
+            else
+                exit(code: 2)
+
+            print(3)
+        _ => 25
+
+    return x
+
+function else_if_chain(k: i64) -> i64
+    x = if k == 0
+        assert false
+    else if k == 1
+        while true
+            print(0)
+    else
+        k * 2
+
+    return x
+
+function text_arm(k: i64) -> str
+    s = match k
+        0 => exit(code: 3)
+        _ => "many"
+
+    return s
+
+# A counted value made on the path that ends.
+function counted_then_exit(k: i64) -> i64
+    x = match k
+        0 =>
+            t = "a" + k.to_str()
+            print(t)
+            exit(code: 3)
+        _ => 26
+
+    return x
+
+# A function's end, for each kind of result: an `@` parameter, a type
+# parameter, a `T?`, a `str` and a record.
+record P
+    x: i64
+    y: i64
+
+function bump(@n: i64) -> i64
+    n @ n + 1
+
+    if n > 0
+        return n
+    exit(code: 1)
+
+function first<T>(xs: [T]) -> T
+    if xs.len() > 0
+        return xs[0]
+    exit(code: 1)
+
+function half(k: i64) -> i64?
+    if k % 2 == 0
+        return ok(k / 2)
+    assert false
+
+function named(k: i64) -> str
+    if k == 0
+        return "zero"
+    exit(code: 1)
+
+function located(n: i64) -> P
+    i: i64 @ 0
+
+    while true
+        if i * i >= n
+            return P(x: i, y: n)
+        i @ i + 1
+
+function main()
+    print(exit_arm(k: 5))
+    print(assert_false_arm(k: 5))
+    print(while_true_block(k: 5))
+    print(block_exit_last(k: 5))
+    print(value_if_branch(k: 5))
+    print(checked_binding(k: 5))
+    print(returned_match(k: 5))
+    print(returned_assert(c: .red))
+    print(a_line_after_the_end(k: 5))
+    print(every_branch_ends_then_a_line(k: 5, j: 0))
+    print(else_if_chain(k: 13))
+    print(text_arm(k: 5))
+    print(counted_then_exit(k: 5))
+    v: i64 @ 1
+    print(bump(@v))
+    print(v)
+    print(first(xs: [27, 28]))
+    print(half(k: 58).must())
+    print(named(k: 0))
+    p = located(n: 10)
+    print(p.x, " ", p.y)

@@ -86,3 +86,14 @@ function main()
     print(double(n: 21))
     print(checked(n: 7))
     print(shade(c: .blue))
+
+# Corrected 2026-10-02, defect 174, lane flow4, below the program so its
+# lines stay where they were: under panel 184's R4 a `while true` with no
+# `break` of its own and `exit(code:)` each end a path, and `missing_return`'s
+# first note says so. So *a loop counts as finishing, whatever its
+# condition* is no longer true of `until_found`'s loop, and the path through
+# `checked`'s `exit(code: 3)` no longer needs the `return` after it; both
+# `return 0`s stay legal, a statement after an end of a path being no error,
+# and this program prints what it printed. The functions with no `return`
+# after those ends are in
+# `tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero`.
