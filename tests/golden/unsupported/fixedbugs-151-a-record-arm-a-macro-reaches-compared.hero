@@ -1,0 +1,24 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R3), the
+# completeness critic's `cov_sp`.
+#
+# SYMPTOM: `SP { kind; union { Inner s; int64_t q; } u; }` with `#define sp_s
+# u.s`, bound by `kind` and `sp_s: Inner`, compared two values whose `q`
+# differs in `Inner`'s padding as `true`.
+#
+# FIX: a record arm compares its fields, never its padding, so it is not
+# compared bit for bit; the field a macro reaches is asked whether it lies in
+# a named union by C's own classification of `u`.
+
+extern "fixedbugs-151-unions.h"
+    record Inner
+        a: i8
+        b: i32
+    record SP  #~ ffi_union_field
+        kind: i32
+        sp_s: Inner
+
+function same(x: SP, y: SP) -> bool
+    return x == y
+
+function main()
+    print(1)

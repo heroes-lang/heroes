@@ -214,8 +214,18 @@ function tag_is_a_union(s: source.Source, decls: [ast.Decl], line: str) -> diag.
         message: "`" + found.must().header + "` declares `" + tag_name + "` as a `union`, not a struct — C keeps the two in one namespace and will not let one stand for the other",
         span: found.must().span
     )
+
+    # **The note says what is true, measured** (defect 157, 2026-10-02, lane
+    # land186). It said *a union has no `record` spelling in this language*,
+    # and `record W` over `typedef union { … } W;` builds and reads; what has
+    # none is a union named ONLY by its tag, `record UI tag utag` here and
+    # `record utag` refused as a name the header lacks. The refusal is panel
+    # 186's R9 question and stays; the routes it names are each a case
+    # (`run/fixedbugs-157-*`), and `ptr` through C functions is the other.
+    h = found.must().header
+    name = found.must().name
     d.notes @ d.notes.push(
-        "a group's `record` is the header's STRUCT (§4.19). A union has no `record` spelling in this language: reach it as a `ptr` and read it through C functions, or bind the one member you need as its own type"
+        "a `tag` names a struct (§4.19), and a `record` binds a union only by a typedef's name, as `record W` over `typedef union { … } W;` does. If `" + h + "` gives `" + tag_name + "` a typedef, bind that name; if not, give it one in a header of the program's own, `typedef union " + tag_name + " " + name + ";`, and bind `record " + name + "`, or reach it as a `ptr` through C functions"
     )
     return ok(d)
 
@@ -273,6 +283,15 @@ test "tag_is_a_union lands the caret on the tag token, and record_by_tag answers
     k = tag_is_a_union(s, parsed.decls, line: u)
     assert k.must().code == "ffi_tag_is_a_union"
     assert source.span_text(s, k.must().span) == "statt"
+
+    # The note names the typedef the program can write, with its own name
+    # for the record (defect 157), and says nothing of a union having no
+    # spelling at all.
+    assert ffi_lookup.has(
+        text: k.must().notes[0],
+        needle: "`typedef union statt FileStat;`, and bind `record FileStat`"
+    )
+    assert !ffi_lookup.has(text: k.must().notes[0], needle: "no `record` spelling")
     found = record_by_tag(s, parsed.decls, tag_name: "statt", want_handle: false).must()
     assert found.name == "FileStat"
     assert found.partial

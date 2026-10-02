@@ -1,0 +1,19 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R4), found in
+# the panel's compiler-engineer's shapes beside the defect.
+#
+# SYMPTOM: a record over a struct whose GNU empty struct member and
+# zero-length array have no bytes, naming the one member that has, was told
+# *does not name `x`*, which it declares.
+#
+# CAUSE: the positional probe counted one zero per declared field into
+# members C counts but stores nothing in.
+#
+# FIX: a member left out is complete where C says its size is zero.
+
+extern "fixedbugs-151-unions.h"
+    record ZE
+        x: i32
+    function make_ze() -> ZE
+
+function main()
+    print(make_ze().x)

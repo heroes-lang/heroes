@@ -1,0 +1,12 @@
+# fixedbugs, defect 158, lane h158, 2026-10-02.
+#
+# Beside `fixedbugs-158-a-header-the-groups-header-includes-in-angle-brackets`:
+# the header the machine lacks is the one the group names. That was
+# `ffi_missing_header` before defect 158, and no golden pinned its words
+# until this case.
+
+extern "fixedbugs-158-a-header-no-machine-has.h"
+    function seven() -> i32  #~ ffi_missing_header
+
+function main()
+    print(seven())

@@ -1,0 +1,43 @@
+# Fixed 2026-10-02, defect 130's class, at the round's gate of lanes
+# recovery-b8, land186 and h158, redoing lane recovery-b8's `ce5caf89`.
+# Symptom: past a statement that failed and ended with its own block, a
+# closer one too many on the next statement's line, `z = 4 )`, was told
+# twice at its column: once by the failed statement's search for a closer
+# one too many and once by the statement it belongs to. One mistake, two
+# messages, in the compiler's own tests and in no golden. Cause: the search
+# read to a line end the drop of the failed line does not reach, and the
+# line under the cursor was already the next statement's. Now it reads only
+# what the drop takes, and a closer on the failed line's own rest is still
+# told once.
+
+function f(a: i64) -> i64
+    return a
+
+function main(xs: [i64], c: bool, n: i64)
+    for i in xs
+        y = f(1 +)  #~ expected_expression
+    z = 4 )  #~ expected_end_of_line
+    while c
+        print(1 +) )  #~ expected_expression expected_end_of_line
+    w = 5 )  #~ expected_end_of_line
+    if n > )  #~ expected_expression
+        v = 3 )  #~ expected_end_of_line
+    u = 4 )  #~ expected_end_of_line
+    for i in xs
+        if c
+            t = f(1 +)  #~ expected_expression
+    s = 4 )  #~ expected_end_of_line
+    if c
+        r = 1
+    else
+        r = f(1 +)  #~ expected_expression
+    q = 4 )  #~ expected_end_of_line
+    match n
+        + => print(1) )  #~ expected_pattern expected_end_of_line
+        _ => print(2)
+    p = 4 )  #~ expected_end_of_line
+    k = match n
+        0 => f(1 +) )  #~ expected_expression expected_end_of_line
+        _ => 2
+    o = 4 )  #~ expected_end_of_line
+    print(k)

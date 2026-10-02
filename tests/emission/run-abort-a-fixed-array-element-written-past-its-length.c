@@ -16,17 +16,9 @@ _Static_assert(sizeof(struct nums) - __builtin_offsetof(struct nums, a) != 0, "h
 _Static_assert(__builtin_classify_type(((struct nums *)0)->after) == 1 && sizeof(((struct nums *)0)->after) == sizeof(int64_t) && (_Generic(((struct nums *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Nums after");
 #line 17 "abortafixedarrayelementwrittenpastitslength.c"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic error "-Wmissing-field-initializers"
-#pragma clang diagnostic ignored "-Wmissing-braces"
-#line 18 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
-__attribute__((unused)) static void hero_ffi_complete_h_abortafixedarrayelementwrittenpastitslength_Nums(void) { struct nums v = {{},0}; (void)v; }
-#line 24 "abortafixedarrayelementwrittenpastitslength.c"
-#pragma clang diagnostic pop
-
 #line 18 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 _Static_assert(__builtin_classify_type(*(struct nums *)0) != 13, "heroes-ffi-union Nums a after");
-#line 29 "abortafixedarrayelementwrittenpastitslength.c"
+#line 21 "abortafixedarrayelementwrittenpastitslength.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -102,7 +94,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 105 "abortafixedarrayelementwrittenpastitslength.c"
+#line 97 "abortafixedarrayelementwrittenpastitslength.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_abortafixedarrayelementwrittenpastitslength_Nums_eq(const struct nums *a, const struct nums *b);
@@ -121,7 +113,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 23 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 void h_abortafixedarrayelementwrittenpastitslength_main(void) {
-#line 124 "abortafixedarrayelementwrittenpastitslength.c"
+#line 116 "abortafixedarrayelementwrittenpastitslength.c"
     struct nums h0_n;
     HeroArrayHeader * h1_xs0 = {0};
     int64_t h2_i0;
@@ -188,15 +180,15 @@ bb0:
     t36 = h4_own4;
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     h4_own4 = t10;
-#line 191 "abortafixedarrayelementwrittenpastitslength.c"
+#line 183 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(t36);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t37 = h1_xs0;
-#line 195 "abortafixedarrayelementwrittenpastitslength.c"
+#line 187 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t10);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     h1_xs0 = t10;
-#line 199 "abortafixedarrayelementwrittenpastitslength.c"
+#line 191 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(t37);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t11 = INT64_C(0);
@@ -286,17 +278,17 @@ bb4:
     hero_print_int(t35);
 #line 30 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_print_end();
-#line 289 "abortafixedarrayelementwrittenpastitslength.c"
+#line 281 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(h1_xs0);
 #line 30 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
-#line 292 "abortafixedarrayelementwrittenpastitslength.c"
+#line 284 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(h4_own4);
     return;
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 299 "abortafixedarrayelementwrittenpastitslength.c"
+#line 291 "abortafixedarrayelementwrittenpastitslength.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -320,15 +312,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 323 "abortafixedarrayelementwrittenpastitslength.c"
+#line 315 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 327 "abortafixedarrayelementwrittenpastitslength.c"
+#line 319 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 331 "abortafixedarrayelementwrittenpastitslength.c"
+#line 323 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -366,13 +358,13 @@ bb2:
 bb3:
 #line 32 "<heroes library>"
     t12 = h2_out;
-#line 369 "abortafixedarrayelementwrittenpastitslength.c"
+#line 361 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t12);
 #line 32 "<heroes library>"
-#line 372 "abortafixedarrayelementwrittenpastitslength.c"
+#line 364 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(h2_out);
 #line 32 "<heroes library>"
-#line 375 "abortafixedarrayelementwrittenpastitslength.c"
+#line 367 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(h4_own4);
     return t12;
 }

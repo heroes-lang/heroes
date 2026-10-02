@@ -1,0 +1,17 @@
+# fixedbugs, defect 156, lane land186, 2026-10-02 (panel 186 R5), a shape
+# beside the critic's: the bit-fields sit in an anonymous struct, promoted to
+# `INANON`'s own names. One named is refused on its line; the one left out is
+# told as a bit-field, left to `partial`. Before, the trunk's probe named the
+# anonymous struct itself in the message, `struct INANON::(anonymous at ...)`,
+# clang's text and no name the author can write.
+
+extern "fixedbugs-156-bit-fields.h"
+    record INANON  #~ ffi_incomplete_record
+        kind: i32
+        lo: u8  #~ ffi_field_type
+
+function touch(v: INANON) -> i32
+    return v.kind
+
+function main()
+    print(1)

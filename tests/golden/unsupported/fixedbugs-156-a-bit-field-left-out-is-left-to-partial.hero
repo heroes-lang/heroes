@@ -1,0 +1,16 @@
+# fixedbugs, defect 156, lane land186, 2026-10-02 (panel 186 R5).
+#
+# A record over `BF` naming only `kind` leaves the bit-fields out, and a
+# member left out is a member C fills with zero; but no field can name a
+# bit-field, so the repair the message gives is not to name it: the record is
+# bound `partial`. The note says so, where a plain member's says what C fills.
+
+extern "fixedbugs-156-bit-fields.h"
+    record BF  #~ ffi_incomplete_record
+        kind: i32
+
+function touch(b: BF) -> i32
+    return b.kind
+
+function main()
+    print(1)

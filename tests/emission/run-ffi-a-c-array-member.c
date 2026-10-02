@@ -87,21 +87,9 @@ _Static_assert(sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbC
              _Static_assert(_Generic(&((VrDeviceInfo *)0)->chromaAbCorrection, float (*)[4]: 1, default: 0) && sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) >= sizeof(float[4]), "heroes-ffi-field VrDeviceInfo chromaAbCorrection");
 #line 79 "ffiacarraymember.c"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic error "-Wmissing-field-initializers"
-#pragma clang diagnostic ignored "-Wmissing-braces"
-#line 40 "tests/golden/run/ffi-a-c-array-member.hero"
-__attribute__((unused)) static void hero_ffi_complete_h_ffiacarraymember_Matrix(void) { Matrix v = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; (void)v; }
-#line 59 "tests/golden/run/ffi-a-c-array-member.hero"
-__attribute__((unused)) static void hero_ffi_complete_h_ffiacarraymember_VrStereoConfig(void) { VrStereoConfig v = {{},{},{},{},{},{},{},{}}; (void)v; }
-#line 68 "tests/golden/run/ffi-a-c-array-member.hero"
-__attribute__((unused)) static void hero_ffi_complete_h_ffiacarraymember_VrDeviceInfo(void) { VrDeviceInfo v = {0,0,0,0,0,0,0,{},{}}; (void)v; }
-#line 90 "ffiacarraymember.c"
-#pragma clang diagnostic pop
-
 #line 68 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(__builtin_classify_type(*(VrDeviceInfo *)0) != 13, "heroes-ffi-union VrDeviceInfo hResolution vResolution hScreenSize vScreenSize eyeToScreenDistance lensSeparationDistance interpupillaryDistance lensDistortionValues chromaAbCorrection");
-#line 95 "ffiacarraymember.c"
+#line 83 "ffiacarraymember.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -177,7 +165,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 171 "ffiacarraymember.c"
+#line 159 "ffiacarraymember.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiacarraymember_Matrix_eq(const Matrix *a, const Matrix *b);
@@ -199,7 +187,7 @@ void h_ffiacarraymember_main(void);
 
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
 void h_ffiacarraymember_main(void) {
-#line 193 "ffiacarraymember.c"
+#line 181 "ffiacarraymember.c"
     VrDeviceInfo h0_device;
     VrStereoConfig h1_config;
     int32_t t1;
@@ -327,7 +315,7 @@ bb0:
     (void)UnloadVrStereoConfig(t38);
 #line 101 "tests/golden/run/ffi-a-c-array-member.hero"
     return;
-#line 321 "ffiacarraymember.c"
+#line 309 "ffiacarraymember.c"
 }
 HERO_TU_LOCAL bool h_ffiacarraymember_Matrix_eq(const Matrix *a, const Matrix *b) {
     if (!(a->m0 == b->m0)) return false;
