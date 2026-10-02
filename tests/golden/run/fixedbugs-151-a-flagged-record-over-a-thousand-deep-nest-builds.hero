@@ -14,6 +14,13 @@
 # Measured the same way the same day: 1,029,643 bytes kept, 719,388,672
 # resident at the peak, which is clang's own output read once (the runtime's
 # file read holds it twice) and released. The program reads the arm C wrote.
+#
+# **Corrected the same day, in the same lane**: keeping only the asked rows
+# was a kept READING under a key the reader's change does not move, and the
+# lane's own next reader read them as its own (`cli/layout.hero`). A dump is
+# now kept verbatim, and one over 4 MiB not at all: here 0 bytes are kept,
+# 723,763,200 resident at the peak, 4.31 s of user time cold and 4.08 warm,
+# clang asked again (`/usr/bin/time -l`, a busy Mac).
 
 extern "fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.h"
     record G0

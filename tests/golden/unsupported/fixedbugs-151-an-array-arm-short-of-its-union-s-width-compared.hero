@@ -6,6 +6,11 @@
 # `c` is not as wide as the union. An anonymous union has no name C can take
 # `sizeof` of, so its width is asked through its members: the arm holds each
 # member's bytes and its size is a multiple of each member's alignment.
+#
+# **Corrected the same day, in the same lane**: that formula is not the
+# union's width under `#pragma pack` or `aligned`, so the width is now the one
+# clang gives the union's own block in the dump, beside C's own offsets. The
+# verdict here is the same: the union is eight bytes and `c` five.
 
 extern "fixedbugs-151-unions.h"
     record SPAD  #~ ffi_union_field

@@ -599,6 +599,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     bit-field is filtered before its assertion; what such a field binds to,
     if anything, is panel 186's question beside defect 151.
 
+    **2026-10-02, lane land186, a bit-field refused on its own line at
+    build, and one left out sent to `partial`** (panel 186 R5): repaired at
+    `afd07f00`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close, and the platform legs before the push.
+
 - [ ] **157 — `ffi_tag_is_a_union` says a union has no `record` spelling, which a record binding a union falsifies** | `extern "tu.h"` over `union utag { int32_t i; float f; };` with `record UI tag utag` naming `i`: `build` exit 1, `ffi_tag_is_a_union`, its note *a group's `record` is the header's STRUCT (§4.19). A union has no `record` spelling in this language: reach it as a `ptr` and read it through C functions, or bind the one member you need as its own type*, while `record W` over the typedef'd union `W` builds and prints `7` | `selfhost/emit/ffi_tag.hero:200-218` (landed in `8fdd2a3c`) · panel 077's ratified item 4 (*spell `union T` where the header says union*) · panel 073's *one record per arm by `tag`*
 
     **Origin:** panel 186's ffi-pragmatist and compiler-engineer (both

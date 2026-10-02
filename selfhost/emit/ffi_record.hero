@@ -75,7 +75,7 @@ function union_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: 
         if kind == extern_union.UNION_KIND
             d.message @ "`" + type_name + "` is a `union` in `" + h + "`, and `" + m + "` is a `" + field_type_text(s, tree, decls, type_name: type_name, field: m) + "`, which is not compared bit for bit" + wrong
         else
-            d.message @ "`" + type_name + "` is a `union` in `" + h + "`, and `" + m + "` is narrower than it, leaving the bytes past it unread" + wrong
+            d.message @ "`" + type_name + "` is a `union` in `" + h + "`, and `" + m + "` is narrower than it, so comparing a `" + type_name + "` or using one as a map key would compare only part of its bytes"
         d.notes @ d.notes.push(compare_note)
         return ok(d)
 
@@ -169,7 +169,7 @@ test "union_record reads its markers: two members built, one compared by kind an
     k = union_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-union-kind One v")
     assert k.must().message == "`One` is a `union` in `m.h`, and `v` is a `f32`, which is not compared bit for bit, so comparing a `One` or using one as a map key can call two different values equal"
     w = union_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-union-narrow UDef i")
-    assert w.must().message == "`UDef` is a `union` in `m.h`, and `i` is narrower than it, leaving the bytes past it unread, so comparing a `UDef` or using one as a map key can call two different values equal"
+    assert w.must().message == "`UDef` is a `union` in `m.h`, and `i` is narrower than it, so comparing a `UDef` or using one as a map key would compare only part of its bytes"
 
     # The premise-death control's own message contains no marker tail
     # that parses: 'a union must classify as 13…' has no record name.
