@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 18**
+**OPEN: 16**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -789,33 +789,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `.claude/rules/verification.md` § Bounded discovery): exit 2 and clang's
     text for the machine's own fact; it would turn the CI's Windows leg red.
 
-- [ ] **159 — a `-` alone on the line above an arm's pattern is joined to it with certainty, though deleting it is as likely a reading** | `k = match n` over a line holding only `-` and then `1 => "one"`, `_ => "many"`, with `n = 1`: `continuation_outside_brackets` with the certain fix *write the statement on one line*, and `check --apply` writes `-1 => "one"`, which checks clean and prints `many`; deleting the `-` gives `1 => "one"` and prints `one` | the lexer's join of a line ending in an operator (`continuation_outside_brackets`'s certain fix) · design.md §4.8 (*two readings make two guesses*) · defect 135's class, closed 2026-10-02 · **class: blocking**
-
-    **Origin:** lane arm's first pass, 2026-10-02
-    (`scratchpad/lane-arm/pass1/r6/u14_lexer_split_int.hero`), raised again
-    by lane recovery-b8 as a question; reproduced by the coordinator before
-    16:39, the filing commit's time, on the trunk at `6c4da49b`
-    (`docs/panel/186-briefs/probes/coordinator/u14_minus_above_an_arm.hero.txt`,
-    kept as text since it does not parse, which is the defect).
-
-    **Why it is a defect.** A `certain` fix is machine-applicable
-    (`.claude/rules/diagnostics-and-goldens.md`), and this one writes a
-    program that checks clean and means something else where another
-    reading is as likely; panel 185's R6 made the same two readings two
-    guesses for a spaced `-` on the arm's own line.
-
-    **2026-10-02, lane h158, a `-` alone above an arm is offered its
-    deletion beside its join, two guesses where both are programs**:
-    repaired at `c936bd28` (`selfhost/sign_above.hero` and
-    `selfhost/join_fix.hero`, called by `selfhost/open_line.hero`), gated by
-    its cases, two `fixedbugs-159-*` goldens and the five that pinned the old
-    join, each corrected under its header; the net is owed at the batch's
-    close.
-
-    **Class: blocking**, 2026-10-02 (the author's *D1a*,
-    `.claude/rules/verification.md` § Bounded discovery): a `certain` fix that
-    writes a program meaning something else.
-
 - [ ] **160 — a package whose `.pc` gives `-F <dir>` is refused, its flag read joined as `-F<dir>`, while the note says `-F` is accepted** | `extern "Fake/fake.h" package "fakefw"` over a `.pc` with `Cflags: -F ${pcfiledir}/../frameworks`: `pkg-config --cflags` prints `-F/<dir>`, and `build` exit 1, `ffi_package`, *answered with `-F/...`, which this compiler does not pass on*, its note listing `-F` among the flags accepted | `selfhost/cli/libraries.hero` (`filter_words`, which takes `-F` only as two words) · **class: blocking**
 
     **Origin:** lane h158, 2026-10-02, measuring framework headers for
@@ -948,29 +921,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): exit 2. Repaired in lane land186 at `25b96332`,
     gated by its own cases; the rest is owed at the round's gate.
-
-- [ ] **165 — a `+` or `*` alone on the line above an arm's pattern gets a join that no pattern takes, and a second message** | `k = match n` over a line holding only `+` (or `*`) and then `1 => "one"`: `continuation_outside_brackets` with the guess *write the statement on one line*, which writes `+1 => "one"`, then `expected_pattern` at the `+`; no deletion of the line is offered | the join of a line ending in an operator (lane h158's `sign_above.hero`, beside defect 159) · **class: adjacent**
-
-    **Origin:** lane h158's first pass for defect 159, 2026-10-02
-    (`scratchpad/lane-h158/d159/s09_plus.hero`, `s12_star.hero`);
-    reproduced by the coordinator at 18:37 by `date` on the trunk at
-    `4b44f684` (`docs/panel/186-briefs/probes/coordinator/adjacent/`, kept as
-    text since they do not parse).
-
-    **Why it is a defect.** The one fix offered writes a program that is
-    refused anew, and one mistake costs two messages (design.md §4.17).
-
-    **2026-10-02, lane h158, an operator alone above an arm is offered the
-    deletion of its line alone, `certain`, and the parser reads the arm
-    without it**: repaired at `8cb4ba6c` (`selfhost/sign_above.hero`'s
-    `offer`; `open_line.goes_on_at_head`, where such a line no longer goes
-    on with an arm above it), gated by its case
-    `fixedbugs-165-an-operator-alone-above-an-arm-offers-its-deletion` and
-    the compiler's own tests; the net is owed at the batch's close.
-
-    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
-    Bounded discovery): a second message for one mistake and a guess that
-    does not compile; no wrong value and no false message.
 
 - [ ] **166 — a `-` alone above a name or a float pattern is told `expected_pattern` twice at the same place** | `k = match n` over a line holding only `-` and then `x => "one"` (or `1.5 => "one"`): `continuation_outside_brackets`, then `expected_pattern` twice at the name or the number, the same text at the same column | the pattern's refusal after the join of a `-` line (the same on the compiler before lane h158) · **class: adjacent**
 
