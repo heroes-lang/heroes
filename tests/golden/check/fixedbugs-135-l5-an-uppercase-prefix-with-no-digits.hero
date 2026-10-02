@@ -1,0 +1,30 @@
+# Fixed 2026-10-02, defect 135's class, lane literals (the certain-fix
+# audit's L5, and the shapes beside it). Symptom: `0X`, `0B` or `0O` with no
+# digit after it cost `base_prefix_case` with the certain fix that lowers
+# the prefix, so `check --apply` wrote `0x`, which costs
+# `empty_base_literal`: a refusal the first run never made, a second turn
+# for one literal. Cause: the lowering was certain whatever followed the
+# prefix. Now it is certain only where a digit of the base follows, or where
+# the digits faulted and the first run told it; with no digit at all the one
+# diagnostic says the literal also stops, its note names the digits it
+# needs, no fix is offered, and `--apply` leaves the case as it is
+# (`number.hero`).
+
+function each_base()
+    print(0X)  #~ base_prefix_case
+    print(0B)  #~ base_prefix_case
+    print(0O)  #~ base_prefix_case
+
+function inside_brackets_and_before_an_operator()
+    xs = [0X, 1]  #~ base_prefix_case
+    print(xs.len() + 0B + 1)  #~ base_prefix_case
+
+function in_a_pattern()
+    k = match 0
+        0X => 1  #~ base_prefix_case
+        _ => 2
+    print(k)
+
+constant EMPTY: i64
+    #~v base_prefix_case
+    0O
