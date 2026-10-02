@@ -293,11 +293,12 @@ CL-060.
 **The three suites** are in § Commands. Their counts live in `docs/ROADMAP.md`
 § Where we are and nowhere else (CL-064).
 
-- **A repair or a step is gated by the golden form that holds its cases and by
-  the compiler's own tests. A ROUND of lanes is gated once, on this Mac alone**
-  (author instruction 2026-10-02): the lanes merged into one tree, the seed
-  regenerated and its fixpoint, the compiler's own tests, the net's own tests,
-  the full net, the census; a red round is bisected by lane, then by commit,
+- **A repair or a step is gated by its own cases alone, the forms narrowed to
+  them, and every other check waits for the round. A ROUND of lanes is gated
+  once, on this Mac alone** (author instructions 2026-10-02): the lanes merged
+  into one tree, the seed regenerated and its fixpoint, the compiler's own
+  tests, the net's own tests, the full net, the census; a red round is bisected
+  by lane, then by commit,
   and only the culprit is redone. A lane is one cluster of defects sharing
   files, a batch of at most five worked in sequence; it closes at five, at the
   cluster's last defect, or before a push (CL-063, CL-079). Which form a

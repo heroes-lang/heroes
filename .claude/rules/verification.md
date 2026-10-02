@@ -324,6 +324,23 @@ The first round under it, 2026-10-02: four lanes, one gate, `e2d59fdb`, the
 full net 4,449 passed and 0 failed. The text below is the rule as it stood
 before, kept.
 
+**And per repair, its own cases alone** (author instruction 2026-10-02 at
+about 16:30, meant as: *the lanes are slow; per repair they must run only
+mini tests, and every other check only at the end*). Given on what one
+repair of lane land186 ran that afternoon: `check` whole (400 cases),
+`unsupported` whole (73), `warnings` whole (289 programs built), the
+compiler's 1,023 tests and its own cases; and the lanes' briefs had asked a
+census of about 1,700 files after each repair. So a repair is gated by its
+compiler rebuilt and its own cases, every form narrowed to them with the
+harness's third word, plus the seconds-long checks of the touched file (fmt,
+`layout` filtered to it); **the whole forms, the compiler's own tests, the
+recovery instrument and the census run once, at the round's gate.** The
+per-repair bullet below that says *the golden form ..., whole where the cost
+column says it costs under a minute* and *the compiler's own tests* is
+superseded by this paragraph; the risk it takes, a repair's damage to
+another's cases found only at the gate, is the risk CL-079 already took, and
+the gate's bisect by lane and commit is its answer.
+
 Author instruction 2026-09-29, in these words (meant as): *it is unsustainable
 to go at the speed we are going; a repair gets its own test, on one platform,
 and is queued; the next repair the same; only at the end of a batch of four or
