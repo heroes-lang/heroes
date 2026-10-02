@@ -906,6 +906,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     Bounded discovery): a second message for one mistake and a guess that
     does not compile; no wrong value and no false message.
 
+    **2026-10-02, lane h158, an operator alone above an arm is offered the
+    deletion of its line alone, `certain`, and the parser reads the arm
+    without it**: repaired at `8cb4ba6c` (`selfhost/sign_above.hero`'s
+    `offer`; `open_line.goes_on_at_head`, where such a line no longer goes
+    on with an arm above it), gated by its case
+    `fixedbugs-165-an-operator-alone-above-an-arm-offers-its-deletion` and
+    the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **166 — a `-` alone above a name or a float pattern is told `expected_pattern` twice at the same place** | `k = match n` over a line holding only `-` and then `x => "one"` (or `1.5 => "one"`): `continuation_outside_brackets`, then `expected_pattern` twice at the name or the number, the same text at the same column | the pattern's refusal after the join of a `-` line (the same on the compiler before lane h158) · **class: adjacent**
 
     **Origin:** lane h158's first pass for defect 159, 2026-10-02
@@ -918,5 +926,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a second message for one mistake.
+
+    **2026-10-02, lane h158, where the deletion is the one repair the `-` is
+    left out of the stream, and the name or the float is told once**:
+    repaired at `8cb4ba6c` with defect 165, gated by its case
+    `fixedbugs-166-a-minus-alone-above-a-name-or-a-float-is-told-once` and
+    the compiler's own tests; the net is owed at the batch's close. The
+    second message was a failed arm's recovery, `opening.drop_line`, which
+    stops at a line of the text inside a line the lexer joined and reads
+    the part below the break again as an arm: `1 |` over `x => "one"` still
+    meets it, before this repair and after it, and is reported apart.
 
 *******************************************************************************
