@@ -1,0 +1,22 @@
+# Fixed 2026-10-02, defect 135's class, lane literals (the certain-fix
+# audit's L4, and the shapes beside it). Symptom: `\%`, written for a
+# percent sign, Ruby's `\#{` and Perl's `\@`, which keep an interpolation
+# from opening, and JavaScript's `\8` and `\9`, cost `unknown_escape` with
+# the certain fix `\\`, so `check --apply` wrote a program that checked
+# clean and printed a backslash where the character alone was meant. Cause:
+# only `\$`, `\?`, `\/` and `` \` `` were read as a character this language
+# writes bare. Now these are too: dropping the backslash and `\\` are both
+# guesses, and `--apply` leaves the case as it is (`escape_readings`).
+
+function a_percent_sign()
+    print("100\%")  #~ unknown_escape
+
+function an_interpolation_kept_shut()
+    print("\#{name} user\@host")  #~ unknown_escape unknown_escape
+
+function a_digit_past_the_octal_ones()
+    print("\8\9")  #~ unknown_escape unknown_escape
+
+function in_an_f_literal()
+    n = 3
+    print(f"{n}\%")  #~ unknown_escape

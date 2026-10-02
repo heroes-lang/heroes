@@ -1,0 +1,5032 @@
+# Fixed 2026-10-01, defect 140, lane emit; through arrays since 2026-10-02,
+# defect 155, lane ci140.
+# Symptom: records nested by value a thousand deep, `record R<i>` holding
+# `R<i-1>`, stopped the compiler at 134: `build` with *stack exhausted in
+# emitsynth.collect*, and `check` itself, where a value of them is compared
+# or used as a map key, with *stack exhausted in checkpartial.reaches_within*.
+# Cause: every walk over a record type recursed once per record on the
+# route. Each now keeps a stack of its own and enters what is below a place
+# in the order the recursion did, so what is emitted and what is said are
+# the recursion's own, and the depth is the records', not the machine's.
+# This case: variant cases a thousand deep, each holding the one below in an
+# array, compared, used as a map key's type, and held in an array. The walks
+# go a thousand variants down, through a case and an array's element at
+# each; the one that orders C's typedefs follows only what is held by value,
+# and has nothing to follow here. No C type nests: an array is a pointer in
+# C, so clang reads a thousand flat structs and compiles only what `main`
+# names, in about a second and a half at -O2 on arm64 macOS (2026-10-02).
+# The compiler of 9d1c209d stops `check` at 134 on this chain three hundred
+# deep already.
+# Until 2026-10-02 the chain stood here BY VALUE, and what that met was
+# clang's limit, not this compiler's: three C aggregates nest per variant,
+# and a thousand variants crashed the CI's Apple clang (clang-2100.1.1.101)
+# and took the Linux legs' -O2 past the harness's 120 s (run 36939966148).
+# By value, the chain is the three `check/fixedbugs-140-*-in-variants-*`
+# cases, where no C compiler reads it.
+
+variant R0
+    a
+        v: i64
+    b
+
+variant R1
+    a
+        inner: [R0]
+    b
+
+variant R2
+    a
+        inner: [R1]
+    b
+
+variant R3
+    a
+        inner: [R2]
+    b
+
+variant R4
+    a
+        inner: [R3]
+    b
+
+variant R5
+    a
+        inner: [R4]
+    b
+
+variant R6
+    a
+        inner: [R5]
+    b
+
+variant R7
+    a
+        inner: [R6]
+    b
+
+variant R8
+    a
+        inner: [R7]
+    b
+
+variant R9
+    a
+        inner: [R8]
+    b
+
+variant R10
+    a
+        inner: [R9]
+    b
+
+variant R11
+    a
+        inner: [R10]
+    b
+
+variant R12
+    a
+        inner: [R11]
+    b
+
+variant R13
+    a
+        inner: [R12]
+    b
+
+variant R14
+    a
+        inner: [R13]
+    b
+
+variant R15
+    a
+        inner: [R14]
+    b
+
+variant R16
+    a
+        inner: [R15]
+    b
+
+variant R17
+    a
+        inner: [R16]
+    b
+
+variant R18
+    a
+        inner: [R17]
+    b
+
+variant R19
+    a
+        inner: [R18]
+    b
+
+variant R20
+    a
+        inner: [R19]
+    b
+
+variant R21
+    a
+        inner: [R20]
+    b
+
+variant R22
+    a
+        inner: [R21]
+    b
+
+variant R23
+    a
+        inner: [R22]
+    b
+
+variant R24
+    a
+        inner: [R23]
+    b
+
+variant R25
+    a
+        inner: [R24]
+    b
+
+variant R26
+    a
+        inner: [R25]
+    b
+
+variant R27
+    a
+        inner: [R26]
+    b
+
+variant R28
+    a
+        inner: [R27]
+    b
+
+variant R29
+    a
+        inner: [R28]
+    b
+
+variant R30
+    a
+        inner: [R29]
+    b
+
+variant R31
+    a
+        inner: [R30]
+    b
+
+variant R32
+    a
+        inner: [R31]
+    b
+
+variant R33
+    a
+        inner: [R32]
+    b
+
+variant R34
+    a
+        inner: [R33]
+    b
+
+variant R35
+    a
+        inner: [R34]
+    b
+
+variant R36
+    a
+        inner: [R35]
+    b
+
+variant R37
+    a
+        inner: [R36]
+    b
+
+variant R38
+    a
+        inner: [R37]
+    b
+
+variant R39
+    a
+        inner: [R38]
+    b
+
+variant R40
+    a
+        inner: [R39]
+    b
+
+variant R41
+    a
+        inner: [R40]
+    b
+
+variant R42
+    a
+        inner: [R41]
+    b
+
+variant R43
+    a
+        inner: [R42]
+    b
+
+variant R44
+    a
+        inner: [R43]
+    b
+
+variant R45
+    a
+        inner: [R44]
+    b
+
+variant R46
+    a
+        inner: [R45]
+    b
+
+variant R47
+    a
+        inner: [R46]
+    b
+
+variant R48
+    a
+        inner: [R47]
+    b
+
+variant R49
+    a
+        inner: [R48]
+    b
+
+variant R50
+    a
+        inner: [R49]
+    b
+
+variant R51
+    a
+        inner: [R50]
+    b
+
+variant R52
+    a
+        inner: [R51]
+    b
+
+variant R53
+    a
+        inner: [R52]
+    b
+
+variant R54
+    a
+        inner: [R53]
+    b
+
+variant R55
+    a
+        inner: [R54]
+    b
+
+variant R56
+    a
+        inner: [R55]
+    b
+
+variant R57
+    a
+        inner: [R56]
+    b
+
+variant R58
+    a
+        inner: [R57]
+    b
+
+variant R59
+    a
+        inner: [R58]
+    b
+
+variant R60
+    a
+        inner: [R59]
+    b
+
+variant R61
+    a
+        inner: [R60]
+    b
+
+variant R62
+    a
+        inner: [R61]
+    b
+
+variant R63
+    a
+        inner: [R62]
+    b
+
+variant R64
+    a
+        inner: [R63]
+    b
+
+variant R65
+    a
+        inner: [R64]
+    b
+
+variant R66
+    a
+        inner: [R65]
+    b
+
+variant R67
+    a
+        inner: [R66]
+    b
+
+variant R68
+    a
+        inner: [R67]
+    b
+
+variant R69
+    a
+        inner: [R68]
+    b
+
+variant R70
+    a
+        inner: [R69]
+    b
+
+variant R71
+    a
+        inner: [R70]
+    b
+
+variant R72
+    a
+        inner: [R71]
+    b
+
+variant R73
+    a
+        inner: [R72]
+    b
+
+variant R74
+    a
+        inner: [R73]
+    b
+
+variant R75
+    a
+        inner: [R74]
+    b
+
+variant R76
+    a
+        inner: [R75]
+    b
+
+variant R77
+    a
+        inner: [R76]
+    b
+
+variant R78
+    a
+        inner: [R77]
+    b
+
+variant R79
+    a
+        inner: [R78]
+    b
+
+variant R80
+    a
+        inner: [R79]
+    b
+
+variant R81
+    a
+        inner: [R80]
+    b
+
+variant R82
+    a
+        inner: [R81]
+    b
+
+variant R83
+    a
+        inner: [R82]
+    b
+
+variant R84
+    a
+        inner: [R83]
+    b
+
+variant R85
+    a
+        inner: [R84]
+    b
+
+variant R86
+    a
+        inner: [R85]
+    b
+
+variant R87
+    a
+        inner: [R86]
+    b
+
+variant R88
+    a
+        inner: [R87]
+    b
+
+variant R89
+    a
+        inner: [R88]
+    b
+
+variant R90
+    a
+        inner: [R89]
+    b
+
+variant R91
+    a
+        inner: [R90]
+    b
+
+variant R92
+    a
+        inner: [R91]
+    b
+
+variant R93
+    a
+        inner: [R92]
+    b
+
+variant R94
+    a
+        inner: [R93]
+    b
+
+variant R95
+    a
+        inner: [R94]
+    b
+
+variant R96
+    a
+        inner: [R95]
+    b
+
+variant R97
+    a
+        inner: [R96]
+    b
+
+variant R98
+    a
+        inner: [R97]
+    b
+
+variant R99
+    a
+        inner: [R98]
+    b
+
+variant R100
+    a
+        inner: [R99]
+    b
+
+variant R101
+    a
+        inner: [R100]
+    b
+
+variant R102
+    a
+        inner: [R101]
+    b
+
+variant R103
+    a
+        inner: [R102]
+    b
+
+variant R104
+    a
+        inner: [R103]
+    b
+
+variant R105
+    a
+        inner: [R104]
+    b
+
+variant R106
+    a
+        inner: [R105]
+    b
+
+variant R107
+    a
+        inner: [R106]
+    b
+
+variant R108
+    a
+        inner: [R107]
+    b
+
+variant R109
+    a
+        inner: [R108]
+    b
+
+variant R110
+    a
+        inner: [R109]
+    b
+
+variant R111
+    a
+        inner: [R110]
+    b
+
+variant R112
+    a
+        inner: [R111]
+    b
+
+variant R113
+    a
+        inner: [R112]
+    b
+
+variant R114
+    a
+        inner: [R113]
+    b
+
+variant R115
+    a
+        inner: [R114]
+    b
+
+variant R116
+    a
+        inner: [R115]
+    b
+
+variant R117
+    a
+        inner: [R116]
+    b
+
+variant R118
+    a
+        inner: [R117]
+    b
+
+variant R119
+    a
+        inner: [R118]
+    b
+
+variant R120
+    a
+        inner: [R119]
+    b
+
+variant R121
+    a
+        inner: [R120]
+    b
+
+variant R122
+    a
+        inner: [R121]
+    b
+
+variant R123
+    a
+        inner: [R122]
+    b
+
+variant R124
+    a
+        inner: [R123]
+    b
+
+variant R125
+    a
+        inner: [R124]
+    b
+
+variant R126
+    a
+        inner: [R125]
+    b
+
+variant R127
+    a
+        inner: [R126]
+    b
+
+variant R128
+    a
+        inner: [R127]
+    b
+
+variant R129
+    a
+        inner: [R128]
+    b
+
+variant R130
+    a
+        inner: [R129]
+    b
+
+variant R131
+    a
+        inner: [R130]
+    b
+
+variant R132
+    a
+        inner: [R131]
+    b
+
+variant R133
+    a
+        inner: [R132]
+    b
+
+variant R134
+    a
+        inner: [R133]
+    b
+
+variant R135
+    a
+        inner: [R134]
+    b
+
+variant R136
+    a
+        inner: [R135]
+    b
+
+variant R137
+    a
+        inner: [R136]
+    b
+
+variant R138
+    a
+        inner: [R137]
+    b
+
+variant R139
+    a
+        inner: [R138]
+    b
+
+variant R140
+    a
+        inner: [R139]
+    b
+
+variant R141
+    a
+        inner: [R140]
+    b
+
+variant R142
+    a
+        inner: [R141]
+    b
+
+variant R143
+    a
+        inner: [R142]
+    b
+
+variant R144
+    a
+        inner: [R143]
+    b
+
+variant R145
+    a
+        inner: [R144]
+    b
+
+variant R146
+    a
+        inner: [R145]
+    b
+
+variant R147
+    a
+        inner: [R146]
+    b
+
+variant R148
+    a
+        inner: [R147]
+    b
+
+variant R149
+    a
+        inner: [R148]
+    b
+
+variant R150
+    a
+        inner: [R149]
+    b
+
+variant R151
+    a
+        inner: [R150]
+    b
+
+variant R152
+    a
+        inner: [R151]
+    b
+
+variant R153
+    a
+        inner: [R152]
+    b
+
+variant R154
+    a
+        inner: [R153]
+    b
+
+variant R155
+    a
+        inner: [R154]
+    b
+
+variant R156
+    a
+        inner: [R155]
+    b
+
+variant R157
+    a
+        inner: [R156]
+    b
+
+variant R158
+    a
+        inner: [R157]
+    b
+
+variant R159
+    a
+        inner: [R158]
+    b
+
+variant R160
+    a
+        inner: [R159]
+    b
+
+variant R161
+    a
+        inner: [R160]
+    b
+
+variant R162
+    a
+        inner: [R161]
+    b
+
+variant R163
+    a
+        inner: [R162]
+    b
+
+variant R164
+    a
+        inner: [R163]
+    b
+
+variant R165
+    a
+        inner: [R164]
+    b
+
+variant R166
+    a
+        inner: [R165]
+    b
+
+variant R167
+    a
+        inner: [R166]
+    b
+
+variant R168
+    a
+        inner: [R167]
+    b
+
+variant R169
+    a
+        inner: [R168]
+    b
+
+variant R170
+    a
+        inner: [R169]
+    b
+
+variant R171
+    a
+        inner: [R170]
+    b
+
+variant R172
+    a
+        inner: [R171]
+    b
+
+variant R173
+    a
+        inner: [R172]
+    b
+
+variant R174
+    a
+        inner: [R173]
+    b
+
+variant R175
+    a
+        inner: [R174]
+    b
+
+variant R176
+    a
+        inner: [R175]
+    b
+
+variant R177
+    a
+        inner: [R176]
+    b
+
+variant R178
+    a
+        inner: [R177]
+    b
+
+variant R179
+    a
+        inner: [R178]
+    b
+
+variant R180
+    a
+        inner: [R179]
+    b
+
+variant R181
+    a
+        inner: [R180]
+    b
+
+variant R182
+    a
+        inner: [R181]
+    b
+
+variant R183
+    a
+        inner: [R182]
+    b
+
+variant R184
+    a
+        inner: [R183]
+    b
+
+variant R185
+    a
+        inner: [R184]
+    b
+
+variant R186
+    a
+        inner: [R185]
+    b
+
+variant R187
+    a
+        inner: [R186]
+    b
+
+variant R188
+    a
+        inner: [R187]
+    b
+
+variant R189
+    a
+        inner: [R188]
+    b
+
+variant R190
+    a
+        inner: [R189]
+    b
+
+variant R191
+    a
+        inner: [R190]
+    b
+
+variant R192
+    a
+        inner: [R191]
+    b
+
+variant R193
+    a
+        inner: [R192]
+    b
+
+variant R194
+    a
+        inner: [R193]
+    b
+
+variant R195
+    a
+        inner: [R194]
+    b
+
+variant R196
+    a
+        inner: [R195]
+    b
+
+variant R197
+    a
+        inner: [R196]
+    b
+
+variant R198
+    a
+        inner: [R197]
+    b
+
+variant R199
+    a
+        inner: [R198]
+    b
+
+variant R200
+    a
+        inner: [R199]
+    b
+
+variant R201
+    a
+        inner: [R200]
+    b
+
+variant R202
+    a
+        inner: [R201]
+    b
+
+variant R203
+    a
+        inner: [R202]
+    b
+
+variant R204
+    a
+        inner: [R203]
+    b
+
+variant R205
+    a
+        inner: [R204]
+    b
+
+variant R206
+    a
+        inner: [R205]
+    b
+
+variant R207
+    a
+        inner: [R206]
+    b
+
+variant R208
+    a
+        inner: [R207]
+    b
+
+variant R209
+    a
+        inner: [R208]
+    b
+
+variant R210
+    a
+        inner: [R209]
+    b
+
+variant R211
+    a
+        inner: [R210]
+    b
+
+variant R212
+    a
+        inner: [R211]
+    b
+
+variant R213
+    a
+        inner: [R212]
+    b
+
+variant R214
+    a
+        inner: [R213]
+    b
+
+variant R215
+    a
+        inner: [R214]
+    b
+
+variant R216
+    a
+        inner: [R215]
+    b
+
+variant R217
+    a
+        inner: [R216]
+    b
+
+variant R218
+    a
+        inner: [R217]
+    b
+
+variant R219
+    a
+        inner: [R218]
+    b
+
+variant R220
+    a
+        inner: [R219]
+    b
+
+variant R221
+    a
+        inner: [R220]
+    b
+
+variant R222
+    a
+        inner: [R221]
+    b
+
+variant R223
+    a
+        inner: [R222]
+    b
+
+variant R224
+    a
+        inner: [R223]
+    b
+
+variant R225
+    a
+        inner: [R224]
+    b
+
+variant R226
+    a
+        inner: [R225]
+    b
+
+variant R227
+    a
+        inner: [R226]
+    b
+
+variant R228
+    a
+        inner: [R227]
+    b
+
+variant R229
+    a
+        inner: [R228]
+    b
+
+variant R230
+    a
+        inner: [R229]
+    b
+
+variant R231
+    a
+        inner: [R230]
+    b
+
+variant R232
+    a
+        inner: [R231]
+    b
+
+variant R233
+    a
+        inner: [R232]
+    b
+
+variant R234
+    a
+        inner: [R233]
+    b
+
+variant R235
+    a
+        inner: [R234]
+    b
+
+variant R236
+    a
+        inner: [R235]
+    b
+
+variant R237
+    a
+        inner: [R236]
+    b
+
+variant R238
+    a
+        inner: [R237]
+    b
+
+variant R239
+    a
+        inner: [R238]
+    b
+
+variant R240
+    a
+        inner: [R239]
+    b
+
+variant R241
+    a
+        inner: [R240]
+    b
+
+variant R242
+    a
+        inner: [R241]
+    b
+
+variant R243
+    a
+        inner: [R242]
+    b
+
+variant R244
+    a
+        inner: [R243]
+    b
+
+variant R245
+    a
+        inner: [R244]
+    b
+
+variant R246
+    a
+        inner: [R245]
+    b
+
+variant R247
+    a
+        inner: [R246]
+    b
+
+variant R248
+    a
+        inner: [R247]
+    b
+
+variant R249
+    a
+        inner: [R248]
+    b
+
+variant R250
+    a
+        inner: [R249]
+    b
+
+variant R251
+    a
+        inner: [R250]
+    b
+
+variant R252
+    a
+        inner: [R251]
+    b
+
+variant R253
+    a
+        inner: [R252]
+    b
+
+variant R254
+    a
+        inner: [R253]
+    b
+
+variant R255
+    a
+        inner: [R254]
+    b
+
+variant R256
+    a
+        inner: [R255]
+    b
+
+variant R257
+    a
+        inner: [R256]
+    b
+
+variant R258
+    a
+        inner: [R257]
+    b
+
+variant R259
+    a
+        inner: [R258]
+    b
+
+variant R260
+    a
+        inner: [R259]
+    b
+
+variant R261
+    a
+        inner: [R260]
+    b
+
+variant R262
+    a
+        inner: [R261]
+    b
+
+variant R263
+    a
+        inner: [R262]
+    b
+
+variant R264
+    a
+        inner: [R263]
+    b
+
+variant R265
+    a
+        inner: [R264]
+    b
+
+variant R266
+    a
+        inner: [R265]
+    b
+
+variant R267
+    a
+        inner: [R266]
+    b
+
+variant R268
+    a
+        inner: [R267]
+    b
+
+variant R269
+    a
+        inner: [R268]
+    b
+
+variant R270
+    a
+        inner: [R269]
+    b
+
+variant R271
+    a
+        inner: [R270]
+    b
+
+variant R272
+    a
+        inner: [R271]
+    b
+
+variant R273
+    a
+        inner: [R272]
+    b
+
+variant R274
+    a
+        inner: [R273]
+    b
+
+variant R275
+    a
+        inner: [R274]
+    b
+
+variant R276
+    a
+        inner: [R275]
+    b
+
+variant R277
+    a
+        inner: [R276]
+    b
+
+variant R278
+    a
+        inner: [R277]
+    b
+
+variant R279
+    a
+        inner: [R278]
+    b
+
+variant R280
+    a
+        inner: [R279]
+    b
+
+variant R281
+    a
+        inner: [R280]
+    b
+
+variant R282
+    a
+        inner: [R281]
+    b
+
+variant R283
+    a
+        inner: [R282]
+    b
+
+variant R284
+    a
+        inner: [R283]
+    b
+
+variant R285
+    a
+        inner: [R284]
+    b
+
+variant R286
+    a
+        inner: [R285]
+    b
+
+variant R287
+    a
+        inner: [R286]
+    b
+
+variant R288
+    a
+        inner: [R287]
+    b
+
+variant R289
+    a
+        inner: [R288]
+    b
+
+variant R290
+    a
+        inner: [R289]
+    b
+
+variant R291
+    a
+        inner: [R290]
+    b
+
+variant R292
+    a
+        inner: [R291]
+    b
+
+variant R293
+    a
+        inner: [R292]
+    b
+
+variant R294
+    a
+        inner: [R293]
+    b
+
+variant R295
+    a
+        inner: [R294]
+    b
+
+variant R296
+    a
+        inner: [R295]
+    b
+
+variant R297
+    a
+        inner: [R296]
+    b
+
+variant R298
+    a
+        inner: [R297]
+    b
+
+variant R299
+    a
+        inner: [R298]
+    b
+
+variant R300
+    a
+        inner: [R299]
+    b
+
+variant R301
+    a
+        inner: [R300]
+    b
+
+variant R302
+    a
+        inner: [R301]
+    b
+
+variant R303
+    a
+        inner: [R302]
+    b
+
+variant R304
+    a
+        inner: [R303]
+    b
+
+variant R305
+    a
+        inner: [R304]
+    b
+
+variant R306
+    a
+        inner: [R305]
+    b
+
+variant R307
+    a
+        inner: [R306]
+    b
+
+variant R308
+    a
+        inner: [R307]
+    b
+
+variant R309
+    a
+        inner: [R308]
+    b
+
+variant R310
+    a
+        inner: [R309]
+    b
+
+variant R311
+    a
+        inner: [R310]
+    b
+
+variant R312
+    a
+        inner: [R311]
+    b
+
+variant R313
+    a
+        inner: [R312]
+    b
+
+variant R314
+    a
+        inner: [R313]
+    b
+
+variant R315
+    a
+        inner: [R314]
+    b
+
+variant R316
+    a
+        inner: [R315]
+    b
+
+variant R317
+    a
+        inner: [R316]
+    b
+
+variant R318
+    a
+        inner: [R317]
+    b
+
+variant R319
+    a
+        inner: [R318]
+    b
+
+variant R320
+    a
+        inner: [R319]
+    b
+
+variant R321
+    a
+        inner: [R320]
+    b
+
+variant R322
+    a
+        inner: [R321]
+    b
+
+variant R323
+    a
+        inner: [R322]
+    b
+
+variant R324
+    a
+        inner: [R323]
+    b
+
+variant R325
+    a
+        inner: [R324]
+    b
+
+variant R326
+    a
+        inner: [R325]
+    b
+
+variant R327
+    a
+        inner: [R326]
+    b
+
+variant R328
+    a
+        inner: [R327]
+    b
+
+variant R329
+    a
+        inner: [R328]
+    b
+
+variant R330
+    a
+        inner: [R329]
+    b
+
+variant R331
+    a
+        inner: [R330]
+    b
+
+variant R332
+    a
+        inner: [R331]
+    b
+
+variant R333
+    a
+        inner: [R332]
+    b
+
+variant R334
+    a
+        inner: [R333]
+    b
+
+variant R335
+    a
+        inner: [R334]
+    b
+
+variant R336
+    a
+        inner: [R335]
+    b
+
+variant R337
+    a
+        inner: [R336]
+    b
+
+variant R338
+    a
+        inner: [R337]
+    b
+
+variant R339
+    a
+        inner: [R338]
+    b
+
+variant R340
+    a
+        inner: [R339]
+    b
+
+variant R341
+    a
+        inner: [R340]
+    b
+
+variant R342
+    a
+        inner: [R341]
+    b
+
+variant R343
+    a
+        inner: [R342]
+    b
+
+variant R344
+    a
+        inner: [R343]
+    b
+
+variant R345
+    a
+        inner: [R344]
+    b
+
+variant R346
+    a
+        inner: [R345]
+    b
+
+variant R347
+    a
+        inner: [R346]
+    b
+
+variant R348
+    a
+        inner: [R347]
+    b
+
+variant R349
+    a
+        inner: [R348]
+    b
+
+variant R350
+    a
+        inner: [R349]
+    b
+
+variant R351
+    a
+        inner: [R350]
+    b
+
+variant R352
+    a
+        inner: [R351]
+    b
+
+variant R353
+    a
+        inner: [R352]
+    b
+
+variant R354
+    a
+        inner: [R353]
+    b
+
+variant R355
+    a
+        inner: [R354]
+    b
+
+variant R356
+    a
+        inner: [R355]
+    b
+
+variant R357
+    a
+        inner: [R356]
+    b
+
+variant R358
+    a
+        inner: [R357]
+    b
+
+variant R359
+    a
+        inner: [R358]
+    b
+
+variant R360
+    a
+        inner: [R359]
+    b
+
+variant R361
+    a
+        inner: [R360]
+    b
+
+variant R362
+    a
+        inner: [R361]
+    b
+
+variant R363
+    a
+        inner: [R362]
+    b
+
+variant R364
+    a
+        inner: [R363]
+    b
+
+variant R365
+    a
+        inner: [R364]
+    b
+
+variant R366
+    a
+        inner: [R365]
+    b
+
+variant R367
+    a
+        inner: [R366]
+    b
+
+variant R368
+    a
+        inner: [R367]
+    b
+
+variant R369
+    a
+        inner: [R368]
+    b
+
+variant R370
+    a
+        inner: [R369]
+    b
+
+variant R371
+    a
+        inner: [R370]
+    b
+
+variant R372
+    a
+        inner: [R371]
+    b
+
+variant R373
+    a
+        inner: [R372]
+    b
+
+variant R374
+    a
+        inner: [R373]
+    b
+
+variant R375
+    a
+        inner: [R374]
+    b
+
+variant R376
+    a
+        inner: [R375]
+    b
+
+variant R377
+    a
+        inner: [R376]
+    b
+
+variant R378
+    a
+        inner: [R377]
+    b
+
+variant R379
+    a
+        inner: [R378]
+    b
+
+variant R380
+    a
+        inner: [R379]
+    b
+
+variant R381
+    a
+        inner: [R380]
+    b
+
+variant R382
+    a
+        inner: [R381]
+    b
+
+variant R383
+    a
+        inner: [R382]
+    b
+
+variant R384
+    a
+        inner: [R383]
+    b
+
+variant R385
+    a
+        inner: [R384]
+    b
+
+variant R386
+    a
+        inner: [R385]
+    b
+
+variant R387
+    a
+        inner: [R386]
+    b
+
+variant R388
+    a
+        inner: [R387]
+    b
+
+variant R389
+    a
+        inner: [R388]
+    b
+
+variant R390
+    a
+        inner: [R389]
+    b
+
+variant R391
+    a
+        inner: [R390]
+    b
+
+variant R392
+    a
+        inner: [R391]
+    b
+
+variant R393
+    a
+        inner: [R392]
+    b
+
+variant R394
+    a
+        inner: [R393]
+    b
+
+variant R395
+    a
+        inner: [R394]
+    b
+
+variant R396
+    a
+        inner: [R395]
+    b
+
+variant R397
+    a
+        inner: [R396]
+    b
+
+variant R398
+    a
+        inner: [R397]
+    b
+
+variant R399
+    a
+        inner: [R398]
+    b
+
+variant R400
+    a
+        inner: [R399]
+    b
+
+variant R401
+    a
+        inner: [R400]
+    b
+
+variant R402
+    a
+        inner: [R401]
+    b
+
+variant R403
+    a
+        inner: [R402]
+    b
+
+variant R404
+    a
+        inner: [R403]
+    b
+
+variant R405
+    a
+        inner: [R404]
+    b
+
+variant R406
+    a
+        inner: [R405]
+    b
+
+variant R407
+    a
+        inner: [R406]
+    b
+
+variant R408
+    a
+        inner: [R407]
+    b
+
+variant R409
+    a
+        inner: [R408]
+    b
+
+variant R410
+    a
+        inner: [R409]
+    b
+
+variant R411
+    a
+        inner: [R410]
+    b
+
+variant R412
+    a
+        inner: [R411]
+    b
+
+variant R413
+    a
+        inner: [R412]
+    b
+
+variant R414
+    a
+        inner: [R413]
+    b
+
+variant R415
+    a
+        inner: [R414]
+    b
+
+variant R416
+    a
+        inner: [R415]
+    b
+
+variant R417
+    a
+        inner: [R416]
+    b
+
+variant R418
+    a
+        inner: [R417]
+    b
+
+variant R419
+    a
+        inner: [R418]
+    b
+
+variant R420
+    a
+        inner: [R419]
+    b
+
+variant R421
+    a
+        inner: [R420]
+    b
+
+variant R422
+    a
+        inner: [R421]
+    b
+
+variant R423
+    a
+        inner: [R422]
+    b
+
+variant R424
+    a
+        inner: [R423]
+    b
+
+variant R425
+    a
+        inner: [R424]
+    b
+
+variant R426
+    a
+        inner: [R425]
+    b
+
+variant R427
+    a
+        inner: [R426]
+    b
+
+variant R428
+    a
+        inner: [R427]
+    b
+
+variant R429
+    a
+        inner: [R428]
+    b
+
+variant R430
+    a
+        inner: [R429]
+    b
+
+variant R431
+    a
+        inner: [R430]
+    b
+
+variant R432
+    a
+        inner: [R431]
+    b
+
+variant R433
+    a
+        inner: [R432]
+    b
+
+variant R434
+    a
+        inner: [R433]
+    b
+
+variant R435
+    a
+        inner: [R434]
+    b
+
+variant R436
+    a
+        inner: [R435]
+    b
+
+variant R437
+    a
+        inner: [R436]
+    b
+
+variant R438
+    a
+        inner: [R437]
+    b
+
+variant R439
+    a
+        inner: [R438]
+    b
+
+variant R440
+    a
+        inner: [R439]
+    b
+
+variant R441
+    a
+        inner: [R440]
+    b
+
+variant R442
+    a
+        inner: [R441]
+    b
+
+variant R443
+    a
+        inner: [R442]
+    b
+
+variant R444
+    a
+        inner: [R443]
+    b
+
+variant R445
+    a
+        inner: [R444]
+    b
+
+variant R446
+    a
+        inner: [R445]
+    b
+
+variant R447
+    a
+        inner: [R446]
+    b
+
+variant R448
+    a
+        inner: [R447]
+    b
+
+variant R449
+    a
+        inner: [R448]
+    b
+
+variant R450
+    a
+        inner: [R449]
+    b
+
+variant R451
+    a
+        inner: [R450]
+    b
+
+variant R452
+    a
+        inner: [R451]
+    b
+
+variant R453
+    a
+        inner: [R452]
+    b
+
+variant R454
+    a
+        inner: [R453]
+    b
+
+variant R455
+    a
+        inner: [R454]
+    b
+
+variant R456
+    a
+        inner: [R455]
+    b
+
+variant R457
+    a
+        inner: [R456]
+    b
+
+variant R458
+    a
+        inner: [R457]
+    b
+
+variant R459
+    a
+        inner: [R458]
+    b
+
+variant R460
+    a
+        inner: [R459]
+    b
+
+variant R461
+    a
+        inner: [R460]
+    b
+
+variant R462
+    a
+        inner: [R461]
+    b
+
+variant R463
+    a
+        inner: [R462]
+    b
+
+variant R464
+    a
+        inner: [R463]
+    b
+
+variant R465
+    a
+        inner: [R464]
+    b
+
+variant R466
+    a
+        inner: [R465]
+    b
+
+variant R467
+    a
+        inner: [R466]
+    b
+
+variant R468
+    a
+        inner: [R467]
+    b
+
+variant R469
+    a
+        inner: [R468]
+    b
+
+variant R470
+    a
+        inner: [R469]
+    b
+
+variant R471
+    a
+        inner: [R470]
+    b
+
+variant R472
+    a
+        inner: [R471]
+    b
+
+variant R473
+    a
+        inner: [R472]
+    b
+
+variant R474
+    a
+        inner: [R473]
+    b
+
+variant R475
+    a
+        inner: [R474]
+    b
+
+variant R476
+    a
+        inner: [R475]
+    b
+
+variant R477
+    a
+        inner: [R476]
+    b
+
+variant R478
+    a
+        inner: [R477]
+    b
+
+variant R479
+    a
+        inner: [R478]
+    b
+
+variant R480
+    a
+        inner: [R479]
+    b
+
+variant R481
+    a
+        inner: [R480]
+    b
+
+variant R482
+    a
+        inner: [R481]
+    b
+
+variant R483
+    a
+        inner: [R482]
+    b
+
+variant R484
+    a
+        inner: [R483]
+    b
+
+variant R485
+    a
+        inner: [R484]
+    b
+
+variant R486
+    a
+        inner: [R485]
+    b
+
+variant R487
+    a
+        inner: [R486]
+    b
+
+variant R488
+    a
+        inner: [R487]
+    b
+
+variant R489
+    a
+        inner: [R488]
+    b
+
+variant R490
+    a
+        inner: [R489]
+    b
+
+variant R491
+    a
+        inner: [R490]
+    b
+
+variant R492
+    a
+        inner: [R491]
+    b
+
+variant R493
+    a
+        inner: [R492]
+    b
+
+variant R494
+    a
+        inner: [R493]
+    b
+
+variant R495
+    a
+        inner: [R494]
+    b
+
+variant R496
+    a
+        inner: [R495]
+    b
+
+variant R497
+    a
+        inner: [R496]
+    b
+
+variant R498
+    a
+        inner: [R497]
+    b
+
+variant R499
+    a
+        inner: [R498]
+    b
+
+variant R500
+    a
+        inner: [R499]
+    b
+
+variant R501
+    a
+        inner: [R500]
+    b
+
+variant R502
+    a
+        inner: [R501]
+    b
+
+variant R503
+    a
+        inner: [R502]
+    b
+
+variant R504
+    a
+        inner: [R503]
+    b
+
+variant R505
+    a
+        inner: [R504]
+    b
+
+variant R506
+    a
+        inner: [R505]
+    b
+
+variant R507
+    a
+        inner: [R506]
+    b
+
+variant R508
+    a
+        inner: [R507]
+    b
+
+variant R509
+    a
+        inner: [R508]
+    b
+
+variant R510
+    a
+        inner: [R509]
+    b
+
+variant R511
+    a
+        inner: [R510]
+    b
+
+variant R512
+    a
+        inner: [R511]
+    b
+
+variant R513
+    a
+        inner: [R512]
+    b
+
+variant R514
+    a
+        inner: [R513]
+    b
+
+variant R515
+    a
+        inner: [R514]
+    b
+
+variant R516
+    a
+        inner: [R515]
+    b
+
+variant R517
+    a
+        inner: [R516]
+    b
+
+variant R518
+    a
+        inner: [R517]
+    b
+
+variant R519
+    a
+        inner: [R518]
+    b
+
+variant R520
+    a
+        inner: [R519]
+    b
+
+variant R521
+    a
+        inner: [R520]
+    b
+
+variant R522
+    a
+        inner: [R521]
+    b
+
+variant R523
+    a
+        inner: [R522]
+    b
+
+variant R524
+    a
+        inner: [R523]
+    b
+
+variant R525
+    a
+        inner: [R524]
+    b
+
+variant R526
+    a
+        inner: [R525]
+    b
+
+variant R527
+    a
+        inner: [R526]
+    b
+
+variant R528
+    a
+        inner: [R527]
+    b
+
+variant R529
+    a
+        inner: [R528]
+    b
+
+variant R530
+    a
+        inner: [R529]
+    b
+
+variant R531
+    a
+        inner: [R530]
+    b
+
+variant R532
+    a
+        inner: [R531]
+    b
+
+variant R533
+    a
+        inner: [R532]
+    b
+
+variant R534
+    a
+        inner: [R533]
+    b
+
+variant R535
+    a
+        inner: [R534]
+    b
+
+variant R536
+    a
+        inner: [R535]
+    b
+
+variant R537
+    a
+        inner: [R536]
+    b
+
+variant R538
+    a
+        inner: [R537]
+    b
+
+variant R539
+    a
+        inner: [R538]
+    b
+
+variant R540
+    a
+        inner: [R539]
+    b
+
+variant R541
+    a
+        inner: [R540]
+    b
+
+variant R542
+    a
+        inner: [R541]
+    b
+
+variant R543
+    a
+        inner: [R542]
+    b
+
+variant R544
+    a
+        inner: [R543]
+    b
+
+variant R545
+    a
+        inner: [R544]
+    b
+
+variant R546
+    a
+        inner: [R545]
+    b
+
+variant R547
+    a
+        inner: [R546]
+    b
+
+variant R548
+    a
+        inner: [R547]
+    b
+
+variant R549
+    a
+        inner: [R548]
+    b
+
+variant R550
+    a
+        inner: [R549]
+    b
+
+variant R551
+    a
+        inner: [R550]
+    b
+
+variant R552
+    a
+        inner: [R551]
+    b
+
+variant R553
+    a
+        inner: [R552]
+    b
+
+variant R554
+    a
+        inner: [R553]
+    b
+
+variant R555
+    a
+        inner: [R554]
+    b
+
+variant R556
+    a
+        inner: [R555]
+    b
+
+variant R557
+    a
+        inner: [R556]
+    b
+
+variant R558
+    a
+        inner: [R557]
+    b
+
+variant R559
+    a
+        inner: [R558]
+    b
+
+variant R560
+    a
+        inner: [R559]
+    b
+
+variant R561
+    a
+        inner: [R560]
+    b
+
+variant R562
+    a
+        inner: [R561]
+    b
+
+variant R563
+    a
+        inner: [R562]
+    b
+
+variant R564
+    a
+        inner: [R563]
+    b
+
+variant R565
+    a
+        inner: [R564]
+    b
+
+variant R566
+    a
+        inner: [R565]
+    b
+
+variant R567
+    a
+        inner: [R566]
+    b
+
+variant R568
+    a
+        inner: [R567]
+    b
+
+variant R569
+    a
+        inner: [R568]
+    b
+
+variant R570
+    a
+        inner: [R569]
+    b
+
+variant R571
+    a
+        inner: [R570]
+    b
+
+variant R572
+    a
+        inner: [R571]
+    b
+
+variant R573
+    a
+        inner: [R572]
+    b
+
+variant R574
+    a
+        inner: [R573]
+    b
+
+variant R575
+    a
+        inner: [R574]
+    b
+
+variant R576
+    a
+        inner: [R575]
+    b
+
+variant R577
+    a
+        inner: [R576]
+    b
+
+variant R578
+    a
+        inner: [R577]
+    b
+
+variant R579
+    a
+        inner: [R578]
+    b
+
+variant R580
+    a
+        inner: [R579]
+    b
+
+variant R581
+    a
+        inner: [R580]
+    b
+
+variant R582
+    a
+        inner: [R581]
+    b
+
+variant R583
+    a
+        inner: [R582]
+    b
+
+variant R584
+    a
+        inner: [R583]
+    b
+
+variant R585
+    a
+        inner: [R584]
+    b
+
+variant R586
+    a
+        inner: [R585]
+    b
+
+variant R587
+    a
+        inner: [R586]
+    b
+
+variant R588
+    a
+        inner: [R587]
+    b
+
+variant R589
+    a
+        inner: [R588]
+    b
+
+variant R590
+    a
+        inner: [R589]
+    b
+
+variant R591
+    a
+        inner: [R590]
+    b
+
+variant R592
+    a
+        inner: [R591]
+    b
+
+variant R593
+    a
+        inner: [R592]
+    b
+
+variant R594
+    a
+        inner: [R593]
+    b
+
+variant R595
+    a
+        inner: [R594]
+    b
+
+variant R596
+    a
+        inner: [R595]
+    b
+
+variant R597
+    a
+        inner: [R596]
+    b
+
+variant R598
+    a
+        inner: [R597]
+    b
+
+variant R599
+    a
+        inner: [R598]
+    b
+
+variant R600
+    a
+        inner: [R599]
+    b
+
+variant R601
+    a
+        inner: [R600]
+    b
+
+variant R602
+    a
+        inner: [R601]
+    b
+
+variant R603
+    a
+        inner: [R602]
+    b
+
+variant R604
+    a
+        inner: [R603]
+    b
+
+variant R605
+    a
+        inner: [R604]
+    b
+
+variant R606
+    a
+        inner: [R605]
+    b
+
+variant R607
+    a
+        inner: [R606]
+    b
+
+variant R608
+    a
+        inner: [R607]
+    b
+
+variant R609
+    a
+        inner: [R608]
+    b
+
+variant R610
+    a
+        inner: [R609]
+    b
+
+variant R611
+    a
+        inner: [R610]
+    b
+
+variant R612
+    a
+        inner: [R611]
+    b
+
+variant R613
+    a
+        inner: [R612]
+    b
+
+variant R614
+    a
+        inner: [R613]
+    b
+
+variant R615
+    a
+        inner: [R614]
+    b
+
+variant R616
+    a
+        inner: [R615]
+    b
+
+variant R617
+    a
+        inner: [R616]
+    b
+
+variant R618
+    a
+        inner: [R617]
+    b
+
+variant R619
+    a
+        inner: [R618]
+    b
+
+variant R620
+    a
+        inner: [R619]
+    b
+
+variant R621
+    a
+        inner: [R620]
+    b
+
+variant R622
+    a
+        inner: [R621]
+    b
+
+variant R623
+    a
+        inner: [R622]
+    b
+
+variant R624
+    a
+        inner: [R623]
+    b
+
+variant R625
+    a
+        inner: [R624]
+    b
+
+variant R626
+    a
+        inner: [R625]
+    b
+
+variant R627
+    a
+        inner: [R626]
+    b
+
+variant R628
+    a
+        inner: [R627]
+    b
+
+variant R629
+    a
+        inner: [R628]
+    b
+
+variant R630
+    a
+        inner: [R629]
+    b
+
+variant R631
+    a
+        inner: [R630]
+    b
+
+variant R632
+    a
+        inner: [R631]
+    b
+
+variant R633
+    a
+        inner: [R632]
+    b
+
+variant R634
+    a
+        inner: [R633]
+    b
+
+variant R635
+    a
+        inner: [R634]
+    b
+
+variant R636
+    a
+        inner: [R635]
+    b
+
+variant R637
+    a
+        inner: [R636]
+    b
+
+variant R638
+    a
+        inner: [R637]
+    b
+
+variant R639
+    a
+        inner: [R638]
+    b
+
+variant R640
+    a
+        inner: [R639]
+    b
+
+variant R641
+    a
+        inner: [R640]
+    b
+
+variant R642
+    a
+        inner: [R641]
+    b
+
+variant R643
+    a
+        inner: [R642]
+    b
+
+variant R644
+    a
+        inner: [R643]
+    b
+
+variant R645
+    a
+        inner: [R644]
+    b
+
+variant R646
+    a
+        inner: [R645]
+    b
+
+variant R647
+    a
+        inner: [R646]
+    b
+
+variant R648
+    a
+        inner: [R647]
+    b
+
+variant R649
+    a
+        inner: [R648]
+    b
+
+variant R650
+    a
+        inner: [R649]
+    b
+
+variant R651
+    a
+        inner: [R650]
+    b
+
+variant R652
+    a
+        inner: [R651]
+    b
+
+variant R653
+    a
+        inner: [R652]
+    b
+
+variant R654
+    a
+        inner: [R653]
+    b
+
+variant R655
+    a
+        inner: [R654]
+    b
+
+variant R656
+    a
+        inner: [R655]
+    b
+
+variant R657
+    a
+        inner: [R656]
+    b
+
+variant R658
+    a
+        inner: [R657]
+    b
+
+variant R659
+    a
+        inner: [R658]
+    b
+
+variant R660
+    a
+        inner: [R659]
+    b
+
+variant R661
+    a
+        inner: [R660]
+    b
+
+variant R662
+    a
+        inner: [R661]
+    b
+
+variant R663
+    a
+        inner: [R662]
+    b
+
+variant R664
+    a
+        inner: [R663]
+    b
+
+variant R665
+    a
+        inner: [R664]
+    b
+
+variant R666
+    a
+        inner: [R665]
+    b
+
+variant R667
+    a
+        inner: [R666]
+    b
+
+variant R668
+    a
+        inner: [R667]
+    b
+
+variant R669
+    a
+        inner: [R668]
+    b
+
+variant R670
+    a
+        inner: [R669]
+    b
+
+variant R671
+    a
+        inner: [R670]
+    b
+
+variant R672
+    a
+        inner: [R671]
+    b
+
+variant R673
+    a
+        inner: [R672]
+    b
+
+variant R674
+    a
+        inner: [R673]
+    b
+
+variant R675
+    a
+        inner: [R674]
+    b
+
+variant R676
+    a
+        inner: [R675]
+    b
+
+variant R677
+    a
+        inner: [R676]
+    b
+
+variant R678
+    a
+        inner: [R677]
+    b
+
+variant R679
+    a
+        inner: [R678]
+    b
+
+variant R680
+    a
+        inner: [R679]
+    b
+
+variant R681
+    a
+        inner: [R680]
+    b
+
+variant R682
+    a
+        inner: [R681]
+    b
+
+variant R683
+    a
+        inner: [R682]
+    b
+
+variant R684
+    a
+        inner: [R683]
+    b
+
+variant R685
+    a
+        inner: [R684]
+    b
+
+variant R686
+    a
+        inner: [R685]
+    b
+
+variant R687
+    a
+        inner: [R686]
+    b
+
+variant R688
+    a
+        inner: [R687]
+    b
+
+variant R689
+    a
+        inner: [R688]
+    b
+
+variant R690
+    a
+        inner: [R689]
+    b
+
+variant R691
+    a
+        inner: [R690]
+    b
+
+variant R692
+    a
+        inner: [R691]
+    b
+
+variant R693
+    a
+        inner: [R692]
+    b
+
+variant R694
+    a
+        inner: [R693]
+    b
+
+variant R695
+    a
+        inner: [R694]
+    b
+
+variant R696
+    a
+        inner: [R695]
+    b
+
+variant R697
+    a
+        inner: [R696]
+    b
+
+variant R698
+    a
+        inner: [R697]
+    b
+
+variant R699
+    a
+        inner: [R698]
+    b
+
+variant R700
+    a
+        inner: [R699]
+    b
+
+variant R701
+    a
+        inner: [R700]
+    b
+
+variant R702
+    a
+        inner: [R701]
+    b
+
+variant R703
+    a
+        inner: [R702]
+    b
+
+variant R704
+    a
+        inner: [R703]
+    b
+
+variant R705
+    a
+        inner: [R704]
+    b
+
+variant R706
+    a
+        inner: [R705]
+    b
+
+variant R707
+    a
+        inner: [R706]
+    b
+
+variant R708
+    a
+        inner: [R707]
+    b
+
+variant R709
+    a
+        inner: [R708]
+    b
+
+variant R710
+    a
+        inner: [R709]
+    b
+
+variant R711
+    a
+        inner: [R710]
+    b
+
+variant R712
+    a
+        inner: [R711]
+    b
+
+variant R713
+    a
+        inner: [R712]
+    b
+
+variant R714
+    a
+        inner: [R713]
+    b
+
+variant R715
+    a
+        inner: [R714]
+    b
+
+variant R716
+    a
+        inner: [R715]
+    b
+
+variant R717
+    a
+        inner: [R716]
+    b
+
+variant R718
+    a
+        inner: [R717]
+    b
+
+variant R719
+    a
+        inner: [R718]
+    b
+
+variant R720
+    a
+        inner: [R719]
+    b
+
+variant R721
+    a
+        inner: [R720]
+    b
+
+variant R722
+    a
+        inner: [R721]
+    b
+
+variant R723
+    a
+        inner: [R722]
+    b
+
+variant R724
+    a
+        inner: [R723]
+    b
+
+variant R725
+    a
+        inner: [R724]
+    b
+
+variant R726
+    a
+        inner: [R725]
+    b
+
+variant R727
+    a
+        inner: [R726]
+    b
+
+variant R728
+    a
+        inner: [R727]
+    b
+
+variant R729
+    a
+        inner: [R728]
+    b
+
+variant R730
+    a
+        inner: [R729]
+    b
+
+variant R731
+    a
+        inner: [R730]
+    b
+
+variant R732
+    a
+        inner: [R731]
+    b
+
+variant R733
+    a
+        inner: [R732]
+    b
+
+variant R734
+    a
+        inner: [R733]
+    b
+
+variant R735
+    a
+        inner: [R734]
+    b
+
+variant R736
+    a
+        inner: [R735]
+    b
+
+variant R737
+    a
+        inner: [R736]
+    b
+
+variant R738
+    a
+        inner: [R737]
+    b
+
+variant R739
+    a
+        inner: [R738]
+    b
+
+variant R740
+    a
+        inner: [R739]
+    b
+
+variant R741
+    a
+        inner: [R740]
+    b
+
+variant R742
+    a
+        inner: [R741]
+    b
+
+variant R743
+    a
+        inner: [R742]
+    b
+
+variant R744
+    a
+        inner: [R743]
+    b
+
+variant R745
+    a
+        inner: [R744]
+    b
+
+variant R746
+    a
+        inner: [R745]
+    b
+
+variant R747
+    a
+        inner: [R746]
+    b
+
+variant R748
+    a
+        inner: [R747]
+    b
+
+variant R749
+    a
+        inner: [R748]
+    b
+
+variant R750
+    a
+        inner: [R749]
+    b
+
+variant R751
+    a
+        inner: [R750]
+    b
+
+variant R752
+    a
+        inner: [R751]
+    b
+
+variant R753
+    a
+        inner: [R752]
+    b
+
+variant R754
+    a
+        inner: [R753]
+    b
+
+variant R755
+    a
+        inner: [R754]
+    b
+
+variant R756
+    a
+        inner: [R755]
+    b
+
+variant R757
+    a
+        inner: [R756]
+    b
+
+variant R758
+    a
+        inner: [R757]
+    b
+
+variant R759
+    a
+        inner: [R758]
+    b
+
+variant R760
+    a
+        inner: [R759]
+    b
+
+variant R761
+    a
+        inner: [R760]
+    b
+
+variant R762
+    a
+        inner: [R761]
+    b
+
+variant R763
+    a
+        inner: [R762]
+    b
+
+variant R764
+    a
+        inner: [R763]
+    b
+
+variant R765
+    a
+        inner: [R764]
+    b
+
+variant R766
+    a
+        inner: [R765]
+    b
+
+variant R767
+    a
+        inner: [R766]
+    b
+
+variant R768
+    a
+        inner: [R767]
+    b
+
+variant R769
+    a
+        inner: [R768]
+    b
+
+variant R770
+    a
+        inner: [R769]
+    b
+
+variant R771
+    a
+        inner: [R770]
+    b
+
+variant R772
+    a
+        inner: [R771]
+    b
+
+variant R773
+    a
+        inner: [R772]
+    b
+
+variant R774
+    a
+        inner: [R773]
+    b
+
+variant R775
+    a
+        inner: [R774]
+    b
+
+variant R776
+    a
+        inner: [R775]
+    b
+
+variant R777
+    a
+        inner: [R776]
+    b
+
+variant R778
+    a
+        inner: [R777]
+    b
+
+variant R779
+    a
+        inner: [R778]
+    b
+
+variant R780
+    a
+        inner: [R779]
+    b
+
+variant R781
+    a
+        inner: [R780]
+    b
+
+variant R782
+    a
+        inner: [R781]
+    b
+
+variant R783
+    a
+        inner: [R782]
+    b
+
+variant R784
+    a
+        inner: [R783]
+    b
+
+variant R785
+    a
+        inner: [R784]
+    b
+
+variant R786
+    a
+        inner: [R785]
+    b
+
+variant R787
+    a
+        inner: [R786]
+    b
+
+variant R788
+    a
+        inner: [R787]
+    b
+
+variant R789
+    a
+        inner: [R788]
+    b
+
+variant R790
+    a
+        inner: [R789]
+    b
+
+variant R791
+    a
+        inner: [R790]
+    b
+
+variant R792
+    a
+        inner: [R791]
+    b
+
+variant R793
+    a
+        inner: [R792]
+    b
+
+variant R794
+    a
+        inner: [R793]
+    b
+
+variant R795
+    a
+        inner: [R794]
+    b
+
+variant R796
+    a
+        inner: [R795]
+    b
+
+variant R797
+    a
+        inner: [R796]
+    b
+
+variant R798
+    a
+        inner: [R797]
+    b
+
+variant R799
+    a
+        inner: [R798]
+    b
+
+variant R800
+    a
+        inner: [R799]
+    b
+
+variant R801
+    a
+        inner: [R800]
+    b
+
+variant R802
+    a
+        inner: [R801]
+    b
+
+variant R803
+    a
+        inner: [R802]
+    b
+
+variant R804
+    a
+        inner: [R803]
+    b
+
+variant R805
+    a
+        inner: [R804]
+    b
+
+variant R806
+    a
+        inner: [R805]
+    b
+
+variant R807
+    a
+        inner: [R806]
+    b
+
+variant R808
+    a
+        inner: [R807]
+    b
+
+variant R809
+    a
+        inner: [R808]
+    b
+
+variant R810
+    a
+        inner: [R809]
+    b
+
+variant R811
+    a
+        inner: [R810]
+    b
+
+variant R812
+    a
+        inner: [R811]
+    b
+
+variant R813
+    a
+        inner: [R812]
+    b
+
+variant R814
+    a
+        inner: [R813]
+    b
+
+variant R815
+    a
+        inner: [R814]
+    b
+
+variant R816
+    a
+        inner: [R815]
+    b
+
+variant R817
+    a
+        inner: [R816]
+    b
+
+variant R818
+    a
+        inner: [R817]
+    b
+
+variant R819
+    a
+        inner: [R818]
+    b
+
+variant R820
+    a
+        inner: [R819]
+    b
+
+variant R821
+    a
+        inner: [R820]
+    b
+
+variant R822
+    a
+        inner: [R821]
+    b
+
+variant R823
+    a
+        inner: [R822]
+    b
+
+variant R824
+    a
+        inner: [R823]
+    b
+
+variant R825
+    a
+        inner: [R824]
+    b
+
+variant R826
+    a
+        inner: [R825]
+    b
+
+variant R827
+    a
+        inner: [R826]
+    b
+
+variant R828
+    a
+        inner: [R827]
+    b
+
+variant R829
+    a
+        inner: [R828]
+    b
+
+variant R830
+    a
+        inner: [R829]
+    b
+
+variant R831
+    a
+        inner: [R830]
+    b
+
+variant R832
+    a
+        inner: [R831]
+    b
+
+variant R833
+    a
+        inner: [R832]
+    b
+
+variant R834
+    a
+        inner: [R833]
+    b
+
+variant R835
+    a
+        inner: [R834]
+    b
+
+variant R836
+    a
+        inner: [R835]
+    b
+
+variant R837
+    a
+        inner: [R836]
+    b
+
+variant R838
+    a
+        inner: [R837]
+    b
+
+variant R839
+    a
+        inner: [R838]
+    b
+
+variant R840
+    a
+        inner: [R839]
+    b
+
+variant R841
+    a
+        inner: [R840]
+    b
+
+variant R842
+    a
+        inner: [R841]
+    b
+
+variant R843
+    a
+        inner: [R842]
+    b
+
+variant R844
+    a
+        inner: [R843]
+    b
+
+variant R845
+    a
+        inner: [R844]
+    b
+
+variant R846
+    a
+        inner: [R845]
+    b
+
+variant R847
+    a
+        inner: [R846]
+    b
+
+variant R848
+    a
+        inner: [R847]
+    b
+
+variant R849
+    a
+        inner: [R848]
+    b
+
+variant R850
+    a
+        inner: [R849]
+    b
+
+variant R851
+    a
+        inner: [R850]
+    b
+
+variant R852
+    a
+        inner: [R851]
+    b
+
+variant R853
+    a
+        inner: [R852]
+    b
+
+variant R854
+    a
+        inner: [R853]
+    b
+
+variant R855
+    a
+        inner: [R854]
+    b
+
+variant R856
+    a
+        inner: [R855]
+    b
+
+variant R857
+    a
+        inner: [R856]
+    b
+
+variant R858
+    a
+        inner: [R857]
+    b
+
+variant R859
+    a
+        inner: [R858]
+    b
+
+variant R860
+    a
+        inner: [R859]
+    b
+
+variant R861
+    a
+        inner: [R860]
+    b
+
+variant R862
+    a
+        inner: [R861]
+    b
+
+variant R863
+    a
+        inner: [R862]
+    b
+
+variant R864
+    a
+        inner: [R863]
+    b
+
+variant R865
+    a
+        inner: [R864]
+    b
+
+variant R866
+    a
+        inner: [R865]
+    b
+
+variant R867
+    a
+        inner: [R866]
+    b
+
+variant R868
+    a
+        inner: [R867]
+    b
+
+variant R869
+    a
+        inner: [R868]
+    b
+
+variant R870
+    a
+        inner: [R869]
+    b
+
+variant R871
+    a
+        inner: [R870]
+    b
+
+variant R872
+    a
+        inner: [R871]
+    b
+
+variant R873
+    a
+        inner: [R872]
+    b
+
+variant R874
+    a
+        inner: [R873]
+    b
+
+variant R875
+    a
+        inner: [R874]
+    b
+
+variant R876
+    a
+        inner: [R875]
+    b
+
+variant R877
+    a
+        inner: [R876]
+    b
+
+variant R878
+    a
+        inner: [R877]
+    b
+
+variant R879
+    a
+        inner: [R878]
+    b
+
+variant R880
+    a
+        inner: [R879]
+    b
+
+variant R881
+    a
+        inner: [R880]
+    b
+
+variant R882
+    a
+        inner: [R881]
+    b
+
+variant R883
+    a
+        inner: [R882]
+    b
+
+variant R884
+    a
+        inner: [R883]
+    b
+
+variant R885
+    a
+        inner: [R884]
+    b
+
+variant R886
+    a
+        inner: [R885]
+    b
+
+variant R887
+    a
+        inner: [R886]
+    b
+
+variant R888
+    a
+        inner: [R887]
+    b
+
+variant R889
+    a
+        inner: [R888]
+    b
+
+variant R890
+    a
+        inner: [R889]
+    b
+
+variant R891
+    a
+        inner: [R890]
+    b
+
+variant R892
+    a
+        inner: [R891]
+    b
+
+variant R893
+    a
+        inner: [R892]
+    b
+
+variant R894
+    a
+        inner: [R893]
+    b
+
+variant R895
+    a
+        inner: [R894]
+    b
+
+variant R896
+    a
+        inner: [R895]
+    b
+
+variant R897
+    a
+        inner: [R896]
+    b
+
+variant R898
+    a
+        inner: [R897]
+    b
+
+variant R899
+    a
+        inner: [R898]
+    b
+
+variant R900
+    a
+        inner: [R899]
+    b
+
+variant R901
+    a
+        inner: [R900]
+    b
+
+variant R902
+    a
+        inner: [R901]
+    b
+
+variant R903
+    a
+        inner: [R902]
+    b
+
+variant R904
+    a
+        inner: [R903]
+    b
+
+variant R905
+    a
+        inner: [R904]
+    b
+
+variant R906
+    a
+        inner: [R905]
+    b
+
+variant R907
+    a
+        inner: [R906]
+    b
+
+variant R908
+    a
+        inner: [R907]
+    b
+
+variant R909
+    a
+        inner: [R908]
+    b
+
+variant R910
+    a
+        inner: [R909]
+    b
+
+variant R911
+    a
+        inner: [R910]
+    b
+
+variant R912
+    a
+        inner: [R911]
+    b
+
+variant R913
+    a
+        inner: [R912]
+    b
+
+variant R914
+    a
+        inner: [R913]
+    b
+
+variant R915
+    a
+        inner: [R914]
+    b
+
+variant R916
+    a
+        inner: [R915]
+    b
+
+variant R917
+    a
+        inner: [R916]
+    b
+
+variant R918
+    a
+        inner: [R917]
+    b
+
+variant R919
+    a
+        inner: [R918]
+    b
+
+variant R920
+    a
+        inner: [R919]
+    b
+
+variant R921
+    a
+        inner: [R920]
+    b
+
+variant R922
+    a
+        inner: [R921]
+    b
+
+variant R923
+    a
+        inner: [R922]
+    b
+
+variant R924
+    a
+        inner: [R923]
+    b
+
+variant R925
+    a
+        inner: [R924]
+    b
+
+variant R926
+    a
+        inner: [R925]
+    b
+
+variant R927
+    a
+        inner: [R926]
+    b
+
+variant R928
+    a
+        inner: [R927]
+    b
+
+variant R929
+    a
+        inner: [R928]
+    b
+
+variant R930
+    a
+        inner: [R929]
+    b
+
+variant R931
+    a
+        inner: [R930]
+    b
+
+variant R932
+    a
+        inner: [R931]
+    b
+
+variant R933
+    a
+        inner: [R932]
+    b
+
+variant R934
+    a
+        inner: [R933]
+    b
+
+variant R935
+    a
+        inner: [R934]
+    b
+
+variant R936
+    a
+        inner: [R935]
+    b
+
+variant R937
+    a
+        inner: [R936]
+    b
+
+variant R938
+    a
+        inner: [R937]
+    b
+
+variant R939
+    a
+        inner: [R938]
+    b
+
+variant R940
+    a
+        inner: [R939]
+    b
+
+variant R941
+    a
+        inner: [R940]
+    b
+
+variant R942
+    a
+        inner: [R941]
+    b
+
+variant R943
+    a
+        inner: [R942]
+    b
+
+variant R944
+    a
+        inner: [R943]
+    b
+
+variant R945
+    a
+        inner: [R944]
+    b
+
+variant R946
+    a
+        inner: [R945]
+    b
+
+variant R947
+    a
+        inner: [R946]
+    b
+
+variant R948
+    a
+        inner: [R947]
+    b
+
+variant R949
+    a
+        inner: [R948]
+    b
+
+variant R950
+    a
+        inner: [R949]
+    b
+
+variant R951
+    a
+        inner: [R950]
+    b
+
+variant R952
+    a
+        inner: [R951]
+    b
+
+variant R953
+    a
+        inner: [R952]
+    b
+
+variant R954
+    a
+        inner: [R953]
+    b
+
+variant R955
+    a
+        inner: [R954]
+    b
+
+variant R956
+    a
+        inner: [R955]
+    b
+
+variant R957
+    a
+        inner: [R956]
+    b
+
+variant R958
+    a
+        inner: [R957]
+    b
+
+variant R959
+    a
+        inner: [R958]
+    b
+
+variant R960
+    a
+        inner: [R959]
+    b
+
+variant R961
+    a
+        inner: [R960]
+    b
+
+variant R962
+    a
+        inner: [R961]
+    b
+
+variant R963
+    a
+        inner: [R962]
+    b
+
+variant R964
+    a
+        inner: [R963]
+    b
+
+variant R965
+    a
+        inner: [R964]
+    b
+
+variant R966
+    a
+        inner: [R965]
+    b
+
+variant R967
+    a
+        inner: [R966]
+    b
+
+variant R968
+    a
+        inner: [R967]
+    b
+
+variant R969
+    a
+        inner: [R968]
+    b
+
+variant R970
+    a
+        inner: [R969]
+    b
+
+variant R971
+    a
+        inner: [R970]
+    b
+
+variant R972
+    a
+        inner: [R971]
+    b
+
+variant R973
+    a
+        inner: [R972]
+    b
+
+variant R974
+    a
+        inner: [R973]
+    b
+
+variant R975
+    a
+        inner: [R974]
+    b
+
+variant R976
+    a
+        inner: [R975]
+    b
+
+variant R977
+    a
+        inner: [R976]
+    b
+
+variant R978
+    a
+        inner: [R977]
+    b
+
+variant R979
+    a
+        inner: [R978]
+    b
+
+variant R980
+    a
+        inner: [R979]
+    b
+
+variant R981
+    a
+        inner: [R980]
+    b
+
+variant R982
+    a
+        inner: [R981]
+    b
+
+variant R983
+    a
+        inner: [R982]
+    b
+
+variant R984
+    a
+        inner: [R983]
+    b
+
+variant R985
+    a
+        inner: [R984]
+    b
+
+variant R986
+    a
+        inner: [R985]
+    b
+
+variant R987
+    a
+        inner: [R986]
+    b
+
+variant R988
+    a
+        inner: [R987]
+    b
+
+variant R989
+    a
+        inner: [R988]
+    b
+
+variant R990
+    a
+        inner: [R989]
+    b
+
+variant R991
+    a
+        inner: [R990]
+    b
+
+variant R992
+    a
+        inner: [R991]
+    b
+
+variant R993
+    a
+        inner: [R992]
+    b
+
+variant R994
+    a
+        inner: [R993]
+    b
+
+variant R995
+    a
+        inner: [R994]
+    b
+
+variant R996
+    a
+        inner: [R995]
+    b
+
+variant R997
+    a
+        inner: [R996]
+    b
+
+variant R998
+    a
+        inner: [R997]
+    b
+
+variant R999
+    a
+        inner: [R998]
+    b
+
+function main()
+    xs: [R999] = []
+    print(xs.len())
+    print(xs == xs)
+    m: {R999: i64} = {}
+    print(len(m))

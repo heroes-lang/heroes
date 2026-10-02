@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 10**
+**OPEN: 13**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -783,6 +783,40 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the audit found (`scratchpad/lane-135c/next/first-pass.md`), P5 waiting
     on panel 185's ruling on design.md §4.15's premise.
 
+    **2026-10-02, lane literals, an escape that names a character by its
+    name, its code or its letter, or one written bare, takes no certain
+    backslash** (the audit's L4, `\N{…}`, `\x{…}`, `\u41`, `\cA`, `\%`; and
+    beside them `\o{…}`, `\U41`, `\C-a`, `\M-A`, `\E`, `\#`, `\@`, `\8`):
+    repaired at `1d134613`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
+    **2026-10-02, lane literals, an uppercase base prefix is lowered with
+    certainty only where a digit follows it or its digits already faulted**
+    (the audit's L5, `0X`, `0B`, `0O` with no digit after them): repaired at
+    `065b0fef`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
+    **2026-10-02, lane literals, the carriage return that begins a CRLF line
+    end ends a literal, and is never written into it** (the audit's L2, and
+    beside it a backslash before that line end): repaired at `f6fd5e48`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close. Left open: an `f"…"` literal open at a CRLF end with no
+    backslash before it, whose loop is `lex_interp.hero:67`.
+
+    **2026-10-02, lane literals, `'\'` is a backslash or an apostrophe, both
+    guesses, and a later quote on its line leaves it whole** (the audit's
+    L3; beside it `c == '\' || c == '"'` read as one wider literal):
+    repaired at `8012b34c`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close, and so is the deletion of
+    `fixedbugs-131-a-literal-that-never-closed-takes-its-line.applied`,
+    which pinned the old certain fix.
+
+    **2026-10-02, lane checker, a label that names nothing is renamed by its
+    position only where the argument can stand there alone** (C3, and beside
+    it two labels naming nothing in each other's places, which applied into
+    a program that checks clean): repaired at `1ef5c8ca`, gated by its cases
+    and the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe)
 
     **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (a header of its own
@@ -792,6 +826,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** A program calling `waitpid` needs `WEXITSTATUS`,
     and the design says it is reachable; the FFI is to be complete (CL-028).
+
+    **Widened 2026-10-02** by panel 185's ffi-pragmatist: glibc's `FD_ZERO`,
+    a statement macro (`do { ... } while (0)`), takes the same false *declares
+    no* (`scratchpad/185-ffi-pragmatist/p185/`); on macOS `WEXITSTATUS`,
+    `htonl`, `FD_ISSET` and `WIFEXITED` are macro-only names alike. Panel 185
+    sat on the route (its Q1); the seats measured that a call-form probe holds
+    none of a macro's parameters, a `u8` declaration reading out of bounds.
 
 - [ ] **147 — spec § 8's `Inline` production refuses one-statement arms the design allows and the compiler builds** | `Inline = ( Expression | "return" [ Expression ] | "break" | "continue" | "assert" Expression ) NEWLINE` leaves out a mutation (`.blue => n @ 5`) and a `while` (`.red => while n < 3` over its body), and both check, build and run on the trunk, where design.md §4.7 says *an arm's body is one statement, inline, or an indented block* (panel 014) | `spec/heroes-spec.md:241-243` · design.md §4.7 (`:1230-1235`) · `selfhost/parse/arm_line.hero`
 
@@ -808,27 +849,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     parser, is a change to the language, so the repair is a sitting's, with
     defect 143 and the value-block question in `docs/work/DECIDE.md`.
 
-- [ ] **148 — `break` or `continue` as a constant's body costs two messages at one place** | `constant M: i64` over `break`: `jump_outside_loop` and `no_value` (*constant `M` produces no value — its body jumps*), both at 2:5, for one mistake; the same with `continue` | `selfhost/check/decls.hero` (the constant's message, defect 139's last repair) · the checker's outcome, which does not carry the jump's kind
-
-    **Origin:** lane flow's first pass for its batch, 2026-10-01
-    (`scratchpad/lane-flow/k1/k10-break.hero`, `k11-continue.hero`), left
-    open in defect 139's closed record; reproduced by the coordinator at
-    00:35 on 2026-10-02 on the trunk at `b9fdb0a3`.
-
-    **Why it is a defect.** design.md §4.17: one mistake costs one message;
-    both sentences are true, and the second is debris of the first.
-
-- [ ] **149 — a constant's body that ends on a statement is told at the block's first line, not at the line that gives no value** | `constant M: i64` over `x: i64 @ 1`, `x @ x + 1`, `assert x == 2`: `no_value`, *this branch ends on a statement*, at 2:5, where the line that ends the body without a value is line 4 | `branch_without_value` (`selfhost/check/walk.hero`, `check/join.hero`), pinned by `tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement`
-
-    **Origin:** lane flow's first pass, 2026-10-01
-    (`scratchpad/lane-flow/k1/k21-two-statements-then-assert.hero`), left
-    open in defect 139's closed record; reproduced by the coordinator at
-    00:35 on 2026-10-02 on `b9fdb0a3`. The same caret is the rule's for any
-    multi-line value block, by the lane's reading, unrun beyond the constant.
-
-    **Why it is a defect.** design.md §4.17: a diagnostic stands at the
-    mistake; the author is sent to a line that is right.
-
 - [ ] **150 — a correct program that reads a C union naming two members gets clang's warning on the author's line** | `extern "w.h"` with `record W` (two members over a union) and `function make_w() -> W`, `print(w.i)`: `build` exit 0, the program prints 7, and the build prints *warning: excess elements in union initializer* at `read.hero:2:81` | the completeness probe's `{0,0}` for a union record (`selfhost/emit/`, beside defect 140's `{}`)
 
     **Origin:** lane emit, 2026-10-01 (`scratchpad/lane-emit/pass1/union2/read.hero`
@@ -838,5 +858,62 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** The emitted C is the compiler's, and a warning
     about it reaches the author at a line they wrote correctly
     (`.claude/rules/generated-c.md`; design.md §4.17).
+
+- [ ] **151 — a C struct holding an anonymous union is bound as separate fields, so a value built from Heroes reads back wrong** | `extern "u.h"` over `typedef struct { int32_t kind; union { int32_t i; float f; }; int32_t x; } SA;` with `record SA` naming `kind`, `i`, `f`, `x`: `s = SA(kind: 1, i: 7, f: 0.5, x: 3)` builds at exit 0 and `print(s.i)` prints 1056964608, the bits of 0.5, where 7 was written; `==` on it is accepted and prints `true` (u18); a field left out of such a struct is not reported, the program printing 12 (u07); and a record naming `a` and `c` of a struct `{a, b, c}` is told *does not name `c`* (u19) | `selfhost/emit/` (the record's layout check, `ffi_union_field`), panels 060 to 077's union rule
+
+    **Origin:** lane literals' first pass for defect 150, 2026-10-02
+    (`scratchpad/lane-literals/pass1/U150/`, `u.h`, `u17_anon_constructed.hero`,
+    `u18_anon_compared.hero`, `u07_anon_omits_x.hero`,
+    `u19_struct_omits_middle.hero`); reproduced by the coordinator at 02:42 on
+    2026-10-02 on the trunk at `03e70520`.
+
+    **Why it is a defect.** A program that checks and builds computes a value
+    nobody wrote, at the C boundary (design.md §1.12, robustness, and §4.19).
+    The lane's route, the header's layout read from clang, changes the union
+    rule of panels 060 to 077, so the repair is a sitting's (panel 186).
+
+- [ ] **152 — a C object declared as an `extern` `function` stops `build` with an internal error** | `extern "errno.h"` with `function errno() -> i32`: `build` exit 2, *internal error: compiling the generated C failed: ... called object type 'int' is not a function or function pointer* at the result probe; the same for `stdin` and `optarg`, with or without parameters, on macOS and Linux (the seat's), where the same names declared `constant` get a clean exit 1 | `selfhost/emit/extern_probe.hero` (the result probe) · the `extern` member's kind check
+
+    **Origin:** panel 185's ffi-pragmatist, 2026-10-02
+    (`scratchpad/185-ffi-pragmatist/p185/`); reproduced by the critic and by the
+    coordinator at 02:42 on `03e70520` (`scratchpad/file-0250/errno.hero`).
+
+    **Why it is a defect.** Exit 2 is the compiler blaming itself for a program
+    the author can be told about (`.claude/rules/c-boundary.md`).
+
+- [ ] **153 — `declaration_in_arm` says `_` would be bound, which spec § 5 says it never is** | `.blue => _ = 0` on an arm's line: *an arm's body may not declare a name — `_` would be bound where nothing can read it*; spec § 5: `_` *binds nothing*, and § 8 names `_ = 0` as the arm that does nothing | `selfhost/parse/arm_body.hero:25-38` (`declared_name` does not ask the name)
+
+    **Origin:** panel 185's critic, compiler-engineer and spec-warden,
+    2026-10-02 (`docs/panel/185-briefs/probes/q2/s06-discard.hero`); reproduced by
+    the coordinator at 02:42 on `03e70520`. Whether `_ = e` stands on an arm's
+    line is panel 185's Q2; the message is false whichever way it rules.
+
+    **Why it is a defect.** design.md §4.17: a diagnostic is true; this one
+    contradicts the spec it cites.
+
+- [ ] **154 — a hexadecimal number with a fraction is told as a field access** | `x = 0x1.5`: `error[expected_field_name]: expected a field or function name after `.`, found a number (`5`)`, a member-access message for a literal | `selfhost/number.hero` · `selfhost/grammar_expr.hero` (the `.` after a literal)
+
+    **Origin:** lane literals' first pass, 2026-10-02
+    (`scratchpad/lane-literals/pass1/L5/t5_hex_fraction_lower.hero`); reproduced by
+    the coordinator at 02:42 on `03e70520`.
+
+    **Why it is a defect.** design.md §4.17: the message names a mistake the
+    author did not make; the number's own form is the mistake.
+
+- [ ] **155 — the public CI is red on `03e70520`: defect 140's variants case passes a C compiler's own limit** | run 36939966148: Darwin arm64's clang (Apple clang 21.0.0, Xcode 26.6) crashes, *Illegal instruction: 4*, on `run/fixedbugs-140-variants-a-thousand-deep-build`, red in `run`, `determinism` and `emission`; Linux x86-64 and arm64 time out on it at `-O2` (exit 124); Linux arm64 also times out on `probe/selfhost, multi`; Windows green | `tests/golden/run/fixedbugs-140-variants-a-thousand-deep-build.hero` and its trace until 2026-10-02, `tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero` since · `tests/harness/suite_run.hero:151`
+
+    **Origin:** the author, 2026-10-02 at 02:31 (*la ci è rotta*), on the push
+    of 01:17; read by the coordinator from `gh run view 36939966148
+    --log-failed`. This Mac and the Linux containers passed the same case at
+    every gate of 2026-10-01.
+
+    **Why it is a defect.** The trunk's own instrument is red on every push
+    until the case witnesses defect 140 without depending on a C compiler's
+    recursion limit or speed; lane ci140 is on it.
+
+    **2026-10-02, lane ci140, the variant chain is built through arrays,
+    where no C type nests, and kept by value in three `check/` cases, where
+    no C compiler reads it**: repaired at `0aa055a9`, gated by its cases and
+    the compiler's own tests; the net is owed at the batch's close.
 
 *******************************************************************************

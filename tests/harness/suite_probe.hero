@@ -72,6 +72,9 @@ function rows() -> [Row]
     # four lexer modules to selfhost and its goldens to tests, and took
     # margin.hero out of the seeds. The fixtures' floors measured again the
     # same day with `patterns125/negative.hero`, the 65th seed (defect 125).
+    # The selfhost row raised 2026-10-02 at lane literals' batch gate, to what
+    # the suite asked: `escape_codes.hero` took selfhost from 355 modules to
+    # 356, past 284 by more than a quarter, and its variants to 3204.
     fixtures: [Floor] = [
         Floor(family: "single", generated: 6479, parsing: 3240)
         Floor(family: "multi", generated: 585, parsing: 293)
@@ -81,13 +84,13 @@ function rows() -> [Row]
         Floor(family: "columns", generated: 5500, parsing: 2750)
         Floor(family: "texts", generated: 3254, parsing: 1627)
     ]
-    selfhost: [Floor] = [Floor(family: "multi", generated: 2556, parsing: 2556)]
+    selfhost: [Floor] = [Floor(family: "multi", generated: 3204, parsing: 3204)]
     tests: [Floor] = [Floor(family: "multi", generated: 5706, parsing: 5706)]
     examples: [Floor] = [Floor(family: "multi", generated: 1080, parsing: 1080)]
     none: [str] = []
     return [
         Row(name: "the fixtures, every family", words: ["probe", "--stride", "2"], seeds: 65, floors: fixtures, known: none)
-        Row(name: "selfhost, multi", words: ["probe", "selfhost", "--family", "multi"], seeds: 284, floors: selfhost, known: none)
+        Row(name: "selfhost, multi", words: ["probe", "selfhost", "--family", "multi"], seeds: 356, floors: selfhost, known: none)
         Row(name: "tests, multi", words: ["probe", "tests", "--family", "multi"], seeds: 634, floors: tests, known: none)
         Row(name: "examples, multi", words: ["probe", "examples", "--family", "multi"], seeds: 120, floors: examples, known: none)
     ]

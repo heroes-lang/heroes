@@ -1,0 +1,45 @@
+# Fixed 2026-10-02, defect 135's class, lane literals (the certain-fix
+# audit's L2, and the shapes beside it). THIS FILE ENDS ITS LINES WITH CRLF,
+# and `.gitattributes` keeps them (`-text`). Symptom: a string or a
+# character literal left open at a CRLF line end cost `raw_carriage_return`,
+# whose certain `\r` wrote the line end's carriage return into the literal,
+# which stayed open; a backslash before the line end cost `unknown_escape`
+# with a certain `\\` that did the same, and in a character literal a second
+# message for one mistake. Cause: the scanners stopped at the line feed and
+# read the carriage return before it as the literal's content. Now a
+# carriage return that begins a CRLF line end ends the line, inside a
+# literal or not: the literal is told unterminated, once, with no fix, and
+# `--apply` leaves the case as it is (`literals.hero`). A carriage return
+# anywhere else in a literal keeps its certain `\r`. Not yet among them: an
+# `f"…"` literal left open at the line end with no backslash before it,
+# whose scanner is `lex_interp.hero`'s `scan_piece`.
+
+function a_string()
+    print("abc)  #~ unterminated_string
+
+function a_character()
+    c = 'a  #~ unterminated_char
+    print(c)
+
+function a_closed_string_below()
+    s = "abc  #~ unterminated_string
+    t = "def"
+    print(t)
+
+function a_backslash_before_the_line_end()
+    #~v unterminated_string
+    s = "abc\
+    print(1)
+
+function a_backslash_in_a_character()
+    #~v unterminated_char
+    c = '\
+    print(1)
+
+function an_f_literal_before_its_first_hole()
+    #~v unterminated_string
+    s = f"abc\
+    print(1)
+
+function the_last_line()
+    print("abc)  #~ unterminated_string

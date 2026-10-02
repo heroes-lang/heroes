@@ -31,7 +31,7 @@
 #
 # `synth` is TOTAL: it always returns a type, because `return`, `break`
 # and `continue` are STATEMENTS in this language — the checker is never
-# asked what type `break` has. Divergence lives in `Outcome.jumps` and
+# asked what type `break` has. Divergence lives in `Outcome.leaves` and
 # reaches expressions only as an absent branch value in the join.
 
 use token
@@ -85,14 +85,15 @@ variant Want
         ty: i64
     unknown
 
-# Does control leave this statement, and what value did it produce?
-# Rust's (Flow, Option<TyId>) pair, as one record.
+# How does control leave this statement, and what value did it produce?
+# Rust's (Flow, Option<TyId>) pair, as one record; `join.Leaves` says why
+# leaving has three answers and not two.
 record Outcome
-    jumps: bool
+    leaves: join.Leaves
     value: i64?
 
 function falls_with_nothing() -> Outcome
-    return Outcome(jumps: false, value: fail(code: "none", msg: "a statement produces no value"))
+    return Outcome(leaves: .falls, value: fail(code: "none", msg: "a statement produces no value"))
 
 ## ⇒ — synthesise
 
@@ -277,7 +278,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             for branch in branches.branches
                 condition(@c, a, r, s, decls, branch.cond)
                 got = block(@c, a, r, s, decls, body: branch.block, want: .unknown)
-                collected @ collected.push(join.Branch(value: got.value, jumps: got.jumps, span: branch.block.span))
+                collected @ collected.push(join.Branch(value: got.value, leaves: got.leaves, span: branch.block.span))
 
             if branches.otherwise.is_err()
                 # Without an else the value is missing whenever the
@@ -286,7 +287,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
             got = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .unknown)
             collected @ collected.push(
-                join.Branch(value: got.value, jumps: got.jumps, span: branches.otherwise.must().span)
+                join.Branch(value: got.value, leaves: got.leaves, span: branches.otherwise.must().span)
             )
             return state.record_expr(
                 @c,
@@ -542,23 +543,24 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         # a .case, an ok(…) or a [] can be written in an arm at all.
 
         .if_expr branches =>
-            all_jump: bool @ !branches.otherwise.is_err()
+            leaving: join.Leaves @ .jumps
 
             for branch in branches.branches
                 condition(@c, a, r, s, decls, branch.cond)
                 got = block(@c, a, r, s, decls, body: branch.block, want: .value(ty: expected))
-                all_jump @ all_jump && got.jumps
+                leaving @ join.both(first: leaving, second: got.leaves)
 
             if branches.otherwise.is_err()
                 state.push_diagnostic(@c, flow_errors.if_without_else(span))
+                leaving @ .falls
             else
                 got = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .value(ty: expected))
-                all_jump @ all_jump && got.jumps
+                leaving @ join.both(first: leaving, second: got.leaves)
 
             # The synthesised `if` asks this in `join_for_value`; the checked
             # one never did, so `x: i64 = if` with a `return` in every branch
             # checked where `x = if` was refused (defect 139).
-            join.refuse_leaving(@c, leaves: all_jump, what: "if", span: span)
+            join.refuse_leaving(@c, leaves: leaving, what: "if", span: span)
             _ = state.record_expr(@c, at: id, ty: expected)
             return
         .match_expr m =>
@@ -577,7 +579,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
 
             # Every arm jumped, which is not *no arm produced a value*: an
             # arm that ended on a statement was told at the arm (defect 139).
-            join.refuse_leaving(@c, leaves: join.every_branch_jumps(branches), what: "match", span: span)
+            join.refuse_leaving(@c, leaves: join.every_branch(branches), what: "match", span: span)
             _ = state.record_expr(@c, at: id, ty: expected)
             return
         # A UFCS call takes the same expectation as a call (panel 105, the
@@ -702,7 +704,7 @@ function mismatch_shown(@c: state.Checker, s: source.Source, decls: [ast.Decl], 
 # block may produce one; every other line is a statement, and §4.14
 # wants it to be ().
 function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block, want: Want) -> Outcome
-    jumps: bool @ false
+    leaves: join.Leaves @ .falls
     value: i64? @ fail(code: "none", msg: "no last value yet")
     last = body.stmts.len() - 1
     index: i64 @ 0
@@ -720,8 +722,11 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         got = statement(@c, a, r, s, decls, id: sid, want: here)
         c.tail @ tail
 
-        if got.jumps
-            jumps @ true
+        # The first statement that leaves is how the block leaves, since
+        # nothing after it runs: a refused `break` before a `return` makes
+        # the block's leaving the refused one's (defect 148).
+        if leaves == .falls && got.leaves != .falls
+            leaves @ got.leaves
 
         if index == last
             value @ got.value
@@ -729,15 +734,29 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
 
     # A block that jumps produces no value, whatever its last line looked
     # like.
-    if jumps
-        return Outcome(jumps: true, value: fail(code: "jumps", msg: "a block that jumps produces no value"))
+    if leaves != .falls
+        return Outcome(leaves: leaves, value: fail(code: "jumps", msg: "a block that jumps produces no value"))
 
     # Asked for a value, falls through, and has none: its last line is a
     # statement. NOT the same as diverging — treating the two alike would
     # let `x = if c` with a loop in the branch pass silently.
     if want != .nothing && value.is_err()
-        state.push_diagnostic(@c, flow_errors.branch_without_value(body.span))
-    return Outcome(jumps: false, value: value)
+        ended_on_a_statement(@c, a, body)
+    return Outcome(leaves: .falls, value: value)
+
+# A value block that ends on a statement, told at that statement: the line
+# that has to be the value (defect 149). Until 2026-10-02 the caret stood at
+# the block's span, which begins at its first line, so every value block of
+# more than one line, a constant's body, a branch of an `if` or a `match`,
+# sent the author to a line that was right. A function of its own so that
+# `block`, which every nested block recurses through, holds no diagnostic in
+# its frame.
+function ended_on_a_statement(@c: state.Checker, a: ast.Ast, body: ast.Block)
+    span: token.Span @ body.span
+
+    if body.stmts.len() > 0
+        span @ a.stmts[body.stmts[body.stmts.len() - 1]].span
+    state.push_diagnostic(@c, flow_errors.branch_without_value(span))
 
 function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, want: Want) -> Outcome
     span = a.stmts[id].span
@@ -779,14 +798,8 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             check(@c, a, r, s, decls, id: m.value, expected: narrowed)
             return falls_with_nothing()
         .return_stmt rv => return returns(@c, a, r, s, decls, value: rv.value, span: span)
-        .break_stmt =>
-            if c.loops == 0
-                state.push_diagnostic(@c, flow_errors.jump_outside_loop("break", span))
-            return Outcome(jumps: true, value: fail(code: "jumps", msg: "a jump has no value"))
-        .continue_stmt =>
-            if c.loops == 0
-                state.push_diagnostic(@c, flow_errors.jump_outside_loop("continue", span))
-            return Outcome(jumps: true, value: fail(code: "jumps", msg: "a jump has no value"))
+        .break_stmt     => return loop_jump(@c, word: "break", span: span)
+        .continue_stmt  => return loop_jump(@c, word: "continue", span: span)
         .assert_stmt v =>
             wanted = table.bool_ty(c.out.types)
             got = synth(@c, a, r, s, decls, v.value)
@@ -859,7 +872,17 @@ function returns(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.
         if c.result != unit
             want = state.show(c, s, decls, c.result)
             state.push_diagnostic(@c, flow_errors.missing_value(want, span))
-    return Outcome(jumps: true, value: fail(code: "jumps", msg: "a return has no value here"))
+    return Outcome(leaves: .jumps, value: fail(code: "jumps", msg: "a return has no value here"))
+
+# `break` and `continue`: a jump inside a loop, and outside every loop one
+# refused where it stands, told here and nowhere else (defect 148). A
+# function of its own so that `statement`, which every nested block recurses
+# through, holds no diagnostic in its frame.
+function loop_jump(@c: state.Checker, word: str, span: token.Span) -> Outcome
+    if c.loops == 0
+        state.push_diagnostic(@c, flow_errors.jump_outside_loop(word, span))
+        return Outcome(leaves: .refused, value: fail(code: "jumps", msg: "a jump has no value"))
+    return Outcome(leaves: .jumps, value: fail(code: "jumps", msg: "a jump has no value"))
 
 # The type a mutation target ACCEPTS, which differs from the type it
 # reads in exactly one case: an index into a map.
@@ -896,20 +919,22 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
     match a.exprs[value].kind
         .if_expr branches =>
             if want == .nothing
-                all_jump: bool @ !branches.otherwise.is_err()
+                leaving: join.Leaves @ .jumps
 
                 for branch in branches.branches
                     condition(@c, a, r, s, decls, branch.cond)
                     got = block(@c, a, r, s, decls, body: branch.block, want: .nothing)
-                    all_jump @ all_jump && got.jumps
+                    leaving @ join.both(first: leaving, second: got.leaves)
 
-                if !branches.otherwise.is_err()
+                if branches.otherwise.is_err()
+                    leaving @ .falls
+                else
                     got = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .nothing)
-                    all_jump @ all_jump && got.jumps
+                    leaving @ join.both(first: leaving, second: got.leaves)
 
                 # As a statement it has the type a statement must have.
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
-                return Outcome(jumps: all_jump, value: fail(code: "none", msg: "a statement produces no value"))
+                return Outcome(leaves: leaving, value: fail(code: "none", msg: "a statement produces no value"))
             return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
         .match_expr m =>
             if want == .nothing
@@ -921,9 +946,9 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
                 # value* until 2026-10-01, which every `match` statement
                 # satisfies, and a function with no `return` checked clean
                 # and stopped in clang (defect 139).
-                all_jump = join.every_branch_jumps(branches)
+                leaving = join.every_branch(branches)
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
-                return Outcome(jumps: all_jump, value: fail(code: "none", msg: "a statement produces no value"))
+                return Outcome(leaves: leaving, value: fail(code: "none", msg: "a statement produces no value"))
             return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return valued_expression(
             @c,
@@ -964,10 +989,10 @@ function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, 
     match want
         .value w =>
             check(@c, a, r, s, decls, id: value, expected: w.ty)
-            return Outcome(jumps: false, value: ok(w.ty))
+            return Outcome(leaves: .falls, value: ok(w.ty))
         .unknown =>
             got = synth(@c, a, r, s, decls, value)
-            return Outcome(jumps: false, value: ok(got))
+            return Outcome(leaves: .falls, value: ok(got))
         .nothing =>
             got = synth(@c, a, r, s, decls, value)
 
@@ -1028,21 +1053,21 @@ function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 .error     => continue
 
         value: i64? @ fail(code: "none", msg: "nothing produced yet")
-        jumps: bool @ false
+        leaves: join.Leaves @ .falls
 
         match arm.body
             .one_stmt one =>
                 # A jump's outcome carries no value already.
                 got = statement(@c, a, r, s, decls, id: one.at, want: want)
-                jumps @ got.jumps
+                leaves @ got.leaves
                 value @ got.value
                 refuse_statement_arm(@c, a, want: want, got: got, at: one.at)
             .block bb =>
                 got = block(@c, a, r, s, decls, body: bb.block, want: want)
-                jumps @ got.jumps
+                leaves @ got.leaves
                 value @ got.value
 
-        branches @ branches.push(join.Branch(value: value, jumps: jumps, span: arm.span))
+        branches @ branches.push(join.Branch(value: value, leaves: leaves, span: arm.span))
 
     reach.exhaustive(@c, s, decls, subject: subject, covered: covered, wildcard_seen: wildcard_seen, span: span)
     return branches
@@ -1055,7 +1080,7 @@ function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
 # recurses through, and the C this compiles to keeps every temporary of a
 # function in its frame: the diagnostic built here would widen each level.
 function refuse_statement_arm(@c: state.Checker, a: ast.Ast, want: Want, got: Outcome, at: i64)
-    if want != .nothing && !got.jumps && got.value.is_err()
+    if want != .nothing && got.leaves == .falls && got.value.is_err()
         state.push_diagnostic(@c, flow_errors.branch_without_value(a.stmts[at].span))
 
 # A literal arm, checked against the subject's type, which is the type its
@@ -1080,17 +1105,6 @@ function literal_pattern(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
 # str) -> str) @ report` where `report` is `(code, msg)` — and the call site
 # would obey the annotation while the callee obeyed itself. With the names in
 # the type's identity (`check/table.hero`) that assignment is a mismatch.
-# Whether a label the call wrote names ANOTHER position of this type, which is
-# what decides the certainty of the `wrong_label` fix: renaming a label that
-# belongs elsewhere leaves the values where they are, so the repair is a guess
-# rather than a certainty (panel 127).
-function listed_name(names: [str], written: str) -> bool
-    for one in names
-        if one == written
-            return true
-
-    return false
-
 function declared_labels(s: source.Source, params: [ast.Param], lowered: [i64]) -> [str]
     names: [str] @ []
     none: [str] = []
@@ -1335,6 +1349,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                 # `str`* — is not even true.
                 if table.shared_at(params, at: position)
                     wanted @ carried
+                misnamed: bool @ false
 
                 if wanted.len() == 0
 
@@ -1357,13 +1372,18 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                         @c,
                         label_errors.needs_label(name: "this function", expected: wanted, shared: state.show(c, s, decls, params[position]), others: others, span: a.exprs[arg.value].span, at: front)
                     )
-                else if source.span_text(s, arg.name.must()) != wanted
-                    state.push_diagnostic(
-                        @c,
-                        label_errors.wrong_label(holder: "this function", written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: listed_name(names, source.span_text(s, arg.name.must())), span: arg.name.must())
-                    )
+                else
+                    misnamed @ source.span_text(s, arg.name.must()) != wanted
 
                 check(@c, a, r, s, decls, id: arg.value, expected: params[position])
+
+                # Told once the argument is checked, since what else a label
+                # naming nothing could be asks its type (defect 135, C3).
+                if misnamed
+                    state.push_diagnostic(
+                        @c,
+                        labels.misnamed(c, a, s, decls, holder: "this function", label: arg.name.must(), every: names, open: names, types: params, at: position, from: offset, value: arg.value, taken: taken)
+                    )
                 index @ index + 1
 
             return f.result
@@ -1584,57 +1604,42 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 position = index + offset
                 param = params[position]
 
-                if listed(ambiguous, position)
+                # A label is its position's name, where the signature needs
+                # one and where it does not: a wrong one is a wrong argument
+                # with a comment on it. Told once the argument is checked.
+                misnamed = !arg.name.is_err() && source.span_text(s, arg.name.must()) != source.span_text(s, fd.value.params[position].name)
+
+                if listed(ambiguous, position) && arg.name.is_err()
                     wanted = source.span_text(s, fd.value.params[position].name)
 
-                    if arg.name.is_err()
-                        # Rendered with the CALLEE's type-parameter names:
-                        # at a call site the enclosing function's letters
-                        # are the wrong dictionary, and #0 is nobody's type.
-                        callee_generics: [str] @ []
+                    # Rendered with the CALLEE's type-parameter names: at a
+                    # call site the enclosing function's letters are the
+                    # wrong dictionary, and #0 is nobody's type.
+                    callee_generics: [str] @ []
 
-                        for gspan in fd.value.generics
-                            callee_generics @ callee_generics.push(source.span_text(s, gspan))
+                    for gspan in fd.value.generics
+                        callee_generics @ callee_generics.push(source.span_text(s, gspan))
 
-                        shared_text = render.render_ty(c.out.types, s, decls, param, callee_generics)
-                        others = labels.other_parameters(
-                            s,
-                            fd.value.params,
-                            types: params,
-                            ambiguous: ambiguous,
-                            at: position,
-                            from: offset,
-                            taken: taken,
-                            mutable: arg.mutable
-                        )
-                        front = label_errors.argument_front(
-                            s.text,
-                            value_start: a.exprs[arg.value].span.start,
-                            mutable: arg.mutable
-                        )
-                        state.push_diagnostic(
-                            @c,
-                            label_errors.needs_label(name: name, expected: wanted, shared: shared_text, others: others, span: a.exprs[arg.value].span, at: front)
-                        )
-                    else
-                        if source.span_text(s, arg.name.must()) != wanted
-                            state.push_diagnostic(
-                                @c,
-                                label_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: names_a_parameter(s, fd.value.params, source.span_text(s, arg.name.must())), span: arg.name.must())
-                            )
-                else
-
-                    # A label where the signature does not need one still
-                    # has to be the right label: a wrong one is a wrong
-                    # argument with a comment on it.
-                    if !arg.name.is_err()
-                        wanted = source.span_text(s, fd.value.params[position].name)
-
-                        if source.span_text(s, arg.name.must()) != wanted
-                            state.push_diagnostic(
-                                @c,
-                                label_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: names_a_parameter(s, fd.value.params, source.span_text(s, arg.name.must())), span: arg.name.must())
-                            )
+                    shared_text = render.render_ty(c.out.types, s, decls, param, callee_generics)
+                    others = labels.other_parameters(
+                        s,
+                        fd.value.params,
+                        types: params,
+                        ambiguous: ambiguous,
+                        at: position,
+                        from: offset,
+                        taken: taken,
+                        mutable: arg.mutable
+                    )
+                    front = label_errors.argument_front(
+                        s.text,
+                        value_start: a.exprs[arg.value].span.start,
+                        mutable: arg.mutable
+                    )
+                    state.push_diagnostic(
+                        @c,
+                        label_errors.needs_label(name: name, expected: wanted, shared: shared_text, others: others, span: a.exprs[arg.value].span, at: front)
+                    )
 
                 # §4.8: the marker is repeated at the call site, and a
                 # marked argument must meet a marked parameter.
@@ -1655,6 +1660,14 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                     if table.poisoned(c.out.types, got)
                         tainted @ true
                     check_generics.bind(@c, s, decls, @bindings, param: param, got: got, span: a.exprs[arg.value].span)
+
+                # What else a label naming nothing could be asks the
+                # argument's type, now known (defect 135, C3).
+                if misnamed
+                    state.push_diagnostic(
+                        @c,
+                        labels.misnamed_parameter(c, a, s, decls, holder: name, label: arg.name.must(), declared: fd.value.params, types: params, ambiguous: ambiguous, given: given, at: position, from: offset, value: arg.value, taken: taken)
+                    )
                 index @ index + 1
 
             # THE CONTEXT BINDS WHAT THE ARGUMENTS LEFT (panel 105, ratified
@@ -1739,27 +1752,6 @@ function bind_argument(@c: state.Checker, s: source.Source, decls: [ast.Decl], @
 record FieldSpec
     name: str
     ty: i64
-
-# **What the certainty of a `wrong_label` fix rests on**, and it is a fact about
-# the call in hand rather than a premise about the world: does the label the
-# author wrote name ANOTHER position of this callee? If it does, the call is an
-# argument swap wearing labels, and renaming one leaves both values where they
-# are (panel 127's compiler seat applied the old certain fix and measured the
-# program printing the other answer). `label_errors.wrong_label` turns that into
-# a `guess`; a label that names nothing is a typo and the rename is certain.
-function names_a_parameter(s: source.Source, params: [ast.Param], written: str) -> bool
-    for p in params
-        if source.span_text(s, p.name) == written
-            return true
-
-    return false
-
-function names_a_field(expected: [FieldSpec], written: str) -> bool
-    for f in expected
-        if f.name == written
-            return true
-
-    return false
 
 # Point(x: 3, y: 4) — §4.9 makes every field name mandatory, always,
 # which is why there is no positional form to get wrong.
@@ -1970,24 +1962,25 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
 
     for arg in given
         spec = expected[index]
-
-        if !arg.name.is_err() && source.span_text(s, arg.name.must()) != spec.name
-            state.push_diagnostic(
-                @c,
-                label_errors.wrong_label(holder: label, written: source.span_text(s, arg.name.must()), expected: spec.name, elsewhere: names_a_field(expected, source.span_text(s, arg.name.must())), span: arg.name.must())
-            )
         lowered = lower.lower_ty(@c, a, r, spec.ty)
         check(@c, a, r, s, decls, id: arg.value, expected: lowered)
         spec_names @ spec_names.push(spec.name)
         spec_types @ spec_types.push(lowered)
         index @ index + 1
 
-    # A missing label is told once every argument is checked: which other
-    # fields an argument could fill asks the type it has (defect 135).
+    # A missing or a wrong label is told once every argument is checked:
+    # which other fields an argument could fill asks the type it has (defect
+    # 135), and the label must be the field at its position.
     taken = labels.written_labels(s, given)
     index @ 0
 
     for arg in given
+        if !arg.name.is_err() && source.span_text(s, arg.name.must()) != spec_names[index]
+            state.push_diagnostic(
+                @c,
+                labels.misnamed(c, a, s, decls, holder: label, label: arg.name.must(), every: spec_names, open: spec_names, types: spec_types, at: index, from: 0, value: arg.value, taken: taken)
+            )
+
         if arg.name.is_err()
             others = labels.other_fields(
                 c,

@@ -1,0 +1,13 @@
+tests/golden/check/fixedbugs-149-a-value-block-is-told-at-the-line-that-ends-it.hero:16:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-149-a-value-block-is-told-at-the-line-that-ends-it.hero:21:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-149-a-value-block-is-told-at-the-line-that-ends-it.hero:26:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-149-a-value-block-is-told-at-the-line-that-ends-it.hero:31:9: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-149-a-value-block-is-told-at-the-line-that-ends-it.hero:36:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-149-a-value-block-is-told-at-the-line-that-ends-it.hero:41:9: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-149-a-value-block-is-told-at-the-line-that-ends-it.hero:51:9: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-149-a-value-block-is-told-at-the-line-that-ends-it.hero:57:9: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-149-a-value-block-is-told-at-the-line-that-ends-it.hero:66:13: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-149-a-value-block-is-told-at-the-line-that-ends-it.hero:76:13: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-149-a-value-block-is-told-at-the-line-that-ends-it.hero:86:13: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-149-a-value-block-is-told-at-the-line-that-ends-it.hero:96:9: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-149-a-value-block-is-told-at-the-line-that-ends-it.hero:103:9: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value

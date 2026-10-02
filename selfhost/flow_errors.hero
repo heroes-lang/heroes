@@ -111,10 +111,15 @@ function no_value(what: str, span: token.Span) -> diag.Diagnostic
 # A constant whose body jumps before it gives a value (§4.2: a constant's
 # body IS its value, its last statement produces it). `return 5` there is a
 # function's habit, and the repair is the value alone. Told once, at the
-# body, and only for a body that jumps: one that ends on a statement was told
-# at its block by `branch_without_value`, and until 2026-10-01 it was told
-# again here, *this `i64` produces no value — every branch jumps*, which no
-# branch had (defect 139's class, an absent value read as a jump).
+# statement through which the body left (until 2026-10-02 at the body's first
+# line, defect 149), and only for a body that jumps: one that ends on a
+# statement was told at its block by `branch_without_value`, and until
+# 2026-10-01 it was told again here, *this `i64` produces no value — every
+# branch jumps*, which no branch had (defect 139's class, an absent value
+# read as a jump). Nor for a body that left by a `break` or a `continue`
+# outside every loop: that jump was told where it stands, and until
+# 2026-10-02 this was its shadow at the same place (defect 148,
+# `check/join.Leaves`).
 function constant_without_value(name: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "no_value",
@@ -124,9 +129,10 @@ function constant_without_value(name: str, span: token.Span) -> diag.Diagnostic
     d.notes @ d.notes.push("a constant has no `return`: write the value itself as the body's last line")
     return d
 
-# A branch that falls off its end without a value. Distinct from a
-# diverging branch, and the distinction is the point: a jump CANNOT
-# produce a value, a statement simply did not.
+# A branch that falls off its end without a value, told at the statement it
+# ends on (`check/walk.ended_on_a_statement`). Distinct from a diverging
+# branch, and the distinction is the point: a jump CANNOT produce a value, a
+# statement simply did not.
 function branch_without_value(span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "no_value",

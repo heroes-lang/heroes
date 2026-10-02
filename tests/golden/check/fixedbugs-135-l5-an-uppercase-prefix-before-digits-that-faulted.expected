@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-135-l5-an-uppercase-prefix-before-digits-that-faulted.hero:9:13: error[digit_not_in_base]: `G` is not a hexadecimal digit
+tests/golden/check/fixedbugs-135-l5-an-uppercase-prefix-before-digits-that-faulted.hero:9:11: error[base_prefix_case]: `0XG` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-135-l5-an-uppercase-prefix-before-digits-that-faulted.hero:12:13: error[digit_not_in_base]: `2` is not a binary digit
+tests/golden/check/fixedbugs-135-l5-an-uppercase-prefix-before-digits-that-faulted.hero:12:11: error[base_prefix_case]: `0B2` writes the base in uppercase — this language spells it `0b`
+tests/golden/check/fixedbugs-135-l5-an-uppercase-prefix-before-digits-that-faulted.hero:15:13: error[misplaced_separator]: `_` groups digits, so it goes between two of them
+tests/golden/check/fixedbugs-135-l5-an-uppercase-prefix-before-digits-that-faulted.hero:15:11: error[base_prefix_case]: `0X_FF` writes the base in uppercase — this language spells it `0x`

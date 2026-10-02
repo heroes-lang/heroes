@@ -1,0 +1,4 @@
+52c52
+<   `{{` writes one brace. A literal without the `f` is unchanged.
+---
+>   `{{` and `}}` each write one brace, and a lone `}` is an error. [RULE 1]

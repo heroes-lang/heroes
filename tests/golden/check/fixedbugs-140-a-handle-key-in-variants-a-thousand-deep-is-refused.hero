@@ -1,21 +1,25 @@
-# Fixed 2026-10-01, defect 140, lane emit.
-# Symptom: records nested by value a thousand deep, `record R<i>` holding
-# `R<i-1>`, stopped the compiler at 134: `build` with *stack exhausted in
-# emitsynth.collect*, and `check` itself, where a value of them is compared
-# or used as a map key, with *stack exhausted in checkpartial.reaches_within*
-# from seven hundred deep.
-# Cause: every walk over a record type recursed once per record on the
-# route. Each now keeps a stack of its own and enters what is below a place
-# in the order the recursion did, so what is emitted and what is said are
-# the recursion's own, and the depth is the records', not the machine's.
-# Clang's own limits are measured beside it and are not this file's: with
-# Apple clang 21 on arm64 macOS, records nested 7,000 deep build and 8,000
-# make clang die by signal, and variants 2,000 and 2,500 (2026-10-01).
-# This case: the same depth through variant cases, compared.
+# Fixed 2026-10-01, defect 140, lane emit: the refusal half, through variant
+# cases since 2026-10-02 (defect 155, lane ci140).
+# Symptom: a refusal over records nested by value a thousand deep never
+# came: `check` stopped at 134, *stack exhausted in
+# checkpartial.reaches_within*, before any rule could speak.
+# Cause: the walks that find what a type reaches recursed once per record;
+# they keep a stack of their own now, and the rule is said at any depth.
+# This case: variant cases nested by value a thousand deep, a handle in the
+# bottom one's case, the top one a map key.
+# By value, the chain is kept where no C compiler reads it: built, it nests
+# three C aggregates per variant, and a thousand variants, compared, crashed
+# the CI's Apple clang and took the Linux legs' -O2 past the harness's
+# watchdog (run 36939966148, the `run/` case of that day). The compiler of
+# 9d1c209d stops `check` on this file at 134.
+
+extern "stdio.h"
+    record File tag FILE
+    function fclose(f: File consumes) -> i64
 
 variant R0
     a
-        v: i64
+        f: File
     b
 
 variant R1
@@ -5014,6 +5018,5 @@ variant R999
     b
 
 function main()
-    xs: [R999] = []
-    print(xs.len())
-    print(xs == xs)
+    m: {R999: i64} @ {}  #~ handle_map_key
+    print(len(m))

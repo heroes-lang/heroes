@@ -1,0 +1,10 @@
+function f(k: i64) -> i64
+    x = match k
+        0 =>
+            print(0)
+            exit(code: 3)
+        _ => 20
+    return x
+
+function main()
+    print(f(k: 5))
