@@ -50,6 +50,63 @@ function fallible_constructor(name: str) -> ir.Shape?
 function is_fallible_operation(name: str) -> bool
     return name == "must" || name == "default" || name == "is_err"
 
+# The declared fields a construction names, by index, in the order written.
+# The checker has held every label to a field of the record, once each and in
+# the declared order (`check/walk.hero`'s `construct_record`), so this is every
+# index in order but where a group's record is built naming one member of each
+# C union (panel 186 R7, spec § 13). A field's construction is never unlabelled
+# past the checker (§4.9), so a label that names nothing here is the
+# compiler's own fault, and it stops loudly.
+function given_fields(s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg]) -> [i64]
+    out: [i64] @ []
+    names: [str] @ []
+
+    match decls[decl].kind
+        .record_decl rec =>
+            for f in rec.fields
+                names @ names.push(source.span_text(s, f.name))
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return out
+
+    for arg in given
+        assert !arg.name.is_err()
+        label = source.span_text(s, arg.name.must())
+        found: i64 @ -1
+        k: i64 @ 0
+
+        while k < names.len()
+            if names[k] == label
+                found @ k
+            k @ k + 1
+
+        assert found >= 0
+        out @ out.push(found)
+
+    return out
+
+# The fields a record construction names, as `--dump-ir` prints them: ""
+# where it names every field in the declared order, which is every
+# construction but a group's record built naming one member of each C union,
+# and `{kind, f, x}` there, so the dump never reads its arguments as fields
+# they are not.
+function named_list(s: source.Source, decls: [ast.Decl], decl: i64, given: [i64]) -> str
+    names: [str] @ []
+    whole: bool @ true
+    at: i64 @ 0
+
+    match decls[decl].kind
+        .record_decl rec =>
+            whole @ given.len() == rec.fields.len()
+
+            for k in given
+                names @ names.push(source.span_text(s, rec.fields[k].name))
+                whole @ whole && k == at
+                at @ at + 1
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return ""
+
+    if whole
+        return ""
+    return "{" + names.join(", ") + "}"
+
 function is_record(decls: [ast.Decl], decl: i64) -> bool
     return match decls[decl].kind
         .record_decl                                                 => true

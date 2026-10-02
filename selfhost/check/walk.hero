@@ -56,6 +56,7 @@ use check/consuming
 use check/join
 use check/builtins
 use check/labels
+use check/group_fields
 use check/markers
 use check/generics as check_generics
 use check/discard
@@ -1765,6 +1766,14 @@ function construct_record(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
                 expected @ expected.push(FieldSpec(name: source.span_text(s, f.name), ty: f.ty))
 
             declared_at = source.elsewhere(s, here: span.start, there: decls[decl].name.start)
+
+            # A group's record is built naming one member of each C union
+            # (panel 186 R7, spec § 13): a construction naming some of its
+            # fields holds only its labels here, and `build` judges what it
+            # leaves out (`check/group_fields.hero`).
+            if !rec.header.is_err() && given.len() != expected.len()
+                built_from_some(@c, a, r, s, decls, label: name, expected: expected, given: given)
+                return table.intern(@c.out.types, .named(decl: decl))
             check_named_fields(
                 @c,
                 a,
@@ -1781,6 +1790,29 @@ function construct_record(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
         .constant_decl | .function_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
 
     return state.error_ty_of(c)
+
+# Each argument checked against the field its label names, the labels told
+# where they name no field, one twice, or one out of the declared order.
+function built_from_some(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], label: str, expected: [FieldSpec], given: [ast.Arg])
+    names: [str] @ []
+    types: [i64] @ []
+
+    for f in expected
+        names @ names.push(f.name)
+        types @ types.push(lower.lower_ty(@c, a, r, f.ty))
+
+    at = group_fields.fields_named(s, names: names, given: given)
+    k: i64 @ 0
+
+    for arg in given
+        if at[k] >= 0
+            check(@c, a, r, s, decls, id: arg.value, expected: types[at[k]])
+        else
+            _ = synth(@c, a, r, s, decls, arg.value)
+        k @ k + 1
+
+    for d in group_fields.told(c, a, s, decls, holder: label, names: names, types: types, given: given, at: at)
+        state.push_diagnostic(@c, d)
 
 # .num(v: 12) in ⇐ position: the expected type says which variant, and
 # the case name says which case (§4.2's "a case is a small record").

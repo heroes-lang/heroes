@@ -46,6 +46,10 @@ use cli/publish
 use cli/digest
 use cli/deps
 use cli/pointee
+use parse
+use resolve
+use checker
+use ir/lower
 
 # The largest dump kept under `build/`, in bytes: every real header measured
 # for panel 186 dumps far below it (`SDL3/SDL.h`, whole, 30 KB), and a
@@ -231,3 +235,68 @@ function code_of(failed: ()?) -> str
     match failed
         .ok    => return ""
         .err e => return e.code
+
+## Tests
+
+# **A member with no bytes is complete only where C says it has none**
+# (panel 186 R4; defect 151, the Windows box's pre-push leg, 2026-10-02). An
+# empty struct is a GNU extension whose size is the target's: 0 for a GNU
+# target and 4 for MSVC's, measured on the box with its clang 23.1.1 and
+# here by asking this machine's clang for both. So a record that leaves one
+# out is complete on one and refused on the other, both verdicts C's, from
+# the one assertion `emit/layout_check.hero` writes; the zero-length array
+# beside it has no bytes on both, which is all
+# `run/fixedbugs-151-members-with-no-bytes-left-out` may hold. clang answers
+# for a foreign target with no header, so the case reads the same on every
+# leg, the box included.
+test "a left-out empty struct is missing for MSVC's target and complete for a GNU one, a zero-length array complete for both"
+    text = "extern \"ze.h\"\n    record ZE\n        x: i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    u = extern_union.used(low.program, c, parsed.decls)
+
+    # The record's block as clang dumps it for a GNU target, which proposes
+    # the names; every verdict below is C's arithmetic for the target asked.
+    gnu_dump = "         0 | struct hero_ly_0\n         0 |   ZE v\n         0 |     struct hero_empty e\n         0 |     int[0] z\n         0 |     int x\n           | [sizeof=4, align=4]\n"
+    rows = layout_rows.rows_of(gnu_dump)
+    tree = layout_text.members(rows: rows, from: layout_text.heads(rows)[0].must()).must()
+    no_sizes: {str: i64} @ {}
+    asked = layout_check.record_lines(
+        layout_text.asked(s, parsed.decls)[0],
+        hero_name: "ZE",
+        tree: tree,
+        decls: parsed.decls,
+        u: u,
+        s: s,
+        c: c,
+        sizes: no_sizes
+    )
+    assert asked.len() == 2
+    assert !process.mkdir_all("build").is_err()
+    unit = "build/selftest-layout-empty.c"
+    said = "build/selftest-layout-empty.txt"
+    header = "struct hero_empty { };\ntypedef struct { struct hero_empty e; int z[0]; int x; } ZE;\n"
+    assert !write_file(path: unit, text: header + asked.join("\n") + "\n").is_err()
+    msvc = process.run(
+        program: "clang",
+        words: ["clang", "--target=x86_64-pc-windows-msvc", "-std=gnu11", "-fsyntax-only", "-ferror-limit=0", unit],
+        out: process.discard(),
+        err: said
+    )
+    assert msvc.started
+    assert msvc.code != 0
+    refused = read_file(said).must()
+    assert layout_rows.byte_index(text: refused, needle: "heroes-ffi-missing ZE e") > 0
+    assert layout_rows.byte_index(text: refused, needle: "heroes-ffi-missing ZE z") < 0
+    gnu = process.run(
+        program: "clang",
+        words: ["clang", "--target=x86_64-linux-gnu", "-std=gnu11", "-fsyntax-only", "-ferror-limit=0", unit],
+        out: process.discard(),
+        err: process.discard()
+    )
+    assert gnu.started
+    assert gnu.code == 0

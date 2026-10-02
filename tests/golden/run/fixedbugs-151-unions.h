@@ -12,9 +12,11 @@ static inline W make_w(void) { W w; w.i = 7; return w; }
 typedef struct { int32_t kind; union { int32_t i; float f; }; int32_t x; } SA;
 static inline SA make_sa(int32_t i) { SA s; memset(&s, 0, sizeof s); s.kind = 1; s.i = i; s.x = 3; return s; }
 
-/* members with no bytes, a GNU empty struct and a zero-length array */
-struct hero_empty { };
-typedef struct { struct hero_empty e; int32_t z[0]; int32_t x; } ZE;
+/* a member with no bytes on every target: a zero-length array. A GNU empty
+   struct stood beside it until 2026-10-02, and has 4 bytes for MSVC's target
+   (the Windows box's clang 23.1.1), so it is witnessed for both targets by
+   `selfhost/cli/layout.hero`'s test rather than held here. */
+typedef struct { int32_t z[0]; int32_t x; } ZE;
 static inline ZE make_ze(void) { ZE v; memset(&v, 0, sizeof v); v.x = 4; return v; }
 
 /* a union holding an anonymous struct, bound by its wide arm */

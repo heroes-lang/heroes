@@ -1,0 +1,1 @@
+tests/golden/check/ffi-a-construction-misspells-a-label.hero:20:21: error[wrong_label]: `SA` has nothing called `ff`: its fields are `kind`, `i`, `f` and `x`

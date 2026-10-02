@@ -79,6 +79,7 @@ function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names,
             s,
             decls,
             decl: rs.decl,
+            given: rs.given,
             arguments: rendered
         )
         .array_shape | .map_shape | .ok_shape | .fail_shape | .err_shape => literal @ literal
@@ -170,7 +171,7 @@ test "one expression for the by-value shapes, statements for the containers"
         s,
         parsed.decls,
         f,
-        shape: .record_shape(decl: 0),
+        shape: .record_shape(decl: 0, given: [0]),
         run: ir.Run(start: 0, length: 1),
         target: ok("t5")
     )

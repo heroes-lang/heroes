@@ -5,19 +5,21 @@
 # field 'c'* and named a field the record declares when the one left out was
 # in the middle.
 #
-# Nine markers, three codes. `ffi_incomplete_record` for a member left out
+# Eight markers, three codes. `ffi_incomplete_record` for a member left out
 # (a bit-field one says `partial`); `ffi_field_type` on the field's own line
-# for a declared bit-field (defect 156); `ffi_union_field` for two declared
-# fields that are one union's bytes in a record the program builds (R2), and
-# for a field in a union of a record the program compares, which is not an
-# integer, a pointer or an array of them, or is not as wide as the union
-# (R3). Every message says the spec's words: comparing a record and using it
-# as a map key.
+# for a declared bit-field (defect 156); `ffi_union_field` for a field in a
+# union of a record the program compares, which is not an integer, a pointer
+# or an array of them, or is not as wide as the union (R3). Every message
+# says the spec's words: comparing a record and using it as a map key. What
+# a construction names and leaves out (R7) is told per construction, in
+# `emit/ffi_built.hero`.
 
 use ast
 use source
 use diag
+use emit/externs as emit_externs
 use emit/ffi_lookup
+use emit/ffi_site
 use emit/ffi_record
 use emit/layout_check
 use emit/layout_compare
@@ -31,7 +33,7 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
     kind: str @ ""
     rest: str @ ""
 
-    for marker in [layout_check.MISSING, layout_check.MISSING_BITS, layout_check.SHARED, layout_check.BITFIELD, layout_compare.OVERLAP, layout_compare.NARROW, layout_compare.BESIDE_BITS, layout_compare.OVERLAP_IN, layout_compare.NARROW_IN]
+    for marker in [layout_check.MISSING, layout_check.MISSING_BITS, layout_check.BITFIELD, layout_compare.OVERLAP, layout_compare.NARROW, layout_compare.BESIDE_BITS, layout_compare.OVERLAP_IN, layout_compare.NARROW_IN]
         tail = ffi_lookup.after(text: line, marker: marker + " ")
 
         if !tail.is_err() && kind.len() == 0
@@ -98,17 +100,6 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
         )
         return ok(bits)
     other = parts[2]
-
-    if kind == layout_check.SHARED
-        shared: diag.Diagnostic @ diag.new_diagnostic(
-            code: "ffi_union_field",
-            message: "`" + m + "` and `" + other + "` are the same bytes of `" + t + "`: `" + h + "` puts them in one union inside the struct, so building one would answer about whichever was written last",
-            span: span
-        )
-        shared.notes @ shared.notes.push(
-            "a `record` that names both is read through either and never built, because C keeps the last one written: to build a `" + t + "`, name only the one the program writes"
-        )
-        return ok(shared)
     d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_union_field", message: "", span: span)
     held = "`" + t + "` holds `" + m + "` in a union of `" + h + "`"
     wrong = ", so comparing a `" + t + "` or using one as a map key can call two different values equal"
@@ -137,6 +128,55 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
     )
     return ok(d)
 
+# A clang error at a group record field's own line, whose name the header
+# defines as a macro (the question unit's answer, `macros`), and which is no
+# member: `#define size 4` beside `record BUF` misspelling `cap` as `size`
+# made C read `((BUF *)0)->4`, *expected identifier*, which the field
+# assertion and the layout check's member probe both draw at that line, and a
+# macro that is another identifier, `stdin` for `__stdinp`, draws *no member
+# named '__stdinp'*, which names no field of the program's. Until
+# lane land186 (2026-10-02) it was `internal error`, exit 2. A field whose
+# macro does name a member (libc's `sa_handler`) draws no such line, and an
+# assertion of this compiler's at the line is another reader's.
+function macro_field(s: source.Source, decls: [ast.Decl], line: str, macros: {str: bool}) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ": error: ") || ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+        return fail(code: "none", msg: "not a syntax error")
+    at = ffi_site.location(s, line: line)
+
+    if at.is_err()
+        return fail(code: "none", msg: "no position this compilation owns")
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if rec.header.is_err()
+                    continue
+
+                for field in rec.fields
+                    name = source.span_text(s, field.name)
+                    here = source.file_of(s, field.name.start) == at.must().file && source.file_line_of(s, field.name.start) == at.must().line
+
+                    # *no member named 'size'* names the field itself, which
+                    # is `ffi_field.unknown_field`'s; a macro naming another
+                    # identifier draws *no member named '__stdinp'*.
+                    own = ffi_lookup.has(text: line, needle: "no member named '" + name + "'")
+
+                    if here && !macros[name].is_err() && !own
+                        h = emit_externs.unquoted(s, span: rec.header.must())
+                        t = source.span_text(s, decl.name)
+                        d: diag.Diagnostic @ diag.new_diagnostic(
+                            code: "ffi_unknown_field",
+                            message: "`" + h + "` defines `" + name + "` as a macro, and the type `" + t + "` binds has no member it names: C reads the macro's text where the field's name stands",
+                            span: field.name
+                        )
+                        d.notes @ d.notes.push(
+                            "a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `" + t + "` has a `" + name + "`"
+                        )
+                        return ok(d)
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return fail(code: "none", msg: "no macro-named field on that line")
+
 ## Tests
 
 test "layout_record reads each marker, and a line that is not one is left alone"
@@ -156,9 +196,10 @@ test "layout_record reads each marker, and a line that is not one is left alone"
     field_bits = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-bitfield S3 a")
     assert field_bits.must().code == "ffi_field_type"
     assert field_bits.must().span.start != missing.must().span.start
-    shared = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-shared S3 a c")
-    assert shared.must().code == "ffi_union_field"
-    assert shared.must().message == "`a` and `c` are the same bytes of `S3`: `s3.h` puts them in one union inside the struct, so building one would answer about whichever was written last"
+
+    # A construction's markers are `emit/ffi_built.hero`'s, told once each.
+    assert layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-shared S3 a c").is_err()
+    assert layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-omitted S3 c").is_err()
     overlap = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-overlap S3 c a")
     assert overlap.must().message == "`S3` holds `c` in a union of `s3.h`, sharing its bytes with `a`, and a `f32` is not compared bit for bit, so comparing a `S3` or using one as a map key can call two different values equal"
     narrow = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-narrow S3 a q")
@@ -168,4 +209,26 @@ test "layout_record reads each marker, and a line that is not one is left alone"
     assert layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-narrow S3 a").is_err()
     assert layout_record(s, parsed.tree, parsed.decls, line: "c.c:2:1: error: missing field 'b' initializer").is_err()
     assert layout_record(s, parsed.tree, parsed.decls, line: "c.c:2:1: error: static assertion failed: heroes-ffi-missing Other b").is_err(
+    )
+
+test "a field named after a header macro that names no member is told on the field"
+    text = "extern \"m.h\"\n    record BUF\n        len: i32\n        size: i32\n\nfunction touch(b: BUF) -> i32\n    return b.len\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    macros: {str: bool} @ {}
+    macros["size"] @ true
+    d = macro_field(s, parsed.decls, line: "t.hero:4:52: error: expected identifier", macros: macros)
+    assert d.must().code == "ffi_unknown_field"
+    assert source.span_text(s, d.must().span) == "size"
+
+    # Not a macro, or an assertion of this compiler's at the line: another reader's.
+    none: {str: bool} @ {}
+    assert macro_field(s, parsed.decls, line: "t.hero:4:52: error: expected identifier", macros: none).is_err()
+    assert macro_field(s, parsed.decls, line: "t.hero:4:52: error: static assertion failed due to requirement 'x': heroes-ffi-field BUF size", macros: macros).is_err(
+    )
+    assert !macro_field(s, parsed.decls, line: "t.hero:4:52: error: no member named '__len' in 'BUF'", macros: macros).is_err()
+    assert macro_field(s, parsed.decls, line: "t.hero:4:52: error: no member named 'size' in 'BUF'", macros: macros).is_err(
     )

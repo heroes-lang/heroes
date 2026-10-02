@@ -83,9 +83,12 @@ variant Callee
 # expanding it here would put the layout decision in the wrong pass.
 variant Shape
     # `Point(x: 3, y: 4)` — fields in DECLARED order, the named
-    # arguments already reordered (Part 5's row, erased here).
+    # arguments already reordered (Part 5's row, erased here). `given` is
+    # their declared indices: every field's, but where a group's record is
+    # built naming one member of each C union (panel 186 R7, spec § 13).
     record_shape
         decl: i64
+        given: [i64]
     # `.num(v: 12)` — a variant case.
     case_shape
         decl: i64

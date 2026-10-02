@@ -27,6 +27,7 @@ use emit/ffi_pointee
 use emit/ffi_call
 use emit/ffi_record
 use emit/ffi_layout
+use emit/ffi_built
 use emit/ffi_field
 use emit/ffi_tag
 use emit/ffi_incomplete
@@ -85,6 +86,11 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
     if asked.said.len() > 0
         text @ stderr + "\n" + asked.said
 
+    # A construction of a group's record, told once per kind with each field
+    # it names or leaves out (panel 186 R7, `emit/ffi_built.hero`), at the
+    # construction: a span no reader below claims, so nothing is dropped.
+    found @ ffi_built.at_constructions(s, decls, c, p, text: text)
+
     for line in ffi_lookup.lines(text: text)
         wrong = ffi_declared.wrong_type(s, decls, line: line)
 
@@ -140,6 +146,10 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !laid.is_err()
             found @ ffi_lookup.add_once(found, d: laid.must())
+        macro_f = ffi_layout.macro_field(s, decls, line: line, macros: asked.macros)
+
+        if !macro_f.is_err()
+            found @ ffi_lookup.add_once(found, d: macro_f.must())
         unknown_f = ffi_field.unknown_field(s, decls, line: line)
 
         if !unknown_f.is_err()
@@ -184,10 +194,14 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !u_typedef.is_err()
             found @ ffi_lookup.add_once(found, d: u_typedef.must())
-        tag_u = ffi_tag.tag_is_a_union(s, decls, line: line)
+        tag_u = ffi_tag.tag_is_a_union(s, decls, line: line, types: asked.types)
 
         if !tag_u.is_err()
             found @ ffi_lookup.add_once(found, d: tag_u.must())
+        tag_k = ffi_tag.tag_of_another_kind(s, decls, line: line)
+
+        if !tag_k.is_err()
+            found @ ffi_lookup.add_once(found, d: tag_k.must())
         unknown_n = ffi_declared.unknown_name(s, tree, decls, line: line, stderr: text, macros: asked.macros)
 
         if !unknown_n.is_err()

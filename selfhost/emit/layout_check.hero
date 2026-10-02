@@ -1,8 +1,8 @@
 # The assertions the header's layout lets the compiler ask (panel 186):
-# a member the record leaves out, two declared fields of one union where the
-# program builds one, a declared bit-field, and, through
-# `emit/layout_compare.hero`, a declared field in a union where it compares
-# one. The dump only proposes NAMES (`emit/layout_text.hero`); every verdict
+# a member the record leaves out, a declared bit-field, through
+# `emit/layout_sites.hero` what each construction names and leaves out
+# (R7), and, through `emit/layout_compare.hero`, a declared field in a union
+# where it compares one. The dump only proposes NAMES (`emit/layout_text.hero`); every verdict
 # here is C arithmetic on the header's own offsets and sizes, or
 # `__builtin_classify_type`, so a misread dump names a member that does not
 # exist, which is clang's hard error and the compiler's fault, or asks about
@@ -25,12 +25,13 @@ use emit/extern_union
 use emit/layout_text
 use emit/layout_rows
 use emit/layout_compare
+use emit/layout_sites
 use parse
 use resolve
 use checker
 use ir/lower
 
-# The markers, one writer and one reader each (`emit/ffi_record.hero`).
+# The markers, one writer and one reader each (`emit/ffi_layout.hero`).
 constant MISSING: str
     "heroes-ffi-missing"
 
@@ -38,11 +39,13 @@ constant MISSING: str
 constant MISSING_BITS: str
     "heroes-ffi-missing-bits"
 
-constant SHARED: str
-    "heroes-ffi-shared"
-
 constant BITFIELD: str
     "heroes-ffi-bitfield"
+
+# A field a macro reaches, asked whether C reads it as a member; it never
+# fails, and what it draws is clang's syntax error at the field's line.
+constant MEMBER: str
+    "heroes-ffi-member"
 
 # The headers, then the assertions for every record that needs one, each at
 # the declaration's own line. Empty when no record needs one, and then
@@ -110,9 +113,10 @@ function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: s
 # whether it has no bytes, or shares one with a field the record names (a
 # union's other arm, measured by C), or sits in a union T whose arm it is;
 # a field in an anonymous member, when the program compares or hashes the
-# record, whether it shares a byte with anything beside it; and two declared
-# fields in one anonymous member, when the program builds the record,
-# whether they share one.
+# record, whether it shares a byte with anything beside it; and each
+# construction, at its own line, whether a field it leaves out shares a
+# byte with one it names and whether two it names share one
+# (`emit/layout_sites.hero`).
 function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text.Member], decls: [ast.Decl], u: extern_union.Used, s: source.Source, c: state.Checked, sizes: {str: i64}) -> [str]
     out: [str] @ []
     declared: {str: bool} @ {}
@@ -138,11 +142,12 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
     t = one.c_type
     is_union = "__builtin_classify_type(*(" + t + " *)0) == 13"
     shown: {str: bool} @ {}
-
+    group_of: {str: i64} @ {}
     unsized: {str: bool} @ {}
 
     for v in seen
         shown[tree[v.at].name] @ true
+        group_of[tree[v.at].name] @ v.group
 
         if tree[v.at].bitfield || tree[v.at].flexible
             unsized[tree[v.at].name] @ true
@@ -234,28 +239,12 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
                 "_Static_assert(!_Generic(((" + t + " *)0)->" + m.name + ", default: 1), \"" + BITFIELD + " " + hero_name + " " + m.name + "\");"
             )
 
-    # Two declared fields that are one union's bytes, where the program builds
-    # the record (R2): C keeps the last one written.
-    if !u.constructed[one.decl].is_err() && declared.len() >= 2
-        for v in seen
-            m = tree[v.at]
-
-            if v.group < 0 || declared[m.name].is_err() || m.bitfield || m.flexible
-                continue
-
-            for w in seen
-                n = tree[w.at]
-
-                if w.group == v.group && w.at > v.at && !declared[n.name].is_err() && !n.bitfield && !n.flexible
-                    out @ out.push(
-                        "_Static_assert(!" + layout_compare.shares(t: t, a: m.name, b: n.name) + ", \"" + SHARED + " " + hero_name + " " + m.name + " " + n.name + "\");"
-                    )
-
-        for a in aliases
-            for other in pairs_of(a, order: order, shown: shown, unsized: unsized)
-                out @ out.push(
-                    "_Static_assert(!" + layout_compare.shares(t: t, a: a, b: other) + ", \"" + SHARED + " " + hero_name + " " + a + " " + other + "\");"
-                )
+    # Each construction of the record, at its own line (panel 186 R7): a
+    # record over a C union is built naming exactly one member of each union.
+    for site in u.sites
+        if site.decl == one.decl
+            for line in layout_sites.site_lines(site, t: t, hero_name: hero_name, order: order, group_of: group_of, unsized: unsized, s: s)
+                out @ out.push(line)
 
     # Comparing it, hashing it or keying a map by it (R3), at any depth the
     # program reaches it (`extern_union.used`).
@@ -265,6 +254,26 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
 
     if aliases.len() == 0 || out.len() == 0
         return out
+
+    # Each field a macro reaches, asked of C at its own line first: a macro
+    # that names no member (`#define size 4` beside a misspelt field) is a
+    # syntax error, and at the field's line it is told as the field's
+    # (`emit/ffi_layout.hero`'s `macro_field`) where the record's line could
+    # only be the compiler's, exit 2 (lane land186, 2026-10-02).
+    probes: [str] @ []
+
+    for a in aliases
+        at = field_place(s, decls, decl: one.decl, field: a)
+
+        if at.len() > 0
+            probes @ probes.push(
+                at + "\n_Static_assert(" + layout_compare.size_of(t: t, m: a) + " != 0 || 1, \"" + MEMBER + " " + hero_name + " " + a + "\");"
+            )
+
+    for line in out
+        probes @ probes.push(line)
+
+    out @ probes
     defined: [str] @ []
 
     for a in aliases
@@ -277,25 +286,18 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
 
     return guarded.push("#endif")
 
-# The declared fields a macro-reached `a` is asked against when the record
-# is built: every other one C can size, each pair of two such fields once.
-function pairs_of(a: str, order: [str], shown: {str: bool}, unsized: {str: bool}) -> [str]
-    out: [str] @ []
-    past: bool @ false
+# The `#line` that puts a check on the line where a field of declaration
+# `decl` was written, or "".
+function field_place(s: source.Source, decls: [ast.Decl], decl: i64, field: str) -> str
+    match decls[decl].kind
+        .record_decl rec =>
+            for one in rec.fields
+                if source.span_text(s, one.name) == field
+                    at = source.locate(s, one.name.start)
+                    return "#line " + at.line.to_str() + " \"" + at.file + "\""
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return ""
 
-    for other in order
-        if other == a
-            past @ true
-            continue
-
-        if !unsized[other].is_err()
-            continue
-
-        if shown[other].is_err() && !past
-            continue
-        out @ out.push(other)
-
-    return out
+    return ""
 
 function failure_of(found: [layout_text.Member]?) -> str
     match found
@@ -323,6 +325,10 @@ test "the assertions for a struct holding an anonymous union: a member left out,
     assert layout_rows.byte_index(text: unit, needle: "#line 2 \"t.hero\"") > 0
     assert layout_rows.byte_index(text: unit, needle: "_Static_assert(sizeof(((SA *)0)->x) == 0 || __builtin_classify_type(*(SA *)0) == 13, \"heroes-ffi-missing SA x\");") > 0
     assert layout_rows.byte_index(text: unit, needle: "\"heroes-ffi-shared SA i f\"") > 0
+
+    # The construction names two members of one union, asked at its own line
+    # (panel 186 R7), the union TYPE's own refusal left to `extern_union`.
+    assert layout_rows.byte_index(text: unit, needle: "#line 8 \"t.hero\"\n_Static_assert(__builtin_classify_type(*(SA *)0) == 13 || !(") > 0
     assert layout_rows.byte_index(text: unit, needle: "heroes-ffi-missing SA kind") < 0
 
     # Compared: the integer arm is asked whether it is as wide as the union,
@@ -370,7 +376,9 @@ test "a field the dump does not show puts the record's every question under the 
     )
 
     # `cc` is a macro or a misspelling: only the preprocessor knows which, so
-    # nothing of `S3` is asked unless it is defined.
+    # nothing of `S3` is asked unless it is defined, and first of all whether
+    # C reads `cc` as a member, at the field's own line (since `25b96332`).
     assert got[0] == "#if defined(cc)"
+    assert got[1] == "#line 4 \"t.hero\"\n_Static_assert(sizeof(((S3 *)0)->cc) != 0 || 1, \"heroes-ffi-member S3 cc\");"
     assert got[got.len() - 1] == "#endif"
-    assert got.len() == 4
+    assert got.len() == 5

@@ -1,0 +1,15 @@
+# fixedbugs, defect 157 widened, lane land186, 2026-10-02, the shape beside
+# the handle at depth one: `record CR tag colour` over `enum colour` was told
+# *declares `colour` as a `union`*, false, because clang's mismatch line does
+# not say the tag's kind. The question unit's `typedef colour hero_q;` does
+# (*must use 'enum' tag*), and an enum is a C integer, not a record.
+
+extern "fixedbugs-157-unions.h"
+    record CR tag colour  #~ ffi_tag_is_a_union
+        v: i32
+
+function touch(c: CR) -> i32
+    return c.v
+
+function main()
+    print(1)

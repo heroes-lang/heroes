@@ -1,0 +1,6 @@
+error[ffi_tag_is_a_union]: `fixedbugs-157-unions.h` declares `TU` as a tag of another kind, not a struct — C keeps the two in one namespace and will not let one stand for the other
+  at tests/golden/unsupported/fixedbugs-157-a-union-s-tag-that-is-also-a-typedef.hero:8:19
+    |
+  8 |     record T2 tag TU  #~ ffi_tag_is_a_union
+    |                   ^^
+  note: `TU` is also the name of a typedef in `fixedbugs-157-unions.h`: if it is a union, a `record` binds it by that name with no `tag`, `record TU`; if an enum, an enum is a C integer, not a record or a handle: bind its values as `constant`s, and a value of it as a number at the width and sign of the integer C gives the enum, as any field, parameter or result is (§ 13)

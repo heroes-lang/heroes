@@ -1,0 +1,12 @@
+# fixedbugs, defect 157 widened, lane land186, 2026-10-02, the shape beside
+# the handle at depth one: a record NAMED for the union's tag, with no
+# `tag`, whose bare name C reads as a type's. It was told *declares no
+# `utag`*; the note now names the typedef that makes the same record bind.
+
+extern "fixedbugs-157-unions.h"
+    record utag  #~ ffi_tag_is_a_union
+        i: i32
+    function make_u() -> utag
+
+function main()
+    print(make_u().i)
