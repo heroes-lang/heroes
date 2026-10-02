@@ -52,6 +52,7 @@ use parse/braces
 use parse/brace_habit
 use grammar_expr
 use parse/opening
+use parse/refused_heads
 
 ## The dispatcher
 
@@ -120,26 +121,54 @@ function unexpected_top_level(@c: cursor.Cursor, @a: ast.Ast, text: str)
         return
     opens = cursor.at_fresh_line(c)
     from = c.pos
+    began = opening.mark(c)
     _ = cursor.bump(@c)
     brace_habit.drop_rest_of_line(@c, text, from: from)
     cursor.skip_terminators(@c)
 
-    if opens
+    if opens && !bodiless_word(@c, text, word: from, head: began)
         grammar_expr.under(@c, @a, text, word: from)
     else if cursor.at(c, .indent)
         _ = cursor.balanced_block(@c)
     else if braces.opens(c, text)
         braces.skip(@c)
 
+# A word the lexer refused, opening its line at token `word` with nothing
+# below it, whose swap names a declaration that owes a block
+# (`refused_heads.declares`): that block is missing, told as under the
+# declaration's own head, and true; false where anything else stands, the
+# caller reading it. `const` and `fn` alone over the next declaration were
+# told the word alone, and the value or the body they owed only once the
+# swap was written (defect 133's last rows, lane recovery-b7).
+function bodiless_word(@c: cursor.Cursor, text: str, word: i64, head: opening.Mark) -> bool
+    t = c.tokens[word]
+
+    if t.kind != .error || cursor.at(c, .indent) || braces.opens(c, text) || opening.tabbed_line(c, text) || !refused_heads.opens_a_block(c, text, at: word)
+        return false
+    declared = refused_heads.declares(cursor.slice_of(text, t.span))
+
+    if declared.is_err()
+        return false
+    kind = declared.must()
+
+    if kind == "record"
+        cursor.push_diagnostic(@c.diagnostics, members_below.empty_record(t.span, in_group: false, partial: false))
+    else if kind == "variant"
+        cursor.push_diagnostic(@c.diagnostics, members_below.empty_variant(t.span))
+    else
+        opening.absent(@c, text, head: head, silent: false, missing: opening.missing_body("a `" + kind + "`"))
+    return true
+
 ## constant
 
 # `constant MAX_DEPTH: i64` + the value, indented (§4.2). Constants use
 # SCREAMING_CASE by convention; the parser does not police it.
 function constant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
+    began = opening.mark(c)
     h = heads.head(@c, text: text, kind: .kw_constant)
 
     if h.is_err()
-        grammar_expr.hanging(@c, @a, text)
+        tails.owed_body(@c, @a, text: text, owner: "a `constant`", head: began)
         return
     hd = h.must()
     tails.constant_tail(
@@ -159,10 +188,11 @@ function constant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl]
 # `function dist2(a: Point, b: Point) -> i64` + body (§4.2). The parameter
 # list attaches to the name, as at the call site.
 function function_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
+    began = opening.mark(c)
     h = heads.head(@c, text: text, kind: .kw_function)
 
     if h.is_err()
-        grammar_expr.hanging(@c, @a, text)
+        tails.owed_body(@c, @a, text: text, owner: "a `function`", head: began)
         return
     hd = h.must()
     tails.function_tail(
@@ -189,7 +219,7 @@ function test_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], te
     named = heads.test_name(@c, text)
 
     if named.is_err()
-        grammar_expr.abandon(@c, @a, text, from: began.pos)
+        tails.owed_body(@c, @a, text: text, owner: "a `test`", head: began)
         return
     name = named.must()
     b = braces.body_or_block(@c, @a, text: text, owner: "a `test`", head: began)
@@ -211,10 +241,18 @@ function test_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], te
 # question a later pass asks reads `header` rather than re-deriving it from
 # where the declaration was parsed.
 function record_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, linkage: tails.Linkage)
+    keyword = cursor.current_span(c)
+    from = c.pos
     h = heads.head(@c, text: text, kind: .kw_record)
 
     if h.is_err()
-        _ = members_below.fields_below(@c, @a, text, below: members_below.here(c, text))
+        empty = members_below.empty_record(keyword, in_group: tails.is_from_c(linkage), partial: false)
+        _ = members_below.fields_below(
+            @c,
+            @a,
+            text,
+            below: members_below.here_or_told(@c, text, from: from, empty: empty)
+        )
         return
     hd = h.must()
     records.record_tail(@c, @a, @decls, text, keyword: hd.keyword, doc: hd.doc, name: hd.name, linkage: linkage)
@@ -224,10 +262,18 @@ function record_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], 
 # `variant Token` + one case per line, each case optionally carrying fields —
 # a case with fields IS a small record (§4.2).
 function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
+    keyword = cursor.current_span(c)
+    from = c.pos
     h = heads.head(@c, text: text, kind: .kw_variant)
 
     if h.is_err()
-        _ = members_below.cases_below(@c, @a, text, below: members_below.here(c, text))
+        empty = members_below.empty_variant(keyword)
+        _ = members_below.cases_below(
+            @c,
+            @a,
+            text,
+            below: members_below.here_or_told(@c, text, from: from, empty: empty)
+        )
         return
     hd = h.must()
     grammar_expr.eat_python_colon(@c)
@@ -487,9 +533,15 @@ test "a swap is read only where its keyword is what the grammar expects"
 
     # And a keyword with no name after it heads nothing, so `const` alone is
     # not read as a `constant` (defect 133's second round): the lexer's
-    # message names the word and the name it owes.
+    # message names the word and the name it owes, and the parser the value
+    # the declaration its swap names owes below it (defect 133's last rows,
+    # lane recovery-b7), with nothing standing there.
     bare = parse_source("const\n")
-    assert bare.diagnostics.len() == 0
+    assert bare.diagnostics.len() == 1
+    assert bare.diagnostics[0].code == "missing_body"
+    assert bare.decls.len() == 0
+    valued = parse_source("const\n    5\n")
+    assert valued.diagnostics.len() == 0
 
 # Lane Y's finding, 2026-09-29 (defect 130's class): a head the lexer joined
 # to a line at its margin that fails still owes its body, held back for the

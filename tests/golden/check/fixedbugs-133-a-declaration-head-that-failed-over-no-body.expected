@@ -1,0 +1,15 @@
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:18:9: error[expected_name]: expected the declared name after `function`, found end of line — `function dist2(a: Point, b: Point) -> i64`
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:19:1: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `function`)
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:19:50: error[expected_params]: expected `(` — a signature always has a parameter list, `()` when it takes nothing, found end of line
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:20:1: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `constant`)
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:20:57: error[expected_constant_type]: expected `:` and the constant's type — a `constant` declares a value, so it has one, found end of line
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:21:1: error[missing_body]: a `constant` needs an indented body — one level deeper, exactly 4 spaces (found `test`)
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:21:41: error[expected_test_name]: expected the test's name as a string, found end of line — `test "3-4-5 triangle"`
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:22:1: error[missing_body]: a `test` needs an indented body — one level deeper, exactly 4 spaces (found `record`)
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:22:51: error[expected_name]: expected the declared name after `record`, found end of line — `record Point`
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:22:1: error[empty_record]: a `record` needs at least one field, indented one level below it
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:23:40: error[expected_name]: expected the declared name after `variant`, found end of line — `variant Token`
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:23:1: error[empty_variant]: a `variant` needs at least one case, indented one level below it
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:25:17: error[expected_constant_type]: expected `:` and the constant's type — a `constant` declares a value, so it has one, found `=`
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:31:38: error[expected_params]: expected `(` — a signature always has a parameter list, `()` when it takes nothing, found end of line
+tests/golden/check/fixedbugs-133-a-declaration-head-that-failed-over-no-body.hero:32:1: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found end of file)

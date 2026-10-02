@@ -156,8 +156,19 @@ function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, mi
     # `record Point )` over its fields is (defect 131's class, 2026-09-29).
     goes_on = !failed && !cursor.at_fresh_line(c)
 
+    # A token the lexer refused there is its own report, and over no body the
+    # head is one that refused something: the body named missing at the next
+    # line (defect 133's class, lane recovery-b7). `function f() fn` was told
+    # the `fn` alone, its missing body only once the `fn` was gone.
+    refused_on_it = goes_on && swap_reading.at_reported_error(c, text)
+
     if goes_on && body_below(c, text)
         junk(@c, text, missing: missing)
+    else if refused_on_it
+        cursor.drop_rest_of_line(@c, from: head.pos)
+        cursor.skip_terminators(@c)
+        absent(@c, text, head: head, silent: unclosed.swallows_the_body(c, text, from: head.pos), missing: missing)
+        return .none
     else
         # A line crossed, or lines inside a bracket the head left open.
         silent = failed && crossed && !head_lines.joined_outside_brackets(c, text, from: head.pos)
