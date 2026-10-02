@@ -51,11 +51,13 @@
 
 use source
 use emit
+use emit/externs as emit_externs
 use cli/io
 use cli/compile
 use cli/toolchain
 use cli/pointee
 use cli/pointee_ask
+use cli/compiling
 use cli/publish
 
 # The artifact, written or printed, AFTER the build's own rounds have passed. A
@@ -66,18 +68,9 @@ use cli/publish
 # tag the header spells with `struct` in front — and `version` is the build's,
 # because `emit_maybe` stamps it. Both come from `cli/produce.hero`, which owns
 # the rounds; this file only applies their answer.
-function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], source_dir: str, package_flags: [str], struct_tags: {str: bool}, version: str) -> ()?
-    checked = pointee.check(
-        t,
-        art.program,
-        art.checked,
-        s,
-        art.decls,
-        answered: @answered,
-        search_include: options.headers_from,
-        package_flags: package_flags,
-        source_dir: source_dir
-    )
+function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], under: compiling.Compiling, struct_tags: {str: bool}, version: str) -> ()?
+    probe = compiling.probe(t.build, under: under, headers: emit_externs.headers(art.program, s, art.decls))
+    checked = pointee.check(t, art.program, art.checked, s, art.decls, answered: @answered, probe: probe)
     checked?
 
     # **THE ARTIFACT IS THE C THAT COMPILED, NOT THE FIRST DRAFT** (defect 049,

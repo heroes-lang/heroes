@@ -34,9 +34,10 @@
 # header's width.
 #
 # **Cached like an object, and published like one** (defect 134). The dump
-# and the check run once per (compiler, declarations, headers, search path),
+# and the check run once per (compiler, declarations, the words they compile
+# under, what the headers resolve to and hold; `cli/compiling`, defect 168),
 # under `build/pointee-<key>/`, a directory every program with the same asks
-# shares: every program that binds only the library's own externs. The
+# and the same headers shares. The
 # record `dump.deps.txt` names the headers the dump read and, by their
 # digest, the dump's answer `dump-<digest>.json` and the verdict
 # `verdict-<digest>-<unit>.txt`, and it is published last (`cli/deps`,
@@ -62,7 +63,7 @@ use ir/containers
 use emit/externs as emit_externs
 use cli/toolchain
 use cli/libraries
-use cli/flags
+use cli/compiling
 use cli/process
 use cli/publish
 use cli/digest
@@ -78,8 +79,9 @@ use ir/lower
 
 ## The check itself
 
-# Ask the header, once per (compiler, declarations, headers, search path),
-# the C compiler included: the dump and the verdict are clang's (defect 122).
+# Ask the header, once per (compiler, declarations, words, what the headers
+# resolve to), the C compiler included: the dump and the verdict are clang's
+# (defect 122).
 # Absent is the answer when nothing is asked, when the answer is cached
 # and fresh, or when the check passed; a failure carries clang's own words,
 # which `emit/ffi.hero` reads back into the author's diagnostic.
@@ -89,12 +91,19 @@ use ir/lower
 # only this file knows which parameter asked about which type. It is filled
 # on the cached path too — from the dump the cache kept — because a cached
 # failure is explained the same way a fresh one is.
-function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], @answered: [pointee_ask.Answered], search_include: [str], package_flags: [str], source_dir: str) -> ()?
+function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], @answered: [pointee_ask.Answered], probe: compiling.Probe) -> ()?
     wanted = pointee_wants.pointees(p, c, s, decls)
 
     if wanted.len() == 0
         return ok()
-    headers = emit_externs.headers(p, s, decls)
+
+    # Headers that do not preprocess: the build's own compile says so on the
+    # author's line, and this check has nothing to add.
+    if probe.read.is_err()
+        return ok()
+    headers = probe.headers
+    words = probe.words
+    memo: {str: str} @ probe.digests
     asked: [str] @ []
 
     for one in wanted
@@ -102,18 +111,20 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
             one.name + ":" + one.param + ":" + one.index.to_str() + ":" + one.declared + ":" + one.file + ":" + one.line.to_str()
         )
 
-    # The key names the package words the two units are compiled with, by the
-    # one rule (defect 161): a verdict reached without a package's `-D` was
-    # replayed after the compiler learned to pass it, measured 2026-10-02 on
-    # an `@` parameter whose width that `-D` decides. It names the compiler's
-    # own flags the probe takes as well (defect 163), so a verdict reached
-    # without `-fsigned-char` is never the answer of a probe that has it.
+    # **The key names every word the two units compile under, from the list
+    # their lines are built from, and what the headers resolve to and hold**
+    # (defect 168, `cli/compiling`). It named the package's compile words
+    # (defect 161) and the compiler's flags a probe takes (defect 163) beside
+    # the asks, whose declaring file is the same `<heroes library>` in every
+    # program: so the library's own asks, judged beside a header whose macro
+    # renames one of them, replayed that refusal onto a program in another
+    # directory with no such header, measured 2026-10-02 both ways on one
+    # `build/`.
     key = digest.digest(
-        t.fingerprint + "|pointee|" + t.compiler_key + "|" + asked.join(",") + "|" + headers.join(",") + "|" + search_include.join(",") + "|compile:" + libraries.key_text(libraries.compile_flags(package_flags)) + "|probe:" + libraries.key_text(probe_flags()) + "|" + t.runtime_key
+        t.fingerprint + "|pointee|" + t.compiler_key + "|" + asked.join(",") + "|" + headers.join(",") + "|words:" + libraries.key_text(words) + "|reads:" + probe.read.must() + "|" + t.runtime_key
     )
     dir = t.build + "/pointee-" + key
     listed = dir + "/dump.deps.txt"
-    memo: {str: str} @ {}
     known = deps.vouched(listed, @memo)
 
     # **The verdict is keyed by the check unit's own text, not only by what
@@ -163,13 +174,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
         "-MF"
         depfile
     ]
-    line @ with_search(
-        line: line,
-        search_include: search_include,
-        package_flags: package_flags,
-        runtime: t.runtime,
-        source_dir: source_dir
-    )
+    line @ strings.with_all(list: line, more: words)
     line @ line.push(dump_c)
     ran = process.run(program: "clang", words: line, out: dump_json, err: err_path)
     json = read_file(dump_json)
@@ -194,14 +199,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     check_c = unit_path(dir: dir, stem: "check", text: check_text)
     publish.write_whole(path: check_c, text: check_text, keyed: true)?
     check_err = publish.private_name(dir + "/check-stderr.txt")
-    check_line: [str] @ ["clang", "-fsyntax-only"]
-    check_line @ with_search(
-        line: check_line,
-        search_include: search_include,
-        package_flags: package_flags,
-        runtime: t.runtime,
-        source_dir: source_dir
-    )
+    check_line: [str] @ strings.with_all(list: ["clang", "-fsyntax-only"], more: words)
     check_line @ check_line.push(check_c)
     checked = toolchain.run_clang(
         line: check_line,
@@ -238,53 +236,6 @@ function verdict_path(dir: str, sum: str, check_text: str) -> str
 function unit_path(dir: str, stem: str, text: str) -> str
     return dir + "/" + stem + "-" + digest.digest(text) + ".c"
 
-# The include search a unit compiles under, on the two check lines too:
-# the same headers must be found from the same places or the question
-# is asked of a different header. Every probe that compiles the program's
-# headers builds its line here (the pointee check's two units, the header's
-# questions, the layout probe), so the flags it compiles under are this
-# function's too, by one rule (`probe_flags`).
-function with_search(line: [str], search_include: [str], package_flags: [str], runtime: str, source_dir: str) -> [str]
-    out: [str] @ strings.with_all(list: line, more: probe_flags())
-
-    for one in search_include
-        out @ strings.with_all(list: out, more: ["-I", one])
-
-    # A package's compile words, by the one rule every compile step reads
-    # (`libraries.compile_flags`; defect 161: `-I` alone was kept here).
-    for flag in libraries.compile_flags(package_flags)
-        out @ out.push(flag)
-
-    out @ strings.with_all(list: out, more: ["-I", runtime])
-
-    if source_dir.len() > 0
-        out @ strings.with_all(list: out, more: ["-I", source_dir])
-
-    return out
-
-# The compiler's own flags a probe compiles under, so it reads a header as
-# the program's compile does (defect 163, 2026-10-02): every flag of
-# `flags.flags()` but its diagnostics, one rule and never a second list.
-# Measured with this Mac's clang 21, preprocessing for the four legs'
-# targets: of the sixteen, `-std=gnu11` (against clang's own gnu17), the two
-# `-D`s and, on Linux arm64 alone, `-fsigned-char` change what C means by a
-# predefined macro; `-g` and the two code-generation flags change none and
-# are kept, so a flag that changes what a type is without a macro is never
-# left out; the diagnostics change none either and decide whether a unit
-# compiles, not what a type is, so a probe never fails on a header's
-# warning. The probes compiled under `-std=gnu11` alone until then, so on
-# Linux arm64, where a plain `char` is unsigned by default, the pointee
-# check refused the `@p: i8` that the program's own compile, under
-# `-fsigned-char`, agrees with, and accepted the `@p: u8` it refuses.
-function probe_flags() -> [str]
-    out: [str] @ []
-
-    for flag in flags.flags()
-        if !strings.starts_with(text: flag, prefix: "-W")
-            out @ out.push(flag)
-
-    return out
-
 function failure_text(failed: ()?) -> str
     match failed
         .ok    => return ""
@@ -296,6 +247,11 @@ function failure_note(failed: str?) -> str
         .err e => return e.msg
 
 ## Tests
+
+# The probe a round would hand the check for this program: its words under
+# `under`, its headers, and what they resolve to now (`compiling.probe`).
+function probing(t: toolchain.Toolchain, p: containers.Program, s: source.Source, decls: [ast.Decl], under: compiling.Compiling) -> compiling.Probe
+    return compiling.probe(t.build, under: under, headers: emit_externs.headers(p, s, decls))
 
 # The binding the check exists for, refused, asked twice: the first time
 # cold, the second from what the first published.
@@ -318,17 +274,16 @@ test "the pointee check publishes its answer and its verdict before the record t
         s,
         parsed.decls,
         answered: @first_answers,
-        search_include: none,
-        package_flags: none,
-        source_dir: ""
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: none, package_flags: none, runtime: t.runtime, source_dir: ""))
     )
     assert first.is_err()
     records: i64 @ 0
     listed = process.files_under(t.build).must()
 
-    # The two units, the answer, the verdict and the record: nothing else,
+    # The two units, the answer, the verdict and the record, and the include
+    # lines `compiling.reads` asked clang about (defect 168): nothing else,
     # and nothing private.
-    assert listed.len() == 5
+    assert listed.len() == 6
 
     for path in listed
         assert !strings.ends_with(text: path, suffix: ".tmp")
@@ -345,13 +300,11 @@ test "the pointee check publishes its answer and its verdict before the record t
         s,
         parsed.decls,
         answered: @second_answers,
-        search_include: none,
-        package_flags: none,
-        source_dir: ""
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: none, package_flags: none, runtime: t.runtime, source_dir: ""))
     )
     assert failure_text(second) == failure_text(first)
     assert second_answers.len() == first_answers.len()
-    assert process.files_under(t.build).must().len() == 5
+    assert process.files_under(t.build).must().len() == 6
 
 # **A package's `-D` reaches the check, and its verdict is keyed by the words
 # it was asked with** (defect 161). The header decides the pointee's width by
@@ -384,9 +337,7 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
         s,
         parsed.decls,
         answered: @narrow_answers,
-        search_include: [headers_at],
-        package_flags: none,
-        source_dir: ""
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: [headers_at], package_flags: none, runtime: t.runtime, source_dir: ""))
     )
     assert narrow.is_err()
 
@@ -399,9 +350,7 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
         s,
         parsed.decls,
         answered: @wide_answers,
-        search_include: [headers_at],
-        package_flags: ["-DHERO_WIDE", "-lz"],
-        source_dir: ""
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: [headers_at], package_flags: ["-DHERO_WIDE", "-lz"], runtime: t.runtime, source_dir: ""))
     )
     assert !wide.is_err()
 
@@ -416,69 +365,70 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
         s,
         parsed.decls,
         answered: @again_answers,
-        search_include: [headers_at],
-        package_flags: ["-DHERO_WIDE"],
-        source_dir: ""
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: [headers_at], package_flags: ["-DHERO_WIDE"], runtime: t.runtime, source_dir: ""))
     )
     assert !again.is_err()
     assert process.files_under(t.build).must().len() == held
 
-# **A probe reads a plain `char` as the program's compile does** (defect
-# 163). The leg where the sign differs is Linux arm64, and clang answers for
-# that target on any machine with no header: asked there, a plain `char` is
-# unsigned under clang's own default and signed under the probe's flags, so
-# the case reads the same on every leg, the arm64 container's included.
-test "a probe's flags make a plain char signed for Linux arm64, as the program's compile does (defect 163)"
-    assert !process.mkdir_all("build").is_err()
-    unit = "build/selftest-probe-char.c"
-    assert !write_file(path: unit, text: "_Static_assert((char)-1 < 0, \"a plain char is signed\");\n").is_err()
-    target = "--target=aarch64-linux-gnu"
-    bare = process.run(
-        program: "clang",
-        words: ["clang", target, "-fsyntax-only", unit],
-        out: process.discard(),
-        err: process.discard()
-    )
-    assert bare.started
-    assert bare.code != 0
-    probed: [str] @ strings.with_all(list: ["clang", target], more: probe_flags())
-    probed @ strings.with_all(list: probed, more: ["-fsyntax-only", unit])
-    signed = process.run(program: "clang", words: probed, out: process.discard(), err: process.discard())
-    assert signed.code == 0
+# **The verdict is keyed by the source's own directory and by what the
+# header resolves to** (defect 168). Two programs of one declaring file name,
+# which is what the library's own asks are in every program, beside two
+# headers of one name: one says `int32_t *` and the other `int64_t *`. In one
+# `build/` each is asked of its own header, in both orders; and a header of
+# that name that appears in an `--include` directory, searched before the
+# source's, is asked again rather than answered by the record of the one it
+# shadows. Measured before this repair: the second program replayed the
+# first's verdict, an `i32` accepted against `int64_t *`.
+test "the pointee check asks each directory's own header, and one that appears earlier in the search, in one build (defect 168)"
+    text = "extern \"x.h\"\n    function hero_fill(@p: i32)\n\nfunction main()\n    n: i32 @ 0\n    hero_fill(@n)\n    print(n)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    root = "build/selftest-pointee-dirs"
+    assert !process.remove_tree(root).is_err()
+    narrow = root + "/narrow"
+    wide = root + "/wide"
+    inc = root + "/inc"
 
-# **What a probe leaves out changes no predefined macro** (defect 163), asked
-# of clang on this machine's own target and on Linux arm64's, the leg the
-# rule was written for. A flag of `flags.flags()` that the rule dropped and
-# that moved a macro would fail here, naming nothing but the comparison, and
-# the sign of a plain `char` is shown to move one on that leg, so the
-# comparison is not blind.
-test "every flag a probe leaves out changes no predefined macro, here or on Linux arm64 (defect 163)"
+    for dir in [narrow, wide, inc]
+        assert !process.mkdir_all(dir).is_err()
+
+    assert !write_file(path: narrow + "/x.h", text: "#include <stdint.h>\nvoid hero_fill(int32_t *p);\n").is_err()
+    assert !write_file(path: wide + "/x.h", text: "#include <stdint.h>\nvoid hero_fill(int64_t *p);\n").is_err()
     none: [str] = []
-    arm = ["--target=aarch64-linux-gnu"]
 
-    for target in [none, arm]
-        base = macros(more: target)
+    for first in [narrow, wide]
+        t.build @ first + "-first"
+        assert !process.remove_tree(t.build).is_err()
+        second: str @ wide
 
-        for flag in flags.flags()
-            kept: bool @ false
+        if first == wide
+            second @ narrow
 
-            for one in probe_flags()
-                if one == flag
-                    kept @ true
+        for dir in [first, second]
+            answers: [pointee_ask.Answered] @ []
+            asked = check(
+                t,
+                low.program,
+                c,
+                s,
+                parsed.decls,
+                answered: @answers,
+                probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir))
+            )
+            assert asked.is_err() == (dir == wide)
 
-            if !kept
-                assert macros(more: target.push(flag)) == base
-
-    assert macros(more: arm.push("-fsigned-char")) != macros(more: arm)
-
-# What clang predefines for C under `more`, read from an empty unit.
-function macros(more: [str]) -> str
-    assert !process.mkdir_all("build").is_err()
-    empty = "build/selftest-probe-empty.c"
-    said = "build/selftest-probe-macros.txt"
-    assert !write_file(path: empty, text: "").is_err()
-    words: [str] @ strings.with_all(list: ["clang"], more: more)
-    words @ strings.with_all(list: words, more: ["-E", "-dM", "-x", "c", empty])
-    ran = process.run(program: "clang", words: words, out: said, err: process.discard())
-    assert ran.code == 0
-    return read_file(said).must()
+    # The source's `x.h` is the narrow one; then the wide one appears in the
+    # `--include` directory, which a unit's compile searches first.
+    t.build @ root + "/build-shadow"
+    assert !process.remove_tree(t.build).is_err()
+    beside: [pointee_ask.Answered] @ []
+    under = compiling.Compiling(search_include: [inc], package_flags: none, runtime: t.runtime, source_dir: narrow)
+    assert !check(t, low.program, c, s, parsed.decls, answered: @beside, probe: probing(t, low.program, s, parsed.decls, under: under)).is_err()
+    assert !write_file(path: inc + "/x.h", text: "#include <stdint.h>\nvoid hero_fill(int64_t *p);\n").is_err()
+    earlier: [pointee_ask.Answered] @ []
+    assert check(t, low.program, c, s, parsed.decls, answered: @earlier, probe: probing(t, low.program, s, parsed.decls, under: under)).is_err(
+    )

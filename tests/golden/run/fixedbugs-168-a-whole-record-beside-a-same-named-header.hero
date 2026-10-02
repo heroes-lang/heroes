@@ -1,0 +1,23 @@
+# fixedbugs, defect 168, lane cb4, 2026-10-02.
+#
+# Symptom: built in one `build/` with
+# `tests/golden/unsupported/fixedbugs-168-a-record-leaving-out-a-member-beside-a-same-named-header`,
+# whose header has this one's name and gives `E` a member `y` this record
+# leaves out, the second of the two replayed the first's verdict: that
+# program built at exit 0, a record leaving `y` out read as complete, or this
+# one stopped at exit 2, *no member named 'y' in 'E'*. Cause: the layout
+# check's key named the screen's text and not the source's directory, so the
+# `-I` that finds each header was outside it. The key now names every word
+# the probe compiles under and what the headers resolve to, and this builds
+# and prints, after the other or not.
+
+extern "fixedbugs-168-beside.h"
+    record E
+        x: i32
+    function hero_168_make(x: i32) -> E
+
+function main()
+    p = hero_168_make(x: 1)
+    q = hero_168_make(x: 1)
+    print(p == q)
+    print(p.x)
