@@ -17,6 +17,17 @@ rule cost to learn is in `docs/records/contract/case-law.md`, cited as `CL-NNN`.
 **The three platforms are measured from this Mac, before the commit**, and CI
 stays the judge (CL-048).
 
+**One moment since 2026-10-02, by author instruction** (meant as: *keep
+only the Mac as the development environment, the other platforms only
+before the final push, Linux arm64 in Docker rather than the emulated
+x86*): **Linux arm64 and the Windows box run once, before the push**, the
+emulated Linux x86-64 container leaves the routine, and the CI's native
+Linux x86-64 leg judges after the push; a defect at the C boundary closes
+only after the push's legs ran its cases. What it gives up, unmeasured on
+the day: whether the arm64 container runs the `--sanitize` cases
+LeakSanitizer needs (CL-055 put that leg on x86-64). The rule of
+2026-09-29 below stands as history.
+
 **Two moments since 2026-09-29, by author instruction** (*Windows and arm Linux
 before the push*; CL-079): **Linux x86-64 runs when a batch closes**, from this
 Mac, in the container below, since it is CI's own architecture and the leg
