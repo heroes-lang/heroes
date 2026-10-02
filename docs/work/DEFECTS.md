@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 41**
+**OPEN: 42**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -955,6 +955,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     so it goes with 130 and 131 to the sitting on what a finished recovery
     is.
 
+    **2026-10-03, lane rec187, panel 187's R4: `opening.drop_line` deleted,
+    a failed arm's line dropped whole, a line the lexer joined to it
+    included** (the four shapes above and nine beside them with its cause, a
+    statement `match`, a `match` in an arm, a returned one and a chain of
+    lines among them): repaired at `29425af6`, gated by its own cases; the
+    rest is owed at the round's gate. The five control-arm messages the
+    drop no longer tells are defect 193.
+
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a second message for one mistake.
 
@@ -1113,5 +1121,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** The emitted C is C11 that clang type-checks clean (CLAUDE.md § 7), and this unit is the compiler itself built by its own first command; any `--emit-c` output compiled by hand on Windows gets the same advice. The runtime already says why the switch is the documented one and not a workaround (`runtime/runtime.c:65-74`).
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
+
+- [ ] **193 — an arm whose pattern failed hides the mistakes in its body: on one line in both arms, and, joined below the failed line, under `--permissive` since panel 187's V1** | `k = match n` over `x | 2 => f(1 +)`: `expected_pattern` at the `x` and the `1 +` untold, in both arms, on the head's compiler and on `29425af6`; `x |` over `2 => f(1 +)`: the normal arm tells the `1 +` from the lines apart, and `check --permissive` told it, `expected_expression`, until `29425af6` and not since; the same over `1 | +`, `x ==`, `1 -> 2 |` and an arm one level deeper | `selfhost/grammar_expr.hero` (`arms_of`'s `.err` branch: the failed arm's line goes with `cursor.drop_rest_of_line`, its body with it) · panel 187's R4 · **class: adjacent**
+
+    **Origin:** panel 187's compiler engineer, 2026-10-02, on its V1 probes `h01`, `h05`, `h14`, `h16`, `h17` and their one-line twins `h02`, `h06` (`scratchpad/187-compiler-engineer-work/probes2/`, 2026-10-02); filed by lane rec187 at the sitting's R4, reproduced on the head's compiler and on `29425af6` (2026-10-03, `scratchpad/lane-rec187/pass1/k-166-control.txt` and `v1-vs-k.txt`). No golden form runs `--permissive` (the sitting's R3), so the control arm's half cannot be pinned; the one-line half can.
+
+    **Why it is a defect.** A mistake told only once another is fixed: design.md §4.17's measure counts an exchange more.
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a mistake told only once another is fixed; no false message, no wrong certain fix.
 
 *******************************************************************************
