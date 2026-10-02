@@ -5,10 +5,10 @@
 # field 'c'* and named a field the record declares when the one left out was
 # in the middle.
 #
-# Eight markers, three codes. `ffi_incomplete_record` for a member left out;
-# `ffi_field_type` on the field's own line for a declared bit-field (defect
-# 156); `ffi_union_field` for two declared fields that are one union's bytes
-# in a record the program builds (R2), and
+# Nine markers, three codes. `ffi_incomplete_record` for a member left out
+# (a bit-field one says `partial`); `ffi_field_type` on the field's own line
+# for a declared bit-field (defect 156); `ffi_union_field` for two declared
+# fields that are one union's bytes in a record the program builds (R2), and
 # for a field in a union of a record the program compares, which is not an
 # integer, a pointer or an array of them, or is not as wide as the union
 # (R3). Every message says the spec's words: comparing a record and using it
@@ -31,7 +31,7 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
     kind: str @ ""
     rest: str @ ""
 
-    for marker in [layout_check.MISSING, layout_check.SHARED, layout_check.BITFIELD, layout_compare.OVERLAP, layout_compare.NARROW, layout_compare.BESIDE_BITS, layout_compare.OVERLAP_IN, layout_compare.NARROW_IN]
+    for marker in [layout_check.MISSING, layout_check.MISSING_BITS, layout_check.SHARED, layout_check.BITFIELD, layout_compare.OVERLAP, layout_compare.NARROW, layout_compare.BESIDE_BITS, layout_compare.OVERLAP_IN, layout_compare.NARROW_IN]
         tail = ffi_lookup.after(text: line, marker: marker + " ")
 
         if !tail.is_err() && kind.len() == 0
@@ -52,7 +52,7 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
         if bare.len() > 0
             parts @ parts.push(bare.join(""))
 
-    pair = kind != layout_check.MISSING && kind != layout_check.BITFIELD
+    pair = kind != layout_check.MISSING && kind != layout_check.MISSING_BITS && kind != layout_check.BITFIELD
 
     if parts.len() < 2 || pair && parts.len() < 3
         return fail(code: "none", msg: "the marker's tail is short")
@@ -75,6 +75,17 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
             "the assertions above check every field you DO name and cannot see one you leave out: a `" + t + "` built here would carry a zero `" + m + "` into C, which is a value rather than a crash"
         )
         return ok(d)
+
+    if kind == layout_check.MISSING_BITS
+        left: diag.Diagnostic @ diag.new_diagnostic(
+            code: "ffi_incomplete_record",
+            message: "`" + t + "` does not name `" + m + "`, and `" + h + "` says the struct has it — `" + m + "` is a bit-field, which no field can bind, so a `record` over this struct leaves it out by being `partial`",
+            span: span
+        )
+        left.notes @ left.notes.push(
+            "mark the `record` `partial`: it binds the fields it names, C keeps the bits of `" + m + "`, and comparing it or using it as a map key is refused, as for every `partial` record"
+        )
+        return ok(left)
 
     if kind == layout_check.BITFIELD
         bits: diag.Diagnostic @ diag.new_diagnostic(
@@ -132,6 +143,9 @@ test "layout_record reads each marker, and a line that is not one is left alone"
     missing = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-missing S3 b")
     assert missing.must().code == "ffi_incomplete_record"
     assert missing.must().message == "`S3` does not name `b`, and `s3.h` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero"
+    bits = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-missing-bits S3 flag")
+    assert bits.must().code == "ffi_incomplete_record"
+    assert ffi_lookup.has(text: bits.must().notes[0], needle: "mark the `record` `partial`")
     field_bits = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-bitfield S3 a")
     assert field_bits.must().code == "ffi_field_type"
     assert field_bits.must().span.start != missing.must().span.start

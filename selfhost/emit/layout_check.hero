@@ -34,6 +34,10 @@ use ir/lower
 constant MISSING: str
     "heroes-ffi-missing"
 
+# A member left out that is a bit-field, which no field can name.
+constant MISSING_BITS: str
+    "heroes-ffi-missing-bits"
+
 constant SHARED: str
     "heroes-ffi-shared"
 
@@ -199,8 +203,12 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
                     "(__builtin_classify_type(((" + t + " *)0)->" + m.name + ") == 13 && (0" + inside.join("") + "))"
                 )
                 terms @ terms.push("(0" + counted.join("") + " >= " + layout_compare.size_of(t: t, m: m.name) + ")")
+            marker: str @ MISSING
+
+            if m.bitfield
+                marker @ MISSING_BITS
             out @ out.push(
-                "_Static_assert(" + terms.join(" || ") + ", \"" + MISSING + " " + hero_name + " " + m.name + "\");"
+                "_Static_assert(" + terms.join(" || ") + ", \"" + marker + " " + hero_name + " " + m.name + "\");"
             )
 
     # A declared bit-field (defect 156): C gives it no address and no size of

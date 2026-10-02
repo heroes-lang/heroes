@@ -542,6 +542,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     cases and the compiler's own tests; the net is owed at the batch's
     close, and the platform legs before the push.
 
+    **2026-10-02, lane land186, one comparison rule: a field in a union is
+    compared only as an integer, a pointer or an array of them as wide as
+    the union** (panel 186 R3, the widening's `SB` among its cases):
+    repaired at `75ff04b9`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close, and the platform legs before the
+    push.
+
 - [ ] **152 — a C object declared as an `extern` `function` stops `build` with an internal error** | `extern "errno.h"` with `function errno() -> i32`: `build` exit 2, *internal error: compiling the generated C failed: ... called object type 'int' is not a function or function pointer* at the result probe; the same for `stdin` and `optarg`, with or without parameters, on macOS and Linux (the seat's), where the same names declared `constant` get a clean exit 1 | `selfhost/emit/extern_probe.hero` (the result probe) · the `extern` member's kind check
 
     **Origin:** panel 185's ffi-pragmatist, 2026-10-02
