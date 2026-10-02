@@ -1,0 +1,26 @@
+# Fixed 2026-10-02, defect 135's class, lane literals (the certain-fix
+# audit's L4, and the shapes beside it). Symptom: `\cA`, the control
+# character Perl, Ruby and the shell write by its letter, and beside it
+# `\c[`, Ruby's and Emacs Lisp's `\C-a` and `\M-A`, and GCC's `\E`, cost
+# `unknown_escape` with the certain fix `\\`, so `check --apply` wrote a
+# program that checked clean and printed the escape's text where a control
+# character was meant; in a character literal `char_literal` came second.
+# Cause: the control letters were read as nothing but a backslash. Now each
+# is a character by its code, `\\` a guess, and `--apply` leaves the case as
+# it is; `C:\code` is a guess too, since its bytes are `\c` before a letter
+# (`escape_codes`).
+
+function by_a_letter()
+    print("\cA \c[ \c?")  #~ unknown_escape unknown_escape unknown_escape
+
+function in_ruby_s_and_emacs_s_spelling()
+    print("\C-a \M-A \M-\C-a")  #~ unknown_escape unknown_escape unknown_escape
+
+function the_escape_character()
+    print("\E[0m")  #~ unknown_escape
+
+function a_path_that_reads_the_same()
+    print("C:\code")  #~ unknown_escape
+
+function in_a_character()
+    print('\cA')  #~ unknown_escape

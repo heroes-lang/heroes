@@ -1,0 +1,14 @@
+function label_for(at: i64) -> str
+    return "row-" + to_str(at)
+
+function main()
+    rows = [3, 5, 8]
+    count = rows.len()
+    total: i64 @ 0
+
+    for n in rows
+        total @ total + n
+        print(f"row {n}: {label_for(n)}")
+
+    print("{count} rows")
+    print("total {total} over {rows.len()} rows")

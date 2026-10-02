@@ -1,0 +1,13 @@
+52c52
+<   `{{` writes one brace. A literal without the `f` is unchanged.
+---
+>   `{{` and `}}` each write one brace, and a lone `}` is an error. [RULE C]
+230c230
+<   constrain the `match`'s type. An arm that does nothing is a block holding
+---
+>   constrain the `match`'s type. [RULE B] An arm that does nothing is a block holding
+242,243c242
+<     Inline  = ( Expression | "return" [ Expression ] | "break" | "continue"
+<               | "assert" Expression ) NEWLINE .
+---
+>     Inline  = [RULE A] .

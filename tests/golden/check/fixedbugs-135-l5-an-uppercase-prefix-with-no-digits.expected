@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-135-l5-an-uppercase-prefix-with-no-digits.hero:14:11: error[base_prefix_case]: `0X` writes the base in uppercase and then stops — this language spells it `0x`, and a number needs digits
+tests/golden/check/fixedbugs-135-l5-an-uppercase-prefix-with-no-digits.hero:15:11: error[base_prefix_case]: `0B` writes the base in uppercase and then stops — this language spells it `0b`, and a number needs digits
+tests/golden/check/fixedbugs-135-l5-an-uppercase-prefix-with-no-digits.hero:16:11: error[base_prefix_case]: `0O` writes the base in uppercase and then stops — this language spells it `0o`, and a number needs digits
+tests/golden/check/fixedbugs-135-l5-an-uppercase-prefix-with-no-digits.hero:19:11: error[base_prefix_case]: `0X` writes the base in uppercase and then stops — this language spells it `0x`, and a number needs digits
+tests/golden/check/fixedbugs-135-l5-an-uppercase-prefix-with-no-digits.hero:20:22: error[base_prefix_case]: `0B` writes the base in uppercase and then stops — this language spells it `0b`, and a number needs digits
+tests/golden/check/fixedbugs-135-l5-an-uppercase-prefix-with-no-digits.hero:24:9: error[base_prefix_case]: `0X` writes the base in uppercase and then stops — this language spells it `0x`, and a number needs digits
+tests/golden/check/fixedbugs-135-l5-an-uppercase-prefix-with-no-digits.hero:30:5: error[base_prefix_case]: `0O` writes the base in uppercase and then stops — this language spells it `0o`, and a number needs digits

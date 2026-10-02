@@ -1,0 +1,15 @@
+# Fixed 2026-10-02, defect 135's class, lane literals: the other half of
+# `fixedbugs-135-l5-an-uppercase-prefix-with-no-digits`. Where the digits
+# after an uppercase prefix faulted, `0XG`, `0B2` or `0X_FF`, the run told
+# that mistake in the first run, so lowering the prefix adds none and stays
+# certain: `check --apply` writes `0xG`, `0b2` and `0x_FF`, and what is left
+# is the mistake the first run already named (`number.hero`).
+
+function a_letter_past_the_base()
+    print(0xG)  #~ digit_not_in_base base_prefix_case
+
+function a_digit_past_the_base()
+    print(0b2)  #~ digit_not_in_base base_prefix_case
+
+function a_separator_first()
+    print(0x_FF)  #~ misplaced_separator base_prefix_case
