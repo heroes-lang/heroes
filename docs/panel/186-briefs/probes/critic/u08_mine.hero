@@ -1,0 +1,11 @@
+extern "u.h"
+    record SA
+        kind: i32
+        i: i32
+        x: i32
+    function make_sa() -> SA
+
+function main()
+    s = SA(kind: 1, i: 7, x: 3)
+    print(s.i)
+    print(make_sa().i)

@@ -1,0 +1,9 @@
+extern "s3.h"
+    record S3
+        a: i32
+        c: i32
+    function make_s3() -> S3
+
+function main()
+    s = make_s3()
+    print(s.c)
