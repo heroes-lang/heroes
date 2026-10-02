@@ -15,10 +15,19 @@
 # of the expression parser's, makes each of them the refusal spec § 8
 # already implies, `expected_pattern`, saying what a pattern may be.
 #
+# **A `-` before a case or `_` is told at the `-`, and deleted with
+# certainty** (panel 185 R6, beside its rule; the sitting's t1 and t2). A
+# bulleted list of variant arms, `- .red => 1`, was told *expected a pattern,
+# found `.`* at a case, which is a pattern, and offered nothing; no `-` signs
+# a case or the wildcard, so the arm without it is its one reading. Before a
+# name, a group, a float or another `-` the deletion leaves no pattern, or a
+# second reading, so those keep the plain refusal and no fix.
+#
 # Out of the expression knot, because it no longer calls into it: the cursor
 # and the tree are all it asks. `grammar_expr.arm` calls `read`.
 
 use token
+use diag
 use ast
 use cursor
 
@@ -86,12 +95,25 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern?
 # the sign a `.unary` around the literal, as the expression parser builds
 # it, so the checker and the lowering read the same node they always read.
 # Anything else after the `-`, a float, a name, a group, another `-`, is
-# refused as no pattern.
+# refused as no pattern, and a case or `_` at the `-`, with its deletion.
 function literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64?
     sign = cursor.current_span(c)
     signed = cursor.eat(@c, .minus)
     at = cursor.current_span(c)
     k = cursor.current_kind(c)
+    unsignable = unsignable_pattern(c, text, k)
+
+    if signed && unsignable.len() > 0
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "expected_pattern",
+            message: "this `-` stands before " + unsignable + ", which no `-` signs: in a pattern a `-` signs only a literal, so delete it",
+            span: sign
+        )
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "delete the `-`", replacement: "", span: token.Span(start: sign.start, end: at.start), certainty: .certain)
+        )
+        cursor.push_diagnostic(@c.diagnostics, d)
+        return fail(code: "no_literal", msg: "a sign before a pattern no sign takes")
 
     if !is_literal(k)
         refuse(@c, message: "expected a pattern, found " + cursor.found(c, text) + " — " + ALLOWED)
@@ -110,6 +132,16 @@ function literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64?
     return ok(
         ast.push_expr(@a.exprs, ast.Expr(kind: .unary(op: .neg, operand: value), span: token.Span(start: sign.start, end: at.end)))
     )
+
+# What the token in hand begins, where it is a pattern no `-` signs: a case
+# or the wildcard; empty for anything else.
+function unsignable_pattern(c: cursor.Cursor, text: str, k: token.TokenKind) -> str
+    if k == .dot
+        return "a case"
+
+    if k == .ident && cursor.slice_of(text, cursor.current_span(c)) == "_"
+        return "the wildcard `_`"
+    return ""
 
 # The three literals spec § 8's production names: an integer, a string, a
 # character. Not a float, and not `true` or `false`.
