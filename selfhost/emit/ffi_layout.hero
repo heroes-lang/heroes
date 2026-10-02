@@ -17,7 +17,9 @@
 use ast
 use source
 use diag
+use emit/externs as emit_externs
 use emit/ffi_lookup
+use emit/ffi_site
 use emit/ffi_record
 use emit/layout_check
 use emit/layout_compare
@@ -137,6 +139,55 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
     )
     return ok(d)
 
+# A clang error at a group record field's own line, whose name the header
+# defines as a macro (the question unit's answer, `macros`), and which is no
+# member: `#define size 4` beside `record BUF` misspelling `cap` as `size`
+# made C read `((BUF *)0)->4`, *expected identifier*, which the field
+# assertion and the layout check's member probe both draw at that line, and a
+# macro that is another identifier, `stdin` for `__stdinp`, draws *no member
+# named '__stdinp'*, which names no field of the program's. Until
+# lane land186 (2026-10-02) it was `internal error`, exit 2. A field whose
+# macro does name a member (libc's `sa_handler`) draws no such line, and an
+# assertion of this compiler's at the line is another reader's.
+function macro_field(s: source.Source, decls: [ast.Decl], line: str, macros: {str: bool}) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ": error: ") || ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+        return fail(code: "none", msg: "not a syntax error")
+    at = ffi_site.location(s, line: line)
+
+    if at.is_err()
+        return fail(code: "none", msg: "no position this compilation owns")
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if rec.header.is_err()
+                    continue
+
+                for field in rec.fields
+                    name = source.span_text(s, field.name)
+                    here = source.file_of(s, field.name.start) == at.must().file && source.file_line_of(s, field.name.start) == at.must().line
+
+                    # *no member named 'size'* names the field itself, which
+                    # is `ffi_field.unknown_field`'s; a macro naming another
+                    # identifier draws *no member named '__stdinp'*.
+                    own = ffi_lookup.has(text: line, needle: "no member named '" + name + "'")
+
+                    if here && !macros[name].is_err() && !own
+                        h = emit_externs.unquoted(s, span: rec.header.must())
+                        t = source.span_text(s, decl.name)
+                        d: diag.Diagnostic @ diag.new_diagnostic(
+                            code: "ffi_unknown_field",
+                            message: "`" + h + "` defines `" + name + "` as a macro, and the type `" + t + "` binds has no member it names: C reads the macro's text where the field's name stands",
+                            span: field.name
+                        )
+                        d.notes @ d.notes.push(
+                            "a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `" + t + "` has a `" + name + "`"
+                        )
+                        return ok(d)
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return fail(code: "none", msg: "no macro-named field on that line")
+
 ## Tests
 
 test "layout_record reads each marker, and a line that is not one is left alone"
@@ -168,4 +219,26 @@ test "layout_record reads each marker, and a line that is not one is left alone"
     assert layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-narrow S3 a").is_err()
     assert layout_record(s, parsed.tree, parsed.decls, line: "c.c:2:1: error: missing field 'b' initializer").is_err()
     assert layout_record(s, parsed.tree, parsed.decls, line: "c.c:2:1: error: static assertion failed: heroes-ffi-missing Other b").is_err(
+    )
+
+test "a field named after a header macro that names no member is told on the field"
+    text = "extern \"m.h\"\n    record BUF\n        len: i32\n        size: i32\n\nfunction touch(b: BUF) -> i32\n    return b.len\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    macros: {str: bool} @ {}
+    macros["size"] @ true
+    d = macro_field(s, parsed.decls, line: "t.hero:4:52: error: expected identifier", macros: macros)
+    assert d.must().code == "ffi_unknown_field"
+    assert source.span_text(s, d.must().span) == "size"
+
+    # Not a macro, or an assertion of this compiler's at the line: another reader's.
+    none: {str: bool} @ {}
+    assert macro_field(s, parsed.decls, line: "t.hero:4:52: error: expected identifier", macros: none).is_err()
+    assert macro_field(s, parsed.decls, line: "t.hero:4:52: error: static assertion failed due to requirement 'x': heroes-ffi-field BUF size", macros: macros).is_err(
+    )
+    assert !macro_field(s, parsed.decls, line: "t.hero:4:52: error: no member named '__len' in 'BUF'", macros: macros).is_err()
+    assert macro_field(s, parsed.decls, line: "t.hero:4:52: error: no member named 'size' in 'BUF'", macros: macros).is_err(
     )

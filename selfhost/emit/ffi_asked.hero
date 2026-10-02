@@ -147,6 +147,22 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> str
         out @ out.push("_Static_assert(!__builtin_constant_p(" + name + "), \"hero-ask\");")
         index @ index + 1
 
+    # Whether each group record's field names a header macro (lane land186,
+    # 2026-10-02): a field the header has under a macro is a member C reaches
+    # (libc's `sa_handler`), and a misspelt one that names some other macro
+    # is no member at all, which clang can only say as a syntax error.
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err() && !source.is_library(s, decl.name.start)
+                    for field in rec.fields
+                        name = source.span_text(s, field.name)
+                        out @ out.push(directive(file: MACRO + name, line: 1))
+                        out @ out.push("#ifdef " + name)
+                        out @ out.push("#warning hero-ask")
+                        out @ out.push("#endif")
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
     # Each group record's tag, but `void`, which only a handle carries.
     for decl in decls
         match decl.kind

@@ -689,6 +689,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `.claude/rules/verification.md` § Bounded discovery): a false note, against
     panel 077's ratified item 4.
 
+    **2026-10-02, lane land186, a tag naming a union's or an enum's tag told
+    its own kind, a handle's and a bare name's included, with what reaches
+    it** (the widening and three shapes beside it with its cause): repaired
+    at `669fc846`, gated by its own cases; the rest is owed at the round's
+    gate, and the platform legs before the push.
+
 - [ ] **158 — a group's header that includes a header this machine lacks stops `build` with an internal error and clang's text** | `extern "outer.h"` over a header holding `#include <no_such_header_here.h>`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: In file included from ...: ./outer.h:2:10: fatal error: 'no_such_header_here.h' file not found*, where a missing header the group names itself is told `ffi_missing_header` at exit 1 | `selfhost/emit/ffi_build.hero` (where `ffi_missing_header` is told) · `tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero`, red on the Windows box · **class: blocking**
 
     **Origin:** the coordinator, 2026-10-02 at 15:55, reading the Windows
