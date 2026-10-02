@@ -1,0 +1,7 @@
+function main()
+    c = 98
+    k = match c
+        - 'a' => 1
+        - 'b' => 2
+        _ => 3
+    print(k)

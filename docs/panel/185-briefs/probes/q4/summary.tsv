@@ -1,0 +1,11 @@
+s5a_bulleted_ints	spaced_minus_element,spaced_minus_element,spaced_minus_element	3	yes	clean	many|	two|
+s5b_one_signed_among_plain	spaced_minus_element	1	yes	clean	minus one|	minus one|
+s5c_bulleted_strings	spaced_minus_element,spaced_minus_element	2	yes	bad_operand,bad_operand	-	2|
+s5d_bulleted_chars	spaced_minus_element,spaced_minus_element	2	yes	clean	3|	2|
+s5e_minus_zero	spaced_minus_element	1	yes	clean	1|	-
+s5f_statement_match	spaced_minus_element	1	yes	clean	minus one|	-
+s5g_after_a_pipe	clean	0	no	clean	1|	-
+s5h_crlf	spaced_minus_element	1	yes	clean	10|	-
+s5i_comment_after	spaced_minus_element	1	yes	clean	10|	-
+s5j_two_spaces	spaced_minus_element	1	yes	clean	10|	-
+s5k_string_alone	spaced_minus_element	1	yes	bad_operand	-	-
