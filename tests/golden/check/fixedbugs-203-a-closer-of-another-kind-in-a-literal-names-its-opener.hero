@@ -1,0 +1,46 @@
+# Fixed 2026-10-03, defect 203, panel 187's R6 (row 130-34a). Symptom: a
+# closer of another kind where a literal's separator goes, `x = [1, 2` over
+# `print(x) )`, was told `expected_separator`, *found `)`*, in words that
+# named neither the `[` nor its closer, so an author who meant the second
+# line as a statement deleted the `)` and was told the `]` on a second run.
+# Cause: the message was the separator's alone. Two readings stand: the
+# grammar's, where a line ending with a literal keeps its NEWLINE, so
+# `print(x)` is a third element and the `)` stands for the `]`; and the `]`
+# left out above with the `)` a stray. The message names the opener still
+# open, where it stands as a distance from this line, true in whichever
+# module it is read, and both edits; on the opener's own line they are one.
+
+function the_row()
+    x = [1, 2
+    print(x) )  #~ expected_separator
+
+function on_one_line()
+    x = [1, 2)  #~ expected_separator
+    print(x)
+
+function a_brace_in_a_list()
+    x = [1, 2
+    print(x) }  #~ expected_separator
+
+function three_lines_below()
+    x = [
+        1,
+        2
+    print(x) )  #~ expected_separator
+
+function in_a_map()
+    m = {1: 2,
+    3: 4 )  #~ expected_separator
+    print(m)
+
+function in_a_map_on_one_line()
+    m = {1: 2]  #~ expected_separator
+    print(m)
+
+function a_character_of_two_bytes_before_it()
+    #~v unclosed_bracket
+    x = ["é", [1, 2
+    print(x) )  #~ expected_separator
+
+function main()
+    print(1)

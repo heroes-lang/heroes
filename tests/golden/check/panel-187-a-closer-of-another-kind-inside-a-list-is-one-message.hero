@@ -6,6 +6,10 @@
 # kind (`parse/list_line.hero:227`). Row 130-34a, whose two readings are
 # panel 187's Q2: two mistakes with the `]` untold, or one told in words
 # that name no `[`.
+#
+# Moved 2026-10-03 with defect 203's repair, panel 187's R6: the one message
+# names the `[` still open on the line above, at its column, and both edits,
+# one per reading; it pins that message now.
 
 function f()
     x = [1, 2
