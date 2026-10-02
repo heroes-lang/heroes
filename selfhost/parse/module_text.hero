@@ -1,0 +1,104 @@
+# Three questions a `use` line asks of its text, and one an `extern` head
+# asks of its header: whether two offsets stand on one line, whether a
+# string's contents are a module's name, and what a string literal holds
+# between its quotes (design.md §3.1, §4.17; panels 031, 032, 099).
+#
+# Moved out of `parse/use_line.hero` on 2026-10-02 (lane recovery-b8), when
+# a `use` line's recovery came to drop only its own line and that module
+# stood at the 310 `tests/harness/suite_layout.hero` measured it at. These
+# never read the cursor: each asks the text, which is the seam. A leaf, used
+# by `parse/use_line` and `parse/group_head`.
+
+use text_lines
+
+# Whether two offsets stand on one line: the distance between them, never
+# each one's line number, a walk from the text's first byte that made a file
+# of broken `use` lines cost its square (defect 146, `text_lines.hero`'s rule).
+function one_line(text: str, from: i64, to: i64) -> bool
+    if from <= to
+        return text_lines.newlines_between(text: text, from: from, to: to) == 0
+    return text_lines.newlines_between(text: text, from: to, to: from) == 0
+
+# Could this text have been written after `use`? The identifier rule, asked
+# of a string's contents so that the fix above is offered only when applying
+# it produces a program that parses.
+#
+# **It answers for a PATH now, and that is a repair rather than a widening**
+# (M-package-layout, panel 099). `use "shapes/geom"` is the shape four other
+# languages write; until paths landed, unquoting it produced something this
+# grammar still refused, so the fix was withheld and the author was left
+# with a message. The same string is now a legal `use`, and withholding the
+# fix would have been the compiler knowing the answer and not saying it —
+# the premise under the old `false` expired the moment the grammar grew
+# (CLAUDE.md §11), which is why this function is asked segment by segment
+# instead of once over the whole string.
+function is_module_name(s: str) -> bool
+    if s.len() == 0
+        return false
+    start: i64 @ 0
+    i: i64 @ 0
+
+    while i < s.len()
+        if s[i] == '/'
+            if !is_one_part(s.slice(from: start, to: i))
+                return false
+            start @ i + 1
+        i @ i + 1
+
+    return is_one_part(s.slice(from: start, to: s.len()))
+
+# One part of a path: the identifier rule, and an empty part is not one —
+# which is what refuses `"a//b"`, `"/a"` and `"a/"`, the three shapes an
+# unquoted path can be broken in.
+function is_one_part(s: str) -> bool
+    if s.len() == 0
+        return false
+    first = s[0]
+
+    if !(first >= 'a' && first <= 'z' || first >= 'A' && first <= 'Z' || first == '_')
+        return false
+    i: i64 @ 1
+
+    while i < s.len()
+        b = s[i]
+
+        if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_')
+            return false
+        i @ i + 1
+
+    return true
+
+# Rust writes `quoted.trim_matches('"')`; the port says it in five lines, which
+# is the same shape the lexer's own scanners use — the delimiters are known to
+# be there because the token is a `str_lit`.
+function unquote(s: str) -> str
+    start: i64 @ 0
+    end: i64 @ s.len()
+
+    if end > start && s[start] == '"'
+        start @ start + 1
+
+    if end > start && s[end - 1] == '"'
+        end @ end - 1
+    return s.slice(from: start, to: end)
+
+## Tests
+
+test "the identifier rule is asked of a string's contents, part by part"
+    assert is_module_name("geom")
+    assert is_module_name("_private")
+    assert is_module_name("g2")
+    assert !is_module_name("")
+    assert !is_module_name("2geom")
+    assert !is_module_name("geom.shapes")
+
+    # A path is a name now, part by part — and an empty part is not one,
+    # which is the whole of what refuses the three broken spellings.
+    assert is_module_name("shapes/geom")
+    assert is_module_name("a/b/c")
+    assert !is_module_name("shapes//geom")
+    assert !is_module_name("/geom")
+    assert !is_module_name("geom/")
+    assert !is_module_name("shapes/2geom")
+    assert unquote("\"geom\"") == "geom"
+    assert unquote("geom") == "geom"
