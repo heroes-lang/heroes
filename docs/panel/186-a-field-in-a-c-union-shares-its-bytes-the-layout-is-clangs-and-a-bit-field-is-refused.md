@@ -218,8 +218,25 @@ push's Linux arm64 and Windows legs (the author's instruction of
 
 ## Author's verdict
 
-Pending: `docs/work/DECIDE.md`'s item `panel 186`, with R7's three
-mechanisms and the recommendation.
+**RATIFIED 2026-10-02 at 15:03**, on the author's answer to three
+recommendations put to them with their reasons, meant as: *1a 2a 3a*, the
+first two being this sitting's. **Recorded as a reading**, CLAUDE.md § 4's
+default; not `by delegation`.
+
+**What the yes settles**: R1 to R10 as the resolution above states them,
+R3's one comparison rule included, so panel 077's any-arity refusal for a
+union type gives way to the bit-for-bit cover rule and its two goldens move;
+and **R7's home is (a)**: `check` stops refusing a field omitted from the
+construction of a group record, and `build` judges it from clang's layout,
+as it judges every other fact of the header. The cost, put to the author in
+those words: for an `extern` record a forgotten field in a construction is
+told by `build`, not by `check`; still a compile error at its line, never a
+wrong value. **What it does not settle**: the landing, lane land186's batch
+for R1 to R6 and defect 157's note, then R7 prototyped in a scratch copy and
+the second blind reading's task run on it (one session, capped at 3 USD,
+authorized by the same answer) before O_cover replaces R_build_cover in the
+spec; 150, 151, 156 and 157 close only after the push's Linux arm64 and
+Windows legs.
 
 ## The critic's two passes
 
