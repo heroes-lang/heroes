@@ -1,0 +1,25 @@
+# fixedbugs, defect 151 as panel 186's completeness critic widened it, lane
+# land186, 2026-10-02 (panel 186 R3).
+#
+# SYMPTOM: `SB { kind; union { int8_t b; int64_t q; }; }` bound by `kind` and
+# `b`, compared over two values whose `q` differs, built at exit 0 and printed
+# `true`.
+#
+# CAUSE: the union rule asked whether the TYPE is a union, and `SB` is a
+# struct; ONE declared field in an anonymous union is enough to compare bytes
+# it does not hold.
+#
+# FIX: comparing, hashing or keying a map by a record holding a field that
+# lies in a union is refused unless the field is an integer, a pointer or an
+# array of them as wide as the union. `b` is one byte of eight.
+
+extern "fixedbugs-151-unions.h"
+    record SB  #~ ffi_union_field
+        kind: i32
+        b: i8
+
+function same(x: SB, y: SB) -> bool
+    return x == y
+
+function main()
+    print(1)

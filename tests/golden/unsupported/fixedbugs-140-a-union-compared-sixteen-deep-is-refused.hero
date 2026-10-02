@@ -14,9 +14,17 @@
 # which `==` and a key still may not walk, at any arity (panel 077): with
 # two, the completeness probe's own `{0,0}` draws clang's *excess elements
 # in union initializer* on this line, a warning that is not this case's.
+#
+# **Moved 2026-10-02, lane land186, by hand** (panel 186 R3, ratified): one
+# comparison rule for a union wherever it sits, refusing a field in a union
+# unless it is an integer, a pointer or an array of them as wide as the
+# union. `i` is that, so `U` by `i` compares soundly and its case is now
+# `run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds`;
+# this one binds the same union by its float arm, which is not compared bit
+# for bit and is still refused sixteen records down.
 extern "fixedbugs-140-a-union-compared-sixteen-deep-is-refused.h"
     record U  #~ ffi_union_field
-        i: i32
+        f: f32
 
 record R0
     u: U

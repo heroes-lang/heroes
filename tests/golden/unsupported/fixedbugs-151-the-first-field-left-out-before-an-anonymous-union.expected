@@ -1,0 +1,6 @@
+error[ffi_incomplete_record]: `SA` does not name `kind`, and `fixedbugs-151-unions.h` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero
+  at tests/golden/unsupported/fixedbugs-151-the-first-field-left-out-before-an-anonymous-union.hero:11:12
+     |
+  11 |     record SA  #~ ffi_incomplete_record
+     |            ^^
+  note: the assertions above check every field you DO name and cannot see one you leave out: a `SA` built here would carry a zero `kind` into C, which is a value rather than a crash

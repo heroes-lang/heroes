@@ -1,23 +1,20 @@
-# Where a group record's assertions GO, and the probe that asks about
-# the fields the program did NOT name (design.md §4.19; panels 060,
-# 061, 062, 072, 077). Port of
-# archive/bootstrap-rs/heroes/src/emit/{extern_record,extern_complete}.rs — one file
-# again, as they were before the ceiling split: the walker and the
-# probe walk the same declarations.
+# Where a group record's assertions GO (design.md §4.19; panels 060,
+# 061, 062, 072, 077, 186). Port of
+# archive/bootstrap-rs/heroes/src/emit/{extern_record,extern_complete}.rs.
 #
 # The field assertions ask, of every field the program NAMES, whether
 # the header agrees — and say nothing about a field left out. record
 # Color with three of raylib's four members compiled with every
 # assertion green at exit 0 and returned a transparent colour where
-# the program asked for an opaque one (panel 061). The probe is the
-# missing half: one never-called function per record whose body is a
-# POSITIONAL initialiser — the one form C obliges the compiler to
-# count — under a locally-armed -Wmissing-field-initializers.
+# the program asked for an opaque one (panel 061). The missing half was
+# a positional probe here until panel 186: one zero per DECLARED field,
+# where C counts the STRUCT's members, so an anonymous union made it miss
+# a field left out, warn on a correct record (defect 150) and name a
+# declared field (defect 151). It is now asked from the header's own
+# layout, before this unit compiles: `emit/layout_text.hero`.
 
 use ast
-use handles
 use source
-use check/table
 use check/state
 use emit/ctype
 use emit/extern_field
@@ -79,134 +76,6 @@ function extern_record_assertions(@w: writer.Writer, c: state.Checked, names: ct
     if wrote
         writer.at_generated(@w)
         writer.blank(@w)
-    completeness_probes(@w, c, names, s, decls)
-
-# One never-called function per group record: positional zeros under a
-# locally-armed warning. partial IS exactly the absence of this probe —
-# everything else the word does is a refusal, so without this it would
-# cost and give nothing. Local pragmas rather than a flag in FLAGS: the
-# emitter writes = {0} for every refcounted slot, and a global warning
-# fires on all of them. -Wmissing-braces is silenced because a nested
-# record's 0 is C's brace elision — legal, and it says nothing about
-# completeness. A union gives no signal, CORRECTLY: naming one member
-# of a union is naming all of it, so SDL_Event passes.
-function completeness_probes(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
-    wanted: [i64] @ []
-    index: i64 @ 0
-
-    for decl in decls
-        match decl.kind
-            .record_decl rec =>
-                if !rec.header.is_err() && !rec.partial && rec.fields.len() > 0
-                    wanted @ wanted.push(index)
-            # NOT `continue`: this loop keeps the declaration index
-            # itself, and a `continue` in a match arm jumps to the next
-            # iteration — skipping the increment below and shifting
-            # every later declaration by one. The class was found
-            # 2026-08-17 when the selfhost compiler refused its own
-            # parse.hero with a `no_size` cycle that does not exist
-            # (check_sized carried the same shape); the self-mutation is
-            # this language's no-op.
-
-            .constant_decl | .function_decl | .variant_decl | .test_decl => index @ index
-
-        index @ index + 1
-
-    if wanted.len() == 0
-        return
-    writer.at_generated(@w)
-    writer.line(@w, text: "#pragma clang diagnostic push")
-    writer.line(@w, text: "#pragma clang diagnostic error \"-Wmissing-field-initializers\"")
-    writer.line(@w, text: "#pragma clang diagnostic ignored \"-Wmissing-braces\"")
-
-    for decl_at in wanted
-        c_type = ctype.of(names, decl: decl_at)
-        probe = extern_field.COMPLETE_PROBE + ctype.satellite(names, decl: decl_at)
-
-        # A nested record's slot is braced, not 0 (brace elision spends a
-        # flat list into the inner struct, and clang then reports a
-        # field missing on a record that names ALL of its fields — ten
-        # of raylib's thirty-five structs unbindable, with a note
-        # naming a repair that does not exist). A fixed array joined
-        # the day the rule existed: both are aggregates. And the outer
-        # single-zero is PARENTHESISED (panel 077, two seats
-        # independently): clang exempts the literal token {0}, so a
-        # one-field record's probe was silently off — panel 061's
-        # defect reborn one field down, two files with different inodes
-        # equal at exit 0. Two characters, measured to leave a union
-        # silent and raise no false positive on struct in_addr.
-        #
-        # **A HANDLE is named and is NOT an aggregate** (2026-09-13,
-        # M-handle-verdict step 8, found by panel 146's completeness
-        # critic while testing whether a `ptr` field could be typed). A
-        # handle is a `record` so its type is `.named`, and this arm
-        # braced it — but a handle EMITS as `<tag> *`, a scalar, so
-        # clang answered `braces around scalar initializer` twice on a
-        # program that builds at exit 0. Measured on raylib's `Font`
-        # with `recs` and `glyphs` retyped from `ptr` to handles.
-        #
-        # **Why it was never met before**, at the width the measurement
-        # was actually taken: no handle was a field of a record declared
-        # INSIDE an `extern` group, which is the only position this
-        # function reaches. Three handles ARE fields of plain Heroes
-        # records — two in `examples/ledger/db/sqlite.hero`, one in
-        # `tests/golden/check/ffi-handle-refusals.hero` — and those get
-        # no probe at all, so they could not have found it.
-        #
-        # `is_handle` is asked about the FIELD's own declaration, so the
-        # answer cannot go stale the way a list of shapes would.
-        zeros: [str] @ []
-
-        match decls[decl_at].kind
-            .record_decl rec =>
-                for field in rec.fields
-                    aggregate: bool @ false
-                    written = state.written_type(c, field.ty)
-
-                    if !written.is_err()
-                        match table.get(c.types, written.must())
-                            .named n                                                  => aggregate @ !handles.is_handle(decls[n.decl])
-                            .fixed                                                    => aggregate @ true
-                            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => aggregate @ aggregate
-                            .array | .map | .fallible | .function_ty                  => aggregate @ aggregate
-                            .case_ty | .failure | .generic | .error                   => aggregate @ aggregate
-
-                    # **`{}` and not `{0}` since defect 140 (2026-10-01).**
-                    # `{0}` names the first scalar at the bottom of the
-                    # nested struct, and clang finds it by brace elision one
-                    # struct at a time: a record holding the one before it
-                    # by value a thousand deep made `clang -fsyntax-only`
-                    # die of SIGSEGV on this line alone (700 deep compiled;
-                    # 1,000 and 2,000 did not), so `build` said `internal
-                    # error` for a program clang compiles. `{}` names no
-                    # scalar, is GNU C under this compiler's `-std=gnu11`,
-                    # and gives the same verdicts: measured on a nested
-                    # record, a fixed array, a handle beside them and a
-                    # union, complete and missing a field, `{0}` against
-                    # `{}`, the same three errors and the same silences.
-                    if aggregate
-                        zeros @ zeros.push("{}")
-                    else
-                        zeros @ zeros.push("0")
-            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
-
-        list: str @ zeros.join(",")
-
-        if zeros.len() == 1 && zeros[0] == "0"
-            list @ "(0)"
-
-        # The declaration's own line, so the verdict lands where the
-        # author can act on it.
-        found = source.locate(s, decls[decl_at].name.start)
-        writer.at_file(@w, file: found.file, at: found.line)
-        writer.line(
-            @w,
-            text: "__attribute__((unused)) static void " + probe + "(void) { " + c_type + " v = {" + list + "}; (void)v; }"
-        )
-
-    writer.at_generated(@w)
-    writer.line(@w, text: "#pragma clang diagnostic pop")
-    writer.blank(@w)
 
 ## Tests
 
@@ -254,34 +123,7 @@ test "assertions land on the field's line, the probe counts positionally"
     assert has(text: got, needle: "heroes-ffi-field Color r")
     assert has(text: got, needle: "#line 3 \"t.hero\"")
 
-    # The probe: Color's nested record slot is {}, Point's single
-    # scalar is parenthesised, and partial Font gets NO probe.
-    assert has(text: got, needle: "hero_ffi_complete_h_t_Color(void) { Color v = {0,{}}; (void)v; }")
-    assert has(text: got, needle: "hero_ffi_complete_h_t_Point(void) { Point v = {(0)}; (void)v; }")
-    assert !has(text: got, needle: "hero_ffi_complete_h_t_Font")
-    assert has(text: got, needle: "#pragma clang diagnostic error \"-Wmissing-field-initializers\"")
-
-test "a handle field is a scalar in the probe, and the record beside it is not"
-    # M-handle-verdict step 8, panel 146's completeness critic. A handle is a
-    # `record`, so its type is `.named` and this emitter braced it — but it
-    # emits as `<tag> *`, and clang answered `braces around scalar initializer`
-    # on a program that builds at exit 0. `Slot` holds one of each kind, so the
-    # two answers are asserted against each other in one probe rather than in
-    # two tests that could drift.
-    text = "extern \"m.h\"\n    record Opaque tag thing\n    record Inner\n        x: f64\n    record Slot\n        handle: Opaque\n        inner: Inner\n        count: i64\n\nfunction touch(s: Slot)\n    _ = s\n\nfunction main()\n    print(1)\n"
-    parsed = parse.parse(text)
-    s = source.new_source(name: "t.hero", text: text)
-    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
-    assert c.diagnostics.len() == 0
-    names = ctype.new_names(s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
-    extern_record_assertions(@w, c, names, s, parsed.decls)
-    got = writer.finish(w)
-
-    # The handle is `0`, the nested record is `{}`, the number is `0`.
-    assert has(text: got, needle: "hero_ffi_complete_h_t_Slot(void) { Slot v = {0,{},0}; (void)v; }")
-
-    # And a fieldless handle gets no probe of its own: it has nothing to be
-    # complete about, which is what makes it a handle.
-    assert !has(text: got, needle: "hero_ffi_complete_h_t_Opaque")
+    # No positional probe since panel 186: completeness is the layout
+    # check's (`emit/layout_text.hero`), asked before this unit compiles.
+    assert !has(text: got, needle: "hero_ffi_complete_")
+    assert !has(text: got, needle: "-Wmissing-field-initializers")

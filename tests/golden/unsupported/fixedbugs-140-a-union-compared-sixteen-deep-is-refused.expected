@@ -1,6 +1,6 @@
-error[ffi_union_field]: `U` is a `union` in `fixedbugs-140-a-union-compared-sixteen-deep-is-refused.h`, so comparing or hashing one asks about bytes that may hold another member — `i` is only what was written last
-  at tests/golden/unsupported/fixedbugs-140-a-union-compared-sixteen-deep-is-refused.hero:18:12
+error[ffi_union_field]: `U` is a `union` in `fixedbugs-140-a-union-compared-sixteen-deep-is-refused.h`, and `f` is a `f32`, which is not compared bit for bit, so comparing a `U` or using one as a map key can call two different values equal
+  at tests/golden/unsupported/fixedbugs-140-a-union-compared-sixteen-deep-is-refused.hero:26:12
      |
-  18 |     record U  #~ ffi_union_field
+  26 |     record U  #~ ffi_union_field
      |            ^
-  note: reading `i` and building one that names it are both sound and stay legal; what has no answer is `==`, `hash` and being a map key, because two values holding different members are equal whenever the bytes match. Mark the `record` `partial` if you want that refusal stated at the declaration
+  note: only an integer, a pointer or an array of them as wide as the union compares a union's bytes; reading through any member, and building one that names one member, stay legal

@@ -354,10 +354,15 @@ unless the header writes it after the word struct, which `tag` gives:
 `record FileStat tag stat partial`. A
 field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed
 array of one: `i32[4]`, never a `[T]`; build one with `[a, b, c, d]`, as many
-elements as the type says.
-`record Font partial` names only some, and then comparing it and using it as a
-map key are compile errors — for it and for any value holding it. Its size stays
-C's, not the field list's. One with a `tag` and no fields is a **handle**, C's
+elements as the type says. A bit-field is none of these: leave it to `partial`.
+`record Font partial` names only some, and its size stays C's, not the field
+list's. A field in a C union, named or anonymous, shares its bytes with the
+union's other members: a record names one or more of each union and reads any,
+and one naming two of a union, an anonymous struct's fields counting as one,
+cannot be built. Comparing a `partial` record, or one holding a union's field
+that is not an integer, pointer or array of them as wide as the union, and using
+it as a map key are compile errors, for it and for any value holding it. One
+with a `tag` and no fields is a **handle**, C's
 pointer to that type: `record Db tag sqlite3` is `sqlite3 *`, and `tag void` is
 `void *`: a `void *` C hands out for the program to give back is declared as one.
 `nullptr` is its null and `==` compares the address; a map key is an error. A

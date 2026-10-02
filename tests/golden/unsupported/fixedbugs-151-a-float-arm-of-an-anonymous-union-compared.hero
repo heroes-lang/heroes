@@ -1,0 +1,21 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R3), the
+# completeness critic's `cov_zero`.
+#
+# SYMPTOM: `SZ { kind; union { int32_t i; float f; }; }` bound by `kind` and
+# `f`, which covers its union, compared two values whose `i` is `INT32_MIN`
+# and `0` as `true`: `f` reads `-0.0` and `0.0`, which a float compares equal.
+#
+# FIX: a float arm is not compared bit for bit, so a record holding one in a
+# union is not compared at all, however wide the arm. Reading `f` and building
+# an `SZ` that names it stay legal.
+
+extern "fixedbugs-151-unions.h"
+    record SZ  #~ ffi_union_field
+        kind: i32
+        f: f32
+
+function same(x: SZ, y: SZ) -> bool
+    return x == y
+
+function main()
+    print(1)

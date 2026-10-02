@@ -1,0 +1,23 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R4), found in
+# the panel's compiler-engineer's shapes beside the defect.
+#
+# SYMPTOM: a record over `DEEP`, whose anonymous struct holds an anonymous
+# union and `y`, naming everything but `y`, was told *`DEEP` does not name
+# `x`*, which it declares.
+#
+# CAUSE: the positional probe counted one zero per declared field into a
+# struct whose anonymous members C counts as one each.
+#
+# FIX: the layout names `y`, at the depth it sits.
+
+extern "fixedbugs-151-unions.h"
+    record DEEP  #~ ffi_incomplete_record
+        kind: i32
+        i: i32
+        x: i32
+
+function touch(d: DEEP) -> i32
+    return d.kind
+
+function main()
+    print(1)

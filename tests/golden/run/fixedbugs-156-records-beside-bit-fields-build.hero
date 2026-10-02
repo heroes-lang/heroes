@@ -1,0 +1,27 @@
+# fixedbugs, defect 156, lane land186, 2026-10-02 (panel 186 R5).
+#
+# What the refusal of a bit-field leaves legal: a `partial` record over `BF`
+# names the full-width member, builds one and reads one from C, and the
+# bit-fields keep the bits C gave them; and a struct whose only bit-fields
+# are unnamed, padding C names nothing, is complete without them, built and
+# compared.
+
+extern "fixedbugs-156-bit-fields.h"
+    record BF partial
+        kind: i32
+    record UNNAMED
+        a: i32
+        b: i32
+    record ZEROW
+        a: i32
+        b: i32
+    function make_bf() -> BF
+    function make_unnamed() -> UNNAMED
+    function make_zerow() -> ZEROW
+
+function main()
+    print(make_bf().kind)
+    built = BF(kind: 9)
+    print(built.kind)
+    u = UNNAMED(a: 1, b: 2)
+    print(u == make_unnamed(), " ", u.b + make_zerow().b)

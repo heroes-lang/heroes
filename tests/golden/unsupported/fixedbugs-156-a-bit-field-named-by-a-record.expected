@@ -1,0 +1,13 @@
+error[ffi_field_type]: `flag` is a bit-field of `BF` in `fixedbugs-156-bit-fields.h`: C gives a bit-field no address and no size of its own, so no field can bind it
+  at tests/golden/unsupported/fixedbugs-156-a-bit-field-named-by-a-record.hero:18:9
+     |
+  18 |         flag: u32  #~ ffi_field_type
+     |         ^^^^
+  note: leave `flag` out and mark the `record` `partial`: it binds the fields it names, and C keeps the bits it does not
+
+error[ffi_field_type]: `rest` is a bit-field of `BF` in `fixedbugs-156-bit-fields.h`: C gives a bit-field no address and no size of its own, so no field can bind it
+  at tests/golden/unsupported/fixedbugs-156-a-bit-field-named-by-a-record.hero:19:9
+     |
+  19 |         rest: u32  #~ ffi_field_type
+     |         ^^^^
+  note: leave `rest` out and mark the `record` `partial`: it binds the fields it names, and C keeps the bits it does not
