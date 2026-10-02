@@ -630,6 +630,17 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     at `ec530b54`, gated by its own cases; the rest is owed at the round's
     gate, and the platform legs before the push.
 
+    **2026-10-02, lane land186, a case that held a GNU fact as everyone's**:
+    the Windows box's pre-push leg at `b48d02b8` refused
+    `run/fixedbugs-151-members-with-no-bytes-left-out`, an empty struct
+    having bytes for MSVC's target, which the compiler was right to refuse
+    (R4); the case now holds only the zero-length array, no bytes on every
+    target measured, and the empty struct is witnessed missing for
+    `x86_64-pc-windows-msvc` and complete for `x86_64-linux-gnu` by
+    `selfhost/cli/layout.hero`'s test: at `bac43e50`, gated by its own cases;
+    the rest is owed at the round's gate, and the platform legs before the
+    push.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a wrong value at the C
     boundary, built from Heroes.
