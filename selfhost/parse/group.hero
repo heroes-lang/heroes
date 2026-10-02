@@ -80,10 +80,17 @@ function extern_group(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: 
     # lays out, where until that day they went whole, every mistake in them
     # unsaid (lane X1's finding 1).
     if !cursor.at(c, .indent)
+        # At the head where a word the lexer refused ends its line, which is
+        # that word's report, as `empty_record` stands at its head (defect
+        # 133's class, lane recovery-b7): `extern "m.h" fn` over nothing.
+        at: token.Span @ cursor.current_span(c)
+
+        if !cursor.at_fresh_line(c) && swap_reading.at_reported_error(c, text)
+            at @ head
         empty = diag.new_diagnostic(
             code: "expected_extern_block",
             message: "an `extern` group's signatures are indented under it — `extern \"math.h\"` then `    function sqrt(x: f64) -> f64` (§4.19)",
-            span: cursor.current_span(c)
+            span: at
         )
         close = members_below.close_of(
             members_below.no_members_below(@c, text: text, head: head, members: "signatures", empty: empty)

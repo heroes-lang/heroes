@@ -1,0 +1,20 @@
+# fixedbugs, defect 152, lane ffi-macro, 2026-10-02.
+#
+# SYMPTOM: an enumerator and a `#define`d number declared as functions,
+# `function RED() -> i32` and `function LIMIT(scale: i64) -> i64`, were
+# `internal error`, exit 2: *called object type 'int'*.
+#
+# CAUSE: as the object's, at the result assertion and at the probe. A value
+# is not an object, and a message saying *object* would be false of it.
+#
+# FIX: the question unit asks `__builtin_constant_p` of the name, the very
+# question a `constant` member asks, and a name it holds as a value is told
+# as one, with the `constant` that binds it.
+
+extern "fixedbugs-152-names.h"
+    function RED() -> i32  #~ ffi_call_shape
+    function LIMIT(scale: i64) -> i64  #~ ffi_call_shape
+
+function main()
+    print(RED())
+    print(LIMIT(scale: 2))

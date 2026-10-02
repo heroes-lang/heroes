@@ -21,3 +21,8 @@
 # literal left open at `\r\n`. Normalised to LF it would test nothing, so git
 # keeps it as written, on every leg.
 tests/golden/check/fixedbugs-135-l2-*.hero -text
+
+# And an `f"…"` literal left open at `\r\n` (defect 135's open CRLF site,
+# lane recovery-b7, 2026-10-02), with what `check --apply` writes of it.
+tests/golden/check/fixedbugs-135-crlf-*.hero -text
+tests/golden/check/fixedbugs-135-crlf-*.applied -text

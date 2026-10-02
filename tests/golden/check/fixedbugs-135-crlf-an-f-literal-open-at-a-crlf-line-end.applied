@@ -1,0 +1,52 @@
+# Fixed 2026-10-02, defect 135's open CRLF site (lane recovery-b7; lane
+# literals' probes `r2g` and `s2i`), an `f"…"` literal left open at a CRLF
+# line end. THIS FILE ENDS ITS LINES WITH CRLF, and `.gitattributes` keeps
+# them (`-text`). Symptom: an `f` literal open at a CRLF line end, before
+# its first hole, after one or after its last, cost `raw_carriage_return`,
+# whose certain `\r` wrote the line end's carriage return into the literal,
+# which stayed open, and `unterminated_string`. Cause: the piece scanner
+# stopped at the line feed alone (`lex_interp.hero`'s `scan_piece`), where
+# the scanners of a string and a character read the carriage return before
+# it as the line's end since lane literals' repair of the class. Now the
+# piece scanner asks the same question (`literals.ends_line`): the literal
+# is told unterminated, once, with no fix, and `--apply` leaves the case as
+# it is. A carriage return anywhere else in a piece keeps its certain `\r`,
+# as the last function's first one does; a hole left open and a backslash
+# before the line end were one message already.
+
+function before_its_first_hole()
+    s = f"abc  #~ unterminated_string
+    print(s)
+
+function after_a_hole()
+    s = f"a{1} b  #~ unterminated_string
+    print(s)
+
+function after_its_last_hole()
+    s = f"a{1}b{2}c  #~ unterminated_string
+    print(s)
+
+function past_a_doubled_brace()
+    s = f"a{{  #~ unterminated_string
+    print(s)
+
+function inside_a_call()
+    print(f"a{1}  #~ unterminated_string
+    print(2)
+
+function a_hole_left_open()
+    #~v unterminated_string
+    s = f"a{1
+    print(s)
+
+function a_backslash_before_the_line_end()
+    #~v unterminated_string
+    s = f"a\
+    print(1)
+
+function a_carriage_return_before_the_line_end()
+    s = f"a\r  #~ raw_carriage_return unterminated_string
+    print(s)
+
+function main()
+    before_its_first_hole()

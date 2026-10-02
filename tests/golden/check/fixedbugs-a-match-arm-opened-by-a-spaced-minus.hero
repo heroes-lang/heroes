@@ -13,6 +13,13 @@
 # is the lexer's, refused as a line that cannot end with `-`, and its join
 # now writes `-6`, where it wrote `- 6`, which this rule refuses. The
 # unspaced `-4`, a `-` after a `|` and a `-` in an arm's body are untouched.
+#
+# Corrected 2026-10-02, panel 185 R6, lane arm: the fix is no longer
+# `certain`. Before an integer or a character a bulleted list of arms is a
+# reading too, so the sign and the deletion are both guesses, and `--apply`
+# writes neither: this case's answer is an `.applied` where it was a
+# `.fixed`, the lexer's join alone. Before a string the `-` signs nothing,
+# and its deletion is certain (`fixedbugs-135-p5-*`).
 
 function pick(n: i64) -> i64
     return match n

@@ -1,0 +1,5 @@
+tests/golden/check/fixedbugs-135-p5-a-minus-before-a-case-or-the-wildcard.hero:19:9: error[expected_pattern]: this `-` stands before a case, which no `-` signs: in a pattern a `-` signs only a literal, so delete it
+tests/golden/check/fixedbugs-135-p5-a-minus-before-a-case-or-the-wildcard.hero:20:9: error[expected_pattern]: this `-` stands before a case, which no `-` signs: in a pattern a `-` signs only a literal, so delete it
+tests/golden/check/fixedbugs-135-p5-a-minus-before-a-case-or-the-wildcard.hero:21:9: error[expected_pattern]: this `-` stands before a case, which no `-` signs: in a pattern a `-` signs only a literal, so delete it
+tests/golden/check/fixedbugs-135-p5-a-minus-before-a-case-or-the-wildcard.hero:25:16: error[expected_pattern]: this `-` stands before a case, which no `-` signs: in a pattern a `-` signs only a literal, so delete it
+tests/golden/check/fixedbugs-135-p5-a-minus-before-a-case-or-the-wildcard.hero:28:13: error[expected_pattern]: this `-` stands before the wildcard `_`, which no `-` signs: in a pattern a `-` signs only a literal, so delete it

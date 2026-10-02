@@ -556,6 +556,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     136's record carries the integration). The item stays open for the shapes
     the audit of 2026-09-30 found open (`scratchpad/audit-130-133/`).
 
+    **2026-10-02, lane recovery-b7, a line that holds an arm's `=>` below an
+    arm or its `match` is an arm, its leading operator told once and the arm
+    read past it, and an alternation broken at a match's margin is read as
+    one arm** (the audit's 132-06, lane X2's `b13`; beside it `| 1 => 10`,
+    `* 2 => 3`, `? =>` at the margin and below a whole arm, and `0` over
+    `| 1 => 10` at the margin): repaired at `4c893c14`, gated by its cases
+    and the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **133 — after a declaration head the lexer refuses as a foreign word with a certain swap, the declaration's own mistakes are reported only once the swap is applied** | `const MAX = 5` costs `reserved_word` alone, and `check --apply` writes `constant MAX = 5`, which then costs `expected_constant_type`; `const MAX: i64 = 5` then costs `missing_body`, `fn main() {` then `missing_body`, `struct Point {` then `empty_record`: two turns for one habit | `selfhost/scan.hero` (the foreign word emitted as an `error` token) · `selfhost/keywords.hero` (`foreign_word`) · `selfhost/parse/decl.hero` · `cursor.recover_to_next_decl`
 
     **Origin:** lane 129's agent, 2026-09-29, reading `check/reserved-words`'s
@@ -597,6 +605,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     129 to 133, X1, X2 and Y): the full net, every suite at 0 failed. The shapes
     still open are the next batch lane's items, found beside the repairs, and
     this item stays open until they are repaired and a batch gate reads them.
+
+    **2026-10-02, lane recovery-b7, a declaration whose head failed, or holds
+    a word the lexer refused, is told the body or the members it lacks in the
+    same run** (the audit's 133-a-fswap2, 133-m-const_alone, 133-m-fn_alone;
+    beside them `$`, `0X` or `let` after a head, `record P fn`, `extern "m.h"
+    fn`, `if true fn` over its margin, and `function`, `function f`,
+    `constant MAX`, `test`, `record`, `variant` that failed over nothing):
+    repaired at `97bbdc68`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
 
 - [ ] **135 — a `certain` fix chosen from one reading, where another is as likely, writes a program that means something else or is refused anew** | `print("\(n)")` costs `unknown_escape` with the certain fix `\\(`, which checks clean and prints the hole's text where Swift's author meant its value; `True` costs `unknown_name` with the certain rename to the one in-scope name within two edits, `run` or `Value`, which then costs `type_mismatch`; a `,` left out before a mutable argument, `hints: nullptr @res`, costs `misplaced_mutable_marker` with the certain `: ` that writes `nullptr : @res`, refused anew | `selfhost/literals.hero:60` (the escape's fix) · `selfhost/resolve/errors.hero` (`suggest`, `nearest`) · `selfhost/grammar_expr.hero` (`misplaced_mutable_marker`)
 
@@ -831,6 +848,41 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     a program that checks clean): repaired at `1ef5c8ca`, gated by its cases
     and the compiler's own tests; the net is owed at the batch's close.
 
+    **2026-10-02, lane arm, panel 185 R6: a spaced `-` opening an arm is
+    deleted with certainty before a string, and is two guesses, the sign and
+    the deletion, before an integer or a character** (P5; beside it, a tab
+    setting the `-` apart, which the sign wrote into the margin): repaired at
+    `b76f705e`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
+    **2026-10-02, lane arm, beside P5 (panel 185's t1 and t2): a `-` before a
+    case or `_` opening a pattern is told at the `-`, where it was told at the
+    pattern after it, and deleted with certainty, since no `-` signs either**:
+    repaired at `45aad99f`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b7, a result written after `:` or `=>` is a
+    certain `->` only where a body follows the head or none is owed** (the
+    audit's P8, `function stub(): pass` and `=> value` over no body; beside
+    them a stub whose word is a type, `(): i64` over nothing; certain still
+    over an indented, tabbed or braced body and in an `extern` group):
+    repaired at `2e0c53f5`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b7, `int` inside an `extern` group is C's,
+    and its certain swap writes `i32`** (the audit's L6, `t_int_extern_param`
+    and `t_int_extern_field`; beside them a result, a callback's parameter and
+    a field two levels under the head; outside a group `int` is `i64` still):
+    repaired at `c61a1d04`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b7, an `f"…"` literal left open at a CRLF
+    line end is told unterminated once, the line end never written into it**
+    (the site the L2 line above left open, `lex_interp.hero`'s `scan_piece`;
+    lane literals' probes `r2g` and `s2i`, and beside them a later piece, a
+    doubled brace and a call): repaired at `664b283b`, gated by its cases and
+    the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe)
 
     **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (a header of its own
@@ -848,6 +900,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     sat on the route (its Q1); the seats measured that a call-form probe holds
     none of a macro's parameters, a `u8` declaration reading out of bounds.
 
+    **2026-10-02, lane ffi-macro, panel 185 R1, a macro-only name is
+    `ffi_macro_name`, its note drafting a function of the program's own with
+    a placeholder for every C type**: repaired at `357589d6`, gated by its
+    cases and the compiler's own tests; the net is owed at the batch's close,
+    and so are Linux x86-64 (the gate's container), Linux arm64 and the
+    Windows box, R1 being at the C boundary.
+
 - [ ] **147 — spec § 8's `Inline` production refuses one-statement arms the design allows and the compiler builds** | `Inline = ( Expression | "return" [ Expression ] | "break" | "continue" | "assert" Expression ) NEWLINE` leaves out a mutation (`.blue => n @ 5`) and a `while` (`.red => while n < 3` over its body), and both check, build and run on the trunk, where design.md §4.7 says *an arm's body is one statement, inline, or an indented block* (panel 014) | `spec/heroes-spec.md:241-243` · design.md §4.7 (`:1230-1235`) · `selfhost/parse/arm_line.hero`
 
     **Origin:** lane flow's first pass, 2026-10-01
@@ -862,6 +921,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     spec never learns the form. Which side moves, the production or the
     parser, is a change to the language, so the repair is a sitting's, with
     defect 143 and the value-block question in `docs/work/DECIDE.md`.
+
+    **2026-10-02, lane arm, panel 185 R3: an arm takes § 5's `Simple`, every
+    statement but a declaration or an `=` of a name other than `_`, and
+    `Inline` is deleted**: repaired at `1ea85b01`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close.
 
 - [ ] **150 — a correct program that reads a C union naming two members gets clang's warning on the author's line** | `extern "w.h"` with `record W` (two members over a union) and `function make_w() -> W`, `print(w.i)`: `build` exit 0, the program prints 7, and the build prints *warning: excess elements in union initializer* at `read.hero:2:81` | the completeness probe's `{0,0}` for a union record (`selfhost/emit/`, beside defect 140's `{}`)
 
@@ -904,6 +968,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** Exit 2 is the compiler blaming itself for a program
     the author can be told about (`.claude/rules/c-boundary.md`).
 
+    **2026-10-02, lane ffi-macro, a name the header has as an object, a
+    value or a type is told on its declaration, and so is a field the header
+    lacks whatever the header calls its type** (the second found in the
+    lane's first pass, at the field assertion): repaired at `2d5240a0` and
+    `6559facf`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
 - [ ] **153 — `declaration_in_arm` says `_` would be bound, which spec § 5 says it never is** | `.blue => _ = 0` on an arm's line: *an arm's body may not declare a name — `_` would be bound where nothing can read it*; spec § 5: `_` *binds nothing*, and § 8 names `_ = 0` as the arm that does nothing | `selfhost/parse/arm_body.hero:25-38` (`declared_name` does not ask the name)
 
     **Origin:** panel 185's critic, compiler-engineer and spec-warden,
@@ -914,6 +985,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** design.md §4.17: a diagnostic is true; this one
     contradicts the spec it cites.
 
+    **2026-10-02, lane arm, panel 185 R3: `_` stands on an arm's line, in
+    `_ = e`, `_: T = e` and `_: T @ e`, and the message is true of every name
+    it still refuses**: repaired at `1ea85b01`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **154 — a hexadecimal number with a fraction is told as a field access** | `x = 0x1.5`: `error[expected_field_name]: expected a field or function name after `.`, found a number (`5`)`, a member-access message for a literal | `selfhost/number.hero` · `selfhost/grammar_expr.hero` (the `.` after a literal)
 
     **Origin:** lane literals' first pass, 2026-10-02
@@ -922,6 +998,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** design.md §4.17: the message names a mistake the
     author did not make; the number's own form is the mistake.
+
+    **2026-10-02, lane arm: a `.` and a decimal digit after a based literal's
+    digits are its fraction, told once as `digit_not_in_base`, the literal
+    one token, with no fix** (beside it `0x.5`, `0x1.5e3`, `0x1.5.2`, C's
+    `0x1.8p-3`, `0xG.5`, an uppercase prefix before one): repaired at
+    `4574e5d3`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close. Left: `1.5.2`, a decimal float with a second
+    point, still told as a field access, since no code's documented meaning
+    covers it (lane arm's report).
 
 - [ ] **155 — the public CI is red on `03e70520`: defect 140's variants case passes a C compiler's own limit** | run 36939966148: Darwin arm64's clang (Apple clang 21.0.0, Xcode 26.6) crashes, *Illegal instruction: 4*, on `run/fixedbugs-140-variants-a-thousand-deep-build`, red in `run`, `determinism` and `emission`; Linux x86-64 and arm64 time out on it at `-O2` (exit 124); Linux arm64 also times out on `probe/selfhost, multi`; Windows green | `tests/golden/run/fixedbugs-140-variants-a-thousand-deep-build.hero` and its trace until 2026-10-02, `tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero` since · `tests/harness/suite_run.hero:151`
 
@@ -938,6 +1023,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     where no C type nests, and kept by value in three `check/` cases, where
     no C compiler reads it**: repaired at `0aa055a9`, gated by its cases and
     the compiler's own tests; the net is owed at the batch's close.
+
+    **2026-10-02, lane ci-probe, the second half: a probe row over a tree
+    probes its files one at a time, and the files together must read what
+    the probe reads of the whole root**: repaired at `efe2fea2`, gated by
+    the net's own tests and `probe` whole; the net is owed at the batch's
+    close, and Linux arm64 at the push.
 
 - [ ] **156 — a C struct with a bit-field member stops `build` with an internal error and clang's text** | `extern "bf.h"` over `typedef struct { int32_t kind; uint32_t flag : 1; uint32_t rest : 31; } BF;` with `record BF` naming `kind: i32`, `flag: u32`, `rest: u32`, reading `make_bf().kind`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: ... invalid application of 'sizeof' to bit-field* at the field assertions and *address of bit-field requested* in the generated hash | `selfhost/emit/` (the field assertion, `heroes-ffi-field`, and the record's descriptor) · panel 073's item 3 (bit-fields filtered before the assertion)
 

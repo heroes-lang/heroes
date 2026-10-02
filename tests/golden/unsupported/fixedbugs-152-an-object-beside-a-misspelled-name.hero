@@ -1,0 +1,18 @@
+# fixedbugs, defect 152, lane ffi-macro, 2026-10-02.
+#
+# SYMPTOM: `errno` declared as a function beside a misspelled `sqrtt` was
+# exit 1 with one diagnostic, the misspelling's: the round's other words
+# went unread, so the author would have met the object only after repairing
+# the name, and then as `internal error`.
+#
+# FIX: both are told, each on its declaration.
+
+extern "errno.h"
+    function errno() -> i32  #~ ffi_call_shape
+
+extern "math.h"
+    function sqrtt(x: f64) -> f64  #~ ffi_unknown_name
+
+function main()
+    print(errno())
+    print(sqrtt(x: 2.0))

@@ -1,0 +1,6 @@
+error[ffi_macro_name]: `fixedbugs-143-macros.h` defines `SQUARE` as a macro that takes arguments, not a value: it has none until it is called, and a macro has no parameter types for clang to hold a declaration to
+  at tests/golden/unsupported/fixedbugs-143-a-function-like-macro-declared-as-a-constant.hero:11:5
+     |
+  11 |     constant SQUARE: i64  #~ ffi_macro_name
+     |     ^^^^^^^^^^^^^^^^^^^^
+  note: bind a function of the program's own that calls it: in a header beside this file, `static inline <C result> hero_SQUARE(<its parameters, in C>) { return SQUARE(<their names>); }`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_SQUARE` there like any function, and clang holds that declaration to your function (§ 13)

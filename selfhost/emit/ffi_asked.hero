@@ -1,0 +1,299 @@
+# What a round clang refused asks the header about the names this program
+# declared, in one more clang run, and how the answer is read (design.md
+# §4.19; CLAUDE.md §7's named exception; defect 152, 2026-10-02).
+#
+# WHY ONE MORE RUN, AND ONLY AFTER A REFUSAL. The first round's words are the
+# verdict and they stay first: the probe judges a fortified function and a name
+# that is both a function and a macro as it always has (panel 092). But some of
+# what clang says cannot be put on the author's line from those words alone. An
+# `extern` with no parameter has no probe, and its result assertion carries no
+# `#line`, since every byte of the emitted C stays as it was, so `function
+# errno() -> i32` against `errno.h` drew *called object type 'int' is not a
+# function or function pointer* at a line of the generated unit and at the
+# call, and `build` said `internal error`, exit 2: the compiler blaming itself
+# for the author's declaration. This unit says each such call again at the
+# declaration's own line, where `emit/ffi.hero`'s readers look already, and
+# asks what decides the message: whether a name the header has is a value. It
+# is compiled only by a build that has already failed, so a program that builds
+# never pays for it (`cli/header_ask.hero` runs it).
+#
+# WHAT IS SAID AGAIN, per `extern` function of the program's own files:
+#
+# - with no parameter, the call, `(void)errno();`: the same call the result
+#   assertion and every call site make, so it compiles wherever they do, and
+#   clang's word about it (an object, a value, a type, a count) lands on the
+#   declaration;
+# - with parameters, the name alone, `(void)my_int;`: the probe already makes
+#   the call at the declaration's line, and one shape gets past it, a TYPE
+#   name, which `(my_int)(a0)` reads as a cast.
+#
+# Both compile for every correct binding, measured on a header of the lane's
+# own and on `errno.h`, `stdio.h`, `string.h` and `unistd.h`, so a refusal the
+# first round already explained is told exactly as before.
+#
+# THE QUESTIONS ANSWER IN THE FILE NAME. Each is written under `#line 1
+# "hero-ask-<kind> <name>"` (the ffi-pragmatist's spelling at panel 185), so
+# clang's line about it carries the question and never reaches a reader that
+# gates on the program's own files. An answer is POSITIVE evidence: a value is
+# `static assertion failed` under its question, never a silence, so a clang
+# that could not run answers nothing rather than yes. A value is what
+# `__builtin_constant_p` holds while compiling, which is the very question a
+# `constant` member asks (`emit/extern_assert.hero`): an enumerator and
+# `#define BUFSIZ 1024` are values, `errno`, `stdin` and a static variable are
+# not, and neither is a function's name, measured.
+#
+# **And whether a name is a MACRO** (panel 185 R1, ratified 2026-10-02):
+# `#ifdef` under its question, and a `#warning` is the yes. A macro has no
+# parameter types for clang to hold a declaration to, so the probe's
+# parenthesised call refuses a macro-only name as *undeclared* (panel 092), and
+# until that day the author was told the header has no such name, which is
+# false of `sys/wait.h` and `WEXITSTATUS`. Every name of a group is asked, a
+# `constant`'s too, because it costs one line in a run already paid for; the
+# answer is read only where clang could not reach the name as anything else,
+# so a fortified function and a name that is both a function and a macro keep
+# the first round's verdict.
+#
+# **And whether a record's tag is a TYPE NAME** (panel 185 R2): `typedef T
+# hero_q;`, the ffi-pragmatist's question, tells a type name, a real tag and
+# neither apart, where `sizeof` called a function's name a typedef and could
+# not tell a tag from a misspelling (the critic's first pass). clang recovers
+# from both refusals, so an assertion after the typedef fails every time it is
+# reached: it is the positive evidence that the question was asked, and the
+# typedef's own words are the answer, none for a type name, *must use 'struct'
+# tag* for a tag, *unknown type name* for neither. Defect 145 left the note two
+# readings where clang showed no spelling of the type; this makes it one.
+
+use ast
+use source
+use ir/containers
+use emit/externs as emit_externs
+use emit/writer
+use emit/ffi_lookup
+use parse
+use resolve
+use checker
+use ir/lower
+
+# The file name every question is written under, and the one for a value.
+constant ASK: str
+    "hero-ask-"
+
+constant VALUE: str
+    "hero-ask-value "
+
+constant MACRO: str
+    "hero-ask-macro "
+
+constant TYPE: str
+    "hero-ask-type "
+
+# What the run answered: clang's lines about what was said again, each at a
+# declaration's line, for the readers to read beside the round's own; the
+# names the header holds as a value; the names it defines as a macro; and what
+# each record's tag is, `type`, `tag` or `neither`.
+record Asked
+    said: str
+    values: {str: bool}
+    macros: {str: bool}
+    types: {str: str}
+
+# The answer of a run that was not made: nothing said, nothing a value or a
+# macro, no tag answered.
+function nothing() -> Asked
+    none: {str: bool} = {}
+    unasked: {str: str} = {}
+    return Asked(said: "", values: none, macros: none, types: unasked)
+
+# The unit's C: the program's headers, then what is said again and asked of
+# each `extern` function its own files declare. A library extern is not asked
+# about: no line of the library is a line the author can be told about
+# (`emit/ffi_site.hero`'s `location` refuses one).
+function unit(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> str
+    out: [str] @ []
+
+    for header in emit_externs.headers(p, s, decls)
+        out @ out.push("#include <" + header + ">")
+
+    index: i64 @ 0
+
+    for f in p.functions
+        if emit_externs.extern_spans(decls, f).header.is_err()
+            continue
+        start = decls[f.decl].name.start
+
+        if source.is_library(s, start)
+            continue
+        name = source.span_text(s, decls[f.decl].name)
+        out @ out.push(directive(file: MACRO + name, line: 1))
+        out @ out.push("#ifdef " + name)
+        out @ out.push("#warning hero-ask")
+        out @ out.push("#endif")
+
+        # A constant asks the rest of its questions in the first round.
+        if emit_externs.is_extern_constant(decls, f)
+            continue
+        at = source.locate(s, start)
+        said: str @ name
+
+        if f.params.len() == 0
+            said @ name + "()"
+        out @ out.push(directive(file: at.file, line: at.line))
+        out @ out.push(
+            "__attribute__((unused)) static void hero_ask_" + index.to_str() + "(void) { (void)" + said + "; }"
+        )
+        out @ out.push(directive(file: VALUE + name, line: 1))
+        out @ out.push("_Static_assert(!__builtin_constant_p(" + name + "), \"hero-ask\");")
+        index @ index + 1
+
+    # Each group record's tag, but `void`, which only a handle carries.
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err() && !rec.tag.is_err() && !source.is_library(s, decl.name.start)
+                    tag = source.span_text(s, rec.tag.must())
+
+                    if tag != "void"
+                        out @ out.push(directive(file: TYPE + tag, line: 1))
+                        out @ out.push("typedef " + tag + " hero_q_" + index.to_str() + ";")
+                        out @ out.push("_Static_assert(sizeof(hero_q_" + index.to_str() + " *) == 0, \"hero-ask\");")
+                        index @ index + 1
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return out.join("\n") + "\n"
+
+# A `#line` spelled as the emitter spells it (`emit/writer.hero`), so a line
+# said again names the file exactly as the probe's does.
+function directive(file: str, line: i64) -> str
+    return "#line " + line.to_str() + " \"" + writer.escaped_path(file) + "\""
+
+# clang's answer, read: a question's line is an answer, the rest was said again.
+# ORDER: none, the walk over `reached` fills a map, and nothing reads its order.
+function read(stderr: str) -> Asked
+    said: [str] @ []
+    values: {str: bool} @ {}
+    macros: {str: bool} @ {}
+    reached: {str: bool} @ {}
+    refused: {str: str} @ {}
+
+    for row in ffi_lookup.lines(text: stderr)
+        if !begins(text: row, prefix: ASK)
+            said @ said.push(row)
+            continue
+
+        if begins(text: row, prefix: VALUE) && ffi_lookup.has(text: row, needle: ffi_lookup.FAILED)
+            values[asked_name(row: row, prefix: VALUE)] @ true
+
+        if begins(text: row, prefix: MACRO) && ffi_lookup.has(text: row, needle: "warning: hero-ask")
+            macros[asked_name(row: row, prefix: MACRO)] @ true
+
+        if begins(text: row, prefix: TYPE)
+            name = asked_name(row: row, prefix: TYPE)
+
+            if ffi_lookup.has(text: row, needle: ffi_lookup.FAILED)
+                reached[name] @ true
+            else if ffi_lookup.has(text: row, needle: "must use 'struct' tag")
+                refused[name] @ "tag"
+            else if ffi_lookup.has(text: row, needle: "unknown type name")
+                refused[name] @ "neither"
+
+    types: {str: str} @ {}
+
+    for name in keys(reached)
+        types[name] @ refused[name].default("type")
+
+    return Asked(said: said.join("\n"), values: values, macros: macros, types: types)
+
+# The name a question's line asks about: what its file name holds after the
+# question's own words, up to the colon that opens the position.
+function asked_name(row: str, prefix: str) -> str
+    cs = row.chars()
+    index: i64 @ prefix.chars().len()
+    kept: [str] @ []
+
+    while index < cs.len() && cs[index] != ":"
+        kept @ kept.push(cs[index])
+        index @ index + 1
+
+    return kept.join("")
+
+function begins(text: str, prefix: str) -> bool
+    at = ffi_lookup.char_index_of(text: text, needle: prefix)
+    return !at.is_err() && at.must() == 0
+
+## Tests
+
+test "the unit says each extern's call again at its line, and asks whether it is a value"
+    text = "extern \"errno.h\"\n    function errno() -> i32\n    function strerror(code: i32) -> cstr\n    constant EDOM: i64\n\nfunction main()\n    print(EDOM)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    got = unit(low.program, s, parsed.decls)
+    assert ffi_lookup.has(text: got, needle: "#include <errno.h>\n")
+
+    # No parameter: the call itself, at the declaration's line.
+    assert ffi_lookup.has(
+        text: got,
+        needle: "#line 2 \"t.hero\"\n__attribute__((unused)) static void hero_ask_0(void) { (void)errno(); }\n"
+    )
+
+    # Parameters: the name alone, since the probe makes the call.
+    assert ffi_lookup.has(
+        text: got,
+        needle: "#line 3 \"t.hero\"\n__attribute__((unused)) static void hero_ask_1(void) { (void)strerror; }\n"
+    )
+    assert ffi_lookup.has(
+        text: got,
+        needle: "#line 1 \"hero-ask-value errno\"\n_Static_assert(!__builtin_constant_p(errno), \"hero-ask\");\n"
+    )
+
+    # Whether each is a macro, a constant's name too; and a constant asks the
+    # rest of its questions in the first round.
+    assert ffi_lookup.has(
+        text: got,
+        needle: "#line 1 \"hero-ask-macro errno\"\n#ifdef errno\n#warning hero-ask\n#endif\n"
+    )
+    assert ffi_lookup.has(text: got, needle: "#line 1 \"hero-ask-macro EDOM\"\n#ifdef EDOM\n")
+    assert !ffi_lookup.has(text: got, needle: "(void)EDOM")
+    assert !ffi_lookup.has(text: got, needle: "hero-ask-value EDOM")
+
+test "a record's tag is asked whether it is a type name, and `void` is not asked"
+    text = "extern \"own.h\"\n    record Q tag only_tagg\n        a: i32\n    record H tag void\n\nfunction touch(q: Q, h: H)\n    _ = q\n    _ = h\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    got = unit(low.program, s, parsed.decls)
+    assert ffi_lookup.has(
+        text: got,
+        needle: "#line 1 \"hero-ask-type only_tagg\"\ntypedef only_tagg hero_q_0;\n_Static_assert(sizeof(hero_q_0 *) == 0, \"hero-ask\");\n"
+    )
+    assert !ffi_lookup.has(text: got, needle: "typedef void")
+
+test "an answer is read from the question's file name, and only a failed assertion is a value"
+    stderr = "t.hero:2:67: error: called object type 'int' is not a function or function pointer\nhero-ask-value BUFSIZ:1:16: error: static assertion failed due to requirement '!__builtin_constant_p(1024)': hero-ask\nhero-ask-value nosuch:1:38: error: use of undeclared identifier 'nosuch'\nhero-ask-macro WEXITSTATUS:2:2: warning: hero-ask [-W#warnings]\n2 errors generated."
+    got = read(stderr)
+    assert !got.values["BUFSIZ"].is_err()
+    assert !got.macros["WEXITSTATUS"].is_err()
+    assert got.macros.len() == 1
+
+    # A tag's three answers, each only where the question was reached.
+    tags = "hero-ask-type anon_s:2:16: error: static assertion failed due to requirement 'sizeof(anon_s *) == 0': hero-ask\nhero-ask-type only_tag:1:9: error: must use 'struct' tag to refer to type 'only_tag'\nhero-ask-type only_tag:2:16: error: static assertion failed due to requirement 'sizeof(struct only_tag *) == 0': hero-ask\nhero-ask-type only_tagg:1:9: error: unknown type name 'only_tagg'\nhero-ask-type only_tagg:2:16: error: static assertion failed due to requirement 'sizeof(int *) == 0': hero-ask\nhero-ask-type cut:1:9: error: unknown type name 'cut'\n"
+    typed = read(tags).types
+    assert typed["anon_s"].must() == "type"
+    assert typed["only_tag"].must() == "tag"
+    assert typed["only_tagg"].must() == "neither"
+    assert typed["cut"].is_err()
+
+    # A question clang could not ask is no answer.
+    assert got.values["nosuch"].is_err()
+    assert got.values.len() == 1
+
+    # What was said again stays, for the readers; no answer's line does.
+    assert ffi_lookup.has(text: got.said, needle: "t.hero:2:67: error: called object type 'int'")
+    assert !ffi_lookup.has(text: got.said, needle: "hero-ask")
+    assert nothing().said == ""

@@ -374,13 +374,18 @@ test "a line end before every closer and every comma stands, and is one separato
     assert three.diagnostics.len() == 0
 
 # Defect 123: an arm whose pattern opens with a `-` a space sets apart from
-# its literal is refused once, where it compiled, and its one fix, `certain`,
-# gives a program that parses: a first arm, a later one, one after a block
-# arm, a joined pattern, two spaces, a character, CRLF. And the `-` alone on
+# its literal is refused once, where it compiled, and every fix gives a
+# program that parses: a first arm, a later one, one after a block arm, a
+# joined pattern, two spaces, a character, CRLF. Panel 185 R6: before an
+# integer or a character the sign and a bullet are both readings, so both
+# fixes are guesses, where the sign was `certain` and a bulleted `- 1` beside
+# `_` was applied into `-1` (the sitting's t7); before a string the `-` signs
+# nothing, and its deletion is certain; and a tab setting the `-` apart goes
+# with it, where the sign wrote the tab into the margin. And the `-` alone on
 # the line above an arm, the lexer's, joins without a space, to `-1`, where
 # the join wrote `- 1`, which the rule refuses; the join is asked alone,
 # since the parentheses offered beside it wrap a pattern (defect 126).
-test "an arm opened by a minus set apart from its literal is refused, and its fix parses"
+test "an arm opened by a minus set apart from its literal is refused, and its fixes parse"
     code = "spaced_minus_element"
     shapes = [
         "function main()\n    k = match n\n        - 1 => 10\n        _ => 20\n"
@@ -396,9 +401,36 @@ test "an arm opened by a minus set apart from its literal is refused, and its fi
         assert every_fix_parses(text: text, code: code)
         refused = parse(text)
         assert refused.diagnostics.len() == 1
-        assert refused.diagnostics[0].fixes.len() == 1
-        assert refused.diagnostics[0].fixes[0].certainty == .certain
+        assert refused.diagnostics[0].fixes.len() == 2
+        assert refused.diagnostics[0].fixes[0].certainty == .guess
         assert refused.diagnostics[0].fixes[0].replacement == "-"
+        assert refused.diagnostics[0].fixes[1].certainty == .guess
+        assert refused.diagnostics[0].fixes[1].replacement == ""
+
+    strings = [
+        "function main()\n    k = match s\n        - \"a\" => 10\n        _ => 20\n"
+        "function main()\n    k = match s\n        \"x\" => 5\n        -  \"a\" | \"b\" => 10\n        _ => 20\n"
+    ]
+
+    for text in strings
+        assert every_fix_parses(text: text, code: code)
+        deleted = parse(text)
+        assert deleted.diagnostics.len() == 1
+        assert deleted.diagnostics[0].fixes.len() == 1
+        assert deleted.diagnostics[0].fixes[0].certainty == .certain
+        assert deleted.diagnostics[0].fixes[0].replacement == ""
+
+    tabbed = "function main()\n    k = match n\n        -\t1 => 10\n        _ => 20\n"
+    mended: i64 @ 0
+
+    for d in parse(tabbed).diagnostics
+        if d.code == code
+            for fix in d.fixes
+                written = tabbed.slice(from: 0, to: fix.span.start) + fix.replacement + tabbed.slice(from: fix.span.end, to: tabbed.len())
+                assert parse(written).diagnostics.len() == 0
+                mended @ mended + 1
+
+    assert mended == 2
 
     split = "function main()\n    k = match n\n        -\n        1 => 10\n        _ => 20\n"
     broken = parse(split)
@@ -589,7 +621,11 @@ test "a brace habit's never closed brace is told once, and its braces end at the
     assert codes(braced.diagnostics) == ["expected_end_of_line", "expected_end_of_line"]
     assert codes(braced.control) == ["expected_end_of_line", "expected_end_of_line"]
     assert codes(parse("function main() {\n    print(1)\n").diagnostics) == ["missing_body"]
-    assert codes(parse("function (a: i64\n").diagnostics) == ["unclosed_bracket", "expected_name"]
+
+    # A head with no name over nothing lacks its body too, told as after
+    # `function f(a: i64`, nothing being in the bracket's reach (defect 133's
+    # class, lane recovery-b7).
+    assert codes(parse("function (a: i64\n").diagnostics) == ["unclosed_bracket", "expected_name", "missing_body"]
 
 # Defect 131's class, lane recovery-b2 (U5): a signature's `(` the lexer named
 # never closed ends at its line and names no closer; the lines below, read
@@ -627,10 +663,22 @@ test "a join the parser refuses only as joined costs the break alone"
     eol = "expected_end_of_line"
     arm = "function main()\n    k = match n\n        "
 
-    for shape in ["0 => 5 -\n        1 => 10\n", "0 => 5\n        | 1 => 10\n", "0 =>\n        _ => 2\n", "0 => 1\n        * 2 => 3\n", "0 => 5 -\n        # a note\n        1 => 10\n"]
+    for shape in ["0 => 5 -\n        1 => 10\n", "0 =>\n        _ => 2\n", "0 => 5 -\n        # a note\n        1 => 10\n"]
         joined = parse(arm + shape + "        _ => 20\n")
         assert codes(joined.diagnostics) == [cob]
         assert codes(joined.control) == [cob, eol]
+
+    # A line that holds an arm's `=>` below a whole arm is no break but an arm,
+    # whose operator is its pattern's one mistake (defect 132's last row); an
+    # arm's patterns broken before a `|` are a break, whose join is the arm.
+    for shape in ["0 => 5\n        | 1 => 10\n", "0 => 1\n        * 2 => 3\n"]
+        own = parse(arm + shape + "        _ => 20\n")
+        assert codes(own.diagnostics) == ["expected_pattern"]
+        assert codes(own.control) == ["expected_pattern"]
+
+    alternation = parse(arm + "0\n        | 1 => 10\n        _ => 20\n")
+    assert codes(alternation.diagnostics) == [cob]
+    assert codes(alternation.control) == [cob]
 
     crlf = parse("function main()\r\n    k = match n\r\n        0 => 5 -\r\n        1 => 10\r\n")
     assert codes(crlf.diagnostics) == [cob]
@@ -665,7 +713,7 @@ test "a mistake the lines make apart is still said beside the break"
     eol = "expected_end_of_line"
     shapes = [
         "function main()\n    k = match n\n        0 => 5 -\n        1 => 10 )\n        _ => 20\n"
-        "function main()\n    k = match n\n        0 => 5\n        | 1 => 10 )\n        _ => 20\n"
+        "function main()\n    k = match n\n        0\n        | 1 => 10 )\n        _ => 20\n"
         "function main()\n    for\n        print(1) )\n"
         "function main()\n    if\n        print(1) )\n"
         "function main()\n    x = n +\n    n )\n"
@@ -680,6 +728,10 @@ test "a mistake the lines make apart is still said beside the break"
         last = got.diagnostics[got.diagnostics.len() - 1]
         assert text.slice(from: last.span.start, to: last.span.end) == ")"
 
+    # An arm whose pattern begins with an operator, below a whole arm, is
+    # read past the operator, and its `)` is said beside its pattern's report.
+    pipe = parse("function main()\n    k = match n\n        0 => 5\n        | 1 => 10 )\n        _ => 20\n")
+    assert codes(pipe.diagnostics) == ["expected_pattern", eol]
     before = parse("function main()\n    x = ) +\n    n )\n")
     assert codes(before.diagnostics) == [cob, "expected_expression", eol]
     tabbed = parse("function\n\ty = 3 )\n")

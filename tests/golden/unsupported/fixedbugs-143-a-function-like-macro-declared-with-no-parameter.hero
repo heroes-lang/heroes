@@ -1,0 +1,17 @@
+# fixedbugs, defect 143, panel 185 R1, lane ffi-macro, 2026-10-02.
+#
+# SYMPTOM: `function SQUARE() -> i32`, a macro that takes an argument
+# declared with none, was `internal error`, exit 2: the result assertion's
+# `SQUARE()` expands to `(() * ())`, *expected expression*, at a line of the
+# generated unit.
+#
+# FIX: the question unit says the call again at the declaration's line, and
+# its answer that `SQUARE` is a macro tells it as one. The draft leaves the
+# parameters to the author, since the declaration gives none and the macro
+# takes some.
+
+extern "fixedbugs-143-macros.h"
+    function SQUARE() -> i32  #~ ffi_macro_name
+
+function main()
+    print(SQUARE())

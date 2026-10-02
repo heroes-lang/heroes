@@ -1,0 +1,27 @@
+# Fixed 2026-10-02, defect 153, panel 185 R3, lane arm: what the checker says
+# of `_` on an arm's line, now that the parser lets it stand. Symptom: every
+# one of these was `declaration_in_arm`, *`_` would be bound*, false by spec
+# § 5. Cause: the arm's refusal never asked the name. Now each is told what
+# its block form is told, at the same column of its own statement: a discard
+# that ends a value arm gives no value, a discarded `T?` drops its error, a
+# discarded `()` holds nothing, and a typed `_` holds its type to the value.
+
+function may(k: i64) -> i64?
+    if k > 0
+        return ok(k)
+    return fail(code: "negative", msg: "a negative number")
+
+function value(n: i64) -> i64
+    return match n
+        0 => _ = 0  #~ no_value
+        _ => 1
+
+function main()
+    n = 1
+
+    match n
+        0 => _ = may(k: n)  #~ discarded_failure
+        1 => _ = print(0)  #~ bound_unit
+        _ => _: i64 = may(k: n)  #~ type_mismatch
+
+    print(value(n: n))

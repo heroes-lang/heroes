@@ -1,0 +1,83 @@
+# Fixed defect 132's last row, 2026-10-02 (the audit's 132-06, lane X2's
+# `b13`), an arm whose pattern begins with an operator. Symptom: `match n`
+# over `+ => print(1)` at its margin cost `continuation_outside_brackets` at
+# the `+`, then `missing_match_arms` and `expected_pattern` at the `=>`, both
+# at one token; over `| 1 => print(1)` the break alone, the margin untold;
+# below a whole arm, `+ => print(2)` cost the break and the pattern again at
+# its `=>`. Cause: the lexer read a line that begins with an operator as one
+# that goes on with the line above and joined it, which no join repairs when
+# that line holds an arm or the `match` itself: the joined line holds two
+# arms, or an arm inside the scrutinee, and the lines read apart had lost
+# the operator that was the pattern. Such a line is now an arm of its own
+# (`selfhost/line_above.hero`, `opens_an_arm`), its operator told once where
+# it stands as what a pattern may not begin with, and the arm read past it,
+# so that its body's own mistake is told too (`selfhost/parse/operator_arm.hero`).
+# A `-` signs its pattern's literal and stays the pattern's own. One shape
+# per function.
+
+function at_the_margin(n: i64)
+    match n
+    + => print(1)  #~ missing_match_arms expected_pattern
+    _ => print(2)
+
+function bound_at_the_margin(n: i64) -> i64
+    k = match n
+    * => 1  #~ missing_match_arms expected_pattern
+    _ => 2
+    return k
+
+function returned_at_the_margin(n: i64) -> i64
+    return match n
+    | 1 => 1  #~ missing_match_arms expected_pattern
+    _ => 2
+
+function a_comparison_at_the_margin(n: i64)
+    match n
+    == 1 => print(1)  #~ missing_match_arms expected_pattern
+    _ => print(2)
+
+function the_second_arm_at_the_margin(n: i64)
+    match n
+    0 => print(0)  #~ missing_match_arms
+    ? => print(1)  #~ expected_pattern
+    _ => print(2)
+
+function below_a_whole_arm(n: i64)
+    match n
+        0 => print(0)
+        + => print(1)  #~ expected_pattern
+        _ => print(2)
+
+function a_field_name_below_a_whole_arm(n: i64)
+    match n
+        0 => print(0)
+        ::x => print(1)  #~ expected_pattern
+        _ => print(2)
+
+function its_body_tells_its_own(n: i64)
+    match n
+        0 => print(0)
+        + => print(1 +)  #~ expected_pattern expected_expression
+        _ => print(2)
+
+function its_block_at_the_margin(n: i64)
+    match n
+    + =>  #~ missing_match_arms expected_pattern
+        print(1)
+    _ => print(2)
+
+function a_sign_with_no_literal(n: i64)
+    match n
+        - => print(1)  #~ expected_pattern
+        _ => print(2)
+
+function main()
+    at_the_margin(n: 1)
+    print(bound_at_the_margin(n: 1) + returned_at_the_margin(n: 1))
+    a_comparison_at_the_margin(n: 1)
+    the_second_arm_at_the_margin(n: 1)
+    below_a_whole_arm(n: 1)
+    a_field_name_below_a_whole_arm(n: 1)
+    its_body_tells_its_own(n: 1)
+    its_block_at_the_margin(n: 1)
+    a_sign_with_no_literal(n: 1)

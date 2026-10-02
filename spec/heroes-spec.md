@@ -140,9 +140,9 @@ arrived fallible is still dropped.
 Shadowing is a compile error: a `use` binds its name for the whole file, so nothing else in the file may take it.
 
     Block     = INDENT { Statement } DEDENT .
-    Statement = ident "=" Expression NEWLINE
-              | ident ":" Type ( "@" | "=" ) Expression NEWLINE
-              | Place "@" Expression NEWLINE
+    Statement = ident Binding | Simple .
+    Binding   = ( "=" | ":" Type ( "@" | "=" ) ) Expression NEWLINE .
+    Simple    = "_" Binding | Place "@" Expression NEWLINE
               | "return" [ Expression ] NEWLINE
               | "break" NEWLINE | "continue" NEWLINE
               | "assert" Expression NEWLINE
@@ -224,11 +224,11 @@ value = match e
 - Exhaustive or compile error. `_` as a catch-all arm is FORBIDDEN on
   variants (allowed on `i64`/`str`, where exhaustiveness is impossible).
 - `|` joins patterns: `.plus | .times => f()`.
-- An arm's body is one statement, inline, or an indented block; a block's value
-  is its last expression. A jump (`return`,
-  `break`, `continue`) is a valid arm body: it yields no value and does not
-  constrain the `match`'s type. An arm that does nothing is a block holding
-  `_ = 0` — `continue` is not one.
+- An arm's body is an indented block, or inline one statement, where a
+  declaration or an `=` may name only `_`; a block's value is its last
+  expression. A jump (`return`, `break`, `continue`) is a valid arm body: it
+  yields no value and does not constrain the `match`'s type. An arm that does
+  nothing holds `_ = 0` — `continue` is not one.
 
 `if` and `match` are expressions and may stand as statements; there is no ternary.
 `if cond` / `else if` / `else` take only `bool` — there is no truthiness.
@@ -238,9 +238,7 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
     For     = "for" ident "in" Expression Block .
     If      = "if" Expression Block { "else" "if" Expression Block } [ "else" Block ] .
     Match   = "match" Expression INDENT { Arm } DEDENT .
-    Arm     = Pattern { "|" Pattern } "=>" ( Inline | Block ) .
-    Inline  = ( Expression | "return" [ Expression ] | "break" | "continue"
-              | "assert" Expression ) NEWLINE .
+    Arm     = Pattern { "|" Pattern } "=>" ( Simple | Block ) .
     Pattern = "." ident [ ident ] | "_" | [ "-" ] ( integer | string | character ) .
 
 ## 9. Functions and calls

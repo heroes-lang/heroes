@@ -210,6 +210,19 @@ function under_a_group(text: str, outline: text_outline.Outline, line: i64) -> b
     top = text_outline.top_above(outline, line: line)
     return top >= 0 && text.slice(from: top, to: word_end(text, from: top)) == "extern"
 
+# Whether the word at `span` stands inside an `extern` group, at any depth
+# under its head: its line does not open at the margin, and the nearest line
+# above it that does begins with `extern`. A group names C's own types, so a
+# type written there is the header's (spec § 13; defect 135's L6). The
+# outline is read here once for the text, as for a word that opens its line.
+function in_a_group(text: str, span: token.Span, @outline: text_outline.Outline) -> bool
+    begins = line_start(text, at: span.start)
+
+    if begins < text.len() && text[begins] != ' ' && text[begins] != '\t'
+        return false
+    text_outline.read(@outline, text)
+    return under_a_group(text, outline, line: begins)
+
 # The first character on the line at `from` that is not a space or a tab.
 function first_mark(text: str, from: i64) -> i64
     i: i64 @ from

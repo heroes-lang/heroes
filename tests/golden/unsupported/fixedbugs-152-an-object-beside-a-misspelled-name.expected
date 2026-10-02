@@ -1,0 +1,13 @@
+error[ffi_unknown_name]: `math.h` declares no `sqrtt` — clang read the header and could not find it
+  at tests/golden/unsupported/fixedbugs-152-an-object-beside-a-misspelled-name.hero:14:5
+     |
+  14 |     function sqrtt(x: f64) -> f64  #~ ffi_unknown_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `sqrtt`
+
+error[ffi_call_shape]: `errno.h` declares `errno` as an object of type `int`, not a function: clang read the header, and the call this declaration implies does not fit it
+  at tests/golden/unsupported/fixedbugs-152-an-object-beside-a-misspelled-name.hero:11:5
+     |
+  11 |     function errno() -> i32  #~ ffi_call_shape
+     |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: an object can hold another value at the next read, so no group member binds one, and a `constant` refuses it (§4.19): a function of the program's own returns it, written in a header beside this file and bound by `extern` naming that header like any function, `static inline int hero_errno(void) { return errno; }`

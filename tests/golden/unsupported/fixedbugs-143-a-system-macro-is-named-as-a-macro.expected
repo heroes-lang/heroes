@@ -1,0 +1,6 @@
+error[ffi_macro_name]: `sys/wait.h` defines `WEXITSTATUS` as a macro, not a function: a macro has no parameter types for clang to hold this declaration to
+  at tests/golden/unsupported/fixedbugs-143-a-system-macro-is-named-as-a-macro.hero:21:5
+     |
+  21 |     function WEXITSTATUS(status: i32) -> i64  #~ ffi_macro_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: bind a function of the program's own that calls it: in a header beside this file, `static inline <C result> hero_WEXITSTATUS(<C type> status) { return WEXITSTATUS(status); }`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_WEXITSTATUS` there like any function, and clang holds that declaration to your function (§ 13)

@@ -1,5 +1,6 @@
-# An arm's body may not declare a name (panel 017 D; design.md §4.7): the
-# refusal `arm` asks of the statement it read as the body. It reads the tree
+# An arm's body may not declare a name (panel 017 D; design.md §4.7), and `_`
+# is none (panel 185 R3; spec § 5): the refusal `arm` asks of the statement it
+# read as the body. It reads the tree
 # the expression knot built and needs nothing of the knot, so it stands
 # outside it (`grammar_expr.hero`'s map).
 #
@@ -15,6 +16,15 @@ use cursor
 # nothing can read: the arm is one statement, so the binding's scope ends with
 # it.
 #
+# **`_` is not a name it binds** (panel 185 R3, defect 153). Spec § 5: `_`
+# binds nothing, so `_ = f(x)`, and `_: i64 = f(x)` with it, declare no name
+# and stand on an arm's line, as they stand in a block, where the checker
+# then says of them what it says there (`discarded_failure`, `bound_unit`,
+# `no_value`). Until that sitting this refused them too, telling the author
+# that `_` would be bound, which the spec it cites denies; and the compiler's
+# own `check/walk.hero` wrote `fall_through()` to get past it. So the message
+# below is true for every name it still refuses: each one is bound.
+#
 # The rejection lives here, in the parser, where Rust puts the same rule — as a
 # GRAMMAR exclusion of `let` from expression position. In the checker it would
 # arrive second: the resolver already reports the name as unused, with a repair
@@ -27,14 +37,18 @@ function reject_declaration(@c: cursor.Cursor, a: ast.Ast, text: str, at: i64)
 
     if named.is_err()
         return
-    return_if_unreadable = named.must()
+    declared = named.must()
 
-    if a.exprs[return_if_unreadable.value].kind == .error
+    if a.exprs[declared.value].kind == .error
+        return
+    name = cursor.slice_of(text, declared.name)
+
+    if name == "_"
         return
     cursor.error(
         @c,
         code: "declaration_in_arm",
-        message: "an arm's body may not declare a name — `" + cursor.slice_of(text, return_if_unreadable.name) + "` would be bound where nothing can read it; write the value as the arm's body, or open a block",
+        message: "an arm's body may not declare a name — `" + name + "` would be bound where nothing can read it; write the value as the arm's body, or open a block",
         span: a.stmts[at].span
     )
 

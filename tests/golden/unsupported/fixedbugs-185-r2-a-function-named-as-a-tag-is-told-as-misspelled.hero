@@ -1,0 +1,14 @@
+# fixedbugs, panel 185 R2, lane ffi-macro, 2026-10-02.
+#
+# The shape the completeness critic found against the first question tried,
+# `sizeof(T)`: GNU C takes `sizeof` of a FUNCTION, so `use_anon_s`, a
+# function of the header, would have been told a typedef. Named after a
+# `tag`, it is no type at all: `typedef use_anon_s hero_q;` answers *unknown
+# type name*, and the note says the tag is misspelled, the one reading left.
+
+extern "fixedbugs-145-types.h"
+    record F tag use_anon_s  #~ ffi_unknown_tag
+        a: i32
+
+function main()
+    print(1)

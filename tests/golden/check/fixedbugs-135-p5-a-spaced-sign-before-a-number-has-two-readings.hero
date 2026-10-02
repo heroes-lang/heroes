@@ -1,0 +1,53 @@
+# Fixed 2026-10-02, defect 135's P5, panel 185 R6, lane arm. Symptom: an arm
+# opened by a `-` a space sets apart from an integer or a character took the
+# certain fix that writes the `-` against it, and `check --apply` wrote a
+# program that checked clean and meant something else where the arms were a
+# bulleted list: `- 1 => "one"` beside `_ => "many"` printed `many` for 1
+# (panel 185's t7), three bulleted integers `many` for 2, two bulleted
+# characters 3 for `'b'`. Cause: the fix rested on the premise that in a
+# pattern a `-` can only be its literal's sign; a bullet is a reading too. Now
+# the sign and the deletion are both offered and both are guesses, so
+# `--apply` writes neither: one bulleted arm beside `_`, a list of them, one
+# signed arm among plain ones, characters, a based integer, a grouped one,
+# zero, one set apart by a tab, and in a statement `match`.
+
+function one(n: i64) -> str
+    return match n
+        - 1 => "one"  #~ spaced_minus_element
+        _ => "many"
+
+function bulleted(n: i64) -> str
+    return match n
+        - 1 => "one"  #~ spaced_minus_element
+        - 2 => "two"  #~ spaced_minus_element
+        - 3 => "three"  #~ spaced_minus_element
+        _ => "many"
+
+function signed_among_plain(n: i64) -> str
+    return match n
+        0 => "zero"
+        - 1 => "minus one"  #~ spaced_minus_element
+        1 => "one"
+        _ => "other"
+
+function letters(c: i64) -> i64
+    return match c
+        - 'a' => 1  #~ spaced_minus_element
+        - 'b' => 2  #~ spaced_minus_element
+        _ => 3
+
+function written(n: i64) -> i64
+    return match n
+        - 0x1f => 31  #~ spaced_minus_element
+        - 1_000 => 1000  #~ spaced_minus_element
+        - 0 => 0  #~ spaced_minus_element
+        -	7 => 7  #~ tab_in_line spaced_minus_element
+        _ => 9
+
+function main()
+    n = 2
+
+    match n
+        - 1 => print(one(n: 1))  #~ spaced_minus_element
+        - 2 => print(bulleted(n: 2), signed_among_plain(n: -1), letters(c: 'b'), written(n: 7))  #~ spaced_minus_element
+        _ => print(0)

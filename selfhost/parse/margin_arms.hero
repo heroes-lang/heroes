@@ -6,7 +6,8 @@
 # statement and refused at its `=>`, `expected_end_of_line`: one mistake, one
 # message more per arm, and every mistake inside the arms unreported. The
 # lines below a `match` with no arms under it that begin at its margin and
-# hold a `=>` outside brackets, or are an arm broken before its `=>`, are its
+# hold a `=>` outside brackets, or are an arm broken before its `=>`, or
+# patterns alone over such a line, an arm broken inside its patterns, are its
 # arms, misplaced: `missing_match_arms` is their one report, and they are
 # read as arms (`grammar_expr.arms_of`).
 #
@@ -43,13 +44,27 @@ function below(c: cursor.Cursor, head: i64) -> bool
 
 # Whether the arms read at a margin end at the cursor: at a dedent, which is
 # the enclosing block's, or at a line that holds no arm. An indent below an
-# arm and the stream's end are the arms loop's own to answer.
-function end_here(c: cursor.Cursor) -> bool
+# arm and the stream's end are the arms loop's own to answer. `run` is the
+# caller's, the line a run of patterns alone was last found to end at
+# (`arm_at`), so that the lines of one run are walked once for the whole
+# loop and not once for each of them.
+function end_here(c: cursor.Cursor, @run: i64) -> bool
     k = cursor.current_kind(c)
 
     if k == .indent || k == .eof
         return false
-    return k == .dedent || !holds_an_arm(c)
+
+    if k == .dedent
+        return true
+
+    if c.pos < run
+        return false
+    at = arm_at(c, from: c.pos)
+
+    if at < 0
+        return true
+    run @ at
+    return false
 
 # Whether the token behind the cursor, past any comment line, is a line end
 # that keeps the margin: a terminator, not an indent or a dedent.
@@ -63,23 +78,91 @@ function after_a_line_end(c: cursor.Cursor) -> bool
 
 # Whether the line under the cursor holds a `=>` outside brackets, or is an
 # arm broken before its `=>`, whose next line begins with one
-# (`parse/broken_arm`).
+# (`parse/broken_arm`), or is an arm broken inside its patterns: patterns
+# alone, over a line at its margin that holds an arm. `0` over `1 => 10` is
+# the arm `0 | 1 => 10` with its `|` left out, the line the lexer reads apart
+# where the author broke it before the `|` (`parse/apart`): read as a
+# statement, the `0` cost the next line its `=>` too, a second message for
+# the break the lexer had told (defect 132's class, lane recovery-b7).
 function holds_an_arm(c: cursor.Cursor) -> bool
+    return arm_at(c, from: c.pos) >= 0
+
+# The first token of the line that holds an arm, the line whose first token
+# is `from` or the one a run of lines of patterns alone from it ends at; -1
+# where there is none. The run is walked in one loop, each line once: a file
+# of such lines is no deeper a recursion than one.
+function arm_at(c: cursor.Cursor, from: i64) -> i64
+    at: i64 @ from
+
+    while true
+        one = read_line(c, from: at)
+
+        if one.holds
+            return at
+
+        if !one.patterns || one.next < 0
+            return -1
+        at @ one.next
+
+    return -1
+
+# What the line whose first token is `from` is to the arms at a margin:
+# whether it holds an arm by its own tokens, a `=>` outside brackets or one
+# the next line begins with; whether it is patterns alone; and where the next
+# line begins, past its line end and comment lines, or -1 where a block's
+# edge or the stream's end ends it.
+record ArmRead
+    holds: bool
+    patterns: bool
+    next: i64
+
+function read_line(c: cursor.Cursor, from: i64) -> ArmRead
     depth: i64 @ 0
-    i: i64 @ c.pos
+    i: i64 @ from
+    patterns: bool @ true
 
     while c.tokens[i].kind != .eof && !(depth == 0 && is_line_end(c.tokens[i].kind))
         k = c.tokens[i].kind
+        patterns @ patterns && of_a_pattern(k)
 
         if k == .lparen || k == .lbracket || k == .lbrace
             depth @ depth + 1
         else if (k == .rparen || k == .rbracket || k == .rbrace) && depth > 0
             depth @ depth - 1
         else if k == .fat_arrow && depth == 0
-            return true
+            return ArmRead(holds: true, patterns: false, next: -1)
         i @ i + 1
 
-    return broken_arm.arrow_below(c, end: i, past_a_dedent: false) >= 0
+    if broken_arm.arrow_below(c, end: i, past_a_dedent: false) >= 0
+        return ArmRead(holds: true, patterns: false, next: -1)
+    next: i64 @ -1
+
+    if c.tokens[i].kind == .terminator
+        next @ past_line_ends(c, from: i)
+    return ArmRead(holds: false, patterns: patterns && i > from, next: next)
+
+# A token spec § 8's `Pattern` is written with, or the `|` that joins two.
+# ENUMERATED, so that a new kind is answered for here.
+function of_a_pattern(k: token.TokenKind) -> bool
+    return match k
+        .dot | .ident | .minus | .int_lit | .str_lit | .char_lit | .pipe | .comment             => true
+        .float_lit | .str_piece | .kw_constant | .kw_function | .kw_record | .kw_variant        => false
+        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use | .kw_true      => false
+        .kw_false | .kw_fail | .eq | .at | .colon | .colon_colon | .comma | .question | .arrow  => false
+        .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace | .plus      => false
+        .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge | .and_and        => false
+        .or_or | .amp | .caret | .shl | .shr | .bang | .tilde | .hole | .terminator | .indent   => false
+        .dedent | .eof | .error                                                                 => false
+
+# The index of the first token past the line ends and comment lines at `from`.
+function past_line_ends(c: cursor.Cursor, from: i64) -> i64
+    i: i64 @ from
+
+    while c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
+        i @ i + 1
+
+    return i
 
 # Whether the `match` at token `head` is an arm's value: a `=>` stands before
 # it on its line.
@@ -222,6 +305,32 @@ test "a line at a match's margin is its arm where it holds one and the match own
     for text in ["match n\nprint(1)\n", "match n\nf([x => 1])\n", "0 => match m\n_ => 5\n", "f(match t\n.a => 1)\n"]
         p = on_the_second_line(text)
         assert !below(p.c, head: p.head)
+
+# Defect 132's last row: the line a break before a `|` leaves apart, `0` over
+# `1 => 10`, is an arm broken inside its patterns, and so is a run of them;
+# a run that ends at no arm, or at a line deeper than the margin, is none.
+test "a line of patterns alone over an arm at the margin is an arm"
+    for text in ["match n\n0\n1 => 1\n", "match n\n0\n# a note\n1\n.red r\n2 => 1\n", "match n\n-1\n_ => 1\n"]
+        p = on_the_second_line(text)
+        assert below(p.c, head: p.head)
+
+    for text in ["match n\n0\n1\nprint(2)\n", "match n\n0\n    1 => 1\n", "match n\n0 + 1\n2 => 1\n", "match n\n1.5\n2 => 1\n"]
+        p = on_the_second_line(text)
+        assert !below(p.c, head: p.head)
+
+test "the arms at a margin walk a run of patterns alone once, and end where it ends at no arm"
+    text = "match n\n0\n1\n2 => 1\nprint(3)\n"
+    p = on_the_second_line(text)
+    run: i64 @ -1
+    assert !end_here(p.c, @run)
+    assert run > p.c.pos
+    kept = run
+    second = on(p.c, at: p.c.pos + 2)
+    assert !end_here(second, @run)
+    assert run == kept
+    past = on(p.c, at: run + 4)
+    assert cursor.at(past, .ident)
+    assert end_here(past, @run)
 
 # The cursor on the first dedent of `text`, in the lexer's own stream.
 function on_the_dedent(text: str) -> cursor.Cursor

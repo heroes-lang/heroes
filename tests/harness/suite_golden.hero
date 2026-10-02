@@ -87,6 +87,10 @@ record Shape
 # **314 in lane recovery-b4, 2026-09-30**: the recovery cluster's batches took
 # the directory past 250 by more than a quarter at the fourth batch's panel 183
 # cases, and the suite asked for 314.
+#
+# **393 in lane recovery-b7, 2026-10-02**: the batches after it took the
+# directory past 314 by more than a quarter at that lane's eighth case, its
+# CRLF `f` literal, and the suite asked for 393.
 function shape_check() -> Shape
     return Shape(
         name: "check",
@@ -95,7 +99,7 @@ function shape_check() -> Shape
         flag: "--brief",
         on_stderr: true,
         want_code: 1,
-        least: 314,
+        least: 393,
         watched: true,
         silent_stdout: false,
         library_skip: false
@@ -137,7 +141,11 @@ function shape_emit() -> Shape
 # one per declared result type, took the directory from 14 cases to 25, past
 # its floor of 12 by more than a quarter, and the suite asked for 25. **34 the
 # same day**, defect 145's nine `fixedbugs-145-` cases, one per way a header
-# names a struct.
+# names a struct. **46 in lane ffi-macro, 2026-10-02**: defect 152's nine
+# `fixedbugs-152-` cases, one per kind of name a header holds that is not a
+# function, and the suite asked for 46. **63 the same day**: seven
+# `fixedbugs-152-a-field-the-header-lacks-` cases and defect 143's ten
+# `fixedbugs-143-` cases (panel 185 R1).
 function shape_unsupported() -> Shape
     return Shape(
         name: "unsupported",
@@ -146,7 +154,7 @@ function shape_unsupported() -> Shape
         flag: "",
         on_stderr: true,
         want_code: 1,
-        least: 34,
+        least: 63,
         watched: true,
         silent_stdout: true,
         library_skip: true

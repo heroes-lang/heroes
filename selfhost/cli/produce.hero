@@ -21,6 +21,7 @@ use source
 use modules
 use emit/ffi
 use emit/ffi_tag
+use emit/ffi_asked
 use cli/io
 use cli/compile
 use cli/toolchain
@@ -28,6 +29,7 @@ use cli/pointee_ask
 use cli/clang_floor
 use cli/artifact
 use cli/assemble
+use cli/header_ask
 use cli/libraries
 use cli/input
 use cli/process
@@ -143,7 +145,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         # compiler is allowed to blame the author's own `extern` (§7).
         message = failure_text(package_flags)
 
-        if blamed(message, art.must(), s, answered, struct_tags: no_tags)
+        if blamed(message, art.must(), s, answered, struct_tags: no_tags, asked: ffi_asked.nothing())
             return fail(code: "diagnostics", msg: "the package could not answer")
         io.eprint(text: message)
         return fail(code: "diagnostics", msg: "the package could not answer")
@@ -217,7 +219,10 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         if failure_code(linked) != "clang"
             return fail(code: "failed", msg: message)
 
-        if blamed(message, art.must(), s, answered, struct_tags: struct_tags)
+        # Asked only now, of a round clang refused (defect 152).
+        asked = header_ask.ask(t, art.must(), s, site, search_include: options.headers_from)
+
+        if blamed(message, art.must(), s, answered, struct_tags: struct_tags, asked: asked)
             return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
 
         # A unit clang refused carries its own path inside the message
@@ -248,8 +253,9 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
 
             if failure_code(wrote) != "clang"
                 return fail(code: "failed", msg: message)
+            asked = header_ask.ask(t, art.must(), s, site, search_include: options.headers_from)
 
-            if blamed(message, art.must(), s, answered, struct_tags: struct_tags)
+            if blamed(message, art.must(), s, answered, struct_tags: struct_tags, asked: asked)
                 return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
             io.eprint(text: "internal error: " + message)
             return fail(code: "failed", msg: "the artifact was not written")
@@ -267,7 +273,7 @@ function failure_text(failed: [str]?) -> str
 # lines back into diagnostics on the `.hero` line, prints them, and the answer
 # is yes (CLAUDE.md §7's named exception). One door for the package that could
 # not answer and the unit clang refused — the same eleven lines twice, before.
-function blamed(message: str, art: compile.Artifact, s: source.Source, answered: [pointee_ask.Answered], struct_tags: {str: bool}) -> bool
+function blamed(message: str, art: compile.Artifact, s: source.Source, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked) -> bool
     theirs = ffi.explain(
         message,
         s,
@@ -277,7 +283,8 @@ function blamed(message: str, art: compile.Artifact, s: source.Source, answered:
         art.program,
         word_bits: io.word_bits(),
         answered: answered,
-        struct_tags: struct_tags
+        struct_tags: struct_tags,
+        asked: asked
     )
 
     if theirs.len() == 0
