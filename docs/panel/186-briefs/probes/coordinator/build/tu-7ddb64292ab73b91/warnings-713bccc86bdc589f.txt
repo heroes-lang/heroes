@@ -1,0 +1,4 @@
+read.hero:2:81: warning: excess elements in union initializer [-Wexcess-initializers]
+    2 | __attribute__((unused)) static void hero_ffi_complete_h_read_W(void) { W v = {0,0}; (void)v; }
+      |                                                                                 ^
+1 warning generated.

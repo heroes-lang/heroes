@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 8**
+**OPEN: 9**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -580,5 +580,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     author (`.claude/rules/c-boundary.md`). Panel 073 resolved that a
     bit-field is filtered before its assertion; what such a field binds to,
     if anything, is panel 186's question beside defect 151.
+
+- [ ] **157 — `ffi_tag_is_a_union` says a union has no `record` spelling, which a record binding a union falsifies** | `extern "tu.h"` over `union utag { int32_t i; float f; };` with `record UI tag utag` naming `i`: `build` exit 1, `ffi_tag_is_a_union`, its note *a group's `record` is the header's STRUCT (§4.19). A union has no `record` spelling in this language: reach it as a `ptr` and read it through C functions, or bind the one member you need as its own type*, while `record W` over the typedef'd union `W` builds and prints `7` | `selfhost/emit/ffi_tag.hero:200-218` (landed in `8fdd2a3c`) · panel 077's ratified item 4 (*spell `union T` where the header says union*) · panel 073's *one record per arm by `tag`*
+
+    **Origin:** panel 186's ffi-pragmatist and compiler-engineer (both
+    measured the refusal, on SDL3's `SDL_Event` and on a minimal `union
+    utag`) and its completeness critic (who read the note against
+    `read.hero` and panel 077, and found no golden holding the code),
+    2026-10-02; reproduced by the coordinator at 14:20 on the trunk at
+    `43520193` (`docs/panel/186-briefs/probes/coordinator/tu1.hero` and
+    `read.hero`).
+
+    **Why it is a defect.** design.md §4.17: a diagnostic is true, and its
+    note sends the author to a `ptr` and C functions for a union the
+    language binds; the refusal itself, of a TAGGED union where a typedef'd
+    one binds, is the question panel 186's R9 leaves open with it.
 
 *******************************************************************************
