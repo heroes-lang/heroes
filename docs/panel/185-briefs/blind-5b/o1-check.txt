@@ -1,0 +1,6 @@
+error[unused_binding]: `count` is bound and never read — remove the binding, or read it
+  at task1.hero:6:5
+    |
+  6 |     count = rows.len()
+    |     ^^^^^
+exit 1

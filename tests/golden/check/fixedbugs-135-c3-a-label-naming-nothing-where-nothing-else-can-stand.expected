@@ -1,0 +1,13 @@
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-nothing-else-can-stand.hero:46:17: error[wrong_label]: `fail` has nothing called `cdoe` at this position — it is `code`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-nothing-else-can-stand.hero:49:27: error[wrong_label]: `Size` has nothing called `widht` at this position — it is `width`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-nothing-else-can-stand.hero:50:21: error[wrong_label]: `copy_text` has nothing called `frm` at this position — it is `from`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-nothing-else-can-stand.hero:51:28: error[wrong_label]: `Shape.circle` has nothing called `radus` at this position — it is `radius`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-nothing-else-can-stand.hero:52:19: error[wrong_label]: `Rgb` has nothing called `gg` at this position — it is `g`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-nothing-else-can-stand.hero:53:17: error[wrong_label]: `P` has nothing called `z` at this position — it is `y`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-nothing-else-can-stand.hero:54:18: error[wrong_label]: `g` has nothing called `aplha` at this position — it is `alpha`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-nothing-else-can-stand.hero:55:13: error[wrong_label]: `g` has nothing called `nn` at this position — it is `n`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-nothing-else-can-stand.hero:57:11: error[wrong_label]: `R` has nothing called `barvo` at this position — it is `alpha`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-nothing-else-can-stand.hero:57:21: error[wrong_label]: `R` has nothing called `aplha` at this position — it is `bravo`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-nothing-else-can-stand.hero:59:25: error[wrong_label]: `k` has nothing called `barvo` at this position — it is `bravo`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-nothing-else-can-stand.hero:60:16: error[wrong_label]: `pick` has nothing called `frist` at this position — it is `first`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-where-nothing-else-can-stand.hero:62:20: error[wrong_label]: `slice` has nothing called `form` at this position — it is `from`

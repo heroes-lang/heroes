@@ -1,0 +1,28 @@
+# Fixed 2026-10-02, defect 135's class, lane literals (the certain-fix
+# audit's L4, and the shapes beside it). Symptom: Perl's `\x{41}` and
+# `\o{101}`, and `\u41` or `\U41`, a code one digit short of its count, cost
+# `unknown_escape` with the certain fix `\\`, so `check --apply` wrote a
+# program that checked clean and printed the escape's text where `A` was
+# meant; in an `f"…"` literal the `{41}` the fix left behind became a hole,
+# and in a character literal `char_literal` came second. Cause: a code was
+# read only at its full count of digits and never braced. Now each is a
+# character by its code, braced to its `}` or, never closed, to its `{`: the
+# character itself and `\\` are both guesses, written in an `f"…"` piece with
+# its `{` doubled, and `--apply` leaves the case as it is (`escape_codes`,
+# `escape_report`).
+
+function braced()
+    print("\x{41} \o{101} \u{}")  #~ unknown_escape unknown_escape unknown_escape
+
+function one_digit_short()
+    print("\u41 \U41 \u4")  #~ unknown_escape unknown_escape unknown_escape
+
+function never_closed()
+    print("a\x{41")  #~ unknown_escape
+
+function in_an_f_literal()
+    n = 3
+    print(f"{n}\x{41}")  #~ unknown_escape
+
+function in_a_character()
+    print('\x{41}')  #~ unknown_escape

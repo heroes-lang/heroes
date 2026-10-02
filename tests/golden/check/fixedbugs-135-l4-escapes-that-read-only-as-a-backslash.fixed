@@ -1,0 +1,19 @@
+# Fixed 2026-10-02, defect 135's class, lane literals: the other half of
+# the `fixedbugs-135-l4-*` cases. Where an escape the language does not have
+# reads as nothing but a backslash the repair stays `\\`, certain, and
+# `check --apply` writes it: a pattern's `\s` and `\&`, `\c` before what is
+# not a control letter or at the literal's end, `\N` with no brace, `\_`
+# and `\!`. That `\s` is Ruby's and Java's space, and `\d` Elixir's delete,
+# is a judgment recorded in `escape_readings`, not a measurement.
+
+function a_pattern()
+    print("\\s+\\&")  #~ unknown_escape unknown_escape
+
+function a_c_that_names_no_control()
+    print("\\c1 ab\\c")  #~ unknown_escape unknown_escape
+
+function an_n_with_no_brace()
+    print("a\\Nb")  #~ unknown_escape
+
+function markup()
+    print("a\\_b hi\\!")  #~ unknown_escape unknown_escape

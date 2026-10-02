@@ -1,0 +1,113 @@
+# Fixed 2026-10-02, defect 148, lane checker. Symptom: `break` or `continue`
+# as a constant's body cost `jump_outside_loop` and the constant's *its body
+# jumps before it gives one*, both at one place, for one mistake; and the
+# lane's first pass found the class wider: an `if` or a `match` used as a
+# value, synthesised or checked, in a constant or a function, every branch of
+# which was such a jump, or one such jump beside a `return`, was told *every
+# branch jumps* beside the jumps' own messages. Cause: the checker's outcome
+# said only whether control left, so a jump refused where it stands and one
+# that means something read alike to every claim. Now how control leaves is
+# three answers (`join.Leaves`): it falls, it jumps, or it leaves by a jump
+# refused where it stands; whatever asks whether control goes on reads the
+# last two alike, and a claim to the author speaks only where no refused jump
+# is what made the construct leave. A block leaves the way its first leaving
+# statement does, so a `return` before a refused `break` is told as well.
+
+constant BREAKS: i64
+    break  #~ jump_outside_loop
+
+constant CONTINUES: i64
+    continue  #~ jump_outside_loop
+
+constant LINES_THEN_BREAK: i64
+    x: i64 @ 1
+    x @ x + 1
+    break  #~ jump_outside_loop
+
+constant BREAK_THEN_VALUE: i64
+    break  #~ jump_outside_loop
+    5
+
+constant IF_EVERY_BRANCH_REFUSED: i64
+    if true
+        break  #~ jump_outside_loop
+    else
+        continue  #~ jump_outside_loop
+
+constant MATCH_EVERY_ARM_REFUSED: i64
+    match 1
+        1 => break  #~ jump_outside_loop
+        _ => continue  #~ jump_outside_loop
+
+constant A_STATEMENT_MATCH_THAT_LEAVES_REFUSED: i64
+    match 1
+        1 => break  #~ jump_outside_loop
+        _ => continue  #~ jump_outside_loop
+
+    5
+
+function value_if(c: bool) -> i64
+    x = if c
+        break  #~ jump_outside_loop
+    else
+        continue  #~ jump_outside_loop
+    return x
+
+function checked_if(c: bool) -> i64
+    x: i64 = if c
+        break  #~ jump_outside_loop
+    else
+        continue  #~ jump_outside_loop
+    return x
+
+function value_match(n: i64) -> i64
+    x = match n
+        0 => break  #~ jump_outside_loop
+        _ => continue  #~ jump_outside_loop
+
+    return x
+
+function checked_match(n: i64) -> i64
+    x: i64 = match n
+        0 => break  #~ jump_outside_loop
+        _ => continue  #~ jump_outside_loop
+
+    return x
+
+function beside_a_return(c: bool) -> i64
+    x = if c
+        break  #~ jump_outside_loop
+    else
+        return 1
+    return x
+
+# Inside a loop the same jumps mean something, and the value they leave
+# without is told once.
+function in_a_loop(c: bool) -> i64
+    while true
+        x = if c  #~ no_value
+            break
+        else
+            continue
+        return x
+
+    return 0
+
+# A `return` is a function's habit, and a constant's body that leaves by one
+# is told, naming the constant; a refused `break` after it is a second
+# mistake, told at its own line.
+constant RETURNS_THEN_BREAKS: i64
+    return 5  #~ no_value
+    break  #~ jump_outside_loop
+
+# What asks whether control goes on reads a refused jump as leaving, as
+# before: this function costs no `missing_return`.
+function body_is_a_break() -> i64
+    break  #~ jump_outside_loop
+
+function main()
+    print(BREAKS + CONTINUES + LINES_THEN_BREAK + BREAK_THEN_VALUE)
+    print(IF_EVERY_BRANCH_REFUSED + MATCH_EVERY_ARM_REFUSED)
+    print(A_STATEMENT_MATCH_THAT_LEAVES_REFUSED + RETURNS_THEN_BREAKS)
+    print(value_if(true) + checked_if(true) + value_match(0) + checked_match(0))
+    print(beside_a_return(true) + in_a_loop(true) + body_is_a_break())

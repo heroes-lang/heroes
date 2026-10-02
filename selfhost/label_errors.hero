@@ -30,19 +30,41 @@ use diag
 # does in `Point(x: 1, z: 2)`, the position decides which field it is and the
 # rename is the repair: `certain`. Found by panel 127's compiler seat, which
 # applied the old fix and measured the program printing `b/a`.
-function wrong_label(holder: str, written: str, expected: str, elsewhere: bool, span: token.Span) -> diag.Diagnostic
+#
+# **And the position decides only where the argument can stand there alone**
+# (defect 135, C3). `Size(widht: 640, height: 480)` over fields `height,
+# width` was renamed into `height:` twice, and `R(barvo: 11, aplha: 22)` over
+# `alpha, bravo` into `R(alpha: 11, bravo: 22)`, which checks clean and binds
+# the values the other way round: where another label writes this position's
+# name (`doubled`), or another position the call leaves unnamed could take the
+# argument (`others`, `check/labels.other_labels`), the order written is one
+# reading among several, and each is offered, none applied.
+function wrong_label(holder: str, written: str, expected: str, elsewhere: bool, doubled: bool, others: [str], span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "wrong_label",
-        message: "`" + holder + "` has nothing called `" + written + "` at this position — it is `" + expected + "`",
+        message: "`" + holder + "` has nothing called `" + written + "` at this position — it is " + in_order(expected, others),
         span: span
     )
     certainty: diag.Certainty @ .certain
 
-    if elsewhere
+    if elsewhere || doubled || others.len() > 0
         certainty @ .guess
+
+    # The note is for a label that names nothing, whose rename would write a
+    # name the call already holds; a swap keeps panel 127's message alone.
+    if doubled && !elsewhere
+        d.notes @ d.notes.push(
+            "another label of this call is `" + expected + ":` already, so the order written may not be the order meant"
+        )
     d.fixes @ d.fixes.push(
         diag.Fix(title: "write `" + expected + ":`", replacement: expected, span: span, certainty: certainty)
     )
+
+    for other in others
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write `" + other + ":`", replacement: other, span: span, certainty: .guess)
+        )
+
     return d
 
 # A label at a call made through a FUNCTION VALUE of a type that carries no
@@ -107,8 +129,11 @@ function missing_label(holder: str, expected: str, others: [str], span: token.Sp
 # The clause that names the label: the one the position gives, or, where the
 # order written may not be the order meant, every one the argument could be.
 function which_one(expected: str, others: [str]) -> str
+    return "this one is " + in_order(expected, others)
+
+function in_order(expected: str, others: [str]) -> str
     if others.len() == 0
-        return "this one is `" + expected + "`"
+        return "`" + expected + "`"
     quoted: [str] @ []
 
     for other in others
@@ -118,7 +143,7 @@ function which_one(expected: str, others: [str]) -> str
 
     if others.len() == 1
         order @ "the other order"
-    return "this one is `" + expected + "` in the order written, or " + quoted.join(" or ") + " in " + order
+    return "`" + expected + "` in the order written, or " + quoted.join(" or ") + " in " + order
 
 # The label the position gives, certain where nothing else could stand
 # there, and beside it as guesses the labels of the other readings.
@@ -195,11 +220,14 @@ test "a label the order written gives is a guess where another could stand there
     assert argument_front("swap(x)", value_start: 5, mutable: false) == 5
 
 test "wrong_label replaces the identifier alone, colon left in place"
+    none: [str] = []
     d = wrong_label(
         holder: "Point",
         written: "z",
         expected: "y",
         elsewhere: false,
+        doubled: false,
+        others: none,
         span: token.Span(start: 10, end: 11)
     )
     assert d.fixes[0].replacement == "y"
@@ -215,13 +243,53 @@ test "a label that names another position is a swap, so its fix is a guess"
     # leaves the two values exactly where they were, which is a fix that keeps
     # the defect it names. Measured by panel 127's compiler seat on a running
     # program, and `.claude/rules/diagnostics-and-goldens.md` is the rule.
+    none: [str] = []
     swap = wrong_label(
         holder: "copy_text",
         written: "to",
         expected: "from",
         elsewhere: true,
+        doubled: false,
+        others: none,
         span: token.Span(start: 10, end: 12)
     )
     assert swap.fixes.len() == 1
     assert swap.fixes[0].replacement == "from"
     assert swap.fixes[0].certainty == .guess
+
+# Defect 135, C3: `copy_text(to: "b", fro: "a")`. The position says `to`,
+# which the call's first label writes already, and `from`, which no label
+# writes, could take the argument as well: both are offered, neither applied.
+test "a label that names nothing is renamed with certainty only where nothing else could stand there"
+    other: [str] = ["from"]
+    d = wrong_label(
+        holder: "copy_text",
+        written: "fro",
+        expected: "to",
+        elsewhere: false,
+        doubled: true,
+        others: other,
+        span: token.Span(start: 25, end: 28)
+    )
+    assert d.message == "`copy_text` has nothing called `fro` at this position — it is `to` in the order written, or `from` in the other order"
+    assert d.fixes.len() == 2
+    assert d.fixes[0].replacement == "to" && d.fixes[0].certainty == .guess
+    assert d.fixes[1].replacement == "from" && d.fixes[1].certainty == .guess
+    assert d.fixes[1].span.start == 25 && d.fixes[1].span.end == 28
+    assert d.notes.len() == 1
+    assert d.notes[0] == "another label of this call is `to:` already, so the order written may not be the order meant"
+
+    # With another reading but the position's name written by no label, the
+    # rename is still one reading of two: `R(barvo: 11, aplha: 22)`.
+    two: [str] = ["bravo"]
+    swapped = wrong_label(
+        holder: "R",
+        written: "barvo",
+        expected: "alpha",
+        elsewhere: false,
+        doubled: false,
+        others: two,
+        span: token.Span(start: 6, end: 11)
+    )
+    assert swapped.fixes[0].certainty == .guess
+    assert swapped.notes.len() == 0

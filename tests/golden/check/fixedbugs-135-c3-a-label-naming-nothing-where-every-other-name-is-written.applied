@@ -1,0 +1,20 @@
+# Fixed 2026-10-02, defect 135's C3, lane checker: a label naming nothing is
+# certain where every other position is named by a label of the call, even
+# one written out of its position. `R(bravo: 1, alpha: 2, cahrlie: 3)`: the
+# first two labels name `alpha` and `bravo`, so `charlie` is all the third
+# can be, and the rename is the repair, while the swap beside it stays a
+# guess, panel 127's rule. The same in a function whose one `i64` is the
+# label's position. `.applied` holds the one rename each, the swaps left.
+
+record R
+    alpha: i64
+    bravo: i64
+    charlie: i64
+
+function f(n: i64, alpha: str, bravo: str) -> str
+    return alpha + bravo + to_str(n)
+
+function main()
+    v = R(bravo: 1, alpha: 2, charlie: 3)  #~ wrong_label wrong_label wrong_label
+    print(f(n: 1, bravo: "b", alpha: "a"))  #~ wrong_label wrong_label wrong_label
+    print(v.charlie)

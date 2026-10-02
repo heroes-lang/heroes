@@ -1,0 +1,5 @@
+extern "wait_shim.h"
+    function hero_wexitstatus(status: i64) -> i64
+
+function main()
+    print(hero_wexitstatus(status: 256))

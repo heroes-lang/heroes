@@ -1,0 +1,52 @@
+# Fixed 2026-10-02, defect 135's C3, lane checker. Symptom: a label that
+# names no position, in a call where another label writes this position's
+# name, took a certain rename to that name: `Size(widht: 640, height: 480)`
+# over fields `height, width` was applied into `height:` twice, refused anew,
+# and `copy_text(to: "b", fro: "a")` into `to:` twice. Cause: the rename asked
+# whether the written label names a position, and never what the call's other
+# labels write. Now a label naming nothing is renamed by its position with
+# certainty only where the argument can stand there alone: no other label
+# writes the position's name, and no other position the call leaves unnamed
+# could take the argument. Otherwise every reading is offered as a guess, the
+# message names them, and `--apply` leaves the call as it was written. Every
+# kind of call that checks a label, below: a record, a variant's case, a
+# declared function, a function value, mutable arguments, and both built-ins.
+
+record Size
+    height: i64
+    width: i64
+
+variant Shape
+    box
+        height: i64
+        width: i64
+    dot
+
+function copy_text(from: str, to: str) -> str
+    return from + " -> " + to
+
+function swap(@one: i64, @two: i64)
+    t = one
+    one @ two
+    two @ t
+
+function failing() -> i64?
+    return fail(msg: "m", cdoe: "e")  #~ wrong_label wrong_label
+
+function main()
+    s = Size(widht: 640, height: 480)  #~ wrong_label wrong_label
+    b: Shape = .box(widht: 640, height: 480)  #~ wrong_label wrong_label
+    print(copy_text(to: "b", fro: "a"))  #~ wrong_label wrong_label
+    g = copy_text
+    print(g(to: "b", fro: "a"))  #~ wrong_label wrong_label
+    a: i64 @ 1
+    c: i64 @ 2
+    swap(otw: @a, one: @c)  #~ wrong_label wrong_label
+    xs = [1, 2, 3, 4]
+    print(xs.slice(to: 3, form: 1).len())  #~ wrong_label wrong_label
+    print(s.width + a + c)
+    print(failing().is_err())
+
+    match b
+        .box x => print(x.width)
+        .dot   => print(0)

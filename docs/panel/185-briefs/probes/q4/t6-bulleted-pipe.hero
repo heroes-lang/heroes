@@ -1,0 +1,6 @@
+function main()
+    n = 2
+    k = match n
+        - 1 | - 2 => "small"
+        _ => "many"
+    print(k)

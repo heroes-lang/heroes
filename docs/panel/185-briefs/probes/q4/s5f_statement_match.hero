@@ -1,0 +1,5 @@
+function main()
+    n = -1
+    match n
+        - 1 => print("minus one")
+        _ => print("other")

@@ -12,6 +12,7 @@ use state
 use escape
 use bytes
 use escape_readings
+use escape_codes
 
 # The diagnostic for the escape whose backslash is at `backslash`, in the
 # escape's own words, its fixes by its reading, pushed; and the position past
@@ -23,14 +24,20 @@ function report(@l: state.LexState, text: str, backslash: i64, literal: i64, ctx
 
     end = match r
         .code c                               => c.end
+        .name n                               => n.end
         .backslash | .hole _ | .bare | .brace => backslash + 1 + escaped.len()
 
     span = token.Span(start: backslash, end: end)
     shown = text.slice(from: backslash, to: end)
     opening = escape_readings.quoted(shown) + " is not an escape sequence — "
+
+    # In the piece of an `f"…"` literal a `{` opens a hole, so a guess that
+    # writes one there writes it doubled, and means what its title says: the
+    # backslash before `\x{41}` is `\\x{{41}` (defect 135's L4).
+    in_piece = ctx == .in_str && text[literal] != '"'
     backslashed = diag.Fix(
-        title: "escape the backslash: " + escape_readings.quoted("\\" + shown),
-        replacement: "\\" + shown,
+        title: "escape the backslash: " + escape_readings.quoted(as_text("\\" + shown, in_piece: in_piece)),
+        replacement: as_text("\\" + shown, in_piece: in_piece),
         span: span,
         certainty: .guess
     )
@@ -50,13 +57,13 @@ function report(@l: state.LexState, text: str, backslash: i64, literal: i64, ctx
             )
             d.fixes @ d.fixes.push(backslashed)
         .code c =>
-            value = escape_readings.code_value(text, at: backslash + 1, end: c.end)
-            one = escape_readings.written(value, ctx)
+            value = escape_codes.code_value(text, at: backslash + 1, end: c.end)
+            one = escape_codes.written(value, ctx)
 
             if ctx == .in_char
                 d.message @ opening + "a character literal is its character's code, an integer, and this language has no escape for a character by its code: write the character, or its number"
 
-                if literal + 1 == backslash && c.end < text.len() && text[c.end] == '\''
+                if value >= 0 && literal + 1 == backslash && c.end < text.len() && text[c.end] == '\''
                     d.fixes @ d.fixes.push(
                         diag.Fix(title: "write the number: `" + value.to_str() + "`", replacement: value.to_str(), span: token.Span(start: literal, end: c.end + 1), certainty: .guess)
                     )
@@ -64,11 +71,20 @@ function report(@l: state.LexState, text: str, backslash: i64, literal: i64, ctx
                 d.message @ opening + "a string holds its characters as themselves, and this language has no escape for one by its code; write `\\\\` for a literal backslash"
 
             if !one.is_err()
+                itself = as_text(one.must(), in_piece: in_piece)
                 d.fixes @ d.fixes.push(
-                    diag.Fix(title: "write the character itself: " + escape_readings.quoted(one.must()), replacement: one.must(), span: span, certainty: .guess)
+                    diag.Fix(title: "write the character itself: " + escape_readings.quoted(itself), replacement: itself, span: span, certainty: .guess)
                 )
 
             if ctx == .in_str
+                d.fixes @ d.fixes.push(backslashed)
+        .name _ =>
+            # A name this compiler has no table for, so the character itself
+            # is the author's to write; `\\` is the one repair it can show.
+            if ctx == .in_char
+                d.message @ opening + "a character literal is its character's code, an integer, and this language has no escape for a character by its name: write the character, or its number"
+            else
+                d.message @ opening + "a string holds its characters as themselves, and this language has no escape for one by its name: write the character itself, or `\\\\` for a literal backslash"
                 d.fixes @ d.fixes.push(backslashed)
         .bare =>
             d.fixes @ d.fixes.push(
@@ -117,3 +133,28 @@ function hole_fix(text: str, hole: str, backslash: i64, close: i64, literal: i64
         span: here,
         certainty: .guess
     )
+
+# The text a fix writes, as it reads where it lands: in the piece of an
+# `f"…"` literal every `{` doubled, since one alone opens a hole there and
+# `{{` is the brace; anywhere else as it is.
+function as_text(s: str, in_piece: bool) -> str
+    if !in_piece
+        return s
+    out: [str] @ []
+    run: i64 @ 0
+    i: i64 @ 0
+
+    while i < s.len()
+        if s[i] == '{'
+            out @ out.push(s.slice(from: run, to: i + 1) + "{")
+            run @ i + 1
+        i @ i + 1
+
+    out @ out.push(s.slice(from: run, to: s.len()))
+    return out.join("")
+
+test "a fix's text in an f piece doubles its brace, and elsewhere stays"
+    assert as_text("\\\\x{41}", in_piece: true) == "\\\\x{{41}"
+    assert as_text("\\\\x{41}", in_piece: false) == "\\\\x{41}"
+    assert as_text("{", in_piece: true) == "{{"
+    assert as_text("é{é", in_piece: true) == "é{{é"

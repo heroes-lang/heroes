@@ -1,0 +1,69 @@
+# Fixed 2026-10-02, defect 135's C3, lane checker: the renames its repair
+# keeps certain, because the argument can stand at its position alone. Every
+# other position is named by a label written right, or holds an unlabelled
+# argument its type alone places there (`g(1.5, ...)`: `n` is the one `f64`),
+# or is of a type the argument cannot take (`R` over `a`, an `i64`, and
+# `"x"`, a `str`), or is the receiver. Applied, the file checks clean, which
+# `.fixed` holds. The neighbours that are guesses are
+# `fixedbugs-135-c3-two-labels-naming-nothing` and
+# `fixedbugs-135-c3-a-label-naming-nothing-beside-one-out-of-its-position`.
+
+record Size
+    height: i64
+    width: i64
+
+record Rgb
+    r: i64
+    g: i64
+    b: i64
+
+record P
+    x: i64
+    y: i64
+
+record R
+    alpha: i64
+    bravo: str
+
+variant Shape
+    circle
+        radius: f64
+    dot
+
+function copy_text(from: str, to: str) -> str
+    return from + " -> " + to
+
+function g(n: f64, alpha: i64, bravo: i64) -> f64
+    return n + to_f64(alpha * 10 + bravo)
+
+function k(base: i64, alpha: i64, bravo: i64) -> i64
+    return base + alpha * 10 + bravo
+
+function pick<T>(first: T, second: T) -> [T]
+    return [first, second]
+
+function failing() -> i64?
+    return fail(cdoe: "e", msg: "m")  #~ wrong_label
+
+function main()
+    s = Size(height: 640, widht: 480)  #~ wrong_label
+    print(copy_text(frm: "a", to: "b"))  #~ wrong_label
+    shape: Shape = .circle(radus: 2.0)  #~ wrong_label
+    c = Rgb(r: 1, gg: 2, b: 3)  #~ wrong_label
+    p = P(x: 1, z: 2)  #~ wrong_label
+    print(g(1.5, aplha: 11, bravo: 22))  #~ wrong_label
+    print(g(nn: 1.5, alpha: 11, bravo: 22))  #~ wrong_label
+    a = 7
+    v = R(barvo: a, aplha: "x")  #~ wrong_label wrong_label
+    x = 7
+    print(x.k(alpha: 1, barvo: 2))  #~ wrong_label
+    print(pick(frist: 1, second: 2).len())  #~ wrong_label
+    xs = [1, 2, 3, 4]
+    print(xs.slice(form: 1, to: 3).len())  #~ wrong_label
+    print(s.width + c.g + p.y + v.alpha)
+    print(v.bravo)
+    print(failing().is_err())
+
+    match shape
+        .circle o => print(o.radius)
+        .dot      => print(0)
