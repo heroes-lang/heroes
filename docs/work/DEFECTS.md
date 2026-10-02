@@ -641,6 +641,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     language binds; the refusal itself, of a TAGGED union where a typedef'd
     one binds, is the question panel 186's R9 leaves open with it.
 
+    **Widened 2026-10-02** by lane land186's first pass, the same cause (a
+    union reached by `tag`): a handle, `record UH tag utag` with no fields
+    over `union utag { int32_t i; float f; };`, is told `ffi_unknown_name`,
+    *`tags.h` declares no `utag`*, which is false (reproduced by the
+    coordinator at 17:40 on `9faf7462`,
+    `docs/panel/186-briefs/probes/coordinator/handle_utag.hero` over
+    `tags.h`).
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a false note, against
     panel 077's ratified item 4.
