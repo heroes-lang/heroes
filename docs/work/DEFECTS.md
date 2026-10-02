@@ -808,6 +808,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     sat on the route (its Q1); the seats measured that a call-form probe holds
     none of a macro's parameters, a `u8` declaration reading out of bounds.
 
+    **2026-10-02, lane ffi-macro, panel 185 R1, a macro-only name is
+    `ffi_macro_name`, its note drafting a function of the program's own with
+    a placeholder for every C type**: repaired at `357589d6`, gated by its
+    cases and the compiler's own tests; the net is owed at the batch's close,
+    and so are Linux x86-64 (the gate's container), Linux arm64 and the
+    Windows box, R1 being at the C boundary.
+
 - [ ] **147 — spec § 8's `Inline` production refuses one-statement arms the design allows and the compiler builds** | `Inline = ( Expression | "return" [ Expression ] | "break" | "continue" | "assert" Expression ) NEWLINE` leaves out a mutation (`.blue => n @ 5`) and a `while` (`.red => while n < 3` over its body), and both check, build and run on the trunk, where design.md §4.7 says *an arm's body is one statement, inline, or an indented block* (panel 014) | `spec/heroes-spec.md:241-243` · design.md §4.7 (`:1230-1235`) · `selfhost/parse/arm_line.hero`
 
     **Origin:** lane flow's first pass, 2026-10-01
