@@ -64,7 +64,7 @@ function number(@l: state.LexState, text: str)
             # THAT would defeat the reason the notation exists.
             base = lowered_marker.must()
             l.pos @ l.pos + 2
-            _ = digit_run(@l, text, base)
+            run = digit_run(@l, text, base)
             span = token.Span(start: start, end: l.pos)
             written = text.slice(from: start, to: l.pos)
             lowered = digits.prefix(base) + text.slice(from: start + 2, to: l.pos)
@@ -73,12 +73,26 @@ function number(@l: state.LexState, text: str)
                 message: "`" + written + "` writes the base in uppercase — this language spells it `" + digits.prefix(base) + "`",
                 span: span
             )
-            d.notes @ d.notes.push(
-                "there is exactly one way to write any program (§4.15). The " + digits.base_name(base) + " digits themselves may be either case, so `" + lowered + "` is the same value written correctly"
-            )
-            d.fixes @ d.fixes.push(
-                diag.Fix(title: "write the prefix as `" + digits.prefix(base) + "`", replacement: lowered, span: span, certainty: .certain)
-            )
+
+            # **The lowered prefix is certain only where the run holds a digit
+            # of its base, or its digits already faulted** and the run told
+            # that mistake (defect 135's L5, lane literals). With neither,
+            # `0X` lowered is `0x`, which `based` refuses as
+            # `empty_base_literal`: `check --apply` wrote a refusal the first
+            # run never made. So that literal is told both mistakes at once
+            # and offered no fix, since its digits are the author's to write.
+            if run.count > 0 || run.faulted
+                d.notes @ d.notes.push(
+                    "there is exactly one way to write any program (§4.15). The " + digits.base_name(base) + " digits themselves may be either case, so `" + lowered + "` is the same value written correctly"
+                )
+                d.fixes @ d.fixes.push(
+                    diag.Fix(title: "write the prefix as `" + digits.prefix(base) + "`", replacement: lowered, span: span, certainty: .certain)
+                )
+            else
+                d.message @ "`" + written + "` writes the base in uppercase and then stops — this language spells it `" + digits.prefix(base) + "`, and a number needs digits"
+                d.notes @ d.notes.push(
+                    "there is exactly one way to write any program (§4.15): " + digits.a_name(base) + " literal is written `" + digits.prefix(base) + "` followed by " + digits.base_digits(base)
+                )
             state.error_token(@l, d)
             return
     run = digit_run(@l, text, .decimal)
@@ -286,6 +300,22 @@ test "an uppercase prefix is refused and only the prefix is lowered"
     # marker had one spelling (§4.15). The Rust original does exactly this.
     assert l.diagnostics[0].fixes[0].replacement == "0x1F"
     assert l.diagnostics[0].fixes[0].certainty == .certain
+
+test "an uppercase prefix with no digit after it is told both mistakes and offered no fix"
+    # Defect 135's L5: the lowering wrote `0x`, refused anew as empty.
+    for alone in ["0X", "0B", "0O", "0X.5", "0X)"]
+        l: state.LexState @ state.new_state()
+        number(@l, alone)
+        assert l.diagnostics.len() == 1
+        assert l.diagnostics[0].code == "base_prefix_case"
+        assert l.diagnostics[0].fixes.len() == 0
+
+    # A run that faulted told its own mistake, so the lowering adds none.
+    for faulted in ["0XG", "0B2", "0X_"]
+        f: state.LexState @ state.new_state()
+        number(@f, faulted)
+        assert f.diagnostics[f.diagnostics.len() - 1].code == "base_prefix_case"
+        assert f.diagnostics[f.diagnostics.len() - 1].fixes[0].certainty == .certain
 
 test "a leading zero is never octal and both fixes are guesses"
     l: state.LexState @ state.new_state()

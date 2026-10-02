@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-135-l2-a-literal-open-at-a-crlf-line-end.hero:18:11: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-135-l2-a-literal-open-at-a-crlf-line-end.hero:21:9: error[unterminated_char]: this character literal never closes — write one character between single quotes: 'a'
+tests/golden/check/fixedbugs-135-l2-a-literal-open-at-a-crlf-line-end.hero:25:9: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-135-l2-a-literal-open-at-a-crlf-line-end.hero:31:9: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-135-l2-a-literal-open-at-a-crlf-line-end.hero:36:9: error[unterminated_char]: this character literal never closes — write one character between single quotes: 'a'
+tests/golden/check/fixedbugs-135-l2-a-literal-open-at-a-crlf-line-end.hero:41:9: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-135-l2-a-literal-open-at-a-crlf-line-end.hero:45:11: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
