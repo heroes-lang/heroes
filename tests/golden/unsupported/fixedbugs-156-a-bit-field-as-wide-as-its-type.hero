@@ -1,0 +1,15 @@
+# fixedbugs, defect 156, lane land186, 2026-10-02 (panel 186 R5), a shape
+# beside the critic's: `uint32_t whole : 32` holds every bit of a `u32` and is
+# still a bit-field, with no address and no size of its own, so the refusal
+# rests on what C says the member is and never on its width.
+
+extern "fixedbugs-156-bit-fields.h"
+    record FULL
+        kind: i32
+        whole: u32  #~ ffi_field_type
+
+function touch(v: FULL) -> i32
+    return v.kind
+
+function main()
+    print(1)

@@ -1,0 +1,176 @@
+# The screen that decides which group records need the header's layout at
+# all (panel 186), so `cli/layout.hero` asks clang for the dump only where C
+# cannot vouch for a binding by itself.
+#
+# **Why a screen.** clang's record-layout dump expands every named record
+# member inline at every level and prints a block for every record it lays
+# out, so it grows with the CUBE of by-value nesting: defect 140's case, a
+# thousand group records each holding the one before it, dumped 693,681,863
+# bytes, and the first build of this route sat at 1.5 GB reading it. A real
+# header nests a few levels deep (`SDL3/SDL.h` dumps 30 KB), but the tracked
+# tree holds a program that does not, and a program that builds must not
+# become one that exhausts a machine.
+#
+# **What the screen proves, in C.** One never-called function per record,
+# its body a POSITIONAL initialiser in the record's declared order under
+# three locally-armed errors: a member left out (`-Wmissing-field-
+# initializers`), one too many (`-Wexcess-initializers`), and a scalar that
+# C spends inside an anonymous member by brace elision (`-Wmissing-braces`).
+# An aggregate's slot designates inside itself, `{.x = 0}` for a record and
+# `{[0] = 0}` for an array, so a slot that C gives to an anonymous union
+# whose first arm is that aggregate is clang's error too (the union has no
+# member `x`, and no `[0]`). And `sizeof(v.f)` per field, which is clang's
+# hard error for a bit-field. So a record whose function compiles clean
+# names exactly the struct's members, none of them in an anonymous member and
+# none a bit-field, and needs nothing more; every other record is dumped.
+# A `partial` record has no count to prove: it is dumped only when the
+# program builds it from two or more fields, the one check it can need.
+#
+# Each function sits at `#line <decl + 1> "hero_ly_screen"`, so every line
+# clang prints about it names the record, and nothing is read from clang's
+# prose but that position.
+
+use ast
+use bytes
+use handles
+use source
+use check/table
+use check/state
+use emit/extern_union
+use emit/layout_text
+
+constant SCREEN: str
+    "hero_ly_screen"
+
+function screen_unit(headers: [str], wanted: [layout_text.Asked], s: source.Source, decls: [ast.Decl], c: state.Checked, u: extern_union.Used) -> str
+    lines: [str] @ []
+
+    for header in headers
+        lines @ lines.push("#include <" + header + ">")
+
+    lines @ lines.push("#pragma clang diagnostic error \"-Wmissing-field-initializers\"")
+    lines @ lines.push("#pragma clang diagnostic error \"-Wexcess-initializers\"")
+    lines @ lines.push("#pragma clang diagnostic error \"-Wmissing-braces\"")
+
+    for one in wanted
+        match decls[one.decl].kind
+            .record_decl rec =>
+                built = !u.constructed[one.decl].is_err() && rec.fields.len() >= 2
+                compared = !u.operated[one.decl].is_err()
+                slots: [str] @ []
+                sizes: [str] @ []
+
+                for field in rec.fields
+                    sizes @ sizes.push("(void)sizeof(v." + source.span_text(s, field.name) + ");")
+                    slots @ slots.push(slot(c, decls, s, field))
+
+                list: str @ slots.join(", ")
+
+                if slots.len() == 1 && slots[0] == "0"
+                    list @ "(0)"
+
+                if rec.partial
+                    list @ ""
+
+                # What the program does with the record is part of the
+                # question the dump answers, so it is part of this text, and
+                # of the key the answer is cached under.
+                lines @ lines.push(
+                    "/* " + one.decl.to_str() + " built " + built.to_str() + " compared " + compared.to_str() + " */"
+                )
+                lines @ lines.push("#line " + (one.decl + 1).to_str() + " \"" + SCREEN + "\"")
+                text: str @ "__attribute__((unused)) static void " + SCREEN + "_" + one.decl.to_str() + "(void) { " + one.c_type + " v = {" + list + "}; " + sizes.join(" ") + " (void)v; }"
+
+                if rec.partial && built
+                    text @ text + " _Static_assert(0, \"" + SCREEN + "\");"
+                lines @ lines.push(text)
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return lines.join("\n") + "\n"
+
+# One field's slot: a scalar is `0`; an aggregate designates its first
+# member, so C cannot spend it on a union arm silently.
+function slot(c: state.Checked, decls: [ast.Decl], s: source.Source, field: ast.Field) -> str
+    written = state.written_type(c, field.ty)
+
+    if written.is_err()
+        return "0"
+
+    match table.get(c.types, written.must())
+        .named n =>
+            if handles.is_handle(decls[n.decl])
+                return "0"
+
+            match decls[n.decl].kind
+                .record_decl inner =>
+                    if inner.fields.len() == 0
+                        return "0"
+                    first = inner.fields[0]
+                    return "{." + source.span_text(s, first.name) + " = " + inner_zero(c, decls, field: first) + "}"
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return "0"
+        .fixed x =>
+            element: str @ "0"
+
+            match table.get(c.types, x.element)
+                .named | .fixed                                           => element @ "{}"
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => element @ element
+                .array | .map | .fallible | .function_ty                  => element @ element
+                .case_ty | .failure | .generic | .error                   => element @ element
+
+            return "{[0] = " + element + "}"
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return "0"
+        .array | .map | .fallible | .function_ty                  => return "0"
+        .case_ty | .failure | .generic | .error                   => return "0"
+
+# The zero of a nested record's first field: `{}` for an aggregate, whose
+# own record is screened on its own, and `0` for a scalar or a handle.
+function inner_zero(c: state.Checked, decls: [ast.Decl], field: ast.Field) -> str
+    written = state.written_type(c, field.ty)
+
+    if written.is_err()
+        return "0"
+
+    match table.get(c.types, written.must())
+        .named n =>
+            if handles.is_handle(decls[n.decl])
+                return "0"
+            return "{}"
+        .fixed                                                    => return "{}"
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return "0"
+        .array | .map | .fallible | .function_ty                  => return "0"
+        .case_ty | .failure | .generic | .error                   => return "0"
+
+# The records clang said anything about: every `hero_ly_screen:<n>:` in its
+# output names declaration n - 1.
+function flagged(said: str) -> {i64: bool}
+    out: {i64: bool} @ {}
+    needle = SCREEN + ":"
+    at: i64 @ 0
+
+    while at + needle.len() <= said.len()
+        if bytes.bytes_at(text: said, at: at, needle: needle)
+            row: i64 @ 0
+            k: i64 @ at + needle.len()
+            seen: bool @ false
+
+            while k < said.len() && said[k] >= '0' && said[k] <= '9'
+                row @ row * 10 + (said[k] - '0').to_i64().must()
+                seen @ true
+                k @ k + 1
+
+            if seen && row >= 1
+                out[row - 1] @ true
+            at @ k
+        else
+            at @ at + 1
+
+    return out
+
+## Tests
+
+test "the screen names a record by its line, and only by that"
+    said = "hero_ly_screen:4:31: error: missing field 'x' initializer [-Wmissing-field-initializers]\nhero_ly_screen:12:5: error: suggest braces\nu.h:3:1: note: here\nhero_ly_screen_7(void)\n"
+    got = flagged(said)
+    assert got.len() == 2
+    assert !got[3].is_err() && !got[11].is_err()
+    assert got[6].is_err()

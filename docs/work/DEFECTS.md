@@ -559,6 +559,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     about it reaches the author at a line they wrote correctly
     (`.claude/rules/generated-c.md`; design.md §4.17).
 
+    **2026-10-02, lane land186, completeness asked of the header's layout
+    and the positional probe gone** (panel 186 R4): repaired at `f2a08f13`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close, and the platform legs before the push.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a clang warning on a
     correct program reaches the author's line.
@@ -584,6 +589,24 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `true` (reproduced by the coordinator at 11:02 on `ae08ed93`), where the
     same union bound alone by one member is `ffi_union_field`
     (`docs/panel/186-briefs/probes/critic/one_arm.hero`).
+
+    **2026-10-02, lane land186, the layout read from clang: a field left out
+    named by it, two fields of one union not built, a misspelling told
+    first** (panel 186 R1, R2, R4): repaired at `f2a08f13`, gated by its
+    cases and the compiler's own tests; the net is owed at the batch's
+    close, and the platform legs before the push.
+
+    **2026-10-02, lane land186, one comparison rule: a field in a union is
+    compared only as an integer, a pointer or an array of them as wide as
+    the union** (panel 186 R3, the widening's `SB` among its cases):
+    repaired at `75ff04b9`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close, and the platform legs before the
+    push.
+
+    **2026-10-02, lane land186, spec § 13 says it, and *as wide as the
+    union* is the width clang gives the union's own block** (panel 186 R6):
+    at `b7c510c5`, gated by its own cases; the rest is owed at the round's
+    gate, and the platform legs before the push.
 
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a wrong value at the C
@@ -648,6 +671,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     bit-field is filtered before its assertion; what such a field binds to,
     if anything, is panel 186's question beside defect 151.
 
+    **2026-10-02, lane land186, a bit-field refused on its own line at
+    build, and one left out sent to `partial`** (panel 186 R5): repaired at
+    `afd07f00`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close, and the platform legs before the push.
+
+    **2026-10-02, lane land186, spec § 13's *A bit-field is none of these:
+    leave it to `partial`.*** (panel 186 R6): at `b7c510c5`, gated by its
+    own cases; the rest is owed at the round's gate.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): exit 2 and clang's
     text for a binding the author can be told about.
@@ -666,6 +698,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     note sends the author to a `ptr` and C functions for a union the
     language binds; the refusal itself, of a TAGGED union where a typedef'd
     one binds, is the question panel 186's R9 leaves open with it.
+
+    **2026-10-02, lane land186, the note says what is true, its two routes
+    built and run**: repaired at `24d3d23d`, gated by its own cases; the
+    rest is owed at the round's gate, and the platform legs before the push.
 
     **Widened 2026-10-02** by lane land186's first pass, the same cause (a
     union reached by `tag`): a handle, `record UH tag utag` with no fields

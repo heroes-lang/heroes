@@ -1,0 +1,80 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R3): panel 077's
+# `unsupported/fixedbugs-140-a-union-compared-sixteen-deep-is-refused`, moved
+# by hand. `U { int32_t i; float f; }` bound by `i`, an integer as wide as the
+# union, compares soundly, so `==` over values holding it sixteen plain records
+# down is built and answers as the bytes do; the same union by its float arm
+# stays refused there, sixteen deep.
+
+extern "fixedbugs-151-unions.h"
+    record U
+        i: i32
+    function make_u(i: i32) -> U
+
+record R0
+    u: U
+
+record R1
+    inner: R0
+
+record R2
+    inner: R1
+
+record R3
+    inner: R2
+
+record R4
+    inner: R3
+
+record R5
+    inner: R4
+
+record R6
+    inner: R5
+
+record R7
+    inner: R6
+
+record R8
+    inner: R7
+
+record R9
+    inner: R8
+
+record R10
+    inner: R9
+
+record R11
+    inner: R10
+
+record R12
+    inner: R11
+
+record R13
+    inner: R12
+
+record R14
+    inner: R13
+
+record R15
+    inner: R14
+
+function deep(i: i32) -> R15
+    r0 = R0(u: make_u(i: i))
+    r1 = R1(inner: r0)
+    r2 = R2(inner: r1)
+    r3 = R3(inner: r2)
+    r4 = R4(inner: r3)
+    r5 = R5(inner: r4)
+    r6 = R6(inner: r5)
+    r7 = R7(inner: r6)
+    r8 = R8(inner: r7)
+    r9 = R9(inner: r8)
+    r10 = R10(inner: r9)
+    r11 = R11(inner: r10)
+    r12 = R12(inner: r11)
+    r13 = R13(inner: r12)
+    r14 = R14(inner: r13)
+    return R15(inner: r14)
+
+function main()
+    print(deep(i: 3) == deep(i: 3), " ", deep(i: 3) == deep(i: 4))

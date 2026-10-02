@@ -1,0 +1,18 @@
+# fixedbugs, defect 156, lane land186, 2026-10-02 (panel 186 R5), found by
+# the panel's ffi-pragmatist on rung 4's own header: curl's `struct
+# curl_hstsentry` holds `unsigned int includeSubDomains:1`, and binding it
+# stopped `build` at exit 2 with clang's text. On a machine with no
+# `curl/curl.h` the case is `ffi_missing_header`, which the form skips.
+
+extern "curl/curl.h"
+    record Hsts tag curl_hstsentry
+        name: ptr
+        namelen: u64
+        includeSubDomains: u32  #~ ffi_field_type
+        expire: i8[18]
+
+function touch(e: Hsts) -> u64
+    return e.namelen
+
+function main()
+    print(1)

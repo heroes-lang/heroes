@@ -1,0 +1,24 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R4).
+#
+# SYMPTOM: a record over `SA` leaving out `x`, the member after the anonymous
+# union, was built at exit 0 and printed 12, `x` reaching C as zero.
+#
+# CAUSE: the completeness probe wrote one positional zero per DECLARED field,
+# where C counts the struct's members: three zeros filled `kind`, the union and
+# `x`, and C's count was met by the wrong fields.
+#
+# FIX: completeness is asked of the header's layout: a member left out is
+# complete only where C says it has no bytes, shares a byte with a declared
+# field, or sits in a union.
+
+extern "fixedbugs-151-unions.h"
+    record SA  #~ ffi_incomplete_record
+        kind: i32
+        i: i32
+        f: f32
+
+function touch(s: SA) -> i32
+    return s.kind
+
+function main()
+    print(1)

@@ -1,0 +1,21 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R4).
+#
+# SYMPTOM: a record over `S3 { a; b; c; }` naming `a` and `c` was told *`S3`
+# does not name `c`*, a field it declares on the line below its name.
+#
+# CAUSE: the positional probe's two zeros filled `a` and `b`, and clang named
+# C's third member, which the message repeated.
+#
+# FIX: the member left out is named from the header's layout, and C judges it:
+# this says `b`. No union in it: the completeness rule is one for every record.
+
+extern "fixedbugs-151-unions.h"
+    record S3  #~ ffi_incomplete_record
+        a: i32
+        c: i32
+
+function touch(s: S3) -> i32
+    return s.a
+
+function main()
+    print(1)

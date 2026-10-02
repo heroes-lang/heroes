@@ -1,0 +1,6 @@
+error[ffi_incomplete_record]: `DEEP` does not name `y`, and `fixedbugs-151-unions.h` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero
+  at tests/golden/unsupported/fixedbugs-151-a-field-left-out-beside-a-union-in-an-anonymous-struct.hero:14:12
+     |
+  14 |     record DEEP  #~ ffi_incomplete_record
+     |            ^^^^
+  note: the assertions above check every field you DO name and cannot see one you leave out: a `DEEP` built here would carry a zero `y` into C, which is a value rather than a crash
