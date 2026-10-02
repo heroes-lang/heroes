@@ -1,0 +1,21 @@
+# Fixed 2026-10-02, defect 135's class, lane literals (a shape beside the
+# certain-fix audit's L3, found in the lane's first pass). Symptom: where a
+# later quote stood on the line, `c == '\' || c == '"'` read `'\' || c == '`
+# as one literal, `char_literal`, and then the `"'` left over as an
+# unterminated string: two messages for one mistake, the first quoting a
+# literal nobody wrote; `['\', 'a']` the same, with `unterminated_char`
+# second. Cause: the classic `'\'` was read only where nothing closed the
+# scan. Now, when the quote that closed the scan opens a well-formed
+# character literal of its own, the classic ends at its third byte and the
+# rest of the line is read as written; where it does not, `'\'a'`, the
+# wider literal stands (`literals.hero`).
+
+function a_comparison_beside_another(c: i64) -> bool
+    return c == '\' || c == '"'  #~ unterminated_char
+
+function a_list()
+    xs = ['\', 'a', '\n']  #~ unterminated_char
+    print(xs.len())
+
+function two_letters_after_it()
+    print('\'a')  #~ char_literal
