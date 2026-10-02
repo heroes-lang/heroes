@@ -9,6 +9,11 @@
 # no certainty, and a `.fixed` must check clean. So what this file pins is one
 # diagnostic per break; the certainties are held by `selfhost/lexer.hero`'s
 # defect 129 tests, which lex the same shapes.
+#
+# Corrected 2026-10-02, defect 159, lane h158: the deletion of the `-` is
+# offered now, and `certain`, since no `-` signs a string (panel 185 R6), with
+# no join beside it, and `check --apply` writes it: the `.fixed` beside this
+# file is that program, which checks clean.
 
 function pick(s: str) -> i64
     return match s

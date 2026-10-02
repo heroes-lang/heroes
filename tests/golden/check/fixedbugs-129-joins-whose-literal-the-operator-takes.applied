@@ -6,14 +6,23 @@
 # `+` over a string; `&&` over `true`; `&&` over `1` that a comparison below
 # holds; `+` over `1 * 2`; two floats; two strings; a literal condition that
 # is a boolean (`selfhost/line_joins.hero`).
+#
+# Corrected 2026-10-02, defect 159, lane h158: two of these shapes move after
+# all. The sign on a character and the sign before `1 | 2` are a `-` alone
+# above an arm, a sign or a stray, both readings programs that mean two
+# things, so their join is a `guess` beside the deletion of the `-`'s line
+# (panel 185 R6's rule), and `--apply` leaves both lines: this case's answer
+# is an `.applied` now, where it was a `.fixed`, the other joins applied.
 
 function sign_on_a_character(n: i64) -> i64
     return match n
         0 => 5
         #~v continuation_outside_brackets
-        -'a' => 10
+        -
+        'a' => 10
         #~v continuation_outside_brackets
-        -1 | 2 => 11
+        -
+        1 | 2 => 11
         _ => 20
 
 function plus_a_string(s: str) -> str

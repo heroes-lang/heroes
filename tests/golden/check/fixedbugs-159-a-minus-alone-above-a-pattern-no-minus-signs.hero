@@ -1,0 +1,46 @@
+# fixedbugs, defect 159, lane h158, 2026-10-02.
+#
+# Beside `fixedbugs-159-a-minus-alone-above-an-integer-or-a-character-arm`:
+# a `-` alone above a string, the wildcard, a case or a literal already
+# signed. No `-` signs any of them, so the join writes no pattern and the
+# deletion of the `-`'s line is the one repair, `certain`, with no join beside
+# it; the `.fixed` beside this file checks clean. The string's join was a
+# `guess` until then and the deletion was not offered at all.
+
+variant Color
+    red
+    blue
+
+function word(s: str) -> i64
+    return match s
+        #~v continuation_outside_brackets
+        -
+        "a" => 1
+        _ => 2
+
+function count(n: i64) -> str
+    return match n
+        1 => "one"
+        #~v continuation_outside_brackets
+        -
+        _ => "many"
+
+function hue(c: Color) -> i64
+    return match c
+        #~v continuation_outside_brackets
+        -
+        .red => 1
+        .blue => 2
+
+function negative(n: i64) -> str
+    return match n
+        #~v continuation_outside_brackets
+        -
+        -1 => "minus one"
+        _ => "other"
+
+function main()
+    print(word(s: "a"))
+    print(count(1))
+    print(hue(c: .blue))
+    print(negative(-1))
