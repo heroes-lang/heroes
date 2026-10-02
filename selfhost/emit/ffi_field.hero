@@ -17,6 +17,7 @@ use diag
 use emit/externs as emit_externs
 use emit/extern_field
 use emit/ffi_lookup
+use emit/ffi_site
 use parse
 use resolve
 use checker
@@ -84,27 +85,90 @@ function record_field(s: source.Source, tree: ast.Ast, decls: [ast.Decl], type_n
     return fail(code: "none", msg: "no group record has this field")
 
 # clang's own "no member named 'red' in 'struct Color'": the header's
-# struct exists and the field does not. It matches clang's wording
+# type exists and the field does not. It matches clang's wording
 # rather than one of ours, and that is safe for the reason
-# unknown_name is: the narrowing is record_group, not whose text this
-# is. One mistake, THREE clang errors — the _Generic and the sizeof
-# each name the member, and every construction site adds a designator
-# error on top; add_once collapses them by span.
+# unknown_name is: the narrowing is a field this program declared in a
+# group, not whose text this is. One mistake, THREE clang errors: the
+# _Generic and the sizeof each name the member, and every construction
+# site adds a designator error on top; add_once collapses them by span.
+#
+# **The field is found by the LINE clang names, since defect 152's lane
+# (2026-10-02).** Until then it was found only by the struct's tag taken as
+# the record's Heroes name, which is one shape of six: `typedef struct Color
+# {...} Color;` bound as `record Color`. A record with a `tag`, a typedef of a
+# tagged struct, an anonymous struct's typedef and a union's were each
+# `internal error`, exit 2, for a field the header lacks, because clang says
+# `'struct tagged_s'`, `'anon_s'` or `'anon_u'` and no record carries that
+# name. The field assertion stands under `#line` at the field itself
+# (`emit/extern_record.hero`), so the location names the field whatever the
+# header calls its type; the tag route stays behind it for a line with no
+# position this compilation owns. The type is quoted as clang spelled it.
 function unknown_field(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     tail = ffi_lookup.after(text: line, marker: "no member named '")
 
     if tail.is_err()
         return fail(code: "none", msg: "not a missing-member line")
     member = ffi_lookup.up_to_quote(tail.must())
-    past = ffi_lookup.after(text: tail.must(), marker: "'")
+    spelled = ffi_lookup.after(text: tail.must(), marker: "' in '")
 
-    if past.is_err()
-        return fail(code: "none", msg: "no closing quote")
-    struct_part = ffi_lookup.after(text: past.must(), marker: "struct ")
+    if spelled.is_err()
+        return fail(code: "none", msg: "no type named on the line")
+    c_type = ffi_lookup.up_to_quote(spelled.must())
+    found: DeclaredField? @ field_at_line(s, decls, line: line, member: member)
+
+    if found.is_err()
+        found @ field_by_tag(s, decls, c_type: c_type, member: member)
+
+    if found.is_err()
+        return fail(code: "none", msg: "no group record names this field")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_unknown_field",
+        message: "`" + found.must().header + "` declares no `" + member + "` in `" + c_type + "`: clang read the header, and that type has no such field",
+        span: found.must().span
+    )
+    d.notes @ d.notes.push(
+        "a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `" + c_type + "` has a `" + member + "`"
+    )
+    return ok(d)
+
+# A field the program declared in a group: its header and where its name
+# was written.
+record DeclaredField
+    header: str
+    span: token.Span
+
+# The group record's field of this name declared on the line clang names.
+function field_at_line(s: source.Source, decls: [ast.Decl], line: str, member: str) -> DeclaredField?
+    at = ffi_site.location(s, line: line)
+
+    if at.is_err()
+        return fail(code: "none", msg: "no position this compilation owns")
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if rec.header.is_err()
+                    continue
+
+                for field in rec.fields
+                    here = source.file_of(s, field.name.start) == at.must().file && source.file_line_of(s, field.name.start) == at.must().line
+
+                    if here && source.span_text(s, field.name) == member
+                        return ok(
+                            DeclaredField(header: emit_externs.unquoted(s, span: rec.header.must()), span: field.name)
+                        )
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return fail(code: "none", msg: "no group record declares this field on that line")
+
+# The route before the location: a `struct` tag that is also the record's
+# Heroes name.
+function field_by_tag(s: source.Source, decls: [ast.Decl], c_type: str, member: str) -> DeclaredField?
+    struct_part = ffi_lookup.after(text: c_type, marker: "struct ")
 
     if struct_part.is_err()
         return fail(code: "none", msg: "no struct name on the line")
-    type_name = ffi_lookup.trimmed(ffi_lookup.up_to_quote(struct_part.must()))
+    type_name = ffi_lookup.trimmed(struct_part.must())
     group = record_group(s, decls, type_name: type_name)
 
     if group.is_err()
@@ -113,15 +177,7 @@ function unknown_field(s: source.Source, decls: [ast.Decl], line: str) -> diag.D
 
     if field.is_err()
         return fail(code: "none", msg: "the record never names this field")
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "ffi_unknown_field",
-        message: "`" + group.must() + "` declares no `" + member + "` in `" + type_name + "` — clang read the header's struct and it has no such field",
-        span: field.must()
-    )
-    d.notes @ d.notes.push(
-        "a group's `record` IS the header's struct (§4.19), so a field is named exactly as the header names it — correct the spelling, or name the header that gives `" + type_name + "` a `" + member + "`"
-    )
-    return ok(d)
+    return ok(DeclaredField(header: group.must(), span: field.must()))
 
 # The header a group's record was declared under.
 function record_group(s: source.Source, decls: [ast.Decl], type_name: str) -> str?
@@ -306,7 +362,7 @@ test "unknown_field reads clang's own wording and lands on the field token"
     line = "main.c:44:60: error: no member named 'red' in 'struct Color'"
     d = unknown_field(s, parsed.decls, line: line)
     assert d.must().code == "ffi_unknown_field"
-    assert d.must().message == "`raylib.h` declares no `red` in `Color` — clang read the header's struct and it has no such field"
+    assert d.must().message == "`raylib.h` declares no `red` in `struct Color`: clang read the header, and that type has no such field"
 
     # The caret sits on the author's own field token.
     assert source.span_text(s, d.must().span) == "red"
@@ -314,3 +370,20 @@ test "unknown_field reads clang's own wording and lands on the field token"
     # A struct this program never declared is refused.
     other = "main.c:44:60: error: no member named 'x' in 'struct Ghost'"
     assert unknown_field(s, parsed.decls, line: other).is_err()
+
+test "a field the header lacks is found by its line, whatever the header calls the type (defect 152's lane)"
+    text = "extern \"f.h\"\n    record T tag tagged_s\n        a: i32\n        c: i32\n    record anon_u\n        x: u32\n\nfunction touch(t: T, u: anon_u)\n    _ = t\n    _ = u\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    tagged = unknown_field(s, parsed.decls, line: "t.hero:4:50: error: no member named 'c' in 'struct tagged_s'")
+    assert tagged.must().message == "`f.h` declares no `c` in `struct tagged_s`: clang read the header, and that type has no such field"
+    assert source.span_text(s, tagged.must().span) == "c"
+    of_union = unknown_field(s, parsed.decls, line: "t.hero:6:50: error: no member named 'x' in 'anon_u'")
+    assert ffi_lookup.has(text: of_union.must().message, needle: "declares no `x` in `anon_u`")
+
+    # A line that declares no such field, a user's read of it, stays where it
+    # was: the tag route, which finds no record named `tagged_s`.
+    assert unknown_field(s, parsed.decls, line: "t.hero:9:9: error: no member named 'c' in 'struct tagged_s'").is_err()

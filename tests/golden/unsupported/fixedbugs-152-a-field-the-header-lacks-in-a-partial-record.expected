@@ -1,0 +1,6 @@
+error[ffi_unknown_field]: `fixedbugs-152-fields.h` declares no `c` in `anon_s`: clang read the header, and that type has no such field
+  at tests/golden/unsupported/fixedbugs-152-a-field-the-header-lacks-in-a-partial-record.hero:15:9
+     |
+  15 |         c: i32  #~ ffi_unknown_field
+     |         ^
+  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `anon_s` has a `c`

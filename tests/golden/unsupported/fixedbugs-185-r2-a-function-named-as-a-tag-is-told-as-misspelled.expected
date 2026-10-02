@@ -1,0 +1,6 @@
+error[ffi_unknown_tag]: `fixedbugs-145-types.h` has no `struct use_anon_s` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
+  at tests/golden/unsupported/fixedbugs-185-r2-a-function-named-as-a-tag-is-told-as-misspelled.hero:10:18
+     |
+  10 |     record F tag use_anon_s  #~ ffi_unknown_tag
+     |                  ^^^^^^^^^^
+  note: so the tag is MISSPELLED, and correcting it is the repair: the header names no type `use_anon_s`, by a tag or by a typedef (§ 13)

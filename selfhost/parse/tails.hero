@@ -96,8 +96,12 @@ function here_or(c: cursor.Cursor, fallback: token.Span) -> token.Span
 function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage, head: opening.Mark)
     typed = heads.constant_type(@c, @a, text)
 
-    if typed.is_err()
+    if typed.is_err() && is_from_c(linkage)
         grammar_expr.abandon(@c, @a, text, from: head.pos)
+        return
+
+    if typed.is_err()
+        owed_body(@c, @a, text: text, owner: "a `constant`", head: head)
         return
     ty = typed.must()
 
@@ -130,8 +134,12 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     is_extern = is_from_c(linkage)
     read = signature.read(@c, @a, text, in_group: is_extern)
 
-    if read.is_err()
+    if read.is_err() && is_extern
         grammar_expr.abandon(@c, @a, text, from: head.pos)
+        return
+
+    if read.is_err()
+        owed_body(@c, @a, text: text, owner: "a `function`", head: head)
         return
     sig = read.must()
     body: ast.Block? @ fail(code: "absent", msg: "an extern function's code comes from C")
@@ -167,6 +175,39 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     decls @ decls.push(
         ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .function_decl(value: f))
     )
+
+# The body owed below a declaration whose head failed before it, `function`
+# with no name, `function f` with no list or `constant MAX` with no type,
+# begun at `head`: read where it stands, indented or in braces, and where
+# none does, named missing at the next line, as under any head that refused
+# something (`parse/opening`; defect 133's class, lane recovery-b7). Until
+# then `function` alone over nothing was told its name and never its body.
+# Where the head's line holds a `=`, `constant MAX = 5`, the value is written
+# there, on the wrong line and not missing: the head's report is the one,
+# and what hangs below is read, as before.
+function owed_body(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: opening.Mark)
+    if value_on_its_line(c, from: head.pos)
+        grammar_expr.abandon(@c, @a, text, from: head.pos)
+    else if braces.body_or_block(@c, @a, text: text, owner: owner, head: head).is_err()
+        cursor.recover_to_next_decl(@c)
+
+# Whether the line begun at token `from` holds a `=` outside its brackets.
+function value_on_its_line(c: cursor.Cursor, from: i64) -> bool
+    depth: i64 @ 0
+    i: i64 @ from
+
+    while i < c.tokens.len() - 1 && !(depth == 0 && (c.tokens[i].kind == .terminator || c.tokens[i].kind == .indent || c.tokens[i].kind == .dedent))
+        k = c.tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if (k == .rparen || k == .rbracket || k == .rbrace) && depth > 0
+            depth @ depth - 1
+        else if k == .eq && depth == 0
+            return true
+        i @ i + 1
+
+    return false
 
 # An `extern` with a body is a mistake worth naming: the body would never be
 # compiled, and silently ignoring it is the class of thing this language

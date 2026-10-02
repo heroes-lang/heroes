@@ -1,0 +1,12 @@
+# fixedbugs, defect 143, panel 185 R1, lane ffi-macro, 2026-10-02.
+#
+# The same as `fixedbugs-143-a-system-macro-is-named-as-a-macro`, on a header
+# of the program's own, so every platform reads it: `SQUARE` is a
+# function-like macro and nothing else, and was told the header declares no
+# such name.
+
+extern "fixedbugs-143-macros.h"
+    function SQUARE(x: i32) -> i32  #~ ffi_macro_name
+
+function main()
+    print(SQUARE(x: 3))

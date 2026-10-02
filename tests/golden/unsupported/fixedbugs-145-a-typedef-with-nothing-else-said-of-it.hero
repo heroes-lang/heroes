@@ -13,6 +13,9 @@
 # spelling. Clang still shows C made the struct up here, so the note gives
 # the two readings left, a misspelled tag or a typedef's name, and never the
 # handle.
+# Since 2026-10-02, panel 185 R2, lane ffi-macro: the refused round asks the
+# header `typedef anon_s hero_q;`, which compiles, and the note gives the one
+# reading that is true, a typedef's name taken by `record anon_s`.
 
 extern "fixedbugs-145-types.h"
     record S tag anon_s  #~ ffi_unknown_tag

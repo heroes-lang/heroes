@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-135-l6-int-in-an-extern-group.hero:17:21: error[reserved_word]: `int` is not a word in this language — in an `extern` group a type is the header's own width and sign, and C's `int` is `i32`
+tests/golden/check/fixedbugs-135-l6-int-in-an-extern-group.hero:17:29: error[reserved_word]: `int` is not a word in this language — in an `extern` group a type is the header's own width and sign, and C's `int` is `i32`
+tests/golden/check/fixedbugs-135-l6-int-in-an-extern-group.hero:21:17: error[reserved_word]: `int` is not a word in this language — in an `extern` group a type is the header's own width and sign, and C's `int` is `i32`
+tests/golden/check/fixedbugs-135-l6-int-in-an-extern-group.hero:23:19: error[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`
+tests/golden/check/fixedbugs-135-l6-int-in-an-extern-group.hero:23:27: error[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`
+tests/golden/check/fixedbugs-135-l6-int-in-an-extern-group.hero:24:12: error[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`

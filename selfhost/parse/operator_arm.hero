@@ -1,0 +1,107 @@
+# An arm whose line begins with an operator (design.md §4.7, §4.17; defect
+# 132's last row, lane recovery-b7, 2026-10-02).
+#
+# `| 1 => 10`, Rust's leading `|`, and `+ => 1` are arms whose pattern begins
+# with a token no pattern begins with. The lexer once read such a line as one
+# that goes on with the line above and joined it, which no join repairs when
+# that line holds an arm or the `match` itself: the pattern was told a second
+# time at its `=>`, and below a `match` whose arms stand at its margin the
+# margin went untold. The lexer now leaves it a line of its own
+# (`line_above.opens_an_arm`), and the parser tells the operator once, as
+# what a pattern may not begin with (`arm_pattern.read`).
+#
+# Then the arm is read past the operator, so its own mistakes are told in
+# the same run: `| 1 => 10 )` reports the `)` too, which the line joined had
+# reported and the line dropped at its first refusal would not. What follows
+# the operator is the arm's pattern, read as any is, or its `=>`, where the
+# operator stood alone where the pattern goes. A second refusal there is the
+# same bad pattern told again (`::x`), and it is not said: the line goes. The
+# arm read so is no arm of the tree, its pattern having been refused.
+#
+# | entry | called by |
+# |---|---|
+# | `lead` | `grammar_expr.arm` |
+
+use token
+use ast
+use cursor
+use parse/arm_pattern
+
+# An arm's first pattern, or none where an operator stood alone where it
+# goes; and whether the operator was told (`told`), the arm then read for
+# its own mistakes and kept from the tree.
+record Lead
+    patterns: [ast.Pattern]
+    told: bool
+
+# The arm's first pattern as `arm_pattern.read` reads it; where that refused
+# an operator no pattern begins with, the pattern after the operator, or
+# none where the `=>` follows it. A failure where no arm can be read here.
+function lead(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Lead?
+    first = arm_pattern.read(@c, @a, text)
+
+    if !first.is_err()
+        return ok(Lead(patterns: [first.must()], told: false))
+
+    if !passed(@c)
+        return fail(code: "no_pattern", msg: "the arm has no pattern")
+    none: [ast.Pattern] = []
+
+    if cursor.at(c, .fat_arrow)
+        return ok(Lead(patterns: none, told: true))
+    after = pattern_after(@c, @a, text)
+
+    if after.is_err()
+        return fail(code: "no_pattern", msg: "no pattern after the operator")
+    return ok(Lead(patterns: [after.must()], told: true))
+
+# Where an arm's pattern was refused at the cursor, whether the token there
+# is an operator no pattern begins with, `arm_pattern.read` having told it:
+# then it is passed, and the arm read after it.
+function passed(@c: cursor.Cursor) -> bool
+    if !leads_no_pattern(cursor.current_kind(c))
+        return false
+    _ = cursor.bump(@c)
+    return true
+
+# The pattern after the operator `passed` passed, read as any pattern is, or
+# a failure, with nothing said, where none stands there.
+function pattern_after(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern?
+    said = c.diagnostics.len()
+    read = arm_pattern.read(@c, @a, text)
+
+    if read.is_err()
+        c.diagnostics @ c.diagnostics.slice(from: 0, to: said)
+    return read
+
+# A binary operator (spec § 7), the propagating `?` and the `::` that names a
+# field: the tokens a line that holds an arm's `=>` may begin with and no
+# pattern may. `-` signs a pattern's literal and is the pattern's own
+# (`arm_line.spaced_sign`). ENUMERATED, never a catch-all: a new kind is a
+# compile error here until somebody decides it.
+function leads_no_pattern(kind: token.TokenKind) -> bool
+    return match kind
+        .or_or | .and_and | .eq_eq | .bang_eq | .lt | .le | .gt | .ge               => true
+        .pipe | .caret | .amp | .shl | .shr | .plus | .star | .slash | .percent     => true
+        .question | .colon_colon                                                    => true
+        .minus | .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit => false
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match | .kw_if => false
+        .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue          => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use     => false
+        .kw_true | .kw_false | .kw_fail | .eq | .at | .colon | .comma | .dot        => false
+        .hole | .arrow | .fat_arrow | .lparen | .rparen | .lbracket | .rbracket     => false
+        .lbrace | .rbrace | .bang | .tilde | .comment | .terminator | .indent       => false
+        .dedent | .eof | .error                                                     => false
+
+test "an operator no pattern begins with is passed, and a pattern's own sign is not"
+    assert leads_no_pattern(.pipe)
+    assert leads_no_pattern(.plus)
+    assert leads_no_pattern(.star)
+    assert leads_no_pattern(.eq_eq)
+    assert leads_no_pattern(.question)
+    assert leads_no_pattern(.colon_colon)
+    assert !leads_no_pattern(.minus)
+    assert !leads_no_pattern(.dot)
+    assert !leads_no_pattern(.int_lit)
+    assert !leads_no_pattern(.fat_arrow)
+    assert !leads_no_pattern(.ident)

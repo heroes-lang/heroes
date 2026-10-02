@@ -1,0 +1,6 @@
+error[ffi_unknown_tag]: `fixedbugs-145-types.h` has no `struct tagged_t` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
+  at tests/golden/unsupported/fixedbugs-185-r2-a-typedef-of-a-tagged-struct-named-as-a-tag.hero:10:18
+     |
+  10 |     record T tag tagged_t  #~ ffi_unknown_tag
+     |                  ^^^^^^^^
+  note: `tagged_t` is the name of a typedef in the header, and no struct carries that tag: a record takes a typedef by its own name, with no `tag`, `record tagged_t` (§ 13)

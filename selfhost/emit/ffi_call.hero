@@ -28,13 +28,25 @@
 # this compilation's. Every class recovers a name THIS program declared
 # `extern` (CLAUDE.md §7's narrowing); a call-shape complaint about a name
 # no group declares stays exit 2, the compiler's.
+#
+# **A name the header has, and not as a function** (defect 152, 2026-10-02):
+# an object, `errno` or `stdin`, a value, an enumerator or `#define BUFSIZ
+# 1024`, or a type. clang says so as *called object type 'int' is not a
+# function or function pointer*, or *unexpected type name*, and until that day
+# no reader here knew either, so `function errno() -> i32` was `internal
+# error`, exit 2. The words land on the declaration's line at the probe when it
+# has parameters, and at the call `emit/ffi_asked.hero` says again when it has
+# none; which of object and value it is, the same unit asked.
 
 use ast
 use source
 use diag
+use check/state
+use check/render
 use ir/containers
 use emit/ffi_lookup
 use emit/ffi_site
+use emit/ffi_declared
 use parse
 use resolve
 use checker
@@ -48,6 +60,22 @@ constant TOO_FEW: str
 
 constant NOT_A_LITERAL: str
     "format string is not a string literal"
+
+constant CALLED_OBJECT: str
+    "called object type '"
+
+constant TYPE_NAME: str
+    "unexpected type name '"
+
+constant DOES_NOT_FIT: str
+    "clang read the header, and the call this declaration implies does not fit it"
+
+# What clang says of a function-like macro called with none of its arguments.
+constant MACRO_UNFED: [str]
+    [
+        "expected expression"
+        "too few arguments provided to function-like macro invocation"
+    ]
 
 # `expected N, have M` — clang's own count, read back so the message can
 # say the header's number and the author's.
@@ -121,6 +149,112 @@ function call_shape(s: source.Source, decls: [ast.Decl], p: containers.Program, 
     )
     return ok(d)
 
+# The header has the name, and not as a function: clang read the call this
+# declaration implies and found an object, a value or a type where a function
+# was meant. `values` is the question unit's answer, the names the header holds
+# as a value clang reads while compiling.
+function not_a_function(s: source.Source, decls: [ast.Decl], p: containers.Program, c: state.Checked, line: str, values: {str: bool}) -> diag.Diagnostic?
+    object_form = ffi_lookup.after(text: line, marker: CALLED_OBJECT)
+    type_form = ffi_lookup.after(text: line, marker: TYPE_NAME)
+
+    if object_form.is_err() && type_form.is_err()
+        return fail(code: "none", msg: "not a line about something that is not a function")
+    at = ffi_site.location(s, line: line)
+
+    if at.is_err()
+        return fail(code: "none", msg: "no usable location")
+    found = ffi_site.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+
+    if found.is_err()
+        return fail(code: "none", msg: "no extern is declared at that line")
+    name = found.must().name
+    declared = ffi_lookup.declaration(s, decls, name: name)
+
+    if declared.is_err()
+        return fail(code: "none", msg: "no group declares this name")
+    header = declared.must().header
+
+    # A type: what clang names must be the declaration's own word, since a
+    # macro could expand to some other type, and that is not this reading.
+    if !type_form.is_err()
+        if ffi_lookup.up_to_quote(type_form.must()) != name
+            return fail(code: "none", msg: "a type this declaration does not name")
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "ffi_call_shape",
+            message: "`" + header + "` declares `" + name + "` as a type, not a function: " + DOES_NOT_FIT,
+            span: declared.must().span
+        )
+        d.notes @ d.notes.push(
+            "a type cannot be called, and a group binds a function by the name its header declares the function under; a struct type is bound as a `record` (§ 13)"
+        )
+        return ok(d)
+    c_type = ffi_lookup.up_to_quote(object_form.must())
+
+    if !values[name].is_err()
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "ffi_call_shape",
+            message: "`" + header + "` defines `" + name + "` as a value of type `" + c_type + "`, not a function: " + DOES_NOT_FIT,
+            span: declared.must().span
+        )
+        d.notes @ d.notes.push(
+            "a value the header holds is bound as a `constant`, with no parameters and no parentheses where it is read: `constant " + name + ": " + constant_type(c, s, decls, f: found.must().f) + "` (§ 13)"
+        )
+        return ok(d)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_call_shape",
+        message: "`" + header + "` declares `" + name + "` as an object of type `" + c_type + "`, not a function: " + DOES_NOT_FIT,
+        span: declared.must().span
+    )
+    d.notes @ d.notes.push(
+        "an object can hold another value at the next read, so no group member binds one, and a `constant` refuses it (§4.19): a function of the program's own returns it, written in a header beside this file and bound by `extern` naming that header like any function, `static inline " + returning(c_type: c_type, callee: "hero_" + name) + "(void) { return " + name + "; }`"
+    )
+    return ok(d)
+
+# A declaration with no parameter of a name the header defines as a macro
+# that takes some (panel 185 R1): `function WEXITSTATUS() -> i64`. The call
+# the question unit says again at the declaration's line hands the macro
+# nothing, and clang refuses what it expands to, or the invocation itself.
+# `macros` is that unit's answer, and without a yes this is not the reading.
+function macro_call(s: source.Source, tree: ast.Ast, decls: [ast.Decl], p: containers.Program, line: str, macros: {str: bool}) -> diag.Diagnostic?
+    unfed: bool @ false
+
+    for words in MACRO_UNFED
+        if ffi_lookup.has(text: line, needle: words)
+            unfed @ true
+
+    if !unfed
+        return fail(code: "none", msg: "not a macro handed nothing")
+    at = ffi_site.location(s, line: line)
+
+    if at.is_err()
+        return fail(code: "none", msg: "no usable location")
+    found = ffi_site.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+
+    if found.is_err() || macros[found.must().name].is_err()
+        return fail(code: "none", msg: "no macro is declared at that line")
+    return ffi_declared.macro_name(s, tree, decls, name: found.must().name)
+
+# The type a `constant` of the declared result would carry, or the words for
+# the one a declaration with no result leaves to the author.
+function constant_type(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function) -> str
+    none: [str] = []
+    written = render.render_ty(c.types, s, decls, f.result, none)
+
+    if written == "()"
+        return "<the type the header gives it>"
+    return written
+
+# A C function's head returning `c_type`, as clang spelled the object's type.
+# An array or a function type has no spelling a C function can return, and
+# there the author writes the type.
+function returning(c_type: str, callee: str) -> str
+    if ffi_lookup.has(text: c_type, needle: "[") || ffi_lookup.has(text: c_type, needle: "(")
+        return "<its C type> " + callee
+
+    if c_type.len() > 0 && c_type[c_type.len() - 1] == '*'
+        return c_type + callee
+    return c_type + " " + callee
+
 ## Tests
 
 test "the arity text is read into the author's declaration, with both counts"
@@ -154,3 +288,54 @@ test "the format-security text lands on the declaration with the fixed-shape rep
     assert !d.is_err()
     assert d.must().code == "ffi_call_shape"
     assert d.must().notes.len() == 1
+
+test "a name the header has as an object, a value or a type is told as what it is (defect 152)"
+    text = "extern \"errno.h\"\n    function errno() -> i32\n    function RED(x: i64) -> i64\n    function my_int() -> i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    values: {str: bool} @ {}
+    values["RED"] @ true
+    object = not_a_function(
+        s,
+        parsed.decls,
+        low.program,
+        c,
+        line: "t.hero:2:67: error: called object type 'int' is not a function or function pointer",
+        values: values
+    )
+    assert object.must().message == "`errno.h` declares `errno` as an object of type `int`, not a function: clang read the header, and the call this declaration implies does not fit it"
+    assert ffi_lookup.has(
+        text: object.must().notes[0],
+        needle: "`static inline int hero_errno(void) { return errno; }`"
+    )
+    value = not_a_function(
+        s,
+        parsed.decls,
+        low.program,
+        c,
+        line: "t.hero:3:98: error: called object type 'int' is not a function or function pointer",
+        values: values
+    )
+    assert ffi_lookup.has(text: value.must().message, needle: "defines `RED` as a value of type `int`")
+    assert ffi_lookup.has(text: value.must().notes[0], needle: "`constant RED: i64`")
+    typed = not_a_function(
+        s,
+        parsed.decls,
+        low.program,
+        c,
+        line: "t.hero:4:62: error: unexpected type name 'my_int': expected expression",
+        values: values
+    )
+    assert ffi_lookup.has(text: typed.must().message, needle: "declares `my_int` as a type")
+
+    # The call's own line declares nothing, and a type the declaration does
+    # not name is not this reading: both stay the compiler's.
+    assert not_a_function(s, parsed.decls, low.program, c, line: "t.hero:7:11: error: called object type 'int' is not a function or function pointer", values: values).is_err(
+    )
+    assert not_a_function(s, parsed.decls, low.program, c, line: "t.hero:4:62: error: unexpected type name 'size_t': expected expression", values: values).is_err(
+    )
+    assert returning(c_type: "FILE *", callee: "hero_stdin") == "FILE *hero_stdin"
+    assert returning(c_type: "char[10]", callee: "hero_buf") == "<its C type> hero_buf"

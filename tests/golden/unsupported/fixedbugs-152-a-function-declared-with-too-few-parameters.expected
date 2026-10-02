@@ -1,0 +1,6 @@
+error[ffi_call_shape]: `strlen` is declared with a different number of parameters from `string.h`'s — clang read the header, and the call this declaration implies does not fit it
+  at tests/golden/unsupported/fixedbugs-152-a-function-declared-with-too-few-parameters.hero:13:5
+     |
+  13 |     function strlen() -> u64  #~ ffi_call_shape
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.19: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths — or, for a function the header declares variadic (`...`), the fixed shape this program calls it with

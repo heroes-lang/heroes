@@ -1,0 +1,14 @@
+# fixedbugs, defect 143, panel 185 R1, lane ffi-macro, 2026-10-02.
+#
+# SYMPTOM: `constant SQUARE: i64`, a function-like macro read as a value, was
+# `ffi_unknown_name`, *declares no `SQUARE`*: unexpanded without its
+# parentheses, the name is undeclared to clang.
+#
+# FIX: told as a macro that takes arguments, which has no value until it is
+# called, with the same repair.
+
+extern "fixedbugs-143-macros.h"
+    constant SQUARE: i64  #~ ffi_macro_name
+
+function main()
+    print(SQUARE)

@@ -155,8 +155,15 @@ constant RUN_ROOTS: [str]
 # refusals), on top of 356 that reached the trunk inside the quarter since
 # the last raise, took the count past 1652 by more than a quarter, and on the
 # merged tree the suite found 2148.
+#
+# **2779 at the round's gate, 2026-10-02**: lanes ffi-macro, arm and
+# recovery-b7 (and ci-probe, which added no case) merged into one tree, their
+# cases for defects 132, 133, 135, 143, 147, 152, 153 and 154 and panel 185's
+# R2 on top of what reached the trunk inside the quarter since the last raise,
+# took the count past 2148 by more than a quarter, and on the merged tree the
+# suite found 2779.
 constant LEAST: i64
-    2148
+    2779
 
 # `only` narrows the sweep to the cases whose name holds it (cases.matching);
 # a narrowed run asks neither the thesis witnesses, nor the groups, nor the

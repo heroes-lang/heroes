@@ -162,11 +162,14 @@ function goes_on(@l: state.LexState, text: str, spaces: i64) -> bool
 # compiles. A deeper line is a block's first, or the parser's indentation
 # error; a word, a literal, a `(`, a `[` or a `.` begins a statement of its
 # own; and a declaration's head is no statement a line goes on with, so the
-# parser says what the head lacks, nor is a line a refused word heads.
+# parser says what the head lacks, nor is a line a refused word heads. Nor
+# does a line that holds an arm's `=>` go on with an arm or a `match` above
+# it (`line_above.opens_an_arm`): it is an arm, its pattern the parser's.
 function goes_on_below(@l: state.LexState, text: str, spaces: i64) -> bool
     b = text[l.pos]
+    above = last_significant(l.tokens)
 
-    if (spaces + 2) / 4 > l.level || bytes.is_alnum(b) || b == '_' || b == '"' || b == '\'' || goes_on_at_head(text, at: l.pos) < 0 || line_above.heads_a_declaration(l.tokens) || line_above.headed_by_a_refused_word(l.tokens, breaks: l.breaks, text, at: last_significant(l.tokens), @l.outline)
+    if (spaces + 2) / 4 > l.level || bytes.is_alnum(b) || b == '_' || b == '"' || b == '\'' || goes_on_at_head(text, at: l.pos) < 0 || line_above.heads_a_declaration(l.tokens) || line_above.headed_by_a_refused_word(l.tokens, breaks: l.breaks, text, at: above, @l.outline) || next_line.holds_an_arrow(text, from: l.pos) && line_above.opens_an_arm(l.tokens, breaks: l.breaks, at: above)
         settle(@l)
         return false
 
@@ -175,7 +178,7 @@ function goes_on_below(@l: state.LexState, text: str, spaces: i64) -> bool
         settle(@l)
         state.push_offset(@l.heads, at: l.pos)
         return false
-    at = last_significant(l.tokens)
+    at = above
     commented = l.tokens.len() > at + 1 || l.held.len() > 0
     l.owed @ -1
     flush(@l)

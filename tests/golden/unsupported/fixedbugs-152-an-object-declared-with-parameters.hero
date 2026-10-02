@@ -1,0 +1,16 @@
+# fixedbugs, defect 152, lane ffi-macro, 2026-10-02.
+#
+# SYMPTOM: `function errno(code: i32) -> i32` was `internal error`, exit 2,
+# like the declaration with none: *called object type 'int'*.
+#
+# CAUSE: here the probe does make the call at the declaration's line, and
+# clang's words landed there, but no reader knew them.
+#
+# FIX: the same reader as the shape with no parameter, `ffi_call_shape` on the
+# declaration, reading the probe's line.
+
+extern "errno.h"
+    function errno(code: i32) -> i32  #~ ffi_call_shape
+
+function main()
+    print(errno(code: 1))

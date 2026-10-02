@@ -1,0 +1,13 @@
+# fixedbugs, defect 143, panel 185 R1, lane ffi-macro, 2026-10-02.
+#
+# The repair `ffi_macro_name` names, declared at a wrong width: `hero_SQUARE`
+# is the program's own `static inline int32_t hero_SQUARE(int32_t x)`, a
+# function, so the probe holds `x: i64` to its `int32_t` and refuses it,
+# where through the macro nothing could. The guarantee ends at the function's
+# prototype, which the author wrote.
+
+extern "fixedbugs-143-macros.h"
+    function hero_SQUARE(x: i64) -> i32  #~ ffi_parameter_type
+
+function main()
+    print(hero_SQUARE(x: 3))

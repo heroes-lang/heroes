@@ -76,6 +76,7 @@ use parse/swap_reading
 use parse/annotation
 use parse/margin_arms
 use parse/broken_arm
+use parse/operator_arm
 use parse/headless
 use parse/brace_habit
 use parse/unclosed
@@ -1112,6 +1113,7 @@ function arms_of(@c: cursor.Cursor, @a: ast.Ast, text: str, tabbed: bool) -> [as
     reading: bool @ true
     failed: bool @ false
     in_tabs: bool @ tabbed
+    run: i64 @ -1
 
     while reading
         cursor.skip_terminators(@c)
@@ -1125,7 +1127,7 @@ function arms_of(@c: cursor.Cursor, @a: ast.Ast, text: str, tabbed: bool) -> [as
         else if failed && !in_tabs && opening.tabbed_line(c, text)
             # The body of a failed arm whose `=>` the lexer joined to it.
             hanging(@c, @a, text)
-        else if at_margin && margin_arms.end_here(c)
+        else if at_margin && margin_arms.end_here(c, @run)
             reading @ false
         else if k == .dedent
             _ = cursor.bump(@c)
@@ -1166,13 +1168,12 @@ function arms_of(@c: cursor.Cursor, @a: ast.Ast, text: str, tabbed: bool) -> [as
 function arm(@c: cursor.Cursor, @a: ast.Ast, text: str, own_block: bool) -> ast.Arm?
     head = opening.mark(c)
     start = cursor.current_span(c)
-    patterns: [ast.Pattern] @ []
     arm_line.spaced_sign(@c, text)
-    first = arm_pattern.read(@c, @a, text)
+    lead = operator_arm.lead(@c, @a, text)
 
-    if first.is_err()
+    if lead.is_err()
         return fail(code: "no_pattern", msg: "the arm has no pattern")
-    patterns @ patterns.push(first.must())
+    patterns: [ast.Pattern] @ lead.must().patterns
     joining: bool @ true
 
     while joining && cursor.eat(@c, .pipe)
@@ -1204,6 +1205,11 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str, own_block: bool) -> ast.
         arm_body.reject_declaration(@c, a, text, at)
         body @ .one_stmt(at: at)
     broken_arm.close_its_block(@c, from: head.pos)
+
+    # A pattern begun with an operator was told, and the arm read past it for
+    # its own mistakes (`parse/operator_arm`).
+    if lead.must().told
+        return fail(code: "no_pattern", msg: "the arm's pattern began with an operator")
     return ok(
         ast.Arm(patterns: patterns, body: body, span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
     )
