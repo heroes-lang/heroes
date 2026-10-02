@@ -339,6 +339,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     round's gate. Beside it with another cause, a body written at its head's
     margin is defect 202.
 
+    **2026-10-03, lane rec187, panel 187's R6: row 130-34a** filed as defect
+    203 and repaired at `97008231`, gated by its own cases; the rest is owed
+    at the round's gate.
+
     **Class: systemic**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): six batches on the
     trunk's record (recovery-b1 to b6) and a seventh in lane recovery-b8, which
@@ -1219,6 +1223,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** the audit's row 130-34a (`scratchpad/audit-130-133/cases/130-34a/`, 2026-09-30), the one row of item 130 open at panel 187; its R6 rewords the message to name the `[` left open, at its line and column, and both edits, the sitting's pin `tests/golden/check/panel-187-a-closer-of-another-kind-inside-a-list-is-one-message.hero` holding it meanwhile. Filed by lane rec187 before its repair, the shapes beside it read on the head's compiler (2026-10-03, `scratchpad/lane-rec187/pass1/k-r6.txt`).
 
     **Why it is a defect.** Both readings of the program stand (the grammar's, the line a third element and the `)` its `]`; and the `]` left out above, the `)` a stray), and the message serves the first alone: under the second the repair costs a run more (design.md §4.17's measure).
+
+    **2026-10-03, lane rec187, panel 187's R6: the message names the opener
+    still open, where it stands as a distance from the caret's line with its
+    column in characters, and both edits** (the row and six shapes beside it
+    with its cause, a second module among them): repaired at `97008231`,
+    gated by its own cases; the rest is owed at the round's gate.
 
     **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be.
 
