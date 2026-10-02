@@ -1,4 +1,4 @@
-error[ffi_union_field]: `UB` is a `union` in `fixedbugs-151-unions.h`, and `b` is narrower than it, leaving the bytes past it unread, so comparing a `UB` or using one as a map key can call two different values equal
+error[ffi_union_field]: `UB` is a `union` in `fixedbugs-151-unions.h`, and `b` is narrower than it, so comparing a `UB` or using one as a map key would compare only part of its bytes
   at tests/golden/unsupported/fixedbugs-151-a-union-type-compared-by-an-arm-narrower-than-it.hero:9:12
     |
   9 |     record UB  #~ ffi_union_field

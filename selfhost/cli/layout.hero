@@ -12,12 +12,14 @@
 # the check unit runs only when it holds an assertion.
 #
 # **What is kept is clang's answers, never this compiler's reading of them**:
-# the screen's stderr and, of the dump, the rows of the blocks this compiler
-# asked for (`emit/layout_rows.hero`), from which the flagged set and the
-# check unit are re-derived on every build, and the verdict keyed by the check
-# unit's own text. The rest of the dump, one block per record clang laid out,
-# is neither kept nor cut into rows: over a deep by-value nest it is cubic in
-# the depth (panel 186's critic, 348 MB at a thousand). A compiler that reads the dump differently therefore asks
+# the screen's stderr and the dump, from which the flagged set, the rows this
+# compiler asks for (`emit/layout_rows.hero`) and the check unit are
+# re-derived on every build, and the verdict keyed by the check unit's own
+# text. **A dump over `KEPT_DUMP` bytes is not kept at all**, and is asked of
+# clang again on the next build: over a deep by-value nest it is cubic in the
+# depth (panel 186's critic, 348 MB at a thousand), and keeping only its
+# asked rows was measured to be the stale-reading class above, the lane's own
+# reader changed and its kept rows read as the new one's (2026-10-02). A compiler that reads the dump differently therefore asks
 # clang again where it must, which is the lesson `cli/pointee.hero` paid for
 # on 2026-09-04: the key's fingerprint is the release's `VERSION`, a constant
 # between releases, and a kept reading outlives the reader that made it.
@@ -44,6 +46,12 @@ use cli/publish
 use cli/digest
 use cli/deps
 use cli/pointee
+
+# The largest dump kept under `build/`, in bytes: every real header measured
+# for panel 186 dumps far below it (`SDL3/SDL.h`, whole, 30 KB), and a
+# synthetic nest of three hundred structs passes it (10 MB).
+constant KEPT_DUMP: i64
+    4194304
 
 # Everything one check asks with.
 record Asking
@@ -134,12 +142,12 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
     if dumped.len() == 0
         return ok()
     dump_text = layout_text.dump_unit(a.headers, wanted: dumped)
-    kept_path = a.dir + "/dump-" + sum + "-" + digest.digest(dump_text) + ".txt"
+    kept_path = a.dir + "/clang-dump-" + sum + "-" + digest.digest(dump_text) + ".txt"
     kept = read_file(kept_path)
-    dumped_text: str @ ""
+    rows: str @ ""
 
     if !kept.is_err()
-        dumped_text @ kept.must()
+        rows @ layout_rows.wrapper_rows(kept.must()).join("\n") + "\n"
     else
         made = dump(a, dump_text: dump_text)
 
@@ -148,13 +156,14 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
         # in its field assertions), so nothing is said or kept here.
         if made.is_err()
             return ok()
-        dumped_text @ made.must()
-        publish.write_whole(path: kept_path, text: dumped_text, keyed: true)?
-    text = layout_check.check_unit(a.headers, dump: dumped_text, wanted: dumped, s: a.s, decls: a.decls, u: a.u, c: a.c)?
+        rows @ layout_rows.wrapper_rows(made.must()).join("\n") + "\n"
+
+        if made.must().len() <= KEPT_DUMP
+            publish.write_whole(path: kept_path, text: made.must(), keyed: true)?
+    text = layout_check.check_unit(a.headers, dump: rows, wanted: dumped, s: a.s, decls: a.decls, u: a.u, c: a.c)?
     return judged(a, sum: sum, text: text)
 
-# The rows of clang's record-layout dump for the unit that this compiler asked
-# for, or absent when it did not compile.
+# clang's record-layout dump for the unit, or absent when it did not compile.
 function dump(a: Asking, dump_text: str) -> str?
     dump_c = pointee.unit_path(dir: a.dir, stem: "dump", text: dump_text)
     publish.write_whole(path: dump_c, text: dump_text, keyed: true)?
@@ -170,7 +179,7 @@ function dump(a: Asking, dump_text: str) -> str?
 
     if !ran.started || ran.code != 0 || dumped_text.is_err()
         return fail(code: "unread", msg: "the dump did not compile")
-    return ok(layout_rows.wrapper_rows(dumped_text.must()).join("\n") + "\n")
+    return ok(dumped_text.must())
 
 # The check unit's verdict, kept under the digest of its own text: a compiler
 # that writes the assertions differently never reads another's answer.

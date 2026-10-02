@@ -15,13 +15,17 @@
 # rest unread: `SB { kind; union { int8_t b; int64_t q; }; }` named by `b`
 # compared two values whose `q` differs as `true` (defect 151's widening).
 #
-# **"As wide as the union", asked of C.** An anonymous union has no name C
-# can take `sizeof` of, so its width is asked through its members: the field
-# holds every member's bytes (`within`), and its size is a multiple of every
-# member's alignment, so the union has no tail past it. A NAMED union a
-# header macro reaches into (libc's `sa_handler`, `s6_addr`) is named by its
-# path, and its `sizeof` is the width. Every verdict is an assertion on the
-# header's own offsets, sizes and alignments; the dump proposes the names.
+# **"As wide as the union", asked twice.** An anonymous union has no name C
+# can take `sizeof` of, so the field must hold every member's bytes, by C's
+# own offsets and sizes (`within`), and its size must be the width clang
+# gives the union's own block in the dump (`layout_text.union_sizes`), which
+# a `packed` or `aligned` union moves and no formula over its members can
+# know. The first is the soundness: a field holding every member's bytes
+# compares every value the union can hold. The second is the rule's word,
+# read from the dump, so a misread width refuses a sound field or admits one
+# that holds every member, never an unsound one. A NAMED union a header
+# macro reaches into (libc's `sa_handler`, `s6_addr`) is named by its path,
+# and its `sizeof` is the width.
 
 use ast
 use handles
@@ -53,7 +57,7 @@ constant NARROW_IN: str
 # directly, the outermost anonymous union it lies in; for each field a macro
 # reaches (`aliases`), every union of the tree it may lie in. `wide` holds
 # the declared fields whose Heroes type compares bit for bit.
-function compared_lines(t: str, hero_name: str, tree: [layout_text.Member], declared: {str: bool}, aliases: [str], wide: {str: bool}) -> [str]
+function compared_lines(t: str, hero_name: str, tree: [layout_text.Member], declared: {str: bool}, aliases: [str], wide: {str: bool}, sizes: {str: i64}) -> [str]
     out: [str] @ []
     k: i64 @ 0
 
@@ -64,15 +68,25 @@ function compared_lines(t: str, hero_name: str, tree: [layout_text.Member], decl
             outer = outermost_union(tree, at: k)
 
             if outer >= 0
+                beside: str @ m.name
+
                 for one in arms(tree, at: outer)
                     if one != k
                         out @ out.push(
                             field_against(t: t, hero_name: hero_name, field: m.name, wide: !wide[m.name].is_err(), arm: tree[one])
                         )
+
+                        if beside == m.name
+                            beside @ tree[one].path
+
+                if !wide[m.name].is_err()
+                    out @ out.push(
+                        "_Static_assert(" + size_of(t: t, m: m.name) + " == " + width_of(sizes, group: tree[outer]) + ", \"" + NARROW + " " + hero_name + " " + m.name + " " + beside + "\");"
+                    )
         k @ k + 1
 
     for a in aliases
-        for line in alias_lines(t: t, hero_name: hero_name, tree: tree, a: a, wide: !wide[a].is_err())
+        for line in alias_lines(t: t, hero_name: hero_name, tree: tree, a: a, wide: !wide[a].is_err(), sizes: sizes)
             out @ out.push(line)
 
     return out
@@ -86,13 +100,13 @@ function field_against(t: str, hero_name: str, field: str, wide: bool, arm: layo
 
     if !wide
         return "_Static_assert(!" + shares(t: t, a: field, b: arm.path) + ", \"" + OVERLAP + tail
-    return "_Static_assert(" + covers(t: t, field: field, arm: arm.path) + ", \"" + NARROW + tail
+    return "_Static_assert(" + within(t: t, inner: arm.path, outer: field) + ", \"" + NARROW + tail
 
 # A field a macro reaches has no place in the tree to read its unions off,
 # so each union is asked whether it holds the field: a named one by C's own
 # classification of its path, an anonymous one by whether the field lies
 # within one of its members.
-function alias_lines(t: str, hero_name: str, tree: [layout_text.Member], a: str, wide: bool) -> [str]
+function alias_lines(t: str, hero_name: str, tree: [layout_text.Member], a: str, wide: bool, sizes: {str: i64}) -> [str]
     out: [str] @ []
     k: i64 @ 0
 
@@ -133,10 +147,15 @@ function alias_lines(t: str, hero_name: str, tree: [layout_text.Member], a: str,
                         out @ out.push("_Static_assert(!" + inside + ", \"" + BESIDE_BITS + tail)
                     else if wide
                         out @ out.push(
-                            "_Static_assert(!" + inside + " || " + covers(t: t, field: a, arm: arm.path) + ", \"" + NARROW + tail
+                            "_Static_assert(!" + inside + " || " + within(t: t, inner: arm.path, outer: a) + ", \"" + NARROW + tail
                         )
                     else
                         out @ out.push("_Static_assert(!" + inside + ", \"" + OVERLAP + tail)
+
+                if wide && them.len() > 0
+                    out @ out.push(
+                        "_Static_assert(!" + inside + " || " + size_of(t: t, m: a) + " == " + width_of(sizes, group: m) + ", \"" + NARROW + " " + hero_name + " " + a + " " + tree[them[0]].path + "\");"
+                    )
         k @ k + 1
 
     return out
@@ -206,10 +225,11 @@ function arms(tree: [layout_text.Member], at: i64) -> [i64]
 
     return out
 
-# The field holds every byte of the arm, and its size leaves no tail the
-# arm's alignment would add to the union.
-function covers(t: str, field: str, arm: str) -> str
-    return "(" + within(t: t, inner: arm, outer: field) + " && " + size_of(t: t, m: field) + " % _Alignof(__typeof__(((" + t + " *)0)->" + arm + ")) == 0)"
+# The width clang gives the anonymous union `group`, as C text; `-1`,
+# which no `sizeof` equals, where the dump gave none (`check_unit` refuses to
+# judge a record whose union has no width before any of this is asked).
+function width_of(sizes: {str: i64}, group: layout_text.Member) -> str
+    return sizes[group.place].default(-1).to_str()
 
 # `inner`'s bytes lie inside `outer`'s, from the header's own offsets.
 function within(t: str, inner: str, outer: str) -> str
@@ -252,20 +272,37 @@ test "a field compared is asked against every arm of its outermost union, and on
         wide[one] @ true
 
     none: [str] = []
+    sizes: {str: i64} @ {}
+    sizes["./bf.h:4:41)"] @ 4
     got = compared_lines(
         t: "DEEP",
         hero_name: "DEEP",
         tree: tree_of(dump),
         declared: declared,
         aliases: none,
-        wide: wide
+        wide: wide,
+        sizes: sizes
     )
 
-    # `i` against `f`, the one other arm of the union it lies in; `y` lies in
-    # the anonymous STRUCT, which is no union, and `kind` in nothing.
-    assert got.len() == 1
+    # `i` against `f`, the one other arm of the union it lies in, and against
+    # the union's own width; `y` lies in the anonymous STRUCT, which is no
+    # union, and `kind` in nothing.
+    assert got.len() == 2
     assert has_line(got, needle: "\"heroes-ffi-narrow DEEP i f\"")
-    assert has_line(got, needle: "% _Alignof(__typeof__(((DEEP *)0)->f)) == 0")
+    assert has_line(got, needle: "_Static_assert(sizeof(((DEEP *)0)->i) == 4, ")
+
+    # A width the dump did not give is one no field has.
+    none_known: {str: i64} @ {}
+    got_none = compared_lines(
+        t: "DEEP",
+        hero_name: "DEEP",
+        tree: tree_of(dump),
+        declared: declared,
+        aliases: none,
+        wide: wide,
+        sizes: none_known
+    )
+    assert has_line(got_none, needle: "_Static_assert(sizeof(((DEEP *)0)->i) == -1, ")
 
     # A float arm is not compared bit for bit: refused wherever it shares.
     declared["f"] @ true
@@ -275,7 +312,8 @@ test "a field compared is asked against every arm of its outermost union, and on
         tree: tree_of(dump),
         declared: declared,
         aliases: none,
-        wide: wide
+        wide: wide,
+        sizes: sizes
     )
     assert has_line(got2, needle: "\"heroes-ffi-overlap DEEP f i\"")
 
@@ -284,13 +322,15 @@ test "a field a macro reaches is asked of every union it may lie in"
     declared: {str: bool} @ {}
     wide: {str: bool} @ {}
     wide["sa_handler"] @ true
+    no_sizes: {str: i64} @ {}
     got = compared_lines(
         t: "struct sigaction",
         hero_name: "SigAction",
         tree: tree_of(dump),
         declared: declared,
         aliases: ["sa_handler"],
-        wide: wide
+        wide: wide,
+        sizes: no_sizes
     )
     assert got.len() == 1
     assert has_line(got, needle: "__builtin_classify_type(((struct sigaction *)0)->__sigaction_u) == 13")

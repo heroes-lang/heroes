@@ -29,3 +29,7 @@ typedef struct { int32_t kind; union { Inner s; int64_t q; } u; } SP;
 #define sp_s u.s
 typedef struct { int32_t kind; union { int8_t c[5]; int32_t i; }; } SPAD;
 typedef union { int8_t b; int64_t q; } UB;
+
+/* The union's own width, which no formula over its members knows: an
+   `aligned` union wider than its one member. */
+typedef struct { int32_t kind; union __attribute__((aligned(16))) { int64_t q; }; } AL;

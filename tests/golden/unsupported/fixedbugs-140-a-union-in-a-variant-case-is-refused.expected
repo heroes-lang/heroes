@@ -1,4 +1,4 @@
-error[ffi_union_field]: `W` is a `union` in `fixedbugs-140-a-union-in-a-variant-case-is-refused.h`, and `b` is narrower than it, leaving the bytes past it unread, so comparing a `W` or using one as a map key can call two different values equal
+error[ffi_union_field]: `W` is a `union` in `fixedbugs-140-a-union-in-a-variant-case-is-refused.h`, and `b` is narrower than it, so comparing a `W` or using one as a map key would compare only part of its bytes
   at tests/golden/unsupported/fixedbugs-140-a-union-in-a-variant-case-is-refused.hero:23:12
      |
   23 |     record W  #~ ffi_union_field

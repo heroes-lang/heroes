@@ -66,6 +66,12 @@ record Member
     # type's text that is read, because an anonymous member has no name C
     # can classify (a NAMED member is classified by C through `path`).
     union_kw: bool
+    # Where an anonymous member is declared, as clang prints it after its last
+    # ` at `: `./u.h:8:32)`. The one part of a type's text both of clang's
+    # spellings of an anonymous union share, its line in a block and its own
+    # block's head, so it is how the union's width is found (`union_sizes`).
+    # Compared for equality only, never read; empty for a named member.
+    place: str
     # How C names the member on T: the names of its named ancestors and its
     # own, joined by `.`, an anonymous level adding nothing because C
     # promotes its members (C11 6.7.2.1p13); empty for an anonymous member.
@@ -147,7 +153,14 @@ function control_holds(rows: [str]) -> bool
                     m.depth.to_str() + ":" + m.name + ":" + m.path + ":" + m.nested.to_str() + ":" + m.bitfield.to_str() + ":" + m.union_kw.to_str()
                 )
 
-            return got.join(" ") == CONTROL
+            if got.join(" ") != CONTROL
+                return false
+
+            # The anonymous union's own block states its width, four bytes,
+            # found by the place its line in the tree gives.
+            sizes = union_sizes(rows)
+            found = sizes[read.must()[1].place]
+            return !found.is_err() && found.must() == 4
 
     return false
 
@@ -184,6 +197,7 @@ function members(rows: [str], from: i64) -> [Member]?
     starts_at: [i64] @ []
     flex: [bool] @ []
     unions: [bool] @ []
+    places: [str] @ []
     closed: bool @ false
 
     while at < rows.len() && !closed
@@ -216,6 +230,7 @@ function members(rows: [str], from: i64) -> [Member]?
             named @ named.push(text)
             flex @ flex.push(false)
             unions @ unions.push(false)
+            places @ places.push("")
         else
             named @ named.push(text.slice(from: space + 1, to: text.len()))
             flexible: bool @ false
@@ -224,6 +239,11 @@ function members(rows: [str], from: i64) -> [Member]?
                 flexible @ text[space - 2] == '[' && text[space - 1] == ']'
             flex @ flex.push(flexible)
             unions @ unions.push(space == text.len() - 1 && layout_rows.starts(text: text, prefix: "union "))
+
+            if space == text.len() - 1
+                places @ places.push(place_of(text.slice(from: 0, to: space)))
+            else
+                places @ places.push("")
 
     if !closed
         return fail(code: "none", msg: "the block never closes")
@@ -234,7 +254,7 @@ function members(rows: [str], from: i64) -> [Member]?
     while k < depths.len()
         deeper = k + 1 < depths.len() && depths[k + 1] > depths[k]
         out @ out.push(
-            Member(depth: depths[k], name: named[k], nested: deeper, bitfield: bits[k], flexible: flex[k], byte: starts_at[k], union_kw: unions[k] && deeper, path: paths[k])
+            Member(depth: depths[k], name: named[k], nested: deeper, bitfield: bits[k], flexible: flex[k], byte: starts_at[k], union_kw: unions[k] && deeper, place: places[k], path: paths[k])
         )
         k @ k + 1
 
@@ -269,6 +289,45 @@ function paths_of(depths: [i64], named: [str]) -> [str]
         k @ k + 1
 
     return out
+
+# The width clang gives each anonymous union, by its place: the head of its
+# own block, `0 | union T::(anonymous at <place>)`, and that block's
+# `[sizeof=N, ...` row, as `layout_rows.wrapper_rows` keeps them. A width is
+# only ever asked as one more condition beside C's own offsets
+# (`emit/layout_compare.hero`), so a misread one refuses a sound field or
+# lets one through that holds every member; it never makes an unsound
+# comparison legal.
+function union_sizes(rows: [str]) -> {str: i64}
+    out: {str: i64} @ {}
+    k: i64 @ 0
+
+    while k + 1 < rows.len()
+        row = rows[k]
+        bar = layout_rows.byte_index(text: row, needle: "| union ")
+
+        if bar >= 0 && layout_rows.byte_index(text: rows[k + 1], needle: "| [sizeof=") >= 0
+            place = place_of(row.slice(from: bar + 2, to: row.len()))
+            close = rows[k + 1]
+            at = layout_rows.byte_index(text: close, needle: "[sizeof=")
+            size = layout_rows.leading_number(close.slice(from: at + 8, to: close.len()))
+
+            if place.len() > 0 && size >= 0
+                out[place] @ size
+        k @ k + 1
+
+    return out
+
+# The text after the last ` at ` of an anonymous record's type, or "".
+function place_of(type_text: str) -> str
+    at: i64 @ type_text.len() - 4
+    needle = " at "
+
+    while at >= 0
+        if layout_rows.byte_index(text: type_text.slice(from: at, to: at + 4), needle: needle) == 0
+            return type_text.slice(from: at + 4, to: type_text.len())
+        at @ at - 1
+
+    return ""
 
 # The members a program can name on T, in the dump's order: below a NAMED
 # record member the fields are that member's own, and are skipped.
@@ -317,6 +376,14 @@ test "a block is read by its shape: depth, the empty name of an anonymous member
     assert got[7].flexible && !got[0].flexible
     assert got[2].union_kw && !got[1].union_kw && !got[3].union_kw
     assert got[3].path == "i" && got[1].path == "" && got[5].path == "y"
+    assert got[2].place == "./bf.h:4:41)" && got[3].place == ""
+
+    # The width is found by the place, whatever spelling the block's head
+    # gives the union beside it (Homebrew clang 22.1.8's, here).
+    widths = union_sizes(
+        layout_rows.rows_of("         0 | union (unnamed struct)::(unnamed struct)::(anonymous at ./bf.h:4:41)\n           | [sizeof=4, align=4]\n")
+    )
+    assert widths[got[2].place].must() == 4
     assert heads(rows)[40].is_err() && heads(rows).len() == 1
     seen = visible(got)
     assert seen.len() == 6

@@ -22,13 +22,18 @@ constant PREFIX: str
 
 # The rows of every block whose head is one of this compiler's wrappers,
 # `0 | struct hero_ly_<n>` or `0 | struct hero_ly_control`, in the dump's
-# order, each from its head to its `| [sizeof=` row; a `\r` before a newline
-# dropped (clang on Windows writes text mode). Every other block, one per
-# record clang laid out, is stepped over without a slice.
+# order, each from its head to its `| [sizeof=` row; and of each block an
+# ANONYMOUS union heads, `0 | union T::(anonymous at <place>)`, the head and
+# that closing row alone, which is where clang states the union's width (an
+# anonymous union has no name C can take `sizeof` of). A `\r` before a
+# newline is dropped (clang on Windows writes text mode). Every other row is
+# stepped over without a slice.
 function wrapper_rows(text: str) -> [str]
     out: [str] @ []
     at: i64 @ 0
-    inside: bool @ false
+
+    # 0 between blocks, 1 inside a wrapper's, 2 inside an anonymous union's.
+    inside: i64 @ 0
 
     while at < text.len()
         stop: i64 @ at
@@ -41,29 +46,61 @@ function wrapper_rows(text: str) -> [str]
         if cut > at && text[cut - 1] == '\r'
             cut @ cut - 1
 
-        if inside
-            row = text.slice(from: at, to: cut)
-            out @ out.push(row)
+        if inside > 0
+            closes = has_from(text: text, from: at, to: cut, needle: "| [sizeof=")
 
-            if byte_index(text: row, needle: "| [sizeof=") >= 0
-                inside @ false
+            if inside == 1 || closes
+                out @ out.push(text.slice(from: at, to: cut))
+
+            if closes
+                inside @ 0
         else if opens(text, from: at, to: cut)
             out @ out.push(text.slice(from: at, to: cut))
-            inside @ true
+            inside @ 1
+        else if opens_union(text, from: at, to: cut)
+            out @ out.push(text.slice(from: at, to: cut))
+            inside @ 2
         at @ stop + 1
 
     return out
+
+# Whether the row from `from` to `to` is the head of an anonymous union's own
+# block: the offset column, then `| union ` with no level of indentation, and
+# a place, ` at `, in the rest of the row.
+function opens_union(text: str, from: i64, to: i64) -> bool
+    at = past_offsets(text, from: from, to: to)
+    head = "| union "
+
+    if at + head.len() > to || !bytes.bytes_at(text: text, at: at, needle: head)
+        return false
+    return has_from(text: text, from: at, to: to, needle: " at ")
+
+# Whether `needle` sits between `from` and `to`, read in place.
+function has_from(text: str, from: i64, to: i64, needle: str) -> bool
+    at: i64 @ from
+
+    while at + needle.len() <= to
+        if bytes.bytes_at(text: text, at: at, needle: needle)
+            return true
+        at @ at + 1
+
+    return false
+
+# The first byte past a row's offset column: spaces, digits, `:` and `-`.
+function past_offsets(text: str, from: i64, to: i64) -> i64
+    at: i64 @ from
+
+    while at < to && (text[at] == ' ' || text[at] == ':' || text[at] == '-' || text[at] >= '0' && text[at] <= '9')
+        at @ at + 1
+
+    return at
 
 # Whether the row from `from` to `to` is a wrapper's head: an offset column
 # (spaces, digits, `:` and `-`), then `| struct hero_ly_` and the rest of the
 # row a declaration's number or `control`. It reads at most the offset column
 # and the head's own bytes, so a long row of another block costs nothing here.
 function opens(text: str, from: i64, to: i64) -> bool
-    at: i64 @ from
-
-    while at < to && (text[at] == ' ' || text[at] == ':' || text[at] == '-' || text[at] >= '0' && text[at] <= '9')
-        at @ at + 1
-
+    at = past_offsets(text, from: from, to: to)
     head = "| struct " + PREFIX
 
     if at + head.len() > to || !bytes.bytes_at(text: text, at: at, needle: head)
@@ -157,9 +194,14 @@ function starts(text: str, prefix: str) -> bool
 ## Tests
 
 test "only the blocks this compiler asked for become rows"
-    dump = "\n*** Dumping AST Record Layout\n         0 | G0\n         0 |   int64_t v\n           | [sizeof=8, align=8]\n\n*** Dumping AST Record Layout\n         0 | struct hero_ly_3\n         0 |   G1 v\r\n         0 |     G0 inner\n           | [sizeof=8, align=8]\n\n*** Dumping AST Record Layout\n         0 | struct hero_ly_3x\n           | [sizeof=8, align=8]\n         0 | struct hero_ly_control\n         0 |   struct (unnamed) v\n           | [sizeof=4, align=4]\n"
+    dump = "\n*** Dumping AST Record Layout\n         0 | G0\n         0 |   int64_t v\n           | [sizeof=8, align=8]\n\n*** Dumping AST Record Layout\n         0 | struct hero_ly_3\n         0 |   G1 v\r\n         0 |     G0 inner\n           | [sizeof=8, align=8]\n\n*** Dumping AST Record Layout\n         0 | struct hero_ly_3x\n           | [sizeof=8, align=8]\n         0 | struct hero_ly_control\n         0 |   struct (unnamed) v\n           | [sizeof=4, align=4]\n         0 | union SA::(anonymous at ./u.h:8:32)\n         0 |   int32_t i\n         0 |   float f\n           | [sizeof=4, align=4]\n         0 | union __sigaction_u\n         0 |   void * h\n           | [sizeof=8, align=8]\n"
     rows = wrapper_rows(dump)
-    assert rows.len() == 7
+    assert rows.len() == 9
+
+    # An anonymous union's own block gives its head and its width, no more;
+    # a named union's block is C's to classify, and is not kept.
+    assert rows[7] == "         0 | union SA::(anonymous at ./u.h:8:32)"
+    assert rows[8] == "           | [sizeof=4, align=4]"
     assert rows[0] == "         0 | struct hero_ly_3"
     assert rows[1] == "         0 |   G1 v"
     assert rows[3] == "           | [sizeof=8, align=8]"

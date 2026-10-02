@@ -112,6 +112,7 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
     d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_union_field", message: "", span: span)
     held = "`" + t + "` holds `" + m + "` in a union of `" + h + "`"
     wrong = ", so comparing a `" + t + "` or using one as a map key can call two different values equal"
+    partly = ", so comparing a `" + t + "` or using one as a map key would compare only part of its bytes"
 
     written = ffi_record.field_type_text(s, tree, decls, type_name: t, field: m)
 
@@ -120,9 +121,15 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
     else if kind == layout_compare.OVERLAP_IN
         d.message @ "`" + t + "` holds `" + m + "` in `" + other + "`, a union of `" + h + "`, and a `" + written + "` is not compared bit for bit" + wrong
     else if kind == layout_compare.NARROW_IN
-        d.message @ "`" + t + "` holds `" + m + "` in `" + other + "`, a union of `" + h + "`, and `" + m + "` is narrower than `" + other + "`" + wrong
+        d.message @ "`" + t + "` holds `" + m + "` in `" + other + "`, a union of `" + h + "`, and `" + m + "` is narrower than `" + other + "`" + partly
     else if kind == layout_compare.NARROW
-        d.message @ held + ", and `" + m + "` is narrower than that union (`" + other + "` is in it too)" + wrong
+        beside: str @ " (`" + other + "` is in it too)"
+
+        # A union of one member wider than the member is `aligned` or padded,
+        # and has no other member to name.
+        if other == m
+            beside @ ""
+        d.message @ held + ", and `" + m + "` is narrower than that union" + beside + partly
     else
         d.message @ held + " beside the bit-field `" + other + "`, whose bytes C gives no offset or size to measure" + wrong
     d.notes @ d.notes.push(
@@ -155,9 +162,9 @@ test "layout_record reads each marker, and a line that is not one is left alone"
     overlap = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-overlap S3 c a")
     assert overlap.must().message == "`S3` holds `c` in a union of `s3.h`, sharing its bytes with `a`, and a `f32` is not compared bit for bit, so comparing a `S3` or using one as a map key can call two different values equal"
     narrow = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-narrow S3 a q")
-    assert narrow.must().message == "`S3` holds `a` in a union of `s3.h`, and `a` is narrower than that union (`q` is in it too), so comparing a `S3` or using one as a map key can call two different values equal"
+    assert narrow.must().message == "`S3` holds `a` in a union of `s3.h`, and `a` is narrower than that union (`q` is in it too), so comparing a `S3` or using one as a map key would compare only part of its bytes"
     narrow_in = layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-narrow-in S3 a u")
-    assert narrow_in.must().message == "`S3` holds `a` in `u`, a union of `s3.h`, and `a` is narrower than `u`, so comparing a `S3` or using one as a map key can call two different values equal"
+    assert narrow_in.must().message == "`S3` holds `a` in `u`, a union of `s3.h`, and `a` is narrower than `u`, so comparing a `S3` or using one as a map key would compare only part of its bytes"
     assert layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-narrow S3 a").is_err()
     assert layout_record(s, parsed.tree, parsed.decls, line: "c.c:2:1: error: missing field 'b' initializer").is_err()
     assert layout_record(s, parsed.tree, parsed.decls, line: "c.c:2:1: error: static assertion failed: heroes-ffi-missing Other b").is_err(

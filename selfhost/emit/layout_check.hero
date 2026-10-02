@@ -61,6 +61,7 @@ function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: s
 
     rows = layout_rows.rows_of(dump)
     opened = layout_text.heads(rows)
+    sizes = layout_text.union_sizes(rows)
 
     if !layout_text.control_holds(rows)
         return fail(
@@ -83,10 +84,20 @@ function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: s
                 code: "failed",
                 msg: "the record-layout dump does not describe `" + one.c_type + "` as this compiler reads it (" + failure_of(found) + ")"
             )
+
+        # An anonymous union whose own block gave no width: the reader does
+        # not know the shape, and says so rather than compare without it.
+        for m in found.must()
+            if m.union_kw && sizes[m.place].is_err()
+                return fail(
+                    code: "failed",
+                    msg: "the record-layout dump gives no width for an anonymous union of `" + one.c_type + "`, which this compiler reads from the union's own block"
+                )
+
         hero_name = source.span_text(s, decls[one.decl].name)
         place = source.locate(s, decls[one.decl].name.start)
 
-        for text in record_lines(one, hero_name: hero_name, tree: found.must(), decls: decls, u: u, s: s, c: c)
+        for text in record_lines(one, hero_name: hero_name, tree: found.must(), decls: decls, u: u, s: s, c: c, sizes: sizes)
             lines @ lines.push("#line " + place.line.to_str() + " \"" + place.file + "\"")
             lines @ lines.push(text)
             wrote @ true
@@ -102,7 +113,7 @@ function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: s
 # record, whether it shares a byte with anything beside it; and two declared
 # fields in one anonymous member, when the program builds the record,
 # whether they share one.
-function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text.Member], decls: [ast.Decl], u: extern_union.Used, s: source.Source, c: state.Checked) -> [str]
+function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text.Member], decls: [ast.Decl], u: extern_union.Used, s: source.Source, c: state.Checked, sizes: {str: i64}) -> [str]
     out: [str] @ []
     declared: {str: bool} @ {}
     wide: {str: bool} @ {}
@@ -249,7 +260,7 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
     # Comparing it, hashing it or keying a map by it (R3), at any depth the
     # program reaches it (`extern_union.used`).
     if !u.operated[one.decl].is_err()
-        for line in layout_compare.compared_lines(t: t, hero_name: hero_name, tree: tree, declared: declared, aliases: aliases, wide: wide)
+        for line in layout_compare.compared_lines(t: t, hero_name: hero_name, tree: tree, declared: declared, aliases: aliases, wide: wide, sizes: sizes)
             out @ out.push(line)
 
     if aliases.len() == 0 || out.len() == 0
@@ -305,8 +316,8 @@ test "the assertions for a struct holding an anonymous union: a member left out,
     wanted = layout_text.asked(s, parsed.decls)
 
     # The control as Apple clang 21 and Homebrew clang 22.1.8 print it.
-    control = "         0 | struct hero_ly_control\n         0 |   struct hero_ly_control::(unnamed at control.c:1:26) v\n         0 |     int a\n         4 |     union hero_ly_control::(anonymous at control.c:1:42) \n         4 |       int b\n         4 |       float c\n         8 |     struct hero_ly_control::(anonymous at control.c:1:69) \n         8 |       int g\n        12 |       int h\n        16 |     struct hero_ly_control::(unnamed at control.c:1:95) n\n        16 |       int p\n    20:0-1 |     unsigned int d\n    20:2-2 |     unsigned int \n        24 |     int[0] e\n           | [sizeof=24, align=4]\n"
-    dump = control + "         0 | struct hero_ly_0\n         0 |   SA v\n         0 |     int32_t kind\n         4 |     union SA::(anonymous at ./u.h:8:32) \n         4 |       int32_t i\n         4 |       float f\n         8 |     int32_t x\n           | [sizeof=12, align=4]\n"
+    control = "         0 | struct hero_ly_control\n         0 |   struct hero_ly_control::(unnamed at control.c:1:26) v\n         0 |     int a\n         4 |     union hero_ly_control::(anonymous at control.c:1:42) \n         4 |       int b\n         4 |       float c\n         8 |     struct hero_ly_control::(anonymous at control.c:1:69) \n         8 |       int g\n        12 |       int h\n        16 |     struct hero_ly_control::(unnamed at control.c:1:95) n\n        16 |       int p\n    20:0-1 |     unsigned int d\n    20:2-2 |     unsigned int \n        24 |     int[0] e\n           | [sizeof=24, align=4]\n         0 | union hero_ly_control::(anonymous at control.c:1:42)\n           | [sizeof=4, align=4]\n"
+    dump = control + "         0 | union SA::(anonymous at ./u.h:8:32)\n           | [sizeof=4, align=4]\n         0 | struct hero_ly_0\n         0 |   SA v\n         0 |     int32_t kind\n         4 |     union SA::(anonymous at ./u.h:8:32) \n         4 |       int32_t i\n         4 |       float f\n         8 |     int32_t x\n           | [sizeof=12, align=4]\n"
     unit = check_unit(["u.h"], dump: dump, wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).must()
     assert layout_rows.byte_index(text: unit, needle: "#include <u.h>") == 0
     assert layout_rows.byte_index(text: unit, needle: "#line 2 \"t.hero\"") > 0
@@ -317,7 +328,13 @@ test "the assertions for a struct holding an anonymous union: a member left out,
     # Compared: the integer arm is asked whether it is as wide as the union,
     # the float arm is refused wherever it shares a byte (R3).
     assert layout_rows.byte_index(text: unit, needle: "\"heroes-ffi-narrow SA i f\"") > 0
+    assert layout_rows.byte_index(text: unit, needle: "_Static_assert(sizeof(((SA *)0)->i) == 4, ") > 0
     assert layout_rows.byte_index(text: unit, needle: "\"heroes-ffi-overlap SA f i\"") > 0
+
+    # A union whose own block is missing has no width, and the record is not
+    # judged without one.
+    unsized = control + "         0 | struct hero_ly_0\n         0 |   SA v\n         0 |     int32_t kind\n         4 |     union SA::(anonymous at ./u.h:8:32) \n         4 |       int32_t i\n         4 |       float f\n         8 |     int32_t x\n           | [sizeof=12, align=4]\n"
+    assert check_unit(["u.h"], dump: unsized, wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).is_err()
     assert check_unit(["u.h"], dump: "", wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).is_err()
     assert check_unit(["u.h"], dump: control, wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).is_err()
     assert check_unit(["u.h"], dump: dump.slice(from: control.len(), to: dump.len()), wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).is_err(
@@ -340,6 +357,7 @@ test "a field the dump does not show puts the record's every question under the 
     tree = "         0 | struct hero_ly_0\n         0 |   S3 v\n         0 |     int32_t a\n         4 |     int32_t b\n         8 |     int32_t c\n           | [sizeof=12, align=4]\n"
     rows = layout_rows.rows_of(tree)
     read = layout_text.members(rows: rows, from: layout_text.heads(rows)[0].must()).must()
+    no_sizes: {str: i64} @ {}
     got = record_lines(
         layout_text.asked(s, parsed.decls)[0],
         hero_name: "S3",
@@ -347,7 +365,8 @@ test "a field the dump does not show puts the record's every question under the 
         decls: parsed.decls,
         u: u,
         s: s,
-        c: c
+        c: c,
+        sizes: no_sizes
     )
 
     # `cc` is a macro or a misspelling: only the preprocessor knows which, so

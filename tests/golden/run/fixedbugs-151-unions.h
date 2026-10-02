@@ -40,3 +40,10 @@ static inline ACT make_act(int32_t flags) { ACT a; memset(&a, 0, sizeof a); a.fl
 /* panel 077's two union goldens, compared by an arm as wide as the union */
 typedef union { int32_t i; float f; } U;
 static inline U make_u(int32_t i) { U u; u.i = i; return u; }
+
+/* a packed union as wide as its five-byte arm, which no formula over its
+   members' alignments admits */
+#pragma pack(push, 1)
+typedef struct { uint8_t k; union { uint8_t c[5]; uint32_t i; }; } PK;
+#pragma pack(pop)
+static inline PK make_pk(uint8_t last) { PK p; memset(&p, 0, sizeof p); p.k = 1; p.c[4] = last; return p; }
