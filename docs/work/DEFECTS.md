@@ -871,6 +871,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     Bounded discovery): exit 2. Repaired in lane land186 at `25b96332`,
     gated by its own cases; the rest is owed at the round's gate.
 
+    **2026-10-02, lane land186, a test the repair left stale**: `25b96332`,
+    gated by its own cases, left one of the compiler's own tests stale,
+    `emit/layout_check.hero`'s count of the questions a misspelt field puts
+    under the preprocessor, which the member probe made five where it asked
+    four (1027 passed and 1 failed on that commit's sources, with its
+    compiler); fixed at `ba162242`, 1027 and 0, the rest owed at the round's
+    gate.
+
 - [ ] **165 — a `+` or `*` alone on the line above an arm's pattern gets a join that no pattern takes, and a second message** | `k = match n` over a line holding only `+` (or `*`) and then `1 => "one"`: `continuation_outside_brackets` with the guess *write the statement on one line*, which writes `+1 => "one"`, then `expected_pattern` at the `+`; no deletion of the line is offered | the join of a line ending in an operator (lane h158's `sign_above.hero`, beside defect 159) · **class: adjacent**
 
     **Origin:** lane h158's first pass for defect 159, 2026-10-02
