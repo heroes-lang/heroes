@@ -295,6 +295,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `e14_record_with_fn` and `f06`): repaired at `26358f9c`, gated by its
     cases and the compiler's own tests; the net is owed at the batch's close.
 
+    **2026-10-02, lane recovery-b8, a block comment over several lines is one
+    comment, told once** (lane recovery-b6's `lc12_block_multi`): repaired at
+    `4ca2c20a`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of

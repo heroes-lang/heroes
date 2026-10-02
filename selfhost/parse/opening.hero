@@ -65,6 +65,7 @@ use parse/swap_reading
 use parse/head_lines
 use parse/brace_habit
 use parse/unclosed
+use parse/swallowed
 
 # Where a head began: how many diagnostics the parser had said, and the
 # token its first word stands on.
@@ -145,6 +146,12 @@ function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, mi
     if failed
         cursor.drop_rest_of_line(@c, from: head.pos)
     cursor.skip_terminators(@c)
+
+    # Lines a bracket the head left open swallowed are its body (`parse/swallowed`).
+    reach = swallowed.body_at(@c, text, from: head.pos, said: head.said, failed: failed, block: missing.braces)
+
+    if reach >= 0
+        return .braced(close: reach)
     found = opening_at(@c, text, missing)
 
     if found != .none

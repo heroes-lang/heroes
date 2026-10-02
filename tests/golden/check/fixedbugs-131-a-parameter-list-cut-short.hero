@@ -9,6 +9,12 @@
 # end token, so the head looked as if it had not left its line. A closer is
 # not asked for where a report already stands (`line_end.expect_closer`), and
 # a head's line is read in the text (`opening.crossed_a_line`).
+#
+# Widened 2026-10-02 (lane recovery-b8, the head class, the audit's row
+# 130-34d): after a whole parameter the body's `)`, one too many, which
+# paired the list, is told too; the lines from the head's to it are the
+# body (`parse/swallowed`). Where the list refused a later token of the
+# line below, the `=` of `y = 3 )`, the line is the list's, as before.
 
 function open_only(
     y = 3 )  #~ expected_parameter_type
@@ -20,7 +26,7 @@ function after_a_comma(x: i64,
     y = 3 )  #~ expected_parameter_type
 
 function after_a_parameter(x: i64
-    y = 3 )  #~ expected_params_close
+    y = 3 )  #~ expected_params_close expected_end_of_line
 
 function two_names(a b)  #~ expected_parameter_type
     y = 3 )  #~ expected_end_of_line
