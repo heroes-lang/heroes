@@ -1,0 +1,19 @@
+# fixedbugs, defect 152's lane, ffi-macro, 2026-10-02.
+#
+# The one shape `ffi_unknown_field` reached before its field was found by its
+# line, raylib's `typedef struct Color {...} Color;` bound as `record Color`,
+# and it had no case of its own: clang says *no member named 'c' in 'struct
+# named_s'*, and the struct's tag is the record's name. Kept, so the route the
+# location replaced stays told the same way, the type quoted as clang spells
+# it.
+
+extern "fixedbugs-152-fields.h"
+    record named_s
+        a: i32
+        c: i32  #~ ffi_unknown_field
+
+function touch(t: named_s)
+    _ = t
+
+function main()
+    print(1)
