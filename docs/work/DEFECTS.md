@@ -855,6 +855,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** Exit 2 is the compiler blaming itself for a program
     the author can be told about (`.claude/rules/c-boundary.md`).
 
+    **2026-10-02, lane ffi-macro, a name the header has as an object, a
+    value or a type is told on its declaration, and so is a field the header
+    lacks whatever the header calls its type** (the second found in the
+    lane's first pass, at the field assertion): repaired at `2d5240a0` and
+    `6559facf`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
 - [ ] **153 — `declaration_in_arm` says `_` would be bound, which spec § 5 says it never is** | `.blue => _ = 0` on an arm's line: *an arm's body may not declare a name — `_` would be bound where nothing can read it*; spec § 5: `_` *binds nothing*, and § 8 names `_ = 0` as the arm that does nothing | `selfhost/parse/arm_body.hero:25-38` (`declared_name` does not ask the name)
 
     **Origin:** panel 185's critic, compiler-engineer and spec-warden,
