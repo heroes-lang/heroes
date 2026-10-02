@@ -863,6 +863,18 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     7 and defect 160's framework reproducer building; the net is owed at the
     batch's close.
 
+    **2026-10-02, the round's third gate, lanes land186 and h158 reconciled:
+    the layout check's cache keyed by the same words**: lane land186's
+    `selfhost/cli/layout.hero` (`f2a08f13`), whose three clang runs
+    `pointee.with_search` now hands a package's compile words and the
+    probe's flags (161, 163), kept its verdicts under the package's whole
+    answer joined by spaces (162's collision too); on one `build/` the
+    merged tree replayed a verdict land186's compiler had reached without
+    the package's `-D` and built, at exit 0, a record four bytes short of
+    the header's struct. Keyed by `libraries.compile_flags` and
+    `pointee.probe_flags` at `77cb114a`, with its compiler test; the round's
+    gate is the commit carrying this line.
+
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): exit 2, a correct program refused.
 

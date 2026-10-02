@@ -9,7 +9,7 @@ _Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
-#line 15 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
+#line 25 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
 _Static_assert(__builtin_classify_type(((ZE *)0)->x) == 1 && sizeof(((ZE *)0)->x) == sizeof(int32_t) && (_Generic(((ZE *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ZE x");
 #line 15 "fixedbugs151memberswithnobytesleftout.c"
 
@@ -96,22 +96,22 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs151memberswithnobytesleftout_main(void);
 
-#line 18 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
+#line 28 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
 void h_fixedbugs151memberswithnobytesleftout_main(void) {
 #line 102 "fixedbugs151memberswithnobytesleftout.c"
     ZE t1;
     int32_t t2;
     goto bb0;
 bb0:
-#line 19 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
+#line 29 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
     t1 = make_ze();
-#line 19 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
+#line 29 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
     t2 = t1.x;
-#line 19 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
+#line 29 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
     hero_print_int(t2);
-#line 19 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
+#line 29 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
     hero_print_end();
-#line 19 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
+#line 29 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
     return;
 #line 117 "fixedbugs151memberswithnobytesleftout.c"
 }

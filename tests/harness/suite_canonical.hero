@@ -80,8 +80,12 @@ constant SOURCE_DIRS: [str]
 # passes. Re-based to today's count by `floors.check`, which is what noticed.
 # **667 on 2026-09-25**, printed by `floors.check` at the merge of panel 177's
 # landing with defect 097's, whose goldens took the tree 27% past 524.
+# **844 on 2026-10-02**, printed by `floors.check` at the round's third gate:
+# the trunk's 831 files sat under its quarter, and lane h158's four and lane
+# land186's nine took the tree 26.5% past 667. The tree's count, the same on
+# every platform, since the walk reads files and builds nothing.
 constant LEAST: i64
-    667
+    844
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
@@ -158,9 +162,11 @@ test "the walk names the directories that were swept, and the floor is under the
     # reached 524 and `floors.check` reported the floor as outgrown — the numbers
     # here move with it, because a bracket taken from an old tree brackets
     # nothing. **524 until 2026-09-25**, when the tree reached 667 at panel
-    # 177's landing and the floor moved to it; 88% of 667 is 587.
-    assert LEAST <= 667
-    assert LEAST > 587
+    # 177's landing and the floor moved to it; 88% of 667 is 587. **667
+    # until 2026-10-02**, when the tree reached 844 at the round's third gate
+    # and the floor moved to it; 88% of 844 is 742.
+    assert LEAST <= 844
+    assert LEAST > 742
 
 test "the two exempt directories are named nowhere in the walk"
     # tests/golden/check and tests/golden/unsupported are the test's data
