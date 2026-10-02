@@ -145,7 +145,9 @@ function shape_emit() -> Shape
 # `fixedbugs-152-` cases, one per kind of name a header holds that is not a
 # function, and the suite asked for 46. **63 the same day**: seven
 # `fixedbugs-152-a-field-the-header-lacks-` cases and defect 143's ten
-# `fixedbugs-143-` cases (panel 185 R1).
+# `fixedbugs-143-` cases (panel 185 R1). **84 in lane land186, the same day**:
+# panel 186's landing, twelve `fixedbugs-151-` cases and seven
+# `fixedbugs-156-` ones, over 65.
 function shape_unsupported() -> Shape
     return Shape(
         name: "unsupported",
@@ -154,7 +156,7 @@ function shape_unsupported() -> Shape
         flag: "",
         on_stderr: true,
         want_code: 1,
-        least: 63,
+        least: 84,
         watched: true,
         silent_stdout: true,
         library_skip: true
