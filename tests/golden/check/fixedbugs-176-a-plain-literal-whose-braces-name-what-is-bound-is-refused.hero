@@ -1,0 +1,65 @@
+# Defect 176, 2026-10-02: `x = 1` over `print("{x}")` printed `{x}` at exit
+# 0, where panel 185's R7, decided by the author that morning (route (5b),
+# landing after panel 184's R1), refuses a plain literal whose brace hole
+# names bindings all bound where the literal stands. Cause: nothing read a
+# plain literal's text after the lexer. Now each such literal is
+# `hole_without_f` at its first hole so bound, with two guesses, the `f`
+# written and the braces kept as text, and every name its holes read counts
+# as read, so `count` below is told once. Refused: a local, a sum, a method,
+# a field, a call, a constant, a built-in, a parameter, a loop variable, a
+# constant's body, a map's key, a literal nested in an `f` literal's hole,
+# braces of text around a bound hole and a `}` after one. Spared, being
+# text: a hole that names nothing (`{0}`), one naming what is bound nowhere
+# (a template's `{name}`), braces holding no expression, braces written
+# twice, a name bound below the literal, a pattern's literal, which no `f`
+# can spell, and a test's name, which is no expression.
+
+record Point
+    x: i64
+
+constant MAX: i64
+    9
+
+constant LABEL: str
+    "{MAX} items"  #~ hole_without_f
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function shown(n: i64) -> str
+    return "{n} shown"  #~ hole_without_f
+
+function pick(s: str) -> i64
+    return match s
+        "{MAX}" => 1
+        _       => 2
+
+function main()
+    count = 3
+    print("{count} rows")  #~ hole_without_f
+    i = 4
+    xs = [1, 2]
+    p = Point(x: 5)
+    print("{i + 1}")  #~ hole_without_f
+    print("{xs.len()}")  #~ hole_without_f
+    print("{p.x}")  #~ hole_without_f
+    print("{twice(i)}")  #~ hole_without_f
+    print("{MAX}")  #~ hole_without_f
+    print("{len(xs)}")  #~ hole_without_f
+
+    for x in xs
+        print("{x}")  #~ hole_without_f
+
+    m: {str: i64} @ {}
+    m["{i}"] @ 1  #~ hole_without_f
+    print(f"{"{i}"} nested")  #~ hole_without_f
+    print("{{{i}}}")  #~ hole_without_f
+    print("{i}}")  #~ hole_without_f
+    print("{0} {name} {K: V} {{i}}")
+    print("{later}")
+    later = 6
+    print(later + pick(s: LABEL) + m.len())
+    print(shown(n: 1))
+
+test "{MAX} is nine"
+    assert MAX == 9

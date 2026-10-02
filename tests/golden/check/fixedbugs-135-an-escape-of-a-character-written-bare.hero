@@ -7,6 +7,10 @@
 # was a backslash. Now these read as the character written bare, and `\{`
 # in an `f"…"` literal as a brace, `{{` there, as much as a backslash: both
 # repairs offered, neither applied (`escape_readings`).
+#
+# 2026-10-02, panel 184 R1 (defect 173): `\}` in an `f"…"` literal reads as
+# a brace too, `}}` there, where it read bare until then: a `}` alone in
+# that text is refused since the ruling, so its bare repair would be too.
 
 function written_bare()
     print("costs \$5, why\? a\/b a\`b")  #~ unknown_escape unknown_escape unknown_escape unknown_escape

@@ -8,6 +8,10 @@
 # escapes and doubled braces, in a nested literal, in a function's result
 # and in a map's keys; the output must carry every one of them byte for
 # byte.
+#
+# 2026-10-02, panel 184 R1 (defect 173): `}}` writes one brace as `{{` does,
+# so the two lines of doubled braces print `{é} 7 {€}` and `é{7}é`, where
+# they printed `{é}} 7 {€}}` and `é{7}}é` until then.
 
 function label(n: i64) -> str
     return f"«{n}»"

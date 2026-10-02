@@ -1,0 +1,44 @@
+# Panel 184's R1 prediction, the ffi-pragmatist's, scored at its landing
+# (defect 173, 2026-10-02): a regular expression written against the landed
+# escape hands C the bytes its author wrote. `f"^[0-9]{{3}}-[0-9]{{4}}$"`
+# is what Python and Rust teach for a brace of text, and until the ruling it
+# handed POSIX `regcomp` `^[0-9]{3}}-[0-9]{4}}$`, a valid expression of
+# another language: `555-1234` refused and `555}-1234}` matched, every exit
+# 0 (the seat's run on `a294a6ff`). Now C receives `^[0-9]{3}-[0-9]{4}$`,
+# whose length C itself counts, and a bound written into the text from a
+# binding is Python's spelling too, `{{{digits}}}`.
+#
+# Windows has no `regex.h`; the harness skips a case whose header the machine
+# lacks, and that skip is deliberate and counted.
+
+extern "regex.h"
+    constant REG_EXTENDED: i32
+    record regex_t partial
+        re_nsub: u64
+    function regcomp(@preg: regex_t, pattern: cstr lent, cflags: i32) -> i64
+    function regexec(@preg: regex_t, text: cstr lent, nmatch: u64, pmatch: ptr, eflags: i32) -> i64
+    function regfree(@preg: regex_t)
+
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+# Whether `text` matches `pattern` as an extended regular expression.
+function matches(pattern: str, text: str) -> bool
+    re: regex_t @ regex_t(re_nsub: 0)
+
+    if regcomp(@re, pattern.cstr(), REG_EXTENDED) != 0
+        print("regcomp refused: ", pattern)
+        return false
+    rc = regexec(@re, text.cstr(), 0, nullptr, 0)
+    regfree(@re)
+    return rc == 0
+
+function report(pattern: str, yes: str, no: str)
+    print("C receives ", pattern, ", ", strlen(pattern.cstr()), " bytes")
+    print("    ", yes, " -> ", matches(pattern: pattern, text: yes))
+    print("    ", no, " -> ", matches(pattern: pattern, text: no))
+
+function main()
+    report(pattern: f"^[0-9]{{3}}-[0-9]{{4}}$", yes: "555-1234", no: "555}-1234}")
+    digits = 3
+    report(pattern: f"^[0-9]{{{digits}}}$", yes: "555", no: "555}")

@@ -1,0 +1,33 @@
+# Defect 173, 2026-10-02: `print(f"{{a}}")` printed `{a}}` at exit 0, where
+# panel 184's R1 (ratified 2026-10-01) makes `}}` write one brace, as `{{`
+# does. Cause: `lex_interp.scan_piece` read only `{{` as an escape and took
+# every `}` of a piece's text as content, and `piece_text` undoubled `{{`
+# alone. Now `}}` is one brace wherever a piece's text reaches: alone, on
+# either side of a hole, three in a row around a hole (Python's and Rust's
+# spelling of a brace around a value), in the head and the tail of one
+# literal, in a constant's body, in a function's result, in a map's key, and
+# in a literal nested in a hole. A plain literal keeps its braces as written.
+
+constant BRACED: str
+    f"{{in a constant}}"
+
+function wrapped(n: i64) -> str
+    return f"{{{n}}}"
+
+function main()
+    x = 5
+    word = "w"
+    print(f"{{a}}")
+    print(f"}}")
+    print(f"{{")
+    print(f"{{{x}}}")
+    print(f"{x}}}")
+    print(f"}}{x}")
+    print(f"a{{b}}c{x}d}}e")
+    print(f"{f"}}{word}{{"} and {"}"}")
+    print(BRACED)
+    print(wrapped(n: 7))
+    m: {str: i64} @ {}
+    m[f"{{k}}"] @ 1
+    print(m["{k}"].must())
+    print("{{a}} }} a}b")

@@ -1,0 +1,28 @@
+# Defect 173, 2026-10-02: a `}` alone in an `f` literal's text compiled and
+# printed itself, `print(f"a}b")` writing `a}b` at exit 0, where panel 184's
+# R1 (ratified 2026-10-01) makes it an error. Cause: `lex_interp.scan_piece`
+# took every `}` of a piece's text as content. Now each such brace is
+# `lone_brace`, at the brace, with two guesses and neither applied: `}}`,
+# the brace as text and what the literal printed before the ruling, and the
+# deletion of a brace typed once too often. Here it is in the text, after a
+# hole, in this language's old spelling of a brace around a word (`{{x}`),
+# empty between two braces, three in a row, before the closing quote, twice
+# in one piece, in a constant's body and in a literal nested in a hole. The
+# plain literal at the end holds the same braces and is untouched.
+
+constant OLD: str
+    f"{{old}"  #~ lone_brace
+
+function main()
+    x = 5
+    print(f"a}b")  #~ lone_brace
+    print(f"}")  #~ lone_brace
+    print(f"{x}}")  #~ lone_brace
+    print(f"{{x}")  #~ lone_brace
+    print(f"{{}")  #~ lone_brace
+    print(f"}}}")  #~ lone_brace
+    print(f"a}")  #~ lone_brace
+    print(f"{x} } and }")  #~ lone_brace lone_brace
+    print(f"{f"in}"}")  #~ lone_brace
+    print("a}b {y}} {{y}")
+    print(OLD)

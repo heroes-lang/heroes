@@ -1,0 +1,41 @@
+# Panel 184's R2 (ratified 2026-10-01, landed 2026-10-02 by lane fbrace):
+# `unused_binding` on a name a plain literal of the same function holds in
+# braces says so, quoting the literal, and offers the `f`, a guess. Before it
+# the message said only that the name is never read, which points away from a
+# forgotten `f`. These are the shapes the note keeps once panel 185's R7
+# refuses a plain literal whose hole names bindings all bound where it stands
+# (defect 176), which counts that hole's names as read: a hole that names
+# something bound nowhere as well, a literal above its binding, a loop
+# variable and a payload, whose certain rename to `_` becomes a guess beside
+# the `f`. A name written `{{taken}}` is in no hole and gains no note, and a
+# pattern's literal, which no `f` can spell, is never read for one.
+
+function rows(n: i64)  #~ unused_binding
+    print("{n + gone} rows")
+
+function found(xs: [i64]) -> i64?
+    return fail(code: "none", msg: "nothing in " + xs.len().to_str())
+
+function main()
+    print("{early} above")
+    early = 1  #~ unused_binding
+    xs = [1, 2]
+
+    for x in xs  #~ unused_binding
+        print("{x + absent}")
+
+    match found(xs: xs)
+        .ok v  => print("{v + absent}")  #~ unused_binding
+        .err _ => print("none")
+
+    taken = 2  #~ unused_binding
+    print("{{taken}} is text")
+    label = "x"  #~ unused_binding
+    s = "y"
+
+    picked = match s
+        "{label}" => 1
+        _         => 2
+
+    print(picked)
+    rows(n: 3)
