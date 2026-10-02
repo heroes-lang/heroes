@@ -324,8 +324,9 @@ The first round under it, 2026-10-02: four lanes, one gate, `e2d59fdb`, the
 full net 4,449 passed and 0 failed. The text below is the rule as it stood
 before, kept.
 
-**And per repair, its own cases alone** (author instruction 2026-10-02 at
-about 16:30, meant as: *the lanes are slow; per repair they must run only
+**And per repair, its own cases alone** (author instruction 2026-10-02,
+between 16:23 and 16:31 by the clock read before it and the commit after
+it, meant as: *the lanes are slow; per repair they must run only
 mini tests, and every other check only at the end*). Given on what one
 repair of lane land186 ran that afternoon: `check` whole (400 cases),
 `unsupported` whole (73), `warnings` whole (289 programs built), the
@@ -394,9 +395,10 @@ the item; every other real defect found beside it is filed apart, `adjacent`.
 
 ## Bounded discovery: the classes of a defect, and when a round ends
 
-Author instruction 2026-10-02 at about 17:00, meant as: *D1a D2a D3a*, on a
+Author instruction 2026-10-02, between 16:31 and 16:39 by the commits
+before and after it, meant as: *D1a D2a D3a*, on a
 proposal put with its measurements. **The loop it ends**: the open count was
-3 on 2026-09-29 and 10 at 16:30 on 2026-10-02, 65 defects closed in nine
+3 on 2026-09-29 and 10 from 15:55 on 2026-10-02 (defect 158's filing), 65 defects closed in nine
 days while the numbers issued went from 082 to 158; defect 130, itself found
 beside defect 124 on 2026-09-28, took seven batches (recovery-b1 to b6 and
 b8) and its item grew to 264 lines, every batch's first pass adding shapes to

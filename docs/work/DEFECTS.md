@@ -645,7 +645,7 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     union reached by `tag`): a handle, `record UH tag utag` with no fields
     over `union utag { int32_t i; float f; };`, is told `ffi_unknown_name`,
     *`tags.h` declares no `utag`*, which is false (reproduced by the
-    coordinator at 17:40 on `9faf7462`,
+    coordinator on `9faf7462` before 16:49, the widening's commit,
     `docs/panel/186-briefs/probes/coordinator/handle_utag.hero` over
     `tags.h`).
 
@@ -655,11 +655,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
 - [ ] **158 — a group's header that includes a header this machine lacks stops `build` with an internal error and clang's text** | `extern "outer.h"` over a header holding `#include <no_such_header_here.h>`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: In file included from ...: ./outer.h:2:10: fatal error: 'no_such_header_here.h' file not found*, where a missing header the group names itself is told `ffi_missing_header` at exit 1 | `selfhost/emit/ffi_build.hero` (where `ffi_missing_header` is told) · `tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero`, red on the Windows box · **class: blocking**
 
-    **Origin:** the coordinator, 2026-10-02 at 15:55, reading the Windows
+    **Origin:** the coordinator, 2026-10-02, reading the Windows
     box's pre-push leg on `2bb45a96` (16 of 19 suites green; `run`,
     `emission` and `determinism` each 1 failed, all on lane ffi-macro's new
     run case, whose header includes `sys/wait.h` and `sys/select.h`, absent
-    on Windows), then reproduced on this Mac at 15:57 on the trunk at
+    on Windows; the leg's log reads its exit at 15:52), then reproduced on
+    this Mac before 15:55, the filing commit's time, on the trunk at
     `4d0f27a1` (`docs/panel/186-briefs/probes/coordinator/nested.hero` and
     `outer.h`).
 
@@ -678,8 +679,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** lane arm's first pass, 2026-10-02
     (`scratchpad/lane-arm/pass1/r6/u14_lexer_split_int.hero`), raised again
-    by lane recovery-b8 as a question; reproduced by the coordinator at
-    17:00 on the trunk at `6c4da49b`
+    by lane recovery-b8 as a question; reproduced by the coordinator before
+    16:39, the filing commit's time, on the trunk at `6c4da49b`
     (`docs/panel/186-briefs/probes/coordinator/u14_minus_above_an_arm.hero.txt`,
     kept as text since it does not parse, which is the defect).
 
@@ -697,7 +698,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** lane h158, 2026-10-02, measuring framework headers for
     defect 158 (`scratchpad/lane-h158/shapes/fw/`); reproduced by the
-    coordinator at 17:25 on the trunk at `545e0044`
+    coordinator before 16:47, the filing commit's time, on the trunk at
+    `545e0044`
     (`docs/panel/186-briefs/probes/coordinator/fw/`, run with
     `PKG_CONFIG_PATH=<that>/pc`).
 
