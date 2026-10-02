@@ -178,7 +178,7 @@ function constant_ended(name: str, span: token.Span) -> diag.Diagnostic
     return d
 
 # A branch that falls off its end without a value, told at the statement it
-# ends on (`check/walk.ended_on_a_statement`). Distinct from a diverging
+# ends on (`check/path_end.ended_on_a_statement`). Distinct from a diverging
 # branch, and the distinction is the point: a jump CANNOT produce a value, a
 # statement simply did not.
 function branch_without_value(span: token.Span) -> diag.Diagnostic
