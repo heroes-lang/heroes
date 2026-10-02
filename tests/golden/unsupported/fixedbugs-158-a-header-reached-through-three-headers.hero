@@ -1,0 +1,11 @@
+# fixedbugs, defect 158, lane h158, 2026-10-02.
+#
+# Beside `fixedbugs-158-a-header-the-groups-header-includes-in-angle-brackets`:
+# three headers deep, included in quotes, then in angle brackets, then in
+# quotes. The message names the two between, and the note each line.
+
+extern "fixedbugs-158-depth-three-outer.h"
+    function seven() -> i32  #~ ffi_missing_header
+
+function main()
+    print(seven())
