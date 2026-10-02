@@ -1,0 +1,17 @@
+# fixedbugs, defect 158, lane h158, 2026-10-02.
+#
+# Symptom: a group's header that includes a header this machine lacks
+# stopped `build` at exit 2, `internal error: compiling the generated C
+# failed`, with clang's text, where a header the group names itself is
+# `ffi_missing_header` at exit 1; on the Windows box the run suite, which
+# skips a case only on that code, went red on a header including
+# `sys/wait.h`. Cause: `emit/ffi_build.hero`'s `missing_header` asked only
+# whether a group names the header clang could not open. clang's line also
+# begins with the place of the `#include`, and that file is the group's
+# header: the diagnostic is on the group, naming both headers and the line.
+
+extern "fixedbugs-158-angle.h"
+    function seven() -> i32  #~ ffi_missing_header
+
+function main()
+    print(seven())

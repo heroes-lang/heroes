@@ -732,6 +732,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     fact also turns a platform's correct skip into a red that would reach
     the CI's Windows leg at the next push.
 
+    **2026-10-02, lane h158, a header the group's own header includes is
+    told on the group from clang's line alone, and one reached through other
+    headers from the include stack above it**: repaired at `744cdc08` (the
+    line) and `7790f2f6` (the stack, the call in `selfhost/emit/ffi.hero`
+    handing clang's whole stderr), gated by their cases, the first also by the
+    compiler's own tests; the net is owed at the batch's close.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): exit 2 and clang's
     text for the machine's own fact; it would turn the CI's Windows leg red.
