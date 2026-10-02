@@ -298,21 +298,6 @@ function tabbed_line(c: cursor.Cursor, text: str) -> bool
         return false
     return head_lines.margin_has_tab(text, at: cursor.current_span(c).start)
 
-# What a failed construct begun at token `from` drops, as
-# `cursor.drop_rest_of_line` does, but never into the next line of the text:
-# after an `=>` or an `else` over a line whose margin holds a tab the lexer
-# puts no line end, and dropping to the next one took that line too.
-function drop_line(@c: cursor.Cursor, text: str, from: i64)
-    if c.pos != from && cursor.at_fresh_line(c)
-        return
-
-    while !cursor.at(c, .eof) && !cursor.at(c, .indent) && !cursor.at(c, .dedent)
-        if c.pos != from && head_lines.margin_width(text, at: cursor.current_span(c).start) >= 0
-            return
-
-        if cursor.bump(@c).kind == .terminator
-            return
-
 # Whether a token can begin an expression, spec § 7's `Unary` and
 # `Primary`: what `while` needs after it to be a loop, so what a `certain`
 # *use `while`* for a `for` over a condition needs (defect 131's third
