@@ -1,0 +1,26 @@
+# Fixed 2026-10-02, defect 130's class, lane recovery-b8 (the audit's row
+# 130-28, lane X4's n4). Symptom: past a statement that failed inside a
+# bracket, a closer one too many on its line, `x = f(0X10 + ) )`, was
+# dropped with the line's debris, and told only once the missing operand
+# was written: two mistakes, one message. Cause: a failed statement drops
+# the rest of its line whatever stands there. Now the first closer on that
+# rest which closes no opener of its kind the line opened, with no report
+# standing on it, is told as past a statement that did not fail; a closer of
+# another kind inside an opener is that list's junk, so `[0X20, )]` keeps
+# its `]`, and a name after the failure is debris, as before.
+
+function f(a: i64) -> i64
+    return a
+
+function main()
+    x = f(0x10 + ) )  #~ base_prefix_case expected_expression expected_end_of_line
+    y = [0x20, )]  #~ base_prefix_case expected_expression
+    print(1 +) )  #~ expected_expression expected_end_of_line
+    z = 3 + ) )  #~ expected_expression expected_end_of_line
+    w = f(1 2) )  #~ expected_args_close expected_end_of_line
+    v = f(f(1 +)) ]  #~ expected_expression expected_end_of_line
+    u = f(1 +,  #~ expected_expression
+        2) )  #~ expected_end_of_line
+    t = f(1 +) ) )  #~ expected_expression expected_end_of_line
+    s = f(1 +) q  #~ expected_expression
+    print(x)

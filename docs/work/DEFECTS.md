@@ -18,9 +18,9 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 12**
+**OPEN: 18**
 
-- [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
+- [ ] **130 — after a unction main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` overecovery · **class: systemic**
 
     **Origin:** lane 123's agent, 2026-09-28, beside defect 124, on the
     trunk's compiler at `aee8b01e` (reproducers `shapes/y01_three_bad.hero`
@@ -78,13 +78,7 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     assigned by the coordinator**: under an arm written inline, `0 => print(1)`
     over a deeper `print(99)` compiled and ran and printed 1, the deeper line
     thrown away at exit 0, a wrong answer and not only a silence (repaired
-    in lane 130, `47849cc9`); and a misspelled keyword at a top-level head,
-    `recrod Point` over its fields, drops its whole block silently (given to
-    lane 133, whose files it is in; reproducers in
-    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/`, 2026-09-29).
-
-    **Widened 2026-09-29 by lane 133's agent**: on the compilers of
-    `a6eab736` and `7c0cb024` the parser HUNG, forever, on a line headed by a
+    in lane 130, `47849cc9`); and a misspelled keyword at a by a
     refused word after an `if`, `while` or `for` block (`elif`, or `let`
     after an `if`); lane 130's merge `0ba7b084` ended it, measured at exit 1,
     and a case per shape is owed (`hang/o.hero`, `y3`, `y4`, `y8`, `r`, `s`);
@@ -283,6 +277,45 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     Linux x86-64 on the gate tree, 1,006 tests and 19 suites, 4,171 passed and
     0 failed. The item stays open for the shapes lane recovery-b6's report
     names.
+
+    **2026-10-02, lane recovery-b8, a line that failed past what it declares
+    drops only its line, and the block below it is told** (lane recovery-b6's
+    `d01_use_junk` and `d04_extern_member_junk`): repaired at `525fe2dd`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close.
+
+    **2026-10-02, lane recovery-b8, a function among a record's fields is
+    told once and read as the function it is** (lane recovery-b6's
+    `e14_record_with_fn` and `f06`): repaired at `26358f9c`, gated by its
+    cases and the compiler's own tests; the net is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b8, a block comment over several lines is one
+    comment, told once** (lane recovery-b6's `lc12_block_multi`): repaired at
+    `4ca2c20a`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
+    **2026-10-02, lane recovery-b8, the body a head's open bracket took in is
+    read as its body** (the head class panel 183 left to the cluster; the
+    audit's rows 130-H-004 and 130-34d): repaired at `276908b3`, gated by its
+    cases and the compiler's own tests; the net is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b8, a closer one too many past a failed
+    statement is told** (the audit's row 130-28): repaired at `ce5caf89`,
+    gated by its own cases alone (the author's instruction of that
+    afternoon); the rest is owed at the round's gate.
+
+    **2026-10-02, the round's gate of lanes recovery-b8, land186 and h158,
+    two of the lane's commits redone**: `ce5caf89`, past a statement that
+    ended with its own block, told the next statement's closer a second
+    time at its column (the compiler's own tests, 3 failed at the gate and
+    at the lane's merge `2dc1a9d7`, 0 at its `276908b3`; the census, 51
+    doubled messages over 19 older goldens), redone at `d105a1e5`, the
+    search bounded by what the drop of the failed line takes; and
+    `525fe2dd` moved the `expected_declaration` arm into
+    `parse/top_level.hero` while the site's claims reader looked for it in
+    `decl.hero` (the site's build, exit 1), followed at `a388a056`. Each
+    gated by its own cases; the round's gate is the commit carrying this
+    line.
 
     **Class: systemic**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): six batches on the
@@ -696,7 +729,7 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     union reached by `tag`): a handle, `record UH tag utag` with no fields
     over `union utag { int32_t i; float f; };`, is told `ffi_unknown_name`,
     *`tags.h` declares no `utag`*, which is false (reproduced by the
-    coordinator at 17:40 on `9faf7462`,
+    coordinator on `9faf7462` before 16:49, the widening's commit,
     `docs/panel/186-briefs/probes/coordinator/handle_utag.hero` over
     `tags.h`).
 
@@ -712,11 +745,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
 - [ ] **158 — a group's header that includes a header this machine lacks stops `build` with an internal error and clang's text** | `extern "outer.h"` over a header holding `#include <no_such_header_here.h>`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: In file included from ...: ./outer.h:2:10: fatal error: 'no_such_header_here.h' file not found*, where a missing header the group names itself is told `ffi_missing_header` at exit 1 | `selfhost/emit/ffi_build.hero` (where `ffi_missing_header` is told) · `tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero`, red on the Windows box · **class: blocking**
 
-    **Origin:** the coordinator, 2026-10-02 at 15:55, reading the Windows
+    **Origin:** the coordinator, 2026-10-02, reading the Windows
     box's pre-push leg on `2bb45a96` (16 of 19 suites green; `run`,
     `emission` and `determinism` each 1 failed, all on lane ffi-macro's new
     run case, whose header includes `sys/wait.h` and `sys/select.h`, absent
-    on Windows), then reproduced on this Mac at 15:57 on the trunk at
+    on Windows; the leg's log reads its exit at 15:52), then reproduced on
+    this Mac before 15:55, the filing commit's time, on the trunk at
     `4d0f27a1` (`docs/panel/186-briefs/probes/coordinator/nested.hero` and
     `outer.h`).
 
@@ -727,6 +761,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     fact also turns a platform's correct skip into a red that would reach
     the CI's Windows leg at the next push.
 
+    **2026-10-02, lane h158, a header the group's own header includes is
+    told on the group from clang's line alone, and one reached through other
+    headers from the include stack above it**: repaired at `744cdc08` (the
+    line) and `7790f2f6` (the stack, the call in `selfhost/emit/ffi.hero`
+    handing clang's whole stderr), gated by their cases, the first also by the
+    compiler's own tests; the net is owed at the batch's close.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): exit 2 and clang's
     text for the machine's own fact; it would turn the CI's Windows leg red.
@@ -735,8 +776,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** lane arm's first pass, 2026-10-02
     (`scratchpad/lane-arm/pass1/r6/u14_lexer_split_int.hero`), raised again
-    by lane recovery-b8 as a question; reproduced by the coordinator at
-    17:00 on the trunk at `6c4da49b`
+    by lane recovery-b8 as a question; reproduced by the coordinator before
+    16:39, the filing commit's time, on the trunk at `6c4da49b`
     (`docs/panel/186-briefs/probes/coordinator/u14_minus_above_an_arm.hero.txt`,
     kept as text since it does not parse, which is the defect).
 
@@ -754,7 +795,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** lane h158, 2026-10-02, measuring framework headers for
     defect 158 (`scratchpad/lane-h158/shapes/fw/`); reproduced by the
-    coordinator at 17:25 on the trunk at `545e0044`
+    coordinator before 16:47, the filing commit's time, on the trunk at
+    `545e0044`
     (`docs/panel/186-briefs/probes/coordinator/fw/`, run with
     `PKG_CONFIG_PATH=<that>/pc`).
 
@@ -764,5 +806,97 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a correct program refused, with a false note.
+
+- [ ] **161 — a package's compile flags other than `-I` never reach clang, so a correct package is refused or stops `build` at exit 2** | `extern "valued.h" package "dpkg"` over a `.pc` with `Cflags: -I<dir> -DHERO_PKG_VALUE=7` and a header returning `HERO_PKG_VALUE`: `build` exit 2, *internal error: ... use of undeclared identifier 'HERO_PKG_VALUE'*; a package's `-F` likewise never reaches the compile step, so a framework header it names is told missing | `selfhost/cli/units.hero:139` and `selfhost/cli/pointee.hero:243`, which keep only a package's `-I` · **class: blocking**
+
+    **Origin:** lane h158, 2026-10-02, beside defect 160 (the framework
+    reproducer, once its `-F` was no longer refused, still not built;
+    `scratchpad/lane-h158/d160/dpkg/`); reproduced by the coordinator at
+    16:57 by `date` on the trunk at `0bcd442c`
+    (`docs/panel/186-briefs/probes/coordinator/dpkg/`, run with
+    `PKG_CONFIG_PATH=<that>/pc`).
+
+    **Why it is a defect.** Exit 2 is the compiler blaming itself for a
+    package the author wrote correctly, and the flags a `.pc` gives are the
+    reason `package` exists (design.md §4.19).
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): exit 2, a correct program refused.
+
+- [ ] **162 — a package whose `.pc` gives a path with a space is refused, the compiler naming a fragment of the path as the flag** | a `.pc` with `Cflags: -I"<dir>/inc with space"`: `pkg-config --cflags` prints the path with its spaces escaped by backslashes, and `build` exit 1, `ffi_package`, *the package `spaced` answered with* the fragment `with` and its backslash, *which this compiler does not pass on* | `selfhost/cli/libraries.hero` (the word splitter before `filter_words`) · **class: blocking**
+
+    **Origin:** lane h158, 2026-10-02, beside defect 160
+    (`scratchpad/lane-h158/d160/pc/spaced.pc`); reproduced by the
+    coordinator at 16:57 by `date` on the trunk at `0bcd442c`
+    (`docs/panel/186-briefs/probes/coordinator/spaced/`, run with
+    `PKG_CONFIG_PATH=<that>/pc`).
+
+    **Why it is a defect.** A correct package is refused, and the message
+    names a piece of a path as a flag (design.md §4.17).
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): a correct program refused, with a false message.
+
+- [ ] **163 — the pointee check judges a plain `char` without `-fsigned-char`, so on Linux arm64 it refuses the binding the program's own compile agrees with** | `extern "c.h"` over `void fill(char *p)`, bound `function fill(@p: i8)`: on this Mac `build` exit 0, prints `-1`; in the Linux arm64 container on the trunk at `02b29536`, `build` exit 1, `ffi_parameter_type`, *`p` of `fill` is declared `i8`, and the header's `char *` points at a different width or sign*, while `@p: u8` is refused on this Mac and built on arm64; the program itself is compiled with `-fsigned-char` on both (`selfhost/cli/flags.hero:108`, panel 161) | `selfhost/cli/pointee.hero` (its two clang runs, without the compiler's own flags) · panel 161 (*a plain `char` meaning the same thing on four legs*) · **class: blocking**
+
+    **Origin:** lane h158, 2026-10-02, a question raised beside defect 161
+    (the pointee probe's compiles do not use the compiler's own flag list);
+    measured by the coordinator at 17:33 by `date`, on this Mac and in the
+    Linux arm64 container (`docs/panel/186-briefs/probes/coordinator/signchar/`,
+    `s8.hero` and `u8.hero` over `c.h`). A result is held by the program's
+    own compile and agrees on both (a `char` result bound `-> u64` refused on
+    both, 17:34): only the pointee check diverges.
+
+    **Why it is a defect.** A correct binding is refused on one platform and
+    accepted on another, against panel 161's ruling that a plain `char` means
+    one thing on every leg; no value read through it is wrong, the bytes
+    being the same (measured: `u8` on arm64 prints `255`).
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): a correct program refused, on Linux arm64.
+
+- [ ] **164 — a record field misspelt as a name the header defines as a macro stops `build` with an internal error and clang's text** | `extern "macro_field.h"` over `#define size 4` and `typedef struct { int32_t len; int32_t cap; } BUF;`, `record BUF` naming `len` and `size`: `build` exit 2, *internal error: compiling the generated C failed: ... error: expected identifier ... note: expanded from macro 'size'*, at the field assertion; the same with `stdin`, which a libc defines as a macro | `selfhost/emit/` (the field assertion, `heroes-ffi-field`, and the unknown-field mapper) · **class: blocking**
+
+    **Origin:** lane land186's second batch, 2026-10-02, beside panel 186's
+    macro-reached fields (`scratchpad/lane-land186/pass2/macro_field.hero`,
+    `macro_field_stdio.hero`); reproduced by the coordinator at 17:43 by
+    `date` on the trunk at `20652888`
+    (`docs/panel/186-briefs/probes/coordinator/macrofield/`).
+
+    **Why it is a defect.** Exit 2 is the compiler blaming itself for a
+    misspelling the author can be told about, and clang's text reaches the
+    author (`.claude/rules/c-boundary.md`).
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): exit 2. Repaired in lane land186 at `25b96332`,
+    gated by its own cases; the rest is owed at the round's gate.
+
+- [ ] **165 — a `+` or `*` alone on the line above an arm's pattern gets a join that no pattern takes, and a second message** | `k = match n` over a line holding only `+` (or `*`) and then `1 => "one"`: `continuation_outside_brackets` with the guess *write the statement on one line*, which writes `+1 => "one"`, then `expected_pattern` at the `+`; no deletion of the line is offered | the join of a line ending in an operator (lane h158's `sign_above.hero`, beside defect 159) · **class: adjacent**
+
+    **Origin:** lane h158's first pass for defect 159, 2026-10-02
+    (`scratchpad/lane-h158/d159/s09_plus.hero`, `s12_star.hero`);
+    reproduced by the coordinator at 18:37 by `date` on the trunk at
+    `4b44f684` (`docs/panel/186-briefs/probes/coordinator/adjacent/`, kept as
+    text since they do not parse).
+
+    **Why it is a defect.** The one fix offered writes a program that is
+    refused anew, and one mistake costs two messages (design.md §4.17).
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): a second message for one mistake and a guess that
+    does not compile; no wrong value and no false message.
+
+- [ ] **166 — a `-` alone above a name or a float pattern is told `expected_pattern` twice at the same place** | `k = match n` over a line holding only `-` and then `x => "one"` (or `1.5 => "one"`): `continuation_outside_brackets`, then `expected_pattern` twice at the name or the number, the same text at the same column | the pattern's refusal after the join of a `-` line (the same on the compiler before lane h158) · **class: adjacent**
+
+    **Origin:** lane h158's first pass for defect 159, 2026-10-02
+    (`scratchpad/lane-h158/d159/s18_name_below.hero`, `s19_float_below.hero`);
+    reproduced by the coordinator at 18:37 by `date` on the trunk at
+    `4b44f684` (`docs/panel/186-briefs/probes/coordinator/adjacent/`).
+
+    **Why it is a defect.** One mistake told twice at one place (design.md
+    §4.17).
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): a second message for one mistake.
 
 *******************************************************************************

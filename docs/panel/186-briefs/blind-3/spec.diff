@@ -1,0 +1,14 @@
+357,360c357,364
+< elements as the type says.
+< `record Font partial` names only some, and then comparing it and using it as a
+< map key are compile errors — for it and for any value holding it. Its size stays
+< C's, not the field list's. One with a `tag` and no fields is a **handle**, C's
+---
+> elements as the type says. A bit-field is none of these: leave it to `partial`.
+> `record Font partial` names only some, and its size stays C's, not the field
+> list's. A field in a C union, named or anonymous, shares its bytes with the
+> union's other members: a record names one or more of each union, reads any, and
+> is built naming exactly one, an anonymous struct's fields counting as one.
+> Comparing a `partial` record, or one holding a union's field that is not an
+> integer, pointer or array of them as wide as the union, and using it as a map
+> key are compile errors, for it and for any value holding it. One with a `tag` and no fields is a **handle**, C's

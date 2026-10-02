@@ -1,0 +1,12 @@
+# fixedbugs, defect 158, lane h158, 2026-10-02.
+#
+# Beside `fixedbugs-158-a-header-the-groups-header-includes-in-angle-brackets`:
+# two includes the machine lacks. clang stops at its first fatal error, so
+# the first is told, and the second is told by the build after it is
+# installed.
+
+extern "fixedbugs-158-two-missing.h"
+    function seven() -> i32  #~ ffi_missing_header
+
+function main()
+    print(seven())

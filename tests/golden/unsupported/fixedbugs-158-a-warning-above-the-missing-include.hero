@@ -1,0 +1,12 @@
+# fixedbugs, defect 158, lane h158, 2026-10-02.
+#
+# Beside `fixedbugs-158-a-header-the-groups-header-includes-in-angle-brackets`:
+# a `#warning` above the include. clang prints its include stack above the
+# warning and none above the error, which a reader of the stack would have
+# to look for; the error's own line names its place either way.
+
+extern "fixedbugs-158-warned.h"
+    function seven() -> i32  #~ ffi_missing_header
+
+function main()
+    print(seven())

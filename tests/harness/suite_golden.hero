@@ -147,7 +147,11 @@ function shape_emit() -> Shape
 # `fixedbugs-152-a-field-the-header-lacks-` cases and defect 143's ten
 # `fixedbugs-143-` cases (panel 185 R1). **84 in lane land186, the same day**:
 # panel 186's landing, twelve `fixedbugs-151-` cases and seven
-# `fixedbugs-156-` ones, over 65.
+# `fixedbugs-156-` ones, over 65. **79 in lane h158, the same day**:
+# defect 158's fourteen `fixedbugs-158-` cases, one per way a header the
+# machine lacks is reached, took the directory from 65 past 63 by more than a
+# quarter. **84 at the round's merge of the two lanes, the same day**: the
+# higher of the two floors, since a floor moves one way.
 function shape_unsupported() -> Shape
     return Shape(
         name: "unsupported",

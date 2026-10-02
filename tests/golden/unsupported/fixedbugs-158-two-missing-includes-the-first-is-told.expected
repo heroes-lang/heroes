@@ -1,0 +1,6 @@
+error[ffi_missing_header]: `first_missing_here.h` is not on this machine's include path, and `fixedbugs-158-two-missing.h`, the header this group names, includes it at line 3
+  at tests/golden/unsupported/fixedbugs-158-two-missing-includes-the-first-is-told.hero:9:5
+    |
+  9 |     function seven() -> i32  #~ ffi_missing_header
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: the group's header is on this machine and a header it includes is not: install the development files that provide `first_missing_here.h`, or pass `--include <dir>` with the directory that holds it; `package` asks the machine where it is when the library ships a `.pc`, and `CPATH` works too
