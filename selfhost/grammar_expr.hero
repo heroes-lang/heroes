@@ -749,7 +749,8 @@ function tabbed_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
     return ast.Block(span: token.Span(start: open.start, end: cursor.previous_significant_span(c).end), stmts: stmts)
 
 # A block below a line that already said what is wrong: read for its own
-# mistakes, not named (defect 130); arms as arms (`headless.arms_below`), and
+# mistakes (defect 130), named first where that line can open none
+# (`statement_end.orphan_below`); arms as arms (`headless.arms_below`), and
 # braces that end the line as the block they stand for (`parse/brace_habit`).
 function hanging(@c: cursor.Cursor, @a: ast.Ast, text: str)
     if cursor.at(c, .indent) && headless.arms_below(c)

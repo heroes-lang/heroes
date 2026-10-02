@@ -1,0 +1,84 @@
+# Fixed 2026-10-02, defect 130's class, lane recovery-b6 (the recovery
+# cluster's C4; the audit's rows 130-22c, H-007, H-012, H-013 and H-014).
+# Symptom: a block indented deeper than anything that opens one, below a line
+# that already said what is wrong, `x = 3 )` over a deeper `y = 4`, was read
+# and never named, so the over-indent was told only once the first mistake
+# was repaired, where below `x = 3` the same block is `unexpected_block` at
+# once: two mistakes, one told. Cause: `parse/statement_end` read every block
+# below a failed line as the body that line might have opened, a rule written
+# for a misspelled head. The block is now named once and read wherever the
+# line can open none: a binding, a mutation, a call, a `return` or an
+# `assert`, whatever failed in it. A line that may be a misspelled head, a
+# name and then a value (`iff x > 1`), or one with a keyword that heads a
+# block, may open it, and it is read unnamed as before.
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+function a_closer_too_many()
+    x = 3 )  #~ expected_end_of_line
+        y = 4  #~ unexpected_block
+    print(x)
+
+function a_closer_too_many_in_a_call(n: i64)
+    x = g(1, n))  #~ expected_end_of_line
+        print(x)  #~ unexpected_block
+    print(n)
+
+function a_trailing_comma()
+    xs = [1, 2, 3,]  #~ trailing_comma
+        print(xs.len())  #~ unexpected_block
+
+function a_group_left_open_by_a_word()
+    print(g<i64>(1, 2))  #~ expected_group_close
+        print(1)  #~ unexpected_block
+
+function a_walrus()
+    x := 1  #~ expected_type
+        print(x)  #~ unexpected_block
+
+function a_return() -> i64
+    return 1 )  #~ expected_end_of_line
+        print(1)  #~ unexpected_block
+
+function an_assert()
+    assert 1 == 1 )  #~ expected_end_of_line
+        print(1)  #~ unexpected_block
+
+function a_mutation()
+    x: i64 @ 1
+    x @ x + 1 )  #~ expected_end_of_line
+        print(x)  #~ unexpected_block
+
+# Its own lines' mistakes are told, a level deeper still is named again, and
+# a comment between changes nothing.
+function its_own_mistakes()
+    x = 3 )  #~ expected_end_of_line
+    # a note
+        y = 4 )  #~ unexpected_block expected_end_of_line
+            z = 5  #~ unexpected_block
+    print(x)
+
+# Arms below a line that opens none are an orphan's, read as arms.
+function arms_below()
+    x = 3 )  #~ expected_end_of_line
+        1 => 2  #~ unexpected_block
+    print(x)
+
+# A misspelled head, a name and then a value, may open the block: read, unnamed.
+function a_misspelled_head(x: i64)
+    iff x > 1  #~ expected_end_of_line
+        print(x)
+
+# A declaration in a body opens its body below it.
+function a_declaration_in_a_body()
+    function inner()  #~ expected_expression
+        print(1)
+
+function main()
+    a_closer_too_many()
+
+# At the file's end.
+function at_the_end()
+    x = 3 )  #~ expected_end_of_line
+        y = 4  #~ unexpected_block
