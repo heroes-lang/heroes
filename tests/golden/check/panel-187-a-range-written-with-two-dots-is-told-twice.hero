@@ -1,0 +1,13 @@
+# Pinned 2026-10-03 by lane rec187 under panel 187's R1 and R5: a known
+# cost, not an intent; a change in either direction turns this case red.
+# Defect 180, class (a), adjacent: Rust's and Swift's range, `1..2`, is told
+# twice as a field access, once at each `.`, in a binding and a `for` head
+# alike, and no message names `range(from:, to:)`. Not repaired inline: the
+# site is `grammar_expr.hero`'s `after_dot`, at its ceiling with no line of
+# room, and the range's right operand is read only inside that knot.
+
+function main()
+    x = 1..2  #~ expected_field_name expected_field_name
+    y = 0x1..5  #~ expected_field_name expected_field_name
+    for i in 0..10  #~ expected_field_name expected_field_name
+        print(i)
