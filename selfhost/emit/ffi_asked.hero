@@ -166,8 +166,8 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> str
 function directive(file: str, line: i64) -> str
     return "#line " + line.to_str() + " \"" + writer.escaped_path(file) + "\""
 
-# clang's answer, read: a line under a question is an answer, every other
-# line is what was said again.
+# clang's answer, read: a question's line is an answer, the rest was said again.
+# ORDER: none, the walk over `reached` fills a map, and nothing reads its order.
 function read(stderr: str) -> Asked
     said: [str] @ []
     values: {str: bool} @ {}
