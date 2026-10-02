@@ -1,13 +1,23 @@
-# A plain literal's braces, read where the literal stands (design.md §4.17;
-# panel 184 R2, ratified 2026-10-01, landed 2026-10-02): `count = 3` over
-# `print("{count} rows")` was told only that `count` is never read, the one
-# message that points away from the mistake. Since R2, `unused_binding` says
-# which literal holds the name in braces and offers the `f`, a guess, the
-# literal being text perhaps after all (rustc has shipped the same note since
-# 1.65, the historian's). The walk records what each plain literal's holes
-# name and the local each name means there (`judge`); the note is written
-# after the unused sweep, since whether a binding is read is known only once
-# every body is walked (`unused_notes`, which `resolve.hero` calls).
+# A plain literal's braces, read where the literal stands (design.md §4.17),
+# by two rules that read its holes alike (`plain_holes`):
+#
+# - **a plain literal whose hole names bindings all bound where it stands is
+#   refused**, `hole_without_f` (panel 185 R7, decided by the author
+#   2026-10-02, route (5b); defect 176): `x = 1` over `print("{x}")` printed
+#   `{x}` at exit 0. At least one name and every name bound, so `{0}`, a
+#   template's `{name}` with no `name` in scope, and `{K: V}`, no expression,
+#   are text; `{i + 1}` and `{xs.len()}` are refused like `{x}`. Once refused,
+#   every name its holes read counts as read, so the one mistake is one
+#   message and not this one and `unused_binding` beside it. It is a thesis
+#   rule (`diag.is_thesis_rule`): without it the literal still means its text.
+# - **`unused_binding` on a name such a literal holds says so** (panel 184 R2,
+#   ratified 2026-10-01): the note quoting the literal and the `f` as a guess
+#   (rustc has shipped the same note since 1.65, the historian's), for what
+#   the refusal leaves: a hole naming what is bound nowhere as well, and a
+#   literal the binding does not reach. The walk records what each literal's
+#   holes name and the local each means there (`judge`); the note is written
+#   after the unused sweep, since whether a binding is read is known only once
+#   every body is walked (`unused_notes`, which `resolve.hero` calls).
 #
 # A literal in a pattern is never judged, an `f` literal being no pattern, so
 # a pattern's plain literal is the only spelling its text has
@@ -18,20 +28,35 @@ use ast
 use diag
 use source
 use resolved
+use inventory
 use plain_holes
 use escape_readings
 use resolve/state
 use resolve/braced_names
 
-# The plain literal `id` of the walk: every name its holes read, each kept
-# with the local it means where the literal stands.
+# The plain literal `id` of the walk: refused where a hole names bindings all
+# bound here; else every name its holes read is kept, with the local it
+# means where the literal stands, for the unused note.
 function judge(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
     span = a.exprs[id].span
 
     if source.is_library(s, span.start)
         return
+    found = plain_holes.holes(s.text, span: span)
+    bound: [plain_holes.PlainHole] @ []
 
-    for h in plain_holes.holes(s.text, span: span)
+    for h in found
+        if bound_here(r, s, names: h.names)
+            bound @ bound.push(h)
+
+    if bound.len() > 0
+        for h in found
+            read_them(@r, s, names: h.names)
+
+        state.push_diagnostic(@r, plain_holes.without_f(s.text, span: span, at: bound[0], bound: bound))
+        return
+
+    for h in found
         for n in h.names
             name = source.span_text(s, n)
             local = state.lookup_local(r, name)
@@ -40,6 +65,30 @@ function judge(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
             if !local.is_err()
                 at @ local.must()
             braced_names.keep(@r.braced, braced_names.Braced(owner: r.owner, name: name, literal: span, local: at))
+
+# At least one name, and every one of them bound where the literal stands: a
+# local, a declaration its module sees, a built-in, or a module it uses, the
+# homes a bare name has, in `resolve/names`' order.
+function bound_here(r: state.Resolver, s: source.Source, names: [token.Span]) -> bool
+    if names.len() == 0
+        return false
+
+    for n in names
+        name = source.span_text(s, n)
+
+        if state.lookup_local(r, name).is_err() && state.top_visible(r, name).is_err() && inventory.index_of(name).is_err() && !resolved.is_used_module(r.out, from: r.module, module: name)
+            return false
+
+    return true
+
+# Each local a refused literal's holes name counts as read: the `f` its
+# refusal offers reads it.
+function read_them(@r: state.Resolver, s: source.Source, names: [token.Span])
+    for n in names
+        local = state.lookup_local(r, source.span_text(s, n))
+
+        if !local.is_err()
+            r.out.locals[local.must()].reads @ r.out.locals[local.must()].reads + 1
 
 # After the unused sweep: each `unused_binding` whose name a plain literal of
 # its own declaration holds in braces gains a note quoting that literal.

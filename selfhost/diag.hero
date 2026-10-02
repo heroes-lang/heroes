@@ -96,7 +96,11 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # needs: the same compiler with §1 switched off. Every code traces to
 # a panel; machine_locked_path joined by panel 055's test — nothing
 # about the types is wrong, and C would take the program on exactly
-# one machine. spaced_minus_element joined by panel 180 (2026-09-27, the
+# one machine. hole_without_f joined by panel 184's (1b) amended, which
+# panel 185's R7 is (decided 2026-10-02, defect 176): without it a plain
+# literal whose braces name what is bound still means its text, braces
+# and all, which is the silent reading the rule refuses.
+# spaced_minus_element joined by panel 180 (2026-09-27, the
 # coordinator's ruling on a question the sitting did not ask): without it
 # `[a` / `- b]` still has a meaning, two elements, which is the silent
 # reading the rule exists to refuse, so the control arm reads it as a
@@ -112,6 +116,7 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 function is_thesis_rule(d: Diagnostic) -> bool
     codes = [
         "unused_binding"
+        "hole_without_f"
         "shadowed_binding"
         "builtin_name_taken"
         "discarded_value"
@@ -160,6 +165,7 @@ test "a diagnostic starts empty and grows by mutation"
     assert u.kind == .unsupported_kind
     assert u.notes.len() == 0
     assert is_thesis_rule(new_diagnostic(code: "needs_label", message: "m", span: u.span))
+    assert is_thesis_rule(new_diagnostic(code: "hole_without_f", message: "m", span: u.span))
     assert is_thesis_rule(new_diagnostic(code: "spaced_minus_element", message: "m", span: u.span))
     assert !is_thesis_rule(new_diagnostic(code: "line_end_before_continuation", message: "m", span: u.span))
     assert is_thesis_rule(new_diagnostic(code: "continuation_outside_brackets", message: "m", span: u.span))
