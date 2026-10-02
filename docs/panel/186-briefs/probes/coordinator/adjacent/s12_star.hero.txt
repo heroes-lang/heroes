@@ -1,0 +1,7 @@
+function main()
+    n = 1
+    k = match n
+        *
+        1 => "one"
+        _ => "many"
+    print(k)
