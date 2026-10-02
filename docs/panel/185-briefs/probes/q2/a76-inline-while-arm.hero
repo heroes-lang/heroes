@@ -1,0 +1,14 @@
+variant Color
+    red
+    blue
+
+function f(c: Color) -> i64
+    n: i64 @ 0
+    match c
+        .red => while n < 3
+            n @ n + 1
+        .blue => return 2
+    return n
+
+function main()
+    print(f(c: .red))

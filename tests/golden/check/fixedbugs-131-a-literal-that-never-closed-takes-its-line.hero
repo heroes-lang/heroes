@@ -46,3 +46,9 @@ function the_classic_whole()
 function outside_brackets()
     t = "abc  #~ unterminated_string
     print(t)
+
+# 2026-10-02, lane literals (defect 135's L3): the classic `'\'` above no
+# longer takes a certain `'\\'`, a backslash and an apostrophe being one
+# character from it alike, so both are guesses; no other mistake here has a
+# certain fix either, so `check --apply` leaves this case as it is and it
+# keeps no `.applied`.

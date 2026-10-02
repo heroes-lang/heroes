@@ -1,0 +1,11 @@
+function f(k: i64, j: i64) -> i64
+    x = match k
+        0 => match j
+            0 => return 1
+            _ => return 2
+        _ => 20
+    return x
+
+function main()
+    print(f(k: 0, j: 0))
+    print(f(k: 3, j: 0))

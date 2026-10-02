@@ -1,0 +1,13 @@
+variant Color
+    red
+    blue
+
+function f(c: Color) -> i64
+    n: i64 @ 0
+    match c
+        .red => return 1
+        .blue => n @ 5
+    return n
+
+function main()
+    print(f(c: .blue))

@@ -1,0 +1,23 @@
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:17:5: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:20:5: error[jump_outside_loop]: `continue` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:25:5: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:28:5: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:33:9: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:35:9: error[jump_outside_loop]: `continue` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:39:14: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:40:14: error[jump_outside_loop]: `continue` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:44:14: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:45:14: error[jump_outside_loop]: `continue` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:51:9: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:53:9: error[jump_outside_loop]: `continue` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:58:9: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:60:9: error[jump_outside_loop]: `continue` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:65:14: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:66:14: error[jump_outside_loop]: `continue` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:72:14: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:73:14: error[jump_outside_loop]: `continue` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:79:9: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:88:13: error[no_value]: this `if` produces no value — every branch jumps, so there is nothing to bind
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:100:5: error[no_value]: constant `RETURNS_THEN_BREAKS` produces no value — its body jumps before it gives one, and a constant's value is its body's last line
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:101:5: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-148-a-claim-that-rests-on-a-jump-already-refused.hero:106:5: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`

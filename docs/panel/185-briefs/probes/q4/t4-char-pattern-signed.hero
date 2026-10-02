@@ -1,0 +1,6 @@
+function main()
+    c = 'b'
+    k = match c
+        -'a' => 1
+        _ => 3
+    print(k)

@@ -1,0 +1,10 @@
+variant Color
+    red
+    blue
+
+function main()
+    c: Color = .blue
+    k = match c
+        - .red => 1
+        - .blue => 2
+    print(k)
