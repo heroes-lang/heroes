@@ -1,0 +1,30 @@
+# Fixed defect 135's P8, 2026-10-02 (lane recovery-b7; the certain-fix
+# audit's `findings/P8-arrow_habit/`), a result written after `:` or `=>`
+# with no body below the head. Symptom: `function stub(): pass` took the
+# certain `-> pass` and `function answer(value: i64) => value` the certain
+# `-> value`, and both stayed refused after `--apply`, `missing_body`, the
+# word after the `:` or the `=>` being the body written on the head's line,
+# Python's `pass` and an expression body. Cause: the result reading was
+# taken as the one reading wherever what follows parses as a type, and a
+# name does. It is `certain` now only where it is the line's one reading:
+# over a body below the head, indented, tabbed or in braces, or in an
+# `extern` group, where no signature has a body; over none it is a `guess`,
+# and the message says where the body goes (`selfhost/parse/signature.hero`,
+# `arrow_habit`). The missing body is told as before. Beside it: a stub
+# whose word is a type, `(): i64` over nothing, is a guess too, the body
+# being missing either way.
+
+function stub(): pass  #~ expected_end_of_line
+
+function answer(value: i64) => value  #~ missing_body expected_end_of_line
+
+function sized(): i64  #~ missing_body expected_end_of_line
+
+function with_a_body(): i64  #~ missing_body expected_end_of_line
+    return 1
+
+extern "stdlib.h"
+    function abs(n: i32): i32  #~ expected_end_of_line
+
+function main()
+    print(abs(n: -1) + with_a_body())
