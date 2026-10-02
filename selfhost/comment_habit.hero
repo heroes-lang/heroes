@@ -19,19 +19,26 @@
 # its fix is `certain` only where the `//` opens its line, where no value can
 # stand before it.
 #
+# **A `/* … */` over several lines is one comment too** (lane recovery-b8,
+# lane recovery-b6's `lc12_block_multi`): from its `/*` to the first `*/`
+# below it that ends its line, told once, its fix writing a `#` line for each
+# of its lines with words. Until 2026-10-02 it was read as code, the
+# margin of its second line, a join, a missing expression and an orphan
+# block: four messages for one comment.
+#
 # | entry | called by |
 # |---|---|
-# | `opens_at`, `divides_at`, `block_end` | `scan.line_body`, `layout.line_start`, `text_outline.outline_of` |
+# | `opens_at`, `divides_at`, `comment_end`, `written_with_hashes` | `scan.line_body`, `layout.line_start`, `text_outline.outline_of` |
 
 # Whether a comment in another language's spelling opens at `at`: `//`, or
-# `/*` whose `*/` stands on the same line.
+# `/*` whose `*/` stands on the same line or ends a later one (`comment_end`).
 function opens_at(text: str, at: i64) -> bool
     if at + 1 >= text.len() || text[at] != '/'
         return false
 
     if text[at + 1] == '/'
         return true
-    return text[at + 1] == '*' && block_end(text, from: at + 2) >= 0
+    return text[at + 1] == '*' && comment_end(text, at: at) >= 0
 
 # Whether the `//` at `at`, inside brackets when `inside`, is Python's
 # integer division: inside a bracket whose closer stands later on its line.
@@ -79,6 +86,36 @@ function block_end(text: str, from: i64) -> i64
 
     return -1
 
+# The offset past the `*/` that closes the block comment whose `/*` stands at
+# `at`: on its own line, or, over several lines, the first `*/` below it
+# where that `*/` ends its line, nothing after it but spaces or a `#`
+# comment; -1 where neither holds (lane recovery-b8, 2026-10-02: until then a
+# `/*` over two lines was read as code, four messages for one comment). A
+# `*/` with code after it is no end this reads, and the `/*` is code as before.
+function comment_end(text: str, at: i64) -> i64
+    same = block_end(text, from: at + 2)
+
+    if same >= 0
+        return same
+    i: i64 @ at + 2
+
+    while i + 1 < text.len() && !(text[i] == '*' && text[i + 1] == '/')
+        i @ i + 1
+
+    if i + 1 >= text.len() || !ends_its_line(text, from: i + 2)
+        return -1
+    return i + 2
+
+# Whether nothing but spaces, or a `#` comment, stands from `from` to its
+# line's end.
+function ends_its_line(text: str, from: i64) -> bool
+    i: i64 @ from
+
+    while i < text.len() && text[i] == ' '
+        i @ i + 1
+
+    return i >= text.len() || text[i] == '\n' || text[i] == '\r' || text[i] == '#'
+
 # Whether the comment that opens at `at` holds the rest of its line: a `//`,
 # or a `/* … */` with nothing but spaces or a `#` comment after it, which
 # leaves the line
@@ -89,12 +126,52 @@ function holds_the_line(text: str, at: i64) -> bool
 
     if text[at + 1] == '/'
         return true
-    i: i64 @ block_end(text, from: at + 2)
+    return ends_its_line(text, from: comment_end(text, at: at))
 
-    while i < text.len() && text[i] == ' '
-        i @ i + 1
+# The block comment from `at` to `end`, past its `*/`, written as this
+# language writes a comment: one `#` line for each of its lines with words,
+# each at the margin of the line the `/*` stood on, a `*` that opens one,
+# the habit's decoration, dropped, and its line ends as the file's. What a
+# comment holds is no part of the program, so the rewrite is its own words.
+function written_with_hashes(text: str, at: i64, end: i64) -> str
+    begin: i64 @ at
 
-    return i >= text.len() || text[i] == '\n' || text[i] == '\r' || text[i] == '#'
+    while begin > 0 && text[begin - 1] != '\n'
+        begin @ begin - 1
+
+    past: i64 @ begin
+
+    while past < at && text[past] == ' '
+        past @ past + 1
+
+    margin = text.slice(from: begin, to: past)
+    lines: [str] @ []
+    break_with: str @ "\n"
+    from: i64 @ at + 2
+
+    while from <= end - 2
+        to: i64 @ from
+
+        while to < end - 2 && text[to] != '\n'
+            to @ to + 1
+
+        if to < end - 2 && to > from && text[to - 1] == '\r'
+            break_with @ "\r\n"
+        words: str @ inner_of(text, from: from, to: to)
+
+        if words.len() > 0 && words[words.len() - 1] == '\r'
+            words @ inner_of(words, from: 0, to: words.len() - 1)
+
+        if words.len() > 0 && words[0] == '*'
+            words @ inner_of(words, from: 1, to: words.len())
+
+        if words.len() > 0
+            lines @ lines.push("# " + words)
+        from @ to + 1
+
+    if lines.len() == 0
+        return "#"
+    return lines.join(break_with + margin)
 
 # The text from `from` to `to`, its spaces off both ends.
 function inner_of(text: str, from: i64, to: i64) -> str
@@ -123,7 +200,8 @@ function slashes(text: str, at: i64) -> i64
 test "a comment in another language's spelling is told from the division it can be"
     assert opens_at("// note\n", at: 0)
     assert opens_at("x = 1  /* note */\n", at: 7)
-    assert !opens_at("x = 1  /* note\n*/\n", at: 7)
+    assert !opens_at("x = 1  /* note\n*/ y\n", at: 7)
+    assert !opens_at("x = 1  /* note\n", at: 7)
     assert !opens_at("x = a / b\n", at: 6)
     assert divides_at("f(a // b)\n", at: 4, inside: true)
     assert !divides_at("f(a,  // the count\n", at: 6, inside: true)
@@ -132,3 +210,14 @@ test "a comment in another language's spelling is told from the division it can 
     assert !divides_at("x: [  // a local's type\n    i64]\n", at: 6, inside: true)
     assert slashes("/// doc\n", at: 0) == 3
     assert block_end("/* a */ x\n", from: 2) == 7
+
+# Lane recovery-b8, 2026-10-02: a `/*` whose `*/` ends a later line is one
+# comment, and its fix writes a `#` line for each of its lines with words.
+# This file's test asserted the opposite of the first line until that day.
+test "a block comment over several lines ends at the first `*/` that ends its line"
+    assert opens_at("x = 1  /* note\n*/\n", at: 7)
+    assert comment_end("/* a\n   b */  # c\nx\n", at: 0) == 12
+    assert comment_end("/* a\n   b */ x\n*/\n", at: 0) == -1
+    assert written_with_hashes("    /* one\n       two */\n", at: 4, end: 24) == "# one\n    # two"
+    assert written_with_hashes("/**\n * doc\n */\n", at: 0, end: 14) == "# doc"
+    assert written_with_hashes("/* a\r\n   b */\r\n", at: 0, end: 13) == "# a\r\n# b"

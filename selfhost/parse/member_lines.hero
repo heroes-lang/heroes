@@ -75,43 +75,60 @@ function fields_of(@c: cursor.Cursor, @a: ast.Ast, text: str, @habit: i64) -> [a
             reading @ false
         else if k == .eof
             reading @ false
-        else if k == .ident
-            name = cursor.current_span(c)
-            doc = doc_comments.take_docs(@c, text, name)
-            _ = cursor.bump(@c)
-
-            if !cursor.expect(@c, text: text, kind: .colon, code: "expected_field_type", what: "`:` and the field's type")
-                cursor.skip_line(@c)
-            else
-                ty = type.parse_type(@c, @a, text)
-                fields @ fields.push(ast.Field(name: name, ty: ty, doc: doc))
-                line_ends(
-                    @c,
-                    text: text,
-                    member: "the field `" + cursor.slice_of(text, name) + "`",
-                    rule: "one field per line, `name: type`",
-                    @habit
-                )
-        else if k == .indent
-            if !cursor.at_reported_error(c)
-                cursor.error(
-                    @c,
-                    code: "unexpected_block",
-                    message: "a field takes no indented block — a field is one line, `name: type`",
-                    span: cursor.current_span(c)
-                )
-            _ = cursor.balanced_block(@c)
         else
-            if !cursor.at_reported_error(c) && !line_end.said_here(c)
-                cursor.error(
-                    @c,
-                    code: "expected_field",
-                    message: "expected a field name, found " + cursor.found(c, text) + " — one field per line, `name: type`",
-                    span: cursor.current_span(c)
-                )
-            cursor.skip_line(@c)
+            field = field_line(@c, @a, text, @habit)
+
+            if !field.is_err()
+                fields @ fields.push(field.must())
 
     return fields
+
+# The line under the cursor, inside a record's fields, read as one: its
+# field, or a failure where the line holds none, told where nothing stands on
+# it already. Its line end is passed; an indented block is passed whole. A
+# record's block that holds declarations too reads its other lines here
+# (`parse/heads.next_member`).
+function field_line(@c: cursor.Cursor, @a: ast.Ast, text: str, @habit: i64) -> ast.Field?
+    k = cursor.current_kind(c)
+
+    if k == .ident
+        name = cursor.current_span(c)
+        doc = doc_comments.take_docs(@c, text, name)
+        _ = cursor.bump(@c)
+
+        if !cursor.expect(@c, text: text, kind: .colon, code: "expected_field_type", what: "`:` and the field's type")
+            cursor.skip_line(@c)
+            return fail(code: "absent", msg: "no type")
+        ty = type.parse_type(@c, @a, text)
+        line_ends(
+            @c,
+            text: text,
+            member: "the field `" + cursor.slice_of(text, name) + "`",
+            rule: "one field per line, `name: type`",
+            @habit
+        )
+        return ok(ast.Field(name: name, ty: ty, doc: doc))
+
+    if k == .indent
+        if !cursor.at_reported_error(c)
+            cursor.error(
+                @c,
+                code: "unexpected_block",
+                message: "a field takes no indented block — a field is one line, `name: type`",
+                span: cursor.current_span(c)
+            )
+        _ = cursor.balanced_block(@c)
+        return fail(code: "absent", msg: "a block")
+
+    if !cursor.at_reported_error(c) && !line_end.said_here(c)
+        cursor.error(
+            @c,
+            code: "expected_field",
+            message: "expected a field name, found " + cursor.found(c, text) + " — one field per line, `name: type`",
+            span: cursor.current_span(c)
+        )
+    cursor.skip_line(@c)
+    return fail(code: "absent", msg: "no field")
 
 # The cases of a `variant`: a name on its own line, optionally followed by an
 # indented field block, or by its fields in braces, on its line or alone on

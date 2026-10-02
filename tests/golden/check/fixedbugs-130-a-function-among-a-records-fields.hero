@@ -1,0 +1,67 @@
+# Fixed 2026-10-02, defect 130's class, lane recovery-b8 (lane recovery-b6's
+# shapes beside its 130 (c), `e14_record_with_fn` and `f06`). Symptom: a
+# function among a record's fields, `record Q` over `function f()` over its
+# body, cost `expected_field` at the function and `unexpected_block` at its
+# body, two messages for one mistake, and the body went unread, its own
+# mistakes unsaid; under `class Q` over a field and a method, whose own
+# message already says where the methods go, the same two came after it.
+# Cause: a record's block was read by the field reader alone, which can read
+# no body, and a block under a refused head was read as fields wherever one
+# line was a field. Now a record's block that holds a declaration is read
+# line by line, a field's line as a field and a declaration's as the
+# declaration it is, the first told once, its body by the grammar; and under
+# a head nothing reads, a declaration's line makes the block one of
+# declarations, whose field lines are read as fields.
+
+record Q
+    function f()  #~ expected_field
+        y = 3 )  #~ expected_end_of_line
+
+class R  #~ reserved_word
+    x: i64
+
+    function f()
+        print(1 +)  #~ expected_expression
+
+record S
+    x: i64
+    function f()  #~ expected_field
+        print(1)
+    function g()
+        print(2 +)  #~ expected_expression
+    y: i64
+
+record T
+    x: i64
+    constant K: i64  #~ expected_field
+        5 )  #~ expected_end_of_line
+    record U
+        y i64  #~ expected_field_type
+    test "t"
+        assert 1 == 1 )  #~ expected_end_of_line
+
+record V
+    x: i64
+    fn f()  #~ reserved_word expected_field
+        print(1 +)  #~ expected_expression
+
+class W  #~ reserved_word
+    x: i64
+    def f(self):  #~ reserved_word
+        print(1 +)  #~ expected_expression
+
+extern "m.h"
+    record X
+        x: i32
+        function f()  #~ expected_field
+            print(1 +)  #~ expected_expression
+
+function a_class_in_a_body()
+    class Y  #~ reserved_word
+        x: i64
+        function f()
+            print(1 +)  #~ expected_expression
+    print(1)
+
+function main()
+    print(1)

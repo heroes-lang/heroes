@@ -284,6 +284,32 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     0 failed. The item stays open for the shapes lane recovery-b6's report
     names.
 
+    **2026-10-02, lane recovery-b8, a line that failed past what it declares
+    drops only its line, and the block below it is told** (lane recovery-b6's
+    `d01_use_junk` and `d04_extern_member_junk`): repaired at `525fe2dd`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close.
+
+    **2026-10-02, lane recovery-b8, a function among a record's fields is
+    told once and read as the function it is** (lane recovery-b6's
+    `e14_record_with_fn` and `f06`): repaired at `26358f9c`, gated by its
+    cases and the compiler's own tests; the net is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b8, a block comment over several lines is one
+    comment, told once** (lane recovery-b6's `lc12_block_multi`): repaired at
+    `4ca2c20a`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
+    **2026-10-02, lane recovery-b8, the body a head's open bracket took in is
+    read as its body** (the head class panel 183 left to the cluster; the
+    audit's rows 130-H-004 and 130-34d): repaired at `276908b3`, gated by its
+    cases and the compiler's own tests; the net is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b8, a closer one too many past a failed
+    statement is told** (the audit's row 130-28): repaired at `ce5caf89`,
+    gated by its own cases alone (the author's instruction of that
+    afternoon); the rest is owed at the round's gate.
+
     **Class: systemic**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): six batches on the
     trunk's record (recovery-b1 to b6) and a seventh in lane recovery-b8, which
