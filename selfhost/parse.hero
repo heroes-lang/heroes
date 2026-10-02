@@ -213,6 +213,22 @@ test "a module's first indented lines are not the body of the module before it"
     assert files_of(s, p) == [0, 1]
     assert p.decls.len() == 1
 
+test "a closer of another kind in a second module names its opener where that module has it"
+    # The parser reads the joined compilation, so a line counted from its first
+    # byte would name `a.hero`'s lines; the opener is said by its distance,
+    # true in `b.hero` too (panel 187's R6).
+    inputs: [source.InputFile] = [
+        source.user_file(name: "a.hero", text: "function one() -> i64\n    return 1\n")
+        source.user_file(name: "b.hero", text: "function f()\n    x = [1, 2\n    print(x) )\n")
+    ]
+    s = source.from_files(inputs)
+    p = parse_source(s)
+    assert p.diagnostics.len() == 1
+    assert p.diagnostics[0].code == "expected_separator"
+    at = source.locate(s, p.diagnostics[0].span.start)
+    assert at.file == "b.hero" && at.line == 3 && at.col == 14
+    assert p.diagnostics[0].message == "expected `,` or a new line between one element and the next, found `)` — the `[` still open on the line above, at column 9: if this line is its last element, write `]` for this `)`; if it closes on a line above, write its `]` there and delete this `)`"
+
 test "an empty file parses to nothing, before the library and between two modules"
     s = source.with_library(name: "main.hero", user: "", library: "function range()\n    return\n")
     p = parse_source(s)
