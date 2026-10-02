@@ -1,0 +1,10 @@
+extern "u.h"
+    record W3
+        i: i32
+        n: u32
+        f: f32
+    function make_w3() -> W3
+
+function main()
+    w = make_w3()
+    print(w.i)

@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 13**
+**OPEN: 14**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery
 
@@ -886,6 +886,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     The lane's route, the header's layout read from clang, changes the union
     rule of panels 060 to 077, so the repair is a sitting's (panel 186).
 
+    **Widened 2026-10-02** by panel 186's completeness critic: ONE declared
+    field inside an anonymous union is enough for a wrong answer.
+    `one_arm.h`'s `typedef struct { int32_t kind; union { int8_t b; int64_t
+    q; }; } SB;` with `record SB` naming `kind` and `b`, `print(make_a() ==
+    make_b())` over two values whose `q` differs: `build` exit 0, prints
+    `true` (reproduced by the coordinator at 11:02 on `ae08ed93`), where the
+    same union bound alone by one member is `ffi_union_field`
+    (`docs/panel/186-briefs/probes/critic/one_arm.hero`).
+
 - [ ] **152 — a C object declared as an `extern` `function` stops `build` with an internal error** | `extern "errno.h"` with `function errno() -> i32`: `build` exit 2, *internal error: compiling the generated C failed: ... called object type 'int' is not a function or function pointer* at the result probe; the same for `stdin` and `optarg`, with or without parameters, on macOS and Linux (the seat's), where the same names declared `constant` get a clean exit 1 | `selfhost/emit/extern_probe.hero` (the result probe) · the `extern` member's kind check
 
     **Origin:** panel 185's ffi-pragmatist, 2026-10-02
@@ -929,5 +938,17 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     where no C type nests, and kept by value in three `check/` cases, where
     no C compiler reads it**: repaired at `0aa055a9`, gated by its cases and
     the compiler's own tests; the net is owed at the batch's close.
+
+- [ ] **156 — a C struct with a bit-field member stops `build` with an internal error and clang's text** | `extern "bf.h"` over `typedef struct { int32_t kind; uint32_t flag : 1; uint32_t rest : 31; } BF;` with `record BF` naming `kind: i32`, `flag: u32`, `rest: u32`, reading `make_bf().kind`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: ... invalid application of 'sizeof' to bit-field* at the field assertions and *address of bit-field requested* in the generated hash | `selfhost/emit/` (the field assertion, `heroes-ffi-field`, and the record's descriptor) · panel 073's item 3 (bit-fields filtered before the assertion)
+
+    **Origin:** panel 186's completeness critic, 2026-10-02, in its first
+    pass over the briefs (`docs/panel/186-briefs/probes/critic/bf.h`, `bf.hero`);
+    reproduced by the coordinator at 11:02 on `ae08ed93`.
+
+    **Why it is a defect.** Exit 2 is the compiler blaming itself for a
+    binding the author can be told about, and clang's text reaches the
+    author (`.claude/rules/c-boundary.md`). Panel 073 resolved that a
+    bit-field is filtered before its assertion; what such a field binds to,
+    if anything, is panel 186's question beside defect 151.
 
 *******************************************************************************
