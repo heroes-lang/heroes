@@ -1,0 +1,10 @@
+# fixedbugs, defect 157 widened, lane land186, 2026-10-02, the shape beside
+# the handle at depth one: a handle over an enum's tag was `internal error`,
+# exit 2, clang's *must use 'enum' tag* read by nothing.
+
+extern "fixedbugs-157-unions.h"
+    record CH tag colour  #~ ffi_tag_is_a_union
+    function one_colour() -> CH
+
+function main()
+    print(1)

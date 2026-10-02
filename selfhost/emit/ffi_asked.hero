@@ -60,7 +60,9 @@
 # from both refusals, so an assertion after the typedef fails every time it is
 # reached: it is the positive evidence that the question was asked, and the
 # typedef's own words are the answer, none for a type name, *must use 'struct'
-# tag* for a tag, *unknown type name* for neither. Defect 145 left the note two
+# tag* for a tag, *unknown type name* for neither, and since lane land186
+# (2026-10-02, defect 157 widened) *must use 'union' tag* and *'enum' tag* for
+# a tag of those kinds, which until then answered `type`, a typedef, falsely. Defect 145 left the note two
 # readings where clang showed no spelling of the type; this makes it one.
 
 use ast
@@ -193,6 +195,10 @@ function read(stderr: str) -> Asked
                 reached[name] @ true
             else if ffi_lookup.has(text: row, needle: "must use 'struct' tag")
                 refused[name] @ "tag"
+            else if ffi_lookup.has(text: row, needle: "must use 'union' tag")
+                refused[name] @ "union"
+            else if ffi_lookup.has(text: row, needle: "must use 'enum' tag")
+                refused[name] @ "enum"
             else if ffi_lookup.has(text: row, needle: "unknown type name")
                 refused[name] @ "neither"
 

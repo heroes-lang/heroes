@@ -1,0 +1,6 @@
+error[ffi_tag_is_a_union]: `fixedbugs-157-unions.h` declares `utag` as a `union`, not a struct — C keeps the two in one namespace and will not let one stand for the other
+  at tests/golden/unsupported/fixedbugs-157-a-record-named-for-a-union-s-tag.hero:7:12
+    |
+  7 |     record utag  #~ ffi_tag_is_a_union
+    |            ^^^^
+  note: C reads `utag` as a type's name, and `fixedbugs-157-unions.h` has it only as a union's tag, so a `record` binds it by a typedef. If `fixedbugs-157-unions.h` gives `utag` a typedef, bind that name; if not, give it one in a header of the program's own, `typedef union utag utag;`, and keep `record utag`, or reach it as a `ptr` through C functions
