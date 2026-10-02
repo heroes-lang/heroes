@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 16**
+**OPEN: 40**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -957,5 +957,153 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a second message for one mistake.
+
+- [ ] **167 — the pointee check reads a header without the build's own `-O2` or `--sanitize`, so a parameter the header types otherwise under them is accepted and the program writes past its `i32`** | `opt.h` declares `fill(int32_t *p)`, and `fill(int64_t *p)` under `#ifdef __OPTIMIZE__`, bound `function fill(@p: i32)`, `a: i32 @ 0`, `fill(@a)`, `print(a)`: `build -O0` prints `7`; `build -O2` exit 0, prints `0`; `build -O2 --sanitize` stops in *AddressSanitizer: stack-buffer-overflow ... WRITE of size 8* on the 4-byte local, exit 134; a header keyed on `__has_feature(address_sanitizer)` does the same under `--sanitize` alone | `selfhost/cli/pointee.hero` (its dump and its check, about `:153-174` and `:197-222` at `6bec7c8c`, `probe_flags()` at `:279-286`), run without the level and the sanitizer `selfhost/cli/units.hero` and `selfhost/cli/flags.hero:201` give the program's own compile · defect 163's class · **class: blocking**
+
+    **Origin:** lane h158 at defect 163, 2026-10-02, a question left unmeasured (*no probe compiles under them*); measured by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/optimize-macro/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`), defect 163's repair `0235b942` included. A result type is held by the program's own compile (a header that changes a return type under `-O2` is refused, `ffi_return_type`), so only the pointee check diverges, as in 163. Unmeasured: whether a real header changes a pointee's type under these macros, and whether the layout check's probe, beside it, is judged without them too.
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a wrong value and a memory fault.
+
+- [ ] **168 — the layout check's cache key does not name the header it read, so a program beside a same-named header replays another directory's verdict: a binding its own header refutes builds and prints a wrong value** | `a/x.h` holds `typedef struct { int32_t x; } E;` and `b/x.h` `typedef struct { int32_t x; int32_t y; } E;`, both bound `record E` naming `x` alone, built from one working directory: alone, `b/p.hero` is refused, `ffi_incomplete_record`; after `a/p.hero` in the same cache it builds at exit 0, and with `gety(e: E) -> i32` reading C's `e.y` its run prints `true`, `2`, `3`, `p == q` true for two values whose `y` C reads as 2 and 3; in the other order the correct `a/p.hero` stops at exit 2, *internal error: checking the header's layout of the group records failed ... no member named 'y' in 'E'* | `selfhost/cli/layout.hero:97-99` (the key: the screen unit's text, `#include <x.h>` and one function per record, no source path) · `selfhost/emit/layout_screen.hero:35`, `:51-59` · the pointee check's key names the declaring file (`selfhost/cli/pointee.hero:111-113`) and does not replay · **class: blocking**
+
+    **Origin:** lane round1002c's gate, 2026-10-02, a question left unrun (*neither the pointee key nor the layout key names `source_dir`*); measured by the coordinator's agent on `6bec7c8c` (2026-10-02, `scratchpad/file-queue/source-dir-key/`), every experiment from one working directory, each with a fresh-cache control. The width shape (`int32_t v` against `int64_t v`) replays too, and the program's own compile still refuses it (`ffi_field_type`): a member left out has the layout check as its only judge. Unmeasured beside it: the standard library's own pointee asks key alike in both directories, and a header found through `CPATH` or another environment variable is named by no key.
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a wrong value at exit 0, and an exit 2 on a correct program.
+
+- [ ] **169 — `check` aborts on a correct program of 300 additions** | `total = 1 + 2 + ... + 300` over `print(total)`: `check` exit 134, *panic: stack exhausted in checkwalk.synth* | `selfhost/check/walk.hero:101` (`synth`) · panel 184's R5 (*the compiler runs its passes on a thread whose stack it chooses*) and R6 (*a floor, not a ceiling*), ratified 2026-10-01, not landed (`docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md:197`, `:204-206`) · **class: blocking**
+
+    **Origin:** panel 184's blind task 3 (`docs/panel/184-briefs/blind/task3a.hero`), aborting in every `check` census since (lane round1002b's; lane round1002c's, *both arms abort on the same file*); reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/check-abort-task3a/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). The sitting's prediction is that *under R5 every shape of the shared brief's table checks at 2,000 on this Mac* (`:238-239`), and R6's N is to be measured before its sentence is written (`:270-271`). No list held the landing until this item.
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a crash, and a correct program refused.
+
+- [ ] **170 — a correct program whose types nest deeper than the C compiler survives stops `build` at exit 2 with clang's crash text** | 3,000 variants nested by value, `variant R<i>` whose case `a` holds `R<i-1>`, `xs: [R2999] = []`, `print(xs == xs)`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: clang: error: unable to execute command: Illegal instruction: 4* (Apple clang 21.0.0); the CI's Apple clang died at 1,000 (defect 155) | the build's clang call (`selfhost/cli/units.hero:96`, `tu_object`) · defect 140's closed record (*facts about the C compiler, not refusals of this one*) · panel 184's R6 · **class: blocking**
+
+    **Origin:** lane ci140's report, 2026-10-02 (*a C compiler's own depth limit reaching the author as an internal error*); defect 155 holds only the CI's red; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/clang-depth/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). Each crash leaves a 7.7 MB preprocessed file and a script in the system's temporary folder and a report under `~/Library/Logs/DiagnosticReports/`. Defect 140's record says a refusal at a depth would be a new diagnostic class, and panel 184's R6 says no source is refused for its depth, so the route may be a sitting's.
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told.
+
+- [ ] **171 — a C function-pointer object declared as an `extern` `function` builds, and called while null it panics naming a callback the program never passed** | `own.h`'s `static int32_t (*hook)(int32_t) = 0;` bound `function hook(x: i32) -> i32`, `print(hook(x: 1))`: `build` exit 0; the run prints *panic: a null function pointer was called — a `ptr` holding `nullptr` reached C where C calls it back*, exit 134 | `runtime/parts/stack.c:515` (and `:738`) · the `extern` member's kind check (defect 152's `2d5240a0`, which lets a function-pointer object through) · **class: blocking**
+
+    **Origin:** lane ffi-macro's first pass for defect 152, 2026-10-02 (`scratchpad/lane-ffi-macro/p1/obj/e23-fnptr-object-called.hero`, 2026-10-02), queued as *a message question and a declaration question, likely a sitting's (panel 038's refusal for `constant`)*; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/null-fnptr-object/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). No memory is corrupted: the guard holds.
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a false message. Refusing the declaration or making the message true is the lane's question.
+
+- [ ] **172 — in an `extern` group, `int` is refused with the `certain` fix `i32`, which `check` cannot know: where the header's type is 64 bits, the applied binding is refused anew by `build`** | `docs/panel/176-briefs/xfer_cj.hero`'s `-> i64`, over `cj.h`'s `int64_t cJSON_AddItemToObject(...)`, written `-> int`: `check` exit 1, `reserved_word`, *in an `extern` group a type is the header's own width and sign, and C's `int` is `i32`*, fix (certain) *replace `int` with `i32`*; `check --apply` writes `-> i32`, `check` exit 0, `build` exit 1, `ffi_return_type` | the `reserved_word` fix for `int` in an `extern` group (defect 135's L6, `c61a1d04`) · `.claude/rules/diagnostics-and-goldens.md` § Errors are a deliverable (*a fix that leaves the defect standing is a `guess`*) · **class: blocking**
+
+    **Origin:** panel 187's completeness critic, 2026-10-02, on the recovery instrument's APPLY-OTHER 20 and APPLY-NEW 19 on lane recovery-b8's runs, 0 and 0 on lane recovery-b6's gate, every one operator `int`, and the same 20 and 19 on the trunk's compiler at `6bec7c8c`, the instrument's run of 2026-10-02 from 21:55 to 22:08 by `date` (`scratchpad/inst-187/round3/`, 2026-10-02); built by the coordinator on `62d65e48` (2026-10-02, `scratchpad/apply-int/case/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). In each of the instrument's cases the original said `i64`, so the header's type is 64 bits there. `check` does not read the header, so it cannot tell C's `int` copied from it (`i32` right) from `int` meaning an integer (`i64` right); `build` reads it, and the binding never runs with the wrong width.
+
+    **Why it is a defect.** `check --apply` applies a `certain` fix without asking, and this one writes a binding that says something else than the header in every case the instrument planted.
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a `certain` fix that writes a program meaning something else; `build` refuses that program, so no wrong value runs.
+
+- [ ] **173 — an `f` literal writes `}}` as two braces and accepts a lone `}`, where panel 184's R1, ratified, makes `}}` one brace and a lone `}` an error** | `print(f"{{a}}")` prints `{a}}` and `print(f"a}b")` prints `a}b`, both at exit 0; under R1 the first prints `{a}` and the second is refused | `selfhost/lex_interp.hero` · panel 184's R1 (`docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md:149-150`, ratified at `:248`, *R1 and R2 land as ratified* at `:284`), R8 putting its sentence in spec § 2 (`:223-224`) · spec `:49-52` (*`{{` writes one brace*, no `}}`, no lone `}`) · **class: blocking**
+
+    **Origin:** panel 184, ratified 2026-10-01 at 22:24 (`docs/records/done/2026-10-01-2224-panel-184-ratified-a-brace-both-ways-a-statement-after-a-jump-refused-and-a-floor-for-depth.md`); its landing found unwritten by the coordinator's file-queue agent, 2026-10-02 (`scratchpad/file-queue/unlanded-184/`, 2026-10-02), and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). No list held the landing: the sitting's item was ticked at its ratification. The spec does not say it either; the landing writes both.
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): by the ratified language, a wrong value (`{a}}`) and a wrong program accepted (`a}b`).
+
+- [ ] **174 — a statement after `return`, `break` or `continue` in the same block compiles, where panel 184's R4, ratified, makes it a compile error** | `function f() -> i64` over `return 1` and then `print(2)`, `main` printing `f()`: `run` exit 0, prints `1` | the checker's walk of a block · panel 184's R4 (`docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md:181-182`; *the spec states the return rule for the first time*, `:186-190`; *R4 lands as it stands*, `:276-277`) · spec § 8 `:229-230`, its only sentence on a jump · **class: blocking**
+
+    **Origin:** panel 184, ratified 2026-10-01 at 22:24; its landing found unwritten by the coordinator's file-queue agent, 2026-10-02 (`scratchpad/file-queue/unlanded-184/after_return.hero`, 2026-10-02), and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`).
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): by the ratified language, a wrong program accepted.
+
+- [ ] **175 — a value block whose last statement is an `if` or a `match` whose every branch leaves is refused `no_value`, where panel 185's R4, ratified, makes the block leave and its arm a jumping arm** | lane flow's `a55-value-arm-block-inner-returns.hero`: `check` exit 1, `no_value` at 4:13, *this `match` produces no value — every branch jumps, so there is nothing to bind*; under R4 it checks clean (its source's own expected output, `1`, `2`, `20`, unrun) | spec § 8 `:229-230` (*A jump (`return`, `break`, `continue`) is a valid arm body*) · panel 185's R4 (`docs/panel/185-a-macro-is-named-as-a-macro-an-arm-takes-a-statement-a-leaving-block-leaves-and-a-spaced-sign-has-two-readings.md:169-170`, ratified at `:241-245`; its sentence goes in § 8, `:171-175`) · **class: blocking**
+
+    **Origin:** panel 185, ratified 2026-10-02 at 03:10 (`docs/records/done/2026-10-02-0310-panel-185-ratified-a-macro-named-as-a-macro-an-arm-of-one-statement-a-leaving-block-a-sign-with-two-readings.md`); its landing found unwritten by the coordinator's file-queue agent, 2026-10-02 (`scratchpad/file-queue/unlanded-184/`, 2026-10-02), and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). The sitting predicts *c1, c2, c3, c6 and a55 to b8 (b4, b7 excepted) build and run* (`:231`).
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): by the ratified language, a correct program refused.
+
+- [ ] **176 — a plain literal whose brace hole names bindings all bound where it stands prints the braces, where panel 185's R7, decided by the author, refuses it with the `f` as its fix** | `x = 1` over `print("{x}")` and `print(x)`: `run` exit 0, prints `{x}` and `1`; under R7 `check` refuses the literal | spec `:52` (*A literal without the `f` is unchanged*), the opposite of the landing · panel 185's R7 (`docs/panel/185-a-macro-is-named-as-a-macro-an-arm-takes-a-statement-a-leaving-block-leaves-and-a-spaced-sign-has-two-readings.md:201-203`; decided 2026-10-02, `:264-268`, *route (5b) lands after panel 184's R1*), so after defect 173 · **class: blocking**
+
+    **Origin:** panel 185's R7, decided by the author 2026-10-02 at 07:05 (`docs/records/done/2026-10-02-0705-panel-185-r7-decided-the-forgotten-f-refused-where-the-braces-hold-names-all-bound.md`); its landing found unwritten by the coordinator's file-queue agent, 2026-10-02 (`scratchpad/file-queue/unlanded-184/forgot_f.hero`, 2026-10-02), and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`).
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): by the decided language, a wrong program accepted.
+
+- [ ] **177 — a `match` whose arms fall inside a bracket left open has each arm told again after the bracket's own message** | `return match scores[name` over `.ok v  => v.to_str()` and `.err e => e.code`: `unclosed_bracket` at the `[`, then `line_end_before_continuation` at each arm, three messages for one missing `]`; `x = match (n` over `.ok v => 1` the same; `y = match n` below `x = [n, 1` gets `expected_end_of_line` at each arm's `=>` | the reach of a bracket left open (panel 183's R1 and R2) over a `match`'s arms · `selfhost/parse/line_end.hero:242` · **class: adjacent**
+
+    **Origin:** lane 135c's report and lane recovery-b4's (*one extra message per arm*), queued under recovery-b5, 2026-10-02 (`scratchpad/lane-135c/shapes/P6/`, 2026-10-02); reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/open-bracket-arms/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). The certain fix lane recovery-b4 saw inside a `[` left open is a guess today, and `check --apply` leaves the text as it is.
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake; no wrong value, no false message, no certain fix. The recovery cluster's, beside 130 and 131.
+
+- [ ] **178 — a separator habit on every line of a block is told once per line: a `,` after each statement or each arm, a `;` after each field** | `x = 1,`, `y = 2,`, `print(x + y),` in a function: three `expected_end_of_line`; arms `0 => 1,`, `1 => 2,`, `_ => 3,`: three; `record P` over `x: i64;`, `y: i64;`, `z: i64;`: three `unexpected_character`; a `,` after every member of a declaration is one message since `68e46a13` | `selfhost/parse/member_lines.hero` (the members' rule, `68e46a13`) · the line end of a statement and of an arm · the lexer's `;` · **class: adjacent**
+
+    **Origin:** lane recovery-b4's report (*the per-line `,` and `;` habits, one message per run with a certain deletion*), queued under recovery-b5, 2026-10-02; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/habit-every-line/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`).
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake. The recovery cluster's.
+
+- [ ] **179 — `@return 1` costs two `expected_expression`, one at the `@` and one at `return`** | `function f() -> i64` over `@return 1`: `check` exit 1, *expected an expression, found `@`* at 2:5 and *expected an expression, found `return`* at 2:6, neither naming the sigil | `selfhost/parse/at_prefix.hero` (a sigil before a name is one message since `4441148b`; before a keyword it is not) · **class: adjacent**
+
+    **Origin:** lane recovery-b4's report (*`@return 1`: two messages*), queued under recovery-b5, 2026-10-02; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/at-return/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`).
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake. The recovery cluster's.
+
+- [ ] **180 — a range written `1..2` is told twice as a field access** | `x = 1..2`: `expected_field_name` at 3:11, *found `.`*, and again at 3:12, *found a number (`2`)*; `x = 0x1..5` the same at 3:13 and 3:14 | `selfhost/grammar_expr.hero:343` · **class: adjacent**
+
+    **Origin:** lane arm's first pass for defect 154, 2026-10-02 (`scratchpad/lane-arm/pass1/n154/e20.hero`, 2026-10-02), queued as *a range habit, recovery's file*; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/range-dots-twice/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). The recovery instrument counts its `range-dots` operator at 12 EXTRA.
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake. The recovery cluster's.
+
+- [ ] **181 — a decimal number with a second point, `1.5.2`, is told as a field access** | `x = 1.5.2`: `expected_field_name` at 3:13, *expected a field or function name after `.`, found a number (`2`)* | `selfhost/grammar_expr.hero:343` · `selfhost/number.hero` · defect 154's closed record (*Left, queued*) · **class: adjacent**
+
+    **Origin:** lane arm's first pass for defect 154, 2026-10-02 (`scratchpad/lane-arm/pass1/n154/e08.hero`, 2026-10-02), named *Left, queued* in `docs/records/done/2026-10-02-1415-defect-154-closed-a-based-literal-with-a-fraction-is-told-as-the-number-it-is.md` and on no open list; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/float-second-point/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). Lane arm: no existing code covers it, so a new one is a sitting's.
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be. The recovery cluster's.
+
+- [ ] **182 — an operator alone on a line deeper than a `match`'s arms costs `continuation_outside_brackets` and `unexpected_block`** | `k = match n` over `1 => "one"`, then a line holding only `+` (or `-`) one level deeper, then `_ => "many"`: two messages on line 5; the `certain` deletion of the operator, applied, checks clean | `selfhost/open_line.hero` · `selfhost/sign_above.hero` (the deletion, defect 165's `8cb4ba6c`) · the orphan block's `unexpected_block` · **class: adjacent**
+
+    **Origin:** lane h158's pass for defects 165 and 166, 2026-10-02 (`scratchpad/lane-h158/d166/q1_plus_deeper.hero`, `q2_minus_deeper_wild.hero`, 2026-10-02); reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/operator-deeper-line/`), where the one fix was a guess, and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`), where it is the `certain` deletion 165's repair brought; the second message stands.
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake. The recovery cluster's.
+
+- [ ] **183 — a `.pc` whose `prefix` holds an unescaped space is refused naming `space/include` as the flag, and not the package file's line that splits it** | `prefix=/opt/with space`, `Cflags: -I${prefix}/include`: `pkg-config --cflags s7` prints `-I/opt/with space/include`; `build` exit 1, `ffi_package`, *the package `s7` answered with `space/include`, which this compiler does not pass on* | `selfhost/cli/shell_split.hero` (the word splitter, defect 162's `b37bfce1`) before `filter_words` (`selfhost/cli/libraries.hero:83`) · **class: adjacent**
+
+    **Origin:** lane h158 beside defect 162, 2026-10-02 (`scratchpad/lane-h158/d162/pc/s7.pc`, 2026-10-02, *true, could say more*); reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/pc-prefix-space/`, run with `PKG_CONFIG_PATH` naming that folder) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`), where only the note's list of accepted flags is worded otherwise.
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be.
+
+- [ ] **184 — `check` takes time quadratic in the `for` heads it refuses: 3,000 `for n > 0` lines cost 16 s** | a function of N loops `for n > 0` over `n @ n - 1`, `check --brief`: 0.44 s of user time at 500, 1.74 at 1,000, 3.87 at 1,500, 15.92 at 3,000, `real` within 0.16 s of `user`; 3,000 `while n > 0,` cost 0.15 s and 3,000 `n @ 0X1` 0.06 s | `selfhost/grammar_expr.hero:899` (`for_stmt`) · `selfhost/parse/loop_habit.hero` (`refuse`), the cause unrun · **class: adjacent**
+
+    **Origin:** the coordinator's file-queue agent, 2026-10-02, measuring lane arm's item on field-place pushes, on `62d65e48` (2026-10-02, `scratchpad/file-queue/for-habit-quadratic/`), the machine at load 2 to 5; re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`), the times above being that run's, on a busy machine and in the same order as the first. Two candidates were measured out over the same 3,000: `loop_habit.hero:62`'s append made in place, and `for_stmt`'s trial parse removed.
+
+    **Why it is a defect.** Defect 146's class: a file of N mistakes costs N² work.
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): real, found beside the work, no wrong value and no crash.
+
+- [ ] **185 — the emitted C's line restores after a fixed-array field's assertion name a line one too low per such field** | `heroes build tests/golden/run/ffi-a-char-field-becomes-text.hero --emit-c`: line 20 is `#line 19 "ffiacharfieldbecomestext.c"`, so line 21 is reported as 19, and every later restore is 2 short; over `tests/emission`, 261 of 36,781 restores in 19 files are 1 to 10 short, each file's shortfall equal to its number of two-assertion lines | `selfhost/emit/extern_field.hero:158`, `:161` (a `"\n             _Static_assert(` the printer does not count) · `.claude/rules/generated-c.md:27-29` · **class: adjacent**
+
+    **Origin:** lane round1002b at its gate, 2026-10-02 (*not chased*); measured by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/line-restore/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`).
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a place less exact than it could be in every clang note, sanitizer frame or debugger line past such a field; no value moves.
+
+- [ ] **186 — `ffi_return_type` says a function does not return the program's type and never names the type the header gives** | defect 172's applied program: *`cJSON_AddItemToObject` does not return `i32` — that is what `cj.h` says, and clang read it*, its note *correct the result type, or name the header that declares this*; neither `int64_t` nor `i64` appears | `selfhost/emit/ffi_declared.hero:60` · **class: adjacent**
+
+    **Origin:** the coordinator, 2026-10-02, building defect 172's applied program on `62d65e48` (2026-10-02, `scratchpad/apply-int/case/`), and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). The pointee check's message beside it names the header's type and offers it (`ffi_parameter_type`, *the header's `int64_t *` points at a different width*, fix *declare `p` as `@p: i64`*).
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be: it carries the header's name and not the type that would fix the program (design.md §4.17).
+
+- [ ] **187 — four parser diagnostics are still appended through a field place, against defect 146's rule and `cursor.hero`'s own comment** | `git grep -n 'c.diagnostics @ c.diagnostics.push' -- selfhost/parse/` prints `loop_habit.hero:62`, `line_end.hero:251`, `type.hero:257`, `type.hero:320`, while `selfhost/cursor.hero:272` says *Every parser module appends through this* | the four lines · `cursor.push_diagnostic` (`selfhost/cursor.hero:273`) · **class: improvement**
+
+    **Origin:** lane arm's report, 2026-10-02; read by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/field-place-push/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`), which finds three more modules appending the same way, their cost unmeasured. No cost is measured for any: at `loop_habit.hero:62` the append is not what makes defect 184 slow.
+
+    **Class: improvement**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a cleaner form nobody needs to be right.
+
+- [ ] **188 — two texts still state the arm rule panel 185's R3 replaced** | `selfhost/check/lending.hero:108-109` quotes the spec as *An arm that does nothing is a block holding `_ = 0`*, where the spec now reads *An arm that does nothing holds `_ = 0`*; `tests/golden/check/fixedbugs-135-a-discard-that-is-the-line-s-one-reading.hero:8` reasons *`_ = ` on the arm's own line is `declaration_in_arm`*, false since R3 | the two lines · **class: improvement**
+
+    **Origin:** lane arm's report, 2026-10-02; read by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/stale-arm-texts/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). design.md §4.7 owes nothing: R3 brought the spec to it.
+
+    **Class: improvement**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): no program moves.
+
+- [ ] **189 — `typeorder.visit`'s walk without recursion has no witness** | the record chains the run cases emit are 1,000 deep (`run/fixedbugs-140-records-` and `-extern-records-a-thousand-deep-build`), and at 1,000 and 5,000 lane ci140's mutant, `visit` restored to its recursion, emits the trunk's bytes (666,776 and 3,358,806, `cmp` equal) | `selfhost/emit/typeorder.hero:130` and its one test at `:206` · **class: improvement**
+
+    **Origin:** lane ci140's report, 2026-10-02 (`scratchpad/lane-ci140/mut/emit-typeorder/heroes-mut`, 2026-10-02, *the mutant that no case catches*); measured by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/typeorder-witness/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). At 20,000 deep the mutant reached clang, which died (defect 170), so a unit test is the witness the lane names.
+
+    **Class: improvement**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): coverage.
+
+- [ ] **190 — `records/lists` reads an item's class token and not the rest of its first line, so an item that lost its title and its *where* field reads as whole** | item 130's first line as `8349d264` left it, with no `**` closing its title and no ` | ` at all, before its class token: `records` 24 passed, 0 failed, after that commit and after every one until the item was restored at `50644159` | `tests/harness/suite_records.hero` (`list_offences`; the class rule, about `:4448-4610`) · **class: improvement**
+
+    **Origin:** the coordinator, 2026-10-02, on the damage panel 187's completeness critic found (`docs/records/log/2026-10-02-2141-item-130-cut-in-8349d264-and-restored-what-cut-it-is-unknown-the-commit-did-not-read-its-diff.md`). It would have caught the cut in the item's line, not the one in its body.
+
+    **Class: improvement**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): hardening of an instrument; nothing a program does moves.
 
 *******************************************************************************
