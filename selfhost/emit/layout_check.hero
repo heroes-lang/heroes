@@ -408,7 +408,9 @@ test "a field the dump does not show puts the record's every question under the 
     )
 
     # `cc` is a macro or a misspelling: only the preprocessor knows which, so
-    # nothing of `S3` is asked unless it is defined.
+    # nothing of `S3` is asked unless it is defined, and first of all whether
+    # C reads `cc` as a member, at the field's own line (since `25b96332`).
     assert got[0] == "#if defined(cc)"
+    assert got[1] == "#line 4 \"t.hero\"\n_Static_assert(sizeof(((S3 *)0)->cc) != 0 || 1, \"heroes-ffi-member S3 cc\");"
     assert got[got.len() - 1] == "#endif"
-    assert got.len() == 4
+    assert got.len() == 5
