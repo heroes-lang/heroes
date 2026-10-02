@@ -614,10 +614,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the CI's Windows leg at the next push.
 
     **2026-10-02, lane h158, a header the group's own header includes is
-    told on the group from clang's line alone**: repaired at `744cdc08`,
-    gated by its cases and the compiler's own tests; the net is owed at the
-    batch's close. A header reached through a second header still stops at
-    exit 2, the follow-up the coordinator holds (it needs clang's whole
-    stderr at the call in `selfhost/emit/ffi.hero`).
+    told on the group from clang's line alone, and one reached through other
+    headers from the include stack above it**: repaired at `744cdc08` (the
+    line) and `7790f2f6` (the stack, the call in `selfhost/emit/ffi.hero`
+    handing clang's whole stderr), gated by their cases, the first also by the
+    compiler's own tests; the net is owed at the batch's close.
 
 *******************************************************************************
