@@ -1,11 +1,11 @@
-tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:13:23: error[expected_end_of_line]: expected the end of the line, found `)` — a `function`'s body goes on the lines below its head, one level deeper
+tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:13:23: error[expected_end_of_line]: expected the end of the line, found `)` — the `function` `a_function`'s body goes on the lines below its head, one level deeper
 tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:14:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
-tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:16:17: error[expected_end_of_line]: expected the end of the line, found `)` — a `constant`'s body goes on the lines below its head, one level deeper
-tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:19:15: error[expected_end_of_line]: expected the end of the line, found `)` — a `test`'s body goes on the lines below its head, one level deeper
+tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:16:17: error[expected_end_of_line]: expected the end of the line, found `)` — the `constant` `K`'s body goes on the lines below its head, one level deeper
+tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:19:15: error[expected_end_of_line]: expected the end of the line, found `)` — the `test` `"a test"`'s body goes on the lines below its head, one level deeper
 tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:23:14: error[expected_end_of_line]: expected the end of the line, found `)` — an `if`'s body goes on the lines below its head, one level deeper
 tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:25:17: error[expected_end_of_line]: expected the end of the line, found `)` — a `while`'s body goes on the lines below its head, one level deeper
 tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:27:36: error[expected_end_of_line]: expected the end of the line, found `)` — a `for`'s body goes on the lines below its head, one level deeper
 tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:32:19: error[expected_end_of_line]: expected the end of the line, found `)` — an `else if`'s body goes on the lines below its head, one level deeper
 tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:35:13: error[expected_end_of_line]: expected the end of the line, found `)` — a `match`'s arms go on the lines below its head, one level deeper
-tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:38:21: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `)`)
+tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:38:21: error[missing_body]: the `function` `bodiless` needs an indented body — one level deeper, exactly 4 spaces (found `)`)
 tests/golden/check/fixedbugs-131-junk-past-a-head-over-its-body.hero:41:14: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `)`)

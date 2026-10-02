@@ -101,7 +101,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
         return
 
     if typed.is_err()
-        owed_body(@c, @a, text: text, owner: "a `constant`", head: head)
+        owed_body(@c, @a, text: text, owner: heads.whose(text, name, .kw_constant), head: head)
         return
     ty = typed.must()
 
@@ -112,7 +112,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     if is_from_c(linkage)
         body_check(@c, "constant")
     else
-        b = braces.body_or_block(@c, @a, text: text, owner: "a `constant`", head: head)
+        b = braces.body_or_block(@c, @a, text: text, owner: heads.whose(text, name, .kw_constant), head: head)
 
         if b.is_err()
             cursor.recover_to_next_decl(@c)
@@ -139,7 +139,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
         return
 
     if read.is_err()
-        owed_body(@c, @a, text: text, owner: "a `function`", head: head)
+        owed_body(@c, @a, text: text, owner: heads.whose(text, name, .kw_function), head: head)
         return
     sig = read.must()
     body: ast.Block? @ fail(code: "absent", msg: "an extern function's code comes from C")
@@ -147,7 +147,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     if is_extern
         body_check(@c, "function")
     else
-        b = braces.body_or_block(@c, @a, text: text, owner: "a `function`", head: head)
+        b = braces.body_or_block(@c, @a, text: text, owner: heads.whose(text, name, .kw_function), head: head)
 
         if b.is_err()
             cursor.recover_to_next_decl(@c)

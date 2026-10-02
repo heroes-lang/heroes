@@ -1,7 +1,7 @@
 tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:31:11: error[continuation_outside_brackets]: a line outside brackets ends its statement, and this one cannot end with `+`: the next line goes on with it one level deeper, where a block would begin; write the statement on one line, or break it inside parentheses
-tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:17:17: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:17:17: error[missing_body]: the `function` `main` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:21:15: error[expected_end_of_line]: expected the end of the line, found a number (`4`) — one statement per line, no semicolons
 tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:33:15: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
-tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:39:18: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:39:18: error[missing_body]: the `function` `stray` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:42:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
-tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:46:13: error[missing_body]: a `test` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-body-in-braces-indented-inside.hero:46:13: error[missing_body]: the `test` `"adds"` needs an indented body — one level deeper, exactly 4 spaces (found `{`)

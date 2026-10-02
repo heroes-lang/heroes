@@ -1,6 +1,6 @@
 tests/golden/check/fixedbugs-133-a-bodiless-head-above-a-foreign-word.hero:15:1: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`
 tests/golden/check/fixedbugs-133-a-bodiless-head-above-a-foreign-word.hero:20:1: error[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
 tests/golden/check/fixedbugs-133-a-bodiless-head-above-a-foreign-word.hero:25:1: error[reserved_word]: `def` is not a word in this language — use `function`
-tests/golden/check/fixedbugs-133-a-bodiless-head-above-a-foreign-word.hero:15:1: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `fn`)
-tests/golden/check/fixedbugs-133-a-bodiless-head-above-a-foreign-word.hero:20:1: error[missing_body]: a `constant` needs an indented body — one level deeper, exactly 4 spaces (found `const`)
-tests/golden/check/fixedbugs-133-a-bodiless-head-above-a-foreign-word.hero:25:1: error[missing_body]: a `test` needs an indented body — one level deeper, exactly 4 spaces (found `def`)
+tests/golden/check/fixedbugs-133-a-bodiless-head-above-a-foreign-word.hero:15:1: error[missing_body]: the `function` `stub` needs an indented body — one level deeper, exactly 4 spaces (found `fn`)
+tests/golden/check/fixedbugs-133-a-bodiless-head-above-a-foreign-word.hero:20:1: error[missing_body]: the `constant` `LIMIT` needs an indented body — one level deeper, exactly 4 spaces (found `const`)
+tests/golden/check/fixedbugs-133-a-bodiless-head-above-a-foreign-word.hero:25:1: error[missing_body]: the `test` `"empty"` needs an indented body — one level deeper, exactly 4 spaces (found `def`)

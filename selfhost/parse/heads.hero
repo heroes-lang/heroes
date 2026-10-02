@@ -204,8 +204,23 @@ function next_member(@c: cursor.Cursor, @a: ast.Ast, text: str, in_record: bool,
         return next_member(@c, @a, text, in_record: in_record, told: @told, @habit)
 
     if head_read(@c, @a, text, kind: k)
-        return Owed(owes: .body, owner: owner, head: began)
+        return Owed(owes: .body, owner: owner_named(c, text, kind: k, keyword: began.pos), head: began)
     return Owed(owes: .abandoned, owner: owner, head: began)
+
+# Whose body a head read whole owes, named by the token after its keyword, a
+# function's or a constant's name or a test's title, so that a body told
+# missing at the line below says whose it is (panel 187's R5, `g2/r09`).
+function owner_named(c: cursor.Cursor, text: str, kind: token.TokenKind, keyword: i64) -> str
+    name = c.tokens[keyword + 1]
+
+    if name.kind == .ident || name.kind == .str_lit
+        return whose(text, name.span, kind)
+    return owner_of(kind)
+
+# `owner_of`'s "a `function`" named by `name`: "the `function` `f`".
+function whose(text: str, name: token.Span, kind: token.TokenKind) -> str
+    phrase = owner_of(kind)
+    return "the " + phrase.slice(from: 2, to: phrase.len()) + " `" + cursor.slice_of(text, name) + "`"
 
 # Whose body the line opened by the cursor's token, read as `kind`, holds:
 # a declaration's keyword's (`owner_of`), or a refused word's that declares
@@ -316,10 +331,11 @@ test "a block of declarations is read line by line, each owing what its keyword 
 
     _ = cursor.bump(@c)
 
-    # The function's signature is read, and its body is owed to the grammar.
+    # The function's signature is read, and its body is owed to the grammar,
+    # under the function's name (panel 187's R5).
     first = next(@c, @a, text)
     assert first.owes == .body
-    assert first.owner == "a `function`"
+    assert first.owner == "the `function` `f`"
     cursor.skip_terminators(@c)
     _ = cursor.balanced_block(@c)
 
@@ -329,3 +345,11 @@ test "a block of declarations is read line by line, each owing what its keyword 
     assert second.owes == .statement
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "expected_field_type"
+
+# `whose` reads `owner_of`'s phrase past its article: a phrase that stops
+# being "a `<keyword>`" for a declaration a name follows turns this red.
+test "a body's owner is named from its keyword's phrase, for every declaration a name follows"
+    name = token.Span(start: 0, end: 1)
+    assert whose("f", name: name, kind: .kw_function) == "the `function` `f`"
+    assert whose("f", name: name, kind: .kw_constant) == "the `constant` `f`"
+    assert whose("f", name: name, kind: .kw_test) == "the `test` `f`"

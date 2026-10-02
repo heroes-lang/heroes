@@ -5,4 +5,4 @@ tests/golden/check/fixedbugs-133-a-type-written-with-a-foreign-word.hero:29:16: 
 tests/golden/check/fixedbugs-133-a-type-written-with-a-foreign-word.hero:20:31: error[expected_type]: expected a type, found `)` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
 tests/golden/check/fixedbugs-133-a-type-written-with-a-foreign-word.hero:24:39: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
 tests/golden/check/fixedbugs-133-a-type-written-with-a-foreign-word.hero:27:32: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
-tests/golden/check/fixedbugs-133-a-type-written-with-a-foreign-word.hero:29:20: error[missing_body]: a `constant` needs an indented body — one level deeper, exactly 4 spaces (found `=`)
+tests/golden/check/fixedbugs-133-a-type-written-with-a-foreign-word.hero:29:20: error[missing_body]: the `constant` `RATE` needs an indented body — one level deeper, exactly 4 spaces (found `=`)
