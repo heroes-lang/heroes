@@ -1,0 +1,16 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R3), the
+# critic's `one_arm_union` under the one rule.
+#
+# A union TYPE is held to the rule a union inside a struct is: compared by an
+# integer arm, the arm must be as wide as the union, which C can name here,
+# so the width is `sizeof(UB)`. `b` is one byte of eight.
+
+extern "fixedbugs-151-unions.h"
+    record UB  #~ ffi_union_field
+        b: i8
+
+function same(x: UB, y: UB) -> bool
+    return x == y
+
+function main()
+    print(1)

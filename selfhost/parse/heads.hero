@@ -32,6 +32,10 @@ use parse/signature
 use parse/opening
 use parse/brace_habit
 use parse/members_below
+use parse/member_lines
+use parse/headless
+use parse/swap_reading
+use parse/refused_heads
 
 ## The head
 
@@ -139,12 +143,32 @@ record Owed
     head: opening.Mark
 
 # The next line of the block of declarations the cursor is inside, read as
-# far as a leaf reads one, and what it owes the grammar.
+# far as a leaf reads one, and what it owes the grammar. A field's line,
+# `x: i64` among `class Q`'s methods, is read as the field it is (lane
+# recovery-b8): it was a statement, a binding with no value.
 function next(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Owed
+    told: bool @ true
+    habit: i64 @ -1
+    return next_member(@c, @a, text, in_record: false, told: @told, @habit)
+
+# The same, where the block is a record's, `record Q` over `x: i64` and
+# `function f()` (`parse/records`): every line no declaration's keyword opens
+# is a field's (`member_lines.field_line`, `habit` its `,` report), and the
+# first line one opens is told where `told` is false, a record holding only
+# fields, and read as the declaration it is, its body the grammar's (defect
+# 130's class, lane recovery-b8). It was `expected_field` and then
+# `unexpected_block`, two messages, its body unread.
+function next_member(@c: cursor.Cursor, @a: ast.Ast, text: str, in_record: bool, @told: bool, @habit: i64) -> Owed
     cursor.skip_terminators(@c)
+    k: token.TokenKind @ swap_reading.opens_line_as(c, text)
+
+    while member_owner(c, text, kind: k) == "" && (in_record && k != .dedent && k != .eof || !in_record && k == .ident && headless.field_shaped(c.tokens, c.pos))
+        _ = member_lines.field_line(@c, @a, text, @habit).is_err()
+        cursor.skip_terminators(@c)
+        k @ swap_reading.opens_line_as(c, text)
+
     began = opening.mark(c)
-    k = cursor.current_kind(c)
-    owner = owner_of(k)
+    owner = member_owner(c, text, kind: k)
 
     if k == .dedent || k == .eof
         _ = cursor.eat(@c, .dedent)
@@ -156,13 +180,44 @@ function next(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Owed
     if owner == ""
         return Owed(owes: .statement, owner: owner, head: began)
 
+    if !told
+        told @ true
+        taking: str @ ""
+
+        if owner == "a `function`"
+            taking @ ", taking the record as a parameter"
+        cursor.error(
+            @c,
+            code: "expected_field",
+            message: "expected a field name, found " + swap_reading.found(c, text) + " — a `record` holds only its fields, one per line, `name: type`, and " + owner + " in it is declared at the top level of the file" + taking,
+            span: cursor.current_span(c)
+        )
+
+    # A word the lexer refused with no certain swap, `def f(self):` among a
+    # record's fields: told by the lexer, and read as the statement reader
+    # reads a refused head, its block under it (`grammar_expr.under`).
+    if k == .error
+        return Owed(owes: .statement, owner: owner, head: began)
+
     if k == .kw_record || k == .kw_variant
         members(@c, @a, text, fields: k == .kw_record)
-        return next(@c, @a, text)
+        return next_member(@c, @a, text, in_record: in_record, told: @told, @habit)
 
     if head_read(@c, @a, text, kind: k)
         return Owed(owes: .body, owner: owner, head: began)
     return Owed(owes: .abandoned, owner: owner, head: began)
+
+# Whose body the line opened by the cursor's token, read as `kind`, holds:
+# a declaration's keyword's (`owner_of`), or a refused word's that declares
+# one, `def` or `fn` (`parse/refused_heads`); "" where neither opens it.
+function member_owner(c: cursor.Cursor, text: str, kind: token.TokenKind) -> str
+    if kind != .error
+        return owner_of(kind)
+    declared = refused_heads.declares(cursor.slice_of(text, cursor.current_span(c)))
+
+    if declared.is_err()
+        return ""
+    return "a `" + declared.must() + "`"
 
 # Whether the head a body follows was read whole, after its keyword.
 function head_read(@c: cursor.Cursor, @a: ast.Ast, text: str, kind: token.TokenKind) -> bool

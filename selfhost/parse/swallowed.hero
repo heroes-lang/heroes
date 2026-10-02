@@ -1,0 +1,176 @@
+# The lines below a head that its own bracket, left open, swallowed: the
+# head's body, read inside the bracket and laid out as none (design.md §4.15,
+# §4.17; the head class panel 183 left to the recovery cluster, its
+# resolution's last paragraph, and the audit's row 130-H-004; lane
+# recovery-b8, 2026-10-02).
+#
+# `while i < text.len(` over its body, or `function f(a: i64` over its body,
+# leaves a bracket the lexer names still open where its reach ends, the next
+# declaration or a line no bracket holds; every line between was read inside
+# the bracket, so the head was told it, `unclosed_bracket`, and its body
+# was passed over, every mistake in it unsaid, an over-indented line among
+# them. The body is now read through a view of those lines laid out as the
+# lexer lays out a block (`parse/braced_lines.view_to`), where `lines_to`
+# says it ends; and a call whose `(` ends a head's line holds nothing, so the
+# lines below are left to the head (`body_below`). And where a closer one
+# too many at the end of a body line closed the head's bracket instead,
+# `function f(a: i64` over `print(a) )`, the head's list refused that line's
+# first word, which is that report, and the lines to the closer are the body,
+# the closer its junk (`spilled`). The lexer's reach and its messages are
+# unchanged: this reads what the bracket took in as what it is.
+#
+# A leaf over `parse/unclosed`.
+#
+# | entry | called by |
+# |---|---|
+# | `body_at` | `parse/opening.body_follows` |
+# | `body_below` | `grammar_expr.call_args` |
+
+use cursor
+use next_line
+use parse/head_lines
+use parse/pairing
+use parse/unclosed
+
+# Where the body below a head begun at token `from` ends, read through a view
+# from the cursor, where the head's bracket took it in (`lines_to`), or, for
+# a head that `failed`, from the line below its line, the cursor moved there,
+# where a closer below paired its bracket (`spilled`); -1 where neither holds
+# or the head owes no `block` of statements, a `match`'s arms being their
+# reader's. `said` is how many reports stood before the head.
+function body_at(@c: cursor.Cursor, text: str, from: i64, said: i64, failed: bool, block: bool) -> i64
+    if !block
+        return -1
+    reach = lines_to(c, text, from: from)
+
+    if reach >= 0 || !failed
+        return reach
+    spill = spilled(c, text, from: from, said: said)
+
+    if spill.start >= 0
+        c.pos @ spill.start
+    return spill.close
+
+# Where the lines a head's own opener swallowed end: the head's line, begun
+# at token `from`, holds an opener the lexer named never closed, and the
+# cursor begins a line below it, deeper than the head's and still in that
+# opener's reach. Those lines are the head's body, read inside the bracket
+# and laid out as none, and the index handed back is the first token past
+# the reach, where the lexer named the opener; -1 where any of that fails
+# (the head class, lane recovery-b8; the audit's row 130-H-004).
+function lines_to(c: cursor.Cursor, text: str, from: i64) -> i64
+    open = unclosed.head_opener(c, text, from: from)
+    below = head_lines.margin_width(text, at: cursor.current_span(c).start)
+
+    if open < 0 || !unclosed.in_reach(c, open: open) || below <= head_lines.line_margin(text, at: c.tokens[from].span.start)
+        return -1
+    ends = pairing.close_after(c, at: c.tokens[open].span.start)
+    i: i64 @ c.pos
+
+    while i < c.tokens.len() - 1 && (ends < 0 || c.tokens[i].span.start < ends) && (c.root_end < 0 || c.tokens[i].span.start < c.root_end)
+        i @ i + 1
+
+    return i
+
+# Whether the opener at token `open`, which the lexer named never closed,
+# ends its line of the text, that line opens with the word of a head that
+# owes a body, and the line below it is deeper: what is below is that head's
+# body, which the opener's reach took in, and the list it opens holds nothing
+# (`lines_to`). `while i < text.len(` over its body read the body as the
+# call's arguments and passed it over at its first binding, an over-indented
+# line in it unsaid (the audit's row 130-H-004, lane recovery-b8).
+function body_below(c: cursor.Cursor, text: str, open: i64) -> bool
+    next: i64 @ open + 1
+
+    while next < c.tokens.len() - 1 && c.tokens[next].kind == .comment
+        next @ next + 1
+
+    below = head_lines.margin_width(text, at: c.tokens[next].span.start)
+    at: i64 @ c.tokens[open].span.start
+
+    while at > 0 && text[at - 1] != '\n'
+        at @ at - 1
+
+    margin: i64 @ at
+
+    while margin < text.len() && text[margin] == ' '
+        margin @ margin + 1
+
+    word = next_line.word_at(text, at: margin)
+    owes = word == "if" || word == "while" || word == "for" || word == "else" || word == "function" || word == "test"
+    return owes && below > margin - at && unclosed.never_closed(c, text, open: open)
+
+# Lines a head's bracket took in as far as a closer below paired it.
+record Spilled
+    # The first token of the line below the head's, or -1.
+    start: i64
+    # The token past the closer.
+    close: i64
+
+# The lines below a head begun at token `from` that one of its line's
+# openers took in, the closer that paired it standing on a line below: the
+# head refused the first word of the line below, which is deeper than the
+# head's and opens a statement, a report said since `said` standing on it;
+# and the closer ends a line of code, not one of its own.
+# `function f(a: i64` over `print(a) )`: one `)` left out
+# and one too many, the second told only once the first was written (the
+# audit's row 130-34d, lane recovery-b8).
+function spilled(c: cursor.Cursor, text: str, from: i64, said: i64) -> Spilled
+    none = Spilled(start: -1, close: -1)
+    i: i64 @ from
+
+    while i < c.pos && i < c.tokens.len() - 1 && head_lines.line_margin(text, at: c.tokens[i].span.start) == head_lines.line_margin(text, at: c.tokens[from].span.start) && !below_the_line(c, text, from: from, at: i)
+        k = c.tokens[i].kind
+        close = pairing.paired_closer(c, text, open: i)
+
+        if (k == .lparen || k == .lbracket) && close > i
+            start = first_below(c, text, open: i)
+
+            if start < close && told_at(c, at: start, said: said) && head_lines.margin_width(text, at: c.tokens[start].span.start) > head_lines.line_margin(text, at: c.tokens[from].span.start) && opens_a_statement(c, at: start) && head_lines.margin_width(text, at: c.tokens[close].span.start) < 0
+                return Spilled(start: start, close: close + 1)
+        i @ i + 1
+
+    return none
+
+# Whether the token at `at` opens a statement and goes on nothing above it:
+# a name, not a parameter's or a field's `name:`, or a statement's keyword;
+# a line opened by `:`, `?` or `->` goes on with its head's list.
+function opens_a_statement(c: cursor.Cursor, at: i64) -> bool
+    k = c.tokens[at].kind
+
+    if k == .ident
+        return c.tokens[at + 1].kind != .colon
+    return k == .kw_if || k == .kw_while || k == .kw_for || k == .kw_match || k == .kw_return || k == .kw_assert
+
+# The first token after the opener at `open` that stands on a later line of
+# the text, comments passed.
+function first_below(c: cursor.Cursor, text: str, open: i64) -> i64
+    i: i64 @ open + 1
+
+    while i < c.tokens.len() - 1 && (c.tokens[i].kind == .comment || !below_the_line(c, text, from: open, at: i))
+        i @ i + 1
+
+    return i
+
+# Whether the token at `at` stands on a later line of the text than the one
+# at `from`.
+function below_the_line(c: cursor.Cursor, text: str, from: i64, at: i64) -> bool
+    i: i64 @ c.tokens[from].span.start
+
+    while i < c.tokens[at].span.start
+        if text[i] == '\n'
+            return true
+        i @ i + 1
+
+    return false
+
+# Whether a report said since `said` stands on the token at `at`.
+function told_at(c: cursor.Cursor, at: i64, said: i64) -> bool
+    i: i64 @ said
+
+    while i < c.diagnostics.len()
+        if c.diagnostics[i].span.start == c.tokens[at].span.start
+            return true
+        i @ i + 1
+
+    return false

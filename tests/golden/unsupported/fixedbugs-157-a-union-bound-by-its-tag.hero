@@ -1,0 +1,19 @@
+# fixedbugs, defect 157, lane land186, 2026-10-02 (panel 186 R9), the
+# coordinator's `tu1.hero`.
+#
+# SYMPTOM: `record UI tag utag` over a header's `union utag` was refused with
+# a note saying *a group's `record` is the header's STRUCT. A union has no
+# `record` spelling in this language*, while `record W` over a typedef'd union
+# builds and reads; and no golden held the code.
+#
+# FIX: the refusal stays (panel 186's R9 question); its note says what is true:
+# a `record` binds a union by a typedef's name, the header's or one of the
+# program's own, and otherwise a `ptr` reaches it.
+
+extern "fixedbugs-157-unions.h"
+    record UI tag utag  #~ ffi_tag_is_a_union
+        i: i32
+    function make_u() -> UI
+
+function main()
+    print(make_u().i)

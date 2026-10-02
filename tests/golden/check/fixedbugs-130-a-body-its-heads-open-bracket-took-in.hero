@@ -1,0 +1,59 @@
+# Fixed 2026-10-02, defect 130's class, lane recovery-b8 (the head class
+# panel 183 left to the recovery cluster; the audit's rows 130-H-004 and
+# 130-34d). Symptom: a head whose own bracket was left open took its body
+# inside the bracket, and the body's own mistakes went unsaid: under
+# `while i < text.len(` an over-indented line, under `function f(a: i64` a
+# missing operand, told only once the `)` was written; and where a `)` one
+# too many at the end of a body line paired the head's bracket, `function
+# f(a: i64` over `print(a) )`, that `)` was told only then. Cause: the lines
+# the bracket took in were read as its list, or passed over, never as the
+# body they are. Now they are read as the head's body, through a view laid
+# out as the lexer lays out a block, to where the lexer ended the bracket's
+# reach or to the closer that paired it, which is the body's junk; a call
+# whose `(` ends a head's line holds nothing. The lexer's message and its
+# reach are unchanged.
+
+function crc(text: str) -> i64
+    i: i64 @ 0
+    total: i64 @ 0
+
+    while i < text.len(  #~ unclosed_bracket
+        byte: u8 @ text[i]
+            total @ total + byte.to_i64()  #~ unexpected_block
+        i @ i + 1
+
+    return total
+
+function a_missing_operand(a: i64  #~ unclosed_bracket
+    print(a +)  #~ expected_expression
+
+function an_orphan_in_the_body(a: i64  #~ unclosed_bracket
+    x = a
+        y = 2  #~ unexpected_block
+    print(x)
+
+function a_closer_too_many(a: i64
+    print(a) )  #~ expected_params_close expected_end_of_line
+
+function two_lines_then_a_closer(a: i64
+    x = a  #~ expected_params_close
+    print(x) )  #~ expected_end_of_line
+
+function a_group_and_a_closer(n: i64)
+    if (n > 0
+        print(1) )  #~ expected_group_close expected_end_of_line
+
+function a_result_type(a: i64) -> [i64  #~ unclosed_bracket
+    return [a]
+        print(1)  #~ unexpected_block
+
+function a_closer_alone_below(a: i64
+    print(a)  #~ expected_params_close
+)
+
+function a_list_over_two_lines(a: i64,
+                               b: i64)
+    print(a + b)
+
+function main()
+    print(1)

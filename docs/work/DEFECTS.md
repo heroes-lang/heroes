@@ -18,9 +18,9 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 15**
+**OPEN: 18**
 
-- [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
+- [ ] **130 — after a unction main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` overecovery · **class: systemic**
 
     **Origin:** lane 123's agent, 2026-09-28, beside defect 124, on the
     trunk's compiler at `aee8b01e` (reproducers `shapes/y01_three_bad.hero`
@@ -78,13 +78,7 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     assigned by the coordinator**: under an arm written inline, `0 => print(1)`
     over a deeper `print(99)` compiled and ran and printed 1, the deeper line
     thrown away at exit 0, a wrong answer and not only a silence (repaired
-    in lane 130, `47849cc9`); and a misspelled keyword at a top-level head,
-    `recrod Point` over its fields, drops its whole block silently (given to
-    lane 133, whose files it is in; reproducers in
-    `/private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/edfda945-b355-427c-a48e-2113b1040b67/scratchpad/lane-130/`, 2026-09-29).
-
-    **Widened 2026-09-29 by lane 133's agent**: on the compilers of
-    `a6eab736` and `7c0cb024` the parser HUNG, forever, on a line headed by a
+    in lane 130, `47849cc9`); and a misspelled keyword at a by a
     refused word after an `if`, `while` or `for` block (`elif`, or `let`
     after an `if`); lane 130's merge `0ba7b084` ended it, measured at exit 1,
     and a case per shape is owed (`hang/o.hero`, `y3`, `y4`, `y8`, `r`, `s`);
@@ -283,6 +277,45 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     Linux x86-64 on the gate tree, 1,006 tests and 19 suites, 4,171 passed and
     0 failed. The item stays open for the shapes lane recovery-b6's report
     names.
+
+    **2026-10-02, lane recovery-b8, a line that failed past what it declares
+    drops only its line, and the block below it is told** (lane recovery-b6's
+    `d01_use_junk` and `d04_extern_member_junk`): repaired at `525fe2dd`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close.
+
+    **2026-10-02, lane recovery-b8, a function among a record's fields is
+    told once and read as the function it is** (lane recovery-b6's
+    `e14_record_with_fn` and `f06`): repaired at `26358f9c`, gated by its
+    cases and the compiler's own tests; the net is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b8, a block comment over several lines is one
+    comment, told once** (lane recovery-b6's `lc12_block_multi`): repaired at
+    `4ca2c20a`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close.
+
+    **2026-10-02, lane recovery-b8, the body a head's open bracket took in is
+    read as its body** (the head class panel 183 left to the cluster; the
+    audit's rows 130-H-004 and 130-34d): repaired at `276908b3`, gated by its
+    cases and the compiler's own tests; the net is owed at the batch's close.
+
+    **2026-10-02, lane recovery-b8, a closer one too many past a failed
+    statement is told** (the audit's row 130-28): repaired at `ce5caf89`,
+    gated by its own cases alone (the author's instruction of that
+    afternoon); the rest is owed at the round's gate.
+
+    **2026-10-02, the round's gate of lanes recovery-b8, land186 and h158,
+    two of the lane's commits redone**: `ce5caf89`, past a statement that
+    ended with its own block, told the next statement's closer a second
+    time at its column (the compiler's own tests, 3 failed at the gate and
+    at the lane's merge `2dc1a9d7`, 0 at its `276908b3`; the census, 51
+    doubled messages over 19 older goldens), redone at `d105a1e5`, the
+    search bounded by what the drop of the failed line takes; and
+    `525fe2dd` moved the `expected_declaration` arm into
+    `parse/top_level.hero` while the site's claims reader looked for it in
+    `decl.hero` (the site's build, exit 1), followed at `a388a056`. Each
+    gated by its own cases; the round's gate is the commit carrying this
+    line.
 
     **Class: systemic**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): six batches on the
@@ -533,6 +566,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     about it reaches the author at a line they wrote correctly
     (`.claude/rules/generated-c.md`; design.md §4.17).
 
+    **2026-10-02, lane land186, completeness asked of the header's layout
+    and the positional probe gone** (panel 186 R4): repaired at `f2a08f13`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close, and the platform legs before the push.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a clang warning on a
     correct program reaches the author's line.
@@ -558,6 +596,24 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `true` (reproduced by the coordinator at 11:02 on `ae08ed93`), where the
     same union bound alone by one member is `ffi_union_field`
     (`docs/panel/186-briefs/probes/critic/one_arm.hero`).
+
+    **2026-10-02, lane land186, the layout read from clang: a field left out
+    named by it, two fields of one union not built, a misspelling told
+    first** (panel 186 R1, R2, R4): repaired at `f2a08f13`, gated by its
+    cases and the compiler's own tests; the net is owed at the batch's
+    close, and the platform legs before the push.
+
+    **2026-10-02, lane land186, one comparison rule: a field in a union is
+    compared only as an integer, a pointer or an array of them as wide as
+    the union** (panel 186 R3, the widening's `SB` among its cases):
+    repaired at `75ff04b9`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close, and the platform legs before the
+    push.
+
+    **2026-10-02, lane land186, spec § 13 says it, and *as wide as the
+    union* is the width clang gives the union's own block** (panel 186 R6):
+    at `b7c510c5`, gated by its own cases; the rest is owed at the round's
+    gate, and the platform legs before the push.
 
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a wrong value at the C
@@ -622,6 +678,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     bit-field is filtered before its assertion; what such a field binds to,
     if anything, is panel 186's question beside defect 151.
 
+    **2026-10-02, lane land186, a bit-field refused on its own line at
+    build, and one left out sent to `partial`** (panel 186 R5): repaired at
+    `afd07f00`, gated by its cases and the compiler's own tests; the net is
+    owed at the batch's close, and the platform legs before the push.
+
+    **2026-10-02, lane land186, spec § 13's *A bit-field is none of these:
+    leave it to `partial`.*** (panel 186 R6): at `b7c510c5`, gated by its
+    own cases; the rest is owed at the round's gate.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): exit 2 and clang's
     text for a binding the author can be told about.
@@ -640,6 +705,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     note sends the author to a `ptr` and C functions for a union the
     language binds; the refusal itself, of a TAGGED union where a typedef'd
     one binds, is the question panel 186's R9 leaves open with it.
+
+    **2026-10-02, lane land186, the note says what is true, its two routes
+    built and run**: repaired at `24d3d23d`, gated by its own cases; the
+    rest is owed at the round's gate, and the platform legs before the push.
 
     **Widened 2026-10-02** by lane land186's first pass, the same cause (a
     union reached by `tag`): a handle, `record UH tag utag` with no fields
@@ -671,16 +740,16 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     fact also turns a platform's correct skip into a red that would reach
     the CI's Windows leg at the next push.
 
-    **Class: blocking**, 2026-10-02 (the author's *D1a*,
-    `.claude/rules/verification.md` § Bounded discovery): exit 2 and clang's
-    text for the machine's own fact; it would turn the CI's Windows leg red.
-
     **2026-10-02, lane h158, a header the group's own header includes is
     told on the group from clang's line alone, and one reached through other
     headers from the include stack above it**: repaired at `744cdc08` (the
     line) and `7790f2f6` (the stack, the call in `selfhost/emit/ffi.hero`
     handing clang's whole stderr), gated by their cases, the first also by the
     compiler's own tests; the net is owed at the batch's close.
+
+    **Class: blocking**, 2026-10-02 (the author's *D1a*,
+    `.claude/rules/verification.md` § Bounded discovery): exit 2 and clang's
+    text for the machine's own fact; it would turn the CI's Windows leg red.
 
 - [ ] **159 — a `-` alone on the line above an arm's pattern is joined to it with certainty, though deleting it is as likely a reading** | `k = match n` over a line holding only `-` and then `1 => "one"`, `_ => "many"`, with `n = 1`: `continuation_outside_brackets` with the certain fix *write the statement on one line*, and `check --apply` writes `-1 => "one"`, which checks clean and prints `many`; deleting the `-` gives `1 => "one"` and prints `one` | the lexer's join of a line ending in an operator (`continuation_outside_brackets`'s certain fix) · design.md §4.8 (*two readings make two guesses*) · defect 135's class, closed 2026-10-02 · **class: blocking**
 
@@ -805,5 +874,49 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     Mac, a run case printing -1, an unsupported case refusing `@p: u8` and
     two unit tests asking clang for Linux arm64's target; its Linux arm64
     leg, where the defect shows, is owed before the push with the net.
+
+- [ ] **164 — a record field misspelt as a name the header defines as a macro stops `build` with an internal error and clang's text** | `extern "macro_field.h"` over `#define size 4` and `typedef struct { int32_t len; int32_t cap; } BUF;`, `record BUF` naming `len` and `size`: `build` exit 2, *internal error: compiling the generated C failed: ... error: expected identifier ... note: expanded from macro 'size'*, at the field assertion; the same with `stdin`, which a libc defines as a macro | `selfhost/emit/` (the field assertion, `heroes-ffi-field`, and the unknown-field mapper) · **class: blocking**
+
+    **Origin:** lane land186's second batch, 2026-10-02, beside panel 186's
+    macro-reached fields (`scratchpad/lane-land186/pass2/macro_field.hero`,
+    `macro_field_stdio.hero`); reproduced by the coordinator at 17:43 by
+    `date` on the trunk at `20652888`
+    (`docs/panel/186-briefs/probes/coordinator/macrofield/`).
+
+    **Why it is a defect.** Exit 2 is the compiler blaming itself for a
+    misspelling the author can be told about, and clang's text reaches the
+    author (`.claude/rules/c-boundary.md`).
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): exit 2. Repaired in lane land186 at `25b96332`,
+    gated by its own cases; the rest is owed at the round's gate.
+
+- [ ] **165 — a `+` or `*` alone on the line above an arm's pattern gets a join that no pattern takes, and a second message** | `k = match n` over a line holding only `+` (or `*`) and then `1 => "one"`: `continuation_outside_brackets` with the guess *write the statement on one line*, which writes `+1 => "one"`, then `expected_pattern` at the `+`; no deletion of the line is offered | the join of a line ending in an operator (lane h158's `sign_above.hero`, beside defect 159) · **class: adjacent**
+
+    **Origin:** lane h158's first pass for defect 159, 2026-10-02
+    (`scratchpad/lane-h158/d159/s09_plus.hero`, `s12_star.hero`);
+    reproduced by the coordinator at 18:37 by `date` on the trunk at
+    `4b44f684` (`docs/panel/186-briefs/probes/coordinator/adjacent/`, kept as
+    text since they do not parse).
+
+    **Why it is a defect.** The one fix offered writes a program that is
+    refused anew, and one mistake costs two messages (design.md §4.17).
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): a second message for one mistake and a guess that
+    does not compile; no wrong value and no false message.
+
+- [ ] **166 — a `-` alone above a name or a float pattern is told `expected_pattern` twice at the same place** | `k = match n` over a line holding only `-` and then `x => "one"` (or `1.5 => "one"`): `continuation_outside_brackets`, then `expected_pattern` twice at the name or the number, the same text at the same column | the pattern's refusal after the join of a `-` line (the same on the compiler before lane h158) · **class: adjacent**
+
+    **Origin:** lane h158's first pass for defect 159, 2026-10-02
+    (`scratchpad/lane-h158/d159/s18_name_below.hero`, `s19_float_below.hero`);
+    reproduced by the coordinator at 18:37 by `date` on the trunk at
+    `4b44f684` (`docs/panel/186-briefs/probes/coordinator/adjacent/`).
+
+    **Why it is a defect.** One mistake told twice at one place (design.md
+    §4.17).
+
+    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
+    Bounded discovery): a second message for one mistake.
 
 *******************************************************************************

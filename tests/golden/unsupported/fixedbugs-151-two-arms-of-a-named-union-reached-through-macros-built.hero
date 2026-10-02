@@ -1,0 +1,24 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R2), found by the
+# panel's ffi-pragmatist on libc's `struct sigaction`.
+#
+# SYMPTOM: a record naming two arms a header macro reaches in one named union
+# (`sa_handler` and `sa_sigaction` are `__sigaction_u`'s) was built at exit 0
+# with four clang warnings on the author's lines, C keeping whichever arm was
+# written last.
+#
+# CAUSE: the dump of the layout does not show a field a macro names, and the
+# union rule never asked about one.
+#
+# FIX: a field the dump does not show is asked about by its own name, which
+# C's `__builtin_offsetof` follows through the macro, and two declared fields
+# sharing bytes are refused at `build` wherever the union sits.
+
+extern "fixedbugs-151-unions.h"
+    record NUW  #~ ffi_union_field
+        kind: i32
+        nu_small: u8
+        nu_big: u64
+
+function main()
+    n = NUW(kind: 1, nu_small: 2, nu_big: 3)
+    print(n.kind)

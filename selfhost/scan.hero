@@ -153,17 +153,21 @@ function foreign_comment(@l: state.LexState, text: str)
         return
 
     if block
-        end = comment_habit.block_end(text, from: start + 2)
+        end = comment_habit.comment_end(text, at: start)
+        lines: str @ ""
+
+        # Over several lines, one comment, each of its lines owing its own `#`.
+        if comment_habit.block_end(text, from: start + 2) < 0
+            lines @ ", so each line of this one begins with its own"
         d: diag.Diagnostic @ diag.new_diagnostic(
             code: "unexpected_character",
-            message: "`/*` is not part of the language's syntax — a comment begins with `#` and runs to its line's end",
+            message: "`/*` is not part of the language's syntax — a comment begins with `#` and runs to its line's end" + lines,
             span: token.Span(start: start, end: start + 2)
         )
 
         if comment_habit.holds_the_line(text, at: start)
-            inner = comment_habit.inner_of(text, from: start + 2, to: end - 2)
             d.fixes @ d.fixes.push(
-                diag.Fix(title: "write the comment with `#`", replacement: "# " + inner, span: token.Span(start: start, end: end), certainty: .certain)
+                diag.Fix(title: "write the comment with `#`", replacement: comment_habit.written_with_hashes(text, at: start, end: end), span: token.Span(start: start, end: end), certainty: .certain)
             )
         state.push_diagnostic(@l.diagnostics, d)
         comment_token(@l, start: start, end: end)

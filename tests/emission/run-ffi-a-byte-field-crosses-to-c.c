@@ -19,17 +19,9 @@ _Static_assert(sizeof(Slot) - __builtin_offsetof(Slot, tag) != 0, "heroes-ffi-fl
 _Static_assert(__builtin_classify_type(((Slot *)0)->id) == 1 && sizeof(((Slot *)0)->id) == sizeof(int64_t) && (_Generic(((Slot *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Slot id");
 #line 19 "ffiabytefieldcrossestoc.c"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic error "-Wmissing-field-initializers"
-#pragma clang diagnostic ignored "-Wmissing-braces"
-#line 34 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-__attribute__((unused)) static void hero_ffi_complete_h_ffiabytefieldcrossestoc_Slot(void) { Slot v = {{},{},0}; (void)v; }
-#line 26 "ffiabytefieldcrossestoc.c"
-#pragma clang diagnostic pop
-
 #line 34 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 _Static_assert(__builtin_classify_type(*(Slot *)0) != 13, "heroes-ffi-union Slot nsap tag id");
-#line 31 "ffiabytefieldcrossestoc.c"
+#line 23 "ffiabytefieldcrossestoc.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -112,7 +104,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 114 "ffiabytefieldcrossestoc.c"
+#line 106 "ffiabytefieldcrossestoc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiabytefieldcrossestoc_Slot_eq(const Slot *a, const Slot *b);
@@ -134,7 +126,7 @@ void h_ffiabytefieldcrossestoc_main(void);
 
 #line 41 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 void h_ffiabytefieldcrossestoc_main(void) {
-#line 136 "ffiabytefieldcrossestoc.c"
+#line 128 "ffiabytefieldcrossestoc.c"
     Slot h0_s;
     h_0opt_e201354 h1_f0 = {0};
     Slot h2_t;
@@ -294,15 +286,15 @@ bb0:
     t76 = h4_own4;
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h4_own4 = t40;
-#line 296 "ffiabytefieldcrossestoc.c"
+#line 288 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&t76);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t77 = h1_f0;
-#line 300 "ffiabytefieldcrossestoc.c"
+#line 292 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_retain(&t40);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h1_f0 = t40;
-#line 304 "ffiabytefieldcrossestoc.c"
+#line 296 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&t77);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t41 = h1_f0;
@@ -378,15 +370,15 @@ bb1:
     t78 = h5_own5;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h5_own5 = t67;
-#line 380 "ffiabytefieldcrossestoc.c"
+#line 372 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&t78);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t79 = h3_f1;
-#line 384 "ffiabytefieldcrossestoc.c"
+#line 376 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_retain(&t67);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h3_f1 = t67;
-#line 388 "ffiabytefieldcrossestoc.c"
+#line 380 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&t79);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t68 = h3_f1;
@@ -404,7 +396,7 @@ bb2:
     t45 = h1_f0;
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t46 = t45.as.err;
-#line 406 "ffiabytefieldcrossestoc.c"
+#line 398 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb3:
@@ -416,16 +408,16 @@ bb3:
     hero_print_str(t75);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     hero_print_end();
-#line 418 "ffiabytefieldcrossestoc.c"
+#line 410 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&h1_f0);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-#line 421 "ffiabytefieldcrossestoc.c"
+#line 413 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&h3_f1);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-#line 424 "ffiabytefieldcrossestoc.c"
+#line 416 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&h4_own4);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-#line 427 "ffiabytefieldcrossestoc.c"
+#line 419 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&h5_own5);
     return;
 bb4:
@@ -433,7 +425,7 @@ bb4:
     t72 = h3_f1;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t73 = t72.as.err;
-#line 435 "ffiabytefieldcrossestoc.c"
+#line 427 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t73);
     hero_unreachable();
 }
