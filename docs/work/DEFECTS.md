@@ -777,6 +777,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     batch's close. Left open: an `f"…"` literal open at a CRLF end with no
     backslash before it, whose loop is `lex_interp.hero:67`.
 
+    **2026-10-02, lane literals, `'\'` is a backslash or an apostrophe, both
+    guesses, and a later quote on its line leaves it whole** (the audit's
+    L3; beside it `c == '\' || c == '"'` read as one wider literal):
+    repaired at `8012b34c`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close, and so is the deletion of
+    `fixedbugs-131-a-literal-that-never-closed-takes-its-line.applied`,
+    which pinned the old certain fix.
+
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe)
 
     **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (a header of its own
