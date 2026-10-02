@@ -8,7 +8,8 @@
 # head is read as a top-level one is. The body is the caller's, which is what
 # lets this be a leaf: it reads types, parameters and marks, and nothing that
 # reads the grammar. A result written after `:` or `=>` is told here since
-# 2026-09-30 (`arrow_habit`), where what follows the parameters is decided.
+# 2026-09-30 (`arrow_habit`), where what follows the parameters is decided,
+# its fix `certain` only where the head has a body below it or none is owed.
 
 use token
 use diag
@@ -18,6 +19,7 @@ use ast
 use parse/type
 use parse/line_end
 use parse/brace_habit
+use parse/opening
 use parse/colon_habit
 use parse/members as parse_members
 use parse/marks as parse_marks
@@ -98,6 +100,19 @@ function arrow_habit(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) 
 
     if probe.diagnostics.len() != said || !ends
         return false
+
+    # The reading is `certain` only where it is the line's one: in an `extern`
+    # group, where no signature has a body, or over a body below the head,
+    # indented, tabbed or in braces. Over none, what follows is as likely the
+    # body written on the head's line, Python's `pass` or an expression body,
+    # `=> value` (defect 135's P8, lane recovery-b7): applied, `function
+    # stub(): pass` became `-> pass`, refused anew for its missing body.
+    certainty: diag.Certainty @ .guess
+    tail: str @ ", and the body goes on the lines below the head, one level deeper"
+
+    if in_group || brace_habit.ending(probe, text) >= 0 || opening.body_below(probe, text)
+        certainty @ .certain
+        tail @ ""
     written = cursor.current_span(c)
     shown = text.slice(from: first.start, to: cursor.previous_significant_span(probe).end)
     fix: str @ "->"
@@ -109,11 +124,11 @@ function arrow_habit(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) 
         fix @ fix + " "
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "expected_end_of_line",
-        message: "expected `->` or the end of the line, found `" + cursor.slice_of(text, written) + "` — a `function`'s result type is written after `->`: `-> " + shown + "`",
+        message: "expected `->` or the end of the line, found `" + cursor.slice_of(text, written) + "` — a `function`'s result type is written after `->`: `-> " + shown + "`" + tail,
         span: written
     )
     d.fixes @ d.fixes.push(
-        diag.Fix(title: "write the result type after `->`", replacement: fix, span: written, certainty: .certain)
+        diag.Fix(title: "write the result type after `->`", replacement: fix, span: written, certainty: certainty)
     )
     cursor.push_diagnostic(@c.diagnostics, d)
     _ = cursor.bump(@c)
@@ -132,13 +147,21 @@ function read_of(text: str) -> cursor.Cursor
     return c
 
 test "a result written after a colon or a fat arrow is told once, with the fix that writes the arrow"
-    c = read_of("function f(): i64\n")
+    c = read_of("function f(): i64\n    return 1\n")
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "expected_end_of_line"
     assert c.diagnostics[0].fixes[0].certainty == .certain
     assert c.diagnostics[0].fixes[0].replacement == " ->"
     assert cursor.at(c, .terminator)
     assert read_of("function f() => [i64]\n").diagnostics[0].fixes[0].replacement == "->"
+
+    # Certain only over a body, or in a group, where no signature has one
+    # (defect 135's P8): over none, the word after the `:` may be the body.
+    for text in ["function f(): i64 {\n", "function f(): i64\n{\n", "function f(): i64\n\treturn 1\n"]
+        assert read_of(text).diagnostics[0].fixes[0].certainty == .certain
+
+    for text in ["function stub(): pass\n", "function answer(value: i64) => value\n\nfunction main()\n", "function f(): i64\n"]
+        assert read_of(text).diagnostics[0].fixes[0].certainty == .guess
 
     # A one-line suite reads as no result: the `:` is left to the head.
     d = read_of("function f(): print(1)\n")

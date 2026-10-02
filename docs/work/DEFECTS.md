@@ -606,6 +606,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     still open are the next batch lane's items, found beside the repairs, and
     this item stays open until they are repaired and a batch gate reads them.
 
+    **2026-10-02, lane recovery-b7, a declaration whose head failed, or holds
+    a word the lexer refused, is told the body or the members it lacks in the
+    same run** (the audit's 133-a-fswap2, 133-m-const_alone, 133-m-fn_alone;
+    beside them `$`, `0X` or `let` after a head, `record P fn`, `extern "m.h"
+    fn`, `if true fn` over its margin, and `function`, `function f`,
+    `constant MAX`, `test`, `record`, `variant` that failed over nothing):
+    repaired at `97bbdc68`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
 - [ ] **135 — a `certain` fix chosen from one reading, where another is as likely, writes a program that means something else or is refused anew** | `print("\(n)")` costs `unknown_escape` with the certain fix `\\(`, which checks clean and prints the hole's text where Swift's author meant its value; `True` costs `unknown_name` with the certain rename to the one in-scope name within two edits, `run` or `Value`, which then costs `type_mismatch`; a `,` left out before a mutable argument, `hints: nullptr @res`, costs `misplaced_mutable_marker` with the certain `: ` that writes `nullptr : @res`, refused anew | `selfhost/literals.hero:60` (the escape's fix) · `selfhost/resolve/errors.hero` (`suggest`, `nearest`) · `selfhost/grammar_expr.hero` (`misplaced_mutable_marker`)
 
     **Origin:** the coordinator's measurement lane, 2026-09-30, the parser
