@@ -1,0 +1,28 @@
+# Panel 186 R7, lane land186, 2026-10-02: a group's record over a C union is
+# built naming exactly one member of each union, an anonymous struct's fields
+# counting as one, and every field outside them (spec § 13); what a
+# construction leaves out is judged by `build` from the header's layout.
+#
+# The program the sitting's second blind reading wrote under the same rule:
+# the record names the integer arm alone, builds the float through its bits,
+# and compares, since an `i32` as wide as its union compares every byte of
+# it (R3). It built before R7 as well; it is the route R7 leaves standing.
+
+extern "ffi-a-construction.h"
+    record SA
+        kind: i32
+        i: i32
+        x: i32
+    function make_sa() -> SA
+    function sa_f(s: SA) -> f32
+    function sa_x(s: SA) -> i32
+
+function main()
+    m = make_sa()
+    print(m.i)
+    b = SA(kind: 2, i: 0x3fc0_0000, x: 4)
+    print(sa_f(b))
+    print(sa_x(b))
+    p = make_sa()
+    q = make_sa()
+    print(p == q)

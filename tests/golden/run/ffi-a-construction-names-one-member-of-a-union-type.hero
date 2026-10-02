@@ -1,0 +1,19 @@
+# Panel 186 R7, lane land186, 2026-10-02: a group's record over a C union is
+# built naming exactly one member of each union, an anonymous struct's fields
+# counting as one, and every field outside them (spec § 13); what a
+# construction leaves out is judged by `build` from the header's layout.
+#
+# A union TYPE: the record names both members and reads either, and a
+# construction names one. `f` 1.5 reads back through `i` as its bits,
+# 0x3fc00000, in C and in Heroes alike.
+
+extern "ffi-a-construction.h"
+    record UT
+        i: i32
+        f: f32
+    function ut_i(u: UT) -> i32
+
+function main()
+    u = UT(f: 1.5)
+    print(ut_i(u))
+    print(u.i)

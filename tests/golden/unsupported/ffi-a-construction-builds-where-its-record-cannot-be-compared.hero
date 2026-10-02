@@ -1,0 +1,26 @@
+# Panel 186 R7, lane land186, 2026-10-02: a group's record over a C union is
+# built naming exactly one member of each union, an anonymous struct's fields
+# counting as one, and every field outside them (spec § 13). What a
+# construction leaves out is judged by `build`, from the header's layout, at
+# the construction (`selfhost/emit/layout_sites.hero`).
+#
+# The natural program the sitting's second blind reading described: the
+# record names both arms, the construction names `f`, and `p == q` is refused
+# on the record, because an `f32` arm is not compared bit for bit (R3). The
+# construction itself is legal; only the comparison is told.
+
+extern "ffi-a-construction.h"
+    record SA  #~ ffi_union_field
+        kind: i32
+        i: i32
+        f: f32
+        x: i32
+    function make_sa() -> SA
+    function sa_f(s: SA) -> f32
+
+function main()
+    b = SA(kind: 2, f: 1.5, x: 4)
+    print(sa_f(b))
+    p = make_sa()
+    q = make_sa()
+    print(p == q)
