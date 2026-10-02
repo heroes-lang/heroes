@@ -238,12 +238,18 @@ compiler-engineer's veto on (1c) compels a written answer, given above.
 
 ## Author's verdict
 
-**PENDING.** Queued as `panel 185` in `docs/work/DECIDE.md`: ratify, amend or
-overturn R1 to R8, and for R7 choose (a) one blind reading of (5b)'s wording
-(one session, 3 USD cap, this sitting's cost 0.61 USD), landing (5b) if it
-approves, or (b) a ruling that the reading's earlier objection, a locality of
-compiling, falls outside the condition, since the author's ruling of
-2026-10-01 put legality outside design.md §1.3, landing (5b) after R1.
+**RATIFIED 2026-10-02**, on the author's answer of the night, meant as:
+*ratify R1 to R8, and for R7 choose (a)*. **Recorded as a reading**, CLAUDE.md
+§ 4's default; not `by delegation`.
+
+**What the yes settles**: R1 to R8 as the resolution above states them; and
+for R7, route (a): one blind reading of (5b)'s wording, one fresh session
+capped at 3 USD, (5b) landing after panel 184's R1 if the reading approves the
+wording, and going back to the author if it does not. **What it does not
+settle**: the landings, each a lane's batch with its cases, R1 run on Linux
+x86-64, Linux arm64 and the Windows box before it is called done, R5's seal
+with its `emission` run, and R4's sentence and R3's production priced in the
+landing's tree.
 
 ## The critic's two passes
 
