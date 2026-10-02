@@ -287,7 +287,7 @@ function could_take(c: state.Checker, a: ast.Ast, decls: [ast.Decl], value: i64,
 # str) -> str) @ report` where `report` is `(code, msg)` — and the call site
 # would obey the annotation while the callee obeyed itself. With the names in
 # the type's identity (`check/table.hero`) that assignment is a mismatch.
-# Moved here from `check/walk.hero` on 2026-10-02 (lane flow4), unchanged,
+# Moved here from `check/walk.hero` on 2026-10-03 (lane flow4), unchanged,
 # beside the rule that reads labels at a call: it calls nothing back in the
 # walk, and the walk's decided ceiling had no room for panel 185's R4.
 function declared_labels(s: source.Source, params: [ast.Param], lowered: [i64]) -> [str]

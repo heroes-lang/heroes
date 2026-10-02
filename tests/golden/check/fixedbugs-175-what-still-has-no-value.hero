@@ -80,3 +80,7 @@ function refused_jumps(k: i64, c: bool) -> i64
         _ => 20
 
     return x
+
+# Corrected 2026-10-03, lane flow4: the first line's date is one day early by
+# the clock. This case and its repair were written, run and committed on
+# 2026-10-03 (`937ae12f`), the lane's work having begun on 2026-10-02.

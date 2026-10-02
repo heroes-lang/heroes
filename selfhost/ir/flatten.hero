@@ -125,7 +125,7 @@ function statement(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: stat
 
 # Out of `statement`, which every nested block recurses through: its frame
 # fell 3,744 bytes, where panel 185's R5 had added 512 to a level of `if`s
-# (lane flow4, 2026-10-02, `clang -fstack-usage`; `build` 141 deep to 149).
+# (lane flow4, 2026-10-03, `clang -fstack-usage`; `build` 141 deep to 149).
 function mutation(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], into: i64, value: i64, span: token.Span)
     target = place(@b, a, r, c, s, decls, id: into)
     produced = expr(@b, a, r, c, s, decls, id: value)
