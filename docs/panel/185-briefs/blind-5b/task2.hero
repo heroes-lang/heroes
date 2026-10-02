@@ -1,0 +1,7 @@
+function main()
+    total: i64 @ 0
+    for n in [4, 5, 6]
+        total @ total + n
+    print("total {total}")
+    print("{\"id\": 7, \"ok\": true}")
+    print(f"done: {total > 10}")
