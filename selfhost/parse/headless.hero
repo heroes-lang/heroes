@@ -17,14 +17,18 @@
 # is parsed:
 #
 # - a FIELD is `name: type`, and a block with one such line is a record's
-#   fields, read by `member_lines.field_block`;
+#   fields, read by `member_lines.field_block`, unless a line in it is a
+#   declaration's, below;
 # - a CASE is a name alone on its line, and a block whose first line is one
 #   is a variant's cases, read by `member_lines.case_block`;
 # - a line opened by a declaration's keyword makes it a block of
 #   declarations, `class Q` over its methods, which the caller reads as the
 #   declarations it holds (`grammar_expr.declarations`, `parse/heads`); it
 #   went whole until 2026-09-29, every mistake in it unsaid (lane X1's
-#   finding 9);
+#   finding 9). A field's line among them is read as a field: `class Q` over
+#   `x: i64` and a method was read as fields, the method told
+#   `expected_field` and its body `unexpected_block`, unread, though the
+#   class's own message says where its methods go (lane recovery-b8);
 # - anything else is a statement, and the block is a body, which the caller
 #   reads with `grammar_expr.hanging`, as the body under any head that failed.
 #
@@ -110,7 +114,7 @@ function shape_of_block(c: cursor.Cursor, text: str, word: i64, block: cursor.Cu
     named = head_kind.named_by(c, text, word: word)
 
     if named.is_err()
-        return shape_below(block)
+        return shape_below(block, text)
     k = named.must()
 
     if k == .kw_record
@@ -121,7 +125,7 @@ function shape_of_block(c: cursor.Cursor, text: str, word: i64, block: cursor.Cu
 
     if k == .kw_function || k == .kw_test || k == .kw_constant
         return .statements
-    return shape_below(block)
+    return shape_below(block, text)
 
 # Read the block under the cursor's indent as the fields or cases its shape
 # names, and say what is left for the caller.
@@ -168,8 +172,12 @@ function refused_head(c: cursor.Cursor, text: str, at: i64) -> bool
 
 # The shape of the block whose `indent` the cursor stands on: its own lines
 # only, since a deeper block belongs to the line above it.
-function shape_below(c: cursor.Cursor) -> Shape
+function shape_below(c: cursor.Cursor, text: str) -> Shape
     starts = line_starts(c)
+
+    for start in starts
+        if declares_at(c, text, start: start)
+            return .members
 
     for start in starts
         if field_shaped(c.tokens, start)
@@ -177,11 +185,6 @@ function shape_below(c: cursor.Cursor) -> Shape
 
     if starts.len() > 0 && case_shaped(c.tokens, starts[0])
         return .cases
-
-    for start in starts
-        if opens_a_declaration(c.tokens[start].kind)
-            return .members
-
     return .statements
 
 # Whether the line under the indent the cursor stands on holds a `=>` outside
@@ -208,8 +211,31 @@ function arms_below(c: cursor.Cursor) -> bool
 
     return false
 
+# Whether a line of the block under the cursor's indent, at the block's own
+# depth, is opened by a declaration's keyword: `function f()` among a
+# record's fields (`parse/records`).
+function declares_inside(c: cursor.Cursor, text: str) -> bool
+    for start in line_starts(c)
+        if declares_at(c, text, start: start)
+            return true
+
+    return false
+
+# Whether the line begun at token `start` is opened by a declaration's
+# keyword, or by a word the lexer refused that declares one, `def f(self):`
+# under `class Q` (`parse/refused_heads`).
+function declares_at(c: cursor.Cursor, text: str, start: i64) -> bool
+    t = c.tokens[start]
+
+    if opens_a_declaration(t.kind)
+        return true
+
+    if t.kind != .error
+        return false
+    return !refused_heads.declares(cursor.slice_of(text, t.span)).is_err()
+
 function opens_a_declaration(kind: token.TokenKind) -> bool
-    return kind == .kw_function || kind == .kw_constant || kind == .kw_record || kind == .kw_variant
+    return kind == .kw_function || kind == .kw_constant || kind == .kw_record || kind == .kw_variant || kind == .kw_test
 
 # Where each line of the block begins, at the block's own depth.
 function line_starts(c: cursor.Cursor) -> [i64]
@@ -285,7 +311,7 @@ function shape_of(kinds: [token.TokenKind]) -> Shape
         tokens @ tokens.push(tok(kind, i))
         i @ i + 1
 
-    return shape_below(cursor.new_cursor(tokens))
+    return shape_below(cursor.new_cursor(tokens), "")
 
 test "a block is read as fields, cases or a body by the shape of its lines"
     # x: i64 / y i64 (the broken field second)
