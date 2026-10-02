@@ -627,10 +627,22 @@ test "a join the parser refuses only as joined costs the break alone"
     eol = "expected_end_of_line"
     arm = "function main()\n    k = match n\n        "
 
-    for shape in ["0 => 5 -\n        1 => 10\n", "0 => 5\n        | 1 => 10\n", "0 =>\n        _ => 2\n", "0 => 1\n        * 2 => 3\n", "0 => 5 -\n        # a note\n        1 => 10\n"]
+    for shape in ["0 => 5 -\n        1 => 10\n", "0 =>\n        _ => 2\n", "0 => 5 -\n        # a note\n        1 => 10\n"]
         joined = parse(arm + shape + "        _ => 20\n")
         assert codes(joined.diagnostics) == [cob]
         assert codes(joined.control) == [cob, eol]
+
+    # A line that holds an arm's `=>` below a whole arm is no break but an arm,
+    # whose operator is its pattern's one mistake (defect 132's last row); an
+    # arm's patterns broken before a `|` are a break, whose join is the arm.
+    for shape in ["0 => 5\n        | 1 => 10\n", "0 => 1\n        * 2 => 3\n"]
+        own = parse(arm + shape + "        _ => 20\n")
+        assert codes(own.diagnostics) == ["expected_pattern"]
+        assert codes(own.control) == ["expected_pattern"]
+
+    alternation = parse(arm + "0\n        | 1 => 10\n        _ => 20\n")
+    assert codes(alternation.diagnostics) == [cob]
+    assert codes(alternation.control) == [cob]
 
     crlf = parse("function main()\r\n    k = match n\r\n        0 => 5 -\r\n        1 => 10\r\n")
     assert codes(crlf.diagnostics) == [cob]
@@ -665,7 +677,7 @@ test "a mistake the lines make apart is still said beside the break"
     eol = "expected_end_of_line"
     shapes = [
         "function main()\n    k = match n\n        0 => 5 -\n        1 => 10 )\n        _ => 20\n"
-        "function main()\n    k = match n\n        0 => 5\n        | 1 => 10 )\n        _ => 20\n"
+        "function main()\n    k = match n\n        0\n        | 1 => 10 )\n        _ => 20\n"
         "function main()\n    for\n        print(1) )\n"
         "function main()\n    if\n        print(1) )\n"
         "function main()\n    x = n +\n    n )\n"
@@ -680,6 +692,10 @@ test "a mistake the lines make apart is still said beside the break"
         last = got.diagnostics[got.diagnostics.len() - 1]
         assert text.slice(from: last.span.start, to: last.span.end) == ")"
 
+    # An arm whose pattern begins with an operator, below a whole arm, is
+    # read past the operator, and its `)` is said beside its pattern's report.
+    pipe = parse("function main()\n    k = match n\n        0 => 5\n        | 1 => 10 )\n        _ => 20\n")
+    assert codes(pipe.diagnostics) == ["expected_pattern", eol]
     before = parse("function main()\n    x = ) +\n    n )\n")
     assert codes(before.diagnostics) == [cob, "expected_expression", eol]
     tabbed = parse("function\n\ty = 3 )\n")
