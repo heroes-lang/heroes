@@ -383,8 +383,10 @@ test "a line end before every closer and every comma stands, and is one separato
 # nothing, and its deletion is certain; and a tab setting the `-` apart goes
 # with it, where the sign wrote the tab into the margin. And the `-` alone on
 # the line above an arm, the lexer's, joins without a space, to `-1`, where
-# the join wrote `- 1`, which the rule refuses; the join is asked alone,
-# since the parentheses offered beside it wrap a pattern (defect 126).
+# the join wrote `- 1`, which the rule refuses, and no parentheses are offered
+# beside it, since they would wrap a pattern (defect 126); since defect 159 the
+# deletion of the `-`'s line stands beside the join, the two guesses this rule
+# makes on the arm's own line.
 test "an arm opened by a minus set apart from its literal is refused, and its fixes parse"
     code = "spaced_minus_element"
     shapes = [
@@ -435,11 +437,12 @@ test "an arm opened by a minus set apart from its literal is refused, and its fi
     split = "function main()\n    k = match n\n        -\n        1 => 10\n        _ => 20\n"
     broken = parse(split)
     assert broken.diagnostics.len() == 1
-    mend = broken.diagnostics[0].fixes[0]
-    assert mend.replacement == ""
-    assert mend.certainty == .certain
-    joined = split.slice(from: 0, to: mend.span.start) + mend.replacement + split.slice(from: mend.span.end, to: split.len())
-    assert parse(joined).diagnostics.len() == 0
+    assert broken.diagnostics[0].fixes.len() == 2
+
+    for mend in broken.diagnostics[0].fixes
+        assert mend.certainty == .guess
+        rewritten = split.slice(from: 0, to: mend.span.start) + mend.replacement + split.slice(from: mend.span.end, to: split.len())
+        assert parse(rewritten).diagnostics.len() == 0
 
 test "the unary spelling, a minus after a join and a minus in an arm's body are not asked"
     for text in ["function main()\n    k = match n\n        -1 => 10\n        _ => 20\n", "function main()\n    k = match n\n        2 | - 1 => 10\n        _ => 20\n", "function main()\n    k = match n\n        0 => - 1\n        _ => 20\n"]
@@ -449,8 +452,11 @@ test "the unary spelling, a minus after a join and a minus in an arm's body are 
 # a comment that ends it, is refused once, as a line that cannot end with
 # `-`, after an inline arm and after a block arm as for the first, where the
 # later ones cost three diagnostics and a `certain` join to the arm above
-# that did not parse. The join writes `-1` and parses; with a comment there
-# is none, and no parentheses are offered around a pattern, which takes none.
+# that did not parse. The join writes `-1` and parses, and no parentheses are
+# offered around a pattern, which takes none. Since defect 159 the deletion of
+# the `-`'s line stands beside the join, both guesses, the sign and a stray
+# being two programs; with a comment the deletion alone, which leaves the
+# comment where it stood, since a join would carry it into the arm.
 test "an arm broken after its sign is refused once, and no fix wraps a pattern"
     code = "continuation_outside_brackets"
     split = [
@@ -464,8 +470,10 @@ test "an arm broken after its sign is refused once, and no fix wraps a pattern"
         assert every_fix_parses(text: text, code: code)
         broken = parse(text)
         assert broken.diagnostics.len() == 1
-        assert broken.diagnostics[0].fixes.len() == 1
+        assert broken.diagnostics[0].fixes.len() == 2
         assert broken.diagnostics[0].fixes[0].replacement == ""
+        assert broken.diagnostics[0].fixes[0].certainty == .guess
+        assert broken.diagnostics[0].fixes[1].certainty == .guess
 
     commented = [
         "function main()\n    k = match n\n        -  # the sign\n        1 => 10\n        _ => 20\n"
@@ -474,10 +482,12 @@ test "an arm broken after its sign is refused once, and no fix wraps a pattern"
     ]
 
     for text in commented
+        assert every_fix_parses(text: text, code: code)
         broken = parse(text)
         assert broken.diagnostics.len() == 1
         assert broken.diagnostics[0].code == code
-        assert broken.diagnostics[0].fixes.len() == 0
+        assert broken.diagnostics[0].fixes.len() == 1
+        assert broken.diagnostics[0].fixes[0].certainty == .guess
 
 # Defect 124: after at most one `-`, a pattern takes one literal token, an
 # integer, a string or a character (spec § 8), and nothing goes on after it,

@@ -20,6 +20,11 @@
 # writes neither: this case's answer is an `.applied` where it was a
 # `.fixed`, the lexer's join alone. Before a string the `-` signs nothing,
 # and its deletion is certain (`fixedbugs-135-p5-*`).
+#
+# Corrected again 2026-10-02, defect 159, lane h158: the lexer's join is a
+# `guess` too, beside the deletion of the `-`'s line, the two readings R6
+# makes on the arm's own line, so `--apply` writes nothing here and this case
+# has no `.applied` now.
 
 function pick(n: i64) -> i64
     return match n

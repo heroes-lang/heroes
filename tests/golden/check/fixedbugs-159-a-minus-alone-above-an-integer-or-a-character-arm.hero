@@ -1,0 +1,31 @@
+# fixedbugs, defect 159, lane h158, 2026-10-02.
+#
+# Symptom: `k = match n` over a line holding only `-` and then `1 => "one"`,
+# `_ => "many"`, with `n = 1`, was refused with the `certain` fix *write the
+# statement on one line*, and `check --apply` wrote `-1 => "one"`, which
+# checks clean and prints `many`; deleting the `-` gives `1 => "one"`, which
+# prints `one`. Cause: the lexer joined the `-` to the pattern below as its
+# sign and weighed no other reading (`selfhost/open_line.hero`). Over an
+# integer or a character both readings are programs that mean two things,
+# so the join and the deletion of the `-`'s line are both guesses
+# (`selfhost/sign_above.hero`), panel 185 R6's rule for the same `-` set
+# apart on the arm's own line, and `--apply` writes neither.
+
+function pick(n: i64) -> str
+    return match n
+        #~v continuation_outside_brackets
+        -
+        1 => "one"
+        _ => "many"
+
+function letter(c: i64) -> str
+    return match c
+        0 => "zero"
+        #~v continuation_outside_brackets
+        -
+        'a' => "a"
+        _ => "other"
+
+function main()
+    print(pick(1))
+    print(letter('a'))

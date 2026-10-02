@@ -65,6 +65,7 @@ use parse/which_arm
 use parse/readings
 use parse/below_a_head as below
 use parse/joined_lines as seams
+use join_fix
 
 # One diagnostic of the joined reading in the order it is said, the held ones
 # where `placed` puts them: said as the parser said it, or held back
@@ -204,8 +205,16 @@ function joins_guessed(@lexed: lexer.LexOutput, lines: [seams.Line], froms: [i64
         while next < statements.len() && statements[next] < b.statement
             next @ next + 1
 
-        if next < statements.len() && statements[next] == b.statement && lexed.diagnostics[b.diagnostic].fixes.len() > 0
-            lexed.diagnostics[b.diagnostic].fixes[0].certainty @ .guess
+        # The break's join, by its title (`join_fix`): a deletion offered
+        # beside it or in its place is no join, and a line the lexer ended
+        # rather than refused (`diagnostic` -1) has neither.
+        at: i64 @ -1
+
+        if b.diagnostic >= 0
+            at @ join_fix.index(lexed.diagnostics[b.diagnostic])
+
+        if next < statements.len() && statements[next] == b.statement && at >= 0
+            lexed.diagnostics[b.diagnostic].fixes[at].certainty @ .guess
 
 # `items` with each of `added`, which ascend, before the first item that stands
 # after it in the text.

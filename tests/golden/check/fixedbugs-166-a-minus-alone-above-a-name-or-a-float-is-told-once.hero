@@ -1,0 +1,55 @@
+# fixedbugs, defect 166, lane h158, 2026-10-02.
+#
+# Beside `fixedbugs-159-a-minus-alone-above-a-pattern-no-minus-signs`: a `-`
+# alone on its line above an arm whose pattern is no pattern, a name, a
+# float or a group, and a `+` above one. No `-` signs any of them, so the
+# deletion of the operator's line is the one repair, `certain`, and the
+# parser reads the arm the deletion writes: its pattern is told once, as it
+# is on a line of its own. Joined, `-` over `x => "one"` was read as `-x`
+# and told `expected_pattern` twice at the name, the arm's recovery dropping
+# no further than the line of the text, so that the part below the break
+# was read again as an arm. `--apply` deletes the operator's line and leaves
+# the pattern, which no certain fix repairs: the `.applied` beside this file.
+
+function name(n: i64) -> str
+    return match n
+        #~v continuation_outside_brackets
+        -
+        x => "one"  #~ expected_pattern
+        _ => "many"
+
+function real(f: f64) -> str
+    return match f
+        #~v continuation_outside_brackets
+        -
+        1.5 => "one"  #~ expected_pattern
+        _ => "many"
+
+function noted(n: i64) -> str
+    return match n
+        1 => "one"
+        #~v continuation_outside_brackets
+        -  # a note
+        y => "two"  #~ expected_pattern
+        _ => "many"
+
+function grouped(n: i64) -> str
+    return match n
+        #~v continuation_outside_brackets
+        -
+        (1) => "one"  #~ expected_pattern
+        _ => "many"
+
+function plus(n: i64) -> str
+    return match n
+        #~v continuation_outside_brackets
+        +
+        z => "one"  #~ expected_pattern
+        _ => "many"
+
+function main()
+    print(name(1))
+    print(real(f: 1.5))
+    print(noted(2))
+    print(grouped(1))
+    print(plus(1))

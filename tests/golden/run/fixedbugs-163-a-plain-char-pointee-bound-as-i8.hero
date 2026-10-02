@@ -1,0 +1,18 @@
+# fixedbugs, defect 163, lane h158, 2026-10-02.
+#
+# Symptom: a header's `char *` bound `@p: i8` built and printed -1 on this
+# Mac and was refused `ffi_parameter_type` in the Linux arm64 container,
+# though the program is compiled under `-fsigned-char` on both (panel 161),
+# and `@p: u8` the reverse. Cause: the pointee check compiled its two units
+# under `-std=gnu11` alone, so on Linux arm64, where a plain `char` is
+# unsigned by default, it judged the parameter against a type the program's
+# own compile never sees. The probes now compile under the compiler's own
+# flags but its diagnostics, and this builds and prints -1 on every leg.
+
+extern "fixedbugs-163-a-plain-char-pointee-bound-as-i8.h"
+    function fill(@p: i8)
+
+function main()
+    v: i8 @ 0
+    fill(@v)
+    print(v)

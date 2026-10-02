@@ -1,0 +1,15 @@
+# fixedbugs, defect 163, lane h158, 2026-10-02.
+#
+# Beside `tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8`:
+# the same `char *` bound `@p: u8`, refused on every leg, the plain `char`
+# being signed under the compiler's `-fsigned-char`. In the Linux arm64
+# container it was built until defect 163, the pointee check reading the
+# platform's own unsigned `char`.
+
+extern "fixedbugs-163-plain-char.h"
+    function fill(@p: u8)  #~ ffi_parameter_type
+
+function main()
+    v: u8 @ 0
+    fill(@v)
+    print(v)
