@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-175-what-still-has-no-value.hero:15:9: error[no_value]: this `match` produces no value — every branch jumps, so there is nothing to bind
+tests/golden/check/fixedbugs-175-what-still-has-no-value.hero:30:9: error[no_value]: this `match` produces no value — every branch leaves before it gives one, so there is nothing to bind
+tests/golden/check/fixedbugs-175-what-still-has-no-value.hero:43:17: error[no_value]: this `match` produces no value — every branch jumps, so there is nothing to bind
+tests/golden/check/fixedbugs-175-what-still-has-no-value.hero:54:5: error[no_value]: constant `LEAVES_AT_ITS_LAST_LINE` produces no value — its body jumps before it gives one, and a constant's value is its body's last line
+tests/golden/check/fixedbugs-175-what-still-has-no-value.hero:65:30: error[type_mismatch]: expected `i64`, found `str`
+tests/golden/check/fixedbugs-175-what-still-has-no-value.hero:77:17: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`
+tests/golden/check/fixedbugs-175-what-still-has-no-value.hero:79:17: error[jump_outside_loop]: `continue` is only meaningful inside a `while` or a `for`

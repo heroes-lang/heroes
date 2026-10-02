@@ -935,7 +935,7 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
                 # As a statement it has the type a statement must have.
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
                 return Outcome(leaves: leaving, value: fail(code: "none", msg: "a statement produces no value"))
-            return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
+            return valued_tail(@c, a, r, s, decls, value: value, want: want, span: span)
         .match_expr m =>
             if want == .nothing
                 subject = synth(@c, a, r, s, decls, m.scrutinee)
@@ -949,7 +949,7 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
                 leaving = join.every_branch(branches)
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
                 return Outcome(leaves: leaving, value: fail(code: "none", msg: "a statement produces no value"))
-            return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
+            return valued_tail(@c, a, r, s, decls, value: value, want: want, span: span)
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return valued_expression(
             @c,
             a,
@@ -982,6 +982,20 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
         )
 
     return falls_with_nothing()
+
+# Panel 185's R4: an `if` or a `match` where a value is wanted, a value
+# block's last line or an arm's one statement, every branch of which leaves,
+# leaves with them, so its block or its arm leaves as one ending on a
+# `return` does (`check/path_end.withdrawn`, the sitting's (3x)). A function
+# of its own so that `expression_statement`'s frame does not widen.
+function valued_tail(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], value: i64, want: Want, span: token.Span) -> Outcome
+    before = c.out.diagnostics.len()
+    got = valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
+    left = path_end.withdrawn(@c, a, before: before, at: value, span: span)
+
+    if left == .falls
+        return got
+    return Outcome(leaves: left, value: fail(code: "jumps", msg: "every branch of this line leaves"))
 
 function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], value: i64, want: Want, span: token.Span) -> Outcome
     # `exit(code:)` ends the program where it stands, so it is a statement
@@ -1108,48 +1122,6 @@ function literal_pattern(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
         return
     check(@c, a, r, s, decls, id: value, expected: subject)
 
-# A declared function used as a VALUE carries its parameter names into its
-# type, and only where §4.9 needs them: two positions of one type. Anywhere
-# else the type stays bare, so `(function(i64, str) -> ())` is ONE type however
-# it was reached, and `check/type_labels.hero`'s two rules and this one agree
-# on which types have names.
-#
-# Defect 026 is why it is not decoration. Without it an annotation could rename
-# the positions of the function assigned to it — `f: (function(msg: str, code:
-# str) -> str) @ report` where `report` is `(code, msg)` — and the call site
-# would obey the annotation while the callee obeyed itself. With the names in
-# the type's identity (`check/table.hero`) that assignment is a mismatch.
-function declared_labels(s: source.Source, params: [ast.Param], lowered: [i64]) -> [str]
-    names: [str] @ []
-    none: [str] = []
-    any_shared: bool @ false
-    i: i64 @ 0
-
-    while i < lowered.len()
-        written = source.span_text(s, params[i].name)
-
-        if table.shared_at(lowered, at: i) && written != "_"
-            any_shared @ true
-            names @ names.push(written)
-        else
-
-            # Two reasons for an empty name, and they are the same reason. A
-            # position nothing can be confused with needs none, so two
-            # declarations differing only in what they call THAT parameter are
-            # one type. And a position the body called `_` makes no claim about
-            # itself — which is what `_` means at every other site in this
-            # language — so it fits whatever the expected type calls it
-            # (`table.fits`). Panel 129's ffi seat is why: zlib's `free_func`
-            # ignores `opaque` in most implementations and reads it in the ones
-            # that pool, and one header typedef takes both.
-            names @ names.push("")
-        i @ i + 1
-
-    if !any_shared
-        return none
-
-    return names
-
 function listed(xs: [i64], x: i64) -> bool
     for it in xs
         if it == x
@@ -1185,7 +1157,7 @@ function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: so
             return table.intern_function(
                 @c.out.types,
                 lowered,
-                declared_labels(s, fd.value.params, lowered),
+                labels.declared_labels(s, fd.value.params, lowered),
                 result: result
             )
         .constant_decl | .record_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
