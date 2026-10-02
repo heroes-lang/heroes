@@ -179,6 +179,84 @@ function argument_front(text: str, value_start: i64, mutable: bool) -> i64
         return i - 1
     return value_start
 
+## A construction of a group's record that names some of its fields
+
+# A record over a C union is built naming exactly one member of each union
+# (panel 186 R7, spec § 13), so such a construction may name fewer fields
+# than the record declares, and its labels are held by `check/group_fields`.
+# No position there settles which field an argument is, so every rename is
+# one reading among several: offered, never applied.
+
+# An argument with no label: every field it could be, among those the
+# construction does not name, `candidates`.
+function unnamed_in_part(holder: str, candidates: [str], span: token.Span, at: i64) -> diag.Diagnostic
+    message: str @ "`" + holder + "`'s fields are always named, and every field it declares is named already"
+
+    if candidates.len() > 0
+        message @ "`" + holder + "`'s fields are always named, and a construction of it may name only some, so the position does not say which field this is: it may be " + any_of(candidates)
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "missing_label", message: message, span: span)
+    insertion = token.Span(start: at, end: at)
+
+    for one in candidates
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write `" + one + ": `", replacement: one + ": ", span: insertion, certainty: .guess)
+        )
+
+    return d
+
+# A label that names no field: the record's fields, and as renames the ones
+# the construction does not name that could take the value.
+function no_such_field(holder: str, written: str, fields: [str], candidates: [str], span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "wrong_label",
+        message: "`" + holder + "` has nothing called `" + written + "`: its fields are " + all_of(fields),
+        span: span
+    )
+
+    for one in candidates
+        d.fixes @ d.fixes.push(diag.Fix(title: "write `" + one + ":`", replacement: one, span: span, certainty: .guess))
+
+    return d
+
+# A field the construction names twice.
+function named_twice(holder: str, written: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "wrong_label",
+        message: "`" + holder + "` is given `" + written + "` twice, and a construction names each field once",
+        span: span
+    )
+
+# A field named after one the record declares after it.
+function out_of_order(holder: str, written: str, after: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "wrong_label",
+        message: "`" + holder + "` declares `" + written + "` before `" + after + "`, and a construction names its fields in the order the record declares them",
+        span: span
+    )
+
+# `a`, `a` or `b`, `a`, `b` or `c`.
+function any_of(names: [str]) -> str
+    return listing(names, last: " or ")
+
+# `a`, `a` and `b`, `a`, `b` and `c`.
+function all_of(names: [str]) -> str
+    return listing(names, last: " and ")
+
+function listing(names: [str], last: str) -> str
+    if names.len() == 0
+        return ""
+
+    if names.len() == 1
+        return "`" + names[0] + "`"
+    heads: [str] @ []
+    at: i64 @ 0
+
+    while at < names.len() - 1
+        heads @ heads.push("`" + names[at] + "`")
+        at @ at + 1
+
+    return heads.join(", ") + last + "`" + names[names.len() - 1] + "`"
+
 ## Tests
 
 test "needs_label carries its reason and a zero-width insertion"

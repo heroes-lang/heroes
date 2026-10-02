@@ -1,0 +1,20 @@
+# Panel 186 R7, lane land186, 2026-10-02: a group's record over a C union is
+# built naming exactly one member of each union, so a construction may name
+# fewer fields than the record declares, and `check` holds only its labels
+# (`selfhost/check/group_fields.hero`); what it leaves out is `build`'s.
+#
+# A field named after one the record declares after it is told as the order,
+# at the label out of place. R7's prototype told it as a construction naming
+# every field, which a group's record need not.
+
+extern "ffi-a-construction.h"
+    record SA
+        kind: i32
+        i: i32
+        f: f32
+        x: i32
+    function sa_x(s: SA) -> i32
+
+function main()
+    b = SA(f: 1.5, kind: 2, x: 4)  #~ wrong_label
+    print(sa_x(b))

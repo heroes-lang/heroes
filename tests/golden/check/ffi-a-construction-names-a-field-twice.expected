@@ -1,0 +1,1 @@
+tests/golden/check/ffi-a-construction-names-a-field-twice.hero:17:29: error[wrong_label]: `SA` is given `f` twice, and a construction names each field once

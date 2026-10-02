@@ -35,6 +35,7 @@
 # every value of `U` is a value of `i`, bit for bit.
 
 use ast
+use token
 use source
 use check/table
 use check/state
@@ -62,14 +63,25 @@ constant UNION_NARROW: str
     "heroes-ffi-union-narrow"
 
 # What the program does to each extern record, split the way the rule
-# splits: construction is refused only at two or more fields (a
-# one-field designated initialiser is the SOUND binding to one arm —
-# C zeroes the rest); ==, hash and a map key are refused at ANY arity,
-# because one declared member still reads one arm's bytes out of a
-# value that may hold another.
+# splits: a construction is asked where it names two or more fields (one
+# named field is the SOUND binding to one arm, and C zeroes the rest);
+# ==, hash and a map key are asked at ANY arity (R3), because one
+# declared member still reads one arm's bytes out of a value that may
+# hold another.
 record Used
-    constructed: {i64: bool}
     operated: {i64: bool}
+    # Each construction of a group's record, with the fields it names: a
+    # record over a C union is built naming exactly one member of each union
+    # (panel 186 R7, spec § 13), and which fields a construction may leave
+    # out is asked of C at its own line (`emit/layout_sites.hero`).
+    sites: [Site]
+
+# One construction: the record, the declared indices of the fields it
+# names in the order written, and where it was written.
+record Site
+    decl: i64
+    given: [i64]
+    span: token.Span
 
 # One assertion per extern record the program constructs or compares.
 #
@@ -81,12 +93,9 @@ function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Che
     u = used(p, c, decls)
     wanted: {i64: bool} @ {}
 
-    for decl in sort(keys(u.constructed))
-        match decls[decl].kind
-            .record_decl rec =>
-                if rec.fields.len() >= 2
-                    wanted[decl] @ true
-            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+    for site in u.sites
+        if site.given.len() >= 2
+            wanted[site.decl] @ true
 
     for decl in sort(keys(u.operated))
         wanted[decl] @ true
@@ -120,7 +129,7 @@ function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Che
                 writer.at_file(@w, file: found.file, at: found.line)
 
                 # Built from two or more fields: C keeps the last one written.
-                if !u.constructed[decl].is_err() && rec.fields.len() >= 2
+                if built_from_two(u, decl: decl)
                     writer.line(
                         @w,
                         text: "_Static_assert(" + not_union + ", \"" + UNION_ASSERTION + " " + hero_name + " " + parts.join(" ") + "\");"
@@ -172,6 +181,25 @@ function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Che
         )
         writer.blank(@w)
 
+# Whether a construction names two or more fields of record `decl`.
+function built_from_two(u: Used, decl: i64) -> bool
+    for site in u.sites
+        if site.decl == decl && site.given.len() >= 2
+            return true
+
+    return false
+
+# Whether a construction of record `decl`, of `count` declared fields, leaves
+# one out (panel 186 R7): `emit/layout_screen.hero` sends the record to the
+# header's layout, and `emit/layout_sites.hero` asks C, per construction,
+# whether each field left out shares a byte with one it names.
+function omits(u: Used, decl: i64, count: i64) -> bool
+    for site in u.sites
+        if site.decl == decl && site.given.len() < count
+            return true
+
+    return false
+
 # Every extern record the program constructs or compares, directly or
 # through a type that contains one. The reach is not decoration: == on
 # a Heroes record calls its generated eq, which calls its fields', so
@@ -181,8 +209,8 @@ function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Che
 # reachable is WORSE than refusing neither, because the wrong answer
 # moves from a comparison the author wrote to a bucket they never see.
 function used(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Used
-    constructed: {i64: bool} @ {}
     operated: {i64: bool} @ {}
+    sites: [Site] @ []
 
     for f in p.functions
         for blk in f.blocks
@@ -190,7 +218,9 @@ function used(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Use
                 match inst.op
                     .construct co =>
                         match co.shape
-                            .record_shape r => constructed[r.decl] @ true
+                            .record_shape r =>
+                                if group_record(decls, decl: r.decl)
+                                    sites @ sites.push(Site(decl: r.decl, given: r.given, span: inst.span))
                             .map_shape => reach(@operated, c, decls, ty: inst.ty)
                             .case_shape | .array_shape | .ok_shape | .fail_shape | .err_shape => continue
                     .binary b =>
@@ -203,7 +233,16 @@ function used(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Use
                     .field | .index | .len_of | .tag_of | .payload                              => continue
                     .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
-    return Used(constructed: constructed, operated: operated)
+    return Used(operated: operated, sites: sites)
+
+# Whether `decl` is a record of an `extern` group, the only kind a
+# construction may build naming some of its fields.
+function group_record(decls: [ast.Decl], decl: i64) -> bool
+    match decls[decl].kind
+        .record_decl rec                                             => return !rec.header.is_err()
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+
+    return false
 
 # The extern records a type reaches by value: a SET, which the caller
 # reads sorted, so the order the queue drains in reaches nothing.

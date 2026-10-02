@@ -1,0 +1,325 @@
+# What clang said about the constructions of a group's record (panel 186 R7;
+# spec § 13; design.md §4.19): a record over a C union is built naming
+# exactly one member of each union, an anonymous struct's fields counting as
+# one, and every field outside them. Three markers say a construction broke
+# that, each read here from this compiler's own marker and never from clang's
+# prose:
+#
+# - `layout_sites.OMITTED`, one per field a construction leaves out that
+#   shares no byte with a field it names, a member C would fill with zero;
+# - `layout_sites.SHARED`, one per pair of fields it names that share bytes in
+#   a union inside the struct, of which C keeps the last written;
+# - `extern_union.UNION_ASSERTION` naming two or more fields, a record over a
+#   union TYPE that some construction builds from two of its members.
+#
+# **Told once per construction, naming each field.** clang prints one failed
+# assertion per field and per pair, all at the construction's `#line`, and
+# the mapper keeps one diagnostic per span (`ffi_lookup.add_once`), so a
+# reader per line told the first field and dropped the rest: a construction
+# leaving out `y` and `z` was told `y`, and `z` on the next build. Here every
+# marker of a construction is gathered before anything is told, and the
+# construction is found in the program itself (`extern_union.used`), so the
+# caret is on the construction the author wrote. Two constructions of one
+# record on one line are told as one, their fields together.
+
+use ast
+use token
+use source
+use diag
+use check/state
+use ir/containers
+use emit/ffi_lookup
+use emit/ffi_site
+use emit/ffi_record
+use emit/extern_union
+use emit/layout_sites
+use parse
+use resolve
+use checker
+use ir/lower
+
+# One construction's markers of one kind: the record's name, where clang put
+# them, and each field (OMITTED) or pair (SHARED, "a b") they name.
+record Gathered
+    kind: str
+    record_name: str
+    file: i64
+    line: i64
+    names: [str]
+
+# Every construction a marker names, told once per kind.
+function at_constructions(s: source.Source, decls: [ast.Decl], c: state.Checked, p: containers.Program, text: str) -> [diag.Diagnostic]
+    gathered: [Gathered] @ []
+    unions: [str] @ []
+
+    for line in ffi_lookup.lines(text: text)
+        if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+            continue
+        union_tail = ffi_lookup.after(text: line, marker: extern_union.UNION_ASSERTION + " ")
+
+        if !union_tail.is_err()
+            parts = bare_words(union_tail.must())
+
+            # The record and two or more of its fields: built from two. One
+            # word alone is the compared record with no field, which
+            # `ffi_record.union_record` tells.
+            if parts.len() >= 3 && !listed(unions, parts[0])
+                unions @ unions.push(parts[0])
+            continue
+        at = ffi_site.location(s, line: line)
+
+        if at.is_err()
+            continue
+
+        for marker in [layout_sites.OMITTED, layout_sites.SHARED]
+            tail = ffi_lookup.after(text: line, marker: marker + " ")
+
+            if tail.is_err()
+                continue
+            parts = bare_words(tail.must())
+            wanted: i64 @ 2
+
+            if marker == layout_sites.SHARED
+                wanted @ 3
+
+            if parts.len() < wanted
+                continue
+            name: str @ parts[1]
+
+            if marker == layout_sites.SHARED
+                name @ parts[1] + " " + parts[2]
+            found = gathered_at(
+                gathered,
+                kind: marker,
+                record_name: parts[0],
+                file: at.must().file,
+                line: at.must().line
+            )
+
+            if found < 0
+                gathered @ gathered.push(
+                    Gathered(kind: marker, record_name: parts[0], file: at.must().file, line: at.must().line, names: [name])
+                )
+            else if !listed(gathered[found].names, name)
+                gathered[found].names @ gathered[found].names.push(name)
+
+    out: [diag.Diagnostic] @ []
+
+    if gathered.len() == 0 && unions.len() == 0
+        return out
+    u = extern_union.used(p, c, decls)
+
+    for g in gathered
+        holder = ffi_record.record_of(s, decls, type_name: g.record_name)
+
+        if !holder.is_err()
+            span = site_span(
+                s,
+                decls,
+                u,
+                record_name: g.record_name,
+                file: g.file,
+                line: g.line,
+                otherwise: holder.must().span
+            )
+            out @ out.push(told(g, header: holder.must().header, span: span))
+
+    for union_name in unions
+        holder = ffi_record.record_of(s, decls, type_name: union_name)
+
+        if holder.is_err()
+            continue
+        sites: i64 @ 0
+
+        for site in u.sites
+            if site.given.len() >= 2 && source.span_text(s, decls[site.decl].name) == union_name
+                out @ out.push(union_built(s, decls, site, header: holder.must().header))
+                sites @ sites + 1
+
+        # The assertion fires only where `used` saw such a construction, so
+        # none found is a disagreement between two readings of one program:
+        # told on the declaration rather than left as the compiler's exit 2.
+        if sites == 0
+            whole = Gathered(kind: extern_union.UNION_ASSERTION, record_name: union_name, file: -1, line: -1, names: [])
+            out @ out.push(told(whole, header: holder.must().header, span: holder.must().span))
+
+    return out
+
+# The diagnostic for one construction's gathered markers.
+function told(g: Gathered, header: str, span: token.Span) -> diag.Diagnostic
+    t = g.record_name
+
+    if g.kind == layout_sites.OMITTED
+        share: str @ "shares"
+        them: str @ "`" + g.names[0] + "`"
+
+        if g.names.len() > 1
+            share @ "share"
+            them @ "them"
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "missing_fields",
+            message: "this construction of `" + t + "` leaves out " + quoted(g.names) + ", which " + share + " no byte with the fields it names, so C would build it with " + them + " zero: `" + header + "` puts " + them + " in no union with any of those",
+            span: span
+        )
+        d.notes @ d.notes.push(
+            "a group's `record` is built naming every field outside the header's unions and exactly one member of each union, an anonymous struct's fields counting as one (§ 13)"
+        )
+        return d
+    named: [str] @ []
+
+    for pair in g.names
+        both = ffi_lookup.words(text: pair)
+        named @ named.push("`" + both[0] + "` and `" + both[1] + "`")
+
+    which: str @ ", which are the same bytes: `" + header + "` puts them in one union inside the struct, so C would keep only the one written last"
+
+    if named.len() > 1
+        which @ ", which are the same bytes pair by pair: `" + header + "` puts each pair in one union inside the struct, so C would keep only the one written last of each"
+
+    if g.kind == extern_union.UNION_ASSERTION
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "ffi_union_field",
+            message: "`" + t + "` is a `union` in `" + header + "`, and a construction of it names two or more of its members, which are the same bytes, so C would keep only the one written last",
+            span: span
+        )
+        d.notes @ d.notes.push(BUILT_NOTE)
+        return d
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_union_field",
+        message: "this construction of `" + t + "` names " + named.join(", and ") + which,
+        span: span
+    )
+    d.notes @ d.notes.push(BUILT_NOTE)
+    return d
+
+# A construction of a record over a union TYPE that names two or more of its
+# members, at the construction.
+function union_built(s: source.Source, decls: [ast.Decl], site: extern_union.Site, header: str) -> diag.Diagnostic
+    t = source.span_text(s, decls[site.decl].name)
+    names: [str] @ []
+
+    match decls[site.decl].kind
+        .record_decl rec =>
+            for k in site.given
+                names @ names.push(source.span_text(s, rec.fields[k].name))
+        .constant_decl | .function_decl | .variant_decl | .test_decl => names @ names
+
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_union_field",
+        message: "this construction of `" + t + "` names " + quoted(names) + ", which are the same bytes: `" + header + "` declares `" + t + "` a `union`, so C would keep only the one written last",
+        span: site.span
+    )
+    d.notes @ d.notes.push(BUILT_NOTE)
+    return d
+
+constant BUILT_NOTE: str
+    "a `record` over a C union names one or more of each union's members and reads any, and is built naming exactly one, an anonymous struct's fields counting as one (§ 13): name the one the program writes"
+
+# The construction of `record_name` the program wrote at `file`:`line`, or
+# `otherwise` where none is there.
+function site_span(s: source.Source, decls: [ast.Decl], u: extern_union.Used, record_name: str, file: i64, line: i64, otherwise: token.Span) -> token.Span
+    for site in u.sites
+        here = source.file_of(s, site.span.start) == file && source.file_line_of(s, site.span.start) == line
+
+        if here && source.span_text(s, decls[site.decl].name) == record_name
+            return site.span
+
+    return otherwise
+
+function gathered_at(gathered: [Gathered], kind: str, record_name: str, file: i64, line: i64) -> i64
+    index: i64 @ 0
+
+    for g in gathered
+        if g.kind == kind && g.record_name == record_name && g.file == file && g.line == line
+            return index
+        index @ index + 1
+
+    return -1
+
+# `a`, `a` and `b`, `a`, `b` and `c`.
+function quoted(names: [str]) -> str
+    if names.len() == 1
+        return "`" + names[0] + "`"
+    heads: [str] @ []
+    at: i64 @ 0
+
+    while at < names.len() - 1
+        heads @ heads.push("`" + names[at] + "`")
+        at @ at + 1
+
+    return heads.join(", ") + " and `" + names[names.len() - 1] + "`"
+
+# A marker's tail as words, any quote clang wraps the message in dropped.
+function bare_words(text: str) -> [str]
+    out: [str] @ []
+
+    for word in ffi_lookup.words(text: text)
+        kept: [str] @ []
+
+        for ch in word.chars()
+            if ch != "\""
+                kept @ kept.push(ch)
+
+        if kept.len() > 0
+            out @ out.push(kept.join(""))
+
+    return out
+
+function listed(xs: [str], x: str) -> bool
+    for it in xs
+        if it == x
+            return true
+
+    return false
+
+## Tests
+
+test "every field a construction leaves out is told in one diagnostic at the construction"
+    text = "extern \"pt3.h\"\n    record PT3\n        x: i32\n        y: i32\n        z: i32\n\nfunction main()\n    p = PT3(x: 1)\n    print(p.x)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    head = "t.hero:8:1: error: static assertion failed due to requirement 'x': "
+    said = head + "heroes-ffi-omitted PT3 y\n" + head + "heroes-ffi-omitted PT3 z\n" + head + "heroes-ffi-omitted PT3 y\n"
+    got = at_constructions(s, parsed.decls, c, low.program, text: said)
+    assert got.len() == 1
+    assert got[0].code == "missing_fields"
+    assert got[0].message == "this construction of `PT3` leaves out `y` and `z`, which share no byte with the fields it names, so C would build it with them zero: `pt3.h` puts them in no union with any of those"
+    assert source.span_text(s, got[0].span) == "PT3(x: 1)"
+
+    # One field, and a pair named at a construction, told apart by kind.
+    one = at_constructions(
+        s,
+        parsed.decls,
+        c,
+        low.program,
+        text: head + "heroes-ffi-omitted PT3 z\n" + head + "heroes-ffi-shared PT3 x y\n"
+    )
+    assert one.len() == 2
+    assert one[0].message == "this construction of `PT3` leaves out `z`, which shares no byte with the fields it names, so C would build it with `z` zero: `pt3.h` puts `z` in no union with any of those"
+    assert one[1].code == "ffi_union_field"
+    assert one[1].message == "this construction of `PT3` names `x` and `y`, which are the same bytes: `pt3.h` puts them in one union inside the struct, so C would keep only the one written last"
+
+    # A line that is no marker of these, or names no record of the group.
+    assert at_constructions(s, parsed.decls, c, low.program, text: head + "heroes-ffi-missing PT3 w\n").len() == 0
+    assert at_constructions(s, parsed.decls, c, low.program, text: head + "heroes-ffi-omitted Other y\n").len() == 0
+
+test "a union type built from two members is told at each construction that does"
+    text = "extern \"ut.h\"\n    record UT\n        i: i32\n        f: f32\n\nfunction main()\n    u = UT(i: 1, f: 1.5)\n    v = UT(f: 2.5)\n    print(u.i + v.i)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    said = "t.hero:2:12: error: static assertion failed due to requirement 'x': heroes-ffi-union UT i f\n"
+    got = at_constructions(s, parsed.decls, c, low.program, text: said)
+    assert got.len() == 1
+    assert got[0].message == "this construction of `UT` names `i` and `f`, which are the same bytes: `ut.h` declares `UT` a `union`, so C would keep only the one written last"
+    assert source.span_text(s, got[0].span) == "UT(i: 1, f: 1.5)"
+
+    # The compared record with no field is `union_record`'s.
+    assert at_constructions(s, parsed.decls, c, low.program, text: "t.hero:2:12: error: static assertion failed due to requirement 'x': heroes-ffi-union UT \n").len() == 0

@@ -1,0 +1,18 @@
+# Panel 186 R7, lane land186, 2026-10-02: a group's record over a C union is
+# built naming exactly one member of each union, so a construction may name
+# fewer fields than the record declares, and `check` holds only its labels
+# (`selfhost/check/group_fields.hero`); what it leaves out is `build`'s.
+#
+# More arguments than fields is told at the label that names none, with the
+# record's fields; R7's prototype said *`PT` is built with every field*,
+# *all of them, always*, which is false of a group's record.
+
+extern "ffi-a-construction.h"
+    record PT
+        x: i32
+        y: i32
+    function pt_y(p: PT) -> i32
+
+function main()
+    p = PT(x: 1, y: 2, z: 3)  #~ wrong_label
+    print(pt_y(p))

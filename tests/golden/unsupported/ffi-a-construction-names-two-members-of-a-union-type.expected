@@ -1,0 +1,6 @@
+error[ffi_union_field]: this construction of `UT` names `i` and `f`, which are the same bytes: `ffi-a-construction.h` declares `UT` a `union`, so C would keep only the one written last
+  at tests/golden/unsupported/ffi-a-construction-names-two-members-of-a-union-type.hero:18:9
+     |
+  18 |     u = UT(i: 1, f: 1.5)  #~ ffi_union_field
+     |         ^^^^^^^^^^^^^^^^
+  note: a `record` over a C union names one or more of each union's members and reads any, and is built naming exactly one, an anonymous struct's fields counting as one (§ 13): name the one the program writes

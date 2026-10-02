@@ -1,6 +1,6 @@
-error[ffi_union_field]: `i` and `f` are the same bytes of `SA`: `fixedbugs-151-unions.h` puts them in one union inside the struct, so building one would answer about whichever was written last
-  at tests/golden/unsupported/fixedbugs-151-an-anonymous-union-built-from-two-arms.hero:17:12
+error[ffi_union_field]: this construction of `SA` names `i` and `f`, which are the same bytes: `fixedbugs-151-unions.h` puts them in one union inside the struct, so C would keep only the one written last
+  at tests/golden/unsupported/fixedbugs-151-an-anonymous-union-built-from-two-arms.hero:31:9
      |
-  17 |     record SA  #~ ffi_union_field
-     |            ^^
-  note: a `record` that names both is read through either and never built, because C keeps the last one written: to build a `SA`, name only the one the program writes
+  31 |     s = SA(kind: 1, i: 7, f: 0.5, x: 3)  #~ ffi_union_field
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a `record` over a C union names one or more of each union's members and reads any, and is built naming exactly one, an anonymous struct's fields counting as one (§ 13): name the one the program writes

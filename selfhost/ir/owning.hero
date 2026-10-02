@@ -72,7 +72,8 @@ test "the four constructors own, the three lookalike reads borrow"
     assert !allocates(.lit(value: .str_const(at: 0)))
 
 test "a record is a second owner, a container literal is not"
-    assert retains_fields(.record_shape(decl: 0))
+    none: [i64] = []
+    assert retains_fields(.record_shape(decl: 0, given: none))
     assert retains_fields(.ok_shape)
     assert !retains_fields(.array_shape)
     assert !retains_fields(.map_shape)

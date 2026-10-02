@@ -35,6 +35,7 @@ use inventory
 use ir
 use ir/containers
 use ir/layout
+use ir/questions
 use parse
 use resolve
 use checker
@@ -421,7 +422,7 @@ function target(callee: ir.Callee, s: source.Source, decls: [ast.Decl]) -> str
 
 function shape_name(shape: ir.Shape, s: source.Source, decls: [ast.Decl]) -> str
     match shape
-        .record_shape rs => return source.span_text(s, decls[rs.decl].name)
+        .record_shape rs => return source.span_text(s, decls[rs.decl].name) + questions.named_list(s, decls, decl: rs.decl, given: rs.given)
         .case_shape cs =>
             holder = source.span_text(s, decls[cs.decl].name)
 

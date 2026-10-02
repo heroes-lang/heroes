@@ -1,0 +1,1 @@
+tests/golden/check/ffi-a-construction-names-its-labels-out-of-order.hero:19:20: error[wrong_label]: `SA` declares `kind` before `f`, and a construction names its fields in the order the record declares them
