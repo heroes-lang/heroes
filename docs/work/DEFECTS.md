@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 50**
+**OPEN: 51**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -331,6 +331,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     repaired by the sitting's R5 and row 130-34a by its R6, each recorded
     below as it lands. The item stays `- [ ]` here; the round's gate closes
     it.
+
+    **2026-10-03, lane rec187, panel 187's R5: a body told missing names its
+    declaration** (`g2/r09`; beside it with its cause, a constant's and a
+    test's, and a head whose signature or type failed after its name):
+    repaired at `eddb0a7c`, gated by its own cases; the rest is owed at the
+    round's gate. Beside it with another cause, a body written at its head's
+    margin is defect 202.
 
     **Class: systemic**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): six batches on the
@@ -1198,5 +1205,13 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** panel 187's compiler engineer, its § 1's cause B4 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on the audit's row 131-32, where `heroes lex --dump-tokens` shows the lexer hands the parser every token of that line; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03).
 
     **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery, panel 187's R1): a mistake told only once another is fixed, class (b).
+
+- [ ] **202 — a body written at its head's margin is told twice at its first line, and once more for each line after** | `function main()` over `print(1)` at column 0: `missing_body` and `expected_declaration`, both at 2:1, for the one indentation left out; `function f(x: i64) -> i64` over `y = x + 1` and `return y` at column 0: a third, `expected_declaration` at the second line; the same under a `test` and a `constant` | `selfhost/parse/top_level.hero:82` (`expected_declaration`, at the line the missing body was just told at) · `selfhost/parse/opening.hero:274` (`absent`) · **class: adjacent**
+
+    **Origin:** lane rec187's first pass beside panel 187's R5, 2026-10-03, on the head's compiler and on `eddb0a7c` (`scratchpad/lane-rec187/pass1/v5/v24*.hero` and `k-v24.txt`, 2026-10-03). No golden pins the two at one place (every `check` case's `.expected` read for a `missing_body` and an `expected_declaration` at one line and column), and the recovery instrument plants no body dedented to its head (its operators in `scratchpad/instrument/tool/ops.py`, read 2026-10-03), so no count has seen it.
+
+    **Why it is a defect.** One mistake, the body's indentation, told twice at one place (design.md §4.17).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake, class (a); both messages true.
 
 *******************************************************************************
