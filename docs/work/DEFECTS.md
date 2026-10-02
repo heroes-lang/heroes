@@ -838,6 +838,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `b76f705e`, gated by its cases and the compiler's own tests; the net is
     owed at the batch's close.
 
+    **2026-10-02, lane arm, beside P5 (panel 185's t1 and t2): a `-` before a
+    case or `_` opening a pattern is told at the `-`, where it was told at the
+    pattern after it, and deleted with certainty, since no `-` signs either**:
+    repaired at `45aad99f`, gated by its cases and the compiler's own tests;
+    the net is owed at the batch's close.
+
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe)
 
     **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (a header of its own
