@@ -324,6 +324,23 @@ The first round under it, 2026-10-02: four lanes, one gate, `e2d59fdb`, the
 full net 4,449 passed and 0 failed. The text below is the rule as it stood
 before, kept.
 
+**And per repair, its own cases alone** (author instruction 2026-10-02 at
+about 16:30, meant as: *the lanes are slow; per repair they must run only
+mini tests, and every other check only at the end*). Given on what one
+repair of lane land186 ran that afternoon: `check` whole (400 cases),
+`unsupported` whole (73), `warnings` whole (289 programs built), the
+compiler's 1,023 tests and its own cases; and the lanes' briefs had asked a
+census of about 1,700 files after each repair. So a repair is gated by its
+compiler rebuilt and its own cases, every form narrowed to them with the
+harness's third word, plus the seconds-long checks of the touched file (fmt,
+`layout` filtered to it); **the whole forms, the compiler's own tests, the
+recovery instrument and the census run once, at the round's gate.** The
+per-repair bullet below that says *the golden form ..., whole where the cost
+column says it costs under a minute* and *the compiler's own tests* is
+superseded by this paragraph; the risk it takes, a repair's damage to
+another's cases found only at the gate, is the risk CL-079 already took, and
+the gate's bisect by lane and commit is its answer.
+
 Author instruction 2026-09-29, in these words (meant as): *it is unsustainable
 to go at the speed we are going; a repair gets its own test, on one platform,
 and is queued; the next repair the same; only at the end of a batch of four or
@@ -371,7 +388,56 @@ commits, 11 merges each with a coordinator's gate, 10 repair commits, 8 gates of
 defects in one pass** (CL-061, CL-078): on the night counted above the shapes
 were sought after each repair and reopened a round each time, six filings and
 widenings for ten repairs. A widening found beside a defect becomes the next
-item of the same lane, never a filing on the trunk.
+item of the same lane, never a filing on the trunk. **Amended 2026-10-02 by
+§ Bounded discovery below**: only a shape with the repair's own cause stays in
+the item; every other real defect found beside it is filed apart, `adjacent`.
+
+## Bounded discovery: the classes of a defect, and when a round ends
+
+Author instruction 2026-10-02 at about 17:00, meant as: *D1a D2a D3a*, on a
+proposal put with its measurements. **The loop it ends**: the open count was
+3 on 2026-09-29 and 10 at 16:30 on 2026-10-02, 65 defects closed in nine
+days while the numbers issued went from 082 to 158; defect 130, itself found
+beside defect 124 on 2026-09-28, took seven batches (recovery-b1 to b6 and
+b8) and its item grew to 264 lines, every batch's first pass adding shapes to
+the same defect. Two rules that are each right multiplied: the shapes beside
+a repair are attacked (CL-061, CL-078), and every one of them became the
+same lane's item and blocked the tag.
+
+**Every item of `docs/work/DEFECTS.md` carries one class**, at the end of its
+line, ` · **class: <name>**`, and its body a `**Class:**` line with the date
+and the reason (`.claude/rules/records.md` § The lists):
+
+- **`blocking`**: the current work's acceptance fails, or, whatever the
+  work, robustness or truth does: a wrong value, a crash, a memory fault, an
+  exit 2 where the author can be told, a false message, a `certain` fix that
+  writes a program meaning something else, a correct program refused, a
+  wrong one accepted, a clang warning on a correct program, a red CI. **This
+  class is never deferred** (§ Precedence: robustness).
+- **`adjacent`**: real, found beside the work, none of the above (a second
+  message for one mistake, a mistake told only after the first is fixed, a
+  true message less exact than it could be). Filed with its reproducer and
+  never widening the item it was found beside. **It becomes `blocking` when
+  two milestone tags have been placed since it was filed**, so the queue
+  cannot only grow.
+- **`systemic`**: a defect that has taken **three batches** and is still
+  open, or one whose remaining rows need a ruling no rule reaches; it stops
+  the lanes on it and goes to a sitting (CLAUDE.md § 4) or to the author.
+- **`improvement`**: hardening, coverage or a cleaner form nobody needs to
+  be right; the backlog.
+
+**The bounds**, one place: the shapes attacked are those beside the
+item's reproducer, depth one, never those beside the shapes; a batch repairs
+at most two `adjacent` items inline, only with room under its five and in
+its own files; everything else found is filed, classed, and left.
+
+**When a round ends**: when its items are repaired and its gate is green,
+not when nothing more can be found in the files it touched. **A milestone is
+tagged** over zero `blocking` and zero `systemic` items (CLAUDE.md §
+Verification), and the author's goal *0 defects* reads as that (the author's
+*D3a*). The executor is `records/lists` (one class per item) and
+`records/tagged` (only `blocking` and `systemic` count, and an aged
+`adjacent` counts as `blocking`).
 
 **Per batch**, which closes at the first of: five repairs queued, the cluster's
 last open defect repaired, before any push, or when the author asks. A batch

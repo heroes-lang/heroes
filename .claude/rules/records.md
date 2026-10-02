@@ -97,7 +97,11 @@ Four work lists and one comprehension list, all in one shape (CL-066):
 `- [ ] **<first field>** | <what, in one line> | <where to look>`, an optional
 body indented four spaces opening with `**Origin:**` and its date, and the item
 region fenced between two lines of asterisks. `docs/work/DECIDE.md` carries the
-rule in full and `records/lists` is its executor.
+rule in full and `records/lists` is its executor. **An item of
+`docs/work/DEFECTS.md` ends its line with ` · **class: <name>**`** (`blocking`,
+`adjacent`, `systemic` or `improvement`) and carries a `**Class:**` body line
+with its date and reason, since 2026-10-02 (the author's *D1a*;
+`.claude/rules/verification.md` § Bounded discovery).
 
 **The first field is what that file's instrument reads**, so it differs by file:
 the milestone in its own `docs/work/milestones/` file, the padded `panel NNN` in

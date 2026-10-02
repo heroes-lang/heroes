@@ -1,0 +1,5 @@
+extern "outer.h"
+    function seven() -> i32
+
+function main()
+    print(seven())
