@@ -1,0 +1,26 @@
+# Fixed 2026-10-02, defect 149, lane checker, the same caret in the constant's
+# own message. Symptom: a constant's body of more than one line that leaves
+# by a `return` was told *its body jumps before it gives one* at its first
+# line: `x: i64 @ 1` over `return x` at the binding, and a body whose `if`
+# returns on both branches before its value, at the line above the `if`.
+# Cause: the message took the body's span. Now it stands at the statement
+# through which the body left, the first that does, whatever follows it.
+
+constant RETURNS_AFTER_A_LINE: i64
+    x: i64 @ 1
+    return x  #~ no_value
+
+constant LEAVES_BY_AN_IF: i64
+    x: i64 @ 1
+
+    if x == 1  #~ no_value
+        return 1
+    else
+        return 2
+    7
+
+constant RETURNS_FIRST: i64
+    return 5  #~ no_value
+
+function main()
+    print(RETURNS_AFTER_A_LINE + LEAVES_BY_AN_IF + RETURNS_FIRST)

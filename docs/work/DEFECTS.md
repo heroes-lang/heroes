@@ -798,6 +798,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** design.md §4.17: one mistake costs one message;
     both sentences are true, and the second is debris of the first.
 
+    **2026-10-02, lane checker, a claim that rests on a jump already refused
+    is the jump's shadow, and is not told** (the item, and beside it *every
+    branch jumps* where a value `if` or `match`, in a constant or a function,
+    left by such a jump): repaired at `6113bcab`, gated by its cases and the
+    compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **149 — a constant's body that ends on a statement is told at the block's first line, not at the line that gives no value** | `constant M: i64` over `x: i64 @ 1`, `x @ x + 1`, `assert x == 2`: `no_value`, *this branch ends on a statement*, at 2:5, where the line that ends the body without a value is line 4 | `branch_without_value` (`selfhost/check/walk.hero`, `check/join.hero`), pinned by `tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement`
 
     **Origin:** lane flow's first pass, 2026-10-01
