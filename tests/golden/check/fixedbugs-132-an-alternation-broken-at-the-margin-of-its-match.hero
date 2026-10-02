@@ -1,0 +1,55 @@
+# Fixed defect 132's class, 2026-10-02 (lane recovery-b7, beside the
+# audit's 132-06), an arm's alternation broken across lines below a `match`
+# whose arms stand at its margin. Symptom: `0` over `| 1 => 10`, `0 |` over
+# `1 => 10` and `0` over `| 1` over `| 2 => 10` each cost the break, whose
+# certain join writes the arm the author meant, and `missing_match_arms`,
+# and then `expected_end_of_line` at the arm's `=>`, a third message for two
+# mistakes. Cause: the lines read apart (`selfhost/parse/apart.hero`) leave
+# the `|` out, and the line of patterns alone above it was no arm at the
+# margin, so it was read as a statement and the arm below it refused. A
+# line of patterns alone over an arm, or over a run of such lines that ends
+# at one, is an arm broken inside its patterns (`selfhost/parse/margin_arms.hero`).
+# Beside it, unbroken: `0` over `1 => 10` at the margin is told its missing
+# `=>`, and a run of patterns alone that ends at no arm is no arm. The
+# annotation line between each `match` and its first arm leaves these joins
+# a `guess`, as on the trunk, so `--apply` writes nothing here; without it
+# the first join is `certain` and writes the arm the author broke.
+
+function a_pipe_below_a_pattern(n: i64) -> i64
+    return match n
+    #~v missing_match_arms
+    0
+    | 1 => 10  #~ continuation_outside_brackets
+    _ => 20
+
+function a_pipe_ending_a_pattern(n: i64) -> i64
+    return match n
+    #~v missing_match_arms continuation_outside_brackets
+    0 |
+    1 => 10
+    _ => 20
+
+function two_pipes_below_a_pattern(n: i64) -> i64
+    return match n
+    #~v missing_match_arms
+    0
+    | 1  #~ continuation_outside_brackets
+    | 2 => 10  #~ continuation_outside_brackets
+    _ => 20
+
+function a_pattern_over_an_arm(n: i64)
+    match n
+    0  #~ missing_match_arms expected_arm_arrow
+    1 => print(1)
+    _ => print(2)
+
+function patterns_over_no_arm(n: i64)
+    match n
+    0  #~ missing_match_arms
+    1
+    print(2)
+
+function main()
+    print(a_pipe_below_a_pattern(n: 1) + a_pipe_ending_a_pattern(n: 1) + two_pipes_below_a_pattern(n: 1))
+    a_pattern_over_an_arm(n: 1)
+    patterns_over_no_arm(n: 1)
