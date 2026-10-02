@@ -80,6 +80,7 @@ variant Below
 # hangs below it.
 function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
     if failed && !brace_habit.after_a_close(c, text)
+        a_closer_too_many(@c, text, from: from)
         brace_habit.drop_rest_of_line(@c, text, from: from)
         return hangs_below(@c, text, from: from)
     ended = c.pos > from && cursor.at_fresh_line(c)
@@ -120,6 +121,53 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
         orphans.named(@c)
         _ = cursor.balanced_block(@c)
     return .nothing
+
+# A closer one too many on the rest of the failed line begun at token `from`,
+# `x = f(0X10 + ) )`: past where the statement stopped, the first closer on
+# its line that closes no opener of its kind the line opened, with no report
+# standing on it, is a mistake of its own, told as past a statement that did
+# not fail (the audit's row 130-28, lane recovery-b8): until 2026-10-02 it
+# went with the debris, told only once the first mistake was repaired. A
+# closer of another kind inside an opener is that list's junk, its own
+# report's or none, so `[0X20, )]` keeps its `]`.
+function a_closer_too_many(@c: cursor.Cursor, text: str, from: i64)
+    open: [token.TokenKind] @ []
+    i: i64 @ from
+
+    while i < c.tokens.len() - 1 && !(open.len() == 0 && i >= c.pos && (c.tokens[i].kind == .terminator || c.tokens[i].kind == .indent || c.tokens[i].kind == .dedent))
+        k = c.tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            open @ open.push(k)
+        else if k == .rparen || k == .rbracket || k == .rbrace
+            at: i64 @ open.len() - 1
+
+            while at >= 0 && !pairs(opener: open[at], closer: k)
+                at @ at - 1
+
+            if at >= 0
+                open @ open.slice(from: 0, to: at)
+            else if open.len() == 0 && i >= c.pos && !told_at(c, at: i)
+                cursor.error(
+                    @c,
+                    code: "expected_end_of_line",
+                    message: "expected the end of the line, found `" + cursor.slice_of(text, c.tokens[i].span) + "` — one statement per line, no semicolons",
+                    span: c.tokens[i].span
+                )
+                return
+        i @ i + 1
+
+# Whether the opener `opener` is closed by the closer `closer`.
+function pairs(opener: token.TokenKind, closer: token.TokenKind) -> bool
+    return opener == .lparen && closer == .rparen || opener == .lbracket && closer == .rbracket || opener == .lbrace && closer == .rbrace
+
+# Whether a report stands on the token at `at`.
+function told_at(c: cursor.Cursor, at: i64) -> bool
+    for d in c.diagnostics
+        if d.span.start == c.tokens[at].span.start
+            return true
+
+    return false
 
 # What hangs below the line begun at token `from`, which said what is wrong:
 # a block it can open none of is an orphan, named here (`parse/orphans`),
