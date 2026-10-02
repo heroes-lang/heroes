@@ -885,4 +885,9 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     until the case witnesses defect 140 without depending on a C compiler's
     recursion limit or speed; lane ci140 is on it.
 
+    **2026-10-02, lane ci140, the variant chain is built through arrays,
+    where no C type nests, and kept by value in three `check/` cases, where
+    no C compiler reads it**: repaired at `0aa055a9`, gated by its cases and
+    the compiler's own tests; the net is owed at the batch's close.
+
 *******************************************************************************
