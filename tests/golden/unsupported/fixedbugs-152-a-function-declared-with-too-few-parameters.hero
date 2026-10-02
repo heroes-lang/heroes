@@ -1,0 +1,16 @@
+# fixedbugs, defect 152, lane ffi-macro, 2026-10-02.
+#
+# SYMPTOM: `function strlen() -> u64`, a function the header gives one
+# parameter, was `internal error`, exit 2: *too few arguments to function
+# call*, at the result assertion and at the call. With one parameter too many
+# the probe holds the call and `ffi_call_shape` has told it since panel 096.
+#
+# FIX: the call said again at the declaration's line is the probe a
+# declaration with no parameter never had, and the reader that tells a count
+# reads it.
+
+extern "string.h"
+    function strlen() -> u64  #~ ffi_call_shape
+
+function main()
+    print(strlen())

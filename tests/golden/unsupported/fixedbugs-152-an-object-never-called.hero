@@ -1,0 +1,14 @@
+# fixedbugs, defect 152, lane ffi-macro, 2026-10-02.
+#
+# SYMPTOM: declared and never called, `function errno() -> i32` was still
+# `internal error`, exit 2, from the result assertion alone, the one line
+# every `extern` function has and the one that carries no `#line`.
+#
+# FIX: the call is said again at the declaration's line whether or not the
+# program makes it, since the assertion makes it.
+
+extern "errno.h"
+    function errno() -> i32  #~ ffi_call_shape
+
+function main()
+    print(1)

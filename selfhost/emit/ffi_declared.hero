@@ -92,8 +92,14 @@ function not_constant(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
         message: "`" + found.must().header + "` has `" + name + "`, but not as a constant — clang cannot read its value while compiling",
         span: found.must().span
     )
+
+    # The note's last sentence said *reached through an `extern function` that
+    # returns it* until defect 152 (2026-10-02), which reads as `function
+    # errno() -> i32`, the declaration that defect is about: what returns it is
+    # a C function of the program's own, and the header's type is not one this
+    # assertion learns, so the author writes it.
     d.notes @ d.notes.push(
-        "a `constant` names one value forever (§4.4), and `" + name + "` is an object or a macro that expands to one — reading it twice could give two answers, which is the mutable global §4.2 forbids. A C object is reached through an `extern function` that returns it"
+        "a `constant` names one value forever (§4.4), and `" + name + "` is an object or a macro that expands to one — reading it twice could give two answers, which is the mutable global §4.2 forbids. A C object is reached through a function of the program's own that returns it, written in a header beside this file and bound by `extern` naming that header like any function: `static inline <its C type> hero_" + name + "(void) { return " + name + "; }`"
     )
     return ok(d)
 

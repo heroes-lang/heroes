@@ -1,0 +1,15 @@
+# fixedbugs, defect 152, lane ffi-macro, 2026-10-02.
+#
+# SYMPTOM: `function stdin() -> ptr` under `extern "stdio.h"` was `internal
+# error`, exit 2: *called object type 'FILE *'*. `stdin` is a `FILE *`
+# object on every libc, behind a macro on two of them.
+#
+# CAUSE AND FIX: as `fixedbugs-152-an-object-declared-as-a-function`; the
+# object's type is written into the suggested function as the header spells
+# it, pointer and all.
+
+extern "stdio.h"
+    function stdin() -> ptr  #~ ffi_call_shape
+
+function main()
+    print(stdin() == nullptr)

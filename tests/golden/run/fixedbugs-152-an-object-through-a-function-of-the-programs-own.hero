@@ -1,0 +1,26 @@
+# fixedbugs, defect 152, lane ffi-macro, 2026-10-02.
+#
+# What `ffi_call_shape` tells an author who declared `function errno() ->
+# i32`: an object is reached through a function of the program's own, in a
+# header beside the file, bound by `extern` like any function. This is that
+# repair, built and run: `strtoll` past the range of a 64-bit integer sets
+# `errno` to `ERANGE` on every libc this compiler targets, and the program
+# reads it twice, before and after, through the function, which returns what
+# `errno` holds at each read.
+
+extern "fixedbugs-152-an-object-through-a-function-of-the-programs-own.h"
+    function hero_errno_clear()
+    function hero_errno() -> i32
+
+extern "stdlib.h"
+    function strtoll(text: cstr lent, end: ptr, base: i32) -> i64
+
+extern "errno.h"
+    constant ERANGE: i32
+
+function main()
+    hero_errno_clear()
+    print(hero_errno())
+    big = strtoll(text: "99999999999999999999999".cstr(), end: nullptr, base: 10)
+    print(big)
+    print(hero_errno() == ERANGE)
