@@ -1,0 +1,21 @@
+# Panel 186 R7, lane land186, 2026-10-02: a group's record over a C union is
+# built naming exactly one member of each union, an anonymous struct's fields
+# counting as one, and every field outside them (spec § 13). What a
+# construction leaves out is judged by `build`, from the header's layout, at
+# the construction (`selfhost/emit/layout_sites.hero`).
+#
+# An anonymous struct's fields count as one member: naming `lo` alone leaves
+# out `hi`, which shares no byte with `lo` or `kind`. `i` shares `lo`'s
+# bytes, so leaving it out is the rule.
+
+extern "ffi-a-construction.h"
+    record SB
+        kind: i32
+        i: i32
+        lo: i16
+        hi: i16
+    function sb_i(s: SB) -> i32
+
+function main()
+    b = SB(kind: 1, lo: 2)  #~ missing_fields
+    print(sb_i(b))

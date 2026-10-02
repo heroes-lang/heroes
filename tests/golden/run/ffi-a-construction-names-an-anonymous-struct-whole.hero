@@ -1,0 +1,26 @@
+# Panel 186 R7, lane land186, 2026-10-02: a group's record over a C union is
+# built naming exactly one member of each union, an anonymous struct's fields
+# counting as one, and every field outside them (spec § 13); what a
+# construction leaves out is judged by `build` from the header's layout.
+#
+# A union whose other member is an anonymous struct: a construction names the
+# struct's fields together, as one member, or the integer alone, and reads
+# the other through C. The bytes are read little-endian, as on every platform
+# this compiler targets (arm64 and x86-64): `hi` 3 over `lo` 2 is 196610.
+
+extern "ffi-a-construction.h"
+    record SB
+        kind: i32
+        i: i32
+        lo: i16
+        hi: i16
+    function sb_i(s: SB) -> i32
+    function sb_kind(s: SB) -> i32
+
+function main()
+    b = SB(kind: 1, lo: 2, hi: 3)
+    print(sb_i(b))
+    print(sb_kind(b))
+    c = SB(kind: 1, i: 196610)
+    print(c.lo)
+    print(c.hi)

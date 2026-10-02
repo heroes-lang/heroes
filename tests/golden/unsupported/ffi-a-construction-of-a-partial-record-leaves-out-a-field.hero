@@ -1,0 +1,19 @@
+# Panel 186 R7, lane land186, 2026-10-02: a group's record over a C union is
+# built naming exactly one member of each union, an anonymous struct's fields
+# counting as one, and every field outside them (spec § 13). What a
+# construction leaves out is judged by `build`, from the header's layout, at
+# the construction (`selfhost/emit/layout_sites.hero`).
+#
+# A `partial` record names only some of the struct's members, and a
+# construction of it names every field it declares outside the unions: `x`
+# left out is refused as for any record, C keeping only what is undeclared.
+
+extern "ffi-a-construction.h"
+    record SA partial
+        kind: i32
+        x: i32
+    function sa_x(s: SA) -> i32
+
+function main()
+    b = SA(kind: 2)  #~ missing_fields
+    print(sa_x(b))

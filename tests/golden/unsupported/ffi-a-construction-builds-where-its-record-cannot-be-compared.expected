@@ -1,0 +1,6 @@
+error[ffi_union_field]: `SA` holds `f` in a union of `ffi-a-construction.h`, sharing its bytes with `i`, and a `f32` is not compared bit for bit, so comparing a `SA` or using one as a map key can call two different values equal
+  at tests/golden/unsupported/ffi-a-construction-builds-where-its-record-cannot-be-compared.hero:13:12
+     |
+  13 |     record SA  #~ ffi_union_field
+     |            ^^
+  note: only an integer, a pointer or an array of them as wide as the union compares a union's bytes: to compare a `SA`, name that member; reading `f` and building a `SA` that names it stay legal

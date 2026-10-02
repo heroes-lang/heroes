@@ -588,6 +588,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     sitting's third reading): at `8977e7c6`, gated by its own cases; the
     rest is owed at the round's gate, and the platform legs before the push.
 
+    **2026-10-02, lane land186, spec § 13 says it, O_cover in place of
+    R_build_cover, and design.md §4.19 says where it is judged** (panel 186
+    R7): at `fc0e7284`, gated by its own cases; the rest is owed at the
+    round's gate, and the platform legs before the push.
+
     **Class: blocking**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): a wrong value at the C
     boundary, built from Heroes.

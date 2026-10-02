@@ -1,0 +1,6 @@
+error[ffi_union_field]: this construction of `SB` names `i` and `lo`, which are the same bytes: `ffi-a-construction.h` puts them in one union inside the struct, so C would keep only the one written last
+  at tests/golden/unsupported/ffi-a-construction-names-an-arm-and-an-anonymous-struct.hero:19:9
+     |
+  19 |     b = SB(kind: 1, i: 2, lo: 3)  #~ ffi_union_field
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a `record` over a C union names one or more of each union's members and reads any, and is built naming exactly one, an anonymous struct's fields counting as one (§ 13): name the one the program writes

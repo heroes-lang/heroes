@@ -1,0 +1,6 @@
+error[missing_fields]: this construction of `SA` leaves out `x`, which shares no byte with the fields it names, so C would build it with `x` zero: `ffi-a-construction.h` puts `x` in no union with any of those
+  at tests/golden/unsupported/ffi-a-construction-of-a-partial-record-leaves-out-a-field.hero:18:9
+     |
+  18 |     b = SA(kind: 2)  #~ missing_fields
+     |         ^^^^^^^^^^^
+  note: a group's `record` is built naming every field outside the header's unions and exactly one member of each union, an anonymous struct's fields counting as one (§ 13)
