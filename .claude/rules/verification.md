@@ -407,8 +407,9 @@ a repair are attacked (CL-061, CL-078), and every one of them became the
 same lane's item and blocked the tag.
 
 **Every item of `docs/work/DEFECTS.md` carries one class**, at the end of its
-line, ` · **class: <name>**`, and its body a `**Class:**` line with the date
-and the reason (`.claude/rules/records.md` § The lists):
+line, ` · **class: <name>**`, and its body one line opening
+`**Class: <name>**, YYYY-MM-DD` with the reason after the day
+(`.claude/rules/records.md` § The lists):
 
 - **`blocking`**: the current work's acceptance fails, or, whatever the
   work, robustness or truth does: a wrong value, a crash, a memory fault, an
