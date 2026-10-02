@@ -757,6 +757,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     the audit found (`scratchpad/lane-135c/next/first-pass.md`), P5 waiting
     on panel 185's ruling on design.md §4.15's premise.
 
+    **2026-10-02, lane checker, a label that names nothing is renamed by its
+    position only where the argument can stand there alone** (C3, and beside
+    it two labels naming nothing in each other's places, which applied into
+    a program that checks clean): repaired at `1ef5c8ca`, gated by its cases
+    and the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe)
 
     **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (a header of its own

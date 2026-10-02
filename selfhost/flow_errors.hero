@@ -114,7 +114,10 @@ function no_value(what: str, span: token.Span) -> diag.Diagnostic
 # body, and only for a body that jumps: one that ends on a statement was told
 # at its block by `branch_without_value`, and until 2026-10-01 it was told
 # again here, *this `i64` produces no value — every branch jumps*, which no
-# branch had (defect 139's class, an absent value read as a jump).
+# branch had (defect 139's class, an absent value read as a jump). Nor for a
+# body that left by a `break` or a `continue` outside every loop: that jump
+# was told where it stands, and until 2026-10-02 this was its shadow at the
+# same place (defect 148, `check/join.Leaves`).
 function constant_without_value(name: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "no_value",

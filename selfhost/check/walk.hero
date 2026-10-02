@@ -31,7 +31,7 @@
 #
 # `synth` is TOTAL: it always returns a type, because `return`, `break`
 # and `continue` are STATEMENTS in this language — the checker is never
-# asked what type `break` has. Divergence lives in `Outcome.jumps` and
+# asked what type `break` has. Divergence lives in `Outcome.leaves` and
 # reaches expressions only as an absent branch value in the join.
 
 use token
@@ -85,14 +85,15 @@ variant Want
         ty: i64
     unknown
 
-# Does control leave this statement, and what value did it produce?
-# Rust's (Flow, Option<TyId>) pair, as one record.
+# How does control leave this statement, and what value did it produce?
+# Rust's (Flow, Option<TyId>) pair, as one record; `join.Leaves` says why
+# leaving has three answers and not two.
 record Outcome
-    jumps: bool
+    leaves: join.Leaves
     value: i64?
 
 function falls_with_nothing() -> Outcome
-    return Outcome(jumps: false, value: fail(code: "none", msg: "a statement produces no value"))
+    return Outcome(leaves: .falls, value: fail(code: "none", msg: "a statement produces no value"))
 
 ## ⇒ — synthesise
 
@@ -277,7 +278,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             for branch in branches.branches
                 condition(@c, a, r, s, decls, branch.cond)
                 got = block(@c, a, r, s, decls, body: branch.block, want: .unknown)
-                collected @ collected.push(join.Branch(value: got.value, jumps: got.jumps, span: branch.block.span))
+                collected @ collected.push(join.Branch(value: got.value, leaves: got.leaves, span: branch.block.span))
 
             if branches.otherwise.is_err()
                 # Without an else the value is missing whenever the
@@ -286,7 +287,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
             got = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .unknown)
             collected @ collected.push(
-                join.Branch(value: got.value, jumps: got.jumps, span: branches.otherwise.must().span)
+                join.Branch(value: got.value, leaves: got.leaves, span: branches.otherwise.must().span)
             )
             return state.record_expr(
                 @c,
@@ -542,23 +543,24 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         # a .case, an ok(…) or a [] can be written in an arm at all.
 
         .if_expr branches =>
-            all_jump: bool @ !branches.otherwise.is_err()
+            leaving: join.Leaves @ .jumps
 
             for branch in branches.branches
                 condition(@c, a, r, s, decls, branch.cond)
                 got = block(@c, a, r, s, decls, body: branch.block, want: .value(ty: expected))
-                all_jump @ all_jump && got.jumps
+                leaving @ join.both(first: leaving, second: got.leaves)
 
             if branches.otherwise.is_err()
                 state.push_diagnostic(@c, flow_errors.if_without_else(span))
+                leaving @ .falls
             else
                 got = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .value(ty: expected))
-                all_jump @ all_jump && got.jumps
+                leaving @ join.both(first: leaving, second: got.leaves)
 
             # The synthesised `if` asks this in `join_for_value`; the checked
             # one never did, so `x: i64 = if` with a `return` in every branch
             # checked where `x = if` was refused (defect 139).
-            join.refuse_leaving(@c, leaves: all_jump, what: "if", span: span)
+            join.refuse_leaving(@c, leaves: leaving, what: "if", span: span)
             _ = state.record_expr(@c, at: id, ty: expected)
             return
         .match_expr m =>
@@ -577,7 +579,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
 
             # Every arm jumped, which is not *no arm produced a value*: an
             # arm that ended on a statement was told at the arm (defect 139).
-            join.refuse_leaving(@c, leaves: join.every_branch_jumps(branches), what: "match", span: span)
+            join.refuse_leaving(@c, leaves: join.every_branch(branches), what: "match", span: span)
             _ = state.record_expr(@c, at: id, ty: expected)
             return
         # A UFCS call takes the same expectation as a call (panel 105, the
@@ -702,7 +704,7 @@ function mismatch_shown(@c: state.Checker, s: source.Source, decls: [ast.Decl], 
 # block may produce one; every other line is a statement, and §4.14
 # wants it to be ().
 function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block, want: Want) -> Outcome
-    jumps: bool @ false
+    leaves: join.Leaves @ .falls
     value: i64? @ fail(code: "none", msg: "no last value yet")
     last = body.stmts.len() - 1
     index: i64 @ 0
@@ -720,8 +722,11 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         got = statement(@c, a, r, s, decls, id: sid, want: here)
         c.tail @ tail
 
-        if got.jumps
-            jumps @ true
+        # The first statement that leaves is how the block leaves, since
+        # nothing after it runs: a refused `break` before a `return` makes
+        # the block's leaving the refused one's (defect 148).
+        if leaves == .falls
+            leaves @ got.leaves
 
         if index == last
             value @ got.value
@@ -729,15 +734,15 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
 
     # A block that jumps produces no value, whatever its last line looked
     # like.
-    if jumps
-        return Outcome(jumps: true, value: fail(code: "jumps", msg: "a block that jumps produces no value"))
+    if leaves != .falls
+        return Outcome(leaves: leaves, value: fail(code: "jumps", msg: "a block that jumps produces no value"))
 
     # Asked for a value, falls through, and has none: its last line is a
     # statement. NOT the same as diverging — treating the two alike would
     # let `x = if c` with a loop in the branch pass silently.
     if want != .nothing && value.is_err()
         state.push_diagnostic(@c, flow_errors.branch_without_value(body.span))
-    return Outcome(jumps: false, value: value)
+    return Outcome(leaves: .falls, value: value)
 
 function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, want: Want) -> Outcome
     span = a.stmts[id].span
@@ -779,14 +784,8 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             check(@c, a, r, s, decls, id: m.value, expected: narrowed)
             return falls_with_nothing()
         .return_stmt rv => return returns(@c, a, r, s, decls, value: rv.value, span: span)
-        .break_stmt =>
-            if c.loops == 0
-                state.push_diagnostic(@c, flow_errors.jump_outside_loop("break", span))
-            return Outcome(jumps: true, value: fail(code: "jumps", msg: "a jump has no value"))
-        .continue_stmt =>
-            if c.loops == 0
-                state.push_diagnostic(@c, flow_errors.jump_outside_loop("continue", span))
-            return Outcome(jumps: true, value: fail(code: "jumps", msg: "a jump has no value"))
+        .break_stmt     => return loop_jump(@c, word: "break", span: span)
+        .continue_stmt  => return loop_jump(@c, word: "continue", span: span)
         .assert_stmt v =>
             wanted = table.bool_ty(c.out.types)
             got = synth(@c, a, r, s, decls, v.value)
@@ -859,7 +858,17 @@ function returns(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.
         if c.result != unit
             want = state.show(c, s, decls, c.result)
             state.push_diagnostic(@c, flow_errors.missing_value(want, span))
-    return Outcome(jumps: true, value: fail(code: "jumps", msg: "a return has no value here"))
+    return Outcome(leaves: .jumps, value: fail(code: "jumps", msg: "a return has no value here"))
+
+# `break` and `continue`: a jump inside a loop, and outside every loop one
+# refused where it stands, told here and nowhere else (defect 148). A
+# function of its own so that `statement`, which every nested block recurses
+# through, holds no diagnostic in its frame.
+function loop_jump(@c: state.Checker, word: str, span: token.Span) -> Outcome
+    if c.loops == 0
+        state.push_diagnostic(@c, flow_errors.jump_outside_loop(word, span))
+        return Outcome(leaves: .refused, value: fail(code: "jumps", msg: "a jump has no value"))
+    return Outcome(leaves: .jumps, value: fail(code: "jumps", msg: "a jump has no value"))
 
 # The type a mutation target ACCEPTS, which differs from the type it
 # reads in exactly one case: an index into a map.
@@ -896,20 +905,22 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
     match a.exprs[value].kind
         .if_expr branches =>
             if want == .nothing
-                all_jump: bool @ !branches.otherwise.is_err()
+                leaving: join.Leaves @ .jumps
 
                 for branch in branches.branches
                     condition(@c, a, r, s, decls, branch.cond)
                     got = block(@c, a, r, s, decls, body: branch.block, want: .nothing)
-                    all_jump @ all_jump && got.jumps
+                    leaving @ join.both(first: leaving, second: got.leaves)
 
-                if !branches.otherwise.is_err()
+                if branches.otherwise.is_err()
+                    leaving @ .falls
+                else
                     got = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .nothing)
-                    all_jump @ all_jump && got.jumps
+                    leaving @ join.both(first: leaving, second: got.leaves)
 
                 # As a statement it has the type a statement must have.
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
-                return Outcome(jumps: all_jump, value: fail(code: "none", msg: "a statement produces no value"))
+                return Outcome(leaves: leaving, value: fail(code: "none", msg: "a statement produces no value"))
             return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
         .match_expr m =>
             if want == .nothing
@@ -921,9 +932,9 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
                 # value* until 2026-10-01, which every `match` statement
                 # satisfies, and a function with no `return` checked clean
                 # and stopped in clang (defect 139).
-                all_jump = join.every_branch_jumps(branches)
+                leaving = join.every_branch(branches)
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
-                return Outcome(jumps: all_jump, value: fail(code: "none", msg: "a statement produces no value"))
+                return Outcome(leaves: leaving, value: fail(code: "none", msg: "a statement produces no value"))
             return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return valued_expression(
             @c,
@@ -964,10 +975,10 @@ function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, 
     match want
         .value w =>
             check(@c, a, r, s, decls, id: value, expected: w.ty)
-            return Outcome(jumps: false, value: ok(w.ty))
+            return Outcome(leaves: .falls, value: ok(w.ty))
         .unknown =>
             got = synth(@c, a, r, s, decls, value)
-            return Outcome(jumps: false, value: ok(got))
+            return Outcome(leaves: .falls, value: ok(got))
         .nothing =>
             got = synth(@c, a, r, s, decls, value)
 
@@ -1028,21 +1039,21 @@ function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 .error     => continue
 
         value: i64? @ fail(code: "none", msg: "nothing produced yet")
-        jumps: bool @ false
+        leaves: join.Leaves @ .falls
 
         match arm.body
             .one_stmt one =>
                 # A jump's outcome carries no value already.
                 got = statement(@c, a, r, s, decls, id: one.at, want: want)
-                jumps @ got.jumps
+                leaves @ got.leaves
                 value @ got.value
                 refuse_statement_arm(@c, a, want: want, got: got, at: one.at)
             .block bb =>
                 got = block(@c, a, r, s, decls, body: bb.block, want: want)
-                jumps @ got.jumps
+                leaves @ got.leaves
                 value @ got.value
 
-        branches @ branches.push(join.Branch(value: value, jumps: jumps, span: arm.span))
+        branches @ branches.push(join.Branch(value: value, leaves: leaves, span: arm.span))
 
     reach.exhaustive(@c, s, decls, subject: subject, covered: covered, wildcard_seen: wildcard_seen, span: span)
     return branches
@@ -1055,7 +1066,7 @@ function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
 # recurses through, and the C this compiles to keeps every temporary of a
 # function in its frame: the diagnostic built here would widen each level.
 function refuse_statement_arm(@c: state.Checker, a: ast.Ast, want: Want, got: Outcome, at: i64)
-    if want != .nothing && !got.jumps && got.value.is_err()
+    if want != .nothing && got.leaves == .falls && got.value.is_err()
         state.push_diagnostic(@c, flow_errors.branch_without_value(a.stmts[at].span))
 
 # A literal arm, checked against the subject's type, which is the type its

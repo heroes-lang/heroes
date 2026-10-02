@@ -56,8 +56,11 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                     # has already said so (`branch_without_value`). Until
                     # 2026-10-01 this read the absent value, so such a body
                     # was told twice, the second time *every branch jumps*
-                    # (defect 139's class).
-                    if got.jumps
+                    # (defect 139's class). And only of a body that left by a
+                    # jump meaning something: one that left by a `break` or a
+                    # `continue` outside every loop was told at the jump, and
+                    # until 2026-10-02 was told here too (defect 148).
+                    if got.leaves == .jumps
                         name = source.span_text(s, decl.name)
                         state.push_diagnostic(
                             @c,
@@ -172,7 +175,7 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                     # clean for three milestones. Held back rather than
                     # pushed, so §4.16's file-wide hole exemption can apply
                     # at the driver.
-                    if !got.jumps && result != table.unit_ty(c.out.types)
+                    if got.leaves == .falls && result != table.unit_ty(c.out.types)
                         want = state.show(c, s, decls, result)
                         name = source.span_text(s, decl.name)
                         c.missing_returns @ c.missing_returns.push(
