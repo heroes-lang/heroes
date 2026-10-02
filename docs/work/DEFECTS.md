@@ -284,6 +284,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     0 failed. The item stays open for the shapes lane recovery-b6's report
     names.
 
+    **2026-10-02, lane recovery-b8, a line that failed past what it declares
+    drops only its line, and the block below it is told** (lane recovery-b6's
+    `d01_use_junk` and `d04_extern_member_junk`): repaired at `525fe2dd`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
