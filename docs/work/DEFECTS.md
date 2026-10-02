@@ -939,6 +939,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     no C compiler reads it**: repaired at `0aa055a9`, gated by its cases and
     the compiler's own tests; the net is owed at the batch's close.
 
+    **2026-10-02, lane ci-probe, the second half: a probe row over a tree
+    probes its files one at a time, and the files together must read what
+    the probe reads of the whole root**: repaired at `efe2fea2`, gated by
+    the net's own tests and `probe` whole; the net is owed at the batch's
+    close, and Linux arm64 at the push.
+
 - [ ] **156 — a C struct with a bit-field member stops `build` with an internal error and clang's text** | `extern "bf.h"` over `typedef struct { int32_t kind; uint32_t flag : 1; uint32_t rest : 31; } BF;` with `record BF` naming `kind: i32`, `flag: u32`, `rest: u32`, reading `make_bf().kind`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: ... invalid application of 'sizeof' to bit-field* at the field assertions and *address of bit-field requested* in the generated hash | `selfhost/emit/` (the field assertion, `heroes-ffi-field`, and the record's descriptor) · panel 073's item 3 (bit-fields filtered before the assertion)
 
     **Origin:** panel 186's completeness critic, 2026-10-02, in its first
