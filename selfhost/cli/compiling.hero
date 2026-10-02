@@ -1,0 +1,262 @@
+# What a probe of the program's headers compiles under, and what those
+# headers resolve to under it (design.md §4.19, §1.12; defects 163 and 168,
+# 2026-10-02).
+#
+# **A probe judges the header the program's own compile will see, with the
+# words that compile sees it with.** The pointee check, the layout check and
+# a refused round's questions each compile the program's headers before any
+# unit does (`cli/pointee.hero`, `cli/layout.hero`, `cli/header_ask.hero`),
+# and each one's line is built here: the compiler's own flags but its
+# diagnostics (`probe_flags`, defect 163), then the search, in the order a
+# unit's compile searches it (`search_words`).
+#
+# **And a verdict a probe keeps is keyed by everything it depends on**
+# (defect 168): every word of its lines, from the one list the lines are
+# built from (`probe_words`), and what the headers resolve to and hold under
+# those words, asked of clang once in each round of a build for both checks
+# (`reads`, `probe`). Until then the layout check's key named the screen's
+# text, the `--include` directories, a package's compile words and the
+# probe's flags, and the pointee check's the declaring file's name: neither
+# named the source's own directory, so a program beside a same-named header
+# replayed another directory's verdict, measured 2026-10-02 both ways on one
+# `build/` (a record leaving a member out built at exit 0 and printed a
+# wrong value; the correct program beside the other header stopped at exit
+# 2), and the library's own asks, whose declaring file is the same in every
+# program, replayed a refusal onto a program whose header refutes nothing.
+# A kept record (`cli/deps`) vouches only for the files a run READ, so a
+# header that appeared earlier in the search order is in no record: the
+# same program, its own source edited, compiled against the new header
+# while the layout check replayed the old one's verdict, exit 0 and a
+# wrong value, measured the same day with `--include`. `reads` asks what a
+# record cannot, which files these words make of these includes now.
+
+use cli/flags
+use cli/libraries
+use cli/strings
+use cli/process
+use cli/publish
+use cli/digest
+use cli/deps
+
+# Everything a probe compiles the program's headers under but the words of
+# its own run: the directories the program names with `--include`, a
+# package's answer, the runtime, and the source's own directory.
+record Compiling
+    search_include: [str]
+    package_flags: [str]
+    runtime: str
+    source_dir: str
+
+# The search, in the order a unit's compile searches (`units.tu_object`): the
+# `--include` directories, a package's compile words by the one rule every
+# compile step reads (`libraries.compile_flags`; defect 161: `-I` alone was
+# kept here), the runtime, and the source's own directory, so `extern
+# "mylib.h"` finds a header beside the `.hero` file. The same headers must be
+# found from the same places, or the question is asked of another header.
+function search_words(c: Compiling) -> [str]
+    out: [str] @ []
+
+    for one in c.search_include
+        out @ strings.with_all(list: out, more: ["-I", one])
+
+    for flag in libraries.compile_flags(c.package_flags)
+        out @ out.push(flag)
+
+    out @ strings.with_all(list: out, more: ["-I", c.runtime])
+
+    if c.source_dir.len() > 0
+        out @ strings.with_all(list: out, more: ["-I", c.source_dir])
+
+    return out
+
+# Every word a probe's line compiles under but its own run's: the
+# compiler's flags but its diagnostics, then the search. Each probe builds
+# its lines from this list and names it in its key, so no word reaches a
+# line without reaching the key.
+function probe_words(c: Compiling) -> [str]
+    return strings.with_all(list: probe_flags(), more: search_words(c))
+
+# What one round's two checks ask with (`assemble.round`): the words their
+# lines compile under, the headers every one of their units opens with, what
+# those headers resolve to under those words (`reads`), and the digests that
+# answer took, so a check vouching for its record hashes no file twice. Each
+# check takes its headers from here, so the listing its key names is the
+# listing of the includes its units open with, and one preprocessing run
+# serves both checks.
+record Probe
+    words: [str]
+    headers: [str]
+    read: str?
+    digests: {str: str}
+
+function probe(build: str, under: Compiling, headers: [str]) -> Probe
+    words = probe_words(under)
+    digests: {str: str} @ {}
+    read = reads(build, words: words, headers: headers, @digests)
+    return Probe(words: words, headers: headers, read: read, digests: digests)
+
+# The compiler's own flags a probe compiles under, so it reads a header as
+# the program's compile does (defect 163, 2026-10-02): every flag of
+# `flags.flags()` but its diagnostics, one rule and never a second list.
+# Measured with this Mac's clang 21, preprocessing for the four legs'
+# targets: of the sixteen, `-std=gnu11` (against clang's own gnu17), the two
+# `-D`s and, on Linux arm64 alone, `-fsigned-char` change what C means by a
+# predefined macro; `-g` and the two code-generation flags change none and
+# are kept, so a flag that changes what a type is without a macro is never
+# left out; the diagnostics change none either and decide whether a unit
+# compiles, not what a type is, so a probe never fails on a header's
+# warning. The probes compiled under `-std=gnu11` alone until then, so on
+# Linux arm64, where a plain `char` is unsigned by default, the pointee
+# check refused the `@p: i8` that the program's own compile, under
+# `-fsigned-char`, agrees with, and accepted the `@p: u8` it refuses.
+function probe_flags() -> [str]
+    out: [str] @ []
+
+    for flag in flags.flags()
+        if !strings.starts_with(text: flag, prefix: "-W")
+            out @ out.push(flag)
+
+    return out
+
+# What the headers resolve to under `words`, and what each one holds: the
+# rows of `cli/deps`, `<digest> <path>` per file, from one `clang -M` over
+# the lines every probe unit opens with (`include_lines`), so the files are
+# the ones the probe's own run would read, found from the same places.
+# Absent where the headers do not preprocess: the build's own compile
+# reports that on the author's line, as each probe leaves a run that fails.
+# One preprocessing run, measured 2026-10-02 on this Mac at a load of 2.6:
+# ten of them over the four headers of a one-record program took 0.10 s of
+# user time, as ten of the layout check's screen runs did, against 0.21 s
+# for that program's whole warm build.
+function reads(build: str, words: [str], headers: [str], @memo: {str: str}) -> str?
+    text = include_lines(headers)
+    dir = build + "/reads"
+    process.mkdir_all(dir)?
+    unit = dir + "/reads-" + digest.digest(text) + ".c"
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    depfile = publish.private_name(dir + "/reads.d")
+    line: [str] @ strings.with_all(list: ["clang"], more: words)
+    line @ strings.with_all(list: line, more: ["-M", "-MT", "dep", "-MF", depfile, unit])
+    ran = process.run(program: "clang", words: line, out: process.discard(), err: process.discard())
+
+    if !ran.started || ran.code != 0
+        publish.discard(depfile)
+        return fail(code: "unread", msg: "the headers did not preprocess")
+    rows = deps.rows_of(depfile: depfile, skip: dir + "/", @memo)
+    publish.discard(depfile)
+    return rows
+
+# The lines every probe unit opens with: one angled include per header, in
+# the program's own order (`emit/externs.headers`).
+function include_lines(headers: [str]) -> str
+    lines: [str] @ []
+
+    for header in headers
+        lines @ lines.push("#include <" + header + ">")
+
+    return lines.join("\n") + "\n"
+
+## Tests
+
+# **What the headers resolve to is clang's answer, and it moves when a header
+# appears earlier in the search** (defect 168). The source's directory holds
+# `x.h`; an `--include` directory searched before it holds nothing, then the
+# same name: the same words and the same includes now read another file, and
+# the answer says so, by path and by what it holds.
+test "what a probe's headers resolve to is asked of clang, and a header that appears earlier in the search is another answer (defect 168)"
+    root = "build/selftest-compiling-reads"
+    assert !process.remove_tree(root).is_err()
+    assert !process.mkdir_all(root + "/inc").is_err()
+    assert !process.mkdir_all(root + "/src").is_err()
+    assert !write_file(path: root + "/src/x.h", text: "#define HERO_READS 1\n").is_err()
+    c = Compiling(search_include: [root + "/inc"], package_flags: [], runtime: "runtime", source_dir: root + "/src")
+    words = probe_words(c)
+    first: {str: str} @ {}
+    beside = reads(root + "/build", words: words, headers: ["x.h"], @first).must()
+    assert process.holds(text: beside, needle: root + "/src/x.h")
+    assert !process.holds(text: beside, needle: root + "/inc/x.h")
+    assert !write_file(path: root + "/inc/x.h", text: "#define HERO_READS 2\n").is_err()
+    second: {str: str} @ {}
+    earlier = reads(root + "/build", words: words, headers: ["x.h"], @second).must()
+    assert process.holds(text: earlier, needle: root + "/inc/x.h")
+    assert earlier != beside
+
+    # A header that is not there does not preprocess, and the answer is
+    # absent rather than a listing of what was found.
+    third: {str: str} @ {}
+    assert reads(root + "/build", words: words, headers: ["hero-no-such-header.h"], @third).is_err()
+
+# **A probe's words are its own flags and the search a unit's compile uses**,
+# in that order: the `--include` directories, a package's compile words but
+# its link words, the runtime, and the source's own directory last.
+test "a probe compiles under the probe flags and then the search, in a unit's order"
+    c = Compiling(
+        search_include: ["inc"],
+        package_flags: ["-DHERO_PKG", "-lz", "-Ipkg"],
+        runtime: "rt",
+        source_dir: "src"
+    )
+    assert search_words(c) == ["-I", "inc", "-DHERO_PKG", "-Ipkg", "-I", "rt", "-I", "src"]
+    assert probe_words(c) == strings.with_all(list: probe_flags(), more: search_words(c))
+    none = Compiling(search_include: [], package_flags: [], runtime: "rt", source_dir: "")
+    assert search_words(none) == ["-I", "rt"]
+
+# **A probe reads a plain `char` as the program's compile does** (defect
+# 163). The leg where the sign differs is Linux arm64, and clang answers for
+# that target on any machine with no header: asked there, a plain `char` is
+# unsigned under clang's own default and signed under the probe's flags, so
+# the case reads the same on every leg, the arm64 container's included.
+test "a probe's flags make a plain char signed for Linux arm64, as the program's compile does (defect 163)"
+    assert !process.mkdir_all("build").is_err()
+    unit = "build/selftest-probe-char.c"
+    assert !write_file(path: unit, text: "_Static_assert((char)-1 < 0, \"a plain char is signed\");\n").is_err()
+    target = "--target=aarch64-linux-gnu"
+    bare = process.run(
+        program: "clang",
+        words: ["clang", target, "-fsyntax-only", unit],
+        out: process.discard(),
+        err: process.discard()
+    )
+    assert bare.started
+    assert bare.code != 0
+    probed: [str] @ strings.with_all(list: ["clang", target], more: probe_flags())
+    probed @ strings.with_all(list: probed, more: ["-fsyntax-only", unit])
+    signed = process.run(program: "clang", words: probed, out: process.discard(), err: process.discard())
+    assert signed.code == 0
+
+# **What a probe leaves out changes no predefined macro** (defect 163), asked
+# of clang on this machine's own target and on Linux arm64's, the leg the
+# rule was written for. A flag of `flags.flags()` that the rule dropped and
+# that moved a macro would fail here, naming nothing but the comparison, and
+# the sign of a plain `char` is shown to move one on that leg, so the
+# comparison is not blind.
+test "every flag a probe leaves out changes no predefined macro, here or on Linux arm64 (defect 163)"
+    none: [str] = []
+    arm = ["--target=aarch64-linux-gnu"]
+
+    for target in [none, arm]
+        base = macros(more: target)
+
+        for flag in flags.flags()
+            kept: bool @ false
+
+            for one in probe_flags()
+                if one == flag
+                    kept @ true
+
+            if !kept
+                assert macros(more: target.push(flag)) == base
+
+    assert macros(more: arm.push("-fsigned-char")) != macros(more: arm)
+
+# What clang predefines for C under `more`, read from an empty unit.
+function macros(more: [str]) -> str
+    assert !process.mkdir_all("build").is_err()
+    empty = "build/selftest-probe-empty.c"
+    said = "build/selftest-probe-macros.txt"
+    assert !write_file(path: empty, text: "").is_err()
+    words: [str] @ strings.with_all(list: ["clang"], more: more)
+    words @ strings.with_all(list: words, more: ["-E", "-dM", "-x", "c", empty])
+    ran = process.run(program: "clang", words: words, out: said, err: process.discard())
+    assert ran.code == 0
+    return read_file(said).must()

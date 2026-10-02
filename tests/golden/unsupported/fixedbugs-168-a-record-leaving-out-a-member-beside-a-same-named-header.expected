@@ -1,0 +1,6 @@
+error[ffi_incomplete_record]: `E` does not name `y`, and `fixedbugs-168-beside.h` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero
+  at tests/golden/unsupported/fixedbugs-168-a-record-leaving-out-a-member-beside-a-same-named-header.hero:11:12
+     |
+  11 |     record E  #~ ffi_incomplete_record
+     |            ^
+  note: the assertions above check every field you DO name and cannot see one you leave out: a `E` built here would carry a zero `y` into C, which is a value rather than a crash
