@@ -52,6 +52,7 @@ record Asking
     headers: [str]
     s: source.Source
     decls: [ast.Decl]
+    c: state.Checked
     u: extern_union.Used
     search_include: [str]
     package_flags: [str]
@@ -78,6 +79,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
         headers: headers,
         s: s,
         decls: decls,
+        c: c,
         u: u,
         search_include: search_include,
         package_flags: package_flags,
@@ -148,7 +150,7 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
             return ok()
         dumped_text @ made.must()
         publish.write_whole(path: kept_path, text: dumped_text, keyed: true)?
-    text = layout_check.check_unit(a.headers, dump: dumped_text, wanted: dumped, s: a.s, decls: a.decls, u: a.u)?
+    text = layout_check.check_unit(a.headers, dump: dumped_text, wanted: dumped, s: a.s, decls: a.decls, u: a.u, c: a.c)?
     return judged(a, sum: sum, text: text)
 
 # The rows of clang's record-layout dump for the unit that this compiler asked

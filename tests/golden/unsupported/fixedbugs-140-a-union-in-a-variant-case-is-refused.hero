@@ -12,9 +12,16 @@
 # which `==` and a key still may not walk, at any arity (panel 077): with
 # two, the completeness probe's own `{0,0}` draws clang's *excess elements
 # in union initializer* on this line, a warning that is not this case's.
+#
+# **Moved 2026-10-02, lane land186, by hand** (panel 186 R3, ratified): `i`
+# is an integer as wide as `W`, which compares soundly, so `W` by `i` is now
+# `run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds`.
+# This case binds the same union by an arm narrower than it, `b`, added to
+# the header for it: a float arm would meet the checker's own refusal of a
+# float in a map key first, which is not this case's rule either.
 extern "fixedbugs-140-a-union-in-a-variant-case-is-refused.h"
     record W  #~ ffi_union_field
-        i: i32
+        b: i8
 
 variant V
     has

@@ -1,0 +1,6 @@
+error[ffi_union_field]: `SPAD` holds `c` in a union of `fixedbugs-151-unions.h`, and `c` is narrower than that union (`i` is in it too), so comparing a `SPAD` or using one as a map key can call two different values equal
+  at tests/golden/unsupported/fixedbugs-151-an-array-arm-short-of-its-union-s-width-compared.hero:11:12
+     |
+  11 |     record SPAD  #~ ffi_union_field
+     |            ^^^^
+  note: only an integer, a pointer or an array of them as wide as the union compares a union's bytes: to compare a `SPAD`, name that member; reading `c` and building a `SPAD` that names it stay legal

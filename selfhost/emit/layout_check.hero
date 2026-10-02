@@ -1,8 +1,8 @@
 # The assertions the header's layout lets the compiler ask (panel 186):
-# a member the record leaves out, a declared field in a union where the
-# program compares the record, two declared fields of one union where it
-# builds one, and a declared bit-field. The dump only proposes NAMES
-# (`emit/layout_text.hero`); every verdict
+# a member the record leaves out, two declared fields of one union where the
+# program builds one, a declared bit-field, and, through
+# `emit/layout_compare.hero`, a declared field in a union where it compares
+# one. The dump only proposes NAMES (`emit/layout_text.hero`); every verdict
 # here is C arithmetic on the header's own offsets and sizes, or
 # `__builtin_classify_type`, so a misread dump names a member that does not
 # exist, which is clang's hard error and the compiler's fault, or asks about
@@ -20,9 +20,11 @@
 
 use ast
 use source
+use check/state
 use emit/extern_union
 use emit/layout_text
 use emit/layout_rows
+use emit/layout_compare
 use parse
 use resolve
 use checker
@@ -35,9 +37,6 @@ constant MISSING: str
 constant SHARED: str
     "heroes-ffi-shared"
 
-constant OVERLAP: str
-    "heroes-ffi-overlap"
-
 constant BITFIELD: str
     "heroes-ffi-bitfield"
 
@@ -48,7 +47,7 @@ constant BITFIELD: str
 #
 # `dump` is the rows of the blocks this compiler asked for
 # (`layout_rows.wrapper_rows`), never clang's whole output.
-function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: source.Source, decls: [ast.Decl], u: extern_union.Used) -> str?
+function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: source.Source, decls: [ast.Decl], u: extern_union.Used, c: state.Checked) -> str?
     lines: [str] @ []
 
     for header in headers
@@ -83,7 +82,7 @@ function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: s
         hero_name = source.span_text(s, decls[one.decl].name)
         place = source.locate(s, decls[one.decl].name.start)
 
-        for text in record_lines(one, hero_name: hero_name, tree: found.must(), decls: decls, u: u, s: s)
+        for text in record_lines(one, hero_name: hero_name, tree: found.must(), decls: decls, u: u, s: s, c: c)
             lines @ lines.push("#line " + place.line.to_str() + " \"" + place.file + "\"")
             lines @ lines.push(text)
             wrote @ true
@@ -99,9 +98,10 @@ function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: s
 # record, whether it shares a byte with anything beside it; and two declared
 # fields in one anonymous member, when the program builds the record,
 # whether they share one.
-function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text.Member], decls: [ast.Decl], u: extern_union.Used, s: source.Source) -> [str]
+function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text.Member], decls: [ast.Decl], u: extern_union.Used, s: source.Source, c: state.Checked) -> [str]
     out: [str] @ []
     declared: {str: bool} @ {}
+    wide: {str: bool} @ {}
     order: [str] @ []
     partial: bool @ true
 
@@ -113,6 +113,10 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
                 name = source.span_text(s, field.name)
                 declared[name] @ true
                 order @ order.push(name)
+                written = state.written_type(c, field.ty)
+
+                if !written.is_err() && layout_compare.compares_bitwise(c, decls, ty: written.must())
+                    wide[name] @ true
         .constant_decl | .function_decl | .variant_decl | .test_decl => partial @ true
 
     seen = layout_text.visible(tree)
@@ -152,7 +156,7 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
             if m.bitfield
                 terms @ terms.push("_Generic(((" + t + " *)0)->" + m.name + ", default: 0)")
             else
-                terms @ terms.push(size_of(t: t, m: m.name) + " == 0")
+                terms @ terms.push(layout_compare.size_of(t: t, m: m.name) + " == 0")
             arm_named: bool @ false
 
             for w in seen
@@ -163,7 +167,7 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
                 arm_named @ true
 
                 if v.group >= 0 && !m.bitfield && !n.bitfield && !n.flexible
-                    terms @ terms.push(shares(t: t, a: m.name, b: n.name))
+                    terms @ terms.push(layout_compare.shares(t: t, a: m.name, b: n.name))
 
                 # A bit-field beside a declared member: whether that member's
                 # bytes hold the bit-field's first byte, the byte the dump
@@ -172,7 +176,7 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
                     o = "__builtin_offsetof(" + t + ", " + n.name + ")"
                     b = m.byte.to_str()
                     terms @ terms.push(
-                        "(" + o + " <= " + b + " && " + b + " < " + o + " + " + size_of(t: t, m: n.name) + ")"
+                        "(" + o + " <= " + b + " && " + b + " < " + o + " + " + layout_compare.size_of(t: t, m: n.name) + ")"
                     )
 
             if v.group < 0 || !arm_named
@@ -186,15 +190,15 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
                 counted: [str] @ []
 
                 for a in aliases
-                    inside @ inside.push(" || " + shares(t: t, a: m.name, b: a))
+                    inside @ inside.push(" || " + layout_compare.shares(t: t, a: m.name, b: a))
                     counted @ counted.push(
-                        " + (" + shares(t: t, a: m.name, b: a) + " ? " + size_of(t: t, m: a) + " : 0)"
+                        " + (" + layout_compare.shares(t: t, a: m.name, b: a) + " ? " + layout_compare.size_of(t: t, m: a) + " : 0)"
                     )
 
                 terms @ terms.push(
                     "(__builtin_classify_type(((" + t + " *)0)->" + m.name + ") == 13 && (0" + inside.join("") + "))"
                 )
-                terms @ terms.push("(0" + counted.join("") + " >= " + size_of(t: t, m: m.name) + ")")
+                terms @ terms.push("(0" + counted.join("") + " >= " + layout_compare.size_of(t: t, m: m.name) + ")")
             out @ out.push(
                 "_Static_assert(" + terms.join(" || ") + ", \"" + MISSING + " " + hero_name + " " + m.name + "\");"
             )
@@ -225,54 +229,20 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
 
                 if w.group == v.group && w.at > v.at && !declared[n.name].is_err() && !n.bitfield && !n.flexible
                     out @ out.push(
-                        "_Static_assert(!" + shares(t: t, a: m.name, b: n.name) + ", \"" + SHARED + " " + hero_name + " " + m.name + " " + n.name + "\");"
+                        "_Static_assert(!" + layout_compare.shares(t: t, a: m.name, b: n.name) + ", \"" + SHARED + " " + hero_name + " " + m.name + " " + n.name + "\");"
                     )
 
         for a in aliases
             for other in pairs_of(a, order: order, shown: shown, unsized: unsized)
                 out @ out.push(
-                    "_Static_assert(!" + shares(t: t, a: a, b: other) + ", \"" + SHARED + " " + hero_name + " " + a + " " + other + "\");"
+                    "_Static_assert(!" + layout_compare.shares(t: t, a: a, b: other) + ", \"" + SHARED + " " + hero_name + " " + a + " " + other + "\");"
                 )
 
-    # Comparing it, hashing it or keying a map by it, at any depth the program
-    # reaches it (`extern_union.used`): a declared field inside an anonymous
-    # member that shares a byte with any member beside it, at any arity; and
-    # a field a macro reaches that lies in a named union member and leaves
-    # some of its bytes unread.
+    # Comparing it, hashing it or keying a map by it (R3), at any depth the
+    # program reaches it (`extern_union.used`).
     if !u.operated[one.decl].is_err()
-        for v in seen
-            m = tree[v.at]
-
-            if v.group < 0 || declared[m.name].is_err() || m.bitfield || m.flexible
-                continue
-            beside: [str] @ []
-
-            for w in seen
-                n = tree[w.at]
-
-                if w.group == v.group && w.at != v.at && !n.bitfield && !n.flexible
-                    beside @ beside.push(shares(t: t, a: m.name, b: n.name))
-
-            if beside.len() > 0
-                out @ out.push(
-                    "_Static_assert(!(" + beside.join(" || ") + "), \"" + OVERLAP + " " + hero_name + " " + m.name + "\");"
-                )
-
-        for a in aliases
-            inside: [str] @ []
-
-            for v in seen
-                n = tree[v.at]
-
-                if !n.bitfield && !n.flexible
-                    inside @ inside.push(
-                        "(" + shares(t: t, a: a, b: n.name) + " && __builtin_classify_type(((" + t + " *)0)->" + n.name + ") == 13 && " + size_of(t: t, m: n.name) + " != " + size_of(t: t, m: a) + ")"
-                    )
-
-            if inside.len() > 0
-                out @ out.push(
-                    "_Static_assert(!(" + inside.join(" || ") + "), \"" + OVERLAP + " " + hero_name + " " + a + "\");"
-                )
+        for line in layout_compare.compared_lines(t: t, hero_name: hero_name, tree: tree, declared: declared, aliases: aliases, wide: wide)
+            out @ out.push(line)
 
     if aliases.len() == 0 || out.len() == 0
         return out
@@ -308,18 +278,6 @@ function pairs_of(a: str, order: [str], shown: {str: bool}, unsized: {str: bool}
 
     return out
 
-# Whether two members share a byte, in C: two non-empty half-open ranges
-# from the header's own offsets and sizes.
-function shares(t: str, a: str, b: str) -> str
-    sa = size_of(t: t, m: a)
-    sb = size_of(t: t, m: b)
-    oa = "__builtin_offsetof(" + t + ", " + a + ")"
-    ob = "__builtin_offsetof(" + t + ", " + b + ")"
-    return "(" + sa + " != 0 && " + sb + " != 0 && " + oa + " < " + ob + " + " + sb + " && " + ob + " < " + oa + " + " + sa + ")"
-
-function size_of(t: str, m: str) -> str
-    return "sizeof(((" + t + " *)0)->" + m + ")"
-
 function failure_of(found: [layout_text.Member]?) -> str
     match found
         .ok    => return ""
@@ -338,18 +296,29 @@ test "the assertions for a struct holding an anonymous union: a member left out,
     u = extern_union.used(low.program, c, parsed.decls)
     wanted = layout_text.asked(s, parsed.decls)
 
-    control = "         0 | struct hero_ly_control\n         0 |   struct (unnamed) v\n         0 |     int a\n         4 |     union (anonymous) \n         4 |       int b\n         4 |       float c\n     8:0-1 |     unsigned int d\n     8:2-2 |     unsigned int \n        12 |     int[0] e\n           | [sizeof=12, align=4]\n"
+    # The control as Apple clang 21 and Homebrew clang 22.1.8 print it.
+    control = "         0 | struct hero_ly_control\n         0 |   struct hero_ly_control::(unnamed at control.c:1:26) v\n         0 |     int a\n         4 |     union hero_ly_control::(anonymous at control.c:1:42) \n         4 |       int b\n         4 |       float c\n         8 |     struct hero_ly_control::(anonymous at control.c:1:69) \n         8 |       int g\n        12 |       int h\n        16 |     struct hero_ly_control::(unnamed at control.c:1:95) n\n        16 |       int p\n    20:0-1 |     unsigned int d\n    20:2-2 |     unsigned int \n        24 |     int[0] e\n           | [sizeof=24, align=4]\n"
     dump = control + "         0 | struct hero_ly_0\n         0 |   SA v\n         0 |     int32_t kind\n         4 |     union SA::(anonymous at ./u.h:8:32) \n         4 |       int32_t i\n         4 |       float f\n         8 |     int32_t x\n           | [sizeof=12, align=4]\n"
-    unit = check_unit(["u.h"], dump: dump, wanted: wanted, s: s, decls: parsed.decls, u: u).must()
+    unit = check_unit(["u.h"], dump: dump, wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).must()
     assert layout_rows.byte_index(text: unit, needle: "#include <u.h>") == 0
     assert layout_rows.byte_index(text: unit, needle: "#line 2 \"t.hero\"") > 0
     assert layout_rows.byte_index(text: unit, needle: "_Static_assert(sizeof(((SA *)0)->x) == 0 || __builtin_classify_type(*(SA *)0) == 13, \"heroes-ffi-missing SA x\");") > 0
     assert layout_rows.byte_index(text: unit, needle: "\"heroes-ffi-shared SA i f\"") > 0
     assert layout_rows.byte_index(text: unit, needle: "heroes-ffi-missing SA kind") < 0
-    assert layout_rows.byte_index(text: unit, needle: "\"heroes-ffi-overlap SA i\"") > 0
-    assert check_unit(["u.h"], dump: "", wanted: wanted, s: s, decls: parsed.decls, u: u).is_err()
-    assert check_unit(["u.h"], dump: control, wanted: wanted, s: s, decls: parsed.decls, u: u).is_err()
-    assert check_unit(["u.h"], dump: dump.slice(from: control.len(), to: dump.len()), wanted: wanted, s: s, decls: parsed.decls, u: u).is_err(
+
+    # Compared: the integer arm is asked whether it is as wide as the union,
+    # the float arm is refused wherever it shares a byte (R3).
+    assert layout_rows.byte_index(text: unit, needle: "\"heroes-ffi-narrow SA i f\"") > 0
+    assert layout_rows.byte_index(text: unit, needle: "\"heroes-ffi-overlap SA f i\"") > 0
+    assert check_unit(["u.h"], dump: "", wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).is_err()
+    assert check_unit(["u.h"], dump: control, wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).is_err()
+    assert check_unit(["u.h"], dump: dump.slice(from: control.len(), to: dump.len()), wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).is_err(
+    )
+
+    # The control of the route's first build, without the anonymous struct
+    # and the named one, is a clang this reader does not know.
+    old = "         0 | struct hero_ly_control\n         0 |   struct (unnamed) v\n         0 |     int a\n         4 |     union (anonymous) \n         4 |       int b\n         4 |       float c\n     8:0-1 |     unsigned int d\n     8:2-2 |     unsigned int \n        12 |     int[0] e\n           | [sizeof=12, align=4]\n"
+    assert check_unit(["u.h"], dump: old + dump.slice(from: control.len(), to: dump.len()), wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).is_err(
     )
 
 test "a field the dump does not show puts the record's every question under the preprocessor"
@@ -369,7 +338,8 @@ test "a field the dump does not show puts the record's every question under the 
         tree: read,
         decls: parsed.decls,
         u: u,
-        s: s
+        s: s,
+        c: c
     )
 
     # `cc` is a macro or a misspelling: only the preprocessor knows which, so

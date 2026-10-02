@@ -136,7 +136,7 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
         # any unit compiles, so a field at the WRONG type and a field left
         # out never meet in one stderr: the positional probe that made them
         # meet (defect 062) is gone.
-        laid = ffi_layout.layout_record(s, decls, line: line)
+        laid = ffi_layout.layout_record(s, tree, decls, line: line)
 
         if !laid.is_err()
             found @ ffi_lookup.add_once(found, d: laid.must())
@@ -164,7 +164,7 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !field.is_err()
             found @ ffi_lookup.add_once(found, d: field.must())
-        union_r = ffi_record.union_record(s, decls, line: line)
+        union_r = ffi_record.union_record(s, tree, decls, line: line)
 
         if !union_r.is_err()
             found @ ffi_lookup.add_once(found, d: union_r.must())

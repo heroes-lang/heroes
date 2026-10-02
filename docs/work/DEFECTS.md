@@ -509,6 +509,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     about it reaches the author at a line they wrote correctly
     (`.claude/rules/generated-c.md`; design.md §4.17).
 
+    **2026-10-02, lane land186, completeness asked of the header's layout
+    and the positional probe gone** (panel 186 R4): repaired at `f2a08f13`,
+    gated by its cases and the compiler's own tests; the net is owed at the
+    batch's close, and the platform legs before the push.
+
 - [ ] **151 — a C struct holding an anonymous union is bound as separate fields, so a value built from Heroes reads back wrong** | `extern "u.h"` over `typedef struct { int32_t kind; union { int32_t i; float f; }; int32_t x; } SA;` with `record SA` naming `kind`, `i`, `f`, `x`: `s = SA(kind: 1, i: 7, f: 0.5, x: 3)` builds at exit 0 and `print(s.i)` prints 1056964608, the bits of 0.5, where 7 was written; `==` on it is accepted and prints `true` (u18); a field left out of such a struct is not reported, the program printing 12 (u07); and a record naming `a` and `c` of a struct `{a, b, c}` is told *does not name `c`* (u19) | `selfhost/emit/` (the record's layout check, `ffi_union_field`), panels 060 to 077's union rule
 
     **Origin:** lane literals' first pass for defect 150, 2026-10-02
@@ -530,6 +535,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `true` (reproduced by the coordinator at 11:02 on `ae08ed93`), where the
     same union bound alone by one member is `ffi_union_field`
     (`docs/panel/186-briefs/probes/critic/one_arm.hero`).
+
+    **2026-10-02, lane land186, the layout read from clang: a field left out
+    named by it, two fields of one union not built, a misspelling told
+    first** (panel 186 R1, R2, R4): repaired at `f2a08f13`, gated by its
+    cases and the compiler's own tests; the net is owed at the batch's
+    close, and the platform legs before the push.
 
 - [ ] **152 — a C object declared as an `extern` `function` stops `build` with an internal error** | `extern "errno.h"` with `function errno() -> i32`: `build` exit 2, *internal error: compiling the generated C failed: ... called object type 'int' is not a function or function pointer* at the result probe; the same for `stdin` and `optarg`, with or without parameters, on macOS and Linux (the seat's), where the same names declared `constant` get a clean exit 1 | `selfhost/emit/extern_probe.hero` (the result probe) · the `extern` member's kind check
 
