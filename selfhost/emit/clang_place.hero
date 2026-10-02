@@ -1,0 +1,175 @@
+# Where a clang diagnostic points, read from its own line, and whether the
+# file it names is a header a group wrote (design.md §4.19; defect 158).
+# `emit/ffi_build.hero` asks it which header holds an `#include` this
+# machine cannot open.
+#
+# clang begins a diagnostic with its place, `path:row:col: fatal error: ...`.
+# The path is the one clang opened, so it carries the machine's separators:
+# the Windows box writes `tests/golden/run\x.h`, the include directory and
+# the header joined by a backslash. A path is compared to a header with both
+# read as `/`, and a carriage return ending a line is never part of it.
+#
+# Every offset here is a BYTE offset and every needle is ASCII: an ASCII byte
+# never stands inside a UTF-8 character, so a slice at one never splits a
+# character, whatever the path holds.
+
+use emit/ffi_lookup
+
+# A file, and the line in it clang names.
+record Place
+    path: str
+    row: i64
+
+# The number after a text's last colon, and what stands before that colon.
+record Tail
+    head: str
+    number: i64
+
+# What follows a diagnostic's place, in every severity clang writes.
+constant SEVERITIES: [str]
+    [
+        ": fatal error: "
+        ": error: "
+        ": warning: "
+        ": note: "
+        ": remark: "
+    ]
+
+# Where a diagnostic line points: what precedes its severity is
+# `path:row:col`, the path being all before the last two numbers, so a
+# Windows drive's own colon stays in it.
+function place(line: str) -> Place?
+    text = without_return(line)
+    end: i64 @ text.len()
+
+    for severity in SEVERITIES
+        at = offset_of(text: text, needle: severity)
+
+        if !at.is_err() && at.must() < end
+            end @ at.must()
+
+    if end == text.len()
+        return fail(code: "none", msg: "not a diagnostic line")
+    column = last_number(text.slice(from: 0, to: end))?
+    row = last_number(column.head)?
+
+    if row.head.len() == 0
+        return fail(code: "none", msg: "no path before the line number")
+    return ok(Place(path: row.head, row: row.number))
+
+# Every way `extern "<header>"` can spell the file at a path clang printed,
+# longest first: the whole path, then what follows each separator, either
+# separator read as `/`. So `tests/golden/run\x.h` is `x.h` among others,
+# and `lib/x.h` is never `ib/x.h`.
+function spellings(path: str) -> [str]
+    p = slashed(path)
+    out: [str] @ []
+    cut: i64 @ 0
+
+    while cut < p.len()
+        if cut == 0 || p[cut - 1] == '/'
+            out @ out.push(p.slice(from: cut, to: p.len()))
+        cut @ cut + 1
+
+    return out
+
+function slashed(path: str) -> str
+    out: [str] @ []
+
+    for ch in path.chars()
+        if ch == "\\"
+            out @ out.push("/")
+        else
+            out @ out.push(ch)
+
+    return out.join("")
+
+# clang's stderr on Windows may end a line with `\r\n`, and the lines are
+# split at `\n`.
+function without_return(text: str) -> str
+    if text.len() > 0 && text[text.len() - 1] == '\r'
+        return text.slice(from: 0, to: text.len() - 1)
+    return text
+
+# The number after the last colon: `path:5` reads 5, `path:` nothing.
+function last_number(text: str) -> Tail?
+    at: i64 @ text.len() - 1
+
+    while at >= 0 && text[at] != ':'
+        at @ at - 1
+
+    if at < 0
+        return fail(code: "none", msg: "no colon")
+    number = ffi_lookup.number(text.slice(from: at + 1, to: text.len()))
+
+    if number.is_err()
+        return fail(code: "none", msg: "no number after the colon")
+    return ok(Tail(head: text.slice(from: 0, to: at), number: number.must()))
+
+# The byte offset of an ASCII needle's first occurrence.
+function offset_of(text: str, needle: str) -> i64?
+    start: i64 @ 0
+
+    while start + needle.len() <= text.len()
+        if same_bytes(text: text, from: start, part: needle)
+            return ok(start)
+        start @ start + 1
+
+    return fail(code: "none", msg: "not found")
+
+# Whether `part`'s bytes stand in `text` from `from`, compared byte by byte
+# so no slice is taken where a character might be split.
+function same_bytes(text: str, from: i64, part: str) -> bool
+    if from < 0 || from + part.len() > text.len()
+        return false
+    index: i64 @ 0
+
+    while index < part.len()
+        if text[from + index] != part[index]
+            return false
+        index @ index + 1
+
+    return true
+
+## Tests
+
+# clang's own lines, from lane h158's first pass of 2026-10-02 on this Mac,
+# and the Windows box's as the coordinator read it there.
+test "a diagnostic's place, on this Mac and on the Windows box"
+    mac = place("d1a/outer.h:2:10: fatal error: 'no_such_header_here.h' file not found")
+    assert mac.must().path == "d1a/outer.h"
+    assert mac.must().row == 2
+    windows = place("tests/golden/run\\x.h:7:10: fatal error: 'sys/wait.h' file not found\r")
+    assert windows.must().path == "tests/golden/run\\x.h"
+    assert windows.must().row == 7
+    drive = place("C:\\inc\\outer.h:2:10: fatal error: 'gone.h' file not found")
+    assert drive.must().path == "C:\\inc\\outer.h"
+    angled = place(
+        "angled/inc/lib/outer.h:2:10: error: 'mid.h' file not found with <angled> include; use \"quotes\" instead"
+    )
+    assert angled.must().path == "angled/inc/lib/outer.h"
+    warned = place("w/outer.h:2:2: warning: \"probe\" [-W#warnings]")
+    assert warned.must().row == 2
+
+    # The source clang echoes under a diagnostic, and the lines around it,
+    # are not places.
+    assert place("    2 | #include <gone.h>").is_err()
+    assert place("In file included from build/tu-1/main.c:5:").is_err()
+    assert place("1 error generated.").is_err()
+    assert place(": fatal error: 'gone.h' file not found").is_err()
+
+    # A path that is not ASCII is read whole, never split.
+    assert place("café/outer.h:3:10: fatal error: 'gone.h' file not found").must().path == "café/outer.h"
+
+test "a path is spelled from each separator, either separator, longest first"
+    assert spellings("outer.h") == ["outer.h"]
+    assert spellings("./outer.h") == ["./outer.h", "outer.h"]
+    assert spellings("tests/golden/run\\x.h") == ["tests/golden/run/x.h", "golden/run/x.h", "run/x.h", "x.h"]
+    assert spellings("C:\\inc\\lib\\outer.h") == ["C:/inc/lib/outer.h", "inc/lib/outer.h", "lib/outer.h", "outer.h"]
+    assert spellings("/usr/include/x.h") == ["/usr/include/x.h", "usr/include/x.h", "include/x.h", "x.h"]
+
+    # Never from inside a name: `inc/xouter.h` is not `outer.h`.
+    for one in spellings("inc/xouter.h")
+        assert one != "outer.h"
+
+    assert spellings("").len() == 0
