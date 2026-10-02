@@ -49,6 +49,18 @@ constant RUN_DIR: str
 # suite asking 235. The second use below is the SKIP floor and keeps this number
 # deliberately: what it asks is *did this machine emit as many as the tree
 # holds*, so both sides of that comparison have to be the same tree.
+#
+# **That second use was wrong, and the platforms said so on 2026-10-02**: the
+# Linux arm64 container read *only 231 of 235 cases emitted* and the Windows
+# box a red alike, the four cases a library this machine lacks cannot emit,
+# so a floor raised to the Mac's count on a Mac-only gate turned every other
+# platform red. And beneath it a worse hole: ANY case that failed to emit was
+# skipped, a compiler that broke `--emit-c` for one case included. So this
+# number floors the TREE alone now, and a skip is what `run`, `emission`,
+# `determinism`, `corpus` and the golden forms already call one: a case
+# whose build says the machine lacks its library
+# (`shell.machine_lacks_the_library`), counted, the suite red when the skips
+# reach a third of the tree; every other failure to emit is a failure.
 constant LEAST: i64
     235
 
@@ -57,7 +69,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     found = cases.collect(scratch: scratch, dir: RUN_DIR)?
 
     floors.check(@r, label: "lines", found: found.len(), floor: LEAST, what: "cases in " + RUN_DIR)
-    emitted: i64 @ 0
+    skipped: i64 @ 0
 
     for item in found
         said = shell.run(
@@ -66,11 +78,26 @@ function run_all(scratch: str, compiler: str) -> report.Report?
             words: [compiler, "build", item.source, "--emit-c"]
         )
 
-        if said.is_err() || said.must().code != 0
-            # A case this machine cannot emit (a missing library) is not
-            # evidence either way.
+        if said.is_err()
+            report.keep_failure(
+                @r,
+                label: "lines/" + item.name,
+                detail: "  the compiler never ran on " + item.source + ":\n    " + shell.refusal(said)
+            )
             continue
-        emitted @ emitted + 1
+
+        if said.must().code != 0
+            # A case this machine cannot emit for a library it lacks is not
+            # evidence either way, and a skip is not a pass: counted below.
+            if shell.machine_lacks_the_library(said.must().err)
+                skipped @ skipped + 1
+            else
+                report.keep_failure(
+                    @r,
+                    label: "lines/" + item.name,
+                    detail: "  " + item.source + " did not emit (exit " + said.must().code.to_str() + "), and nothing says this machine lacks a library:\n    " + said.must().err
+                )
+            continue
         wrong = offences(c: said.must().out, source: item.source)
 
         if wrong.len() == 0
@@ -82,13 +109,26 @@ function run_all(scratch: str, compiler: str) -> report.Report?
                 detail: "  " + wrong.len().to_str() + " generated line(s) point at a source line that is blank or absent — `#line` drifted, and a debugger will show the author a line they did not write:\n" + shown(wrong)
             )
 
-    if emitted < LEAST
+    if starved(skipped: skipped, found: found.len())
         report.keep_failure(
             @r,
             label: "lines",
-            detail: "  only " + emitted.to_str() + " of " + found.len().to_str() + " cases emitted — this machine tested nothing"
+            detail: "  " + skipped.to_str() + " of " + found.len().to_str() + " cases were skipped for a missing library — this machine is not running the corpus"
         )
     return ok(r)
+
+# A machine that skipped a third of the tree for libraries it lacks is not
+# running the corpus, whatever the rest read: the rule `run` and the golden
+# forms already hold (2026-10-02).
+function starved(skipped: i64, found: i64) -> bool
+    return skipped > 0 && skipped * 3 >= found
+
+test "a few skips for a missing library pass, a third of the tree does not"
+    assert !starved(skipped: 0, found: 235)
+    assert !starved(skipped: 4, found: 235)
+    assert !starved(skipped: 78, found: 235)
+    assert starved(skipped: 79, found: 235)
+    assert starved(skipped: 1, found: 3)
 
 # Walks emitted C the way C does — `#line N "f"` anchors the NEXT line,
 # then the count advances — and reports every claim that lands nowhere.
