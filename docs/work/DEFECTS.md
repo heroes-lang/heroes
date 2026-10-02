@@ -701,6 +701,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `.claude/rules/verification.md` § Bounded discovery): a `certain` fix that
     writes a program meaning something else.
 
+    **2026-10-02, lane h158, a `-` alone above an arm is offered its
+    deletion beside its join, two guesses where both are programs**:
+    repaired at `c936bd28` (`selfhost/sign_above.hero` and
+    `selfhost/join_fix.hero`, called by `selfhost/open_line.hero`), gated by
+    its cases, two `fixedbugs-159-*` goldens and the five that pinned the old
+    join, each corrected under its header; the net is owed at the batch's
+    close.
+
 - [ ] **160 — a package whose `.pc` gives `-F <dir>` is refused, its flag read joined as `-F<dir>`, while the note says `-F` is accepted** | `extern "Fake/fake.h" package "fakefw"` over a `.pc` with `Cflags: -F ${pcfiledir}/../frameworks`: `pkg-config --cflags` prints `-F/<dir>`, and `build` exit 1, `ffi_package`, *answered with `-F/...`, which this compiler does not pass on*, its note listing `-F` among the flags accepted | `selfhost/cli/libraries.hero` (`filter_words`, which takes `-F` only as two words) · **class: blocking**
 
     **Origin:** lane h158, 2026-10-02, measuring framework headers for
