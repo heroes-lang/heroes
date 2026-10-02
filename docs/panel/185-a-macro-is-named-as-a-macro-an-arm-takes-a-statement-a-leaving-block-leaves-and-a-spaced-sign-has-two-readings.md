@@ -261,6 +261,16 @@ compiler-engineer built refuses any hole whose names are all bound: the short
 wording is narrower than the rule. **The author's condition is not met**, so,
 as the ratification provides, R7 goes back to the author.
 
+**R7 decided by the author, 2026-10-02 in the morning**, meant as: *5b*, on the
+recommendation put to them with the measurements of both readings and of the
+census. **Recorded as a reading.** Route (5b) lands after panel 184's R1, its
+sentence written as wide as the rule as built, a hole whose names are all
+bound where the literal stands, `{i + 1}` included, and priced in the
+landing's tree; the readings' objection, that whether a literal compiles
+depends on the bindings in scope, is a locality of legality, which the
+author's ruling of 2026-10-01 put outside design.md §1.3. (5b)'s falsifier
+stands: a template whose placeholder names a binding in scope.
+
 ## The critic's two passes
 
 `185-reports/completeness-critic-briefs.md` (the briefs, before any seat:
