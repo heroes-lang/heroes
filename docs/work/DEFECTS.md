@@ -790,4 +790,12 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a correct program refused, on Linux arm64.
 
+    **2026-10-02, lane h158, a probe compiles under the compiler's own flags
+    but its diagnostics, so a plain `char` is signed there too**: repaired at
+    `0235b942` (`pointee.probe_flags`, put on every probe's line by
+    `selfhost/cli/pointee.hero`'s `with_search`), gated by its cases on this
+    Mac, a run case printing -1, an unsupported case refusing `@p: u8` and
+    two unit tests asking clang for Linux arm64's target; its Linux arm64
+    leg, where the defect shows, is owed before the push with the net.
+
 *******************************************************************************
