@@ -1151,9 +1151,9 @@ function arms_of(@c: cursor.Cursor, @a: ast.Ast, text: str, tabbed: bool) -> [as
             failed @ one.is_err()
 
             match one
-                # A pattern or `=>` that failed consumed nothing reusable, and
-                # the rest of its line is all that goes (defect 130).
-                .err => opening.drop_line(@c, text, from: from)
+                # A pattern or `=>` that failed consumed nothing reusable, and the
+                # rest of its line goes, a line joined to it too (130, 166).
+                .err => cursor.drop_rest_of_line(@c, from: from)
 
                 # A body that failed has already dropped the rest of its line
                 # (`finish` does it for every statement), so the loop must NOT
