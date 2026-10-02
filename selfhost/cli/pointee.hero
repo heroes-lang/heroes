@@ -61,6 +61,7 @@ use check/state
 use ir/containers
 use emit/externs as emit_externs
 use cli/toolchain
+use cli/libraries
 use cli/process
 use cli/publish
 use cli/digest
@@ -100,8 +101,12 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
             one.name + ":" + one.param + ":" + one.index.to_str() + ":" + one.declared + ":" + one.file + ":" + one.line.to_str()
         )
 
+    # The key names the package words the two units are compiled with, by the
+    # one rule (defect 161): a verdict reached without a package's `-D` was
+    # replayed after the compiler learned to pass it, measured 2026-10-02 on
+    # an `@` parameter whose width that `-D` decides.
     key = digest.digest(
-        t.fingerprint + "|pointee|" + t.compiler_key + "|" + asked.join(",") + "|" + headers.join(",") + "|" + search_include.join(",") + "|" + package_flags.join(" ") + "|" + t.runtime_key
+        t.fingerprint + "|pointee|" + t.compiler_key + "|" + asked.join(",") + "|" + headers.join(",") + "|" + search_include.join(",") + "|compile:" + libraries.compile_flags(package_flags).join(" ") + "|" + t.runtime_key
     )
     dir = t.build + "/pointee-" + key
     listed = dir + "/dump.deps.txt"
@@ -240,9 +245,10 @@ function with_search(line: [str], search_include: [str], package_flags: [str], r
     for one in search_include
         out @ strings.with_all(list: out, more: ["-I", one])
 
-    for flag in package_flags
-        if strings.starts_with(text: flag, prefix: "-I")
-            out @ out.push(flag)
+    # A package's compile words, by the one rule every compile step reads
+    # (`libraries.compile_flags`; defect 161: `-I` alone was kept here).
+    for flag in libraries.compile_flags(package_flags)
+        out @ out.push(flag)
 
     out @ strings.with_all(list: out, more: ["-I", runtime])
 
@@ -318,3 +324,73 @@ test "the pointee check publishes its answer and its verdict before the record t
     assert failure_text(second) == failure_text(first)
     assert second_answers.len() == first_answers.len()
     assert process.files_under(t.build).must().len() == 5
+
+# **A package's `-D` reaches the check, and its verdict is keyed by the words
+# it was asked with** (defect 161). The header decides the pointee's width by
+# a macro the package defines; the check kept a package's `-I` alone, so it
+# refused the correct 64-bit declaration, and after the compiler passed the
+# `-D` it replayed that refusal from the same `build/` (measured 2026-10-02).
+test "a package's -D reaches the pointee check, and its verdict is keyed by the words it was asked with (defect 161)"
+    text = "extern \"wide.h\"\n    function hero_get(@out: i64)\n\nfunction main()\n    n: i64 @ 0\n    hero_get(out: @n)\n    print(n)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-pointee-package"
+    headers_at = "build/selftest-pointee-package-include"
+    assert !process.remove_tree(t.build).is_err()
+    assert !process.mkdir_all(headers_at).is_err()
+    header = "#include <stdint.h>\n#ifdef HERO_WIDE\ntypedef int64_t hero_num;\n#else\ntypedef int32_t hero_num;\n#endif\nvoid hero_get(hero_num *out);\n"
+    assert !write_file(path: headers_at + "/wide.h", text: header).is_err()
+    none: [str] = []
+
+    # Without the package's word the header's type is 32 bits wide, and the
+    # declaration is refused.
+    narrow_answers: [pointee_ask.Answered] @ []
+    narrow = check(
+        t,
+        low.program,
+        c,
+        s,
+        parsed.decls,
+        answered: @narrow_answers,
+        search_include: [headers_at],
+        package_flags: none,
+        source_dir: ""
+    )
+    assert narrow.is_err()
+
+    # With it, in the same `build/`, the question is asked again and passes.
+    wide_answers: [pointee_ask.Answered] @ []
+    wide = check(
+        t,
+        low.program,
+        c,
+        s,
+        parsed.decls,
+        answered: @wide_answers,
+        search_include: [headers_at],
+        package_flags: ["-DHERO_WIDE", "-lz"],
+        source_dir: ""
+    )
+    assert !wide.is_err()
+
+    # The key names the compile words alone: without the link word the
+    # verdict already published answers, and nothing new is written.
+    held = process.files_under(t.build).must().len()
+    again_answers: [pointee_ask.Answered] @ []
+    again = check(
+        t,
+        low.program,
+        c,
+        s,
+        parsed.decls,
+        answered: @again_answers,
+        search_include: [headers_at],
+        package_flags: ["-DHERO_WIDE"],
+        source_dir: ""
+    )
+    assert !again.is_err()
+    assert process.files_under(t.build).must().len() == held

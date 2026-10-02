@@ -76,9 +76,9 @@ function in_the_c_runtime(library: str) -> bool
 # then, so a framework's package was refused with a note listing `-F` as
 # accepted. A value in the next word is a value only when it is not itself a
 # flag, so a refused flag stays refused in that slot too, and every value is
-# handed on JOINED, one word per flag: the compile line keeps a package's
-# `-I` words by their prefix (`cli/units.hero`), and a separate `-I` would
-# have reached it without its directory.
+# handed on JOINED, one word per flag: `compile_flags` below keeps a
+# package's compile words by their prefix, and a separate `-I` would have
+# reached a compile without its directory.
 function filter_words(package: str, said: str) -> [str]?
     flags: [str] @ []
     parts = split_whitespace(said)
@@ -129,6 +129,38 @@ function filter_words(package: str, said: str) -> [str]?
         return refused(package: package, said: word)
 
     return ok(flags)
+
+# The words of a package's answer a COMPILE needs, `-I -D -U -F`, in the
+# order the package gave them: the one rule for every step that compiles the
+# program's headers, the units (`cli/units.hero`), the pointee and layout
+# probes and the header's questions (`pointee.with_search`), so no step keeps
+# a different subset. The link line takes the whole answer: clang 21 reads
+# a compile word there without a warning (measured 2026-10-02, this Mac),
+# and a link word at a compile warns `'linker' input unused`.
+#
+# **Every step kept `-I` alone until defect 161** (2026-10-02): a `.pc`'s
+# `-D` never reached clang, so a header using it stopped `build` at exit 2
+# with clang's text, and its `-F` never reached a compile, so a framework's
+# header was told missing. The rule reads `filter_words`' own output, whose
+# contract is that a value is joined to its flag and that `-framework`'s
+# name, the one value in a word of its own, never begins with `-`.
+function compile_flags(package_flags: [str]) -> [str]
+    out: [str] @ []
+
+    for flag in package_flags
+        if compiles(flag)
+            out @ out.push(flag)
+
+    return out
+
+function compiles(flag: str) -> bool
+    for prefix in ["-I", "-D", "-U", "-F"]
+        rest = tail_after(word: flag, prefix: prefix)
+
+        if !rest.is_err() && rest.must().len() > 0
+            return true
+
+    return false
 
 # The refusal, naming what the package said and what is accepted. The list
 # in it is the function above, word for word.
@@ -342,6 +374,20 @@ test "every accepted flag in both its spellings, and a refused one refused in ei
     # A word the list does not hold stays refused in either spelling.
     assert filter_words(package: "trap", said: "-isystem /sys/a").is_err()
     assert filter_words(package: "trap", said: "-Xlinker -rpath -Xlinker /rp/c").is_err()
+
+# Over the same measured answer: a compile is handed every compile word and
+# no link word, in the package's order (defect 161).
+test "a compile takes a package's -I -D -U -F, and only those, in their order"
+    said = "-F/fw/a -I/inc/a -DNAME_A -U NAME_B -I/inc/b -F/fw/b -DNAME_C=1 -L/lib/a -lm -framework Cocoa -Wl,-rpath -Wl,/rp/a -Wl,-rpath,/rp/b -Wl,-framework -Wl,Metal\n"
+    flags = filter_words(package: "spell", said: said).must()
+    assert compile_flags(flags) == ["-F/fw/a", "-I/inc/a", "-DNAME_A", "-UNAME_B", "-I/inc/b", "-F/fw/b", "-DNAME_C=1"]
+
+    # The framework's name and the libraries stay off a compile.
+    linked = filter_words(package: "sdl", said: "-framework Cocoa -lSDL3 -L/opt/lib -Wl,-framework,Metal").must()
+    assert linked.len() == 6
+    assert compile_flags(linked).len() == 0
+    none: [str] = []
+    assert compile_flags(none).len() == 0
 
 # **The fold-in is asked of the machine, so the case asks the same question.**
 # `-lm` is REQUIRED on POSIX and impossible on MSVC (`LNK1104: cannot open

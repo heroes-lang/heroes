@@ -49,6 +49,7 @@ use cli/flags
 use cli/process
 use cli/publish
 use cli/toolchain
+use cli/libraries
 use cli/strings
 
 # The distinct components of a compilation, in file-table order: the
@@ -83,9 +84,17 @@ function components(s: source.Source) -> [str]
 # and asking 157 translation units separately would be 125 MB of
 # hashing — about 104 s at this compiler's measured 1.2 MB/s. Read
 # once, hashed once, answered once per TU.
+#
+# **The key names the package words the compile RECEIVES**, by the rule that
+# hands them over, never the package's whole answer (defect 161): a compile
+# kept a package's `-I` alone under a key naming all of it, so the compiler
+# that passes the rest replayed the object compiled without them, measured
+# 2026-10-02 on one `build/`: a header returning 8 under its `.pc`'s `-D`
+# printed 7. The words come after `compile:`, so no key written before names
+# the same text.
 function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, package_flags: [str], source_dir: str, search_include: [str], @memo: {str: str}) -> str?
     key = digest.digest(
-        t.fingerprint + "|tu|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|" + package_flags.join(" ")
+        t.fingerprint + "|tu|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|compile:" + libraries.compile_flags(package_flags).join(" ")
     )
     dir = t.build + "/tu-" + key
     process.mkdir_all(dir)?
@@ -136,9 +145,10 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     for one in search_include
         line @ strings.with_all(list: line, more: ["-I", one])
 
-    for flag in package_flags
-        if strings.starts_with(text: flag, prefix: "-I")
-            line @ line.push(flag)
+    # A package's compile words, by the one rule every compile step reads
+    # (`libraries.compile_flags`; defect 161: `-I` alone was kept here).
+    for flag in libraries.compile_flags(package_flags)
+        line @ line.push(flag)
 
     line @ strings.with_all(list: line, more: [c_file, "-I", t.runtime])
 
@@ -283,3 +293,31 @@ test "a record vouches only for the object its own compile made, and one whose o
     # reader asks for.
     for path in process.files_under(t.build).must()
         assert !strings.ends_with(text: path, suffix: ".tmp")
+
+# **A package's compile words reach the unit, and its object is theirs**
+# (defect 161). A `.pc`'s `-D` never reached clang, and the object compiled
+# without it was keyed as if it had been, so the compiler that passed it
+# replayed the old one (measured 2026-10-02: a header returning 8 under the
+# package's `-D` printed 7).
+test "a package's -D reaches the unit's compile, and an object is keyed by the words it was compiled with (defect 161)"
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-package-words"
+    assert !process.remove_tree(t.build).is_err()
+    text = "#include <stdint.h>\nint64_t heroes_package_value(void);\nint64_t heroes_package_value(void) { return HEROES_PACKAGE_VALUE; }\n"
+    none: [str] = []
+    memo: {str: str} @ {}
+
+    # Without the package's word the unit does not compile, and nothing is
+    # kept for the compile that has it to find.
+    assert tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).is_err(
+    )
+    seven = tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: ["-DHEROES_PACKAGE_VALUE=7"], source_dir: "", search_include: none, @memo).must(
+    )
+    eight = tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: ["-DHEROES_PACKAGE_VALUE=8"], source_dir: "", search_include: none, @memo).must(
+    )
+    assert eight != seven
+
+    # A link word is no compile's: the same words, the same object.
+    linked = tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: ["-DHEROES_PACKAGE_VALUE=7", "-lz", "-framework", "Cocoa"], source_dir: "", search_include: none, @memo).must(
+    )
+    assert linked == seven
