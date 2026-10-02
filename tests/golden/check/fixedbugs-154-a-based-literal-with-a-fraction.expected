@@ -1,0 +1,15 @@
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:15:8: error[digit_not_in_base]: `0x1.5` has a fraction, which only a decimal literal may have — `.` is not a hexadecimal digit
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:21:12: error[digit_not_in_base]: `0x1.5` has a fraction, which only a decimal literal may have — `.` is not a hexadecimal digit
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:22:12: error[digit_not_in_base]: `0b1.0` has a fraction, which only a decimal literal may have — `.` is not a binary digit
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:23:12: error[digit_not_in_base]: `0o7.1` has a fraction, which only a decimal literal may have — `.` is not an octal digit
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:24:11: error[digit_not_in_base]: `0x.5` has a fraction, which only a decimal literal may have — `.` is not a hexadecimal digit
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:25:12: error[digit_not_in_base]: `0x1.5.2` has a fraction, which only a decimal literal may have — `.` is not a hexadecimal digit
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:26:12: error[digit_not_in_base]: `0x1.8p-3` has a fraction, which only a decimal literal may have — `.` is not a hexadecimal digit
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:27:14: error[digit_not_in_base]: `0x1_0.5_0` has a fraction, which only a decimal literal may have — `.` is not a hexadecimal digit
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:28:11: error[digit_not_in_base]: `G` is not a hexadecimal digit
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:29:13: error[digit_not_in_base]: `0x1.5` has a fraction, which only a decimal literal may have — `.` is not a hexadecimal digit
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:30:12: error[digit_not_in_base]: `0X1.5` has a fraction, which only a decimal literal may have — `.` is not a hexadecimal digit
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:30:9: error[base_prefix_case]: `0X1.5` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:31:23: error[digit_not_in_base]: `0x1.5` has a fraction, which only a decimal literal may have — `.` is not a hexadecimal digit
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:31:32: error[digit_not_in_base]: `0x1.5` has a fraction, which only a decimal literal may have — `.` is not a hexadecimal digit
+tests/golden/check/fixedbugs-154-a-based-literal-with-a-fraction.hero:35:12: error[digit_not_in_base]: `0x1.5` has a fraction, which only a decimal literal may have — `.` is not a hexadecimal digit

@@ -1,0 +1,37 @@
+# Fixed 2026-10-02, defect 135's P5, panel 185 R6, lane arm. Symptom: an arm
+# opened by a `-` a space sets apart from a string, a bulleted list of string
+# arms above all, took the certain fix that writes the `-` against it, and
+# `check --apply` wrote `-"one"`, refused anew as `bad_operand`. Cause: the
+# fix rested on the premise that in a pattern a `-` can only be its literal's
+# sign, and a string has none. Now before a string the fix deletes the `-`,
+# and is certain, since it is the one reading: in a first arm and the one
+# after it, one after a block arm, at the head of a joined pattern, set apart
+# by two spaces or by a tab, in a statement `match` and in a nested one.
+
+function name(s: str) -> i64
+    return match s
+        "one" => 1  #~ spaced_minus_element
+        "two" => 2  #~ spaced_minus_element
+        _ => 0
+
+function after_a_block(s: str) -> i64
+    return match s
+        "zero" =>
+            print(0)
+            0
+        "one" | "uno" => 1  #~ spaced_minus_element
+        _ => 9
+
+function tabbed(s: str) -> i64
+    return match s
+        "one" => 1  #~ tab_in_line spaced_minus_element
+        _ => 0
+
+function main()
+    word = "two"
+
+    match word
+        "one" => print(1)  #~ spaced_minus_element
+        _ => match word
+            "two" => print(name(s: word) + after_a_block(s: "uno") + tabbed(s: "one"))  #~ spaced_minus_element
+            _ => print(0)

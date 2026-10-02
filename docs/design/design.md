@@ -2000,9 +2000,10 @@ invents:**
     unspaced `[a` / `-b]` stays two elements, its `-` a sign, as Swift reads the same spacing.
     Both readings are `guess` fixes, where both parse. The spec's sentence carries no bracket
     limit, and the same code refuses a line that opens a `match` arm with a `-` set apart from its
-    literal, since a NEWLINE separates every arm from the line above: there the fix, the `-`
-    written against its literal, is `certain`, because in a pattern a `-` can only be its
-    literal's sign (defect 123, 2026-09-28; extended at this sitting's ratification).
+    literal, since a NEWLINE separates every arm from the line above: there the fix
+    depends on the literal: before a string the `-` signs nothing and the fix deletes it, `certain`;
+    before an integer or a character both readings compile, so both fixes are `guess`, as in a list
+    (defect 123, 2026-09-28; extended at this sitting's ratification; panel 185).
   - **A token that would have gone on with the line above is refused with the line end named as
     the cause** (`line_end_before_continuation`, R3): a binary operator, `.`, `::`, `?`, `(`, `[`,
     and the `:` or `->` a production writes there. The fix moves the token to the end of the line
