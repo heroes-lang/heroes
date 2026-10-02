@@ -140,6 +140,10 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !laid.is_err()
             found @ ffi_lookup.add_once(found, d: laid.must())
+        macro_f = ffi_layout.macro_field(s, decls, line: line, macros: asked.macros)
+
+        if !macro_f.is_err()
+            found @ ffi_lookup.add_once(found, d: macro_f.must())
         unknown_f = ffi_field.unknown_field(s, decls, line: line)
 
         if !unknown_f.is_err()

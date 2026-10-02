@@ -1,0 +1,26 @@
+# A misspelt field that names a header macro, lane land186, 2026-10-02:
+# exit 2 on the trunk's compiler, its filing owed by the coordinator.
+#
+# SYMPTOM: `record BUF` naming `size` where the header has `cap` and
+# `#define size 4` was `internal error`, exit 2: C read `((BUF *)0)->4`,
+# *expected identifier*, at the field's line, in words no reader knew; the
+# same with a macro naming another identifier, *no member named '__spare'*.
+#
+# FIX: the question unit asks whether each field's name is a header macro,
+# the layout check asks a macro-reached field at its own line first, and a
+# syntax error there, or a member C names that is not the field's, is told as
+# the field the header lacks, `ffi_unknown_field`, on its line.
+
+extern "ffi-a-field-named-after-a-header-macro.h"
+    record BUF
+        len: i32
+        size: i32  #~ ffi_unknown_field
+    record BUF2
+        len: i32
+        spare: i32  #~ ffi_unknown_field
+
+function touch(b: BUF, c: BUF2) -> i32
+    return b.len + c.len
+
+function main()
+    print(1)

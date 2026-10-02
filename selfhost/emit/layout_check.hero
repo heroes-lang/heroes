@@ -44,6 +44,11 @@ constant SHARED: str
 constant BITFIELD: str
     "heroes-ffi-bitfield"
 
+# A field a macro reaches, asked whether C reads it as a member; it never
+# fails, and what it draws is clang's syntax error at the field's line.
+constant MEMBER: str
+    "heroes-ffi-member"
+
 # The headers, then the assertions for every record that needs one, each at
 # the declaration's own line. Empty when no record needs one, and then
 # clang is not run at all. Absent when the dump holds no block for a record
@@ -265,6 +270,26 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
 
     if aliases.len() == 0 || out.len() == 0
         return out
+
+    # Each field a macro reaches, asked of C at its own line first: a macro
+    # that names no member (`#define size 4` beside a misspelt field) is a
+    # syntax error, and at the field's line it is told as the field's
+    # (`emit/ffi_layout.hero`'s `macro_field`) where the record's line could
+    # only be the compiler's, exit 2 (lane land186, 2026-10-02).
+    probes: [str] @ []
+
+    for a in aliases
+        at = field_place(s, decls, decl: one.decl, field: a)
+
+        if at.len() > 0
+            probes @ probes.push(
+                at + "\n_Static_assert(" + layout_compare.size_of(t: t, m: a) + " != 0 || 1, \"" + MEMBER + " " + hero_name + " " + a + "\");"
+            )
+
+    for line in out
+        probes @ probes.push(line)
+
+    out @ probes
     defined: [str] @ []
 
     for a in aliases
@@ -276,6 +301,19 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
         guarded @ guarded.push(line)
 
     return guarded.push("#endif")
+
+# The `#line` that puts a check on the line where a field of declaration
+# `decl` was written, or "".
+function field_place(s: source.Source, decls: [ast.Decl], decl: i64, field: str) -> str
+    match decls[decl].kind
+        .record_decl rec =>
+            for one in rec.fields
+                if source.span_text(s, one.name) == field
+                    at = source.locate(s, one.name.start)
+                    return "#line " + at.line.to_str() + " \"" + at.file + "\""
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return ""
+
+    return ""
 
 # The declared fields a macro-reached `a` is asked against when the record
 # is built: every other one C can size, each pair of two such fields once.
