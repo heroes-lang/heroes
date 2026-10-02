@@ -305,6 +305,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     audit's rows 130-H-004 and 130-34d): repaired at `276908b3`, gated by its
     cases and the compiler's own tests; the net is owed at the batch's close.
 
+    **2026-10-02, lane recovery-b8, a closer one too many past a failed
+    statement is told** (the audit's row 130-28): repaired at `ce5caf89`,
+    gated by its own cases alone (the author's instruction of that
+    afternoon); the rest is owed at the round's gate.
+
 - [ ] **131 — a block head whose line failed reports its missing body as a second mistake** | `if n > )` over an indented `print(1)` costs `expected_expression` and then `missing_body` at the same column; so do `else if`, `while` and `for` heads (`missing_body`) and `match )` (`missing_match_arms`); and `if n >` over a deeper line, joined by `continuation_outside_brackets`, is followed by `missing_body` at the next statement | `selfhost/grammar_expr.hero` (the body checks after a block head, `match_expr`'s arms check) · `cursor.at_reported_error`
 
     **Origin:** the coordinator, 2026-09-28 at 22:58, attacking the head of
