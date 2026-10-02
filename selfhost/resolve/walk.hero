@@ -49,6 +49,7 @@ use resolve/qualified
 use resolve/names
 use resolve/writes
 use resolve/binding as resolve_binding
+use resolve/plain_literal
 
 ## Statements
 
@@ -111,8 +112,9 @@ function expr(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl
         # hole here must not quiet the unused rule in a module nobody is
         # editing.
 
-        .hole                                                    => resolved.note_hole(@r.out, r.module)
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => return
+        .hole                                         => resolved.note_hole(@r.out, r.module)
+        .str_lit                                      => plain_literal.judge(@r, a, s, id)
+        .int_lit | .float_lit | .char_lit | .bool_lit => return
         .interp ip =>
             for h in ip.holes
                 expr(@r, a, s, decls, h)
@@ -180,8 +182,10 @@ function expr(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl
                         .variant_case c =>
                             if !c.binding.is_err()
                                 bind_payload(@r, s, decls, c.binding.must())
-                        .literal l         => expr(@r, a, s, decls, l.value)
-                        .wildcard | .error => continue
+                        # A pattern's literal names nothing, and its braces are
+                        # never judged: an `f` literal is no pattern, so a plain
+                        # one is the only spelling its text has (`plain_literal`).
+                        .literal | .wildcard | .error => continue
 
                 match arm.body
                     .one_stmt one => statement(@r, a, s, decls, one.at)

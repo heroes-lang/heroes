@@ -63,6 +63,7 @@ constant FIXTURES: [str]
         "tests/golden/surface-fixtures/paramcomment095"
         "tests/golden/surface-fixtures/patterns125"
         "tests/golden/surface-fixtures/releaser108"
+        "tests/golden/surface-fixtures/braces173"
     ]
 
 # How many failures past the first the report names.

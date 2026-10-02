@@ -11,17 +11,21 @@
 # brackets, and `state.emit` already counts them — so a `}` closes the hole only
 # when the depth is back to what it was when the hole opened.
 #
-# `{{` writes one brace and opens nothing. A `}` inside the text is content,
-# because a piece is text mode and only the hole's closer is read as a `}`.
+# `{{` and `}}` each write one brace and open or close nothing, and a lone
+# `}` in the text is an error (panel 184 R1, ratified 2026-10-01): the hole's
+# closer is read in code mode, by `closes_a_hole`, so a `}` a piece meets in
+# text mode closes nothing. Until that ruling only `{{` was an escape and a
+# `}` was content, so `f"{{x}}"` printed `{x}}` and `f"a}b"` printed `a}b`,
+# both at exit 0 (defect 173).
 #
 # WHY A MODULE OF ITS OWN. `literals.hero` lexes one token and returns; this is
 # a state machine that spans several tokens and the ordinary tokens between
 # them, and it borrows `literals.hero`'s escape step rather than copying it.
 #
 # THE TEXT OF A PIECE is decoded here too, for the lowering: the delimiters
-# come off, `{{` becomes `{`, and the six escapes decode through the same
-# `unescape` a plain literal uses, so a form that looks like a string escapes
-# like one.
+# come off, `{{` becomes `{` and `}}` becomes `}`, and the six escapes decode
+# through the same `unescape` a plain literal uses, so a form that looks like
+# a string escapes like one.
 
 use token
 use diag
@@ -86,6 +90,12 @@ function scan_piece(@l: state.LexState, text: str, start: i64)
                 state.emit(@l, .str_piece, start)
                 l.holes @ l.holes.push(l.open_brackets.len())
                 return
+        else if b == '}'
+            if l.pos + 1 < text.len() && text[l.pos + 1] == '}'
+                l.pos @ l.pos + 2
+            else
+                lone_brace(@l, at: l.pos)
+                l.pos @ l.pos + 1
         else if b == '\\'
             if !literals.escape_step(@l, text, .in_str, literal: start)
                 break
@@ -101,21 +111,47 @@ function scan_piece(@l: state.LexState, text: str, start: i64)
     )
     literals.swallow(@l, text, start: start)
 
+# A `}` alone in a piece's text closes nothing (panel 184 R1): a hole's closer
+# is read in code mode, so this one is a brace the author wrote. It has two
+# readings and so two guesses, the list design.md §4.10 makes of a fix with
+# two: the brace meant as text, which `}}` writes and which is what the
+# literal printed before the ruling (`f"{{x}"` was this language's own
+# spelling of `{x}` until then), and a brace typed once too often, which the
+# deletion repairs. The token keeps its kind, so one brace is one diagnostic.
+function lone_brace(@l: state.LexState, at: i64)
+    span = token.Span(start: at, end: at + 1)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "lone_brace",
+        message: "a `}` alone in an `f\"…\"` literal is an error — `}}` writes one brace, as `{{` does, and a `}` closes only the hole a `{` opened",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write the brace as text: `}}`", replacement: "}}", span: span, certainty: .guess)
+    )
+    d.fixes @ d.fixes.push(diag.Fix(title: "delete the brace", replacement: "", span: span, certainty: .guess))
+    state.push_diagnostic(@l.diagnostics, d)
+
 # Whether a piece's text closes the literal: its last byte is the quote.
 function ends_closed(text: str) -> bool
     return text.len() > 0 && text[text.len() - 1] == '"'
 
-# The text a piece contributes, decoded: delimiters off, `{{` to `{`, and the
-# six escapes as a plain literal decodes them.
+# The text a piece contributes, decoded: delimiters off, `{{` to `{` and `}}`
+# to `}`, and the six escapes as a plain literal decodes them.
 #
 # **The text is cut only beside a brace** (defect 110). This walked the piece
 # byte by byte and sliced each byte out as a string of its own, so the first
 # byte of `é` was a slice that splits a character and `print(f"é {x}")`,
-# which the checker accepts, aborted the compiler at `build`. `{` is one byte
-# that is never inside another character's encoding (UTF-8 continuation bytes
-# are 128 to 191, and every lead byte above ASCII is 192 or more), so a run
-# between two doubled braces starts and ends on character boundaries whatever
-# the characters are, and it is copied whole rather than one byte at a time.
+# which the checker accepts, aborted the compiler at `build`. `{` and `}` are
+# one byte each and never inside another character's encoding (UTF-8
+# continuation bytes are 128 to 191, and every lead byte above ASCII is 192 or
+# more), so a run between two doubled braces starts and ends on character
+# boundaries whatever the characters are, and it is copied whole rather than
+# one byte at a time.
+#
+# **The pairs are read as the lexer read them.** A piece that reaches this
+# function lexed clean, so every brace of its text is one of a pair and no
+# escape's second byte is a brace (the six are `n` `t` `r` `\` `"` `'`): a
+# scan from the left meets the pairs `scan_piece` met.
 function piece_text(text: str) -> str
     from: i64 @ 1
 
@@ -130,7 +166,7 @@ function piece_text(text: str) -> str
     at: i64 @ 0
 
     while at < inner.len()
-        if inner[at] == '{' && at + 1 < inner.len() && inner[at + 1] == '{'
+        if (inner[at] == '{' || inner[at] == '}') && at + 1 < inner.len() && inner[at + 1] == inner[at]
             undoubled @ undoubled.push(inner.slice(from: run, to: at + 1))
             at @ at + 2
             run @ at
@@ -151,9 +187,15 @@ test "a piece's text loses its delimiters, whichever pair it has"
     assert piece_text("}\"") == ""
 
 test "a doubled brace is one brace, and an escape decodes as in a plain literal"
-    assert piece_text("f\"{{x}}\"") == "{x}}"
+    # Panel 184 R1 (defect 173): this read `{x}}` until 2026-10-02, the
+    # closing brace written twice because only `{{` was an escape.
+    assert piece_text("f\"{{x}}\"") == "{x}"
+    assert piece_text("f\"}}\"") == "}"
+    assert piece_text("}}} and {") == "} and "
+    assert piece_text("f\"a{{b}}c {") == "a{b}c "
     assert piece_text("f\"a\\tb {") == "a\tb "
     assert piece_text("}\\\"q\\\"\"") == "\"q\""
+    assert piece_text("f\"\\\\}}\"") == "\\}"
 
 test "a character above ASCII is copied whole before, after and between holes"
     # Defect 110: the first byte of `é` was sliced out alone and the build aborted.
@@ -164,7 +206,9 @@ test "a character above ASCII is copied whole before, after and between holes"
     assert piece_text("f\"aé€😀z {") == "aé€😀z "
 
 test "a character above ASCII survives beside a doubled brace and an escape"
-    assert piece_text("f\"é{{€}}😀 {") == "é{€}}😀 "
+    assert piece_text("f\"é{{€}}😀 {") == "é{€}😀 "
+    assert piece_text("}}}é\"") == "}é"
+    assert piece_text("}é}}\"") == "é}"
     assert piece_text("f\"{{é\"") == "{é"
     assert piece_text("f\"é{{\"") == "é{"
     assert piece_text("}\\té\\n€\\\\😀\"") == "\té\n€\\😀"

@@ -772,6 +772,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** panel 184, ratified 2026-10-01 at 22:24 (`docs/records/done/2026-10-01-2224-panel-184-ratified-a-brace-both-ways-a-statement-after-a-jump-refused-and-a-floor-for-depth.md`); its landing found unwritten by the coordinator's file-queue agent, 2026-10-02 (`scratchpad/file-queue/unlanded-184/`, 2026-10-02), and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). No list held the landing: the sitting's item was ticked at its ratification. The spec does not say it either; the landing writes both.
 
+    **2026-10-02, lane fbrace, R1 in its two stages**: repaired at `f6fdda79`, the seed regenerated between the stages at `11b40220` with its fixpoint verified by `cmp`, and R8's sentence in spec § 2 at `8fc6e206` (2026-10-03), gated by its own cases; the rest is owed at the round's gate.
+
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): by the ratified language, a wrong value (`{a}}`) and a wrong program accepted (`a}b`).
 
 - [ ] **174 — a statement after `return`, `break` or `continue` in the same block compiles, where panel 184's R4, ratified, makes it a compile error** | `function f() -> i64` over `return 1` and then `print(2)`, `main` printing `f()`: `run` exit 0, prints `1` | the checker's walk of a block · panel 184's R4 (`docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md:181-182`; *the spec states the return rule for the first time*, `:186-190`; *R4 lands as it stands*, `:276-277`) · spec § 8 `:229-230`, its only sentence on a jump · **class: blocking**
@@ -789,6 +791,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 - [ ] **176 — a plain literal whose brace hole names bindings all bound where it stands prints the braces, where panel 185's R7, decided by the author, refuses it with the `f` as its fix** | `x = 1` over `print("{x}")` and `print(x)`: `run` exit 0, prints `{x}` and `1`; under R7 `check` refuses the literal | spec `:52` (*A literal without the `f` is unchanged*), the opposite of the landing · panel 185's R7 (`docs/panel/185-a-macro-is-named-as-a-macro-an-arm-takes-a-statement-a-leaving-block-leaves-and-a-spaced-sign-has-two-readings.md:201-203`; decided 2026-10-02, `:264-268`, *route (5b) lands after panel 184's R1*), so after defect 173 · **class: blocking**
 
     **Origin:** panel 185's R7, decided by the author 2026-10-02 at 07:05 (`docs/records/done/2026-10-02-0705-panel-185-r7-decided-the-forgotten-f-refused-where-the-braces-hold-names-all-bound.md`); its landing found unwritten by the coordinator's file-queue agent, 2026-10-02 (`scratchpad/file-queue/unlanded-184/forgot_f.hero`, 2026-10-02), and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`).
+
+    **2026-10-03, lane fbrace, route (5b) after R1**: repaired at `a5fc53de`, its sentence in spec § 2 at `8fc6e206`, gated by its own cases; the rest is owed at the round's gate.
 
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): by the decided language, a wrong program accepted.
 

@@ -31,9 +31,10 @@ function report(@l: state.LexState, text: str, backslash: i64, literal: i64, ctx
     shown = text.slice(from: backslash, to: end)
     opening = escape_readings.quoted(shown) + " is not an escape sequence — "
 
-    # In the piece of an `f"…"` literal a `{` opens a hole, so a guess that
-    # writes one there writes it doubled, and means what its title says: the
-    # backslash before `\x{41}` is `\\x{{41}` (defect 135's L4).
+    # In the piece of an `f"…"` literal a `{` opens a hole and a `}` alone is
+    # refused, so a guess that writes a brace there writes it doubled, and
+    # means what its title says: the backslash before `\x{41}` is
+    # `\\x{{41}}` (defect 135's L4; the `}` since panel 184 R1).
     in_piece = ctx == .in_str && text[literal] != '"'
     backslashed = diag.Fix(
         title: "escape the backslash: " + escape_readings.quoted(as_text("\\" + shown, in_piece: in_piece)),
@@ -100,9 +101,10 @@ function report(@l: state.LexState, text: str, backslash: i64, literal: i64, ctx
                 d.message @ opening + escape_readings.quoted(escaped) + " needs no escape inside a string, write it bare; write `\\\\` for a literal backslash"
                 d.fixes @ d.fixes.push(backslashed)
         .brace =>
-            d.message @ opening + "a brace is written `{{` in an `f\"…\"` literal; write `\\\\` for a literal backslash"
+            doubled = escaped + escaped
+            d.message @ opening + "a brace is written `" + doubled + "` in an `f\"…\"` literal; write `\\\\` for a literal backslash"
             d.fixes @ d.fixes.push(
-                diag.Fix(title: "write the brace: `{{`", replacement: "{{", span: span, certainty: .guess)
+                diag.Fix(title: "write the brace: `" + doubled + "`", replacement: doubled, span: span, certainty: .guess)
             )
             d.fixes @ d.fixes.push(backslashed)
 
@@ -135,8 +137,9 @@ function hole_fix(text: str, hole: str, backslash: i64, close: i64, literal: i64
     )
 
 # The text a fix writes, as it reads where it lands: in the piece of an
-# `f"…"` literal every `{` doubled, since one alone opens a hole there and
-# `{{` is the brace; anywhere else as it is.
+# `f"…"` literal every brace doubled, since a `{` alone opens a hole there, a
+# `}` alone is refused (panel 184 R1), and `{{` and `}}` are the braces;
+# anywhere else as it is.
 function as_text(s: str, in_piece: bool) -> str
     if !in_piece
         return s
@@ -145,8 +148,8 @@ function as_text(s: str, in_piece: bool) -> str
     i: i64 @ 0
 
     while i < s.len()
-        if s[i] == '{'
-            out @ out.push(s.slice(from: run, to: i + 1) + "{")
+        if s[i] == '{' || s[i] == '}'
+            out @ out.push(s.slice(from: run, to: i + 1) + s.slice(from: i, to: i + 1))
             run @ i + 1
         i @ i + 1
 
@@ -154,7 +157,9 @@ function as_text(s: str, in_piece: bool) -> str
     return out.join("")
 
 test "a fix's text in an f piece doubles its brace, and elsewhere stays"
-    assert as_text("\\\\x{41}", in_piece: true) == "\\\\x{{41}"
+    # Panel 184 R1: the first read `\\x{{41}` until 2026-10-02, a lone `}`.
+    assert as_text("\\\\x{41}", in_piece: true) == "\\\\x{{41}}"
     assert as_text("\\\\x{41}", in_piece: false) == "\\\\x{41}"
     assert as_text("{", in_piece: true) == "{{"
-    assert as_text("é{é", in_piece: true) == "é{{é"
+    assert as_text("}", in_piece: true) == "}}"
+    assert as_text("é{é}", in_piece: true) == "é{{é}}"

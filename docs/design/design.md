@@ -2139,6 +2139,13 @@ anyone.
   Loud failure with the solution pre-written. Five lines of code each.
 - `@name` in prefix position is a **syntax error, always** — so a model carrying a Python/Ruby prior
   fails loudly instead of producing something valid.
+- A `}` alone in an `f` literal's text is `lone_brace`, `{{` and `}}` each writing one brace, its two
+  guesses `}}` and the brace deleted (panel 184 R1, ratified 2026-10-01).
+- `unused_binding` on a name a plain literal holds in braces quotes that literal and offers its `f`
+  as a guess, so a forgotten `f` is told where it was forgotten (panel 184 R2, ratified 2026-10-01).
+- A plain literal whose braces, read with an `f`, would be a hole naming something and only what is
+  in scope is `hole_without_f`, its two guesses the `f` and the braces kept as text (panel 185 R7,
+  decided by the author 2026-10-02).
 - Type-inference failures on empty containers dictate the annotation (4.5).
 - Non-exhaustive `match` lists the missing cases by name.
 - Same-typed argument rule violations show the required labels.
