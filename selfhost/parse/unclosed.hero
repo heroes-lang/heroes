@@ -21,6 +21,7 @@
 # | entry | called by |
 # |---|---|
 # | `never_closed` | `grammar_expr.array_literal`, `grammar_expr.map_literal` |
+# | `head_opener`, `in_reach` | `parse/swallowed` |
 # | `recover_past_pair` | the `end_` functions here, `parse/members.params`, `parse/type`'s function types |
 # | `end_literal` | the same two |
 # | `end_group`, `end_arguments`, `end_index` | `grammar_expr.group`, `grammar_expr.call_args`, `grammar_expr.postfix` |

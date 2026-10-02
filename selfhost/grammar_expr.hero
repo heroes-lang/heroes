@@ -80,6 +80,7 @@ use parse/operator_arm
 use parse/headless
 use parse/brace_habit
 use parse/unclosed
+use parse/swallowed
 use parse/loop_habit
 use parse/colon_habit
 use parse/braced_arms
@@ -615,7 +616,7 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
     _ = cursor.bump(@c)
     cursor.skip_terminators(@c)
 
-    if cursor.eat(@c, .rparen)
+    if cursor.eat(@c, .rparen) || open_ended && swallowed.body_below(c, text, open: at)
         return arguments
     reading: bool @ true
 
@@ -699,7 +700,7 @@ function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: open
 
     return match found
         .indented => ok(indented_block(@c, @a, text))
-        .braced _ => ok(in_braces(@c, @a, text))
+        .braced b => ok(in_braces(@c, @a, text, close: b.close))
         .tabbed   => ok(tabbed_block(@c, @a, text))
         .none     => fail(code: "missing_body", msg: owner)
 
@@ -727,11 +728,12 @@ function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
 
     return ast.Block(span: token.Span(start: open.end, end: cursor.previous_significant_span(c).end), stmts: stmts)
 
-# A body in braces, its `{` under the cursor, read as `parse/braced_lines` lays it out.
-function in_braces(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
-    lines: cursor.Cursor @ braced_lines.laid_out(c, text)
+# A body in braces, its `{` under the cursor and its `}` at `close`, or the lines a
+# head's bracket swallowed, to `close`, read as `parse/braced_lines` lays them out.
+function in_braces(@c: cursor.Cursor, @a: ast.Ast, text: str, close: i64) -> ast.Block
+    lines: cursor.Cursor @ braced_lines.view_to(c, text, close: close)
     body = indented_block(@lines, @a, text)
-    braced_lines.took(c: @c, view: lines)
+    braced_lines.took_to(c: @c, view: lines, close: close)
     return body
 
 # The statements of a body whose margin holds a tab (`opening.tabbed_line`),
@@ -759,7 +761,7 @@ function hanging(@c: cursor.Cursor, @a: ast.Ast, text: str)
     else if cursor.at(c, .indent)
         _ = indented_block(@c, @a, text)
     else if brace_habit.opens_here(c, text)
-        _ = in_braces(@c, @a, text)
+        _ = in_braces(@c, @a, text, close: brace_habit.closer(c, open: c.pos))
     else if opening.tabbed_line(c, text)
         _ = tabbed_block(@c, @a, text)
 

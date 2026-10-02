@@ -26,7 +26,7 @@
 
 use token
 use diag
-use text_lines
+use parse/module_text
 use cursor
 use ast
 use keywords
@@ -194,7 +194,7 @@ function part_missing(@c: cursor.Cursor, text: str, name: token.Span, slash: tok
 # may already be on the next declaration, and naming it blames an innocent
 # line.
 function alias_missing(@c: cursor.Cursor, text: str, word: token.Span)
-    same_line = one_line(text, from: word.start, to: cursor.current_span(c).start)
+    same_line = module_text.one_line(text, from: word.start, to: cursor.current_span(c).start)
     message: str @ "`as` renames the module and this line names nothing — `use syntax/decl as sd`, and then this file calls it `sd`"
 
     if same_line
@@ -222,7 +222,7 @@ function skip_rest_of_line(@c: cursor.Cursor, text: str, from: token.Span)
     scanning: bool @ true
 
     while scanning && !cursor.at(c, .eof)
-        if !one_line(text, from: from.start, to: cursor.current_span(c).start)
+        if !module_text.one_line(text, from: from.start, to: cursor.current_span(c).start)
             scanning @ false
         else
             _ = cursor.bump(@c)
@@ -240,19 +240,32 @@ function skip_rest_of_line(@c: cursor.Cursor, text: str, from: token.Span)
 function quoted_module(@c: cursor.Cursor, text: str)
     s = cursor.current_span(c)
     quoted = cursor.slice_of(text, s)
-    inner = unquote(quoted)
+    inner = module_text.unquote(quoted)
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "use_wants_a_name",
         message: "a module is named, not quoted — write `use " + inner + "`, which reads `" + inner + ".hero` from the directory of the file you compile",
         span: s
     )
 
-    if is_module_name(inner)
+    if module_text.is_module_name(inner)
         d.fixes @ d.fixes.push(
             diag.Fix(title: "write `use " + inner + "`", replacement: inner, span: s, certainty: .certain)
         )
     cursor.push_diagnostic(@c.diagnostics, d)
-    cursor.recover_to_next_decl(@c)
+    _ = cursor.bump(@c)
+
+    # The line goes on as a name's would: `as g` is its alias, and anything
+    # else on it, and a block below it, are the dispatcher's, as past any
+    # `use` (`decl.past_a_use`; defect 130's class, lane recovery-b8). Until
+    # 2026-10-02 the line's recovery took the block below whole, its mistakes
+    # unsaid, and the junk after the string with it.
+    if cursor.at(c, .ident) && cursor.slice_of(text, cursor.current_span(c)) == keywords.WORD_AS
+        word = cursor.bump(@c).span
+
+        if !cursor.at(c, .ident)
+            alias_missing(@c, text, word: word)
+            return
+        _ = cursor.bump(@c)
 
 # `use` with nothing after it.
 #
@@ -263,7 +276,7 @@ function quoted_module(@c: cursor.Cursor, text: str)
 function missing_name(@c: cursor.Cursor, text: str, keyword: token.Span)
     if cursor.at_reported_error(c)
         return
-    same_line = one_line(text, from: keyword.start, to: cursor.current_span(c).start)
+    same_line = module_text.one_line(text, from: keyword.start, to: cursor.current_span(c).start)
     message: str @ "`use` names one module and this line names none — `use geom`, which reads `geom.hero` beside this file"
 
     if same_line
@@ -273,82 +286,12 @@ function missing_name(@c: cursor.Cursor, text: str, keyword: token.Span)
     # Nothing is left of the broken line when the cursor has already crossed
     # onto the next one, and recovering anyway would eat an innocent
     # declaration whole — the failure panel 018's keyword-first shape exists to
-    # prevent. It reappears here because `use` plants no terminator.
+    # prevent. It reappears here because `use` plants no terminator. **Only
+    # the line goes**: a block below it is no `use`'s, and the dispatcher
+    # names it and reads it (defect 130's class, lane recovery-b8), where the
+    # recovery to the next declaration took it whole until 2026-10-02.
     if same_line
-        cursor.recover_to_next_decl(@c)
-
-## Two questions about text
-
-# Whether two offsets stand on one line: the distance between them, never
-# each one's line number, a walk from the text's first byte that made a file
-# of broken `use` lines cost its square (defect 146, `text_lines.hero`'s rule).
-function one_line(text: str, from: i64, to: i64) -> bool
-    if from <= to
-        return text_lines.newlines_between(text: text, from: from, to: to) == 0
-    return text_lines.newlines_between(text: text, from: to, to: from) == 0
-
-# Could this text have been written after `use`? The identifier rule, asked
-# of a string's contents so that the fix above is offered only when applying
-# it produces a program that parses.
-#
-# **It answers for a PATH now, and that is a repair rather than a widening**
-# (M-package-layout, panel 099). `use "shapes/geom"` is the shape four other
-# languages write; until paths landed, unquoting it produced something this
-# grammar still refused, so the fix was withheld and the author was left
-# with a message. The same string is now a legal `use`, and withholding the
-# fix would have been the compiler knowing the answer and not saying it —
-# the premise under the old `false` expired the moment the grammar grew
-# (CLAUDE.md §11), which is why this function is asked segment by segment
-# instead of once over the whole string.
-function is_module_name(s: str) -> bool
-    if s.len() == 0
-        return false
-    start: i64 @ 0
-    i: i64 @ 0
-
-    while i < s.len()
-        if s[i] == '/'
-            if !is_one_part(s.slice(from: start, to: i))
-                return false
-            start @ i + 1
-        i @ i + 1
-
-    return is_one_part(s.slice(from: start, to: s.len()))
-
-# One part of a path: the identifier rule, and an empty part is not one —
-# which is what refuses `"a//b"`, `"/a"` and `"a/"`, the three shapes an
-# unquoted path can be broken in.
-function is_one_part(s: str) -> bool
-    if s.len() == 0
-        return false
-    first = s[0]
-
-    if !(first >= 'a' && first <= 'z' || first >= 'A' && first <= 'Z' || first == '_')
-        return false
-    i: i64 @ 1
-
-    while i < s.len()
-        b = s[i]
-
-        if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_')
-            return false
-        i @ i + 1
-
-    return true
-
-# Rust writes `quoted.trim_matches('"')`; the port says it in five lines, which
-# is the same shape the lexer's own scanners use — the delimiters are known to
-# be there because the token is a `str_lit`.
-function unquote(s: str) -> str
-    start: i64 @ 0
-    end: i64 @ s.len()
-
-    if end > start && s[start] == '"'
-        start @ start + 1
-
-    if end > start && s[end - 1] == '"'
-        end @ end - 1
-    return s.slice(from: start, to: end)
+        skip_rest_of_line(@c, text, from: keyword)
 
 ## Tests
 
@@ -562,22 +505,3 @@ test "a use whose mistake IS on its line quotes what it found"
     declaration(@c, @uses, text)
     assert c.diagnostics[0].code == "expected_module_name"
     assert c.diagnostics[0].message == "expected the module's name after `use`, found a number (`42`) — `use geom`, which reads `geom.hero` beside this file"
-
-test "the identifier rule is asked of a string's contents, part by part"
-    assert is_module_name("geom")
-    assert is_module_name("_private")
-    assert is_module_name("g2")
-    assert !is_module_name("")
-    assert !is_module_name("2geom")
-    assert !is_module_name("geom.shapes")
-
-    # A path is a name now, part by part — and an empty part is not one,
-    # which is the whole of what refuses the three broken spellings.
-    assert is_module_name("shapes/geom")
-    assert is_module_name("a/b/c")
-    assert !is_module_name("shapes//geom")
-    assert !is_module_name("/geom")
-    assert !is_module_name("geom/")
-    assert !is_module_name("shapes/2geom")
-    assert unquote("\"geom\"") == "geom"
-    assert unquote("geom") == "geom"

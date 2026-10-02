@@ -1,0 +1,25 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R2).
+#
+# SYMPTOM: a record over a struct holding an anonymous union, naming both of
+# its arms, was built at exit 0, `SA(kind: 1, i: 7, f: 0.5, x: 3).i` printing
+# 1056964608, the bits of 0.5, with clang's *excess elements* and *initializer
+# overrides* warnings on the author's lines.
+#
+# CAUSE: the union rule asked C whether the TYPE was a union
+# (`__builtin_classify_type`, panel 077), and a struct holding one answers
+# struct; nothing asked whether two declared fields are one union's bytes.
+#
+# FIX: the header's layout is read from clang (`cli/layout.hero`), and building
+# a record whose two declared fields share bytes is refused at `build`, by C's
+# own offsets and sizes. Reading through both stays legal.
+
+extern "fixedbugs-151-unions.h"
+    record SA  #~ ffi_union_field
+        kind: i32
+        i: i32
+        f: f32
+        x: i32
+
+function main()
+    s = SA(kind: 1, i: 7, f: 0.5, x: 3)
+    print(s.i)
