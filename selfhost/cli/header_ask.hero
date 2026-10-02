@@ -87,3 +87,6 @@ test "a refused round's question is asked of the real header (defect 152)"
     assert ffi_lookup.has(text: got.said, needle: "called object type")
     assert !got.values["BUFSIZ"].is_err()
     assert got.values["errno"].is_err()
+
+    # `errno` is a macro over an object on every libc this compiler targets.
+    assert !got.macros["errno"].is_err()

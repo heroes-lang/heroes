@@ -562,8 +562,12 @@ tension become:
    actually building a second backend, which is why the QBE backend is *scheduled* post-fixpoint
    (Part 7 item 14) rather than left as "maybe".
 2. **A thin C shim remains standard practice** for C++ libraries and awkward struct-passing: a `.c`
-   file exposing plain functions, compiled by `heroes cc`, linked in. Macros, `inline` functions and
-   `#define` constants are now reachable directly, so shims are for the hard cases only.
+   file exposing plain functions, compiled by `heroes cc`, linked in. `inline` functions and
+   `#define` constants are now reachable directly, so shims are for the hard cases only. A
+   function-like macro is not: it has no parameter types for clang to hold a declaration to, and it
+   is reached through a `static inline` function in a header of the program's own that calls it,
+   bound like any function and compiled with the program's own unit (panel 185 R1, 2026-10-02;
+   until that day this point said macros were reachable directly).
 3. **FFI signatures are verified by clang against the real header** (`importc`-style declarations,
    §4.19) — a wrong type in an `extern` is a *compile* error, which is this project's thesis applied
    to the boundary.
@@ -642,8 +646,9 @@ Part 2 rules out as a justification.
 
 - **The full C ABI**, per target, maintained by people paid to get it right. Struct passing,
   varargs (including Apple ARM64's on-stack variadics), alignment — never your problem.
-- **Header access.** `#include <sqlite3.h>` reaches macros, `inline` functions and `#define`
-  constants, and — the property that matters most — **clang verifies every `extern` signature
+- **Header access.** `#include <sqlite3.h>` reaches `inline` functions and `#define` constants,
+  and a function-like macro through a function of the program's own that calls it (§4.19, panel
+  185 R1), and — the property that matters most — **clang verifies every `extern` signature
   against the real header**. A wrong FFI type is a compile error, not a runtime disaster.
 - **Debug info.** `#line` directives map generated C back to `.hero` lines; lldb breaks on and
   steps through the author's source.
@@ -2262,8 +2267,17 @@ parser **flattens** it: one declaration per member, two spans on each, and no
 later pass ever learns the word "group", because a declaration's index is function identity across
 five modules. `ptr` is an opaque pointer whose only literal is `nullptr` — `null` belongs to the
 foreign-word registry and stays there — and a C out-parameter is an `@` parameter, which §4.8
-already compiles to a pointer. Macros and `inline` functions are reachable
-because the C compiler sees the real header.
+already compiles to a pointer. `inline` functions and `#define` constants are reachable
+because the C compiler sees the real header. **A function-like macro is not, and this sentence
+said it was until 2026-10-02** (panel 185 R1, defect 143): the probe calls its callee in
+parentheses, which is what holds a fortified `memset` to its widths (panel 092) and what no macro
+expands under, and a macro has no parameter types for clang to hold a declaration to, so a call
+through one checks none of them (`WEXITSTATUS` declared `status: u8` read four bytes of one,
+AddressSanitizer exit 134, measured by that sitting). A refused build asks the header which of its
+names are macros, and such a name is `error[ffi_macro_name]`, whose note drafts the repair: a
+`static inline` function in a header of the program's own that calls the macro, bound by `extern`
+like any function, every C type in the draft a placeholder the author fills from the macro's
+documentation, never the declaration's.
 
 **A `constant` is the group's second kind of member, and its value is the header's**
 (panel 038). It carries no body — inside a group a declaration is a *signature, not a
@@ -2398,8 +2412,10 @@ i64 hero_sqlite_exec(void *db, const char *sql) {
 
 This solves struct-passing-by-value, out-parameters, and callbacks in one place — and it is the
 only realistic route to C++ libraries, since `extern "C"` wrappers are the same pattern. Budget for
-shims as normal work, not as a workaround — but note they are now for the hard cases only, not for
-every macro.
+shims as normal work, not as a workaround — but note they are now for the hard cases only. A
+function-like macro needs no `.c` file at all: a `static inline` function in a header of the
+program's own reaches it and compiles with the program's own unit (panel 185 R1); this sentence
+said *not for every macro* until 2026-10-02, as if a macro needed none.
 
 **A binding annotation vocabulary will eventually be needed**, because ownership has to cross the
 boundary somehow. Three cases to cover: a pointer you *must* free (and with which function), a

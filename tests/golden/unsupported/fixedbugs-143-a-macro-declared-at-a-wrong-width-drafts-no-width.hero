@@ -1,0 +1,13 @@
+# fixedbugs, defect 143, panel 185 R1, lane ffi-macro, 2026-10-02.
+#
+# The width panel 185 measured reading out of bounds through the macro,
+# `status: u8` where `WEXITSTATUS` takes the address of an `int`: the
+# function the note drafts must not carry it, or the author's own header
+# holds the hole. Every C type in the draft is a placeholder; the
+# parameter's NAME is the declaration's, since a name corrupts nothing.
+
+extern "sys/wait.h"
+    function WEXITSTATUS(status: u8) -> i64  #~ ffi_macro_name
+
+function main()
+    print(WEXITSTATUS(status: 1))

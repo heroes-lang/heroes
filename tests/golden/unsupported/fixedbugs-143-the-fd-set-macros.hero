@@ -1,0 +1,22 @@
+# fixedbugs, defect 143, panel 185 R1, lane ffi-macro, 2026-10-02.
+#
+# `FD_ZERO`, `FD_SET` and `FD_ISSET` are macros on macOS and on glibc, and
+# glibc's `FD_ZERO` is a STATEMENT, `do { ... } while (0)` (panel 185's
+# ffi-pragmatist, `bits/select.h`): no call form can stand where an
+# expression must, so a route through the macro could not even compile there.
+# Each is told as a macro on both, by the probe's own undeclared line, and
+# the repair, a function of the program's own, takes a statement macro as
+# well as any (`tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own`).
+# The statement shape is reached only on glibc: run in the Linux container at
+# the batch gate, unrun on this Mac. Skipped where the machine has no
+# `sys/select.h`.
+
+extern "sys/select.h"
+    function FD_ZERO(set: ptr)  #~ ffi_macro_name
+    function FD_SET(fd: i32, set: ptr)  #~ ffi_macro_name
+    function FD_ISSET(fd: i32, set: ptr) -> i32  #~ ffi_macro_name
+
+function main()
+    FD_ZERO(set: nullptr)
+    FD_SET(fd: 1, set: nullptr)
+    print(FD_ISSET(fd: 1, set: nullptr))

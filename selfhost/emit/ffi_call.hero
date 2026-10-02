@@ -46,6 +46,7 @@ use check/render
 use ir/containers
 use emit/ffi_lookup
 use emit/ffi_site
+use emit/ffi_declared
 use parse
 use resolve
 use checker
@@ -68,6 +69,13 @@ constant TYPE_NAME: str
 
 constant DOES_NOT_FIT: str
     "clang read the header, and the call this declaration implies does not fit it"
+
+# What clang says of a function-like macro called with none of its arguments.
+constant MACRO_UNFED: [str]
+    [
+        "expected expression"
+        "too few arguments provided to function-like macro invocation"
+    ]
 
 # `expected N, have M` — clang's own count, read back so the message can
 # say the header's number and the author's.
@@ -201,6 +209,30 @@ function not_a_function(s: source.Source, decls: [ast.Decl], p: containers.Progr
         "an object can hold another value at the next read, so no group member binds one, and a `constant` refuses it (§4.19): a function of the program's own returns it, written in a header beside this file and bound by `extern` naming that header like any function, `static inline " + returning(c_type: c_type, callee: "hero_" + name) + "(void) { return " + name + "; }`"
     )
     return ok(d)
+
+# A declaration with no parameter of a name the header defines as a macro
+# that takes some (panel 185 R1): `function WEXITSTATUS() -> i64`. The call
+# the question unit says again at the declaration's line hands the macro
+# nothing, and clang refuses what it expands to, or the invocation itself.
+# `macros` is that unit's answer, and without a yes this is not the reading.
+function macro_call(s: source.Source, tree: ast.Ast, decls: [ast.Decl], p: containers.Program, line: str, macros: {str: bool}) -> diag.Diagnostic?
+    unfed: bool @ false
+
+    for words in MACRO_UNFED
+        if ffi_lookup.has(text: line, needle: words)
+            unfed @ true
+
+    if !unfed
+        return fail(code: "none", msg: "not a macro handed nothing")
+    at = ffi_site.location(s, line: line)
+
+    if at.is_err()
+        return fail(code: "none", msg: "no usable location")
+    found = ffi_site.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+
+    if found.is_err() || macros[found.must().name].is_err()
+        return fail(code: "none", msg: "no macro is declared at that line")
+    return ffi_declared.macro_name(s, tree, decls, name: found.must().name)
 
 # The type a `constant` of the declared result would carry, or the words for
 # the one a declaration with no result leaves to the author.

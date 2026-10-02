@@ -1,0 +1,24 @@
+# fixedbugs, defect 143, panel 185 R1, lane ffi-macro, 2026-10-02.
+#
+# SYMPTOM: `function WEXITSTATUS(status: i32) -> i64` under `extern
+# "sys/wait.h"` was `ffi_unknown_name`, *`sys/wait.h` declares no
+# `WEXITSTATUS`*, though the header defines it, as a macro, on macOS and on
+# glibc alike.
+#
+# CAUSE: the probe calls its callee in parentheses (panel 092), which is what
+# holds a fortified `memset` to its widths, and a parenthesised name expands
+# no function-like macro, so clang called it undeclared. And a macro has no
+# parameter types: panel 185 measured that a call through it holds none of
+# them, `status: u8` reading four bytes of one.
+#
+# FIX: the round clang refused asks the header, once, which of its names are
+# macros (`emit/ffi_asked.hero`), and such a name is `ffi_macro_name`: told
+# as a macro, with the repair, a function of the program's own that calls it,
+# drafted with placeholders for every C type. Skipped where the machine has
+# no `sys/wait.h`.
+
+extern "sys/wait.h"
+    function WEXITSTATUS(status: i32) -> i64  #~ ffi_macro_name
+
+function main()
+    print(WEXITSTATUS(status: 256))

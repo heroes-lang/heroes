@@ -1,0 +1,15 @@
+# fixedbugs, defect 143, panel 185 R1, lane ffi-macro, 2026-10-02.
+#
+# `twice` is a function AND a macro of the same name, the shape of `getc` on
+# some libcs and of `curl_easy_setopt` in curl.h. The probe's parenthesised
+# call reaches the function, so clang holds the declaration to its
+# parameters and a width that disagrees is `ffi_parameter_type`, as for any
+# function (panel 092). R1 asks after the round and reads its answer only for
+# a name clang could not reach: this one it reached, so the macro answer
+# changes nothing here, and the first round stays first.
+
+extern "fixedbugs-143-macros.h"
+    function twice(x: i64) -> i32  #~ ffi_parameter_type
+
+function main()
+    print(twice(x: 3))
