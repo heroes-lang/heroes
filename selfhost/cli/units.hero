@@ -91,10 +91,11 @@ function components(s: source.Source) -> [str]
 # that passes the rest replayed the object compiled without them, measured
 # 2026-10-02 on one `build/`: a header returning 8 under its `.pc`'s `-D`
 # printed 7. The words come after `compile:`, so no key written before names
-# the same text.
+# the same text, each by its length (`libraries.key_text`), so a word that
+# holds a space (defect 162) is never two.
 function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, package_flags: [str], source_dir: str, search_include: [str], @memo: {str: str}) -> str?
     key = digest.digest(
-        t.fingerprint + "|tu|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|compile:" + libraries.compile_flags(package_flags).join(" ")
+        t.fingerprint + "|tu|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|compile:" + libraries.key_text(libraries.compile_flags(package_flags))
     )
     dir = t.build + "/tu-" + key
     process.mkdir_all(dir)?

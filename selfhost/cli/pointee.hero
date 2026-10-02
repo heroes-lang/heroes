@@ -106,7 +106,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     # replayed after the compiler learned to pass it, measured 2026-10-02 on
     # an `@` parameter whose width that `-D` decides.
     key = digest.digest(
-        t.fingerprint + "|pointee|" + t.compiler_key + "|" + asked.join(",") + "|" + headers.join(",") + "|" + search_include.join(",") + "|compile:" + libraries.compile_flags(package_flags).join(" ") + "|" + t.runtime_key
+        t.fingerprint + "|pointee|" + t.compiler_key + "|" + asked.join(",") + "|" + headers.join(",") + "|" + search_include.join(",") + "|compile:" + libraries.key_text(libraries.compile_flags(package_flags)) + "|" + t.runtime_key
     )
     dir = t.build + "/pointee-" + key
     listed = dir + "/dump.deps.txt"

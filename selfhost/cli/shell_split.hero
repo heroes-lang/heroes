@@ -1,0 +1,112 @@
+# How a command line's text is split into its words, as a POSIX shell
+# splits it and with nothing expanded (design.md §4.19; defect 162). It reads
+# pkg-config's answer for `cli/libraries.hero`, which judges each word
+# against its list: pkg-config writes that answer for a shell, so it is read
+# the way a shell would read it, and every word it gives is one argument to
+# clang, whatever it holds.
+
+use cli/strings
+
+# The words of pkg-config's answer, read as a POSIX shell reads a command
+# line, with nothing expanded (defect 162, 2026-10-02). pkg-config writes its
+# answer for a shell: this Mac's pkgconf 3.0.7, measured over one `.pc` per
+# shape, gives `-I"/inc/with space"` back as `-I/inc/with\ space`,
+# `-DNAME="a b"` as `-DNAME=a\ b`, a quoted backslash as `\\`, an `&` as
+# `\&` and a tab after a backslash, and keeps `-DVERSION=\"1.0\"` as it
+# is. A word was everything between two spaces until then, so a path with a
+# space was refused, a fragment of it named as the flag. So: outside quotes
+# a backslash makes the next character a letter of the word, and before a
+# newline it is nothing; single quotes keep every character to the next
+# one; double quotes keep every character to the next unescaped one, a
+# backslash in them escaping only `$`, a backtick, `"`, `\` and a newline; a
+# space, a tab or a newline outside quotes ends a word. Nothing is expanded,
+# so a `$` or a backtick in a `.pc` runs nothing, and a word reaches clang
+# whole, as one argument, whatever it holds.
+function words(package: str, said: str) -> [str]?
+    out: [str] @ []
+    run: [str] @ []
+    in_word: bool @ false
+    quote: str @ ""
+    cs = said.chars()
+    index: i64 @ 0
+
+    while index < cs.len()
+        ch = cs[index]
+        next: str @ ""
+
+        if index + 1 < cs.len()
+            next @ cs[index + 1]
+
+        if quote == "'"
+            if ch == "'"
+                quote @ ""
+            else
+                run @ run.push(ch)
+        else if quote == "\""
+            if ch == "\""
+                quote @ ""
+            else if ch == "\\" && escaped_in_double_quotes(next)
+                if next != "\n"
+                    run @ run.push(next)
+                index @ index + 1
+            else
+                run @ run.push(ch)
+        else if ch == " " || ch == "\t" || ch == "\n"
+            if in_word
+                out @ out.push(run.join(""))
+                run @ []
+                in_word @ false
+        else if ch == "\\"
+            if next == "\n"
+                index @ index + 1
+            else if next.len() > 0
+                run @ run.push(next)
+                in_word @ true
+                index @ index + 1
+            else
+                run @ run.push(ch)
+                in_word @ true
+        else
+            if ch == "'" || ch == "\""
+                quote @ ch
+            else
+                run @ run.push(ch)
+            in_word @ true
+        index @ index + 1
+
+    if quote.len() > 0
+        return fail(
+            code: "failed",
+            msg: "heroes-ffi-package `" + package + "` answered with a `" + quote + "` that nothing closes, which this compiler does not read: `" + strings.trimmed(said) + "`"
+        )
+
+    if in_word
+        out @ out.push(run.join(""))
+    return ok(out)
+
+function escaped_in_double_quotes(ch: str) -> bool
+    return ch == "$" || ch == "`" || ch == "\"" || ch == "\\" || ch == "\n"
+
+## Tests
+
+# pkgconf 3.0.7's answers on this Mac, 2026-10-02, one `.pc` per shape (lane
+# h158, defect 162): a path with spaces and a tab, a `-D` with a space and
+# one with quotes, a backslash, an `&` and a `$`, and a library directory
+# with a space, each one word, nothing expanded.
+test "pkg-config's answer is read as a shell reads it, and nothing in it is expanded"
+    said = "-I/inc/with\\ space -I/inc/two\\ \\ spaces -I/inc/tab\\\there -DNAME=a\\ b -DVERSION=\\\"1.0\\\" -I/inc/back\\\\slash -I/inc/amp\\&x -I/inc/dollar$x -L/lib/with\\ space -lz\n"
+    read = words(package: "spaced", said: said).must()
+    assert read == ["-I/inc/with space", "-I/inc/two  spaces", "-I/inc/tab\there", "-DNAME=a b", "-DVERSION=\"1.0\"", "-I/inc/back\\slash", "-I/inc/amp&x", "-I/inc/dollar$x", "-L/lib/with space", "-lz"]
+
+    # The quotes another pkg-config may keep, an empty word, a backslash
+    # before a newline and one ending the answer.
+    quoted = words(package: "q", said: "-I'/inc/single quoted' -I\"/inc/double \\\"quoted\\\"\" '' -DX=\"$HOME\" -I/a\\\n/b -I/c\\").must(
+    )
+    assert quoted == ["-I/inc/single quoted", "-I/inc/double \"quoted\"", "", "-DX=$HOME", "-I/a/b", "-I/c\\"]
+
+    # A quote left open is refused, naming it.
+    open_quote = words(package: "q", said: "-I'/inc/open")
+
+    match open_quote
+        .ok    => assert false
+        .err e => assert e.msg == "heroes-ffi-package `q` answered with a `'` that nothing closes, which this compiler does not read: `-I'/inc/open`"
