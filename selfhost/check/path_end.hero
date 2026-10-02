@@ -1,0 +1,247 @@
+# How a path ends where no jump word stands, and the refusal of a statement
+# after one that does (design.md §4.7, §4.17; panel 184's R4, panel 185's R4
+# and R5).
+#
+# Two rules, and what joins them is the one predicate they are read through.
+# **A statement after `return`, `break` or `continue`, in the same block, is a
+# compile error**: it never runs, and a line an indentation slip moved under a
+# jump is a program that compiles and does something else (panel 184's blind
+# reading: a loop that never advances, a `print` that never prints). And
+# **`exit(code:)`, `assert false` and a `while true` with no `break` of its own
+# end a path**: a function whose path ends on one returns on every path that
+# reaches its end, and an arm or a block that ends on one gives no value and
+# owes none, as one that jumps does. All three are read by their SYNTAX and
+# never by a value: `assert OFF` over a constant `OFF` that is false, and a
+# `while true` whose only `break` sits under `if false`, end nothing (the
+# sitting's critic, B9), because a value is the run's to know.
+#
+# The refusal reads the jump words alone, and that is the ruling, not a gap:
+# a statement after `exit(code:)`, or after an `if` or a `match` every branch
+# of which leaves, stays legal, so the defensive `return 0` after `exit` a
+# model writes is not refused (panel 184's task-2 reading approved S and
+# objected to R, the wider refusal), and panel 185's R4 leaves its c5 legal.
+#
+# **One predicate, read three ways** (panel 185's R5): the walk's
+# `Outcome.leaves` decides a function's end (`missing_return`), a value arm
+# (the join skips it) and a value block (it owes no value), so the three can
+# never disagree; and `Checked.ends` hands the lowering the statement each
+# body that leaves ends at, so the C never reads a value no path made.
+#
+# Asked by `check/walk.hero` (`block`, `statement`, `arms`, `valued_tail`) and
+# by `check/decls.hero`'s constant body; it calls none of them back, which is
+# what lets it stand outside the walk's knot.
+
+use token
+use ast
+use source
+use resolved
+use parse
+use check/table
+use check/state
+use check/join
+use flow_errors
+
+## The refusal after a jump
+
+# The jump word a statement is, or "" for every other statement.
+function jump_word(a: ast.Ast, at: i64) -> str
+    return match a.stmts[at].kind
+        .return_stmt                                            => "return"
+        .break_stmt                                             => "break"
+        .continue_stmt                                          => "continue"
+        .bind | .declare | .mutate | .assert_stmt | .while_stmt => ""
+        .for_in | .expr_stmt | .error                           => ""
+
+# A block's statements after its first jump word, told at the first that
+# never runs, once per block, since every line after it is the same mistake
+# (design.md §4.17), and never at a line the parser has already refused,
+# which is told what it is. One call per block, after its statements are
+# checked (the driver puts every diagnostic in source order), so that
+# `walk.block`, which every nested block recurses through, keeps no state of
+# its own for the rule and makes one call for it rather than two a statement.
+function after_a_jump(@c: state.Checker, a: ast.Ast, s: source.Source, body: ast.Block)
+    jumped: i64 @ -1
+
+    for sid in body.stmts
+        if jumped >= 0 && a.stmts[sid].kind != .error
+            left_at = source.elsewhere(s, here: a.stmts[sid].span.start, there: a.stmts[jumped].span.start)
+            state.push_diagnostic(
+                @c,
+                flow_errors.unreachable_statement(word: jump_word(a, at: jumped), left_at: left_at, span: a.stmts[sid].span)
+            )
+            return
+
+        if jumped < 0 && jump_word(a, at: sid) != ""
+            jumped @ sid
+
+## The three ends of a path that are not jumps
+
+# `exit(code:)` called by its own name: a call whose callee is the name `exit`
+# resolving to the library's function, which no program may declare again
+# (`builtin_name_taken`). Never a method's spelling: `h.exit(3)` calls a field
+# of `h` first where one is named `exit` (§4.11), and goes on.
+function calls_exit(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], value: i64) -> bool
+    match a.exprs[value].kind
+        .call cl =>
+            if a.exprs[cl.callee].kind != .name
+                return false
+
+            match r.uses[cl.callee]
+                .top t => return source.is_library(s, decls[t.at].name.start) && source.span_text(s, decls[t.at].name) == "exit"
+                .unresolved | .local | .builtin | .module => return false
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp | .null_ptr => return false
+        .name | .hole | .unary | .binary | .field | .field_name | .index | .method     => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => return false
+
+    return false
+
+# `assert false`: the asserted expression is the literal `false`.
+function aborts(a: ast.Ast, s: source.Source, value: i64) -> bool
+    return literal(a, s, at: value, word: "false")
+
+# `while true` with no `break` of its own, which never finishes. `broken` is
+# the walk's `Checker.broke` for this loop's body: a `break` of a loop inside
+# it is that loop's.
+function forever(a: ast.Ast, s: source.Source, cond: i64, broken: bool) -> bool
+    return !broken && literal(a, s, at: cond, word: "true")
+
+function literal(a: ast.Ast, s: source.Source, at: i64, word: str) -> bool
+    return a.exprs[at].kind == .bool_lit && source.span_text(s, a.exprs[at].span) == word
+
+## What the lowering is handed
+
+# A body the walk judged leaving, recorded at the statement it ends at: a
+# block's last, or an arm's one (`Checked.ends`). A function of its own so
+# that `block`, which every nested block recurses through, holds no map in
+# its frame.
+function ended(@c: state.Checker, at: i64)
+    c.out.ends[at] @ true
+
+## The value block that leaves (panel 185's R4)
+
+# An `if` or a `match` standing where a value is wanted, a value block's last
+# line or an arm's one statement, every branch of which leaves, leaves with
+# them, and its block or its arm leaves (built as the sitting's (3x)). The
+# value check of such a construct says `no_value` at the construct's own span
+# last of all (`join.refuse_leaving`), and here that one message is
+# withdrawn, the construct recorded as the statement it is, and how it left
+# handed back. Anything said after the refusal, or any other message, and
+# nothing is withdrawn: the refusal stands, which is the safe direction.
+# Asked of the diagnostics rather than of a field `refuse_leaving` writes,
+# because a field of `Checker` widens every frame that holds one (panel 185
+# measured one to three levels of the nesting `check` survives).
+function withdrawn(@c: state.Checker, a: ast.Ast, before: i64, at: i64, span: token.Span) -> join.Leaves
+    count = c.out.diagnostics.len()
+
+    if count == before
+        return .falls
+    said = c.out.diagnostics[count - 1]
+    what = construct(a, at: at)
+    left: join.Leaves @ .falls
+
+    if said.span.start != span.start || said.span.end != span.end
+        return .falls
+
+    if said.message == flow_errors.no_value(what, span).message
+        left @ .jumps
+
+    if said.message == flow_errors.no_value_ended(what, span).message
+        left @ .ends
+
+    if left == .falls
+        return .falls
+    c.out.diagnostics @ c.out.diagnostics.slice(from: 0, to: count - 1)
+    _ = state.record_expr(@c, at: at, ty: table.unit_ty(c.out.types))
+    return left
+
+# The word a construct's `no_value` names it by.
+function construct(a: ast.Ast, at: i64) -> str
+    return match a.exprs[at].kind
+        .if_expr                                                             => "if"
+        .match_expr                                                          => "match"
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp   => ""
+        .null_ptr | .name | .hole | .unary | .binary | .field | .field_name  => ""
+        .index | .call | .method | .variant_case | .array | .map | .try_expr => ""
+        .error                                                               => ""
+
+## A value block that ends on a statement
+
+# A value block that ends on a statement, told at that statement: the line
+# that has to be the value (defect 149). Until 2026-10-02 the caret stood at
+# the block's span, which begins at its first line, so every value block of
+# more than one line, a constant's body, a branch of an `if` or a `match`,
+# sent the author to a line that was right. Moved here from `check/walk.hero`
+# on the same day, unchanged, with the rest of what decides how a block ends;
+# a function of its own so that `block`, which every nested block recurses
+# through, holds no diagnostic in its frame.
+function ended_on_a_statement(@c: state.Checker, a: ast.Ast, body: ast.Block)
+    span: token.Span @ body.span
+
+    if body.stmts.len() > 0
+        span @ a.stmts[body.stmts[body.stmts.len() - 1]].span
+    state.push_diagnostic(@c, flow_errors.branch_without_value(span))
+
+## Tests
+
+# The first declaration's body, a function's.
+function first_body(p: parse.ParseOutput) -> ast.Block
+    none: [i64] = []
+    empty = ast.Block(span: token.Span(start: 0, end: 0), stmts: none)
+
+    return match p.decls[0].kind
+        .function_decl fd                                          => fd.value.body.must()
+        .constant_decl | .record_decl | .variant_decl | .test_decl => empty
+
+# The refusal over a parsed function's body, as `walk.block` asks it.
+function refused_in(text: str) -> state.Checker
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    r: resolved.Resolved @ resolved.new_resolved()
+    c: state.Checker @ state.new_checker(out_of: r, expr_count: p.tree.exprs.len())
+    after_a_jump(@c, p.tree, s, body: first_body(p))
+    return c
+
+test "the statement after a jump word is told once, naming the jump and its line"
+    text = "function f() -> i64\n    x = 1\n    return x\n    print(2)\n    print(3)\n"
+    c = refused_in(text)
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "unreachable_statement"
+    assert c.out.diagnostics[0].message == "this statement never runs: the `return` at line 3 leaves its block first"
+
+    # The caret is on the first line that never runs, `print(2)`.
+    s = source.new_source(name: "t.hero", text: text)
+    assert source.span_text(s, c.out.diagnostics[0].span) == "print(2)"
+    broke = refused_in("function f()\n    break\n    print(1)\n")
+    assert broke.out.diagnostics[0].message == "this statement never runs: the `break` at line 2 leaves its block first"
+    went_on = refused_in("function f()\n    continue\n    return\n")
+    assert went_on.out.diagnostics.len() == 1
+
+test "nothing after a statement that is not a jump word, and none told twice"
+    # `exit(code:)` ends a path and is not a jump: what follows it stays legal
+    # (panel 184's R4, route (2d)), so the defensive `return` is not refused.
+    c = refused_in("function f() -> i64\n    exit(code: 1)\n    return 0\n")
+    assert c.out.diagnostics.len() == 0
+    looped = refused_in("function f()\n    while true\n        print(1)\n    print(2)\n")
+    assert looped.out.diagnostics.len() == 0
+    twice = refused_in("function f() -> i64\n    return 1\n    return 2\n    return 3\n")
+    assert twice.out.diagnostics.len() == 1
+
+# The critic's B9 is the reason: `assert off` over a parameter, a negated
+# literal, and a `while true` with a `break` of its own end nothing, whatever
+# the run would find; a literal in parentheses is still the literal.
+test "the three ends are read by their syntax, never by a value"
+    text = "function f(off: bool)\n    assert false\n    assert !true\n    assert off\n    while true\n        print(1)\n    while (true)\n        print(1)\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    held: [bool] @ []
+
+    for sid in first_body(p).stmts
+        match p.tree.stmts[sid].kind
+            .assert_stmt v => held @ held.push(aborts(p.tree, s, value: v.value))
+            .while_stmt w =>
+                held @ held.push(forever(p.tree, s, cond: w.cond, broken: false))
+                held @ held.push(forever(p.tree, s, cond: w.cond, broken: true))
+            .bind | .declare | .mutate | .return_stmt | .break_stmt => continue
+            .continue_stmt | .for_in | .expr_stmt | .error          => continue
+
+    assert held == [true, false, false, true, false, true, false]

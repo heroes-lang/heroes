@@ -1,0 +1,108 @@
+# Fixed 2026-10-02, defect 174, lane flow4: panel 184's R4, its second half.
+# `exit(code:)`, `assert false` and a `while true` with no `break` of its
+# own end a path, so a function whose path ends on one owes no `return`
+# there; and all three are read by their SYNTAX, never by a value (the
+# sitting's critic, B9). Each function below has a path that reaches its end
+# under that reading, and is told `missing_return` as before. The paths that
+# do end, built and run, are
+# `tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero`.
+
+constant OFF: bool
+    false
+
+# `assert` over a constant that is false asserts a value.
+function asserted_a_constant(n: i64) -> i64  #~ missing_return
+    if n > 0
+        return 1
+    assert OFF
+
+function asserted_a_negation(n: i64) -> i64  #~ missing_return
+    if n > 0
+        return 1
+    assert !true
+
+# A `break` of its own, even one no run reaches, lets the loop finish.
+function a_break_under_if_false(n: i64) -> i64  #~ missing_return
+    m: i64 @ n
+
+    while true
+        if false
+            break
+
+        if m > 3
+            return m
+        m @ m + 1
+
+function a_break_in_an_arm(n: i64) -> i64  #~ missing_return
+    m: i64 @ n
+
+    while true
+        match m
+            9 => break
+            _ => m @ m + 1
+
+        if m > 3
+            return m
+
+# A condition that is not the word `true` is a value.
+function a_condition_that_holds(n: i64) -> i64  #~ missing_return
+    m: i64 @ n
+
+    while m > -1
+        if m > 3
+            return m
+        m @ m + 1
+
+# `exit` is read by its name: `n.exit()` spells a method, and a field named
+# `exit` is called first where a record has one (spec § 9, UFCS), so neither
+# spelling ends a path.
+record Hooks
+    exit: (function(i64) -> ())
+
+function exits_by_a_method(n: i64) -> i64  #~ missing_return
+    if n > 0
+        return 1
+    n.exit()
+
+function calls_a_field_named_exit(h: Hooks) -> i64  #~ missing_return
+    if false
+        return 1
+    h.exit(3)
+
+# Where a value is wanted, what ends its path gives none: a `match` every
+# arm of which ends so has nothing to bind, told in words that do not call
+# an `exit` a jump; and a loop with a `break` of its own finishes, so an arm
+# that ends on one ends on a statement.
+function every_arm_exits(k: i64) -> i64
+    x = match k  #~ no_value
+        0 => exit(code: 1)
+        _ => exit(code: 2)
+
+    return x
+
+function an_arm_that_loops_and_breaks(k: i64) -> i64
+    n: i64 @ 0
+
+    x = match k
+        0 =>
+            while true  #~ no_value
+                n @ n + 1
+
+                if n > 3
+                    break
+        _ => 20
+
+    return x + n
+
+# A constant's body that ends its path never gives its value, told at the
+# line it ends on, which is not always its last.
+constant ASSERTS_FALSE: i64
+    assert false  #~ no_value
+
+constant LOOPS: i64
+    while true  #~ no_value
+        _ = 0
+
+constant ASSERTS_THEN_SEVEN: i64
+    assert false  #~ no_value
+    7

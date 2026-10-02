@@ -49,30 +49,42 @@ use flow_errors
 
 # How control leaves a statement, a block or a branch, if it does: it
 # `falls` to the next line; it `jumps`, by a `return`, or by a `break` or a
-# `continue` inside a loop; or it leaves by a jump `refused` where it stands,
-# a `break` or a `continue` outside every loop, already told at the jump.
+# `continue` inside a loop; it `ends` its path with no jump word, by
+# `exit(code:)`, by `assert false` or by a `while true` with no `break` of
+# its own (panel 184's R4, `check/path_end.hero`); or it leaves by a jump
+# `refused` where it stands, a `break` or a `continue` outside every loop,
+# already told at the jump.
 #
-# **The third is why this is not a `bool`** (defect 148). Whatever asks
+# **The fourth is why this is not a `bool`** (defect 148). Whatever asks
 # whether control goes on reads a refused jump as leaving, as it always has:
 # a function whose body is a `break` costs `jump_outside_loop` and no
 # `missing_return`. What may not read it so is a CLAIM to the author that
 # rests on it, *every branch jumps* or *its body jumps before it gives one*:
 # `constant M: i64` over `break` was told both, at one place, for one
 # mistake, and the second is the first one's shadow (design.md §4.17).
+# **And the third is apart from `jumps` for the same reason**: every reader
+# that asks whether control goes on takes both alike, and only a claim tells
+# them apart, since `exit(code:)` is no jump and *every branch jumps* said of
+# an arm that ends on it would be false.
 variant Leaves
     falls
     jumps
+    ends
     refused
 
 # The way a construct with two branches leaves, from the way each does: it
 # falls if either does, and where both leave, by a refused jump if either
-# was, since a claim about the whole would rest on that one.
+# was, since a claim about the whole would rest on that one, and by ending
+# its path if either did, since *every branch jumps* would then be false.
 function both(first: Leaves, second: Leaves) -> Leaves
     if first == .falls || second == .falls
         return .falls
 
     if first == .refused || second == .refused
         return .refused
+
+    if first == .ends || second == .ends
+        return .ends
     return .jumps
 
 # One branch of a join: the type it produces, or absence when it has
@@ -143,10 +155,17 @@ function join_for_value(@c: state.Checker, s: source.Source, decls: [ast.Decl], 
 # `join_for_value` and by the checked `match` and `if`, so that `x = if`
 # and `x: i64 = if` are one rule; `leaves` is `every_branch`'s answer, or
 # the same answer an `if` folds off its blocks with `both`. Told only where
-# every branch jumps: one that left by a refused jump has been told there.
+# every branch jumps, or leaves with one ending its path, in the words that
+# are true of each: one that left by a refused jump has been told there.
+# Where such a construct is a value block's last line it is the block that
+# leaves, and `check/path_end.withdrawn` takes this message back (panel
+# 185's R4), which is why the construct's check says nothing after it.
 function refuse_leaving(@c: state.Checker, leaves: Leaves, what: str, span: token.Span)
     if leaves == .jumps
         state.push_diagnostic(@c, flow_errors.no_value(what, span))
+
+    if leaves == .ends
+        state.push_diagnostic(@c, flow_errors.no_value_ended(what, span))
 
 ## Tests
 
@@ -239,3 +258,32 @@ test "a jump refused where it stands leaves, and no claim rests on it"
     assert every_branch(refused) == .refused
     _ = join_for_value(@c, s, d, refused, what: "if", span: token.Span(start: 0, end: 5))
     assert c.out.diagnostics.len() == 0
+
+# Panel 184's R4: a branch that ends its path on `exit(code:)`, `assert false`
+# or a `while true` nothing breaks leaves as a jump does, and the claim told
+# of a construct that leaves through one says so, never *every branch jumps*.
+test "a branch that ends its path leaves, and the claim about it is not a jump's"
+    assert both(first: .jumps, second: .ends) == .ends
+    assert both(first: .ends, second: .refused) == .refused
+    assert both(first: .ends, second: .falls) == .falls
+    assert both(first: .jumps, second: .jumps) == .jumps
+    r: resolved.Resolved @ resolved.new_resolved()
+    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    s = source.new_source(name: "t.hero", text: "x\n")
+    d: [ast.Decl] = []
+    int_id = table.int_ty_id(c.out.types)
+    ended: [Branch] = [
+        Branch(value: fail(code: "ends", msg: "an exit"), leaves: .ends, span: token.Span(start: 0, end: 1))
+        Branch(value: fail(code: "jumps", msg: "a return"), leaves: .jumps, span: token.Span(start: 2, end: 3))
+    ]
+    assert every_branch(ended) == .ends
+    _ = join_for_value(@c, s, d, ended, what: "match", span: token.Span(start: 0, end: 5))
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "no_value"
+    assert c.out.diagnostics[0].message == "this `match` produces no value — every branch leaves before it gives one, so there is nothing to bind"
+    mixed: [Branch] = [
+        Branch(value: fail(code: "ends", msg: "an exit"), leaves: .ends, span: token.Span(start: 0, end: 1))
+        Branch(value: ok(int_id), leaves: .falls, span: token.Span(start: 2, end: 3))
+    ]
+    assert join_branches(@c, s, d, mixed).must() == int_id
+    assert c.out.diagnostics.len() == 1

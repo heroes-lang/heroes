@@ -94,6 +94,16 @@ record Checked
     # program until defect 111.
     freers: {str: token.Span}
     diagnostics: [diag.Diagnostic]
+    # Where each body the walk judged LEAVING ends, by statement: a block's
+    # last statement, an arm's one (`check/path_end.hero`, panel 185's R5).
+    # The lowering seals a value block, a value arm and a function's end
+    # there with `unreachable`, where a path that ended on `exit(code:)`,
+    # `assert false` or a `while true` nothing breaks would otherwise run on
+    # to store a value nothing made, or fall off with no `return`. A record
+    # rather than a second reading of the tree: the lowering asks the
+    # checker's one predicate, and where the checker did not say *leaves*,
+    # nothing is sealed and clang still refuses a value read from nothing.
+    ends: {i64: bool}
 
 # The type of a local, by its index. The hole report reads it to print
 # what is in scope.
@@ -115,24 +125,21 @@ function written_type(out: Checked, id: i64) -> i64?
 
 # The pass's working state. Owns everything; the tree, the resolver's
 # answers and the source are parameters.
+#
+# **The flags stand last, together, and that is a measurement** (2026-10-02,
+# panel 185's R5): every frame of the walk holds copies of this record, and
+# a field that widens it costs levels of the nesting `check` survives (one to
+# three for sixteen bytes, panel 185's engineer). Spread between the eight-byte
+# fields each `bool` took eight; packed at the end, four take one word, so
+# `Checked.ends` and `broke` cost this record nothing (184 bytes before and
+# after, clang's record layout of the emitted C; `Checked` 128 to 136).
 record Checker
     out: Checked
     # The result type of the function being checked — what `return` is
     # checked against.
     result: i64
-    # Whether that function's result is a T?, which is what makes `?`
-    # legal (§4.6: `?` in a function that cannot fail is a compile error).
-    fallible: bool
     # Loop nesting, so `break` outside a loop is caught here, not in C.
     loops: i64
-    # Whether the statement being checked ends a function that returns a
-    # value: set for such a body, kept by `block` for its last statement
-    # alone, so an `if`'s or a `match`'s arms at the end inherit it. What
-    # a line nothing receives may have meant is `return` there (defect 135).
-    tail: bool
-    # Whether the walk is inside a `test`, which checks only what it
-    # asserts, so a value dropped there may be an `assert` lost (defect 135).
-    in_test: bool
     # Where each local's binding name starts -> its index. Built once,
     # because the checker must not depend on walking the tree in the same
     # order the resolver did.
@@ -145,6 +152,22 @@ record Checker
     # until the whole file is checked so §4.16's file-wide hole exemption
     # can apply.
     missing_returns: [diag.Diagnostic]
+    # Whether that function's result is a T?, which is what makes `?`
+    # legal (§4.6: `?` in a function that cannot fail is a compile error).
+    fallible: bool
+    # Whether the statement being checked ends a function that returns a
+    # value: set for such a body, kept by `block` for its last statement
+    # alone, so an `if`'s or a `match`'s arms at the end inherit it. What
+    # a line nothing receives may have meant is `return` there (defect 135).
+    tail: bool
+    # Whether the walk is inside a `test`, which checks only what it
+    # asserts, so a value dropped there may be an `assert` lost (defect 135).
+    in_test: bool
+    # Whether the innermost loop's body has a `break` of its own so far: a
+    # `while true` without one never finishes and ends a path (panel 184's
+    # R4). Each loop sets it false over its body and gives the enclosing
+    # one's back after, so a `break` of an inner loop is that loop's.
+    broke: bool
 
 function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
     types = table.new_types()
@@ -170,6 +193,7 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
     counted: [bool] = []
     freers: {str: token.Span} = {}
     diagnostics: [diag.Diagnostic] = []
+    ends: {i64: bool} = {}
     out = Checked(
         types: types,
         local_types: local_types,
@@ -181,7 +205,8 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
         instantiations: instantiations,
         counted: counted,
         freers: freers,
-        diagnostics: diagnostics
+        diagnostics: diagnostics,
+        ends: ends
     )
     locals_by_span: {i64: i64} @ {}
     k: i64 @ 0
@@ -195,13 +220,14 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
     return Checker(
         out: out,
         result: 0,
-        fallible: false,
         loops: 0,
-        tail: false,
-        in_test: false,
         locals_by_span: locals_by_span,
         generic_names: generic_names,
-        missing_returns: missing_returns
+        missing_returns: missing_returns,
+        fallible: false,
+        tail: false,
+        in_test: false,
+        broke: false
     )
 
 function error_ty_of(c: Checker) -> i64

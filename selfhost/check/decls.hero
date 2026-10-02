@@ -27,6 +27,7 @@ use check/state
 use check/lower
 use check/walk
 use check/join
+use check/path_end
 use check/ffi
 use check/freer as freer
 use check/generics
@@ -51,25 +52,16 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 if !k.body.is_err()
                     # A constant's body IS its value: its last statement
                     # produces it, unlike a function, which returns.
-                    left = constant_body(@c, a, r, s, decls, body: k.body.must(), ty: declared)
-
-                    # Asked of how the body left, never of the missing value:
-                    # a body that ends on a statement has none either, and its
-                    # walk has already said so (`branch_without_value`). Until
-                    # 2026-10-01 this read the absent value, so such a body
-                    # was told twice, the second time *every branch jumps*
-                    # (defect 139's class). And only of a body that left by a
-                    # jump meaning something: one that left by a `break` or a
-                    # `continue` outside every loop was told at the jump, and
-                    # until 2026-10-02 was told here too (defect 148). Told at
-                    # the statement through which the body left, which until
-                    # the same day was its first line (defect 149).
-                    if !left.is_err()
-                        name = source.span_text(s, decl.name)
-                        state.push_diagnostic(
-                            @c,
-                            flow_errors.constant_without_value(name: name, span: left.must())
-                        )
+                    constant_body(
+                        @c,
+                        a,
+                        r,
+                        s,
+                        decls,
+                        name: source.span_text(s, decl.name),
+                        body: k.body.must(),
+                        ty: declared
+                    )
                 else
                     if !k.header.is_err()
                         # No body: the value is the header's. What IS
@@ -228,17 +220,32 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
         index @ index + 1
 
 # A constant's body (§4.2: its last line is its value), walked as
-# `walk.block` walks a value block, and answering where it left when it left
-# by a jump meaning something, the one statement the constant's message
-# points at (defect 149: `x: i64 @ 1` over `return x` was told at the
-# binding). Absent where it falls, or left by a jump already refused (defect
-# 148). A copy of `block`'s loop rather than a field `block` writes, because a
-# constant's body is walked once, from its declaration, and `block` is on the
-# path every nested block recurses through: carrying the statement there cost
-# one to four levels of the nesting `check` survives (measured 2026-10-02).
-function constant_body(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block, ty: i64) -> token.Span?
+# `walk.block` walks a value block, and told at the one statement it left
+# by when it left (defect 149: `x: i64 @ 1` over `return x` was told at the
+# binding). A copy of `block`'s loop rather than a field `block` writes,
+# because a constant's body is walked once, from its declaration, and
+# `block` is on the path every nested block recurses through: carrying the
+# statement there cost one to four levels of the nesting `check` survives
+# (measured 2026-10-02).
+#
+# Asked of how the body left, never of the missing value: a body that ends
+# on a statement has none either, and is told so once, at that statement
+# (`branch_without_value`). Until 2026-10-01 the absent value was read, so
+# such a body was told twice, the second time *every branch jumps* (defect
+# 139's class). A body that left by a `break` or a `continue` outside every
+# loop was told at the jump, and until 2026-10-02 here too (defect 148). One
+# that ends its path on `exit(code:)`, `assert false` or a `while true`
+# nothing breaks is told so in its own words (panel 184's R4).
+#
+# **Panel 184's R4 refuses nothing at this level, and that is a premise
+# with a test** (`a jump at a constant's top level is told once`, below):
+# every jump that can stand here is refused already, a `return` by the
+# message below and a `break` or a `continue` by `jump_outside_loop`, so a
+# line after one is that refusal's shadow (design.md §4.17). A block inside
+# the body is `walk.block`'s, and refuses as everywhere.
+function constant_body(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], name: str, body: ast.Block, ty: i64)
     leaves: join.Leaves @ .falls
-    left: token.Span? @ fail(code: "falls", msg: "the body has not left")
+    left: token.Span @ body.span
     value: i64? @ fail(code: "none", msg: "no last value yet")
     last = body.stmts.len() - 1
     index: i64 @ 0
@@ -253,18 +260,20 @@ function constant_body(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
 
         if leaves == .falls && got.leaves != .falls
             leaves @ got.leaves
-            left @ ok(a.stmts[sid].span)
+            left @ a.stmts[sid].span
 
         if index == last
             value @ got.value
         index @ index + 1
 
     if leaves == .jumps
-        return left
+        state.push_diagnostic(@c, flow_errors.constant_without_value(name: name, span: left))
+
+    if leaves == .ends
+        state.push_diagnostic(@c, flow_errors.constant_ended(name: name, span: left))
 
     if leaves == .falls && value.is_err()
-        walk.ended_on_a_statement(@c, a, body)
-    return fail(code: "no_claim", msg: "the body gave its value, or was told where it ended")
+        path_end.ended_on_a_statement(@c, a, body)
 
 function clear_generics(@c: state.Checker)
     empty: [str] = []
@@ -306,6 +315,40 @@ test "a value dropped in a test or at a function's end names what it may have me
     )
     assert looped.out.diagnostics[0].fixes.len() == 1
     assert looped.out.diagnostics[0].fixes[0].certainty == .certain
+
+# The premise `constant_body` rests on, and the test that fires when it dies:
+# every jump that can stand at a constant's top level is refused already, so
+# panel 184's R4 adds nothing there. Were a `return` ever let stand in a
+# constant, this would count one message where two are owed.
+test "a jump at a constant's top level is told once"
+    returned = checked_file("constant M: i64\n    return 1\n    2\n")
+    assert returned.out.diagnostics.len() == 1
+    assert returned.out.diagnostics[0].code == "no_value"
+    broke = checked_file("constant M: i64\n    break\n    2\n")
+    assert broke.out.diagnostics.len() == 1
+    assert broke.out.diagnostics[0].code == "jump_outside_loop"
+
+    # Inside the body's own blocks the rule is `walk.block`'s, as anywhere.
+    looped = checked_file("constant M: i64\n    n: i64 @ 0\n    while n < 3\n        break\n        n @ n + 1\n    n\n")
+    assert looped.out.diagnostics.len() == 1
+    assert looped.out.diagnostics[0].code == "unreachable_statement"
+
+# Panel 184's R4: `exit(code:)`, `assert false` and a `while true` with no
+# `break` of its own end a path, so a function whose path ends on one owes no
+# `return` there; read by the syntax, `assert` on a value ends nothing.
+test "a path that ends on assert false or a loop nothing breaks needs no return"
+    ended = checked_file("function f(n: i64) -> i64\n    if n > 0\n        return n\n    assert false\n")
+    assert ended.missing_returns.len() == 0
+    looped = checked_file(
+        "function f(n: i64) -> i64\n    m: i64 @ n\n    while true\n        if m > 9\n            return m\n        m @ m + 1\n"
+    )
+    assert looped.missing_returns.len() == 0
+    valued = checked_file("function f(n: i64, off: bool) -> i64\n    if n > 0\n        return n\n    assert off\n")
+    assert valued.missing_returns.len() == 1
+    broken = checked_file(
+        "function f(n: i64) -> i64\n    m: i64 @ n\n    while true\n        if false\n            break\n        if m > 9\n            return m\n        m @ m + 1\n"
+    )
+    assert broken.missing_returns.len() == 1
 
 test "main produces nothing, and the promise line takes the caret"
     c = checked_file("function main() -> i64\n    return 3\n")

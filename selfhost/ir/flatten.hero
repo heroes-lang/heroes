@@ -73,6 +73,7 @@ function block(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Ch
 
         if wants_value && index == body.stmts.len() - 1
             value @ produced
+            emissions.seal(@b, ends: c.ends, at: id)
         index @ index + 1
 
     return value
@@ -90,24 +91,10 @@ function statement(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: stat
             bind_stmt(@b, a, r, c, s, decls, name: dc.name, value: dc.value, span: span)
             return fail(code: "none", msg: "a declare produces nothing")
         .mutate m =>
-            target = place(@b, a, r, c, s, decls, id: m.place)
-            produced = expr(@b, a, r, c, s, decls, id: m.value)
-            ty = build.value_ty(b, produced)
-            build.emit_void(@b, op: .store(place: target, value: produced), ty: ty, span: span)
+            mutation(@b, a, r, c, s, decls, into: m.place, value: m.value, span: span)
             return fail(code: "none", msg: "a mutation produces nothing")
         .return_stmt ret =>
-            if ret.value.is_err()
-                emissions.copy_out(@b, c)
-                build.terminate(@b, .return_term(value: fail(code: "none", msg: "bare return")))
-            else
-                produced = expr(@b, a, r, c, s, decls, id: ret.value.must())
-
-                # The copy-out chain goes AFTER the value is computed and
-                # before control leaves: the returned value was read from
-                # the pre-copy-out state, which is what "copy in, copy
-                # out" means.
-                emissions.copy_out(@b, c)
-                build.terminate(@b, .return_term(value: ok(produced)))
+            returned(@b, a, r, c, s, decls, value: ret.value)
             return fail(code: "none", msg: "a return produces nothing")
         .break_stmt =>
             if b.loops.len() > 0
@@ -135,6 +122,28 @@ function statement(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: stat
         .error => return fail(code: "none", msg: "an error lowers to nothing")
 
     return fail(code: "none", msg: "unreached")
+
+# Out of `statement`, which every nested block recurses through: its frame
+# fell 3,744 bytes, where panel 185's R5 had added 512 to a level of `if`s
+# (lane flow4, 2026-10-02, `clang -fstack-usage`; `build` 141 deep to 149).
+function mutation(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], into: i64, value: i64, span: token.Span)
+    target = place(@b, a, r, c, s, decls, id: into)
+    produced = expr(@b, a, r, c, s, decls, id: value)
+    ty = build.value_ty(b, produced)
+    build.emit_void(@b, op: .store(place: target, value: produced), ty: ty, span: span)
+
+function returned(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], value: i64?)
+    if value.is_err()
+        emissions.copy_out(@b, c)
+        build.terminate(@b, .return_term(value: fail(code: "none", msg: "bare return")))
+        return
+    produced = expr(@b, a, r, c, s, decls, id: value.must())
+
+    # The copy-out chain goes AFTER the value is computed and before control
+    # leaves: the returned value was read from the pre-copy-out state, which
+    # is what "copy in, copy out" means.
+    emissions.copy_out(@b, c)
+    build.terminate(@b, .return_term(value: ok(produced)))
 
 # `x = 5` and `v: i64 @ 0` are both slots by here: §4.4's mutation rule
 # was enforced by the resolver, and the IR does not re-litigate it.
@@ -1118,6 +1127,7 @@ function arm_body(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
             produced = statement(@b, a, r, c, s, decls, id: st.at)
 
             if wants_value
+                emissions.seal(@b, ends: c.ends, at: st.at)
                 return produced
             return fail(code: "none", msg: "statement position")
         .block bl => return block(@b, a, r, c, s, decls, body: bl.block, wants_value: wants_value)

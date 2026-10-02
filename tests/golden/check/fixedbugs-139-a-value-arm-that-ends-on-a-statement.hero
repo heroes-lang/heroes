@@ -18,21 +18,21 @@ variant Color
 function bound(c: Color) -> i64
     x = match c
         .red  => 1
-        .blue => assert false  #~ no_value
+        .blue => assert false
 
     return x
 
 function typed(c: Color) -> i64
     x: i64 = match c
         .red  => 1
-        .blue => assert false  #~ no_value
+        .blue => assert false
 
     return x
 
 function returned(c: Color) -> i64
     return match c
         .red  => 1
-        .blue => assert false  #~ no_value
+        .blue => assert false
 
 function mutated(c: Color) -> i64
     n: i64 @ 0
@@ -46,7 +46,7 @@ function mutated(c: Color) -> i64
 # Two arms, two statements, two messages, and no *every branch jumps*.
 function every_arm_a_statement(c: Color) -> i64
     x = match c
-        .red  => assert false  #~ no_value
+        .red  => assert false
         .blue => assert true  #~ no_value
 
     return x
@@ -57,3 +57,14 @@ function main()
     print(returned(c: .red))
     print(mutated(c: .red))
     print(every_arm_a_statement(c: .red))
+
+# Corrected 2026-10-02, defect 174, lane flow4, below the program so its
+# lines stay where they were, and by hand as panel 185's R5 says: under panel
+# 184's R4 `assert false` ends a path, as `exit(code:)` and a `while true`
+# nothing breaks do, so the four `assert false` arms of lines 21, 28, 35 and
+# 49 leave, as a `return` there would, and are no longer refused; their
+# annotations are taken off, and the lowering ends each with `unreachable`
+# (`Checked.ends`). What this file pins still holds of the two arms that end
+# on a statement that does not end a path, `n @ 5` and `assert true`, each
+# told once at its line, and `every_arm_a_statement` is now one message and
+# not two, the `assert true` arm's.

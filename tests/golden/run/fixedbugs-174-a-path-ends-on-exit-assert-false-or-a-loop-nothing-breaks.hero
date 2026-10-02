@@ -1,0 +1,160 @@
+# Fixed 2026-10-02, defect 174, lane flow4: panel 184's R4, its second half.
+# Symptom: a function with a `->` whose last path ended on `exit(code:)`,
+# on `assert false` or on a `while true` with no `break` of its own was told
+# `missing_return`, *one path through it returns nothing*, though no path
+# through it reached its end, and the spec stated no return rule at all.
+# Cause: the checker read only `return`, `break` and `continue` as leaving.
+# Now the three end a path, read by their syntax, wherever they stand, and a
+# statement after one stays legal: the refusal of panel 184's R4 reads the
+# jump words alone, so a defensive `return 0` after `exit` builds (the
+# sitting's task-2 reading). Every path end `missing_return`'s note names
+# since then is a function here, built and run; the paths that still reach
+# their end are `tests/golden/check/fixedbugs-174-a-path-ends-only-by-its-syntax.hero`.
+
+variant Color
+    red
+    blue
+
+# `exit(code:)` ends the program, named or by position.
+function checked(n: i64) -> i64
+    if n >= 0
+        return n
+    exit(code: 3)
+
+function by_position(n: i64) -> i64
+    if n >= 0
+        return n
+    exit(3)
+
+# `assert false` aborts wherever it stands. (Its literal in parentheses is
+# the same literal, `check/path_end.hero`'s test; `heroes fmt` writes it
+# bare, so no canonical file holds that spelling.)
+function asserted(n: i64) -> i64
+    if n > 0
+        return n
+    assert false
+
+# A `while true` with no `break` of its own never finishes: the paths out of
+# it are its `return`s. A `break` of a loop inside it is that loop's, and a
+# `continue` does not finish it.
+function until_found(n: i64) -> i64
+    i: i64 @ 0
+
+    while true
+        if i * i >= n
+            return i
+        i @ i + 1
+
+function an_inner_for_breaks(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        for k in [1, 2]
+            if k == 2
+                break
+
+        if m > 3
+            return m
+        m @ m + 1
+
+function an_inner_while_breaks(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        while true
+            break
+
+        if m > 3
+            return m
+        m @ m + 1
+
+function continues(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        m @ m + 1
+
+        if m < 5
+            continue
+        return m
+
+# Every branch ends a path, some by a jump and some not.
+function every_branch_ends(n: i64) -> i64
+    if n > 100
+        exit(code: 2)
+    else if n >= 0
+        return n
+    else
+        assert false
+
+function an_arm_exits(c: Color) -> i64
+    match c
+        .red  => return 1
+        .blue => exit(code: 4)
+
+# A statement after one of the three is no error, and never runs.
+function defensive(n: i64) -> i64
+    if n >= 0
+        return n
+    exit(code: 1)
+    return 0
+
+function after_assert(n: i64) -> i64
+    if n > 0
+        return n
+    assert false
+    return 0
+
+function after_a_loop(n: i64) -> i64
+    i: i64 @ 0
+
+    while true
+        if i >= n
+            return i
+        i @ i + 1
+
+    print(9)
+    return 0
+
+# Nor after an `if` or a `match` every branch of which leaves (panel 185's
+# R4 keeps it legal, its c5).
+function after_a_leaving_if(k: i64) -> i64
+    if k > 0
+        return 1
+    else
+        return 2
+
+    print(3)
+    return 0
+
+function after_a_leaving_match(k: i64) -> i64
+    match k
+        0 => return 1
+        _ => return 2
+
+    print(9)
+    return 0
+
+# A function with no result that ends on `exit(code:)`, the last call of the
+# run: it prints, and ends the program with the status it names.
+function finish()
+    print("done")
+    exit(code: 0)
+    print("never")
+
+function main()
+    print(checked(n: 7))
+    print(by_position(n: 8))
+    print(asserted(n: 1))
+    print(until_found(n: 10))
+    print(an_inner_for_breaks(n: 1))
+    print(an_inner_while_breaks(n: 2))
+    print(continues(n: 0))
+    print(every_branch_ends(n: 6))
+    print(an_arm_exits(c: .red))
+    print(defensive(n: 3))
+    print(after_assert(n: 4))
+    print(after_a_loop(n: 5))
+    print(after_a_leaving_if(k: 1))
+    print(after_a_leaving_match(k: 0))
+    finish()
