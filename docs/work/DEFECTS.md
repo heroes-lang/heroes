@@ -628,4 +628,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     language binds; the refusal itself, of a TAGGED union where a typedef'd
     one binds, is the question panel 186's R9 leaves open with it.
 
+    **2026-10-02, lane land186, the note says what is true, its two routes
+    built and run**: repaired at `24d3d23d`, gated by its own cases; the
+    rest is owed at the round's gate, and the platform legs before the push.
+
 *******************************************************************************
