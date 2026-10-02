@@ -65,6 +65,7 @@ function number(@l: state.LexState, text: str)
             base = lowered_marker.must()
             l.pos @ l.pos + 2
             run = digit_run(@l, text, base)
+            faulted = fraction(@l, text, base, start: start, told: run.faulted) || run.faulted
             span = token.Span(start: start, end: l.pos)
             written = text.slice(from: start, to: l.pos)
             lowered = digits.prefix(base) + text.slice(from: start + 2, to: l.pos)
@@ -81,9 +82,17 @@ function number(@l: state.LexState, text: str)
             # `empty_base_literal`: `check --apply` wrote a refusal the first
             # run never made. So that literal is told both mistakes at once
             # and offered no fix, since its digits are the author's to write.
-            if run.count > 0 || run.faulted
+            # A fraction is such a fault, told above (defect 154): `0X1.5`
+            # lowered is `0x1.5`, refused for the fraction the first run named.
+            if run.count > 0 || faulted
+                same: str @ "is the same value written correctly"
+
+                # A faulted literal has no value to keep, so the note says
+                # only what the lowering does.
+                if faulted
+                    same @ "writes the prefix as this language does, and the digits' own mistake is told beside it"
                 d.notes @ d.notes.push(
-                    "there is exactly one way to write any program (§4.15). The " + digits.base_name(base) + " digits themselves may be either case, so `" + lowered + "` is the same value written correctly"
+                    "there is exactly one way to write any program (§4.15). The " + digits.base_name(base) + " digits themselves may be either case, so `" + lowered + "` " + same
                 )
                 d.fixes @ d.fixes.push(
                     diag.Fix(title: "write the prefix as `" + digits.prefix(base) + "`", replacement: lowered, span: span, certainty: .certain)
@@ -168,6 +177,10 @@ function number(@l: state.LexState, text: str)
 # The body of a 0x / 0o / 0b literal: the prefix is already consumed.
 function based(@l: state.LexState, text: str, base: digits.Base, start: i64)
     run = digit_run(@l, text, base)
+
+    if fraction(@l, text, base, start: start, told: run.faulted)
+        state.error_token_at(@l, start)
+        return
     span = token.Span(start: start, end: l.pos)
 
     if run.count == 0
@@ -189,6 +202,58 @@ function based(@l: state.LexState, text: str, base: digits.Base, start: i64)
         state.error_token_at(@l, start)
         return
     state.emit(@l, .int_lit, start)
+
+# A fraction after a based literal's digits, which only a decimal literal may
+# have (defect 154): `0x1.5`, `0b1.0`, `0o7.1`, `0x.5`. Until then the run
+# stopped at the `.` and handed `0x1` back, so `.5` was told as a field
+# access, `expected_field_name`, for a number, which is this module's third
+# rule broken: a character that cannot continue a based literal ends it with
+# a diagnostic. It is `digit_not_in_base`'s mistake, a character the base does
+# not admit, said of the fraction.
+#
+# **Only a decimal digit after the `.` makes it a fraction**, as it makes a
+# decimal one a float, since no field name begins with a digit: `0xa.b` and
+# `0x1.to_str()` keep their dot, a field and a call. The fraction runs to the
+# end of what a number could be written as, the letters and `_` of its
+# digits, a second `.5`, and C's binary exponent with its sign, `p-3`, so the
+# literal is one token and one diagnostic: `0x1.5.2` and `0x1.8p-3` too.
+#
+# **No fix**: `0x1.5` reads as the hexadecimal fraction C's `0x1.5p0` writes,
+# as the decimal `1.5` with a stray base, and as the integer `0x15` with a
+# stray point, three numbers, so the note names the repairs and none is
+# offered. `told` is a run that already faulted, whose mistake was said.
+function fraction(@l: state.LexState, text: str, base: digits.Base, start: i64, told: bool) -> bool
+    if byte_at(text, l.pos) != '.' || !bytes.is_digit(byte_at(text, l.pos + 1))
+        return false
+    point = l.pos
+    going: bool @ true
+
+    while going
+        b = byte_at(text, l.pos)
+        before = byte_at(text, l.pos - 1)
+
+        if b == '.' && bytes.is_digit(byte_at(text, l.pos + 1))
+            l.pos @ l.pos + 1
+        else if bytes.is_alnum(b) || b == '_'
+            l.pos @ l.pos + 1
+        else if (b == '+' || b == '-') && (before == 'p' || before == 'P') && bytes.is_digit(byte_at(text, l.pos + 1))
+            l.pos @ l.pos + 1
+        else
+            going @ false
+
+    if told
+        return true
+    written = text.slice(from: start, to: l.pos)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "digit_not_in_base",
+        message: "`" + written + "` has a fraction, which only a decimal literal may have — `.` is not " + digits.a_name(base) + " digit",
+        span: token.Span(start: point, end: l.pos)
+    )
+    d.notes @ d.notes.push(
+        digits.a_name(base) + " literal admits " + digits.base_digits(base) + ", and no point: write the value as a decimal literal, or the digits without the `.` if they are one integer"
+    )
+    state.push_diagnostic(@l.diagnostics, d)
+    return true
 
 ## The digit run
 
@@ -303,19 +368,58 @@ test "an uppercase prefix is refused and only the prefix is lowered"
 
 test "an uppercase prefix with no digit after it is told both mistakes and offered no fix"
     # Defect 135's L5: the lowering wrote `0x`, refused anew as empty.
-    for alone in ["0X", "0B", "0O", "0X.5", "0X)"]
+    for alone in ["0X", "0B", "0O", "0X)"]
         l: state.LexState @ state.new_state()
         number(@l, alone)
         assert l.diagnostics.len() == 1
         assert l.diagnostics[0].code == "base_prefix_case"
         assert l.diagnostics[0].fixes.len() == 0
 
-    # A run that faulted told its own mistake, so the lowering adds none.
-    for faulted in ["0XG", "0B2", "0X_"]
+    # A run that faulted told its own mistake, so the lowering adds none; a
+    # fraction is one (defect 154), `0X.5` with it, which was told only the
+    # case.
+    for faulted in ["0XG", "0B2", "0X_", "0X.5", "0X1.5"]
         f: state.LexState @ state.new_state()
         number(@f, faulted)
-        assert f.diagnostics[f.diagnostics.len() - 1].code == "base_prefix_case"
-        assert f.diagnostics[f.diagnostics.len() - 1].fixes[0].certainty == .certain
+        assert f.diagnostics.len() == 2
+        assert f.diagnostics[0].code == "digit_not_in_base" || f.diagnostics[0].code == "misplaced_separator"
+        assert f.diagnostics[1].code == "base_prefix_case"
+        assert f.diagnostics[1].fixes[0].certainty == .certain
+        assert f.tokens.len() == 1
+        assert f.pos == faulted.len()
+
+# Defect 154: a fraction after a based literal's digits was handed back as
+# a field access, `expected_field_name`; now the literal is one token and one
+# diagnostic, the fraction's, with no fix, since its readings are three
+# numbers, in every base, with no digit before the point, a second point, an
+# exponent, separators, and after digits that already faulted.
+test "a based literal with a fraction is one mistake, the number's own"
+    for written in ["0x1.5", "0b1.0", "0o7.1", "0x.5", "0x1.5.2", "0x1.5e3", "0x1.8p-3", "0x1_0.5", "0x1.5_0"]
+        l: state.LexState @ state.new_state()
+        number(@l, written)
+        assert l.tokens.len() == 1
+        assert l.tokens[0].kind == .error
+        assert l.pos == written.len()
+        assert l.diagnostics.len() == 1
+        assert l.diagnostics[0].code == "digit_not_in_base"
+        assert l.diagnostics[0].fixes.len() == 0
+
+    told: state.LexState @ state.new_state()
+    number(@told, "0xG.5")
+    assert told.diagnostics.len() == 1
+    assert told.pos == 5
+
+    # A letter after the point is a field or a call, as on a decimal literal.
+    for member in ["0xa.b", "0x1.to_str()", "0b1.x"]
+        m: state.LexState @ state.new_state()
+        number(@m, member)
+        assert m.tokens[0].kind == .int_lit
+        assert m.diagnostics.len() == 0
+
+    # And a subtraction after a hexadecimal `e` digit is not an exponent.
+    minus: state.LexState @ state.new_state()
+    number(@minus, "0x1.5e-3")
+    assert minus.pos == 6
 
 test "a leading zero is never octal and both fixes are guesses"
     l: state.LexState @ state.new_state()
