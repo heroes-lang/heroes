@@ -1,0 +1,10 @@
+# Pinned 2026-10-03 by lane rec187 under panel 187's R1 and R5: a known
+# cost, not an intent; a change in either direction turns this case red.
+# Defect 181, class (a)'s neighbour, adjacent: `1.5.2` is told as a field
+# access, found a number, true and less exact than it could be. Not
+# repaired inline: the site is `grammar_expr.hero`'s `after_dot`, at its
+# ceiling, beside defect 180's.
+
+function main()
+    x = 1.5.2  #~ expected_field_name
+    print(x)

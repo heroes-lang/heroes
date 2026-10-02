@@ -1,0 +1,6 @@
+tests/golden/check/panel-187-a-range-written-with-two-dots-is-told-twice.hero:10:11: error[expected_field_name]: expected a field or function name after `.`, found `.`
+tests/golden/check/panel-187-a-range-written-with-two-dots-is-told-twice.hero:10:12: error[expected_field_name]: expected a field or function name after `.`, found a number (`2`)
+tests/golden/check/panel-187-a-range-written-with-two-dots-is-told-twice.hero:11:13: error[expected_field_name]: expected a field or function name after `.`, found `.`
+tests/golden/check/panel-187-a-range-written-with-two-dots-is-told-twice.hero:11:14: error[expected_field_name]: expected a field or function name after `.`, found a number (`5`)
+tests/golden/check/panel-187-a-range-written-with-two-dots-is-told-twice.hero:12:16: error[expected_field_name]: expected a field or function name after `.`, found `.`
+tests/golden/check/panel-187-a-range-written-with-two-dots-is-told-twice.hero:12:17: error[expected_field_name]: expected a field or function name after `.`, found a number (`10`)

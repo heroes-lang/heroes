@@ -1,0 +1,27 @@
+# Pinned 2026-10-03 by lane rec187 under panel 187's R1 and R5: a known
+# cost, not an intent; a change in either direction turns this case red.
+# Defect 178, class (a), adjacent: a `,` after every statement or arm and a
+# `;` after every field are told once a line, where a `,` after every
+# member of a declaration is one message since `68e46a13`. Not repaired
+# inline: one message for a run of lines is a reading of its own, as
+# ruling 5's is for an indentation habit, and the `;` is the lexer's
+# (`scan.hero:299`).
+
+function statements()
+    x = 1,  #~ expected_end_of_line
+    y = 2,  #~ expected_end_of_line
+    print(x + y),  #~ expected_end_of_line
+
+function arms(n: i64) -> i64
+    return match n
+        0 => 1,  #~ expected_end_of_line
+        1 => 2,  #~ expected_end_of_line
+        _ => 3,  #~ expected_end_of_line
+
+record P
+    x: i64;  #~ unexpected_character
+    y: i64;  #~ unexpected_character
+    z: i64;  #~ unexpected_character
+
+function main()
+    print(1)
