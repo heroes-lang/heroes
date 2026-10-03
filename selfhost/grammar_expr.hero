@@ -94,6 +94,7 @@ use parse/argument_marker
 use parse/at_prefix
 use operators
 use expr_kinds
+use dot_words
 
 ## The precedence table — §4.14, read from the bottom up
 
@@ -323,16 +324,17 @@ function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
 # `x.f(y)` is UFCS, `x.f` is a field read: the `(` decides (§4.11).
 function after_dot(@c: cursor.Cursor, @a: ast.Ast, text: str, base: i64) -> i64
-    _ = cursor.bump(@c)
+    dot = cursor.bump(@c).span
 
     if !cursor.at(c, .ident)
         if !cursor.at_reported_error(c)
             cursor.error(
                 @c,
                 code: "expected_field_name",
-                message: "expected a field or function name after `.`, found " + cursor.found(c, text),
+                message: "expected a field or function name after `.`, found " + cursor.found(c, text) + dot_words.after(text, dot: dot.start),
                 span: cursor.current_span(c)
             )
+        past_a_range(@c, @a, text, dot: dot)
         return base
     name = cursor.bump(@c).span
     start = a.exprs[base].span
@@ -345,6 +347,19 @@ function after_dot(@c: cursor.Cursor, @a: ast.Ast, text: str, base: i64) -> i64
         @a.exprs,
         ast.Expr(kind: .field(base: base, name: name), span: token.Span(start: start.start, end: name.end))
     )
+
+# Another language's range at the `.` at `dot`, `1..2`, `..n` or `0..=n`,
+# told once there: the rest of its operator passed and its right operand
+# read for its own mistakes, so a bracket around it keeps its closer
+# (`dot_words`, defect 180). Nothing moves at any other `.`.
+function past_a_range(@c: cursor.Cursor, @a: ast.Ast, text: str, dot: token.Span)
+    ends = dot_words.range_end(text, dot: dot.start)
+
+    while ends >= 0 && cursor.current_span(c).start < ends && !cursor.at(c, .eof)
+        _ = cursor.bump(@c)
+
+    if ends >= 0 && opening.begins_an_expression(cursor.current_kind(c))
+        _ = unary(@c, @a, text)
 
 # `Point::x` — a record's own name on the left, a field's name on the right,
 # and the whole expression is that field's name as a `str` (panel 132). It is
@@ -580,9 +595,10 @@ function case_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
             cursor.error(
                 @c,
                 code: "expected_case_name",
-                message: "expected a variant case name after `.`, found " + cursor.found(c, text) + " — `.plus`, or `.num(v: 12)` with its fields",
+                message: "expected a variant case name after `.`, found " + cursor.found(c, text) + dot_words.after_a_case(text, dot: dot.start),
                 span: cursor.current_span(c)
             )
+        past_a_range(@c, @a, text, dot: dot)
         return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: dot))
     name = cursor.bump(@c).span
     arguments: [ast.Arg] @ []
