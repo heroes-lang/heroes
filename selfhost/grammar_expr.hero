@@ -1096,7 +1096,7 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 function misplaced(@c: cursor.Cursor, @a: ast.Ast, text: str, head: i64)
     past = margin_arms.past_the_block(c, text)
 
-    if margin_arms.below(c, head)
+    if margin_arms.below(c, text, head)
         _ = arms_of(@c, @a, text, tabbed: false)
     else if past >= 0
         lines: cursor.Cursor @ margin_arms.on(c, at: past)

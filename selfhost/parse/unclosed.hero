@@ -85,14 +85,16 @@ function ends_at_the_line(c: cursor.Cursor) -> bool
 # `(total` over `+ fee`, is inside the same brackets, and that line end is
 # refused as it is above a closer (`line_end.continued`, panel 180 R3), its
 # line passed over. `holds` is the list the construct is, as
-# `line_end.expect_closer` asks it.
+# `line_end.expect_closer` asks it. A line that holds an arm's `=>` goes on
+# with nothing: no line inside brackets holds one in a program that compiles,
+# so it is a `match`'s arm the reach took in, its arms' reader's (defect 177).
 function past_what_goes_on(@c: cursor.Cursor, text: str, holds: line_end.Holds)
     while cursor.at(c, .terminator)
         before = line_end.significant_before(c, at: c.pos)
         below: cursor.Cursor @ c
         below.pos @ past_line_ends(c)
 
-        if !line_end.goes_on(below, text: text, holds: holds, before: before)
+        if !line_end.goes_on(below, text: text, holds: holds, before: before) || next_line.holds_an_arrow(text, from: cursor.current_span(below).start)
             return
         cursor.skip_terminators(@c)
         other = holds == .arguments && line_end.begins_a_value(cursor.current_kind(c))
