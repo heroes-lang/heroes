@@ -362,4 +362,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a message without code or location, the compiler's own marker shown (design.md §4.17); and a false one beside it, an answer quoted with *the package* in place of the marker's text.
 
+    **2026-10-04, batch 8's FFI lane**: repaired at `1d2bde6d`, the reader asking each group's name at the head of the driver's first line and the driver writing `pkg-config`'s control characters by their code, gated by its cases and the compiler's own tests; the net and the platform legs are owed at the batch's close.
+
 *******************************************************************************
