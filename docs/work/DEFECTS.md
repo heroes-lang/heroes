@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 48**
+**OPEN: 51**
 
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe) · **class: blocking**
 
@@ -436,5 +436,25 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** lane warn's first pass beside defect 207, 2026-10-03, reported to the coordinator with its reproducer; reproduced by the coordinator the same day.
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 and an internal error where the author can be told. No angled `#include` can spell a `>`, and panel 036's R2 keeps the angled form and never the quoted one, since a quoted include takes a decoy planted beside the unit (`docs/panel/036-the-ffi-ladder.md`); so the repair is a refusal at `check`, a diagnostic class and so a sitting's (CLAUDE.md § 4) before a lane's.
+
+- [ ] **217 — under `ulimit -s unlimited` on Linux, a program that starts a thread panics at its first spawn** | `examples/threads` as it stood at `02e507bc`, run in the Linux arm64 container with the stack limit unlimited: a panic at the first spawn, glibc reporting the main thread's stack as 93,823,035,207,680 bytes, from which `runtime/parts/spawn.c` asked a floor | `runtime/parts/spawn.c` · lane depth's commit `ffaf9f4d` · **class: blocking**
+
+    **Origin:** lane depth's first pass beside defect 169, 2026-10-03, reported to the coordinator (`<scratchpad>/lane-depth/linux2/`).
+
+    **2026-10-03, repaired at `ffaf9f4d` in lane depth, beside defect 169**: under an unlimited stack limit no floor is asked. Owed at the round's gate, and on the platforms before the push, `runtime/` being the C boundary.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a crash of a correct program in a setting Linux allows.
+
+- [ ] **218 — the IR verifier's cost grows about as the cube of a function's size, so 7 of 25 nesting shapes at 2,000 deep do not build in 150 s on this Mac, 8 in the Linux container** | lane depth's 25 shapes (panel 184's thirteen and twelve beside them) at N = 2,000: `check` and `fmt` hold every one, `build` of seven does not finish in 150 s; the cost the lane traced to `released_on_return` in `selfhost/ir/phases.hero` and `dominators` in `selfhost/ir/values.hero` (`<scratchpad>/lane-depth/pass1-findings.md`) | those two functions · panel 184's R6 · **class: blocking**
+
+    **Origin:** lane depth, 2026-10-03, measuring panel 184's R6 on this Mac and in the Linux arm64 container, reported to the coordinator; not yet run by the coordinator.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): panel 184's R6, ratified, owes spec § 9 a sentence the lane drafted, *a source nested up to 2,000 deep compiles on every platform*, and it cannot be written true while these builds do not finish; a cost that stops a needed program from building at all is compiler need (CL-006).
+
+- [ ] **219 — clang's debug information dies on a type chain between 3,000 and 5,000 nested variants on this Mac, by 10,000 in the Linux container** | past panel 184's R6 floor of 2,000: since `6c95f44a` (defect 170) the build says so in the compiler's words at exit 2 and leaves no crash files; clang's own stack raised to 64 MB compiled 10,000 in the lane's measurement, about eight times further, not built | `selfhost/cli/clang_died.hero` (lane depth's, at `6c95f44a`, 2026-10-03), `selfhost/emit/typeorder.hero` · **class: improvement**
+
+    **Origin:** lane depth beside defect 170, 2026-10-03, reported to the coordinator.
+
+    **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): beyond the floor panel 184's R6 sets, and told truly at exit 2 since defect 170's repair; a reach nobody needs to be right today.
 
 *******************************************************************************
