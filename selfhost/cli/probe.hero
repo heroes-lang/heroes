@@ -379,7 +379,11 @@ test "a family the probe does not make is named with the seven, and a path that 
     # 9 -> 10 on 2026-09-28: `continuation181`, panel 181's `fmt` rows.
     # 10 -> 11 the same day: `patterns125`. No seed held a negative pattern,
     # and `fmt` exited 2 on every program with one (defect 125).
-    assert FIXTURES.len() == 11
+    # 11 -> 12 on 2026-10-03: `braces173`, panel 184's R1 (defect 173), the
+    # surface suite's `fmt` rows over `}}` and `{{` in an `f` literal. Lane
+    # fbrace's f6fdda79 grew the list and not this count; the round's gate
+    # read this test red and wrote the count.
+    assert FIXTURES.len() == 12
 
 test "a stride is a whole number from 1 up"
     assert counted("2") == 2
