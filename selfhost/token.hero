@@ -116,6 +116,12 @@ function is_line_end(kind: TokenKind) -> bool
 function ends_a_line(kind: TokenKind) -> bool
     return is_line_end(kind) || kind == .eof
 
+# A token of `kind` over `start` to `end`: a stream written by hand, as the
+# parser's tests write theirs, eight modules of which held a copy as `tok`
+# until 2026-10-03 (lane b8-recovery).
+function made(kind: TokenKind, start: i64, end: i64) -> Token
+    return Token(kind: kind, span: Span(start: start, end: end))
+
 ## The stable names
 
 # Stable lowercase name, used by `heroes lex --json` and the snapshots. These
