@@ -30,6 +30,27 @@
 #ifndef HEROES_RUNTIME_H
 #define HEROES_RUNTIME_H
 
+/* **The two macros `heroes build` passes for Windows are the unit's own**
+ * (defect 192). Without `_CRT_SECURE_NO_WARNINGS` MSVC's headers deprecate
+ * ISO C's `getenv` and `fopen` in favour of Annex K (`runtime/runtime.c`
+ * says why the switch is the documented one and not a workaround), and
+ * without `_USE_MATH_DEFINES` they hide `M_PI`; `selfhost/cli/flags.hero`
+ * passes both on every compile `heroes build` makes. A unit compiled any
+ * other way, the seed by its own documented command or an `--emit-c` by
+ * hand, had only what it says itself: the seed built on the Windows box by
+ * `seed/README.md`'s line printed three `getenv` deprecations (2026-10-02).
+ * This header is every emitted unit's first include, so the two are defined
+ * here, before its first system include and any header a group names; the
+ * guard keeps a command line's definition, and `runtime.c`'s own. */
+#if defined(_WIN32)
+#  if !defined(_CRT_SECURE_NO_WARNINGS)
+#    define _CRT_SECURE_NO_WARNINGS 1
+#  endif
+#  if !defined(_USE_MATH_DEFINES)
+#    define _USE_MATH_DEFINES 1
+#  endif
+#endif
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
