@@ -218,26 +218,28 @@ test "what a probe's headers resolve to is asked of clang, and a header that app
     )
     words = probe_words(c)
     first: {str: str} @ {}
-    beside: str @ ""
+    turned: [str] @ []
 
     for ch in reads(root + "/build", words: words, headers: ["x.h"], @first).must().chars()
         if ch == "\\"
-            beside @ beside + "/"
+            turned @ turned.push("/")
         else
-            beside @ beside + ch
+            turned @ turned.push(ch)
 
+    beside = turned.join("")
     assert process.holds(text: beside, needle: digest.digest(one) + " " + root + "/src/x.h")
     assert !process.holds(text: beside, needle: root + "/inc/x.h")
     assert !write_file(path: root + "/inc/x.h", text: two).is_err()
     second: {str: str} @ {}
-    earlier: str @ ""
+    again: [str] @ []
 
     for ch in reads(root + "/build", words: words, headers: ["x.h"], @second).must().chars()
         if ch == "\\"
-            earlier @ earlier + "/"
+            again @ again.push("/")
         else
-            earlier @ earlier + ch
+            again @ again.push(ch)
 
+    earlier = again.join("")
     assert process.holds(text: earlier, needle: digest.digest(two) + " " + root + "/inc/x.h")
     assert !process.holds(text: earlier, needle: root + "/src/x.h")
     assert earlier != beside
