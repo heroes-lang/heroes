@@ -28,3 +28,14 @@ evening (`docs/records/log/2026-10-03-2321-the-author-answers-1a-2a-3a-4a.md`).
     `not_text`, through a sitting**, convened the same evening as panel 189.
     Until its synthesis 227 stays open; the work that is the same under
     either label proceeds in lane b8-source. Recorded as a reading.
+
+*Corrected 2026-10-03 at 23:37 by `date`, read from the history: the
+recommendation above says *"panel 087 (2026-09-03) chose a code that says
+what happened"*. Panel 087 (convened 2026-08-19, ratified 2026-08-23) chose
+the conservative `read_failed` over `file_not_text` and named its cost, a
+message *"mildly dishonest"* about a file that read perfectly well, with a
+reversal condition; the reversal landed on 2026-09-03 (`24fbf441`, defects
+001 and 002: `read_file` says `not_text`), and panel 162 cites `not_text` as
+*the code `read_file` already returns*. The substance stands, the language
+already naming this state `not_text`; the attribution was the lane's, carried
+by the coordinator without reading the sitting.*
