@@ -98,12 +98,15 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     return per_module(t, options, art, s, site, struct_tags)
 
 # What every probe of this build compiles the program's headers under
-# (`cli/compiling`): the `--include` directories, the package's answer, the
-# runtime and the source's own directory, the ones its units are compiled
-# with. One place builds it, so the round's two checks, the artifact's and a
-# refused round's questions ask under the same words.
+# (`cli/compiling`): the level, the sanitizers, the `--include`
+# directories, the package's answer, the runtime and the source's own
+# directory, the ones its units are compiled with (defect 167). One place
+# builds it, so the round's two checks, the artifact's and a refused round's
+# questions ask under the same words.
 function compiled_under(t: toolchain.Toolchain, options: compile.Options, site: Site) -> compiling.Compiling
     return compiling.Compiling(
+        level: options.level,
+        sanitize: options.sanitize,
         search_include: options.headers_from,
         package_flags: site.package_flags,
         runtime: t.runtime,
