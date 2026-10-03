@@ -56,48 +56,18 @@ function missing_link(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
 # analogue of declaration(): a library name this program wrote is the
 # author's business, and one it did not write is the driver's own -l
 # and stays exit 2.
+#
+# **The line is asked about each name the program wrote, never parsed for
+# one** (panel 188): ld64 writes `ld: library 'X' not found`, GNU ld
+# `cannot find -lX` then `:` or the line's end, and until then the name was
+# cut at the first quote or space, so `link "a'b"` on ld64 and `link "a b"`
+# on GNU ld were an internal error. The longest name the line holds wins.
 function missing_library(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
-    # `ld: library 'X' not found` (ld64) and `cannot find -lX` (GNU
-    # ld / lld).
-    name: str @ ""
-    caught: bool @ false
-    apple = ffi_lookup.after(text: line, marker: "library '")
-
-    if !apple.is_err()
-        name @ ffi_lookup.up_to_quote(apple.must())
-        caught @ true
-
-    if !caught
-        gnu = ffi_lookup.after(text: line, marker: "cannot find -l")
-
-        if !gnu.is_err()
-            parts = ffi_lookup.words(text: gnu.must())
-
-            if parts.len() == 0
-                return fail(code: "none", msg: "no library name after -l")
-            name @ strip_colons(parts[0])
-            caught @ true
-
-    if !caught
+    if !ffi_lookup.has(text: line, needle: "library '") && !ffi_lookup.has(text: line, needle: "cannot find -l")
         return fail(code: "none", msg: "not a missing-library line")
-    span = link_head(s, decls, name: name)
+    name: str @ ""
+    span: token.Span? @ fail(code: "none", msg: "no group names this library")
 
-    if span.is_err()
-        return fail(code: "none", msg: "no group names this library")
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "ffi_missing_library",
-        message: "this machine has no library called `" + name + "` — the group names it, and the linker looked",
-        span: span.must()
-    )
-    d.notes @ d.notes.push(
-        "install its development files, or pass `--library <dir>`; where the library ships a `.pc`, `package \"" + name + "\"` asks the machine for both its headers and its libraries"
-    )
-    return ok(d)
-
-# The group head that wrote `link "<name>"` — the narrowing that keeps
-# a library the DRIVER passed from being blamed on the author. A
-# record is a group member here too (panel 062's audit, finding 6).
-function link_head(s: source.Source, decls: [ast.Decl], name: str) -> token.Span?
     for decl in decls
         library: ast.Library? @ fail(code: "none", msg: "no library")
 
@@ -112,11 +82,32 @@ function link_head(s: source.Source, decls: [ast.Decl], name: str) -> token.Span
 
         match library.must()
             .link l =>
-                if emit_externs.unquoted(s, span: l.name) == name
-                    return ok(l.name)
+                written = emit_externs.unquoted(s, span: l.name)
+
+                if written.len() > name.len() && names_library(line: line, name: written)
+                    name @ written
+                    span @ ok(l.name)
             .package => continue
 
-    return fail(code: "none", msg: "no group names this library")
+    if span.is_err()
+        return fail(code: "none", msg: "no group names this library")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_missing_library",
+        message: "this machine has no library called `" + name + "` — the group names it, and the linker looked",
+        span: span.must()
+    )
+    d.notes @ d.notes.push(
+        "install its development files, or pass `--library <dir>`; where the library ships a `.pc`, `package \"" + name + "\"` asks the machine for both its headers and its libraries"
+    )
+    return ok(d)
+
+# Whether the linker's line is its report of `name` missing, in either
+# spelling, the name whole.
+function names_library(line: str, name: str) -> bool
+    if ffi_lookup.has(text: line, needle: "library '" + name + "' not found")
+        return true
+    rest = ffi_lookup.after(text: line, marker: "cannot find -l" + name)
+    return !rest.is_err() && (rest.must().len() == 0 || rest.must()[0] == ':')
 
 # The symbol out of a linker's complaint, in the spellings the two
 # platforms produce. GNU ld and lld write "undefined reference to
@@ -148,27 +139,6 @@ function undefined_symbol(line: str) -> str?
             return ok(quoted.slice(from: 1, to: quoted.len()))
         return ok(quoted)
     return fail(code: "none", msg: "not an undefined-symbol line")
-
-function strip_colons(text: str) -> str
-    cs = text.chars()
-    head: i64 @ 0
-
-    while head < cs.len() && cs[head] == ":"
-        head @ head + 1
-
-    tail: i64 @ cs.len()
-
-    while tail > head && cs[tail - 1] == ":"
-        tail @ tail - 1
-
-    kept: [str] @ []
-    index: i64 @ head
-
-    while index < tail
-        kept @ kept.push(cs[index])
-        index @ index + 1
-
-    return kept.join("")
 
 # A header the preprocessor could not find, named by an extern group
 # in this program — the class that stops §4.19's ladder one directory
@@ -372,3 +342,15 @@ test "a header no group names is asked of the stack, and one a group names keeps
     assert missing_header(s, parsed.decls, line: alone, stderr: alone).is_err()
     direct = "build/tu-1/main.c:5:10: fatal error: 'outer.h' file not found"
     assert missing_header(s, parsed.decls, line: direct, stderr: direct).must().message == "`outer.h` is not on this machine's include path — clang looked and did not find it"
+
+test "a library's name is found in the linker's line whole, a quote or a space in it (panel 188)"
+    text = "extern \"stdio.h\" link \"x'y\"\n    function f1() -> i32\n\nextern \"stdio.h\" link \"a b\"\n    function f2() -> i32\n\nextern \"stdio.h\" link \"a\"\n    function f3() -> i32\n\nextern \"stdio.h\" link \"ab\"\n    function f4() -> i32\n\nfunction main()\n    print(f1() + f2() + f3() + f4())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    quoted = missing_library(s, parsed.decls, line: "ld: library 'x'y' not found")
+    assert source.span_text(s, quoted.must().span) == "\"x'y\""
+    spaced = missing_library(s, parsed.decls, line: "/usr/bin/ld: cannot find -la b: No such file or directory")
+    assert source.span_text(s, spaced.must().span) == "\"a b\""
+    longer = missing_library(s, parsed.decls, line: "/usr/bin/ld: cannot find -lab")
+    assert source.span_text(s, longer.must().span) == "\"ab\""
+    assert missing_library(s, parsed.decls, line: "/usr/bin/ld: cannot find -labc").is_err()
