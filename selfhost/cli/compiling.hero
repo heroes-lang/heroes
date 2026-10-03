@@ -190,13 +190,24 @@ function include_lines(headers: [str]) -> str
 # appears earlier in the search** (defect 168). The source's directory holds
 # `x.h`; an `--include` directory searched before it holds nothing, then the
 # same name: the same words and the same includes now read another file, and
-# the answer says so, by path and by what it holds.
+# the answer says so, by path and by what it holds, in one row. **The rows
+# are read with every separator a `/`** (defect 214, 2026-10-03): clang on
+# Windows writes every one of a listing's separators as `\`, those it was
+# given as `/` among them, so the paths written here with `/` were never in
+# the answer there and the first assertion failed while the second, that
+# the answer does not hold the other directory's `x.h`, passed whatever
+# `reads` answered. The turn is written in the test, as
+# `emit/clang_place.slashed` writes it for clang's diagnostics, because a
+# `use` line would move every function of this module down one line in the
+# seed's `#line` directives, measured: the same seed byte for byte but them.
 test "what a probe's headers resolve to is asked of clang, and a header that appears earlier in the search is another answer (defect 168)"
     root = "build/selftest-compiling-reads"
     assert !process.remove_tree(root).is_err()
     assert !process.mkdir_all(root + "/inc").is_err()
     assert !process.mkdir_all(root + "/src").is_err()
-    assert !write_file(path: root + "/src/x.h", text: "#define HERO_READS 1\n").is_err()
+    one = "#define HERO_READS 1\n"
+    two = "#define HERO_READS 2\n"
+    assert !write_file(path: root + "/src/x.h", text: one).is_err()
     c = Compiling(
         level: "-O0",
         sanitize: false,
@@ -207,13 +218,28 @@ test "what a probe's headers resolve to is asked of clang, and a header that app
     )
     words = probe_words(c)
     first: {str: str} @ {}
-    beside = reads(root + "/build", words: words, headers: ["x.h"], @first).must()
-    assert process.holds(text: beside, needle: root + "/src/x.h")
+    beside: str @ ""
+
+    for ch in reads(root + "/build", words: words, headers: ["x.h"], @first).must().chars()
+        if ch == "\\"
+            beside @ beside + "/"
+        else
+            beside @ beside + ch
+
+    assert process.holds(text: beside, needle: digest.digest(one) + " " + root + "/src/x.h")
     assert !process.holds(text: beside, needle: root + "/inc/x.h")
-    assert !write_file(path: root + "/inc/x.h", text: "#define HERO_READS 2\n").is_err()
+    assert !write_file(path: root + "/inc/x.h", text: two).is_err()
     second: {str: str} @ {}
-    earlier = reads(root + "/build", words: words, headers: ["x.h"], @second).must()
-    assert process.holds(text: earlier, needle: root + "/inc/x.h")
+    earlier: str @ ""
+
+    for ch in reads(root + "/build", words: words, headers: ["x.h"], @second).must().chars()
+        if ch == "\\"
+            earlier @ earlier + "/"
+        else
+            earlier @ earlier + ch
+
+    assert process.holds(text: earlier, needle: digest.digest(two) + " " + root + "/inc/x.h")
+    assert !process.holds(text: earlier, needle: root + "/src/x.h")
     assert earlier != beside
 
     # A header that is not there does not preprocess, and the answer is
