@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 47**
+**OPEN: 42**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -726,50 +726,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     `.claude/rules/verification.md` § Bounded discovery): exit 2 and clang's
     text for the machine's own fact; it would turn the CI's Windows leg red.
 
-- [ ] **166 — a `-` alone above a name or a float pattern is told `expected_pattern` twice at the same place** | `k = match n` over a line holding only `-` and then `x => "one"` (or `1.5 => "one"`): `continuation_outside_brackets`, then `expected_pattern` twice at the name or the number, the same text at the same column | the pattern's refusal after the join of a `-` line (the same on the compiler before lane h158) · **class: adjacent**
-
-    **Origin:** lane h158's first pass for defect 159, 2026-10-02
-    (`scratchpad/lane-h158/d159/s18_name_below.hero`, `s19_float_below.hero`);
-    reproduced by the coordinator at 18:37 by `date` on the trunk at
-    `4b44f684` (`docs/panel/186-briefs/probes/coordinator/adjacent/`).
-
-    **Why it is a defect.** One mistake told twice at one place (design.md
-    §4.17).
-
-    **2026-10-02, lane h158, where the deletion is the one repair the `-` is
-    left out of the stream, and the name or the float is told once**:
-    repaired at `8cb4ba6c` with defect 165, gated by its case
-    `fixedbugs-166-a-minus-alone-above-a-name-or-a-float-is-told-once` and
-    the compiler's own tests; the net is owed at the batch's close. The
-    second message was a failed arm's recovery, `opening.drop_line`, which
-    stops at a line of the text inside a line the lexer joined and reads
-    the part below the break again as an arm: `1 |` over `x => "one"` still
-    meets it, before this repair and after it, and is reported apart.
-
-    **Its cause found 2026-10-02** by lane h158 (its repair of the `-` shapes,
-    `8cb4ba6c`, keeps them away from the cause, not repaired):
-    `parse/opening.hero`'s `drop_line` stops a failed arm's recovery at the
-    first word of a line of the text even inside a line the lexer joined
-    (the stop defect 131 added at `9811d4cd`, for tab margins), so the part
-    below the break is read again as an arm and told a second time. Shapes
-    that still read two `expected_pattern` at one place, before and after
-    `8cb4ba6c`: `1 |` over `x => "one"`, `1 |` over `1.5 => "one"`, `"a" |`
-    over `x => "one"`, `1 | -` over `x => "one"`
-    (`scratchpad/lane-h158/d166/`). The cause is the recovery cluster's file,
-    so it goes with 130 and 131 to the sitting on what a finished recovery
-    is.
-
-    **2026-10-03, lane rec187, panel 187's R4: `opening.drop_line` deleted,
-    a failed arm's line dropped whole, a line the lexer joined to it
-    included** (the four shapes above and nine beside them with its cause, a
-    statement `match`, a `match` in an arm, a returned one and a chain of
-    lines among them): repaired at `29425af6`, gated by its own cases; the
-    rest is owed at the round's gate. The five control-arm messages the
-    drop no longer tells are defect 193.
-
-    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
-    Bounded discovery): a second message for one mistake.
-
 - [ ] **167 — the pointee check reads a header without the build's own `-O2` or `--sanitize`, so a parameter the header types otherwise under them is accepted and the program writes past its `i32`** | `opt.h` declares `fill(int32_t *p)`, and `fill(int64_t *p)` under `#ifdef __OPTIMIZE__`, bound `function fill(@p: i32)`, `a: i32 @ 0`, `fill(@a)`, `print(a)`: `build -O0` prints `7`; `build -O2` exit 0, prints `0`; `build -O2 --sanitize` stops in *AddressSanitizer: stack-buffer-overflow ... WRITE of size 8* on the 4-byte local, exit 134; a header keyed on `__has_feature(address_sanitizer)` does the same under `--sanitize` alone | `selfhost/cli/pointee.hero` (its dump and its check, about `:153-174` and `:197-222` at `6bec7c8c`, `probe_flags()` at `:279-286`), run without the level and the sanitizer `selfhost/cli/units.hero` and `selfhost/cli/flags.hero:201` give the program's own compile · defect 163's class · **class: blocking**
 
     **Origin:** lane h158 at defect 163, 2026-10-02, a question left unmeasured (*no probe compiles under them*); measured by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/optimize-macro/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`), defect 163's repair `0235b942` included. A result type is held by the program's own compile (a header that changes a return type under `-O2` is refused, `ffi_return_type`), so only the pointee check diverges, as in 163. Unmeasured: whether a real header changes a pointee's type under these macros, and whether the layout check's probe, beside it, is judged without them too.
@@ -815,53 +771,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** `check --apply` applies a `certain` fix without asking, and this one writes a binding that says something else than the header in every case the instrument planted.
 
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a `certain` fix that writes a program meaning something else; `build` refuses that program, so no wrong value runs.
-
-- [ ] **173 — an `f` literal writes `}}` as two braces and accepts a lone `}`, where panel 184's R1, ratified, makes `}}` one brace and a lone `}` an error** | `print(f"{{a}}")` prints `{a}}` and `print(f"a}b")` prints `a}b`, both at exit 0; under R1 the first prints `{a}` and the second is refused | `selfhost/lex_interp.hero` · panel 184's R1 (`docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md:149-150`, ratified at `:248`, *R1 and R2 land as ratified* at `:284`), R8 putting its sentence in spec § 2 (`:223-224`) · spec `:49-52` (*`{{` writes one brace*, no `}}`, no lone `}`) · **class: blocking**
-
-    **Origin:** panel 184, ratified 2026-10-01 at 22:24 (`docs/records/done/2026-10-01-2224-panel-184-ratified-a-brace-both-ways-a-statement-after-a-jump-refused-and-a-floor-for-depth.md`); its landing found unwritten by the coordinator's file-queue agent, 2026-10-02 (`scratchpad/file-queue/unlanded-184/`, 2026-10-02), and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). No list held the landing: the sitting's item was ticked at its ratification. The spec does not say it either; the landing writes both.
-
-    **2026-10-02, lane fbrace, R1 in its two stages**: repaired at `f6fdda79`, the seed regenerated between the stages at `11b40220` with its fixpoint verified by `cmp`, and R8's sentence in spec § 2 at `8fc6e206` (2026-10-03), gated by its own cases; the rest is owed at the round's gate.
-
-    **2026-10-03, the round's gate, lane round1003a**: two of the lane's misses redone in the round's tree, gated there: the probe's pinned count of the formatter's fixture directories, which `f6fdda79` grew to 12 and left its test at 11 (`5f022fa2`), and the site's four figures cut from `examples/gallery/12-interpolation.hero`, whose lines `f6fdda79` and `a5fc53de` moved by three (`b025a473`). Owed before the push: the strings chapter's paragraph on braces, in both editions, still states the language before R1 and R7.
-
-    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): by the ratified language, a wrong value (`{a}}`) and a wrong program accepted (`a}b`).
-
-- [ ] **174 — a statement after `return`, `break` or `continue` in the same block compiles, where panel 184's R4, ratified, makes it a compile error** | `function f() -> i64` over `return 1` and then `print(2)`, `main` printing `f()`: `run` exit 0, prints `1` | the checker's walk of a block · panel 184's R4 (`docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md:181-182`; *the spec states the return rule for the first time*, `:186-190`; *R4 lands as it stands*, `:276-277`) · spec § 8 `:229-230`, its only sentence on a jump · **class: blocking**
-
-    **Origin:** panel 184, ratified 2026-10-01 at 22:24; its landing found unwritten by the coordinator's file-queue agent, 2026-10-02 (`scratchpad/file-queue/unlanded-184/after_return.hero`, 2026-10-02), and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`).
-
-    **2026-10-03, lane flow4, panel 184's R4 whole with panel 185's R5**:
-    repaired at `2a03b5e6` (`selfhost/check/path_end.hero`, called by
-    `check/walk.hero` and `check/decls.hero`; the seal in `ir/flatten.hero`,
-    `ir/lower.hero`, `ir/emissions.hero`), gated by its own cases, two
-    `fixedbugs-174-*` goldens under `check/` and two under `run/`, and the
-    two defect-139 goldens moved by hand; spec § 8's sentence landed in the
-    lane's spec commit; the rest is owed at the round's gate.
-
-    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): by the ratified language, a wrong program accepted.
-
-- [ ] **175 — a value block whose last statement is an `if` or a `match` whose every branch leaves is refused `no_value`, where panel 185's R4, ratified, makes the block leave and its arm a jumping arm** | lane flow's `a55-value-arm-block-inner-returns.hero`: `check` exit 1, `no_value` at 4:13, *this `match` produces no value — every branch jumps, so there is nothing to bind*; under R4 it checks clean (its source's own expected output, `1`, `2`, `20`, unrun) | spec § 8 `:229-230` (*A jump (`return`, `break`, `continue`) is a valid arm body*) · panel 185's R4 (`docs/panel/185-a-macro-is-named-as-a-macro-an-arm-takes-a-statement-a-leaving-block-leaves-and-a-spaced-sign-has-two-readings.md:169-170`, ratified at `:241-245`; its sentence goes in § 8, `:171-175`) · **class: blocking**
-
-    **Origin:** panel 185, ratified 2026-10-02 at 03:10 (`docs/records/done/2026-10-02-0310-panel-185-ratified-a-macro-named-as-a-macro-an-arm-of-one-statement-a-leaving-block-a-sign-with-two-readings.md`); its landing found unwritten by the coordinator's file-queue agent, 2026-10-02 (`scratchpad/file-queue/unlanded-184/`, 2026-10-02), and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). The sitting predicts *c1, c2, c3, c6 and a55 to b8 (b4, b7 excepted) build and run* (`:231`).
-
-    **2026-10-03, lane flow4, panel 185's R4**: repaired at `937ae12f`
-    (`check/walk.hero`'s `valued_tail`, `check/path_end.hero`'s
-    `withdrawn`), gated by its own cases, `fixedbugs-175-*` under `check/`
-    and `run/`, lane flow's a55, a69, a73, b1, b2, b3, b5, b6 and b8 among
-    them; spec § 8's sentence landed in the lane's spec commit; the rest is
-    owed at the round's gate.
-
-    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): by the ratified language, a correct program refused.
-
-- [ ] **176 — a plain literal whose brace hole names bindings all bound where it stands prints the braces, where panel 185's R7, decided by the author, refuses it with the `f` as its fix** | `x = 1` over `print("{x}")` and `print(x)`: `run` exit 0, prints `{x}` and `1`; under R7 `check` refuses the literal | spec `:52` (*A literal without the `f` is unchanged*), the opposite of the landing · panel 185's R7 (`docs/panel/185-a-macro-is-named-as-a-macro-an-arm-takes-a-statement-a-leaving-block-leaves-and-a-spaced-sign-has-two-readings.md:201-203`; decided 2026-10-02, `:264-268`, *route (5b) lands after panel 184's R1*), so after defect 173 · **class: blocking**
-
-    **Origin:** panel 185's R7, decided by the author 2026-10-02 at 07:05 (`docs/records/done/2026-10-02-0705-panel-185-r7-decided-the-forgotten-f-refused-where-the-braces-hold-names-all-bound.md`); its landing found unwritten by the coordinator's file-queue agent, 2026-10-02 (`scratchpad/file-queue/unlanded-184/forgot_f.hero`, 2026-10-02), and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`).
-
-    **2026-10-03, lane fbrace, route (5b) after R1**: repaired at `a5fc53de`, its sentence in spec § 2 at `8fc6e206`, gated by its own cases; the rest is owed at the round's gate.
-
-    **2026-10-03, the round's gate, lane round1003a**: the site's figures this item's `a5fc53de` moved, with defect 173's `f6fdda79`, are re-cut at `b025a473`. Owed before the push: the strings chapter's *A string without the `f` is exactly what it was*, in both editions.
-
-    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): by the decided language, a wrong program accepted.
 
 - [ ] **177 — a `match` whose arms fall inside a bracket left open has each arm told again after the bracket's own message** | `return match scores[name` over `.ok v  => v.to_str()` and `.err e => e.code`: `unclosed_bracket` at the `[`, then `line_end_before_continuation` at each arm, three messages for one missing `]`; `x = match (n` over `.ok v => 1` the same; `y = match n` below `x = [n, 1` gets `expected_end_of_line` at each arm's `=>` | the reach of a bracket left open (panel 183's R1 and R2) over a `match`'s arms · `selfhost/parse/line_end.hero:242` · **class: adjacent**
 
