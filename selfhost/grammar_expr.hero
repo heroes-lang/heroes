@@ -802,7 +802,7 @@ function declarations(@c: cursor.Cursor, @a: ast.Ast, text: str)
 function statement(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     start = cursor.current_span(c)
     from = c.pos
-    said = cursor.diagnostic_count(c)
+    said = c.diagnostics.len()
     exprs = a.exprs.len()
     kind: ast.StmtKind @ statement_kind(@c, @a, text)
     return finish(@c, @a, text, start: start, from: from, kind: kind, said: said, exprs: exprs)
@@ -912,7 +912,7 @@ function for_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
         return .for_in(name: name, iterable: iterable, block: body.must())
 
     if !cursor.at_reported_error(c)
-        read: cursor.Cursor @ c
+        read: cursor.Cursor @ cursor.trial(c)
         scratch: ast.Ast @ ast.new_ast()
         _ = parse_expr(@read, @scratch, text)
         loop_habit.refuse(c: @c, text: text, keyword: keyword, read: read)

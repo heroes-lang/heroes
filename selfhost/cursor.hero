@@ -240,11 +240,14 @@ function skip_terminators(@c: Cursor)
 
 ## Failing
 
-# How many diagnostics have been reported so far. The statement parser compares
-# it before and after: a statement that produced one has already said what is
-# wrong, wherever inside itself the mistake was.
-function diagnostic_count(c: Cursor) -> i64
-    return c.diagnostics.len()
+# A copy of `c` to try a reading on, holding none of `c`'s reports, its own
+# from index 0: one said through `c` while a copy shares them copies them all,
+# once a head in a file of refused heads (defect 184).
+function trial(c: Cursor) -> Cursor
+    none: [diag.Diagnostic] = []
+    copy: Cursor @ c
+    copy.diagnostics @ none
+    return copy
 
 # Whether the parser refused anything since it had said `said`. A thesis rule
 # is no refusal: the program keeps a meaning without one, and a recovery keyed
@@ -525,6 +528,25 @@ test "a thesis rule is no refusal to a recovery"
     error(@c, code: "expected_expression", message: "m", span: here)
     assert refused_since(c, 0)
     assert !refused_since(c, 2)
+
+# What `parse/loop_habit.a_loop` asks of the copy a `for` head's condition is
+# read on: it stands where the cursor stands, holds none of its reports, and
+# what it says stays its own (defect 184).
+test "a trial copy holds none of the cursor's reports, and its own stay its own"
+    tokens: [token.Token] = [
+        token.Token(kind: .ident, span: token.Span(start: 0, end: 1))
+        token.Token(kind: .eof, span: token.Span(start: 1, end: 1))
+    ]
+    c: Cursor @ new_cursor(tokens)
+    error(@c, code: "expected_expression", message: "said before", span: current_span(c))
+    t: Cursor @ trial(c)
+    assert t.pos == c.pos
+    assert t.diagnostics.len() == 0
+    assert !refused_since(t, 0)
+    error(@t, code: "expected_expression", message: "said on the copy", span: current_span(t))
+    assert refused_since(t, 0)
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].message == "said before"
 
 test "one bad declaration costs one, and never costs the next"
     # `function f(` … then a body, then the next declaration. Recovery eats the
