@@ -32,6 +32,7 @@
 use bytes
 use emit/ffi_pointee
 use cli/pointee_ask
+use emit/c_text
 
 constant PREFIX: str
     "hero_ty_"
@@ -42,10 +43,7 @@ constant PREFIX: str
 # per extern asked about — one per NAME, because two parameters of one
 # function are read from one declaration.
 function dump_unit(headers: [str], wanted: [pointee_ask.Pointee]) -> str
-    lines: [str] @ []
-
-    for header in headers
-        lines @ lines.push("#include <" + header + ">")
+    lines: [str] @ c_text.includes(headers)
 
     named: [str] @ []
 
@@ -67,15 +65,12 @@ function dump_unit(headers: [str], wanted: [pointee_ask.Pointee]) -> str
 # C11 arithmetic; for a float pointee the two sides agree and only
 # `sizeof` decides, which is the right question for a float.
 function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: [str]}) -> str
-    lines: [str] @ []
-
-    for header in headers
-        lines @ lines.push("#include <" + header + ">")
+    lines: [str] @ c_text.includes(headers)
 
     for one in answered(wanted, types)
         header_type = one.header_type
         asked = one.asked
-        lines @ lines.push("#line " + asked.line.to_str() + " \"" + asked.file + "\"")
+        lines @ lines.push(c_text.line_directive(at: asked.line, file: asked.file))
 
         # **A depth ask is one line and its own marker** (defect 083). The
         # guard against `void` is folded in, because `*(void *)0` is only a

@@ -1,0 +1,209 @@
+# Text the program supplies, spelled for each place C reads it: a string
+# literal, the name in a `#line`, a header in an `#include`, and a block
+# comment (design.md §3.1; CLAUDE.md §7; defect 207, 2026-10-03). Every
+# writer of one of the four goes through here, so a character C reads as
+# more than itself is answered in one place.
+#
+# **The `?` that would end a trigraph.** C's translation phase 1 reads `??`
+# before one of `=` `(` `/` `)` `'` `<` `!` `>` `-` as one character (C11
+# 5.2.1.1). Under `-std=gnu11`, the dialect this compiler names, clang
+# leaves the nine alone and says *trigraph ignored* at each; under
+# `-std=c11`, a dialect the seed is compiled under by hand
+# (`seed/README.md`), it replaces them, and `"what???)"` would print
+# `what?]`. A literal and a `#line` name write that `?` as `\?`, which every
+# dialect reads as `?`. A header name has no escapes (C11 6.4.7), so its line
+# is split by a line splice after the first `?`: phase 1 sees no `??`, and
+# phase 2 joins the two lines before the name is read. Measured 2026-10-03
+# on Apple clang 21.0.0 and Debian clang 22.1.8 and 18.1.8, under
+# `-std=gnu11`, `c11`, `c17` and `gnu17`: both spellings silent, under
+# `-Weverything` too, `#line 40 "caf\303\251?\?).hero"` reported as
+# `café??).hero`, and `#include <h?\` over `?).h>` opening `h??).h`.
+#
+# **Until defect 207** a literal escaped `"`, `\`, the control bytes and the
+# bytes above ASCII and not that `?`; a `#line` name escaped `"` and `\`
+# alone, and four writers of one escaped nothing, so a source under a
+# directory `a\q` drew *unknown escape sequence* from the pointee and layout
+# checks, on Windows wherever a path is typed with its own separator; and the
+# comment opening every unit took the source's path as it came, so a
+# directory `a*` closed it at exit 2 and a path holding `/*` drew
+# `-Wcomment`.
+
+# A C string literal holding exactly `text`'s bytes, quotes included. Octal
+# escapes for every byte below a space or above `~`, three digits always,
+# because `\x` has no length limit in C and would swallow a following hex
+# digit. The runs between two escapes go through whole, one slice each
+# (defect 105): a run holds printable ASCII only, so it starts and ends on a
+# character's edge, and an escaped byte of a longer character is never the
+# edge of a slice.
+function literal(text: str) -> str
+    parts: [str] @ ["\""]
+    plain: i64 @ 0
+    i: i64 @ 0
+
+    while i < text.len()
+        byte = text[i]
+        escape: str @ ""
+
+        if byte == '"'
+            escape @ "\\\""
+        else if byte == '\\'
+            escape @ "\\\\"
+        else if byte == '\n'
+            escape @ "\\n"
+        else if byte == '\t'
+            escape @ "\\t"
+        else if byte < ' ' || byte > '~'
+            escape @ "\\" + octal3(byte.to_i64().must())
+        else if ends_trigraph(text, at: i)
+            escape @ "\\?"
+
+        if escape.len() > 0
+            if i > plain
+                parts @ parts.push(text.slice(from: plain, to: i))
+            parts @ parts.push(escape)
+            plain @ i + 1
+        i @ i + 1
+
+    if plain == 0
+        return "\"" + text + "\""
+
+    if plain < text.len()
+        parts @ parts.push(text.slice(from: plain, to: text.len()))
+    return parts.push("\"").join("")
+
+function octal3(code: i64) -> str
+    digits = "01234567"
+    first = code / 64
+    second = code / 8 % 8
+    third = code % 8
+    return digits.slice(from: first, to: first + 1) + digits.slice(from: second, to: second + 1) + digits.slice(from: third, to: third + 1)
+
+# Whether the `?` at `at` is the second of a `??` that phase 1 reads, with
+# the character after it, as a trigraph. A `?` before it that is itself the
+# second of one is written `\?`, so a run of them is decided pair by pair on
+# the text as given.
+function ends_trigraph(text: str, at: i64) -> bool
+    if at == 0 || at + 1 >= text.len() || text[at] != '?' || text[at - 1] != '?'
+        return false
+    last = text[at + 1]
+    return last == '=' || last == '(' || last == '/' || last == ')' || last == '\'' || last == '<' || last == '!' || last == '>' || last == '-'
+
+# The `#line` that names `file` from line `at` on: the name as a literal,
+# which C decodes, so a diagnostic and the debugger name the file the
+# program was read from, whatever its name holds.
+function line_directive(at: i64, file: str) -> str
+    return "#line " + at.to_str() + " " + literal(file)
+
+# One `#include <...>` per header, in the order given, each as `header_lines`
+# spells it.
+function includes(headers: [str]) -> [str]
+    out: [str] @ []
+
+    for header in headers
+        for line in header_lines(header)
+            out @ out.push(line)
+
+    return out
+
+# A header's `#include <...>` as the lines C reads it from: one line, or,
+# where a `??` would end a trigraph with what follows it, the closing `>`
+# included, split by a line splice before its second `?`. The angled form
+# is the only one written (`emit/decls.hero` says why).
+function header_lines(header: str) -> [str]
+    text = "#include <" + header + ">"
+    lines: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+
+    while i < text.len()
+        if ends_trigraph(text, at: i)
+            lines @ lines.push(text.slice(from: start, to: i) + "\\")
+            start @ i
+        i @ i + 1
+
+    return lines.push(text.slice(from: start, to: text.len()))
+
+# Text inside a `/* */` comment, as it reads there: a `*/` would end the
+# comment and a `/*` draws `-Wcomment`, so a `/` after a `*` and a `*` after
+# a `/` are written after a backslash; and a control byte is written as a
+# literal writes it, so the comment keeps to its line, since the writer
+# counts the lines it writes and a line end it did not write moves every
+# `#line` restore after it. A byte above ASCII stays itself: a comment may
+# hold any UTF-8, and a `str` holds nothing else.
+function in_comment(text: str) -> str
+    parts: [str] @ []
+    plain: i64 @ 0
+    i: i64 @ 0
+
+    while i < text.len()
+        byte = text[i]
+        escape: str @ ""
+
+        if byte == '\n'
+            escape @ "\\n"
+        else if byte == '\t'
+            escape @ "\\t"
+        else if byte < ' '
+            escape @ "\\" + octal3(byte.to_i64().must())
+        else if i > 0 && byte == '/' && text[i - 1] == '*'
+            escape @ "\\/"
+        else if i > 0 && byte == '*' && text[i - 1] == '/'
+            escape @ "\\*"
+
+        if escape.len() > 0
+            if i > plain
+                parts @ parts.push(text.slice(from: plain, to: i))
+            parts @ parts.push(escape)
+            plain @ i + 1
+        i @ i + 1
+
+    if plain == 0
+        return text
+
+    if plain < text.len()
+        parts @ parts.push(text.slice(from: plain, to: text.len()))
+    return parts.join("")
+
+## Tests
+
+test "a literal holds every byte as itself, and no `?` that ends a trigraph (defect 207)"
+    for last in ["=", "(", "/", ")", "'", "<", "!", ">", "-"]
+        assert literal("a??" + last + "b") == "\"a?\\?" + last + "b\""
+
+    assert literal("what???)") == "\"what??\\?)\""
+    assert literal("??=??=") == "\"?\\?=?\\?=\""
+
+    # A `??` before anything else, a third `?` included, is C's as it
+    # stands, and so is one before an escape, which is a character between.
+    assert literal("???") == "\"???\""
+    assert literal("end??") == "\"end??\""
+    assert literal("a??\"b") == "\"a??\\\"b\""
+    assert literal("t??\tb") == "\"t??\\tb\""
+    assert literal("plain") == "\"plain\""
+    assert literal("") == "\"\""
+    assert literal("q\"b\\s\nn") == "\"q\\\"b\\\\s\\nn\""
+    assert literal("a\rb") == "\"a\\015b\""
+    assert literal("café") == "\"caf\\303\\251\""
+
+test "a #line names the file the program was read from, whatever its name holds (defect 207)"
+    assert line_directive(at: 3, file: "a.hero") == "#line 3 \"a.hero\""
+    assert line_directive(at: 3, file: "a\\q/p.hero") == "#line 3 \"a\\\\q/p.hero\""
+    assert line_directive(at: 3, file: "a\"b/p.hero") == "#line 3 \"a\\\"b/p.hero\""
+    assert line_directive(at: 3, file: "n\nl/p.hero") == "#line 3 \"n\\nl/p.hero\""
+    assert line_directive(at: 3, file: "t??)/p.hero") == "#line 3 \"t?\\?)/p.hero\""
+
+test "a header name is split by a line splice where it would hold a trigraph, its closing bracket included (defect 207)"
+    assert header_lines("stdio.h") == ["#include <stdio.h>"]
+    assert header_lines("h??).h") == ["#include <h?\\", "?).h>"]
+    assert header_lines("h??") == ["#include <h?\\", "?>"]
+    assert header_lines("a??=b??-c.h") == ["#include <a?\\", "?=b?\\", "?-c.h>"]
+    assert header_lines("???.h") == ["#include <???.h>"]
+    assert includes(["a.h", "h??).h"]) == ["#include <a.h>", "#include <h?\\", "?).h>"]
+
+test "a comment keeps to its line, and neither closes nor opens another (defect 207)"
+    assert in_comment("tests/golden/run/x.hero") == "tests/golden/run/x.hero"
+    assert in_comment("a*/p.hero") == "a*\\/p.hero"
+    assert in_comment("x/*b/p.hero") == "x/\\*b/p.hero"
+    assert in_comment("/*/") == "/\\*\\/"
+    assert in_comment("n\nl\rx") == "n\\nl\\015x"
+    assert in_comment("café") == "café"

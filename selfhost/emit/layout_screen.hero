@@ -59,6 +59,7 @@ use check/table
 use check/state
 use emit/extern_union
 use emit/layout_text
+use emit/c_text
 
 constant SCREEN: str
     "hero_ly_screen"
@@ -79,10 +80,7 @@ constant NO_LAYOUT: str
     "heroes-ffi-no-layout"
 
 function screen_unit(headers: [str], wanted: [layout_text.Asked], s: source.Source, decls: [ast.Decl], c: state.Checked, u: extern_union.Used) -> str
-    lines: [str] @ []
-
-    for header in headers
-        lines @ lines.push("#include <" + header + ">")
+    lines: [str] @ c_text.includes(headers)
 
     lines @ lines.push("#pragma clang diagnostic error \"-Wmissing-field-initializers\"")
     lines @ lines.push("#pragma clang diagnostic error \"-Wexcess-initializers\"")
@@ -238,10 +236,7 @@ function strays(said: str) -> bool
 # The question clang's JSON answers: one typedef of each record's type, whose
 # `type` says what the record's name stands for.
 function type_unit(headers: [str], wanted: [layout_text.Asked]) -> str
-    lines: [str] @ []
-
-    for header in headers
-        lines @ lines.push("#include <" + header + ">")
+    lines: [str] @ c_text.includes(headers)
 
     for one in wanted
         lines @ lines.push("typedef " + one.c_type + " " + TYPED + one.decl.to_str() + ";")
