@@ -40,6 +40,7 @@
 # and finish joins once. Before/after: docs/measurements/012.
 
 use source
+use emit/c_text
 
 # What clang believes the next output line is: which file, and which
 # line in it. `none` — nothing claimed yet, the file is its own truth.
@@ -117,7 +118,7 @@ function push_line(@w: Writer, text: str)
 # being honoured.
 function restore(@w: Writer, file: str, at: i64)
     w.claim @ .no_claim
-    push_line(@w, text: "#line " + at.to_str() + " \"" + escaped_path(file) + "\"")
+    push_line(@w, text: c_text.line_directive(at: at, file: file))
     w.claim @ .at(file: file, line: at)
 
 function blank(@w: Writer)
@@ -173,7 +174,7 @@ function directive(@w: Writer, file: str, at: i64)
     # directive is about to replace. push, not line: writing a #line
     # must not ask whether one is needed.
     w.claim @ .no_claim
-    push_line(@w, text: "#line " + at.to_str() + " \"" + escaped_path(file) + "\"")
+    push_line(@w, text: c_text.line_directive(at: at, file: file))
     w.claim @ .at(file: file, line: at)
     w.intent @ w.claim
 
@@ -182,22 +183,6 @@ function directive(@w: Writer, file: str, at: i64)
 # and finishing twice gives the same str), then everything joins once.
 function finish(w: Writer) -> str
     return join(w.chunks.push(join(w.chunk, "")), "")
-
-# A path inside a C string literal. A quote or a backslash in a file
-# name would otherwise end the directive early — and on Windows-style
-# paths the backslash is the separator, so this is not hypothetical.
-function escaped_path(path: str) -> str
-    parts: [str] @ []
-
-    for ch in path.chars()
-        if ch == "\""
-            parts @ parts.push("\\\"")
-        else if ch == "\\"
-            parts @ parts.push("\\\\")
-        else
-            parts @ parts.push(ch)
-
-    return parts.join("")
 
 # Point the next line at whichever source a span actually came from.
 # Every caller that has a span and a Source goes through here rather
@@ -238,10 +223,6 @@ test "asking for what is already intended emits nothing"
     at_file(@again, file: "a.hero", at: 6)
     line(@again, text: "z;")
     assert finish(again) == "#line 5 \"a.hero\"\n#line 6 \"a.hero\"\nz;\n"
-
-test "a path with quotes or backslashes cannot end the directive early"
-    assert escaped_path("a\\b.hero") == "a\\\\b.hero"
-    assert escaped_path("we\"ird.hero") == "we\\\"ird.hero"
 
 test "the chunk flush loses no line and adds none"
     w: Writer @ new_writer("m")

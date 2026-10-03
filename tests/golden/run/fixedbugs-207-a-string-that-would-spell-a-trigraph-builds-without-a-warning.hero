@@ -1,0 +1,37 @@
+# fixedbugs, defect 207, lane warn, 2026-10-03.
+#
+# SYMPTOM: `print("what???)")` built and printed `what???)`, with clang's
+# *trigraph ignored* warning on the emitted C at the literal; so did every
+# string holding `??` before one of `=` `(` `/` `)` `'` `<` `!` `>` `-`, an `f`
+# literal's text, a `constant`, a `match` pattern and a map key among them.
+# Under `-std=c11`, where C reads trigraphs, the same C would have printed
+# `what?]`.
+#
+# CAUSE: the emitter wrote a string's bytes into a C string literal escaping
+# `"`, `\`, the control bytes and the bytes above ASCII, and not the `?` that
+# translation phase 1 reads as the second of a trigraph.
+#
+# FIX: that `?` is written `\?`, which C reads as `?` in every mode; one rule
+# spells every text the emitter writes into C (`emit/c_text.hero`). The `run`
+# form holds the build's silence: a case with no ending line exits 0 with
+# nothing on stderr, and `run` compiles it at `-O2` and under `--sanitize`.
+
+constant SPELLED: str
+    "a constant??!"
+
+function kind(s: str) -> i64
+    match s
+        "m??)" => return 1
+        _      => return 2
+
+function main()
+    print("what???)")
+    print("what???)".len())
+    print("??= ??( ??/ ??) ??' ??< ??! ??> ??-")
+    print("??=".len())
+    x = 7
+    print(f"an f literal's text??){x}??(")
+    print(SPELLED)
+    print(kind("m??)"))
+    m = {"k??-": 3}
+    print(m["k??-"].must())
