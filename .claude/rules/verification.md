@@ -317,8 +317,10 @@ while the CI's x86-64 leg timed out on it, clang 22.1.8 against 18.1.3). So:
   push;
 - **a defect at the C boundary** (`runtime/`, `seed/`, `selfhost/emit/ffi*`
   and `extern*`, an `examples/` program with an `extern`) closes only after
-  the push's platform legs have run its cases; every other defect closes at
-  the round's gate.
+  the push's platform legs have run its cases, a case on a header one
+  platform lacks judged where the header is (`.claude/rules/platforms.md`,
+  the author's *A* of 2026-10-03); every other defect closes at the round's
+  gate.
 
 The first round under it, 2026-10-02: four lanes, one gate, `e2d59fdb`, the
 full net 4,449 passed and 0 failed. The text below is the rule as it stood
