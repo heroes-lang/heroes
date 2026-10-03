@@ -1,0 +1,44 @@
+# What the grammar asks of an expression it has built, by its kind alone:
+# whether it carries a block that ends the expression, and whether it is a
+# place (design.md §4.4, §4.7; spec § 5's Place).
+#
+# Moved out of `grammar_expr.hero` on 2026-10-03 (lane b8-recovery), when the
+# knot stood at its `DECIDED` ceiling and defects 180 and 181 needed lines in
+# its `after_dot`: neither reads a token or calls back into the knot, so
+# neither is part of its ring.
+#
+# | entry | called by |
+# |---|---|
+# | `ends_the_expression` | `grammar_expr.binary` |
+# | `is_place` | `grammar_expr.expression_or_mutation` and `call_args` |
+
+use ast
+
+# Does this operand carry a block, so that the expression ends with it, or
+# could it not be read, so that `while >` is not refused twice (defect 131)?
+#
+# ENUMERATED, never a catch-all: the day a new expression kind carries a
+# block, this must answer for it, and a `_ => false` would answer "no"
+# silently — which is the shape panel 060 paid for in the formatter.
+function ends_the_expression(a: ast.Ast, id: i64) -> bool
+    return match a.exprs[id].kind
+        .if_expr | .match_expr | .error                                                => true
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => false
+        .name | .hole | .unary | .binary | .field | .field_name | .index               => false
+        .call | .method | .variant_case | .array | .map | .try_expr                    => false
+
+# A PLACE: a name, or a field or index path rooted at one. Since Heroes has no
+# references, every place has exactly one root — which is what makes panel 010's
+# alias test a comparison of roots rather than a dataflow analysis.
+function is_place(a: ast.Ast, at: i64) -> bool
+    return match a.exprs[at].kind
+        .name    => true
+        .field f => is_place(a, f.base)
+        # A field's NAME is a value, never a place: `Point::x @ 1` is refused here
+        # rather than by a message about records (panel 132).
+
+        .field_name                                                                            => false
+        .index i                                                                               => is_place(a, i.base)
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr | .hole => false
+        .unary | .binary | .call | .method | .variant_case                                     => false
+        .array | .map | .try_expr | .if_expr | .match_expr | .error                            => false
