@@ -628,17 +628,39 @@ test "the fixtures half applies across two files, re-checks the whole program, a
 
     # A `.fixed` the compiler WOULD produce that does not check clean with its
     # module: the second half, which is the one that makes the tag mean
-    # something. `geom.hero` keeps `dist2` and gives it `str` parameters, so
-    # the applied text is the same, byte for byte, and only the re-check can
-    # see that the program is still broken. (A `geom.hero` that loses `dist2`
-    # makes the fix name another function, and the first half catches that
-    # before this one is reached.)
+    # something. `geom.hero` keeps `dist2` as the call takes it and gains a
+    # function that does not check, an error that was already there, so the
+    # program the rename writes says nothing new and the rename stays certain
+    # (defect 220): the applied text is the same, byte for byte, and only the
+    # re-check can see that the program is still broken. (A `geom.hero` that
+    # loses `dist2` makes the fix name another function, and the first half
+    # catches that before this one is reached.)
     assert !write_file(path: tree + "/typo/main.fixed", text: applied.must().out).is_err()
-    assert !write_file(path: tree + "/typo/geom.hero", text: "function dist2(a: str, b: str) -> i64\n    return a.len() + b.len()\n").is_err()
+    erring = geom + "\nfunction answer() -> i64\n    return \"forty-two\"\n"
+    assert !write_file(path: tree + "/typo/geom.hero", text: erring).is_err()
+    again = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "check", tree + "/typo/main.hero", "--apply"]
+    )
+    assert !again.is_err()
+    assert again.must().out == applied.must().out
     lied = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 1)
     assert !lied.is_err()
     assert lied.must().failed == 1
     assert strings.contains(text: lied.must().failures[0], needle: "does not check clean")
+
+    # The lie this half held until 2026-10-04, `dist2` given `str` parameters,
+    # is the first half's since defect 220: a rename into a call whose types
+    # refuse it is a guess, so `--apply` leaves the text as it is, and that
+    # is not the `.fixed`.
+    assert !write_file(path: tree + "/typo/geom.hero", text: "function dist2(a: str, b: str) -> i64\n    return a.len() + b.len()\n").is_err()
+    caught = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 1)
+    assert !caught.is_err()
+    assert caught.must().failed == 1
+    assert strings.contains(text: caught.must().failures[0], needle: "typo/main.hero")
+    assert strings.contains(text: caught.must().failures[0], needle: "--apply")
+    assert !strings.contains(text: caught.must().failures[0], needle: "does not check clean")
 
 # Defect 129, 2026-09-28: a case with no answer file was skipped, so a join
 # that turned `certain` in a case whose every fix is a `guess` passed green.
