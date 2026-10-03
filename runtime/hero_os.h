@@ -344,6 +344,13 @@ int64_t hero_run_serial(void);
  * and a `[T]` or a `{K: V}` in that signature is `error[ffi_type]` on the
  * author's line. That is Part 7.13's isolation obtained from the type rule. */
 int64_t hero_thread_spawn(int64_t (*body)(int64_t), int64_t arg);
+
+/* The same, on a stack of at least `bytes` that the caller chooses (panel 184
+ * R5): the compiler runs every command on one. A refusal is answered rather
+ * than panicked, -1 with the operating system's own number in `*why`, so the
+ * caller can say what it needed the thread for. `parts/spawn.c` says why. */
+int64_t hero_thread_spawn_sized(int64_t (*body)(int64_t), int64_t arg, int64_t bytes,
+                                int64_t *why);
 int64_t hero_thread_join(int64_t handle);
 
 /* How many may run at once, so a program can ask instead of meeting the panic.
