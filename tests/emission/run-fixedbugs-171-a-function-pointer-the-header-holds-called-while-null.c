@@ -66,7 +66,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 19 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
+#line 22 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs171afunctionpointertheheaderholdscalledwhilenull_hook(int32_t a0) { (void)(hook)(a0); }
 #line 112 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
@@ -94,7 +94,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs171afunctionpointertheheaderholdscalledwhilenull_main(void);
 
-#line 21 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
+#line 24 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
 void h_fixedbugs171afunctionpointertheheaderholdscalledwhilenull_main(void) {
 #line 100 "fixedbugs171afunctionpointertheheaderholdscalledwhilenull.c"
     HeroStr t1;
@@ -102,21 +102,21 @@ void h_fixedbugs171afunctionpointertheheaderholdscalledwhilenull_main(void) {
     int32_t t3;
     goto bb0;
 bb0:
-#line 22 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
+#line 25 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
     t1 = HERO_STR_LIT(hero_str_43560e4d);
-#line 22 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
+#line 25 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
     hero_print_str(t1);
-#line 22 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
+#line 25 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
     hero_print_end();
-#line 23 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
+#line 26 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
     t2 = INT64_C(1);
-#line 23 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
+#line 26 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
     t3 = hook(t2);
-#line 23 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
+#line 26 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
     hero_print_int(t3);
-#line 23 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
+#line 26 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
     hero_print_end();
-#line 23 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
+#line 26 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
     return;
 #line 122 "fixedbugs171afunctionpointertheheaderholdscalledwhilenull.c"
 }

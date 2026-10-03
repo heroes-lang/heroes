@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 51**
+**OPEN: 50**
 
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe) · **class: blocking**
 
@@ -168,16 +168,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **2026-10-03, lane ffimsg**: repaired at `428fc2a6`, gated by its own cases; the rest is owed at the round's gate, and Linux and the Windows box before the push, the repair being under `runtime/`. The message is made true and the declaration is not refused: measured, a refusal is possible only in a unit of its own (in the program's own, `__typeof__` is a hard error on an `overloadable` function), it cannot see a macro over `(*p)`, and it would refuse a loader's shape, volk's and GLAD's function pointers called as functions, a correct program that builds and runs (`tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero`).
 
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a false message. Refusing the declaration or making the message true is the lane's question.
-
-- [ ] **172 — in an `extern` group, `int` is refused with the `certain` fix `i32`, which `check` cannot know: where the header's type is 64 bits, the applied binding is refused anew by `build`** | `docs/panel/176-briefs/xfer_cj.hero`'s `-> i64`, over `cj.h`'s `int64_t cJSON_AddItemToObject(...)`, written `-> int`: `check` exit 1, `reserved_word`, *in an `extern` group a type is the header's own width and sign, and C's `int` is `i32`*, fix (certain) *replace `int` with `i32`*; `check --apply` writes `-> i32`, `check` exit 0, `build` exit 1, `ffi_return_type` | the `reserved_word` fix for `int` in an `extern` group (defect 135's L6, `c61a1d04`) · `.claude/rules/diagnostics-and-goldens.md` § Errors are a deliverable (*a fix that leaves the defect standing is a `guess`*) · **class: blocking**
-
-    **Origin:** panel 187's completeness critic, 2026-10-02, on the recovery instrument's APPLY-OTHER 20 and APPLY-NEW 19 on lane recovery-b8's runs, 0 and 0 on lane recovery-b6's gate, every one operator `int`, and the same 20 and 19 on the trunk's compiler at `6bec7c8c`, the instrument's run of 2026-10-02 from 21:55 to 22:08 by `date` (`scratchpad/inst-187/round3/`, 2026-10-02); built by the coordinator on `62d65e48` (2026-10-02, `scratchpad/apply-int/case/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). In each of the instrument's cases the original said `i64`, so the header's type is 64 bits there. `check` does not read the header, so it cannot tell C's `int` copied from it (`i32` right) from `int` meaning an integer (`i64` right); `build` reads it, and the binding never runs with the wrong width.
-
-    **Why it is a defect.** `check --apply` applies a `certain` fix without asking, and this one writes a binding that says something else than the header in every case the instrument planted.
-
-    **2026-10-03, lane ffimsg**: repaired at `c53ce231`, gated by its own cases; the rest is owed at the round's gate, and so is the recovery instrument's `int` row re-read there (`scratchpad/inst-187/run.sh` over lane recovery-b6's `rGate` plan, APPLY-OTHER 20 and APPLY-NEW 19 before). In a group `int` is a guess now, `i64` where a result or a constant may be wider and `i32` elsewhere; outside one it keeps its certain `i64`.
-
-    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a `certain` fix that writes a program meaning something else; `build` refuses that program, so no wrong value runs.
 
 - [ ] **177 — a `match` whose arms fall inside a bracket left open has each arm told again after the bracket's own message** | `return match scores[name` over `.ok v  => v.to_str()` and `.err e => e.code`: `unclosed_bracket` at the `[`, then `line_end_before_continuation` at each arm, three messages for one missing `]`; `x = match (n` over `.ok v => 1` the same; `y = match n` below `x = [n, 1` gets `expected_end_of_line` at each arm's `=>` | the reach of a bracket left open (panel 183's R1 and R2) over a `match`'s arms · `selfhost/parse/line_end.hero:242` · **class: adjacent**
 
