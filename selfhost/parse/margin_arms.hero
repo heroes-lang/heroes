@@ -35,12 +35,13 @@ use token
 use cursor
 use parse/broken_arm
 use parse/swap_reading
+use parse/unclosed
 use lexer
 
 # Whether the line under the cursor begins at the margin of the `match` whose
 # keyword is token `head`, holds an arm, and can be that `match`'s.
-function below(c: cursor.Cursor, head: i64) -> bool
-    return after_a_line_end(c) && holds_an_arm(c) && !an_arms_value(c, head) && !inside_a_bracket(c, head)
+function below(c: cursor.Cursor, text: str, head: i64) -> bool
+    return after_a_line_end(c) && holds_an_arm(c) && !an_arms_value(c, head) && !inside_a_bracket(c, text, head)
 
 # Whether the arms read at a margin end at the cursor: at a dedent, which is
 # the enclosing block's, or at a line that holds no arm. An indent below an
@@ -182,7 +183,10 @@ function an_arms_value(c: cursor.Cursor, head: i64) -> bool
 # refused as it stands (panel 180 R5's shape 74). The bracket may have opened
 # on a line above, so the walk goes back to the block's edge, an indent or a
 # dedent, which no bracket spans; it runs only where a `match` has no arms.
-function inside_a_bracket(c: cursor.Cursor, head: i64) -> bool
+# An opener the lexer named never closed is passed over: its report is the
+# mistake's one, and the arms its reach took in are read as arms, told again
+# at each `=>` until 2026-10-03 (defect 177); past its reach they are laid out.
+function inside_a_bracket(c: cursor.Cursor, text: str, head: i64) -> bool
     depth: i64 @ 0
     i: i64 @ head - 1
 
@@ -192,7 +196,8 @@ function inside_a_bracket(c: cursor.Cursor, head: i64) -> bool
         if k == .rparen || k == .rbracket || k == .rbrace
             depth @ depth + 1
         else if (k == .lparen || k == .lbracket || k == .lbrace) && depth == 0
-            return true
+            if !unclosed.never_closed(c, text, open: i)
+                return true
         else if k == .lparen || k == .lbracket || k == .lbrace
             depth @ depth - 1
         i @ i - 1
@@ -294,14 +299,20 @@ function on_the_second_line(text: str) -> Placed
 test "a line at a match's margin is its arm where it holds one and the match owns it"
     for text in ["match n\n_ => 1\n", "match n\n# the arms\n0 | 1 => 1\n", "match n\n0\n=> 1\n"]
         p = on_the_second_line(text)
-        assert below(p.c, head: p.head)
+        assert below(p.c, text, head: p.head)
+
+    # Inside a bracket the lexer names never closed, the arms its reach took
+    # in are the `match`'s, the bracket's report their one (defect 177).
+    left_open = "x = [n, match n\n0 => 1\n"
+    q = on_the_second_line(left_open)
+    assert below(q.c, left_open, head: q.head)
 
     # No arm on the line, a `=>` inside brackets, a `match` that is an arm's
     # value, whose margin holds the enclosing `match`'s arms, and a `match`
     # inside a bracket, below which no line has a margin.
     for text in ["match n\nprint(1)\n", "match n\nf([x => 1])\n", "0 => match m\n_ => 5\n", "f(match t\n.a => 1)\n"]
         p = on_the_second_line(text)
-        assert !below(p.c, head: p.head)
+        assert !below(p.c, text, head: p.head)
 
 # Defect 132's last row: the line a break before a `|` leaves apart, `0` over
 # `1 => 10`, is an arm broken inside its patterns, and so is a run of them;
@@ -309,11 +320,11 @@ test "a line at a match's margin is its arm where it holds one and the match own
 test "a line of patterns alone over an arm at the margin is an arm"
     for text in ["match n\n0\n1 => 1\n", "match n\n0\n# a note\n1\n.red r\n2 => 1\n", "match n\n-1\n_ => 1\n"]
         p = on_the_second_line(text)
-        assert below(p.c, head: p.head)
+        assert below(p.c, text, head: p.head)
 
     for text in ["match n\n0\n1\nprint(2)\n", "match n\n0\n    1 => 1\n", "match n\n0 + 1\n2 => 1\n", "match n\n1.5\n2 => 1\n"]
         p = on_the_second_line(text)
-        assert !below(p.c, head: p.head)
+        assert !below(p.c, text, head: p.head)
 
 test "the arms at a margin walk a run of patterns alone once, and end where it ends at no arm"
     text = "match n\n0\n1\n2 => 1\nprint(3)\n"

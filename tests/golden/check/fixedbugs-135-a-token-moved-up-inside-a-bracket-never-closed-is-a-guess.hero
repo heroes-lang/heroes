@@ -10,11 +10,17 @@
 # other, wherever the line below can stand on its own, as a line that begins
 # with `.` can. The fix is now a `guess` there; a line that can only go on,
 # `[1` over `+ 2`, keeps its certain fix (defect 130's case pins it).
+#
+# Moved 2026-10-03 with defect 177's repair (lane b8-recovery): these lines
+# hold an arm's `=>`, so they are the `match`'s arms the bracket's reach took
+# in, read as arms and told nothing, and no fix moves their `.` at all; the
+# bracket is the one message. A `.` that does go on inside such a bracket
+# keeps its guess, pinned by defect 130's case (`.len()`).
 
 function describe(scores: {str: i64}, name: str) -> str
     return match scores[name  #~ unclosed_bracket
-        .ok v => v.to_str()  #~ line_end_before_continuation
-        .err e => e.code  #~ line_end_before_continuation
+        .ok v => v.to_str()
+        .err e => e.code
 
 function head(xs: [i64]) -> i64?
     if xs.len() == 0
@@ -23,8 +29,8 @@ function head(xs: [i64]) -> i64?
 
 function first_or_zero(xs: [i64]) -> i64
     return match (head(xs)  #~ unclosed_bracket
-        .ok v => v  #~ line_end_before_continuation
-        .err _ => 0  #~ line_end_before_continuation
+        .ok v => v
+        .err _ => 0
 
 function main()
     print(describe({"a": 1}, name: "a"))
