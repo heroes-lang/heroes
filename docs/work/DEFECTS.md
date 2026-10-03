@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 48**
+**OPEN: 49**
 
 - [ ] **177 — a `match` whose arms fall inside a bracket left open has each arm told again after the bracket's own message** | `return match scores[name` over `.ok v  => v.to_str()` and `.err e => e.code`: `unclosed_bracket` at the `[`, then `line_end_before_continuation` at each arm, three messages for one missing `]`; `x = match (n` over `.ok v => 1` the same; `y = match n` below `x = [n, 1` gets `expected_end_of_line` at each arm's `=>` | the reach of a bracket left open (panel 183's R1 and R2) over a `match`'s arms · `selfhost/parse/line_end.hero:242` · **class: adjacent**
 
@@ -355,5 +355,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a false message, a route that fails on Windows where the compiler's own `--library <dir>` works on every platform measured.
 
     **2026-10-03, batch 8's FFI lane**: repaired at `c6bd5a6a`, gated by its cases and the compiler's own tests; the net and the Windows leg are owed at the batch's close.
+
+- [ ] **237 — the reader of the driver's package message cuts a name at its first backtick, so `package "a`b"` reaches the author raw, the compiler's `heroes-ffi-package` marker and all, with no code and no place** | `extern "ab.h" package "a`b"` over `function seven() -> i32`: `build` exit 1, its stderr opening *heroes-ffi-package `a`b` is not installed on this machine*, no `error[ffi_package]` and no `at`: `package_problem` read the name up to its first backtick, `a`, which no group names, and `cli/produce.hero` printed the message raw (the trunk's compiler at `dcaca1a3` and the lane's at `e2f98e17`, `<scratchpad>/batch8/ffi/repro/s1/s221-pkg-backtick/` and `repro/r237/`, 2026-10-03); beside it, a `.pc` answering a word that holds the marker's text is quoted with *the package* in its place, the reader replacing every marker on the line | `selfhost/emit/ffi_build.hero` (`package_problem`, `replace_all`) · `selfhost/emit/ffi_lookup.hero` (`package_span`) · the marker's writers in `selfhost/cli/libraries.hero` and `selfhost/cli/shell_split.hero` · **class: blocking**
+
+    **Origin:** lane b8-ffi beside 226, 2026-10-03, reproduced on the trunk's compiler; the cause panel 188's compiler-engineer saw in its stage A, where a line end in a package's message leaked the marker (`docs/panel/188-reports/compiler-engineer.md` § 12.4).
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a message without code or location, the compiler's own marker shown (design.md §4.17); and a false one beside it, an answer quoted with *the package* in place of the marker's text.
 
 *******************************************************************************
