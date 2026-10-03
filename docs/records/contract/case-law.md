@@ -1978,3 +1978,15 @@ idea is recorded here as measured false and is not a rule. The cost column of
 the map is owed at the first quiet hour, unrun on the day, because two other
 sessions' gates ran on the machine throughout. What the rule bought is written
 beneath this entry by the first batch that runs under it.
+
+**Amended 2026-10-03 by author instruction**, meant as: *here you have to
+make batches holding at least about fifteen defects together, because
+otherwise it gets too long*; minutes later, *make batches of at most twenty
+defects*; and then, *you choose the range, but dare a little: ten to twenty,
+sixteen to thirty-two.* The coordinator chose sixteen to thirty-two, the
+evening's 47 open defects clearing in two batches at that size and in three
+at ten to twenty. A batch holds sixteen to thirty-two defects, filled from the
+open list `blocking` first, one lane per cluster of shared files, merged and
+gated once (`.claude/rules/verification.md` § The batch).
+Measured that day by the commits' dates: seven round gates in 27 hours,
+`e2d59fdb` to `da0ff6c9`, the seventh over one defect.

@@ -290,11 +290,33 @@ the work and a public branch.
 
 **Superseded on 2026-09-29 in its first half**: a repair or a step is gated by
 the golden form that holds its cases and by the compiler's own tests, and
-the full net runs once per BATCH of at most five, which is what a push carries
+the full net runs once per BATCH, sixteen to thirty-two defects since
+2026-10-03, which is what a push carries
 (§ The batch, above; CL-079). The map keeps its other job: it says which form a
 change's cases live in, and which suites the batch's census and platforms owe.
 
-## The batch: repairs gated by their cases, one gate for five
+## The batch: repairs gated by their cases, one gate for sixteen to thirty-two
+
+**Amended 2026-10-03 by author instruction**, meant as: *here you have to
+make batches holding at least about fifteen defects together, because
+otherwise it gets too long.* Given on the coordinator's plan for panel 188's
+landing, a lane of five and a lane of two; measured that day by the commits'
+dates, seven round gates in 27 hours (`e2d59fdb`, 2026-10-02 13:36, to
+`da0ff6c9`, 2026-10-03 16:17), the seventh over one defect. Minutes later,
+meant as: *make batches of at most twenty defects*; and then, meant as: *you
+choose the range, but dare a little: ten to twenty, sixteen to thirty-two.*
+The coordinator chose **sixteen to thirty-two**: the open list of that
+evening, 47 once its filings were in, clears in two batches at that size and
+in three at ten to twenty, each batch paying one seed, one full net, one
+census, two platform legs and one push; the price is a red gate's bisect of
+five steps instead of four. So **a batch holds sixteen to thirty-two
+defects**, in as many lanes as its clusters need (one lane per cluster of
+shared files, parallel lanes for disjoint ones), merged into one round and
+gated once. **It is filled from the open list**:
+`blocking` first, then the `adjacent` and `improvement` items that share a
+cluster's files, then the oldest `adjacent`, then `improvement`; so no
+`blocking` item waits for others to be found, and when fewer than sixteen are
+open the batch takes them all.
 
 **Amended 2026-10-02 by author instruction**, meant as: *keep only the Mac
 as the development environment, and the other platforms only as activities
@@ -306,8 +328,9 @@ emulated Linux x86-64 container 83**; and on a catch rate that container had
 not earned (it passed defect 140's variants case at every gate of 2026-10-01
 while the CI's x86-64 leg timed out on it, clang 22.1.8 against 18.1.3). So:
 
-- **one gate per ROUND**, not per lane: the round's lanes, each a batch of at
-  most five, are merged into one tree under `.claude/worktrees/`, one merge
+- **one gate per ROUND**, not per lane: the round's lanes, together a batch of
+  sixteen to thirty-two defects (above), are merged into one tree under
+  `.claude/worktrees/`, one merge
   commit each, and that tree is gated once by steps 1 to 4 below; red, the
   lane is found first by the red suite at each merge commit, then the commit
   inside it by bisect;
@@ -433,8 +456,8 @@ line, ` · **class: <name>**`, and its body one line opening
 
 **The bounds**, one place: the shapes attacked are those beside the
 item's reproducer, depth one, never those beside the shapes; a batch repairs
-at most two `adjacent` items inline, only with room under its five and in
-its own files; everything else found is filed, classed, and left.
+at most two `adjacent` items found inline, in its own files; everything else
+found is filed, classed, and left.
 
 **When a round ends**: when its items are repaired and its gate is green,
 not when nothing more can be found in the files it touched. **A milestone is
@@ -458,8 +481,9 @@ commit and a worse one filed by its class (panel 187's R2); never a ratchet
 on totals, and a corpus program's own messages are subtracted before a
 mutant is read as worse (the fourth round's reading, 2026-10-03).
 
-**Per batch**, which closes at the first of: five repairs queued, the cluster's
-last open defect repaired, before any push, or when the author asks. A batch
+**Per batch**, which closes at the first of: its sixteen to thirty-two items
+repaired (every open one, when fewer than sixteen are open), before any push,
+or when the author asks; never more than thirty-two. A batch
 never spans a tag. The gate is what a push already owed, on the tree that will
 BE the trunk (merge the trunk into the lane once, gate the merged tree, then
 fast-forward the trunk: same tree, no second gate):
@@ -481,7 +505,8 @@ fast-forward the trunk: same tree, no second gate):
 **Red**: the batch's commits are linear in its lane, one per defect. `git bisect`
 between the batch's base and head, at each step the compiler rebuilt from
 `selfhost/` with the base's compiler (`heroes build selfhost/main.hero`, about
-30 s warm) and the one red suite; five repairs are three steps. The culprit
+30 s warm) and the one red suite; sixteen to thirty-two repairs are four or
+five steps. The culprit
 alone is redone, with the other repairs' cases in view; where the culprit is
 the interaction of two repairs, the later one is redone and the record says so.
 **Green**: the items are ticked and moved to `docs/records/done/`, one file
