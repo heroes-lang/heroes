@@ -43,28 +43,36 @@ _Static_assert(_Generic(&((Matrix *)0)->m11, float *: 1, default: 0) && sizeof((
 _Static_assert(_Generic(&((Matrix *)0)->m15, float *: 1, default: 0) && sizeof(((Matrix *)0)->m15) == sizeof(float), "heroes-ffi-field Matrix m15");
 #line 60 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, projection) != 0, "heroes-ffi-flex VrStereoConfig projection");
-             _Static_assert(_Generic(&((VrStereoConfig *)0)->projection, Matrix (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, projection) >= sizeof(Matrix[2]), "heroes-ffi-field VrStereoConfig projection");
+#line 60 "tests/golden/run/ffi-a-c-array-member.hero"
+_Static_assert(_Generic(&((VrStereoConfig *)0)->projection, Matrix (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, projection) >= sizeof(Matrix[2]), "heroes-ffi-field VrStereoConfig projection");
 #line 61 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, viewOffset) != 0, "heroes-ffi-flex VrStereoConfig viewOffset");
-             _Static_assert(_Generic(&((VrStereoConfig *)0)->viewOffset, Matrix (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, viewOffset) >= sizeof(Matrix[2]), "heroes-ffi-field VrStereoConfig viewOffset");
+#line 61 "tests/golden/run/ffi-a-c-array-member.hero"
+_Static_assert(_Generic(&((VrStereoConfig *)0)->viewOffset, Matrix (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, viewOffset) >= sizeof(Matrix[2]), "heroes-ffi-field VrStereoConfig viewOffset");
 #line 62 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, leftLensCenter) != 0, "heroes-ffi-flex VrStereoConfig leftLensCenter");
-             _Static_assert(_Generic(&((VrStereoConfig *)0)->leftLensCenter, float (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, leftLensCenter) >= sizeof(float[2]), "heroes-ffi-field VrStereoConfig leftLensCenter");
+#line 62 "tests/golden/run/ffi-a-c-array-member.hero"
+_Static_assert(_Generic(&((VrStereoConfig *)0)->leftLensCenter, float (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, leftLensCenter) >= sizeof(float[2]), "heroes-ffi-field VrStereoConfig leftLensCenter");
 #line 63 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, rightLensCenter) != 0, "heroes-ffi-flex VrStereoConfig rightLensCenter");
-             _Static_assert(_Generic(&((VrStereoConfig *)0)->rightLensCenter, float (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, rightLensCenter) >= sizeof(float[2]), "heroes-ffi-field VrStereoConfig rightLensCenter");
+#line 63 "tests/golden/run/ffi-a-c-array-member.hero"
+_Static_assert(_Generic(&((VrStereoConfig *)0)->rightLensCenter, float (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, rightLensCenter) >= sizeof(float[2]), "heroes-ffi-field VrStereoConfig rightLensCenter");
 #line 64 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, leftScreenCenter) != 0, "heroes-ffi-flex VrStereoConfig leftScreenCenter");
-             _Static_assert(_Generic(&((VrStereoConfig *)0)->leftScreenCenter, float (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, leftScreenCenter) >= sizeof(float[2]), "heroes-ffi-field VrStereoConfig leftScreenCenter");
+#line 64 "tests/golden/run/ffi-a-c-array-member.hero"
+_Static_assert(_Generic(&((VrStereoConfig *)0)->leftScreenCenter, float (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, leftScreenCenter) >= sizeof(float[2]), "heroes-ffi-field VrStereoConfig leftScreenCenter");
 #line 65 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, rightScreenCenter) != 0, "heroes-ffi-flex VrStereoConfig rightScreenCenter");
-             _Static_assert(_Generic(&((VrStereoConfig *)0)->rightScreenCenter, float (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, rightScreenCenter) >= sizeof(float[2]), "heroes-ffi-field VrStereoConfig rightScreenCenter");
+#line 65 "tests/golden/run/ffi-a-c-array-member.hero"
+_Static_assert(_Generic(&((VrStereoConfig *)0)->rightScreenCenter, float (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, rightScreenCenter) >= sizeof(float[2]), "heroes-ffi-field VrStereoConfig rightScreenCenter");
 #line 66 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, scale) != 0, "heroes-ffi-flex VrStereoConfig scale");
-             _Static_assert(_Generic(&((VrStereoConfig *)0)->scale, float (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, scale) >= sizeof(float[2]), "heroes-ffi-field VrStereoConfig scale");
+#line 66 "tests/golden/run/ffi-a-c-array-member.hero"
+_Static_assert(_Generic(&((VrStereoConfig *)0)->scale, float (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, scale) >= sizeof(float[2]), "heroes-ffi-field VrStereoConfig scale");
 #line 67 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, scaleIn) != 0, "heroes-ffi-flex VrStereoConfig scaleIn");
-             _Static_assert(_Generic(&((VrStereoConfig *)0)->scaleIn, float (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, scaleIn) >= sizeof(float[2]), "heroes-ffi-field VrStereoConfig scaleIn");
+#line 67 "tests/golden/run/ffi-a-c-array-member.hero"
+_Static_assert(_Generic(&((VrStereoConfig *)0)->scaleIn, float (*)[2]: 1, default: 0) && sizeof(VrStereoConfig) - __builtin_offsetof(VrStereoConfig, scaleIn) >= sizeof(float[2]), "heroes-ffi-field VrStereoConfig scaleIn");
 #line 69 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(__builtin_classify_type(((VrDeviceInfo *)0)->hResolution) == 1 && sizeof(((VrDeviceInfo *)0)->hResolution) == sizeof(int32_t) && (_Generic(((VrDeviceInfo *)0)->hResolution, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field VrDeviceInfo hResolution");
 #line 70 "tests/golden/run/ffi-a-c-array-member.hero"
@@ -81,15 +89,17 @@ _Static_assert(_Generic(&((VrDeviceInfo *)0)->lensSeparationDistance, float *: 1
 _Static_assert(_Generic(&((VrDeviceInfo *)0)->interpupillaryDistance, float *: 1, default: 0) && sizeof(((VrDeviceInfo *)0)->interpupillaryDistance) == sizeof(float), "heroes-ffi-field VrDeviceInfo interpupillaryDistance");
 #line 76 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, lensDistortionValues) != 0, "heroes-ffi-flex VrDeviceInfo lensDistortionValues");
-             _Static_assert(_Generic(&((VrDeviceInfo *)0)->lensDistortionValues, float (*)[4]: 1, default: 0) && sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, lensDistortionValues) >= sizeof(float[4]), "heroes-ffi-field VrDeviceInfo lensDistortionValues");
+#line 76 "tests/golden/run/ffi-a-c-array-member.hero"
+_Static_assert(_Generic(&((VrDeviceInfo *)0)->lensDistortionValues, float (*)[4]: 1, default: 0) && sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, lensDistortionValues) >= sizeof(float[4]), "heroes-ffi-field VrDeviceInfo lensDistortionValues");
 #line 77 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) != 0, "heroes-ffi-flex VrDeviceInfo chromaAbCorrection");
-             _Static_assert(_Generic(&((VrDeviceInfo *)0)->chromaAbCorrection, float (*)[4]: 1, default: 0) && sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) >= sizeof(float[4]), "heroes-ffi-field VrDeviceInfo chromaAbCorrection");
-#line 79 "ffiacarraymember.c"
+#line 77 "tests/golden/run/ffi-a-c-array-member.hero"
+_Static_assert(_Generic(&((VrDeviceInfo *)0)->chromaAbCorrection, float (*)[4]: 1, default: 0) && sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) >= sizeof(float[4]), "heroes-ffi-field VrDeviceInfo chromaAbCorrection");
+#line 99 "ffiacarraymember.c"
 
 #line 68 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(__builtin_classify_type(*(VrDeviceInfo *)0) != 13, "heroes-ffi-union VrDeviceInfo hResolution vResolution hScreenSize vScreenSize eyeToScreenDistance lensSeparationDistance interpupillaryDistance lensDistortionValues chromaAbCorrection");
-#line 83 "ffiacarraymember.c"
+#line 103 "ffiacarraymember.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -165,7 +175,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "ffiacarraymember.c"
+#line 179 "ffiacarraymember.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiacarraymember_Matrix_eq(const Matrix *a, const Matrix *b);
@@ -187,7 +197,7 @@ void h_ffiacarraymember_main(void);
 
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
 void h_ffiacarraymember_main(void) {
-#line 181 "ffiacarraymember.c"
+#line 201 "ffiacarraymember.c"
     VrDeviceInfo h0_device;
     VrStereoConfig h1_config;
     int32_t t1;
@@ -315,7 +325,7 @@ bb0:
     (void)UnloadVrStereoConfig(t38);
 #line 101 "tests/golden/run/ffi-a-c-array-member.hero"
     return;
-#line 309 "ffiacarraymember.c"
+#line 329 "ffiacarraymember.c"
 }
 HERO_TU_LOCAL bool h_ffiacarraymember_Matrix_eq(const Matrix *a, const Matrix *b) {
     if (!(a->m0 == b->m0)) return false;

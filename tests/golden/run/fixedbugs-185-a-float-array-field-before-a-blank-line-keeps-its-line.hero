@@ -1,0 +1,15 @@
+# Defect 185, 2026-10-03: an array field's two assertions, one string holding
+# a newline until that day, so the second rode C's auto-increment onto the
+# blank line below the field and every restore of the generated file after it
+# was one line short. The shape beside the integer one: an element C asks no
+# sign of, the other branch that wrote the newline.
+
+extern "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.h"
+    function sum_of(p: Pair) -> f32
+    record Pair
+        weights: f32[2]
+
+function main()
+    p = Pair(weights: [1.5, 2.25])
+    print(p.weights[0] + p.weights[1])
+    print(p.sum_of())
