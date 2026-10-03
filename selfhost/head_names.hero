@@ -54,6 +54,13 @@ function cannot_carry(spelled: str, value: str, span: token.Span, what: str) -> 
                 diag.new_diagnostic(code: "option_like_name", message: "this package's name begins with `-`, which is how an option to `pkg-config` begins, and this compiler does not rest on every `pkg-config` reading the `--` it writes before the name: name the package, as `package \"raylib\"`", span: span)
             )
 
+    # A `link` too: lld-link reads a name beginning `-` as an option of its own,
+    # and `link "-out:x"` wrote a file of the author's naming (panel 188, § 22.5).
+    if what == "link" && value[0] == '-'
+        return ok(
+            diag.new_diagnostic(code: "option_like_name", message: "this library's name begins with `-`, which is how an option to a linker begins, and `lld-link` on Windows reads it as one of its own: name the library, as `link \"m\"`", span: span)
+        )
+
     if what == "header"
         return header_unwritable(spelled: spelled, value: value, span: span)
     return fail(code: "none", msg: "a name every tool carries whole")
@@ -415,6 +422,9 @@ test "a library's name shares the first classes and none of a header's"
     assert said(spelled: "\"a\\nb\"", what: "link") == "unwritable_name"
     assert said(spelled: "\"a\\tb\"", what: "link") == "unshowable_name"
     assert said(spelled: "\":libm.a\"", what: "link") == "machine_locked_path"
+    assert said(spelled: "\"-out:pwn188\"", what: "link") == "option_like_name"
+    assert said(spelled: "\"-\"", what: "link") == "option_like_name"
+    assert said(spelled: "\"m-x\"", what: "link") == ""
 
 test "a package's string names one package (panel 188)"
     assert said(spelled: "\"raylib\"", what: "package") == ""
@@ -435,7 +445,7 @@ test "a package's string names one package (panel 188)"
     assert said(spelled: "\"/opt/x.pc\"", what: "package") == "machine_locked_path"
     assert said(spelled: "\"-x\"", what: "package") == "option_like_name"
     assert said(spelled: "\"--atleast-pkgconfig-version=0\"", what: "package") == "option_like_name"
-    assert said(spelled: "\"-x\"", what: "link") == ""
+    assert said(spelled: "\"-x\"", what: "link") == "option_like_name"
 
 test "C's spelling carried in is dropped by a certain fix, and only where what is left passes"
     sure = judged(spelled: "\"<stdio.h>\"", span: token.Span(start: 0, end: 11), what: "header").must()
