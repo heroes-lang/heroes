@@ -6,9 +6,10 @@
 # passed §11's 300 lines with defect 135's refinement of `one_reading`. The
 # seam is the question: the messages there say what is wrong and offer the
 # rename, and this file answers, of two names alone, which names are near
-# enough to offer (`nearest`) and whether the one offered can be applied
-# (`one_reading`). `resolve/errors.suggest` and `module/diagnostics`'s
-# `not_in_module` ask it, one rule for a local name and a module's.
+# enough to offer (`nearest`) and whether the letters allow the one offered
+# alone (`one_reading`). `rename_fit.hero` asks the second of every rename
+# the name stage offers, one rule for a local name and a module's, and makes
+# a rename certain only where the program it writes agrees (defect 220).
 
 use bytes
 

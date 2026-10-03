@@ -37,6 +37,7 @@ use diag
 use source
 use module/names as module_names
 use module/paths
+use module/reading
 use ast
 use parse
 
@@ -97,7 +98,7 @@ function open_directory(path: str) -> str
 # filesystem listing. The seen list is what makes this terminate on a
 # cycle; it is not the cycle CHECK, which needs spans and lives in
 # errors().
-function load_text(path: str, root_text: str, library: str) -> source.Source
+function load_text(path: str, root_text: str, library: str) -> source.Source?
     # The RAW stem, the same rule user_file follows and the same rule
     # a use line spells: seeding with the sanitised name made `use ab`
     # in a_b.hero look already-seen, so ab.hero was never loaded and
@@ -122,12 +123,13 @@ function load_text(path: str, root_text: str, library: str) -> source.Source
 
             if already
                 continue
-            found = read_file(open_directory(path) + module + ".hero")
+            opened = open_directory(path) + module + ".hero"
+            found = read_file(opened)
 
             if found.is_err()
-                # Not an error HERE: errors() says so with the caret
-                # on the use line, which is the file the author has
-                # open.
+                # Nothing there is said on the use line, by errors(); a file there
+                # that cannot be read stops the load, as the root's does (defect 236).
+                reading.nothing_at(opened: opened, named: directory_text(path) + module + ".hero")?
                 seen @ seen.push(module)
                 continue
             seen @ seen.push(module)
@@ -148,7 +150,7 @@ function load_text(path: str, root_text: str, library: str) -> source.Source
     files @ files.push(
         source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: library, is_library: true)
     )
-    return source.from_files(files)
+    return ok(source.from_files(files))
 
 ## The graph's own errors — against the finished Source
 
@@ -438,16 +440,16 @@ test "load_text walks siblings depth-first and appends the library last"
     root = "use selftest_mod_leaf\n\nfunction main()\n    print(selftest_mod_leaf.leaf())\n"
     assert !write_file(path: "build/selftest_mod_root.hero", text: root).is_err()
     assert !write_file(path: "build/selftest_mod_leaf.hero", text: "function leaf() -> i64\n    return 3\n").is_err()
-    s = load_text(path: "build/selftest_mod_root.hero", root_text: root, library: "")
+    s = load_text(path: "build/selftest_mod_root.hero", root_text: root, library: "").must()
     assert s.files.len() == 3
     assert s.files[0].module == "selftest_mod_root"
     assert s.files[1].module == "selftest_mod_leaf"
     assert s.files[1].name == "build/selftest_mod_leaf.hero"
     assert s.files[2].is_library
 
-    # A use nobody can read is not an error HERE: discovery skips it
-    # and the graph pass owns the caret.
+    # A use whose file is not there is not an error HERE: discovery skips
+    # it and the graph pass owns the caret.
     ghost = "use selftest_mod_ghost\n\nfunction main()\n    print(1)\n"
     assert !write_file(path: "build/selftest_mod_root.hero", text: ghost).is_err()
-    g = load_text(path: "build/selftest_mod_root.hero", root_text: ghost, library: "")
+    g = load_text(path: "build/selftest_mod_root.hero", root_text: ghost, library: "").must()
     assert g.files.len() == 2

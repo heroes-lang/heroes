@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 51**
+**OPEN: 52**
 
 - [ ] **177 — a `match` whose arms fall inside a bracket left open has each arm told again after the bracket's own message** | `return match scores[name` over `.ok v  => v.to_str()` and `.err e => e.code`: `unclosed_bracket` at the `[`, then `line_end_before_continuation` at each arm, three messages for one missing `]`; `x = match (n` over `.ok v => 1` the same; `y = match n` below `x = [n, 1` gets `expected_end_of_line` at each arm's `=>` | the reach of a bracket left open (panel 183's R1 and R2) over a `match`'s arms · `selfhost/parse/line_end.hero:242` · **class: adjacent**
 
@@ -258,6 +258,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a `certain` fix that writes a program refused anew; and the name is C's `sqrt`, which a program binds from `math.h`, so the rename points away from the repair.
 
+    **2026-10-03, lane b8-source, a rename is certain only where the name's letters allow the candidate alone and the program it writes says nothing the program as written did not** (`selfhost/rename_fit.hero`; the 16 shapes beside with the cause, a built-in, a function, a local, a literal, a record, a method, a type, a cell, a function value, a result refused further on and a module's name, now guesses, the 12 that fit still certain): repaired at `d0cd8278`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **221 — no reader of a group head's string decodes its escapes, so `extern "a\\b.h"` asks clang for `a\\b.h` and `build` says a header present is missing** | `extern "a\\b.h"` over `function seven() -> i32`, the file `a\b.h` beside the program: `check` 0, `build` 1, `ffi_missing_header`, *`a\\b.h` is not on this machine's include path, clang looked and did not find it*, while the file is there; the emitted unit holds `#include <a\\b.h>`, two backslashes; the same for `\"`, `\n`, `\t`, `\r`, and for `link "a\\b"` with `liba\b.a` there (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro188/esc-bs/`) | `selfhost/emit/externs.hero` (`unquoted`), `selfhost/parse/module_text.hero` (`unquote`) · spec § 2's five string escapes, § 13's `Extern` production · panel 188 R1 · **class: blocking**
 
     **Origin:** panel 188's completeness critic, 2026-10-03, in its first pass over the briefs (the escape face of F1, read as clang's, was the compiler's); confirmed by `od -c` of the emitted units (the compiler-engineer) and for `link` (the ffi-pragmatist); reproduced by the coordinator the same day.
@@ -371,6 +373,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a divergence between platforms whose messages are true on each; ruled with 234.
 
     **2026-10-03, batch 8's FFI lane**: repaired at `24cb4fd4`, gated by its cases and the compiler's own tests; the net is owed at the batch's close (the line added at the round's merge, the item having been filed on the trunk after the lane's base).
+
+- [ ] **236 — a used module that is present but unreadable is told that the file is not there** | `main.hero` over `use geom` and `print(geom.two())`, beside a `geom.hero` declaring `two` whose mode is 000: `check` exit 1, `unknown_module`, *there is no module `geom`, `use geom` reads `geom.hero`, from the directory of `main.hero`, the file you compile, and that file is not there*, while the file is there; the main file unreadable is *cannot read* at exit 2 (the trunk's compiler, from the seed at `dcaca1a3`, 2026-10-03, `<scratchpad>/batch8/source/shapes227/m17/`) | `selfhost/modules.hero:125` (every read failure taken as absence) · **class: blocking**
+
+    **Origin:** lane b8-source beside defect 227, 2026-10-03, reported to the coordinator, who filed it the same day; the lane reproduced it on the trunk's compiler and restored the file's mode.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a false message; `read_file` answers `file_not_found` for a file it may not open, and the loader takes every failure to read for absence.
+
+    **2026-10-03, lane b8-source, a module whose file is there and cannot be read stops the read as the root does, *cannot read* and the file at exit 2, and only a path where nothing is or can be stays absent** (`selfhost/module/reading.hero`; beside it a directory, a dangling link, a nested file, an unsearchable directory, a module two uses down and a module not UTF-8, the same; a path below a regular file and an absent module still `unknown_module`; a round of `check --apply` that cannot read writes nothing): repaired at `c898bd94`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
 
 - [ ] **237 — the reader of the driver's package message cuts a name at its first backtick, so `package "a`b"` reaches the author raw, the compiler's `heroes-ffi-package` marker and all, with no code and no place** | `extern "ab.h" package "a`b"` over `function seven() -> i32`: `build` exit 1, its stderr opening *heroes-ffi-package `a`b` is not installed on this machine*, no `error[ffi_package]` and no `at`: `package_problem` read the name up to its first backtick, `a`, which no group names, and `cli/produce.hero` printed the message raw (the trunk's compiler at `dcaca1a3` and the lane's at `e2f98e17`, `<scratchpad>/batch8/ffi/repro/s1/s221-pkg-backtick/` and `repro/r237/`, 2026-10-03); beside it, a `.pc` answering a word that holds the marker's text is quoted with *the package* in its place, the reader replacing every marker on the line | `selfhost/emit/ffi_build.hero` (`package_problem`, `replace_all`) · `selfhost/emit/ffi_lookup.hero` (`package_span`) · the marker's writers in `selfhost/cli/libraries.hero` and `selfhost/cli/shell_split.hero` · **class: blocking**
 
