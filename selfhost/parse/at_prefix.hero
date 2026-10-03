@@ -26,6 +26,11 @@
 # | `@v: T @ e` | the declaration | nothing more, `certain` |
 # | `@v: T = e` | the declaration | nothing more, a `guess`: `v: T @ e` is as likely |
 # | anything else: `@v`, `@v += 1`, `@f(x)` | the line as it stands | none: what the rest computes is the checker's to judge |
+# | `@return 1`, `@for x in xs`: a statement's word | that statement | nothing more, `certain` (defect 179) |
+#
+# Before a statement's word the `@` was read as a value missing and then as a
+# mutation's `@`, the word refused as its value: two messages, neither naming
+# the sigil.
 #
 # **In a value the same habit reads as the name**, `x = @v` or Ruby's
 # `@count = @count + 1`: the `@` is one more certain deletion of the report of
@@ -33,7 +38,7 @@
 #
 # | entry | called by |
 # |---|---|
-# | `before_a_place` | `grammar_expr.expression_or_mutation` |
+# | `opens_a_line` | `grammar_expr.expression_or_mutation` |
 # | `told` | `grammar_expr.prefixed` |
 # | `in_value` | `grammar_expr.primary` |
 
@@ -52,22 +57,34 @@ variant Reading
     discard
     declaration
     value
+    statement
 
 # Does the token under the cursor, an `@`, stand before a name, alone or
 # doubled, Ruby's class variable `@@v`?
 function before_a_place(c: cursor.Cursor) -> bool
+    n = sigils(c)
+    return n > 0 && cursor.peek(c, n) == .ident
+
+# Or, at a statement's start, before a statement's word, `@return 1`.
+function opens_a_line(c: cursor.Cursor) -> bool
     return sigils(c) > 0
 
-# How many `@` stand under the cursor before a name, 0 where none does.
+# How many `@` stand under the cursor before a name or a word that begins a
+# statement, 0 where they stand before anything else.
 function sigils(c: cursor.Cursor) -> i64
     n: i64 @ 0
 
     while cursor.peek(c, n) == .at
         n @ n + 1
 
-    if n > 0 && cursor.peek(c, n) == .ident
+    if n > 0 && (cursor.peek(c, n) == .ident || begins_a_statement(cursor.peek(c, n)))
         return n
     return 0
+
+# The words a statement begins with that a sigil can stand before: no value
+# begins with one but `if` and `match`, whose line is the statement too.
+function begins_a_statement(k: token.TokenKind) -> bool
+    return k == .kw_return || k == .kw_break || k == .kw_continue || k == .kw_assert || k == .kw_for || k == .kw_while || k == .kw_if || k == .kw_match
 
 # The sigil under the cursor passed over, every `@` of it, and its span.
 function passed(@c: cursor.Cursor) -> token.Span
@@ -88,9 +105,12 @@ function passed(@c: cursor.Cursor) -> token.Span
 function told(@c: cursor.Cursor, text: str) -> Reading
     at = passed(@c)
     name = cursor.slice_of(text, cursor.current_span(c))
-    after: cursor.Cursor @ c
-    _ = cursor.bump(@after)
-    reading = past_the_place(@after, discarding: name == "_")
+    after: cursor.Cursor @ cursor.trial(c)
+    reading: Reading @ .statement
+
+    if cursor.at(c, .ident)
+        _ = cursor.bump(@after)
+        reading @ past_the_place(@after, discarding: name == "_")
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "expected_expression",
         message: "expected an expression, found `@` before `" + name + "` — " + words(reading, name),
@@ -150,6 +170,7 @@ function words(reading: Reading, name: str) -> str
         .discard  => "`_` is written bare: `_ = e` discards a value on purpose"
         .declaration => "a name is declared bare, and `@` after its type makes the cell mutable: `" + name + ": <type> @ <value>`"
         .value => read_bare(name)
+        .statement => "a statement begins with its word bare, `" + name + "`, and `@` before a name marks only an argument lent to a mutable parameter, `f(@x)`"
 
 # The words of a sigil read as the name it stands before.
 function read_bare(name: str) -> str

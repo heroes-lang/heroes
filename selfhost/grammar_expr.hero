@@ -956,9 +956,9 @@ function annotated(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     return .error
 
 # Everything else: an expression alone on its line, or the place on the left of
-# an `@`; `@v = e`, a sigil before a name, is `prefixed`.
+# an `@`; `@v = e` or `@return 1`, a sigil, is `prefixed`.
 function expression_or_mutation(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
-    if at_prefix.before_a_place(c)
+    if at_prefix.opens_a_line(c)
         return prefixed(@c, @a, text)
     value = parse_expr(@c, @a, text)
 
@@ -977,14 +977,14 @@ function expression_or_mutation(@c: cursor.Cursor, @a: ast.Ast, text: str) -> as
         )
     return .mutate(place: value, value: parse_expr(@c, @a, text))
 
-# `@v = e`, told once at its `@` and read as the statement the line is with the
-# sigil gone (`parse/at_prefix`): the mutation `v @ e`, past its `=` or `@`,
-# the discard, the declaration, or the line as it stands.
+# `@v = e` or `@return 1`, told once at its `@` and read as the statement the
+# line is with the sigil gone (`parse/at_prefix`): the mutation `v @ e`, past
+# its `=` or `@`, the discard, the declaration, or the statement as it stands.
 function prefixed(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     return match at_prefix.told(@c, text)
-        .declaration => annotated(@c, @a, text)
-        .discard     => bind_stmt(@c, @a, text)
-        .value       => expression_or_mutation(@c, @a, text)
+        .declaration        => annotated(@c, @a, text)
+        .discard            => bind_stmt(@c, @a, text)
+        .value | .statement => statement_kind(@c, @a, text)
         .mutation =>
             place = postfix(@c, @a, text)
             _ = cursor.bump(@c)

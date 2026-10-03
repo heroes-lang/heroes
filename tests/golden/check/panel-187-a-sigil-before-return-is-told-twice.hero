@@ -4,9 +4,13 @@
 # at `return`; a sigil before a name is one message since `4441148b`. Not
 # repaired inline: the statement's start is `grammar_expr.hero`'s, at its
 # ceiling with no line of room, and a repair there first moves code out.
+#
+# Moved 2026-10-03 with defect 179's repair (lane b8-recovery): a sigil
+# before a statement's word is told once, at the `@`, naming it, its
+# deletion certain, and the line read as that statement; it pins that now.
 
 function f() -> i64
-    @return 1  #~ expected_expression expected_expression
+    @return 1  #~ expected_expression
 
 function main()
     print(f())

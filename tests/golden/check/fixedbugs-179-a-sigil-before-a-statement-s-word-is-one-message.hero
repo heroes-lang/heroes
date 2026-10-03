@@ -1,0 +1,54 @@
+# Fixed defect 179, 2026-10-03. Symptom: `@return 1` cost two
+# `expected_expression`, one at the `@` and one at `return`, neither naming
+# the sigil; so did `@break`, `@continue`, `@assert`, `@for` and `@while`, and
+# a mistake after the word went untold. Cause: a sigil before a name is read
+# as the habit it is (`parse/at_prefix`), and before a statement's word the
+# `@` was read as a value missing and then as a mutation's `@`, the word
+# refused as its value. Repair: before a word that begins a statement the
+# sigil is told once, at the `@`, naming it, with its deletion `certain`, and
+# the line is read as that statement, its own mistakes told.
+
+function returns() -> i64
+    @return 1  #~ expected_expression
+
+function returns_nothing()
+    @return  #~ expected_expression
+
+function doubled() -> i64
+    @@return 2  #~ expected_expression
+
+function spaced() -> i64
+    @ return 3  #~ expected_expression
+
+function loops(xs: [i64])
+    @for x in xs  #~ expected_expression
+        print(x)
+    n: i64 @ 2
+
+    @while n > 0  #~ expected_expression
+        n @ n - 1
+
+    while true
+        @break  #~ expected_expression
+
+    for x in xs
+        @continue  #~ expected_expression
+
+function branches(n: i64) -> i64
+    @assert n > 0  #~ expected_expression
+
+    @if n > 1  #~ expected_expression
+        print(n)
+
+    @match n  #~ expected_expression
+        1 => print(1)
+        _ => print(2)
+    return n
+
+function and_a_mistake_after_it() -> i64
+    @return 1 +  #~ expected_expression expected_expression
+
+function main()
+    print(returns() + doubled() + spaced() + branches(2) + and_a_mistake_after_it())
+    returns_nothing()
+    loops([1, 2])
