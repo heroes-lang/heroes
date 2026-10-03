@@ -15,6 +15,8 @@ use source
 use diag
 use emit/assert_spelling
 use emit/ffi_lookup
+use emit/ffi_asked
+use emit/ffi_result
 use parse
 use resolve
 use checker
@@ -23,8 +25,11 @@ use checker
 # failed: the header disagrees with the declared type. Two codes from
 # one assertion, because the same _Generic asks the same question of a
 # call and of a constant, and the reader's mistake is not the same: a
-# function RETURNS the wrong type, a constant IS one.
-function wrong_type(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+# function RETURNS the wrong type, a constant IS one. Where the refused
+# round's question named the header's type (`results`, defect 186), the
+# message names it and offers its word (`emit/ffi_result.hero`); the
+# sentences below are for a round that could not ask.
+function wrong_type(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str, results: {str: ffi_asked.Typed}, word_bits: i64) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
         return fail(code: "none", msg: "not an assertion failure")
     rest = ffi_lookup.after(text: line, marker: assert_spelling.ASSERTION)
@@ -44,6 +49,12 @@ function wrong_type(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diag
 
     if found.is_err()
         return fail(code: "none", msg: "no group declares this name")
+    given = results[name]
+
+    if !given.is_err()
+        return ok(
+            ffi_result.told(s, decls, tree, name: name, declared: declared, found: found.must(), typed: given.must(), word_bits: word_bits)
+        )
 
     if found.must().is_constant
         d: diag.Diagnostic @ diag.new_diagnostic(
@@ -313,18 +324,42 @@ test "wrong_type splits the emitter's own tail into the two codes"
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     line = "main.c:12:1: error: static assertion failed due to requirement 'x': heroes-ffi-return sqrt f64"
-    d = wrong_type(s, parsed.decls, line: line)
+    unasked: {str: ffi_asked.Typed} = {}
+    d = wrong_type(s, parsed.decls, parsed.tree, line: line, results: unasked, word_bits: 64)
     assert d.must().code == "ffi_return_type"
     assert d.must().message == "`sqrt` does not return `f64` — that is what `math.h` says, and clang read it"
-    k = wrong_type(s, parsed.decls, line: "e: static assertion failed: heroes-ffi-return M_PI f64")
+    k = wrong_type(
+        s,
+        parsed.decls,
+        parsed.tree,
+        line: "e: static assertion failed: heroes-ffi-return M_PI f64",
+        results: unasked,
+        word_bits: 64
+    )
     assert k.must().code == "ffi_constant_type"
 
     # The echo line carries the marker without FAILED, and is refused.
     echo = "_Static_assert(HERO_RET_F64(sqrt((double)0)), \"heroes-ffi-return sqrt f64\");"
-    assert wrong_type(s, parsed.decls, line: echo).is_err()
+    assert wrong_type(s, parsed.decls, parsed.tree, line: echo, results: unasked, word_bits: 64).is_err()
 
     # A name no group declares stays the compiler's problem.
-    assert wrong_type(s, parsed.decls, line: "e: static assertion failed: heroes-ffi-return puts i64").is_err()
+    assert wrong_type(s, parsed.decls, parsed.tree, line: "e: static assertion failed: heroes-ffi-return puts i64", results: unasked, word_bits: 64).is_err(
+    )
+
+    # With the refused round's answer the header's type is named and its
+    # word offered (defect 186).
+    asked: {str: ffi_asked.Typed} @ {}
+    asked["sqrt"] @ ffi_asked.Typed(spelled: "double", canonical: "double")
+    named = wrong_type(
+        s,
+        parsed.decls,
+        parsed.tree,
+        line: "e: static assertion failed: heroes-ffi-return sqrt f32",
+        results: asked,
+        word_bits: 64
+    )
+    assert named.must().message == "`sqrt` returns `double` in `math.h`, not `f32` — clang read the header"
+    assert named.must().fixes[0].replacement == "f64"
 
 test "not_constant trims the echo's punctuation and names the object"
     text = "extern \"stdio.h\"\n    constant BUFSIZ: i64\n\nfunction main()\n    print(BUFSIZ)\n"

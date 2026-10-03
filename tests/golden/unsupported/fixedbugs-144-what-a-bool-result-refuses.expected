@@ -1,97 +1,112 @@
-error[ffi_return_type]: `char_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `char_as_bool` returns `char` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:11:5
      |
   11 |     function char_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `char_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `char_as_bool`
+  fix (guess): declare the result `i8`
 
-error[ffi_return_type]: `schar_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `schar_as_bool` returns `signed char` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:12:5
      |
   12 |     function schar_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `schar_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `schar_as_bool`
+  fix (guess): declare the result `i8`
 
-error[ffi_return_type]: `short_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `short_as_bool` returns `short` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:13:5
      |
   13 |     function short_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `short_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `short_as_bool`
+  fix (guess): declare the result `i16`
 
-error[ffi_return_type]: `int_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `int_as_bool` returns `int` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:14:5
      |
   14 |     function int_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `int_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `int_as_bool`
+  fix (guess): declare the result `i32`
 
-error[ffi_return_type]: `long_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `long_as_bool` returns `long` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:15:5
      |
   15 |     function long_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `long_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `long_as_bool`
+  note: `long` is the platform's width, 32 bits on one and 64 on another, and a result or a constant may be wider than C's: `i64` holds every value of it on both
+  fix (guess): declare the result `i64`
 
-error[ffi_return_type]: `llong_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `llong_as_bool` returns `long long` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:16:5
      |
   16 |     function llong_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `llong_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `llong_as_bool`
+  fix (guess): declare the result `i64`
 
-error[ffi_return_type]: `uchar_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `uchar_as_bool` returns `unsigned char` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:17:5
      |
   17 |     function uchar_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `uchar_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `uchar_as_bool`
+  fix (guess): declare the result `u8`
 
-error[ffi_return_type]: `ushort_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `ushort_as_bool` returns `unsigned short` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:18:5
      |
   18 |     function ushort_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `ushort_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ushort_as_bool`
+  fix (guess): declare the result `u16`
 
-error[ffi_return_type]: `uint_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `uint_as_bool` returns `unsigned int` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:19:5
      |
   19 |     function uint_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `uint_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `uint_as_bool`
+  fix (guess): declare the result `u32`
 
-error[ffi_return_type]: `ulong_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `ulong_as_bool` returns `unsigned long` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:20:5
      |
   20 |     function ulong_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `ulong_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ulong_as_bool`
+  note: `unsigned long` is the platform's width, 32 bits on one and 64 on another, and a result or a constant may be wider than C's: `u64` holds every value of it on both
+  fix (guess): declare the result `u64`
 
-error[ffi_return_type]: `ullong_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `ullong_as_bool` returns `unsigned long long` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:21:5
      |
   21 |     function ullong_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `ullong_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ullong_as_bool`
+  fix (guess): declare the result `u64`
 
-error[ffi_return_type]: `float_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `float_as_bool` returns `float` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:22:5
      |
   22 |     function float_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `float_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `float_as_bool`
+  fix (guess): declare the result `f32`
 
-error[ffi_return_type]: `double_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `double_as_bool` returns `double` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:23:5
      |
   23 |     function double_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `double_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `double_as_bool`
+  fix (guess): declare the result `f64`
 
-error[ffi_return_type]: `ldouble_as_bool` does not return `bool` — that is what `fixedbugs-144-results.h` says, and clang read it
+error[ffi_return_type]: `ldouble_as_bool` returns `long double` in `fixedbugs-144-results.h`, not `bool` — clang read the header
   at tests/golden/unsupported/fixedbugs-144-what-a-bool-result-refuses.hero:24:5
      |
   24 |     function ldouble_as_bool() -> bool  #~ ffi_return_type
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `ldouble_as_bool`
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ldouble_as_bool`

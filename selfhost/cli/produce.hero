@@ -173,6 +173,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         package_flags: package_flags.must(),
         version: version
     )
+    under = assemble.compiled_under(t, options, site)
 
     # THE ROUNDS, and the one reason there is more than one (defect 037,
     # panel 152 R1). The first round spells every handle's tag as the author
@@ -220,7 +221,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
             return fail(code: "failed", msg: message)
 
         # Asked only now, of a round clang refused (defect 152).
-        asked = header_ask.ask(t, art.must(), s, under: assemble.compiled_under(t, options, site))
+        asked = header_ask.ask(t, art.must(), s, under: under, struct_tags: struct_tags)
 
         if blamed(message, art.must(), s, answered, struct_tags: struct_tags, asked: asked)
             return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
@@ -242,7 +243,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
             art.must(),
             s,
             answered: @answered,
-            under: assemble.compiled_under(t, options, site),
+            under: under,
             struct_tags: struct_tags,
             version: version
         )
@@ -252,7 +253,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
 
             if failure_code(wrote) != "clang"
                 return fail(code: "failed", msg: message)
-            asked = header_ask.ask(t, art.must(), s, under: assemble.compiled_under(t, options, site))
+            asked = header_ask.ask(t, art.must(), s, under: under, struct_tags: struct_tags)
 
             if blamed(message, art.must(), s, answered, struct_tags: struct_tags, asked: asked)
                 return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")

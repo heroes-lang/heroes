@@ -1,0 +1,307 @@
+# The type a header gives a result or a constant, told back to the program
+# that declared another (design.md §4.17, §4.19; defect 186, 2026-10-03).
+#
+# `ffi_return_type` and `ffi_constant_type` read the return assertion this
+# emitter writes, whose message carries the program's declared type and
+# never the header's, so both said *does not return `i32`* and stopped
+# there, where `ffi_parameter_type` beside them names the header's
+# `int64_t *` and offers `i64`. A refused round asks clang the type of each
+# result and each constant (`emit/ffi_asked.hero`); this module puts the
+# answer in the message and offers the type that declares it.
+#
+# **The offer is a guess**, as the parameter's is: a result and a constant
+# may be declared wider than the header's type (spec § 13), and a width
+# chosen anew reaches every use of the value, so nothing here is applied.
+# Where the language has no word for the type, the message names it and
+# offers nothing.
+
+use token
+use ast
+use source
+use diag
+use emit/c_spellings
+use emit/ffi_asked
+use emit/ffi_lookup
+use parse
+
+# The diagnostic for `name`, declared `declared`, whose header `found` names
+# and whose type the refused round's question answered `typed`.
+function told(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, declared: str, found: ffi_lookup.Declared, typed: ffi_asked.Typed, word_bits: i64) -> diag.Diagnostic
+    shown = "`" + typed.spelled + "`" + also(typed, word_bits: word_bits)
+    header = found.header
+
+    if found.is_constant
+        k: diag.Diagnostic @ diag.new_diagnostic(
+            code: "ffi_constant_type",
+            message: "`" + name + "` is " + shown + " in `" + header + "`, not `" + declared + "` — clang read the header and the types disagree",
+            span: found.span
+        )
+        k.notes @ k.notes.push(
+            "an `extern constant` takes its value and its type from the header (§4.19), and is declared at that type or one that holds every value of it — or the header named is not the one that spells `" + name + "` as `" + declared + "`"
+        )
+        return offered(
+            k,
+            s,
+            decls,
+            tree,
+            name: name,
+            declared: declared,
+            typed: typed,
+            word_bits: word_bits,
+            title: "declare it `"
+        )
+    gives = typed.canonical != "void"
+    message: str @ "`" + name + "` returns " + shown + " in `" + header + "`, not `" + declared + "` — clang read the header"
+    note: str @ "an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `" + name + "`"
+
+    if !gives
+        message @ "`" + name + "` returns nothing in `" + header + "`, its C result being `void`, not `" + declared + "` — clang read the header"
+        note @ "a C function that returns `void` is bound with no `->`, as one that gives nothing back (§4.19)"
+    else if declared == "()"
+        message @ "`" + name + "` returns " + shown + " in `" + header + "`, and this declaration takes nothing back — clang read the header"
+        note @ "a result the header gives is declared after `->`, as its type or one that holds every value of it (§4.19)"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_return_type", message: message, span: found.span)
+    d.notes @ d.notes.push(note)
+
+    if !gives || declared == "()"
+        return d
+    return offered(
+        d,
+        s,
+        decls,
+        tree,
+        name: name,
+        declared: declared,
+        typed: typed,
+        word_bits: word_bits,
+        title: "declare the result `"
+    )
+
+# `typed`'s canonical type, in parentheses, where clang gave one other than
+# the spelling and the spelling is no word of the table: `int64_t` says its
+# width itself, and its canonical type is `long long` here, `long` on Linux,
+# so the message would differ by platform for nothing; `opaque_t *` does
+# not, and `struct opaque *` says what it is.
+function also(typed: ffi_asked.Typed, word_bits: i64) -> str
+    if typed.canonical == typed.spelled || !c_spellings.spelling(c_type: typed.spelled, word_bits: word_bits).is_err()
+        return ""
+    return " (`" + typed.canonical + "`)"
+
+# The diagnostic with the guess that declares `typed`, at the declared
+# type's own span, and the caveat a platform's width owes; unchanged where
+# the language has no word for it, and where its word is the one declared,
+# a record whose tag is the mistake, which that record's own diagnostic
+# tells (`fixedbugs-145-a-result-spells-the-typedef`).
+function offered(given: diag.Diagnostic, s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, declared: str, typed: ffi_asked.Typed, word_bits: i64, title: str) -> diag.Diagnostic
+    word = declaring(s, decls, typed: typed, word_bits: word_bits)
+    at = type_span(s, decls, tree, name: name)
+
+    if word.is_err() || at.is_err() || word.must().heroes == declared
+        return given
+    d: diag.Diagnostic @ given
+
+    if !word.must().caveat.is_err()
+        d.notes @ d.notes.push(word.must().caveat.must())
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: title + word.must().heroes + "`", replacement: word.must().heroes, span: at.must(), certainty: .guess)
+    )
+    return d
+
+# The type that declares a value of `typed`: the spelling table's row for
+# the header's word or for the canonical type; `bool` for C's; a record of
+# the program's own groups named or tagged as the struct, or the struct a
+# pointer reaches; and `ptr` for any other pointer. Absent for a type the
+# language has no word for.
+#
+# **A platform's width is answered for every platform**: the table answers
+# `long` and `size_t` with this machine's word and a caveat naming it, which
+# a parameter needs, held to the header's own width; a result and a constant
+# may be wider (spec § 13), so their 64-bit word of the same sign holds the
+# value on a 32-bit `long` and a 64-bit one alike, and the message is the
+# same on every platform.
+function declaring(s: source.Source, decls: [ast.Decl], typed: ffi_asked.Typed, word_bits: i64) -> c_spellings.Spelling?
+    none: str? = fail(code: "none", msg: "no caveat")
+
+    for word in [typed.spelled, typed.canonical]
+        row = c_spellings.spelling(c_type: word, word_bits: word_bits)
+
+        if !row.is_err() && row.must().caveat.is_err()
+            return row
+
+        if !row.is_err()
+            wide = row.must().heroes.slice(from: 0, to: 1) + "64"
+            caveat: str? = ok(
+                "`" + word + "` is the platform's width, 32 bits on one and 64 on another, and a result or a constant may be wider than C's: `" + wide + "` holds every value of it on both"
+            )
+            return ok(c_spellings.Spelling(heroes: wide, caveat: caveat))
+
+    if typed.canonical == "_Bool" || typed.canonical == "bool"
+        return ok(c_spellings.Spelling(heroes: "bool", caveat: none))
+    pointed = typed.canonical.len() > 0 && typed.canonical[typed.canonical.len() - 1] == '*'
+
+    for word in [typed.spelled, typed.canonical]
+        record_word = group_record(s, decls, tag: tag_of(word))
+
+        if !record_word.is_err()
+            return ok(c_spellings.Spelling(heroes: record_word.must(), caveat: none))
+
+    if pointed
+        return ok(c_spellings.Spelling(heroes: "ptr", caveat: none))
+    return fail(code: "none", msg: "no word for this C type")
+
+# The struct a C type names, by value or through one pointer: its words but
+# `const`, `struct` and the `*`.
+function tag_of(c_type: str) -> str
+    kept: [str] @ []
+
+    for word in ffi_lookup.words(text: c_type)
+        if word != "const" && word != "struct" && word != "*"
+            kept @ kept.push(trim_star(word))
+
+    return kept.join(" ")
+
+function trim_star(word: str) -> str
+    if word.len() > 0 && word[word.len() - 1] == '*'
+        return word.slice(from: 0, to: word.len() - 1)
+    return word
+
+# The name of a record of the program's own groups whose name or tag is
+# `tag`.
+function group_record(s: source.Source, decls: [ast.Decl], tag: str) -> str?
+    if tag.len() == 0
+        return fail(code: "none", msg: "no tag")
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err()
+                    named = source.span_text(s, decl.name) == tag
+                    tagged = !rec.tag.is_err() && source.span_text(s, rec.tag.must()) == tag
+
+                    if named || tagged
+                        return ok(source.span_text(s, decl.name))
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return fail(code: "none", msg: "no group record names it")
+
+# The span of the type a group's `name` is declared with: a constant's, or a
+# function's result where it writes one.
+function type_span(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str) -> token.Span?
+    for decl in decls
+        if source.span_text(s, decl.name) != name
+            continue
+
+        match decl.kind
+            .constant_decl k =>
+                if !k.header.is_err()
+                    return ok(tree.types[k.ty].span)
+            .function_decl fd =>
+                if !fd.value.header.is_err()
+                    match tree.types[fd.value.result].kind
+                        .unit => return fail(code: "none", msg: "no result written")
+                        .named | .array_of | .fixed | .map_of | .fallible | .function_type | .error => return ok(
+                            tree.types[fd.value.result].span
+                        )
+            .record_decl | .variant_decl | .test_decl => continue
+
+    return fail(code: "none", msg: "no group declares this name")
+
+## Tests
+
+test "a result is told by the header's own type, and offered the type that declares it (defect 186)"
+    text = "extern \"cj.h\"\n    record Json tag cJSON\n    function add(object: Json) -> i32\n    function made() -> i32\n    function gone() -> i32\n    function wide() -> i32\n    constant BIG: i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    found = ffi_lookup.declaration(s, parsed.decls, name: "add").must()
+    d = told(
+        s,
+        parsed.decls,
+        parsed.tree,
+        name: "add",
+        declared: "i32",
+        found: found,
+        typed: ffi_asked.Typed(spelled: "int64_t", canonical: "long long"),
+        word_bits: 64
+    )
+    assert d.code == "ffi_return_type"
+
+    # `int64_t` says its width itself, so its canonical type, which differs
+    # by platform, is not shown.
+    assert d.message == "`add` returns `int64_t` in `cj.h`, not `i32` — clang read the header"
+    assert d.fixes.len() == 1
+    assert d.fixes[0].replacement == "i64"
+    assert d.fixes[0].certainty == .guess
+    assert s.text.slice(from: d.fixes[0].span.start, to: d.fixes[0].span.end) == "i32"
+
+    # A pointer to a struct a group's record is tagged with offers the record.
+    made = told(
+        s,
+        parsed.decls,
+        parsed.tree,
+        name: "made",
+        declared: "i32",
+        found: ffi_lookup.declaration(s, parsed.decls, name: "made").must(),
+        typed: ffi_asked.Typed(spelled: "cJSON *", canonical: "struct cJSON *"),
+        word_bits: 64
+    )
+    assert made.fixes[0].replacement == "Json"
+    assert made.message == "`made` returns `cJSON *` (`struct cJSON *`) in `cj.h`, not `i32` — clang read the header"
+
+    # `void`: told as nothing, and nothing offered.
+    gone = told(
+        s,
+        parsed.decls,
+        parsed.tree,
+        name: "gone",
+        declared: "i32",
+        found: ffi_lookup.declaration(s, parsed.decls, name: "gone").must(),
+        typed: ffi_asked.Typed(spelled: "void", canonical: "void"),
+        word_bits: 64
+    )
+    assert gone.message == "`gone` returns nothing in `cj.h`, its C result being `void`, not `i32` — clang read the header"
+    assert gone.fixes.len() == 0
+
+    # A type with no word is named and offered nothing.
+    wide = told(
+        s,
+        parsed.decls,
+        parsed.tree,
+        name: "wide",
+        declared: "i32",
+        found: ffi_lookup.declaration(s, parsed.decls, name: "wide").must(),
+        typed: ffi_asked.Typed(spelled: "long double", canonical: "long double"),
+        word_bits: 64
+    )
+    assert wide.fixes.len() == 0
+
+    # A constant is told as one.
+    big = told(
+        s,
+        parsed.decls,
+        parsed.tree,
+        name: "BIG",
+        declared: "i32",
+        found: ffi_lookup.declaration(s, parsed.decls, name: "BIG").must(),
+        typed: ffi_asked.Typed(spelled: "long long", canonical: "long long"),
+        word_bits: 64
+    )
+    assert big.code == "ffi_constant_type"
+    assert big.message == "`BIG` is `long long` in `cj.h`, not `i32` — clang read the header and the types disagree"
+    assert big.fixes[0].replacement == "i64"
+
+# `long` and `size_t` take their 64-bit word, whatever this machine's is,
+# so the guess and the note are the same on every platform.
+test "a platform's width is answered with the word that holds it on every platform (defect 186)"
+    text = "extern \"w.h\"\n    function count() -> i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+
+    for bits in [32, 64]
+        signed = declaring(s, parsed.decls, typed: ffi_asked.Typed(spelled: "long", canonical: "long"), word_bits: bits).must(
+        )
+        assert signed.heroes == "i64"
+        assert signed.caveat.must() == "`long` is the platform's width, 32 bits on one and 64 on another, and a result or a constant may be wider than C's: `i64` holds every value of it on both"
+        assert declaring(s, parsed.decls, typed: ffi_asked.Typed(spelled: "size_t", canonical: "unsigned long"), word_bits: bits).must().heroes == "u64"
+
+    assert declaring(s, parsed.decls, typed: ffi_asked.Typed(spelled: "int32_t", canonical: "int"), word_bits: 64).must().caveat.is_err(
+    )
