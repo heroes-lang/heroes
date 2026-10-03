@@ -62,8 +62,10 @@ function missing_link(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
 # `cannot find -lX` then `:` or the line's end, and until then the name was
 # cut at the first quote or space, so `link "a'b"` on ld64 and `link "a b"`
 # on GNU ld were an internal error. The longest name the line holds wins.
+# lld-link, the Windows linker, writes `could not open 'X.lib'` then `:`, and
+# a missing library was exit 2 there (panel 188's Windows leg, § 22.2).
 function missing_library(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
-    if !ffi_lookup.has(text: line, needle: "library '") && !ffi_lookup.has(text: line, needle: "cannot find -l")
+    if !ffi_lookup.has(text: line, needle: "library '") && !ffi_lookup.has(text: line, needle: "cannot find -l") && !ffi_lookup.has(text: line, needle: "could not open '")
         return fail(code: "none", msg: "not a missing-library line")
     name: str @ ""
     span: token.Span? @ fail(code: "none", msg: "no group names this library")
@@ -101,12 +103,20 @@ function missing_library(s: source.Source, decls: [ast.Decl], line: str) -> diag
     )
     return ok(d)
 
-# Whether the linker's line is its report of `name` missing, in either
-# spelling, the name whole.
+# Whether the linker's line is its report of `name` missing, in any of the
+# three spellings, the name whole. lld-link opens `-lX` as `X.lib`, and a
+# name already ending in `.lib` is asked as itself too, unrun on Windows.
 function names_library(line: str, name: str) -> bool
     if ffi_lookup.has(text: line, needle: "library '" + name + "' not found")
         return true
-    rest = ffi_lookup.after(text: line, marker: "cannot find -l" + name)
+
+    if ends_the_name(line: line, marker: "could not open '" + name + ".lib'") || ends_the_name(line: line, marker: "could not open '" + name + "'")
+        return true
+    return ends_the_name(line: line, marker: "cannot find -l" + name)
+
+# Whether `marker` stands in the line followed by `:` or by its end.
+function ends_the_name(line: str, marker: str) -> bool
+    rest = ffi_lookup.after(text: line, marker: marker)
     return !rest.is_err() && (rest.must().len() == 0 || rest.must()[0] == ':')
 
 # The symbol out of a linker's complaint, in the spellings the two
@@ -354,3 +364,22 @@ test "a library's name is found in the linker's line whole, a quote or a space i
     longer = missing_library(s, parsed.decls, line: "/usr/bin/ld: cannot find -lab")
     assert source.span_text(s, longer.must().span) == "\"ab\""
     assert missing_library(s, parsed.decls, line: "/usr/bin/ld: cannot find -labc").is_err()
+
+# lld-link's wording as panel 188's Windows leg quotes it (the
+# compiler-engineer's report, § 22.2), behind lld's usual prefix.
+test "a library lld-link could not open is found whole, and only by its own name (panel 188, Windows)"
+    text = "extern \"stdio.h\" link \"x'y\"\n    function f1() -> i32\n\nextern \"stdio.h\" link \"a b\"\n    function f2() -> i32\n\nextern \"stdio.h\" link \"a\"\n    function f3() -> i32\n\nextern \"stdio.h\" link \"ab\"\n    function f4() -> i32\n\nextern \"stdio.h\" link \"z.lib\"\n    function f5() -> i32\n\nfunction main()\n    print(f1() + f2() + f3() + f4() + f5())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    opened = "lld-link: error: could not open '"
+    absent = ": no such file or directory"
+    spaced = missing_library(s, parsed.decls, line: opened + "a b.lib'" + absent)
+    assert source.span_text(s, spaced.must().span) == "\"a b\""
+    quoted = missing_library(s, parsed.decls, line: opened + "x'y.lib'" + absent)
+    assert source.span_text(s, quoted.must().span) == "\"x'y\""
+    longer = missing_library(s, parsed.decls, line: opened + "ab.lib'" + absent)
+    assert source.span_text(s, longer.must().span) == "\"ab\""
+    suffixed = missing_library(s, parsed.decls, line: opened + "z.lib'" + absent)
+    assert source.span_text(s, suffixed.must().span) == "\"z.lib\""
+    assert missing_library(s, parsed.decls, line: opened + "abc.lib'" + absent).is_err()
+    assert missing_library(s, parsed.decls, line: opened + "main.obj'" + absent).is_err()
