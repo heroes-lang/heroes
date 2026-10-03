@@ -21,7 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 1**
+**OPEN: 2**
 
 - [ ] **panel 188** | the Windows names its ratified rules still admit (defects 234 and 235): extend R2 and R6 by their own reasons in batch 8's FFI lane, or convene a sitting? And read the extension of R7 (b) to a `link` string already taken there | `docs/panel/188-a-group-heads-string-is-its-value-and-what-its-tool-cannot-carry-is-refused-on-its-line.md` § After the ratification · `docs/panel/188-reports/ffi-pragmatist.md` § Windows, measured · `docs/panel/188-reports/compiler-engineer.md` § 22
 
@@ -48,5 +48,25 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     taken**: R7 (b)'s refusal of a leading `-` applied to `link` as well,
     because on lld-link `link "-out:pwn188"` builds at exit 0 and writes a
     file of the author's naming; recommended to keep.
+
+- [ ] **lane b8-source** | defect 227, a source byte that is not UTF-8: tell it at exit 1 under the existing `unexpected_character`, landing in batch 8, or under a new code `not_text`, which a sitting must admit? | `<scratchpad>/batch8/source/report.md` § Defect 227 · `docs/work/DEFECTS.md` 227 · design.md §1.10 · panel 087
+
+    **Origin:** lane b8-source, 2026-10-03, stopped before writing a code as
+    its brief asked (a new code is a diagnostic class, CLAUDE.md § 4). Until
+    it is answered 227 stays open, *cannot read* at exit 2 through every verb,
+    and a `use`d module holding the byte is told absent at exit 1.
+
+    **Recommendation: (b), the new code `not_text`, through a sitting**:
+    `unexpected_character`'s message says *not part of the language's syntax*,
+    while inside a comment or a string every character is allowed and what is
+    wrong is the file's encoding, so its code would name the wrong class to a
+    reader; panel 087 (2026-09-03) chose *a code that says what happened* for
+    this same state. Either way the work is the same (the runtime's UTF-8
+    check reports the first bad offset, `cli/input.hero` gives exit 1,
+    `modules.hero` tells a bad byte in a `use`d module), so the choice moves
+    only the label and the sitting's hours. **(a)**, `unexpected_character`
+    with a true message (*the byte 0xE9 at 2:10 is not UTF-8*), lands tonight
+    in batch 8 with no sitting. If the decision above takes its sitting, one
+    sitting can rule on both.
 
 *******************************************************************************
