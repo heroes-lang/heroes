@@ -7,14 +7,16 @@
 #
 # Two shapes of repair, and the line between them is §4.17's:
 #
-# - **certain**, machine-applicable: renaming to the ONE candidate in scope
-#   the name's own letters allow alone (`near_names.one_reading`), and renaming an
-#   unread binding to `_`. Both preserve meaning, and the compiler is the one
-#   that knows the candidate is unique; a candidate the letters do not pin is
-#   the same rename shown as a guess (defect 135).
+# - **certain**, machine-applicable: renaming an unread loop variable or
+#   payload to `_`, which changes nothing but the name.
 # - **guess**, prose for the reader: everything whose repair depends on
 #   intent — removing a parameter (its call sites are elsewhere), deleting a
-#   binding, or writing the type on a cell the resolver cannot infer.
+#   binding, or writing the type on a cell the resolver cannot infer. The
+#   rename to the one candidate in scope is OFFERED here as a guess too:
+#   whether it repairs the mistake is a question about types this pass
+#   cannot ask (defect 220: `sqrt` to `sort`, which takes `[T]`), so
+#   `rename_fit.hero` makes it certain where the name's letters allow the
+#   candidate alone and the program it writes says nothing new.
 #
 # Wording follows the lexer's house style: what is wrong, then an em-dash
 # clause that teaches the rule, then the repair. The message TEXT is the
@@ -23,7 +25,6 @@
 
 use token
 use diag
-use resolve/near_names
 use resolved
 
 ## Names that resolve to nothing
@@ -34,7 +35,7 @@ function unknown_name(name: str, near: [str], span: token.Span) -> diag.Diagnost
         message: "nothing named `" + name + "` is in scope",
         span: span
     )
-    suggest(@d, name, near, span)
+    suggest(@d, near, span)
     return d
 
 # `x.f(y)` is `f(x, y)` and nothing else (§4.11: there are no methods), so
@@ -45,12 +46,12 @@ function unknown_function(name: str, near: [str], span: token.Span) -> diag.Diag
         message: "no function named `" + name + "` — `x." + name + "(…)` means `" + name + "(x, …)`, so `" + name + "` has to be a top-level function or a built-in",
         span: span
     )
-    suggest(@d, name, near, span)
+    suggest(@d, near, span)
     return d
 
 function unknown_type(name: str, near: [str], span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(code: "unknown_type", message: "no type named `" + name + "`", span: span)
-    suggest(@d, name, near, span)
+    suggest(@d, near, span)
     return d
 
 function not_a_type(name: str, what: str, span: token.Span) -> diag.Diagnostic
@@ -171,22 +172,19 @@ function no_mutable_globals(name: str, what: str, span: token.Span) -> diag.Diag
 
 ## Did you mean
 
-# One candidate the letters allow alone → a CERTAIN rename (§4.17 names this
-# case explicitly): `one_reading`. One the letters do not pin → the same
-# rename, shown as a guess and never applied: `True` two edits from `run`,
-# `p` one from `s`, `check --apply` wrote a program refused anew or one that
-# read another binding (defect 135, lane recovery-b3). Several → the names,
-# in prose, and no fix: a tool that picks one of three is guessing, and only
-# certain fixes may be applied.
-function suggest(@d: diag.Diagnostic, name: str, near: [str], span: token.Span)
+# One candidate → the rename, OFFERED as a guess (§4.17 names the rename to
+# the one in-scope candidate as a certain fix, and it becomes one only where
+# `rename_fit.hero` proves it): the letters alone once decided, and `True`
+# two edits from `run`, `p` one from `s` (defect 135, lane recovery-b3), and
+# `sqrt` one from `sort` (defect 220) were each written into a program
+# refused anew or reading another binding. Several → the names, in prose,
+# and no fix: a tool that picks one of three is guessing, and only certain
+# fixes may be applied.
+function suggest(@d: diag.Diagnostic, near: [str], span: token.Span)
     if near.len() == 1
         d.message @ d.message + " — did you mean `" + near[0] + "`?"
-        certainty: diag.Certainty @ .guess
-
-        if near_names.one_reading(name: name, candidate: near[0])
-            certainty @ .certain
         d.fixes @ d.fixes.push(
-            diag.Fix(title: "rename to `" + near[0] + "`", replacement: near[0], span: span, certainty: certainty)
+            diag.Fix(title: "rename to `" + near[0] + "`", replacement: near[0], span: span, certainty: .guess)
         )
         return
 
@@ -200,31 +198,33 @@ function suggest(@d: diag.Diagnostic, name: str, near: [str], span: token.Span)
 
 ## Tests
 
-test "one candidate is a certain rename, three are prose"
+test "one candidate is a rename offered, three are prose"
     span = token.Span(start: 0, end: 5)
     one: [str] = ["total"]
     d = unknown_name("totl", one, span)
     assert d.message == "nothing named `totl` is in scope — did you mean `total`?"
     assert d.fixes.len() == 1
     assert d.fixes[0].replacement == "total"
-    assert d.fixes[0].certainty == .certain
     many: [str] = ["tot", "toll", "tall"]
     e = unknown_name("totl", many, span)
     assert e.fixes.len() == 0
     assert e.message == "nothing named `totl` is in scope — the closest names in scope are `tot`, `toll`, `tall`"
 
-test "a rename is certain only where the letters allow the one name"
+# Defect 220: what makes a rename certain is not this pass's to know, so every
+# one it offers is a guess, the letters' best case included; `rename_fit.hero`
+# proves the ones that are certain.
+test "every rename this pass offers is a guess, whatever its letters"
     span = token.Span(start: 0, end: 4)
     run: [str] = ["run"]
     far = unknown_name("True", run, span)
     assert far.message == "nothing named `True` is in scope — did you mean `run`?"
     assert far.fixes[0].certainty == .guess
-    one: [str] = ["s"]
-    assert unknown_name("p", one, span).fixes[0].certainty == .guess
     literal: [str] = ["true"]
-    assert unknown_name("TRUE", literal, span).fixes[0].certainty == .certain
-    length: [str] = ["length"]
-    assert unknown_name("lenght", length, span).fixes[0].certainty == .certain
+    assert unknown_name("TRUE", literal, span).fixes[0].certainty == .guess
+    sorted: [str] = ["sort"]
+    assert unknown_function("sqrt", sorted, span).fixes[0].certainty == .guess
+    point: [str] = ["Point"]
+    assert unknown_type("Poimt", point, span).fixes[0].certainty == .guess
 
 test "the unused wording follows the kind, and the valve is certain"
     span = token.Span(start: 0, end: 3)

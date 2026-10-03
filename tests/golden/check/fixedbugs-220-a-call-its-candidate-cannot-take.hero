@@ -1,0 +1,37 @@
+# Fixed 2026-10-03, defect 220, lane b8-source: the shapes beside
+# `fixedbugs-220-sqrt-is-not-sort`, a name called where the one candidate its
+# letters allow cannot take the call as written. Each was a certain rename
+# `check --apply` wrote into a program refused anew: a built-in by its
+# argument's type and by its arity, a function of this file by its argument's
+# type, by its arity and by its label, a local that is no function, a record
+# built with its fields unnamed, and a function after a dot by its receiver's
+# type. Each is now a guess. Beside each, the same name in a call that fits
+# stays certain, and `.applied` pins what `--apply` writes: those, and
+# nothing else.
+
+record Point
+    x: i64
+    y: i64
+
+function total(xs: [i64]) -> i64
+    return xs.len()
+
+function main()
+    xs = [1, 2, 3]
+    n = 5
+    count = 4
+    pirnt(n)  #~ unknown_name
+    print(lenn(xs))  #~ unknown_name
+    print(lenn(n))  #~ unknown_name
+    print(lenn(xs, 1))  #~ unknown_name
+    print(totl(xs))  #~ unknown_name
+    print(totl(2.5))  #~ unknown_name
+    print(totl(xs, 2))  #~ unknown_name
+    print(totl(items: xs))  #~ unknown_name
+    print(cuont(1))  #~ unknown_name
+    print(count)
+    p = Pointt(x: 1, y: 2)  #~ unknown_name
+    q = Pointt(3, 4)  #~ unknown_name
+    print(p.x + q.y)
+    print(xs.lenn())  #~ unknown_function
+    print(n.lenn())  #~ unknown_function

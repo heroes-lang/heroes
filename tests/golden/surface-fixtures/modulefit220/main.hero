@@ -1,0 +1,13 @@
+# Fixed 2026-10-03, defect 220, lane b8-source: a name a module does not
+# declare, one slip from the one it does, took the rename as a `certain` fix
+# on its letters alone, so `calc.totl(2.5)` was written `calc.total(2.5)`,
+# refused anew: `total` takes `[i64]`. Now the rename is certain only where
+# the program it writes says nothing new (`selfhost/rename_fit.hero`), as a
+# local name's is: `calc.totl(xs)` still becomes `calc.total(xs)`, the other
+# stays a guess, and `main.applied` pins what `check --apply` writes.
+use calc
+
+function main()
+    xs = [1, 2, 3]
+    print(calc.totl(xs))  #~ unknown_in_module
+    print(calc.totl(2.5))  #~ unknown_in_module

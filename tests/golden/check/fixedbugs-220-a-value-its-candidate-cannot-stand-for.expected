@@ -1,0 +1,12 @@
+tests/golden/check/fixedbugs-220-a-value-its-candidate-cannot-stand-for.hero:28:11: error[unknown_name]: nothing named `totl` is in scope — did you mean `total`?
+tests/golden/check/fixedbugs-220-a-value-its-candidate-cannot-stand-for.hero:29:11: error[unknown_name]: nothing named `itmes` is in scope — did you mean `items`?
+tests/golden/check/fixedbugs-220-a-value-its-candidate-cannot-stand-for.hero:30:18: error[unknown_name]: nothing named `True` is in scope — did you mean `true`?
+tests/golden/check/fixedbugs-220-a-value-its-candidate-cannot-stand-for.hero:31:18: error[unknown_name]: nothing named `True` is in scope — did you mean `true`?
+tests/golden/check/fixedbugs-220-a-value-its-candidate-cannot-stand-for.hero:33:20: error[unknown_name]: nothing named `dobule` is in scope — did you mean `double`?
+tests/golden/check/fixedbugs-220-a-value-its-candidate-cannot-stand-for.hero:34:20: error[unknown_name]: nothing named `shuot` is in scope — did you mean `shout`?
+tests/golden/check/fixedbugs-220-a-value-its-candidate-cannot-stand-for.hero:36:8: error[unknown_type]: no type named `Pointt` — did you mean `Point`?
+tests/golden/check/fixedbugs-220-a-value-its-candidate-cannot-stand-for.hero:37:8: error[unknown_type]: no type named `Amont` — did you mean `Amount`?
+tests/golden/check/fixedbugs-220-a-value-its-candidate-cannot-stand-for.hero:41:5: error[unknown_name]: nothing named `conuter` is in scope — did you mean `counter`?
+tests/golden/check/fixedbugs-220-a-value-its-candidate-cannot-stand-for.hero:42:5: error[unknown_name]: nothing named `lable` is in scope — did you mean `label`?
+tests/golden/check/fixedbugs-220-a-value-its-candidate-cannot-stand-for.hero:45:10: error[unknown_name]: nothing named `sortt` is in scope — did you mean `sort`?
+tests/golden/check/fixedbugs-220-a-value-its-candidate-cannot-stand-for.hero:47:10: error[unknown_name]: nothing named `sqrt` is in scope — did you mean `sort`?

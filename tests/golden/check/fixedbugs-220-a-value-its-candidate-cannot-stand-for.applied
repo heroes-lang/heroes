@@ -1,0 +1,48 @@
+# Fixed 2026-10-03, defect 220, lane b8-source: the other shapes beside
+# `fixedbugs-220-sqrt-is-not-sort`, a name read, written or named as a type
+# where the one candidate its letters allow cannot stand: a local printed
+# that is an array, a literal in another case where an `i64` is asked, a
+# function handed to `map` that takes another type, a type the value is not,
+# a cell of another type written, and a call that fits whose result is
+# refused further on (`gs = sort(fs)`, then `print(gs)`). Each was a certain
+# rename `check --apply` wrote into a program refused anew, and each is now a
+# guess. Beside each, the same shape that fits stays certain, and `.applied`
+# pins what `--apply` writes.
+
+record Point
+    x: i64
+    y: i64
+
+record Amount
+    n: i64
+
+function double(n: i64) -> i64
+    return n * 2
+
+function shout(s: str) -> str
+    return s + "!"
+
+function main()
+    total = 5
+    items = [1, 2]
+    print(total)  #~ unknown_name
+    print(itmes)  #~ unknown_name
+    flag: bool = true  #~ unknown_name
+    width: i64 = True  #~ unknown_name
+    print(flag, width)
+    ys = items.map(double)  #~ unknown_name
+    zs = items.map(shuot)  #~ unknown_name
+    print(ys.len() + zs.len())
+    p: Point = Point(x: 1, y: 2)  #~ unknown_type
+    a: Amont = 5  #~ unknown_type
+    print(p.x + a.n)
+    counter: i64 @ 0
+    label: str @ ""
+    counter @ 5  #~ unknown_name
+    lable @ 5  #~ unknown_name
+    print(counter, label)
+    fs = [2.0, 1.0]
+    hs = sort(fs)  #~ unknown_name
+    print(hs.len())
+    gs = sqrt(fs)  #~ unknown_name
+    print(gs)

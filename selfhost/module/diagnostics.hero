@@ -12,14 +12,14 @@
 # fix carries the repair.
 #
 # The line between certain and guess is resolve_errors' own, applied once
-# more: `geom.f` is certain because it repairs the line and leaves a
-# program that checks clean; `f` from a module with no `use` is a GUESS
-# because applying it leaves a file that still needs the `use`.
+# more: the near name in `geom.f` is offered as a guess and made certain by
+# `rename_fit.hero` where it repairs the line and the program it writes
+# says nothing new; `f` from a module with no `use` is a GUESS because
+# applying it leaves a file that still needs the `use`.
 
 use token
 use diag
 use module/names as module_names
-use resolve/near_names
 
 # One module named twice in one file. Not a shadowing error and not a
 # duplicate declaration — it is a line that does nothing, and saying which
@@ -74,12 +74,14 @@ function unused_use(name: str, span: token.Span) -> diag.Diagnostic
 # module's own name; since `as` exists they differ, and the fix has to carry
 # the first one (panel 101 — this fix was `certain` and did not compile).
 #
-# **The one near name is certain only where the name's own letters allow it
-# alone**, the rule a local name's rename asks (`near_names.one_reading`; defect
-# 135, the certain-fix audit's R3, which found this site with no guard at
-# all): `calc.sub(a: 7, b: 2)` became `calc.sum` and printed 9 where 5 was
-# meant, and `calc.median([1, 2, 9])` became `calc.mean` and printed 4 where
-# 2 was, each a meaningful name one slip or two from another.
+# **The one near name is offered as a guess, and certain only where
+# `rename_fit.hero` proves it**, as a local name's rename is: the name's own
+# letters allow it alone (`near_names.one_reading`; defect 135, the
+# certain-fix audit's R3, which found this site with no guard at all:
+# `calc.sub(a: 7, b: 2)` became `calc.sum` and printed 9 where 5 was meant,
+# and `calc.median([1, 2, 9])` became `calc.mean` and printed 4 where 2 was),
+# and the program it writes says nothing new (defect 220: `calc.totl(2.5)`
+# became `calc.total`, which takes `[i64]`, refused anew).
 function not_in_module(module: str, qualifier: str, name: str, near: [str], span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "unknown_in_module",
@@ -89,12 +91,8 @@ function not_in_module(module: str, qualifier: str, name: str, near: [str], span
 
     if near.len() == 1
         d.message @ "module `" + module + "` declares nothing called `" + name + "` — it has `" + near[0] + "`"
-        certainty: diag.Certainty @ .guess
-
-        if near_names.one_reading(name: name, candidate: near[0])
-            certainty @ .certain
         d.fixes @ d.fixes.push(
-            diag.Fix(title: "write `" + qualifier + "." + near[0] + "`", replacement: near[0], span: span, certainty: certainty)
+            diag.Fix(title: "write `" + qualifier + "." + near[0] + "`", replacement: near[0], span: span, certainty: .guess)
         )
     else if near.len() > 1
         d.message @ "module `" + module + "` declares nothing called `" + name + "` — it has " + listed(near)
@@ -298,16 +296,16 @@ function listed(items: [str]) -> str
 
 ## Tests
 
-test "one candidate rewrites the line, several stay prose"
+test "one candidate is offered as a guess, several stay prose"
     span = token.Span(start: 0, end: 4)
     one: [str] = ["dist2"]
     d = not_in_module(module: "geom", qualifier: "geom", name: "dsit2", near: one, span: span)
     assert d.message == "module `geom` declares nothing called `dsit2` — it has `dist2`"
     assert d.fixes.len() == 1
-    assert d.fixes[0].certainty == .certain
+    assert d.fixes[0].replacement == "dist2"
 
-    # Defect 135: the digit is what tells `dist2` from `dist`, so the one
-    # near name is a second function rather than a slip, and a guess.
+    # Defect 220: what makes it certain is `rename_fit.hero`'s to prove.
+    assert d.fixes[0].certainty == .guess
     twin = not_in_module(module: "geom", qualifier: "geom", name: "dist", near: one, span: span)
     assert twin.fixes.len() == 1
     assert twin.fixes[0].certainty == .guess
