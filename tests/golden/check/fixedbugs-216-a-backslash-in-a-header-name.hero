@@ -12,6 +12,12 @@
 # from a root, `"\\b.h"` or `"C:\\x.h"`, is told as both in one message,
 # routed past both (stage E): the advice to write `/` led to `/b.h`, which the
 # panel 055 check refused next.
+#
+# 2026-10-03, panel 188's Windows leg (the compiler-engineer's report, § 22.3):
+# clang there reads a `\` as a directory separator, `<a\b.h>` opening `a/b.h`,
+# and a trailing one is a file not found. The refusal holds on both; the
+# message gives neither clang's reading as the reason, only that C leaves the
+# `\` undefined and that clang does not read it alike on every platform.
 
 extern "ab\\"    #~ escape_in_header_name
     function b1() -> i32
