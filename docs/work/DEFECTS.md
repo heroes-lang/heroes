@@ -334,4 +334,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a false message; `read_file` answers `file_not_found` for a file it may not open, and the loader takes every failure to read for absence.
 
+    **2026-10-03, lane b8-source, a module whose file is there and cannot be read stops the read as the root does, *cannot read* and the file at exit 2, and only a path where nothing is or can be stays absent** (`selfhost/module/reading.hero`; beside it a directory, a dangling link, a nested file, an unsearchable directory, a module two uses down and a module not UTF-8, the same; a path below a regular file and an absent module still `unknown_module`; a round of `check --apply` that cannot read writes nothing): repaired at `c898bd94`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
 *******************************************************************************
