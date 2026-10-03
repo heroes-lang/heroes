@@ -13,7 +13,8 @@
 # end of its defining block rather than computing liveness, so what
 # must be true is that a counted temporary is never read anywhere else
 # — checked here rather than argued there. Buy the check, not the
-# machinery.
+# machinery. The two ownership questions live in `ir/released.hero`
+# since defect 218's repair (2026-10-03), and this file asks them.
 
 use token
 use source
@@ -24,11 +25,124 @@ use check/table
 use check/state
 use ir
 use ir/containers
-use ir/layout
-use ir/owning
 use ir/place_store
+use ir/released
 
-function check(p: containers.Program, f: containers.Function, blk: containers.Block, c: state.Checked, label: str, @problems: [str])
+# What every block of one function is asked about its slots and its
+# result, answered once per function (defect 218, 2026-10-03). The three
+# slot questions below were asked of EVERY slot in EVERY block, blocks
+# times slots for one function, and a slot's answer does not depend on the
+# block asking: each block still names every slot that fails, in slot
+# order, as it did.
+record Facts
+    # The slots whose type still names a type parameter, in slot order.
+    generic_slots: [i64]
+    # The slots whose type the checker never resolved, in slot order;
+    # none where the program has holes, which carry that type by design.
+    error_slots: [i64]
+    generic_result: bool
+    error_result: bool
+    # The slots a returning block owes a release, in slot order: a local or
+    # synthetic slot of a counted type that is not a parameter.
+    owed: [i64]
+    # Every type's answers, from `type_kinds`: one table for the whole program,
+    # shared by every function's facts and never copied.
+    kinds: [i64]
+
+function facts(p: containers.Program, f: containers.Function, c: state.Checked, kinds: [i64]) -> Facts
+    none: [i64] = []
+
+    match p.phase
+        .lowered => return Facts(
+            generic_slots: none,
+            error_slots: none,
+            generic_result: false,
+            error_result: false,
+            owed: none,
+            kinds: kinds
+        )
+        .mono  => return slot_facts(f, c, owed: none, kinds: kinds)
+        .owned => return slot_facts(f, c, owed: released.owed_slots(f, c), kinds: kinds)
+
+function slot_facts(f: containers.Function, c: state.Checked, owed: [i64], kinds: [i64]) -> Facts
+    generic: [i64] @ []
+    unresolved: [i64] @ []
+    index: i64 @ 0
+
+    for slot in f.slots
+        if names_generic(kinds, ty: slot.ty)
+            generic @ generic.push(index)
+
+        # The error walk is skipped where the program has holes, as
+        # `no_error_survives` skips its own.
+        if c.holes.len() == 0 && names_error(kinds, ty: slot.ty)
+            unresolved @ unresolved.push(index)
+        index @ index + 1
+
+    return Facts(
+        generic_slots: generic,
+        error_slots: unresolved,
+        generic_result: names_generic(kinds, ty: f.result),
+        error_result: c.holes.len() == 0 && names_error(kinds, ty: f.result),
+        owed: owed,
+        kinds: kinds
+    )
+
+# What every type of the table mentions, answered once per verification
+# (defect 218, 2026-10-03): `mentions_generic` and `mentions_error` below
+# walked a type as deep as it goes for every instruction and every slot that
+# carried it, so a type nested 2,000 deep cost 2,000 steps for each of
+# thousands of instructions. A type's answer depends on the table alone, so
+# each is found once, its parts' answers remembered as they are found:
+# `kinds[ty]` is 1 for a type that mentions neither, plus 2 where it
+# mentions a type parameter and 4 where it mentions the error id. The two
+# walks stay, word for word, for their callers in the emitter.
+function type_kinds(c: state.Checked) -> [i64]
+    memo: [i64] @ []
+
+    while memo.len() < table.len_of(c.types)
+        memo @ memo.push(0)
+
+    ty: i64 @ 0
+
+    while ty < memo.len()
+        _ = walked(c, ty: ty, memo: @memo)
+        ty @ ty + 1
+
+    return memo
+
+# One type's flags, from its parts' and remembered: 0 in `memo` is a type
+# not walked yet. Recursive as deep as the type, as the two walks are.
+function walked(c: state.Checked, ty: i64, @memo: [i64]) -> i64
+    if memo[ty] != 0
+        return memo[ty]
+    flags: i64 @ 1
+
+    match table.get(c.types, ty)
+        .generic    => flags @ 3
+        .error      => flags @ 5
+        .array arr  => flags @ walked(c, ty: arr.element, memo: @memo)
+        .fallible o => flags @ walked(c, ty: o.payload, memo: @memo)
+        .fixed x    => flags @ walked(c, ty: x.element, memo: @memo)
+        .map m      => flags @ walked(c, ty: m.key, memo: @memo) | walked(c, ty: m.value, memo: @memo)
+        .function_ty fn_ty =>
+            for one in table.params_of(c.types, fn_ty.params)
+                flags @ flags | walked(c, ty: one, memo: @memo)
+
+            flags @ flags | walked(c, ty: fn_ty.result, memo: @memo)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => flags @ 1
+        .named | .case_ty | .failure                              => flags @ 1
+
+    memo[ty] @ flags
+    return flags
+
+function names_generic(kinds: [i64], ty: i64) -> bool
+    return kinds[ty] & 2 != 0
+
+function names_error(kinds: [i64], ty: i64) -> bool
+    return kinds[ty] & 4 != 0
+
+function check(p: containers.Program, f: containers.Function, blk: containers.Block, c: state.Checked, known: Facts, label: str, @problems: [str])
     match p.phase
         .lowered =>
             has_rc: bool @ false
@@ -48,27 +162,26 @@ function check(p: containers.Program, f: containers.Function, blk: containers.Bl
         # (panel 029 R1).
 
         .mono =>
-            no_generic_survives(f, blk, c, label: label, problems: @problems)
-            no_error_survives(f, blk, c, label: label, problems: @problems)
+            no_generic_survives(blk, known: known, label: label, problems: @problems)
+            no_error_survives(f, blk, c, known: known, label: label, problems: @problems)
         .owned =>
-            no_generic_survives(f, blk, c, label: label, problems: @problems)
-            no_error_survives(f, blk, c, label: label, problems: @problems)
-            released_on_return(f, blk, c, label: label, problems: @problems)
-            owning_temporaries_move_into_slots(blk, c, label: label, problems: @problems)
+            no_generic_survives(blk, known: known, label: label, problems: @problems)
+            no_error_survives(f, blk, c, known: known, label: label, problems: @problems)
+            released.released_on_return(f, blk, owed: known.owed, label: label, problems: @problems)
+            released.owning_temporaries_move_into_slots(blk, c, label: label, problems: @problems)
             place_store.verify(blk, f, c, label: label, problems: @problems)
 
 # Every type in this block is concrete. Checked at mono AND at owned,
 # because the second is where a survivor would do its damage.
-function no_generic_survives(f: containers.Function, blk: containers.Block, c: state.Checked, label: str, @problems: [str])
+function no_generic_survives(blk: containers.Block, known: Facts, label: str, @problems: [str])
     for inst in blk.insts
-        if mentions_generic(c, ty: inst.ty)
+        if names_generic(known.kinds, ty: inst.ty)
             problems @ problems.push(label + "an instruction still has a type parameter in it")
 
-    for slot in f.slots
-        if mentions_generic(c, ty: slot.ty)
-            problems @ problems.push(label + "a slot still has a type parameter in it")
+    for _ in known.generic_slots
+        problems @ problems.push(label + "a slot still has a type parameter in it")
 
-    if mentions_generic(c, ty: f.result)
+    if known.generic_result
         problems @ problems.push(label + "the result still has a type parameter in it")
 
 # NO POISON SURVIVES EITHER (defect 006, docs/work/DONE.md, 2026-09-03). The checker
@@ -88,23 +201,22 @@ function no_generic_survives(f: containers.Function, blk: containers.Block, c: s
 # everything else and produces no binary (spec § Tests and holes). So the
 # check asks the value in hand — does this program have holes? — and not
 # a premise about which passes might have run (CLAUDE.md §11).
-function no_error_survives(f: containers.Function, blk: containers.Block, c: state.Checked, label: str, @problems: [str])
+function no_error_survives(f: containers.Function, blk: containers.Block, c: state.Checked, known: Facts, label: str, @problems: [str])
     if c.holes.len() > 0
         return
 
     for inst in blk.insts
-        if mentions_error(c, ty: inst.ty)
+        if names_error(known.kinds, ty: inst.ty)
             problems @ problems.push(
                 label + "an instruction carries a type the checker never resolved, and no diagnostic says why"
             )
 
-    for slot in f.slots
-        if mentions_error(c, ty: slot.ty)
-            problems @ problems.push(
-                label + "slot `" + slot.name + "` carries a type the checker never resolved, and no diagnostic says why"
-            )
+    for at in known.error_slots
+        problems @ problems.push(
+            label + "slot `" + f.slots[at].name + "` carries a type the checker never resolved, and no diagnostic says why"
+        )
 
-    if mentions_error(c, ty: f.result)
+    if known.error_result
         problems @ problems.push(
             label + "the result carries a type the checker never resolved, and no diagnostic says why"
         )
@@ -146,149 +258,6 @@ function mentions_generic(c: state.Checked, ty: i64) -> bool
         .named | .case_ty | .failure | .error                     => return false
 
     return false
-
-# A returning block releases every local and synthetic slot it owns.
-# Parameters are BORROWED and @ parameters are COPIED OUT, so neither
-# is counted here — the calling convention, asserted rather than
-# trusted: taking the other reading was the first program panel 021's
-# ffi-pragmatist compiled, and ASan failed it on the first run.
-#
-# "Released" means a decref of a load taken AFTER the slot's last
-# write. Counting decrefs was a proxy; matching decref to load could
-# not tell a sweep from a store either, because a store to a counted
-# slot also loads the old value and decrefs it, byte-identical to a
-# sweep pair. What separates them is POSITION — the store's load
-# precedes the store, the sweep's follows it. Found by removing a sweep
-# decref by hand and watching the check stay silent.
-function released_on_return(f: containers.Function, blk: containers.Block, c: state.Checked, label: str, @problems: [str])
-    is_return: bool @ false
-
-    match blk.term
-        .return_term                                          => is_return @ true
-        .jump | .branch | .switch_term | .unreachable | .open => is_return @ is_return
-
-    if !is_return
-        return
-    index: i64 @ 0
-
-    for slot in f.slots
-        owed: bool @ false
-
-        match slot.kind
-            .local_slot | .synthetic_slot => owed @ true
-            .param_slot                   => owed @ owed
-
-        if owed && !layout.is_refcounted(c, slot.ty)
-            owed @ false
-
-        if owed
-            for p in f.params
-                if p == index
-                    owed @ false
-
-        if owed && !released_after(blk, slot_at: index, floor: last_write(blk, slot_at: index))
-            problems @ problems.push(label + "returns without releasing `" + slot.name + "`, a slot it owns")
-        index @ index + 1
-
-# The index just past this slot's last whole-slot store, 0 when it was
-# never written: the sweep's load must come after it.
-function last_write(blk: containers.Block, slot_at: i64) -> i64
-    floor: i64 @ 0
-    at: i64 @ 0
-
-    for inst in blk.insts
-        # The no-op arms MUST NOT say continue: the counter at the
-        # bottom is the position, and continue skips it — found the day
-        # the ownership pass first exercised this check, as twelve
-        # false "returns without releasing".
-        match inst.op
-            .store st =>
-                if st.place.root == slot_at && st.place.path.length == 0
-                    floor @ at + 1
-            .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct              => at @ at
-            .field | .index | .map_get | .len_of | .tag_of | .payload                               => at @ at
-            .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => at @ at
-
-        at @ at + 1
-
-    return floor
-
-function released_after(blk: containers.Block, slot_at: i64, floor: i64) -> bool
-    at: i64 @ 0
-
-    for inst in blk.insts
-        if at >= floor
-            match inst.op
-                # The direct form, since panel 106: the release names the
-                # slot, so the question this function asks is answered by
-                # reading the instruction rather than by tracing a
-                # temporary back to its load.
-                .decref_slot ds =>
-                    if ds.slot == slot_at
-                        return true
-                .decref rc =>
-                    if loaded_from(blk, value: rc.value, slot_at: slot_at, floor: floor, before: at)
-                        return true
-                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => at @ at
-                .field | .index | .map_get | .len_of | .tag_of | .payload                           => at @ at
-                .func_ref | .copy_out | .abort_op | .incref | .hole | .missing                      => at @ at
-        at @ at + 1
-
-    return false
-
-# Was `value` produced by a whole-slot load of this slot, between the
-# floor and the decref?
-function loaded_from(blk: containers.Block, value: i64, slot_at: i64, floor: i64, before: i64) -> bool
-    at: i64 @ 0
-
-    for inst in blk.insts
-        if at >= floor && at < before
-            if !inst.dest.is_err() && inst.dest.must() == value
-                match inst.op
-                    .load ld =>
-                        if ld.place.root == slot_at && ld.place.path.length == 0
-                            return true
-                    .lit | .store | .push_owned | .unary | .binary | .cast | .call | .construct             => at @ at
-                    .field | .index | .map_get | .len_of | .tag_of | .payload                               => at @ at
-                    .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => at @ at
-        at @ at + 1
-
-    return false
-
-# EVERY OWNING TEMPORARY IS MOVED INTO A SLOT IN THE BLOCK THAT DEFINES
-# IT. This is the invariant that replaces liveness: the ownership pass
-# never releases a temporary — it moves the reference into a synthetic
-# slot the instruction after it appears — so nothing owned crosses a
-# block edge. Two earlier wordings were refuted, BOTH too strong: "a
-# counted temporary is read only in its block" fired on assert's
-# operands crossing into the abort block (harmless — a literal is
-# static), and "a released temporary never crosses" fired on
-# `... + got.must().to_str()`, where .must() opens a block mid-
-# expression — not a corner case, but what any expression containing a
-# fallible call looks like.
-function owning_temporaries_move_into_slots(blk: containers.Block, c: state.Checked, label: str, @problems: [str])
-    for inst in blk.insts
-        if inst.dest.is_err()
-            continue
-        dest = inst.dest.must()
-
-        if !owning.allocates(inst.op) || !layout.is_refcounted(c, inst.ty)
-            continue
-        moved: bool @ false
-
-        for one in blk.insts
-            match one.op
-                .store st =>
-                    if st.value == dest
-                        moved @ true
-                .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct              => continue
-                .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
-                .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
-
-        if !moved
-            problems @ problems.push(
-                label + "$" + dest.to_str() + " owns a reference and no store in this block takes it — a temporary never carries ownership across an edge"
-            )
 
 ## Tests
 
@@ -353,7 +322,7 @@ test "a type the checker never resolved is refused after mono, unless the progra
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.holes.len() == 0
     problems: [str] @ []
-    check(p, f, blk, c, label: "", problems: @problems)
+    check(p, f, blk, c, known: facts(p, f, c, kinds: type_kinds(c)), label: "", problems: @problems)
     assert problems.len() == 2
     assert problems[0] == "an instruction carries a type the checker never resolved, and no diagnostic says why"
     assert problems[1] == "slot `own5` carries a type the checker never resolved, and no diagnostic says why"
@@ -367,7 +336,7 @@ test "a type the checker never resolved is refused after mono, unless the progra
     c_h = checker.check(parsed_h.tree, out_h, s_h, parsed_h.decls)
     assert c_h.holes.len() == 1
     quiet: [str] @ []
-    check(p, f, blk, c_h, label: "", problems: @quiet)
+    check(p, f, blk, c_h, known: facts(p, f, c_h, kinds: type_kinds(c_h)), label: "", problems: @quiet)
     assert quiet.len() == 0
 
 test "a refcount op before the ownership pass is named, after it is legal"
@@ -387,6 +356,109 @@ test "a refcount op before the ownership pass is named, after it is legal"
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     problems: [str] @ []
-    check(p, p.functions[0], blk, c, label: "", problems: @problems)
+    check(
+        p,
+        p.functions[0],
+        blk,
+        c,
+        known: facts(p, p.functions[0], c, kinds: type_kinds(c)),
+        label: "",
+        problems: @problems
+    )
     assert problems.len() == 1
     assert problems[0] == "a refcount operation before the ownership pass"
+
+test "a type parameter left in an instruction, a slot or the result is named in every block after mono"
+    text = "record R\n    n: i64\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    tbl: table.Types @ c.types
+    loose = table.intern(@tbl, .generic(at: 0))
+    held = table.intern(@tbl, .array(element: loose))
+    c.types @ tbl
+    span = token.Span(start: 0, end: 1)
+    insts: [ir.Inst] = [ir.Inst(dest: ok(1), op: .lit(value: .bool_const(value: true)), ty: held, span: span)]
+    blk = containers.Block(
+        preds: [],
+        insts: insts,
+        term: .return_term(value: fail(code: "none", msg: "no value")),
+        note: "t"
+    )
+    p: containers.Program @ phase_scaffold(.mono, blk)
+    p.functions[0].slots @ [
+        containers.Slot(name: "a", ty: held, kind: .local_slot(mutable: false))
+        containers.Slot(name: "b", ty: table.int_ty_id(c.types), kind: .local_slot(mutable: false))
+        containers.Slot(name: "c", ty: loose, kind: .synthetic_slot)
+    ]
+    p.functions[0].result @ loose
+    p.functions[0].blocks @ [blk, blk]
+    f = p.functions[0]
+    known = facts(p, f, c, kinds: type_kinds(c))
+    assert known.generic_slots == [0, 2]
+    problems: [str] @ []
+    check(p, f, f.blocks[0], c, known: known, label: "bb0: ", problems: @problems)
+    check(p, f, f.blocks[1], c, known: known, label: "bb1: ", problems: @problems)
+
+    # Each block names each: the slots answered once for the function, as
+    # many times as before, in slot order.
+    assert problems == ["bb0: an instruction still has a type parameter in it", "bb0: a slot still has a type parameter in it", "bb0: a slot still has a type parameter in it", "bb0: the result still has a type parameter in it", "bb1: an instruction still has a type parameter in it", "bb1: a slot still has a type parameter in it", "bb1: a slot still has a type parameter in it", "bb1: the result still has a type parameter in it"]
+
+    # Before mono nothing is asked: a generic body lowers polymorphically.
+    lowered: containers.Program @ p
+    lowered.phase @ .lowered
+    quiet: [str] @ []
+    check(lowered, f, f.blocks[0], c, known: facts(lowered, f, c, kinds: type_kinds(c)), label: "", problems: @quiet)
+    assert quiet.len() == 0
+
+test "every type's flags say what the two walks say, on a table with parameters and the error id inside every kind of type"
+    text = "function id<T>(x: T) -> T\n    return x\n\nfunction main()\n    print(id(1))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    tbl: table.Types @ c.types
+    loose = table.intern(@tbl, .generic(at: 0))
+    poison = table.error_ty(tbl)
+    number = table.int_ty_id(tbl)
+    deep: i64 @ loose
+    layers: i64 @ 0
+
+    # A parameter fifty arrays deep, then each kind of type with a
+    # parameter or the error id somewhere inside it, and beside it clean.
+    while layers < 50
+        deep @ table.intern(@tbl, .array(element: deep))
+        layers @ layers + 1
+
+    _ = table.intern(@tbl, .map(key: table.str_ty(tbl), value: loose))
+    _ = table.intern(@tbl, .map(key: poison, value: number))
+    _ = table.intern(@tbl, .map(key: number, value: number))
+    _ = table.intern(@tbl, .fallible(payload: poison))
+    _ = table.intern(@tbl, .fixed(element: loose, length: 4))
+    _ = table.intern_function(@tbl, params: [number, poison], labels: ["a", "b"], result: number)
+    _ = table.intern_function(@tbl, params: [number], labels: ["a"], result: loose)
+    _ = table.intern_function(@tbl, params: [number], labels: ["a"], result: number)
+    c.types @ tbl
+    flags = type_kinds(c)
+    ty: i64 @ 0
+    asked: i64 @ 0
+    generic_seen: i64 @ 0
+    error_seen: i64 @ 0
+
+    while ty < table.len_of(c.types)
+        assert names_generic(flags, ty: ty) == mentions_generic(c, ty: ty)
+        assert names_error(flags, ty: ty) == mentions_error(c, ty: ty)
+
+        if names_generic(flags, ty: ty)
+            generic_seen @ generic_seen + 1
+
+        if names_error(flags, ty: ty)
+            error_seen @ error_seen + 1
+        asked @ asked + 1
+        ty @ ty + 1
+
+    # The table held both answers, many times: the test asked something.
+    assert asked > 60
+    assert generic_seen > 40
+    assert error_seen >= 4
