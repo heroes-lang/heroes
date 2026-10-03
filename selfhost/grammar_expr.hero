@@ -1218,9 +1218,6 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str, own_block: bool) -> ast.
 
 ## Tests — the precedence table, read back off real token streams
 
-function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
-    return token.Token(kind: kind, span: token.Span(start: start, end: end))
-
 # The tree, written back out fully parenthesised. A precedence table is only
 # testable through what it BUILDS, and this is the cheapest way to see it.
 # `(interp f"a { n } b")`: the pieces verbatim and each hole re-printed, so a
@@ -1265,12 +1262,12 @@ function render(a: ast.Ast, at: i64, text: str) -> str
 test "multiplication binds tighter than addition, and both are left-associative"
     # 1 + 2 * 3
     stream: [token.Token] = [
-        tok(.int_lit, start: 0, end: 1)
-        tok(.plus, start: 2, end: 3)
-        tok(.int_lit, start: 4, end: 5)
-        tok(.star, start: 6, end: 7)
-        tok(.int_lit, start: 8, end: 9)
-        tok(.eof, start: 9, end: 9)
+        token.made(.int_lit, start: 0, end: 1)
+        token.made(.plus, start: 2, end: 3)
+        token.made(.int_lit, start: 4, end: 5)
+        token.made(.star, start: 6, end: 7)
+        token.made(.int_lit, start: 8, end: 9)
+        token.made(.eof, start: 9, end: 9)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1279,12 +1276,12 @@ test "multiplication binds tighter than addition, and both are left-associative"
 
     # 1 - 2 - 3 groups left
     left: [token.Token] = [
-        tok(.int_lit, start: 0, end: 1)
-        tok(.minus, start: 2, end: 3)
-        tok(.int_lit, start: 4, end: 5)
-        tok(.minus, start: 6, end: 7)
-        tok(.int_lit, start: 8, end: 9)
-        tok(.eof, start: 9, end: 9)
+        token.made(.int_lit, start: 0, end: 1)
+        token.made(.minus, start: 2, end: 3)
+        token.made(.int_lit, start: 4, end: 5)
+        token.made(.minus, start: 6, end: 7)
+        token.made(.int_lit, start: 8, end: 9)
+        token.made(.eof, start: 9, end: 9)
     ]
     d: cursor.Cursor @ cursor.new_cursor(left)
     b: ast.Ast @ ast.new_ast()
@@ -1294,12 +1291,12 @@ test "multiplication binds tighter than addition, and both are left-associative"
 test "comparisons sit above &&, so a < b && c needs no parentheses"
     # a < b && c
     stream: [token.Token] = [
-        tok(.ident, start: 0, end: 1)
-        tok(.lt, start: 2, end: 3)
-        tok(.ident, start: 4, end: 5)
-        tok(.and_and, start: 6, end: 8)
-        tok(.ident, start: 9, end: 10)
-        tok(.eof, start: 10, end: 10)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.lt, start: 2, end: 3)
+        token.made(.ident, start: 4, end: 5)
+        token.made(.and_and, start: 6, end: 8)
+        token.made(.ident, start: 9, end: 10)
+        token.made(.eof, start: 10, end: 10)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1309,12 +1306,12 @@ test "comparisons sit above &&, so a < b && c needs no parentheses"
 test "C's own mistake is not inherited: & binds tighter than =="
     # x & 1 == 0  — in C this means x & (1 == 0); here it is (x & 1) == 0
     stream: [token.Token] = [
-        tok(.ident, start: 0, end: 1)
-        tok(.amp, start: 2, end: 3)
-        tok(.int_lit, start: 4, end: 5)
-        tok(.eq_eq, start: 6, end: 8)
-        tok(.int_lit, start: 9, end: 10)
-        tok(.eof, start: 10, end: 10)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.amp, start: 2, end: 3)
+        token.made(.int_lit, start: 4, end: 5)
+        token.made(.eq_eq, start: 6, end: 8)
+        token.made(.int_lit, start: 9, end: 10)
+        token.made(.eof, start: 10, end: 10)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1324,13 +1321,13 @@ test "C's own mistake is not inherited: & binds tighter than =="
 test "the suffixes chain left to right"
     # xs[0].f
     stream: [token.Token] = [
-        tok(.ident, start: 0, end: 2)
-        tok(.lbracket, start: 2, end: 3)
-        tok(.int_lit, start: 3, end: 4)
-        tok(.rbracket, start: 4, end: 5)
-        tok(.dot, start: 5, end: 6)
-        tok(.ident, start: 6, end: 7)
-        tok(.eof, start: 7, end: 7)
+        token.made(.ident, start: 0, end: 2)
+        token.made(.lbracket, start: 2, end: 3)
+        token.made(.int_lit, start: 3, end: 4)
+        token.made(.rbracket, start: 4, end: 5)
+        token.made(.dot, start: 5, end: 6)
+        token.made(.ident, start: 6, end: 7)
+        token.made(.eof, start: 7, end: 7)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1339,11 +1336,11 @@ test "the suffixes chain left to right"
 
     # e? binds tightest of all
     q: [token.Token] = [
-        tok(.ident, start: 0, end: 1)
-        tok(.question, start: 1, end: 2)
-        tok(.plus, start: 3, end: 4)
-        tok(.int_lit, start: 5, end: 6)
-        tok(.eof, start: 6, end: 6)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.question, start: 1, end: 2)
+        token.made(.plus, start: 3, end: 4)
+        token.made(.int_lit, start: 5, end: 6)
+        token.made(.eof, start: 6, end: 6)
     ]
     d: cursor.Cursor @ cursor.new_cursor(q)
     b: ast.Ast @ ast.new_ast()
@@ -1353,13 +1350,13 @@ test "the suffixes chain left to right"
 test "a dot with parentheses is UFCS, without them a field"
     # x.f(y)
     stream: [token.Token] = [
-        tok(.ident, start: 0, end: 1)
-        tok(.dot, start: 1, end: 2)
-        tok(.ident, start: 2, end: 3)
-        tok(.lparen, start: 3, end: 4)
-        tok(.ident, start: 4, end: 5)
-        tok(.rparen, start: 5, end: 6)
-        tok(.eof, start: 6, end: 6)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.dot, start: 1, end: 2)
+        token.made(.ident, start: 2, end: 3)
+        token.made(.lparen, start: 3, end: 4)
+        token.made(.ident, start: 4, end: 5)
+        token.made(.rparen, start: 5, end: 6)
+        token.made(.eof, start: 6, end: 6)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1369,12 +1366,12 @@ test "a dot with parentheses is UFCS, without them a field"
 test "a trailing comma is refused with the deletion as its fix"
     # f(a,)
     stream: [token.Token] = [
-        tok(.ident, start: 0, end: 1)
-        tok(.lparen, start: 1, end: 2)
-        tok(.ident, start: 2, end: 3)
-        tok(.comma, start: 3, end: 4)
-        tok(.rparen, start: 4, end: 5)
-        tok(.eof, start: 5, end: 5)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.lparen, start: 1, end: 2)
+        token.made(.ident, start: 2, end: 3)
+        token.made(.comma, start: 3, end: 4)
+        token.made(.rparen, start: 4, end: 5)
+        token.made(.eof, start: 5, end: 5)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1386,13 +1383,13 @@ test "a trailing comma is refused with the deletion as its fix"
 
 test "a name before `@` reads as f(a: @n) and as f(a, @n), neither certain"
     stream: [token.Token] = [
-        tok(.ident, start: 0, end: 1)
-        tok(.lparen, start: 1, end: 2)
-        tok(.ident, start: 2, end: 3)
-        tok(.at, start: 4, end: 5)
-        tok(.ident, start: 6, end: 7)
-        tok(.rparen, start: 7, end: 8)
-        tok(.eof, start: 8, end: 8)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.lparen, start: 1, end: 2)
+        token.made(.ident, start: 2, end: 3)
+        token.made(.at, start: 4, end: 5)
+        token.made(.ident, start: 6, end: 7)
+        token.made(.rparen, start: 7, end: 8)
+        token.made(.eof, start: 8, end: 8)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1408,12 +1405,12 @@ test "inside brackets a newline is a separator, not a statement end"
     # [1
     #  2]  — the lexer plants a terminator between them
     stream: [token.Token] = [
-        tok(.lbracket, start: 0, end: 1)
-        tok(.int_lit, start: 1, end: 2)
-        tok(.terminator, start: 2, end: 2)
-        tok(.int_lit, start: 3, end: 4)
-        tok(.rbracket, start: 4, end: 5)
-        tok(.eof, start: 5, end: 5)
+        token.made(.lbracket, start: 0, end: 1)
+        token.made(.int_lit, start: 1, end: 2)
+        token.made(.terminator, start: 2, end: 2)
+        token.made(.int_lit, start: 3, end: 4)
+        token.made(.rbracket, start: 4, end: 5)
+        token.made(.eof, start: 5, end: 5)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1424,10 +1421,10 @@ test "inside brackets a newline is a separator, not a statement end"
 test "a pattern's operand never consumes the join, which is what | is there"
     # 1 | 2 in pattern position must stop at the `|`, leaving it for the arm.
     stream: [token.Token] = [
-        tok(.int_lit, start: 0, end: 1)
-        tok(.pipe, start: 2, end: 3)
-        tok(.int_lit, start: 4, end: 5)
-        tok(.eof, start: 5, end: 5)
+        token.made(.int_lit, start: 0, end: 1)
+        token.made(.pipe, start: 2, end: 3)
+        token.made(.int_lit, start: 4, end: 5)
+        token.made(.eof, start: 5, end: 5)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1447,11 +1444,11 @@ test "a pattern's operand never consumes the join, which is what | is there"
 test "the three name-shaped lines are told apart by one token"
     # x = 5
     bind_line: [token.Token] = [
-        tok(.ident, start: 0, end: 1)
-        tok(.eq, start: 2, end: 3)
-        tok(.int_lit, start: 4, end: 5)
-        tok(.terminator, start: 5, end: 5)
-        tok(.eof, start: 5, end: 5)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.eq, start: 2, end: 3)
+        token.made(.int_lit, start: 4, end: 5)
+        token.made(.terminator, start: 5, end: 5)
+        token.made(.eof, start: 5, end: 5)
     ]
     c: cursor.Cursor @ cursor.new_cursor(bind_line)
     a: ast.Ast @ ast.new_ast()
@@ -1466,13 +1463,13 @@ test "the three name-shaped lines are told apart by one token"
 
     # v @ v + 1 — a mutation, because the place is followed by `@`
     mutate_line: [token.Token] = [
-        tok(.ident, start: 0, end: 1)
-        tok(.at, start: 2, end: 3)
-        tok(.ident, start: 4, end: 5)
-        tok(.plus, start: 6, end: 7)
-        tok(.int_lit, start: 8, end: 9)
-        tok(.terminator, start: 9, end: 9)
-        tok(.eof, start: 9, end: 9)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.at, start: 2, end: 3)
+        token.made(.ident, start: 4, end: 5)
+        token.made(.plus, start: 6, end: 7)
+        token.made(.int_lit, start: 8, end: 9)
+        token.made(.terminator, start: 9, end: 9)
+        token.made(.eof, start: 9, end: 9)
     ]
     d: cursor.Cursor @ cursor.new_cursor(mutate_line)
     b: ast.Ast @ ast.new_ast()
@@ -1488,14 +1485,14 @@ test "the three name-shaped lines are told apart by one token"
 test "only a place can be mutated"
     # f(x) @ 1 — a call is not a place
     stream: [token.Token] = [
-        tok(.ident, start: 0, end: 1)
-        tok(.lparen, start: 1, end: 2)
-        tok(.ident, start: 2, end: 3)
-        tok(.rparen, start: 3, end: 4)
-        tok(.at, start: 5, end: 6)
-        tok(.int_lit, start: 7, end: 8)
-        tok(.terminator, start: 8, end: 8)
-        tok(.eof, start: 8, end: 8)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.lparen, start: 1, end: 2)
+        token.made(.ident, start: 2, end: 3)
+        token.made(.rparen, start: 3, end: 4)
+        token.made(.at, start: 5, end: 6)
+        token.made(.int_lit, start: 7, end: 8)
+        token.made(.terminator, start: 8, end: 8)
+        token.made(.eof, start: 8, end: 8)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1506,15 +1503,15 @@ test "the Python colon is eaten with its fix, so the block still parses"
     # while c:
     #     break
     stream: [token.Token] = [
-        tok(.kw_while, start: 0, end: 5)
-        tok(.ident, start: 6, end: 7)
-        tok(.colon, start: 7, end: 8)
-        tok(.terminator, start: 8, end: 8)
-        tok(.indent, start: 9, end: 13)
-        tok(.kw_break, start: 13, end: 18)
-        tok(.terminator, start: 18, end: 18)
-        tok(.dedent, start: 19, end: 19)
-        tok(.eof, start: 19, end: 19)
+        token.made(.kw_while, start: 0, end: 5)
+        token.made(.ident, start: 6, end: 7)
+        token.made(.colon, start: 7, end: 8)
+        token.made(.terminator, start: 8, end: 8)
+        token.made(.indent, start: 9, end: 13)
+        token.made(.kw_break, start: 13, end: 18)
+        token.made(.terminator, start: 18, end: 18)
+        token.made(.dedent, start: 19, end: 19)
+        token.made(.eof, start: 19, end: 19)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1532,15 +1529,15 @@ test "the Python colon is eaten with its fix, so the block still parses"
 test "for over a condition is met with while, and the certainty says how sure"
     # for !done — no loop variable can be there, so the fix is CERTAIN
     sure: [token.Token] = [
-        tok(.kw_for, start: 0, end: 3)
-        tok(.bang, start: 4, end: 5)
-        tok(.ident, start: 5, end: 9)
-        tok(.terminator, start: 9, end: 9)
-        tok(.indent, start: 10, end: 14)
-        tok(.kw_break, start: 14, end: 19)
-        tok(.terminator, start: 19, end: 19)
-        tok(.dedent, start: 20, end: 20)
-        tok(.eof, start: 20, end: 20)
+        token.made(.kw_for, start: 0, end: 3)
+        token.made(.bang, start: 4, end: 5)
+        token.made(.ident, start: 5, end: 9)
+        token.made(.terminator, start: 9, end: 9)
+        token.made(.indent, start: 10, end: 14)
+        token.made(.kw_break, start: 14, end: 19)
+        token.made(.terminator, start: 19, end: 19)
+        token.made(.dedent, start: 20, end: 20)
+        token.made(.eof, start: 20, end: 20)
     ]
     c: cursor.Cursor @ cursor.new_cursor(sure)
     a: ast.Ast @ ast.new_ast()
@@ -1551,16 +1548,16 @@ test "for over a condition is met with while, and the certainty says how sure"
 
     # for x > 0 — `for x of xs` reaches the same state, so it is a GUESS
     unsure: [token.Token] = [
-        tok(.kw_for, start: 0, end: 3)
-        tok(.ident, start: 4, end: 5)
-        tok(.gt, start: 6, end: 7)
-        tok(.int_lit, start: 8, end: 9)
-        tok(.terminator, start: 9, end: 9)
-        tok(.indent, start: 10, end: 14)
-        tok(.kw_break, start: 14, end: 19)
-        tok(.terminator, start: 19, end: 19)
-        tok(.dedent, start: 20, end: 20)
-        tok(.eof, start: 20, end: 20)
+        token.made(.kw_for, start: 0, end: 3)
+        token.made(.ident, start: 4, end: 5)
+        token.made(.gt, start: 6, end: 7)
+        token.made(.int_lit, start: 8, end: 9)
+        token.made(.terminator, start: 9, end: 9)
+        token.made(.indent, start: 10, end: 14)
+        token.made(.kw_break, start: 14, end: 19)
+        token.made(.terminator, start: 19, end: 19)
+        token.made(.dedent, start: 20, end: 20)
+        token.made(.eof, start: 20, end: 20)
     ]
     d: cursor.Cursor @ cursor.new_cursor(unsure)
     b: ast.Ast @ ast.new_ast()
@@ -1571,18 +1568,18 @@ test "for over a condition is met with while, and the certainty says how sure"
     # loop and the fix is a GUESS, though `(` can begin an expression
     # (`parse/loop_habit`, lane X3, 2026-09-29).
     c_style: [token.Token] = [
-        tok(.kw_for, start: 0, end: 3)
-        tok(.lparen, start: 4, end: 5)
-        tok(.ident, start: 5, end: 6)
-        tok(.eq, start: 7, end: 8)
-        tok(.int_lit, start: 9, end: 10)
-        tok(.rparen, start: 10, end: 11)
-        tok(.terminator, start: 11, end: 11)
-        tok(.indent, start: 12, end: 16)
-        tok(.kw_break, start: 16, end: 21)
-        tok(.terminator, start: 21, end: 21)
-        tok(.dedent, start: 22, end: 22)
-        tok(.eof, start: 22, end: 22)
+        token.made(.kw_for, start: 0, end: 3)
+        token.made(.lparen, start: 4, end: 5)
+        token.made(.ident, start: 5, end: 6)
+        token.made(.eq, start: 7, end: 8)
+        token.made(.int_lit, start: 9, end: 10)
+        token.made(.rparen, start: 10, end: 11)
+        token.made(.terminator, start: 11, end: 11)
+        token.made(.indent, start: 12, end: 16)
+        token.made(.kw_break, start: 16, end: 21)
+        token.made(.terminator, start: 21, end: 21)
+        token.made(.dedent, start: 22, end: 22)
+        token.made(.eof, start: 22, end: 22)
     ]
     e: cursor.Cursor @ cursor.new_cursor(c_style)
     f: ast.Ast @ ast.new_ast()
@@ -1597,22 +1594,22 @@ test "the ring is closed: if is an expression with a block inside it"
     #     else
     #         2
     stream: [token.Token] = [
-        tok(.ident, start: 0, end: 1)
-        tok(.eq, start: 2, end: 3)
-        tok(.kw_if, start: 4, end: 6)
-        tok(.ident, start: 7, end: 8)
-        tok(.terminator, start: 8, end: 8)
-        tok(.indent, start: 9, end: 17)
-        tok(.int_lit, start: 17, end: 18)
-        tok(.terminator, start: 18, end: 18)
-        tok(.dedent, start: 19, end: 19)
-        tok(.kw_else, start: 19, end: 23)
-        tok(.terminator, start: 23, end: 23)
-        tok(.indent, start: 24, end: 32)
-        tok(.int_lit, start: 32, end: 33)
-        tok(.terminator, start: 33, end: 33)
-        tok(.dedent, start: 34, end: 34)
-        tok(.eof, start: 34, end: 34)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.eq, start: 2, end: 3)
+        token.made(.kw_if, start: 4, end: 6)
+        token.made(.ident, start: 7, end: 8)
+        token.made(.terminator, start: 8, end: 8)
+        token.made(.indent, start: 9, end: 17)
+        token.made(.int_lit, start: 17, end: 18)
+        token.made(.terminator, start: 18, end: 18)
+        token.made(.dedent, start: 19, end: 19)
+        token.made(.kw_else, start: 19, end: 23)
+        token.made(.terminator, start: 23, end: 23)
+        token.made(.indent, start: 24, end: 32)
+        token.made(.int_lit, start: 32, end: 33)
+        token.made(.terminator, start: 33, end: 33)
+        token.made(.dedent, start: 34, end: 34)
+        token.made(.eof, start: 34, end: 34)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1636,19 +1633,19 @@ test "a match arm may not declare a name where nothing can read it"
     # match e
     #     .a => x = 5
     stream: [token.Token] = [
-        tok(.kw_match, start: 0, end: 5)
-        tok(.ident, start: 6, end: 7)
-        tok(.terminator, start: 7, end: 7)
-        tok(.indent, start: 8, end: 12)
-        tok(.dot, start: 12, end: 13)
-        tok(.ident, start: 13, end: 14)
-        tok(.fat_arrow, start: 15, end: 17)
-        tok(.ident, start: 18, end: 19)
-        tok(.eq, start: 20, end: 21)
-        tok(.int_lit, start: 22, end: 23)
-        tok(.terminator, start: 23, end: 23)
-        tok(.dedent, start: 24, end: 24)
-        tok(.eof, start: 24, end: 24)
+        token.made(.kw_match, start: 0, end: 5)
+        token.made(.ident, start: 6, end: 7)
+        token.made(.terminator, start: 7, end: 7)
+        token.made(.indent, start: 8, end: 12)
+        token.made(.dot, start: 12, end: 13)
+        token.made(.ident, start: 13, end: 14)
+        token.made(.fat_arrow, start: 15, end: 17)
+        token.made(.ident, start: 18, end: 19)
+        token.made(.eq, start: 20, end: 21)
+        token.made(.int_lit, start: 22, end: 23)
+        token.made(.terminator, start: 23, end: 23)
+        token.made(.dedent, start: 24, end: 24)
+        token.made(.eof, start: 24, end: 24)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1663,16 +1660,16 @@ test "a match arm may not declare a name where nothing can read it"
 test "only a place can be passed as @"
     # f(@g(x)) — a call's result has nowhere to receive the copy-out
     stream: [token.Token] = [
-        tok(.ident, start: 0, end: 1)
-        tok(.lparen, start: 1, end: 2)
-        tok(.at, start: 2, end: 3)
-        tok(.ident, start: 3, end: 4)
-        tok(.lparen, start: 4, end: 5)
-        tok(.ident, start: 5, end: 6)
-        tok(.rparen, start: 6, end: 7)
-        tok(.rparen, start: 7, end: 8)
-        tok(.terminator, start: 8, end: 8)
-        tok(.eof, start: 8, end: 8)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.lparen, start: 1, end: 2)
+        token.made(.at, start: 2, end: 3)
+        token.made(.ident, start: 3, end: 4)
+        token.made(.lparen, start: 4, end: 5)
+        token.made(.ident, start: 5, end: 6)
+        token.made(.rparen, start: 6, end: 7)
+        token.made(.rparen, start: 7, end: 8)
+        token.made(.terminator, start: 8, end: 8)
+        token.made(.eof, start: 8, end: 8)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -1758,7 +1755,7 @@ test "an expression begins exactly where begins_an_expression says it can"
     ]
 
     for k in kinds
-        stream: [token.Token] = [tok(k, start: 0, end: 1), tok(.eof, start: 1, end: 1)]
+        stream: [token.Token] = [token.made(k, start: 0, end: 1), token.made(.eof, start: 1, end: 1)]
         c: cursor.Cursor @ cursor.new_cursor(stream)
         a: ast.Ast @ ast.new_ast()
         _ = parse_expr(@c, @a, "x ")

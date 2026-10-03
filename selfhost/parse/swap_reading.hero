@@ -213,9 +213,6 @@ function is_identifier(word: str) -> bool
 
 ## Tests
 
-function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
-    return token.Token(kind: kind, span: token.Span(start: start, end: end))
-
 # A cursor over `tokens`, told the swaps the lexer writes for `text`, which is
 # what a stream the lexer made carries (`lexer.LexOutput.swaps`).
 function told(tokens: [token.Token], text: str) -> cursor.Cursor
@@ -225,24 +222,24 @@ function told(tokens: [token.Token], text: str) -> cursor.Cursor
 test "a certain swap to a keyword reads as that keyword, and nothing else does"
     text = "fn f\nrecord P struct\nlet\nx: int\nelif\nmain\n"
     tokens = [
-        tok(.error, start: 0, end: 2)
-        tok(.ident, start: 3, end: 4)
-        tok(.terminator, start: 4, end: 4)
-        tok(.kw_record, start: 5, end: 11)
-        tok(.ident, start: 12, end: 13)
-        tok(.error, start: 14, end: 20)
-        tok(.terminator, start: 20, end: 20)
-        tok(.error, start: 21, end: 24)
-        tok(.terminator, start: 24, end: 24)
-        tok(.ident, start: 25, end: 26)
-        tok(.colon, start: 26, end: 27)
-        tok(.error, start: 28, end: 31)
-        tok(.terminator, start: 31, end: 31)
-        tok(.error, start: 32, end: 36)
-        tok(.terminator, start: 36, end: 36)
-        tok(.ident, start: 37, end: 41)
-        tok(.terminator, start: 41, end: 41)
-        tok(.eof, start: 42, end: 42)
+        token.made(.error, start: 0, end: 2)
+        token.made(.ident, start: 3, end: 4)
+        token.made(.terminator, start: 4, end: 4)
+        token.made(.kw_record, start: 5, end: 11)
+        token.made(.ident, start: 12, end: 13)
+        token.made(.error, start: 14, end: 20)
+        token.made(.terminator, start: 20, end: 20)
+        token.made(.error, start: 21, end: 24)
+        token.made(.terminator, start: 24, end: 24)
+        token.made(.ident, start: 25, end: 26)
+        token.made(.colon, start: 26, end: 27)
+        token.made(.error, start: 28, end: 31)
+        token.made(.terminator, start: 31, end: 31)
+        token.made(.error, start: 32, end: 36)
+        token.made(.terminator, start: 36, end: 36)
+        token.made(.ident, start: 37, end: 41)
+        token.made(.terminator, start: 41, end: 41)
+        token.made(.eof, start: 42, end: 42)
     ]
     c: cursor.Cursor @ told(tokens, text)
 
@@ -287,10 +284,10 @@ test "a certain swap to a keyword reads as that keyword, and nothing else does"
 test "a bare function type reads as the type it means, certain or not"
     text = "g: fn(i64) -> i64"
     tokens = [
-        tok(.ident, start: 0, end: 1)
-        tok(.colon, start: 1, end: 2)
-        tok(.error, start: 3, end: 5)
-        tok(.eof, start: 17, end: 17)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.colon, start: 1, end: 2)
+        token.made(.error, start: 3, end: 5)
+        token.made(.eof, start: 17, end: 17)
     ]
     c: cursor.Cursor @ told(tokens, text)
     c.pos @ 2
@@ -299,7 +296,11 @@ test "a bare function type reads as the type it means, certain or not"
 
 test "eat_as consumes only what reads as the kind asked for"
     text = "x: (fn(i64)"
-    tokens = [tok(.error, start: 4, end: 6), tok(.lparen, start: 6, end: 7), tok(.eof, start: 11, end: 11)]
+    tokens = [
+        token.made(.error, start: 4, end: 6)
+        token.made(.lparen, start: 6, end: 7)
+        token.made(.eof, start: 11, end: 11)
+    ]
     c: cursor.Cursor @ told(tokens, text)
     assert !eat_as(@c, text, .kw_record)
     assert eat_as(@c, text, .kw_function)

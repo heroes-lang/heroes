@@ -83,19 +83,16 @@ function before_the_break(c: cursor.Cursor, from: i64, at: i64) -> i64
 
 ## Tests
 
-function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
-    return token.Token(kind: kind, span: token.Span(start: start, end: end))
-
 test "a join is two tokens on two lines with no line end between them"
     # if n >  /  print(1): the lexer planted no line end at the break.
     text = "if n >\n    print(1)\n"
     tokens = [
-        tok(.kw_if, start: 0, end: 2)
-        tok(.ident, start: 3, end: 4)
-        tok(.gt, start: 5, end: 6)
-        tok(.ident, start: 11, end: 16)
-        tok(.terminator, start: 19, end: 19)
-        tok(.eof, start: 20, end: 20)
+        token.made(.kw_if, start: 0, end: 2)
+        token.made(.ident, start: 3, end: 4)
+        token.made(.gt, start: 5, end: 6)
+        token.made(.ident, start: 11, end: 16)
+        token.made(.terminator, start: 19, end: 19)
+        token.made(.eof, start: 20, end: 20)
     ]
     c: cursor.Cursor @ cursor.new_cursor(tokens)
     c.pos @ 4
@@ -107,12 +104,12 @@ test "a join is two tokens on two lines with no line end between them"
     # The same head on one line crossed none and was joined nowhere.
     one = "if n > m\n"
     flat = [
-        tok(.kw_if, start: 0, end: 2)
-        tok(.ident, start: 3, end: 4)
-        tok(.gt, start: 5, end: 6)
-        tok(.ident, start: 7, end: 8)
-        tok(.terminator, start: 8, end: 8)
-        tok(.eof, start: 9, end: 9)
+        token.made(.kw_if, start: 0, end: 2)
+        token.made(.ident, start: 3, end: 4)
+        token.made(.gt, start: 5, end: 6)
+        token.made(.ident, start: 7, end: 8)
+        token.made(.terminator, start: 8, end: 8)
+        token.made(.eof, start: 9, end: 9)
     ]
     d: cursor.Cursor @ cursor.new_cursor(flat)
     d.pos @ 4
