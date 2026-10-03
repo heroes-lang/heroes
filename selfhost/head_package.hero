@@ -1,0 +1,80 @@
+# What a `package` string may hold past what every group head's string
+# shares (design.md §4.19; spec § 13; panel 188's R6 and R7). `head_names`
+# judges every string and asks this leaf the package's own questions: where
+# `pkg-config` splits its argument, a name read as an option, a version's
+# comparison, and a `.pc` file named instead of a package. Moved out of
+# `head_names.hero` on 2026-10-03 when that file stood at its 300 lines and
+# defect 234's rules needed room there (panel 188's R12), word for word but a
+# guard against an empty value, which `head_names` never hands it.
+
+use token
+use diag
+use shown_char
+
+# What `pkg-config` cannot be handed as one package's name: `unwritable_name`
+# where it splits its argument, `option_like_name` where it would read an
+# option; none otherwise.
+function cannot_carry(value: str, span: token.Span) -> diag.Diagnostic?
+    split = package_split(value)
+
+    if split.len() > 0
+        return ok(
+            diag.new_diagnostic(code: "unwritable_name", message: "this package's name holds " + split + ", where `pkg-config` splits its argument into packages and versions: a group names one package, as `package \"raylib\"`", span: span)
+        )
+
+    # Go's `SafeArg` refuses the same (panel 188's historian): the `--`
+    # `cli/libraries.hero` writes before the name is read as the end of
+    # options by pkgconf 3.0.7 and 1.8.1 and is unrun elsewhere, so this
+    # rests on no tool, and is no thesis rule.
+    if value.len() > 0 && value[0] == '-'
+        return ok(
+            diag.new_diagnostic(code: "option_like_name", message: "this package's name begins with `-`, which is how an option to `pkg-config` begins, and this compiler does not rest on every `pkg-config` reading the `--` it writes before the name: name the package, as `package \"raylib\"`", span: span)
+        )
+    return fail(code: "none", msg: "one name to `pkg-config`")
+
+# The first byte where `pkg-config` splits its argument, named, or "":
+# whitespace and `,`, the seven bytes of 126 its argument does not carry
+# inside one name (pkgconf 3.0.7 and 1.8.1, panel 188's sweep), the two
+# line ends among them and told above.
+function package_split(value: str) -> str
+    i: i64 @ 0
+
+    while i < value.len()
+        b = value[i]
+
+        if b == ' '
+            return "a space"
+
+        if b == '\t' || b == 11 || b == 12 || b == ','
+            return shown_char.named(value.slice(from: i, to: i + 1))
+        i @ i + 1
+
+    return ""
+
+# A package's name past what every string shares. `<`, `>`, `=` and `!` are
+# carried inside one name (panel 188's sweep), and between spaces they are
+# how `pkg-config` writes a version's comparison, which a group cannot say.
+# And a name ending in `.pc` is read as a FILE, from the directory `heroes`
+# runs in, not the program's: where the machine keeps it (panel 055).
+# `written` is the spelling between the quotes, which the message quotes.
+function thesis(written: str, value: str, span: token.Span) -> diag.Diagnostic?
+    last = value.len() - 1
+
+    # In any case, and bare: `pkg-config` 3.0.7 and pkgconf 1.8.1 read
+    # `seven.PC`, `seven.pC` and `.pc` as files too (the critic's third pass).
+    if last >= 2 && value[last - 2] == '.' && (value[last - 1] == 'p' || value[last - 1] == 'P') && (value[last] == 'c' || value[last] == 'C')
+        return ok(
+            diag.new_diagnostic(code: "machine_locked_path", message: "`" + written + "` names a `.pc` file, which `pkg-config` reads from the directory `heroes` runs in, not the program's\n  name the package, as `package \"raylib\"`, and say where its `.pc` is with `PKG_CONFIG_PATH`", span: span)
+        )
+    i: i64 @ 0
+
+    while i < value.len()
+        b = value[i]
+
+        if b == '<' || b == '>' || b == '=' || b == '!'
+            return ok(
+                diag.new_diagnostic(code: "package_comparison", message: "this package's name holds `" + value.slice(from: i, to: i + 1) + "`, which is how `pkg-config` writes a version's comparison, and a group names a package and no version: write the package's name alone, as `package \"raylib\"`", span: span)
+            )
+        i @ i + 1
+
+    return fail(code: "none", msg: "one package's name")
