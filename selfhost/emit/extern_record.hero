@@ -59,7 +59,7 @@ function extern_record_assertions(@w: writer.Writer, c: state.Checked, names: ct
                         # One `line` per assertion (defect 185): the
                         # writer counts each, and restores the field's
                         # line before the second of an array field's two.
-                        found = source.locate(s, field.name.start)
+                        found = source.source_line(s, field.name.start)
                         writer.at_file(@w, file: found.file, at: found.line)
 
                         for line in lines.must()
