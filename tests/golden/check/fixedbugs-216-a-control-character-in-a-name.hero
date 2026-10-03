@@ -6,13 +6,18 @@
 # by its code point. The panel's survey found none in 103,736 header names
 # and 2,600 library and `.pc` names; a name holding one is what would make
 # this rule wrong. Only `\t` is written here, the one control character an
-# escape spells; the raw bytes are the sitting's runner cases.
+# escape spells; the raw bytes are the sitting's runner cases. In a package's
+# string a tab is where `pkg-config` splits its argument, which nothing
+# carries, so it is told as that.
 
 extern "a\tb.h"    #~ unshowable_name
     function h1() -> i32
 
 extern "stdio.h" link "m\tx"    #~ unshowable_name
     function h2() -> i32
+
+extern "stdio.h" package "zlib\tzlib"    #~ unwritable_name
+    function h3() -> i32
 
 # Stage E: the next line holds U+200B, a zero width space, between `std` and
 # `io.h`, Unicode's Default_Ignorable_Code_Point; with no such header the
@@ -25,4 +30,4 @@ extern "std io.h"    #~ unshowable_name
     function h5() -> i32
 
 function main()
-    print(h1() + h2() + h4() + h5())
+    print(h1() + h2() + h3() + h4() + h5())

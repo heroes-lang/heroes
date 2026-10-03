@@ -37,6 +37,14 @@ function cannot_carry(spelled: str, value: str, span: token.Span, what: str) -> 
     if value.len() == 0 || held.len() > 0
         return ok(diag.new_diagnostic(code: "unwritable_name", message: unwritable(what: what, held: held), span: span))
 
+    if what == "package"
+        split = package_split(value)
+
+        if split.len() > 0
+            return ok(
+                diag.new_diagnostic(code: "unwritable_name", message: "this package's name holds " + split + ", where `pkg-config` splits its argument into packages and versions: a group names one package, as `package \"raylib\"`", span: span)
+            )
+
     if what == "header"
         return header_unwritable(spelled: spelled, value: value, span: span)
     return fail(code: "none", msg: "a name every tool carries whole")
@@ -54,6 +62,9 @@ function thesis(spelled: str, value: str, span: token.Span, what: str) -> diag.D
         return ok(
             diag.new_diagnostic(code: "machine_locked_path", message: locked(written: inside(spelled), what: what), span: span)
         )
+
+    if what == "package"
+        return package_thesis(spelled: spelled, value: value, span: span)
 
     if what == "header"
         return header_undefined(spelled: spelled, value: value, span: span)
@@ -133,6 +144,54 @@ function unshowable_character(value: str) -> str
             return "the invisible character " + shown_char.u_plus(code)
 
     return ""
+
+# The first byte where `pkg-config` splits its argument, named, or "":
+# whitespace and `,`, the seven bytes of 126 its argument does not carry
+# inside one name (pkgconf 3.0.7 and 1.8.1, panel 188's sweep), the two
+# line ends among them and told above.
+function package_split(value: str) -> str
+    i: i64 @ 0
+
+    while i < value.len()
+        b = value[i]
+
+        if b == ' '
+            return "a space"
+
+        if b == '\t' || b == 11 || b == 12 || b == ','
+            return shown_char.named(value.slice(from: i, to: i + 1))
+        i @ i + 1
+
+    return ""
+
+# A package's name past what every string shares. `<`, `>`, `=` and `!` are
+# carried inside one name (panel 188's sweep), and between spaces they are
+# how `pkg-config` writes a version's comparison, which a group cannot say.
+# And a name ending in `.pc` is read as a FILE, from the directory `heroes`
+# runs in, not the program's: where the machine keeps it (panel 055).
+function package_thesis(spelled: str, value: str, span: token.Span) -> diag.Diagnostic?
+    written = inside(spelled)
+
+    last = value.len() - 1
+
+    # In any case, and bare: `pkg-config` 3.0.7 and pkgconf 1.8.1 read
+    # `seven.PC`, `seven.pC` and `.pc` as files too (the critic's third pass).
+    if last >= 2 && value[last - 2] == '.' && (value[last - 1] == 'p' || value[last - 1] == 'P') && (value[last] == 'c' || value[last] == 'C')
+        return ok(
+            diag.new_diagnostic(code: "machine_locked_path", message: "`" + written + "` names a `.pc` file, which `pkg-config` reads from the directory `heroes` runs in, not the program's\n  name the package, as `package \"raylib\"`, and say where its `.pc` is with `PKG_CONFIG_PATH`", span: span)
+        )
+    i: i64 @ 0
+
+    while i < value.len()
+        b = value[i]
+
+        if b == '<' || b == '>' || b == '=' || b == '!'
+            return ok(
+                diag.new_diagnostic(code: "package_comparison", message: "this package's name holds `" + value.slice(from: i, to: i + 1) + "`, which is how `pkg-config` writes a version's comparison, and a group names a package and no version: write the package's name alone, as `package \"raylib\"`", span: span)
+            )
+        i @ i + 1
+
+    return fail(code: "none", msg: "one package's name")
 
 # **A string in a group head may not name an absolute path** (panel 055):
 # a leading root, a Windows drive letter, or GNU `ld`'s `-l:filename` form,
@@ -320,6 +379,7 @@ test "a control character is named by its code, a thesis rule after what nothing
     assert said(spelled: "\"éa.h\"", what: "header") == ""
     assert said(spelled: "\"aé\"", what: "header") == ""
     assert said(spelled: "\"é\"", what: "link") == ""
+    assert said(spelled: "\"aé.pc\"", what: "package") == "machine_locked_path"
     assert said(spelled: "\"é\"", what: "package") == ""
     assert unshowable_character("a\tb") == "the control character U+0009"
     assert unshowable_character("ab") == ""
@@ -346,6 +406,24 @@ test "a library's name shares the first classes and none of a header's"
     assert said(spelled: "\"a\\nb\"", what: "link") == "unwritable_name"
     assert said(spelled: "\"a\\tb\"", what: "link") == "unshowable_name"
     assert said(spelled: "\":libm.a\"", what: "link") == "machine_locked_path"
+
+test "a package's string names one package (panel 188)"
+    assert said(spelled: "\"raylib\"", what: "package") == ""
+    assert said(spelled: "\"gtk+-3.0\"", what: "package") == ""
+    assert said(spelled: "\"zlib sqlite3\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"zlib,sqlite3\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"zlib >= 1\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"zlib\\tx\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"zlib>=1\"", what: "package") == "package_comparison"
+    assert said(spelled: "\"a!b\"", what: "package") == "package_comparison"
+    assert said(spelled: "\"seven.pc\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"seven.PC\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"seven.pC\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\".pc\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"seven.pcx\"", what: "package") == ""
+    assert said(spelled: "\"pc\"", what: "package") == ""
+    assert said(spelled: "\"sub/seven.pc\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"/opt/x.pc\"", what: "package") == "machine_locked_path"
 
 test "C's spelling carried in is dropped by a certain fix, and only where what is left passes"
     sure = judged(spelled: "\"<stdio.h>\"", span: token.Span(start: 0, end: 11), what: "header").must()
