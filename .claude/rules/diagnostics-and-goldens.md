@@ -17,7 +17,8 @@ in `docs/records/contract/case-law.md`, cited as `CL-NNN`.
 
 Every `Diagnostic` carries `Fix`es tagged `certain` or `guess`, and only
 `certain` is machine-applicable. An error carries everything needed to fix the
-program without opening another file (design.md §4.17).
+mistake it names without opening another file (design.md §4.17; *the
+program* until panel 187, ratified 2026-10-03, read the promise as per message).
 
 **A `certain` fix repairs the defect the diagnostic names. A fix that leaves the
 defect standing is a `guess`, however well it compiles** (`/decide` 2026-09-08,

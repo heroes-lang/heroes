@@ -2139,6 +2139,20 @@ a broken program compile, before and after. Rust and Elm proved good errors tran
 experience; nobody has designed them for the consumer that today reads more compiler errors than
 anyone.
 
+**One turn is promised per message, and the rest is counted** (panel 187, ratified 2026-10-03).
+Every message is true of the program as written, and a `certain` fix repairs the mistake its
+message names and writes nothing else; a message that breaks either is a defect that blocks. One
+mistake is one edit its author owes: a habit carried down a run of lines is one, and each braced
+block is its own. What a broken program costs beyond that is counted rather than promised: a
+second message for one mistake, a mistake of the parse stage told only once another is fixed, and
+a message off its mistake's lines, each read at a recovery round's gate on the round's compiler
+against the trunk's over one frozen corpus of planted mistakes, a worse mutant being the finding,
+and what that corpus cannot plant (two mistakes on one line, a mistake inside a failed arm's
+body) pinned in goldens instead. A later stage's mistakes wait for the earlier stage's by design,
+since `heroes check` runs a stage only when the one before said nothing. Part 11's metric 4
+counts the exchanges themselves once it runs; where it measures a hidden mistake of the parse
+stage costing one, telling that mistake in the same run joins the promise.
+
 **Specific errors to include:**
 
 - Reserved-word errors that dictate the fix. The likeliest mistake from a model writing on autopilot

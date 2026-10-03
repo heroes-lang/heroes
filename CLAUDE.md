@@ -213,8 +213,8 @@ and is byte-identical on a second emission of the same input.
 
 ## 8. Error discipline
 Home: `.claude/rules/diagnostics-and-goldens.md`. Errors are a deliverable, not
-plumbing: a diagnostic carries everything needed to fix the program without
-opening another file (design.md §4.17), and its `Fix`es are tagged `certain` or
+plumbing: a diagnostic carries everything needed to fix the mistake it names
+without opening another file (design.md §4.17; panel 187, 2026-10-03), and its `Fix`es are tagged `certain` or
 `guess`, only `certain` being machine-applicable.
 
 ## 9. Golden discipline
