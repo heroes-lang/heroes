@@ -28,6 +28,19 @@ the day: whether the arm64 container runs the `--sanitize` cases
 LeakSanitizer needs (CL-055 put that leg on x86-64). The rule of
 2026-09-29 below stands as history.
 
+**A case on a header or a library one platform does not have** (the
+author's answer *A*, 2026-10-03): skipped there by name, its build reading
+`ffi_missing_header` or `ffi_package`, it is judged on the platforms that
+have the header, each read one case at a time; and where the defect's
+shape can be written on a header of the program's own, a twin of the case
+is written and runs on every platform. Measured the day it was given: four
+of defect 143's twelve cases bind `sys/wait.h` or `sys/select.h`, and the
+Windows box's C library carries neither (its `sys/` holds `locking.h`,
+`stat.h`, `timeb.h`, `types.h` and `utime.h`), so under the strict reading
+143 could never close; the author's *4a* had closed 151 this way for SDL3
+that morning
+(`docs/records/log/2026-10-03-1123-the-author-answers-a-a-case-a-platform-cannot-run-is-judged-where-its-header-is.md`).
+
 **Two moments since 2026-09-29, by author instruction** (*Windows and arm Linux
 before the push*; CL-079): **Linux x86-64 runs when a batch closes**, from this
 Mac, in the container below, since it is CI's own architecture and the leg
