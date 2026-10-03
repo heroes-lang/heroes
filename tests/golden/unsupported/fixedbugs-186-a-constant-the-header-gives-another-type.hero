@@ -1,0 +1,13 @@
+# fixedbugs, defect 186, lane ffimsg, 2026-10-03, the shape beside the
+# defect's in `ffi_constant_type`, which read the same assertion and said
+# only *`BIG_COUNT` is not `i32`*: a `long long` declared `i32` and a
+# `double` declared `i64` now name the header's type and offer `i64` and
+# `f64`.
+
+extern "fixedbugs-186-results.h"
+    constant BIG_COUNT: i32  #~ ffi_constant_type
+    constant HALF: i64  #~ ffi_constant_type
+
+function main()
+    print(BIG_COUNT)
+    print(HALF)

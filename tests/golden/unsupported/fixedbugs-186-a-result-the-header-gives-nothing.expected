@@ -1,0 +1,13 @@
+error[ffi_return_type]: `reset` returns nothing in `fixedbugs-186-results.h`, its C result being `void`, not `i32` — clang read the header
+  at tests/golden/unsupported/fixedbugs-186-a-result-the-header-gives-nothing.hero:8:5
+    |
+  8 |     function reset() -> i32  #~ ffi_return_type
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: a C function that returns `void` is bound with no `->`, as one that gives nothing back (§4.19)
+
+error[ffi_return_type]: `status` returns `int` in `fixedbugs-186-results.h`, and this declaration takes nothing back — clang read the header
+  at tests/golden/unsupported/fixedbugs-186-a-result-the-header-gives-nothing.hero:9:5
+    |
+  9 |     function status()  #~ ffi_return_type
+    |     ^^^^^^^^^^^^^^^^^
+  note: a result the header gives is declared after `->`, as its type or one that holds every value of it (§4.19)

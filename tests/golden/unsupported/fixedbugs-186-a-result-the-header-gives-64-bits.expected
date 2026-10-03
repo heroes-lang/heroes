@@ -1,0 +1,15 @@
+error[ffi_return_type]: `wide_count` returns `int64_t` in `fixedbugs-186-results.h`, not `i32` — clang read the header
+  at tests/golden/unsupported/fixedbugs-186-a-result-the-header-gives-64-bits.hero:18:5
+     |
+  18 |     function wide_count() -> i32  #~ ffi_return_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `wide_count`
+  fix (guess): declare the result `i64`
+
+error[ffi_return_type]: `ratio` returns `double` in `fixedbugs-186-results.h`, not `f32` — clang read the header
+  at tests/golden/unsupported/fixedbugs-186-a-result-the-header-gives-64-bits.hero:19:5
+     |
+  19 |     function ratio() -> f32  #~ ffi_return_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `ratio`
+  fix (guess): declare the result `f64`
