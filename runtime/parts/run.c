@@ -501,6 +501,22 @@ int64_t hero_run_why(void) {
     return hero_run_why_code;
 }
 
+/* WHAT ENDED THE LAST CHILD WHEN IT DID NOT END ITSELF (defect 170,
+ * 2026-10-03). `hero_run_go` answers a child a signal killed as 128 plus the
+ * signal, which a child may also exit with of its own accord; this says which
+ * it was, POSIX's own number, so a caller can tell a C compiler that died from
+ * one that refused. Debian clang 22.1.8 killed on its own stack by 10,000
+ * nested variants wrote nothing at all, measured on Linux arm64. Windows has
+ * no signals: a child that crashed exits with its exception's code, in
+ * NTSTATUS's error range (0xC0000000 and above), and that code is the answer
+ * there, unrun on the box. 0 where the child exited by itself or the watchdog
+ * ended it; cleared by every `hero_run_go`. Thread-local, as the why is. */
+static _Thread_local int64_t hero_run_signal_code = 0;
+
+int64_t hero_run_signal(void) {
+    return hero_run_signal_code;
+}
+
 /* Run the program with the words pushed so far, `hero_run_words[0]` included as
  * argv[0] by convention. Returns the exit code; `*status` is HERO_OS_OK when the
  * program ran at all, HERO_OS_NOT_FOUND when it could not be started, and
@@ -515,6 +531,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
     /* Cleared on the way in, so a reader of `hero_run_why` after a successful
      * call sees 0 rather than the last refusal of an hour ago. */
     hero_run_why_code = 0;
+    hero_run_signal_code = 0;
 
     if (hero_run_count == 0) {
         *status = HERO_OS_FAILED;
@@ -736,6 +753,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
     }
     DWORD code = 0;
     GetExitCodeProcess(child.hProcess, &code);
+    if (code >= 0xC0000000u) hero_run_signal_code = (int64_t)code;
 
     /* **THE SWEEP RUNS ON THE ORDINARY EXIT TOO, and that is the point.** The
      * recorded holder was left by a `heroes.exe` that FINISHED; no watchdog was
@@ -870,7 +888,10 @@ int64_t hero_run_go(const char *program, const char *in_path,
         return -1;
     }
     *status = HERO_OS_OK;
-    if (WIFSIGNALED(wait_status)) return 128 + WTERMSIG(wait_status);
+    if (WIFSIGNALED(wait_status)) {
+        hero_run_signal_code = (int64_t)WTERMSIG(wait_status);
+        return 128 + WTERMSIG(wait_status);
+    }
     return WIFEXITED(wait_status) ? WEXITSTATUS(wait_status) : -1;
 #endif
 }

@@ -1,0 +1,173 @@
+# Fixed 2026-10-03, defect 170, lane depth: the premise's witness.
+# `emit/typeorder.hero` hands clang a chain of structs from its bottom only
+# past 32 of them (`IN_ORDER_FROM`), on the premise that a chain of 32 met
+# from its top, three C structs a level for a variant, is within the stack of
+# every clang this compiler runs on; the least of those measured died at
+# 1,000 variants (the CI's Apple clang, defect 155). This case is that chain,
+# 32 variants each holding the one before by value, built WITHOUT the help on
+# every platform the net runs on, so the first clang that cannot goes red here.
+
+variant R0
+    a
+        v: i64
+    b
+
+variant R1
+    a
+        inner: R0
+    b
+
+variant R2
+    a
+        inner: R1
+    b
+
+variant R3
+    a
+        inner: R2
+    b
+
+variant R4
+    a
+        inner: R3
+    b
+
+variant R5
+    a
+        inner: R4
+    b
+
+variant R6
+    a
+        inner: R5
+    b
+
+variant R7
+    a
+        inner: R6
+    b
+
+variant R8
+    a
+        inner: R7
+    b
+
+variant R9
+    a
+        inner: R8
+    b
+
+variant R10
+    a
+        inner: R9
+    b
+
+variant R11
+    a
+        inner: R10
+    b
+
+variant R12
+    a
+        inner: R11
+    b
+
+variant R13
+    a
+        inner: R12
+    b
+
+variant R14
+    a
+        inner: R13
+    b
+
+variant R15
+    a
+        inner: R14
+    b
+
+variant R16
+    a
+        inner: R15
+    b
+
+variant R17
+    a
+        inner: R16
+    b
+
+variant R18
+    a
+        inner: R17
+    b
+
+variant R19
+    a
+        inner: R18
+    b
+
+variant R20
+    a
+        inner: R19
+    b
+
+variant R21
+    a
+        inner: R20
+    b
+
+variant R22
+    a
+        inner: R21
+    b
+
+variant R23
+    a
+        inner: R22
+    b
+
+variant R24
+    a
+        inner: R23
+    b
+
+variant R25
+    a
+        inner: R24
+    b
+
+variant R26
+    a
+        inner: R25
+    b
+
+variant R27
+    a
+        inner: R26
+    b
+
+variant R28
+    a
+        inner: R27
+    b
+
+variant R29
+    a
+        inner: R28
+    b
+
+variant R30
+    a
+        inner: R29
+    b
+
+variant R31
+    a
+        inner: R30
+    b
+
+function main()
+    xs: [R31] = []
+    print(xs.len())
+    print(xs == xs)
