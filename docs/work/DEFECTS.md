@@ -1000,6 +1000,17 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** the coordinator's closings agent, 2026-10-03, reading defect 160's cases one by one on Linux arm64 between 00:36 and 00:54 by `date` (`scratchpad/closings/table.txt`, 2026-10-03), and its target probe on this Mac after 01:03 (`scratchpad/closings/fwprobe/`, 2026-10-03). The queue's question *a link step handed compile words, unmeasured on Linux* (lane h158, 2026-10-02) is this, measured. Which of the build's clang calls prints it on Linux is not read: that the link carries `-F` is an inference from the target probe.
 
+    **2026-10-03, lane warn, a link is handed only the words a link reads
+    (`libraries.link_words`, `link.link_line`): a package's `-L`, `-l`,
+    `-Wl,-rpath` and `-framework` pair, its `-F` only where the answer links a
+    framework, and no include directory. Which call printed it, read first
+    under a wrapper logging every clang call (Debian clang 22.1.8): the
+    program's final link and no other; of every compile word at a Linux link,
+    22.1.8 and 18.1.8 warn about `-F` alone**: repaired at `9b31cd64`, gated
+    by its own cases on this Mac and on Linux arm64, where the fixture prints
+    `7` with an empty stderr and its link carries no `-F`; the rest is owed
+    at the round's gate.
+
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
 
 - [ ] **207 — a correct program whose string holds `??` before `)`, `(`, `<`, `>`, `=`, `/`, `'`, `!` or `-` gets clang's *trigraph ignored* warning on the emitted C** | `print("what???)")`: `check` exit 0, `run` exit 0 and prints `what???)`, and clang prints `build/tu-<key>/tri.c:10:42: warning: trigraph ignored [-Wtrigraphs]`; the net's own tests' build prints it twice for the harness's own `print(???)` | the emitter's string literals (a `?` that would begin a trigraph is written `?\?` in C) · **class: blocking**
@@ -1015,8 +1026,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     line end in a path and a directory `a*` (both exit 2), a header named
     `h??).h`**: repaired at `ed776fb2`, gated by its own cases on this Mac;
     the rest is owed at the round's gate, and the platform legs before the
-    push (the two spellings were measured on Debian clang 22.1.8 and 18.1.8
-    in the arm64 container; the repair itself is unrun there and on Windows).
+    push. On Linux arm64 since (Debian clang 22.1.8, a copy of the tree with
+    206's repair beside it), the case prints its `.expected` with an empty
+    stderr and the compiler tests of the modules it touched read 31 and 0;
+    the two spellings were measured there under 18.1.8 too; unrun on Windows.
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
 
