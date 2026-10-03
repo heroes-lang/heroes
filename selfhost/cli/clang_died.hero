@@ -1,0 +1,115 @@
+# How a C compiler that DIED is told from one that refused (defect 170,
+# 2026-10-03; design.md §4.17). Two shapes were measured: Apple clang 21 on
+# arm64 macOS catches its own compiler's death and its driver says so, and
+# Debian clang 22.1.8 on Linux arm64 died whole, by the signal itself, and
+# wrote nothing (`process.Ran.signal` is what tells that one). `cli/toolchain`
+# asks; this file only reads what clang and the runtime said.
+
+use cli/strings
+
+# What `process.Ran.signal` names, in words: a POSIX signal is a small number
+# and a Windows exception code is at least 0xC0000000, so the value says which
+# it is.
+function ending(signal: i64) -> str
+    if signal < 256
+        return "killed by signal " + signal.to_str()
+    return "ended by exception " + signal.to_str()
+
+# What killed the C compiler under clang's driver, or "" when nothing did:
+# the driver says *command failed due to signal* when one did, after naming the
+# signal on its *unable to execute command:* line. Both are the driver's own
+# words, measured on Apple clang 21 on arm64 macOS on 2026-10-03; on Windows,
+# which has no signals, unrun. Where the naming line is missing it is `a
+# signal`, never a guess at which.
+function died_by(noise: str) -> str
+    if !has_text(text: noise, needle: "failed due to signal")
+        return ""
+    current: [str] @ []
+
+    for ch in noise.chars()
+        if ch == "\n"
+            said = rest_after(line: current, marker: "unable to execute command: ")
+
+            if said.len() > 0
+                return said
+            current @ []
+        else
+            current @ current.push(ch)
+
+    said = rest_after(line: current, marker: "unable to execute command: ")
+
+    if said.len() > 0
+        return said
+    return "a signal"
+
+# What follows `marker` in one line, given as its characters `line`, or "".
+function rest_after(line: [str], marker: str) -> str
+    want = marker.chars()
+
+    if want.len() == 0 || want.len() > line.len()
+        return ""
+    start: i64 @ 0
+
+    while start <= line.len() - want.len()
+        matched: bool @ true
+        offset: i64 @ 0
+
+        while offset < want.len()
+            if line[start + offset] != want[offset]
+                matched @ false
+                break
+            offset @ offset + 1
+
+        if matched
+            return strings.trimmed(line.slice(from: start + want.len(), to: line.len()).join(""))
+        start @ start + 1
+
+    return ""
+
+# Whether `needle` stands anywhere in `text`, character by character.
+function has_text(text: str, needle: str) -> bool
+    cs = text.chars()
+    needle_cs = needle.chars()
+
+    if needle_cs.len() == 0
+        return true
+
+    if needle_cs.len() > cs.len()
+        return false
+    start: i64 @ 0
+
+    while start <= cs.len() - needle_cs.len()
+        matched: bool @ true
+        offset: i64 @ 0
+
+        while offset < needle_cs.len()
+            if cs[start + offset] != needle_cs[offset]
+                matched @ false
+                break
+            offset @ offset + 1
+
+        if matched
+            return true
+        start @ start + 1
+
+    return false
+
+## Tests
+
+# The first text is the two lines Apple clang 21 printed on arm64 macOS when
+# 5,000 variants nested by value killed it under `-fno-crash-diagnostics`,
+# 2026-10-03. They are the driver's own diagnostics, `unable to execute
+# command: %0` and `%0 command failed due to signal`, so the test reads the
+# driver's words and not one run's.
+test "a clang that died by a signal is told as one, and a refusal is not (defect 170)"
+    died = "clang: error: unable to execute command: Illegal instruction: 4\nclang: error: clang frontend command failed due to signal (use -v to see invocation)\n"
+    assert died_by(died) == "Illegal instruction: 4"
+    assert died_by("clang: error: linker command failed due to signal (use -v to see invocation)\n") == "a signal"
+    assert died_by("build/selftest_broken.c:1:32: error: use of undeclared identifier 'undeclared_name'\n1 error generated.\n") == ""
+
+    # Debian clang 22.1.8 on Linux arm64, 10,000 variants under `-g`: killed by
+    # SIGSEGV, exit 139, nothing written; the runtime's signal says it, and a
+    # Windows exception code is told as one.
+    assert died_by("") == ""
+    assert ending(signal: 11) == "killed by signal 11"
+    assert ending(signal: 3221225725) == "ended by exception 3221225725"

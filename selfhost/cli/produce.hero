@@ -33,6 +33,7 @@ use cli/header_ask
 use cli/libraries
 use cli/input
 use cli/process
+use cli/deep_types
 use library_source
 
 record Produced
@@ -214,7 +215,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         # clang's own words are read for it: a path the author wrote after
         # `-o` could spell a marker, and a publish that failed there is not
         # the header disagreeing with anybody.
-        message = failure_message(linked)
+        message = failure_message(linked) + deep_types.note(failure_code(linked), art.must().decls, art.must().checked, s)
 
         if failure_code(linked) != "clang"
             return fail(code: "failed", msg: message)
@@ -248,7 +249,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         )
 
         if wrote.is_err()
-            message = failure_message(wrote)
+            message = failure_message(wrote) + deep_types.note(failure_code(wrote), art.must().decls, art.must().checked, s)
 
             if failure_code(wrote) != "clang"
                 return fail(code: "failed", msg: message)

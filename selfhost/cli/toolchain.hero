@@ -36,6 +36,7 @@ use cli/process
 use cli/publish
 use cli/runtime_key
 use cli/strings
+use cli/clang_died
 
 # WHAT A BUILD LEAVES UNDER `build/` HAS A SHAPE, AND EVERY KEY NAMES IT.
 # `fingerprint` is the Heroes `VERSION`, which moves at a release, so a
@@ -157,6 +158,24 @@ function run_clang(line: [str], what: str, err_path: str) -> ()?
         if strings.trimmed(noise).len() > 0
             io.eprint_raw(text: noise)
         return ok()
+    died: str @ clang_died.died_by(noise)
+
+    # **A C COMPILER THAT DIED REFUSED NOTHING** (defect 170, 2026-10-03), and
+    # it says so in one of two ways: Apple clang 21 catches its own compiler's
+    # death and its driver says *failed due to signal*; Debian clang 22.1.8 on
+    # Linux arm64 died whole, by the signal itself, and wrote nothing. Either
+    # way the C was never judged, which is neither this compiler's mistake nor
+    # the author's, so it is neither `internal error` nor clang's crash report,
+    # whose files and backtrace speak to clang's own developers. Said here,
+    # once, in this compiler's words.
+    if died.len() == 0 && ran.signal != 0
+        died @ clang_died.ending(ran.signal)
+
+    if died.len() > 0
+        return fail(
+            code: "crashed",
+            msg: what + " stopped: clang died on the C instead of judging it (" + died + "), so nothing in it was refused"
+        )
     return fail(code: "clang", msg: what + " failed:\n" + noise)
 
 # Compile the runtime once and cache it, keyed on its own contents,

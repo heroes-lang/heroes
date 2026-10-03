@@ -320,6 +320,11 @@ int64_t hero_run_go(const char *program, const char *in_path,
  * different repairs and they were one silence. */
 int64_t hero_run_why(void);
 
+/* The signal that ended the last child, or on Windows the exception code a
+ * crashed child exited with; 0 where the child ended itself (defect 170).
+ * `parts/run.c` carries why. */
+int64_t hero_run_signal(void);
+
 /* A number this process has not answered before, so a caller can name a file
  * that no earlier call can still be holding open. `parts/run.c` carries why it
  * is here rather than in the language (panel 174, route B). */
