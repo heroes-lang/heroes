@@ -14,6 +14,7 @@ use ast
 use source
 use diag
 use emit/externs as emit_externs
+use emit/clang_name
 use emit/ffi_lookup
 use emit/header_reach
 use parse
@@ -165,7 +166,11 @@ function undefined_symbol(line: str) -> str?
 #
 # The header's name is read after clang's `error: '`, so a quote in a
 # directory's name cannot be taken for the header's (the first quote on the
-# line was read until defect 158).
+# line was read until defect 158), and up to the line's LAST `' file not
+# found`, so a quote in the name stays in it and the group is asked in
+# clang's spelling (`emit/clang_name.hero`): until defect 232 the name was cut
+# at its first quote, and a missing header named with `'` or with a code point
+# clang writes `<U+XXXX>` was exit 2, or a nested one named falsely.
 function missing_header(s: source.Source, decls: [ast.Decl], line: str, stderr: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: "file not found")
         return fail(code: "none", msg: "not a missing-header line")
@@ -176,7 +181,11 @@ function missing_header(s: source.Source, decls: [ast.Decl], line: str, stderr: 
 
     if opened.is_err()
         return fail(code: "none", msg: "no quoted header")
-    header = ffi_lookup.up_to_quote(opened.must())
+    printed = clang_name.before_last(text: opened.must(), marker: "' file not found")
+
+    if printed.is_err()
+        return fail(code: "none", msg: "no quoted header")
+    header = printed.must()
     span = ffi_lookup.group_head(s, decls, header: header)
 
     if span.is_err()
@@ -383,3 +392,27 @@ test "a library lld-link could not open is found whole, and only by its own name
     assert source.span_text(s, suffixed.must().span) == "\"z.lib\""
     assert missing_library(s, parsed.decls, line: opened + "abc.lib'" + absent).is_err()
     assert missing_library(s, parsed.decls, line: opened + "main.obj'" + absent).is_err()
+
+# Defect 232's lines, as this Mac's clang printed them (2026-10-03): a quote
+# in a header's name, a code point clang escapes, a header whose name another
+# group's ends with, and a quote in a header a group's header includes.
+test "a header clang could not find is read whole, a quote or an escaped code point in it (defect 232)"
+    # The third group's header holds U+E000, a private-use code point, between
+    # `x` and `.h`.
+    text = "extern \"b.h\"\n    function six() -> i32\n\nextern \"a'b.h\"\n    function seven() -> i32\n\nextern \"x.h\"\n    function eight() -> i32\n\nfunction main()\n    print(six() + seven() + eight())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    quoted = "build/tu-1/p.c:6:10: fatal error: 'a'b.h' file not found"
+    said = missing_header(s, parsed.decls, line: quoted, stderr: quoted).must()
+    assert source.span_text(s, said.span) == "function seven() -> i32"
+    assert said.message == "`a'b.h` is not on this machine's include path — clang looked and did not find it"
+    plain = "build/tu-1/p.c:5:10: fatal error: 'b.h' file not found"
+    assert source.span_text(s, missing_header(s, parsed.decls, line: plain, stderr: plain).must().span) == "function six() -> i32"
+    escaped = "build/tu-1/p.c:7:10: fatal error: 'x<U+E000>.h' file not found"
+    pua = missing_header(s, parsed.decls, line: escaped, stderr: escaped).must()
+    assert source.span_text(s, pua.span) == "function eight() -> i32"
+    assert pua.message == "`x<U+E000>.h` is not on this machine's include path — clang looked and did not find it"
+    inner = "d/b.h:1:10: fatal error: 'gone'x.h' file not found"
+    stack = "In file included from build/tu-1/p.c:5:\n" + inner + "\n"
+    deep = missing_header(s, parsed.decls, line: inner, stderr: stack).must()
+    assert deep.message == "`gone'x.h` is not on this machine's include path, and `b.h`, the header this group names, includes it at line 1"
