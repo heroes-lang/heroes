@@ -80,6 +80,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** Defect 146's class: a file of N mistakes costs N² work.
 
+    **2026-10-03, lane b8-recovery: below a head that refused something only an opener is paired with a closer, and the `for` head's report is said in place, its condition read on a copy that holds none of the reports** (`parse/swallowed.spilled`, `cursor.trial`, `parse/loop_habit.refuse`; 3,000 heads 250.1 to 2.08 billion instructions retired): repaired at `bd43a92c`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): real, found beside the work, no wrong value and no crash.
 
 - [ ] **185 — the emitted C's line restores after a fixed-array field's assertion name a line one too low per such field** | `heroes build tests/golden/run/ffi-a-char-field-becomes-text.hero --emit-c`: line 20 is `#line 19 "ffiacharfieldbecomestext.c"`, so line 21 is reported as 19, and every later restore is 2 short; over `tests/emission`, 261 of 36,781 restores in 19 files are 1 to 10 short, each file's shortfall equal to its number of two-assertion lines | `selfhost/emit/extern_field.hero:158`, `:161` (a `"\n             _Static_assert(` the printer does not count) · `.claude/rules/generated-c.md:27-29` · **class: adjacent**
