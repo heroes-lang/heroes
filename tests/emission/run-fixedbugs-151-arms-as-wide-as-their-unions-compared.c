@@ -23,12 +23,13 @@ _Static_assert(__builtin_classify_type(((SB *)0)->q) == 1 && sizeof(((SB *)0)->q
 _Static_assert(__builtin_classify_type(((SARR *)0)->kind) == 1 && sizeof(((SARR *)0)->kind) == sizeof(int32_t) && (_Generic(((SARR *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SARR kind");
 #line 21 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 _Static_assert(sizeof(SARR) - __builtin_offsetof(SARR, bytes) != 0, "heroes-ffi-flex SARR bytes");
-             _Static_assert(_Generic(&((SARR *)0)->bytes, _Bool (*)[4]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field SARR bytes");
+#line 21 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
+_Static_assert(_Generic(&((SARR *)0)->bytes, _Bool (*)[4]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field SARR bytes");
 #line 23 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 _Static_assert(__builtin_classify_type(((SPTR *)0)->kind) == 1 && sizeof(((SPTR *)0)->kind) == sizeof(int32_t) && (_Generic(((SPTR *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SPTR kind");
 #line 24 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 _Static_assert(__builtin_classify_type(((SPTR *)0)->p) == 5 && _Generic(((SPTR *)0)->p, __typeof__(((SPTR *)0)->p): 1, default: 0) && sizeof(((SPTR *)0)->p) == sizeof(void *), "heroes-ffi-field SPTR p");
-#line 31 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 33 "fixedbugs151armsaswideastheirunionscompared.c"
 
 #line 12 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 _Static_assert(__builtin_classify_type(*(SA *)0) != 13 || sizeof(((SA *)0)->kind) == sizeof(SA), "heroes-ffi-union-narrow SA kind");
@@ -48,7 +49,7 @@ _Static_assert(__builtin_classify_type(*(SARR *)0) != 13 || sizeof(((SARR *)0)->
 _Static_assert(__builtin_classify_type(*(SPTR *)0) != 13 || sizeof(((SPTR *)0)->kind) == sizeof(SPTR), "heroes-ffi-union-narrow SPTR kind");
 #line 22 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 _Static_assert(__builtin_classify_type(*(SPTR *)0) != 13 || sizeof(((SPTR *)0)->p) == sizeof(SPTR), "heroes-ffi-union-narrow SPTR p");
-#line 51 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 53 "fixedbugs151armsaswideastheirunionscompared.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -144,7 +145,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 149 "fixedbugs151armsaswideastheirunionscompared.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_SA_eq(const SA *a, const SA *b);
@@ -191,7 +192,7 @@ void h_fixedbugs151armsaswideastheirunionscompared_main(void);
 
 #line 33 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 void h_fixedbugs151armsaswideastheirunionscompared_main(void) {
-#line 194 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 196 "fixedbugs151armsaswideastheirunionscompared.c"
     HeroMapHeader * h0_seen = {0};
     HeroMapHeader * h1_own1 = {0};
     int32_t t1;
@@ -297,15 +298,15 @@ bb0:
     t56 = h1_own1;
 #line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     h1_own1 = t16;
-#line 300 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 302 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_decref(t56);
 #line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     t57 = h0_seen;
-#line 304 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 306 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_incref(t16);
 #line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     h0_seen = t16;
-#line 308 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 310 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_decref(t57);
 #line 36 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     t17 = INT64_C(5);
@@ -415,10 +416,10 @@ bb0:
     hero_print_bool(t55);
 #line 47 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     hero_print_end();
-#line 418 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 420 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_decref(h0_seen);
 #line 47 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
-#line 421 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 423 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_decref(h1_own1);
     return;
 }

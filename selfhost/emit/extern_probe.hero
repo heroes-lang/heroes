@@ -121,7 +121,7 @@ function extern_probes(@w: writer.Writer, p: containers.Program, c: state.Checke
         # The declaration's own file and line, so clang's verdict lands
         # where the author can act on it — and a probe for a library's
         # extern claims the library.
-        found = source.locate(s, decls[f.decl].name.start)
+        found = source.source_line(s, decls[f.decl].name.start)
         module = source.component_at(s, decls[f.decl].span.start)
         probes @ probes.push(
             Probe(file: found.file, line: found.line, text: probe_line(probe: probe_name(module: module, name: name), name: name, parameters: parameters.must(), arguments: arguments))

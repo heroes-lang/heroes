@@ -108,6 +108,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a place less exact than it could be in every clang note, sanitizer frame or debugger line past such a field; no value moves.
 
+    **2026-10-03, lane b8-emit, each assertion of an array field is its own counted line, and the `lines` suite asks every restore of the generated file for its own line**: repaired at `1a4bb344`, gated by its cases and the compiler's own tests; the net is owed at the batch's close. All 261 short restores in 19 traces were the 40 continuation lines above them, none from another writer; a C-boundary file (`extern*`), so it closes after the push's platform legs.
+
 - [ ] **187 — four parser diagnostics are still appended through a field place, against defect 146's rule and `cursor.hero`'s own comment** | `git grep -n 'c.diagnostics @ c.diagnostics.push' -- selfhost/parse/` prints `loop_habit.hero:62`, `line_end.hero:251`, `type.hero:257`, `type.hero:320`, while `selfhost/cursor.hero:272` says *Every parser module appends through this* | the four lines · `cursor.push_diagnostic` (`selfhost/cursor.hero:273`) · **class: improvement**
 
     **Origin:** lane arm's report, 2026-10-02; read by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/field-place-push/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`), which finds three more modules appending the same way, their cost unmeasured. No cost is measured for any: at `loop_habit.hero:62` the append is not what makes defect 184 slow.
@@ -342,11 +344,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): every one of R6's 25 shapes builds at 2,000 on this Mac and in the Linux arm64 container after 218's repair, so this is a cost past the floor, not a program that fails.
 
+    **2026-10-03, lane b8-emit, a `#line` asks the source for its file and line and walks no line**: repaired at `17322f0e`, gated by its cases and the compiler's own tests; the net is owed at the batch's close. Counted on an instrumented copy of each compiler's own C, the characters the column walk covers in `build --emit-c`: concat-chain-2000 24,188,468 to 286, index-chain-2000 92,310,458 to 286, for-nested-1000 80,378,910 to 286; seven more emitter sites built `#line` text through `locate` and ask the same lookup.
+
 - [ ] **229 — the emitter's type gate walks a deep type in full at each use** | lane irverify's profile: `emit/gate.check_type` → `check_element`, about 60% of `index-chain-2000`'s build after defect 218's repair (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/emit/gate.hero` · **class: improvement**
 
     **Origin:** lane irverify, 2026-10-03, the same profiles, reported to the coordinator; not yet run by the coordinator.
 
     **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a cost past panel 184's R6 floor, which the shape meets.
+
+    **2026-10-03, lane b8-emit, the emitter answers each type's questions once per program**: repaired at `a387bee9`, gated by its cases and the compiler's own tests; the net is owed at the batch's close. The gate was one of four emitter walks of the cause: the arena loops of `typeorder`, `descriptor_set` and `ctype.with_options` asked `mentions_generic` of every type id in each of 394 units (8,905,311 calls in the compiler's own emission, now 0), and `synth.collect` and `extern_union.reach` walked again for every use. Counted on an instrumented copy of each compiler: `table.get` on index-chain-2000 66,249,770 to 2,178,748, map-literal-2000 126,311,868 to 167,817; the C byte-identical.
 
 - [ ] **230 — the ownership pass asks of every counted load whether a write in its block lets it survive, a walk of the block each time** | lane irverify's profile: `ir/own.run` → `place_store.load_survives_write`, 33 to 35% of `one-return-many-800`, `many-params-800` and `record-literal-2000` (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/ir/own.hero`, `selfhost/ir/place_store.hero` · **class: improvement**
 
@@ -354,11 +360,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a cost past panel 184's R6 floor, which the shapes meet.
 
+    **2026-10-03, lane b8-emit, the ownership pass costs a block's length**: repaired at `23579605`, gated by its cases and the compiler's own tests; the net is owed at the batch's close. The per-load walk was one of three costs of the square, and counted on the item's own shapes not the largest: rule 5's pushes copied the whole output block (a `.must()` in the pushed instruction kept the place store from growing it), 17,961,115 instructions copied on one-return-many-800 and 72,133,964 on record-literal-2000, now 58,870 and 90,479; `writes_root` 1,598,832 calls to 6.
+
 - [ ] **231 — every return sweeps every owned slot, so a function of many returns and many slots grows its IR and its C as their product** | lane irverify: `slots-returns-400` builds in 64.57 s after defect 218's repair, and at 800 clang does not finish in 300 s (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/ir/` (the sweep at a return) · panel 106's design · **class: adjacent**
 
     **Origin:** lane irverify, 2026-10-03, beside defect 218, reported to the coordinator; not yet run by the coordinator.
 
     **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): real, beside the work; an 800-return function is no shape of panel 184's R6, so no floor it sets is broken.
+
+    **2026-10-04, lane b8-emit, measured and stopped, not repaired**: after `17322f0e`, `a387bee9` and `23579605` no step of the compiler grows faster than this shape's output (none at x4.5 or more from 200 to 400 while the output grows x3.99, on an instrumented copy). The output is the product by panel 021's R3, kept by panel 106: every returning block releases every owed slot, 481,201 `decref_slot` for 402 returns and 1,200 slots at 400, 1,922,401 and 5,815,408 lines of C at 800. A repair changes what the IR does at a return (one shared exit, or a sweep pruned by liveness, which 021 R3 refused) or the C's one-label-per-block rule, a question for a sitting (CLAUDE.md § 4).
 
 - [ ] **232 — the reader of clang's *file not found* line cuts a header's name at a quote and cannot read a code point clang prints as `<U+XXXX>`, so a missing header named with either stops `build` at exit 2** | `extern "a'b.h"` over `function seven() -> i32`, no header beside it: `check` 0, `build` 2, *internal error: compiling the generated C failed*, clang's *'a'b.h' file not found* not matched back to the group, where `extern "ab.h"` missing is `ffi_missing_header` at exit 1 (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro188/squote-missing/`); a private-use U+E000, an unassigned U+0378 or a noncharacter U+FFFE in a missing header's name the same, clang printing it `<U+E000>`, on both platforms (the compiler-engineer, stage E) | `selfhost/emit/ffi_build.hero` (`missing_header`, which takes the name up to the first quote and matches it whole) · **class: blocking**
 

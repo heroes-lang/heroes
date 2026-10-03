@@ -24,8 +24,20 @@
 # NOT flagged and must not be — it is a real, non-blank line of the
 # author's file, which is the whole test.
 #
-# `<heroes library>` and any other non-`.hero` name are skipped: there is
-# no file to ask.
+# `<heroes library>` is skipped: there is no file to ask.
+#
+# **And every other name is the generated file, whose restore must name its
+# own next line** (defect 185, 2026-10-03). `.claude/rules/generated-c.md`
+# says the restore carries the printer's own output line count, and until
+# that day nothing asked: this suite skipped every name that was not a
+# `.hero` file, so an array field's two assertions, written as one string
+# holding a newline, left every later restore of the generated file one line
+# short per such field, 261 restores in 19 of the blessed traces, for as long
+# as such fields were emitted. The emitter claims three kinds of name, the
+# author's files, the library and the generated file (measured over the 354
+# traces that day: 40,176 claims on the generated file, 5,964 on the
+# library), so a claim on anything else that does not name its own next line
+# fails here rather than passing unread.
 
 use cases
 use report
@@ -35,6 +47,11 @@ use strings
 
 constant RUN_DIR: str
     "tests/golden/run"
+
+# What the emitter calls the library in a `#line` (`selfhost/source.hero`'s
+# `LIBRARY_FILE`): a name with no file behind it, so no line of it is asked.
+constant LIBRARY_FILE: str
+    "<heroes library>"
 
 # golden.rs floors the corpus at 40 and floors the number that actually emitted
 # at 40 as well — a machine that emits nothing must not report green.
@@ -106,7 +123,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
             report.keep_failure(
                 @r,
                 label: "lines/" + item.name,
-                detail: "  " + wrong.len().to_str() + " generated line(s) point at a source line that is blank or absent — `#line` drifted, and a debugger will show the author a line they did not write:\n" + shown(wrong)
+                detail: "  " + wrong.len().to_str() + " `#line` claim(s) wrong: a generated line pointing at a source line that is blank or absent, or a restore of the generated file not naming its own next line — `#line` drifted, and a debugger or a clang note will show the author a line they did not write:\n" + shown(wrong)
             )
 
     if starved(skipped: skipped, found: found.len())
@@ -160,6 +177,14 @@ function offences(c: str, source: str) -> [str]
                 if !number.is_err()
                     claim_line @ number.must()
                     claim_file @ unquoted(rest.slice(from: space.must() + 1, to: rest.len()))
+
+            # A restore of the generated file names the line after its own
+            # (defect 185): it is the printer's count, and a count it got
+            # wrong moves every line of C below it.
+            if generated_claim(claim_file) && claim_line != row_number + 1
+                found @ found.push(
+                    "    C:" + row_number.to_str() + " `" + strings.trimmed(row) + "` names line " + claim_line.to_str() + " of the generated file, and the line after it is " + (row_number + 1).to_str() + " (from " + source + ")"
+                )
             continue
 
         if claim_file.len() == 0
@@ -191,6 +216,12 @@ function offences(c: str, source: str) -> [str]
         claim_line @ claim_line + 1
 
     return found
+
+# Whether a claim names the generated file: a name, neither the author's
+# `.hero` file nor the library. An empty name is a directive this walk could
+# not read, and claims nothing.
+function generated_claim(file: str) -> bool
+    return file.len() > 0 && !strings.ends_with(text: file, suffix: ".hero") && file != LIBRARY_FILE
 
 # The first three offences and a count of the rest: a drifted `#line`
 # repeats, and five hundred of them in one message is a message nobody
@@ -261,9 +292,28 @@ test "the count advances after the anchor, which is the defect this exists for"
     assert offences(c: drifting, source: "t").len() == 1
     assert strings.contains(text: offences(c: drifting, source: "t")[0], needle: ":2 is a blank line")
 
-test "a name that is not a .hero file is nobody's line"
+test "the library is nobody's line"
     assert offences(c: "#line 400 \"<heroes library>\"\nint x;\n", source: "t").len() == 0
     assert offences(c: "int x;\n", source: "t").len() == 0
+
+test "a restore of the generated file names its own next line, and one short is an offence"
+    # Defect 185's shape: the second row is one line of C to the printer and
+    # two to C, so the restore on row 4 names line 4 where the next is 5.
+    good = "int a;\n#line 3 \"m.c\"\nint b;\n"
+    assert offences(c: good, source: "t").len() == 0
+    short = "int a;\nint b;\nint c;\n#line 4 \"m.c\"\nint d;\n"
+    assert offences(c: short, source: "t").len() == 1
+    assert strings.contains(
+        text: offences(c: short, source: "t")[0],
+        needle: "names line 4 of the generated file, and the line after it is 5"
+    )
+
+    # A claim the walk cannot read names no file, so it is no restore.
+    assert offences(c: "#line x \"m.c\"\nint a;\n", source: "t").len() == 0
+    assert !generated_claim("")
+    assert !generated_claim("<heroes library>")
+    assert !generated_claim("a/b.hero")
+    assert generated_claim("m.c")
 
 test "unquoted undoes C's escapes"
     assert unquoted("\"a.hero\"") == "a.hero"

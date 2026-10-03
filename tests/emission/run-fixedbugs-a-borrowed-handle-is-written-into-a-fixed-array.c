@@ -11,12 +11,13 @@ _Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compile
 
 #line 18 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
 _Static_assert(sizeof(struct four) - __builtin_offsetof(struct four, a) != 0, "heroes-ffi-flex Four a");
-             _Static_assert(_Generic(&((struct four *)0)->a, ob * (*)[4]: 1, default: 0) && sizeof(struct four) - __builtin_offsetof(struct four, a) >= sizeof(ob *[4]), "heroes-ffi-field Four a");
-#line 15 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 18 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
+_Static_assert(_Generic(&((struct four *)0)->a, ob * (*)[4]: 1, default: 0) && sizeof(struct four) - __builtin_offsetof(struct four, a) >= sizeof(ob *[4]), "heroes-ffi-field Four a");
+#line 17 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
 
 #line 16 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
 _Static_assert(__builtin_classify_type(*(ob * *)0) != 13, "heroes-ffi-union Ob ");
-#line 19 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 21 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -95,7 +96,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 98 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 100 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsaborrowedhandleiswrittenintoafixedarray_Ob_eq(ob * const *a, ob * const *b);
@@ -116,7 +117,7 @@ HeroArrayHeader * h_library_args(void);
 
 #line 22 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
 void h_fixedbugsaborrowedhandleiswrittenintoafixedarray_main(void) {
-#line 119 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 121 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     struct four h0_f;
     int64_t h1_k;
     HeroArrayHeader * h2_own2 = {0};
@@ -188,7 +189,7 @@ bb0:
     t30 = h2_own2;
 #line 26 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
     h2_own2 = t13;
-#line 191 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 193 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_array_decref(t30);
 #line 26 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
     t14 = hero_array_len(t13);
@@ -244,14 +245,14 @@ bb0:
     hero_print_bool(t29);
 #line 28 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
     hero_print_end();
-#line 247 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 249 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_array_decref(h2_own2);
     return;
 }
 
 #line 188 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 254 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 256 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -278,15 +279,15 @@ bb0:
     t14 = h2_own2;
 #line 189 "<heroes library>"
     h2_own2 = t1;
-#line 281 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 283 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_array_decref(t14);
 #line 189 "<heroes library>"
     t15 = h0_out;
-#line 285 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 287 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_array_incref(t1);
 #line 189 "<heroes library>"
     h0_out = t1;
-#line 289 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 291 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_array_decref(t15);
 #line 190 "<heroes library>"
     t2 = INT64_C(0);
@@ -314,7 +315,7 @@ bb2:
     t16 = h3_own3;
 #line 192 "<heroes library>"
     h3_own3 = t8;
-#line 317 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 319 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_str_decref(t16);
 #line 192 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -332,16 +333,16 @@ bb2:
 bb3:
 #line 194 "<heroes library>"
     t13 = h0_out;
-#line 335 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 337 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_array_incref(t13);
 #line 194 "<heroes library>"
-#line 338 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 340 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_array_decref(h0_out);
 #line 194 "<heroes library>"
-#line 341 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 343 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_array_decref(h2_own2);
 #line 194 "<heroes library>"
-#line 344 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 346 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_str_decref(h3_own3);
     return t13;
 }

@@ -187,9 +187,11 @@ function finish(w: Writer) -> str
 # Point the next line at whichever source a span actually came from.
 # Every caller that has a span and a Source goes through here rather
 # than choosing for itself, so "is this the author's code or the
-# library's" is answered in one place.
+# library's" is answered in one place. The file and line only: a `#line`
+# carries no column, and asking `locate` for one walked the line up to the
+# offset for every instruction, the square of a long line (defect 228).
 function at_span(@w: Writer, s: source.Source, offset: i64)
-    found = source.locate(s, offset)
+    found = source.source_line(s, offset)
     at_file(@w, file: found.file, at: found.line)
 
 ## Tests

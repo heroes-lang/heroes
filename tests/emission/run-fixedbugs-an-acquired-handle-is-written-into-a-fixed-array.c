@@ -11,8 +11,9 @@ _Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compile
 
 #line 23 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
 _Static_assert(sizeof(struct four) - __builtin_offsetof(struct four, a) != 0, "heroes-ffi-flex Four a");
-             _Static_assert(_Generic(&((struct four *)0)->a, ob * (*)[4]: 1, default: 0) && sizeof(struct four) - __builtin_offsetof(struct four, a) >= sizeof(ob *[4]), "heroes-ffi-field Four a");
-#line 15 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 23 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
+_Static_assert(_Generic(&((struct four *)0)->a, ob * (*)[4]: 1, default: 0) && sizeof(struct four) - __builtin_offsetof(struct four, a) >= sizeof(ob *[4]), "heroes-ffi-field Four a");
+#line 17 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -93,7 +94,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 98 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsanacquiredhandleiswrittenintoafixedarray_Ob_eq(ob * const *a, ob * const *b);
@@ -114,7 +115,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 29 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
 void h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main(void) {
-#line 117 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 119 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     struct four h0_f;
     int64_t h1_n;
     HeroArrayHeader * h2_xs0 = {0};
@@ -205,15 +206,15 @@ bb0:
     t51 = h8_own8;
 #line 33 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     h8_own8 = t10;
-#line 208 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 210 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(t51);
 #line 33 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     t52 = h2_xs0;
-#line 212 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 214 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_incref(t10);
 #line 33 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     h2_xs0 = t10;
-#line 216 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 218 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(t52);
 #line 33 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     t11 = INT64_C(0);
@@ -307,15 +308,15 @@ bb4:
     t53 = h9_own9;
 #line 39 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     h9_own9 = t33;
-#line 310 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 312 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(t53);
 #line 39 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     t54 = h5_xs1;
-#line 314 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 316 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_incref(t33);
 #line 39 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     h5_xs1 = t33;
-#line 318 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 320 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(t54);
 #line 39 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     t34 = INT64_C(0);
@@ -389,23 +390,23 @@ bb8:
     hero_print_int(t50);
 #line 42 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     hero_print_end();
-#line 392 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 394 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(h2_xs0);
 #line 42 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
-#line 395 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 397 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(h5_xs1);
 #line 42 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
-#line 398 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 400 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(h8_own8);
 #line 42 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
-#line 401 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 403 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(h9_own9);
     return;
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 408 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 410 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -429,15 +430,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 432 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 434 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 436 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 438 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 440 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 442 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -475,13 +476,13 @@ bb2:
 bb3:
 #line 32 "<heroes library>"
     t12 = h2_out;
-#line 478 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 480 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_incref(t12);
 #line 32 "<heroes library>"
-#line 481 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 483 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(h2_out);
 #line 32 "<heroes library>"
-#line 484 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 486 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(h4_own4);
     return t12;
 }

@@ -41,7 +41,7 @@ function extern_record_assertions(@w: writer.Writer, c: state.Checked, names: ct
                     hero_name = source.span_text(s, decl.name)
 
                     for field in rec.fields
-                        line = extern_field.assertion(
+                        lines = extern_field.assertions(
                             c,
                             names,
                             s,
@@ -50,15 +50,21 @@ function extern_record_assertions(@w: writer.Writer, c: state.Checked, names: ct
                             field: field
                         )
 
-                        if line.is_err()
+                        if lines.is_err()
                             continue
 
                         # #line at the FIELD, so a failure lands on the
                         # author's own line and the mapper can tell
                         # whose mistake it is from the file clang names.
-                        found = source.locate(s, field.name.start)
+                        # One `line` per assertion (defect 185): the
+                        # writer counts each, and restores the field's
+                        # line before the second of an array field's two.
+                        found = source.source_line(s, field.name.start)
                         writer.at_file(@w, file: found.file, at: found.line)
-                        writer.line(@w, text: line.must())
+
+                        for line in lines.must()
+                            writer.line(@w, text: line)
+
                         wrote @ true
             # NOT `continue`: this loop keeps the declaration index
             # itself, and a `continue` in a match arm jumps to the next
@@ -127,3 +133,52 @@ test "assertions land on the field's line, the probe counts positionally"
     # check's (`emit/layout_text.hero`), asked before this unit compiles.
     assert !has(text: got, needle: "hero_ffi_complete_")
     assert !has(text: got, needle: "-Wmissing-field-initializers")
+
+test "an array field's two assertions are two counted lines, each under the field's own line"
+    # Defect 185: they were one string holding a newline, so the writer
+    # counted one line where C read two. The restore of the generated file
+    # below them then named a line one too low per array field, and the
+    # second assertion rode C's auto-increment onto line 4, the next field.
+    text = "extern \"m.h\"\n    record Probe\n        name: u8[4]\n        tail: f32[2]\n\nfunction touch(p: Probe)\n    _ = p\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    names = ctype.new_names(s, parsed.decls)
+    w: writer.Writer @ writer.new_writer("t")
+    extern_record_assertions(@w, c, names, s, parsed.decls)
+    rows = rows_of(writer.finish(w))
+
+    # Each field's flex question, then its own line restated, then its
+    # field question: both assertions of `name` claim line 3, of `tail` 4.
+    assert rows[0] == "#line 3 \"t.hero\""
+    assert has(text: rows[1], needle: "heroes-ffi-flex Probe name")
+    assert rows[2] == "#line 3 \"t.hero\""
+    assert has(text: rows[3], needle: "heroes-ffi-field Probe name")
+    assert rows[4] == "#line 4 \"t.hero\""
+    assert has(text: rows[5], needle: "heroes-ffi-flex Probe tail")
+    assert rows[6] == "#line 4 \"t.hero\""
+    assert has(text: rows[7], needle: "heroes-ffi-field Probe tail")
+
+    # And the restore of the generated file names its own next line: row 9
+    # of the output says the line after it is 10, which it is.
+    assert rows[8] == "#line 10 \"t.c\""
+    assert rows.len() == 10
+
+# The output's lines, split at each newline the bytes hold, so a line
+# carrying a newline of its own is two rows here, as it is two lines to C.
+function rows_of(text: str) -> [str]
+    rows: [str] @ []
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at < text.len()
+        if text[at] == '\n'
+            rows @ rows.push(text.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    if start < text.len()
+        rows @ rows.push(text.slice(from: start, to: text.len()))
+    return rows

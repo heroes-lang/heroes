@@ -183,7 +183,7 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl], c: sta
         # A constant asks the rest of its questions in the first round.
         if emit_externs.is_extern_constant(decls, f)
             continue
-        at = source.locate(s, start)
+        at = source.source_line(s, start)
         said: str @ name
 
         if f.params.len() == 0
