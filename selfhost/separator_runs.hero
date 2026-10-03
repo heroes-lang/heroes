@@ -19,8 +19,7 @@
 # and the name's list lent to `push_fix` (spec § 10: a push reached through
 # a field or an index copies the array, and so did lending
 # `@reports[k].fixes`, 15.3 times the instructions retired for 4 times the
-# appends, where this takes 1.66; the members' rule, through a field place,
-# grew 6.29 times from 500 fields to 2,000; lane b8-recovery, 2026-10-03).
+# appends, where this takes 1.66; lane b8-recovery, 2026-10-03).
 #
 # A leaf: it reads the text and the reports it is handed.
 #
