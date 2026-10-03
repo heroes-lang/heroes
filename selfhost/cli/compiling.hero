@@ -200,6 +200,10 @@ function include_lines(headers: [str]) -> str
 # `emit/clang_place.slashed` writes it for clang's diagnostics, because a
 # `use` line would move every function of this module down one line in the
 # seed's `#line` directives, measured: the same seed byte for byte but them.
+# **And the probe's own unit is never a row**: it lives in the directory the
+# key names, which `skip` leaves out, and on Windows no row was left out
+# until `deps.under` read a `\` and a `/` as one separator (defect 214's
+# second half, 2026-10-03).
 test "what a probe's headers resolve to is asked of clang, and a header that appears earlier in the search is another answer (defect 168)"
     root = "build/selftest-compiling-reads"
     assert !process.remove_tree(root).is_err()
@@ -229,6 +233,7 @@ test "what a probe's headers resolve to is asked of clang, and a header that app
     beside = turned.join("")
     assert process.holds(text: beside, needle: digest.digest(one) + " " + root + "/src/x.h")
     assert !process.holds(text: beside, needle: root + "/inc/x.h")
+    assert !process.holds(text: beside, needle: root + "/build/reads/")
     assert !write_file(path: root + "/inc/x.h", text: two).is_err()
     second: {str: str} @ {}
     again: [str] @ []
@@ -242,6 +247,7 @@ test "what a probe's headers resolve to is asked of clang, and a header that app
     earlier = again.join("")
     assert process.holds(text: earlier, needle: digest.digest(two) + " " + root + "/inc/x.h")
     assert !process.holds(text: earlier, needle: root + "/src/x.h")
+    assert !process.holds(text: earlier, needle: root + "/build/reads/")
     assert earlier != beside
 
     # A header that is not there does not preprocess, and the answer is
