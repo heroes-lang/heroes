@@ -1,0 +1,13 @@
+# fixedbugs, defect 143, lane ffimsg, 2026-10-03:
+# `fixedbugs-143-a-macro-declared-at-a-wrong-width-drafts-no-width` on a
+# header of the tree's own, since that case binds `sys/wait.h`, which the
+# Windows box lacks. `status: u8` where the macro reads an `int`'s bits:
+# the function the note drafts must not carry the width, or the author's
+# own header holds the hole, so every C type in it is a placeholder, and
+# the parameter's NAME is the declaration's.
+
+extern "fixedbugs-143-statement-macros.h"
+    function EXIT_STATUS_OF(status: u8) -> i64  #~ ffi_macro_name
+
+function main()
+    print(EXIT_STATUS_OF(status: 1))
