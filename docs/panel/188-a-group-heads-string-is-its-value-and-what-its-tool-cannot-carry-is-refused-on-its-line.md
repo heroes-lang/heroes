@@ -519,4 +519,13 @@ R4 closes only as a thesis rule (filed, R12).
 
 ## Author's verdict
 
-Pending: `docs/work/DECIDE.md`, `panel 188`.
+**RATIFIED 2026-10-03**, on the author's answer to the recommendation put to
+them that evening, meant as: *OK, ratify as you said, and push.* **Recorded
+as a reading**, CLAUDE.md § 4's default; not `by delegation`.
+
+**What the yes settles**: R1 to R12 as the resolution above states them,
+the two elements where the synthesis parts from a seat included (R4 over the
+spec-warden's objection, R10 without a spec sentence). The landing is batch
+8's FFI lane, `lane-b8-ffi`, opened at `dcaca1a3`. **What it does not
+settle**: the platform legs R12 owes before defect 216 closes, the Windows
+box's above all.
