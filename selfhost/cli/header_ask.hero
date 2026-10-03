@@ -74,7 +74,7 @@ test "a refused round's question is asked of the real header (defect 152)"
         t,
         art,
         s,
-        under: compiling.Compiling(search_include: none, package_flags: none, runtime: t.runtime, source_dir: "build")
+        under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: "build")
     )
     assert ffi_lookup.has(text: got.said, needle: "build/selftest_header_ask.hero:2:")
     assert ffi_lookup.has(text: got.said, needle: "called object type")
@@ -83,3 +83,58 @@ test "a refused round's question is asked of the real header (defect 152)"
 
     # `errno` is a macro over an object on every libc this compiler targets.
     assert !got.macros["errno"].is_err()
+
+# **A refused round's questions are asked under the build's level and
+# sanitizers** (defect 167). The header makes `thing` a value macro when
+# optimised and when sanitised, and a function otherwise: asked as `-O0`
+# reads it, neither a macro nor a value; asked as `-O2` and as `--sanitize`
+# read it, both, which is what the program's own compile meets. Measured
+# before this repair: at `-O2` the round's refusal of `thing()` had no
+# answer to be told by and the build stopped at exit 2, clang's text.
+test "a refused round's questions are asked under the build's level and sanitizers (defect 167)"
+    library = library_source.text()
+    dir = "build/selftest-header-ask-level"
+    assert !process.mkdir_all(dir).is_err()
+    header = "#if defined(__OPTIMIZE__) || __has_feature(address_sanitizer)\n#define thing 5\n#else\nint thing(void);\n#endif\n"
+    assert !write_file(path: dir + "/lvl.h", text: header).is_err()
+    text = "extern \"lvl.h\"\n    function thing() -> i32\n\nfunction main()\n    print(thing())\n"
+    assert !write_file(path: dir + "/p.hero", text: text).is_err()
+    s = input.read_compilation(path: dir + "/p.hero", library: library).must()
+    none: [str] = []
+    options = compile.Options(
+        level: "-O0",
+        dump_ir: false,
+        emit_c: true,
+        output: fail(code: "none", msg: "no output"),
+        sanitize: false,
+        target: .program_build,
+        headers_from: none,
+        library: none
+    )
+    art = compile.to_unit(s, options, version: "0.0.0-port").must()
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-header-ask").must()
+    plain = ask(
+        t,
+        art,
+        s,
+        under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir)
+    )
+    assert plain.macros["thing"].is_err()
+    assert plain.values["thing"].is_err()
+
+    for sanitize in [false, true]
+        level: str @ "-O2"
+
+        if sanitize
+            level @ "-O0"
+        under = compiling.Compiling(
+            level: level,
+            sanitize: sanitize,
+            search_include: none,
+            package_flags: none,
+            runtime: t.runtime,
+            source_dir: dir
+        )
+        read_so = ask(t, art, s, under: under)
+        assert !read_so.macros["thing"].is_err()
+        assert !read_so.values["thing"].is_err()
