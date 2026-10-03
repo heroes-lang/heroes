@@ -44,6 +44,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **2026-10-03, lane rec187, panel 187's R5: measured as filed on the lane's compiler at `97008231` (V1, V5 and R6 landed), its reproducers reading as on the head's; pinned by `tests/golden/check/panel-187-a-sigil-before-return-is-told-twice.hero`, a known cost under the sitting's R1**, not repaired inline: the statement's start is `selfhost/grammar_expr.hero`'s, at its `DECIDED` ceiling of 1085 with no line of room, so a repair first moves code out of that knot. The item stays open.
 
+    **2026-10-03, lane b8-recovery: a sigil before a word that begins a statement is read as before a name, told once at the `@`, naming the word, its deletion certain, and the line read as that statement** (`parse/at_prefix`, `grammar_expr.prefixed`, which took no new line; twelve shapes one message each, `@return 1 +` now telling its operand; the sigil's look ahead on `cursor.trial`, linear): repaired at `ecf53e41`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake. The recovery cluster's.
 
 - [ ] **180 — a range written `1..2` is told twice as a field access** | `x = 1..2`: `expected_field_name` at 3:11, *found `.`*, and again at 3:12, *found a number (`2`)*; `x = 0x1..5` the same at 3:13 and 3:14 | `selfhost/grammar_expr.hero:343` · **class: adjacent**
