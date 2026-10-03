@@ -332,7 +332,7 @@ test "a package's words reach the layout check each one whole, and its verdict i
         c,
         s,
         parsed.decls,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: [headers_at], package_flags: ["-DHERO_A=1 -DHERO_EXTRA"], runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], package_flags: ["-DHERO_A=1 -DHERO_EXTRA"], runtime: t.runtime, source_dir: ""))
     )
     assert !one_word.is_err()
 
@@ -344,7 +344,7 @@ test "a package's words reach the layout check each one whole, and its verdict i
         c,
         s,
         parsed.decls,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: [headers_at], package_flags: ["-DHERO_A=1", "-DHERO_EXTRA"], runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], package_flags: ["-DHERO_A=1", "-DHERO_EXTRA"], runtime: t.runtime, source_dir: ""))
     )
     assert two_words.is_err()
     assert layout_rows.byte_index(text: pointee.failure_text(two_words), needle: "heroes-ffi-missing EXTRA y") > 0
@@ -358,7 +358,7 @@ test "a package's words reach the layout check each one whole, and its verdict i
         c,
         s,
         parsed.decls,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: [headers_at], package_flags: ["-DHERO_A=1", "-DHERO_EXTRA", "-lz"], runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], package_flags: ["-DHERO_A=1", "-DHERO_EXTRA", "-lz"], runtime: t.runtime, source_dir: ""))
     )
     assert pointee.failure_text(linked) == pointee.failure_text(two_words)
     assert process.files_under(t.build).must().len() == held
@@ -410,7 +410,7 @@ test "the layout check asks each directory's own header, and one that appears ea
                 c,
                 s,
                 parsed.decls,
-                probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir))
+                probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir))
             )
 
             if dir == wider
@@ -422,7 +422,14 @@ test "the layout check asks each directory's own header, and one that appears ea
     # the `--include` directory, which a unit's compile searches first.
     t.build @ root + "/build-shadow"
     assert !process.remove_tree(t.build).is_err()
-    under = compiling.Compiling(search_include: [inc], package_flags: none, runtime: t.runtime, source_dir: whole)
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [inc],
+        package_flags: none,
+        runtime: t.runtime,
+        source_dir: whole
+    )
     assert !check(t, low.program, c, s, parsed.decls, probe: probing(t, low.program, s, parsed.decls, under: under)).is_err()
     assert !write_file(path: inc + "/xy.h", text: "#include <stdint.h>\ntypedef struct { int32_t x; int32_t y; } XY;\n").is_err()
     shadowed = check(t, low.program, c, s, parsed.decls, probe: probing(t, low.program, s, parsed.decls, under: under))
@@ -455,6 +462,8 @@ test "the layout check refuses a record named after a typedef with no layout, na
         assert c.diagnostics.len() == 0
         low = lower.lower(parsed.tree, out, c, s, parsed.decls)
         under = compiling.Compiling(
+            level: "-O0",
+            sanitize: false,
             search_include: [headers_at],
             package_flags: none,
             runtime: t.runtime,
@@ -470,6 +479,56 @@ test "the layout check refuses a record named after a typedef with no layout, na
             assert said == layout_screen.NO_LAYOUT + " void_t void\n"
         else
             assert layout_rows.byte_index(text: said, needle: layout_screen.NO_LAYOUT) < 0
+
+# **The layout check judges a record under the build's level and
+# sanitizers** (defect 167). The header gives its struct a member `y` when
+# optimised and when sanitised, and the record names `x` alone: whole at
+# `-O0`, leaving `y` out at `-O2` and under `--sanitize`, each asked of its
+# own reading in one `build/`. Measured before this repair: the `-O2` build
+# accepted it, and `==` on two values whose `y` differ answered true.
+test "the layout check judges a record under the build's level and sanitizers (defect 167)"
+    text = "extern \"lvl.h\"\n    record LV\n        x: i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-layout-level"
+    headers_at = "build/selftest-layout-level-include"
+    assert !process.remove_tree(t.build).is_err()
+    assert !process.mkdir_all(headers_at).is_err()
+    header = "#include <stdint.h>\ntypedef struct {\n    int32_t x;\n#if defined(__OPTIMIZE__) || __has_feature(address_sanitizer)\n    int32_t y;\n#endif\n} LV;\n"
+    assert !write_file(path: headers_at + "/lvl.h", text: header).is_err()
+    none: [str] = []
+
+    for level in ["-O0", "-O2", "-O0"]
+        under = compiling.Compiling(
+            level: level,
+            sanitize: false,
+            search_include: [headers_at],
+            package_flags: none,
+            runtime: t.runtime,
+            source_dir: ""
+        )
+        asked = check(t, low.program, c, s, parsed.decls, probe: probing(t, low.program, s, parsed.decls, under: under))
+
+        if level == "-O2"
+            assert layout_rows.byte_index(text: pointee.failure_text(asked), needle: "heroes-ffi-missing LV y") > 0
+        else
+            assert !asked.is_err()
+
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: true,
+        search_include: [headers_at],
+        package_flags: none,
+        runtime: t.runtime,
+        source_dir: ""
+    )
+    sanitised = check(t, low.program, c, s, parsed.decls, probe: probing(t, low.program, s, parsed.decls, under: under))
+    assert layout_rows.byte_index(text: pointee.failure_text(sanitised), needle: "heroes-ffi-missing LV y") > 0
 
 # **A member with no bytes is complete only where C says it has none**
 # (panel 186 R4; defect 151, the Windows box's pre-push leg, 2026-10-02). An

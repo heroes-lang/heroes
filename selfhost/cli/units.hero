@@ -50,6 +50,7 @@ use cli/process
 use cli/publish
 use cli/toolchain
 use cli/libraries
+use cli/compiling
 use cli/strings
 
 # The distinct components of a compilation, in file-table order: the
@@ -85,17 +86,26 @@ function components(s: source.Source) -> [str]
 # hashing — about 104 s at this compiler's measured 1.2 MB/s. Read
 # once, hashed once, answered once per TU.
 #
-# **The key names the package words the compile RECEIVES**, by the rule that
-# hands them over, never the package's whole answer (defect 161): a compile
-# kept a package's `-I` alone under a key naming all of it, so the compiler
-# that passes the rest replayed the object compiled without them, measured
+# **The key names every word the compile RECEIVES, from the list its line is
+# built from** (`compiling.unit_words`, defect 167), each by its length
+# (`libraries.key_text`), so a word that holds a space (defect 162) is never
+# two. It named a package's whole answer until defect 161: a compile kept a
+# package's `-I` alone under a key naming all of it, so the compiler that
+# passes the rest replayed the object compiled without them, measured
 # 2026-10-02 on one `build/`: a header returning 8 under its `.pc`'s `-D`
-# printed 7. The words come after `compile:`, so no key written before names
-# the same text, each by its length (`libraries.key_text`), so a word that
-# holds a space (defect 162) is never two.
+# printed 7. Until defect 167 it named the level, the sanitizers, the
+# `--include` and `--library` directories and a package's compile words, and
+# not the runtime's directory or the source's own, which its line searches:
+# a unit's text names its root source in its first line, so no two
+# directories met under one key, and that was a sentence of the text, not a
+# fact the key asked. The words come after `words:`, so no key written before
+# names the same text.
 function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, package_flags: [str], source_dir: str, search_include: [str], @memo: {str: str}) -> str?
+    words = compiling.unit_words(
+        compiling.Compiling(level: level, sanitize: sanitize, search_include: search_include, package_flags: package_flags, runtime: t.runtime, source_dir: source_dir)
+    )
     key = digest.digest(
-        t.fingerprint + "|tu|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|compile:" + libraries.key_text(libraries.compile_flags(package_flags))
+        t.fingerprint + "|tu|" + t.compiler_key + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|words:" + libraries.key_text(words)
     )
     dir = t.build + "/tu-" + key
     process.mkdir_all(dir)?
@@ -138,24 +148,8 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # `-MT dep` names the listing's target a word rather than a path,
     # so the reader cuts at the first `:` on a fact it chose. The
     # listing rides this compile; no second clang invocation exists.
-    line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
-    line @ line.push(level)
-    line @ strings.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
-    line @ strings.with_all(list: line, more: ["-c", "-MD", "-MT", "dep", "-MF", depfile])
-
-    for one in search_include
-        line @ strings.with_all(list: line, more: ["-I", one])
-
-    # A package's compile words, by the one rule every compile step reads
-    # (`libraries.compile_flags`; defect 161: `-I` alone was kept here).
-    for flag in libraries.compile_flags(package_flags)
-        line @ line.push(flag)
-
-    line @ strings.with_all(list: line, more: [c_file, "-I", t.runtime])
-
-    if source_dir.len() > 0
-        line @ strings.with_all(list: line, more: ["-I", source_dir])
-    line @ strings.with_all(list: line, more: ["-o", staged])
+    line: [str] @ strings.with_all(list: ["clang"], more: words)
+    line @ strings.with_all(list: line, more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, c_file, "-o", staged])
     compiled = toolchain.run_clang(line: line, what: "compiling the generated C", err_path: err_path)
     captured = read_file(err_path)
     publish.discard(err_path)
@@ -322,3 +316,33 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
     linked = tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: ["-DHEROES_PACKAGE_VALUE=7", "-lz", "-framework", "Cocoa"], source_dir: "", search_include: none, @memo).must(
     )
     assert linked == seven
+
+# **A unit's object is keyed by every word its line compiles under, the
+# source's own directory among them** (defect 167, `compiling.unit_words`). One
+# text compiled from two source directories, each with its own `beside.h`,
+# is two objects. The key named no source directory until then; a unit's
+# text kept two directories apart only because its first line names its root
+# source, which this text does not.
+test "a unit compiled beside two same-named headers is two objects, keyed by the source's own directory (defect 167)"
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    root = "build/selftest-units-dirs"
+    t.build @ root + "/build"
+    assert !process.remove_tree(root).is_err()
+    one = root + "/one"
+    two = root + "/two"
+
+    for dir in [one, two]
+        assert !process.mkdir_all(dir).is_err()
+
+    assert !write_file(path: one + "/beside.h", text: "#define HERO_BESIDE 1\n").is_err()
+    assert !write_file(path: two + "/beside.h", text: "#define HERO_BESIDE 2\n").is_err()
+    text = "#include <stdint.h>\n#include <beside.h>\nint64_t heroes_beside(void);\nint64_t heroes_beside(void) { return HERO_BESIDE; }\n"
+    none: [str] = []
+    memo: {str: str} @ {}
+    first = tu_object(t, module: "beside", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: one, search_include: none, @memo).must(
+    )
+    second = tu_object(t, module: "beside", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: two, search_include: none, @memo).must(
+    )
+    assert first != second
+    assert process.path_exists(path: first)
+    assert process.path_exists(path: second)

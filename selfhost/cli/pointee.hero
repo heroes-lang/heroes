@@ -274,7 +274,7 @@ test "the pointee check publishes its answer and its verdict before the record t
         s,
         parsed.decls,
         answered: @first_answers,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: none, package_flags: none, runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: ""))
     )
     assert first.is_err()
     records: i64 @ 0
@@ -300,7 +300,7 @@ test "the pointee check publishes its answer and its verdict before the record t
         s,
         parsed.decls,
         answered: @second_answers,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: none, package_flags: none, runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: ""))
     )
     assert failure_text(second) == failure_text(first)
     assert second_answers.len() == first_answers.len()
@@ -337,7 +337,7 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
         s,
         parsed.decls,
         answered: @narrow_answers,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: [headers_at], package_flags: none, runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], package_flags: none, runtime: t.runtime, source_dir: ""))
     )
     assert narrow.is_err()
 
@@ -350,7 +350,7 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
         s,
         parsed.decls,
         answered: @wide_answers,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: [headers_at], package_flags: ["-DHERO_WIDE", "-lz"], runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], package_flags: ["-DHERO_WIDE", "-lz"], runtime: t.runtime, source_dir: ""))
     )
     assert !wide.is_err()
 
@@ -365,7 +365,7 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
         s,
         parsed.decls,
         answered: @again_answers,
-        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: [headers_at], package_flags: ["-DHERO_WIDE"], runtime: t.runtime, source_dir: ""))
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: [headers_at], package_flags: ["-DHERO_WIDE"], runtime: t.runtime, source_dir: ""))
     )
     assert !again.is_err()
     assert process.files_under(t.build).must().len() == held
@@ -417,7 +417,7 @@ test "the pointee check asks each directory's own header, and one that appears e
                 s,
                 parsed.decls,
                 answered: @answers,
-                probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir))
+                probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir))
             )
             assert asked.is_err() == (dir == wide)
 
@@ -426,9 +426,72 @@ test "the pointee check asks each directory's own header, and one that appears e
     t.build @ root + "/build-shadow"
     assert !process.remove_tree(t.build).is_err()
     beside: [pointee_ask.Answered] @ []
-    under = compiling.Compiling(search_include: [inc], package_flags: none, runtime: t.runtime, source_dir: narrow)
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [inc],
+        package_flags: none,
+        runtime: t.runtime,
+        source_dir: narrow
+    )
     assert !check(t, low.program, c, s, parsed.decls, answered: @beside, probe: probing(t, low.program, s, parsed.decls, under: under)).is_err()
     assert !write_file(path: inc + "/x.h", text: "#include <stdint.h>\nvoid hero_fill(int64_t *p);\n").is_err()
     earlier: [pointee_ask.Answered] @ []
     assert check(t, low.program, c, s, parsed.decls, answered: @earlier, probe: probing(t, low.program, s, parsed.decls, under: under)).is_err(
+    )
+
+# **A probe compiles under the build's level and sanitizers** (defect 167,
+# `scratchpad/file-queue/optimize-macro/`'s shape). The header types the
+# pointee as 64 bits when optimised and when sanitised, so `@p: i32` is
+# right at `-O0` and wrong at `-O2` and under `--sanitize`; in one `build/`
+# each is asked of its own reading, and `-O0` after `-O2` is not answered by
+# the refusal. Measured before this repair: the `-O2` build accepted it and C
+# wrote eight bytes into the four, which ASan reported under `--sanitize`.
+test "the pointee check judges a parameter under the build's level and sanitizers (defect 167)"
+    text = "extern \"lvl.h\"\n    function hero_put(@p: i32)\n\nfunction main()\n    n: i32 @ 0\n    hero_put(@n)\n    print(n)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-pointee-level"
+    headers_at = "build/selftest-pointee-level-include"
+    assert !process.remove_tree(t.build).is_err()
+    assert !process.mkdir_all(headers_at).is_err()
+    header = "#include <stdint.h>\n#if defined(__OPTIMIZE__) || __has_feature(address_sanitizer)\nvoid hero_put(int64_t *p);\n#else\nvoid hero_put(int32_t *p);\n#endif\n"
+    assert !write_file(path: headers_at + "/lvl.h", text: header).is_err()
+    none: [str] = []
+
+    for level in ["-O0", "-O2", "-O0"]
+        answers: [pointee_ask.Answered] @ []
+        under = compiling.Compiling(
+            level: level,
+            sanitize: false,
+            search_include: [headers_at],
+            package_flags: none,
+            runtime: t.runtime,
+            source_dir: ""
+        )
+        asked = check(
+            t,
+            low.program,
+            c,
+            s,
+            parsed.decls,
+            answered: @answers,
+            probe: probing(t, low.program, s, parsed.decls, under: under)
+        )
+        assert asked.is_err() == (level == "-O2")
+
+    sanitised: [pointee_ask.Answered] @ []
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: true,
+        search_include: [headers_at],
+        package_flags: none,
+        runtime: t.runtime,
+        source_dir: ""
+    )
+    assert check(t, low.program, c, s, parsed.decls, answered: @sanitised, probe: probing(t, low.program, s, parsed.decls, under: under)).is_err(
     )
