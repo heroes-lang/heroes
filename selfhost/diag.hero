@@ -113,6 +113,10 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # the author's to overrule): the lexer hands the parser the one line the
 # author broke, so without the rule `y = a +` over `1` means `y = a + 1`,
 # which the control arm reads, a continuation the language never had.
+# unreachable_statement joined by panel 184's R4 (ratified 2026-10-01, landed
+# 2026-10-03): without it a line after a `return` still has a meaning, a
+# statement that never runs, which is the silent program the rule exists to
+# refuse (the sitting's blind reading: a loop that never advances).
 function is_thesis_rule(d: Diagnostic) -> bool
     codes = [
         "unused_binding"
@@ -133,6 +137,7 @@ function is_thesis_rule(d: Diagnostic) -> bool
         "machine_locked_path"
         "spaced_minus_element"
         "continuation_outside_brackets"
+        "unreachable_statement"
     ]
 
     for one in codes
@@ -169,4 +174,5 @@ test "a diagnostic starts empty and grows by mutation"
     assert is_thesis_rule(new_diagnostic(code: "spaced_minus_element", message: "m", span: u.span))
     assert !is_thesis_rule(new_diagnostic(code: "line_end_before_continuation", message: "m", span: u.span))
     assert is_thesis_rule(new_diagnostic(code: "continuation_outside_brackets", message: "m", span: u.span))
+    assert is_thesis_rule(new_diagnostic(code: "unreachable_statement", message: "m", span: u.span))
     assert !is_thesis_rule(u)

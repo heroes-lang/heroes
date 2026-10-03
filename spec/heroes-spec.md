@@ -232,6 +232,12 @@ value = match e
   expression. A jump (`return`, `break`, `continue`) is a valid arm body: it
   yields no value and does not constrain the `match`'s type. An arm that does
   nothing holds `_ = 0` — `continue` is not one.
+- A statement after a jump, in its block, is a compile error. A function with
+  a `->` must `return` on every path that reaches its end, and `exit(code:)`,
+  `assert false` and a `while true` with no `break` of its own end a path.
+- A block or an arm leaves, and owes no value, once a statement in it ends a
+  path or is an `if` or a `match` every branch of which leaves; only a jump
+  refuses the statement after it.
 
 `if` and `match` are expressions and may stand as statements; there is no ternary.
 `if cond` / `else if` / `else` take only `bool` — there is no truthiness.

@@ -1,0 +1,115 @@
+# Fixed 2026-10-02, defect 174, lane flow4: panel 184's R4, ratified
+# 2026-10-01. Symptom: a statement after `return`, `break` or `continue`, in
+# the same block, compiled and never ran: `return 1` over `print(2)` ran at
+# exit 0 printing `1`, and the sitting's blind reading met a loop whose
+# increment an indentation slip had moved under `return i`, so it never
+# advanced. Cause: nothing read the statements of a block after one that
+# left it. Now the first statement after a jump word, in its block, is
+# refused, `unreachable_statement`, naming the jump and its line, once per
+# block. What stays legal, a statement after `exit(code:)`, `assert false`,
+# a `while true` nothing breaks, or an `if` or a `match` every branch of
+# which leaves, builds and runs in
+# `tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero`.
+
+function after_return() -> i64
+    return 1
+    print(2)  #~ unreachable_statement
+
+function after_a_bare_return()
+    return
+    print(2)  #~ unreachable_statement
+
+function after_break()
+    for n in [1, 2, 3]
+        break
+        print(n)  #~ unreachable_statement
+
+function after_continue()
+    for n in [1, 2, 3]
+        continue
+        print(n)  #~ unreachable_statement
+
+# A `return` is a statement too, and so is a loop.
+function return_after_return() -> i64
+    return 1
+    return 2  #~ unreachable_statement
+
+function a_loop_after_return() -> i64
+    return 1
+
+    while true  #~ unreachable_statement
+        print(2)
+
+# In a branch the refusal is that branch's, and the line after the `if` runs.
+function in_a_branch(k: i64) -> i64
+    if k > 0
+        return 1
+        print(2)  #~ unreachable_statement
+    return 0
+
+function after_break_in_a_branch()
+    for n in [1, 2]
+        if n > 0
+            break
+            print(n)  #~ unreachable_statement
+
+    print(0)
+
+# In an arm's block, and in the block of an arm whose `match` gives a value.
+function in_an_arm(k: i64) -> i64
+    match k
+        0 =>
+            return 1
+            print(2)  #~ unreachable_statement
+        _ => return 3
+
+function in_a_value_arm(k: i64) -> i64
+    x = match k
+        0 =>
+            return 1
+            print(2)  #~ unreachable_statement
+        _ => 3
+
+    return x
+
+# Once per block: every line after the first is the same mistake, a second
+# jump among them.
+function twice() -> i64
+    return 1
+    print(2)  #~ unreachable_statement
+    print(3)
+    return 4
+    print(5)
+
+# The blind reading's task 2: the increment under `return i`, and the
+# `print` after `break`.
+function first_negative(xs: [i64]) -> i64
+    i: i64 @ 0
+
+    while i < xs.len()
+        if xs[i] < 0
+            return i
+            i @ i + 1  #~ unreachable_statement
+
+    return -1
+
+function report_zero(xs: [i64])
+    for x in xs
+        if x == 0
+            break
+            print("found a zero")  #~ unreachable_statement
+
+test "a jump in a test"
+    return
+    assert 1 == 2  #~ unreachable_statement
+
+function main()
+    print(after_return())
+    after_a_bare_return()
+    after_break()
+    after_continue()
+    print(return_after_return() + a_loop_after_return() + in_a_branch(k: 1))
+    after_break_in_a_branch()
+    print(in_an_arm(k: 0) + in_a_value_arm(k: 0) + twice())
+    print(first_negative(xs: [4, -1]))
+    report_zero(xs: [1, 0])

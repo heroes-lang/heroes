@@ -173,18 +173,29 @@ function lower_function(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
         build.end_fn(@b)
     else
         build.entry(@b)
-        _ = flatten.block(@b, a, r, c, s, decls, body: f.body.must(), wants_value: false).is_err()
-        close(@b, c)
+        body = f.body.must()
+        _ = flatten.block(@b, a, r, c, s, decls, body: body, wants_value: false).is_err()
+        close(@b, c, body: body, result: result)
         build.end_fn(@b)
 
 # The fall-through edge out of a function body. A body that runs off
 # its end returns nothing — right for a () result, a program error
 # otherwise, and the frontend already held that back as missing_return.
 # Lowering does not invent a value: it emits the copy-out chain and
-# return.
-function close(@b: build.Lowering, c: state.Checked)
+# return. **Except where the checker said the body leaves** (panel 184's
+# R4, 185's R5): a function with a result whose path ends on
+# `exit(code:)`, `assert false` or a `while true` nothing breaks reaches
+# this edge in the IR and never at run time, and there it is the
+# language's `unreachable`, never a `return` with no value.
+function close(@b: build.Lowering, c: state.Checked, body: ast.Block, result: i64)
     if build.is_terminated(b)
         return
+
+    if result != table.unit_ty(c.types) && body.stmts.len() > 0
+        emissions.seal(@b, ends: c.ends, at: body.stmts[body.stmts.len() - 1])
+
+        if build.is_terminated(b)
+            return
     emissions.copy_out(@b, c)
     build.terminate(@b, .return_term(value: fail(code: "none", msg: "fell off the end")))
 

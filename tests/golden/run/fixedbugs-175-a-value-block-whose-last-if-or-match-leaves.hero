@@ -1,0 +1,300 @@
+# Fixed 2026-10-02, defect 175, lane flow4: panel 185's R4, ratified
+# 2026-10-02, built as the sitting's (3x). Symptom: a value block whose
+# last statement is an `if` or a `match` every branch of which leaves was
+# refused `no_value` at that statement, *this `match` produces no value —
+# every branch jumps, so there is nothing to bind*, though nothing was being
+# bound there: the block, not the construct, was where the value stood.
+# Cause: the block's last line was checked as its value, and the join
+# refused a value construct every branch of which left. Now such a
+# construct leaves, and its block or its arm leaves with it, as one ending
+# on a `return` does; a binding of such a construct is still refused
+# (`tests/golden/check/fixedbugs-175-what-still-has-no-value.hero`). Lane
+# flow's a55, a69, a73, b1, b2, b3, b5, b6 and b8
+# (`docs/panel/185-briefs/probes/q3/`), the sitting's engineer's d2, d4,
+# d5, d6, d9 and d10, and the shapes where a branch ends its path by
+# `exit(code:)`, `assert false` or a `while true` (panel 185's R5, the seal
+# the lowering ends the block with), each built and run.
+
+variant Color
+    red
+    green
+    blue
+
+record Pair
+    first: i64
+    second: i64
+
+# a55: a value arm's block that ends on a `match` every arm of which returns.
+function inner_returns(k: i64, j: i64) -> i64
+    x = match k
+        0 =>
+            match j
+                0 => return 1
+                _ => return 2
+        _ => 20
+
+    return x
+
+# a69: the same with an `if`.
+function inner_if_returns(k: i64) -> i64
+    x = match k
+        0 =>
+            if k == 0
+                return 1
+            else
+                return 2
+        _ => 20
+
+    return x
+
+# a73: a statement before the leaving `match`.
+function a_statement_first(k: i64) -> i64
+    x = match k
+        0 =>
+            print(1)
+
+            match k
+                0 => return 1
+                _ => return 2
+        _ => 20
+
+    return x
+
+# b1: the leaving block is a branch of an `if` used as a value.
+function outer_if(k: i64, j: i64) -> i64
+    x = if k == 0
+        match j
+            0 => return 1
+            _ => return 2
+    else
+        20
+
+    return x
+
+# b2: the arm's one statement is the `match`, its head on the arm's line.
+function inline_head(k: i64, j: i64) -> i64
+    x = match k
+        0 => match j
+            0 => return 1
+            _ => return 2
+        _ => 20
+
+    return x
+
+# b3: the value is returned directly.
+function returned_directly(k: i64, j: i64) -> i64
+    return match k
+        0 =>
+            match j
+                0 => return 1
+                _ => return 2
+        _ => 20
+
+# b5: two levels down, the inner one an `if`.
+function two_deep(k: i64, j: i64) -> i64
+    x = match k
+        0 =>
+            match j
+                0 =>
+                    if k == j
+                        return 1
+                    else
+                        return 3
+                _ => return 2
+        _ => 20
+
+    return x
+
+# b6: in a loop, by `break` and `continue`.
+function in_a_loop(xs: [i64]) -> i64
+    total: i64 @ 0
+
+    for v in xs
+        y = match v
+            0 =>
+                if total > 5
+                    break
+                else
+                    continue
+            _ => v
+
+        total @ total + y
+
+    return total
+
+# b8: the arm's one statement is an `if`, its head on the arm's line.
+function value_if_arm(k: i64, j: i64) -> i64
+    x = match k
+        0 => if j == 0
+            return 1
+        else
+            return 2
+        _ => 20
+
+    return x
+
+# d2: a checked binding.
+function checked(k: i64, j: i64) -> i64
+    x: i64 = match k
+        0 =>
+            match j
+                0 => return 2
+                _ => return 3
+        _ => 20
+
+    return x
+
+# d4: `return if`, its branch a leaving `match`.
+function return_if(k: i64) -> i64
+    return if k == 0
+        match k
+            0 => return 1
+            _ => return 2
+    else
+        20
+
+# d5: a `while` whose arm leaves by `break` or `continue`.
+function while_tail(n: i64) -> i64
+    i: i64 @ 0
+    total: i64 @ 0
+
+    while i < n
+        i @ i + 1
+
+        step = match i
+            3 =>
+                if total > 100
+                    break
+                else
+                    continue
+            _ => i
+
+        total @ total + step
+
+    return total
+
+# d6: a `str` result, and a `T?`'s arms.
+function word(k: i64) -> str
+    return match k
+        0 => "zero"
+        1 =>
+            if k > 0
+                return "one"
+            else
+                return "never"
+        _ => "many"
+
+# d9: a record built in the other arm.
+function pair(k: i64) -> Pair
+    p = match k
+        0 =>
+            if k == 0
+                return Pair(first: 1, second: 5)
+            else
+                return Pair(first: 0, second: 0)
+        _ => Pair(first: k, second: k)
+
+    return p
+
+# d10: a variant's case under `return match`.
+function shade(c: Color) -> i64
+    return match c
+        .red => 1
+        .green =>
+            if c == .green
+                return 3
+            else
+                return 4
+        .blue => 2
+
+# Panel 185's R5 with R4: a branch that ends its path rather than jumping.
+function exits_or_returns(k: i64, j: i64) -> i64
+    x = match k
+        0 =>
+            if j == 0
+                exit(code: 1)
+            else
+                return 2
+        _ => 20
+
+    return x
+
+function every_arm_exits(k: i64, j: i64) -> i64
+    x = match k
+        0 =>
+            match j
+                0 => exit(code: 1)
+                _ => exit(code: 2)
+        _ => 21
+
+    return x
+
+function loops_or_returns(k: i64, j: i64) -> i64
+    x = match k
+        0 =>
+            if j == 0
+                while true
+                    print(0)
+            else
+                return 2
+        _ => 22
+
+    return x
+
+function checked_ends(k: i64, j: i64) -> i64
+    x: i64 = match k
+        0 =>
+            if j == 0
+                assert false
+            else
+                exit(code: 4)
+        _ => 23
+
+    return x
+
+function three_deep(k: i64, j: i64, m: i64) -> i64
+    x = match k
+        0 =>
+            match j
+                0 =>
+                    match m
+                        0 => return 1
+                        _ => return 2
+                _ => return 3
+        _ => 24
+
+    return x
+
+function main()
+    print(inner_returns(k: 0, j: 0))
+    print(inner_returns(k: 0, j: 1))
+    print(inner_returns(k: 5, j: 0))
+    print(inner_if_returns(k: 0))
+    print(a_statement_first(k: 0))
+    print(outer_if(k: 0, j: 1))
+    print(outer_if(k: 3, j: 0))
+    print(inline_head(k: 0, j: 0))
+    print(returned_directly(k: 3, j: 0))
+    print(two_deep(k: 0, j: 0))
+    print(in_a_loop(xs: [1, 2, 0, 9]))
+    print(value_if_arm(k: 0, j: 1))
+    print(checked(k: 0, j: 0))
+    print(return_if(k: 3))
+    print(while_tail(n: 6))
+    print(word(k: 1))
+    p = pair(k: 0)
+    print(p.first + p.second)
+    print(shade(c: .green))
+    print(exits_or_returns(k: 0, j: 1))
+    print(exits_or_returns(k: 5, j: 0))
+    print(every_arm_exits(k: 5, j: 0))
+    print(loops_or_returns(k: 0, j: 1))
+    print(loops_or_returns(k: 5, j: 0))
+    print(checked_ends(k: 5, j: 0))
+    print(three_deep(k: 0, j: 0, m: 1))
+    print(three_deep(k: 0, j: 1, m: 0))
+    print(three_deep(k: 5, j: 0, m: 0))
+
+# Corrected 2026-10-03, lane flow4: the first line's date is one day early by
+# the clock. This case and its repair were written, run and committed on
+# 2026-10-03 (`937ae12f`), the lane's work having begun on 2026-10-02.
