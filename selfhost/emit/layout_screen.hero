@@ -35,6 +35,21 @@
 # Each function sits at `#line <decl + 1> "hero_ly_screen"`, so every line
 # clang prints about it names the record, and nothing is read from clang's
 # prose but that position.
+#
+# **And a record named after a typedef is asked two more questions, answered
+# the same way** (defect 191, 2026-10-02): at `#line <decl + 1>
+# "hero_ly_named"`, `typedef T hero_ly_named_<decl>;`, which fails only where
+# `T` is no type, and at `"hero_ly_whole"`, an array of `sizeof(T)` chars and
+# an assertion that `T` is not `void`, which fail only where the type has no
+# layout. A record whose name is a type with no layout is refused by the
+# layout check itself (`no_layout`), and the type behind its name is read
+# from clang's JSON (`type_unit`, `behind_of`), the text and never the
+# verdict. Until then that record first met clang at the unit's field
+# assertions, whose refusal clang 21 words *'opaque_t' (aka 'struct
+# opaque_s')* and clang 18 *'struct opaque_s'*, and the reader that knew only
+# the first stopped the public CI's Linux leg at exit 2. A record with a tag
+# is not asked: what its note says comes from the header's own spellings,
+# which only the unit's refusal shows.
 
 use ast
 use bytes
@@ -47,6 +62,21 @@ use emit/layout_text
 
 constant SCREEN: str
     "hero_ly_screen"
+
+# The two positions of a record named after a typedef, the prefix of the
+# typedefs the JSON is asked about, and the marker of the layout check's own
+# refusal (`cli/layout.hero`, read by `emit/ffi_incomplete.hero`).
+constant NAMED: str
+    "hero_ly_named"
+
+constant WHOLE: str
+    "hero_ly_whole"
+
+constant TYPED: str
+    "hero_ly_ty_"
+
+constant NO_LAYOUT: str
+    "heroes-ffi-no-layout"
 
 function screen_unit(headers: [str], wanted: [layout_text.Asked], s: source.Source, decls: [ast.Decl], c: state.Checked, u: extern_union.Used) -> str
     lines: [str] @ []
@@ -93,6 +123,15 @@ function screen_unit(headers: [str], wanted: [layout_text.Asked], s: source.Sour
                 if rec.partial && built || omitted
                     text @ text + " _Static_assert(0, \"" + SCREEN + "\");"
                 lines @ lines.push(text)
+
+                if rec.tag.is_err()
+                    at = (one.decl + 1).to_str()
+                    lines @ lines.push("#line " + at + " \"" + NAMED + "\"")
+                    lines @ lines.push("typedef " + one.c_type + " " + NAMED + "_" + one.decl.to_str() + ";")
+                    lines @ lines.push("#line " + at + " \"" + WHOLE + "\"")
+                    lines @ lines.push(
+                        "typedef char " + WHOLE + "_" + one.decl.to_str() + "[sizeof(" + one.c_type + ")]; _Static_assert(!__builtin_types_compatible_p(" + one.c_type + ", void), \"" + WHOLE + "\");"
+                    )
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
     return lines.join("\n") + "\n"
@@ -152,8 +191,124 @@ function inner_zero(c: state.Checked, decls: [ast.Decl], field: ast.Field) -> st
 # The records clang said anything about: every `hero_ly_screen:<n>:` in its
 # output names declaration n - 1.
 function flagged(said: str) -> {i64: bool}
+    return placed(said: said, file: SCREEN)
+
+# The records named after a typedef whose name is a type with no layout:
+# clang erred at their `hero_ly_whole` position and not at their
+# `hero_ly_named` one, which is all that is read of what it said.
+function no_layout(said: str, wanted: [layout_text.Asked]) -> [layout_text.Asked]
+    whole = placed(said: said, file: WHOLE)
+    named = placed(said: said, file: NAMED)
+    out: [layout_text.Asked] @ []
+
+    for one in wanted
+        if !whole[one.decl].is_err() && named[one.decl].is_err()
+            out @ out.push(one)
+
+    return out
+
+# Whether clang erred anywhere but at the screen's own positions: the
+# headers do not compile alone, which the program's own compile tells on the
+# author's line, so no answer of the screen's is read as the header's. Only
+# where an error line is placed and the severity clang labels it with are
+# read, never what it says: a broken struct's own error was measured to
+# silence `hero_ly_whole` on clang 21, and this does not rest on that.
+function strays(said: str) -> bool
+    start: i64 @ 0
+
+    while start < said.len()
+        end: i64 @ said.len()
+        found = index_from(text: said, needle: "\n", from: start)
+
+        if !found.is_err()
+            end @ found.must()
+        row = said.slice(from: start, to: end)
+        errs = !index_from(text: row, needle: ": error: ", from: 0).is_err() || !index_from(text: row, needle: ": fatal error: ", from: 0).is_err()
+        colon = index_from(text: row, needle: ":", from: 0)
+
+        if errs && !colon.is_err()
+            file = row.slice(from: 0, to: colon.must())
+
+            if file != SCREEN && file != NAMED && file != WHOLE
+                return true
+        start @ end + 1
+
+    return false
+
+# The question clang's JSON answers: one typedef of each record's type, whose
+# `type` says what the record's name stands for.
+function type_unit(headers: [str], wanted: [layout_text.Asked]) -> str
+    lines: [str] @ []
+
+    for header in headers
+        lines @ lines.push("#include <" + header + ">")
+
+    for one in wanted
+        lines @ lines.push("typedef " + one.c_type + " " + TYPED + one.decl.to_str() + ";")
+
+    return lines.join("\n") + "\n"
+
+# The type behind declaration `decl`'s name, from `clang -ast-dump=json
+# -ast-dump-filter=hero_ly_ty_` over `type_unit`: the `desugaredQualType` of
+# its typedef where the name is sugar, else its `qualType`. Read by its
+# shape, as `cli/header_types.hero` reads its own: the typedef's `"name"`,
+# then its `"type"` object, which holds no other object. Measured alike on
+# clang 18.1.8 and 21: `struct opaque_s` and `void` behind a typedef of each.
+function behind_of(json: str, decl: i64) -> str?
+    named = index_from(text: json, needle: "\"name\": \"" + TYPED + decl.to_str() + "\"", from: 0)
+
+    if named.is_err()
+        return fail(code: "none", msg: "clang said nothing of that typedef")
+    opened = index_from(text: json, needle: "\"type\": {", from: named.must())
+
+    if opened.is_err()
+        return fail(code: "none", msg: "the typedef has no type")
+    closed = index_from(text: json, needle: "}", from: opened.must())
+
+    if closed.is_err()
+        return fail(code: "none", msg: "the type is not closed")
+    object = json.slice(from: opened.must(), to: closed.must())
+
+    for key in ["desugaredQualType", "qualType"]
+        value = quoted_after(text: object, key: key)
+
+        if !value.is_err()
+            return value
+
+    return fail(code: "none", msg: "the type names no type")
+
+# The string after `"key": "` up to its closing quote: a type's spelling
+# holds no quote.
+function quoted_after(text: str, key: str) -> str?
+    marker = "\"" + key + "\": \""
+    at = index_from(text: text, needle: marker, from: 0)
+
+    if at.is_err()
+        return fail(code: "none", msg: "no such key")
+    start = at.must() + marker.len()
+    end = index_from(text: text, needle: "\"", from: start)
+
+    if end.is_err()
+        return fail(code: "none", msg: "an unclosed string")
+    return ok(text.slice(from: start, to: end.must()))
+
+# The first byte at or after `from` where `needle` begins, by bytes: a cut
+# there is at an ASCII byte, which no UTF-8 character holds inside it.
+function index_from(text: str, needle: str, from: i64) -> i64?
+    at: i64 @ from
+
+    while at + needle.len() <= text.len()
+        if bytes.bytes_at(text: text, at: at, needle: needle)
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: "none", msg: "not found")
+
+# The positions clang said anything at under `#line <n> "<file>"`: every
+# `<file>:<n>:` in its output names declaration n - 1.
+function placed(said: str, file: str) -> {i64: bool}
     out: {i64: bool} @ {}
-    needle = SCREEN + ":"
+    needle = file + ":"
     at: i64 @ 0
 
     while at + needle.len() <= said.len()
@@ -183,3 +338,33 @@ test "the screen names a record by its line, and only by that"
     assert got.len() == 2
     assert !got[3].is_err() && !got[11].is_err()
     assert got[6].is_err()
+
+# **A record named after a typedef is refused by where clang erred, never by
+# what it said** (defect 191): the `hero_ly_whole` position without the
+# `hero_ly_named` one is a type with no layout; both is no type at all, left
+# to the unit's readers; the screen's own position says nothing of either.
+test "a type with no layout is read from where clang erred, and the type behind it from clang's JSON (defect 191)"
+    wanted = [
+        layout_text.Asked(decl: 0, c_type: "opaque_t")
+        layout_text.Asked(decl: 1, c_type: "nosuch_t")
+        layout_text.Asked(decl: 2, c_type: "whole_t")
+    ]
+    said = "hero_ly_screen:1:40: error: whatever clang words it\nhero_ly_whole:1:30: error: whatever clang words it\nhero_ly_named:2:9: error: whatever clang words it\nhero_ly_whole:2:30: error: whatever clang words it\nhero_ly_screen:3:12: error: whatever clang words it\n"
+    opaque = no_layout(said, wanted: wanted)
+    assert opaque.len() == 1
+    assert opaque[0].c_type == "opaque_t"
+    assert flagged(said).len() == 2
+
+    # The JSON's shape, as clang 18.1.8 and 21 print it: the typedef's own
+    # `type` object, sugar and all.
+    json = "{\n  \"kind\": \"TypedefDecl\",\n  \"name\": \"hero_ly_ty_0\",\n  \"type\": {\n    \"desugaredQualType\": \"struct opaque_s\",\n    \"qualType\": \"opaque_t\",\n    \"typeAliasDeclId\": \"0x1\"\n  },\n  \"inner\": [ { \"type\": { \"qualType\": \"opaque_t\" } } ]\n}\n{\n  \"kind\": \"TypedefDecl\",\n  \"name\": \"hero_ly_ty_4\",\n  \"type\": {\n    \"qualType\": \"struct whole_s\"\n  }\n}\n"
+    assert behind_of(json, decl: 0).must() == "struct opaque_s"
+    assert behind_of(json, decl: 4).must() == "struct whole_s"
+    assert behind_of(json, decl: 7).is_err()
+    assert type_unit(["x.h"], wanted: [layout_text.Asked(decl: 0, c_type: "opaque_t")]) == "#include <x.h>\ntypedef opaque_t hero_ly_ty_0;\n"
+
+    # A note in the header is no stray, an error in it is, and so is a
+    # header the machine lacks: then the program's own compile tells it.
+    assert !strays(said + "./x.h:7:16: note: whatever clang words it\nIn file included from hero_ly_screen.c:1:\n")
+    assert strays(said + "./x.h:2:38: error: whatever clang words it\n")
+    assert strays("hero_ly_screen.c:1:10: fatal error: whatever clang words it\n")

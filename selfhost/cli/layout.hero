@@ -4,27 +4,29 @@
 # and `emit/layout_text.hero`; this file runs clang and keeps the answer, as
 # `cli/pointee.hero` does.
 #
-# **One process on a cold build, three at most.** The screen runs once per
-# (compiler, records and what the program does with them, headers, search
-# path, the words a probe compiles under), under `build/layout-<key>/`, with
-# the headers it read recorded by digest (`cli/deps`), so a header that
-# changes asks again and an unchanged one costs a read. Only a record the
-# screen cannot vouch for is dumped, and the check unit runs only when it
-# holds an assertion.
+# **One process on a warm build, two on a cold one, four at most.** The screen
+# runs once per (compiler, records and what the program does with them, the
+# words a probe compiles under, what the headers resolve to and hold), under
+# `build/layout-<key>/`, with the headers it read recorded by digest
+# (`cli/deps`), so a header that changes asks again and an unchanged one
+# costs a read and the one preprocessing run that says what the headers
+# resolve to (`compiling.reads`). Only a record the screen cannot vouch for
+# is dumped, and the check unit runs only when it holds an assertion.
 #
-# **The key names the words the three clang runs compile under**, by the
-# rules that hand them over, the pointee check's own (`pointee.with_search`):
-# a package's `-I -D -U -F` (`libraries.compile_flags`, defect 161) after
-# `compile:` and the compiler's own flags but its diagnostics
-# (`pointee.probe_flags`, defect 163) after `probe:`, each word by its length
-# (`libraries.key_text`). Until the round of 2026-10-02's third gate the key
-# held the package's whole answer joined by spaces, and the runs took a
-# package's `-I` alone and `-std=gnu11` alone: so two answers that join to
-# one text, a word holding a space (defect 162) against the two words it
-# spells, read one verdict (the first test below), and a verdict kept by a
-# compiler that passed fewer words was keyed as this one's. The words come
-# after `compile:` and `probe:`, so no key written before names the same
-# text.
+# **The key names every word the three clang runs compile under, from the
+# list their lines are built from** (`compiling.probe_words`), each word by
+# its length (`libraries.key_text`), **and what the headers resolve to under
+# them** (`compiling.reads`; defect 168, 2026-10-02). Until the round of
+# 2026-10-02's third gate the key held a package's whole answer joined by
+# spaces, so a word holding a space (defect 162) and the two words it spells
+# read one verdict (the first test below); until defect 168 it held the
+# screen's text, the `--include` directories, a package's compile words and
+# the probe's flags, and not the source's own directory, so a program beside
+# a same-named header replayed another directory's verdict, both ways on one
+# `build/`: a record leaving a member out built at exit 0 and printed a wrong
+# value, and the correct program stopped at exit 2, *no member named 'y'*.
+# The words come after `words:` and the files after `reads:`, so no key
+# written before names the same text.
 #
 # **What is kept is clang's answers, never this compiler's reading of them**:
 # the screen's stderr and the dump, from which the flagged set, the rows this
@@ -61,7 +63,9 @@ use cli/publish
 use cli/digest
 use cli/deps
 use cli/pointee
+use cli/compiling
 use cli/libraries
+use cli/strings
 use parse
 use resolve
 use checker
@@ -82,37 +86,31 @@ record Asking
     decls: [ast.Decl]
     c: state.Checked
     u: extern_union.Used
-    search_include: [str]
-    package_flags: [str]
-    source_dir: str
+    # Every word the three runs compile under but each run's own
+    # (`compiling.probe_words`), the list the key names.
+    words: [str]
 
-function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], search_include: [str], package_flags: [str], source_dir: str) -> ()?
+function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe) -> ()?
     wanted = layout_text.asked(s, decls)
 
     if wanted.len() == 0
         return ok()
-    headers = emit_externs.headers(p, s, decls)
+
+    # Headers that do not preprocess make a screen that fails on no record,
+    # which is the build's own compile's to report (below).
+    if probe.read.is_err()
+        return ok()
+    headers = probe.headers
     u = extern_union.used(p, c, decls)
     screen_text = layout_screen.screen_unit(headers, wanted, s, decls, c, u)
     key = digest.digest(
-        t.fingerprint + "|layout|" + t.compiler_key + "|" + screen_text + "|" + search_include.join(",") + "|compile:" + libraries.key_text(libraries.compile_flags(package_flags)) + "|probe:" + libraries.key_text(pointee.probe_flags()) + "|" + t.runtime_key
+        t.fingerprint + "|layout|" + t.compiler_key + "|" + screen_text + "|words:" + libraries.key_text(probe.words) + "|reads:" + probe.read.must() + "|" + t.runtime_key
     )
     dir = t.build + "/layout-" + key
     listed = dir + "/screen.deps.txt"
-    memo: {str: str} @ {}
+    memo: {str: str} @ probe.digests
     known = deps.vouched(listed, @memo)
-    a = Asking(
-        t: t,
-        dir: dir,
-        headers: headers,
-        s: s,
-        decls: decls,
-        c: c,
-        u: u,
-        search_include: search_include,
-        package_flags: package_flags,
-        source_dir: source_dir
-    )
+    a = Asking(t: t, dir: dir, headers: headers, s: s, decls: decls, c: c, u: u, words: probe.words)
 
     if !known.is_err()
         kept = read_file(dir + "/screen-" + known.must() + ".txt")
@@ -150,8 +148,15 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
 
 # From what the screen said: the records it could not vouch for, their
 # layout (kept under the digest of the unit that asked for it), and the
-# check unit that layout gives.
+# check unit that layout gives. A record named after a typedef whose type
+# has no layout is refused first, by the screen's own two answers, unless
+# clang erred outside the screen too: then the headers did not compile
+# alone, and the program's own compile says so on the author's line.
 function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -> ()?
+    opaque = layout_screen.no_layout(said, wanted: wanted)
+
+    if opaque.len() > 0 && !layout_screen.strays(said)
+        return refused_opaque(a, opaque: opaque)
     flagged = layout_screen.flagged(said)
     dumped: [layout_text.Asked] @ []
 
@@ -182,6 +187,46 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
             publish.write_whole(path: kept_path, text: made.must(), keyed: true)?
     text = layout_check.check_unit(a.headers, dump: rows, wanted: dumped, s: a.s, decls: a.decls, u: a.u, c: a.c)?
     return judged(a, sum: sum, text: text)
+
+# **A record named after a typedef whose type has no layout, refused here,
+# before any unit compiles** (defect 191, 2026-10-02): the screen's two
+# questions said where clang erred, which is the verdict, and the type behind
+# the name is read from clang's JSON over `layout_screen.type_unit`, which is
+# only its text. Until then such a record met clang first at the unit's field
+# assertions, and the reader of that refusal found the record only by the
+# typedef's name in clang's words, written by clang 21 and not by clang 18:
+# the public CI's Linux leg stopped at exit 2. Each line is the marker
+# `emit/ffi_incomplete.hero` reads into `ffi_unknown_tag`; a JSON that names
+# no type leaves the type unsaid, never the refusal.
+function refused_opaque(a: Asking, opaque: [layout_text.Asked]) -> ()?
+    text = layout_screen.type_unit(a.headers, wanted: opaque)
+    process.mkdir_all(a.dir)?
+    unit = pointee.unit_path(dir: a.dir, stem: "type", text: text)
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    out_path = publish.private_name(a.dir + "/type.json")
+    line: [str] @ [
+        "clang"
+        "-fsyntax-only"
+        "-Xclang"
+        "-ast-dump=json"
+        "-Xclang"
+        "-ast-dump-filter=" + layout_screen.TYPED
+    ]
+    line @ searched(a, line: line)
+    line @ line.push(unit)
+    ran = process.run(program: "clang", words: line, out: out_path, err: process.discard())
+    json = read_file(out_path)
+    publish.discard(out_path)
+    said: [str] @ []
+
+    for one in opaque
+        behind: str @ ""
+
+        if ran.started && ran.code == 0 && !json.is_err()
+            behind @ layout_screen.behind_of(json.must(), decl: one.decl).default("")
+        said @ said.push(layout_screen.NO_LAYOUT + " " + source.span_text(a.s, a.decls[one.decl].name) + " " + behind)
+
+    return fail(code: "clang", msg: said.join("\n") + "\n")
 
 # clang's record-layout dump for the unit, or absent when it did not compile.
 function dump(a: Asking, dump_text: str) -> str?
@@ -239,13 +284,7 @@ function judged(a: Asking, sum: str, text: str) -> ()?
     return ok()
 
 function searched(a: Asking, line: [str]) -> [str]
-    return pointee.with_search(
-        line: line,
-        search_include: a.search_include,
-        package_flags: a.package_flags,
-        runtime: a.t.runtime,
-        source_dir: a.source_dir
-    )
+    return strings.with_all(list: line, more: a.words)
 
 function code_of(failed: ()?) -> str
     match failed
@@ -253,6 +292,11 @@ function code_of(failed: ()?) -> str
         .err e => return e.code
 
 ## Tests
+
+# The probe a round would hand the check for this program: its words under
+# `under`, its headers, and what they resolve to now (`compiling.probe`).
+function probing(t: toolchain.Toolchain, p: containers.Program, s: source.Source, decls: [ast.Decl], under: compiling.Compiling) -> compiling.Probe
+    return compiling.probe(t.build, under: under, headers: emit_externs.headers(p, s, decls))
 
 # **A package's compile words reach the layout check, each one whole, and
 # its verdict is keyed by them** (defects 161 and 162 at the layout check,
@@ -288,9 +332,7 @@ test "a package's words reach the layout check each one whole, and its verdict i
         c,
         s,
         parsed.decls,
-        search_include: [headers_at],
-        package_flags: ["-DHERO_A=1 -DHERO_EXTRA"],
-        source_dir: ""
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: [headers_at], package_flags: ["-DHERO_A=1 -DHERO_EXTRA"], runtime: t.runtime, source_dir: ""))
     )
     assert !one_word.is_err()
 
@@ -302,9 +344,7 @@ test "a package's words reach the layout check each one whole, and its verdict i
         c,
         s,
         parsed.decls,
-        search_include: [headers_at],
-        package_flags: ["-DHERO_A=1", "-DHERO_EXTRA"],
-        source_dir: ""
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: [headers_at], package_flags: ["-DHERO_A=1", "-DHERO_EXTRA"], runtime: t.runtime, source_dir: ""))
     )
     assert two_words.is_err()
     assert layout_rows.byte_index(text: pointee.failure_text(two_words), needle: "heroes-ffi-missing EXTRA y") > 0
@@ -318,12 +358,118 @@ test "a package's words reach the layout check each one whole, and its verdict i
         c,
         s,
         parsed.decls,
-        search_include: [headers_at],
-        package_flags: ["-DHERO_A=1", "-DHERO_EXTRA", "-lz"],
-        source_dir: ""
+        probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: [headers_at], package_flags: ["-DHERO_A=1", "-DHERO_EXTRA", "-lz"], runtime: t.runtime, source_dir: ""))
     )
     assert pointee.failure_text(linked) == pointee.failure_text(two_words)
     assert process.files_under(t.build).must().len() == held
+
+# **The verdict is keyed by the source's own directory and by what the
+# header resolves to** (defect 168, `scratchpad/file-queue/source-dir-key/`'s
+# shape). One program of one declaring file name beside two headers of one
+# name: in one the struct is the record's whole, in the other it has a `y`
+# the record leaves out. In one `build/`, in both orders, each is asked of
+# its own header; and a header of that name that appears in an `--include`
+# directory, searched before the source's, is asked again rather than
+# answered by the record of the one it shadows. Measured before this
+# repair: the second directory replayed the first's verdict, a record that
+# leaves `y` out read as complete, and the whole one refused.
+test "the layout check asks each directory's own header, and one that appears earlier in the search, in one build (defect 168)"
+    text = "extern \"xy.h\"\n    record XY\n        x: i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    root = "build/selftest-layout-dirs"
+    assert !process.remove_tree(root).is_err()
+    whole = root + "/whole"
+    wider = root + "/wider"
+    inc = root + "/inc"
+
+    for dir in [whole, wider, inc]
+        assert !process.mkdir_all(dir).is_err()
+
+    assert !write_file(path: whole + "/xy.h", text: "#include <stdint.h>\ntypedef struct { int32_t x; } XY;\n").is_err()
+    assert !write_file(path: wider + "/xy.h", text: "#include <stdint.h>\ntypedef struct { int32_t x; int32_t y; } XY;\n").is_err()
+    none: [str] = []
+
+    for first in [whole, wider]
+        t.build @ first + "-first"
+        assert !process.remove_tree(t.build).is_err()
+        second: str @ wider
+
+        if first == wider
+            second @ whole
+
+        for dir in [first, second]
+            asked = check(
+                t,
+                low.program,
+                c,
+                s,
+                parsed.decls,
+                probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir))
+            )
+
+            if dir == wider
+                assert layout_rows.byte_index(text: pointee.failure_text(asked), needle: "heroes-ffi-missing XY y") > 0
+            else
+                assert !asked.is_err()
+
+    # The source's `xy.h` is the whole one; then the one with `y` appears in
+    # the `--include` directory, which a unit's compile searches first.
+    t.build @ root + "/build-shadow"
+    assert !process.remove_tree(t.build).is_err()
+    under = compiling.Compiling(search_include: [inc], package_flags: none, runtime: t.runtime, source_dir: whole)
+    assert !check(t, low.program, c, s, parsed.decls, probe: probing(t, low.program, s, parsed.decls, under: under)).is_err()
+    assert !write_file(path: inc + "/xy.h", text: "#include <stdint.h>\ntypedef struct { int32_t x; int32_t y; } XY;\n").is_err()
+    shadowed = check(t, low.program, c, s, parsed.decls, probe: probing(t, low.program, s, parsed.decls, under: under))
+    assert layout_rows.byte_index(text: pointee.failure_text(shadowed), needle: "heroes-ffi-missing XY y") > 0
+
+# **A record named after a typedef whose type has no layout is refused by
+# the layout check itself, on the screen's two positions** (defect 191). A
+# typedef of an opaque struct and one of `void` are refused naming the type
+# behind them, which clang's JSON gave; a typedef of a whole struct is not;
+# and a record with a tag over the opaque struct is left to the unit's
+# readers, which read what the header spells. Measured before this repair:
+# the check said nothing of the first two, and the unit's field assertions
+# met them, worded apart by clang 18 and 21.
+test "the layout check refuses a record named after a typedef with no layout, naming the type behind it (defect 191)"
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-layout-opaque"
+    headers_at = "build/selftest-layout-opaque-include"
+    assert !process.remove_tree(t.build).is_err()
+    assert !process.mkdir_all(headers_at).is_err()
+    header = "#include <stdint.h>\ntypedef struct opaque_s opaque_t;\ntypedef void void_t;\ntypedef struct { int32_t a; } whole_t;\n"
+    assert !write_file(path: headers_at + "/op.h", text: header).is_err()
+    none: [str] = []
+
+    for named in ["opaque_t", "void_t", "whole_t", "Tagged tag opaque_s"]
+        text = "extern \"op.h\"\n    record " + named + "\n        a: i32\n\nfunction main()\n    print(1)\n"
+        parsed = parse.parse(text)
+        s = source.new_source(name: "t.hero", text: text)
+        out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+        c = checker.check(parsed.tree, out, s, parsed.decls)
+        assert c.diagnostics.len() == 0
+        low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+        under = compiling.Compiling(
+            search_include: [headers_at],
+            package_flags: none,
+            runtime: t.runtime,
+            source_dir: ""
+        )
+        said = pointee.failure_text(
+            check(t, low.program, c, s, parsed.decls, probe: probing(t, low.program, s, parsed.decls, under: under))
+        )
+
+        if named == "opaque_t"
+            assert said == layout_screen.NO_LAYOUT + " opaque_t struct opaque_s\n"
+        else if named == "void_t"
+            assert said == layout_screen.NO_LAYOUT + " void_t void\n"
+        else
+            assert layout_rows.byte_index(text: said, needle: layout_screen.NO_LAYOUT) < 0
 
 # **A member with no bytes is complete only where C says it has none**
 # (panel 186 R4; defect 151, the Windows box's pre-push leg, 2026-10-02). An

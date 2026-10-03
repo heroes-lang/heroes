@@ -194,6 +194,13 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !u_typedef.is_err()
             found @ ffi_lookup.add_once(found, d: u_typedef.must())
+
+        # The layout check's own refusal of the same shape (defect 191),
+        # told alike on every clang.
+        u_whole = ffi_incomplete.no_layout(s, decls, line: line)
+
+        if !u_whole.is_err()
+            found @ ffi_lookup.add_once(found, d: u_whole.must())
         tag_u = ffi_tag.tag_is_a_union(s, decls, line: line, types: asked.types)
 
         if !tag_u.is_err()

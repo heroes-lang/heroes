@@ -134,7 +134,7 @@ function filter_words(package: str, said: str) -> [str]?
 # The words of a package's answer a COMPILE needs, `-I -D -U -F`, in the
 # order the package gave them: the one rule for every step that compiles the
 # program's headers, the units (`cli/units.hero`), the pointee and layout
-# probes and the header's questions (`pointee.with_search`), so no step keeps
+# probes and the header's questions (`compiling.search_words`), so no step keeps
 # a different subset. The link line takes the whole answer: clang 21 reads
 # a compile word there without a warning (measured 2026-10-02, this Mac),
 # and a link word at a compile warns `'linker' input unused`.

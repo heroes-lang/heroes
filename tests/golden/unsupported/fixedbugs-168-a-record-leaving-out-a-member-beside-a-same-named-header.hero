@@ -1,0 +1,19 @@
+# fixedbugs, defect 168, lane cb4, 2026-10-02.
+#
+# Beside `tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header`,
+# the same program over a header of the same name that gives `E` a member
+# `y` the record leaves out: refused, after the other program or not. Built
+# in one `build/` after it, this was built at exit 0 until defect 168, the
+# layout check replaying the other directory's verdict, because its key did
+# not name the source's directory.
+
+extern "fixedbugs-168-beside.h"
+    record E  #~ ffi_incomplete_record
+        x: i32
+    function hero_168_make(x: i32) -> E
+
+function main()
+    p = hero_168_make(x: 1)
+    q = hero_168_make(x: 1)
+    print(p == q)
+    print(p.x)
