@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 46**
+**OPEN: 48**
 
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe) · **class: blocking**
 
@@ -421,6 +421,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** the coordinator's Windows leg at `02e507bc`, 2026-10-03: the compiler's tests red there, where the thirteen legs before it read them all passed (the last, `6bec7c8c`, 1056 of 1056); the test named by a second run in a folder of its own (10:08 to 10:13 by `date`), the dependency listing and the record read on the box by hand.
 
+    **2026-10-03, the first half repaired at `b8ad7f9e` and `fcf09839`, lane win214, merged at `773db596`**: defect 168's test reads clang's rows with every separator a `/`, the turn written in the test as a list of pieces joined once, and holds each path to the digest of what it holds, in one row. Gated once on this Mac on the merged tree: the seed regenerated, the same bytes as `02e507bc`'s once its `#line` numbers are masked, the compiler built from it the same binary as `02e507bc`'s by `cmp`, the fixpoint by `cmp`; the compiler's own tests 1083 and the net's own 200, all passed; the full net, 26 suites, 4,901 passed and 0 failed. In the Linux arm64 container, under clang 22.1.8 and again under 18.1.8, the compilers built from the two seeds are the same binary and the compiler's own tests read 1083 of 1083; on the Windows box the assembly clang writes for the two seeds is the same and the compiler's own tests read 1083, all passed, defect 168's three among them. The second half, a `skip` prefix no Windows listing matches (`under` in `selfhost/cli/deps.hero`), is open.
+
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a red on a platform, and the CI's Windows leg would be red on the push. The second half, a `skip` that never matches on Windows, has the same cause and stays in the item; it writes no wrong value, the file it fails to leave out being keyed and hashing the same, and costs each warm build there the digest of every unit's C (unmeasured). The test's other assertion, that the answer does not hold `root + "/inc/x.h"`, passes on Windows whatever `reads` answers.
+
+- [ ] **215 — a text grown by `+` in a selfhost module is first seen by the whole `layout` at a gate: the write-time hook does not ask it, and `layout` narrowed to the file cannot** | lane win214's `b8ad7f9e` wrote `beside @ beside + ch` in a loop of `selfhost/cli/compiling.hero`'s test; `.claude/hooks/fmt_check.py` passed it (it asks parse, canonical form, the compiler's check and the line ceiling), and the lane's gate read `layout/concat` red at 11:06, four sites; `tests/harness/suite_layout.hero` asks `appends`, `concat` and `budget` only when `only == ""`, so a narrowed `layout` never asks them | `.claude/hooks/fmt_check.py`, `tests/harness/suite_layout.hero` (`GROWTH_ALLOWED`) · defect 209 · **class: improvement**
+
+    **Origin:** the coordinator, 2026-10-03, at lane win214's gate: one run of 25 suites stopped at 20 to repair it, then run again whole.
+
+    **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an instrument's coverage. § A suite is the last judge asks that what a hook can see on the touched file never wait for a suite, and the growth sites of one file against `GROWTH_ALLOWED`'s entries for that file are such a thing.
+
+- [ ] **216 — a header whose name holds a `>` passes `check` and stops `build` at exit 2 with an internal error and clang's text** | `extern "a>b.h"` over `function seven() -> i32`, the header beside the program: `check` exit 0; `build` exit 2, *internal error: compiling the generated C failed*, clang's `#include <a>b.h>` and *'a' file not found*, then *error: clang refused the generated C*; the same program over `ab.h` builds and prints `7` (the trunk's compiler, `02e507bc`'s seed, 2026-10-03) | `selfhost/parse/group_head.hero` (what a group head refuses of its header's text, `machine_locked_path` its one refusal today) · the `#include` line the emitter writes · **class: blocking**
+
+    **Origin:** lane warn's first pass beside defect 207, 2026-10-03, reported to the coordinator with its reproducer; reproduced by the coordinator the same day.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 and an internal error where the author can be told. No angled `#include` can spell a `>`, and panel 036's R2 keeps the angled form and never the quoted one, since a quoted include takes a decoy planted beside the unit (`docs/panel/036-the-ffi-ladder.md`); so the repair is a refusal at `check`, a diagnostic class and so a sitting's (CLAUDE.md § 4) before a lane's.
 
 *******************************************************************************
