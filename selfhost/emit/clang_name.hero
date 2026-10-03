@@ -15,8 +15,10 @@
 # at its first quote and matched whole, so a missing header named with a `'`
 # or with an escaped code point stopped `build` at exit 2.
 #
-# A leaf: it reads strings, and `shown_char` for the form of a code point.
+# A leaf: it reads strings, `shown_char` for the form of a code point and
+# `bytes` for a search that never splits a character.
 
+use bytes
 use shown_char
 
 # Whether clang's text `printed` is `value`, character by character, each
@@ -28,43 +30,23 @@ function printed_as(printed: str, value: str) -> bool
     for ch in value.chars()
         escaped = "<" + shown_char.u_plus(shown_char.code_point(ch)) + ">"
 
-        if starts_at(text: printed, at: at, part: ch)
+        if bytes.bytes_at(text: printed, at: at, needle: ch)
             at @ at + ch.len()
-        else if starts_at(text: printed, at: at, part: escaped)
+        else if bytes.bytes_at(text: printed, at: at, needle: escaped)
             at @ at + escaped.len()
         else
             return false
 
     return at == printed.len()
 
-# Whether `part` stands in `text` from byte `at`, compared byte by byte, so no
-# character of `text` is ever cut, wherever `at` falls.
-function starts_at(text: str, at: i64, part: str) -> bool
-    if at < 0 || at + part.len() > text.len()
-        return false
-    i: i64 @ 0
-
-    while i < part.len()
-        if text[at + i] != part[i]
-            return false
-        i @ i + 1
-
-    return true
-
 # The text before the LAST `marker`, or none. A header's name is read up to
 # the last *' file not found* on clang's line, so a quote inside the name
 # stays in it, and clang's hint after it, *with <angled> include*, does not.
-# `marker` begins with an ASCII byte, which no character's bytes hold, so the
-# cut never splits one.
+# `bytes.rfind` finds it by its bytes, and a match of a well-formed marker
+# starts on a character's first byte, so the cut never splits one.
 function before_last(text: str, marker: str) -> str?
-    at: i64 @ text.len() - marker.len()
-
-    while at >= 0
-        if starts_at(text: text, at: at, part: marker)
-            return ok(text.slice(from: 0, to: at))
-        at @ at - 1
-
-    return fail(code: "none", msg: "the marker is not in the text")
+    at = bytes.rfind(text: text, needle: marker)?
+    return ok(text.slice(from: 0, to: at))
 
 ## Tests
 
@@ -86,5 +68,3 @@ test "a name is cut at the last file-not-found, a quote and clang's hint around 
     assert before_last(text: "mid.h' file not found with <angled> include; use \"quotes\" instead", marker: marker).must() == "mid.h"
     assert before_last(text: "é' file not found\r", marker: marker).must() == "é"
     assert before_last(text: "gone.h", marker: marker).is_err()
-    assert !starts_at(text: "é", at: 1, part: "x")
-    assert !starts_at(text: "ab", at: -1, part: "a")
