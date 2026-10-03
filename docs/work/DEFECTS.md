@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 42**
+**OPEN: 45**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -1001,5 +1001,23 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** the coordinator's closings agent, 2026-10-03, reading defect 160's cases one by one on Linux arm64 between 00:36 and 00:54 by `date` (`scratchpad/closings/table.txt`, 2026-10-03), and its target probe on this Mac after 01:03 (`scratchpad/closings/fwprobe/`, 2026-10-03). The queue's question *a link step handed compile words, unmeasured on Linux* (lane h158, 2026-10-02) is this, measured. Which of the build's clang calls prints it on Linux is not read: that the link carries `-F` is an inference from the target probe.
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
+
+- [ ] **207 — a correct program whose string holds `??` before `)`, `(`, `<`, `>`, `=`, `/`, `'`, `!` or `-` gets clang's *trigraph ignored* warning on the emitted C** | `print("what???)")`: `check` exit 0, `run` exit 0 and prints `what???)`, and clang prints `build/tu-<key>/tri.c:10:42: warning: trigraph ignored [-Wtrigraphs]`; the net's own tests' build prints it twice for the harness's own `print(???)` | the emitter's string literals (a `?` that would begin a trigraph is written `?\?` in C) · **class: blocking**
+
+    **Origin:** lane round1003b's gate, 2026-10-03, seeing it in the net's own tests' build and in the last gate's (`scratchpad/lane-round1003b/progress.md`, 2026-10-03); measured by the coordinator on the trunk at `e5893696` before 08:00 by `date` (`scratchpad/file-r5/tri.hero`, 2026-10-03).
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
+
+- [ ] **208 — a dead `break` after a `return` inside `while true` is told twice, `unreachable_statement` and `missing_return`** | `while true` over `if m > 3`, `return m`, `break`, in a `function f(n: i64) -> i64`: `unreachable_statement` at the `break` and `missing_return` on `f`, both gone once the `break` is deleted | `selfhost/check/flow.hero` (panel 184's R4: a `while true` with a `break` of its own does not end a path, read by syntax) · **class: adjacent**
+
+    **Origin:** lane flow4's report, 2026-10-03 (`scratchpad/lane-flow4/w/w16-dead-break-under-return.hero`, 2026-10-03); measured by the coordinator on the trunk at `e5893696` (`scratchpad/file-r5/`, 2026-10-03).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake.
+
+- [ ] **209 — a `layout` run filtered to a name that matches no module reads 1 passed** | `./heroes run tests/harness/main.hero -- ./heroes layout <a name no module has>`: `1 passed, 0 failed`, because the harness's guard against an empty selection counts cases and the suite's file-wide checks are always one case | `tests/harness/suite_layout.hero` · the harness's selection guard · **class: improvement**
+
+    **Origin:** the coordinator's agent finishing defect 167 in lane cb4, 2026-10-03, which then checked by hand that each of its six filters matched one module (`scratchpad/lane-cb4/progress.md`, 2026-10-03).
+
+    **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an instrument that can read green over nothing; no program moves.
 
 *******************************************************************************
