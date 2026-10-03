@@ -962,6 +962,16 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** lane h158 at defect 163, 2026-10-02, a question left unmeasured (*no probe compiles under them*); measured by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/optimize-macro/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`), defect 163's repair `0235b942` included. A result type is held by the program's own compile (a header that changes a return type under `-O2` is refused, `ffi_return_type`), so only the pointee check diverges, as in 163. Unmeasured: whether a real header changes a pointee's type under these macros, and whether the layout check's probe, beside it, is judged without them too.
 
+    **2026-10-03, lane cb4, every probe of the program's headers compiled
+    under the words its units compile with, the level and the sanitizers
+    included** (the shapes beside it with its cause, S7 to S10 of the lane's
+    first pass, 2026-10-02, `scratchpad/lane-cb4/first-pass.md`: the layout
+    check under `-O2` and under `--sanitize`, which answers the origin's
+    question, a refused round's header asks under `-O2`, `--emit-c -O2` and
+    `heroes test --sanitize`): repaired at `e28f4fc7`, gated by its own
+    cases; the rest is owed at the round's gate, and the platform legs before
+    the push.
+
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a wrong value and a memory fault.
 
 - [ ] **168 — the layout check's cache key does not name the header it read, so a program beside a same-named header replays another directory's verdict: a binding its own header refutes builds and prints a wrong value** | `a/x.h` holds `typedef struct { int32_t x; } E;` and `b/x.h` `typedef struct { int32_t x; int32_t y; } E;`, both bound `record E` naming `x` alone, built from one working directory: alone, `b/p.hero` is refused, `ffi_incomplete_record`; after `a/p.hero` in the same cache it builds at exit 0, and with `gety(e: E) -> i32` reading C's `e.y` its run prints `true`, `2`, `3`, `p == q` true for two values whose `y` C reads as 2 and 3; in the other order the correct `a/p.hero` stops at exit 2, *internal error: checking the header's layout of the group records failed ... no member named 'y' in 'E'* | `selfhost/cli/layout.hero:97-99` (the key: the screen unit's text, `#include <x.h>` and one function per record, no source path) · `selfhost/emit/layout_screen.hero:35`, `:51-59` · the pointee check's key names the declaring file (`selfhost/cli/pointee.hero:111-113`) and does not replay · **class: blocking**
