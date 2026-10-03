@@ -11,17 +11,19 @@ _Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compile
 
 #line 34 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 _Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, name) != 0, "heroes-ffi-flex Tag name");
-             _Static_assert(_Generic(&((Tag *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag name");
+#line 34 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
+_Static_assert(_Generic(&((Tag *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag name");
 #line 35 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 _Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, raw) != 0, "heroes-ffi-flex Tag raw");
-             _Static_assert(_Generic(&((Tag *)0)->raw, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag raw");
+#line 35 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
+_Static_assert(_Generic(&((Tag *)0)->raw, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag raw");
 #line 36 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 _Static_assert(__builtin_classify_type(((Tag *)0)->id) == 1 && sizeof(((Tag *)0)->id) == sizeof(int32_t) && (_Generic(((Tag *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Tag id");
-#line 19 "ffiacharfieldbecomestext.c"
+#line 23 "ffiacharfieldbecomestext.c"
 
 #line 33 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 _Static_assert(__builtin_classify_type(*(Tag *)0) != 13, "heroes-ffi-union Tag name raw id");
-#line 23 "ffiacharfieldbecomestext.c"
+#line 27 "ffiacharfieldbecomestext.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -105,7 +107,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 107 "ffiacharfieldbecomestext.c"
+#line 111 "ffiacharfieldbecomestext.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiacharfieldbecomestext_Tag_eq(const Tag *a, const Tag *b);
@@ -127,7 +129,7 @@ void h_ffiacharfieldbecomestext_main(void);
 
 #line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 void h_ffiacharfieldbecomestext_main(void) {
-#line 129 "ffiacharfieldbecomestext.c"
+#line 133 "ffiacharfieldbecomestext.c"
     Tag h0_t;
     h_0opt_f87774a h1_f0 = {0};
     h_0opt_f87774a h2_f1 = {0};
@@ -342,15 +344,15 @@ bb0:
     t131 = h11_own11;
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h11_own11 = t23;
-#line 344 "ffiacharfieldbecomestext.c"
+#line 348 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&t131);
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t132 = h1_f0;
-#line 348 "ffiacharfieldbecomestext.c"
+#line 352 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_retain(&t23);
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h1_f0 = t23;
-#line 352 "ffiacharfieldbecomestext.c"
+#line 356 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&t132);
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t24 = h1_f0;
@@ -396,15 +398,15 @@ bb1:
     t133 = h12_own12;
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h12_own12 = t34;
-#line 398 "ffiacharfieldbecomestext.c"
+#line 402 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&t133);
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t134 = h2_f1;
-#line 402 "ffiacharfieldbecomestext.c"
+#line 406 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_retain(&t34);
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h2_f1 = t34;
-#line 406 "ffiacharfieldbecomestext.c"
+#line 410 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&t134);
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t35 = h2_f1;
@@ -422,7 +424,7 @@ bb2:
     t28 = h1_f0;
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t29 = t28.as.err;
-#line 424 "ffiacharfieldbecomestext.c"
+#line 428 "ffiacharfieldbecomestext.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb3:
@@ -496,15 +498,15 @@ bb3:
     t135 = h13_own13;
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h13_own13 = t65;
-#line 498 "ffiacharfieldbecomestext.c"
+#line 502 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&t135);
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t136 = h4_f2;
-#line 502 "ffiacharfieldbecomestext.c"
+#line 506 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_retain(&t65);
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h4_f2 = t65;
-#line 506 "ffiacharfieldbecomestext.c"
+#line 510 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&t136);
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t66 = h4_f2;
@@ -522,7 +524,7 @@ bb4:
     t39 = h2_f1;
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t40 = t39.as.err;
-#line 524 "ffiacharfieldbecomestext.c"
+#line 528 "ffiacharfieldbecomestext.c"
     hero_panic_must(t40);
     hero_unreachable();
 bb5:
@@ -560,15 +562,15 @@ bb5:
     t137 = h14_own14;
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h14_own14 = t77;
-#line 562 "ffiacharfieldbecomestext.c"
+#line 566 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&t137);
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t138 = h5_f3;
-#line 566 "ffiacharfieldbecomestext.c"
+#line 570 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_retain(&t77);
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h5_f3 = t77;
-#line 570 "ffiacharfieldbecomestext.c"
+#line 574 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&t138);
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t78 = h5_f3;
@@ -586,7 +588,7 @@ bb6:
     t70 = h4_f2;
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t71 = t70.as.err;
-#line 588 "ffiacharfieldbecomestext.c"
+#line 592 "ffiacharfieldbecomestext.c"
     hero_panic_must(t71);
     hero_unreachable();
 bb7:
@@ -666,15 +668,15 @@ bb7:
     t139 = h15_own15;
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h15_own15 = t109;
-#line 668 "ffiacharfieldbecomestext.c"
+#line 672 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&t139);
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t140 = h7_s0;
-#line 672 "ffiacharfieldbecomestext.c"
+#line 676 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_retain(&t109);
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h7_s0 = t109;
-#line 676 "ffiacharfieldbecomestext.c"
+#line 680 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&t140);
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t110 = h7_s0;
@@ -696,7 +698,7 @@ bb8:
     t82 = h5_f3;
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t83 = t82.as.err;
-#line 698 "ffiacharfieldbecomestext.c"
+#line 702 "ffiacharfieldbecomestext.c"
     hero_panic_must(t83);
     hero_unreachable();
 bb9:
@@ -710,15 +712,15 @@ bb9:
     t141 = h16_own16;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h16_own16 = t122;
-#line 712 "ffiacharfieldbecomestext.c"
+#line 716 "ffiacharfieldbecomestext.c"
     h_0opt_e201354_release(&t141);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t142 = h10_f4;
-#line 716 "ffiacharfieldbecomestext.c"
+#line 720 "ffiacharfieldbecomestext.c"
     h_0opt_e201354_retain(&t122);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h10_f4 = t122;
-#line 720 "ffiacharfieldbecomestext.c"
+#line 724 "ffiacharfieldbecomestext.c"
     h_0opt_e201354_release(&t142);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t123 = h10_f4;
@@ -738,11 +740,11 @@ bb10:
     t113 = t112.as.ok;
 #line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t143 = h8_text;
-#line 740 "ffiacharfieldbecomestext.c"
+#line 744 "ffiacharfieldbecomestext.c"
     hero_str_incref(t113);
 #line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h8_text = t113;
-#line 744 "ffiacharfieldbecomestext.c"
+#line 748 "ffiacharfieldbecomestext.c"
     hero_str_decref(t143);
 #line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t114 = HERO_STR_LIT(hero_str_6044c9d2);
@@ -764,11 +766,11 @@ bb11:
     t117 = t116.as.err;
 #line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t144 = h9_e;
-#line 766 "ffiacharfieldbecomestext.c"
+#line 770 "ffiacharfieldbecomestext.c"
     hero_failure_retain(&t117);
 #line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h9_e = t117;
-#line 770 "ffiacharfieldbecomestext.c"
+#line 774 "ffiacharfieldbecomestext.c"
     hero_failure_release(&t144);
 #line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t118 = h9_e;
@@ -790,46 +792,46 @@ bb12:
     hero_print_int(t130);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     hero_print_end();
-#line 792 "ffiacharfieldbecomestext.c"
+#line 796 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&h1_f0);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-#line 795 "ffiacharfieldbecomestext.c"
+#line 799 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&h2_f1);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-#line 798 "ffiacharfieldbecomestext.c"
+#line 802 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&h4_f2);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-#line 801 "ffiacharfieldbecomestext.c"
+#line 805 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&h5_f3);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-#line 804 "ffiacharfieldbecomestext.c"
+#line 808 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&h7_s0);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-#line 807 "ffiacharfieldbecomestext.c"
+#line 811 "ffiacharfieldbecomestext.c"
     hero_str_decref(h8_text);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-#line 810 "ffiacharfieldbecomestext.c"
+#line 814 "ffiacharfieldbecomestext.c"
     hero_failure_release(&h9_e);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-#line 813 "ffiacharfieldbecomestext.c"
+#line 817 "ffiacharfieldbecomestext.c"
     h_0opt_e201354_release(&h10_f4);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-#line 816 "ffiacharfieldbecomestext.c"
+#line 820 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&h11_own11);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-#line 819 "ffiacharfieldbecomestext.c"
+#line 823 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&h12_own12);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-#line 822 "ffiacharfieldbecomestext.c"
+#line 826 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&h13_own13);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-#line 825 "ffiacharfieldbecomestext.c"
+#line 829 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&h14_own14);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-#line 828 "ffiacharfieldbecomestext.c"
+#line 832 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(&h15_own15);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-#line 831 "ffiacharfieldbecomestext.c"
+#line 835 "ffiacharfieldbecomestext.c"
     h_0opt_e201354_release(&h16_own16);
     return;
 bb13:
@@ -837,7 +839,7 @@ bb13:
     t127 = h10_f4;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t128 = t127.as.err;
-#line 839 "ffiacharfieldbecomestext.c"
+#line 843 "ffiacharfieldbecomestext.c"
     hero_panic_must(t128);
     hero_unreachable();
 }

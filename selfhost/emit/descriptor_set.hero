@@ -66,17 +66,19 @@ use checker
 # (measured 2026-08-25, the first per-module self-build). A descriptor
 # and the type it describes are emitted by two different filters, so
 # the filters have to be one question.
-function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: synth.Wanted) -> [i64]
+#
+# `kinds` is `phases.type_kinds`, found once per build (defect 229): this
+# walked every type id as deep as it goes, in every translation unit.
+function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: synth.Wanted, kinds: [i64]) -> [i64]
     wanted: {i64: bool} @ {}
     queue: [i64] @ []
-    count = table.len_of(c.types)
     id: i64 @ 0
 
-    while id < count
+    while id < kinds.len()
         # A type still carrying a parameter is skipped, as in both
         # sibling walks: monomorphisation deletes the generic FUNCTIONS,
         # not the A? their signatures interned.
-        if !phases.mentions_generic(c, ty: id)
+        if !phases.names_generic(kinds, ty: id)
             # A container the EMITTED functions never mention
             # contributes nothing: test blocks intern types too, and an
             # ordinary build does not emit them.
@@ -157,7 +159,7 @@ function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, 
         next = queue[queue.len() - 1]
         queue @ queue.slice(from: 0, to: queue.len() - 1)
 
-        if phases.mentions_generic(c, ty: next)
+        if phases.names_generic(kinds, ty: next)
             continue
 
         if !seen[next].is_err()
@@ -226,7 +228,14 @@ test "the worklist reaches an element, a payload, and expands as it drains"
     # `construct` instructions and nothing else.
     constructed: {i64: bool} @ {}
     constructed[table.lookup(c.types, .array(element: point)).must()] @ true
-    got = generated(c, p.decls, reachable: reachable, constructed: constructed, want: synth.everything())
+    got = generated(
+        c,
+        p.decls,
+        reachable: reachable,
+        constructed: constructed,
+        want: synth.everything(),
+        kinds: phases.type_kinds(c)
+    )
     saw_point: bool @ false
     saw_option: bool @ false
 
@@ -278,7 +287,7 @@ test "an array a signature interned and nobody builds gets no descriptor"
 
     # Nothing constructed: the empty map is the whole point of the case.
     nothing: {i64: bool} @ {}
-    assert generated(c, p.decls, reachable: reachable, constructed: nothing, want: synth.everything()).len() == 0
+    assert generated(c, p.decls, reachable: reachable, constructed: nothing, want: synth.everything(), kinds: phases.type_kinds(c)).len() == 0
 
     # And the same program WITH the array built asks for Row's
     # descriptor, which is what keeps this from passing for the wrong
@@ -286,6 +295,13 @@ test "an array a signature interned and nobody builds gets no descriptor"
     row = table.lookup(c.types, .named(decl: 0)).must()
     built: {i64: bool} @ {}
     built[table.lookup(c.types, .array(element: row)).must()] @ true
-    got = generated(c, p.decls, reachable: reachable, constructed: built, want: synth.everything())
+    got = generated(
+        c,
+        p.decls,
+        reachable: reachable,
+        constructed: built,
+        want: synth.everything(),
+        kinds: phases.type_kinds(c)
+    )
     assert got.len() == 1
     assert got[0] == row

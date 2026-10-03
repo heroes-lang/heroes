@@ -51,7 +51,7 @@ function site_lines(site: extern_union.Site, t: str, hero_name: str, order: [str
     for k in site.given
         named[k] @ true
 
-    at = source.locate(s, site.span.start)
+    at = source.source_line(s, site.span.start)
     place = c_text.line_directive(at: at.line, file: at.file) + "\n"
     is_union = "__builtin_classify_type(*(" + t + " *)0) == 13"
     out: [str] @ []

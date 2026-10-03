@@ -189,7 +189,7 @@ function runtime_guard(c: state.Checked, s: source.Source, decls: [ast.Decl], f:
 
     if count >= params.len()
         return fail(code: "none", msg: "a position past the signature")
-    at = source.locate(s, lend.span.start)
+    at = source.source_line(s, lend.span.start)
     said = at.file + ":" + at.line.to_str() + ": `" + source.span_text(s, decls[decl].name) + "` was given an extent past the " + length.to_str() + " bytes of the field lent to it, read from `" + params[count] + "` at run time"
     low: str @ ""
 

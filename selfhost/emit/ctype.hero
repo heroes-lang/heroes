@@ -194,15 +194,15 @@ function new_names_qualified(s: source.Source, decls: [ast.Decl], struct_tags: {
 # field is invisible to a walk over the emitted functions — a missing
 # name is a hard error, found by the mutant corpus rather than by any
 # case somebody wrote. A type that still mentions a parameter has no C
-# declaration: the arena keeps the templates' A? after monomorphisation
-# deletes the functions that used them.
+# declaration, as monomorphisation leaves the templates' A? in the arena;
+# that is read from one walk of the arena (defect 229), not one per type.
 function with_options(names: Names, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Names
     out: Names @ names
-    count = table.len_of(c.types)
+    kinds = phases.type_kinds(c)
     id: i64 @ 0
 
-    while id < count
-        if !phases.mentions_generic(c, ty: id)
+    while id < kinds.len()
+        if !phases.names_generic(kinds, ty: id)
             is_fallible: bool @ false
 
             match table.get(c.types, id)
@@ -509,3 +509,34 @@ test "fixedbugs: a function before the records does not shift the table"
     # Point is declaration 1 and Size is 2 — each named for itself.
     assert of(names, decl: 1) == "h_t_Point"
     assert of(names, decl: 2) == "h_t_Size"
+
+test "a container walked once per seen set finds the function types a fresh walk of every type finds"
+    # Defect 229: `synth.collect` remembers every container it has walked,
+    # where it remembered records alone and walked an array again for every
+    # slot and value carrying it. The oracle: every type of the table
+    # collected afresh, one set each, against all of them through one.
+    text = "record S\n    f: (function(i64) -> i64)\n\nfunction twice(v: i64) -> i64\n    return v * 2\n\nfunction main()\n    fs: [(function(i64) -> i64)] = [twice]\n    gs: [[(function(i64) -> i64)?]] @ []\n    m: {str: [S]} @ {}\n    m[\"a\"] @ [S(f: twice)]\n    print(fs.len() + gs.len() + m.len())\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    alone: {i64: bool} @ {}
+    shared: {i64: bool} @ {}
+    seen: {i64: bool} @ {}
+    ty: i64 @ 0
+
+    while ty < table.len_of(c.types)
+        one: {i64: bool} @ {}
+        fresh: {i64: bool} @ {}
+        synth.collect(c, p.decls, ty: ty, into: @one, seen: @fresh)
+
+        # ORDER: none, the union of two sets.
+        for id in keys(one)
+            alone[id] @ true
+
+        synth.collect(c, p.decls, ty: ty, into: @shared, seen: @seen)
+        ty @ ty + 1
+
+    assert alone.len() > 0
+    assert sort(keys(alone)) == sort(keys(shared))

@@ -33,6 +33,7 @@ use token
 use ir
 use ir/containers
 use ir/uses
+use ir/survival
 use inventory
 use check/state
 use check/table
@@ -211,7 +212,10 @@ function pattern(f: containers.Function, insts: [ir.Inst], defs: {i64: i64}, rea
 # so the header under a borrowed load could not die. The place store
 # makes the count honest, which is exactly when the load needs a
 # reference of its own (ir_own gives it one; place-store-c5 case 5 is
-# the program that dies without this).
+# the program that dies without this). Since defect 230 the ownership
+# pass asks `survival.survivors` of a whole block at once, where this walk
+# per load cost the block's length squared; this reading stays as the
+# oracle `ir/own.hero`'s test holds that one to.
 function load_survives_write(f: containers.Function, insts: [ir.Inst], term: ir.Term, load_at: i64, root: i64, value: i64) -> bool
     written: bool @ false
     at: i64 @ load_at + 1
@@ -234,28 +238,18 @@ function load_survives_write(f: containers.Function, insts: [ir.Inst], term: ir.
 
 # Could this operation change what the root slot holds? `@` arguments
 # and stores are the only writers the IR has; copy_out is kept out of
-# caution — it writes a caller's place through a parameter.
+# caution — it writes a caller's place through a parameter. What an
+# operation writes is read in one place, `survival.roots_written`, since
+# defect 230, so this pattern and the ownership pass ask the same table.
 function writes_root(f: containers.Function, op: ir.OpKind, root: i64) -> bool
-    match op
-        .store st => return st.place.root == root
-        .push_owned pg => return pg.place.root == root
-        .copy_out => return true
-        .call cl => return inout_hits(f, over: cl.arguments, root: root)
-        .construct con => return inout_hits(f, over: con.arguments, root: root)
-        .abort_op ab => return inout_hits(f, over: ab.arguments, root: root)
-        .lit | .load | .unary | .binary | .cast => return false
-        .field | .index | .map_get | .len_of | .tag_of | .payload => return false
-        .func_ref | .incref | .decref | .decref_slot | .hole | .missing => return false
+    written = survival.roots_written(f, op)
 
-    return false
+    if written.every
+        return true
 
-function inout_hits(f: containers.Function, over: ir.Run, root: i64) -> bool
-    for arg in containers.args_of(f, over)
-        match arg
-            .inout_arg io =>
-                if io.place.root == root
-                    return true
-            .value_arg => continue
+    for one in written.roots
+        if one == root
+            return true
 
     return false
 

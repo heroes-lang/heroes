@@ -95,7 +95,7 @@ function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: s
                 )
 
         hero_name = source.span_text(s, decls[one.decl].name)
-        place = source.locate(s, decls[one.decl].name.start)
+        place = source.source_line(s, decls[one.decl].name.start)
 
         for text in record_lines(one, hero_name: hero_name, tree: found.must(), decls: decls, u: u, s: s, c: c, sizes: sizes)
             lines @ lines.push(c_text.line_directive(at: place.line, file: place.file))
@@ -290,7 +290,7 @@ function field_place(s: source.Source, decls: [ast.Decl], decl: i64, field: str)
         .record_decl rec =>
             for one in rec.fields
                 if source.span_text(s, one.name) == field
-                    at = source.locate(s, one.name.start)
+                    at = source.source_line(s, one.name.start)
                     return c_text.line_directive(at: at.line, file: at.file)
         .constant_decl | .function_decl | .variant_decl | .test_decl => return ""
 

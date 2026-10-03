@@ -40,18 +40,24 @@ use emit/ffi_lookup
 # aggregates (panel 023's walk) then ascending type id — so a program
 # with no cross-kind containment emits byte-identically to the
 # two-pass form, and the double-emit determinism test still covers it.
-function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], want: synth.Wanted)
+#
+# `kinds` is `phases.type_kinds` of the program, found ONCE for the whole
+# build and handed to every translation unit (defect 229, 2026-10-03):
+# this loop asked `mentions_generic` of every type id, a walk as deep as
+# the type, in each of the 394 units of the compiler's own build, 8.9
+# million calls with its other per-unit loop, and the square of a type's
+# depth for one written 2,000 deep.
+function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], want: synth.Wanted, kinds: [i64])
     seeds: [i64] @ []
 
     for decl in types.aggregates(c, decls)
         if synth.wants_decl(w: want, decl: decl)
             seeds @ seeds.push(decl * 2)
 
-    count = table.len_of(c.types)
     id: i64 @ 0
 
-    while id < count
-        if !phases.mentions_generic(c, ty: id)
+    while id < kinds.len()
+        if !phases.names_generic(kinds, ty: id)
             wanted: bool @ false
 
             match table.get(c.types, id)
@@ -305,7 +311,7 @@ test "cross-kind containment lands each typedef after what it holds"
     names @ ctype.with_options(names, c: c, s: s, decls: parsed.decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: parsed.decls, p: low.program)
     w: writer.Writer @ writer.new_writer("t")
-    definitions(@w, c, names, s, parsed.decls, want: synth.everything())
+    definitions(@w, c, names, s, parsed.decls, want: synth.everything(), kinds: phases.type_kinds(c))
     got = writer.finish(w)
 
     # Box holds an i64? by value, so the option's typedef must come
@@ -334,7 +340,7 @@ function chain_text(n: i64) -> str
     names @ ctype.with_options(names, c: c, s: s, decls: parsed.decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: parsed.decls, p: low.program)
     w: writer.Writer @ writer.new_writer("t")
-    definitions(@w, c, names, s, parsed.decls, want: synth.everything())
+    definitions(@w, c, names, s, parsed.decls, want: synth.everything(), kinds: phases.type_kinds(c))
     return writer.finish(w)
 
 test "past 32 structs held by value clang is handed the chain from its bottom, and at 32 it is not (defect 170)"

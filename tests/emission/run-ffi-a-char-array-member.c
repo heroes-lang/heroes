@@ -11,14 +11,15 @@ _Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compile
 
 #line 35 "tests/golden/run/ffi-a-char-array-member.hero"
 _Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, name) != 0, "heroes-ffi-flex Tag name");
-             _Static_assert(_Generic(&((Tag *)0)->name, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag name");
+#line 35 "tests/golden/run/ffi-a-char-array-member.hero"
+_Static_assert(_Generic(&((Tag *)0)->name, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag name");
 #line 36 "tests/golden/run/ffi-a-char-array-member.hero"
 _Static_assert(__builtin_classify_type(((Tag *)0)->id) == 1 && sizeof(((Tag *)0)->id) == sizeof(int32_t) && (_Generic(((Tag *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Tag id");
-#line 17 "ffiachararraymember.c"
+#line 19 "ffiachararraymember.c"
 
 #line 34 "tests/golden/run/ffi-a-char-array-member.hero"
 _Static_assert(__builtin_classify_type(*(Tag *)0) != 13, "heroes-ffi-union Tag name id");
-#line 21 "ffiachararraymember.c"
+#line 23 "ffiachararraymember.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -100,7 +101,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 103 "ffiachararraymember.c"
+#line 105 "ffiachararraymember.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiachararraymember_Tag_eq(const Tag *a, const Tag *b);
@@ -122,7 +123,7 @@ void h_ffiachararraymember_main(void);
 
 #line 39 "tests/golden/run/ffi-a-char-array-member.hero"
 void h_ffiachararraymember_main(void) {
-#line 125 "ffiachararraymember.c"
+#line 127 "ffiachararraymember.c"
     Tag h0_t;
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_e201354 h2_f1 = {0};
@@ -203,15 +204,15 @@ bb0:
     t44 = h4_own4;
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     h4_own4 = t10;
-#line 206 "ffiachararraymember.c"
+#line 208 "ffiachararraymember.c"
     h_0opt_e201354_release(&t44);
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t45 = h1_f0;
-#line 210 "ffiachararraymember.c"
+#line 212 "ffiachararraymember.c"
     h_0opt_e201354_retain(&t10);
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     h1_f0 = t10;
-#line 214 "ffiachararraymember.c"
+#line 216 "ffiachararraymember.c"
     h_0opt_e201354_release(&t45);
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t11 = h1_f0;
@@ -245,15 +246,15 @@ bb1:
     t46 = h5_own5;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h5_own5 = t23;
-#line 248 "ffiachararraymember.c"
+#line 250 "ffiachararraymember.c"
     h_0opt_e201354_release(&t46);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t47 = h2_f1;
-#line 252 "ffiachararraymember.c"
+#line 254 "ffiachararraymember.c"
     h_0opt_e201354_retain(&t23);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h2_f1 = t23;
-#line 256 "ffiachararraymember.c"
+#line 258 "ffiachararraymember.c"
     h_0opt_e201354_release(&t47);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t24 = h2_f1;
@@ -271,7 +272,7 @@ bb2:
     t15 = h1_f0;
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t16 = t15.as.err;
-#line 274 "ffiachararraymember.c"
+#line 276 "ffiachararraymember.c"
     hero_panic_must(t16);
     hero_unreachable();
 bb3:
@@ -291,15 +292,15 @@ bb3:
     t48 = h6_own6;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h6_own6 = t35;
-#line 294 "ffiachararraymember.c"
+#line 296 "ffiachararraymember.c"
     h_0opt_e201354_release(&t48);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t49 = h3_f2;
-#line 298 "ffiachararraymember.c"
+#line 300 "ffiachararraymember.c"
     h_0opt_e201354_retain(&t35);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h3_f2 = t35;
-#line 302 "ffiachararraymember.c"
+#line 304 "ffiachararraymember.c"
     h_0opt_e201354_release(&t49);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t36 = h3_f2;
@@ -317,7 +318,7 @@ bb4:
     t28 = h2_f1;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t29 = t28.as.err;
-#line 320 "ffiachararraymember.c"
+#line 322 "ffiachararraymember.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb5:
@@ -333,22 +334,22 @@ bb5:
     hero_print_int(t43);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     hero_print_end();
-#line 336 "ffiachararraymember.c"
+#line 338 "ffiachararraymember.c"
     h_0opt_e201354_release(&h1_f0);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-#line 339 "ffiachararraymember.c"
+#line 341 "ffiachararraymember.c"
     h_0opt_e201354_release(&h2_f1);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-#line 342 "ffiachararraymember.c"
+#line 344 "ffiachararraymember.c"
     h_0opt_e201354_release(&h3_f2);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-#line 345 "ffiachararraymember.c"
+#line 347 "ffiachararraymember.c"
     h_0opt_e201354_release(&h4_own4);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-#line 348 "ffiachararraymember.c"
+#line 350 "ffiachararraymember.c"
     h_0opt_e201354_release(&h5_own5);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-#line 351 "ffiachararraymember.c"
+#line 353 "ffiachararraymember.c"
     h_0opt_e201354_release(&h6_own6);
     return;
 bb6:
@@ -356,7 +357,7 @@ bb6:
     t40 = h3_f2;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t41 = t40.as.err;
-#line 359 "ffiachararraymember.c"
+#line 361 "ffiachararraymember.c"
     hero_panic_must(t41);
     hero_unreachable();
 }

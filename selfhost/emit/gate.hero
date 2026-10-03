@@ -76,6 +76,9 @@ function subset() -> str
 # where it first appears.
 function refuse(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
     found: [GateNote] @ []
+
+    # Each type's notes, found once here and said at every use (`said_of`).
+    memo: {i64: [Said]} @ {}
     unit_fields(@found, c, s, decls)
 
     for f in p.functions
@@ -98,7 +101,7 @@ function refuse(target: emit_decls.BuildTarget, p: containers.Program, c: state.
             continue
 
         for slot_id in f.params
-            check_type(@found, c, s, decls, ty: f.slots[slot_id].ty, span: containers.reports_at(f, f.span))
+            check_type(@found, @memo, c, decls, ty: f.slots[slot_id].ty, span: containers.reports_at(f, f.span))
 
             # `()` in its own right is fine and `check_type` says so —
             # but a PARAMETER of it emits `void h0_`, which clang
@@ -118,11 +121,11 @@ function refuse(target: emit_decls.BuildTarget, p: containers.Program, c: state.
                     span: containers.reports_at(f, f.span)
                 )
 
-        check_type(@found, c, s, decls, ty: f.result, span: containers.reports_at(f, f.span))
+        check_type(@found, @memo, c, decls, ty: f.result, span: containers.reports_at(f, f.span))
 
         for blk in f.blocks
             for inst in blk.insts
-                check_type(@found, c, s, decls, ty: inst.ty, span: containers.reports_at(f, inst.span))
+                check_type(@found, @memo, c, decls, ty: inst.ty, span: containers.reports_at(f, inst.span))
                 check_op(@found, op: inst.op, span: containers.reports_at(f, inst.span))
                 check_fixed_flow(@found, c, f, op: inst.op, span: containers.reports_at(f, inst.span))
 
@@ -188,25 +191,55 @@ function what_the_author_can_do(code: str) -> str
 
 ## The type table (gate_types.rs)
 
-# A type the runtime has no representation for. Every arm returns
-# today; what is left is descent, because () as an ELEMENT is still
-# refused (a descriptor that does not exist) while () as a type in its
-# own right is fine.
-function check_type(@found: [GateNote], c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, span: token.Span)
+# What one type's check says, without the span it is said at: a code and
+# a message, in the order the walk finds them.
+record Said
+    code: str
+    what: str
+
+# A type the runtime has no representation for, said at `span`.
+#
+# **Found once per type and said at every use** (defect 229, 2026-10-03).
+# This walked the type as deep as it goes for every instruction carrying
+# it, so an array nested 2,000 deep and indexed 2,000 times cost 12 million
+# steps, and a map nested as deep 20 million. A type's notes depend on the
+# table alone, so `said_of` finds each type's once; and since `note` keeps
+# each message at its earliest span, saying the remembered list at every use
+# keeps exactly what the walk at every use kept. The walk it replaced stays
+# in the tests below as the oracle.
+function check_type(@found: [GateNote], @memo: {i64: [Said]}, c: state.Checked, decls: [ast.Decl], ty: i64, span: token.Span)
+    for one in said_of(c, decls, ty: ty, memo: @memo)
+        note(@found, code: one.code, what: one.what, span: span)
+
+# Every arm says nothing today; what is left is descent, because () as an
+# ELEMENT is still refused (a descriptor that does not exist) while () as a
+# type in its own right is fine.
+function said_of(c: state.Checked, decls: [ast.Decl], ty: i64, @memo: {i64: [Said]}) -> [Said]
+    known = memo[ty]
+
+    if !known.is_err()
+        return known.must()
+    out: [Said] @ []
+
     match table.get(c.types, ty)
-        .array arr => check_element(@found, c, s, decls, element: arr.element, span: span, container: "an array")
+        .array arr => out @ element_said(c, decls, element: arr.element, container: "an array", memo: @memo)
         .map m =>
-            check_element(@found, c, s, decls, element: m.key, span: span, container: "a map key")
-            check_element(@found, c, s, decls, element: m.value, span: span, container: "a map value")
+            out @ element_said(c, decls, element: m.key, container: "a map key", memo: @memo)
+
+            for one in element_said(c, decls, element: m.value, container: "a map value", memo: @memo)
+                out @ out.push(one)
         # A ()? is representable and the other containers are not: a
         # union whose ok side carries nothing is just a tag.
 
         .fallible o =>
             if o.payload != table.unit_ty(c.types)
-                check_element(@found, c, s, decls, element: o.payload, span: span, container: "a `T?`")
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-        .fixed | .function_ty | .named | .case_ty                 => return
-        .failure | .generic | .error                              => return
+                out @ element_said(c, decls, element: o.payload, container: "a `T?`", memo: @memo)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => out @ out
+        .fixed | .function_ty | .named | .case_ty                 => out @ out
+        .failure | .generic | .error                              => out @ out
+
+    memo[ty] @ out
+    return out
 
 # () as the type of a DECLARED FIELD, which the IR walk cannot see:
 # record Box { u: () } walked straight past the gate and reached clang
@@ -246,38 +279,26 @@ function unit_fields(@found: [GateNote], c: state.Checked, s: source.Source, dec
 # seventh shape): Slot { p: ptr } as a key gets hero_unreachable in its
 # generated hash — key position ONLY, measured, because hash is called
 # only for a key.
-function check_element(@found: [GateNote], c: state.Checked, s: source.Source, decls: [ast.Decl], element: i64, span: token.Span, container: str)
+function element_said(c: state.Checked, decls: [ast.Decl], element: i64, container: str, @memo: {i64: [Said]}) -> [Said]
     fall: bool @ false
 
     match table.get(c.types, element)
-        .unit =>
-            note(@found, code: "unit_element", what: "`()` as the element of " + container, span: span)
-            return
-        .ptr =>
-            note(@found, code: "pointer_element", what: "`ptr` as the element of " + container, span: span)
-            return
-        .cstr =>
-            note(@found, code: "pointer_element", what: "`cstr` as the element of " + container, span: span)
-            return
-        .fixed =>
-            note(@found, code: "fixed_element", what: "a fixed array as the element of " + container, span: span)
-            return
-        .int_ty | .float_ty | .bool | .str                => fall @ fall
+        .unit => return [Said(code: "unit_element", what: "`()` as the element of " + container)]
+        .ptr => return [Said(code: "pointer_element", what: "`ptr` as the element of " + container)]
+        .cstr => return [Said(code: "pointer_element", what: "`cstr` as the element of " + container)]
+        .fixed => return [Said(code: "fixed_element", what: "a fixed array as the element of " + container)]
+        .int_ty | .float_ty | .bool | .str => fall @ fall
         .array | .map | .fallible | .function_ty | .named => fall @ fall
-        .case_ty | .failure | .generic | .error           => fall @ fall
+        .case_ty | .failure | .generic | .error => fall @ fall
 
     if container == "a map key"
         reached = key_pointer.reaches_pointer(c, decls, ty: element)
 
         if !reached.is_err()
-            note(
-                @found,
-                code: "pointer_element",
-                what: "a map key that reaches " + reached.must() + " — it has no hash",
-                span: span
-            )
-            return
-    check_type(@found, c, s, decls, ty: element, span: span)
+            return [
+                Said(code: "pointer_element", what: "a map key that reaches " + reached.must() + " — it has no hash")
+            ]
+    return said_of(c, decls, ty: element, memo: @memo)
 
 ## The op table (gate_ops.rs)
 
@@ -414,3 +435,97 @@ test "a pointer element is refused with the record route, at its first appearanc
     assert got[0].code == "pointer_element"
     assert got[0].message == "`ptr` as the element of an array is not emitted yet"
     assert got[0].notes[0] == "hold a `str` and lend it with `.cstr()` at the call that reads it — a `cstr` parked in a Heroes record is refused for the same reason (panel 122 R4)"
+
+test "a type's notes found once and said at each use are the walk's at each use, over every type"
+    # Defect 229's oracle. The walk `check_type` was until that day is
+    # written again here as a stack, a second reading of the same rule: an
+    # element is first asked whether it is one of the four that are no
+    # element, or a key reaching a pointer, and is descended only if not; a
+    # map's key goes before its value. Every type the program interns is
+    # said twice, at a later span first, so the earliest-span rule is where
+    # the two readings could part.
+    text = "extern \"m.h\"\n    function make() -> ptr\n    record Slot\n        p: ptr\n\nfunction main()\n    a: [[[ptr]]] @ []\n    b: {Slot: i64} @ {}\n    u: [[()]] @ []\n    d: {str: [[ptr]]} @ {}\n    m: {str: ptr} @ {}\n    g: [ptr?] @ []\n    e: [[i64]?] @ []\n    _ = a\n    _ = b\n    _ = u\n    _ = d\n    _ = m\n    print(g.len() + e.len())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    old: [GateNote] @ []
+    new: [GateNote] @ []
+    memo: {i64: [Said]} @ {}
+    count = table.len_of(c.types)
+    ty: i64 @ count - 1
+
+    while ty >= 0
+        walk: [Said] @ []
+        tys: [i64] @ [ty]
+        wheres: [str] @ [""]
+
+        while tys.len() > 0
+            one = tys[tys.len() - 1]
+            where = wheres[wheres.len() - 1]
+            tys @ tys.slice(from: 0, to: tys.len() - 1)
+            wheres @ wheres.slice(from: 0, to: wheres.len() - 1)
+            descend: bool @ true
+
+            if where != ""
+                match table.get(c.types, one)
+                    .unit =>
+                        walk @ walk.push(Said(code: "unit_element", what: "`()` as the element of " + where))
+                        descend @ false
+                    .ptr =>
+                        walk @ walk.push(Said(code: "pointer_element", what: "`ptr` as the element of " + where))
+                        descend @ false
+                    .cstr =>
+                        walk @ walk.push(Said(code: "pointer_element", what: "`cstr` as the element of " + where))
+                        descend @ false
+                    .fixed =>
+                        walk @ walk.push(Said(code: "fixed_element", what: "a fixed array as the element of " + where))
+                        descend @ false
+                    .int_ty | .float_ty | .bool | .str                => descend @ descend
+                    .array | .map | .fallible | .function_ty | .named => descend @ descend
+                    .case_ty | .failure | .generic | .error           => descend @ descend
+
+                if descend && where == "a map key"
+                    reached = key_pointer.reaches_pointer(c, parsed.decls, ty: one)
+
+                    if !reached.is_err()
+                        walk @ walk.push(
+                            Said(code: "pointer_element", what: "a map key that reaches " + reached.must() + " — it has no hash")
+                        )
+                        descend @ false
+
+            if descend
+                match table.get(c.types, one)
+                    .array arr =>
+                        tys @ tys.push(arr.element)
+                        wheres @ wheres.push("an array")
+                    .map m =>
+                        tys @ tys.push(m.value)
+                        wheres @ wheres.push("a map value")
+                        tys @ tys.push(m.key)
+                        wheres @ wheres.push("a map key")
+                    .fallible o =>
+                        if o.payload != table.unit_ty(c.types)
+                            tys @ tys.push(o.payload)
+                            wheres @ wheres.push("a `T?`")
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => descend @ descend
+                    .fixed | .function_ty | .named | .case_ty                 => descend @ descend
+                    .failure | .generic | .error                              => descend @ descend
+
+        for span in [token.Span(start: 1000 + ty, end: 1001 + ty), token.Span(start: ty, end: ty + 1)]
+            for one in walk
+                note(@old, code: one.code, what: one.what, span: span)
+
+            check_type(@new, @memo, c, parsed.decls, ty: ty, span: span)
+
+        ty @ ty - 1
+
+    # The program reaches five refusals, a pointer as an array's, a map
+    # value's and a `T?`'s element, a key reaching one, and `()` as an
+    # element; the two readings agree on every note, its order and its span.
+    assert old.len() == 5
+    assert old == new
+
+    # And each type's notes were found once: one entry per type reached.
+    assert memo.len() <= count
