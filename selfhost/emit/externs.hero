@@ -23,6 +23,8 @@
 use token
 use ast
 use source
+use escape
+use head_names
 use ir/containers
 use check/state
 use parse
@@ -58,12 +60,17 @@ function is_extern_constant(decls: [ast.Decl], f: containers.Function) -> bool
 
     return false
 
-# The quotes stripped from a span's text.
+# A group head's string as its VALUE, its escapes decoded as spec § 2
+# defines them (`escape.unescape`), since the value is what reaches C: the
+# `#include <...>` line, the linker's `-l`, the word `pkg-config` is asked
+# about, and the names read back from what clang says. Until panel 188 the
+# quotes were cut and the spelling kept, so `extern "a\\b.h"` asked clang
+# for two backslashes, and a missing header was reported where it stood.
 function unquoted(s: source.Source, span: token.Span) -> str
     text = source.span_text(s, span)
 
-    if text.len() >= 2 && text.slice(from: 0, to: 1) == "\"" && text.slice(from: text.len() - 1, to: text.len()) == "\""
-        return text.slice(from: 1, to: text.len() - 1)
+    if text.len() >= 2 && text[0] == '"' && text[text.len() - 1] == '"'
+        return escape.unescape(text)
     return text
 
 # Every header a group named, without its quotes, deduplicated and in
@@ -165,6 +172,33 @@ function named(p: containers.Program, s: source.Source, decls: [ast.Decl], want_
 
     return seen
 
+# **What no tool can carry, asked once more before any tool is handed a name**
+# (panel 188's guard): every header, library and package this program names,
+# as its value, put to the half of `head_names.judged` that `check` refuses
+# because nothing carries it. A program reaches here through those refusals,
+# so this answers "" unless a name came another way; then `cli/produce.hero`
+# stops at exit 2, the compiler's own error, before any tool reads one.
+function unjudged(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> str
+    said: [str] @ refused(said: [], names: headers(p, s, decls), what: "header")
+    said @ refused(said: said, names: libraries(p, s, decls), what: "link")
+    return refused(said: said, names: packages(p, s, decls), what: "package").join("\n  ")
+
+function refused(said: [str], names: [str], what: str) -> [str]
+    out: [str] @ said
+
+    for name in names
+        verdict = head_names.cannot_carry(
+            spelled: "\"" + name + "\"",
+            value: name,
+            span: token.Span(start: 0, end: 0),
+            what: what
+        )
+
+        if !verdict.is_err()
+            out @ out.push(verdict.must().message)
+
+    return out
+
 function library_span(library: ast.Library, want_package: bool) -> token.Span?
     match library
         .link l =>
@@ -200,3 +234,32 @@ test "headers seed math and os, dedupe, and see a record-only group"
     pkgs = packages(low.program, s, parsed.decls)
     assert pkgs.len() == 1
     assert pkgs[0] == "raylib"
+    assert unjudged(low.program, s, parsed.decls) == ""
+
+test "a group head's string reaches C as its value, its escapes decoded (panel 188)"
+    s = source.new_source(name: "t.hero", text: "\"a\\tb.h\" \"q\\\\r\" plain")
+    assert unquoted(s, span: token.Span(start: 0, end: 8)) == "a\tb.h"
+    assert unquoted(s, span: token.Span(start: 9, end: 15)) == "q\\r"
+    assert unquoted(s, span: token.Span(start: 16, end: 21)) == "plain"
+
+test "a name no tool carries is found again before any tool is handed it (panel 188)"
+    text = "extern \"a>b.h\" link \"\"\n    function seven() -> i32\n\nextern \"stdio.h\" package \"zlib zlib\"\n    function puts(s: cstr lent) -> i32\n\nfunction main()\n    print(seven())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    said = unjudged(low.program, s, parsed.decls)
+    assert has_text(text: said, needle: "holds `>`")
+    assert has_text(text: said, needle: "library's name is empty")
+    assert has_text(text: said, needle: "package's name holds a space")
+
+function has_text(text: str, needle: str) -> bool
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false

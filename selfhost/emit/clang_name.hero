@@ -1,0 +1,70 @@
+# How clang writes back a name it was handed (design.md §4.19; defect 232).
+# `emit/ffi_build.hero` reads a missing header's name out of clang's
+# *'<name>' file not found*, and `emit/ffi_lookup.hero`'s `group_head` asks
+# which group's header that name is.
+#
+# clang writes each character of the name as itself or, where it will not
+# show one, as `<U+XXXX>`. Measured 2026-10-03 on this Mac's Apple clang 21:
+# a private-use U+E000, an unassigned U+0378, the noncharacters U+FFFE and
+# U+FFFF, U+F0000, U+10FFFF, U+2028, U+2029 and the controls but a TAB came
+# back escaped; U+200B, U+202E, U+FEFF, U+00A0, U+00AD and the letters came
+# back as themselves (panel 188's compiler-engineer saw the escape on Linux
+# too). Which code points a clang escapes is a premise about its Unicode
+# tables and its version, so a name is read here in either spelling at every
+# character, and no list of them is kept. Until defect 232 the name was cut
+# at its first quote and matched whole, so a missing header named with a `'`
+# or with an escaped code point stopped `build` at exit 2.
+#
+# A leaf: it reads strings, `shown_char` for the form of a code point and
+# `bytes` for a search that never splits a character.
+
+use bytes
+use shown_char
+
+# Whether clang's text `printed` is `value`, character by character, each
+# written as itself or as `<U+XXXX>` in `shown_char.u_plus`'s form, which is
+# clang's: upper-case hexadecimal, at least four digits.
+function printed_as(printed: str, value: str) -> bool
+    at: i64 @ 0
+
+    for ch in value.chars()
+        escaped = "<" + shown_char.u_plus(shown_char.code_point(ch)) + ">"
+
+        if bytes.bytes_at(text: printed, at: at, needle: ch)
+            at @ at + ch.len()
+        else if bytes.bytes_at(text: printed, at: at, needle: escaped)
+            at @ at + escaped.len()
+        else
+            return false
+
+    return at == printed.len()
+
+# The text before the LAST `marker`, or none. A header's name is read up to
+# the last *' file not found* on clang's line, so a quote inside the name
+# stays in it, and clang's hint after it, *with <angled> include*, does not.
+# `bytes.rfind` finds it by its bytes, and a match of a well-formed marker
+# starts on a character's first byte, so the cut never splits one.
+function before_last(text: str, marker: str) -> str?
+    at = bytes.rfind(text: text, needle: marker)?
+    return ok(text.slice(from: 0, to: at))
+
+## Tests
+
+test "a name is read in either spelling of each character, and only whole (defect 232)"
+    assert printed_as(printed: "a'b.h", value: "a'b.h")
+    assert printed_as(printed: "a<U+00E9>.h", value: "aé.h")
+    assert printed_as(printed: "aé.h", value: "aé.h")
+    assert printed_as(printed: "<U+1F600>x", value: "😀x")
+    assert printed_as(printed: "", value: "")
+    assert !printed_as(printed: "a.h", value: "ab.h")
+    assert !printed_as(printed: "ab.h", value: "a.h")
+    assert !printed_as(printed: "a<U+00E9.h", value: "aé.h")
+    assert !printed_as(printed: "a<U+E9>.h", value: "aé.h")
+    assert !printed_as(printed: "é", value: "e")
+
+test "a name is cut at the last file-not-found, a quote and clang's hint around it"
+    marker = "' file not found"
+    assert before_last(text: "a'b.h' file not found", marker: marker).must() == "a'b.h"
+    assert before_last(text: "mid.h' file not found with <angled> include; use \"quotes\" instead", marker: marker).must() == "mid.h"
+    assert before_last(text: "é' file not found\r", marker: marker).must() == "é"
+    assert before_last(text: "gone.h", marker: marker).is_err()

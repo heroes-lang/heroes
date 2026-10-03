@@ -1,0 +1,60 @@
+# Defect 234 (panel 188's R2 and R6, extended to Windows by the author,
+# 2026-10-03): a group head's name Windows stores as another file's, or reads
+# as a device, or reaches by how the machine is laid out. Measured by panel
+# 188's ffi-pragmatist on the Windows box (clang 23.1.1, NTFS): each header
+# below the first nine opened another file or the null device at exit 0
+# there, where this Mac and Linux say the header is missing. A part ending in
+# `.` or a space, and a device's name, are what Windows cannot hold as the one
+# file named: `unwritable_name`, no thesis rule. A `:`, a `~` and a climb out
+# of a named directory reach a file by the machine's layout:
+# `machine_locked_path`, panel 055's thesis rule. A `link` and a `package` are
+# judged alike, their last part's end apart, where the tool adds `.lib` or
+# `.pc`. The last three lines pass.
+
+extern "ab.h."  #~ unwritable_name
+    function w1() -> i32
+
+extern "ab.h "  #~ unwritable_name
+    function w2() -> i32
+
+extern "ab.h.."  #~ unwritable_name
+    function w3() -> i32
+
+extern "d./ab.h"  #~ unwritable_name
+    function w4() -> i32
+
+extern "NUL"  #~ unwritable_name
+    function w5() -> i32
+
+extern "ab.h::$DATA"  #~ machine_locked_path
+    function w6() -> i32
+
+extern "ab:c.h"  #~ machine_locked_path
+    function w7() -> i32
+
+extern "zz/../ab.h"  #~ machine_locked_path
+    function w8() -> i32
+
+extern "ABCDEF~1.H"  #~ machine_locked_path
+    function w9() -> i32
+
+extern "stdio.h" link "nul"  #~ unwritable_name
+    function w10() -> i32
+
+extern "stdio.h" link "ab:c"  #~ machine_locked_path
+    function w11() -> i32
+
+extern "stdio.h" package "zz/../x"  #~ machine_locked_path
+    function w12() -> i32
+
+extern "../i2.h"
+    function w13() -> i32
+
+extern "nullish.h"
+    function w14() -> i32
+
+extern "stdio.h" link "m."
+    function w15() -> i32
+
+function main()
+    print(w1() + w2() + w3() + w4() + w5() + w6() + w7() + w8() + w9() + w10() + w11() + w12() + w13() + w14() + w15())

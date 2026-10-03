@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 49**
+**OPEN: 51**
 
 - [ ] **177 — a `match` whose arms fall inside a bracket left open has each arm told again after the bracket's own message** | `return match scores[name` over `.ok v  => v.to_str()` and `.err e => e.code`: `unclosed_bracket` at the `[`, then `line_end_before_continuation` at each arm, three messages for one missing `]`; `x = match (n` over `.ok v => 1` the same; `y = match n` below `x = [n, 1` gets `expected_end_of_line` at each arm's `=>` | the reach of a bracket left open (panel 183's R1 and R2) over a `match`'s arms · `selfhost/parse/line_end.hero:242` · **class: adjacent**
 
@@ -73,6 +73,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** lane h158 beside defect 162, 2026-10-02 (`scratchpad/lane-h158/d162/pc/s7.pc`, 2026-10-02, *true, could say more*); reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/pc-prefix-space/`, run with `PKG_CONFIG_PATH` naming that folder) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`), where only the note's list of accepted flags is worded otherwise.
 
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be.
+
+    **2026-10-03, batch 8's FFI lane**: repaired at `e2f98e17`, gated by its cases and the compiler's own tests; the net is owed at the batch's close. The refusal of a word that is no flag names the line `pkg-config` printed and the word before it; the package file's own line is not read, since finding it would rest on each `pkg-config`'s `.pc` syntax.
 
 - [ ] **184 — `check` takes time quadratic in the `for` heads it refuses: 3,000 `for n > 0` lines cost 16 s** | a function of N loops `for n > 0` over `n @ n - 1`, `check --brief`: 0.44 s of user time at 500, 1.74 at 1,000, 3.87 at 1,500, 15.92 at 3,000, `real` within 0.16 s of `user`; 3,000 `while n > 0,` cost 0.15 s and 3,000 `n @ 0X1` 0.06 s | `selfhost/grammar_expr.hero:899` (`for_stmt`) · `selfhost/parse/loop_habit.hero` (`refuse`), the cause unrun · **class: adjacent**
 
@@ -242,6 +244,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Widened by panel 188**, 2026-10-03 (`docs/panel/188-a-group-heads-string-is-its-value-and-what-its-tool-cannot-carry-is-refused-on-its-line.md` R2, R12): the cause is the group head's string's, not the header's, a string its tool cannot carry as the one name it is, so the empty string, a NUL and a line end in a header, a `link` or a `package`, and `>` in a header, are 216's shapes. Measured on the trunk's compiler beside it: a NUL in a `link` or `package` string aborts the compiler (`build` 134, *an argument contains a NUL byte*), `link ""` hands the linker a bare `-l` that takes the output as an input (`build` 2), and a NUL in a header binds the part before it at exit 0 where that part names a file (`<scratchpad>/repro188/link-nul/`, `link-empty/`). Repaired by the sitting's stage E, which lands in batch 8's FFI lane; closes only after that batch's platform legs (a C-boundary defect).
 
+    **2026-10-03, batch 8's FFI lane**: repaired at `dd1c0dec`, its message for a `\` made true on Windows at `5778f5d5`, gated by its cases and the compiler's own tests; the net and the platform legs are owed at the batch's close.
+
 - [ ] **219 — clang's debug information dies on a type chain between 3,000 and 5,000 nested variants on this Mac, by 10,000 in the Linux container** | past panel 184's R6 floor of 2,000: since `6c95f44a` (defect 170) the build says so in the compiler's words at exit 2 and leaves no crash files; clang's own stack raised to 64 MB compiled 10,000 in the lane's measurement, about eight times further, not built | `selfhost/cli/clang_died.hero` (lane depth's, at `6c95f44a`, 2026-10-03), `selfhost/emit/typeorder.hero` · **class: improvement**
 
     **Origin:** lane depth beside defect 170, 2026-10-03, reported to the coordinator.
@@ -260,11 +264,17 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a false message; filed apart from 216 by the rule (a reader that does not decode, where 216's is a string its tool cannot carry), landed in the same lane, since the refusal reads the decoded value.
 
+    **2026-10-03, batch 8's FFI lane**: repaired at `db9fb52e`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **222 — a `package` string beginning with `-` reaches `pkg-config` as an option: one is accepted with no package named, another called a package, a third told falsely as not installed** | `extern "ab.h" package "--atleast-pkgconfig-version=0"` over `function seven() -> i32`, `ab.h` a `static inline`: `check` 0, `build` 0, prints `7`, a package clause naming no package; `package "--version"`: *the package `--version` answered with `3.0.7`*; `package "-x"`: *the package `-x` is not installed on this machine*, where `pkg-config` said *unknown option -- x* (the trunk's compiler at `826ddc2f`, this Mac, 2026-10-03, `<scratchpad>/repro188/pkg-option/`, `pkg-opt--/`, `pkg-opt-x/`; the first also in the Linux arm64 image, the seats) | `selfhost/cli/libraries.hero` (the `pkg-config` argv; its comment at 302 to 304 says no `.hero` file can hand it an argument) · panel 188 R7 (b) · **class: blocking**
 
     **Origin:** panel 188's ffi-pragmatist and compiler-engineer, 2026-10-03, on Q5; reproduced by the coordinator the same day.
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a wrong program accepted and a false message; filed apart from 216 (the tool's parse of a whole string, not a string its tool cannot carry), landed in the same lane.
+
+    **Widened to `link` by panel 188's Windows leg**, 2026-10-03 (`docs/panel/188-reports/compiler-engineer.md` § 22.5; the author kept the extension): lld-link reads a `link` beginning with `-` as an option of its own, `link "-out:pwn188"` building at exit 0 and writing a file `pwn188.lib`; refused with the same `option_like_name`.
+
+    **2026-10-03, batch 8's FFI lane**: repaired at `9c1ee8c3`, widened at `d3597207`, gated by its cases and the compiler's own tests; the net and the Windows leg are owed at the batch's close.
 
 - [ ] **223 — a `package` string reaches `pkg-config`'s list and version grammar, which § 13 does not name, and a refused version is told as a package not installed** | `extern "ab.h" package "zlib >= 99"`: `build` 1, *the package `zlib >= 99` is not installed on this machine*, while zlib 1.2.12 is installed (this Mac; 1.3.1 in the Linux arm64 image, the ffi-pragmatist); `package "zlib sqlite3"`: `build` 0 (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro188/pkg-version/`, `pkg-list/`) | `selfhost/cli/libraries.hero` · spec § 13 (*"A group may name a **package**"*) · panel 188 R7 (c) · **class: blocking**
 
@@ -272,11 +282,17 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a false message; filed apart from 216 (`pkg-config`'s grammar, not a string its tool cannot carry), landed in the same lane.
 
+    **2026-10-03, batch 8's FFI lane**: repaired at `6779162c`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
 - [ ] **224 — the reader of the linker's *missing library* line cuts a library's name at a quote under ld64 and at whitespace under GNU ld, and `build` exits 2** | `extern "ab.h" link "a'b"`: `build` 2, *internal error: linking failed*, ld64's *library 'a'b' not found*, *clang refused the generated C* (this Mac); `link "a b"`: the same under GNU ld's *cannot find -la b* (Linux arm64, the seats) (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro188/link-squote/`) | `selfhost/emit/ffi_build.hero` (`missing_library`, `link_head`, `strip_colons`) · panel 188 R7 (a) · **class: blocking**
 
     **Origin:** panel 188's compiler-engineer and ffi-pragmatist, 2026-10-03, on Q5; reproduced by the coordinator on this Mac the same day.
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told; filed apart from 216 (the compiler's reader of the linker's text), landed with 221's repair, which widens it (a TAB in a `link` name once decoded).
+
+    **Widened by panel 188's Windows leg**, 2026-10-03 (`docs/panel/188-reports/compiler-engineer.md` § 22.2): lld-link writes *could not open 'X.lib': no such file or directory*, which the reader did not catch, so a group naming a missing library was exit 2 on Windows, 11 of the leg's 155 cases; the same cause in another linker's wording.
+
+    **2026-10-03, batch 8's FFI lane**: repaired at `0242a730`, widened at `25bc5e04`, gated by its cases and the compiler's own tests; the net and the Windows leg are owed at the batch's close.
 
 - [ ] **225 — `machine_locked` reads a header's first bytes, so a `..` climb to the root names a header by where this machine keeps it, and a `package` naming a `.pc` file is read from the working directory** | `extern "../../(24 times)/<the absolute path without its leading />"` over `function seven() -> i32`: `check` 0, `build` 0, prints `7`, while the same path written absolute is refused `machine_locked_path` (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro188/climb/`); `package "./seven.pc"`, `"seven.pc"`, `"seven.PC"`, `".pc"` build from the `.pc`'s directory and are *not installed* from another (the ffi-pragmatist and the critic, pkg-config 3.0.7 and pkgconf 1.8.1) | `selfhost/parse/group_head.hero` (`machine_locked`; the leaf of panel 188 R9 once landed) · panel 055 · panel 188 R6, which refuses the `.pc` half · **class: adjacent**
 
@@ -284,11 +300,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): real, beside the work, a thesis rule's reach rather than a wrong program; the `.pc` half lands with panel 188's R6, and for the climb the value alone cannot tell a climb to the root from a climb to a sibling directory.
 
+    **2026-10-03, batch 8's FFI lane**: the `.pc` half is refused at `6779162c` (panel 188's R6), and a climb out of a named directory at `e8397297` (defect 234). For a leading climb no value-only rule was found among those searched (any `..`; a depth threshold; a root directory's name after the climb; the climb against the program's own depth; the climb against the parts after it): a climb to the root and one to a sibling directory are one string, and which it is depends on where the program sits. The closing is proposed as a pinned known cost, which needs a ruling (`<scratchpad>/batch8/ffi/225-pin/`, 2026-10-03).
+
 - [ ] **226 — `ffi_package` points at the group's first member, not at the `package` string it is about** | `extern "ab.h" package "zz9nothere"` over `function seven() -> i32`: `build` 1, *the package `zz9nothere` is not installed on this machine*, `at p.hero:2:5`, the member's line, where the string is on line 1 (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro188/pkg-span/`) | `selfhost/emit/ffi_build.hero` (where `ffi_package` takes its span) · **class: adjacent**
 
     **Origin:** panel 188's spec-warden, 2026-10-03; reproduced by the coordinator the same day.
 
     **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be.
+
+    **2026-10-03, batch 8's FFI lane**: repaired at `b9c4bda0`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
 
 - [ ] **227 — a source file holding a byte that is not UTF-8 is answered `cannot read` at exit 2, where the file was read and the author can be told which line holds the byte** | `function main()` over a comment `# caf` and the byte 0xE9, over `print(1)`: `check` exit 2, *error: cannot read `p.hero`*; the same with the byte inside a string literal (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro-utf8/`) | the reading of a source file into a `str` · `.claude/rules/cli-surface.md` (*exit 1 the input has diagnostics, exit 2 the tool could not run*) · **class: blocking**
 
@@ -326,16 +346,38 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told. Panel 188's R4 and R5 refuse `'`, U+2028 and U+2029 at `check`, so once they land a program `check` passes reaches this reader with a private-use, unassigned or noncharacter code point only; R4 is a thesis rule the author may turn, so the reader is repaired on its own, reading clang's line against each declared header as stage C did for the linker's.
 
+    **2026-10-03, batch 8's FFI lane**: repaired at `850ca708`, its leaf reading with `bytes` at `f9b9605f`, gated by its cases and the compiler's own tests; the net and the platform legs are owed at the batch's close.
+
+- [ ] **233 — the route `machine_locked_path` names for a library is `LIBRARY_PATH`, which lld-link ignores, so the advice fails on Windows** | `extern "stdio.h" link "/opt/foo/lib/libfoo.a"`: `check` exit 1, `machine_locked_path`, *set `LIBRARY_PATH` to the directory holding it* (`tests/golden/check/ffi-a-group-head-names-not-locates`); on the Windows box (clang 23.1.1, `lld-link`) `extern "lp.h" link "lp188"` over a library only in a side directory, built with `LIBRARY_PATH` naming that directory, stops at *could not open 'lp188.lib'*, exit 2, where `--library <dir>` builds and prints 7 and `LIB` fails too (the compiler-engineer's `libprobe.sh`, 2026-10-03, panel 188's Windows leg, its report's § 22.4) | the leaf's message (`selfhost/head_names.hero` after stage E, `route`) · `ffi_missing_library`'s note (`selfhost/emit/ffi_build.hero`), which already names `--library <dir>` · **class: blocking**
+
+    **Origin:** the compiler-engineer's Windows leg of 2026-10-03 (`docs/panel/188-reports/compiler-engineer.md` § 22.4), panel 188 R12's platform facts; filed by the coordinator's instruction into batch 8's FFI lane, which repairs it.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a false message, a route that fails on Windows where the compiler's own `--library <dir>` works on every platform measured.
+
+    **2026-10-03, batch 8's FFI lane**: repaired at `c6bd5a6a`, gated by its cases and the compiler's own tests; the net and the Windows leg are owed at the batch's close.
+
 - [ ] **234 — on Windows a header name NTFS stores as another file is accepted, and the include opens that file at exit 0 where the Mac and Linux say it is missing** | under clang 23.1.1 on the Windows box, each tree holding only what the row needs: `#include <ab.h.>`, `<ab.h >`, `<ab.h..>` and `<ab.h::$DATA>` open `ab.h`; `<ab:c.h>` opens the alternate data stream `c.h` of a file `ab`; `<d./ab.h>` opens `d/ab.h`; `<zz/../ab.h>` opens `ab.h` with no `zz`; `<ABCDEF~1.H>` opens `abcdefghij.h` by its 8.3 name; `<NUL>` opens the null device; each *file not found* on this Mac and in the Linux arm64 image (the ffi-pragmatist, `docs/panel/188-reports/ffi-pragmatist.md` § Windows, measured, 2026-10-03); every one passes the ratified rules of panel 188 | the leaf's judgement of a group head's string (`selfhost/head_names.hero` after panel 188's landing) · panel 188 R2 and R6 · panel 055 · **class: blocking**
 
     **Origin:** panel 188's ffi-pragmatist, 2026-10-03, measuring R12's Windows facts after the ratification; read by the coordinator from the seat's tables, not yet run by the coordinator.
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a wrong program accepted on one platform, the header bound being another file than the one the string names. Its repair widens what `check` refuses, which is the author's to rule on (`docs/work/DECIDE.md`, `panel 188`): the rule measured to close it refuses 0 of the real header names surveyed on the three platforms and none of the tree's 700 group-head strings.
 
+    **2026-10-03, batch 8's FFI lane**: repaired at `e8397297`, a package's rules moved out of `head_names.hero` into `head_package.hero` first at `1a8eb095`, gated by its cases and the compiler's own tests; the net is owed at the batch's close (the line added at the round's merge, the item having been filed on the trunk after the lane's base).
+
 - [ ] **235 — a header name no NTFS file can hold builds on the Mac and Linux and is missing on Windows** | `*`, `<`, `?` and `|` in a header's name: `CreateFileW` refuses each (Win32 error 123), so on Windows `build` says *missing header*, true there, where this Mac and the Linux arm64 image build and run (the ffi-pragmatist, the same section, 2026-10-03) | the leaf's judgement (`selfhost/head_names.hero` after panel 188's landing) · panel 188 R4 (which already refuses `/*`) · **class: adjacent**
 
     **Origin:** panel 188's ffi-pragmatist, 2026-10-03, the same measurement; read by the coordinator from the seat's tables, not yet run by the coordinator.
 
     **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a divergence between platforms whose messages are true on each; ruled with 234.
+
+    **2026-10-03, batch 8's FFI lane**: repaired at `24cb4fd4`, gated by its cases and the compiler's own tests; the net is owed at the batch's close (the line added at the round's merge, the item having been filed on the trunk after the lane's base).
+
+- [ ] **237 — the reader of the driver's package message cuts a name at its first backtick, so `package "a`b"` reaches the author raw, the compiler's `heroes-ffi-package` marker and all, with no code and no place** | `extern "ab.h" package "a`b"` over `function seven() -> i32`: `build` exit 1, its stderr opening *heroes-ffi-package `a`b` is not installed on this machine*, no `error[ffi_package]` and no `at`: `package_problem` read the name up to its first backtick, `a`, which no group names, and `cli/produce.hero` printed the message raw (the trunk's compiler at `dcaca1a3` and the lane's at `e2f98e17`, `<scratchpad>/batch8/ffi/repro/s1/s221-pkg-backtick/` and `repro/r237/`, 2026-10-03); beside it, a `.pc` answering a word that holds the marker's text is quoted with *the package* in its place, the reader replacing every marker on the line | `selfhost/emit/ffi_build.hero` (`package_problem`, `replace_all`) · `selfhost/emit/ffi_lookup.hero` (`package_span`) · the marker's writers in `selfhost/cli/libraries.hero` and `selfhost/cli/shell_split.hero` · **class: blocking**
+
+    **Origin:** lane b8-ffi beside 226, 2026-10-03, reproduced on the trunk's compiler; the cause panel 188's compiler-engineer saw in its stage A, where a line end in a package's message leaked the marker (`docs/panel/188-reports/compiler-engineer.md` § 12.4).
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a message without code or location, the compiler's own marker shown (design.md §4.17); and a false one beside it, an answer quoted with *the package* in place of the marker's text.
+
+    **2026-10-04, batch 8's FFI lane**: repaired at `1d2bde6d`, the reader asking each group's name at the head of the driver's first line and the driver writing `pkg-config`'s control characters by their code, gated by its cases and the compiler's own tests; the net and the platform legs are owed at the batch's close.
 
 *******************************************************************************

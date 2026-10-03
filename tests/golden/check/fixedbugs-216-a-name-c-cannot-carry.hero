@@ -1,0 +1,36 @@
+# Defect 216 (panel 188, 2026-10-03): a group head's string whose VALUE no
+# tool can be handed. Until then `check` passed each at exit 0, and `build`
+# stopped at exit 2 with an internal error (`>`), said a header was missing
+# that was there (a line end), said clang had read a header it never opened
+# (the empty name), or shifted the link line (`link ""`, a bare `-l` taking
+# the next word). The string is judged on its value, its escapes decoded as
+# spec § 2 defines them, because the value is what reaches C. A NUL is the
+# fourth member and is not written here: no escape spells one, and a raw NUL
+# in a case is a byte the annotation tools would have to read.
+
+extern "a>b.h"    #~ unwritable_name
+    function f1() -> i32
+
+extern "stdio.h>"    #~ unwritable_name
+    function f2() -> i32
+
+extern "a\nb.h"    #~ unwritable_name
+    function f3() -> i32
+
+extern "a\rb.h"    #~ unwritable_name
+    function f4() -> i32
+
+extern ""    #~ unwritable_name
+    function f5() -> i32
+
+extern "stdio.h" link ""    #~ unwritable_name
+    function f6() -> i32
+
+extern "stdio.h" link "m\nx"    #~ unwritable_name
+    function f7() -> i32
+
+extern "stdio.h" package "a\rb"    #~ unwritable_name
+    function f8() -> i32
+
+function main()
+    print(f1() + f2() + f3() + f4() + f5() + f6() + f7() + f8())

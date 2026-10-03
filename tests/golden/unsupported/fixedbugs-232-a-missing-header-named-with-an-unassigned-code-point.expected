@@ -1,0 +1,6 @@
+error[ffi_missing_header]: `fixedbugs-232-<U+0378>.h` is not on this machine's include path — clang looked and did not find it
+  at tests/golden/unsupported/fixedbugs-232-a-missing-header-named-with-an-unassigned-code-point.hero:14:5
+     |
+  14 |     function seven() -> i32  #~ ffi_missing_header
+     |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: the group names a header the preprocessor must be able to open: install the library's development files, or pass `--include <dir>` — `package` finds it for you where the library ships a `.pc`, and `CPATH` works too

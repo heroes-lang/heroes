@@ -1,0 +1,13 @@
+# fixedbugs, defect 226, lane b8-ffi, 2026-10-03.
+#
+# A package the machine does not have, asked for by a group of one function:
+# `ffi_package` is told at the `package` string, the thing it is about, on the
+# group's head line, where it pointed at the function's line below (panel
+# 188's spec-warden). Beside `ffi-records-only-group-cannot-claim-its-package`,
+# whose group holds only a record.
+
+extern "stdio.h" package "fixedbugs-226-a-package-no-machine-has"  #~ ffi_package
+    function puts(s: cstr lent) -> i32
+
+function main()
+    _ = puts("hi".cstr())
