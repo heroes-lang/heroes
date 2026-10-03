@@ -135,9 +135,8 @@ function filter_words(package: str, said: str) -> [str]?
 # order the package gave them: the one rule for every step that compiles the
 # program's headers, the units (`cli/units.hero`), the pointee and layout
 # probes and the header's questions (`compiling.search_words`), so no step keeps
-# a different subset. The link line takes the whole answer: clang 21 reads
-# a compile word there without a warning (measured 2026-10-02, this Mac),
-# and a link word at a compile warns `'linker' input unused`.
+# a different subset. A link word at a compile warns `'linker' input unused`,
+# and the link takes `link_words` below.
 #
 # **Every step kept `-I` alone until defect 161** (2026-10-02): a `.pc`'s
 # `-D` never reached clang, so a header using it stopped `build` at exit 2
@@ -149,19 +148,52 @@ function compile_flags(package_flags: [str]) -> [str]
     out: [str] @ []
 
     for flag in package_flags
-        if compiles(flag)
+        if valued_by(flag, prefixes: ["-I", "-D", "-U", "-F"])
             out @ out.push(flag)
 
     return out
 
-function compiles(flag: str) -> bool
-    for prefix in ["-I", "-D", "-U", "-F"]
+# Whether `flag` is one of `prefixes` with its value joined to it.
+function valued_by(flag: str, prefixes: [str]) -> bool
+    for prefix in prefixes
         rest = tail_after(word: flag, prefix: prefix)
 
         if !rest.is_err() && rest.must().len() > 0
             return true
 
     return false
+
+# The words of a package's answer a LINK reads, in the order the package
+# gave them: `-L`, `-l`, `-Wl,-rpath,` and the `-framework` pair, and `-F`
+# where the answer links a framework, since a link reads `-F` only to find
+# one; `-I -D -U` are no link's. The link took the whole answer until defect
+# 206, and clang on Linux calls a `-F` at a link *argument unused during
+# compilation*, the one compile word it warns about there (Debian clang
+# 22.1.8 and 18.1.8, measured 2026-10-03; `-framework` is no Linux link's).
+function link_words(package_flags: [str]) -> [str]
+    framework: bool @ false
+
+    for flag in package_flags
+        if flag == "-framework"
+            framework @ true
+
+    out: [str] @ []
+    index: i64 @ 0
+
+    while index < package_flags.len()
+        flag = package_flags[index]
+
+        if flag == "-framework" && index + 1 < package_flags.len()
+            out @ out.push(flag)
+            out @ out.push(package_flags[index + 1])
+            index @ index + 2
+            continue
+
+        if valued_by(flag, prefixes: ["-L", "-l", "-Wl,"]) || framework && valued_by(flag, prefixes: ["-F"])
+            out @ out.push(flag)
+        index @ index + 1
+
+    return out
 
 # The refusal, naming what the package said and what is accepted. The list
 # in it is the function above, word for word.
@@ -382,6 +414,33 @@ test "a compile takes a package's -I -D -U -F, and only those, in their order"
     linked = filter_words(package: "sdl", said: "-framework Cocoa -lSDL3 -L/opt/lib -Wl,-framework,Metal").must()
     assert linked.len() == 6
     assert compile_flags(linked).len() == 0
+
+# Over the same measured answer: a link is handed every link word and no
+# compile word, in the package's order, and `-F` only where a framework is
+# linked (defect 206); every word reaches a compile or a link.
+test "a link takes a package's link words, and its -F only beside a framework (defect 206)"
+    said = "-F/fw/a -I/inc/a -DNAME_A -U NAME_B -I/inc/b -F/fw/b -DNAME_C=1 -L/lib/a -lm -framework Cocoa -Wl,-rpath -Wl,/rp/a -Wl,-rpath,/rp/b -Wl,-framework -Wl,Metal\n"
+    flags = filter_words(package: "spell", said: said).must()
+    assert link_words(flags) == ["-F/fw/a", "-F/fw/b", "-L/lib/a", "-lm", "-framework", "Cocoa", "-Wl,-rpath,/rp/a", "-Wl,-rpath,/rp/b", "-framework", "Metal"]
+    both = strings.with_all(list: compile_flags(flags), more: link_words(flags))
+
+    for word in flags
+        found: bool @ false
+
+        for one in both
+            if one == word
+                found @ true
+
+        assert found
+
+    # The defect's own `.pc`: a framework's headers, and nothing linked.
+    headers_only = filter_words(package: "fakefw", said: "-F /fw/pc/../frameworks\n").must()
+    assert compile_flags(headers_only) == ["-F/fw/pc/../frameworks"]
+    assert link_words(headers_only).len() == 0
+
+    # One package's `-F` finds the framework another package links.
+    two = strings.with_all(list: headers_only, more: filter_words(package: "fw", said: "-framework Fake\n").must())
+    assert link_words(two) == ["-F/fw/pc/../frameworks", "-framework", "Fake"]
 
 # pkgconf 3.0.7's answers on this Mac, 2026-10-02 (lane h158, defect 162),
 # read into the words the list judges: each one word whatever it holds.
