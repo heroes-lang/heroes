@@ -1,0 +1,18 @@
+# fixedbugs, defect 171, lane ffimsg, 2026-10-03: why the binding is not
+# refused. A loader's API is function pointers the loader sets at run time,
+# volk naming each by the API's own name, `vkCreateInstance`, and GLAD
+# naming it `glad_glClear` behind `#define glClear glad_glClear`; C calls
+# them as functions, and so does this program, correctly. A `build` that
+# refused a pointer bound as a function would refuse it, and every program
+# over volk, GLAD or GLEW with it; measured, it builds and prints 5 and 9
+# today.
+
+extern "fixedbugs-171-a-loaders-pointers-set-then-called.h"
+    function load_all()
+    function vkAdd(a: i32, b: i32) -> i32
+    function glAdd(a: i32, b: i32) -> i32
+
+function main()
+    load_all()
+    print(vkAdd(a: 2, b: 3))
+    print(glAdd(a: 4, b: 5))

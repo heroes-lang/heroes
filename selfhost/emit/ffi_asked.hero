@@ -64,12 +64,26 @@
 # (2026-10-02, defect 157 widened) *must use 'union' tag* and *'enum' tag* for
 # a tag of those kinds, which until then answered `type`, a typedef, falsely. Defect 145 left the note two
 # readings where clang showed no spelling of the type; this makes it one.
+#
+# **And the TYPE the header gives each function's result and each constant**
+# (defect 186, 2026-10-03): a refused return assertion says only that the
+# declared type is wrong, so `ffi_return_type` named the program's type and
+# never the header's. The question initialises a struct of this unit's own
+# with the return assertion's very call (`extern_assert.zero_call`), or with
+# the constant's name, and clang's refusal names the type as the header
+# spells it, the canonical one after it: *initializing 'struct
+# hero_ask_result' with an expression of incompatible type 'int64_t' (aka
+# 'long long')*, or `'void'`. A question that does not compile, a callback's
+# parameter spelled by a typedef this unit lacks, answers nothing.
 
 use ast
 use source
+use check/state
 use ir/containers
+use emit/ctype
 use emit/externs as emit_externs
 use emit/c_text
+use emit/extern_assert
 use emit/ffi_lookup
 use parse
 use resolve
@@ -89,31 +103,60 @@ constant MACRO: str
 constant TYPE: str
     "hero-ask-type "
 
+constant RESULT: str
+    "hero-ask-result "
+
+constant INCOMPATIBLE: str
+    "with an expression of incompatible type '"
+
+# A type as clang named it: as the header spells it, and the canonical type
+# clang gives after it, `(aka '…')`, or the same where it gives none.
+record Typed
+    spelled: str
+    canonical: str
+
 # What the run answered: clang's lines about what was said again, each at a
 # declaration's line, for the readers to read beside the round's own; the
-# names the header holds as a value; the names it defines as a macro; and what
-# each record's tag is, `type`, `tag` or `neither`.
+# names the header holds as a value; the names it defines as a macro; what
+# each record's tag is, `type`, `tag` or `neither`; and the type the header
+# gives each function's result and each constant.
 record Asked
     said: str
     values: {str: bool}
     macros: {str: bool}
     types: {str: str}
+    results: {str: Typed}
 
 # The answer of a run that was not made: nothing said, nothing a value or a
-# macro, no tag answered.
+# macro, no tag or type answered.
 function nothing() -> Asked
     none: {str: bool} = {}
     unasked: {str: str} = {}
-    return Asked(said: "", values: none, macros: none, types: unasked)
+    untyped: {str: Typed} = {}
+    return Asked(said: "", values: none, macros: none, types: unasked, results: untyped)
 
 # The unit's C: the program's headers, then what is said again and asked of
 # each `extern` function its own files declare. A library extern is not asked
 # about: no line of the library is a line the author can be told about
-# (`emit/ffi_site.hero`'s `location` refuses one).
-function unit(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> str
+# (`emit/ffi_site.hero`'s `location` refuses one). `struct_tags` is what the
+# rounds learned, so a call's zero of a handle is spelled as theirs was.
+function unit(p: containers.Program, s: source.Source, decls: [ast.Decl], c: state.Checked, struct_tags: {str: bool}) -> str
     out: [str] @ c_text.includes(emit_externs.headers(p, s, decls))
 
+    names = ctype.with_functions(
+        ctype.new_names_qualified(s, decls, struct_tags: struct_tags),
+        c: c,
+        s: s,
+        decls: decls,
+        p: p
+    )
     index: i64 @ 0
+
+    # The type questions stand after every other, so one whose call a macro
+    # turns into a statement, which clang recovers from as it can, reaches
+    # no question but the type questions after it.
+    typings: [str] @ ["struct hero_ask_result { char hero_c; };"]
+    typed: i64 @ 0
 
     for f in p.functions
         if emit_externs.extern_spans(decls, f).header.is_err()
@@ -127,6 +170,15 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> str
         out @ out.push("#ifdef " + name)
         out @ out.push("#warning hero-ask")
         out @ out.push("#endif")
+        given: str @ name
+
+        if !emit_externs.is_extern_constant(decls, f)
+            given @ extern_assert.zero_call(f, names, c, s, decls)
+        typings @ typings.push(directive(file: RESULT + name, line: 1))
+        typings @ typings.push(
+            "__attribute__((unused)) static void hero_ask_r_" + typed.to_str() + "(void) { struct hero_ask_result hero_r = " + given + "; (void)hero_r; }"
+        )
+        typed @ typed + 1
 
         # A constant asks the rest of its questions in the first round.
         if emit_externs.is_extern_constant(decls, f)
@@ -174,6 +226,9 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> str
                         index @ index + 1
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
+    for line in typings
+        out @ out.push(line)
+
     return out.join("\n") + "\n"
 
 # A `#line` spelled as the emitter spells it (`emit/c_text.hero`), so a line
@@ -189,11 +244,18 @@ function read(stderr: str) -> Asked
     macros: {str: bool} @ {}
     reached: {str: bool} @ {}
     refused: {str: str} @ {}
+    results: {str: Typed} @ {}
 
     for row in ffi_lookup.lines(text: stderr)
         if !begins(text: row, prefix: ASK)
             said @ said.push(row)
             continue
+
+        if begins(text: row, prefix: RESULT)
+            given = typed_in(row)
+
+            if !given.is_err()
+                results[asked_name(row: row, prefix: RESULT)] @ given.must()
 
         if begins(text: row, prefix: VALUE) && ffi_lookup.has(text: row, needle: ffi_lookup.FAILED)
             values[asked_name(row: row, prefix: VALUE)] @ true
@@ -220,7 +282,22 @@ function read(stderr: str) -> Asked
     for name in keys(reached)
         types[name] @ refused[name].default("type")
 
-    return Asked(said: said.join("\n"), values: values, macros: macros, types: types)
+    return Asked(said: said.join("\n"), values: values, macros: macros, types: types, results: results)
+
+# The type clang's refusal of an initialiser names, and the canonical one
+# after it where it gives one; absent from any other line.
+function typed_in(row: str) -> Typed?
+    after = ffi_lookup.after(text: row, marker: INCOMPATIBLE)
+
+    if after.is_err()
+        return fail(code: "none", msg: "not an incompatible initialiser")
+    spelled = ffi_lookup.up_to_quote(after.must())
+    aka = ffi_lookup.after(text: after.must(), marker: "(aka '")
+    canonical: str @ spelled
+
+    if !aka.is_err()
+        canonical @ ffi_lookup.up_to_quote(aka.must())
+    return ok(Typed(spelled: spelled, canonical: canonical))
 
 # The name a question's line asks about: what its file name holds after the
 # question's own words, up to the colon that opens the position.
@@ -249,8 +326,23 @@ test "the unit says each extern's call again at its line, and asks whether it is
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    got = unit(low.program, s, parsed.decls)
+    no_tags: {str: bool} = {}
+    got = unit(low.program, s, parsed.decls, c, struct_tags: no_tags)
     assert ffi_lookup.has(text: got, needle: "#include <errno.h>\n")
+
+    # The type of each result and each constant, by the return assertion's
+    # own call, or by the constant's name (defect 186).
+    assert ffi_lookup.has(
+        text: got,
+        needle: "#line 1 \"hero-ask-result strerror\"\n__attribute__((unused)) static void hero_ask_r_1(void) { struct hero_ask_result hero_r = strerror((int32_t)0); (void)hero_r; }\n"
+    )
+    assert ffi_lookup.has(text: got, needle: "struct hero_ask_result hero_r = EDOM; (void)hero_r; }\n")
+
+    # And they stand after every other question, which a type question a
+    # macro breaks cannot then reach.
+    first_type = ffi_lookup.char_index_of(text: got, needle: "hero-ask-result").must()
+    assert first_type > ffi_lookup.char_index_of(text: got, needle: "hero-ask-value strerror").must()
+    assert first_type > ffi_lookup.char_index_of(text: got, needle: "hero-ask-macro EDOM").must()
 
     # No parameter: the call itself, at the declaration's line.
     assert ffi_lookup.has(
@@ -286,7 +378,8 @@ test "a record's tag is asked whether it is a type name, and `void` is not asked
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    got = unit(low.program, s, parsed.decls)
+    no_tags: {str: bool} = {}
+    got = unit(low.program, s, parsed.decls, c, struct_tags: no_tags)
     assert ffi_lookup.has(
         text: got,
         needle: "#line 1 \"hero-ask-type only_tagg\"\ntypedef only_tagg hero_q_0;\n_Static_assert(sizeof(hero_q_0 *) == 0, \"hero-ask\");\n"
@@ -315,4 +408,13 @@ test "an answer is read from the question's file name, and only a failed asserti
     # What was said again stays, for the readers; no answer's line does.
     assert ffi_lookup.has(text: got.said, needle: "t.hero:2:67: error: called object type 'int'")
     assert !ffi_lookup.has(text: got.said, needle: "hero-ask")
+
+    # A result's type as the header spells it and the canonical one after
+    # it, or the one clang gives where there is no other (defect 186); a
+    # question that did not compile answers nothing.
+    results = "hero-ask-result add:1:83: error: initializing 'struct hero_ask_result' with an expression of incompatible type 'int64_t' (aka 'long long')\nhero-ask-result tick:1:83: error: initializing 'struct hero_ask_result' with an expression of incompatible type 'void'\nhero-ask-result on:1:90: error: unknown type name 'hero_fn_1'\n"
+    answered = read(results).results
+    assert answered["add"].must() == Typed(spelled: "int64_t", canonical: "long long")
+    assert answered["tick"].must() == Typed(spelled: "void", canonical: "void")
+    assert answered["on"].is_err()
     assert nothing().said == ""

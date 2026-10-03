@@ -1,0 +1,34 @@
+# Fixed defect 172, 2026-10-03 (lane ffimsg; found by panel 187's
+# completeness critic in the recovery instrument's APPLY-OTHER 20 and
+# APPLY-NEW 19, every one the operator `int`).
+#
+# SYMPTOM: `docs/panel/176-briefs/xfer_cj.hero`'s result written `-> int`,
+# over `cj.h`'s `int64_t cJSON_AddItemToObject(...)`, took the certain fix
+# `i32`: `check --apply` wrote it, `check` passed, and `build` refused the
+# applied binding, `ffi_return_type`.
+#
+# CAUSE: in an `extern` group a type is the header's, and `check` does not
+# read the header. Defect 135's L6 made the swap C's `int`, `i32`, which is
+# right only where the header says `int`, and a certain fix is applied
+# without asking.
+#
+# FIX: in a group the swap is a guess, shown and never applied. A result may
+# be wider than the header's (spec § 13), so its guess is `i64`, which holds
+# every C integer but an unsigned 64-bit one; a result broken over lines
+# takes the same. `--apply` leaves this file as it is.
+
+extern "cj.h"
+    record Json tag cJSON
+    function cJSON_CreateObject() -> Json acquires cJSON_Delete
+    function cJSON_AddItemToObject(object: Json, string: cstr lent, item: Json consumes) -> int  #~ reserved_word
+    function cJSON_Delete(item: Json consumes)
+    function cJSON_GetArraySize(
+        array: Json
+    ) -> int  #~ reserved_word
+
+function main()
+    root = cJSON_CreateObject()
+    child = cJSON_CreateObject()
+    _ = cJSON_AddItemToObject(object: root, string: "child".cstr(), item: child)
+    print(cJSON_GetArraySize(array: root))
+    cJSON_Delete(item: root)

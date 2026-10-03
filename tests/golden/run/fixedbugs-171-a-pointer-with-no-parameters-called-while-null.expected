@@ -1,0 +1,3 @@
+before
+!sanitizer: on unknown address
+!panic: a null function pointer was called — a call went through a function pointer that held none, such as a `ptr` holding `nullptr` handed to C as a callback, or an `extern` function its header declares as a pointer, called while the pointer held none

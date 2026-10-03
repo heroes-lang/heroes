@@ -1,0 +1,11 @@
+# fixedbugs, defect 186, lane ffimsg, 2026-10-03, a shape beside the
+# defect's: a result the header gives as `opaque_t *` declared `-> i64`. The
+# message names the header's word and the struct it points at, `struct
+# opaque *`, and offers the group's own handle tagged with it, `H`.
+
+extern "fixedbugs-186-results.h"
+    record H tag opaque
+    function open_one() -> i64  #~ ffi_return_type
+
+function main()
+    print(open_one())

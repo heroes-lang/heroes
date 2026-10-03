@@ -1,0 +1,29 @@
+# fixedbugs, defect 143, lane ffimsg, 2026-10-03: the run case of
+# `fixedbugs-143-system-macros-through-functions-of-the-programs-own` on a
+# header of the tree's own. That case binds `sys/wait.h` and `sys/select.h`,
+# which the Windows box lacks, so it is skipped there and the item waited on
+# it (`docs/work/DEFECTS.md`, item 143, 2026-10-03). Here every shape it
+# reaches is the tree's: a macro over a status's bits through a function of
+# the program's own, and a struct of bits behind a handle, cleared by a
+# STATEMENT macro, `do { ... } while (0)`, which no call form reaches and a
+# function body holds, on every platform and not only on glibc.
+
+extern "fixedbugs-143-statement-macros-through-functions-of-the-programs-own.h"
+    record BitSet tag bit_set
+    function hero_exit_status_of(status: i32) -> i32
+    function hero_bits_new() -> BitSet acquires hero_bits_free
+    function hero_bits_free(s: BitSet consumes)
+    function hero_bits_zero(s: BitSet)
+    function hero_bits_set(n: i32, s: BitSet)
+    function hero_bits_isset(n: i32, s: BitSet) -> i32
+
+function main()
+    print(hero_exit_status_of(status: 256))
+    s = hero_bits_new()
+    hero_bits_zero(s: s)
+    hero_bits_set(n: 3, s: s)
+    hero_bits_set(n: 70, s: s)
+    print(hero_bits_isset(n: 3, s: s))
+    print(hero_bits_isset(n: 4, s: s))
+    print(hero_bits_isset(n: 70, s: s))
+    hero_bits_free(s: s)

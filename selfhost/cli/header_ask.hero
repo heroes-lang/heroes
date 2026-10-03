@@ -27,12 +27,13 @@ use library_source
 # (`compiling.probe_words`). `-ferror-limit=0` because every question that
 # answers is an error line, and clang stops at twenty by default;
 # `-fno-caret-diagnostics` because a line of the unit echoed under its answer
-# is nothing a reader should be handed.
-function ask(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, under: compiling.Compiling) -> ffi_asked.Asked
+# is nothing a reader should be handed. `struct_tags` is what the rounds
+# learned, so a call the unit makes spells a handle as theirs did.
+function ask(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, under: compiling.Compiling, struct_tags: {str: bool}) -> ffi_asked.Asked
     unit = publish.private_name(t.build + "/header-ask") + ".c"
     err = publish.private_name(t.build + "/header-ask-stderr.txt")
 
-    if write_file(path: unit, text: ffi_asked.unit(art.program, s, art.decls)).is_err()
+    if write_file(path: unit, text: ffi_asked.unit(art.program, s, art.decls, art.checked, struct_tags: struct_tags)).is_err()
         return ffi_asked.nothing()
     line = strings.with_all(
         list: ["clang", "-fsyntax-only", "-ferror-limit=0", "-fno-caret-diagnostics"],
@@ -70,11 +71,13 @@ test "a refused round's question is asked of the real header (defect 152)"
     )
     art = compile.to_unit(s, options, version: "0.0.0-port").must()
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-header-ask").must()
+    no_tags: {str: bool} = {}
     got = ask(
         t,
         art,
         s,
-        under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: "build")
+        under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: "build"),
+        struct_tags: no_tags
     )
     assert ffi_lookup.has(text: got.said, needle: "build/selftest_header_ask.hero:2:")
     assert ffi_lookup.has(text: got.said, needle: "called object type")
@@ -113,11 +116,13 @@ test "a refused round's questions are asked under the build's level and sanitize
     )
     art = compile.to_unit(s, options, version: "0.0.0-port").must()
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-header-ask").must()
+    no_tags: {str: bool} = {}
     plain = ask(
         t,
         art,
         s,
-        under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir)
+        under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir),
+        struct_tags: no_tags
     )
     assert plain.macros["thing"].is_err()
     assert plain.values["thing"].is_err()
@@ -135,6 +140,46 @@ test "a refused round's questions are asked under the build's level and sanitize
             runtime: t.runtime,
             source_dir: dir
         )
-        read_so = ask(t, art, s, under: under)
+        read_so = ask(t, art, s, under: under, struct_tags: no_tags)
         assert !read_so.macros["thing"].is_err()
         assert !read_so.values["thing"].is_err()
+
+# **A refused round asks the type of each result and each constant**
+# (defect 186): `hero_wide` declared `-> i32` is refused by its return
+# assertion, and the question names `hero_wide_t`, as the header spells it,
+# and `long long` after it; `HERO_SMALL`, `#define`d to a number, is an
+# `int`. A header of the test's own, because a library function clang
+# knows as a builtin, `strlen`, comes back as its canonical type alone,
+# `unsigned long` and not `size_t`, measured on this Mac's clang 21.
+test "a refused round's question names the type the header gives a result and a constant (defect 186)"
+    library = library_source.text()
+    dir = "build/selftest-header-ask-result"
+    assert !process.mkdir_all(dir).is_err()
+    header = "typedef long long hero_wide_t;\nstatic inline hero_wide_t hero_wide(void) { return 1; }\n#define HERO_SMALL 2\n"
+    assert !write_file(path: dir + "/wide.h", text: header).is_err()
+    text = "extern \"wide.h\"\n    function hero_wide() -> i32\n    constant HERO_SMALL: i64\n\nfunction main()\n    print(hero_wide())\n    print(HERO_SMALL)\n"
+    assert !write_file(path: dir + "/p.hero", text: text).is_err()
+    s = input.read_compilation(path: dir + "/p.hero", library: library).must()
+    none: [str] = []
+    options = compile.Options(
+        level: "-O0",
+        dump_ir: false,
+        emit_c: true,
+        output: fail(code: "none", msg: "no output"),
+        sanitize: false,
+        target: .program_build,
+        headers_from: none,
+        library: none
+    )
+    art = compile.to_unit(s, options, version: "0.0.0-port").must()
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-header-ask").must()
+    no_tags: {str: bool} = {}
+    got = ask(
+        t,
+        art,
+        s,
+        under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir),
+        struct_tags: no_tags
+    )
+    assert got.results["hero_wide"].must() == ffi_asked.Typed(spelled: "hero_wide_t", canonical: "long long")
+    assert got.results["HERO_SMALL"].must().spelled == "int"

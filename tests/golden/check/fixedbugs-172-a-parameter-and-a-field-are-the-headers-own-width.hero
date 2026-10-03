@@ -1,0 +1,31 @@
+# Fixed defect 172, 2026-10-03 (lane ffimsg), the shapes beside the
+# defect's result where a type is the header's own width and sign: a
+# parameter, an out-parameter, a field and a fixed array.
+#
+# SYMPTOM: each `int` took the certain `i32`. Against a header giving 64
+# bits, `build` refused the applied field and fixed array, `ffi_field_type`,
+# and the applied out-parameter, `ffi_parameter_type`; the applied by-value
+# parameter built, an `int64_t` narrowed to 32 bits in the program's own
+# declaration (measured 2026-10-03 on the trunk's compiler at `02e507bc`).
+#
+# CAUSE: the swap was C's `int`, where the width is the header's, which
+# `check` does not read.
+#
+# FIX: a guess, `i32` where the header says `int`, the message saying `i64`
+# where it says `int64_t`. `--apply` leaves this file as it is.
+
+extern "w.h"
+    record WRec
+        a: int  #~ reserved_word
+        b: i32
+        xs: int[2]  #~ reserved_word
+    function make_w() -> WRec
+    function wide_param(x: int) -> i64  #~ reserved_word
+    function out_wide(@p: int) -> i64  #~ reserved_word
+
+function main()
+    n: i32 @ 0
+    _ = out_wide(p: @n)
+    print(make_w().b)
+    print(wide_param(x: 41))
+    print(n)

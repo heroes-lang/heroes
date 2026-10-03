@@ -1,0 +1,12 @@
+# fixedbugs, defect 171, lane ffimsg, 2026-10-03, a shape beside the
+# defect's: a header's function pointer declared with a parameter list its
+# pointee does not have. The probe's call goes through the pointer as it
+# goes through a function, so clang counts the pointee's parameters, and the
+# declaration is told so at `build`, `ffi_call_shape`, as a function's is;
+# the pointer, called while null, never runs.
+
+extern "fixedbugs-171-a-pointer-of-another-signature.h"
+    function combine(x: i64) -> i64  #~ ffi_call_shape
+
+function main()
+    print(combine(x: 1))
