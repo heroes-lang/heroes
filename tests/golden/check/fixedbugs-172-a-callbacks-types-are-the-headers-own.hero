@@ -1,0 +1,29 @@
+# Fixed defect 172, 2026-10-03 (lane ffimsg), the shape beside the defect's
+# result that is NOT a result the header lets be wider: a callback's types,
+# its parameter and its own result.
+#
+# SYMPTOM: `call_back(f: (function(int) -> ()))` against `void (*)(int64_t)`
+# took the certain `i32`, and `build` refused the applied binding,
+# `ffi_callback_type` (measured 2026-10-03 on the trunk's compiler at
+# `02e507bc`).
+#
+# CAUSE: the swap was C's `int`, and a function pointer's types are the
+# header's own, exactly, which `check` does not read.
+#
+# FIX: a guess, `i32` where the header says `int`. A function type's result
+# is closed by its own `)` and so is told apart from the member's, which
+# may be wider and takes `i64`. `--apply` leaves this file as it is.
+
+extern "s.h"
+    function call_back(f: (function(int) -> ()))  #~ reserved_word
+    function on_value(f: (function(i32) -> int)) -> i64  #~ reserved_word
+
+function got(x: i32)
+    print(x)
+
+function twice(x: i32) -> i32
+    return x * 2
+
+function main()
+    call_back(f: got)
+    print(on_value(f: twice))

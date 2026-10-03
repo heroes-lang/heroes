@@ -157,19 +157,11 @@ function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: st
     if writes == "use" && word_neighbours.header_after(text, end: span.end)
         return keywords.ForeignWord(
             message: "`" + word + "` is not a word in this language — a C header is named by an `extern` group, with the signatures it declares indented below it: `extern \"stdio.h\"`",
-            repair: .hint(word: "extern")
+            repair: .hint(word: "extern", title: "`extern` is where to look")
         )
 
-    # In an `extern` group a parameter and a field are at the header's own
-    # width and sign, and the spec's word is *`i32` where C says int* (§ 13),
-    # so `int` there is C's: `i64`, the language's integer, checked clean and
-    # `build` refused it at the header (defect 135's L6, lane recovery-b7). A
-    # result may be wider, and `i32` is right there too.
     if writes == "i64" && place == .typed && word_place.in_a_group(text, span, @outline)
-        return keywords.ForeignWord(
-            message: "`" + word + "` is not a word in this language — in an `extern` group a type is the header's own width and sign, and C's `" + word + "` is `i32`",
-            repair: .swap(word: "i32")
-        )
+        return in_a_group(text: text, span, word: word)
 
     if right_at(text: text, span, writes: writes, place: place)
         return one
@@ -182,6 +174,31 @@ function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: st
     return keywords.ForeignWord(
         message: misplaced(word: word, writes: writes, place: place) + in_braces(text: text, span, writes: writes, place: place),
         repair: repair_there(writes, place: place)
+    )
+
+# `int` where a type goes in an `extern` group: what is right there is the
+# header's type, which the text does not hold, so the repair is a guess in
+# every place, shown and never applied (defect 172, 2026-10-03). It was a
+# certain `i32` from defect 135's L6 (`c61a1d04`) until then, and that is
+# right only where the header says `int`: measured over every place, a
+# result, a field, a callback's parameter, an out-parameter, a fixed array
+# and a constant the header gives 64 bits each took `i32`, checked clean and
+# was refused anew by `build`, and a parameter took a width C narrows to in
+# silence. A result and a constant may be wider than the header's (spec
+# § 13), so there `i64` is right wherever `i32` is and more, as the spec's
+# own `constant SQLITE_OK: i64` writes it; everywhere else the type is the
+# header's own width, `i32` where it says `int`.
+function in_a_group(text: str, span: token.Span, word: str) -> keywords.ForeignWord
+    lead = "`" + word + "` is not a word in this language — in an `extern` group "
+
+    if word_place.may_be_wider(text, span)
+        return keywords.ForeignWord(
+            message: lead + "a result or a constant may be wider than the header's type: `i64` holds every C integer but an unsigned 64-bit one, which is `u64`",
+            repair: .hint(word: "i64", title: "replace `" + word + "` with `i64`, unless the header's type is unsigned and 64 bits wide")
+        )
+    return keywords.ForeignWord(
+        message: lead + "a type is the header's own width and sign: `i32` where the header says `int`, `i64` where it says `int64_t`",
+        repair: .hint(word: "i32", title: "replace `" + word + "` with `i32`, where the header says `int`")
     )
 
 # Where a `{` follows a declaring word with no name after it, `struct {`, the
@@ -344,14 +361,21 @@ test "a swap is certain only where the word it writes is right"
     assert swap_in("x: int", token.Span(start: 3, end: 6)).must() == "i64"
     assert swap_in("int x", token.Span(start: 0, end: 3)).is_err()
 
-    # In an `extern` group `int` is C's, `i32`, at any depth under the head;
-    # past the group it is the language's integer again (defect 135's L6).
+    # In an `extern` group the type is the header's, which no text holds, so
+    # `int` there takes no certain swap at any depth under the head, and the
+    # guess is `i32`, or `i64` where the value may be wider; past the group it
+    # is the language's integer again (defect 135's L6, defect 172).
     member = "extern \"stdlib.h\"\n    function abs(n: int) -> int\n"
-    assert swap_in(member, word_place.at_word(text: member, word: "int")).must() == "i32"
+    parameter = word_place.at_word(text: member, word: "int")
+    assert swap_in(member, parameter).is_err()
+    assert repair_in(member, parameter).must().repair == .hint(word: "i32", title: "replace `int` with `i32`, where the header says `int`")
+    result = token.Span(start: parameter.end + 5, end: parameter.end + 8)
+    assert swap_in(member, result).is_err()
+    assert repair_in(member, result).must().repair == .hint(word: "i64", title: "replace `int` with `i64`, unless the header's type is unsigned and 64 bits wide")
     field = "extern \"time.h\"\n    record Tm tag tm partial\n        tm_sec: int\n"
     callback = "extern \"signal.h\"\n    function signal(sig: i32, f: (function(int) -> ())) -> ptr\n"
-    assert swap_in(callback, word_place.at_word(text: callback, word: "int")).must() == "i32"
-    assert swap_in(field, word_place.at_word(text: field, word: "int")).must() == "i32"
+    assert swap_in(callback, word_place.at_word(text: callback, word: "int")).is_err()
+    assert swap_in(field, word_place.at_word(text: field, word: "int")).is_err()
     after = "extern \"m.h\"\n    function q() -> f64\n\nfunction f(n: int)\n"
     assert swap_in(after, word_place.at_word(text: after, word: "int")).must() == "i64"
     local = "function main()\n    x: int @ 0\n"
@@ -364,7 +388,7 @@ test "a swap is certain only where the word it writes is right"
     group = "extern \"m.h\"\n    enum Mode\n"
     assert swap_in(group, token.Span(start: 17, end: 21)).is_err()
     header = "include \"stdio.h\"\n"
-    assert repair_in(header, token.Span(start: 0, end: 7)).must().repair == .hint(word: "extern")
+    assert repair_in(header, token.Span(start: 0, end: 7)).must().repair == .hint(word: "extern", title: "`extern` is where to look")
     assert swap_in("import geom", token.Span(start: 0, end: 6)).must() == "use"
     chain = "function f()\n    if x\n        print(1)\n    elif y\n"
     assert swap_in(chain, token.Span(start: 43, end: 47)).must() == "else if"

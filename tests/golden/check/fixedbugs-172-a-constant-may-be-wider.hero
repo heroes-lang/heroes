@@ -1,0 +1,24 @@
+# Fixed defect 172, 2026-10-03 (lane ffimsg), a shape beside the defect's
+# result: a group's `constant` written `: int`.
+#
+# SYMPTOM: the certain `i32` was written by `check --apply`; where the
+# header's value needs 64 bits, `#define BIG_CONST 5000000000LL`, `build`
+# refused it, `ffi_constant_type`, and where it fits, the program's own
+# `n + SMALL_CONST` was refused anew by `check`, `mixed_arithmetic`, `i64`
+# and `i32` (measured 2026-10-03 on the trunk's compiler at `02e507bc`).
+#
+# CAUSE: the swap was C's `int`, where a constant takes its value and its
+# type from a header `check` does not read.
+#
+# FIX: a guess. A constant may be wider than the header's type, as the
+# spec's own `constant SQLITE_OK: i64` is over C's `int`, so its guess is
+# `i64`. `--apply` leaves this file as it is.
+
+extern "w.h"
+    constant BIG_CONST: int  #~ reserved_word
+    constant SMALL_CONST: int  #~ reserved_word
+
+function main()
+    n: i64 = 40
+    print(n + SMALL_CONST)
+    print(BIG_CONST)
