@@ -1,0 +1,11 @@
+tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero:10:15: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero:10:22: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero:15:10: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero:15:11: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero:19:15: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero:19:22: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero:10:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — a loop over a condition is `while`
+tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero:10:29: error[missing_body]: a `for` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero:11:15: error[expected_end_of_line]: expected the end of the line, found a number (`4`) — one statement per line, no semicolons
+tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero:15:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — a loop over a condition is `while`
+tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero:19:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — a loop over a condition is `while`

@@ -1,16 +1,16 @@
-tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:19:21: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:19:21: error[missing_body]: the `function` `branches` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:21:15: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:22:15: error[expected_end_of_line]: expected the end of the line, found a number (`4`) — one statement per line, no semicolons
 tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:23:22: error[missing_body]: an `else if` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:24:15: error[expected_end_of_line]: expected the end of the line, found a number (`5`) — one statement per line, no semicolons
 tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:26:10: error[missing_body]: an `else` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:27:15: error[expected_end_of_line]: expected the end of the line, found a number (`6`) — one statement per line, no semicolons
-tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:31:18: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:31:18: error[missing_body]: the `function` `loops` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:33:17: error[missing_body]: a `while` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:35:15: error[expected_end_of_line]: expected the end of the line, found a number (`4`) — one statement per line, no semicolons
 tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:37:21: error[missing_body]: a `for` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:38:15: error[expected_end_of_line]: expected the end of the line, found a number (`5`) — one statement per line, no semicolons
-tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:42:31: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:42:31: error[missing_body]: the `function` `heads_that_went_on` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:44:15: error[expected_end_of_line]: expected the end of the line, found `)` — an `if`'s body goes on the lines below its head, one level deeper
 tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:44:17: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-131-a-brace-habit-nested-in-a-body.hero:45:15: error[expected_end_of_line]: expected the end of the line, found a number (`4`) — one statement per line, no semicolons

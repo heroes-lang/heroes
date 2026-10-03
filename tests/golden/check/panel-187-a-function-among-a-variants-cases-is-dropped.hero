@@ -1,0 +1,14 @@
+# Pinned 2026-10-02 by panel 187's compiler engineer, route (1f): a known
+# cost, not an intent; a change in either direction turns this case red.
+# A `function` among a variant's cases is told once and dropped with its
+# block (`parse/member_lines.hero:205` and `:202`), so a mistake inside it
+# waits until it moves out; a record's is read since lane recovery-b8.
+# Shape `g2/r12`. Class (b): `adjacent`.
+
+variant V
+    red
+    function f()  #~ expected_case
+        print(1 +)
+
+function main()
+    print(1)

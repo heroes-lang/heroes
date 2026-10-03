@@ -4,9 +4,9 @@ tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:
 tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:26:1: error[reserved_word]: `class` is not a word in this language — use `record` (there is no inheritance)
 tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:30:1: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
 tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:34:1: error[unexpected_character]: `€` (U+20AC) is not part of the language's syntax
-tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:14:1: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `class`)
-tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:18:1: error[missing_body]: a `constant` needs an indented body — one level deeper, exactly 4 spaces (found `let`)
-tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:22:1: error[missing_body]: a `test` needs an indented body — one level deeper, exactly 4 spaces (found `€`)
+tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:14:1: error[missing_body]: the `function` `stub` needs an indented body — one level deeper, exactly 4 spaces (found `class`)
+tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:18:1: error[missing_body]: the `constant` `LIMIT` needs an indented body — one level deeper, exactly 4 spaces (found `let`)
+tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:22:1: error[missing_body]: the `test` `"empty"` needs an indented body — one level deeper, exactly 4 spaces (found `€`)
 tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:24:1: error[empty_record]: a `record` needs at least one field, indented one level below it
 tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:28:1: error[empty_variant]: a `variant` needs at least one case, indented one level below it
 tests/golden/check/fixedbugs-130-an-empty-declaration-above-a-refused-line.hero:34:1: error[expected_extern_block]: an `extern` group's signatures are indented under it — `extern "math.h"` then `    function sqrt(x: f64) -> f64` (§4.19)

@@ -28,7 +28,7 @@
 
 use cursor
 use next_line
-use parse/head_lines
+use text_lines
 use parse/pairing
 use parse/unclosed
 
@@ -60,9 +60,9 @@ function body_at(@c: cursor.Cursor, text: str, from: i64, said: i64, failed: boo
 # (the head class, lane recovery-b8; the audit's row 130-H-004).
 function lines_to(c: cursor.Cursor, text: str, from: i64) -> i64
     open = unclosed.head_opener(c, text, from: from)
-    below = head_lines.margin_width(text, at: cursor.current_span(c).start)
+    below = text_lines.margin_width(text, at: cursor.current_span(c).start)
 
-    if open < 0 || !unclosed.in_reach(c, open: open) || below <= head_lines.line_margin(text, at: c.tokens[from].span.start)
+    if open < 0 || !unclosed.in_reach(c, open: open) || below <= text_lines.line_margin(text, at: c.tokens[from].span.start)
         return -1
     ends = pairing.close_after(c, at: c.tokens[open].span.start)
     i: i64 @ c.pos
@@ -85,7 +85,7 @@ function body_below(c: cursor.Cursor, text: str, open: i64) -> bool
     while next < c.tokens.len() - 1 && c.tokens[next].kind == .comment
         next @ next + 1
 
-    below = head_lines.margin_width(text, at: c.tokens[next].span.start)
+    below = text_lines.margin_width(text, at: c.tokens[next].span.start)
     at: i64 @ c.tokens[open].span.start
 
     while at > 0 && text[at - 1] != '\n'
@@ -119,14 +119,14 @@ function spilled(c: cursor.Cursor, text: str, from: i64, said: i64) -> Spilled
     none = Spilled(start: -1, close: -1)
     i: i64 @ from
 
-    while i < c.pos && i < c.tokens.len() - 1 && head_lines.line_margin(text, at: c.tokens[i].span.start) == head_lines.line_margin(text, at: c.tokens[from].span.start) && !below_the_line(c, text, from: from, at: i)
+    while i < c.pos && i < c.tokens.len() - 1 && text_lines.line_margin(text, at: c.tokens[i].span.start) == text_lines.line_margin(text, at: c.tokens[from].span.start) && !below_the_line(c, text, from: from, at: i)
         k = c.tokens[i].kind
         close = pairing.paired_closer(c, text, open: i)
 
         if (k == .lparen || k == .lbracket) && close > i
             start = first_below(c, text, open: i)
 
-            if start < close && told_at(c, at: start, said: said) && head_lines.margin_width(text, at: c.tokens[start].span.start) > head_lines.line_margin(text, at: c.tokens[from].span.start) && opens_a_statement(c, at: start) && head_lines.margin_width(text, at: c.tokens[close].span.start) < 0
+            if start < close && told_at(c, at: start, said: said) && text_lines.margin_width(text, at: c.tokens[start].span.start) > text_lines.line_margin(text, at: c.tokens[from].span.start) && opens_a_statement(c, at: start) && text_lines.margin_width(text, at: c.tokens[close].span.start) < 0
                 return Spilled(start: start, close: close + 1)
         i @ i + 1
 

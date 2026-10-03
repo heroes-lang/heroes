@@ -1,0 +1,3 @@
+tests/golden/check/panel-187-a-variants-cases-in-braces-cost-three-edits.hero:11:1: error[indentation_jump]: indentation jumps from level 0 to level 2; a block opens one level at a time
+tests/golden/check/panel-187-a-variants-cases-in-braces-cost-three-edits.hero:10:5: error[empty_variant]: the cases of `variant Shape` go on the lines below it, one level deeper, and never in braces (found `{`)
+tests/golden/check/panel-187-a-variants-cases-in-braces-cost-three-edits.hero:11:10: error[expected_end_of_line]: expected the end of the line after the case `r`, found `:` — one case per line, its fields on the lines below it, one level deeper

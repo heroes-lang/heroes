@@ -465,6 +465,31 @@ constant DECIDED: [str]
         "selfhost/parse/use_line.hero 310"
     ]
 
+# THE PARSER'S MODULES HAVE A BUDGET, and not only each file a ceiling
+# (panel 187's R9, the compiler engineer's route for what a finished recovery
+# is, design.md §1.1: simplicity sets the ceiling). Between defect 130's
+# filing (`0338b598`) and the sitting (`07ccb72a`) the front end the parser
+# reaches went from 8,407 lines to 19,201 and `parse/` from 2,403 to 8,696,
+# every file under its ceiling: a per-file ceiling is met by adding files.
+# A repair here pays for its lines by deleting or moving others; a
+# `blocking` repair that cannot raises its row with the reason written beside
+# it, as a `DECIDED` row is raised. A row is a directory, with its `/`, and
+# its lines in `code_lines`' unit, summed over the modules under it.
+#
+# ITS PREMISE, a falsifiable claim: the parser's recovery is written under
+# `parse/`. It is false in part the day the row is written (the lexer's joins,
+# `open_line.hero`, `sign_above.hero` and `grammar_expr.hero` stand outside),
+# and a module moved out of `parse/` escapes the row: the row holds a
+# directory, where the front end's `use` closure from `parse.hero` would hold
+# the parser, at the cost of a module walk here, unbuilt. So a move pays for
+# lines only along a seam, code that reads no parse: the lane that wrote this
+# row paid defect 203's 21 lines so, `head_lines`' three margin readers to
+# `text_lines`, which reads every line of a text.
+constant BUDGETS: [str]
+    [
+        "selfhost/parse/ 8696"
+    ]
+
 # The floor is the Rust's own idea —
 # `assert!(files.len() > 100, "the walk is not reaching the tree")` — and
 # it exists because a walk that finds nothing reports green.
@@ -562,6 +587,12 @@ function run_all(scratch: str, only: str) -> report.Report?
     slow: [str] @ []
     grown_keys: [str] @ []
     grown_lines: [str] @ []
+    spent: [i64] @ []
+    held: [i64] @ []
+
+    for _ in BUDGETS
+        spent @ spent.push(0)
+        held @ held.push(0)
 
     for path in modules
         text = read_file(path)
@@ -580,6 +611,7 @@ function run_all(scratch: str, only: str) -> report.Report?
             grown_lines @ grown_lines.push(where)
 
         lines = code_lines(text.must())
+        tally(spent: @spent, held: @held, rows: BUDGETS, path: path, lines: lines)
         limit = ceiling_for(path)
 
         if lines > limit
@@ -617,6 +649,17 @@ function run_all(scratch: str, only: str) -> report.Report?
         else
             report.keep_pass(@r)
 
+        past = over_budget(rows: BUDGETS, spent: spent, held: held)
+
+        if past.len() > 0
+            report.keep_failure(
+                @r,
+                label: "layout/budget",
+                detail: "  a directory's modules may not pass the lines its row in `BUDGETS` grants (panel 187's R9): a repair pays for its lines by deleting or moving others, and a `blocking` one that cannot raises the row with its reason:\n" + past.join("\n")
+            )
+        else
+            report.keep_pass(@r)
+
     if over.len() > 0
         report.keep_failure(
             @r,
@@ -626,6 +669,46 @@ function run_all(scratch: str, only: str) -> report.Report?
     else
         report.keep_pass(@r)
     return ok(r)
+
+# A module's lines added to each row of `rows` whose directory holds it, and
+# the module counted there.
+function tally(@spent: [i64], @held: [i64], rows: [str], path: str, lines: i64)
+    index: i64 @ 0
+
+    for entry in rows
+        parts = strings.words(entry)
+
+        if parts.len() > 0 && strings.starts_with(text: path, prefix: parts[0])
+            spent[index] @ spent[index] + lines
+            held[index] @ held[index] + 1
+        index @ index + 1
+
+# Each row of `rows` the tree passes or names wrongly, said with its numbers:
+# a row that is not a directory with its `/` and a number, a directory that
+# holds no module, where the budget would measure nothing and pass, and one
+# whose modules, `spent` lines over `held` of them, pass its number.
+function over_budget(rows: [str], spent: [i64], held: [i64]) -> [str]
+    out: [str] @ []
+    index: i64 @ 0
+
+    for entry in rows
+        parts = strings.words(entry)
+        number: i64? @ fail(code: "row", msg: "no number")
+
+        if parts.len() == 2
+            number @ strings.to_number(parts[1])
+
+        if number.is_err() || !strings.ends_with(text: parts[0], suffix: "/")
+            out @ out.push("    `" + entry + "` is not a directory with its `/` and a number")
+        else if held[index] == 0
+            out @ out.push("    " + parts[0] + " holds no module, so its budget measures nothing")
+        else if spent[index] > number.must()
+            out @ out.push(
+                "    " + parts[0] + ": " + spent[index].to_str() + " lines of code, past its budget of " + number.must().to_str()
+            )
+        index @ index + 1
+
+    return out
 
 # The growths no allowance names, and each allowance no growth matched:
 # `found[i]` is `written[i]`'s module and name, as an allowance spells them.
@@ -888,3 +971,35 @@ test "a growth the allowance names passes, any other fails, and a stale allowanc
         parts = strings.words(entry)
         assert parts.len() == 2
         assert strings.starts_with(text: parts[0], prefix: "selfhost/")
+
+test "a budget's row is a directory with its slash, so `parse.hero` is not under `parse/`"
+    for entry in BUDGETS
+        parts = strings.words(entry)
+        assert parts.len() == 2
+        assert strings.ends_with(text: parts[0], suffix: "/")
+        assert !strings.to_number(parts[1]).is_err()
+
+    assert !strings.starts_with(text: "selfhost/parse.hero", prefix: "selfhost/parse/")
+    assert strings.starts_with(text: "selfhost/parse/opening.hero", prefix: "selfhost/parse/")
+
+test "a budget is passed, met, empty or malformed, and each but the met is said"
+    rows = ["selfhost/parse/ 10", "selfhost/none/ 5", "selfhost/parse 3"]
+    spent: [i64] @ [0, 0, 0]
+    held: [i64] @ [0, 0, 0]
+    tally(spent: @spent, held: @held, rows: rows, path: "selfhost/parse/a.hero", lines: 6)
+    tally(spent: @spent, held: @held, rows: rows, path: "selfhost/parse/b.hero", lines: 4)
+    tally(spent: @spent, held: @held, rows: rows, path: "selfhost/parse.hero", lines: 7)
+    assert spent == [10, 0, 17]
+    assert held == [2, 0, 3]
+
+    # Ten lines under a budget of ten meet it; the empty directory and the row
+    # with no `/` are told, a walk that finds nothing never passing in silence.
+    said = over_budget(rows: rows, spent: spent, held: held)
+    assert said.len() == 2
+    assert strings.contains(text: said[0], needle: "selfhost/none/ holds no module")
+    assert strings.contains(text: said[1], needle: "is not a directory")
+
+    # One line more than the row grants is said, with both numbers.
+    tally(spent: @spent, held: @held, rows: rows, path: "selfhost/parse/c.hero", lines: 1)
+    past = over_budget(rows: rows, spent: spent, held: held)
+    assert strings.contains(text: past[0], needle: "selfhost/parse/: 11 lines of code, past its budget of 10")

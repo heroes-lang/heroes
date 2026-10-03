@@ -1,0 +1,13 @@
+# Pinned 2026-10-02 by panel 187's compiler engineer, route (1f): a known
+# cost, not an intent; a change in either direction turns this case red.
+# A head that refused something drops the rest of its line as debris
+# (`parse/opening.hero:147`), a stray closer in it with it. Shape `g4/ti`:
+# the `)` after the condition is told only once the operand is written.
+# Class (b): `adjacent`.
+
+function f(a: i64) -> i64
+    return a
+
+function main()
+    if f(1 +) )  #~ expected_expression
+        print(1)

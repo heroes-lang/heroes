@@ -1,6 +1,6 @@
-tests/golden/check/fixedbugs-130-past-a-comment-line.hero:13:1: error[missing_body]: a `constant` needs an indented body — one level deeper, exactly 4 spaces (found `constant`)
+tests/golden/check/fixedbugs-130-past-a-comment-line.hero:13:1: error[missing_body]: the `constant` `BARE` needs an indented body — one level deeper, exactly 4 spaces (found `constant`)
 tests/golden/check/fixedbugs-130-past-a-comment-line.hero:14:7: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
-tests/golden/check/fixedbugs-130-past-a-comment-line.hero:18:1: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `function`)
+tests/golden/check/fixedbugs-130-past-a-comment-line.hero:18:1: error[missing_body]: the `function` `bare` needs an indented body — one level deeper, exactly 4 spaces (found `function`)
 tests/golden/check/fixedbugs-130-past-a-comment-line.hero:19:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-past-a-comment-line.hero:23:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-past-a-comment-line.hero:25:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

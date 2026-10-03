@@ -38,7 +38,7 @@ use parse/pairing
 use parse/line_end
 use lexer
 use next_line
-use parse/head_lines
+use text_lines
 
 # Whether no closer closes the opener at token `open` (`paired_closer`): one
 # asked as never closed, which the parser names none of. A body's `{` the
@@ -123,8 +123,8 @@ function swallows_the_body(c: cursor.Cursor, text: str, from: i64) -> bool
 
     if open >= 0 && in_reach(c, open: open)
         return true
-    below = head_lines.line_margin(text, at: cursor.current_span(c).start)
-    return below > head_lines.line_margin(text, at: c.tokens[from].span.start) && inside_an_open_bracket(c, text, from: from)
+    below = text_lines.line_margin(text, at: cursor.current_span(c).start)
+    return below > text_lines.line_margin(text, at: c.tokens[from].span.start) && inside_an_open_bracket(c, text, from: from)
 
 # Whether the head at token `from` stands inside the reach of an opener before
 # it that the lexer named never closed, the cursor still in that reach: every

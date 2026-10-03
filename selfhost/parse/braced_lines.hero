@@ -35,7 +35,7 @@ use token
 use diag
 use cursor
 use lexer
-use parse/head_lines
+use text_lines
 use parse/brace_habit
 use parse/laid_braces
 
@@ -77,7 +77,7 @@ function lines_from(c: cursor.Cursor, text: str, from: i64, close: i64) -> curso
         width: i64 @ -1
 
         if depth == 0 && !cursor.is_invisible(t.kind)
-            width @ head_lines.margin_width(text, at: t.span.start)
+            width @ text_lines.margin_width(text, at: t.span.start)
 
         if width >= 0 && base < 0
             base @ (width + 2) / 4

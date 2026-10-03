@@ -22,6 +22,7 @@
 use token
 use diag
 use cursor
+use text_lines
 use parse/line_end
 use parse/unclosed
 
@@ -224,7 +225,31 @@ function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: 
         cursor.error(
             @c,
             code: "expected_separator",
-            message: "expected `,` or a new line between one " + what + " and the next, found " + cursor.found(c, text),
+            message: "expected `,` or a new line between one " + what + " and the next, found " + cursor.found(c, text) + another_kind(c, text: text, what: what, closer: closer, open: open),
             span: cursor.current_span(c)
         )
     return false
+
+# A closer of another kind where the separator goes stands for the literal's
+# own, `[1, 2` over `print(x) )`: the message names the opener still open and
+# where, and both edits, so that it is true whether the line is the literal's
+# last element, the grammar's reading (a line ending with a literal keeps its
+# NEWLINE, which `Sep` writes), or a statement the literal took in (panel
+# 187's R6, row 130-34a).
+function another_kind(c: cursor.Cursor, text: str, what: str, closer: token.TokenKind, open: i64) -> str
+    k = cursor.current_kind(c)
+
+    if k != .rparen && k != .rbracket && k != .rbrace
+        return ""
+    opener = c.tokens[open].span
+    found = cursor.current_span(c)
+    own: str @ "`]`"
+
+    if closer == .rbrace
+        own @ "`}`"
+    swap = "write " + own + " for this `" + cursor.slice_of(text, found) + "`"
+    said = " — the `" + cursor.slice_of(text, opener) + "` still open " + text_lines.place_above(text, at: opener.start, from: found.start) + ": "
+
+    if text_lines.newlines_between(text: text, from: opener.start, to: found.start) == 0
+        return said + swap
+    return said + "if this line is its last " + what + ", " + swap + "; if it closes on a line above, write its " + own + " there and delete this `" + cursor.slice_of(text, found) + "`"

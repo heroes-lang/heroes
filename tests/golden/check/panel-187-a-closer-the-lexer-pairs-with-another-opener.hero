@@ -1,0 +1,13 @@
+# Pinned 2026-10-02 by panel 187's compiler engineer, route (1f): a known
+# cost, not an intent; a change in either direction turns this case red.
+# One `)` left out of a function type: the lexer pairs the line's last `)`
+# with the innermost opener and names the other two never closed
+# (`closers.hero:151`), and the type reader then asks for the `)` and the
+# `->` it was owed (`parse/type.hero`, through `cursor.expect`). Row
+# 131-41a. Class (a): `adjacent`.
+
+function f(g: (function(i64 -> i64)  #~ unclosed_bracket unclosed_bracket expected_function_type_params_close expected_function_type_arrow
+    print(1)
+
+function main()
+    print(1)

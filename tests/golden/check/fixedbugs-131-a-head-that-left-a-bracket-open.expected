@@ -8,5 +8,5 @@ tests/golden/check/fixedbugs-131-a-head-that-left-a-bracket-open.hero:39:9: erro
 tests/golden/check/fixedbugs-131-a-head-that-left-a-bracket-open.hero:44:11: error[unclosed_bracket]: `(` opened here is still open at line 47, where `function` begins a line no bracket can hold
 tests/golden/check/fixedbugs-131-a-head-that-left-a-bracket-open.hero:48:14: error[unclosed_bracket]: `[` opened here is still open at line 51, where `function` begins a line no bracket can hold
 tests/golden/check/fixedbugs-131-a-head-that-left-a-bracket-open.hero:52:16: error[unclosed_bracket]: `(` opened here is still open at line 55, where the name `print` begins a line after one that ended without a `,`
-tests/golden/check/fixedbugs-131-a-head-that-left-a-bracket-open.hero:38:1: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `function`)
+tests/golden/check/fixedbugs-131-a-head-that-left-a-bracket-open.hero:38:1: error[missing_body]: the `function` `nothing_below` needs an indented body — one level deeper, exactly 4 spaces (found `function`)
 tests/golden/check/fixedbugs-131-a-head-that-left-a-bracket-open.hero:58:14: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

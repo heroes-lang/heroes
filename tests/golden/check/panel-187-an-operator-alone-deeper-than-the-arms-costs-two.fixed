@@ -1,0 +1,25 @@
+# Pinned 2026-10-03 by lane rec187 under panel 187's R1 and R5: a known
+# cost, not an intent; a change in either direction turns this case red.
+# Defect 182, class (a), adjacent: an operator alone on a line deeper than
+# a `match`'s arms is refused, `continuation_outside_brackets`, and the
+# block its margin opened is told again, `unexpected_block`; the certain
+# deletion, applied, checks clean. Not repaired inline: the line's margin
+# is laid out by the lexer before the operator is left out of the stream
+# (`sign_above.hero`), in `open_line.hero`, two lines under its ceiling.
+
+function plus_deeper()
+    n = 1
+    k = match n
+        1 => "one"  #~v continuation_outside_brackets unexpected_block
+        _ => "many"
+    print(k)
+
+function minus_deeper()
+    n = 1
+    k = match n
+        1 => "one"  #~v continuation_outside_brackets unexpected_block
+        _ => "many"
+    print(k)
+
+function main()
+    print(1)
