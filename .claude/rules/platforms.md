@@ -41,6 +41,19 @@ Windows box's C library carries neither (its `sys/` holds `locking.h`,
 that morning
 (`docs/records/log/2026-10-03-1123-the-author-answers-a-a-case-a-platform-cannot-run-is-judged-where-its-header-is.md`).
 
+**The Linux arm64 leg runs its suites four at a time inside the container**,
+the compiler's own tests alone first and `cache` alone after, each suite its
+own harness process, a red in the parallel pass run again alone before it is
+read (§ What may run beside a gate in `.claude/rules/verification.md`, the
+same shape this Mac's gate has). Measured 2026-10-03, on the author's
+noticing that Docker showed one CPU of eight busy: the sequential leg held
+one (`docker stats`, 100% of 800%, memory 299 MiB of 7.65 GiB), so more
+memory or CPUs would have bought nothing; the parallel leg on `02e507bc`
+read 400% and its 21 count lines were the sequential leg's on the same
+commit, line for line by `diff`, the suites in 11 minutes against the
+sequential 24 to 27 of 2026-10-02, on a busy Mac. Independent invocations
+inside any container run the same way, `xargs -P 4`, each into its own file.
+
 **Two moments since 2026-09-29, by author instruction** (*Windows and arm Linux
 before the push*; CL-079): **Linux x86-64 runs when a batch closes**, from this
 Mac, in the container below, since it is CI's own architecture and the leg
