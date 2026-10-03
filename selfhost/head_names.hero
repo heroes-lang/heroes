@@ -240,11 +240,12 @@ function route(what: str) -> str
 
 # What a header's name cannot carry past what every string shares: `>`, which
 # ends it in C's `#include <...>`, and C's own `<name>` carried in whole; and
-# `\`, which clang's lexer reads as escaping the next character, so before
-# the closing `>` it reads on and opens another header or none (the
-# completeness critic's measurement, panel 188): its own code, not a thesis
-# rule, since in the middle of a name clang does carry it and `unwritable_name`
-# says nothing carries one.
+# `\`, which C leaves undefined there and clangs read apart: on macOS and Linux
+# as escaping the next character, so before the closing `>` it reads on into
+# another header or none (the completeness critic's measurement, panel 188),
+# on Windows as a directory separator (the Windows leg, § 22.3). Its own code,
+# not a thesis rule, since in the middle of a name clang does carry it and
+# `unwritable_name` says nothing carries one.
 function header_unwritable(spelled: str, value: str, span: token.Span) -> diag.Diagnostic?
     if c_spelling(value) == "brackets"
         return ok(carried(spelled: spelled, value: value, span: span))
@@ -255,7 +256,7 @@ function header_unwritable(spelled: str, value: str, span: token.Span) -> diag.D
         )
 
     if value.contains_byte('\\')
-        escaped = "this header's name holds `\\`, which clang reads in a header's name as escaping the character after it, and at the name's end that is the `>` closing it, so clang reads on into another header or none"
+        escaped = "this header's name holds `\\`, which C leaves undefined in a header's name (C11 6.4.7) and clang does not read alike on every platform, so the name does not say one file on every machine"
 
         # A rooted name with a `\`, `\\b.h` or `C:\\x.h`, is a path too: the
         # advice to write `/` would lead to `/b.h`, which the panel 055 check

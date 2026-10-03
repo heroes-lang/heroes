@@ -122,7 +122,7 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # itself, the tools carry a control character in any name, and `pkg-config`
 # one of `<>=!` inside a package's, so without the rule the program has the
 # tool's meaning. Their siblings are not: unwritable_name (nothing carries
-# it), escape_in_header_name (clang reads a `\` as an escape and opens
+# it), escape_in_header_name (clangs read a `\` apart, and one of them opens
 # another header) and option_like_name (resting on no `pkg-config`, and on
 # Windows a `link` beginning `-` is lld-link's own option, panel 188 § 22.5).
 function is_thesis_rule(d: Diagnostic) -> bool
