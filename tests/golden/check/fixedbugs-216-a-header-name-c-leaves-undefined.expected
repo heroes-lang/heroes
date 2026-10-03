@@ -1,0 +1,9 @@
+tests/golden/check/fixedbugs-216-a-header-name-c-leaves-undefined.hero:14:8: error[undefined_header_name]: this header's name holds `'`, which C leaves undefined in a header's name (C11 6.4.7): one compiler reads it as itself and the next need not, so `a'b.h` means what one compiler says
+  rename the header without it
+tests/golden/check/fixedbugs-216-a-header-name-c-leaves-undefined.hero:17:8: error[undefined_header_name]: this header's name holds `"`, which C leaves undefined in a header's name (C11 6.4.7): one compiler reads it as itself and the next need not, so `a\"b.h` means what one compiler says
+  rename the header without it
+tests/golden/check/fixedbugs-216-a-header-name-c-leaves-undefined.hero:20:8: error[undefined_header_name]: this header's name holds `//`, which C leaves undefined in a header's name (C11 6.4.7): one compiler reads it as itself and the next need not, so `d//b.h` means what one compiler says
+  write one `/`
+tests/golden/check/fixedbugs-216-a-header-name-c-leaves-undefined.hero:23:8: error[undefined_header_name]: this header's name holds `/*`, which C leaves undefined in a header's name (C11 6.4.7): one compiler reads it as itself and the next need not, so `e/*b.h` means what one compiler says
+  rename the header without it
+tests/golden/check/fixedbugs-216-a-header-name-c-leaves-undefined.hero:26:8: error[unshowable_name]: this header's name holds the control character U+0009, which no message can show: write the name without it, as `extern "math.h"`

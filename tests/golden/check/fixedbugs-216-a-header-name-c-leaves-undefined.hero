@@ -1,0 +1,30 @@
+# Defect 216 (panel 188, 2026-10-03): a header's name holding what C11
+# 6.4.7p3 leaves undefined between `<` and `>` (its text in the sitting's
+# historian's report): `'`, `"`, `//` and `/*`. Clang reads each as itself and
+# says nothing even under `-Weverything`, so without the rule the program has
+# one compiler's meaning, which is why the code is a thesis rule
+# (`diag.is_thesis_rule`). Until then `"` reached clang as its source
+# spelling, two bytes, and `build` said the header was missing. The fifth
+# mark, `\`, is refused apart (`fixedbugs-216-a-backslash-in-a-header-name`).
+#
+# The shape beside: an escape is decoded before it is judged, so `\t` is a
+# control character (`unshowable_name`, stage D) and no longer a Windows root
+# as the spelling's first byte made it.
+
+extern "a'b.h"    #~ undefined_header_name
+    function g1() -> i32
+
+extern "a\"b.h"    #~ undefined_header_name
+    function g3() -> i32
+
+extern "d//b.h"    #~ undefined_header_name
+    function g4() -> i32
+
+extern "e/*b.h"    #~ undefined_header_name
+    function g5() -> i32
+
+extern "\tb.h"    #~ unshowable_name
+    function g6() -> i32
+
+function main()
+    print(g1() + g3() + g4() + g5() + g6())
