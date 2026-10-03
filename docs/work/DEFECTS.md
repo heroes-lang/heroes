@@ -860,7 +860,7 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** the coordinator, 2026-10-02, building defect 172's applied program on `62d65e48` (2026-10-02, `scratchpad/apply-int/case/`), and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). The pointee check's message beside it names the header's type and offers it (`ffi_parameter_type`, *the header's `int64_t *` points at a different width*, fix *declare `p` as `@p: i64`*).
 
-    **2026-10-03, lane ffimsg**: repaired at `edfeb7d2`, gated by its own cases; the rest is owed at the round's gate. A refused round asks clang the type of each result and each constant (`selfhost/emit/ffi_asked.hero`), and `ffi_return_type` and, beside it, `ffi_constant_type` name it and offer the word that declares it, a guess; `fixedbugs-144-*` and `fixedbugs-145-a-result-spells-the-typedef` read anew.
+    **2026-10-03, lane ffimsg**: repaired at `edfeb7d2` and `64b0d525`, gated by its own cases; the rest is owed at the round's gate. A refused round asks clang the type of each result and each constant (`selfhost/emit/ffi_asked.hero`), and `ffi_return_type` and, beside it, `ffi_constant_type` name it and offer the word that declares it, a guess; `fixedbugs-144-*` and `fixedbugs-145-a-result-spells-the-typedef` read anew.
 
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be: it carries the header's name and not the type that would fix the program (design.md §4.17).
 
