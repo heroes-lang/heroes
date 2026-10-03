@@ -1,0 +1,5 @@
+# The module the root beside it calls by a name it does not declare (defect
+# 220, lane b8-source).
+
+function total(xs: [i64]) -> i64
+    return xs.len()

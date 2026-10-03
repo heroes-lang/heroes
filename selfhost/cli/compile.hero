@@ -23,6 +23,7 @@ use diag_render
 use parse
 use modules
 use resolve
+use rename_fit
 use checker
 use check/state
 use check/holes
@@ -162,7 +163,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
 
     if !stop_g.is_err()
         return leave(stop_g.must(), stage_name: "the module graph")
-    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    out = rename_fit.judged(resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses), s, parsed)
     stop_r = stage(out.diagnostics, s)
 
     if !stop_r.is_err()
