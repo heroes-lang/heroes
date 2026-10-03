@@ -1,9 +1,3 @@
-tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero:22:11: error[unexpected_character]: `;` is not part of the language's syntax
-tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero:23:11: error[unexpected_character]: `;` is not part of the language's syntax
-tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero:24:11: error[unexpected_character]: `;` is not part of the language's syntax
-tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero:11:10: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, no semicolons
-tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero:12:10: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, no semicolons
-tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero:13:17: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, no semicolons
-tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero:17:15: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, no semicolons
-tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero:18:15: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, no semicolons
-tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero:19:15: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, no semicolons
+tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero:27:11: error[unexpected_character]: `;` is not part of the language's syntax — a line's end ends what the line holds, a statement, a field or a case, and no `;` ends one
+tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero:16:10: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, and no `,` ends a statement's line
+tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero:22:15: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, and no `,` ends a statement's line

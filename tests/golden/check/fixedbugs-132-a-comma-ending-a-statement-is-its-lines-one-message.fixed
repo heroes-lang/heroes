@@ -1,0 +1,20 @@
+# Fixed 2026-09-30, defect 132's class, lane recovery-b4, beside
+# `fixedbugs-132-a-comma-after-every-member-is-one-message`. A statement or
+# an arm whose line ends with `,` over a line at its own margin was joined
+# to it, `continuation_outside_brackets` for a line that goes on with
+# nothing. The line ends at its `,` now, and the `,` is the line's one
+# message, what stands past its statement.
+#
+# Moved 2026-10-03 with defect 178's repair (lane b8-recovery): each `,` is
+# told in its run's words, its deletion certain; the two stand in two
+# declarations, so each is its own run and its own message.
+
+function f(n: i64) -> i64
+    return match n
+        0 => 1  #~ expected_end_of_line
+        _ => 2
+
+function main()
+    x = 1
+    print(x)  #~ expected_end_of_line
+    print(f(x))

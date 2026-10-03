@@ -15,6 +15,10 @@
 # certain deletions, two members on a line at its `,`, a statement's at its
 # own, and the braces' report is unchanged. `check --apply` deletes the
 # certain `,` and leaves the braces, the habit's own report (`.applied`).
+#
+# Moved 2026-10-03 with defect 178's repair (lane b8-recovery): the `,` that
+# ends a statement's line in the body in braces is told in its run's words,
+# its deletion certain, which the `.applied` now writes.
 
 record Point {  #~ expected_end_of_line
     x: i64  #~ expected_end_of_line
@@ -52,7 +56,7 @@ extern "math.h" {  #~ expected_end_of_line
 }
 
 function body() {  #~ missing_body
-    x = 1,  #~ expected_end_of_line
+    x = 1  #~ expected_end_of_line
     print(x)
 }
 

@@ -1,0 +1,148 @@
+# A separator another language ends its lines with, told once a run: Rust's,
+# Go's and JavaScript's `,` after a statement or an arm, C's `;` after a
+# statement, a field, a case or a signature (design.md §4.15, §4.17; defect
+# 178, 2026-10-03; the members' rule of defect 132, `68e46a13`, read the same).
+#
+# A line end ends what its line holds, so a `,` or a `;` written where a line
+# ends is one habit, and on every line of a declaration it was told once a
+# line: the parser's `expected_end_of_line` at each `,`, the lexer's
+# `unexpected_character` at each `;`. The first of a run is told, its
+# deletion `certain`; every later one with no other report said between,
+# in the same declaration, is one more certain deletion of that report, as
+# each `,` ending a member's line is of the members' (`parse/member_lines`).
+# A line opening at column 0, a declaration's, ends a run, and so does any
+# other report: what is told between is its own, and the run after it is
+# told again.
+#
+# The deletions grow the report's list in place, so a run of N lines costs
+# N appends: the report is taken out into a name, its slot's list emptied,
+# and the name's list lent to `push_fix` (spec § 10: a push reached through
+# a field or an index copies the array, and so did lending
+# `@reports[k].fixes`, 15.3 times the instructions retired for 4 times the
+# appends, where this takes 1.66; the members' rule, through a field place,
+# grew 6.29 times from 500 fields to 2,000; lane b8-recovery, 2026-10-03).
+#
+# A leaf: it reads the text and the reports it is handed.
+#
+# | entry | called by |
+# |---|---|
+# | `comma` | `parse/statement_end.close` |
+# | `semicolon` | `scan.punct` |
+
+use token
+use diag
+
+constant COMMA_WORDS: str
+    "expected the end of the line, found `,` — one statement per line, and no `,` ends a statement's line"
+
+constant SEMICOLON_WORDS: str
+    "`;` is not part of the language's syntax — a line's end ends what the line holds, a statement, a field or a case, and no `;` ends one"
+
+# A `,` that ends the line of a statement or of an arm's, the parser's run.
+function comma(@diagnostics: [diag.Diagnostic], text: str, at: token.Span)
+    said(@diagnostics, text: text, at: at, code: "expected_end_of_line", message: COMMA_WORDS, title: "delete the `,`")
+
+# A `;` that ends its line outside brackets, after a statement, a field, a
+# case or a signature, the lexer's run.
+function semicolon(@diagnostics: [diag.Diagnostic], text: str, at: token.Span)
+    said(
+        @diagnostics,
+        text: text,
+        at: at,
+        code: "unexpected_character",
+        message: SEMICOLON_WORDS,
+        title: "delete the `;`"
+    )
+
+# The separator spanning `at` that ends its line, told as `code` in
+# `message`'s words where it opens a run, or one more certain deletion of the
+# run's report where the last report said is that run's. The deletion,
+# titled `title`, takes the separator and the spaces before it on its line.
+function said(@diagnostics: [diag.Diagnostic], text: str, at: token.Span, code: str, message: str, title: str)
+    from: i64 @ at.start
+
+    while from > 0 && (text[from - 1] == ' ' || text[from - 1] == '\t')
+        from @ from - 1
+
+    gone = diag.Fix(title: title, replacement: "", span: token.Span(start: from, end: at.end), certainty: .certain)
+    last = diagnostics.len() - 1
+
+    if last >= 0 && runs_on(diagnostics[last], text: text, code: code, title: title, to: at.start)
+        none: [diag.Fix] = []
+        run: diag.Diagnostic @ diagnostics[last]
+        diagnostics[last].fixes @ none
+        push_fix(@run.fixes, gone)
+        diagnostics[last] @ run
+        return
+    d: diag.Diagnostic @ diag.new_diagnostic(code: code, message: message, span: at)
+    d.fixes @ d.fixes.push(gone)
+    diagnostics @ diagnostics.push(d)
+
+# Whether `d` is the report of a run the separator at `to` goes on: its code,
+# its last fix one of `title`, and no line between that fix and `to` opening
+# at column 0 with words, where a declaration begins.
+function runs_on(d: diag.Diagnostic, text: str, code: str, title: str, to: i64) -> bool
+    n = d.fixes.len()
+
+    if d.code != code || n == 0 || d.fixes[n - 1].title != title
+        return false
+    i: i64 @ d.fixes[n - 1].span.end
+
+    while i < to
+        if text[i] == '\n' && i + 1 < to && with_words(text[i + 1])
+            return false
+        i @ i + 1
+
+    return true
+
+# Whether a line whose first byte is `b` holds words at column 0: not a blank
+# line, a margin or a comment.
+function with_words(b: u8) -> bool
+    return b != ' ' && b != '\t' && b != '\n' && b != '\r' && b != '#'
+
+function push_fix(@fixes: [diag.Fix], f: diag.Fix)
+    fixes @ fixes.push(f)
+
+# Whether nothing but spaces stands from `at` to its line's end, a comment or
+# the text's end: a separator there ends its line.
+function ends_its_line(text: str, at: i64) -> bool
+    i: i64 @ at
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\t')
+        i @ i + 1
+
+    return i >= text.len() || text[i] == '\n' || text[i] == '\r' || text[i] == '#'
+
+## Tests
+
+test "a separator opens a run, and the next in its declaration is one more deletion of its report"
+    # Two statements of one function, then a second function's: `,` at 9, 20
+    # and 44, a declaration at column 0 between the second and the third.
+    text = "    x = 1,\n    y = 2,\nfunction g()\n    z = 3,\n"
+    reports: [diag.Diagnostic] @ []
+
+    for at in [9, 20, 44]
+        comma(@reports, text, at: token.Span(start: at, end: at + 1))
+
+    assert reports.len() == 2
+    assert reports[0].fixes.len() == 2
+    assert reports[0].fixes[1].span.start == 20
+    assert reports[1].fixes.len() == 1
+
+test "any other report said between ends a run"
+    text = "    x = 1,\n    y = 2,\n"
+    reports: [diag.Diagnostic] @ []
+    comma(@reports, text, at: token.Span(start: 9, end: 10))
+    reports @ reports.push(diag.new_diagnostic(code: "other", message: "m", span: token.Span(start: 15, end: 16)))
+    comma(@reports, text, at: token.Span(start: 20, end: 21))
+    assert reports.len() == 3
+    assert reports[2].fixes.len() == 1
+
+test "a deletion takes the separator and the spaces before it, and a separator ends its line before a comment"
+    text = "    x: i64  ;  # a note\n"
+    reports: [diag.Diagnostic] @ []
+    semicolon(@reports, text, at: token.Span(start: 12, end: 13))
+    assert reports[0].fixes[0].span.start == 10
+    assert reports[0].fixes[0].certainty == .certain
+    assert ends_its_line(text, at: 13)
+    assert !ends_its_line("x = 1; y = 2\n", at: 6)

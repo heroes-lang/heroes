@@ -1,0 +1,50 @@
+# Fixed defect 131's class, 2026-09-29, the brace habit at a `match`, Rust's
+# spelling. Symptom: `match n {` over its arms over `}` cost
+# `missing_match_arms` at the `{` and then the arms were read as statements,
+# refused where a statement cannot go on, at a `=>`, a `,` or the `}`, and
+# their own mistakes waited for the braces to go; an arm `0 => {` over its
+# body over `}` was read as a map literal, `expected_map_entry_colon` at the
+# end of its first statement's line. Cause: a
+# `match`'s arms were not read in braces, and an arm's value in braces was
+# always a map. Now the `{` is the habit's one report and what is inside is
+# read as arms, a `,` between them Rust's separator; an arm's braces are its
+# body, said once as the missing body they stand for, unless their first line
+# is a map's entry (`selfhost/parse/braced_arms.hero`).
+#
+# Moved 2026-10-03 with defect 178's repair (lane b8-recovery): a `,` that
+# ends each arm's line is one run, told once, every `,` of it a certain
+# deletion of that report (`selfhost/separator_runs.hero`).
+
+function arms_in_braces(n: i64)
+    match n {  #~ missing_match_arms
+        0 => print(0 +)  #~ expected_expression
+        1 => print(1)  #~ expected_end_of_line
+        _ => print(2)
+    }
+
+function a_body_in_braces(n: i64)
+    match n
+        0 => {  #~ missing_body
+            print(0 +)  #~ expected_expression
+        }
+        _ => print(1)
+
+function a_map_in_braces(n: i64) -> {str: i64}
+    return match n
+        0 => {
+            "a": 1
+        }
+        _ => {"b": 2}
+
+function main()
+    arms_in_braces(n: 0)
+    a_body_in_braces(n: 0)
+    print(a_map_in_braces(n: 0).len())
+
+# Read again 2026-10-01, lane recovery-b5 (ruling 1, `selfhost/brace_layout.hero`):
+# `match n {` is laid out by the lexer as the block its fix leaves, so a `,`
+# after an arm is told as it is with no braces, where it was Rust's
+# separator: `expected_end_of_line`, one an arm, as with no braces around
+# them (the per-line `,`, queued for the next recovery batch). An arm's own
+# braces, after `=>`, stay a bracket the lexer cannot tell from a map's, read
+# as before.
