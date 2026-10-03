@@ -123,9 +123,16 @@ function through_pointer(c: state.Checked, names: ctype.Names, ty: i64, place: s
 #
 # `constructed` narrows one of the worklist's three sources and nothing
 # else — see `descriptor_set.generated`, which is where the two sets
-# meet.
-function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: synth.Wanted)
-    wanted = descriptor_set.generated(c, decls, reachable: reachable, constructed: constructed, want: want)
+# meet. `kinds` is the program's `phases.type_kinds`, found once per build.
+function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: synth.Wanted, kinds: [i64])
+    wanted = descriptor_set.generated(
+        c,
+        decls,
+        reachable: reachable,
+        constructed: constructed,
+        want: want,
+        kinds: kinds
+    )
 
     for ty in wanted
         prefix: str @ ""

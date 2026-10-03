@@ -157,7 +157,7 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
         version: version,
         tu_local: "__attribute__((unused)) static"
     )
-    typeorder.definitions(@w, c, names, s, decls, want: want)
+    typeorder.definitions(@w, c, names, s, decls, want: want, kinds: whole.kinds)
 
     # A probe's parameters are the DECLARED types, so it belongs after
     # the typedefs and not in the prelude (panel 111 R4). `tu_p` is the
@@ -171,7 +171,16 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
     # the NARROW one on purpose — it is the container narrowing that
     # keeps a `[Probe]` nobody builds from getting a descriptor nothing
     # points at (-Wunused-const-variable, §7's zero-warning bar).
-    descriptors.definitions(@w, c, names, decls, reachable: declared, constructed: walked.constructed, want: want)
+    descriptors.definitions(
+        @w,
+        c,
+        names,
+        decls,
+        reachable: declared,
+        constructed: walked.constructed,
+        want: want,
+        kinds: whole.kinds
+    )
 
     # What this TU defines and what it calls, in one ascending walk:
     # a cross-TU call resolves against the callee's prototype, and the

@@ -212,6 +212,9 @@ function used(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Use
     operated: {i64: bool} @ {}
     sites: [Site] @ []
 
+    # One set of walked types for every `reach` below (defect 229).
+    seen: {i64: bool} @ {}
+
     for f in p.functions
         for blk in f.blocks
             for inst in blk.insts
@@ -221,14 +224,14 @@ function used(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Use
                             .record_shape r =>
                                 if group_record(decls, decl: r.decl)
                                     sites @ sites.push(Site(decl: r.decl, given: r.given, span: inst.span))
-                            .map_shape => reach(@operated, c, decls, ty: inst.ty)
+                            .map_shape => reach(out: @operated, seen: @seen, c, decls, ty: inst.ty)
                             .case_shape | .array_shape | .ok_shape | .fail_shape | .err_shape => continue
                     .binary b =>
                         if b.op == .eq || b.op == .ne
-                            reach(@operated, c, decls, ty: containers.value_type(f, b.left))
+                            reach(out: @operated, seen: @seen, c, decls, ty: containers.value_type(f, b.left))
                     .map_get mg =>
-                        reach(@operated, c, decls, ty: containers.value_type(f, mg.map))
-                        reach(@operated, c, decls, ty: containers.value_type(f, mg.key))
+                        reach(out: @operated, seen: @seen, c, decls, ty: containers.value_type(f, mg.map))
+                        reach(out: @operated, seen: @seen, c, decls, ty: containers.value_type(f, mg.key))
                     .lit | .load | .store | .push_owned | .unary | .cast | .call | .func_ref    => continue
                     .field | .index | .len_of | .tag_of | .payload                              => continue
                     .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
@@ -256,8 +259,12 @@ function group_record(decls: [ast.Decl], decl: i64) -> bool
 # the union's bytes under two types, where fifteen down was refused. A set
 # of the type ids walked makes it total, and a cyclic generic the old
 # comment feared ends there too, since every id is entered once.
-function reach(@out: {i64: bool}, c: state.Checked, decls: [ast.Decl], ty: i64)
-    seen: {i64: bool} @ {}
+#
+# `seen` is the CALLER's, one for all its calls (defect 229, 2026-10-03):
+# each call drains its queue, so a type walked before has already put every
+# record it reaches in `out`, and walking it again for each of 2,000 nested
+# map literals cost 4 million steps.
+function reach(@out: {i64: bool}, @seen: {i64: bool}, c: state.Checked, decls: [ast.Decl], ty: i64)
     queue: [i64] @ [ty]
     next: i64 @ 0
 

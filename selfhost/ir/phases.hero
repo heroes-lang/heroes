@@ -96,7 +96,8 @@ function slot_facts(f: containers.Function, c: state.Checked, owed: [i64], kinds
 # each is found once, its parts' answers remembered as they are found:
 # `kinds[ty]` is 1 for a type that mentions neither, plus 2 where it
 # mentions a type parameter and 4 where it mentions the error id. The two
-# walks stay, word for word, for their callers in the emitter.
+# walks stay, word for word, as the oracle of the test below; the emitter's
+# loops over the arena read these flags too since defect 229.
 function type_kinds(c: state.Checked) -> [i64]
     memo: [i64] @ []
 
