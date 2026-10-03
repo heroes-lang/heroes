@@ -27,6 +27,7 @@
 # and `arm` ask what a failed type, a misplaced arm or a broken one owes, nor
 # `parse/colon_habit`, `loop_habit`, `braced_arms` and `unclosed`: the `:`
 # habit, `for`'s and `do`'s, arms in braces, a bracket the lexer found open.
+# `expr_kinds` answers what a built expression is by its kind alone.
 #
 # **The entry points**, and they are the whole public surface:
 #
@@ -92,6 +93,7 @@ use parse/orphans
 use parse/argument_marker
 use parse/at_prefix
 use operators
+use expr_kinds
 
 ## The precedence table — §4.14, read from the bottom up
 
@@ -185,19 +187,6 @@ function binary_op(kind: token.TokenKind) -> Operator?
 function parse_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     return binary(@c, @a, text, 0)
 
-# Does this operand carry a block, so that the expression ends with it, or
-# could it not be read, so that `while >` is not refused twice (defect 131)?
-#
-# ENUMERATED, never a catch-all: the day a new expression kind carries a
-# block, this must answer for it, and a `_ => false` would answer "no"
-# silently — which is the shape panel 060 paid for in the formatter.
-function ends_the_expression(a: ast.Ast, id: i64) -> bool
-    return match a.exprs[id].kind
-        .if_expr | .match_expr | .error                                                => true
-        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => false
-        .name | .hole | .unary | .binary | .field | .field_name | .index               => false
-        .call | .method | .variant_case | .array | .map | .try_expr                    => false
-
 # Everything at `min_power` or tighter. All of Heroes' binary operators are
 # left-associative, so the recursive call asks for `power + 1`.
 function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i64
@@ -226,7 +215,7 @@ function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i6
     # form is the RIGHT operand, which is the only side its block can be
     # on (`fmt.hero`'s `binary_control_tail` says the same thing
     # from the printer's side).
-    if ends_the_expression(a, left)
+    if expr_kinds.ends_the_expression(a, left)
         return left
     climbing: bool @ true
 
@@ -651,7 +640,7 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
             # copy goes — the three shapes the left of `@` accepts, and the
             # resolver then holds the root to the same rule (`not_mutable`).
             # Accepted until 2026-09-03 (M-robustness-guards step 1).
-            if mutable && !is_place(a, value)
+            if mutable && !expr_kinds.is_place(a, value)
                 cursor.error(
                     @c,
                     code: "not_a_place",
@@ -968,7 +957,7 @@ function expression_or_mutation(@c: cursor.Cursor, @a: ast.Ast, text: str) -> as
     if cursor.previous_kind(c) == .dedent || !cursor.eat(@c, .at)
         return .expr_stmt(value: value)
 
-    if !is_place(a, value) && a.exprs[value].kind != .error
+    if !expr_kinds.is_place(a, value) && a.exprs[value].kind != .error
         cursor.error(
             @c,
             code: "not_a_place",
@@ -989,22 +978,6 @@ function prefixed(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
             place = postfix(@c, @a, text)
             _ = cursor.bump(@c)
             .mutate(place: place, value: parse_expr(@c, @a, text))
-
-# A PLACE: a name, or a field or index path rooted at one. Since Heroes has no
-# references, every place has exactly one root — which is what makes panel 010's
-# alias test a comparison of roots rather than a dataflow analysis.
-function is_place(a: ast.Ast, at: i64) -> bool
-    return match a.exprs[at].kind
-        .name    => true
-        .field f => is_place(a, f.base)
-        # A field's NAME is a value, never a place: `Point::x @ 1` is refused here
-        # rather than by a message about records (panel 132).
-
-        .field_name                                                                            => false
-        .index i                                                                               => is_place(a, i.base)
-        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr | .hole => false
-        .unary | .binary | .call | .method | .variant_case                                     => false
-        .array | .map | .try_expr | .if_expr | .match_expr | .error                            => false
 
 ## `if` and `match`, which are expressions (§4.7)
 
