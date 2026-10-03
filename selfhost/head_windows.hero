@@ -1,9 +1,9 @@
 # What Windows reads otherwise in a group head's name (design.md §4.19; panel
 # 188's R2 and R6, extended to Windows by the author on 2026-10-03; defects
 # 234 and 235). Measured on the Windows box by panel 188's ffi-pragmatist (its
-# report's § Windows, measured: clang 23.1.1 over NTFS): `*`, `<`, `?` and `|`
-# can stand in no file's name there, where this Mac and Linux build; and,
-# each against *file not found* on this Mac and on Linux, a part ending in
+# report's section *Windows, measured*: clang 23.1.1 over NTFS): `*`, `<`, `?`
+# and `|` can stand in no file's name there, where this Mac and Linux build;
+# and, each against *file not found* on this Mac and on Linux, a part ending in
 # `.` or a space is
 # stored under the name without them, so `<ab.h.>` and `<d./ab.h>` opened
 # `ab.h` and `d/ab.h`; a `:` names a drive or a stream of another file,
