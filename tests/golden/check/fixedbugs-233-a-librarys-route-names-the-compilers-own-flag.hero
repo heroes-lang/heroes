@@ -1,0 +1,14 @@
+# Defect 233 (panel 188's Windows leg, the compiler-engineer's report § 22.4,
+# 2026-10-03): `machine_locked_path` told a `link` naming a path to set
+# `LIBRARY_PATH`, which lld-link, the Windows linker, ignores: a library only
+# in a side directory, built with it set, was *could not open 'lp188.lib'* at
+# exit 2 there, and `LIB` failed too, where the compiler's own
+# `--library <dir>` built and printed 7. The route names `--library <dir>`
+# now, true on every platform measured; a header's route, `CPATH`, worked on
+# the box and stays.
+
+extern "stdio.h" link "C:/side/lp188"  #~ machine_locked_path
+    function lp188() -> i32
+
+function main()
+    print(lp188())
