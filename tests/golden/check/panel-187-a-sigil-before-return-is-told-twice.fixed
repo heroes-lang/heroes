@@ -10,7 +10,7 @@
 # deletion certain, and the line read as that statement; it pins that now.
 
 function f() -> i64
-    @return 1  #~ expected_expression
+    return 1  #~ expected_expression
 
 function main()
     print(f())

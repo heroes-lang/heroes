@@ -1,2 +1,1 @@
-tests/golden/check/panel-187-a-sigil-before-return-is-told-twice.hero:9:5: error[expected_expression]: expected an expression, found `@` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
-tests/golden/check/panel-187-a-sigil-before-return-is-told-twice.hero:9:6: error[expected_expression]: expected an expression, found `return` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/panel-187-a-sigil-before-return-is-told-twice.hero:13:5: error[expected_expression]: expected an expression, found `@` before `return` — a statement begins with its word bare, `return`, and `@` before a name marks only an argument lent to a mutable parameter, `f(@x)`
