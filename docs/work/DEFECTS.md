@@ -26,6 +26,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **2026-10-03, lane rec187, panel 187's R5: measured as filed on the lane's compiler at `97008231` (V1, V5 and R6 landed), its reproducers reading as on the head's; pinned by `tests/golden/check/panel-187-arms-inside-a-bracket-left-open-are-told-again.hero`, a known cost under the sitting's R1**, not repaired inline: where the reach of a bracket left open ends over a match's arms is panel 183's R1 and R2, ratified, which the lexer and `parse/unclosed` apply. The item stays open.
 
+    **2026-10-03, lane b8-recovery: the reach stands, and the arms it took in are read as arms**: a line inside a bracket left open that holds an arm's `=>` goes on with nothing (`parse/unclosed.past_what_goes_on`), and an opener the lexer named never closed hides no arms (`parse/margin_arms.inside_a_bracket`); one message for each of the rows, an arm's own mistake now told, and the pin and defect 135's case moved with a dated line each: repaired at `e9067748`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
+    **Clarified 2026-10-04, lane b8-recovery**: `e9067748`'s body says an arm's own mistake is "told twice over"; it means in two of the case's shapes, below an index left open and below a list left open, each told once, with the bracket's own report beside it.
+
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake; no wrong value, no false message, no certain fix. The recovery cluster's, beside 130 and 131.
 
 - [ ] **178 — a separator habit on every line of a block is told once per line: a `,` after each statement or each arm, a `;` after each field** | `x = 1,`, `y = 2,`, `print(x + y),` in a function: three `expected_end_of_line`; arms `0 => 1,`, `1 => 2,`, `_ => 3,`: three; `record P` over `x: i64;`, `y: i64;`, `z: i64;`: three `unexpected_character`; a `,` after every member of a declaration is one message since `68e46a13` | `selfhost/parse/member_lines.hero` (the members' rule, `68e46a13`) · the line end of a statement and of an arm · the lexer's `;` · **class: adjacent**
@@ -33,6 +37,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** lane recovery-b4's report (*the per-line `,` and `;` habits, one message per run with a certain deletion*), queued under recovery-b5, 2026-10-02; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/habit-every-line/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`).
 
     **2026-10-03, lane rec187, panel 187's R5: measured as filed on the lane's compiler at `97008231` (V1, V5 and R6 landed), its reproducers reading as on the head's; pinned by `tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero`, a known cost under the sitting's R1**, not repaired inline: one message for a run of lines is a reading of its own, as ruling 5's is for an indentation habit, and the `;` is the lexer's (`selfhost/scan.hero:299`). The item stays open.
+
+    **2026-10-03, lane b8-recovery: the members' reading of defect 132 carried to statements, arms and the lexer's `;`: the first separator ending its line is told, its deletion certain, and every later one in the declaration, with no other report between, is one more certain deletion of that report** (`selfhost/separator_runs.hero`, called by `parse/statement_end.close` and `scan.punct`; the deletions appended in place, linear; the pin and four cases of defects 130, 131, 132 and `unterminated` moved with a dated line each): repaired at `20f824b3`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
 
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake. The recovery cluster's.
 
@@ -42,6 +48,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **2026-10-03, lane rec187, panel 187's R5: measured as filed on the lane's compiler at `97008231` (V1, V5 and R6 landed), its reproducers reading as on the head's; pinned by `tests/golden/check/panel-187-a-sigil-before-return-is-told-twice.hero`, a known cost under the sitting's R1**, not repaired inline: the statement's start is `selfhost/grammar_expr.hero`'s, at its `DECIDED` ceiling of 1085 with no line of room, so a repair first moves code out of that knot. The item stays open.
 
+    **2026-10-03, lane b8-recovery: a sigil before a word that begins a statement is read as before a name, told once at the `@`, naming the word, its deletion certain, and the line read as that statement** (`parse/at_prefix`, `grammar_expr.prefixed`, which took no new line; twelve shapes one message each, `@return 1 +` now telling its operand; the sigil's look ahead on `cursor.trial`, linear): repaired at `ecf53e41`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake. The recovery cluster's.
 
 - [ ] **180 — a range written `1..2` is told twice as a field access** | `x = 1..2`: `expected_field_name` at 3:11, *found `.`*, and again at 3:12, *found a number (`2`)*; `x = 0x1..5` the same at 3:13 and 3:14 | `selfhost/grammar_expr.hero:343` · **class: adjacent**
@@ -49,6 +57,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** lane arm's first pass for defect 154, 2026-10-02 (`scratchpad/lane-arm/pass1/n154/e20.hero`, 2026-10-02), queued as *a range habit, recovery's file*; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/range-dots-twice/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). The recovery instrument counts its `range-dots` operator at 12 EXTRA.
 
     **2026-10-03, lane rec187, panel 187's R5: measured as filed on the lane's compiler at `97008231` (V1, V5 and R6 landed), its reproducers reading as on the head's; pinned by `tests/golden/check/panel-187-a-range-written-with-two-dots-is-told-twice.hero`, a known cost under the sitting's R1**, not repaired inline: its site is `selfhost/grammar_expr.hero`'s `after_dot`, at its `DECIDED` ceiling of 1085 with no line of room, and the range's right operand can be read only inside that knot, so no module of `parse/` can carry the repair; a `for i in 0..10` head costs the same two. The item stays open.
+
+    **2026-10-03, lane b8-recovery: the range is told once, at its second dot, its code and words kept and words added naming `range(from: a, to: b)`, the rest of its operator passed and its right operand read** (`grammar_expr.past_a_range`, from `after_dot` and from `case_expr` for `..n`; `selfhost/dot_words.hero`, text-only, outside `parse/`; the knot's room made by moving `ends_the_expression` and `is_place` to `selfhost/expr_kinds.hero` at `24b3f85d`; sixteen shapes one message each): repaired at `e0ea7c9d`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
 
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake. The recovery cluster's.
 
@@ -58,6 +68,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **2026-10-03, lane rec187, panel 187's R5: measured as filed on the lane's compiler at `97008231` (V1, V5 and R6 landed), its reproducers reading as on the head's; pinned by `tests/golden/check/panel-187-a-number-with-a-second-point-is-told-as-a-field.hero`, a known cost under the sitting's R1**, not repaired inline: its site is `selfhost/grammar_expr.hero`'s `after_dot`, beside 180's, at its `DECIDED` ceiling with no line of room. The item stays open.
 
+    **2026-10-03, lane b8-recovery: the message keeps its code and words and names the number that already holds its point, `1.5`; no new code** (`selfhost/dot_words.hero`'s `number_before`; six numbers named, `1.5 .2` written apart keeping its words): repaired at `098c76f8`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be. The recovery cluster's.
 
 - [ ] **182 — an operator alone on a line deeper than a `match`'s arms costs `continuation_outside_brackets` and `unexpected_block`** | `k = match n` over `1 => "one"`, then a line holding only `+` (or `-`) one level deeper, then `_ => "many"`: two messages on line 5; the `certain` deletion of the operator, applied, checks clean | `selfhost/open_line.hero` · `selfhost/sign_above.hero` (the deletion, defect 165's `8cb4ba6c`) · the orphan block's `unexpected_block` · **class: adjacent**
@@ -65,6 +77,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** lane h158's pass for defects 165 and 166, 2026-10-02 (`scratchpad/lane-h158/d166/q1_plus_deeper.hero`, `q2_minus_deeper_wild.hero`, 2026-10-02); reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/operator-deeper-line/`), where the one fix was a guess, and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`), where it is the `certain` deletion 165's repair brought; the second message stands.
 
     **2026-10-03, lane rec187, panel 187's R5: measured as filed on the lane's compiler at `97008231` (V1, V5 and R6 landed), its reproducers reading as on the head's; pinned by `tests/golden/check/panel-187-an-operator-alone-deeper-than-the-arms-costs-two.hero`, a known cost under the sitting's R1**, not repaired inline: the deeper margin is laid out by the lexer before `selfhost/sign_above.hero` leaves the operator out of the stream, in `selfhost/open_line.hero`, two lines under its ceiling, and only the lexer's indent stack can take the block back. The item stays open.
+
+    **2026-10-03, lane b8-recovery: where the deletion is the one repair, the operator's line goes with the margin it laid out, the indent or dedents and the reports that margin said, and the arm's line is laid out on its own margin, as the deletion writes the text; that refusal records no break** (`selfhost/sign_above.hero`, `selfhost/open_line.hero`; one message for each of eight shapes off the arms' margin, an over-indented arm below told at its own line; the pin moved with a dated line): repaired at `883a3fb9`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
 
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake. The recovery cluster's.
 
@@ -81,6 +95,10 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** the coordinator's file-queue agent, 2026-10-02, measuring lane arm's item on field-place pushes, on `62d65e48` (2026-10-02, `scratchpad/file-queue/for-habit-quadratic/`), the machine at load 2 to 5; re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`), the times above being that run's, on a busy machine and in the same order as the first. Two candidates were measured out over the same 3,000: `loop_habit.hero:62`'s append made in place, and `for_stmt`'s trial parse removed.
 
     **Why it is a defect.** Defect 146's class: a file of N mistakes costs N² work.
+
+    **2026-10-03, lane b8-recovery: below a head that refused something only an opener is paired with a closer, and the `for` head's report is said in place, its condition read on a copy that holds none of the reports** (`parse/swallowed.spilled`, `cursor.trial`, `parse/loop_habit.refuse`; 3,000 heads 250.1 to 2.08 billion instructions retired): repaired at `bd43a92c`, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
+    **Corrected 2026-10-04, lane b8-recovery**: `bd43a92c`'s body says `while n >`, `if n >`, `for` alone, `for (n > 0)` and no body went from about 15x to 3.5x for 4 times the heads; measured, from 500 heads to 2,000 in instructions retired, the `for` shapes went to 3.48x to 3.62x and `while n >` and `if n >` from 15.04x to 5.47x and 5.46x, the rest of theirs `line_end.said_here`'s walk over every report said, at each refused condition, a cause apart, reported to the coordinator.
 
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): real, found beside the work, no wrong value and no crash.
 

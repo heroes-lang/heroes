@@ -6,22 +6,27 @@
 # inline: one message for a run of lines is a reading of its own, as
 # ruling 5's is for an indentation habit, and the `;` is the lexer's
 # (`scan.hero:299`).
+#
+# Moved 2026-10-03 with defect 178's repair (lane b8-recovery): a separator
+# that ends its line is one message for its run, every later line of the
+# declaration one more certain deletion of it (`selfhost/separator_runs.hero`);
+# it pins the one message a run now.
 
 function statements()
     x = 1,  #~ expected_end_of_line
-    y = 2,  #~ expected_end_of_line
-    print(x + y),  #~ expected_end_of_line
+    y = 2,
+    print(x + y),
 
 function arms(n: i64) -> i64
     return match n
         0 => 1,  #~ expected_end_of_line
-        1 => 2,  #~ expected_end_of_line
-        _ => 3,  #~ expected_end_of_line
+        1 => 2,
+        _ => 3,
 
 record P
     x: i64;  #~ unexpected_character
-    y: i64;  #~ unexpected_character
-    z: i64;  #~ unexpected_character
+    y: i64;
+    z: i64;
 
 function main()
     print(1)

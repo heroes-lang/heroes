@@ -1,0 +1,34 @@
+# Fixed defect 178, 2026-10-03. Symptom: a `,` after every statement of a
+# body, or after every arm of a `match`, Rust's arms and Go's and
+# JavaScript's habit, was told once a line, `expected_end_of_line` at each,
+# with no fix, where a `,` after every member of a declaration is one message
+# since defect 132 (`68e46a13`). Cause: each statement's end told its own `,`
+# (`parse/statement_end.close`). Repair: a `,` that ends a statement's line or
+# an arm's opens a run, told once with its deletion `certain`, and every later
+# one in the same declaration, with no other report between, is one more
+# certain deletion of that report (`selfhost/separator_runs.hero`), appended in
+# place. One message a declaration below, and the deletions check clean.
+
+function statements()
+    x = 1,  #~ expected_end_of_line
+    y = 2,
+    print(x + y),
+
+function arms(n: i64) -> i64
+    return match n
+        0 => 1,  #~ expected_end_of_line
+        1 => 2,
+        _ => 3,
+
+function nested_and_mixed(n: i64) -> i64
+    x = 1,  #~ expected_end_of_line
+
+    if x > 0
+        print(x),  # a note after the comma
+    return match n
+        0 => x,
+        _ => 2,
+
+function main()
+    statements()
+    print(arms(1) + nested_and_mixed(2))

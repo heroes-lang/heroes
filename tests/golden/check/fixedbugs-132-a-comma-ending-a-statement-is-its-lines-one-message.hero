@@ -4,6 +4,10 @@
 # to it, `continuation_outside_brackets` for a line that goes on with
 # nothing. The line ends at its `,` now, and the `,` is the line's one
 # message, what stands past its statement.
+#
+# Moved 2026-10-03 with defect 178's repair (lane b8-recovery): each `,` is
+# told in its run's words, its deletion certain; the two stand in two
+# declarations, so each is its own run and its own message.
 
 function f(n: i64) -> i64
     return match n

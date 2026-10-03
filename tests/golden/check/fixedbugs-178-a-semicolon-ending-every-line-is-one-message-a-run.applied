@@ -1,0 +1,36 @@
+# Fixed defect 178, 2026-10-03, its second case: C's `;` after every field,
+# case or statement was told once a line by the lexer, `unexpected_character`
+# with no fix. Cause: the lexer told every character the language lacks
+# alone (`scan.punct`). Repair: a `;` that ends its line outside brackets
+# opens a run as a `,` does, told once with its deletion `certain`, every
+# later one in the declaration one more deletion of it
+# (`selfhost/separator_runs.hero`). A run ends at a line opening a
+# declaration and at any other report, whose mistake is its own, and a `;`
+# inside a line is no such habit and is told as before (`.applied`).
+
+record P
+    x: i64  #~ unexpected_character
+    y: i64
+    z: i64
+
+variant V
+    red  #~ unexpected_character
+    green
+
+function statements(p: P) -> i64
+    a = p.x  #~ unexpected_character
+    b = p.y
+    return a + b
+
+function a_run_ends_at_another_report()
+    x = 1  #~ expected_end_of_line
+    y = f(1 +),  #~ expected_expression
+    z = 3  #~ expected_end_of_line
+    print(x + z)
+
+function a_semicolon_inside_a_line()
+    x = 1; y = 2  #~ unexpected_character
+    print(x)
+
+function main()
+    print(1)

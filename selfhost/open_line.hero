@@ -256,11 +256,11 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     d: diag.Diagnostic @ diag.new_diagnostic(code: "continuation_outside_brackets", message: message, span: left.span)
 
     # An operator alone above an arm: its deletion, and its join only where
-    # the join writes a pattern (`sign_above`).
+    # the join writes a pattern (`sign_above`), which says the refusal; left
+    # out with its margin, the arm's line is laid out on its own, as the
+    # deletion writes it, and is no break (`refused`, with no `\` asking).
     if can_only_go_on(left.kind) && l.backslash < 0 && line_above.opens_a_line(l.tokens, at: at) && next_line.holds_an_arrow(text, from: l.pos)
-        sign_above.offer(@l, @d, text, at: at)
-        refused(@l, d, head: false)
-        return true
+        return sign_above.offer(@l, d, text, at: at)
 
     # Joining the lines is the program the parser reads. It is `certain` where
     # the next line cannot stand alone, so the join is the only repair; a

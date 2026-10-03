@@ -1,1 +1,1 @@
-tests/golden/check/panel-187-a-number-with-a-second-point-is-told-as-a-field.hero:9:13: error[expected_field_name]: expected a field or function name after `.`, found a number (`2`)
+tests/golden/check/panel-187-a-number-with-a-second-point-is-told-as-a-field.hero:13:13: error[expected_field_name]: expected a field or function name after `.`, found a number (`2`) — a number holds one decimal point, and `1.5` already has its own

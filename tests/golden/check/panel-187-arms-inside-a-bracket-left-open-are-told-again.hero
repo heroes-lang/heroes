@@ -6,23 +6,28 @@
 # a `=>` (`parse/line_end.hero:242`). Not repaired inline: where the reach
 # of a bracket left open ends over a match's arms is panel 183's R1 and R2,
 # ratified, which the lexer and `parse/unclosed` apply.
+#
+# Moved 2026-10-03 with defect 177's repair (lane b8-recovery): a line inside
+# a bracket left open that holds an arm's `=>` is the `match`'s arm its reach
+# took in, read as one, so the bracket's own message is the one each
+# function costs; it pins that now.
 
 function describe(scores: {str: i64}, name: str) -> str
     return match scores[name  #~ unclosed_bracket
-        .ok v  => v.to_str()  #~ line_end_before_continuation
-        .err e => e.code  #~ line_end_before_continuation
+        .ok v  => v.to_str()
+        .err e => e.code
 
 function grouped()
     n = 5
     x = match (n  #~ unclosed_bracket
-        .ok v => 1  #~ line_end_before_continuation
+        .ok v => 1
     print(x)
 
 function below_a_list(n: i64) -> i64
     x = [n, 1  #~ unclosed_bracket
     y = match n
-        0 => 1  #~ expected_end_of_line
-        _ => 2  #~ expected_end_of_line
+        0 => 1
+        _ => 2
     return y
 
 function main()

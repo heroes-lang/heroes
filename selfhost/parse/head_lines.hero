@@ -43,7 +43,7 @@ function joined_at(c: cursor.Cursor, text: str, from: i64) -> token.Span?
         here = c.tokens[i]
         next = c.tokens[i + 1]
 
-        if !is_line_end(here.kind) && !is_line_end(next.kind) && next.kind != .eof
+        if !token.is_line_end(here.kind) && !token.is_line_end(next.kind) && next.kind != .eof
             if text_lines.newlines_between(text, from: here.span.end, to: next.span.start) > 0
                 return ok(token.Span(start: before_the_break(c, from: from, at: i), end: next.span.end))
         i @ i + 1
@@ -66,7 +66,7 @@ function joined_outside_brackets(c: cursor.Cursor, text: str, from: i64) -> bool
         else if (k == .rparen || k == .rbracket || k == .rbrace) && depth > 0
             depth @ depth - 1
 
-        if depth == 0 && !is_line_end(k) && !is_line_end(next.kind) && next.kind != .eof
+        if depth == 0 && !token.is_line_end(k) && !token.is_line_end(next.kind) && next.kind != .eof
             if text_lines.newlines_between(text, from: c.tokens[i].span.end, to: next.span.start) > 0
                 return true
         i @ i + 1
@@ -81,24 +81,18 @@ function before_the_break(c: cursor.Cursor, from: i64, at: i64) -> i64
 
     return c.tokens[i].span.start
 
-function is_line_end(kind: token.TokenKind) -> bool
-    return kind == .terminator || kind == .indent || kind == .dedent
-
 ## Tests
-
-function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
-    return token.Token(kind: kind, span: token.Span(start: start, end: end))
 
 test "a join is two tokens on two lines with no line end between them"
     # if n >  /  print(1): the lexer planted no line end at the break.
     text = "if n >\n    print(1)\n"
     tokens = [
-        tok(.kw_if, start: 0, end: 2)
-        tok(.ident, start: 3, end: 4)
-        tok(.gt, start: 5, end: 6)
-        tok(.ident, start: 11, end: 16)
-        tok(.terminator, start: 19, end: 19)
-        tok(.eof, start: 20, end: 20)
+        token.made(.kw_if, start: 0, end: 2)
+        token.made(.ident, start: 3, end: 4)
+        token.made(.gt, start: 5, end: 6)
+        token.made(.ident, start: 11, end: 16)
+        token.made(.terminator, start: 19, end: 19)
+        token.made(.eof, start: 20, end: 20)
     ]
     c: cursor.Cursor @ cursor.new_cursor(tokens)
     c.pos @ 4
@@ -110,12 +104,12 @@ test "a join is two tokens on two lines with no line end between them"
     # The same head on one line crossed none and was joined nowhere.
     one = "if n > m\n"
     flat = [
-        tok(.kw_if, start: 0, end: 2)
-        tok(.ident, start: 3, end: 4)
-        tok(.gt, start: 5, end: 6)
-        tok(.ident, start: 7, end: 8)
-        tok(.terminator, start: 8, end: 8)
-        tok(.eof, start: 9, end: 9)
+        token.made(.kw_if, start: 0, end: 2)
+        token.made(.ident, start: 3, end: 4)
+        token.made(.gt, start: 5, end: 6)
+        token.made(.ident, start: 7, end: 8)
+        token.made(.terminator, start: 8, end: 8)
+        token.made(.eof, start: 9, end: 9)
     ]
     d: cursor.Cursor @ cursor.new_cursor(flat)
     d.pos @ 4

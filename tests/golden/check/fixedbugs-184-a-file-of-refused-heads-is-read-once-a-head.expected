@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-184-a-file-of-refused-heads-is-read-once-a-head.hero:19:9: error[for_missing_in]: `for` iterates — `for x in xs`; found a name (`m`) — a loop over a condition is `while`
+tests/golden/check/fixedbugs-184-a-file-of-refused-heads-is-read-once-a-head.hero:21:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — a loop over a condition is `while`
+tests/golden/check/fixedbugs-184-a-file-of-refused-heads-is-read-once-a-head.hero:23:27: error[for_missing_in]: `for` iterates — `for x in xs`; found end of line — a loop over a condition is `while`
+tests/golden/check/fixedbugs-184-a-file-of-refused-heads-is-read-once-a-head.hero:25:38: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-184-a-file-of-refused-heads-is-read-once-a-head.hero:27:35: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-184-a-file-of-refused-heads-is-read-once-a-head.hero:29:9: error[for_missing_in]: `for` iterates — `for x in xs`; found a name (`m`) — a loop over a condition is `while`
+tests/golden/check/fixedbugs-184-a-file-of-refused-heads-is-read-once-a-head.hero:30:5: error[missing_body]: a `for` needs an indented body — one level deeper, exactly 4 spaces (found a name (`print`))

@@ -1,0 +1,33 @@
+# Fixed defect 184, 2026-10-03. Symptom: `check` took work that grew with
+# the square of the loop heads it refused: a function of N `for n > 0` loops
+# over `n @ n - 1` retired 7.30 billion instructions at 500 heads and 250.10
+# billion at 3,000, 34 times as many for 6 times the heads; `while n >`,
+# `if n >`, `for` alone, `for (n > 0)` and a head with no body below it grew
+# the same way. Causes, each found with `sample`: below a head that refused
+# something, `parse/swallowed.spilled` paired every token of the head's line
+# with a closer, and from a name or an operator that walk ran to the file's
+# next closer or its end, once a token, once a head; and the `for` head's
+# report was said through a field place while the cursor copy its condition
+# was read on still shared the reports, so each one copied all before it.
+# Repair: only an opener is paired; the condition is read on a
+# `cursor.trial`, which holds none of the reports, and the report is said in
+# place. 3,000 heads now retire 2.08 billion and 12,000 heads 8.16 billion.
+# Nothing said moves: this case pins each shape's messages, as before.
+
+function loops(n: i64)
+    m: i64 @ n
+    for m > 0  #~ for_missing_in
+        m @ m - 1
+    for (m > 0)  #~ for_missing_in
+        m @ m - 1
+    for  #~ for_missing_in
+        m @ m - 1
+    while m >  #~ expected_expression
+        m @ m - 1
+    if m >  #~ expected_expression
+        m @ m - 1
+    for m > 1  #~ for_missing_in
+    print(m)  #~ missing_body
+
+function main()
+    loops(3)
