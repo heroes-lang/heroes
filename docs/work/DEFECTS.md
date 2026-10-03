@@ -900,6 +900,19 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** The emitted C is C11 that clang type-checks clean (CLAUDE.md § 7), and this unit is the compiler itself built by its own first command; any `--emit-c` output compiled by hand on Windows gets the same advice. The runtime already says why the switch is the documented one and not a workaround (`runtime/runtime.c:65-74`).
 
+    **2026-10-03, lane warn, the two macros `heroes build` passes for
+    Windows are `runtime/heroes_runtime.h`'s own, defined on `_WIN32` before
+    its first system include, each under a guard; `_USE_MATH_DEFINES` beside
+    `_CRT_SECURE_NO_WARNINGS`, the same shape (`M_PI`, which
+    `tests/golden/run/ffi-constant.hero` binds)**: repaired at `dc23c4a8`,
+    gated by its own case, a compiler test preprocessing for
+    `x86_64-pc-windows-msvc`, on this Mac and on Linux arm64 under Debian
+    clang 22.1.8 and 18.1.8; the rest is owed at the round's gate, and the
+    Windows box before the push, where the seed's documented line is the
+    proof, unrun (the box offline on 2026-10-03). On this Mac a stub
+    `stdlib.h` deprecating `getenv` as the box's UCRT does warned under
+    `02e507bc`'s header and not under this one.
+
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
 
 - [ ] **193 — an arm whose pattern failed hides the mistakes in its body: on one line in both arms, and, joined below the failed line, under `--permissive` since panel 187's V1** | `k = match n` over `x | 2 => f(1 +)`: `expected_pattern` at the `x` and the `1 +` untold, in both arms, on the head's compiler and on `29425af6`; `x |` over `2 => f(1 +)`: the normal arm tells the `1 +` from the lines apart, and `check --permissive` told it, `expected_expression`, until `29425af6` and not since; the same over `1 | +`, `x ==`, `1 -> 2 |` and an arm one level deeper | `selfhost/grammar_expr.hero` (`arms_of`'s `.err` branch: the failed arm's line goes with `cursor.drop_rest_of_line`, its body with it) · panel 187's R4 · **class: adjacent**
