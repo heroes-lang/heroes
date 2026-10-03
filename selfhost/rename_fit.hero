@@ -225,8 +225,8 @@ function removed(xs: [Said], at: i64) -> [Said]
 # What `text`'s name stage says once its renames are judged, read as `check`
 # reads a file: the library joined.
 function judged_text(text: str) -> resolved.Resolved
-    s = modules.load_text(path: "build/selftest-rename-fit.hero", root_text: text, library: library_source.text())
-    return judged_source(s)
+    loaded = modules.load_text(path: "build/selftest-rename-fit.hero", root_text: text, library: library_source.text())
+    return judged_source(loaded.must())
 
 # The same for a program of two files, `main.hero` using `calc.hero`.
 function judged_files(main: str, calc: str) -> resolved.Resolved

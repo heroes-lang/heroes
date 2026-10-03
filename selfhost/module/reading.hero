@@ -1,0 +1,95 @@
+# Whether the file a `use` names is not there, or is there and cannot be read
+# (spec § 1 Files and layout; design.md §1.12; defect 236). Asked by
+# `modules.load_text` when `read_file` fails on a module's file, because that
+# failure does not say which: `read_file` answers `file_not_found` for a file
+# it may not open, measured on this Mac 2026-10-03 for a mode of 000 and for
+# a file in a directory it may not search, and the loader took every failure
+# for absence, so a file that was there was told *that file is not there*.
+#
+# Its own module because `modules.hero` may not grow (the layout check's
+# ceiling for it, 320), and because the question is the filesystem's, asked
+# through `cli/files` as every other question about what is at a path is.
+
+use cli/files
+use cli/process
+
+# `ok()` where nothing is at `opened`, nor can be, which the loader takes for
+# an absent module and `modules.errors` tells on the `use` line; where
+# something is there and cannot be read, the failure the compilation stops
+# on, `cannot read` and the file as the author names it, as an unreadable
+# root's is (`cli/input.hero`), at exit 2.
+function nothing_at(opened: str, named: str) -> ()?
+    if absent(opened)
+        return ok()
+    return fail(code: "unreadable", msg: "cannot read `" + named + "`")
+
+# Whether no entry is at `opened`, nor can be. The question that fails is
+# asked again of the directory that would hold the path, until one answers:
+# below a file there can be nothing (`use bin/geom` beside a program `bin`,
+# which POSIX answers ENOTDIR and the runtime `unknown`, where Windows says
+# absent), and below a directory there may be something nobody may reach (a
+# directory with no search permission), which is not absence. A path whose
+# every question fails is not called absent either.
+function absent(opened: str) -> bool
+    at: str @ opened
+
+    while at.len() > 0
+        match files.entry(at)
+            .absent        => return true
+            .file | .other => return at != opened
+            .directory     => return false
+            .link          => return at != opened && !process.is_directory(path: at)
+            .unknown       => at @ holder(at)
+
+    return false
+
+# `path` without its last part and the separator before it: the directory
+# that would hold it, or "" where there is none to ask.
+function holder(path: str) -> str
+    cut: i64 @ -1
+    index: i64 @ 0
+
+    while index < path.len()
+        if path[index] == '/'
+            cut @ index
+        index @ index + 1
+
+    if cut <= 0
+        return ""
+    return path.slice(from: 0, to: cut)
+
+## Tests
+
+# Every shape is made under `build/`, in a directory this test removes first.
+test "what is at a module's path decides between absent and cannot read"
+    dir = "build/selftest-module-reading"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/adir.hero").is_err()
+    assert !write_file(path: dir + "/plain", text: "a file, not a directory\n").is_err()
+    assert !write_file(path: dir + "/here.hero", text: "function two() -> i64\n    return 2\n").is_err()
+
+    # Nothing there, and nothing that can be: below a file.
+    assert !nothing_at(opened: dir + "/gone.hero", named: "gone.hero").is_err()
+    assert !nothing_at(opened: dir + "/plain/inner.hero", named: "plain/inner.hero").is_err()
+    assert !nothing_at(opened: dir + "/plain/deeper/inner.hero", named: "plain/deeper/inner.hero").is_err()
+    assert !nothing_at(opened: dir + "/none/inner.hero", named: "none/inner.hero").is_err()
+
+    # Something there: a directory, a file, and a link to nothing where this
+    # platform makes links.
+    match nothing_at(opened: dir + "/adir.hero", named: "adir.hero")
+        .ok => assert false
+        .err e =>
+            assert e.code == "unreadable"
+            assert e.msg == "cannot read `adir.hero`"
+
+    assert nothing_at(opened: dir + "/here.hero", named: "here.hero").is_err()
+    linked = files.symbolic_link(target: "nowhere.hero", name: dir + "/dangling.hero")
+
+    if !linked.is_err()
+        assert nothing_at(opened: dir + "/dangling.hero", named: "dangling.hero").is_err()
+
+test "the directory that would hold a path is the path without its last part"
+    assert holder("a/b/c.hero") == "a/b"
+    assert holder("c.hero") == ""
+    assert holder("/c.hero") == ""
+    assert holder("a/") == "a"

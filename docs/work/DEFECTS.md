@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 47**
+**OPEN: 48**
 
 - [ ] **177 — a `match` whose arms fall inside a bracket left open has each arm told again after the bracket's own message** | `return match scores[name` over `.ok v  => v.to_str()` and `.err e => e.code`: `unclosed_bracket` at the `[`, then `line_end_before_continuation` at each arm, three messages for one missing `]`; `x = match (n` over `.ok v => 1` the same; `y = match n` below `x = [n, 1` gets `expected_end_of_line` at each arm's `=>` | the reach of a bracket left open (panel 183's R1 and R2) over a `match`'s arms · `selfhost/parse/line_end.hero:242` · **class: adjacent**
 
@@ -327,5 +327,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** panel 188's completeness critic, 2026-10-03, in its third pass over stage D (F1 ran `a'b.h` only with its header present), and the compiler-engineer building stage E for the escaped code points; the quote reproduced by the coordinator the same day.
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told. Panel 188's R4 and R5 refuse `'`, U+2028 and U+2029 at `check`, so once they land a program `check` passes reaches this reader with a private-use, unassigned or noncharacter code point only; R4 is a thesis rule the author may turn, so the reader is repaired on its own, reading clang's line against each declared header as stage C did for the linker's.
+
+- [ ] **236 — a used module that is present but unreadable is told that the file is not there** | `main.hero` over `use geom` and `print(geom.two())`, beside a `geom.hero` declaring `two` whose mode is 000: `check` exit 1, `unknown_module`, *there is no module `geom`, `use geom` reads `geom.hero`, from the directory of `main.hero`, the file you compile, and that file is not there*, while the file is there; the main file unreadable is *cannot read* at exit 2 (the trunk's compiler, from the seed at `dcaca1a3`, 2026-10-03, `<scratchpad>/batch8/source/shapes227/m17/`) | `selfhost/modules.hero:125` (every read failure taken as absence) · **class: blocking**
+
+    **Origin:** lane b8-source beside defect 227, 2026-10-03, reported to the coordinator, who filed it the same day; the lane reproduced it on the trunk's compiler and restored the file's mode.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a false message; `read_file` answers `file_not_found` for a file it may not open, and the loader takes every failure to read for absence.
 
 *******************************************************************************
