@@ -1,8 +1,10 @@
 # What Windows reads otherwise in a group head's name (design.md §4.19; panel
-# 188's R2 and R6, extended to Windows by the author on 2026-10-03; defect
-# 234). Measured on the Windows box by panel 188's ffi-pragmatist (its
-# report's § Windows, measured: clang 23.1.1 over NTFS), each against *file
-# not found* on this Mac and on Linux: a part ending in `.` or a space is
+# 188's R2 and R6, extended to Windows by the author on 2026-10-03; defects
+# 234 and 235). Measured on the Windows box by panel 188's ffi-pragmatist (its
+# report's § Windows, measured: clang 23.1.1 over NTFS): `*`, `<`, `?` and `|`
+# can stand in no file's name there, where this Mac and Linux build; and,
+# each against *file not found* on this Mac and on Linux, a part ending in
+# `.` or a space is
 # stored under the name without them, so `<ab.h.>` and `<d./ab.h>` opened
 # `ab.h` and `d/ab.h`; a `:` names a drive or a stream of another file,
 # `<ab:c.h>` the stream `c.h` of a file `ab`; a `~` an 8.3 short name,
@@ -24,10 +26,16 @@
 
 use bytes
 
-# Why Windows holds no file of this name, or "": a part ending in `.` or a
-# space, or a part naming a device, the part before its first `.` read in
-# any case. `suffixed` is true where the tool adds to the last part.
+# Why Windows holds no file of this name, or "": one of `*`, `<`, `?` and
+# `|`, which NTFS refuses in any file's name (Win32 error 123, defect 235); a
+# part ending in `.` or a space; or a part naming a device, the part before
+# its first `.` read in any case. `suffixed` is true where the tool adds to
+# the last part.
 function unwritable(value: str, suffixed: bool) -> str
+    reserved = reserved_byte(value)
+
+    if reserved.len() > 0
+        return "holds `" + reserved + "`, which no file's name on Windows can hold"
     start: i64 @ 0
     at: i64 @ 0
 
@@ -38,6 +46,18 @@ function unwritable(value: str, suffixed: bool) -> str
             if said.len() > 0
                 return said
             start @ at + 1
+        at @ at + 1
+
+    return ""
+
+function reserved_byte(value: str) -> str
+    at: i64 @ 0
+
+    while at < value.len()
+        b = value[at]
+
+        if b == '*' || b == '<' || b == '?' || b == '|'
+            return value.slice(from: at, to: at + 1)
         at @ at + 1
 
     return ""
@@ -121,6 +141,12 @@ function climbs_back(value: str) -> bool
 
 test "a part Windows stores under another name, or reads as a device (defect 234)"
     assert unwritable(value: "ab.h", suffixed: false) == ""
+    assert unwritable(value: "a*b.h", suffixed: false) == "holds `*`, which no file's name on Windows can hold"
+    assert unwritable(value: "a<b.h", suffixed: false) != ""
+    assert unwritable(value: "a?b.h", suffixed: false) != ""
+    assert unwritable(value: "sub/a|b.h", suffixed: false) != ""
+    assert unwritable(value: "a?b", suffixed: true) != ""
+    assert unwritable(value: "a>b!=c", suffixed: true) == ""
     assert unwritable(value: "ab.h.", suffixed: false) != ""
     assert unwritable(value: "ab.h ", suffixed: false) != ""
     assert unwritable(value: "ab.h..", suffixed: false) != ""
