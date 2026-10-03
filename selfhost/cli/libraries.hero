@@ -100,7 +100,7 @@ function filter_words(package: str, said: str) -> [str]?
                 )
 
             if next.len() == 0 || next.chars()[0] == "-"
-                return refused(package: package, said: word + " " + next)
+                return refused(package: package, said: word + " " + next, told: "")
 
             if word == "-framework"
                 flags @ flags.push(word)
@@ -127,7 +127,7 @@ function filter_words(package: str, said: str) -> [str]?
             flags @ flags.push(framed.must().value)
             index @ index + framed.must().words
             continue
-        return refused(package: package, said: word)
+        return refused(package: package, said: word, told: shell_split.no_flag(said: said, parts: parts, at: index))
 
     return ok(flags)
 
@@ -195,12 +195,13 @@ function link_words(package_flags: [str]) -> [str]
 
     return out
 
-# The refusal, naming what the package said and what is accepted. The list
-# in it is the function above, word for word.
-function refused(package: str, said: str) -> [str]?
+# The refusal, naming what the package said and what is accepted, `told`
+# after it where a word is no flag (`shell_split.no_flag`, defect 183). The
+# list in it is the function above, word for word.
+function refused(package: str, said: str, told: str) -> [str]?
     return fail(
         code: "failed",
-        msg: "heroes-ffi-package `" + package + "` answered with `" + said + "`, which this compiler does not pass on\n  only `-D`, `-U`, `-I`, `-L`, `-l` and `-F`, each with its value joined or as the next word, `-framework <name>`, and `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>`, in one word or split as `-Wl,-rpath -Wl,<dir>`, are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
+        msg: "heroes-ffi-package `" + package + "` answered with `" + said + "`, which this compiler does not pass on" + told + "\n  only `-D`, `-U`, `-I`, `-L`, `-l` and `-F`, each with its value joined or as the next word, `-framework <name>`, and `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>`, in one word or split as `-Wl,-rpath -Wl,<dir>`, are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
     )
 
 # The flags whose value clang reads joined to them or as the next word.
@@ -465,6 +466,27 @@ test "a word pkg-config escaped is judged whole, and a key keeps it one"
     assert key_text(["-Ia"]) == "3:-Ia"
     none: [str] = []
     assert compile_flags(none).len() == 0
+
+# Lane h158's `s7.pc` (2026-10-02, defect 183): the refusal of the path's
+# tail names the line `pkg-config` printed and the word before it, and a
+# refused flag keeps its words.
+test "a word that is no flag is refused with the line it came from (defect 183)"
+    split = filter_words(package: "s7", said: "-I/opt/with space/include -L/opt/with space/lib\n")
+
+    match split
+        .ok => assert false
+        .err e =>
+            assert has_text(
+                text: e.msg,
+                needle: "answered with `space/include`, which this compiler does not pass on: it is no flag, and `pkg-config` printed `-I/opt/with space/include -L/opt/with space/lib`, where whitespace nothing escapes stands between `-I/opt/with` and it"
+            )
+            assert has_text(text: e.msg, needle: "CVE-2018-6574")
+
+    flag = filter_words(package: "trap", said: "-I/x -fplugin=attack.so")
+
+    match flag
+        .ok    => assert false
+        .err e => assert !has_text(text: e.msg, needle: "no flag")
 
 # **The fold-in is asked of the machine, so the case asks the same question.**
 # `-lm` is REQUIRED on POSIX and impossible on MSVC (`LNK1104: cannot open
