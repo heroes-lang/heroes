@@ -22,10 +22,12 @@
 # which found the verifier checked nothing within a block while the
 # emitter's prologue stopped zeroing temporaries on the strength of it).
 #
-# The algorithm is the textbook fixpoint, unadorned: dom(entry) =
-# {entry}, dom(b) = {b} ∪ ⋂ dom(p) over b's predecessors, iterated to
-# stability. O(blocks²) on a bool row per block — the largest recorded
-# block count is 226, not worth a Lengauer-Tarjan.
+# Which block dominates which is `ir/dominators.hero`'s, a Lengauer-Tarjan
+# tree since defect 218 (2026-10-03). Until then it was a fixpoint here,
+# a bool row per block iterated to stability, chosen because *the largest
+# recorded block count is 226*; a `main` of 500 nested `match`es took
+# 92.87 s of user time to build with it, and the tree answers the same on
+# every graph.
 #
 # Port note: Rust threads a `where_` closure for message prefixes;
 # Heroes stores no closures (the Cyclone rule's mirror), so the callers
@@ -34,6 +36,7 @@
 use token
 use ir
 use ir/containers
+use ir/dominators
 use ir/uses
 
 # Every value invariant, on one function. `label` prefixes every
@@ -88,7 +91,7 @@ function definitions(f: containers.Function, label: str, @problems: [str]) -> [i
 # definitions walk says a value is produced somewhere; this says it is
 # produced on EVERY path that reads it.
 function dominance(f: containers.Function, homes: [i64], label: str, @problems: [str])
-    dom = dominators(f.blocks)
+    tree = dominators.compute(f.blocks)
     index: i64 @ 0
 
     for blk in f.blocks
@@ -113,7 +116,7 @@ function dominance(f: containers.Function, homes: [i64], label: str, @problems: 
             if homes[value] < 0
                 continue
 
-            if !dom[index][homes[value]]
+            if !dominators.dominates(tree, over: homes[value], under: index)
                 problems @ problems.push(
                     label + "bb" + index.to_str() + " reads $" + value.to_str() + ", defined in bb" + homes[value].to_str() + ", which does not dominate it"
                 )
@@ -161,64 +164,6 @@ function early(homes: [i64], written: {i64: bool}, value: i64, block: i64, label
         problems @ problems.push(
             label + "bb" + block.to_str() + " reads $" + value.to_str() + " before the instruction that defines it"
         )
-
-# dominators[b][d] — whether block d dominates block b. The entry is
-# dominated by itself alone; everything else starts maximal and
-# shrinks, which is what makes the fixpoint a greatest one.
-function dominators(blocks: [containers.Block]) -> [[bool]]
-    count = blocks.len()
-    dom: [[bool]] @ []
-    i: i64 @ 0
-
-    while i < count
-        row: [bool] @ []
-        j: i64 @ 0
-
-        while j < count
-            if i == 0
-                row @ row.push(j == 0)
-            else
-                row @ row.push(true)
-            j @ j + 1
-
-        dom @ dom.push(row)
-        i @ i + 1
-
-    changed: bool @ true
-
-    while changed
-        changed @ false
-        index: i64 @ 1
-
-        while index < count
-            next: [bool] @ []
-            k: i64 @ 0
-
-            while k < count
-                next @ next.push(blocks[index].preds.len() == 0)
-                k @ k + 1
-
-            position: i64 @ 0
-
-            for pred in blocks[index].preds
-                if position == 0
-                    next @ dom[pred]
-                else
-                    m: i64 @ 0
-
-                    while m < count
-                        next[m] @ next[m] && dom[pred][m]
-                        m @ m + 1
-                position @ position + 1
-
-            next[index] @ true
-
-            if next != dom[index]
-                dom[index] @ next
-                changed @ true
-            index @ index + 1
-
-    return dom
 
 ## Tests
 

@@ -59,6 +59,7 @@ use ir/lower
 use ir/mono
 use ir/verify
 use ir/place_store
+use ir/released
 
 # Insert the reference counting. Idempotent by construction: advance_to
 # refuses a second run.
@@ -352,3 +353,38 @@ test "a store expands to load-incref-store-decref, and the sweep closes returns"
 
     assert incref_at >= 0
     assert last_decref > incref_at
+
+test "a straight function of 400 chained strings verifies at owned, its sweep read in two walks"
+    # Each line reads the one before, so no expression nests and every
+    # binding is used; the ownership pass moves two results a line into
+    # slots and sweeps all of them at the one return. Defect 218's shape: the
+    # release check read that sweep in about slots x decrefs x instructions
+    # / 2, 3e9 steps here (derived, not run), and now reads it in two walks.
+    lines: [str] @ ["function f(x: i64) -> str", "    s0 = x.to_str()"]
+
+    while lines.len() < 402
+        lines @ lines.push("    s" + (lines.len() - 1).to_str() + " = s" + (lines.len() - 2).to_str() + " + x.to_str()")
+
+    lines @ lines.push("    return s400")
+    got = owned(lines.join("\n") + "\n\nfunction main()\n    print(f(x: 3).len())\n")
+    assert verify.verify(got.program, got.checked, got.decls).len() == 0
+    checked_one: bool @ false
+
+    for f in got.program.functions
+        if f.name == "f"
+            owed = released.owed_slots(f, got.checked)
+            assert owed.len() > 1000
+
+            for blk in f.blocks
+                match blk.term
+                    .return_term =>
+                        read = released.releases(blk)
+                        assert read.visits <= 3 * blk.insts.len()
+
+                        for slot in owed
+                            assert !read.released[slot].is_err()
+
+                        checked_one @ true
+                    .jump | .branch | .switch_term | .unreachable | .open => continue
+
+    assert checked_one
