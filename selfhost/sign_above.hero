@@ -24,10 +24,17 @@
 # name (defect 166), because a failed arm's recovery dropped no further
 # than its line of the text (`opening.drop_line`, gone since panel 187) and
 # read the part below the break again as an arm. Where both readings stand,
-# the stream is the join, as for every refused break (`open_line`). The arm
-# is read at the margin the operator's line laid out, which is the arm's own
-# wherever the operator stands at it; at another margin a block was opened
-# or closed there.
+# the stream is the join, as for every refused break (`open_line`).
+#
+# **The operator's line goes with it, its margin too** (defect 182). Deeper
+# than the arms, its margin opened a block the arm below was joined into, and
+# the parser named it `unexpected_block`, a second message for the one line
+# the deletion removes; shallower, it closed the arms. The indent or dedents
+# that line laid out and the reports its margin said are taken back, the
+# level is what it was above it, and the arm's line is laid out on its own
+# margin, as the deletion writes the text: an arm over-indented there is
+# told as itself. A margin laid out under braces or an indentation habit,
+# which keep their own count of the lines, stays, and the arm is joined.
 #
 # The deletion takes the operator's whole line, so the arm keeps its own
 # margin. A comment after the operator on its line stays where the operator
@@ -39,16 +46,26 @@ use state
 use diag
 use bytes
 use join_fix
+use word_place
 
-# The fixes of the refused line `d` that holds the token at `at` alone, above
-# the arm whose first byte is `l.pos`, and the stream the parser is handed.
-function offer(@l: state.LexState, @d: diag.Diagnostic, text: str, at: i64)
+# The refusal `d` of the line that holds the token at `at` alone, above the
+# arm whose first byte is `l.pos`, said with its fixes, and the stream the
+# parser is handed: whether it is the join, false where the operator's line
+# is left out with its margin and the arm's line is the caller's to lay out.
+# A break is recorded only over a join (`state.Break`): its `after` is the
+# first word of the line joined below it, and a line laid out on its own is
+# none (`parse/joined_lines` and `line_above` read the breaks as joins).
+function offer(@l: state.LexState, d: diag.Diagnostic, text: str, at: i64) -> bool
     operator = l.tokens[at]
     commented = l.tokens.len() > at + 1 || l.held.len() > 0
-    d.fixes @ fixes(text, operator: operator, below: l.pos, commented: commented)
+    told: diag.Diagnostic @ d
+    told.fixes @ fixes(text, operator: operator, below: l.pos, commented: commented)
+    joined = two_readings(text, operator: operator, below: l.pos) || !leave_out(@l, text, at: at)
+    state.push_diagnostic(@l.diagnostics, told)
 
-    if !two_readings(text, operator: operator, below: l.pos)
-        leave_out(@l, at: at)
+    if joined
+        state.push_break(@l.breaks, diagnostic: l.diagnostics.len() - 1, after: l.tokens.len(), head: false)
+    return joined
 
 # Whether the arm has two readings: the operator a `-` and the arm's line
 # beginning with a literal it signs, so that joined and deleted are two
@@ -117,17 +134,58 @@ function deleted(text: str, operator: token.Span) -> token.Span
         end @ end + 1
     return token.Span(start: start, end: end)
 
-# The token at `at` taken out of the stream, the comments after it kept: it
-# is the last word lexed, so only those comments are moved, and only on this
-# refusal's path, which no program that compiles reaches. Every index into
-# the stream recorded so far stands before it: each break's `after`, the
-# operator opening its line, and `open_line`, cleared before the refusal.
-function leave_out(@l: state.LexState, at: i64)
+# The token at `at` taken out of the stream, the comments after it kept, and
+# the margin its line laid out taken back where that margin is plain: spaces
+# alone, under no braces and no indentation habit. Its indent or dedents are
+# the tokens just before the operator spanning the line's margin, and its
+# reports, `indentation_jump` and `indentation_not_multiple_of_4` over that
+# span, are the last said; the level goes back to the line above's. True
+# where it was taken back. The operator is the last word lexed, so only its
+# comments are moved, and only on this refusal's path, which no program that
+# compiles reaches. Every index recorded so far stands before the margin: each
+# break's `after`, and `open_line`, cleared before the refusal.
+function leave_out(@l: state.LexState, text: str, at: i64) -> bool
+    begins = l.tokens[at].span.start
+    line = word_place.line_start(text, at: begins)
+    plain = l.braced.len() == 0 && l.run[0].kind == .none && spaces_alone(text, from: line, to: begins)
+    from: i64 @ at
+
+    while plain && from > 0 && laid_out(l.tokens[from - 1], line: line, ends: begins)
+        if l.tokens[from - 1].kind == .indent
+            l.level @ l.level - 1
+        else
+            l.level @ l.level + 1
+        from @ from - 1
+
+    while plain && l.diagnostics.len() > 0 && said_of_margin(l.diagnostics[l.diagnostics.len() - 1], line: line, ends: begins)
+        l.diagnostics @ l.diagnostics.slice(from: 0, to: l.diagnostics.len() - 1)
+
     after: [token.Token] = l.tokens.slice(from: at + 1, to: l.tokens.len())
-    l.tokens @ l.tokens.slice(from: 0, to: at)
+    l.tokens @ l.tokens.slice(from: 0, to: from)
 
     for t in after
         state.push_token(@l.tokens, t)
+
+    return plain
+
+# Whether `t` is a margin token the line beginning at `line` laid out, its
+# span that line's margin, to `ends`.
+function laid_out(t: token.Token, line: i64, ends: i64) -> bool
+    return (t.kind == .indent || t.kind == .dedent) && t.span.start == line && t.span.end == ends
+
+# Whether `d` is a report the layout said of that margin.
+function said_of_margin(d: diag.Diagnostic, line: i64, ends: i64) -> bool
+    return (d.code == "indentation_jump" || d.code == "indentation_not_multiple_of_4") && d.span.start == line && d.span.end == ends
+
+function spaces_alone(text: str, from: i64, to: i64) -> bool
+    i: i64 @ from
+
+    while i < to
+        if text[i] != ' '
+            return false
+        i @ i + 1
+
+    return true
 
 ## Tests
 
