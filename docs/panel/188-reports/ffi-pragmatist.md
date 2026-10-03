@@ -174,6 +174,12 @@ the same seed inside the container (`heroes-linux`, sha256 `c2fcd60b4c3ecebb`):
 for message** once the build hashes are normalised. So F1 on Linux, unrun in
 the facts, is now run. Beyond F1, F6 and F7:
 
+*Corrected underneath, 2026-10-03 22:44: these Linux cases were written under
+`/w`, this Mac's APFS bind-mounted through FUSE, so they ran Linux's clang
+and compiler over the Mac's filesystem. § 1.1 and the sweep, re-run on the
+container's own overlayfs, read the same; this table and § 4 were not re-run
+there (§ Windows, measured, at the end).*
+
 | `extern "..."` (source) | file beside | `check` | `build` | run |
 |---|---|---|---|---|
 | `"a\tb.h"` | `a`, TAB, `b.h` | 0 | 1, `ffi_missing_header` naming `a\tb.h`, **while the file is there** | |
@@ -654,3 +660,175 @@ compiler's line (measured above).
 **Cost**: one more container, 17:37:49 to 17:38:04 by its own `date`, started
 over an empty `docker ps -q`, with `clang-18` fetched by `apt-get` once more.
 No paid run, no timing.
+
+## Windows, measured (appended 2026-10-03, 22:21 to 22:44, after the ratification)
+
+**At the coordinator's request**, panel 188 ratified (R1 to R12): the
+predictions I registered, scored on the Windows box, and my § 1.1 and § 1.2
+units run there. Times are each machine's own `date`; the box prints `WEDT`
+and agreed with this Mac's `CEST` (22:22:04 here, 22:22:06 there, an ssh
+round trip between).
+
+**The box, and how I worked there.** `ssh win` answered at 22:22:04 after
+one attempt that timed out at 22:21:35 (exit 255, Tailscale reading the box
+*active; direct*): Git Bash on Windows 10.0.26100 (`uname -a`:
+`MINGW64_NT-10.0-26100`, MSYS runtime 3.6.9), clang 23.1.1 at
+`/c/Program Files/LLVM/bin/clang`, target `x86_64-pc-windows-msvc`. My folder
+`/c/w/188-fp-win/`, new (absent at 22:30:16). Nothing was removed, on the box
+or here, and `/c/w/188-ce-win/` and `/c/w/close129-*` were never touched.
+**No Python there**: `python3` is the Microsoft Store's alias (*Python was
+not found*, exit 49). So the survey and the scanner ran as Perl ports
+(`win/survey.pl`, `win/scan.pl`; Perl 5.42.2 there), first checked on this
+Mac against the Python originals: the same 17 candidate files and lines over
+the same 50,729 distinct files, and 0 names outside the set (the Perl walk
+counts a header once per symlinked path that names it, 100,208 names where
+the Python counted 94,908). The judge ran as `win/wjudge.sh`, checked here on
+the calibration headers (all seven shapes, in both modes). The scripts went
+as one 32,768-byte archive by `windows2-u.sh`'s recipe (one part under its
+1 MB, its size read back from the box, sha256 `5dfe8d62addd2c15` on both
+sides) at 22:30:34, and the outputs came back as one 30,720-byte archive, its
+size equal on both sides. Phase one ran 22:30:44 to 22:31:31, phase two
+22:31:51 to 22:35:33, three last cases 22:38:06 to 22:38:08.
+
+**The roots** are clang's own default `#include <...>` list on the box
+(`echo | clang -x c -E -v -`): `C:\Program Files\LLVM\lib\clang\23\include`,
+the MSVC toolset's `14.44.35207\include`, and the Windows SDK 10.0.26100.0's
+`ucrt`, `shared`, `um`, `winrt` and `cppwinrt`. **MSYS2's own include roots:
+none exists** in this Git Bash (`/mingw64/include`, `/ucrt64/include`,
+`/usr/include` and `/clang64/include` are all absent).
+
+### The predictions, scored
+
+| registered | measured on the box | score |
+|---|---|---|
+| the verdict block's: the survey over the box's clang resource `include/` and its Windows SDK finds zero names outside `[A-Za-z0-9._+/-]` | 5,455 names over the 7 roots (323, 361, 66, 303, 2,189, 839, 1,374): **0** outside; 0 holding `'`, `\`, `"`, `//` or `/*`; 0 holding `>`, a line end or a NUL | **holds** |
+| § The backstop's: the scan and the judge find no real C header clang flags with `-Wextra-tokens` or `-Wnull-character` in the default configuration | 5,455 distinct files, **0** proxy candidates and 0 holding a NUL, so clang 23.1.1 had nothing to judge (`out/judge.txt`) | **holds** |
+| the verdict block's other half: under (1h) none of the tree's strings is refused and the ladder's rungs build on all three platforms | needs the compiler built on the box and the landing (R12) | **unscored**, owed at the landing's legs |
+
+### The § 1.1 units and the § 1.2 sweep under clang 23.1.1
+
+The headers written by Git Bash as on the other two machines, compiled by the
+native clang (`win/wrun.sh`, `win/wsweep.sh`: the same units, removing
+nothing; `out/run.txt`, `out/sweep.txt`). Where Windows differs from this Mac
+and Linux, it differs exactly where NTFS does:
+
+| name (the value) | this Mac and Linux | Windows |
+|---|---|---|
+| `ab.h`, `a'b.h`, `d//b.h`, `a b.h`, `é.h` | builds, `7` | builds, `7` |
+| `a>b.h`, LF, CR, CRLF, the empty name | fails | fails, with the same messages |
+| `a\b.h` | opens a file named with one backslash | `\` is a separator: Git Bash wrote `a/b.h`, and clang opened `inc\a\b.h` |
+| `a"b.h`, `e/*b.h`, `a<b.h`, TAB, `a??)b.h` raw and spliced | builds, `7` | **`file not found`**: no NTFS name holds `"`, `*`, `<`, a control byte or `?`, and Git Bash stored each under another name (below) |
+| a NUL, a file `a` present | opens `a`, runs | **opens `a`, runs** |
+| `<stdio.h>`, `stdio.h>`, `<stdio.h` | fails; builds with `-Wextra-tokens`; fails | the same, against the UCRT's `stdio.h` |
+
+The sweep: **87 of the 126 bytes build with zero warnings, DEL (0x7F) among
+them; 39 fail: all 31 control bytes, `"`, `*`, `:`, `<`, `>`, `?`, `|`, and
+`\`**, which Git Bash would not write as part of one name. The five UTF-8
+names build with zero warnings, and **no byte builds and then fails only
+under the backstop**. On this Mac and on Linux, three fail: LF, CR and `>`.
+
+**And the Linux legs, said here because this run found it**: every Linux case
+of §§ 1.1 to 1.3 and § 4 was written under `/w`, the scratchpad
+bind-mounted into the container, which is this Mac's APFS through FUSE
+(`stat -f /w` reads `fuse`). Re-run on the container's own filesystem
+(`/tmp`, `overlayfs`, 22:41:38 to 22:41:44), § 1.1 reads row for row the
+same and the sweep fails on the same three bytes (`win/linux-native-run.txt`,
+`win/linux-native-sweep.txt`). § 1.3 and § 4, which go through the compiler,
+were not re-run there: on a Linux filesystem they are unrun.
+
+### NTFS's names, through the calls clang's own lookup makes (`win/names.c`)
+
+A program compiled on the box tried each name with `CreateFileW`
+(`CREATE_NEW`), then listed what NTFS stored with `FindFirstFileW`
+(`out/names.txt`):
+
+- **refused**, Win32 error 123 (`ERROR_INVALID_NAME`): `a<cp>b.h` for every
+  control byte U+0001 to U+001F and for `"`, `*`, `<`, `>`, `?` and `|`. A
+  `\` gets error 3, the path not found, because it is a separator. DEL is
+  created as itself;
+- **created under another name**: `ab.h.`, `ab.h `, `ab.h. ` and `ab.h..` are
+  each stored as `ab.h`; `ab.h::$DATA` is `ab.h` itself; `a:b.h` and `ab:c.h`
+  create a file `a` (`ab`) holding an alternate data stream `b.h` (`c.h`);
+- **Git Bash's own writes** of the refused names are stored as private-use
+  code points: `<` as U+F03C, `"` U+F022, `*` U+F02A, `:` U+F03A, `>` U+F03E,
+  `?` U+F03F, `|` U+F07C, a control byte as U+F001 to U+F01F. The file exists
+  under a name no native program asks for.
+
+### What `#include <...>` opens on Windows and nowhere else
+
+Each case compiled with clang 23.1.1 and run, the tree holding only what its
+row says. The last column is this Mac and Linux, measured the same evening
+(`win/mac-shapes.txt`; `win/linux-shapes-native.txt`, on overlayfs).
+
+| `#include` | the tree holds | Windows | this Mac and Linux |
+|---|---|---|---|
+| `<a\b.h>` | `inc/a/b.h` | opens `a/b.h`, runs | no file of that name |
+| `<ab.h.>`, `<ab.h >`, `<ab.h. >`, `<ab.h..>` | `inc/ab.h` | **opens `ab.h`, runs** | `file not found, did you mean 'ab.h'?` |
+| `<ab.h::$DATA>` | `inc/ab.h` | **opens `ab.h`, runs** | `file not found` |
+| `<ab:c.h>` | a file `ab` (holding `not a header`), its stream `c.h` holding the header | **opens the stream, runs** | opens a file named `ab:c.h`, `:` being a byte there |
+| `<d./ab.h>` | `inc/d/ab.h` | **opens `d/ab.h`, runs** | `file not found` |
+| `<zz/../ab.h>` | `inc/ab.h`, no `zz` | **opens `ab.h`, runs** | `file not found` |
+| `<ABCDEF~1.H>` | `inc/abcdefghij.h` (`dir /x` lists `ABCDEF~1.H`) | **opens it, runs** | `file not found` |
+| `<NUL>` | `inc/ab.h` | **opens the null device**: the include succeeds, and `seven` is undeclared | `file not found` |
+| `<nul.h>`, `<CON>`, `<con.h>`, `<AUX>`, `<aux.h>`, `<COM1>`, `<lpt1.h>` | `inc/ab.h` | `file not found`; none hung (30 s timeouts unreached) | not run |
+| `<AB.H>` | `inc/ab.h` | opens `ab.h` | this Mac: opens it, with `-Wnonportable-include-path`; Linux: `file not found` |
+
+### What this changes, read against R1 to R12
+
+- **R3** (*"makes no claim about Windows until the Windows box has run
+  one"*): now run. On Windows a `\` in a header is a separator, so `#include
+  <a\b.h>` opens `a/b.h`; and it can never be a byte of a name (Win32 error
+  3).
+- **R4** (*"`a"b.h` ..., a name NTFS is recalled not to hold (unrun)"*): now
+  run. NTFS refuses `"` (error 123), and refuses `*`, the second byte of R4's
+  `/*`, too.
+- **R12's Windows items**: clang's reading of `\` and `"`, and the include
+  roots surveyed, are above. F1 through the compiler, `--` before a package
+  on the box's `pkg-config`, and its linker's *missing library* wording I did
+  not measure.
+- **My registered condition is met, and its conclusion does not follow.** It
+  said my preference would move from (1h) to (1c) if Windows showed a byte
+  (1h) admits failing there or naming another file. Both happened: `*`, `<`,
+  `?` and `|` fail there; `:` names a stream; a trailing `.` or space is
+  dropped. But the same run shows (1c) would not have closed it: its own set
+  holds `ab.h.`, `d./ab.h`, `zz/../ab.h` and `NUL`, and each opens another
+  file or a device on Windows. So I do not score this as a win for (1c).
+  What Windows measured is a class neither route reached.
+- **What R2 to R5 admit that Windows reads otherwise**, measured. First,
+  names no NTFS file can hold: `*`, `<`, `?`, `|`. On Windows `build` would
+  say `ffi_missing_header`, true there, where the Mac and Linux build: a
+  divergence whose messages are true everywhere. Second, names that open
+  **another file** on Windows than on the Mac and Linux, at exit 0: a `:` past
+  a name's second byte (`machine_locked` refuses only a second-byte `:`), a
+  component ending in `.` or a space, a `..` through a directory that does
+  not exist, `~` (an 8.3 alias), and the bare name `NUL`. By § Bounded
+  discovery's list the second group is *a wrong one accepted* on one
+  platform, `blocking`, and the first `adjacent`; both are the coordinator's
+  to file and class.
+- **Their cost as refusals, measured**: of 100,208 names on this Mac, 9,128 on
+  Linux and the box's 5,455 (`win/components.pl`, every symlinked path),
+  **0** hold a component ending in `.` or a space, a component whose part
+  before its first `.` is a device name (`CON`, `PRN`, `AUX`, `NUL`, `COM0` to
+  `COM9`, `LPT0` to `LPT9`, in any case), a `~` or a `:`. § 2 and the box's
+  survey had already found 0 holding `*`, `<`, `?` or `|`. And of the tree's
+  700 `extern`, `link` and `package` strings, none holds a `..` after a
+  component, a `~`, or a component ending in `.` or a space other than the
+  leading `.` and `..` a rule would exempt (8 `../i2.h`, 1 `./...`); the one
+  `:` is panel 055's own refused `link ":/opt/foo/lib/libfoo.a"`.
+- **So the rule that would close both groups** refuses no real header on the
+  three platforms and none of the tree's strings. Judged on the value, per
+  `/`-separated component, it refuses: NTFS's whole reserved set (`*`, `<`,
+  `?`, `|` beside what R2 to R5 already hold), a `:` anywhere, a component
+  ending in `.` or a space other than `.` and `..` themselves, a `..` after a
+  component, a `~`, and a component naming a device. Each refused name stays
+  bindable through a one-line header of the program's own (§ 1.5). This is
+  offered to the coordinator as a filing for the landing's lane, not decided
+  here, since the sitting is ratified.
+
+**Cost**: the box from 22:21:35 to 22:38:08, in one folder of mine, nothing
+removed. Three containers here (22:40:48 to 22:40:51, 22:41:14 to 22:41:15,
+22:41:38 to 22:41:44), each started over an empty `docker ps -q`. No paid
+run, no timing. One slip of mine: a command at about 22:42 wrote a scratch
+copy of the tree's strings to `/tmp/claude-ffi188-strings.txt`, outside my
+scratchpad. It stays there, since removing it is a destructive command and
+waits for the author.

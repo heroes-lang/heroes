@@ -529,3 +529,44 @@ spec-warden's objection, R10 without a spec sentence). The landing is batch
 8's FFI lane, `lane-b8-ffi`, opened at `dcaca1a3`. **What it does not
 settle**: the platform legs R12 owes before defect 216 closes, the Windows
 box's above all.
+
+## After the ratification: Windows, measured (2026-10-03, appended at 22:47)
+
+The Windows box came on after the author's ratification, and two seats ran
+R12's Windows facts there (Git Bash on Windows, clang 23.1.1, target
+`x86_64-pc-windows-msvc`, linker lld-link, no `pkg-config`): the
+compiler-engineer's § 22 and the ffi-pragmatist's *Windows, measured*.
+
+- **Scored**: the historian's first prediction **held** (`#include <a\b.h>`
+  opens `a/b.h` in a tree holding only that; clang warns
+  `-Wnonportable-include-path-separator`); the ffi-pragmatist's survey of the
+  box's seven default include roots **held** (0 of 5,455 names outside
+  `[A-Za-z0-9._+/-]`), and so did its backstop scan (0 candidates). R3 and
+  R4 now rest on Windows too: a `\` is a separator there and a trailing one
+  is *file not found*, and NTFS refuses `"` and `*` in a name.
+- **Stage E on Windows** (155 cases): the trunk's 33 exits at 2 or 134
+  become 12, none introduced by E. The 12 are the batch's to close: lld-link's
+  *could not open 'X.lib'* is a third wording the linker's reader does not
+  read (defect 224, widened), and a `link` string beginning with `-` is an
+  lld-link option (`link "-out:pwn188"` builds at exit 0 and writes a file of
+  the author's naming).
+- **Taken in batch 8's FFI lane, provisional on the author's reading**: the
+  `option_like_name` refusal of R7 (b) extended to a `link` string by its own
+  reason, the premise that `-l-x` always names a library being the Mac's and
+  Linux's and false on Windows; R3's message made true on both platforms;
+  `machine_locked_path`'s library route, which names `LIBRARY_PATH` that
+  lld-link ignores, filed as defect 233.
+- **What the ratified rules still admit on Windows**, measured by the
+  ffi-pragmatist: names NTFS stores as another file, so that the include opens
+  something else at exit 0 where the Mac and Linux say *file not found* (`:`
+  past a name's second byte, a component ending in `.` or a space, a `..`
+  through a directory that does not exist, a `~` 8.3 alias, the device name
+  `NUL`), filed as defect 234; and names no NTFS file can hold (`*`, `<`, `?`,
+  `|`), told truly on Windows, filed as defect 235. The rule that would close
+  both refuses 0 of the real names surveyed on the three platforms and none of
+  the tree's 700 group-head strings. **Whether to extend R2 and R6 by their
+  own reasons to them, or to convene a sitting, is put to the author**
+  (`docs/work/DECIDE.md`).
+- **Corrected beneath § 22**: `f1-trigraph` and `f7-lt` build 1 on Windows
+  because NTFS cannot store `?` or `<` in a name (§ 22.1's own table), so their
+  *missing header* is true there, not clang reading them differently.

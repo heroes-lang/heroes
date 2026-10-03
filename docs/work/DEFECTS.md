@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 47**
+**OPEN: 49**
 
 - [ ] **177 — a `match` whose arms fall inside a bracket left open has each arm told again after the bracket's own message** | `return match scores[name` over `.ok v  => v.to_str()` and `.err e => e.code`: `unclosed_bracket` at the `[`, then `line_end_before_continuation` at each arm, three messages for one missing `]`; `x = match (n` over `.ok v => 1` the same; `y = match n` below `x = [n, 1` gets `expected_end_of_line` at each arm's `=>` | the reach of a bracket left open (panel 183's R1 and R2) over a `match`'s arms · `selfhost/parse/line_end.hero:242` · **class: adjacent**
 
@@ -325,5 +325,17 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** panel 188's completeness critic, 2026-10-03, in its third pass over stage D (F1 ran `a'b.h` only with its header present), and the compiler-engineer building stage E for the escaped code points; the quote reproduced by the coordinator the same day.
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told. Panel 188's R4 and R5 refuse `'`, U+2028 and U+2029 at `check`, so once they land a program `check` passes reaches this reader with a private-use, unassigned or noncharacter code point only; R4 is a thesis rule the author may turn, so the reader is repaired on its own, reading clang's line against each declared header as stage C did for the linker's.
+
+- [ ] **234 — on Windows a header name NTFS stores as another file is accepted, and the include opens that file at exit 0 where the Mac and Linux say it is missing** | under clang 23.1.1 on the Windows box, each tree holding only what the row needs: `#include <ab.h.>`, `<ab.h >`, `<ab.h..>` and `<ab.h::$DATA>` open `ab.h`; `<ab:c.h>` opens the alternate data stream `c.h` of a file `ab`; `<d./ab.h>` opens `d/ab.h`; `<zz/../ab.h>` opens `ab.h` with no `zz`; `<ABCDEF~1.H>` opens `abcdefghij.h` by its 8.3 name; `<NUL>` opens the null device; each *file not found* on this Mac and in the Linux arm64 image (the ffi-pragmatist, `docs/panel/188-reports/ffi-pragmatist.md` § Windows, measured, 2026-10-03); every one passes the ratified rules of panel 188 | the leaf's judgement of a group head's string (`selfhost/head_names.hero` after panel 188's landing) · panel 188 R2 and R6 · panel 055 · **class: blocking**
+
+    **Origin:** panel 188's ffi-pragmatist, 2026-10-03, measuring R12's Windows facts after the ratification; read by the coordinator from the seat's tables, not yet run by the coordinator.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a wrong program accepted on one platform, the header bound being another file than the one the string names. Its repair widens what `check` refuses, which is the author's to rule on (`docs/work/DECIDE.md`, `panel 188`): the rule measured to close it refuses 0 of the real header names surveyed on the three platforms and none of the tree's 700 group-head strings.
+
+- [ ] **235 — a header name no NTFS file can hold builds on the Mac and Linux and is missing on Windows** | `*`, `<`, `?` and `|` in a header's name: `CreateFileW` refuses each (Win32 error 123), so on Windows `build` says *missing header*, true there, where this Mac and the Linux arm64 image build and run (the ffi-pragmatist, the same section, 2026-10-03) | the leaf's judgement (`selfhost/head_names.hero` after panel 188's landing) · panel 188 R4 (which already refuses `/*`) · **class: adjacent**
+
+    **Origin:** panel 188's ffi-pragmatist, 2026-10-03, the same measurement; read by the coordinator from the seat's tables, not yet run by the coordinator.
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a divergence between platforms whose messages are true on each; ruled with 234.
 
 *******************************************************************************

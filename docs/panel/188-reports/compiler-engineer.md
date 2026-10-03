@@ -813,3 +813,193 @@ on D now (`<copy>/work/attack/run3-d/`): `e2-psep-missing` 2, `e2-pua-missing`
 2, `e2-lsep-present` builds and prints `7`. So D's count is **3**
 (`e2-lsep-missing`, `e2-psep-missing`, `e2-pua-missing`); the trunk's is 5
 (the four the row names and `e2-pua-missing`); E's stays 1.
+
+## 22. Windows, R12's platform facts (written 22:42 by `date`)
+
+The box came on: MSYS2 on Windows (`uname`: MINGW64_NT-10.0-26100),
+**clang 23.1.1, target x86_64-pc-windows-msvc**, linker **lld-link**, 43 GB
+free on C:. Work in `/c/w/188-ce-win/`, a new folder; nothing removed, on the
+box or here. The archive (my copy's `seed/` and `runtime/` at `826ddc2f`, my
+`selfhost/`, the 155 case folders, a runner) went in seven 1 MB parts by
+`ssh win "cat > ..."`, each size checked, joined, sha256 `d38f37a0cb525fc0`
+both sides. The trunk's compiler built from the seed (seed `2c809845ed0f7ba8`,
+as in my copy) with the stack flag, and **stage E built by it from my
+`selfhost/`**, `heroes-e` sha256 `2bf1c8b08012e5b6`. Each compiler ran the
+155 cases over its own fresh copy of the set (`run_box.sh`, which refuses a
+folder that exists). No pkg-config and no pkgconf on the box (`command -v`:
+none), so every `package` run and `--` there is **unrun, said so**.
+
+### 22.1 How NTFS stored the case names
+
+MSYS2 maps the bytes NTFS forbids into the private-use area on unpack
+(`FindFirstFileW`, `ntnames.exe`): `a>b.h` is `a<U+F03E>b.h`, `a"b.h` is
+`a<U+F022>b.h`, a TAB is `<U+F009>`, and so on; `a'b.h`, `a b.h` and `é.h`
+keep their bytes; `a\b.h` and `d//b.h` became directories `a` and `d` holding
+`b.h`, and `ab\` became `b.h`. Nine of the archive's files could not be
+created at all and `tar` skipped them (the trailing-`\` cases and the inner
+file of the `\`-directory cases), so those folders hold the program alone,
+which is the right shape for a header the platform cannot even store. A native
+`CreateFileW` of each byte (`ntmake.exe`) is the ground under it:
+
+| name tried | CreateFileW |
+|---|---|
+| `a"b.h`, `a<b.h`, `a>b.h`, `a\|b.h`, `a?b.h`, `a*b.h`, a TAB | **refused, GetLastError 123** (the name is invalid) |
+| `ab\` | refused, GetLastError 267 (the directory name is invalid) |
+| `a:b.h` | created (an alternate data stream on `a`) |
+| `a'b.h`, `a b.h`, `a`+U+200B+`b.h`, `a`+U+202E+`b.h` | created |
+
+So on NTFS a `"` cannot name a file (R12's question): `CreateFileW` refuses
+it, and `#include <a"b.h>` beside MSYS2's mapped `a<U+F022>b.h` is *file not
+found* (probe t3b). `'`, a space and the invisible characters can.
+
+### 22.2 The 155 cases, both compilers, against the Mac
+
+Each compiler over its own copy (`<copy>/work/win/box-trunk.txt`,
+`box-e.txt`; the Mac over the same set, `mac-trunk.txt`, `mac-e.txt`):
+
+| | at exit 2 or 134 |
+|---|---|
+| trunk, this Mac | 14 |
+| trunk, Windows | **33** |
+| stage E, this Mac | 1 |
+| stage E, Windows | **12** |
+
+**E cuts the count on Windows as on the Mac** (33 to 12, 14 to 1), and
+introduced none of the 12: every one is exit 2 on the Windows trunk too.
+Seventeen rows read differently on Windows than on the Mac under E, in three
+groups, none of them E's doing:
+
+1. **Eleven `link` names holding a special byte** (`q5-link-space`,
+   `-squote`, `-gt`, `-dq`, `-slashslash`, `-slashstar`, `-trigraph`,
+   `-bs`, `-lt`, `bs-in-link`, `x-link-eacute`): on the Mac `ffi_missing_library`
+   at exit 1, a true message; on Windows **an internal error, exit 2**. The
+   cause is R12's linker question: lld-link writes *could not open
+   'X.lib': no such file or directory*, and **stage C's reader does not catch
+   it** (it matches ld64's `library 'X' not found` and GNU ld's `cannot find
+   -lX`, read in both). So a group that names a missing library is exit 2 on
+   Windows, on the trunk and on E alike. This is the `link` analogue of the
+   header reader the coordinator filed apart, and it wants the same repair:
+   read lld-link's wording too.
+2. **Four `link` names beginning with `-`** (`dash-link`, `dash-link-lone`,
+   `q5-link-dash`, `q5-link-dashdash`): on the Mac `ffi_missing_library` at
+   exit 1 (true: `-l-x` names a library); on Windows **build 0, run 0** -
+   lld-link says *ignoring unknown argument '-x.lib'* and links the program
+   anyway, its `link` directive silently dropped. See 22.4.
+3. **`f1-trigraph` and `f7-lt`**: on the Mac build 0 and run; on Windows build
+   1, `ffi_missing_header`. Windows clang 23 does not splice the trigraph `?`
+   the way `-std=gnu11` clang does on the Mac, and reads `<` differently. On
+   the trunk and on E both; not a refusal of E's.
+
+   *The coordinator's correction, 2026-10-03 at 22:47 by `date`: by § 22.1's
+   own table NTFS cannot store `?` or `<` in a name (`CreateFileW`, error
+   123), so the headers these two cases name do not exist on the box under
+   those names and their *missing header* is true there; the ffi-pragmatist
+   measured the same (its *Windows, measured*), not clang reading them
+   differently.*
+
+Every other row read the same exit codes on Windows as on the Mac, the F1 and
+F7 rows among them:
+
+| case | trunk Mac | trunk Win | E Mac | E Win |
+|---|---|---|---|---|
+| f1-plain, f1-space | 0,0,0 | 0,0,0 | 0,0,0 | 0,0,0 |
+| f1-squote, f1-slashslash | 0,0,0 | 0,0,0 | 1,1 | 1,1 |
+| f1-gt | 0,2 | 0,2 | 1,1 | 1,1 |
+| f1-backslash | 0,1 | 0,0,0 | 1,1 | 1,1 |
+| f1-dquote, f1-newline | 0,1 | 0,1 | 1,1 | 1,1 |
+| f7-nul | 0,2 | 0,2 | 1,1 | 1,1 |
+| f7-empty | 0,1 | 0,1 | 1,1 | 1,1 |
+
+`f1-backslash` is the one header row that differs on the trunk: on the Mac
+the trunk emitted `#include <a\\b.h>` (two bytes) and clang did not find it;
+on Windows clang read the `\` as a path separator and built. E refuses it on
+both (`escape_in_header_name`), so the divergence is closed.
+
+### 22.3 R12's `\` and trailing-`\` questions, clang alone
+
+A tree holding only `a/b.h`, `#include <a\b.h>` (`probe/t1`): **clang opened
+it, the program returned 7** (the historian's prediction 1 confirmed on the
+box), and `-Wnonportable-include-path-separator` warns *non-portable path to
+file 'a\b.h'; specified path contains backslashes*. So Windows clang reads a
+`\` in a header's name as a **path separator**. A trailing `\`, `#include
+<ab\>` beside a file `ab` (`probe/t2`): **error, 'ab\' file not found, did
+you mean 'ab'?**, and `<a  b\>` beside `a  b`: *'a b\' file not found, did
+you mean 'a b'*. So a trailing `\` on Windows clang is a file-not-found with
+a spelling suggestion, not the Mac clang's token path that binds another
+header. The refusal of `\` holds on both platforms; the two clangs reach it
+by different routes.
+
+### 22.4 Whether any of stage E's messages says something false on Windows
+
+Two, and both are inherited wordings E now carries rather than new text:
+
+1. **The `machine_locked_path` route for a library names `LIBRARY_PATH`**,
+   *"set `LIBRARY_PATH` to the directory holding it"*. On the box lld-link
+   **ignores `LIBRARY_PATH`**: a library only in a side directory, built with
+   `LIBRARY_PATH` set, is *could not open 'lp188.lib'*, exit 2 (`libprobe.sh`,
+   both compilers). The routes that worked on the box are the compiler's own
+   **`--library <dir>`** (build 0, run 7) and clang's `-L` (`LIB` did not
+   work either). `CPATH`, which the header route names, **does work** on the
+   box (probe t5, build 0 run 7). So the library route's advice is false on
+   Windows and the header route's is true. The sentence is panel 055's, from
+   the trunk; `ffi_missing_library`'s own build-time note already says
+   `--library`, which is right everywhere.
+2. **The `escape_in_header_name` message** says clang reads a `\` *"as
+   escaping the character after it, and at the name's end that is the `>`
+   closing it, so clang reads on into another header or none"*. That is this
+   Mac's clang. On Windows clang a `\` is a path separator (22.3), and a
+   trailing `\` is file-not-found, so the stated mechanism is not Windows
+   clang's. The refusal is right on both; only the explanation is one
+   platform's. A wording true on both would drop the mechanism: *a `\` in a
+   header's name is not portable (clang on Windows reads it as a directory
+   separator and warns; this clang reads it otherwise), so write `/`*.
+
+### 22.5 A gap on Windows, measured, for the coordinator
+
+`option_like_name` refuses a `-` only at the head of a `package` string; a
+`link` string's leading `-` is admitted, on the Mac reasoning that `-l-x`
+names a library. On the box that reasoning does not hold: `link "-out:pwn188"`
+(`optprobe.sh`) **built at exit 0 and wrote a file `pwn188.lib`** of the
+author's naming, because `-l` + `-out:pwn188` reaches lld-link, which reads a
+leading-`-` argument as an option. `link "-x"` and `link "--version"` link
+the program with lld-link *ignoring unknown argument '-x.lib'* (22.2 group 2).
+So on the Windows linker a `link` name beginning with `-` is a linker option,
+not a library, and the leading-`-` refusal `option_like_name` makes for
+`package` has a `link` case here. It was not in the ratified rules (R-set put
+`option_like_name` on `package` alone), so E does not refuse it; I report it
+rather than widen E past what was ratified. The repair is one line in
+`head_names.cannot_carry`'s `link`/`package` arm, the same shape as the
+package rule.
+
+### 22.6 What is unrun
+
+pkg-config and pkgconf are absent on the box, so `--` before a package, the
+package grammar (D2) and the `.pc` reading (E1) are **unrun on Windows**; the
+D2 and E1 rules fire at `check`, before any tool, so they read the same there,
+but what pkgconf on Windows would do with `--` or a `.pc` path is a question.
+Not run on the box either: the suites (my leg here is the cases, not the net),
+the seed's fixpoint, `emission`. The box's own `clang --version` is 23.1.1,
+newer than the Mac's Apple clang 21 and the image's 22.1.8.
+
+### 22.7 The compiler-engineer's reading of the Windows leg
+
+Stage E holds on Windows: it cuts the trunk's 33 exits at 2 or 134 to 12,
+introduces none, and refuses the same header, package and control-character
+shapes at `check` as on the Mac, before any tool. Three things the leg found,
+all at the C boundary and none a regression of E's: the linker-reader (stage
+C's) does not catch lld-link's *could not open 'X.lib'*, so a missing library
+is exit 2 on Windows (the `link` analogue of the filed header-reader item); a
+`link` name beginning with `-` is a linker option on lld-link, which the
+`option_like_name` rule should reach (22.5); and two inherited messages name
+a mechanism or an environment variable that is this Mac's and not Windows'
+(the `\` explanation and `LIBRARY_PATH`). By `.claude/rules/verification.md`
+a C-boundary defect closes only after the platform legs run its cases; these
+are those facts. My verdict on the route is unchanged; the three findings are
+filings for the coordinator, the first two `blocking` (an exit 2, a wrong
+program built), the message ones `adjacent`.
+
+## Status
+
+Windows leg complete at 22:42 by `date`. `/c/w/188-ce-win/` is left in place
+on the box (nothing removed); its result files are copied to
+`<copy>/work/win/`.
