@@ -125,7 +125,7 @@ function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Che
                 # assertion, no one field is at fault — what the author
                 # must change is the declaration or the expression that
                 # builds it.
-                found = source.locate(s, decls[decl].name.start)
+                found = source.source_line(s, decls[decl].name.start)
                 writer.at_file(@w, file: found.file, at: found.line)
 
                 # Built from two or more fields: C keeps the last one written.

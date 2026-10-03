@@ -292,6 +292,26 @@ function locate(s: Source, offset: i64) -> Location
         line @ 1
     return Location(file: entry.name, line: line, col: p.col)
 
+# Where an offset is AS A `#line` NAMES IT: the file that holds it and the
+# line within that file, with no column (defect 228, 2026-10-03). `locate`
+# counts the column's characters from the line's start, and the emitter asked
+# it once for every instruction it placed, so a line N bytes long cost about
+# N squared over 2: 24 million characters walked for one 2,000-piece
+# concatenation, 80 million for 1,000 nested loops, where every instruction
+# walked its line's indentation. A `#line` carries no column, so this asks
+# two sorted tables and walks no line.
+record SourceLine
+    file: str
+    line: i64
+
+function source_line(s: Source, offset: i64) -> SourceLine
+    entry = file_at(s, offset)
+    line: i64 @ line_of(s, offset) - entry.lines_before
+
+    if line < 1
+        line @ 1
+    return SourceLine(file: entry.name, line: line)
+
 # How to name THE OTHER END of a mistake, from where the caret is: `line 12`
 # when both ends are in one file, `geom.hero:12` when they are not. Every
 # "already declared at …" goes through here. The short form is deliberate:
@@ -432,6 +452,28 @@ test "files that are all empty are only their joiners, and a lone empty file is 
     assert alone.line_starts.len() == 1
     assert line_col(alone, 0).line == 1
     assert line_col(alone, 0).col == 1
+
+test "a `#line`'s place is locate's file and line, whatever the column, in every file"
+    # Defect 228: `source_line` answers what `locate` answers but the column,
+    # which it never walks for. Held to `locate` at every offset of three
+    # files, a long line, a character above ASCII, and the joiners included.
+    inputs: [InputFile] = [
+        user_file(name: "a.hero", text: "x = 1\n" + repeat("y", 300) + " = \"é\"\n")
+        user_file(name: "b.hero", text: "")
+        user_file(name: "c.hero", text: "z = 2\n    w = 3")
+    ]
+    s = from_files(inputs)
+    at: i64 @ 0
+
+    while at < s.text.len()
+        # `locate` slices to the offset, so it is asked only where a
+        # character starts: never at a continuation byte, 0x80 to 0xBF.
+        if s.text[at] < 128 || s.text[at] >= 192
+            one = source_line(s, at)
+            two = locate(s, at)
+            assert one.file == two.file
+            assert one.line == two.line
+        at @ at + 1
 
 test "the column counts characters, not bytes"
     # `è` is two bytes; the caret after it must say column 3, not 4.
