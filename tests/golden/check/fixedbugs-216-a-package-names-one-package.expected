@@ -1,0 +1,10 @@
+tests/golden/check/fixedbugs-216-a-package-names-one-package.hero:14:26: error[unwritable_name]: this package's name holds a space, where `pkg-config` splits its argument into packages and versions: a group names one package, as `package "raylib"`
+tests/golden/check/fixedbugs-216-a-package-names-one-package.hero:17:26: error[unwritable_name]: this package's name holds `,`, where `pkg-config` splits its argument into packages and versions: a group names one package, as `package "raylib"`
+tests/golden/check/fixedbugs-216-a-package-names-one-package.hero:20:26: error[unwritable_name]: this package's name holds a space, where `pkg-config` splits its argument into packages and versions: a group names one package, as `package "raylib"`
+tests/golden/check/fixedbugs-216-a-package-names-one-package.hero:23:26: error[package_comparison]: this package's name holds `>`, which is how `pkg-config` writes a version's comparison, and a group names a package and no version: write the package's name alone, as `package "raylib"`
+tests/golden/check/fixedbugs-216-a-package-names-one-package.hero:26:26: error[machine_locked_path]: `seven.pc` names a `.pc` file, which `pkg-config` reads from the directory `heroes` runs in, not the program's
+  name the package, as `package "raylib"`, and say where its `.pc` is with `PKG_CONFIG_PATH`
+tests/golden/check/fixedbugs-216-a-package-names-one-package.hero:29:26: error[machine_locked_path]: `seven.PC` names a `.pc` file, which `pkg-config` reads from the directory `heroes` runs in, not the program's
+  name the package, as `package "raylib"`, and say where its `.pc` is with `PKG_CONFIG_PATH`
+tests/golden/check/fixedbugs-216-a-package-names-one-package.hero:32:26: error[machine_locked_path]: `.pc` names a `.pc` file, which `pkg-config` reads from the directory `heroes` runs in, not the program's
+  name the package, as `package "raylib"`, and say where its `.pc` is with `PKG_CONFIG_PATH`
