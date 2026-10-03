@@ -11,10 +11,12 @@ _Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compile
 
 #line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 _Static_assert(sizeof(struct row) - __builtin_offsetof(struct row, a) != 0, "heroes-ffi-flex Row a");
-             _Static_assert(_Generic(&((struct row *)0)->a, _Bool (*)[3]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[3]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[3]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[3]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[3]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[3]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[3]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[3]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[3]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[3]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[3]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[3]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Row a");
+#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+_Static_assert(_Generic(&((struct row *)0)->a, _Bool (*)[3]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[3]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[3]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[3]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[3]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[3]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[3]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[3]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[3]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[3]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[3]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[3]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Row a");
 #line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 _Static_assert(sizeof(struct outer) - __builtin_offsetof(struct outer, rows) != 0, "heroes-ffi-flex Outer rows");
-             _Static_assert(_Generic(&((struct outer *)0)->rows, struct row (*)[2]: 1, default: 0) && sizeof(struct outer) - __builtin_offsetof(struct outer, rows) >= sizeof(struct row[2]), "heroes-ffi-field Outer rows");
+#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+_Static_assert(_Generic(&((struct outer *)0)->rows, struct row (*)[2]: 1, default: 0) && sizeof(struct outer) - __builtin_offsetof(struct outer, rows) >= sizeof(struct row[2]), "heroes-ffi-field Outer rows");
 #line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 _Static_assert(__builtin_classify_type(((struct outer *)0)->tail) == 1 && sizeof(((struct outer *)0)->tail) == sizeof(int32_t) && (_Generic(((struct outer *)0)->tail, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Outer tail");
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
@@ -23,17 +25,19 @@ _Static_assert(__builtin_classify_type(((struct cell *)0)->v) == 1 && sizeof(((s
 _Static_assert(__builtin_classify_type(((struct cell *)0)->w) == 1 && sizeof(((struct cell *)0)->w) == sizeof(int64_t) && (_Generic(((struct cell *)0)->w, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Cell w");
 #line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 _Static_assert(sizeof(struct holder) - __builtin_offsetof(struct holder, xs) != 0, "heroes-ffi-flex Holder xs");
-             _Static_assert(_Generic(&((struct holder *)0)->xs, struct cell (*)[3]: 1, default: 0) && sizeof(struct holder) - __builtin_offsetof(struct holder, xs) >= sizeof(struct cell[3]), "heroes-ffi-field Holder xs");
+#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+_Static_assert(_Generic(&((struct holder *)0)->xs, struct cell (*)[3]: 1, default: 0) && sizeof(struct holder) - __builtin_offsetof(struct holder, xs) >= sizeof(struct cell[3]), "heroes-ffi-field Holder xs");
 #line 34 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 _Static_assert(sizeof(struct nums) - __builtin_offsetof(struct nums, a) != 0, "heroes-ffi-flex Nums a");
-             _Static_assert(_Generic(&((struct nums *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Nums a");
-#line 27 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 34 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+_Static_assert(_Generic(&((struct nums *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Nums a");
+#line 35 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
 
 #line 25 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 _Static_assert(__builtin_classify_type(*(struct outer *)0) != 13, "heroes-ffi-union Outer rows tail");
 #line 28 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 _Static_assert(__builtin_classify_type(*(struct cell *)0) != 13, "heroes-ffi-union Cell v w");
-#line 33 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 41 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -111,7 +115,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 111 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 119 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswrittenatanydepth_Row_eq(const struct row *a, const struct row *b);
@@ -155,7 +159,7 @@ HeroArrayHeader * h_library_args(void);
 
 #line 38 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 void h_fixedbugsafixedarrayelementiswrittenatanydepth_main(void) {
-#line 155 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 163 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     int64_t h0_k;
     struct outer h1_o;
     struct holder h2_r;
@@ -290,7 +294,7 @@ bb0:
     t135 = h5_own5;
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h5_own5 = t1;
-#line 290 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 298 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t135);
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t2 = hero_array_len(t1);
@@ -542,25 +546,25 @@ bb0:
     t136 = h6_own6;
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h6_own6 = t110;
-#line 542 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 550 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t136);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t137 = h3_xs;
-#line 546 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 554 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t110);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h3_xs = t110;
-#line 550 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 558 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t137);
 #line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t111 = h3_xs;
 #line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t138 = h4_ys;
-#line 556 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 564 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t111);
 #line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h4_ys = t111;
-#line 560 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 568 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t138);
 #line 54 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t112 = INT64_C(1);
@@ -618,23 +622,23 @@ bb0:
     hero_print_int(t134);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_print_end();
-#line 618 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 626 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(h3_xs);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-#line 621 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 629 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(h4_ys);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-#line 624 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 632 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(h5_own5);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-#line 627 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 635 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(h6_own6);
     return;
 }
 
 #line 188 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 634 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 642 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -661,15 +665,15 @@ bb0:
     t14 = h2_own2;
 #line 189 "<heroes library>"
     h2_own2 = t1;
-#line 661 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 669 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t14);
 #line 189 "<heroes library>"
     t15 = h0_out;
-#line 665 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 673 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t1);
 #line 189 "<heroes library>"
     h0_out = t1;
-#line 669 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 677 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t15);
 #line 190 "<heroes library>"
     t2 = INT64_C(0);
@@ -697,7 +701,7 @@ bb2:
     t16 = h3_own3;
 #line 192 "<heroes library>"
     h3_own3 = t8;
-#line 697 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 705 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_str_decref(t16);
 #line 192 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -715,16 +719,16 @@ bb2:
 bb3:
 #line 194 "<heroes library>"
     t13 = h0_out;
-#line 715 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 723 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t13);
 #line 194 "<heroes library>"
-#line 718 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 726 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(h0_out);
 #line 194 "<heroes library>"
-#line 721 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 729 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(h2_own2);
 #line 194 "<heroes library>"
-#line 724 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 732 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_str_decref(h3_own3);
     return t13;
 }

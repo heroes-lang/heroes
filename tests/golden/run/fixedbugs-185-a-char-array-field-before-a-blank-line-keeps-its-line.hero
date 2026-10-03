@@ -1,0 +1,20 @@
+# Defect 185, 2026-10-03. An array field of a group record is asked two
+# questions, and until that day they came back as ONE string holding a
+# newline: the writer counted one line where C read two. So the second
+# assertion rode C's auto-increment onto the line below the field, here the
+# blank line before `main`, which the `lines` suite refuses, and every restore
+# of the generated file below it named a line one too low, which the same
+# suite refuses since the same day. Each assertion is now its own line, both
+# under the field's own `#line`. The shape: an integer element, a tagged
+# record, the field last in it.
+
+extern "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.h"
+    function label_id(l: Label) -> i32
+    record Label tag label
+        id: i32
+        name: i8[8]
+
+function main()
+    l = Label(id: 7, name: [104, 105, 0, 0, 0, 0, 0, 0])
+    print(l.name.validated_bytes().must())
+    print(l.label_id().to_i64().must())

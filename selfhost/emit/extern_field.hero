@@ -35,11 +35,22 @@ constant FLEX_ASSERTION: str
 constant COMPLETE_PROBE: str
     "hero_ffi_complete_"
 
-# One field's assertion, or absent for a field whose type the checker
+# One field's assertions, or absent for a field whose type the checker
 # already refused — the program does not reach a binary, and an
 # assertion naming a type with no C spelling would be the compiler's
 # own error.
-function assertion(c: state.Checked, names: ctype.Names, s: source.Source, c_type: str, hero_name: str, field: ast.Field) -> str?
+#
+# **Each element is ONE line of C and holds no newline** (defect 185,
+# 2026-10-03). The writer counts the lines it is handed, and every `#line`
+# that names the generated file carries that count. An array field asks two
+# questions, and until that day they came back as one string joined by a
+# newline: the writer counted one line where C read two, so every restore of
+# the generated file after such a field named a line one too low per field
+# (261 restores in 19 of the blessed traces), and the second assertion rode
+# C's auto-increment onto the line below the field's, the next field's, a
+# blank one, or one past the end of the file. Two questions are two lines,
+# and `extern_record` writes each under the field's own `#line`.
+function assertions(c: state.Checked, names: ctype.Names, s: source.Source, c_type: str, hero_name: str, field: ast.Field) -> [str]?
     written = state.written_type(c, field.ty)
 
     if written.is_err()
@@ -69,7 +80,7 @@ function assertion(c: state.Checked, names: ctype.Names, s: source.Source, c_typ
 
     if is_ptr
         return ok(
-            "_Static_assert(__builtin_classify_type(" + place + ") == 5 && _Generic(" + place + ", __typeof__(" + place + "): 1, default: 0) && sizeof(" + place + ") == sizeof(void *), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+            ["_Static_assert(__builtin_classify_type(" + place + ") == 5 && _Generic(" + place + ", __typeof__(" + place + "): 1, default: 0) && sizeof(" + place + ") == sizeof(void *), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"]
         )
 
     # An array field is a BRANCH, not a row (panel 062's veto): C's
@@ -155,10 +166,10 @@ function assertion(c: state.Checked, names: ctype.Names, s: source.Source, c_typ
                 )
 
             return ok(
-                flex_line + "\n             _Static_assert(_Generic(&" + place + ", " + rows.join(", ") + ", default: 0), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+                [flex_line, "_Static_assert(_Generic(&" + place + ", " + rows.join(", ") + ", default: 0), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"]
             )
         return ok(
-            flex_line + "\n             _Static_assert(_Generic(&" + place + ", " + elem.must() + " (*)[" + fixed_len.to_str() + "]: 1, default: 0) && sizeof(" + c_type + ") - __builtin_offsetof(" + c_type + ", " + member + ") >= sizeof(" + elem.must() + "[" + fixed_len.to_str() + "]), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+            [flex_line, "_Static_assert(_Generic(&" + place + ", " + elem.must() + " (*)[" + fixed_len.to_str() + "]: 1, default: 0) && sizeof(" + c_type + ") - __builtin_offsetof(" + c_type + ", " + member + ") >= sizeof(" + elem.must() + "[" + fixed_len.to_str() + "]), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"]
         )
 
     # An integer field asks WIDTH AND SIGN, never type identity (panel
@@ -207,7 +218,7 @@ function assertion(c: state.Checked, names: ctype.Names, s: source.Source, c_typ
     # this was the sixth.
     if is_cstr
         return ok(
-            "_Static_assert(_Generic(" + place + ", " + assert_spelling.CSTR_SPELLINGS + ", default:0) && sizeof(" + place + ") == sizeof(char *), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+            ["_Static_assert(_Generic(" + place + ", " + assert_spelling.CSTR_SPELLINGS + ", default:0) && sizeof(" + place + ") == sizeof(char *), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"]
         )
     is_int: bool @ false
     int_kind: widths.IntKind @ .i64
@@ -240,14 +251,14 @@ function assertion(c: state.Checked, names: ctype.Names, s: source.Source, c_typ
         if !widths.int_signed(int_kind)
             declared @ "1"
         return ok(
-            "_Static_assert(__builtin_classify_type(" + place + ") == 1 && sizeof(" + place + ") == sizeof(" + spelling + ") && (" + unsignedness_of(place: place) + " == " + declared + "), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+            ["_Static_assert(__builtin_classify_type(" + place + ") == 1 && sizeof(" + place + ") == sizeof(" + spelling + ") && (" + unsignedness_of(place: place) + " == " + declared + "), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"]
         )
     found = c_spelling(c, names, ty: ty)
 
     if found.is_err()
         return fail(code: "none", msg: "a type with no header layout")
     return ok(
-        "_Static_assert(_Generic(&" + place + ", " + found.must() + " *: 1, default: 0) && sizeof(" + place + ") == sizeof(" + found.must() + "), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+        ["_Static_assert(_Generic(&" + place + ", " + found.must() + " *: 1, default: 0) && sizeof(" + place + ") == sizeof(" + found.must() + "), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"]
     )
 
 # Whether a member's own C type is unsigned, as a constant expression
@@ -319,8 +330,9 @@ test "a cstr field accepts every spelling C gives a string, not just const char 
         .record_decl rec                                             => fields @ rec.fields
         .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
 
-    line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[0])
-    got = line.must()
+    lines = assertions(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[0])
+    assert lines.must().len() == 1
+    got = lines.must()[0]
 
     # all six, and the plain `char *` first — the one the old form refused
     assert strings_has(text: got, needle: "char *:1")
@@ -360,14 +372,46 @@ test "the four branches: pointer, char array, integer by width+sign, float by id
         .record_decl rec                                             => fields @ rec.fields
         .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
 
-    p_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[0])
-    assert p_line.must() == "_Static_assert(__builtin_classify_type(((Probe *)0)->p) == 5 && _Generic(((Probe *)0)->p, __typeof__(((Probe *)0)->p): 1, default: 0) && sizeof(((Probe *)0)->p) == sizeof(void *), \"heroes-ffi-field Probe p\");"
-    count_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[2])
-    assert count_line.must() == "_Static_assert(__builtin_classify_type(((Probe *)0)->count) == 1 && sizeof(((Probe *)0)->count) == sizeof(int64_t) && (_Generic(((Probe *)0)->count, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), \"heroes-ffi-field Probe count\");"
-    ratio_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[3])
-    assert ratio_line.must() == "_Static_assert(_Generic(&((Probe *)0)->ratio, float *: 1, default: 0) && sizeof(((Probe *)0)->ratio) == sizeof(float), \"heroes-ffi-field Probe ratio\");"
+    p_line = assertions(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[0])
+    assert p_line.must() == ["_Static_assert(__builtin_classify_type(((Probe *)0)->p) == 5 && _Generic(((Probe *)0)->p, __typeof__(((Probe *)0)->p): 1, default: 0) && sizeof(((Probe *)0)->p) == sizeof(void *), \"heroes-ffi-field Probe p\");"]
+    count_line = assertions(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[2])
+    assert count_line.must() == ["_Static_assert(__builtin_classify_type(((Probe *)0)->count) == 1 && sizeof(((Probe *)0)->count) == sizeof(int64_t) && (_Generic(((Probe *)0)->count, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), \"heroes-ffi-field Probe count\");"]
+    ratio_line = assertions(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[3])
+    assert ratio_line.must() == ["_Static_assert(_Generic(&((Probe *)0)->ratio, float *: 1, default: 0) && sizeof(((Probe *)0)->ratio) == sizeof(float), \"heroes-ffi-field Probe ratio\");"]
 
     # The integer-element array: flex tail first, then class+size+sign
-    # and the exact count asked of the field's own element type.
-    name_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[1])
-    assert !name_line.is_err()
+    # and the exact count asked of the field's own element type, as TWO
+    # lines, neither holding a newline (defect 185): the writer counts what
+    # it is handed, and a newline inside one is a line it never counted.
+    name_lines = assertions(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[1]).must()
+    assert name_lines.len() == 2
+    assert strings_has(text: name_lines[0], needle: "\"heroes-ffi-flex Probe name\"")
+    assert strings_has(text: name_lines[1], needle: "\"heroes-ffi-field Probe name\"")
+
+    for one in name_lines
+        assert !strings_has(text: one, needle: "\n")
+
+test "a float array and a record array are two lines each, as the integer one is"
+    # The other array branch (an element C need not ask the sign of), with
+    # both of its element kinds: defect 185's second site.
+    text = "extern \"m.h\"\n    record Cell\n        v: i32\n    record Probe\n        xs: f32[2]\n        cells: Cell[3]\n\nfunction touch(x: Probe)\n    _ = x\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    names = ctype.new_names(s, parsed.decls)
+    fields: [ast.Field] @ []
+
+    match parsed.decls[1].kind
+        .record_decl rec                                             => fields @ rec.fields
+        .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
+
+    for field in fields
+        got = assertions(c, names, s, c_type: "Probe", hero_name: "Probe", field: field).must()
+        assert got.len() == 2
+        assert strings_has(text: got[0], needle: "heroes-ffi-flex Probe")
+        assert strings_has(text: got[1], needle: "heroes-ffi-field Probe")
+
+        for one in got
+            assert !strings_has(text: one, needle: "\n")
