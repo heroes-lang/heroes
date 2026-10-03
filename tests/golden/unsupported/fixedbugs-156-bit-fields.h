@@ -15,3 +15,15 @@ typedef struct { int32_t kind; struct { uint8_t lo : 4; uint8_t hi : 4; }; } INA
 
 /* a bit-field as wide as its type, still a bit-field */
 typedef struct { int32_t kind; uint32_t whole : 32; } FULL;
+
+/* curl's `struct curl_hstsentry` (curl/curl.h), copied member for member so
+   its shape, a tagged struct holding a one-bit field among a pointer, a size
+   and an array, runs where curl is not installed (the author's answer A,
+   2026-10-03; fixedbugs-156-a-tagged-struct-shaped-as-curl-s-hsts-entry). */
+#include <stddef.h>
+struct hero_hstsentry {
+  char *name;
+  size_t namelen;
+  unsigned int includeSubDomains:1;
+  char expire[18];
+};
