@@ -1,0 +1,65 @@
+# Schema 1: the diagnostics `check --json` prints (design.md §4.17;
+# CLAUDE.md §10, `--json` says how to print, never what). Moved out of
+# `cli/check.hero` unchanged on 2026-10-03, defect 236, when the rounds of
+# `check --apply` needed the lines to say that a module could not be read
+# again and that file stood at §11's 300: the writer shares nothing with the
+# stages but the diagnostics it is handed.
+
+use diag
+use source
+use cli/json_text
+
+# Schema 1. Versioned because a schema is a promise: a consumer that
+# reads `schema` can refuse a version it does not know, which is the
+# whole reason the field is first.
+function json(diagnostics: [diag.Diagnostic], s: source.Source) -> str
+    rows: [str] @ ["{\n  \"schema\": 1,\n  \"diagnostics\": [\n"]
+    index: i64 @ 0
+
+    for d in diagnostics
+        found = source.locate(s, d.span.start)
+        rows @ rows.push("    {\n")
+        rows @ rows.push("      \"code\": \"" + d.code + "\",\n")
+        rows @ rows.push("      \"message\": " + quote(d.message) + ",\n")
+        rows @ rows.push("      \"file\": " + quote(found.file) + ",\n")
+        rows @ rows.push("      \"line\": " + found.line.to_str() + ",\n      \"col\": " + found.col.to_str() + ",\n")
+        notes: [str] @ []
+
+        for note in d.notes
+            notes @ notes.push(quote(note))
+
+        rows @ rows.push("      \"notes\": [" + notes.join(", ") + "],\n")
+        fixes: [str] @ []
+
+        for fix in d.fixes
+            tag: str @ "guess"
+
+            if fix.certainty == .certain
+                tag @ "certain"
+            fixes @ fixes.push(
+                "{\"title\": " + quote(fix.title) + ", \"replacement\": " + quote(fix.replacement) + ", \"certainty\": \"" + tag + "\"}"
+            )
+
+        rows @ rows.push("      \"fixes\": [" + fixes.join(", ") + "]\n")
+
+        if index == diagnostics.len() - 1
+            rows @ rows.push("    }\n")
+        else
+            rows @ rows.push("    },\n")
+        index @ index + 1
+
+    rows @ rows.push("  ]\n}\n")
+    return rows.join("")
+
+# A JSON string, quoted, through the one escape every JSON writer here shares
+# (defect 102: this one escaped three characters of the thirty-four JSON
+# forbids raw, and a stray control byte in a message made schema 1 unreadable).
+function quote(text: str) -> str
+    return "\"" + json_text.json_string(text) + "\""
+
+## Tests
+
+# Schema 1 goes through the one escape (defect 102): the tab and the carriage
+# return this writer used to pass raw.
+test "a JSON string here escapes what JSON forbids raw"
+    assert quote("a\tb\rc\n\"d\\e") == "\"a\\tb\\rc\\n\\\"d\\\\e\""

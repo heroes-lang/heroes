@@ -1,0 +1,13 @@
+tests/golden/check/fixedbugs-220-a-call-its-candidate-cannot-take.hero:23:5: error[unknown_name]: nothing named `pirnt` is in scope — did you mean `print`?
+tests/golden/check/fixedbugs-220-a-call-its-candidate-cannot-take.hero:24:11: error[unknown_name]: nothing named `lenn` is in scope — did you mean `len`?
+tests/golden/check/fixedbugs-220-a-call-its-candidate-cannot-take.hero:25:11: error[unknown_name]: nothing named `lenn` is in scope — did you mean `len`?
+tests/golden/check/fixedbugs-220-a-call-its-candidate-cannot-take.hero:26:11: error[unknown_name]: nothing named `lenn` is in scope — did you mean `len`?
+tests/golden/check/fixedbugs-220-a-call-its-candidate-cannot-take.hero:27:11: error[unknown_name]: nothing named `totl` is in scope — did you mean `total`?
+tests/golden/check/fixedbugs-220-a-call-its-candidate-cannot-take.hero:28:11: error[unknown_name]: nothing named `totl` is in scope — did you mean `total`?
+tests/golden/check/fixedbugs-220-a-call-its-candidate-cannot-take.hero:29:11: error[unknown_name]: nothing named `totl` is in scope — did you mean `total`?
+tests/golden/check/fixedbugs-220-a-call-its-candidate-cannot-take.hero:30:11: error[unknown_name]: nothing named `totl` is in scope — did you mean `total`?
+tests/golden/check/fixedbugs-220-a-call-its-candidate-cannot-take.hero:31:11: error[unknown_name]: nothing named `cuont` is in scope — did you mean `count`?
+tests/golden/check/fixedbugs-220-a-call-its-candidate-cannot-take.hero:33:9: error[unknown_name]: nothing named `Pointt` is in scope — did you mean `Point`?
+tests/golden/check/fixedbugs-220-a-call-its-candidate-cannot-take.hero:34:9: error[unknown_name]: nothing named `Pointt` is in scope — did you mean `Point`?
+tests/golden/check/fixedbugs-220-a-call-its-candidate-cannot-take.hero:36:14: error[unknown_function]: no function named `lenn` — `x.lenn(…)` means `lenn(x, …)`, so `lenn` has to be a top-level function or a built-in — did you mean `len`?
+tests/golden/check/fixedbugs-220-a-call-its-candidate-cannot-take.hero:37:13: error[unknown_function]: no function named `lenn` — `x.lenn(…)` means `lenn(x, …)`, so `lenn` has to be a top-level function or a built-in — did you mean `len`?

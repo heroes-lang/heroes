@@ -1,0 +1,12 @@
+# Fixed 2026-10-03, defect 220, lane b8-source (panel 188's completeness
+# critic). Symptom: `print(sqrt(2.0))`, with nothing binding `sqrt`, took the
+# certain rename to `sort`, the one name in scope its letters allow, and
+# `check --apply` wrote `print(sort(2.0))`, refused anew: `sort` takes `[T]`.
+# The name is C's, which a program binds in an `extern` group, so the rename
+# pointed away from the repair. Cause: the letters alone made a rename
+# certain, and the resolver that offers it knows no type. Now a rename is
+# certain only where the program it writes also says nothing the program as
+# written did not (`selfhost/rename_fit.hero`); this one is a guess, and
+# `check --apply` leaves the file as it is.
+function main()
+    print(sqrt(2.0))  #~ unknown_name

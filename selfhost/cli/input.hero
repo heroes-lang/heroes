@@ -10,12 +10,18 @@
 # A module named by a `use` and missing from disk is NOT an error
 # here: modules.errors reports it against this Source, caret on the
 # use line. Failing to read the ROOT is a different thing — the tool
-# could not run at all. The library's text arrives as a parameter,
-# same as modules.load_text takes it: where the compiled selfhost
-# binary keeps its copy is the driver's parked DECIDE question.
+# could not run at all — and so is failing to read a module whose file
+# is there (defect 236: a mode of 000, a directory, a link to nothing
+# were each told *that file is not there*); `modules.load_text` fails
+# for it as this file does for the root, in the same words. The
+# library's text arrives as a parameter, same as modules.load_text takes
+# it: where the compiled selfhost binary keeps its copy is the driver's
+# parked DECIDE question.
 
 use source
 use modules
+use cli/process
+use cli/files
 
 # The whole compilation as one Source: the file named, every module it
 # reaches through use, and the library last (§1.11). Doing it here is
@@ -26,7 +32,7 @@ function read_compilation(path: str, library: str) -> source.Source?
 
     if root.is_err()
         return fail(code: "unreadable", msg: "cannot read `" + path + "`")
-    return ok(modules.load_text(path: path, root_text: root.must(), library: library))
+    return modules.load_text(path: path, root_text: root.must(), library: library)
 
 # THE ROOT FILE ALONE, for `fmt` and only for `fmt`.
 #
@@ -67,3 +73,29 @@ test "the root read fails loud, a missing module stays the graph's"
     s = read_compilation(path: "build/selftest_input_root.hero", library: "")
     assert !s.is_err()
     assert s.must().files.len() == 2
+
+# DEFECT 236: a module whose file is there and cannot be read fails the read
+# as an unreadable root does, in the root's words, and never reads as absent;
+# one that cannot be there, below a file, is still the graph's to tell.
+test "a module that is there and cannot be read fails loud, as the root does"
+    dir = "build/selftest-input-modules"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/geom.hero").is_err()
+    assert !write_file(path: dir + "/bin", text: "a program, not a directory\n").is_err()
+    uses_geom = "use geom\n\nfunction main()\n    print(geom.two())\n"
+    assert !write_file(path: dir + "/main.hero", text: uses_geom).is_err()
+
+    match read_compilation(path: dir + "/main.hero", library: "")
+        .ok => assert false
+        .err e =>
+            assert e.code == "unreadable"
+            assert e.msg == "cannot read `" + dir + "/geom.hero`"
+
+    assert !write_file(path: dir + "/below.hero", text: "use bin/geom\n\nfunction main()\n    print(geom.two())\n").is_err()
+    below = read_compilation(path: dir + "/below.hero", library: "")
+    assert !below.is_err()
+    assert below.must().files.len() == 2
+    assert !write_file(path: dir + "/linked.hero", text: "use dangling\n\nfunction main()\n    print(dangling.two())\n").is_err()
+
+    if !files.symbolic_link(target: "nowhere.hero", name: dir + "/dangling.hero").is_err()
+        assert read_compilation(path: dir + "/linked.hero", library: "").is_err()

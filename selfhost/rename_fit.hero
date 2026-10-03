@@ -1,0 +1,351 @@
+# Whether a rename the name stage offers may be applied by a tool (design.md
+# §4.17; panel 187, ratified 2026-10-03: a `certain` fix repairs the mistake
+# its message names and writes nothing else; defect 220).
+#
+# The name stage offers each did-you-mean rename as a guess, because the
+# resolver knows no type. While the letters alone decided it, `print(sqrt(2.0))`
+# took the certain rename to `sort`, the one name in scope its letters allow,
+# and `check --apply` wrote `print(sort(2.0))`, refused anew: `sort` takes
+# `[T]`. The name was C's `sqrt`, which a program binds in an `extern` group,
+# so the rename pointed away from the repair. A rename is made certain here on
+# two witnesses, and on nothing less:
+#
+# - **the letters**: the name as written allows the candidate and nothing
+#   else (`near_names.one_reading`, defect 135's rule, asked of two names);
+# - **the program**: the text the rename writes, read through every stage to
+#   the checker, says nothing the text as written did not, the rename's own
+#   message aside. A candidate that cannot take the call as written (its
+#   arity, its labels, its types), stand for the value where it is read, or
+#   hold what is written into it, is refused anew there or further on, and a
+#   refusal anywhere is something new.
+#
+# The program as written is read with its unresolved names typed as nothing,
+# which the checker gives every name the resolver left without an answer
+# (`check/walk.hero`'s `.unresolved`), the reading `heroes mutate` has given
+# every mutant since its port (`mutate/score.hero`'s `fate`). So an error the
+# program already had stands against no rename, and two unknown names are
+# each tried with the other unknown. A program whose parse or module graph
+# said anything is not tried at all: the checker never reads a tree the
+# parser could not read.
+#
+# It lives here and not in the resolver because a rename's fit is a question
+# about types, and the resolver cannot ask the checker: every `check/` module
+# uses `resolve`, so the edge back would be a cycle. Every command that prints
+# the name stage's diagnostics asks it, `cli/check.hero` for `check` and the
+# rounds of `check --apply`, `cli/compile.hero` for `build`, `run` and
+# `test`; a caller that does not shows each rename as the guess the resolver
+# offers, never a certainty nobody proved.
+
+use token
+use diag
+use source
+use source_extent
+use parse
+use modules
+use resolve
+use resolved
+use checker
+use resolve/near_names
+use library_source
+
+# The codes whose one fix is the did-you-mean rename: a name, a function
+# after a dot, a type, and a name inside a module (`resolve/errors.suggest`,
+# `module/diagnostics.not_in_module`).
+constant RENAMES: [str]
+    ["unknown_name", "unknown_function", "unknown_type", "unknown_in_module"]
+
+# How many renames one reading of the name stage tries, each a reading of
+# the whole program. Past it a rename stays the guess it was offered as,
+# which is never wrong; once the renames before it are written, the stage
+# read again tries it, as `check --apply`'s next round does after a round
+# that wrote something.
+constant TRIED: i64
+    16
+
+# One rename to try: where it stands in the stage's diagnostics, and what it
+# writes.
+record Offer
+    diagnostic: i64
+    fix: i64
+    edit: diag.Fix
+
+# One thing a stage said, as two readings of one program compare it: its
+# code, its words, and the bytes it points at in the text as written.
+record Said
+    code: str
+    message: str
+    start: i64
+    end: i64
+
+# The name stage's answer for `s`, every rename in it `certain` where both
+# witnesses hold and a `guess` everywhere else.
+function judged(out: resolved.Resolved, s: source.Source, parsed: parse.ParseOutput) -> resolved.Resolved
+    result: resolved.Resolved @ out
+    offers: [Offer] @ []
+    at: i64 @ 0
+
+    for d in out.diagnostics
+        if is_rename(d.code)
+            k: i64 @ 0
+
+            for f in d.fixes
+                result.diagnostics[at].fixes[k].certainty @ .guess
+
+                if offers.len() < TRIED && within(f.span, s) && near_names.one_reading(name: source.span_text(s, f.span), candidate: f.replacement)
+                    offers @ offers.push(Offer(diagnostic: at, fix: k, edit: f))
+                k @ k + 1
+
+        at @ at + 1
+
+    if offers.len() == 0 || parsed.diagnostics.len() > 0 || modules.errors(s, parsed.uses).len() > 0
+        return result
+    written: [Said] @ []
+
+    for d in out.diagnostics
+        written @ written.push(said(d, edit: none_edit()))
+
+    for d in checker.check(parsed.tree, out, s, parsed.decls).diagnostics
+        written @ written.push(said(d, edit: none_edit()))
+
+    for offer in offers
+        if fits(offer, s, written)
+            result.diagnostics[offer.diagnostic].fixes[offer.fix].certainty @ .certain
+
+    return result
+
+function is_rename(code: str) -> bool
+    for one in RENAMES
+        if code == one
+            return true
+
+    return false
+
+# Whether a fix's bytes are bytes of the text, which a name read from them
+# needs: one that ends before it starts is refused by `--apply` as well
+# (`cli/certain.hero`), and reading it would abort.
+function within(span: token.Span, s: source.Source) -> bool
+    return span.start >= 0 && span.start <= span.end && span.end <= s.text.len()
+
+# Whether the text `offer` writes says nothing `written` did not, the offer's
+# own diagnostic aside (`written` holds the name stage's first, in its order).
+function fits(offer: Offer, s: source.Source, written: [Said]) -> bool
+    tried = renamed(s, offer.edit)
+    parsed = parse.parse_source(tried)
+
+    if parsed.diagnostics.len() > 0 || modules.errors(tried, parsed.uses).len() > 0
+        return false
+    out = resolve.resolve(parsed.tree, tried, parsed.decls, parsed.uses)
+    left: [Said] @ removed(written, at: offer.diagnostic)
+    now: [diag.Diagnostic] @ out.diagnostics
+
+    for d in checker.check(parsed.tree, out, tried, parsed.decls).diagnostics
+        now @ now.push(d)
+
+    for d in now
+        found = index_of(left, said(d, edit: offer.edit))
+
+        if found < 0
+            return false
+        left @ removed(left, at: found)
+
+    return true
+
+# `s` with `edit` written into the one file whose bytes it spans. A rename
+# never holds a line end, so every line keeps its number and only the bytes
+# after it on its own line, and in the files after it, move.
+function renamed(s: source.Source, edit: diag.Fix) -> source.Source
+    inputs: [source.InputFile] @ []
+    index: i64 @ 0
+
+    for f in s.files
+        text: str @ source_extent.text_of(s, index)
+        start = edit.span.start - f.start
+
+        if start >= 0 && edit.span.end - f.start <= text.len()
+            text @ text.slice(from: 0, to: start) + edit.replacement + text.slice(from: edit.span.end - f.start, to: text.len())
+        inputs @ inputs.push(source.InputFile(name: f.name, module: f.module, text: text, is_library: f.is_library))
+        index @ index + 1
+
+    return source.from_files(inputs)
+
+# What `d` said, its bytes read back into the text as written: before the
+# edit they stand, after it they move back by what the edit added, and inside
+# it they are the renamed name's own.
+function said(d: diag.Diagnostic, edit: diag.Fix) -> Said
+    return Said(
+        code: d.code,
+        message: d.message,
+        start: back(d.span.start, edit, closing: false),
+        end: back(d.span.end, edit, closing: true)
+    )
+
+function back(at: i64, edit: diag.Fix, closing: bool) -> i64
+    wrote = edit.span.start + edit.replacement.len()
+
+    if at <= edit.span.start
+        return at
+
+    if at >= wrote
+        return at - wrote + edit.span.end
+
+    if closing
+        return edit.span.end
+    return edit.span.start
+
+# An edit that moves nothing, for the text as written.
+function none_edit() -> diag.Fix
+    return diag.Fix(title: "", replacement: "", span: none_span(), certainty: .guess)
+
+function none_span() -> token.Span
+    return token.Span(start: -1, end: -1)
+
+function index_of(xs: [Said], x: Said) -> i64
+    at: i64 @ 0
+
+    for one in xs
+        if one == x
+            return at
+        at @ at + 1
+
+    return -1
+
+function removed(xs: [Said], at: i64) -> [Said]
+    kept: [Said] @ []
+    index: i64 @ 0
+
+    for one in xs
+        if index != at
+            kept @ kept.push(one)
+        index @ index + 1
+
+    return kept
+
+## Tests
+
+# What `text`'s name stage says once its renames are judged, read as `check`
+# reads a file: the library joined.
+function judged_text(text: str) -> resolved.Resolved
+    loaded = modules.load_text(path: "build/selftest-rename-fit.hero", root_text: text, library: library_source.text())
+    return judged_source(loaded.must())
+
+# The same for a program of two files, `main.hero` using `calc.hero`.
+function judged_files(main: str, calc: str) -> resolved.Resolved
+    inputs: [source.InputFile] = [
+        source.user_file(name: "main.hero", text: main)
+        source.InputFile(name: "calc.hero", module: "calc", text: calc, is_library: false)
+        source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: library_source.text(), is_library: true)
+    ]
+    return judged_source(source.from_files(inputs))
+
+function judged_source(s: source.Source) -> resolved.Resolved
+    parsed = parse.parse_source(s)
+    return judged(resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses), s, parsed)
+
+# Each rename's certainty, in source order, `certain` or `guess`.
+function certainties(out: resolved.Resolved) -> [str]
+    words: [str] @ []
+
+    for d in out.diagnostics
+        if is_rename(d.code)
+            for f in d.fixes
+                word = match f.certainty
+                    .certain => "certain"
+                    .guess   => "guess"
+
+                words @ words.push(word)
+
+    return words
+
+function certainties_of(text: str) -> [str]
+    return certainties(judged_text(text))
+
+test "a rename is certain where its letters allow it alone and its program says nothing new"
+    total = "function total(xs: [i64]) -> i64\n    return xs.len()\n\n"
+    assert certainties_of("function main()\n    pirnt(1)\n") == ["certain"]
+    assert certainties_of("function main()\n    xs = [1, 2, 3]\n    print(lenn(xs))\n") == ["certain"]
+    assert certainties_of(total + "function main()\n    xs = [1, 2, 3]\n    print(totl(xs))\n") == ["certain"]
+    assert certainties_of("function main()\n    total = 5\n    print(totl)\n") == ["certain"]
+    assert certainties_of("function main()\n    x: bool = True\n    print(x)\n") == ["certain"]
+    assert certainties_of("record Point\n    x: i64\n    y: i64\n\nfunction main()\n    p = Pointt(x: 1, y: 2)\n    print(p.x)\n") == ["certain"]
+    assert certainties_of("function main()\n    xs = [1, 2, 3]\n    print(xs.lenn())\n") == ["certain"]
+    assert certainties_of("record Point\n    x: i64\n    y: i64\n\nfunction main()\n    p: Pointt = Point(x: 1, y: 2)\n    print(p.x)\n") == ["certain"]
+    assert certainties_of("function main()\n    total: i64 @ 0\n    totl @ 5\n    print(total)\n") == ["certain"]
+    assert certainties_of("function double(n: i64) -> i64\n    return n * 2\n\nfunction main()\n    ys = [1, 2].map(dobule)\n    print(ys.len())\n") == ["certain"]
+
+# Defect 220: the letters allow one name, and the program the rename writes
+# is refused anew, at the call or further on.
+test "a rename whose program is refused anew is a guess"
+    total = "function total(xs: [i64]) -> i64\n    return xs.len()\n\n"
+    assert certainties_of("function main()\n    print(sqrt(2.0))\n") == ["guess"]
+    assert certainties_of("function main()\n    n = 5\n    print(lenn(n))\n") == ["guess"]
+    assert certainties_of("function main()\n    xs = [1, 2, 3]\n    print(lenn(xs, 1))\n") == ["guess"]
+    assert certainties_of(total + "function main()\n    print(totl(2.5))\n") == ["guess"]
+    assert certainties_of(total + "function main()\n    xs = [1, 2, 3]\n    print(totl(xs, 2))\n") == ["guess"]
+    assert certainties_of(total + "function main()\n    ys = [1, 2, 3]\n    print(totl(items: ys))\n") == ["guess"]
+    assert certainties_of("function main()\n    total = [1, 2]\n    print(totl)\n") == ["guess"]
+    assert certainties_of("function main()\n    total = 5\n    print(totl(1))\n    print(total)\n") == ["guess"]
+    assert certainties_of("function main()\n    x: i64 = True\n    print(x)\n") == ["guess"]
+    assert certainties_of("record Point\n    x: i64\n    y: i64\n\nfunction main()\n    p = Pointt(1, 2)\n    print(p.x)\n") == ["guess"]
+    assert certainties_of("function main()\n    n = 5\n    print(n.lenn())\n") == ["guess"]
+    assert certainties_of("record Amount\n    n: i64\n\nfunction main()\n    x: Amont = 5\n    print(x.n)\n") == ["guess"]
+    assert certainties_of("function main()\n    total: str @ \"\"\n    totl @ 5\n    print(total)\n") == ["guess"]
+    assert certainties_of("function main()\n    xs = [2.0, 1.0]\n    ys = sqrt(xs)\n    print(ys)\n") == ["guess"]
+    assert certainties_of("function double(n: str) -> str\n    return n + n\n\nfunction main()\n    ys = [1, 2].map(dobule)\n    print(ys.len())\n") == ["guess"]
+
+test "an error the program already had stands against no rename, and two are each tried alone"
+    total = "function total(xs: [i64]) -> i64\n    return xs.len()\n\n"
+    assert certainties_of(total + "function main()\n    xs = [1, 2, 3]\n    print(totl(xs))\n    s: str @ \"a\"\n    s @ 5\n    print(s)\n") == ["certain"]
+    assert certainties_of(total + "function main()\n    xs = [1, 2, 3]\n    count = 2\n    n = totl(xs)\n    print(n + coutn)\n") == ["certain", "certain"]
+
+    # One letter from another one-letter name is no slip the letters pin,
+    # however well the program it writes reads.
+    assert certainties_of("function main()\n    s = 1\n    print(p)\n") == ["guess"]
+
+test "a name inside a module, and a rename in a module that is not the root, are tried the same way"
+    calc = "function total(xs: [i64]) -> i64\n    return xs.len()\n"
+    assert certainties(judged_files(main: "use calc\n\nfunction main()\n    xs = [1, 2, 3]\n    print(calc.totl(xs))\n", calc: calc)) == ["certain"]
+    assert certainties(judged_files(main: "use calc\n\nfunction main()\n    print(calc.totl(2.5))\n", calc: calc)) == ["guess"]
+    twice = calc + "\nfunction twice(xs: [i64]) -> i64\n    return totl(xs) * 2\n"
+    assert certainties(judged_files(main: "use calc\n\nfunction main()\n    print(calc.twice([1, 2]))\n", calc: twice)) == ["certain"]
+    misfit = calc + "\nfunction twice(n: f64) -> i64\n    return totl(n) * 2\n"
+    assert certainties(judged_files(main: "use calc\n\nfunction main()\n    print(calc.twice(2.0))\n", calc: misfit)) == ["guess"]
+
+test "past TRIED renames, the rest stay the guesses they were offered as"
+    lines: [str] @ ["function main()\n    total = 1\n"]
+    n: i64 @ 0
+
+    while n <= TRIED
+        lines @ lines.push("    print(totl)\n")
+        n @ n + 1
+
+    words = certainties_of(lines.join(""))
+    assert words.len() == TRIED + 1
+    assert words[TRIED - 1] == "certain"
+    assert words[TRIED] == "guess"
+
+# The program as written is read by the checker with the name stage's other
+# mistakes in it, as `heroes mutate` reads a mutant: each kind beside a
+# rename that fits, which they leave certain.
+test "every other kind of name-stage mistake beside a rename is read through"
+    rename = "function main()\n    total = 1\n    print(totl)\n"
+    beside: [str] = [
+        "function f() -> i64\n    return 1\n\nfunction f() -> i64\n    return 2\n\n"
+        "variant V\n    a\n\nfunction g() -> i64\n    x = V\n    return 1\n\n"
+        "record P\n    x: i64\n\nfunction g(n: i64) -> i64\n    return n.P()\n\n"
+        "function g(p: Qx) -> i64\n    return 1\n\n"
+        "constant A: i64\n    B\n\nconstant B: i64\n    A\n\n"
+        "function g(n: i64) -> i64\n    n @ 2\n    return n\n\n"
+        "function g() -> i64\n    m = 1\n    if true\n        m = 2\n        print(m)\n    return m\n\n"
+        "function g(len: i64) -> i64\n    return len\n\n"
+        "function g() -> i64\n    x = 1\n    return 2\n\n"
+    ]
+
+    for one in beside
+        assert certainties_of(one + rename) == ["certain"]
+
+test "a fix whose bytes are not the text's is never read for a name"
+    s = source.new_source(name: "t.hero", text: "abc")
+    assert within(token.Span(start: 0, end: 3), s)
+    assert !within(token.Span(start: 2, end: 1), s)
+    assert !within(token.Span(start: -1, end: 1), s)
+    assert !within(token.Span(start: 0, end: 4), s)

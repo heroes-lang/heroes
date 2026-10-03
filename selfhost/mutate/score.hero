@@ -121,7 +121,14 @@ function rate(killed: i64, mutants: i64, excluded: i64) -> i64
 # whole corpus was refused for a day because of it (measurement 014,
 # M-corpus-depth step 1).
 function fate(name: str, text: str, library: str, permissive: bool) -> Fate
-    s = modules.load_text(path: name, root_text: text, library: library)
+    loaded = modules.load_text(path: name, root_text: text, library: library)
+
+    # A module of the program that is there and cannot be read (defect 236):
+    # the compiler judged nothing, so nothing is counted, and a base that
+    # cannot be read is refused as one that does not check clean is.
+    if loaded.is_err()
+        return .excluded
+    s = loaded.must()
     parsed = parse.parse_source(s)
 
     if parsed.diagnostics.len() > 0
