@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 46**
+**OPEN: 47**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -780,6 +780,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** lane round1002c's gate, 2026-10-02, a question left unrun (*neither the pointee key nor the layout key names `source_dir`*); measured by the coordinator's agent on `6bec7c8c` (2026-10-02, `scratchpad/file-queue/source-dir-key/`), every experiment from one working directory, each with a fresh-cache control. The width shape (`int32_t v` against `int64_t v`) replays too, and the program's own compile still refuses it (`ffi_field_type`): a member left out has the layout check as its only judge. Unmeasured beside it: the standard library's own pointee asks key alike in both directories, and a header found through `CPATH` or another environment variable is named by no key.
 
+    **2026-10-02, lane cb4, a probe's kept verdict keyed by every word its
+    lines compile under and by what its headers resolve to, a header that
+    appears earlier in the search and the library's own asks included** (the
+    two shapes beside it with its cause, S4 and S6 of the lane's first pass,
+    2026-10-02, `scratchpad/lane-cb4/first-pass.md`): repaired at `cf949d33`,
+    gated by its own cases; the rest is owed at the round's gate, and the
+    platform legs before the push.
+
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a wrong value at exit 0, and an exit 2 on a correct program.
 
 - [ ] **169 — `check` aborts on a correct program of 300 additions** | `total = 1 + 2 + ... + 300` over `print(total)`: `check` exit 134, *panic: stack exhausted in checkwalk.synth* | `selfhost/check/walk.hero:101` (`synth`) · panel 184's R5 (*the compiler runs its passes on a thread whose stack it chooses*) and R6 (*a floor, not a ceiling*), ratified 2026-10-01, not landed (`docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md:197`, `:204-206`) · **class: blocking**
@@ -948,6 +956,20 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** the coordinator, 2026-10-02, on the damage panel 187's completeness critic found (`docs/records/log/2026-10-02-2141-item-130-cut-in-8349d264-and-restored-what-cut-it-is-unknown-the-commit-did-not-read-its-diff.md`). It would have caught the cut in the item's line, not the one in its body.
 
     **Class: improvement**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): hardening of an instrument; nothing a program does moves.
+
+- [ ] **191 — a record named after a typedef of a struct the header keeps opaque, with fields, stops `build` at exit 2 under clang 18, whose refusal of a member read through it does not name the typedef** | `tests/golden/unsupported/fixedbugs-145-a-typedef-of-an-opaque-struct-bound-with-fields`, `ffi_unknown_tag` expected: on the public CI's Linux x86-64 leg (Ubuntu clang 18.1.3), `internal error: compiling the generated C failed`, clang's *incomplete definition of type 'struct opaque_s'* three times at the field assertions, exit 2; Apple clang 21 on this Mac words it *'opaque_t' (aka 'struct opaque_s')* and the case passes | `selfhost/emit/ffi_incomplete.hero` (`incomplete_typedef`, which finds the record by the typedef's name in clang's words) · `f2a08f13` (panel 186's layout route, which removed the unit's positional completeness probe) · **class: blocking**
+
+    **Origin:** the public CI on `07ccb72a`, run 37065944766, read by the coordinator (2026-10-02, `scratchpad/ci-x86-07ccb72a.log`, lines 1726 to 1763); reproduced by the coordinator under clang 18 in the arm64 container (Debian clang 18.1.8): `unsupported fixedbugs-145` 8 passed and 1 failed on `07ccb72a` and on `b48d02b8`, 9 and 0 on `8b98bcc7` (the last green CI) and on `415c0a14`, so the round merged at `b48d02b8` brought it; this Mac's clang, Debian clang 22.1.8 and Windows' clang 23.1.1 pass it. Reproduced by lane cb4 on `c2b3f3a1` under Debian clang 18.1.8, the same 8 and 1, and measured on both clangs beside it (2026-10-03, `scratchpad/lane-cb4/d191/words/`): the member read is the one refusal worded apart, a variable of the type, `sizeof` of it and a typedef of `void` are worded alike on both, and every position is the same. The positional probe `f2a08f13` removed was a variable of the record's type, which is why the case passed under clang 18 before it.
+
+    **2026-10-03, lane cb4, the layout check asks a record named after a
+    typedef, by where clang errs and never by what it says, whether its name
+    is a type and whether that type has a layout, and refuses it before any
+    unit compiles, the type behind its name read from clang's JSON**:
+    repaired at `7c05e64d`, gated by its own cases under Debian clang 18.1.8
+    and this Mac's clang; the rest is owed at the round's gate, and the
+    platform legs before the push.
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told, and a red CI.
 
 - [ ] **192 — the compiler built from its seed on Windows, by the seed's own documented command, gets three clang warnings: `getenv` deprecated by the C library's headers** | `clang -I runtime seed/heroes.c runtime/runtime.c -Wl,/STACK:67108864 -o heroes` (`seed/README.md`'s Windows line) on the Windows box: *'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead*, at `seed/heroes.c:50` and, through `#line`, `selfhost/cli/process.hero:64` and `:209`, then *3 warnings generated*; `heroes build` passes `-D_CRT_SECURE_NO_WARNINGS` to every unit it compiles (`selfhost/cli/flags.hero:96`) and `runtime/runtime.c:75` defines it for its own unit, so only a unit compiled outside `heroes build` gets the warnings | `runtime/heroes_runtime.h`, the first include of every emitted unit (`seed/heroes.c:2`) · `seed/README.md` · **class: blocking**
 

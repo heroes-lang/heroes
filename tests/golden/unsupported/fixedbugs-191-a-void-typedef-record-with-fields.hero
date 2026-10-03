@@ -1,0 +1,15 @@
+# fixedbugs, defect 191, lane cb4, 2026-10-02.
+#
+# Beside `fixedbugs-191-an-opaque-typedef-record-a-function-is-handed`: a
+# record named after a typedef of `void`, as `curl.h` writes `typedef void
+# CURL;`, with fields. Clang 18 and 21 word this refusal alike, so it was
+# refused on both before defect 191; it is refused now by the layout check's
+# two questions, which do not read clang's words at all, with the same
+# message.
+
+extern "fixedbugs-191-types.h"
+    record void191_t  #~ ffi_unknown_tag
+        a: i32
+
+function main()
+    print(1)

@@ -32,9 +32,11 @@ use cli/link
 use cli/pointee
 use cli/pointee_ask
 use cli/layout
+use cli/compiling
 use emit
 use emit/unit
 use emit/members
+use emit/externs as emit_externs
 
 # What one build has settled before any round runs. Where the binary lands
 # is not among it: under `build/` that is named by the link line, which a
@@ -65,22 +67,20 @@ record Round
     binary: str
 
 function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, @answered: [pointee_ask.Answered], struct_tags: {str: bool}) -> Round
+    # What both checks ask with, asked of clang once: the probe's words and
+    # what the program's headers resolve to under them (`cli/compiling`).
+    probe = compiling.probe(
+        t.build,
+        under: compiled_under(t, options, site),
+        headers: emit_externs.headers(art.program, s, art.decls)
+    )
+
     # What the extern out-parameters point at, asked of the header before
     # any unit compiles (panel 103): the width and sign of a numeric `@`
     # against the header's own type. A failure here is the AUTHOR's, and it
     # rides the same mapping a clang failure does — `emit/ffi.hero` reads the
     # assertion's marker back into the parameter's diagnostic.
-    checked = pointee.check(
-        t,
-        art.program,
-        art.checked,
-        s,
-        art.decls,
-        answered: @answered,
-        search_include: options.headers_from,
-        package_flags: site.package_flags,
-        source_dir: site.source_dir
-    )
+    checked = pointee.check(t, art.program, art.checked, s, art.decls, answered: @answered, probe: probe)
 
     if checked.is_err()
         return Round(verdict: checked, refusals: messages_of(checked), binary: "")
@@ -88,16 +88,7 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     # The header's layout of every group record (panel 186): a field left
     # out, and a field that lies in a union where the program builds or
     # compares the record. Its failure rides the same mapping.
-    laid = layout.check(
-        t,
-        art.program,
-        art.checked,
-        s,
-        art.decls,
-        search_include: options.headers_from,
-        package_flags: site.package_flags,
-        source_dir: site.source_dir
-    )
+    laid = layout.check(t, art.program, art.checked, s, art.decls, probe: probe)
 
     if laid.is_err()
         return Round(verdict: laid, refusals: messages_of(laid), binary: "")
@@ -105,6 +96,19 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     if site.is_tests
         return fused(t, options, art, s, site, struct_tags)
     return per_module(t, options, art, s, site, struct_tags)
+
+# What every probe of this build compiles the program's headers under
+# (`cli/compiling`): the `--include` directories, the package's answer, the
+# runtime and the source's own directory, the ones its units are compiled
+# with. One place builds it, so the round's two checks, the artifact's and a
+# refused round's questions ask under the same words.
+function compiled_under(t: toolchain.Toolchain, options: compile.Options, site: Site) -> compiling.Compiling
+    return compiling.Compiling(
+        search_include: options.headers_from,
+        package_flags: site.package_flags,
+        runtime: t.runtime,
+        source_dir: site.source_dir
+    )
 
 # A test binary keeps the fused unit: `heroes test` compiles once and runs per
 # block, and the fused path is the artifact path the blessed emissions pin. The

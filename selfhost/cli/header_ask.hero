@@ -16,29 +16,27 @@ use cli/compile
 use cli/toolchain
 use cli/process
 use cli/publish
-use cli/pointee
-use cli/assemble
+use cli/compiling
+use cli/strings
 use emit/ffi_asked
 use emit/ffi_lookup
 use cli/input
 use library_source
 
-# Ask, once. `-ferror-limit=0` because every question that answers is an
-# error line, and clang stops at twenty by default; `-fno-caret-diagnostics`
-# because a line of the unit echoed under its answer is nothing a reader
-# should be handed.
-function ask(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, site: assemble.Site, search_include: [str]) -> ffi_asked.Asked
+# Ask, once, under the words every probe compiles under
+# (`compiling.probe_words`). `-ferror-limit=0` because every question that
+# answers is an error line, and clang stops at twenty by default;
+# `-fno-caret-diagnostics` because a line of the unit echoed under its answer
+# is nothing a reader should be handed.
+function ask(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, under: compiling.Compiling) -> ffi_asked.Asked
     unit = publish.private_name(t.build + "/header-ask") + ".c"
     err = publish.private_name(t.build + "/header-ask-stderr.txt")
 
     if write_file(path: unit, text: ffi_asked.unit(art.program, s, art.decls)).is_err()
         return ffi_asked.nothing()
-    line = pointee.with_search(
-        line: ["clang", "-std=gnu11", "-fsyntax-only", "-ferror-limit=0", "-fno-caret-diagnostics"],
-        search_include: search_include,
-        package_flags: site.package_flags,
-        runtime: t.runtime,
-        source_dir: site.source_dir
+    line = strings.with_all(
+        list: ["clang", "-fsyntax-only", "-ferror-limit=0", "-fno-caret-diagnostics"],
+        more: compiling.probe_words(under)
     )
     ran = process.run(program: "clang", words: line.push(unit), out: process.discard(), err: err)
     said = read_file(err)
@@ -72,17 +70,12 @@ test "a refused round's question is asked of the real header (defect 152)"
     )
     art = compile.to_unit(s, options, version: "0.0.0-port").must()
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-header-ask").must()
-    site = assemble.Site(
-        object: "",
-        output: fail(code: "none", msg: "no output"),
-        is_tests: false,
-        link: false,
-        source_dir: "build",
-        link_names: none,
-        package_flags: none,
-        version: "0.0.0-port"
+    got = ask(
+        t,
+        art,
+        s,
+        under: compiling.Compiling(search_include: none, package_flags: none, runtime: t.runtime, source_dir: "build")
     )
-    got = ask(t, art, s, site, search_include: none)
     assert ffi_lookup.has(text: got.said, needle: "build/selftest_header_ask.hero:2:")
     assert ffi_lookup.has(text: got.said, needle: "called object type")
     assert !got.values["BUFSIZ"].is_err()

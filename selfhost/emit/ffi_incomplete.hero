@@ -43,6 +43,7 @@ use diag
 use emit/externs as emit_externs
 use emit/ffi_lookup
 use emit/ffi_tag
+use emit/layout_screen
 use parse
 use resolve
 use checker
@@ -183,15 +184,42 @@ function incomplete_typedef(s: source.Source, decls: [ast.Decl], line: str) -> d
 
     if found.is_err()
         return fail(code: "none", msg: "no record of this program is that typedef")
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "ffi_unknown_tag",
-        message: "`" + word + "` is `" + ffi_lookup.up_to_quote(behind.must()) + "` in `" + found.must().header + "`, and the header gives it no fields — clang read the header and cannot lay the type out",
-        span: found.must().span
-    )
+    return ok(opaque_typedef(found.must(), word: word, behind: ffi_lookup.up_to_quote(behind.must())))
+
+# **The layout check's own refusal of a record named after a typedef whose
+# type has no layout** (defect 191, `emit/layout_screen.hero`): its marker
+# names the record and the type behind it, both learned without reading
+# clang's words, so this is told alike on every clang. `incomplete_typedef`
+# above reads the same shape from a unit's refusal, where clang 21 names the
+# typedef and clang 18 only the struct behind it.
+function no_layout(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+    rest = ffi_lookup.after(text: line, marker: layout_screen.NO_LAYOUT + " ")
+
+    if rest.is_err()
+        return fail(code: "none", msg: "not the layout check's refusal of a typedef")
+    words = ffi_lookup.words(text: rest.must())
+
+    if words.len() == 0
+        return fail(code: "none", msg: "the marker names no record")
+    found = untagged_record(s, decls, name: words[0])
+
+    if found.is_err()
+        return fail(code: "none", msg: "no record of this program is that typedef")
+    return ok(opaque_typedef(found.must(), word: words[0], behind: words.slice(from: 1, to: words.len()).join(" ")))
+
+# What either reader says of a record named after a typedef whose type has
+# no layout; `behind` is the type its name stands for, or empty where clang's
+# JSON named none.
+function opaque_typedef(found: ffi_tag.TaggedRecord, word: str, behind: str) -> diag.Diagnostic
+    message: str @ "`" + word + "` has no fields in `" + found.header + "` — clang read the header and cannot lay the type out"
+
+    if behind.len() > 0
+        message @ "`" + word + "` is `" + behind + "` in `" + found.header + "`, and the header gives it no fields — clang read the header and cannot lay the type out"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_unknown_tag", message: message, span: found.span)
     d.notes @ d.notes.push(
         "the header keeps the type opaque: a program never holds one by value, only C's pointer to it, which is a HANDLE. Drop the field block and give the record the typedef as its tag, `record " + word + " tag " + word + "` (§ 13)"
     )
-    return ok(d)
+    return d
 
 ## What clang's other lines say
 
@@ -399,6 +427,25 @@ test "a record named after a typedef of an opaque type is told it is one"
     assert incomplete_typedef(p.s, p.decls, line: "x.c:1:1: error: variable has incomplete type 'ghost_t' (aka 'struct g')").is_err(
     )
     assert incomplete_typedef(p.s, p.decls, line: "x.c:1:1: error: incomplete definition of type 'struct opaque_s'").is_err(
+    )
+
+# **The layout check's refusal says what the unit's reader says** (defect
+# 191): one message for one shape, whichever finds it, and the type behind
+# the name left unsaid where clang's JSON named none.
+test "the layout check's refusal of a typedef with no layout is told as the unit's reader tells it (defect 191)"
+    p = program(
+        "extern \"own.h\"\n    record opaque_t\n        a: i32\n\nfunction touch(v: opaque_t)\n    _ = v\n\nfunction main()\n    print(1)\n"
+    )
+    read = incomplete_typedef(p.s, p.decls, line: "t.hero:2:111: error: variable has incomplete type 'opaque_t' (aka 'struct opaque_s')").must(
+    )
+    marked = no_layout(p.s, p.decls, line: layout_screen.NO_LAYOUT + " opaque_t struct opaque_s").must()
+    assert marked.message == read.message
+    assert marked.notes == read.notes
+    assert source.span_text(p.s, marked.span) == "opaque_t"
+    unsaid = no_layout(p.s, p.decls, line: layout_screen.NO_LAYOUT + " opaque_t ").must()
+    assert unsaid.message == "`opaque_t` has no fields in `own.h` — clang read the header and cannot lay the type out"
+    assert no_layout(p.s, p.decls, line: layout_screen.NO_LAYOUT + " ghost_t void").is_err()
+    assert no_layout(p.s, p.decls, line: "t.hero:2:111: error: variable has incomplete type 'opaque_t' (aka 'struct opaque_s')").is_err(
     )
 
 test "a location names a file this compiler wrote, or a header"
