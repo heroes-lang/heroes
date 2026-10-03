@@ -442,6 +442,20 @@ Verification), and the author's goal *0 defects* reads as that (the author's
 `records/tagged` (only `blocking` and `systemic` count, and an aged
 `adjacent` counts as `blocking`).
 
+**A recovery item closes** (panel 187's R1, ratified 2026-10-03, the author's
+answer *(a)*) when each of its rows is repaired, filed `adjacent` apart one
+item per cause, or pinned as a known cost in a `tests/golden/check/` case whose
+header gives its reason and the ruling it rests on; never a row that breaks
+design.md §4.17's promise (a false message, a `certain` fix that writes
+another meaning, an exit 2), which is `blocking`. A pinned row is not an open
+item and does not age, and its golden moving, either way, is read at the gate.
+The counts §4.17 names are read at each round whose lanes touch the
+recovery's files, the round's compiler against the trunk's over one frozen
+corpus of planted mistakes, every moved mutant named in the round's closing
+commit and a worse one filed by its class (panel 187's R2); never a ratchet
+on totals, and a corpus program's own messages are subtracted before a
+mutant is read as worse (the fourth round's reading, 2026-10-03).
+
 **Per batch**, which closes at the first of: five repairs queued, the cluster's
 last open defect repaired, before any push, or when the author asks. A batch
 never spans a tag. The gate is what a push already owed, on the tree that will

@@ -265,4 +265,22 @@ the `g2/r09` reading).
 
 ## Author's verdict
 
-Pending: `docs/work/DECIDE.md`, `panel 187`.
+**RATIFIED 2026-10-03**, on the author's answer to seven recommendations put
+to them with their reasons, meant as: *I accept all your suggestions*, the
+first being this sitting. **Recorded as a reading**, CLAUDE.md § 4's default;
+not `by delegation`.
+
+**What the yes settles**: R1 to R10 as the resolution above states them; lane
+rec187's one deviation in R6 (the open bracket's line said as a distance, *on
+the line above, at column 9*, because an absolute line was wrong in a second
+module, reproduced by the lane); and the process half: (a) R1's closing rule
+in `.claude/rules/verification.md` § Bounded discovery, written with R2's
+differential reading in place of the drafted ratchet; (b) CLAUDE.md § 8 and
+`.claude/rules/diagnostics-and-goldens.md` reading *to fix the mistake it
+names*; (c) R9's line budget, landed by lane rec187 at `f118c989`. design.md
+§4.17 gains the spec-warden's D1 paragraph with the same replacement.
+**What it does not settle**: the class (b) reading at the project's sizes,
+deferred by the same answer (*later*) and filed as defect 212, the author's
+to fund; R10's other filings stand as items, 193 (the control arm's five
+hides), 210 (the instrument's port into `heroes mutate`) and 211 (a golden
+form for the control arm).
