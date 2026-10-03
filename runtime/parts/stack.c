@@ -510,9 +510,21 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      * The caller is deliberately not named. With `pc == 0` the frame walk's
      * first entry is bogus, and the honest caller is usually C's own — libc's
      * exit machinery for `atexit`, a library's dispatch loop elsewhere — so a
-     * name here would point at the wrong file more often than the right one. */
+     * name here would point at the wrong file more often than the right one.
+     *
+     * THE MESSAGE NAMES ITS CAUSES BY EXAMPLE, NOT ONE OF THEM (defect 171,
+     * 2026-10-03). It named the callback alone until then, and a program that
+     * handed C no callback got it: `own.h`'s `static int32_t (*hook)(int32_t)
+     * = 0;` bound as `function hook(x: i32) -> i32` and called, the program's
+     * own call going through the header's pointer. A build cannot refuse that
+     * binding, and that is measured: a loader's API IS such pointers, volk's
+     * `vkCreateInstance` under the API's own name and GLAD's `glad_glClear`
+     * behind `#define glClear`, set at run time and called as functions, a
+     * correct program that builds and runs today; and a macro over `(*p)` is
+     * a function to every question C can ask at compile time. So the address
+     * is still the witness, and the sentence says what can reach it. */
     if (pc == 0) {
-        hero_stack_say("panic: a null function pointer was called — a `ptr` holding `nullptr` reached C where C calls it back\n");
+        hero_stack_say("panic: a null function pointer was called — a call went through a function pointer that held none, such as a `ptr` holding `nullptr` handed to C as a callback, or an `extern` function its header declares as a pointer, called while the pointer held none\n");
         hero_abort();
     }
 
@@ -735,7 +747,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
      * `nullptr`, which no C library checks. */
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && (uintptr_t)ep->ExceptionRecord->ExceptionAddress == 0) {
-        hero_stack_veh_say("panic: a null function pointer was called \xe2\x80\x94 a `ptr` holding `nullptr` reached C where C calls it back\n");
+        hero_stack_veh_say("panic: a null function pointer was called \xe2\x80\x94 a call went through a function pointer that held none, such as a `ptr` holding `nullptr` handed to C as a callback, or an `extern` function its header declares as a pointer, called while the pointer held none\n");
         hero_abort();
     }
 
