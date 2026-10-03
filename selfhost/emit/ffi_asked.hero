@@ -69,7 +69,7 @@ use ast
 use source
 use ir/containers
 use emit/externs as emit_externs
-use emit/writer
+use emit/c_text
 use emit/ffi_lookup
 use parse
 use resolve
@@ -111,10 +111,7 @@ function nothing() -> Asked
 # about: no line of the library is a line the author can be told about
 # (`emit/ffi_site.hero`'s `location` refuses one).
 function unit(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> str
-    out: [str] @ []
-
-    for header in emit_externs.headers(p, s, decls)
-        out @ out.push("#include <" + header + ">")
+    out: [str] @ c_text.includes(emit_externs.headers(p, s, decls))
 
     index: i64 @ 0
 
@@ -179,10 +176,10 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> str
 
     return out.join("\n") + "\n"
 
-# A `#line` spelled as the emitter spells it (`emit/writer.hero`), so a line
+# A `#line` spelled as the emitter spells it (`emit/c_text.hero`), so a line
 # said again names the file exactly as the probe's does.
 function directive(file: str, line: i64) -> str
-    return "#line " + line.to_str() + " \"" + writer.escaped_path(file) + "\""
+    return c_text.line_directive(at: line, file: file)
 
 # clang's answer, read: a question's line is an answer, the rest was said again.
 # ORDER: none, the walk over `reached` fills a map, and nothing reads its order.
