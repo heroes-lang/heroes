@@ -1,0 +1,10 @@
+error[ffi_package]: the package `fixedbugs-226-a-package-no-machine-has` is not installed on this machine
+  at tests/golden/unsupported/fixedbugs-226-a-package-not-installed-is-told-at-its-string.hero:9:26
+    |
+  9 | extern "stdio.h" package "fixedbugs-226-a-package-no-machine-has"  #~ ffi_package
+    |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: pkg-config said: Package fixedbugs-226-a-package-no-machine-has was not found in the pkg-config search path.
+  note: Perhaps you should add the directory containing `fixedbugs-226-a-package-no-machine-has.pc'
+  note: to the PKG_CONFIG_PATH environment variable
+  note: Package 'fixedbugs-226-a-package-no-machine-has' not found
+  note: install its development files, or name the library directly with `link`

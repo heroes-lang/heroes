@@ -335,6 +335,7 @@ test "the linker's two spellings, the library, the header, the package"
     line = "heroes-ffi-package `raylib` is not installed on this machine"
     pk = package_problem(s, parsed.decls, stderr: stderr, line: line)
     assert pk.must().code == "ffi_package"
+    assert source.span_text(s, pk.must().span) == "\"raylib\""
     assert pk.must().message == "the package `raylib` is not installed on this machine"
     assert pk.must().notes.len() == 2
     assert pk.must().notes[0] == "install raylib with your package manager"

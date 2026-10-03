@@ -143,9 +143,11 @@ function group_head(s: source.Source, decls: [ast.Decl], header: str) -> token.S
 
     return fail(code: "none", msg: "no group names this header")
 
-# The span of the first declaration whose group asked about this
-# package — the reason a stray line mentioning a package name cannot
-# become a diagnostic about a program that never asked for it.
+# The span of the `package` string of the first group that asked about
+# this package — the reason a stray line mentioning a package name cannot
+# become a diagnostic about a program that never asked for it. The string
+# is what the diagnostic is about; it pointed at the group's first member
+# until defect 226 (panel 188's spec-warden).
 function package_span(s: source.Source, decls: [ast.Decl], name: str) -> token.Span?
     for decl in decls
         library: ast.Library? @ fail(code: "none", msg: "no library")
@@ -162,7 +164,7 @@ function package_span(s: source.Source, decls: [ast.Decl], name: str) -> token.S
         match library.must()
             .package pk =>
                 if emit_externs.unquoted(s, span: pk.name) == name
-                    return ok(decl.span)
+                    return ok(pk.name)
             .link => continue
 
     return fail(code: "none", msg: "no group asked for this package")
@@ -354,7 +356,7 @@ test "declaration finds all three kinds and refuses the rest"
     # The group lookups: the head line and the package question.
     assert !group_head(s, parsed.decls, header: "m.h").is_err()
     assert group_head(s, parsed.decls, header: "other.h").is_err()
-    assert !package_span(s, parsed.decls, name: "raylib").is_err()
+    assert source.span_text(s, package_span(s, parsed.decls, name: "raylib").must()) == "\"raylib\""
     assert package_span(s, parsed.decls, name: "sdl3").is_err()
 
 test "add_once keeps one diagnostic per span, and the splitter reads clang's shapes"
