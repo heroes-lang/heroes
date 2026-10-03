@@ -1,0 +1,23 @@
+# Defect 225's climb, pinned as a known cost (proposed by batch 8's FFI lane,
+# 2026-10-03; ruled by the author's *1a* of 2026-10-04,
+# `docs/records/log/2026-10-04-0150-the-author-answers-1a-2a-3a-4a-5a.md`). A
+# header's name that climbs with a leading run of `..` reaches the machine's
+# root when the program sits no deeper than the climb, and then names a file
+# where this machine keeps it, the shape panel 055 refuses when written
+# absolute. A climb to a sibling directory is the same string, and which one a
+# climb is depends on where the program sits, a fact of the machine and not of
+# the value. Panel 188's R6 refuses the `.pc` half and defect 234 a climb out
+# of a named directory; a leading climb passes, and this case pins that it
+# does: if a rule ever refuses one, this golden moves and the gate reads it.
+
+extern "/opt/x/ab.h"  #~ machine_locked_path
+    function a1() -> i32
+
+extern "../../../../../../../../../../opt/x/ab.h"
+    function a2() -> i32
+
+extern "../include/ab.h"
+    function a3() -> i32
+
+function main()
+    print(a1() + a2() + a3())

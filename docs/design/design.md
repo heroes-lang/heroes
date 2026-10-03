@@ -2586,6 +2586,16 @@ the first is the one that proves the project's premise:
    search path is the machine's own `CPATH`, `LIBRARY_PATH` or `PKG_CONFIG_PATH` — all three
    measured live, because `Command` inherits the environment.
 
+   **`LIBRARY_PATH` measured false on Windows, 2026-10-03; corrected here 2026-10-04** (the
+   author's *2a*, `docs/records/log/2026-10-04-0150-the-author-answers-1a-2a-3a-4a-5a.md`).
+   On the Windows box, clang 23.1.1 driving `lld-link`, a library only in a side directory,
+   built with `LIBRARY_PATH` naming that directory, stops at *could not open 'lp188.lib'*,
+   exit 2, and `LIB` did no better; the compiler's own `--library <dir>` builds and prints 7,
+   and `CPATH` works there (panel 188's compiler-engineer, its report's section 22.4; defect
+   233). So the route `machine_locked_path` names for a library is `--library <dir>` since
+   batch 8 (`c6bd5a6a`), the one `ffi_missing_library`'s note already gave. The rule, an
+   absolute path refused, is unchanged; `PKG_CONFIG_PATH` on Windows is unrun.
+
 
 ### 4.20 The runtime, in C
 
