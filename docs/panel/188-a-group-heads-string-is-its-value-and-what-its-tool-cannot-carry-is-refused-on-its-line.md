@@ -570,3 +570,9 @@ compiler-engineer's § 22 and the ffi-pragmatist's *Windows, measured*.
 - **Corrected beneath § 22**: `f1-trigraph` and `f7-lt` build 1 on Windows
   because NTFS cannot store `?` or `<` in a name (§ 22.1's own table), so their
   *missing header* is true there, not clang reading them differently.
+
+**The author's reading of the above, 2026-10-03** (their answer *"1a 2a 3a
+4a"*, between 23:19 and 23:21): R2 and R6 extended by their own reasons to the
+Windows names of defects 234 and 235, in batch 8's FFI lane; and the extension
+of R7 (b) to a `link` string kept. Recorded as a reading
+(`docs/records/done/2026-10-03-2321-panel-188-windows-names-extended-and-the-link-refusal-kept.md`).
