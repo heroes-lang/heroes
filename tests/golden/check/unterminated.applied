@@ -3,7 +3,7 @@ function main()  #~v unterminated_string
     c = 'ab'  #~ char_literal
     d = 1 & 2
     e = 1 << 2
-    f = 2;  #~ unexpected_character
+    f = 2  #~ unexpected_character
 
 # Moved 2026-10-03 with defect 178's repair (lane b8-recovery): the `;` that
 # ends `f = 2;` is told in its run's words, its deletion certain.

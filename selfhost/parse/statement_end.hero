@@ -61,6 +61,7 @@ use parse/refused_heads
 use parse/refused_literal
 use parse/opening
 use token
+use separator_runs
 
 # What hangs below the line a statement ended on, for the grammar to read.
 variant Below
@@ -96,7 +97,10 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
         _ = cursor.bump(@c)
         return .rest
 
-    if said
+    # A `,` ending the line is a habit told once a run (`separator_runs`).
+    if said && cursor.at(c, .comma) && token.ends_a_line(cursor.peek(c, 1))
+        separator_runs.comma(@c.diagnostics, text, at: cursor.current_span(c))
+    else if said
         cursor.error(
             @c,
             code: "expected_end_of_line",

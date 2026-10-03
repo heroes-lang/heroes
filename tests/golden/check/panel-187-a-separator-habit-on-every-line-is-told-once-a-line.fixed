@@ -13,20 +13,20 @@
 # it pins the one message a run now.
 
 function statements()
-    x = 1,  #~ expected_end_of_line
-    y = 2,
-    print(x + y),
+    x = 1  #~ expected_end_of_line
+    y = 2
+    print(x + y)
 
 function arms(n: i64) -> i64
     return match n
-        0 => 1,  #~ expected_end_of_line
-        1 => 2,
-        _ => 3,
+        0 => 1  #~ expected_end_of_line
+        1 => 2
+        _ => 3
 
 record P
-    x: i64;  #~ unexpected_character
-    y: i64;
-    z: i64;
+    x: i64  #~ unexpected_character
+    y: i64
+    z: i64
 
 function main()
     print(1)

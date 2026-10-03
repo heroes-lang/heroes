@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-178-a-comma-ending-every-line-is-one-message-a-run.hero:13:10: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, and no `,` ends a statement's line
+tests/golden/check/fixedbugs-178-a-comma-ending-every-line-is-one-message-a-run.hero:19:15: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, and no `,` ends a statement's line
+tests/golden/check/fixedbugs-178-a-comma-ending-every-line-is-one-message-a-run.hero:24:10: error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, and no `,` ends a statement's line

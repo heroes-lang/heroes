@@ -11,10 +11,10 @@
 
 function f(n: i64) -> i64
     return match n
-        0 => 1,  #~ expected_end_of_line
+        0 => 1  #~ expected_end_of_line
         _ => 2
 
 function main()
     x = 1
-    print(x),  #~ expected_end_of_line
+    print(x)  #~ expected_end_of_line
     print(f(x))

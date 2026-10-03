@@ -33,6 +33,7 @@ use closers
 use lost_quote
 use comment_habit
 use word_place
+use separator_runs
 
 ## One line of words
 
@@ -285,6 +286,13 @@ function punct(@l: state.LexState, text: str)
     # its string held, is that quote's, which the literal its line ends in
     # reports (`lost_quote.hero`).
     if lost_quote.lost_in(text, at: start)
+        state.error_token_at(@l, start)
+        return
+
+    # C's `;` that ends its line outside brackets is a habit told once a run,
+    # its deletion certain (`separator_runs`, defect 178).
+    if ch == ";" && l.open_brackets.len() == 0 && separator_runs.ends_its_line(text, at: l.pos)
+        separator_runs.semicolon(@l.diagnostics, text, at: span)
         state.error_token_at(@l, start)
         return
 

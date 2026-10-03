@@ -18,8 +18,8 @@
 function arms_in_braces(n: i64)
     match n {  #~ missing_match_arms
         0 => print(0 +)  #~ expected_expression
-        1 => print(1),  #~ expected_end_of_line
-        _ => print(2),
+        1 => print(1)  #~ expected_end_of_line
+        _ => print(2)
     }
 
 function a_body_in_braces(n: i64)
