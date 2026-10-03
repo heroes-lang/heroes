@@ -720,7 +720,9 @@ test "a join is certain only where the operator takes the literal it is written 
 # deletion alone, certain, since no pattern begins with one; and wherever the
 # deletion is the one repair the stream is the program it writes, so that the
 # parser tells the arm's own mistakes, once. Where both readings stand, the
-# stream is the join.
+# stream is the join. Defect 182: off the arms' margin too, the line going
+# with the margin it laid out and the reports that margin said, and a stream
+# that is no join records no break (`parse/joined_lines` reads breaks as joins).
 test "an operator alone above an arm is offered its deletion, and the stream is what the deletion writes"
     shapes = [
         ["k = match n\n    +\n    1 => 10\n", "k = match n\n    1 => 10\n"]
@@ -729,6 +731,10 @@ test "an operator alone above an arm is offered its deletion, and the stream is 
         ["k = match s\r\n    |\r\n    \"a\" => 10\r\n", "k = match s\r\n    \"a\" => 10\r\n"]
         ["k = match n\n    -\n    x => 10\n", "k = match n\n    x => 10\n"]
         ["k = match n\n    -\n    1.5 => 10\n", "k = match n\n    1.5 => 10\n"]
+        ["k = match n\n    1 => 1\n        +\n    _ => 2\n", "k = match n\n    1 => 1\n    _ => 2\n"]
+        ["k = match n\n    1 => 1\n            +\n    _ => 2\n", "k = match n\n    1 => 1\n    _ => 2\n"]
+        ["k = match n\n    1 => 1\n+\n    _ => 2\n", "k = match n\n    1 => 1\n    _ => 2\n"]
+        ["k = match n\n        +\n    1 => 1\n", "k = match n\n    1 => 1\n"]
     ]
 
     for shape in shapes
@@ -737,9 +743,11 @@ test "an operator alone above an arm is offered its deletion, and the stream is 
         assert out.diagnostics[0].fixes.len() == 1
         assert out.diagnostics[0].fixes[0].certainty == .certain
         assert kind_line(out.tokens) == kind_line(lex_one(shape[1]).tokens)
+        assert out.breaks.len() == 0
 
     signed = lex_one("k = match n\n    -\n    1 => 10\n")
     assert kind_line(signed.tokens) == kind_line(lex_one("k = match n\n    -1 => 10\n").tokens)
+    assert signed.breaks.len() == 1
 
 # Defect 129 (A), the coordinator's widening: a statement that opens a block
 # is still one statement after it, so the break before the block and the one

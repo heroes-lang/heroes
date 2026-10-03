@@ -6,11 +6,16 @@
 # deletion, applied, checks clean. Not repaired inline: the line's margin
 # is laid out by the lexer before the operator is left out of the stream
 # (`sign_above.hero`), in `open_line.hero`, two lines under its ceiling.
+#
+# Moved 2026-10-03 with defect 182's repair (lane b8-recovery): the
+# operator's line goes with the margin it laid out, so the arm below it is
+# read at its own margin and the stray line costs one message, the lexer's;
+# it pins that message now.
 
 function plus_deeper()
     n = 1
     k = match n
-        1 => "one"  #~v continuation_outside_brackets unexpected_block
+        1 => "one"  #~v continuation_outside_brackets
             +
         _ => "many"
     print(k)
@@ -18,7 +23,7 @@ function plus_deeper()
 function minus_deeper()
     n = 1
     k = match n
-        1 => "one"  #~v continuation_outside_brackets unexpected_block
+        1 => "one"  #~v continuation_outside_brackets
             -
         _ => "many"
     print(k)

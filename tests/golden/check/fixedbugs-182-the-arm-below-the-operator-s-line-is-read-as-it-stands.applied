@@ -1,0 +1,22 @@
+# Fixed defect 182, 2026-10-03, its second case: below the operator's line
+# that goes with its margin, the arm's line is laid out on its own margin, as
+# the deletion writes the text, so a mistake of the arm's own is told as
+# itself. An arm written deeper than the arms is its own block, named at its
+# line where the operator's line was named before; a mistake inside the arm
+# is told as ever. The deletion leaves both standing (`.applied`).
+
+function arm_also_deeper(n: i64) -> str
+    k = match n
+        1 => "one"  #~v continuation_outside_brackets
+            _ => "many"  #~ unexpected_block
+    return k
+
+function arm_with_its_own_mistake(n: i64) -> i64
+    k = match n
+        1 => 10  #~v continuation_outside_brackets
+        _ => f(1 +)  #~ expected_expression
+    return k
+
+function main()
+    print(arm_also_deeper(1))
+    print(arm_with_its_own_mistake(1))
