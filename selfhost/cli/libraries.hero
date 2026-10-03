@@ -96,7 +96,7 @@ function filter_words(package: str, said: str) -> [str]?
             if index + 1 >= parts.len()
                 return fail(
                     code: "failed",
-                    msg: "heroes-ffi-package `" + package + "` answered with `" + word + "` and nothing after it"
+                    msg: "heroes-ffi-package `" + package + "` answered with `" + shell_split.shown(word, keep_lines: false) + "` and nothing after it"
                 )
 
             if next.len() == 0 || next.chars()[0] == "-"
@@ -201,7 +201,7 @@ function link_words(package_flags: [str]) -> [str]
 function refused(package: str, said: str, told: str) -> [str]?
     return fail(
         code: "failed",
-        msg: "heroes-ffi-package `" + package + "` answered with `" + said + "`, which this compiler does not pass on" + told + "\n  only `-D`, `-U`, `-I`, `-L`, `-l` and `-F`, each with its value joined or as the next word, `-framework <name>`, and `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>`, in one word or split as `-Wl,-rpath -Wl,<dir>`, are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
+        msg: "heroes-ffi-package `" + package + "` answered with `" + shell_split.shown(said, keep_lines: false) + "`, which this compiler does not pass on" + told + "\n  only `-D`, `-U`, `-I`, `-L`, `-l` and `-F`, each with its value joined or as the next word, `-framework <name>`, and `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>`, in one word or split as `-Wl,-rpath -Wl,<dir>`, are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
     )
 
 # The flags whose value clang reads joined to them or as the next word.
@@ -318,7 +318,7 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
                 said @ strings.trimmed(complained.must())
             return fail(
                 code: "failed",
-                msg: "heroes-ffi-package `" + package + "` is not installed on this machine\n  pkg-config said: " + said + "\n  install its development files, or name the library directly with `link`"
+                msg: "heroes-ffi-package `" + package + "` is not installed on this machine\n  pkg-config said: " + shell_split.shown(said, keep_lines: true) + "\n  install its development files, or name the library directly with `link`"
             )
         said: str @ ""
 
@@ -487,6 +487,21 @@ test "a word that is no flag is refused with the line it came from (defect 183)"
     match flag
         .ok    => assert false
         .err e => assert !has_text(text: e.msg, needle: "no flag")
+
+# A word holding a line end, as a quoted word in a `.pc` can (defect 237):
+# the message holds it by its code, so its first line, the one the marker's
+# reader reads, is whole.
+test "a line end in pkg-config's answer is written by its code, and the message's first line stays one (defect 237)"
+    split = filter_words(package: "q", said: "'x\ny' -lz")
+
+    match split
+        .ok => assert false
+        .err e =>
+            assert has_text(
+                text: e.msg,
+                needle: "answered with `x<U+000A>y`, which this compiler does not pass on: it is no flag, and `pkg-config` printed `'x<U+000A>y' -lz`\n"
+            )
+            assert !has_text(text: e.msg, needle: "x\ny")
 
 # **The fold-in is asked of the machine, so the case asks the same question.**
 # `-lm` is REQUIRED on POSIX and impossible on MSVC (`LNK1104: cannot open

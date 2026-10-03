@@ -13,6 +13,7 @@ use token
 use ast
 use source
 use diag
+use bytes
 use emit/externs as emit_externs
 use emit/clang_name
 use emit/ffi_lookup
@@ -200,96 +201,50 @@ function missing_header(s: source.Source, decls: [ast.Decl], line: str, stderr: 
     )
     return ok(d)
 
-# A package this program asked about, and the machine could not answer
-# — not installed, or answering with a flag the allow-list refuses.
-# The only class whose text this compiler wrote itself: the driver
-# marks it, and the marker is matched here so one file holds every
-# rule about whose mistake a build failure is. The driver's message is
-# already written for a reader; the whole of it is carried, minus the
-# marker, because its later lines are the repair and §4.17 says an
-# error carries what is needed to fix it.
+# A package this program asked about, and the machine could not answer:
+# not installed, or answering with a word the allow-list refuses. The only
+# class whose text this compiler writes itself: `cli/libraries.hero` opens
+# its message with the marker, matched here so one file holds every rule
+# about whose mistake a build failure is. The message is already written for
+# a reader and is carried whole, minus the marker, its later lines as notes,
+# because they are the repair and §4.17 says an error carries what is needed
+# to fix it.
+#
+# **The marker is read at the head of the text's first line and nowhere else**
+# (defect 237, 2026-10-03). It was read anywhere on any line, the name cut at
+# its first backtick and every marker on the line replaced, so `package "a`b"`
+# matched no group and the driver's message reached the author raw, marker
+# and all, at exit 1 with no code and no place, and an answer holding the
+# marker's text was quoted with *the package* in its place; panel 188's stage
+# A saw a line end leak the marker the same way. Only the driver writes that
+# head, the group is the one whose own name stands there
+# (`ffi_lookup.package_span`), and only that leading marker is replaced, so no
+# byte of a name or of `pkg-config`'s answer moves the reading; the driver
+# writes `pkg-config`'s control characters by their code
+# (`cli/shell_split.shown`), a line end among them.
 function package_problem(s: source.Source, decls: [ast.Decl], stderr: str, line: str) -> diag.Diagnostic?
-    rest = ffi_lookup.after(text: line, marker: ffi_lookup.PACKAGE)
-
-    if rest.is_err()
-        return fail(code: "none", msg: "not a package line")
-    opened = ffi_lookup.after(text: rest.must(), marker: "`")
-
-    if opened.is_err()
-        return fail(code: "none", msg: "no package name on the line")
-    letters: [str] @ []
-
-    for ch in opened.must().chars()
-        if ch == "`"
-            break
-        letters @ letters.push(ch)
-
-    name = letters.join("")
-
-    span = ffi_lookup.package_span(s, decls, name: name)
+    if !bytes.bytes_at(text: line, at: 0, needle: ffi_lookup.PACKAGE) || !first_line(text: stderr, line: line)
+        return fail(code: "none", msg: "not the driver's package line")
+    span = ffi_lookup.package_span(s, decls, line: line)
 
     if span.is_err()
         return fail(code: "none", msg: "no group asked for this package")
-    kept: [str] @ []
-    seen: bool @ false
-
-    for one in ffi_lookup.lines(text: stderr)
-        if !seen && ffi_lookup.has(text: one, needle: ffi_lookup.PACKAGE)
-            seen @ true
-
-        if seen
-            kept @ kept.push(one)
-
-    headline: str @ rest.must()
-
-    if kept.len() > 0
-        headline @ replace_all(text: kept[0], marker: ffi_lookup.PACKAGE, with_text: "the package ")
+    headline = "the package " + line.slice(from: ffi_lookup.PACKAGE.len(), to: line.len())
     d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_package", message: headline, span: span.must())
     index: i64 @ 0
 
-    for one in kept
-        if index > 0
-            note = ffi_lookup.trimmed(one)
+    for one in ffi_lookup.lines(text: stderr)
+        note = ffi_lookup.trimmed(one)
 
-            if note.len() > 0
-                d.notes @ d.notes.push(note)
+        if index > 0 && note.len() > 0
+            d.notes @ d.notes.push(note)
         index @ index + 1
 
     return ok(d)
 
-function replace_all(text: str, marker: str, with_text: str) -> str
-    parts: [str] @ []
-    remaining: str @ text
-    fall: bool @ false
-
-    while !fall
-        at = ffi_lookup.char_index_of(text: remaining, needle: marker)
-
-        if at.is_err()
-            fall @ true
-        else
-            cs = remaining.chars()
-            head: [str] @ []
-            index: i64 @ 0
-
-            while index < at.must()
-                head @ head.push(cs[index])
-                index @ index + 1
-
-            before = head.join("")
-            parts @ parts.push(before)
-            parts @ parts.push(with_text)
-            tail: [str] @ []
-            index @ at.must() + marker.chars().len()
-
-            while index < cs.len()
-                tail @ tail.push(cs[index])
-                index @ index + 1
-
-            remaining @ tail.join("")
-
-    parts @ parts.push(remaining)
-    return parts.join("")
+# Whether `line` is the first line of `text`, asked by its bytes.
+function first_line(text: str, line: str) -> bool
+    return bytes.bytes_at(text: text, at: 0, needle: line) && (text.len() == line.len() || text[line.len()] == '\n')
 
 ## Tests
 
@@ -417,3 +372,32 @@ test "a header clang could not find is read whole, a quote or an escaped code po
     stack = "In file included from build/tu-1/p.c:5:\n" + inner + "\n"
     deep = missing_header(s, parsed.decls, line: inner, stderr: stack).must()
     assert deep.message == "`gone'x.h` is not on this machine's include path, and `b.h`, the header this group names, includes it at line 1"
+
+# Defect 237's lines, in the driver's wordings: a name with a backtick or a
+# quote, a name that is the marker's own text, an answer holding the marker,
+# the marker on a later line, and on a line clang wrote.
+test "the driver's package line is read at its head, whatever a name or an answer holds (defect 237)"
+    text = "extern \"stdio.h\" package \"a`b\"\n    function f1() -> i32\n\nextern \"stdio.h\" package \"a\"\n    function f2() -> i32\n\nextern \"stdio.h\" package \"x'y\"\n    function f3() -> i32\n\nextern \"stdio.h\" package \"heroes-ffi-package\"\n    function f4() -> i32\n\nfunction main()\n    print(f1() + f2() + f3() + f4())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    tick = "heroes-ffi-package `a`b` is not installed on this machine"
+    said = package_problem(s, parsed.decls, stderr: tick + "\n  pkg-config said: Package a`b was not found\n", line: tick).must(
+    )
+    assert source.span_text(s, said.span) == "\"a`b\""
+    assert said.message == "the package `a`b` is not installed on this machine"
+    assert said.notes[0] == "pkg-config said: Package a`b was not found"
+    quote = "heroes-ffi-package `x'y` is not installed on this machine"
+    assert source.span_text(s, package_problem(s, parsed.decls, stderr: quote, line: quote).must().span) == "\"x'y\""
+    marker = "heroes-ffi-package `heroes-ffi-package` is not installed on this machine"
+    named = package_problem(s, parsed.decls, stderr: marker, line: marker).must()
+    assert source.span_text(s, named.span) == "\"heroes-ffi-package\""
+    assert named.message == "the package `heroes-ffi-package` is not installed on this machine"
+    answer = "heroes-ffi-package `a` answered with `heroes-ffi-package `a`b` is`, which this compiler does not pass on"
+    quoted = package_problem(s, parsed.decls, stderr: answer, line: answer).must()
+    assert source.span_text(s, quoted.span) == "\"a\""
+    assert quoted.message == "the package `a` answered with `heroes-ffi-package `a`b` is`, which this compiler does not pass on"
+    later = "heroes-ffi-package `a` is not installed on this machine\nheroes-ffi-package `a`b` is not installed on this machine\n"
+    assert package_problem(s, parsed.decls, stderr: later, line: "heroes-ffi-package `a`b` is not installed on this machine").is_err(
+    )
+    clang = "p.c:3:1: error: heroes-ffi-package `a` is not installed"
+    assert package_problem(s, parsed.decls, stderr: clang, line: clang).is_err()

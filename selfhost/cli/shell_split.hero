@@ -6,6 +6,7 @@
 # clang, whatever it holds.
 
 use cli/strings
+use shown_char
 
 # The words of pkg-config's answer, read as a POSIX shell reads a command
 # line, with nothing expanded (defect 162, 2026-10-02). pkg-config writes its
@@ -77,7 +78,7 @@ function words(package: str, said: str) -> [str]?
     if quote.len() > 0
         return fail(
             code: "failed",
-            msg: "heroes-ffi-package `" + package + "` answered with a `" + quote + "` that nothing closes, which this compiler does not read: `" + strings.trimmed(said) + "`"
+            msg: "heroes-ffi-package `" + package + "` answered with a `" + quote + "` that nothing closes, which this compiler does not read: `" + one_line(said) + "`"
         )
 
     if in_word
@@ -101,20 +102,40 @@ function no_flag(said: str, parts: [str], at: i64) -> str
     where: str @ ""
 
     if at > 0
-        where @ ", where whitespace nothing escapes stands between `" + parts[at - 1] + "` and it, and ends a word"
+        where @ ", where whitespace nothing escapes stands between `" + shown(parts[at - 1], keep_lines: false) + "` and it, and ends a word"
     return ": it is no flag, and `pkg-config` printed `" + one_line(said) + "`" + where + "\n  a path holding a space is one word only where `pkg-config` prints the space escaped, `\\ `, or inside quotes"
 
-# The answer as one line, a line end read as a space, its ends trimmed.
+# The answer as one line: its ends trimmed, and a line end in it written by
+# its code, as every control character is (`shown`).
 function one_line(text: str) -> str
-    kept: [str] @ []
+    return shown(strings.trimmed(text), keep_lines: false)
 
-    for ch in text.chars()
-        if ch == "\n" || ch == "\r"
-            kept @ kept.push(" ")
+# `pkg-config`'s text as a message may carry it (defect 237). `pkg-config`
+# prints what a `.pc` holds, a file this program did not write, and pkgconf
+# 3.0.7 passed a raw ESC from one into its answer (measured, 2026-10-03), so a
+# control character on its way to the author's terminal inside a message is
+# written by its code, `<U+001B>`, as clang writes one it will not show; a
+# line end among them, which split the message the marker's reader reads,
+# unless `keep_lines` keeps the lines of `pkg-config`'s own report, `\r\n`
+# read as one line end there.
+function shown(text: str, keep_lines: bool) -> str
+    kept: [str] @ []
+    read: str @ text
+
+    if keep_lines
+        read @ strings.without_returns(text)
+
+    for ch in read.chars()
+        code = shown_char.code_point(ch)
+
+        if keep_lines && ch == "\n"
+            kept @ kept.push(ch)
+        else if code < 32 || code >= 127 && code < 160
+            kept @ kept.push("<" + shown_char.u_plus(code) + ">")
         else
             kept @ kept.push(ch)
 
-    return strings.trimmed(kept.join(""))
+    return kept.join("")
 
 ## Tests
 
@@ -149,4 +170,20 @@ test "a word that is no flag is told with the line pkg-config printed and the wo
     assert no_flag(said: said, parts: read, at: 0) == ""
     alone = words(package: "f", said: "/opt/x/libfoo.a -lz").must()
     assert no_flag(said: "/opt/x/libfoo.a -lz", parts: alone, at: 0) == ": it is no flag, and `pkg-config` printed `/opt/x/libfoo.a -lz`\n  a path holding a space is one word only where `pkg-config` prints the space escaped, `\\ `, or inside quotes"
-    assert one_line("-Ia\r\n-Lb\n") == "-Ia  -Lb"
+    assert one_line("-Ia\r\n-Lb\n") == "-Ia<U+000D><U+000A>-Lb"
+
+# What a `.pc` can put in `pkg-config`'s answer reaches a message by its code
+# (defect 237): a line end in a quoted word, which split the message's first
+# line, a tab and a return; `pkg-config`'s own report keeps its lines.
+test "a control character in pkg-config's text is written by its code, a line end among them (defect 237)"
+    assert shown("a\tb\rc\nd", keep_lines: false) == "a<U+0009>b<U+000D>c<U+000A>d"
+    assert shown("one\r\ntwo\rthree\n", keep_lines: true) == "one\ntwo<U+000D>three\n"
+    assert shown("plain é ok", keep_lines: false) == "plain é ok"
+    quoted = words(package: "q", said: "'x\ny' -lz").must()
+    assert quoted[0] == "x\ny"
+    assert no_flag(said: "'x\ny' -lz", parts: quoted, at: 0) == ": it is no flag, and `pkg-config` printed `'x<U+000A>y' -lz`\n  a path holding a space is one word only where `pkg-config` prints the space escaped, `\\ `, or inside quotes"
+    open_line = words(package: "q", said: "-I'/a\nb")
+
+    match open_line
+        .ok    => assert false
+        .err e => assert e.msg == "heroes-ffi-package `q` answered with a `'` that nothing closes, which this compiler does not read: `-I'/a<U+000A>b`"
