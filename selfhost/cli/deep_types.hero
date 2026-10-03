@@ -1,0 +1,170 @@
+# What a build adds when the C compiler died on its C (defect 170,
+# 2026-10-03; design.md §4.17, the message carries what fixes the program):
+# how deep the program's own types nest by value, the one kind of a source's
+# depth that reaches the C compiler. Every other kind is flat in the emitted
+# C, measured: each shape of panel 184's table, at 90, emits C whose brackets
+# nest 4 deep. A struct holding a struct is converted by the C compiler with a
+# recursion as deep as the chain, on a stack of the C compiler's own, which
+# this compiler does not choose: Apple clang 21 on arm64 macOS died at 3,000
+# variants nested by value (at 2,500 in defect 140's record) until
+# `emit/typeorder.hero` handed it the chain from its bottom, and its debug
+# information still dies between 3,000 and 5,000 (measured 2026-10-03).
+#
+# So the note names the deepest chain where it is past the depth `typeorder`
+# starts helping at, and says nothing of depth where it is not: the C
+# compiler died of something else then, and a sentence about depth would be a
+# guess. The program is not refused (panel 184's R6: no source is refused for
+# its depth), and the build stays the tool unable to finish, exit 2.
+
+use ast
+use source
+use check/state
+use check/table
+use emit/types
+use emit/typeorder
+use parse
+use resolve
+use checker
+
+# The deepest chain: how many declared types it holds by value, the one at
+# its top counted, and that type's declaration (-1 when there is none).
+record Deepest
+    depth: i64
+    top: i64
+
+# Where the walk below stands in one declaration, as `typeorder.visit`'s
+# frames do: the declaration, what it holds, how many of those it has gone
+# into.
+record Frame
+    decl: i64
+    holds: [i64]
+    next: i64
+
+# The note, or "" for a failure that is not the C compiler dying, or a
+# program whose types are not deep.
+function note(code: str, decls: [ast.Decl], c: state.Checked, s: source.Source) -> str
+    if code != "crashed"
+        return ""
+    found = deepest(c, decls)
+
+    if found.top < 0 || found.depth <= typeorder.IN_ORDER_FROM
+        return ""
+    name = source.span_text(s, decls[found.top].name)
+    return "\n  note: this program's types nest " + found.depth.to_str() + " deep by value, `" + name + "` holding a type that holds another, and so on down: a C compiler walks such a type with a recursion as deep as the chain, on a stack of its own, and where that stack ends is the C compiler's limit, not this language's\n  note: one level held through an array, `[T]` where a field says `T`, ends the chain there"
+
+# The deepest chain of declared types held by value, through any options and
+# fixed arrays between them. A stack of its own and not the machine's, since
+# the chain is exactly what it measures (defect 140's lesson): a recursion
+# here would die where the C compiler did.
+function deepest(c: state.Checked, decls: [ast.Decl]) -> Deepest
+    depth: {i64: i64} @ {}
+    best: Deepest @ Deepest(depth: 0, top: -1)
+
+    for root in types.aggregates(c, decls)
+        if !depth[root].is_err()
+            continue
+        frames: [Frame] @ [Frame(decl: root, holds: holds(c, decls, decl: root), next: 0)]
+        live: i64 @ 1
+
+        while live > 0
+            top = frames[live - 1]
+
+            if top.next < top.holds.len()
+                held = top.holds[top.next]
+                frames[live - 1].next @ top.next + 1
+
+                if depth[held].is_err()
+                    entered = Frame(decl: held, holds: holds(c, decls, decl: held), next: 0)
+
+                    if live < frames.len()
+                        frames[live] @ entered
+                    else
+                        frames @ frames.push(entered)
+                    live @ live + 1
+            else
+                # Each held declaration is measured by now: the checker
+                # refuses a by-value cycle, so the walk is over a DAG.
+                below: i64 @ 0
+
+                for held in top.holds
+                    d = depth[held].default(0)
+
+                    if d > below
+                        below @ d
+
+                depth[top.decl] @ below + 1
+
+                if below + 1 > best.depth
+                    best @ Deepest(depth: below + 1, top: top.decl)
+                live @ live - 1
+
+    return best
+
+# The declared types one declaration holds by value: its fields' and its
+# cases' fields', seen through an option or a fixed array to what they hold.
+function holds(c: state.Checked, decls: [ast.Decl], decl: i64) -> [i64]
+    out: [i64] @ []
+    fields: [ast.Field] @ types.fields_of(decls, decl: decl)
+
+    for one_case in types.cases_of(decls, decl: decl)
+        for field in one_case.fields
+            fields @ fields.push(field)
+
+    for field in fields
+        found = state.written_type(c, field.ty)
+
+        if !found.is_err()
+            held = held_decl(c, ty: found.must())
+
+            if held >= 0
+                out @ out.push(held)
+
+    return out
+
+# The declaration a field's type holds by value, or -1: an option and a
+# fixed array hold what they wrap; an array, a map and a function hold a
+# pointer.
+function held_decl(c: state.Checked, ty: i64) -> i64
+    at: i64 @ ty
+
+    while true
+        match table.get(c.types, at)
+            .named n                                                  => return n.decl
+            .case_ty ct                                               => return ct.decl
+            .fallible o                                               => at @ o.payload
+            .fixed f                                                  => at @ f.element
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return -1
+            .array | .map | .function_ty                              => return -1
+            .failure | .generic | .error                              => return -1
+
+## Tests
+
+# `n` records, each holding the one before by value, checked.
+function chained(n: i64) -> Checked
+    parts: [str] @ ["record R0\n    v: i64\n"]
+
+    for i in range(from: 1, to: n)
+        parts @ parts.push("record R" + i.to_str() + "\n    inner: R" + (i - 1).to_str() + "\n")
+
+    parts @ parts.push("function main()\n    xs: [R" + (n - 1).to_str() + "] = []\n    print(xs.len())\n")
+    text = parts.join("\n")
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    return Checked(c: checker.check(parsed.tree, out, s, parsed.decls), decls: parsed.decls, s: s)
+
+record Checked
+    c: state.Checked
+    decls: [ast.Decl]
+    s: source.Source
+
+test "the note names the deepest chain past the depth the emitter helps from, and says nothing else (defect 170)"
+    deep = chained(n: 40)
+    assert deep.c.diagnostics.len() == 0
+    found = deepest(deep.c, deep.decls)
+    assert found.depth == 40
+    assert source.span_text(deep.s, deep.decls[found.top].name) == "R39"
+    assert note(code: "crashed", decls: deep.decls, c: deep.c, s: deep.s).len() > 0
+    assert note(code: "clang", decls: deep.decls, c: deep.c, s: deep.s) == ""
+    shallow = chained(n: 32)
+    assert note(code: "crashed", decls: shallow.decls, c: shallow.c, s: shallow.s) == ""

@@ -44,6 +44,7 @@ extern "hero_os.h"
     # is assumed to keep what it is handed. `runtime/parts/os.c` is the C.
     function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
     function hero_run_why() -> i64
+    function hero_run_signal() -> i64
     function hero_fs_exists(path: cstr lent) -> i64
     function hero_fs_is_directory(path: cstr lent) -> i64
     function hero_fs_mkdir_all(path: cstr lent) -> i64
@@ -73,6 +74,11 @@ record Ran
     code: i64
     started: bool
     why: i64
+    # What ended the program when it did not end itself: the signal, or on
+    # Windows the exception code a crashed program exits with; 0 otherwise
+    # (defect 170). A code of 128 plus a signal is also an exit a program may
+    # choose, and this is what tells the two apart.
+    signal: i64
 
 # The runtime's status words. `0` is OK; `1` is "could not be started".
 constant RUN_OK: i64
@@ -112,7 +118,7 @@ function run(program: str, words: [str], out: str, err: str) -> Ran
     )
     hero_run_reset()
 
-    return Ran(code: code, started: status == RUN_OK, why: hero_run_why())
+    return Ran(code: code, started: status == RUN_OK, why: hero_run_why(), signal: hero_run_signal())
 
 # Where a stream goes to be thrown away, spelled the way this machine
 # spells it. Asked of the runtime rather than written here, because

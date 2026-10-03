@@ -56,7 +56,47 @@ use cli/grammar
 constant VERSION: str
     "0.2.0"
 
+# EVERY COMMAND RUNS ON A THREAD WHOSE STACK THIS COMPILER CHOOSES (panel 184
+# R5, ratified 2026-10-01; defect 169). The parser, the resolver, the checker,
+# the lowering, the emitter and the formatter each recurse once per level of
+# what they read, so how deep a source may nest was the stack over their
+# frames: on the 8 MB a POSIX shell gives `main`, a sum of 300 terms stopped
+# `check` at 134 with *panic: stack exhausted*, and the compiler could not
+# check its own source at `ulimit -s 512` (panel 107's hole); both measured on
+# this Mac and on Linux arm64 before the thread and not after it. On this thread the number is the compiler's own on every machine,
+# and never the shell's. It is the COMPILER's thread and not a program's:
+# panel 107 refused `main` on a created thread for programs, which keep
+# theirs (`examples/sdl/` needs it).
+#
+# 256 MiB is reserved address space and not memory: a page is committed when
+# a walk first touches it, so a shallow program costs what it did. The floor
+# it buys is measured, never assumed (panel 184's R6,
+# `docs/records/log/2026-10-03-1130-panel-184-r5-landed-every-command-runs-on-a-thread-whose-stack-the-compiler-chooses.md`),
+# and past it the abort stands as `panic: stack exhausted`, exit 134.
+extern "hero_os.h"
+    function hero_thread_spawn_sized(body: (function(i64) -> i64), arg: i64, bytes: i64, @why: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant STACK_BYTES: i64
+    268435456
+
 function main()
+    why: i64 @ 0
+    handle = hero_thread_spawn_sized(body: command, arg: 0, bytes: STACK_BYTES, why: @why)
+
+    # A thread the operating system will not start is the tool unable to run,
+    # exit 2, said with the system's own number; never a fallback to `main`'s
+    # stack, which would keep the compiler running while it broke the floor
+    # in silence.
+    if handle < 0
+        io.eprint(
+            text: "error: the operating system refused to start the thread this compiler runs every command on, with a stack of " + STACK_BYTES.to_str() + " bytes; its own reason is " + why.to_str()
+        )
+        exit(code: 2)
+    exit(code: hero_thread_join(handle: handle))
+
+# The whole command, on the thread `main` starts: its answer is the exit code.
+function command(_: i64) -> i64
     # `args_checked()` and not `args()`, and this is the compiler refusing
     # to die on input it was only asked to carry.
     #
@@ -185,7 +225,7 @@ function main()
         .doctor_cmd | .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => verdict @ verdict
         .grammar_cmd | .probe_cmd                                                       => verdict @ verdict
 
-    exit(code: cli_table.exit_code(verdict))
+    return cli_table.exit_code(verdict)
 
 # The three verbs that need the toolchain, and the one place it is
 # located: a missing runtime is the tool being unable to run, which is

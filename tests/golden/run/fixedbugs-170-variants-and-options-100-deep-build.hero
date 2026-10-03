@@ -1,0 +1,529 @@
+# Fixed 2026-10-03, defect 170, lane depth.
+# Symptom: 3,000 variants nested by value, `variant R<i>` holding `R<i-1>`,
+# checked at exit 0 and stopped `build` at exit 2, *internal error: compiling
+# the generated C failed* over clang's crash report, *Illegal instruction: 4*
+# (Apple clang 21 on arm64 macOS; the CI's Apple clang died at 1,000). The
+# crash also wrote 8,270,409 bytes of preprocessed C and a script into the
+# system's temporary folder.
+# Cause: clang converts a struct to its own form the first time a function
+# needs it and recurses into every struct it holds by value, so a chain met
+# from its top took a recursion as deep as the chain, 9,000 structs here,
+# past clang's own 8 MB stack (`-fsyntax-only` passed, `-emit-llvm` died, and
+# the same clang under `ulimit -s 65520` compiled it in 2 s). Past 32 levels
+# the emitter now writes a function nothing calls that steps over each struct
+# in the order the typedefs were written (`emit/typeorder.hero`), so each is
+# converted with its fields already done; and a clang that dies anyway is said
+# as one, exit 2, in this compiler's words, with the program's deepest chain
+# and without the crash report (`cli/clang_died.hero`, `cli/deep_types.hero`).
+# Measured 2026-10-03: the 3,000 variants build at `-O0` in 7.4 s of user time
+# and print `0` and `true`; at 5,000 clang's debug information still dies, and
+# the build says so. This case is 100 deep, every other level through an
+# option, since at `-O2` the build takes 62 s of user time on 1,000 and 175 s
+# on 3,000, most of it clang's GVN and inliner, past the harness's 120 s: it
+# pins that the function is written, compiles clean and leaves the program
+# what it was.
+
+variant R0
+    a
+        v: i64
+    b
+
+variant R1
+    a
+        inner: R0?
+    b
+
+variant R2
+    a
+        inner: R1
+    b
+
+variant R3
+    a
+        inner: R2?
+    b
+
+variant R4
+    a
+        inner: R3
+    b
+
+variant R5
+    a
+        inner: R4?
+    b
+
+variant R6
+    a
+        inner: R5
+    b
+
+variant R7
+    a
+        inner: R6?
+    b
+
+variant R8
+    a
+        inner: R7
+    b
+
+variant R9
+    a
+        inner: R8?
+    b
+
+variant R10
+    a
+        inner: R9
+    b
+
+variant R11
+    a
+        inner: R10?
+    b
+
+variant R12
+    a
+        inner: R11
+    b
+
+variant R13
+    a
+        inner: R12?
+    b
+
+variant R14
+    a
+        inner: R13
+    b
+
+variant R15
+    a
+        inner: R14?
+    b
+
+variant R16
+    a
+        inner: R15
+    b
+
+variant R17
+    a
+        inner: R16?
+    b
+
+variant R18
+    a
+        inner: R17
+    b
+
+variant R19
+    a
+        inner: R18?
+    b
+
+variant R20
+    a
+        inner: R19
+    b
+
+variant R21
+    a
+        inner: R20?
+    b
+
+variant R22
+    a
+        inner: R21
+    b
+
+variant R23
+    a
+        inner: R22?
+    b
+
+variant R24
+    a
+        inner: R23
+    b
+
+variant R25
+    a
+        inner: R24?
+    b
+
+variant R26
+    a
+        inner: R25
+    b
+
+variant R27
+    a
+        inner: R26?
+    b
+
+variant R28
+    a
+        inner: R27
+    b
+
+variant R29
+    a
+        inner: R28?
+    b
+
+variant R30
+    a
+        inner: R29
+    b
+
+variant R31
+    a
+        inner: R30?
+    b
+
+variant R32
+    a
+        inner: R31
+    b
+
+variant R33
+    a
+        inner: R32?
+    b
+
+variant R34
+    a
+        inner: R33
+    b
+
+variant R35
+    a
+        inner: R34?
+    b
+
+variant R36
+    a
+        inner: R35
+    b
+
+variant R37
+    a
+        inner: R36?
+    b
+
+variant R38
+    a
+        inner: R37
+    b
+
+variant R39
+    a
+        inner: R38?
+    b
+
+variant R40
+    a
+        inner: R39
+    b
+
+variant R41
+    a
+        inner: R40?
+    b
+
+variant R42
+    a
+        inner: R41
+    b
+
+variant R43
+    a
+        inner: R42?
+    b
+
+variant R44
+    a
+        inner: R43
+    b
+
+variant R45
+    a
+        inner: R44?
+    b
+
+variant R46
+    a
+        inner: R45
+    b
+
+variant R47
+    a
+        inner: R46?
+    b
+
+variant R48
+    a
+        inner: R47
+    b
+
+variant R49
+    a
+        inner: R48?
+    b
+
+variant R50
+    a
+        inner: R49
+    b
+
+variant R51
+    a
+        inner: R50?
+    b
+
+variant R52
+    a
+        inner: R51
+    b
+
+variant R53
+    a
+        inner: R52?
+    b
+
+variant R54
+    a
+        inner: R53
+    b
+
+variant R55
+    a
+        inner: R54?
+    b
+
+variant R56
+    a
+        inner: R55
+    b
+
+variant R57
+    a
+        inner: R56?
+    b
+
+variant R58
+    a
+        inner: R57
+    b
+
+variant R59
+    a
+        inner: R58?
+    b
+
+variant R60
+    a
+        inner: R59
+    b
+
+variant R61
+    a
+        inner: R60?
+    b
+
+variant R62
+    a
+        inner: R61
+    b
+
+variant R63
+    a
+        inner: R62?
+    b
+
+variant R64
+    a
+        inner: R63
+    b
+
+variant R65
+    a
+        inner: R64?
+    b
+
+variant R66
+    a
+        inner: R65
+    b
+
+variant R67
+    a
+        inner: R66?
+    b
+
+variant R68
+    a
+        inner: R67
+    b
+
+variant R69
+    a
+        inner: R68?
+    b
+
+variant R70
+    a
+        inner: R69
+    b
+
+variant R71
+    a
+        inner: R70?
+    b
+
+variant R72
+    a
+        inner: R71
+    b
+
+variant R73
+    a
+        inner: R72?
+    b
+
+variant R74
+    a
+        inner: R73
+    b
+
+variant R75
+    a
+        inner: R74?
+    b
+
+variant R76
+    a
+        inner: R75
+    b
+
+variant R77
+    a
+        inner: R76?
+    b
+
+variant R78
+    a
+        inner: R77
+    b
+
+variant R79
+    a
+        inner: R78?
+    b
+
+variant R80
+    a
+        inner: R79
+    b
+
+variant R81
+    a
+        inner: R80?
+    b
+
+variant R82
+    a
+        inner: R81
+    b
+
+variant R83
+    a
+        inner: R82?
+    b
+
+variant R84
+    a
+        inner: R83
+    b
+
+variant R85
+    a
+        inner: R84?
+    b
+
+variant R86
+    a
+        inner: R85
+    b
+
+variant R87
+    a
+        inner: R86?
+    b
+
+variant R88
+    a
+        inner: R87
+    b
+
+variant R89
+    a
+        inner: R88?
+    b
+
+variant R90
+    a
+        inner: R89
+    b
+
+variant R91
+    a
+        inner: R90?
+    b
+
+variant R92
+    a
+        inner: R91
+    b
+
+variant R93
+    a
+        inner: R92?
+    b
+
+variant R94
+    a
+        inner: R93
+    b
+
+variant R95
+    a
+        inner: R94?
+    b
+
+variant R96
+    a
+        inner: R95
+    b
+
+variant R97
+    a
+        inner: R96?
+    b
+
+variant R98
+    a
+        inner: R97
+    b
+
+variant R99
+    a
+        inner: R98?
+    b
+
+function main()
+    xs: [R99] = []
+    print(xs.len())
+    print(xs == xs)
