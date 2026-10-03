@@ -223,6 +223,32 @@ function in_a_group(text: str, span: token.Span, @outline: text_outline.Outline)
     text_outline.read(@outline, text)
     return under_a_group(text, outline, line: begins)
 
+# Whether the word at `span`, where a type goes in an `extern` group, types
+# a value that may be wider than the header's (spec § 13; defect 172): a
+# constant's, on a line that opens with `constant` or the `const` a swap
+# writes as it; or a member's result, after `->`. A function type's result
+# is never one, being the header's own, and it is told apart by the `)` that
+# closes the type after it, which a member's result never has: a claim about
+# the productions of § 4 and § 13, falsified by a production that puts a
+# member's result before a `)`, and the test below is its witness.
+function may_be_wider(text: str, span: token.Span) -> bool
+    begins = line_start(text, at: span.start)
+    first = first_mark(text, from: begins)
+    opener = text.slice(from: first, to: word_end(text, from: first))
+
+    if opener == "constant" || opener == "const"
+        return true
+    before = significant_before(text, at: span.start, floor: begins)
+
+    if before <= begins || text[before] != '>' || text[before - 1] != '-'
+        return false
+    after: i64 @ span.end
+
+    while after < text.len() && text[after] == ' '
+        after @ after + 1
+
+    return after >= text.len() || text[after] != ')'
+
 # The first character on the line at `from` that is not a space or a tab.
 function first_mark(text: str, from: i64) -> i64
     i: i64 @ from
@@ -292,6 +318,21 @@ test "in the middle of a line a word stands where a name, a type or a value goes
     assert place_in(text: "return switch x", word: "switch") == .valued
     assert place_in(text: "print(int)", word: "int") == .other
     assert place_in(text: "record P fn", word: "fn") == .other
+
+# Defect 172: where a group's value may be wider than the header's type.
+test "a group's result and constant may be wider, and a function type's result may not"
+    member = "extern \"m.h\"\n    function q(n: int) -> int\n"
+    parameter = at_word(text: member, word: "int")
+    result = token.Span(start: parameter.end + 5, end: parameter.end + 8)
+    assert member.slice(from: result.start, to: result.end) == "int"
+    assert may_be_wider(member, result)
+    assert !may_be_wider(member, parameter)
+    callback = "extern \"s.h\"\n    function on(f: (function(i32) -> int)) -> i64\n"
+    assert !may_be_wider(callback, at_word(text: callback, word: "int"))
+    valued = "extern \"m.h\"\n    constant LIMIT: int\n"
+    assert may_be_wider(valued, at_word(text: valued, word: "int"))
+    field = "extern \"m.h\"\n    record P\n        x: int\n"
+    assert !may_be_wider(field, at_word(text: field, word: "int"))
 
 test "a line inside an open bracket heads nothing"
     params = "function f(x: i64\nfn g()\n"

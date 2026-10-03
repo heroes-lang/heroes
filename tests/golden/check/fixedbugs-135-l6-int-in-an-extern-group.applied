@@ -12,13 +12,21 @@
 # `sizeof(int)` 4, and the applied `abs` built against `stdlib.h` and
 # printed 5; `long`, 8 here and 4 on Windows, is no word the lexer refuses,
 # and takes no fix.
+#
+# **Corrected 2026-10-03, defect 172**: the certain `i32` above is right
+# only where the header says `int`, which `check` does not read; where the
+# header gives 64 bits, `build` refused the applied binding anew. In a group
+# the swap is a guess now, `i32` for a parameter and a field and `i64` for a
+# result, which may be wider, so `--apply` writes the three outside the
+# group and leaves these three, and the case carries `.applied` where it
+# carried `.fixed`.
 
 extern "stdlib.h"
-    function abs(n: i32) -> i32  #~ reserved_word reserved_word
+    function abs(n: int) -> int  #~ reserved_word reserved_word
 
 extern "time.h"
     record Tm tag tm partial
-        tm_sec: i32  #~ reserved_word
+        tm_sec: int  #~ reserved_word
 
 function twice(n: i64) -> i64  #~ reserved_word reserved_word
     local: i64 @ n  #~ reserved_word

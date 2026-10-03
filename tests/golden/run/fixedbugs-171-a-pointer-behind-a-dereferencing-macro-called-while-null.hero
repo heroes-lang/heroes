@@ -1,0 +1,15 @@
+# fixedbugs, defect 171, lane ffimsg, 2026-10-03, a shape beside the
+# defect's: `#define via_slot (*slot)`, a macro over a pointer dereferenced.
+# C reads `(*slot)` as a function to every question a compile can ask it,
+# `__typeof__` and `__builtin_types_compatible_p` included (measured with
+# this Mac's clang 21), so no build could tell this binding from a
+# function's, and the run is where it is told.
+#
+# SYMPTOM, CAUSE and FIX as `fixedbugs-171-a-function-pointer-the-header-holds-called-while-null`.
+
+extern "fixedbugs-171-a-pointer-behind-a-dereferencing-macro-called-while-null.h"
+    function via_slot(x: i32) -> i32
+
+function main()
+    print("before")
+    print(via_slot(x: 1))

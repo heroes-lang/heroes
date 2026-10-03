@@ -179,8 +179,10 @@ variant Repair
     # exists because a word-for-word swap that is correct where the word
     # DECLARES something is wrong where the word is CALLED, and the difference
     # is not visible to the table below — only to the character after the word.
+    # `title` is the fix's, saying when the word is right (defect 172).
     hint
         word: str
+        title: str
     # The word goes, and the spaces after it: shown, never machine-applied,
     # where what is right is the line without it (`const x = 5` in a body is
     # `x = 5`; defect 133, 2026-09-29).
@@ -237,7 +239,7 @@ function foreign_word(text: str, called: bool) -> ForeignWord?
 function called_word(text: str) -> ForeignWord?
     if text == "int"
         return ok(
-            ForeignWord(message: "`int` is not a word in this language — to make an integer out of a float, `to_i64` truncates toward zero and gives an `i64?` because the value may not fit: `to_i64(x).must()`. As a TYPE an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`", repair: .hint(word: "to_i64"))
+            ForeignWord(message: "`int` is not a word in this language — to make an integer out of a float, `to_i64` truncates toward zero and gives an `i64?` because the value may not fit: `to_i64(x).must()`. As a TYPE an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`", repair: .hint(word: "to_i64", title: "`to_i64` is where to look"))
         )
     found = declared_word(text)
 
@@ -370,7 +372,7 @@ test "a foreign word that is CALLED loses its certain swap"
     # it is a hint because `to_i64` gives an `i64?` and the reader still has to
     # choose `.must()` or `.default(v)`.
     called = foreign_word(text: "int", called: true).must()
-    assert called.repair == .hint(word: "to_i64")
+    assert called.repair == .hint(word: "to_i64", title: "`to_i64` is where to look")
     assert strings_has(text: called.message, needle: "to_i64")
 
     # A row whose replacement cannot precede a `(` keeps its message and loses

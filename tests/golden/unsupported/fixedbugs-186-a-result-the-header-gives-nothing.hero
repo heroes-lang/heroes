@@ -1,0 +1,14 @@
+# fixedbugs, defect 186, lane ffimsg, 2026-10-03, the shapes beside the
+# defect's where the header's result or the declaration's is nothing: a
+# `void` function declared `-> i32`, and an `int` one declared with no `->`.
+# Both were told *does not return* the program's type, `()` for the second;
+# now each says which side gives nothing, and the note how it is bound.
+
+extern "fixedbugs-186-results.h"
+    function reset() -> i32  #~ ffi_return_type
+    function status()  #~ ffi_return_type
+
+function main()
+    _ = reset()
+    status()
+    print(1)

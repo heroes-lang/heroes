@@ -179,34 +179,42 @@ function extern_assertions(@w: writer.Writer, p: containers.Program, c: state.Ch
                     text: "_Static_assert(__builtin_constant_p(" + extern_name + "), \"" + assert_spelling.CONSTANCY + extern_name + "\");"
                 )
             continue
-        zeros: [str] @ []
-
-        for slot_id in f.params
-            declared = f.slots[slot_id]
-
-            # An @ parameter is a pointer parameter (§4.8), so its zero
-            # is a null of that pointer type — the value's own zero was
-            # -Wint-conversion, a warning that survived a green run
-            # until the goldens were read.
-            mutable: bool @ false
-
-            match declared.kind
-                .param_slot ps =>
-                    if ps.mutable
-                        mutable @ true
-                .local_slot | .synthetic_slot => mutable @ mutable
-
-            zeros @ zeros.push(assert_spelling.zero_of(names, c, ty: declared.ty, mutable: mutable))
 
         # The message is a CONTRACT with the error mapper, not prose:
         # marker + C name + declared Heroes type, so a failure maps back
         # to the author's line instead of printing generated C.
         writer.line(
             @w,
-            text: "_Static_assert(" + check_macro.must() + "(" + extern_name + "(" + zeros.join(", ") + ")" + type_argument + "), \"" + assert_spelling.ASSERTION + extern_name + " " + declared_type + "\");"
+            text: "_Static_assert(" + check_macro.must() + "(" + zero_call(f, names, c, s, decls) + type_argument + "), \"" + assert_spelling.ASSERTION + extern_name + " " + declared_type + "\");"
         )
 
     writer.line(@w, text: "")
+
+# The call the return assertion makes of an extern function: its C name
+# over a zero of each parameter's declared type, never evaluated. A refused
+# round asks clang the type of the same call (`emit/ffi_asked.hero`; defect
+# 186), so the two cannot mean different calls.
+function zero_call(f: containers.Function, names: ctype.Names, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+    zeros: [str] @ []
+
+    for slot_id in f.params
+        declared = f.slots[slot_id]
+
+        # An @ parameter is a pointer parameter (§4.8), so its zero
+        # is a null of that pointer type — the value's own zero was
+        # -Wint-conversion, a warning that survived a green run
+        # until the goldens were read.
+        mutable: bool @ false
+
+        match declared.kind
+            .param_slot ps =>
+                if ps.mutable
+                    mutable @ true
+            .local_slot | .synthetic_slot => mutable @ mutable
+
+        zeros @ zeros.push(assert_spelling.zero_of(names, c, ty: declared.ty, mutable: mutable))
+
+    return source.span_text(s, decls[f.decl].name) + "(" + zeros.join(", ") + ")"
 
 ## Tests
 

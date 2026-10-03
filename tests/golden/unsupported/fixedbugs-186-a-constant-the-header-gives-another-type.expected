@@ -1,0 +1,15 @@
+error[ffi_constant_type]: `BIG_COUNT` is `long long` in `fixedbugs-186-results.h`, not `i32` — clang read the header and the types disagree
+  at tests/golden/unsupported/fixedbugs-186-a-constant-the-header-gives-another-type.hero:8:5
+    |
+  8 |     constant BIG_COUNT: i32  #~ ffi_constant_type
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern constant` takes its value and its type from the header (§4.19), and is declared at that type or one that holds every value of it — or the header named is not the one that spells `BIG_COUNT` as `i32`
+  fix (guess): declare it `i64`
+
+error[ffi_constant_type]: `HALF` is `double` in `fixedbugs-186-results.h`, not `i64` — clang read the header and the types disagree
+  at tests/golden/unsupported/fixedbugs-186-a-constant-the-header-gives-another-type.hero:9:5
+    |
+  9 |     constant HALF: i64  #~ ffi_constant_type
+    |     ^^^^^^^^^^^^^^^^^^
+  note: an `extern constant` takes its value and its type from the header (§4.19), and is declared at that type or one that holds every value of it — or the header named is not the one that spells `HALF` as `i64`
+  fix (guess): declare it `f64`
