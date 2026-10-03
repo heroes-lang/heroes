@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-172-a-constant-may-be-wider.hero:18:25: error[reserved_word]: `int` is not a word in this language — in an `extern` group a result or a constant may be wider than the header's type: `i64` holds every C integer but an unsigned 64-bit one, which is `u64`
+tests/golden/check/fixedbugs-172-a-constant-may-be-wider.hero:19:27: error[reserved_word]: `int` is not a word in this language — in an `extern` group a result or a constant may be wider than the header's type: `i64` holds every C integer but an unsigned 64-bit one, which is `u64`
