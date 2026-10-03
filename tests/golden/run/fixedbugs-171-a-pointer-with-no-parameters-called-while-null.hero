@@ -1,0 +1,13 @@
+# fixedbugs, defect 171, lane ffimsg, 2026-10-03, a shape beside the
+# defect's: a pointer to a function taking and giving nothing, bound as
+# `function tick()` and called as a statement.
+#
+# SYMPTOM, CAUSE and FIX as `fixedbugs-171-a-function-pointer-the-header-holds-called-while-null`.
+
+extern "fixedbugs-171-a-pointer-with-no-parameters-called-while-null.h"
+    function tick()
+
+function main()
+    print("before")
+    tick()
+    print("after")
