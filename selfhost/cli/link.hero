@@ -8,6 +8,7 @@
 use cli/digest
 use cli/files
 use cli/flags
+use cli/libraries
 use cli/process
 use cli/publish
 use cli/strings
@@ -36,31 +37,15 @@ use cli/units
 # output, so a private file name would leave a new `.pdb` on every build.
 # Inside it the output is the module's own name, never a part of the path
 # asked for: an author's `-o` is not split to find one (`published_as`).
-function link_objects(t: toolchain.Toolchain, objects: [str], module: str, output: str?, level: str, sanitize: bool, search_include: [str], search_library: [str], package_flags: [str], link_names: [str]) -> str?
-    line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
-    line @ line.push(level)
-    line @ strings.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
-
-    # The link's own flags, which on Windows is the stack reserve a
-    # recursive frontend needs (flags.link_flags carries the
-    # measurement). Empty everywhere else.
-    line @ strings.with_all(list: line, more: flags.link_flags())
-
-    for dir in search_include
-        line @ strings.with_all(list: line, more: ["-I", dir])
-
-    for dir in search_library
-        line @ strings.with_all(list: line, more: ["-L", dir])
-
-    for object in objects
-        line @ line.push(object)
-
-    for flag in package_flags
-        line @ line.push(flag)
-
-    for name in link_names
-        line @ line.push("-l" + name)
-
+function link_objects(t: toolchain.Toolchain, objects: [str], module: str, output: str?, level: str, sanitize: bool, search_library: [str], package_flags: [str], link_names: [str]) -> str?
+    line: [str] @ link_line(
+        objects: objects,
+        level: level,
+        sanitize: sanitize,
+        search_library: search_library,
+        package_flags: package_flags,
+        link_names: link_names
+    )
     binary: str @ binary_home(t, line: line, name: module + process.exe_suffix())
 
     # Where the binary lands, which is `binary` itself but for an author's
@@ -128,6 +113,37 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
 
     _ = process.remove_tree(stage).is_err()
     return ok(binary)
+
+# The words of the link but its output. The compiler's flags ride it whole:
+# Debian clang 22.1.8 and Apple clang 21.0.0 link under the whole list
+# without a word (measured 2026-10-03), and the `warnings` suite reads every
+# program's link, so it fires the day a clang does not. Then the level, the
+# sanitizers, the link's own flags (`flags.link_flags`, which carries the
+# measurements: `-rdynamic` on POSIX, the stack reserve and a full link on
+# Windows), the `--library` directories, the objects, a package's link
+# words (`libraries.link_words`) and the `link` names. No include directory:
+# a link reads none, and until defect 206 the link took the `--include`
+# directories and a package's whole answer, whose `-F` clang on Linux
+# called *argument unused during compilation*.
+function link_line(objects: [str], level: str, sanitize: bool, search_library: [str], package_flags: [str], link_names: [str]) -> [str]
+    line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
+    line @ line.push(level)
+    line @ strings.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
+    line @ strings.with_all(list: line, more: flags.link_flags())
+
+    for dir in search_library
+        line @ strings.with_all(list: line, more: ["-L", dir])
+
+    for object in objects
+        line @ line.push(object)
+
+    for flag in libraries.link_words(package_flags)
+        line @ line.push(flag)
+
+    for name in link_names
+        line @ line.push("-l" + name)
+
+    return line
 
 # The link written straight into `at`, which is not a file. Answers the
 # author's own spelling, as a link published under `build/` does.
@@ -217,7 +233,6 @@ function build_beside(index: i64) -> i64
         output: no_output,
         level: "-O0",
         sanitize: false,
-        search_include: none,
         search_library: none,
         package_flags: none,
         link_names: none
@@ -277,7 +292,7 @@ test "a binary's home is named by every word of its link line, and an author's -
     made = units.tu_object(t, module: "linkprobe", tu_text: "int main(void) { return 0; }\n", level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).must(
     )
     wanted = t.build + "/app" + process.exe_suffix()
-    binary = link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(wanted), level: "-O0", sanitize: false, search_include: none, search_library: none, package_flags: none, link_names: none).must(
+    binary = link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(wanted), level: "-O0", sanitize: false, search_library: none, package_flags: none, link_names: none).must(
     )
     assert binary == wanted
     assert process.path_exists(wanted)
@@ -286,7 +301,7 @@ test "a binary's home is named by every word of its link line, and an author's -
     # elsewhere a byte of a name, and neither is split to name the output.
     assert !process.mkdir_all(t.build + "/sub").is_err()
     slashed = t.build + "/sub\\app" + process.exe_suffix()
-    assert link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(slashed), level: "-O0", sanitize: false, search_include: none, search_library: none, package_flags: none, link_names: none).must() == slashed
+    assert link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(slashed), level: "-O0", sanitize: false, search_library: none, package_flags: none, link_names: none).must() == slashed
     assert process.path_exists(slashed)
     missing = link_objects(
         t,
@@ -295,7 +310,6 @@ test "a binary's home is named by every word of its link line, and an author's -
         output: ok(t.build + "/no-such-directory/app"),
         level: "-O0",
         sanitize: false,
-        search_include: none,
         search_library: none,
         package_flags: none,
         link_names: none
@@ -304,3 +318,36 @@ test "a binary's home is named by every word of its link line, and an author's -
 
     for path in process.files_under(t.build).must()
         assert !strings.ends_with(text: path, suffix: ".tmp")
+
+# **A link over a package's compile words prints nothing** (defect 206). On
+# Linux a `-F` at a link is *argument unused during compilation*, so a
+# framework's headers found through a `.pc` warned on every build; the line
+# `link_objects` runs carries none of a package's `-F -I -D -U` when no
+# framework is linked, and clang, run over it, says nothing.
+test "a link over a package's compile words carries none of them and prints nothing (defect 206)"
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-link-words"
+    assert !process.remove_tree(t.build).is_err()
+    none: [str] = []
+    memo: {str: str} @ {}
+    runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
+    made = units.tu_object(t, module: "linkwords", tu_text: "int main(void) { return 0; }\n", level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).must(
+    )
+    words = ["-F" + t.build, "-I" + t.build, "-DHERO_LINK_WORDS=1", "-UHERO_LINK_WORDS"]
+    line = link_line(
+        objects: [runtime, made],
+        level: "-O0",
+        sanitize: false,
+        search_library: none,
+        package_flags: words,
+        link_names: none
+    )
+
+    for word in words
+        for one in line
+            assert one != word
+
+    said = t.build + "/said.txt"
+    out = t.build + "/linkwords" + process.exe_suffix()
+    assert !toolchain.run_clang(line: strings.with_all(list: line, more: ["-o", out]), what: "linking", err_path: said).is_err()
+    assert read_file(said).must() == ""
