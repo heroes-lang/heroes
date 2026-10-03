@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 45**
+**OPEN: 46**
 
 - [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe) · **class: blocking**
 
@@ -412,5 +412,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** the coordinator's closings agent, 2026-10-03, and the author's answer *4a*.
 
     **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): coverage of one platform.
+
+- [ ] **214 — clang on Windows writes every path of a dependency listing with backslashes, and two readers compare it with forward slashes: defect 168's own test fails there, and no `skip` prefix matches** | `heroes test selfhost/main.hero` on the Windows box at `02e507bc`: *1083 tests, 1 failed*, `what a probe's headers resolve to is asked of clang, and a header that appears earlier in the search is another answer (defect 168)` at `process.holds(text: beside, needle: root + "/src/x.h")`; the box's clang, given `-I build/selftest-compiling-reads/src`, writes `build\selftest-compiling-reads\src\x.h`; and a translation unit's record there lists its own `build\tu-0b52ebf10bd34d86\library.c`, the file `rows_of`'s `skip: dir + "/"` exists to leave out | `selfhost/cli/compiling.hero` (the test), `selfhost/cli/deps.hero` (`under`, `rows_of`) and its five callers · **class: blocking**
+
+    **Origin:** the coordinator's Windows leg at `02e507bc`, 2026-10-03: the compiler's tests red there, where the thirteen legs before it read them all passed (the last, `6bec7c8c`, 1056 of 1056); the test named by a second run in a folder of its own (10:08 to 10:13 by `date`), the dependency listing and the record read on the box by hand.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a red on a platform, and the CI's Windows leg would be red on the push. The second half, a `skip` that never matches on Windows, has the same cause and stays in the item; it writes no wrong value, the file it fails to leave out being keyed and hashing the same, and costs each warm build there the digest of every unit's C (unmeasured). The test's other assertion, that the answer does not hold `root + "/inc/x.h"`, passes on Windows whatever `reads` answers.
 
 *******************************************************************************
