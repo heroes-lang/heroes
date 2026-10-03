@@ -1,0 +1,171 @@
+# A graph over a function's blocks (design.md Part 10 step 6, an IR of
+# explicit basic blocks), as the verifier walks it: edges grouped into one
+# flat list, and a walk depth first from block 0. Split out of
+# `ir/dominators.hero` on 2026-10-03, when defect 218's repair gave the
+# verifier its first graph algorithms: the dominator tree walks the graph
+# the preds draw and then the tree, and `check_preds` in `ir/verify.hero`
+# groups the edges the terminators draw.
+#
+# **Nothing here grows a list through an index, and nothing recurses.** A
+# list reached through an index is copied whole by a push (spec § 10), and a
+# recursion is as deep as the longest chain of blocks, which is what defect
+# 218's sources, nested 2,000 deep, are made of. So the lists are counted
+# first and filled after, and the walk keeps its own stack.
+
+use ir/containers
+use ir/flow
+
+## Edges
+
+# Items grouped into lists, in one flat list: item i goes into list
+# `lists[i]`, and list k holds its items in the order given, at
+# `targets[first[k]]` up to `targets[first[k + 1]]`. Two counting passes, so
+# no list grows through an index, which copies it (spec § 10). An item whose
+# list is outside 0..count is left out.
+record Edges
+    first: [i64]
+    targets: [i64]
+    visits: i64
+
+function grouped(lists: [i64], items: [i64], count: i64) -> Edges
+    degree: [i64] @ filled(size: count, value: 0)
+    visits: i64 @ 0
+
+    for k in lists
+        visits @ visits + 1
+
+        if k >= 0 && k < count
+            degree[k] @ degree[k] + 1
+
+    first: [i64] @ []
+    total: i64 @ 0
+
+    for d in degree
+        visits @ visits + 1
+        first @ first.push(total)
+        total @ total + d
+
+    first @ first.push(total)
+    targets: [i64] @ filled(size: total, value: 0)
+    next: [i64] @ first
+    at: i64 @ 0
+
+    for k in lists
+        visits @ visits + 1
+
+        if k >= 0 && k < count
+            targets[next[k]] @ items[at]
+            next[k] @ next[k] + 1
+
+        at @ at + 1
+
+    return Edges(first: first, targets: targets, visits: visits)
+
+# For each block, the blocks whose terminators jump to it, each once and in
+# order: the list a block's preds must hold, recomputed with the builder's own
+# successors (`ir/flow.hero`). A target outside the blocks is no block's.
+function jumps_into(blocks: [containers.Block]) -> Edges
+    count = blocks.len()
+    targets: [i64] @ []
+    sources: [i64] @ []
+
+    # The last block counted for each target, so a branch whose two arms
+    # agree, or a switch naming one block twice, counts its block once.
+    marked: [i64] @ filled(size: count, value: 0 - 1)
+    index: i64 @ 0
+
+    for blk in blocks
+        for target in flow.successors(blk.term)
+            if target >= 0 && target < count && marked[target] != index
+                marked[target] @ index
+                targets @ targets.push(target)
+                sources @ sources.push(index)
+
+        index @ index + 1
+
+    return grouped(lists: targets, items: sources, count: count)
+
+function filled(size: i64, value: i64) -> [i64]
+    out: [i64] @ []
+
+    while out.len() < size
+        out @ out.push(value)
+
+    return out
+
+## The walk
+
+# A walk depth first from block 0: the blocks in the order it first reached
+# them, each one's position in that order (-1 where it never did), the block
+# it was reached from (-1 for block 0 and the unreached), and the last
+# position inside each one's subtree of the walk.
+record Walk
+    order: [i64]
+    number: [i64]
+    parent: [i64]
+    last: [i64]
+    visits: i64
+
+function depth_first(edges: Edges) -> Walk
+    count = edges.first.len() - 1
+    number: [i64] @ filled(size: count, value: 0 - 1)
+    parent: [i64] @ filled(size: count, value: 0 - 1)
+    last: [i64] @ filled(size: count, value: 0 - 1)
+    order: [i64] @ []
+
+    if count == 0
+        return Walk(order: order, number: number, parent: parent, last: last, visits: 0)
+
+    # A block and the next of its edges still to try; a block is stacked
+    # once, when it is first reached, so `count` places always suffice.
+    stack: [i64] @ filled(size: count, value: 0)
+    tried: [i64] @ filled(size: count, value: 0)
+    tried[0] @ edges.first[0]
+    number[0] @ 0
+    order @ order.push(0)
+    depth: i64 @ 1
+    visits: i64 @ 0
+
+    while depth > 0
+        visits @ visits + 1
+        top = depth - 1
+        here = stack[top]
+        at = tried[top]
+
+        if at < edges.first[here + 1]
+            tried[top] @ at + 1
+            reached = edges.targets[at]
+
+            if number[reached] < 0
+                number[reached] @ order.len()
+                order @ order.push(reached)
+                parent[reached] @ here
+                stack[depth] @ reached
+                tried[depth] @ edges.first[reached]
+                depth @ depth + 1
+        else
+            last[here] @ order.len() - 1
+            depth @ depth - 1
+
+    return Walk(order: order, number: number, parent: parent, last: last, visits: visits)
+
+## Tests
+
+test "items go into their lists in the order given, and the walk numbers what it reaches"
+    # Edges 0 -> 2, 1 -> 2, 0 -> 1, 2 -> 0, and 3 -> 1 from a block nothing
+    # reaches; lists 9 and -1 name no block and their items are left out.
+    lists: [i64] = [0, 1, 0, 2, 3, 9, 0 - 1]
+    items: [i64] = [2, 2, 1, 0, 1, 1, 1]
+    edges = grouped(lists: lists, items: items, count: 4)
+    assert edges.first == [0, 2, 3, 4, 5]
+    assert edges.targets == [2, 1, 2, 0, 1]
+    walk = depth_first(edges)
+    assert walk.order == [0, 2, 1]
+    assert walk.number == [0, 2, 1, 0 - 1]
+    assert walk.parent == [0 - 1, 0, 0, 0 - 1]
+
+    # The last position inside each subtree: 0 holds all three, 2 is alone
+    # (its edge back to 0 reaches nothing new), 1 is alone.
+    assert walk.last == [2, 2, 1, 0 - 1]
+    nothing = depth_first(grouped(lists: [], items: [], count: 0))
+    assert nothing.order.len() == 0

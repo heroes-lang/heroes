@@ -1,0 +1,455 @@
+# The dominator tree of a function's blocks, and the one question asked of
+# it: does block d dominate block b, every path from block 0 to b passing
+# through d (design.md Part 10 step 6; panel 020 R4.10). `ir/values.hero`'s
+# dominance check is its reader.
+#
+# **The graph is the one the recorded preds draw**: block p reaches block b
+# when p is among b's preds, whatever the terminators say. It is the graph
+# the fixpoint this module replaced read, and `check_preds` in
+# `ir/verify.hero` is what holds the preds to the terminators; asking the
+# terminators here would answer another question on exactly the IR that
+# check refuses.
+#
+# **Lengauer and Tarjan's algorithm (1979), in its simple form**: a walk
+# depth first from block 0 numbers the blocks it reaches; the semidominators
+# come out in the reverse of that order, through a forest linked as it goes
+# and compressed on every evaluation; the immediate dominators follow in one
+# pass forward. O(E log V). The fixpoint it replaced, dom(b) = {b} joined to
+# the meet of dom(p) over b's preds, a bool row per block iterated to
+# stability, was O(V²) per pass with no bound on the passes but the blocks,
+# and where a `main` of 1,000 nested matches spent its build (sampled by lane
+# depth, defect 218, 2026-10-03). Its own comment declined Lengauer-Tarjan
+# because *the largest recorded block count is 226*, a premise about the
+# world that a source nested 2,000 deep falsifies by thousands.
+#
+# **The answer is the fixpoint's, on every graph it answered**, including
+# what a textbook leaves out. A block that block 0 never reaches is
+# dominated by EVERY block, because the fixpoint started every row full and
+# nothing reached ever emptied it; a reached block is dominated by no
+# unreached one. The test below holds the two to each other on generated
+# graphs, the fixpoint kept there word for word as the oracle. One input it
+# never answered: a pred outside the blocks, which it indexed and aborted on.
+# Here it names nothing to walk from and is left out, and `check_preds`
+# refuses the IR that holds it, so a verifier that died there now says why.
+#
+# Every walk is a loop over a stack sized once, never a recursion: a chain
+# of blocks thousands long is exactly what defect 218's sources make.
+
+use source
+use parse
+use resolve
+use checker
+use ir/containers
+use ir/graph
+use ir/lower
+
+# The tree, walked once from block 0: each block's position in that walk
+# (`number`, -1 where block 0 never reaches it), and the last position
+# inside its subtree (`last`). So d dominates b exactly when b's position
+# lies between d's and d's last. `visits` counts every step of every walk
+# that made it, for the test that holds the cost to its bound.
+record Tree
+    number: [i64]
+    last: [i64]
+    visits: i64
+
+# Whether block `over` dominates block `under`. A block dominates itself.
+function dominates(tree: Tree, over: i64, under: i64) -> bool
+    if tree.number[under] < 0
+        return true
+
+    if tree.number[over] < 0
+        return false
+    return tree.number[over] <= tree.number[under] && tree.number[under] <= tree.last[over]
+
+function compute(blocks: [containers.Block]) -> Tree
+    count = blocks.len()
+    pred_of: [i64] @ []
+    block_of: [i64] @ []
+    index: i64 @ 0
+
+    for blk in blocks
+        for p in blk.preds
+            pred_of @ pred_of.push(p)
+            block_of @ block_of.push(index)
+
+        index @ index + 1
+
+    successors = graph.grouped(lists: pred_of, items: block_of, count: count)
+    flow = graph.depth_first(successors)
+    idom = immediate(blocks, flow: flow)
+    child_of: [i64] @ []
+    kids: [i64] @ []
+    index @ 0
+
+    for d in idom.dominator
+        if d >= 0
+            child_of @ child_of.push(d)
+            kids @ kids.push(index)
+
+        index @ index + 1
+
+    walked = graph.depth_first(graph.grouped(lists: child_of, items: kids, count: count))
+    visits = successors.visits + flow.visits + idom.visits + walked.visits + pred_of.len()
+    return Tree(number: walked.number, last: walked.last, visits: visits)
+
+## The semidominators
+
+# The forest the semidominator pass links as it goes: `ancestor[v]` is -1
+# until v is linked, `label[v]` the block of least semidominator on the
+# compressed path above v, `semi[v]` v's semidominator as a position in the
+# walk. `trail` is the compression's own stack, sized once.
+record Forest
+    ancestor: [i64]
+    label: [i64]
+    semi: [i64]
+    trail: [i64]
+    visits: i64
+
+record Immediate
+    # Each reached block's immediate dominator; -1 for block 0 and for every
+    # block block 0 never reaches.
+    dominator: [i64]
+    visits: i64
+
+function immediate(blocks: [containers.Block], flow: graph.Walk) -> Immediate
+    count = blocks.len()
+    reached = flow.order.len()
+    labels: [i64] @ []
+
+    while labels.len() < count
+        labels @ labels.push(labels.len())
+
+    forest: Forest @ Forest(
+        ancestor: graph.filled(size: count, value: 0 - 1),
+        label: labels,
+        semi: flow.number,
+        trail: graph.filled(size: count, value: 0),
+        visits: 0
+    )
+    dominator: [i64] @ graph.filled(size: count, value: 0 - 1)
+
+    # Each block waits in its semidominator's bucket until that block's
+    # parent is linked: one list per block, threaded through `waiting`.
+    bucket: [i64] @ graph.filled(size: count, value: 0 - 1)
+    waiting: [i64] @ graph.filled(size: count, value: 0 - 1)
+    i: i64 @ reached - 1
+
+    while i >= 1
+        w = flow.order[i]
+
+        for v in blocks[w].preds
+            forest.visits @ forest.visits + 1
+
+            if v >= 0 && v < count && flow.number[v] >= 0
+                u = evaluate(@forest, v)
+
+                if forest.semi[u] < forest.semi[w]
+                    forest.semi[w] @ forest.semi[u]
+
+        s = flow.order[forest.semi[w]]
+        waiting[w] @ bucket[s]
+        bucket[s] @ w
+        p = flow.parent[w]
+        forest.ancestor[w] @ p
+        held: i64 @ bucket[p]
+
+        while held >= 0
+            forest.visits @ forest.visits + 1
+            least = evaluate(@forest, held)
+
+            if forest.semi[least] < forest.semi[held]
+                dominator[held] @ least
+            else
+                dominator[held] @ p
+            held @ waiting[held]
+
+        bucket[p] @ 0 - 1
+        i @ i - 1
+
+    i @ 1
+
+    while i < reached
+        w = flow.order[i]
+
+        if dominator[w] != flow.order[forest.semi[w]]
+            dominator[w] @ dominator[dominator[w]]
+        i @ i + 1
+
+    return Immediate(dominator: dominator, visits: forest.visits + reached)
+
+function evaluate(@forest: Forest, v: i64) -> i64
+    if forest.ancestor[v] < 0
+        return v
+    compress(@forest, v)
+    return forest.label[v]
+
+# Path compression as two loops: climb while the ancestor has an ancestor,
+# then come back down, each block taking the least label above it and
+# pointing past its ancestor. The recursion it stands for would go as deep
+# as the longest chain of blocks.
+function compress(@forest: Forest, v: i64)
+    depth: i64 @ 0
+    x: i64 @ v
+
+    while forest.ancestor[forest.ancestor[x]] >= 0
+        forest.trail[depth] @ x
+        depth @ depth + 1
+        x @ forest.ancestor[x]
+
+    forest.visits @ forest.visits + depth
+
+    while depth > 0
+        depth @ depth - 1
+        y = forest.trail[depth]
+        a = forest.ancestor[y]
+
+        if forest.semi[forest.label[a]] < forest.semi[forest.label[y]]
+            forest.label[y] @ forest.label[a]
+        forest.ancestor[y] @ forest.ancestor[a]
+
+## Tests
+
+# The fixpoint this module replaced, word for word as `ir/values.hero` held it
+# at b7edbc35 under the name `dominators`: `rows[b][d]` says whether d
+# dominates b. The oracle every test below holds the tree to.
+function fixpoint(blocks: [containers.Block]) -> [[bool]]
+    count = blocks.len()
+    dom: [[bool]] @ []
+    i: i64 @ 0
+
+    while i < count
+        row: [bool] @ []
+        j: i64 @ 0
+
+        while j < count
+            if i == 0
+                row @ row.push(j == 0)
+            else
+                row @ row.push(true)
+            j @ j + 1
+
+        dom @ dom.push(row)
+        i @ i + 1
+
+    changed: bool @ true
+
+    while changed
+        changed @ false
+        index: i64 @ 1
+
+        while index < count
+            next: [bool] @ []
+            k: i64 @ 0
+
+            while k < count
+                next @ next.push(blocks[index].preds.len() == 0)
+                k @ k + 1
+
+            position: i64 @ 0
+
+            for pred in blocks[index].preds
+                if position == 0
+                    next @ dom[pred]
+                else
+                    m: i64 @ 0
+
+                    while m < count
+                        next[m] @ next[m] && dom[pred][m]
+                        m @ m + 1
+                position @ position + 1
+
+            next[index] @ true
+
+            if next != dom[index]
+                dom[index] @ next
+                changed @ true
+            index @ index + 1
+
+    return dom
+
+# The first pair on which the tree and the fixpoint disagree, said with the
+# graph, or "" where they agree on every pair.
+function disagreement(blocks: [containers.Block]) -> str
+    rows = fixpoint(blocks)
+    tree = compute(blocks)
+    under: i64 @ 0
+
+    while under < blocks.len()
+        over: i64 @ 0
+
+        while over < blocks.len()
+            if dominates(tree, over: over, under: under) != rows[under][over]
+                drawn: [str] @ []
+
+                for blk in blocks
+                    names: [str] @ []
+
+                    for p in blk.preds
+                        names @ names.push(p.to_str())
+
+                    drawn @ drawn.push("[" + names.join(",") + "]")
+
+                return "bb" + over.to_str() + " over bb" + under.to_str() + ", preds " + drawn.join(" ")
+            over @ over + 1
+
+        under @ under + 1
+
+    return ""
+
+# A generator, so the graphs are many and the same on every run: C's own
+# `rand` example's constants, every product inside an i64.
+function step(@seed: i64) -> i64
+    seed @ (seed * 1103515245 + 12345) % 2147483648
+    return seed / 65536
+
+# `count` blocks of up to `most` preds each, drawn from anywhere among them:
+# so block 0 may have preds, a block may name itself or one pred twice, and
+# blocks block 0 never reaches, alone or in a cycle of their own, come up.
+function generated(@seed: i64, count: i64, most: i64) -> [containers.Block]
+    blocks: [containers.Block] @ []
+
+    while blocks.len() < count
+        preds: [i64] @ []
+        wanted = step(@seed) % (most + 1)
+
+        while preds.len() < wanted
+            preds @ preds.push(step(@seed) % count)
+
+        blocks @ blocks.push(containers.Block(preds: preds, insts: [], term: .unreachable, note: "g"))
+
+    return blocks
+
+function bits(n: i64) -> i64
+    out: i64 @ 0
+    left: i64 @ n
+
+    while left > 0
+        out @ out + 1
+        left @ left / 2
+
+    return out
+
+function edges_of(blocks: [containers.Block]) -> i64
+    total: i64 @ 0
+
+    for blk in blocks
+        total @ total + blk.preds.len()
+
+    return total
+
+test "the tree answers what the fixpoint answered, on every pair of every generated graph"
+    seed: i64 @ 2018
+    graphs: i64 @ 0
+    first: str @ ""
+
+    while graphs < 600 && first == ""
+        first @ disagreement(generated(seed: @seed, count: 1 + graphs % 10, most: 3))
+        graphs @ graphs + 1
+
+    assert first == ""
+
+    # Larger and sparser: long chains, loops entered twice, unreached runs.
+    while graphs < 700 && first == ""
+        first @ disagreement(generated(seed: @seed, count: 10 + graphs % 31, most: 2))
+        graphs @ graphs + 1
+
+    assert first == ""
+
+test "the tree answers what the fixpoint answered on the graphs the lowering draws"
+    text = "variant Tok\n    word\n        text: str\n    num\n        v: i64\n    plus\n\nfunction pick(t: Tok, n: i64) -> i64\n    total: i64 @ 0\n    i: i64 @ 0\n\n    while i < n\n        i @ i + 1\n\n        if i % 3 == 0\n            continue\n\n        total @ total + match t\n            .word w => w.text.len()\n            .num k =>\n                if k.v > 2\n                    k.v\n                else if k.v < 0\n                    0 - k.v\n                else\n                    break\n            .plus => 1\n\n    for x in [1, 2, 3]\n        if x == n\n            return total\n\n    return total + n\n\nfunction main()\n    print(pick(.num(v: 4), n: 9))\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c = checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(p.tree, out, c, s, p.decls)
+    seen: i64 @ 0
+
+    for f in low.program.functions
+        assert disagreement(f.blocks) == ""
+        seen @ seen + f.blocks.len()
+
+    # The graphs are real ones: a loop, a `match`, an `else if` and a return
+    # from inside a `for` make more than a handful of blocks.
+    assert seen > 20
+
+test "what the fixpoint never answered: a pred outside the blocks, and no blocks"
+    none = compute([])
+    assert none.number.len() == 0
+    blocks: [containers.Block] = [
+        containers.Block(preds: [], insts: [], term: .unreachable, note: "entry")
+        containers.Block(preds: [0, 7], insts: [], term: .unreachable, note: "one stray pred")
+        containers.Block(preds: [0 - 1], insts: [], term: .unreachable, note: "only a stray pred")
+    ]
+    tree = compute(blocks)
+
+    # The stray pred names nothing to walk from: bb1 is reached through bb0
+    # alone, and bb2 is not reached at all, so every block dominates it.
+    assert dominates(tree, over: 0, under: 1)
+    assert !dominates(tree, over: 2, under: 1)
+    assert dominates(tree, over: 1, under: 2)
+    assert dominates(tree, over: 2, under: 2)
+
+test "the walks stay within (V + E) times (16 + bits V) on the graphs deep sources make"
+    # A chain of 20,000 blocks: what a straight run of nested joins draws.
+    chain: [containers.Block] @ []
+
+    while chain.len() < 20000
+        if chain.len() == 0
+            chain @ chain.push(containers.Block(preds: [], insts: [], term: .unreachable, note: "c"))
+        else
+            chain @ chain.push(containers.Block(preds: [chain.len() - 1], insts: [], term: .unreachable, note: "c"))
+
+    tree = compute(chain)
+    assert tree.visits <= (chain.len() + edges_of(chain)) * (16 + bits(chain.len()))
+    assert dominates(tree, over: 12345, under: 19999)
+    assert !dominates(tree, over: 19999, under: 12345)
+
+    # Diamonds nested 2,000 deep, each a head, two arms and a join, the
+    # inner diamond inside the left arm: the shape of 2,000 nested `match`es.
+    nest: [containers.Block] @ [containers.Block(preds: [], insts: [], term: .unreachable, note: "head")]
+    heads: [i64] @ [0]
+
+    while heads.len() < 2000
+        head = heads[heads.len() - 1]
+        nest @ nest.push(containers.Block(preds: [head], insts: [], term: .unreachable, note: "left"))
+        heads @ heads.push(nest.len() - 1)
+
+    depth: i64 @ heads.len() - 1
+
+    while depth >= 0
+        head = heads[depth]
+        nest @ nest.push(containers.Block(preds: [head], insts: [], term: .unreachable, note: "right"))
+        right = nest.len() - 1
+        inner: i64 @ head
+
+        if depth + 1 < heads.len()
+            inner @ nest.len() - 2
+        nest @ nest.push(containers.Block(preds: [inner, right], insts: [], term: .unreachable, note: "join"))
+        depth @ depth - 1
+
+    nested = compute(nest)
+    assert nested.visits <= (nest.len() + edges_of(nest)) * (16 + bits(nest.len()))
+
+    # A join of 5,000 preds, each an arm off one switch: an `else if` chain.
+    fan: [containers.Block] @ [containers.Block(preds: [], insts: [], term: .unreachable, note: "switch")]
+
+    while fan.len() <= 5000
+        fan @ fan.push(containers.Block(preds: [0], insts: [], term: .unreachable, note: "arm"))
+
+    arms: [i64] @ []
+
+    while arms.len() < 5000
+        arms @ arms.push(arms.len() + 1)
+
+    fan @ fan.push(containers.Block(preds: arms, insts: [], term: .unreachable, note: "join"))
+    wide = compute(fan)
+    assert wide.visits <= (fan.len() + edges_of(fan)) * (16 + bits(fan.len()))
+    assert dominates(wide, over: 0, under: fan.len() - 1)
+    assert !dominates(wide, over: 1, under: fan.len() - 1)
+
+    # And generated graphs of 3,000 blocks, loops and unreached runs in them.
+    seed: i64 @ 7
+    drawn = generated(seed: @seed, count: 3000, most: 3)
+    assert compute(drawn).visits <= (drawn.len() + edges_of(drawn)) * (16 + bits(drawn.len()))
