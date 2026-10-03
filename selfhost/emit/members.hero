@@ -19,6 +19,7 @@ use source
 use check/table
 use check/state
 use ir/containers
+use ir/phases
 use emit
 use emit/ctype
 use emit/types
@@ -45,6 +46,11 @@ record Whole
     # the function whose prototype it owes, and a linear search per call
     # is what `instance_index` already costs for the generic ones.
     by_decl: {i64: i64}
+    # Every type's flags (`phases.type_kinds`), read by each TU's loops
+    # over the arena: found here once where every TU walked every type as
+    # deep as it goes, 8.9 million steps in the compiler's own build
+    # (defect 229).
+    kinds: [i64]
 
 function whole_of(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], struct_tags: {str: bool}) -> Whole
     names: ctype.Names @ ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
@@ -58,7 +64,7 @@ function whole_of(p: containers.Program, c: state.Checked, s: source.Source, dec
             by_decl[f.decl] @ index
         index @ index + 1
 
-    return Whole(names: names, shown: emit.shown_fused(p, s), by_decl: by_decl)
+    return Whole(names: names, shown: emit.shown_fused(p, s), by_decl: by_decl, kinds: phases.type_kinds(c))
 
 # What one TU emits, and what it merely declares.
 #

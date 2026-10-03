@@ -19,6 +19,7 @@ use diag
 use check/table
 use check/state
 use ir/containers
+use ir/phases
 use emit/ctype
 use emit/synth
 use emit/writer
@@ -246,6 +247,10 @@ function emit_maybe(target: emit_decls.BuildTarget, p: containers.Program, c: st
     names @ ctype.with_options(names, c: c, s: s, decls: decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
 
+    # Every type's flags, found once for the loops over the arena below
+    # (defect 229): a type is no longer walked again for each of them.
+    kinds = phases.type_kinds(c)
+
     # `module`, not `stem_of` — the sanitised name, which is the one the
     # compiler actually WRITES on disk (`build/<key>/whileloop.c`). The
     # comment above already said the root module names the generated .c
@@ -261,7 +266,7 @@ function emit_maybe(target: emit_decls.BuildTarget, p: containers.Program, c: st
     # containment order, then every per-type prototype, then the
     # descriptors — an array literal names its element's descriptor,
     # so the object must exist before a function body mentions it.
-    typeorder.definitions(@w, c, names, s, decls, want: synth.everything())
+    typeorder.definitions(@w, c, names, s, decls, want: synth.everything(), kinds: kinds)
 
     # A probe's parameters are the DECLARED types, so it is "anything
     # that can mention one" and obeys the line above (panel 111 R4).
@@ -274,7 +279,8 @@ function emit_maybe(target: emit_decls.BuildTarget, p: containers.Program, c: st
         decls,
         reachable: reached,
         constructed: constructed,
-        want: synth.everything()
+        want: synth.everything(),
+        kinds: kinds
     )
 
     # Which functions C may call back, computed ONCE for the whole unit

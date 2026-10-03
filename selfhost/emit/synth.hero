@@ -80,11 +80,24 @@ function collect(c: state.Checked, decls: [ast.Decl], ty: i64, @into: {i64: bool
                         queue @ queue.push(p)
 
                     queue @ queue.push(fn_ty.result)
-            .array arr  => queue @ queue.push(arr.element)
-            .fallible o => queue @ queue.push(o.payload)
+            # **A container is walked once per `seen`, as a record is**
+            # (defect 229, 2026-10-03). Each call drains its queue, so a type
+            # already seen has had everything beneath it collected; walked
+            # again for every slot and value carrying it, an array nested
+            # 2,000 deep cost 16 million steps of `with_functions`.
+            .array arr =>
+                if seen[at].is_err()
+                    seen[at] @ true
+                    queue @ queue.push(arr.element)
+            .fallible o =>
+                if seen[at].is_err()
+                    seen[at] @ true
+                    queue @ queue.push(o.payload)
             .map m =>
-                queue @ queue.push(m.key)
-                queue @ queue.push(m.value)
+                if seen[at].is_err()
+                    seen[at] @ true
+                    queue @ queue.push(m.key)
+                    queue @ queue.push(m.value)
             # **A RECORD OR VARIANT IS WALKED, and this arm returned at once
             # until 2026-09-12** (defect 028). A function type reachable only
             # through a field — `record S` holding `f: (function(v: i64) ->
