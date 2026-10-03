@@ -227,7 +227,6 @@ function linked_round(t: toolchain.Toolchain, options: compile.Options, site: Si
         output: site.output,
         level: options.level,
         sanitize: options.sanitize,
-        search_include: options.headers_from,
         search_library: options.library,
         package_flags: site.package_flags,
         link_names: site.link_names

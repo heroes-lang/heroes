@@ -26,6 +26,7 @@ use emit/layout_text
 use emit/layout_rows
 use emit/layout_compare
 use emit/layout_sites
+use emit/c_text
 use parse
 use resolve
 use checker
@@ -55,11 +56,7 @@ constant MEMBER: str
 # `dump` is the rows of the blocks this compiler asked for
 # (`layout_rows.wrapper_rows`), never clang's whole output.
 function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: source.Source, decls: [ast.Decl], u: extern_union.Used, c: state.Checked) -> str?
-    lines: [str] @ []
-
-    for header in headers
-        lines @ lines.push("#include <" + header + ">")
-
+    lines: [str] @ c_text.includes(headers)
     wrote: bool @ false
 
     rows = layout_rows.rows_of(dump)
@@ -101,7 +98,7 @@ function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: s
         place = source.locate(s, decls[one.decl].name.start)
 
         for text in record_lines(one, hero_name: hero_name, tree: found.must(), decls: decls, u: u, s: s, c: c, sizes: sizes)
-            lines @ lines.push("#line " + place.line.to_str() + " \"" + place.file + "\"")
+            lines @ lines.push(c_text.line_directive(at: place.line, file: place.file))
             lines @ lines.push(text)
             wrote @ true
 
@@ -294,7 +291,7 @@ function field_place(s: source.Source, decls: [ast.Decl], decl: i64, field: str)
             for one in rec.fields
                 if source.span_text(s, one.name) == field
                     at = source.locate(s, one.name.start)
-                    return "#line " + at.line.to_str() + " \"" + at.file + "\""
+                    return c_text.line_directive(at: at.line, file: at.file)
         .constant_decl | .function_decl | .variant_decl | .test_decl => return ""
 
     return ""

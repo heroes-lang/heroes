@@ -287,6 +287,19 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** The emitted C is C11 that clang type-checks clean (CLAUDE.md § 7), and this unit is the compiler itself built by its own first command; any `--emit-c` output compiled by hand on Windows gets the same advice. The runtime already says why the switch is the documented one and not a workaround (`runtime/runtime.c:65-74`).
 
+    **2026-10-03, lane warn, the two macros `heroes build` passes for
+    Windows are `runtime/heroes_runtime.h`'s own, defined on `_WIN32` before
+    its first system include, each under a guard; `_USE_MATH_DEFINES` beside
+    `_CRT_SECURE_NO_WARNINGS`, the same shape (`M_PI`, which
+    `tests/golden/run/ffi-constant.hero` binds)**: repaired at `dc23c4a8`,
+    gated by its own case, a compiler test preprocessing for
+    `x86_64-pc-windows-msvc`, on this Mac and on Linux arm64 under Debian
+    clang 22.1.8 and 18.1.8; the rest is owed at the round's gate, and the
+    Windows box before the push, where the seed's documented line is the
+    proof, unrun (the box offline on 2026-10-03). On this Mac a stub
+    `stdlib.h` deprecating `getenv` as the box's UCRT does warned under
+    `02e507bc`'s header and not under this one.
+
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
 
 - [ ] **193 — an arm whose pattern failed hides the mistakes in its body: on one line in both arms, and, joined below the failed line, under `--permissive` since panel 187's V1** | `k = match n` over `x | 2 => f(1 +)`: `expected_pattern` at the `x` and the `1 +` untold, in both arms, on the head's compiler and on `29425af6`; `x |` over `2 => f(1 +)`: the normal arm tells the `1 +` from the lines apart, and `check --permissive` told it, `expected_expression`, until `29425af6` and not since; the same over `1 | +`, `x ==`, `1 -> 2 |` and an arm one level deeper | `selfhost/grammar_expr.hero` (`arms_of`'s `.err` branch: the failed arm's line goes with `cursor.drop_rest_of_line`, its body with it) · panel 187's R4 · **class: adjacent**
@@ -373,11 +386,36 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** the coordinator's closings agent, 2026-10-03, reading defect 160's cases one by one on Linux arm64 between 00:36 and 00:54 by `date` (`scratchpad/closings/table.txt`, 2026-10-03), and its target probe on this Mac after 01:03 (`scratchpad/closings/fwprobe/`, 2026-10-03). The queue's question *a link step handed compile words, unmeasured on Linux* (lane h158, 2026-10-02) is this, measured. Which of the build's clang calls prints it on Linux is not read: that the link carries `-F` is an inference from the target probe.
 
+    **2026-10-03, lane warn, a link is handed only the words a link reads
+    (`libraries.link_words`, `link.link_line`): a package's `-L`, `-l`,
+    `-Wl,-rpath` and `-framework` pair, its `-F` only where the answer links a
+    framework, and no include directory. Which call printed it, read first
+    under a wrapper logging every clang call (Debian clang 22.1.8): the
+    program's final link and no other; of every compile word at a Linux link,
+    22.1.8 and 18.1.8 warn about `-F` alone**: repaired at `9b31cd64`, gated
+    by its own cases on this Mac and on Linux arm64, where the fixture prints
+    `7` with an empty stderr and its link carries no `-F`; the rest is owed
+    at the round's gate.
+
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
 
 - [ ] **207 — a correct program whose string holds `??` before `)`, `(`, `<`, `>`, `=`, `/`, `'`, `!` or `-` gets clang's *trigraph ignored* warning on the emitted C** | `print("what???)")`: `check` exit 0, `run` exit 0 and prints `what???)`, and clang prints `build/tu-<key>/tri.c:10:42: warning: trigraph ignored [-Wtrigraphs]`; the net's own tests' build prints it twice for the harness's own `print(???)` | the emitter's string literals (a `?` that would begin a trigraph is written `?\?` in C) · **class: blocking**
 
     **Origin:** lane round1003b's gate, 2026-10-03, seeing it in the net's own tests' build and in the last gate's (`scratchpad/lane-round1003b/progress.md`, 2026-10-03); measured by the coordinator on the trunk at `e5893696` before 08:00 by `date` (`scratchpad/file-r5/tri.hero`, 2026-10-03).
+
+    **2026-10-03, lane warn, every text the emitter writes into C is spelled
+    for where C reads it (`selfhost/emit/c_text.hero`): a literal or a
+    `#line` name writes a `?` that would end a trigraph as `\?`, a header
+    name is split by a line splice, and the comment opening a unit neither
+    closes nor opens one; the shapes beside it with its cause included, the
+    four `#line` writers that escaped nothing (a directory `a\q` or `a"b`), a
+    line end in a path and a directory `a*` (both exit 2), a header named
+    `h??).h`**: repaired at `ed776fb2`, gated by its own cases on this Mac;
+    the rest is owed at the round's gate, and the platform legs before the
+    push. On Linux arm64 since (Debian clang 22.1.8, a copy of the tree with
+    206's repair beside it), the case prints its `.expected` with an empty
+    stderr and the compiler tests of the modules it touched read 31 and 0;
+    the two spellings were measured there under 18.1.8 too; unrun on Windows.
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
 

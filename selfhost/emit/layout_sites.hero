@@ -27,6 +27,7 @@ use source
 use emit/extern_union
 use emit/layout_compare
 use emit/layout_rows
+use emit/c_text
 use parse
 use resolve
 use checker
@@ -51,7 +52,7 @@ function site_lines(site: extern_union.Site, t: str, hero_name: str, order: [str
         named[k] @ true
 
     at = source.locate(s, site.span.start)
-    place = "#line " + at.line.to_str() + " \"" + at.file + "\"\n"
+    place = c_text.line_directive(at: at.line, file: at.file) + "\n"
     is_union = "__builtin_classify_type(*(" + t + " *)0) == 13"
     out: [str] @ []
     index: i64 @ 0

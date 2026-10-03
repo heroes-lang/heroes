@@ -47,6 +47,7 @@ use cli/process
 use cli/publish
 use cli/digest
 use cli/deps
+use emit/c_text
 
 # Everything the program's C is compiled under but the words of one run (its
 # input, its output, its listing): the level, whether it is sanitised, the
@@ -175,14 +176,10 @@ function reads(build: str, words: [str], headers: [str], @memo: {str: str}) -> s
     return rows
 
 # The lines every probe unit opens with: one angled include per header, in
-# the program's own order (`emit/externs.headers`).
+# the program's own order (`emit/externs.headers`), spelled as the program's
+# own unit spells them (`emit/c_text.hero`).
 function include_lines(headers: [str]) -> str
-    lines: [str] @ []
-
-    for header in headers
-        lines @ lines.push("#include <" + header + ">")
-
-    return lines.join("\n") + "\n"
+    return c_text.includes(headers).join("\n") + "\n"
 
 ## Tests
 
@@ -327,6 +324,58 @@ test "every flag a probe leaves out changes no predefined macro, here or on Linu
                 assert macros(more: target.push(flag)) == base
 
     assert macros(more: arm.push("-fsigned-char")) != macros(more: arm)
+
+# **What the emitter writes of a program's text, clang reads as written and
+# says nothing about** (defect 207), under the compiler's own flags: the
+# comment that opens a unit, a header named with a `??` that ends a trigraph
+# where the machine allows such a name (Windows refuses a `?` in one), a
+# `#line` naming a file whose name holds the nine endings, a quote, a
+# backslash and a comment's closer, and a literal holding them, whose bytes
+# are the text's under `-std=c11`, where C reads trigraphs, as under the
+# compiler's own `-std=gnu11`. The name clang reports is the name written,
+# which every message mapped back to a `.hero` line and the debugger read.
+test "clang reads the emitter's spellings of a program's text as written, and says nothing about them (defect 207)"
+    root = "build/selftest-c-text"
+    assert !process.remove_tree(root).is_err()
+    assert !process.mkdir_all(root + "/inc").is_err()
+    odd = "t??=??(??/??)??'??<??!??>??-a*/x\"y\\q.hero"
+    held = "what???) ??= ??( ??/ ??) ??' ??< ??! ??> ??- \"\\"
+    bytes_of: [str] @ []
+    i: i64 @ 0
+
+    while i < held.len()
+        bytes_of @ bytes_of.push(held[i].to_str())
+        i @ i + 1
+
+    unit: str @ "/* " + c_text.in_comment(odd) + " */\n#include <string.h>\n"
+
+    if process.exe_suffix() != ".exe"
+        assert !write_file(path: root + "/inc/h??).h", text: "#define HEROES_C_TEXT 1\n").is_err()
+        unit @ unit + c_text.includes(["h??).h"]).join("\n") + "\n#if HEROES_C_TEXT != 1\n#error the header was not read\n#endif\n"
+    unit @ unit + c_text.line_directive(at: 7, file: odd) + "\nint main(void) {\n    static const char got[] = " + c_text.literal(held) + ";\n"
+    unit @ unit + "    static const unsigned char want[] = {" + bytes_of.join(", ") + ", 0};\n"
+    unit @ unit + "    return sizeof got != sizeof want || memcmp(got, want, sizeof want) != 0;\n}\n"
+    assert !write_file(path: root + "/unit.c", text: unit).is_err()
+    binary = root + "/unit" + process.exe_suffix()
+
+    for dialect in ["-std=gnu11", "-std=c11"]
+        words: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
+        words @ strings.with_all(list: words, more: [dialect, "-I", root + "/inc", root + "/unit.c", "-o", binary])
+        built = process.run(program: "clang", words: words, out: process.discard(), err: root + "/said.txt")
+        assert built.code == 0
+        assert read_file(root + "/said.txt").must() == ""
+        assert process.run(program: binary, words: [binary], out: process.discard(), err: process.discard()).code == 0
+
+    # The name, read back from clang's own diagnostic.
+    assert !write_file(path: root + "/named.c", text: c_text.line_directive(at: 7, file: odd) + "\n#error heroes-c-text\n").is_err()
+    named: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
+    named @ strings.with_all(list: named, more: ["-fsyntax-only", root + "/named.c"])
+    refused = process.run(program: "clang", words: named, out: process.discard(), err: root + "/said.txt")
+    said = read_file(root + "/said.txt").must()
+    assert refused.code != 0
+    assert process.holds(text: said, needle: odd + ":7:")
+    assert process.holds(text: said, needle: "heroes-c-text")
+    assert !process.holds(text: said, needle: "warning:")
 
 # What clang predefines for C under `more`, read from an empty unit.
 function macros(more: [str]) -> str

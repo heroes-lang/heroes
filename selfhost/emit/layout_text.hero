@@ -44,6 +44,7 @@ use ast
 use source
 use emit/ctype
 use emit/layout_rows
+use emit/c_text
 
 # A group record the dump is asked about: its declaration and its C type.
 record Asked
@@ -106,10 +107,7 @@ function asked(s: source.Source, decls: [ast.Decl]) -> [Asked]
     return out
 
 function dump_unit(headers: [str], wanted: [Asked]) -> str
-    lines: [str] @ []
-
-    for header in headers
-        lines @ lines.push("#include <" + header + ">")
+    lines: [str] @ c_text.includes(headers)
 
     for one in wanted
         wrap = "struct " + layout_rows.PREFIX + one.decl.to_str()
