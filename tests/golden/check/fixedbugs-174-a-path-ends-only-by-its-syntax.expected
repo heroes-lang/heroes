@@ -1,0 +1,12 @@
+tests/golden/check/fixedbugs-174-a-path-ends-only-by-its-syntax.hero:14:41: error[missing_return]: `asserted_a_constant` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-174-a-path-ends-only-by-its-syntax.hero:19:41: error[missing_return]: `asserted_a_negation` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-174-a-path-ends-only-by-its-syntax.hero:25:44: error[missing_return]: `a_break_under_if_false` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-174-a-path-ends-only-by-its-syntax.hero:36:39: error[missing_return]: `a_break_in_an_arm` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-174-a-path-ends-only-by-its-syntax.hero:48:44: error[missing_return]: `a_condition_that_holds` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-174-a-path-ends-only-by-its-syntax.hero:62:39: error[missing_return]: `exits_by_a_method` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-174-a-path-ends-only-by-its-syntax.hero:67:48: error[missing_return]: `calls_a_field_named_exit` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-174-a-path-ends-only-by-its-syntax.hero:77:9: error[no_value]: this `match` produces no value — every branch leaves before it gives one, so there is nothing to bind
+tests/golden/check/fixedbugs-174-a-path-ends-only-by-its-syntax.hero:88:13: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-174-a-path-ends-only-by-its-syntax.hero:100:5: error[no_value]: constant `ASSERTS_FALSE` produces no value — its body never goes past this line, and a constant's value is its body's last line
+tests/golden/check/fixedbugs-174-a-path-ends-only-by-its-syntax.hero:103:5: error[no_value]: constant `LOOPS` produces no value — its body never goes past this line, and a constant's value is its body's last line
+tests/golden/check/fixedbugs-174-a-path-ends-only-by-its-syntax.hero:107:5: error[no_value]: constant `ASSERTS_THEN_SEVEN` produces no value — its body never goes past this line, and a constant's value is its body's last line

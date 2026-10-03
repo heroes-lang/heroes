@@ -1260,6 +1260,17 @@ value = match e
   bodies — a name bound in an arm is a name nothing can read — and that rejection
   lives in the parser, so it is one diagnostic instead of the unused-binding
   message plus a second one.
+- **A block's last line is a statement position, so a block or an arm whose last
+  statement is an `if` or a `match` every branch of which leaves, leaves** (panel
+  185's R4, landed 2026-10-03): it owes no value, as one ending on a `return` does,
+  and its arm is a jumping arm; a *binding* of such a construct is still refused,
+  since nothing reaches it. Since panel 184's R4 a branch leaves by `exit(code:)`,
+  `assert false` or a `while true` with no `break` of its own as well as by a jump,
+  and one predicate, the checker's `Outcome.leaves`, decides a function's end, a value
+  arm and a value block (panel 185's R5); the lowering ends a value block, a value arm
+  and the end of a function with a result with `unreachable` where the checker said so
+  and the IR would run on, so no value is read that no path made. Only a jump refuses
+  the statement after it.
 
 **`if` takes only a `bool`** — it is sugar for `match` on a two-case variant, which is what `bool`
 is. One line of spec covers all its behaviour. `else if` and `else` exist.
@@ -2149,6 +2160,12 @@ anyone.
 - Type-inference failures on empty containers dictate the annotation (4.5).
 - Non-exhaustive `match` lists the missing cases by name.
 - Same-typed argument rule violations show the required labels.
+- A statement after `return`, `break` or `continue` in its block is refused,
+  `unreachable_statement`, naming the jump and its line (panel 184's R4, landed 2026-10-03):
+  the line an indentation slip moved under a jump otherwise compiles and never runs, a loop
+  that never advances in the sitting's own blind reading. `missing_return` reads
+  `exit(code:)`, `assert false` and a `while true` with no `break` of its own as ends of a
+  path, by their syntax, so a function whose path ends on one owes no `return` there.
 
 ### 4.18 Tests in the source
 

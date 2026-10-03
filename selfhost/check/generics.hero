@@ -251,7 +251,7 @@ function mentions(c: state.Checker, ty: i64, at: i64) -> bool
 # own recommendation of the cheaper reading).
 #
 # An EMPTY name matches anything, on either side. A function whose parameters
-# cannot be confused carries none (`check/walk.hero`'s `declared_labels`), and a
+# cannot be confused carries none (`check/labels.hero`'s `declared_labels`), and a
 # type that names nothing is asking for nothing.
 function named(@c: state.Checker, wanted: table.Params, got: table.Params, span: token.Span)
     ws = table.labels_of(c.out.types, wanted)

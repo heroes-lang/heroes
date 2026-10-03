@@ -1,6 +1,6 @@
 tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:14:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
-tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:17:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
-tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:20:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
+tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:17:5: error[no_value]: constant `ENDS_ON_ASSERT_FALSE` produces no value — its body never goes past this line, and a constant's value is its body's last line
+tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:20:5: error[no_value]: constant `ENDS_ON_A_LOOP` produces no value — its body never goes past this line, and a constant's value is its body's last line
 tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:24:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
 tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:31:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
 tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement.hero:34:5: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value

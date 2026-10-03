@@ -334,7 +334,7 @@ function fits(@t: Types, wanted: i64, got: i64) -> bool
             # A run of the wrong LENGTH is a different shape and not a blank; a
             # run of length ZERO is a type that names nothing anywhere, which is
             # every declared function with no two parameters of one type
-            # (`check/walk.hero`'s `declared_labels`). Refusing that made every
+            # (`check/labels.hero`'s `declared_labels`). Refusing that made every
             # written type carrying a name at a position nothing can confuse
             # UNINHABITED — panel 130's spec-warden, which built its own compiler
             # and ran `(function(item: i64) -> i64)` rather than reading for it.

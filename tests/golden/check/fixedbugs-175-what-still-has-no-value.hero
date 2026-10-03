@@ -1,0 +1,86 @@
+# Fixed 2026-10-02, defect 175, lane flow4: panel 185's R4. The shapes
+# beside the repair that stay refused, each told once and at the true
+# place. A value block whose last statement is an `if` or a `match` every
+# branch of which leaves now leaves, and builds
+# (`tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero`);
+# but where every arm of a binding's `match` leaves so, nothing reaches the
+# binding, and it is told there, in the words true of how they left; a
+# binding inside an arm is not the arm's last line, so its `match` is told;
+# a constant whose body ends on one is told as a constant that jumps; and a
+# leaving construct that holds a mistake of its own, or a jump refused where
+# it stands, is told that mistake and nothing more.
+
+# Lane flow's d1: every arm leaves, by a `match` and by an `if`.
+function every_arm_leaves(k: i64, j: i64) -> i64
+    x = match k  #~ no_value
+        0 =>
+            match j
+                0 => return 1
+                _ => return 2
+        _ =>
+            if j == 0
+                return 3
+            else
+                return 4
+
+    return x
+
+# The same where one way out is `exit(code:)`, which is no jump.
+function every_arm_leaves_one_by_exit(k: i64, j: i64) -> i64
+    x = match k  #~ no_value
+        0 =>
+            match j
+                0 => exit(code: 1)
+                _ => return 2
+        _ => exit(code: 3)
+
+    return x
+
+# Lane flow's d8: a binding is not a tail.
+function a_binding_inside(k: i64, j: i64) -> i64
+    x = match k
+        0 =>
+            y = match j  #~ no_value
+                0 => return 1
+                _ => return 2
+
+            y
+        _ => 20
+
+    return x
+
+# A constant's body that ends on a leaving `if` gives no value.
+constant LEAVES_AT_ITS_LAST_LINE: i64
+    if true  #~ no_value
+        return 1
+    else
+        return 2
+
+# A mistake inside the leaving construct is told, and nothing else.
+function a_mistake_inside(k: i64, j: i64) -> i64
+    x = match k
+        0 =>
+            match j
+                0 =>
+                    y: i64 = "s"  #~ type_mismatch
+                    return y
+                _ => return 2
+        _ => 20
+
+    return x
+
+# Jumps refused where they stand are told there, and no claim rests on them.
+function refused_jumps(k: i64, c: bool) -> i64
+    x = match k
+        0 =>
+            if c
+                break  #~ jump_outside_loop
+            else
+                continue  #~ jump_outside_loop
+        _ => 20
+
+    return x
+
+# Corrected 2026-10-03, lane flow4: the first line's date is one day early by
+# the clock. This case and its repair were written, run and committed on
+# 2026-10-03 (`937ae12f`), the lane's work having begun on 2026-10-02.

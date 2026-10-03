@@ -58,3 +58,10 @@ function main()
 # lines stay where they were: the message of `AFTER_TWO_LINES` stands at the
 # line that ends the block, `assert x == 2`, which is the line that has to be
 # the value, and not where the block begins, as the comment above it says.
+
+# Corrected 2026-10-02, defect 174, lane flow4: under panel 184's R4 an
+# `assert false` and a `while true` with no `break` of its own end a path,
+# so `ENDS_ON_ASSERT_FALSE` and `ENDS_ON_A_LOOP` no longer end on a
+# statement: each body never goes past its line, and is told so once, at
+# that line, naming the constant (`flow_errors.constant_ended`). The other
+# bodies here keep their messages.

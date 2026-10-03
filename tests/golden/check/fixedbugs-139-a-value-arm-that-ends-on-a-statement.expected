@@ -1,6 +1,2 @@
-tests/golden/check/fixedbugs-139-a-value-arm-that-ends-on-a-statement.hero:21:18: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
-tests/golden/check/fixedbugs-139-a-value-arm-that-ends-on-a-statement.hero:28:18: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
-tests/golden/check/fixedbugs-139-a-value-arm-that-ends-on-a-statement.hero:35:18: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
 tests/golden/check/fixedbugs-139-a-value-arm-that-ends-on-a-statement.hero:42:18: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
-tests/golden/check/fixedbugs-139-a-value-arm-that-ends-on-a-statement.hero:49:18: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value
 tests/golden/check/fixedbugs-139-a-value-arm-that-ends-on-a-statement.hero:50:18: error[no_value]: this branch ends on a statement, so it produces no value — its last line has to be the value

@@ -1,0 +1,14 @@
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:16:5: error[unreachable_statement]: this statement never runs: the `return` at line 15 leaves its block first
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:20:5: error[unreachable_statement]: this statement never runs: the `return` at line 19 leaves its block first
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:25:9: error[unreachable_statement]: this statement never runs: the `break` at line 24 leaves its block first
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:30:9: error[unreachable_statement]: this statement never runs: the `continue` at line 29 leaves its block first
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:35:5: error[unreachable_statement]: this statement never runs: the `return` at line 34 leaves its block first
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:40:5: error[unreachable_statement]: this statement never runs: the `return` at line 38 leaves its block first
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:47:9: error[unreachable_statement]: this statement never runs: the `return` at line 46 leaves its block first
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:54:13: error[unreachable_statement]: this statement never runs: the `break` at line 53 leaves its block first
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:63:13: error[unreachable_statement]: this statement never runs: the `return` at line 62 leaves its block first
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:70:13: error[unreachable_statement]: this statement never runs: the `return` at line 69 leaves its block first
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:79:5: error[unreachable_statement]: this statement never runs: the `return` at line 78 leaves its block first
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:92:13: error[unreachable_statement]: this statement never runs: the `return` at line 91 leaves its block first
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:100:13: error[unreachable_statement]: this statement never runs: the `break` at line 99 leaves its block first
+tests/golden/check/fixedbugs-174-a-statement-after-return-break-or-continue-is-refused.hero:104:5: error[unreachable_statement]: this statement never runs: the `return` at line 103 leaves its block first

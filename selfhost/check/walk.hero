@@ -18,8 +18,9 @@
 # `check` for its arguments. The edges that LEAVE the knot and stay other
 # modules: check_state (the record), check_table, check_lower,
 # check_render, check_ops, check_access, check_contextual, check_join,
-# check_builtins, check_generics, the error files, and digits for the
-# literal range.
+# check_builtins, check_generics, check_path_end (how a path ends with no
+# jump word, and the refusal after one that is), the error files, and
+# digits for the literal range.
 #
 # **The entry points**: `synth` (⇒: give me this expression's type),
 # `check` (⇐: hold this expression to a type the context knows), `block`
@@ -71,6 +72,7 @@ use check/freer as freer
 use check/freer_marks
 use check/interp
 use check/reach
+use check/path_end
 
 ## The two statement-side answers
 
@@ -733,31 +735,22 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             value @ got.value
         index @ index + 1
 
-    # A block that jumps produces no value, whatever its last line looked
-    # like.
+    # Panel 184's R4: a statement after a `return`, `break` or `continue` in
+    # this block never runs, and is refused (`check/path_end`).
+    path_end.after_a_jump(@c, a, s, body)
+
+    # A block that leaves produces no value, whatever its last line looked
+    # like, and the lowering is told where it ends (panel 185's R5).
     if leaves != .falls
-        return Outcome(leaves: leaves, value: fail(code: "jumps", msg: "a block that jumps produces no value"))
+        path_end.ended(@c, at: body.stmts[last])
+        return Outcome(leaves: leaves, value: fail(code: "jumps", msg: "a block that leaves produces no value"))
 
     # Asked for a value, falls through, and has none: its last line is a
     # statement. NOT the same as diverging — treating the two alike would
     # let `x = if c` with a loop in the branch pass silently.
     if want != .nothing && value.is_err()
-        ended_on_a_statement(@c, a, body)
+        path_end.ended_on_a_statement(@c, a, body)
     return Outcome(leaves: .falls, value: value)
-
-# A value block that ends on a statement, told at that statement: the line
-# that has to be the value (defect 149). Until 2026-10-02 the caret stood at
-# the block's span, which begins at its first line, so every value block of
-# more than one line, a constant's body, a branch of an `if` or a `match`,
-# sent the author to a line that was right. A function of its own so that
-# `block`, which every nested block recurses through, holds no diagnostic in
-# its frame.
-function ended_on_a_statement(@c: state.Checker, a: ast.Ast, body: ast.Block)
-    span: token.Span @ body.span
-
-    if body.stmts.len() > 0
-        span @ a.stmts[body.stmts[body.stmts.len() - 1]].span
-    state.push_diagnostic(@c, flow_errors.branch_without_value(span))
 
 function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, want: Want) -> Outcome
     span = a.stmts[id].span
@@ -795,67 +788,95 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             # reading a map yields a fallible because the key may be
             # absent; WRITING one cannot fail, because m[k] @ v inserts.
             # So the target sheds one fallible layer, only for this shape.
-            narrowed = write_target(c, a, place: m.place, read: target)
+            narrowed = access.write_target(c, a, place: m.place, read: target)
             check(@c, a, r, s, decls, id: m.value, expected: narrowed)
             return falls_with_nothing()
         .return_stmt rv => return returns(@c, a, r, s, decls, value: rv.value, span: span)
         .break_stmt     => return loop_jump(@c, word: "break", span: span)
         .continue_stmt  => return loop_jump(@c, word: "continue", span: span)
-        .assert_stmt v =>
-            wanted = table.bool_ty(c.out.types)
-            got = synth(@c, a, r, s, decls, v.value)
-
-            if got != wanted && !table.poisoned(c.out.types, got)
-                shown = state.show(c, s, decls, got)
-                state.push_diagnostic(
-                    @c,
-                    value_errors.not_bool(what: "an `assert`", got: shown, span: a.exprs[v.value].span)
-                )
-            return falls_with_nothing()
-        .while_stmt w =>
-            wanted = table.bool_ty(c.out.types)
-            got = synth(@c, a, r, s, decls, w.cond)
-
-            if got != wanted && !table.poisoned(c.out.types, got)
-                shown = state.show(c, s, decls, got)
-                state.push_diagnostic(
-                    @c,
-                    value_errors.not_bool(what: "a `while` condition", got: shown, span: a.exprs[w.cond].span)
-                )
-            c.loops @ c.loops + 1
-            _ = block(@c, a, r, s, decls, body: w.block, want: .nothing)
-            c.loops @ c.loops - 1
-
-            # A loop may run zero times, so it never counts as diverging —
-            # that one line is why a function whose only return sits
-            # inside a loop is still missing_return.
-            return falls_with_nothing()
-        .for_in f =>
-            over = synth(@c, a, r, s, decls, f.iterable)
-            element: i64 @ 0
-
-            match table.get(c.out.types, over)
-                .array arr => element @ arr.element
-                # s.chars() is how a string is walked (§4.3), so a bare
-                # str here is the mistake worth naming.
-
-                .error => element @ state.error_ty_of(c)
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
-                    shown = state.show(c, s, decls, over)
-                    state.push_diagnostic(@c, flow_errors.not_iterable(shown, a.exprs[f.iterable].span))
-                .fixed | .map | .fallible | .function_ty | .named | .case_ty | .failure | .generic =>
-                    shown = state.show(c, s, decls, over)
-                    state.push_diagnostic(@c, flow_errors.not_iterable(shown, a.exprs[f.iterable].span))
-
-            state.bind_local(@c, f.name, ty: element)
-            c.loops @ c.loops + 1
-            _ = block(@c, a, r, s, decls, body: f.block, want: .nothing)
-            c.loops @ c.loops - 1
-            return falls_with_nothing()
-        .expr_stmt v => return expression_statement(@c, a, r, s, decls, value: v.value, want: want)
-        .error       => return falls_with_nothing()
+        .assert_stmt v  => return assertion(@c, a, r, s, decls, value: v.value)
+        .while_stmt w   => return while_loop(@c, a, r, s, decls, cond: w.cond, body: w.block)
+        .for_in f       => return for_loop(@c, a, r, s, decls, name: f.name, iterable: f.iterable, body: f.block)
+        .expr_stmt v    => return expression_statement(@c, a, r, s, decls, value: v.value, want: want)
+        .error          => return falls_with_nothing()
 
     return falls_with_nothing()
+
+# The three statements below are functions of their own so that `statement`,
+# which every nested block recurses through, holds none of their
+# temporaries: the C this compiles to keeps every temporary of a function in
+# its frame. Measured 2026-10-02 on this Mac, lane flow4: the first build of
+# panel 184's R4 wrote them in `statement`, whose frame grew 1,680 bytes
+# (`clang -fstack-usage` on the emitted C), and the `if` statements `check`
+# survives nested fell from 206 to 195.
+function assertion(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], value: i64) -> Outcome
+    wanted = table.bool_ty(c.out.types)
+    got = synth(@c, a, r, s, decls, value)
+
+    if got != wanted && !table.poisoned(c.out.types, got)
+        shown = state.show(c, s, decls, got)
+        state.push_diagnostic(@c, value_errors.not_bool(what: "an `assert`", got: shown, span: a.exprs[value].span))
+
+    # `assert false` aborts wherever it stands, and ends a path (panel 184's
+    # R4, `check/path_end`).
+    if path_end.aborts(a, s, value: value)
+        return Outcome(leaves: .ends, value: fail(code: "ends", msg: "`assert false` never goes on"))
+    return falls_with_nothing()
+
+function while_loop(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], cond: i64, body: ast.Block) -> Outcome
+    wanted = table.bool_ty(c.out.types)
+    got = synth(@c, a, r, s, decls, cond)
+
+    if got != wanted && !table.poisoned(c.out.types, got)
+        shown = state.show(c, s, decls, got)
+        state.push_diagnostic(
+            @c,
+            value_errors.not_bool(what: "a `while` condition", got: shown, span: a.exprs[cond].span)
+        )
+    broken = loop_body(@c, a, r, s, decls, body: body)
+
+    # A loop may run zero times, so it counts as one that can finish — that
+    # line is why a function whose only return sits inside a loop is still
+    # missing_return — but for a `while true` with no `break` of its own,
+    # which never does (panel 184's R4).
+    if path_end.forever(a, s, cond: cond, broken: broken)
+        return Outcome(leaves: .ends, value: fail(code: "ends", msg: "a loop nothing breaks never finishes"))
+    return falls_with_nothing()
+
+function for_loop(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], name: token.Span, iterable: i64, body: ast.Block) -> Outcome
+    over = synth(@c, a, r, s, decls, iterable)
+    element: i64 @ 0
+
+    match table.get(c.out.types, over)
+        .array arr => element @ arr.element
+        # s.chars() is how a string is walked (§4.3), so a bare str here is
+        # the mistake worth naming.
+
+        .error => element @ state.error_ty_of(c)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+            shown = state.show(c, s, decls, over)
+            state.push_diagnostic(@c, flow_errors.not_iterable(shown, a.exprs[iterable].span))
+        .fixed | .map | .fallible | .function_ty | .named | .case_ty | .failure | .generic =>
+            shown = state.show(c, s, decls, over)
+            state.push_diagnostic(@c, flow_errors.not_iterable(shown, a.exprs[iterable].span))
+
+    state.bind_local(@c, name, ty: element)
+    _ = loop_body(@c, a, r, s, decls, body: body)
+    return falls_with_nothing()
+
+# A loop's body, checked with the loop counted and its own `break`s
+# collected (`Checker.broke`, panel 184's R4): true where one was seen. The
+# enclosing loop's answer is given back after, so this loop's `break` is
+# never the enclosing loop's.
+function loop_body(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block) -> bool
+    outer = c.broke
+    c.broke @ false
+    c.loops @ c.loops + 1
+    _ = block(@c, a, r, s, decls, body: body, want: .nothing)
+    c.loops @ c.loops - 1
+    broken = c.broke
+    c.broke @ outer
+    return broken
 
 # `return e` and `return` — checked against the signature, never
 # inferred. The two error cases are opposites: a value where the
@@ -883,33 +904,11 @@ function loop_jump(@c: state.Checker, word: str, span: token.Span) -> Outcome
     if c.loops == 0
         state.push_diagnostic(@c, flow_errors.jump_outside_loop(word, span))
         return Outcome(leaves: .refused, value: fail(code: "jumps", msg: "a jump has no value"))
+
+    # A `break` is the innermost loop's own (`Checker.broke`).
+    if word == "break"
+        c.broke @ true
     return Outcome(leaves: .jumps, value: fail(code: "jumps", msg: "a jump has no value"))
-
-# The type a mutation target ACCEPTS, which differs from the type it
-# reads in exactly one case: an index into a map.
-function write_target(c: state.Checker, a: ast.Ast, place: i64, read: i64) -> i64
-    match a.exprs[place].kind
-        .index i =>
-            base_ty = c.out.expr_types[i.base]
-
-            base_is_map = match table.get(c.out.types, base_ty)
-                .map                                                      => true
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-                .array | .fixed | .fallible | .function_ty | .named       => false
-                .case_ty | .failure | .generic | .error                   => false
-
-            if base_is_map
-                match table.get(c.out.types, read)
-                    .fallible o                                               => return o.payload
-                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return read
-                    .array | .fixed | .map | .function_ty | .named            => return read
-                    .case_ty | .failure | .generic | .error                   => return read
-            return read
-        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return read
-        .name | .hole | .unary | .binary | .field | .field_name | .call | .method      => return read
-        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => return read
-
-    return read
 
 # An expression alone on a line: route if/match in statement position
 # (where they need no value and may have arms that all jump), and enforce
@@ -936,7 +935,7 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
                 # As a statement it has the type a statement must have.
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
                 return Outcome(leaves: leaving, value: fail(code: "none", msg: "a statement produces no value"))
-            return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
+            return valued_tail(@c, a, r, s, decls, value: value, want: want, span: span)
         .match_expr m =>
             if want == .nothing
                 subject = synth(@c, a, r, s, decls, m.scrutinee)
@@ -950,7 +949,7 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
                 leaving = join.every_branch(branches)
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
                 return Outcome(leaves: leaving, value: fail(code: "none", msg: "a statement produces no value"))
-            return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
+            return valued_tail(@c, a, r, s, decls, value: value, want: want, span: span)
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return valued_expression(
             @c,
             a,
@@ -984,7 +983,30 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
 
     return falls_with_nothing()
 
+# Panel 185's R4: an `if` or a `match` where a value is wanted, a value
+# block's last line or an arm's one statement, every branch of which leaves,
+# leaves with them, so its block or its arm leaves as one ending on a
+# `return` does (`check/path_end.withdrawn`, the sitting's (3x)). A function
+# of its own so that `expression_statement`'s frame does not widen.
+function valued_tail(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], value: i64, want: Want, span: token.Span) -> Outcome
+    before = c.out.diagnostics.len()
+    got = valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
+    left = path_end.withdrawn(@c, a, before: before, at: value, span: span)
+
+    if left == .falls
+        return got
+    return Outcome(leaves: left, value: fail(code: "jumps", msg: "every branch of this line leaves"))
+
 function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], value: i64, want: Want, span: token.Span) -> Outcome
+    # `exit(code:)` ends the program where it stands, so it is a statement
+    # even where a value is wanted, and owes none (panel 184's R4). Asked
+    # here, where every expression alone on a line but an `if` or a `match`
+    # arrives, and not in `statement`, which every nested block recurses
+    # through.
+    if path_end.calls_exit(a, r, s, decls, value: value)
+        _ = synth(@c, a, r, s, decls, value)
+        return Outcome(leaves: .ends, value: fail(code: "ends", msg: "`exit` never returns"))
+
     # A value block's last statement is checked against what the block is
     # FOR — the ⇐-only forms live or die on this.
     match want
@@ -1080,9 +1102,14 @@ function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
 # function of its own because `arms` is on the path every nested `match`
 # recurses through, and the C this compiles to keeps every temporary of a
 # function in its frame: the diagnostic built here would widen each level.
+# For the same reason it is where an arm that leaves is told to the lowering
+# where it ends, as a block that leaves is (panel 185's R5).
 function refuse_statement_arm(@c: state.Checker, a: ast.Ast, want: Want, got: Outcome, at: i64)
     if want != .nothing && got.leaves == .falls && got.value.is_err()
         state.push_diagnostic(@c, flow_errors.branch_without_value(a.stmts[at].span))
+
+    if got.leaves != .falls
+        path_end.ended(@c, at: at)
 
 # A literal arm, checked against the subject's type, which is the type its
 # context asks for (spec § 2), the sign folded into the literal as a
@@ -1094,48 +1121,6 @@ function literal_pattern(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
         _ = synth(@c, a, r, s, decls, value)
         return
     check(@c, a, r, s, decls, id: value, expected: subject)
-
-# A declared function used as a VALUE carries its parameter names into its
-# type, and only where §4.9 needs them: two positions of one type. Anywhere
-# else the type stays bare, so `(function(i64, str) -> ())` is ONE type however
-# it was reached, and `check/type_labels.hero`'s two rules and this one agree
-# on which types have names.
-#
-# Defect 026 is why it is not decoration. Without it an annotation could rename
-# the positions of the function assigned to it — `f: (function(msg: str, code:
-# str) -> str) @ report` where `report` is `(code, msg)` — and the call site
-# would obey the annotation while the callee obeyed itself. With the names in
-# the type's identity (`check/table.hero`) that assignment is a mismatch.
-function declared_labels(s: source.Source, params: [ast.Param], lowered: [i64]) -> [str]
-    names: [str] @ []
-    none: [str] = []
-    any_shared: bool @ false
-    i: i64 @ 0
-
-    while i < lowered.len()
-        written = source.span_text(s, params[i].name)
-
-        if table.shared_at(lowered, at: i) && written != "_"
-            any_shared @ true
-            names @ names.push(written)
-        else
-
-            # Two reasons for an empty name, and they are the same reason. A
-            # position nothing can be confused with needs none, so two
-            # declarations differing only in what they call THAT parameter are
-            # one type. And a position the body called `_` makes no claim about
-            # itself — which is what `_` means at every other site in this
-            # language — so it fits whatever the expected type calls it
-            # (`table.fits`). Panel 129's ffi seat is why: zlib's `free_func`
-            # ignores `opaque` in most implementations and reads it in the ones
-            # that pool, and one header typedef takes both.
-            names @ names.push("")
-        i @ i + 1
-
-    if !any_shared
-        return none
-
-    return names
 
 function listed(xs: [i64], x: i64) -> bool
     for it in xs
@@ -1172,7 +1157,7 @@ function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: so
             return table.intern_function(
                 @c.out.types,
                 lowered,
-                declared_labels(s, fd.value.params, lowered),
+                labels.declared_labels(s, fd.value.params, lowered),
                 result: result
             )
         .constant_decl | .record_decl | .variant_decl | .test_decl => return state.error_ty_of(c)

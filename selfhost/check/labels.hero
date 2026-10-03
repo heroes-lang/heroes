@@ -28,6 +28,7 @@ use source
 use label_errors
 use resolved
 use inventory
+use check/table
 use check/state
 use check/contextual
 
@@ -274,6 +275,51 @@ function could_take(c: state.Checker, a: ast.Ast, decls: [ast.Decl], value: i64,
     if contextual.contextual(a, value)
         return contextual.adopts(c, a, decls, id: value, offered: ty)
     return c.out.expr_types[value] == ty
+
+# A declared function used as a VALUE carries its parameter names into its
+# type, and only where §4.9 needs them: two positions of one type. Anywhere
+# else the type stays bare, so `(function(i64, str) -> ())` is ONE type however
+# it was reached, and `check/type_labels.hero`'s two rules and this one agree
+# on which types have names.
+#
+# Defect 026 is why it is not decoration. Without it an annotation could rename
+# the positions of the function assigned to it — `f: (function(msg: str, code:
+# str) -> str) @ report` where `report` is `(code, msg)` — and the call site
+# would obey the annotation while the callee obeyed itself. With the names in
+# the type's identity (`check/table.hero`) that assignment is a mismatch.
+# Moved here from `check/walk.hero` on 2026-10-03 (lane flow4), unchanged,
+# beside the rule that reads labels at a call: it calls nothing back in the
+# walk, and the walk's decided ceiling had no room for panel 185's R4.
+function declared_labels(s: source.Source, params: [ast.Param], lowered: [i64]) -> [str]
+    names: [str] @ []
+    none: [str] = []
+    any_shared: bool @ false
+    i: i64 @ 0
+
+    while i < lowered.len()
+        written = source.span_text(s, params[i].name)
+
+        if table.shared_at(lowered, at: i) && written != "_"
+            any_shared @ true
+            names @ names.push(written)
+        else
+
+            # Two reasons for an empty name, and they are the same reason. A
+            # position nothing can be confused with needs none, so two
+            # declarations differing only in what they call THAT parameter are
+            # one type. And a position the body called `_` makes no claim about
+            # itself — which is what `_` means at every other site in this
+            # language — so it fits whatever the expected type calls it
+            # (`table.fits`). Panel 129's ffi seat is why: zlib's `free_func`
+            # ignores `opaque` in most implementations and reads it in the ones
+            # that pool, and one header typedef takes both.
+            names @ names.push("")
+        i @ i + 1
+
+    if !any_shared
+        return none
+
+    return names
 
 ## Tests
 
