@@ -1,0 +1,158 @@
+# What Windows reads otherwise in a group head's name (design.md §4.19; panel
+# 188's R2 and R6, extended to Windows by the author on 2026-10-03; defect
+# 234). Measured on the Windows box by panel 188's ffi-pragmatist (its
+# report's § Windows, measured: clang 23.1.1 over NTFS), each against *file
+# not found* on this Mac and on Linux: a part ending in `.` or a space is
+# stored under the name without them, so `<ab.h.>` and `<d./ab.h>` opened
+# `ab.h` and `d/ab.h`; a `:` names a drive or a stream of another file,
+# `<ab:c.h>` the stream `c.h` of a file `ab`; a `~` an 8.3 short name,
+# `<ABCDEF~1.H>` opening `abcdefghij.h`; `<zz/../ab.h>` opened `ab.h` with no
+# `zz` there; and `<NUL>` the null device. Judged on the value, part by part
+# between `/`, the rules refuse 0 of the header names surveyed on three
+# platforms, of this Mac's 1,371 library and 487 `.pc` names, and of the
+# tree's group-head strings.
+#
+# A header's value is a file's whole name; a `link`'s and a `package`'s are
+# the stem of one the tool builds, `X.lib` from clang's Windows driver
+# (measured with `-###`) and `X.pc`, so the end of their last part is not the
+# end of a file's name, and a `.` or a space there is no reason to refuse.
+# What lld-link and a Windows `pkg-config` do with such names is unrun.
+#
+# A leaf, read by `head_names`: `unwritable` gives `unwritable_name`'s reason
+# on Windows, a name it stores as another file's or a device's, and `locked`
+# gives `machine_locked_path`'s, a name whose file depends on the machine.
+
+use bytes
+
+# Why Windows holds no file of this name, or "": a part ending in `.` or a
+# space, or a part naming a device, the part before its first `.` read in
+# any case. `suffixed` is true where the tool adds to the last part.
+function unwritable(value: str, suffixed: bool) -> str
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at <= value.len()
+        if at == value.len() || value[at] == '/'
+            said = part_unwritable(part: value.slice(from: start, to: at), last: at == value.len(), suffixed: suffixed)
+
+            if said.len() > 0
+                return said
+            start @ at + 1
+        at @ at + 1
+
+    return ""
+
+function part_unwritable(part: str, last: bool, suffixed: bool) -> str
+    if part.len() == 0 || part == "." || part == ".."
+        return ""
+    end = part[part.len() - 1]
+
+    if (end == '.' || end == ' ') && !(last && suffixed)
+        return "has a part ending in " + ending(end) + ", which Windows drops from a file's name"
+
+    if device(part)
+        return "has a part Windows reads as one of its devices, not as a file"
+    return ""
+
+function ending(b: u8) -> str
+    if b == '.'
+        return "`.`"
+    return "a space"
+
+# Whether a part names one of Windows' devices: CON, PRN, AUX, NUL, COM0 to
+# COM9 or LPT0 to LPT9, in any case, the part before its first `.`.
+function device(part: str) -> bool
+    stem: i64 @ 0
+
+    while stem < part.len() && part[stem] != '.'
+        stem @ stem + 1
+
+    if stem == 3
+        return same_letters(part: part, word: "con") || same_letters(part: part, word: "prn") || same_letters(part: part, word: "aux") || same_letters(part: part, word: "nul")
+    return stem == 4 && (same_letters(part: part, word: "com") || same_letters(part: part, word: "lpt")) && bytes.is_digit(part[3])
+
+# Whether `part` begins with the lower-case `word` in any ASCII case.
+function same_letters(part: str, word: str) -> bool
+    if part.len() < word.len()
+        return false
+    i: i64 @ 0
+
+    while i < word.len()
+        if bytes.lower(part[i]) != word[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# Why the file this value names depends on the machine, or "": a `:`, a `~`,
+# or a `..` that climbs out of a directory the value named (a leading `../`
+# climbs out of none, and stays: the tree holds `../i2.h`).
+function locked(value: str) -> str
+    if !bytes.rfind(text: value, needle: ":").is_err()
+        return "holds `:`, which Windows reads as a drive or as a stream of another file"
+
+    if !bytes.rfind(text: value, needle: "~").is_err()
+        return "holds `~`, which Windows can read as the short name of another file"
+
+    if climbs_back(value)
+        return "climbs back out of a directory it names, with `..`, which Windows does without that directory, and macOS and Linux only through it"
+    return ""
+
+function climbs_back(value: str) -> bool
+    depth: i64 @ 0
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at <= value.len()
+        if at == value.len() || value[at] == '/'
+            part = value.slice(from: start, to: at)
+
+            if part == ".." && depth > 0
+                return true
+
+            if part.len() > 0 && part != "." && part != ".."
+                depth @ depth + 1
+            start @ at + 1
+        at @ at + 1
+
+    return false
+
+## Tests
+
+test "a part Windows stores under another name, or reads as a device (defect 234)"
+    assert unwritable(value: "ab.h", suffixed: false) == ""
+    assert unwritable(value: "ab.h.", suffixed: false) != ""
+    assert unwritable(value: "ab.h ", suffixed: false) != ""
+    assert unwritable(value: "ab.h..", suffixed: false) != ""
+    assert unwritable(value: "d./ab.h", suffixed: false) != ""
+    assert unwritable(value: "d /ab.h", suffixed: false) != ""
+    assert unwritable(value: "./ab.h", suffixed: false) == ""
+    assert unwritable(value: "../ab.h", suffixed: false) == ""
+    assert unwritable(value: ".hidden.h", suffixed: false) == ""
+    assert unwritable(value: "m.", suffixed: true) == ""
+    assert unwritable(value: "d./m", suffixed: true) != ""
+    assert unwritable(value: "NUL", suffixed: false) != ""
+    assert unwritable(value: "nul.h", suffixed: false) != ""
+    assert unwritable(value: "sub/Con.h", suffixed: false) != ""
+    assert unwritable(value: "aux", suffixed: true) != ""
+    assert unwritable(value: "COM1", suffixed: false) != ""
+    assert unwritable(value: "lpt0.h", suffixed: false) != ""
+    assert unwritable(value: "com.h", suffixed: false) == ""
+    assert unwritable(value: "comx.h", suffixed: false) == ""
+    assert unwritable(value: "com10.h", suffixed: false) == ""
+    assert unwritable(value: "nullish.h", suffixed: false) == ""
+    assert unwritable(value: "a.nul", suffixed: false) == ""
+    assert unwritable(value: "é.h", suffixed: false) == ""
+
+test "a name whose file depends on the machine: a `:`, a `~`, a climb out of a named directory (defect 234)"
+    assert locked("ab.h") == ""
+    assert locked("ab:c.h") != ""
+    assert locked("ab.h::$DATA") != ""
+    assert locked("ABCDEF~1.H") != ""
+    assert locked("zz/../ab.h") != ""
+    assert locked("zz/./../ab.h") != ""
+    assert locked("../ab.h") == ""
+    assert locked("../../ab.h") == ""
+    assert locked("./../ab.h") == ""
+    assert locked("sub/ab.h") == ""
+    assert locked("a..b/c.h") == ""

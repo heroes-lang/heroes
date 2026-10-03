@@ -20,6 +20,7 @@ use diag
 use escape
 use shown_char
 use head_package
+use head_windows
 
 # The diagnostic a group head's string earns, if any. `spelled` is its token,
 # quotes included; `what` is the word naming it: `header`, `link`, `package`.
@@ -52,7 +53,14 @@ function cannot_carry(spelled: str, value: str, span: token.Span, what: str) -> 
         )
 
     if what == "header"
-        return header_unwritable(spelled: spelled, value: value, span: span)
+        c_says = header_unwritable(spelled: spelled, value: value, span: span)
+
+        if !c_says.is_err()
+            return c_says
+    windows = head_windows.unwritable(value: value, suffixed: what != "header")
+
+    if windows.len() > 0
+        return windows_said(code: "unwritable_name", reason: windows, spelled: spelled, span: span, what: what)
     return fail(code: "none", msg: "a name every tool carries whole")
 
 # What the tool carries and the language still refuses, each a thesis rule.
@@ -68,6 +76,10 @@ function thesis(spelled: str, value: str, span: token.Span, what: str) -> diag.D
         return ok(
             diag.new_diagnostic(code: "machine_locked_path", message: locked(written: inside(spelled), what: what), span: span)
         )
+    machine = head_windows.locked(value)
+
+    if machine.len() > 0
+        return windows_said(code: "machine_locked_path", reason: machine, spelled: spelled, span: span, what: what)
 
     if what == "package"
         return head_package.thesis(written: inside(spelled), value: value, span: span)
@@ -75,6 +87,13 @@ function thesis(spelled: str, value: str, span: token.Span, what: str) -> diag.D
     if what == "header"
         return header_undefined(spelled: spelled, value: value, span: span)
     return fail(code: "none", msg: "a library's name every tool carries")
+
+# A name Windows reads otherwise (`head_windows`, defect 234), told in one
+# shape whichever reason and code.
+function windows_said(code: str, reason: str, spelled: str, span: token.Span, what: str) -> diag.Diagnostic?
+    return ok(
+        diag.new_diagnostic(code: code, message: "this " + noun(what) + "'s name " + reason + ", so `" + inside(spelled) + "` does not name one file on every machine: write the name without it, as " + example(what), span: span)
+    )
 
 function noun(what: str) -> str
     if what == "link"
@@ -402,3 +421,21 @@ test "C's spelling carried in is dropped by a certain fix, and only where what i
     assert left.fixes[0].certainty == .guess
     tabbed = judged(spelled: "\"<a\\tb.h>\"", span: token.Span(start: 0, end: 10), what: "header").must()
     assert tabbed.fixes[0].certainty == .guess
+
+test "what Windows stores as another file is unwritable, and what depends on the machine is locked (defect 234)"
+    assert said(spelled: "\"ab.h.\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"ab.h \"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"d./ab.h\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"NUL\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"ab:c.h\"", what: "header") == "machine_locked_path"
+    assert said(spelled: "\"ab.h::$DATA\"", what: "header") == "machine_locked_path"
+    assert said(spelled: "\"ABCDEF~1.H\"", what: "header") == "machine_locked_path"
+    assert said(spelled: "\"zz/../ab.h\"", what: "header") == "machine_locked_path"
+    assert said(spelled: "\"../i2.h\"", what: "header") == ""
+    assert said(spelled: "\"a:b.h\"", what: "header") == "machine_locked_path"
+    assert said(spelled: "\"m.\"", what: "link") == ""
+    assert said(spelled: "\"nul\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"ab:c\"", what: "link") == "machine_locked_path"
+    assert said(spelled: "\"x~1\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"con\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"sub/seven\"", what: "package") == ""
