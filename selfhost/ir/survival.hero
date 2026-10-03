@@ -1,0 +1,134 @@
+# Which loads of a block outlive a write to their own root, and what an
+# instruction writes (design.md Part 5, §4.10; defect 230, 2026-10-03).
+#
+# The ownership pass gives such a load a reference of its own
+# (`ir/own.hero`; `ir/place_store.hero`'s `load_survives_write` says why:
+# once the place store makes counts honest, the header under a borrowed load
+# dies at the write). It asked that question of every counted load, a walk
+# from the load to the end of its block, so a block of N loads cost N walks
+# of it: 1,598,832 `writes_root` calls for one function of 800 strings. The
+# answer for a load at position i, of root r, defining v, is a fact about
+# two positions: the first write to r after i, and the last read of v, the
+# terminator counting as the position past the block. The load survives
+# where such a write exists and v is read after it. So two walks from the
+# end answer every load of a block: the first finds each value's last read,
+# the second carries each root's nearest write below.
+#
+# What an instruction writes is read in ONE place, `roots_written`, which
+# `place_store.writes_root` asks too, so the place store's pattern and this
+# pass cannot disagree about a writer. `load_survives_write` stays as the
+# per-load reading, and `ir/own.hero`'s test holds this one to it.
+
+use ir
+use ir/containers
+use ir/uses
+
+# The roots one operation may change: those it names, or every root at once.
+# A copy-out writes a caller's place through a parameter and is counted as
+# writing every root, out of caution, as `place_store` always counted it.
+record RootsWritten
+    roots: [i64]
+    every: bool
+
+# `@` arguments and stores are the only writers the IR has.
+function roots_written(f: containers.Function, op: ir.OpKind) -> RootsWritten
+    none: [i64] = []
+
+    match op
+        .store st => return RootsWritten(roots: [st.place.root], every: false)
+        .push_owned pg => return RootsWritten(roots: [pg.place.root], every: false)
+        .copy_out => return RootsWritten(roots: none, every: true)
+        .call cl => return RootsWritten(roots: inout_roots(f, over: cl.arguments), every: false)
+        .construct con => return RootsWritten(roots: inout_roots(f, over: con.arguments), every: false)
+        .abort_op ab => return RootsWritten(roots: inout_roots(f, over: ab.arguments), every: false)
+        .lit | .load | .unary | .binary | .cast => return RootsWritten(roots: none, every: false)
+        .field | .index | .map_get | .len_of | .tag_of | .payload => return RootsWritten(roots: none, every: false)
+        .func_ref | .incref | .decref | .decref_slot | .hole | .missing => return RootsWritten(
+            roots: none,
+            every: false
+        )
+
+    return RootsWritten(roots: none, every: false)
+
+# The root of every `@` argument a run holds.
+function inout_roots(f: containers.Function, over: ir.Run) -> [i64]
+    out: [i64] @ []
+
+    for arg in containers.args_of(f, over)
+        match arg
+            .inout_arg io => out @ out.push(io.place.root)
+            .value_arg    => continue
+
+    return out
+
+record Survivors
+    # By position in the block: true for a load whose value is read after a
+    # write to its root, by a later instruction or by the terminator.
+    survive: [bool]
+    # Every operand and instruction the two walks visited, for the test that
+    # holds this reading to the block's size.
+    visits: i64
+
+function survivors(f: containers.Function, insts: [ir.Inst], term: ir.Term) -> Survivors
+    n = insts.len()
+    survive: [bool] @ []
+
+    while survive.len() < n
+        survive @ survive.push(false)
+
+    # Each value's last read, the terminator's at position n.
+    last: {i64: i64} @ {}
+    visits: i64 @ 0
+
+    for v in uses.terminator_operands(term)
+        last[v] @ n
+
+    at: i64 @ n - 1
+
+    while at >= 0
+        for v in uses.operands(f, insts[at].op)
+            visits @ visits + 1
+
+            if last[v].is_err()
+                last[v] @ at
+
+        at @ at - 1
+
+    # Each root's nearest write below the position, and the nearest write to
+    # every root at once; -1 where there is none. A load is answered before
+    # its own position's writes are taken, since a write must follow it.
+    below: {i64: i64} @ {}
+    every: i64 @ 0 - 1
+    at @ n - 1
+
+    while at >= 0
+        visits @ visits + 1
+        one = insts[at]
+        root: i64 @ 0 - 1
+
+        match one.op
+            .load ld                                                               => root @ ld.place.root
+            .lit | .store | .push_owned | .unary | .binary | .cast | .call         => root @ root
+            .construct | .field | .index | .map_get | .len_of | .tag_of | .payload => root @ root
+            .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot   => root @ root
+            .hole | .missing                                                       => root @ root
+
+        if root >= 0 && !one.dest.is_err()
+            write: i64 @ below[root].default(0 - 1)
+
+            if every >= 0 && (write < 0 || every < write)
+                write @ every
+
+            if write >= 0 && last[one.dest.must()].default(0 - 1) > write
+                survive[at] @ true
+        written = roots_written(f, one.op)
+
+        if written.every
+            every @ at
+
+        for r in written.roots
+            below[r] @ at
+
+        at @ at - 1
+
+    return Survivors(survive: survive, visits: visits)

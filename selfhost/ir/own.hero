@@ -59,6 +59,8 @@ use ir/lower
 use ir/mono
 use ir/verify
 use ir/place_store
+use ir/survival
+use ir/uses
 use ir/released
 
 # Insert the reference counting. Idempotent by construction: advance_to
@@ -78,14 +80,29 @@ function run(@p: containers.Program, c: state.Checked)
 # slot list to be complete. Done in one walk, a block that returns
 # early sweeps only the slots invented before it — caught immediately
 # as `returns without releasing $own7`.
+#
+# **Linear in a block, since defect 230 (2026-10-03).** Three costs made
+# this pass the square of a block's length, counted on one function of 800
+# strings: a walk to the block's end for every counted load (now
+# `survival.survivors`, two walks of the block for all its loads); a
+# `.must()` inside a pushed instruction, which opens a block between the
+# load of `out` and its store, so the place store could not grow `out` in
+# place and the push copied it whole, and its result's synthetic slot made
+# the next push copy it again, 2,240,146 instructions copied twice over
+# (now the value is named first); and a slot or a value added through
+# `worked`'s fields, a path the place store does not grow, so each one
+# copied the whole table (now `slots` and `values`, grown in place and put
+# back before the sweep reads them).
 function rewrite(f: containers.Function, c: state.Checked) -> containers.Function
     worked: containers.Function @ f
-    next_value: i64 @ worked.values.len()
+    slots: [containers.Slot] @ worked.slots
+    values: [i64] @ worked.values
     index: i64 @ 0
 
     while index < worked.blocks.len()
         out: [ir.Inst] @ []
         pos: i64 @ 0
+        lives = survival.survivors(worked, worked.blocks[index].insts, worked.blocks[index].term).survive
 
         for inst in worked.blocks[index].insts
             here = pos
@@ -98,30 +115,19 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
                 # (place_store.load_survives_write says why). Give it a
                 # reference of its own, and rule 5's slot machinery does
                 # the rest.
-                .load ld =>
-                    survives: bool @ false
-
-                    if !inst.dest.is_err() && layout.is_refcounted(c, inst.ty)
-                        survives @ place_store.load_survives_write(
-                            worked,
-                            worked.blocks[index].insts,
-                            worked.blocks[index].term,
-                            load_at: here,
-                            root: ld.place.root,
-                            value: inst.dest.must()
-                        )
-
-                    if survives
+                .load =>
+                    if !inst.dest.is_err() && layout.is_refcounted(c, inst.ty) && lives[here]
+                        moved = inst.dest.must()
                         out @ out.push(inst)
                         out @ out.push(
-                            ir.Inst(dest: fail(code: "none", msg: "void"), op: .incref(value: inst.dest.must()), ty: inst.ty, span: inst.span)
+                            ir.Inst(dest: fail(code: "none", msg: "void"), op: .incref(value: moved), ty: inst.ty, span: inst.span)
                         )
-                        slot = own_slot(@worked, ty: inst.ty)
+                        slot = own_slot(@slots, ty: inst.ty)
                         place = ir.Place(root: slot, path: ir.Run(start: 0, length: 0))
-                        old = fresh(next_value: @next_value, worked: @worked, ty: inst.ty)
+                        old = fresh(@values, ty: inst.ty)
                         out @ out.push(ir.Inst(dest: ok(old), op: .load(place: place), ty: inst.ty, span: inst.span))
                         out @ out.push(
-                            ir.Inst(dest: fail(code: "none", msg: "void"), op: .store(place: place, value: inst.dest.must()), ty: inst.ty, span: inst.span)
+                            ir.Inst(dest: fail(code: "none", msg: "void"), op: .store(place: place, value: moved), ty: inst.ty, span: inst.span)
                         )
                         out @ out.push(
                             ir.Inst(dest: fail(code: "none", msg: "void"), op: .decref(value: old), ty: inst.ty, span: inst.span)
@@ -148,7 +154,7 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
                             )
                             out @ out.push(inst)
                         else
-                            old = fresh(next_value: @next_value, worked: @worked, ty: ty)
+                            old = fresh(@values, ty: ty)
                             out @ out.push(ir.Inst(dest: ok(old), op: .load(place: st.place), ty: ty, span: inst.span))
                             out @ out.push(
                                 ir.Inst(dest: fail(code: "none", msg: "void"), op: .incref(value: st.value), ty: ty, span: inst.span)
@@ -187,12 +193,13 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
             # the temporary — which is what makes every later value
             # borrowed.
             if !inst.dest.is_err() && owning.allocates(inst.op) && layout.is_refcounted(c, inst.ty)
-                slot = own_slot(@worked, ty: inst.ty)
+                moved = inst.dest.must()
+                slot = own_slot(@slots, ty: inst.ty)
                 place = ir.Place(root: slot, path: ir.Run(start: 0, length: 0))
-                old = fresh(next_value: @next_value, worked: @worked, ty: inst.ty)
+                old = fresh(@values, ty: inst.ty)
                 out @ out.push(ir.Inst(dest: ok(old), op: .load(place: place), ty: inst.ty, span: inst.span))
                 out @ out.push(
-                    ir.Inst(dest: fail(code: "none", msg: "void"), op: .store(place: place, value: inst.dest.must()), ty: inst.ty, span: inst.span)
+                    ir.Inst(dest: fail(code: "none", msg: "void"), op: .store(place: place, value: moved), ty: inst.ty, span: inst.span)
                 )
                 out @ out.push(
                     ir.Inst(dest: fail(code: "none", msg: "void"), op: .decref(value: old), ty: inst.ty, span: inst.span)
@@ -201,9 +208,23 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
         worked.blocks[index].insts @ out
         index @ index + 1
 
+    worked.slots @ slots
+    worked.values @ values
+
     # The second walk. Rules 1 and 2 decide the list: local and
     # synthetic slots only, because a plain parameter is borrowed and an
-    # @ parameter is copied out.
+    # @ parameter is copied out. Which slots are parameters is read once,
+    # where every slot walked the parameters (defect 230), and this reading
+    # stays its own: `released.owed_slots` is the verifier's of the same rules.
+    is_param: [bool] @ []
+
+    while is_param.len() < worked.slots.len()
+        is_param @ is_param.push(false)
+
+    for param in worked.params
+        if param >= 0 && param < is_param.len()
+            is_param[param] @ true
+
     sweep: [i64] @ []
     slot_at: i64 @ 0
 
@@ -214,15 +235,8 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
             .local_slot | .synthetic_slot => owed @ true
             .param_slot                   => owed @ owed
 
-        if owed && layout.is_refcounted(c, slot.ty)
-            is_param: bool @ false
-
-            for param in worked.params
-                if param == slot_at
-                    is_param @ true
-
-            if !is_param
-                sweep @ sweep.push(slot_at)
+        if owed && layout.is_refcounted(c, slot.ty) && !is_param[slot_at]
+            sweep @ sweep.push(slot_at)
         slot_at @ slot_at + 1
 
     index @ 0
@@ -248,11 +262,12 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
             # by here — it lives in a slot — so the caller's reference
             # has to be a new one.
             if !returned.is_err()
-                ret_ty = containers.value_type(worked, returned.must())
+                back = returned.must()
+                ret_ty = containers.value_type(worked, back)
 
                 if layout.is_refcounted(c, ret_ty)
                     out @ out.push(
-                        ir.Inst(dest: fail(code: "none", msg: "void"), op: .incref(value: returned.must()), ty: ret_ty, span: span)
+                        ir.Inst(dest: fail(code: "none", msg: "void"), op: .incref(value: back), ty: ret_ty, span: span)
                     )
 
             # **One instruction per swept slot, since panel 106.** This was
@@ -280,17 +295,16 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
 
 # A synthetic slot for one owning temporary. Its name starts with $,
 # which no Heroes program contains.
-function own_slot(@worked: containers.Function, ty: i64) -> i64
-    index = worked.slots.len()
-    worked.slots @ worked.slots.push(containers.Slot(name: "$own" + index.to_str(), ty: ty, kind: .synthetic_slot))
+function own_slot(@slots: [containers.Slot], ty: i64) -> i64
+    index = slots.len()
+    slots @ slots.push(containers.Slot(name: "$own" + index.to_str(), ty: ty, kind: .synthetic_slot))
     return index
 
 # A value the pass invented. It extends the values table, which is
 # dense over the ids, so the type table stays complete.
-function fresh(@next_value: i64, @worked: containers.Function, ty: i64) -> i64
-    id = next_value
-    next_value @ next_value + 1
-    worked.values @ worked.values.push(ty)
+function fresh(@values: [i64], ty: i64) -> i64
+    id = values.len()
+    values @ values.push(ty)
     return id
 
 ## Tests
@@ -388,3 +402,133 @@ test "a straight function of 400 chained strings verifies at owned, its sweep re
                     .jump | .branch | .switch_term | .unreachable | .open => continue
 
     assert checked_one
+
+test "a block's survivors are the per-load walk's, the writer table is the per-root reading, and both walks stay linear"
+    # Defect 230's oracle, over the IR the ownership pass is handed (after
+    # the place store). `place_store.load_survives_write` is the walk per
+    # load this replaced and answers every load here; the per-root reading
+    # of what an operation writes is written out below as it stood, and
+    # answers every instruction and every root. The programs hold loads that
+    # survive an `@` call (`place-store-c5`'s case 5) and a copy-out, a
+    # self-store whose load is read only by the store that writes it, and
+    # straight functions of many counted loads, which made the old walk the
+    # square of a block.
+    many: [str] @ ["function f(x: i64) -> i64", "    s0 = \"a\" + x.to_str()"]
+
+    while many.len() < 42
+        many @ many.push("    s" + (many.len() - 1).to_str() + " = s" + (many.len() - 2).to_str() + " + x.to_str()")
+
+    many @ many.push("    return s40.len()")
+    params: [str] @ []
+    grows: [str] @ []
+    calls: [str] @ []
+    decls: [str] @ []
+
+    while params.len() < 12
+        n = params.len().to_str()
+        params @ params.push("@p" + n + ": str")
+        grows @ grows.push("    p" + n + " @ p" + n + " + \"!\"")
+        calls @ calls.push("p" + n + ": @a" + n)
+        decls @ decls.push("    a" + n + ": str @ \"x\"")
+
+    texts: [str] = [
+        "function bump(@v: [i64]) -> i64\n    v @ v.push(99)\n    return v.len()\n\nfunction echo(@s: str) -> str\n    s @ s + \"!\"\n    return s\n\nfunction shout(@s: str, t: str) -> str\n    return s + echo(@s) + t\n\nfunction main()\n    qs: [i64] @ []\n    qs @ qs.push(1)\n    qs @ qs.push(bump(@qs))\n    ys = qs\n    qs @ qs.push(3)\n    s: str @ \"a\"\n    s @ s\n    t = shout(s: @s, t: \"b\")\n    print(qs.len(), \" \", ys.len(), \" \", t, \" \", s)\n"
+        many.join("\n") + "\n\nfunction main()\n    print(f(x: 3))\n"
+        "function g(" + params.join(", ") + ")\n" + grows.join("\n") + "\n\nfunction main()\n" + decls.join("\n") + "\n    g(" + calls.join(", ") + ")\n    print(a0.len())\n"
+    ]
+    survived: i64 @ 0
+
+    for text in texts
+        parsed = parse.parse(text)
+        s = source.new_source(name: "t.hero", text: text)
+        resolved_out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+        c: state.Checked @ checker.check(parsed.tree, resolved_out, s, parsed.decls)
+        assert c.diagnostics.len() == 0
+        low = lower.lower(parsed.tree, resolved_out, c, s, parsed.decls)
+        p: containers.Program @ low.program
+        assert mono.run(@p, @c, s, parsed.decls).len() == 0
+        place_store.run(@p)
+
+        for f in p.functions
+            for blk in f.blocks
+                got = survival.survivors(f, blk.insts, blk.term)
+                operands: i64 @ uses.terminator_operands(blk.term).len()
+                at: i64 @ 0
+
+                for one in blk.insts
+                    operands @ operands + uses.operands(f, one.op).len()
+
+                    match one.op
+                        .load ld =>
+                            if !one.dest.is_err()
+                                old = place_store.load_survives_write(
+                                    f,
+                                    blk.insts,
+                                    blk.term,
+                                    load_at: at,
+                                    root: ld.place.root,
+                                    value: one.dest.must()
+                                )
+                                assert got.survive[at] == old
+
+                                if old
+                                    survived @ survived + 1
+                        .lit | .store | .push_owned | .unary | .binary | .cast | .call | .construct             => at @ at
+                        .field | .index | .map_get | .len_of | .tag_of | .payload                               => at @ at
+                        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => at @ at
+
+                    written = survival.roots_written(f, one.op)
+                    root: i64 @ 0
+
+                    while root < f.slots.len()
+                        before: bool @ false
+
+                        match one.op
+                            .store st      => before @ st.place.root == root
+                            .push_owned pg => before @ pg.place.root == root
+                            .copy_out      => before @ true
+                            .call cl =>
+                                for arg in containers.args_of(f, cl.arguments)
+                                    match arg
+                                        .inout_arg io =>
+                                            if io.place.root == root
+                                                before @ true
+                                        .value_arg => continue
+                            .construct con =>
+                                for arg in containers.args_of(f, con.arguments)
+                                    match arg
+                                        .inout_arg io =>
+                                            if io.place.root == root
+                                                before @ true
+                                        .value_arg => continue
+                            .abort_op ab =>
+                                for arg in containers.args_of(f, ab.arguments)
+                                    match arg
+                                        .inout_arg io =>
+                                            if io.place.root == root
+                                                before @ true
+                                        .value_arg => continue
+                            .lit | .load | .unary | .binary | .cast                         => before @ false
+                            .field | .index | .map_get | .len_of | .tag_of | .payload       => before @ false
+                            .func_ref | .incref | .decref | .decref_slot | .hole | .missing => before @ false
+
+                        now: bool @ written.every
+
+                        for r in written.roots
+                            if r == root
+                                now @ true
+
+                        assert now == before
+                        assert place_store.writes_root(f, one.op, root: root) == before
+                        root @ root + 1
+
+                    at @ at + 1
+
+                # Two walks of the block: each operand once, each
+                # instruction once, whatever the number of loads.
+                assert got.visits <= blk.insts.len() + operands
+
+    # Case 5's receiver read after `bump(@qs)`, `echo`'s `s` returned after
+    # its copy-out, and `shout`'s `s` read after `echo(@s)` survive: the
+    # oracle saw each kind answer true, and `g`'s twelve answer false.
+    assert survived >= 3
