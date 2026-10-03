@@ -1,5 +1,5 @@
 # Defect 216's shapes beside (panel 188, stage D, 2026-10-03): a `package`
-# string reaches `pkg-config` as one argument, and `pkg-config`
+# string reaches `pkg-config` as one argument, after `--`, and `pkg-config`
 # splits that argument at whitespace and `,` into packages and versions, so
 # `"zlib >= 99"` said *not installed* of a zlib that is installed and
 # `"zlib >= 1"` and `"zlib,sqlite3"` built (pkgconf 3.0.7 and 1.8.1). Those
@@ -9,7 +9,9 @@
 # directory `heroes` runs in, panel 055's machine-locked path, in any case
 # and bare (stage E: `seven.PC` and `.pc` are files to `pkg-config` too). `sub/name` is
 # looked up under each search directory, as a header's `sub/foo.h` is, and
-# passes.
+# passes. A name beginning with `-` is how an option begins; `heroes` writes
+# `--` before the name and refuses the `-` as well, resting on no `pkg-config`
+# (Go's `SafeArg`), so the refusal is no thesis rule.
 
 extern "stdio.h" package "zlib sqlite3"    #~ unwritable_name
     function p1() -> i32
@@ -35,5 +37,8 @@ extern "stdio.h" package ".pc"    #~ machine_locked_path
 extern "stdio.h" package "sub/seven"
     function p6() -> i32
 
+extern "stdio.h" package "-x"    #~ option_like_name
+    function p7() -> i32
+
 function main()
-    print(p1() + p2() + p3() + p4() + p5() + p6() + p8() + p9())
+    print(p1() + p2() + p3() + p4() + p5() + p6() + p7() + p8() + p9())

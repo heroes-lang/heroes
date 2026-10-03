@@ -291,7 +291,7 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
         err_path = publish.private_name(build_dir + "/pkg-config-err.txt")
         ran = process.run(
             program: "pkg-config",
-            words: ["pkg-config", "--cflags", "--libs", package],
+            words: ["pkg-config", "--cflags", "--libs", "--", package],
             out: answer_path,
             err: err_path
         )
@@ -301,8 +301,9 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
         publish.discard(err_path)
 
         # A package name reaches `pkg-config` as one word whatever is in
-        # it, so no `.hero` file can hand this program an argument of
-        # its own making — the property `sq()` was maintaining by hand.
+        # it, and after `--`, so it is read as a name and never as an
+        # option: until panel 188 `package "--atleast-pkgconfig-version=0"`
+        # was answered with nothing at exit 0 and the group accepted.
         if !ran.started
             return fail(
                 code: "no_pkg_config",
