@@ -10,7 +10,7 @@ use token
 use cursor
 use ast
 use keywords
-use parse/module_text
+use head_names
 use parse/heads
 
 # The head line's header string. A missing one is where the old headerless
@@ -30,7 +30,7 @@ use parse/heads
 function header(@c: cursor.Cursor, text: str) -> token.Span?
     if cursor.at(c, .str_lit)
         span = cursor.bump(@c).span
-        machine_locked(@c, text: text, span: span, what: "header")
+        judge_name(@c, text: text, span: span, what: "header")
         return ok(span)
 
     if !cursor.at_reported_error(c)
@@ -57,46 +57,13 @@ function header(@c: cursor.Cursor, text: str) -> token.Span?
     cursor.recover_to_next_decl(@c)
     return fail(code: "expected_extern_header", msg: "recovered to the next declaration")
 
-# **A string in a group head may not name an absolute path** (panel 055).
-#
-# Only the absolute form is refused, and the narrowing is the point:
-# `extern "sub/bar.h"` resolves against the `.hero` file's own directory
-# (panel 036's `-I <source dir>`), so a vendored header beside the program is
-# portable and correct. *"This string begins with a filesystem root"* is a
-# fact about the value; *"nobody needs a relative path"* would be a premise
-# about the world (CLAUDE.md §11).
-#
-# The repair is not text, so there is no fix: the answer is `CPATH` or a
-# `.pc` on `PKG_CONFIG_PATH`, and a certain fix that rewrote the string would
-# be a lie.
-function machine_locked(@c: cursor.Cursor, text: str, span: token.Span, what: str)
-    value = module_text.unquote(cursor.slice_of(text, span))
+# **What a string in a group head may hold** (panels 055 and 188), judged
+# on its value by `head_names`, a leaf that reads no parse; this says it.
+function judge_name(@c: cursor.Cursor, text: str, span: token.Span, what: str)
+    said = head_names.judged(spelled: cursor.slice_of(text, span), span: span, what: what)
 
-    # A leading root, a Windows drive letter, or — for a library only — GNU
-    # `ld`'s `-l:filename` form, which is how a `link` string names a FILE
-    # rather than a library: refused whatever follows the colon, because the
-    # whole point of the form is that the rest is a filename.
-    rooted: bool @ false
-
-    if value.len() > 0
-        first = value[0]
-        rooted @ first == '/' || first == '\\' || first == ':'
-
-    if !rooted && value.len() > 1
-        rooted @ value[1] == ':'
-
-    if !rooted
-        return
-    route: str @ "set `LIBRARY_PATH` to the directory holding it, or name a `package` and let `pkg-config` answer; `link` takes the library's **name**, as `link \"sqlite3\"`"
-
-    if what == "header"
-        route @ "set `CPATH` to the directory holding it, or name a `package` and let `pkg-config` answer; a header beside this file is written relative, as `sub/foo.h`"
-    cursor.error(
-        @c,
-        code: "machine_locked_path",
-        message: "`" + value + "` names a path, and a " + what + " in a group head says what the machine has, not where this machine keeps it — the next machine keeps it elsewhere\n  " + route,
-        span: span
-    )
+    if !said.is_err()
+        cursor.push_diagnostic(@c.diagnostics, said.must())
 
 # `link "sqlite3"` or `package "raylib"` — optional, one or the other, and
 # both matched by text rather than lexed as keywords, for the reason above.
@@ -112,7 +79,7 @@ function library_clause(@c: cursor.Cursor, text: str) -> ast.Library?
     if first.is_err()
         return first
     taken = first.must()
-    machine_locked(@c, text: text, span: library_name_span(taken), what: "library")
+    judge_name(@c, text: text, span: library_name_span(taken), what: library_word(taken))
 
     # A second clause on the same head line. The message names what is
     # already there, because the repair is to delete one and the author must

@@ -1,0 +1,10 @@
+error[ffi_package]: the package `fixedbugs-237-a`b` is not installed on this machine
+  at tests/golden/unsupported/fixedbugs-237-a-package-name-holding-a-backtick.hero:11:26
+     |
+  11 | extern "stdio.h" package "fixedbugs-237-a`b"  #~ ffi_package
+     |                          ^^^^^^^^^^^^^^^^^^^
+  note: pkg-config said: Package fixedbugs-237-a`b was not found in the pkg-config search path.
+  note: Perhaps you should add the directory containing `fixedbugs-237-a`b.pc'
+  note: to the PKG_CONFIG_PATH environment variable
+  note: Package 'fixedbugs-237-a`b' not found
+  note: install its development files, or name the library directly with `link`

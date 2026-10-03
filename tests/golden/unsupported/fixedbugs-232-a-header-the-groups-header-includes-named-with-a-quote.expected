@@ -1,0 +1,6 @@
+error[ffi_missing_header]: `fixedbugs-232-gone'x.h` is not on this machine's include path, and `fixedbugs-232-includes-a-header-named-with-a-quote.h`, the header this group names, includes it at line 1
+  at tests/golden/unsupported/fixedbugs-232-a-header-the-groups-header-includes-named-with-a-quote.hero:12:5
+     |
+  12 |     function seven() -> i32  #~ ffi_missing_header
+     |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: the group's header is on this machine and a header it includes is not: install the development files that provide `fixedbugs-232-gone'x.h`, or pass `--include <dir>` with the directory that holds it; `package` asks the machine where it is when the library ships a `.pc`, and `CPATH` works too

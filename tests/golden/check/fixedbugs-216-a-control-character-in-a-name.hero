@@ -1,0 +1,33 @@
+# Defect 216 (panel 188, stage D, 2026-10-03): a control character in a group
+# head's string, past the NUL and the line ends that nothing carries. Clang,
+# the linker and `pkg-config` carry each one (the sitting's sweeps: of every
+# byte 0x01 to 0x7F only LF, CR and `>` fail an `#include <...>`), so the
+# refusal is a thesis rule; no message can show one, so the message names it
+# by its code point. The panel's survey found none in 103,736 header names
+# and 2,600 library and `.pc` names; a name holding one is what would make
+# this rule wrong. Only `\t` is written here, the one control character an
+# escape spells; the raw bytes are the sitting's runner cases. In a package's
+# string a tab is where `pkg-config` splits its argument, which nothing
+# carries, so it is told as that.
+
+extern "a\tb.h"    #~ unshowable_name
+    function h1() -> i32
+
+extern "stdio.h" link "m\tx"    #~ unshowable_name
+    function h2() -> i32
+
+extern "stdio.h" package "zlib\tzlib"    #~ unwritable_name
+    function h3() -> i32
+
+# Stage E: the next line holds U+200B, a zero width space, between `std` and
+# `io.h`, Unicode's Default_Ignorable_Code_Point; with no such header the
+# message would have read as if `stdio.h` were missing. The line after holds
+# U+2028, a line separator, which clang's message prints as `<U+2028>`.
+extern "std​io.h"    #~ unshowable_name
+    function h4() -> i32
+
+extern "std io.h"    #~ unshowable_name
+    function h5() -> i32
+
+function main()
+    print(h1() + h2() + h3() + h4() + h5())

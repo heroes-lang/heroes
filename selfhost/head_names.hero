@@ -1,0 +1,441 @@
+# What a group head's three strings may hold: the header of `extern
+# "math.h"`, the library of `link "m"`, the package of `package "raylib"`
+# (design.md §4.19; spec § 13; panels 055 and 188). Each is judged on its
+# VALUE, its escapes decoded as spec § 2 defines them, because the value is
+# what reaches C (`emit/externs.unquoted` hands every reader the same); a
+# message quotes the SPELLING, which is what the author wrote.
+#
+# One diagnostic per string, and the order is a rule: what no tool can be
+# handed as one name (`unwritable_name`) is told before any thesis rule
+# (`diag.is_thesis_rule`), because `check --permissive` drops the thesis
+# rules, and a string holding both would otherwise reach `build` with the
+# byte nothing carries.
+#
+# A leaf that reads a string and nothing of the parser, which is why it
+# stands outside `parse/` (panel 187's R9: a move pays for lines along a
+# seam that reads no parse); `parse/group_head` reports what it says.
+
+use token
+use diag
+use escape
+use shown_char
+use head_package
+use head_windows
+
+# The diagnostic a group head's string earns, if any. `spelled` is its token,
+# quotes included; `what` is the word naming it: `header`, `link`, `package`.
+function judged(spelled: str, span: token.Span, what: str) -> diag.Diagnostic?
+    value = escape.unescape(spelled)
+    cannot = cannot_carry(spelled: spelled, value: value, span: span, what: what)
+
+    if !cannot.is_err()
+        return cannot
+    return thesis(spelled: spelled, value: value, span: span, what: what)
+
+# What no tool can be handed as one name, each `unwritable_name`.
+function cannot_carry(spelled: str, value: str, span: token.Span, what: str) -> diag.Diagnostic?
+    held = unwritable_byte(value)
+
+    if value.len() == 0 || held.len() > 0
+        return ok(diag.new_diagnostic(code: "unwritable_name", message: unwritable(what: what, held: held), span: span))
+
+    if what == "package"
+        package_says = head_package.cannot_carry(value: value, span: span)
+
+        if !package_says.is_err()
+            return package_says
+
+    # A `link` too: lld-link reads a name beginning `-` as an option of its own,
+    # and `link "-out:x"` wrote a file of the author's naming (panel 188, § 22.5).
+    if what == "link" && value[0] == '-'
+        return ok(
+            diag.new_diagnostic(code: "option_like_name", message: "this library's name begins with `-`, which is how an option to a linker begins, and `lld-link` on Windows reads it as one of its own: name the library, as `link \"m\"`", span: span)
+        )
+
+    if what == "header"
+        c_says = header_unwritable(spelled: spelled, value: value, span: span)
+
+        if !c_says.is_err()
+            return c_says
+    windows = head_windows.unwritable(value: value, suffixed: what != "header")
+
+    if windows.len() > 0
+        return windows_said(code: "unwritable_name", reason: windows, spelled: spelled, span: span, what: what)
+    return fail(code: "none", msg: "a name every tool carries whole")
+
+# What the tool carries and the language still refuses, each a thesis rule.
+function thesis(spelled: str, value: str, span: token.Span, what: str) -> diag.Diagnostic?
+    control = unshowable_character(value)
+
+    if control.len() > 0
+        return ok(
+            diag.new_diagnostic(code: "unshowable_name", message: "this " + noun(what) + "'s name holds " + control + ", which no message can show: write the name without it, as " + example(what), span: span)
+        )
+
+    if rooted(value)
+        return ok(
+            diag.new_diagnostic(code: "machine_locked_path", message: locked(written: inside(spelled), what: what), span: span)
+        )
+    machine = head_windows.locked(value)
+
+    if machine.len() > 0
+        return windows_said(code: "machine_locked_path", reason: machine, spelled: spelled, span: span, what: what)
+
+    if what == "package"
+        return head_package.thesis(written: inside(spelled), value: value, span: span)
+
+    if what == "header"
+        return header_undefined(spelled: spelled, value: value, span: span)
+    return fail(code: "none", msg: "a library's name every tool carries")
+
+# A name Windows reads otherwise (`head_windows`, defect 234), told in one
+# shape whichever reason and code.
+function windows_said(code: str, reason: str, spelled: str, span: token.Span, what: str) -> diag.Diagnostic?
+    return ok(
+        diag.new_diagnostic(code: code, message: "this " + noun(what) + "'s name " + reason + ", so `" + inside(spelled) + "` does not name one file on every machine: write the name without it, as " + example(what), span: span)
+    )
+
+function noun(what: str) -> str
+    if what == "link"
+        return "library"
+    return what
+
+function example(what: str) -> str
+    if what == "link"
+        return "`link \"m\"`"
+
+    if what == "package"
+        return "`package \"raylib\"`"
+    return "`extern \"math.h\"`"
+
+# The spelling between the quotes, as the author wrote it. **Every slice in
+# this file is cut beside an ASCII byte it has just read**, since a slice that
+# splits a character aborts (spec § 10): until stage D of panel 188's build,
+# `extern "é.h"` stopped `check` at 134.
+function inside(spelled: str) -> str
+    if spelled.len() < 2 || spelled[0] != '"' || spelled[spelled.len() - 1] != '"'
+        return spelled
+    return spelled.slice(from: 1, to: spelled.len() - 1)
+
+# What no group head's string may hold, named, or "" (panel 188, measured
+# with the value carried): a NUL, and a line end.
+function unwritable_byte(value: str) -> str
+    i: i64 @ 0
+
+    while i < value.len()
+        if value[i] == 0
+            return "a NUL byte"
+
+        if value[i] == '\n' || value[i] == '\r'
+            return "a line end"
+        i @ i + 1
+
+    return ""
+
+function unwritable(what: str, held: str) -> str
+    reason: str @ "C's `#include <...>` ends at the line's end, before the name does"
+
+    if what == "link"
+        reason @ "the linker reports a missing library on one line"
+    else if what == "package"
+        reason @ "`pkg-config` reads a line end between two packages"
+
+    if held == "a NUL byte"
+        reason @ "C reads a name only up to its first NUL, so no file is named by one"
+
+    if held.len() == 0
+        return "this " + noun(what) + "'s name is empty, so it names nothing C can look for: the string holds the name, as " + example(what)
+    return "this " + noun(what) + "'s name holds " + held + ", and " + reason + ": write the name without it, as " + example(what)
+
+# The first character in a name no message can show, named by its code point,
+# or "": a control character, by the compiler's own line (`shown_char.named`),
+# past the NUL and the line ends told above; and one Unicode calls
+# Default_Ignorable_Code_Point (`shown_char.default_ignorable`), which a
+# message shows as nothing or, for a bidirectional override, shows the rest of
+# its line reordered, so a missing header's message read as another name
+# (the completeness critic's third pass). The tools carry each one, so this is
+# a thesis rule.
+function unshowable_character(value: str) -> str
+    for ch in value.chars()
+        code = shown_char.code_point(ch)
+
+        if code < 32 || code >= 127 && code < 160
+            return shown_char.named(ch)
+
+        # And U+2028 and U+2029, Unicode's line and paragraph separators
+        # (General_Category Zl and Zp), which clang's own message prints as
+        # `<U+2028>`, so a missing header named with one was an exit 2.
+        if shown_char.default_ignorable(code) || code == 8232 || code == 8233
+            return "the invisible character " + shown_char.u_plus(code)
+
+    return ""
+
+# **A string in a group head may not name an absolute path** (panel 055):
+# a leading root, a Windows drive letter, or GNU `ld`'s `-l:filename` form,
+# which is how a `link` string names a FILE rather than a library. Only the
+# absolute form is refused: `extern "sub/bar.h"` resolves against the
+# `.hero` file's own directory (panel 036's `-I <source dir>`). *"This string
+# begins with a filesystem root"* is a fact about the value; *"nobody needs a
+# relative path"* would be a premise about the world (CLAUDE.md §11). The
+# repair is not text, so there is no fix: the answer is `CPATH` or a `.pc`
+# on `PKG_CONFIG_PATH`, and a certain fix that rewrote the string would lie.
+function rooted(value: str) -> bool
+    if value.len() == 0
+        return false
+    first = value[0]
+
+    if first == '/' || first == '\\' || first == ':'
+        return true
+    return value.len() > 1 && value[1] == ':'
+
+function locked(written: str, what: str) -> str
+    return "`" + written + "` names a path, and a " + noun(what) + " in a group head says what the machine has, not where this machine keeps it — the next machine keeps it elsewhere\n  " + route(what)
+
+function route(what: str) -> str
+    if what == "header"
+        return "set `CPATH` to the directory holding it, or name a `package` and let `pkg-config` answer; a header beside this file is written relative, as `sub/foo.h`"
+
+    if what == "package"
+        return "name the package, as `package \"raylib\"`, and say where its `.pc` is with `PKG_CONFIG_PATH`"
+    return "pass `--library <dir>` with the directory holding it, or name a `package` and let `pkg-config` answer; `link` takes the library's **name**, as `link \"sqlite3\"`"
+
+# What a header's name cannot carry past what every string shares: `>`, which
+# ends it in C's `#include <...>`, and C's own `<name>` carried in whole; and
+# `\`, which C leaves undefined there and clangs read apart: on macOS and Linux
+# as escaping the next character, so before the closing `>` it reads on into
+# another header or none (the completeness critic's measurement, panel 188),
+# on Windows as a directory separator (the Windows leg, § 22.3). Its own code,
+# not a thesis rule, since in the middle of a name clang does carry it and
+# `unwritable_name` says nothing carries one.
+function header_unwritable(spelled: str, value: str, span: token.Span) -> diag.Diagnostic?
+    if c_spelling(value) == "brackets"
+        return ok(carried(spelled: spelled, value: value, span: span))
+
+    if value.contains_byte('>')
+        return ok(
+            diag.new_diagnostic(code: "unwritable_name", message: "this header's name holds `>`, which ends a header's name in C's `#include <...>`, so `" + inside(spelled) + "` cannot be written there: rename the header without it", span: span)
+        )
+
+    if value.contains_byte('\\')
+        escaped = "this header's name holds `\\`, which C leaves undefined in a header's name (C11 6.4.7) and clang does not read alike on every platform, so the name does not say one file on every machine"
+
+        # A rooted name with a `\`, `\\b.h` or `C:\\x.h`, is a path too: the
+        # advice to write `/` would lead to `/b.h`, which the panel 055 check
+        # refuses next, so the message tells both and routes past both.
+        if rooted(value)
+            return ok(
+                diag.new_diagnostic(code: "escape_in_header_name", message: escaped + ", and it names a path from a root, where this machine keeps the header rather than what the machine has\n  " + route("header"), span: span)
+            )
+        return ok(
+            diag.new_diagnostic(code: "escape_in_header_name", message: escaped + ": write `/` between directories, or rename the header without it", span: span)
+        )
+    return fail(code: "none", msg: "a header's name C carries")
+
+# What C carries in a header's name and leaves undefined (C11 6.4.7p3, its
+# text in panel 188's historian's report): `'`, `"`, `//` and `/*` (its `\`
+# is `header_unwritable`'s), and C's own `"name"` carried in whole.
+function header_undefined(spelled: str, value: str, span: token.Span) -> diag.Diagnostic?
+    if c_spelling(value) == "quotes"
+        return ok(carried(spelled: spelled, value: value, span: span))
+    mark = undefined_mark(value)
+
+    if mark.len() == 0
+        return fail(code: "none", msg: "a header's name C reads as itself")
+    advice: str @ "rename the header without it"
+
+    if mark == "//"
+        advice @ "write one `/`"
+    return ok(
+        diag.new_diagnostic(code: "undefined_header_name", message: "this header's name holds `" + mark + "`, which C leaves undefined in a header's name (C11 6.4.7): one compiler reads it as itself and the next need not, so `" + inside(spelled) + "` means what one compiler says\n  " + advice, span: span)
+    )
+
+# C's own spelling carried into the string, told as that, with the fix that
+# drops it: certain where what it leaves is a name `judged` passes.
+function carried(spelled: str, value: str, span: token.Span) -> diag.Diagnostic
+    written = inside(spelled)
+    what = c_spelling(value)
+    cut: i64 @ 1
+    code: str @ "unwritable_name"
+    why: str @ "the `>` would end the name C reads"
+
+    if what == "quotes"
+        cut @ 2
+        code @ "undefined_header_name"
+        why @ "C leaves a `\"` in a header's name undefined (C11 6.4.7)"
+    bare = written.slice(from: cut, to: written.len() - cut)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: code,
+        message: "`" + written + "` is C's own `#include` spelling carried into the string, " + what + " and all, and " + why + ": the group's string holds the name alone, as `extern \"" + bare + "\"`",
+        span: span
+    )
+    sure: diag.Certainty @ .certain
+
+    if !judged(spelled: "\"" + bare + "\"", span: span, what: "header").is_err()
+        sure @ .guess
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "drop C's " + what, replacement: "\"" + bare + "\"", span: span, certainty: sure)
+    )
+    return d
+
+# Which of C's two spellings the value carries whole, `brackets` or
+# `quotes`, or "": the name between them is not empty and holds neither.
+function c_spelling(value: str) -> str
+    if value.len() < 3
+        return ""
+    first = value[0]
+    last = value[value.len() - 1]
+
+    if first == '<' && last == '>' && !between(value).contains_byte('<') && !between(value).contains_byte('>')
+        return "brackets"
+
+    if first == '"' && last == '"' && !between(value).contains_byte('"')
+        return "quotes"
+    return ""
+
+# The value without its first and last bytes, asked only where both are ASCII.
+function between(value: str) -> str
+    return value.slice(from: 1, to: value.len() - 1)
+
+# The first of C11 6.4.7's undefined marks in a header's name, or "", but the
+# `\`, which `header_unwritable` refuses apart.
+function undefined_mark(value: str) -> str
+    i: i64 @ 0
+
+    while i < value.len()
+        b = value[i]
+
+        if b == '\'' || b == '"'
+            return value.slice(from: i, to: i + 1)
+
+        if b == '/' && i + 1 < value.len() && (value[i + 1] == '/' || value[i + 1] == '*')
+            return value.slice(from: i, to: i + 2)
+        i @ i + 1
+
+    return ""
+
+function contains_byte(s: str, b: u8) -> bool
+    i: i64 @ 0
+
+    while i < s.len()
+        if s[i] == b
+            return true
+        i @ i + 1
+
+    return false
+
+## Tests
+
+function said(spelled: str, what: str) -> str
+    got = judged(spelled: spelled, span: token.Span(start: 0, end: spelled.len()), what: what)
+
+    if got.is_err()
+        return ""
+    return got.must().code
+
+test "a header's name is judged on its value, its escapes decoded (panel 188)"
+    assert said(spelled: "\"stdio.h\"", what: "header") == ""
+    assert said(spelled: "\"a b.h\"", what: "header") == ""
+    assert said(spelled: "\"a??)b.h\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"a<b.h\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"é.h\"", what: "header") == ""
+    assert said(spelled: "\"\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"a\\nb.h\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"a\\rb.h\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"a>b.h\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"<stdio.h>\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"a\\\\b.h\"", what: "header") == "escape_in_header_name"
+    assert said(spelled: "\"a  b\\\\\"", what: "header") == "escape_in_header_name"
+    assert said(spelled: "\"a\\\"b.h\"", what: "header") == "undefined_header_name"
+    assert said(spelled: "\"a'b.h\"", what: "header") == "undefined_header_name"
+    assert said(spelled: "\"d//b.h\"", what: "header") == "undefined_header_name"
+    assert said(spelled: "\"e/*b.h\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"\\\"stdio.h\\\"\"", what: "header") == "undefined_header_name"
+
+test "a control character is named by its code, a thesis rule after what nothing carries (panel 188)"
+    assert said(spelled: "\"a\\tb.h\"", what: "header") == "unshowable_name"
+    assert said(spelled: "\"\\tb.h\"", what: "header") == "unshowable_name"
+    assert said(spelled: "\"éa.h\"", what: "header") == ""
+    assert said(spelled: "\"aé\"", what: "header") == ""
+    assert said(spelled: "\"é\"", what: "link") == ""
+    assert said(spelled: "\"aé.pc\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"é\"", what: "package") == ""
+    assert unshowable_character("a\tb") == "the control character U+0009"
+    assert unshowable_character("ab") == ""
+    tab = judged(spelled: "\"a\\tb>c.h\"", span: token.Span(start: 0, end: 11), what: "header").must()
+    assert tab.code == "unwritable_name"
+    rooted_gt = judged(spelled: "\"/a>b.h\"", span: token.Span(start: 0, end: 8), what: "header").must()
+    assert rooted_gt.code == "unwritable_name"
+
+test "an escape is no root, and a rooted value is one (panels 055 and 188)"
+    assert said(spelled: "\"\\\\b.h\"", what: "header") == "escape_in_header_name"
+    rooted_bs = judged(spelled: "\"C:\\\\x.h\"", span: token.Span(start: 0, end: 9), what: "header").must()
+    assert rooted_bs.code == "escape_in_header_name"
+    tail = route("header")
+    assert rooted_bs.message.slice(from: rooted_bs.message.len() - tail.len(), to: rooted_bs.message.len()) == tail
+    assert said(spelled: "\"/opt/x.h\"", what: "header") == "machine_locked_path"
+    assert said(spelled: "\"C:x.h\"", what: "header") == "machine_locked_path"
+
+test "a library's name shares the first classes and none of a header's"
+    assert said(spelled: "\"m\"", what: "link") == ""
+    assert said(spelled: "\"a>b\"", what: "link") == ""
+    assert said(spelled: "\"a'b\"", what: "link") == ""
+    assert said(spelled: "\"a b\"", what: "link") == ""
+    assert said(spelled: "\"\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"a\\nb\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"a\\tb\"", what: "link") == "unshowable_name"
+    assert said(spelled: "\":libm.a\"", what: "link") == "machine_locked_path"
+    assert said(spelled: "\"-out:pwn188\"", what: "link") == "option_like_name"
+    assert said(spelled: "\"-\"", what: "link") == "option_like_name"
+    assert said(spelled: "\"m-x\"", what: "link") == ""
+
+test "a package's string names one package (panel 188)"
+    assert said(spelled: "\"raylib\"", what: "package") == ""
+    assert said(spelled: "\"gtk+-3.0\"", what: "package") == ""
+    assert said(spelled: "\"zlib sqlite3\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"zlib,sqlite3\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"zlib >= 1\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"zlib\\tx\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"zlib>=1\"", what: "package") == "package_comparison"
+    assert said(spelled: "\"a!b\"", what: "package") == "package_comparison"
+    assert said(spelled: "\"seven.pc\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"seven.PC\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"seven.pC\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\".pc\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"seven.pcx\"", what: "package") == ""
+    assert said(spelled: "\"pc\"", what: "package") == ""
+    assert said(spelled: "\"sub/seven.pc\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"/opt/x.pc\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"-x\"", what: "package") == "option_like_name"
+    assert said(spelled: "\"--atleast-pkgconfig-version=0\"", what: "package") == "option_like_name"
+    assert said(spelled: "\"-x\"", what: "link") == "option_like_name"
+
+test "C's spelling carried in is dropped by a certain fix, and only where what is left passes"
+    sure = judged(spelled: "\"<stdio.h>\"", span: token.Span(start: 0, end: 11), what: "header").must()
+    assert sure.fixes.len() == 1
+    assert sure.fixes[0].replacement == "\"stdio.h\""
+    assert sure.fixes[0].certainty == .certain
+    quoted = judged(spelled: "\"\\\"stdio.h\\\"\"", span: token.Span(start: 0, end: 13), what: "header").must()
+    assert quoted.fixes[0].replacement == "\"stdio.h\""
+    assert quoted.fixes[0].certainty == .certain
+    left = judged(spelled: "\"<a'b.h>\"", span: token.Span(start: 0, end: 9), what: "header").must()
+    assert left.fixes[0].certainty == .guess
+    tabbed = judged(spelled: "\"<a\\tb.h>\"", span: token.Span(start: 0, end: 10), what: "header").must()
+    assert tabbed.fixes[0].certainty == .guess
+
+test "what Windows stores as another file is unwritable, and what depends on the machine is locked (defect 234)"
+    assert said(spelled: "\"ab.h.\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"ab.h \"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"d./ab.h\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"NUL\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"ab:c.h\"", what: "header") == "machine_locked_path"
+    assert said(spelled: "\"ab.h::$DATA\"", what: "header") == "machine_locked_path"
+    assert said(spelled: "\"ABCDEF~1.H\"", what: "header") == "machine_locked_path"
+    assert said(spelled: "\"zz/../ab.h\"", what: "header") == "machine_locked_path"
+    assert said(spelled: "\"../i2.h\"", what: "header") == ""
+    assert said(spelled: "\"a:b.h\"", what: "header") == "machine_locked_path"
+    assert said(spelled: "\"m.\"", what: "link") == ""
+    assert said(spelled: "\"nul\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"ab:c\"", what: "link") == "machine_locked_path"
+    assert said(spelled: "\"x~1\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"con\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"sub/seven\"", what: "package") == ""

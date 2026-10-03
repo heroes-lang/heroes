@@ -1,0 +1,35 @@
+# Defect 235 (panel 188's R2 extended to Windows by the author, 2026-10-03):
+# a group head's name holding `*`, `<`, `?` or `|`, which NTFS refuses in any
+# file's name (Win32 error 123, panel 188's ffi-pragmatist on the Windows
+# box). This Mac and Linux built such a header where Windows said it is
+# missing, true there. Refused at `check` as `unwritable_name`, no thesis
+# rule, in all three strings, and before any thesis rule, so a package's `<`
+# is told as this and no longer as a version's comparison. A trigraph's `??)`
+# holds two of them.
+
+extern "a*b.h"  #~ unwritable_name
+    function v1() -> i32
+
+extern "a<b.h"  #~ unwritable_name
+    function v2() -> i32
+
+extern "a?b.h"  #~ unwritable_name
+    function v3() -> i32
+
+extern "sub/a|b.h"  #~ unwritable_name
+    function v4() -> i32
+
+extern "a??)b.h"  #~ unwritable_name
+    function v5() -> i32
+
+extern "stdio.h" link "a?b"  #~ unwritable_name
+    function v6() -> i32
+
+extern "stdio.h" package "zlib<2"  #~ unwritable_name
+    function v7() -> i32
+
+extern "stdio.h" package "zlib>=1"  #~ package_comparison
+    function v8() -> i32
+
+function main()
+    print(v1() + v2() + v3() + v4() + v5() + v6() + v7() + v8())

@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-233-a-librarys-route-names-the-compilers-own-flag.hero:10:23: error[machine_locked_path]: `C:/side/lp188` names a path, and a library in a group head says what the machine has, not where this machine keeps it — the next machine keeps it elsewhere
+  pass `--library <dir>` with the directory holding it, or name a `package` and let `pkg-config` answer; `link` takes the library's **name**, as `link "sqlite3"`

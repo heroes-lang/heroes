@@ -1,0 +1,44 @@
+# Defect 216's shapes beside (panel 188, stage D, 2026-10-03): a `package`
+# string reaches `pkg-config` as one argument, after `--`, and `pkg-config`
+# splits that argument at whitespace and `,` into packages and versions, so
+# `"zlib >= 99"` said *not installed* of a zlib that is installed and
+# `"zlib >= 1"` and `"zlib,sqlite3"` built (pkgconf 3.0.7 and 1.8.1). Those
+# two are what nothing carries as one name. Inside one name `<`, `>`, `=` and
+# `!` are carried, and refused as a thesis rule, being how `pkg-config`
+# writes a comparison; and a name ending in `.pc` is read as a file from the
+# directory `heroes` runs in, panel 055's machine-locked path, in any case
+# and bare (stage E: `seven.PC` and `.pc` are files to `pkg-config` too). `sub/name` is
+# looked up under each search directory, as a header's `sub/foo.h` is, and
+# passes. A name beginning with `-` is how an option begins; `heroes` writes
+# `--` before the name and refuses the `-` as well, resting on no `pkg-config`
+# (Go's `SafeArg`), so the refusal is no thesis rule.
+
+extern "stdio.h" package "zlib sqlite3"    #~ unwritable_name
+    function p1() -> i32
+
+extern "stdio.h" package "zlib,sqlite3"    #~ unwritable_name
+    function p2() -> i32
+
+extern "stdio.h" package "zlib >= 99"    #~ unwritable_name
+    function p3() -> i32
+
+extern "stdio.h" package "zlib>=1"    #~ package_comparison
+    function p4() -> i32
+
+extern "stdio.h" package "seven.pc"    #~ machine_locked_path
+    function p5() -> i32
+
+extern "stdio.h" package "seven.PC"    #~ machine_locked_path
+    function p8() -> i32
+
+extern "stdio.h" package ".pc"    #~ machine_locked_path
+    function p9() -> i32
+
+extern "stdio.h" package "sub/seven"
+    function p6() -> i32
+
+extern "stdio.h" package "-x"    #~ option_like_name
+    function p7() -> i32
+
+function main()
+    print(p1() + p2() + p3() + p4() + p5() + p6() + p7() + p8() + p9())

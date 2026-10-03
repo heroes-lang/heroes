@@ -1,0 +1,15 @@
+# fixedbugs, defect 232, lane b8-ffi, 2026-10-03.
+#
+# The group's header is on this machine and includes one that is not, named
+# with a `'`. The reader of clang's *'...' file not found* cut the name at
+# its first quote, so the message said `fixedbugs-232-gone` was missing, a
+# name nothing includes. It reads the name up to the line's last
+# *' file not found* now. A program `check` passes reaches this shape, where
+# a `'` in the group's own header is refused at `check` (panel 188's R4); the
+# reader of that one is held by `emit/ffi_build.hero`'s unit test.
+
+extern "fixedbugs-232-includes-a-header-named-with-a-quote.h"
+    function seven() -> i32  #~ ffi_missing_header
+
+function main()
+    print(seven())

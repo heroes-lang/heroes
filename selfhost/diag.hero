@@ -117,6 +117,14 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # 2026-10-03): without it a line after a `return` still has a meaning, a
 # statement that never runs, which is the silent program the rule exists to
 # refuse (the sitting's blind reading: a loop that never advances).
+# undefined_header_name, unshowable_name and package_comparison joined by
+# panel 188: clang reads `'`, `"`, `//` or `/*` in a header's name as
+# itself, the tools carry a control character in any name, and `pkg-config`
+# one of `<>=!` inside a package's, so without the rule the program has the
+# tool's meaning. Their siblings are not: unwritable_name (nothing carries
+# it), escape_in_header_name (clangs read a `\` apart, and one of them opens
+# another header) and option_like_name (resting on no `pkg-config`, and on
+# Windows a `link` beginning `-` is lld-link's own option, panel 188 § 22.5).
 function is_thesis_rule(d: Diagnostic) -> bool
     codes = [
         "unused_binding"
@@ -138,6 +146,9 @@ function is_thesis_rule(d: Diagnostic) -> bool
         "spaced_minus_element"
         "continuation_outside_brackets"
         "unreachable_statement"
+        "undefined_header_name"
+        "unshowable_name"
+        "package_comparison"
     ]
 
     for one in codes

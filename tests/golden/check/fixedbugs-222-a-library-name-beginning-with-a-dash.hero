@@ -1,0 +1,29 @@
+# Defect 222, widened to `link` (panel 188's Windows leg, the
+# compiler-engineer's report § 22.5, 2026-10-03): a library's name beginning
+# with `-`. On this Mac and on Linux `-l-x` names a library called `-x`, and
+# the build says no such library is there; on Windows clang hands `-x.lib` to
+# lld-link, which reads it as an option of its own: `link "-x"` linked with
+# the directive dropped, and `link "-out:pwn188"` built at exit 0 and wrote a
+# file `pwn188.lib` of the author's naming. Refused at `check` as a package's
+# leading `-` is (R7 (b)), and no thesis rule: without it the program means a
+# linker's option on one platform. A `-` inside the name is no option, and
+# passes. An extension of the ratified rules by their own reason, provisional
+# on the author's reading.
+
+extern "stdio.h" link "-x"  #~ option_like_name
+    function d1() -> i32
+
+extern "stdio.h" link "-out:pwn188"  #~ option_like_name
+    function d2() -> i32
+
+extern "stdio.h" link "--version"  #~ option_like_name
+    function d3() -> i32
+
+extern "stdio.h" link "-"  #~ option_like_name
+    function d4() -> i32
+
+extern "stdio.h" link "m-x"
+    function d5() -> i32
+
+function main()
+    print(d1() + d2() + d3() + d4() + d5())
