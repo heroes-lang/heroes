@@ -153,8 +153,12 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl], c: sta
         decls: decls,
         p: p
     )
-    out @ out.push("struct hero_ask_result { char hero_c; };")
     index: i64 @ 0
+
+    # The type questions stand after every other, so one whose call a macro
+    # turns into a statement, which clang recovers from as it can, reaches
+    # no question but the type questions after it.
+    typings: [str] @ ["struct hero_ask_result { char hero_c; };"]
     typed: i64 @ 0
 
     for f in p.functions
@@ -173,8 +177,8 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl], c: sta
 
         if !emit_externs.is_extern_constant(decls, f)
             given @ extern_assert.zero_call(f, names, c, s, decls)
-        out @ out.push(directive(file: RESULT + name, line: 1))
-        out @ out.push(
+        typings @ typings.push(directive(file: RESULT + name, line: 1))
+        typings @ typings.push(
             "__attribute__((unused)) static void hero_ask_r_" + typed.to_str() + "(void) { struct hero_ask_result hero_r = " + given + "; (void)hero_r; }"
         )
         typed @ typed + 1
@@ -224,6 +228,9 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl], c: sta
                         out @ out.push("_Static_assert(sizeof(hero_q_" + index.to_str() + " *) == 0, \"hero-ask\");")
                         index @ index + 1
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    for line in typings
+        out @ out.push(line)
 
     return out.join("\n") + "\n"
 
@@ -333,6 +340,12 @@ test "the unit says each extern's call again at its line, and asks whether it is
         needle: "#line 1 \"hero-ask-result strerror\"\n__attribute__((unused)) static void hero_ask_r_1(void) { struct hero_ask_result hero_r = strerror((int32_t)0); (void)hero_r; }\n"
     )
     assert ffi_lookup.has(text: got, needle: "struct hero_ask_result hero_r = EDOM; (void)hero_r; }\n")
+
+    # And they stand after every other question, which a type question a
+    # macro breaks cannot then reach.
+    first_type = ffi_lookup.char_index_of(text: got, needle: "hero-ask-result").must()
+    assert first_type > ffi_lookup.char_index_of(text: got, needle: "hero-ask-value strerror").must()
+    assert first_type > ffi_lookup.char_index_of(text: got, needle: "hero-ask-macro EDOM").must()
 
     # No parameter: the call itself, at the declaration's line.
     assert ffi_lookup.has(
