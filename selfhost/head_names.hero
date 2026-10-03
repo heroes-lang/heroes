@@ -236,7 +236,7 @@ function route(what: str) -> str
 
     if what == "package"
         return "name the package, as `package \"raylib\"`, and say where its `.pc` is with `PKG_CONFIG_PATH`"
-    return "set `LIBRARY_PATH` to the directory holding it, or name a `package` and let `pkg-config` answer; `link` takes the library's **name**, as `link \"sqlite3\"`"
+    return "pass `--library <dir>` with the directory holding it, or name a `package` and let `pkg-config` answer; `link` takes the library's **name**, as `link \"sqlite3\"`"
 
 # What a header's name cannot carry past what every string shares: `>`, which
 # ends it in C's `#include <...>`, and C's own `<name>` carried in whole; and
