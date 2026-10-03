@@ -18,95 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 46**
-
-- [ ] **143 — a function-like macro cannot be bound** | `extern "sys/wait.h"` with `function WEXITSTATUS(status: i32) -> i64`: `build` exit 1, *`sys/wait.h` declares no `WEXITSTATUS` — clang read the header and could not find it*, though the header defines it as a macro; design.md §1.11 says *Macros, `inline` functions and `#define` constants are now reachable directly* | the `extern` probe's parenthesized call (panel 092's `(fn)(...)`), which no function-like macro expands · `selfhost/emit/` (the probe) · **class: blocking**
-
-    **Origin:** panel 184's ffi-pragmatist, 2026-09-30 (a header of its own
-    and `sys/wait.h:144-146`); reproduced by the coordinator at 20:44 on the
-    trunk's compiler at `a294a6ff` (`scratchpad/p184/ffi-side/macro.hero`);
-    again at 00:17 on 2026-10-01 on `3cc3b553`, exit 1 and `ffi_unknown_name`.
-
-    **Why it is a defect.** A program calling `waitpid` needs `WEXITSTATUS`,
-    and the design says it is reachable; the FFI is to be complete (CL-028).
-
-    **Widened 2026-10-02** by panel 185's ffi-pragmatist: glibc's `FD_ZERO`,
-    a statement macro (`do { ... } while (0)`), takes the same false *declares
-    no* (`scratchpad/185-ffi-pragmatist/p185/`); on macOS `WEXITSTATUS`,
-    `htonl`, `FD_ISSET` and `WIFEXITED` are macro-only names alike. Panel 185
-    sat on the route (its Q1); the seats measured that a call-form probe holds
-    none of a macro's parameters, a `u8` declaration reading out of bounds.
-
-    **2026-10-02, lane ffi-macro, panel 185 R1, a macro-only name is
-    `ffi_macro_name`, its note drafting a function of the program's own with
-    a placeholder for every C type**: repaired at `357589d6`, gated by its
-    cases and the compiler's own tests; the net is owed at the batch's close,
-    and so are Linux x86-64 (the gate's container), Linux arm64 and the
-    Windows box, R1 being at the C boundary.
-
-    **2026-10-03, its cases read one by one, held for the Windows box**: on this Mac (00:30 to 00:42 by `date`) and in the Linux arm64 container (one run, 00:36 to 00:54, Debian clang 22.1.8), with a compiler built from the trunk's seed at `2620bed1`, all twelve passed, `run/fixedbugs-143-*` 2 of 2 and `unsupported/fixedbugs-143-*` 10 of 10. Four of them bind `sys/wait.h` or `sys/select.h` (`run/fixedbugs-143-system-macros-through-functions-of-the-programs-own`, `unsupported/fixedbugs-143-a-macro-declared-at-a-wrong-width-drafts-no-width`, `-a-system-macro-is-named-as-a-macro` and `-the-fd-set-macros`), which the Windows box lacks (this list's item 158, whose origin is the first of them red there at `2bb45a96`): there they are told `ffi_missing_header` and skipped, and the leg of `6bec7c8c` read `run` 234 and `unsupported` 113 at 0 failed, short of the Mac's 242 and 119 by exactly the cases that can skip there, these four among them (deduced from the totals; the box did not answer on 2026-10-03). A case skipped on a platform does not close the item: it waits for those four to run on Windows, which needs headers the platform does not have, or for a ruling that a case on a POSIX header is judged where the header exists.
-
-    **2026-10-03, lane ffimsg**: cases at `391c04d4` on headers of the tree's own for the three shapes only the four system cases witnessed, a statement macro told as a macro and reached through a function of the program's own behind a handle, and a macro declared at a wrong width drafted with no width (`tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero`, `tests/golden/unsupported/fixedbugs-143-statement-macros-of-the-programs-own-header.hero`, `tests/golden/unsupported/fixedbugs-143-a-macro-of-the-programs-own-header-at-a-wrong-width.hero`), gated by their own cases on this Mac; the rest is owed at the round's gate. The item closes when they run on the Windows box.
-
-    **2026-10-03, read one by one at `02e507bc` with the Windows box answering, and the author's answer *A***: all twelve passed on this Mac and in the Linux arm64 container, under clang 22.1.8 and again under 18.1.8; on the Windows box (clang 23.1.1) eight passed and the four named above were skipped, each built alone there reading `ffi_missing_header` on `sys/wait.h` or `sys/select.h`, which the paragraph held for the Windows box had deduced from the totals. The author's answer *A* (`docs/records/log/2026-10-03-1123-the-author-answers-a-a-case-a-platform-cannot-run-is-judged-where-its-header-is.md`): those four are judged where their headers are, and the item closes once its twin, lane ffimsg's in-tree macro case, has run on all three.
-
-    **Class: blocking**, 2026-10-02 (the author's *D1a*,
-    `.claude/rules/verification.md` § Bounded discovery): a false message
-    (*declares no*) on a header that defines the name; repaired and gated,
-    closes after the push's platform legs.
-
-- [ ] **156 — a C struct with a bit-field member stops `build` with an internal error and clang's text** | `extern "bf.h"` over `typedef struct { int32_t kind; uint32_t flag : 1; uint32_t rest : 31; } BF;` with `record BF` naming `kind: i32`, `flag: u32`, `rest: u32`, reading `make_bf().kind`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: ... invalid application of 'sizeof' to bit-field* at the field assertions and *address of bit-field requested* in the generated hash | `selfhost/emit/` (the field assertion, `heroes-ffi-field`, and the record's descriptor) · panel 073's item 3 (bit-fields filtered before the assertion) · **class: blocking**
-
-    **Origin:** panel 186's completeness critic, 2026-10-02, in its first
-    pass over the briefs (`docs/panel/186-briefs/probes/critic/bf.h`, `bf.hero`);
-    reproduced by the coordinator at 11:02 on `ae08ed93`.
-
-    **Why it is a defect.** Exit 2 is the compiler blaming itself for a
-    binding the author can be told about, and clang's text reaches the
-    author (`.claude/rules/c-boundary.md`). Panel 073 resolved that a
-    bit-field is filtered before its assertion; what such a field binds to,
-    if anything, is panel 186's question beside defect 151.
-
-    **2026-10-02, lane land186, a bit-field refused on its own line at
-    build, and one left out sent to `partial`** (panel 186 R5): repaired at
-    `afd07f00`, gated by its cases and the compiler's own tests; the net is
-    owed at the batch's close, and the platform legs before the push.
-
-    **2026-10-02, lane land186, spec § 13's *A bit-field is none of these:
-    leave it to `partial`.*** (panel 186 R6): at `b7c510c5`, gated by its
-    own cases; the rest is owed at the round's gate.
-
-    **2026-10-03, its cases read one by one, held for the Windows box**: all eight, `run/fixedbugs-156-records-beside-bit-fields-build` and `unsupported/fixedbugs-156-*` 7 of 7, passed on this Mac (00:30 to 00:42 by `date`) and in the Linux arm64 container (one run, 00:36 to 00:54, `libcurl` 8.14.1 answering there), with `docs/panel/186-briefs/probes/critic/bf.hero` told `ffi_field_type` on each bit-field at exit 1 on both. On the Windows box `unsupported/fixedbugs-156-curl-s-hsts-entry` binds `curl/curl.h`: whether it ran there is unread, the box not answering on 2026-10-03, and the leg of `6bec7c8c` (`unsupported` 113 at 0 failed against 119) leaves exactly one skip between it and defect 158's fourteen cases, if the box has neither `pkg-config` nor raylib as its install list says. The other seven name only their own header over `stdint.h` and passed there, by the same totals. The item waits for the box to say whether the curl case ran.
-
-    **2026-10-03, read one by one at `02e507bc` with the Windows box answering, and the author's answer *A***: all eight passed on this Mac and in the Linux arm64 container, under clang 22.1.8 and again under 18.1.8; on the Windows box seven passed and `unsupported/fixedbugs-156-curl-s-hsts-entry` was skipped, built alone there reading `ffi_missing_header` on `curl/curl.h`; `bf.hero` was told `ffi_field_type` on each bit-field at exit 1 on all three. The author's answer *A* (`docs/records/log/2026-10-03-1123-the-author-answers-a-a-case-a-platform-cannot-run-is-judged-where-its-header-is.md`): the curl case is judged where curl is, and the item gains a twin, a case on a header beside the program carrying curl's bit-fields, closing once that twin has run on all three.
-
-    **Class: blocking**, 2026-10-02 (the author's *D1a*,
-    `.claude/rules/verification.md` § Bounded discovery): exit 2 and clang's
-    text for a binding the author can be told about.
-
-- [ ] **169 — `check` aborts on a correct program of 300 additions** | `total = 1 + 2 + ... + 300` over `print(total)`: `check` exit 134, *panic: stack exhausted in checkwalk.synth* | `selfhost/check/walk.hero:101` (`synth`) · panel 184's R5 (*the compiler runs its passes on a thread whose stack it chooses*) and R6 (*a floor, not a ceiling*), ratified 2026-10-01, not landed (`docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md:197`, `:204-206`) · **class: blocking**
-
-    **Origin:** panel 184's blind task 3 (`docs/panel/184-briefs/blind/task3a.hero`), aborting in every `check` census since (lane round1002b's; lane round1002c's, *both arms abort on the same file*); reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/check-abort-task3a/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). The sitting's prediction is that *under R5 every shape of the shared brief's table checks at 2,000 on this Mac* (`:238-239`), and R6's N is to be measured before its sentence is written (`:270-271`). No list held the landing until this item.
-
-    **2026-10-03, lane depth, every command runs on a thread whose 256 MiB stack the compiler chooses (panel 184's R5), and under an unlimited stack limit a thread asks no floor**: repaired at `ffaf9f4d`, gated by its own cases; the rest is owed at the round's gate. R6's N measured at 2,000 on this Mac and on Linux arm64, Windows owed (`docs/records/log/2026-10-03-1130-panel-184-r5-landed-every-command-runs-on-a-thread-whose-stack-the-compiler-chooses.md`).
-
-    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a crash, and a correct program refused.
-
-- [ ] **170 — a correct program whose types nest deeper than the C compiler survives stops `build` at exit 2 with clang's crash text** | 3,000 variants nested by value, `variant R<i>` whose case `a` holds `R<i-1>`, `xs: [R2999] = []`, `print(xs == xs)`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: clang: error: unable to execute command: Illegal instruction: 4* (Apple clang 21.0.0); the CI's Apple clang died at 1,000 (defect 155) | the build's clang call (`selfhost/cli/units.hero:96`, `tu_object`) · defect 140's closed record (*facts about the C compiler, not refusals of this one*) · panel 184's R6 · **class: blocking**
-
-    **Origin:** lane ci140's report, 2026-10-02 (*a C compiler's own depth limit reaching the author as an internal error*); defect 155 holds only the CI's red; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/clang-depth/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). Each crash leaves a 7.7 MB preprocessed file and a script in the system's temporary folder and a report under `~/Library/Logs/DiagnosticReports/`. Defect 140's record says a refusal at a depth would be a new diagnostic class, and panel 184's R6 says no source is refused for its depth, so the route may be a sitting's.
-
-    **2026-10-03, lane depth, clang is handed a chain of structs from its bottom past 32 of them, and a clang that dies anyway is told as one at exit 2 with the program's deepest chain**: repaired at `6c95f44a`, gated by its own cases; the rest is owed at the round's gate. Exit 2 and not a diagnostic at exit 1: the program is correct and panel 184's R6 refuses none for its depth (`docs/records/log/2026-10-03-1228-panel-184-r7-landed-fmt-holds-on-the-thread-the-depth-of-types-is-repaired-apart-and-nothing-pins-a-boundary.md`).
-
-    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told.
-
-- [ ] **171 — a C function-pointer object declared as an `extern` `function` builds, and called while null it panics naming a callback the program never passed** | `own.h`'s `static int32_t (*hook)(int32_t) = 0;` bound `function hook(x: i32) -> i32`, `print(hook(x: 1))`: `build` exit 0; the run prints *panic: a null function pointer was called — a `ptr` holding `nullptr` reached C where C calls it back*, exit 134 | `runtime/parts/stack.c:515` (and `:738`) · the `extern` member's kind check (defect 152's `2d5240a0`, which lets a function-pointer object through) · **class: blocking**
-
-    **Origin:** lane ffi-macro's first pass for defect 152, 2026-10-02 (`scratchpad/lane-ffi-macro/p1/obj/e23-fnptr-object-called.hero`, 2026-10-02), queued as *a message question and a declaration question, likely a sitting's (panel 038's refusal for `constant`)*; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/null-fnptr-object/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). No memory is corrupted: the guard holds.
-
-    **2026-10-03, lane ffimsg**: repaired at `428fc2a6`, gated by its own cases; the rest is owed at the round's gate, and Linux and the Windows box before the push, the repair being under `runtime/`. The message is made true and the declaration is not refused: measured, a refusal is possible only in a unit of its own (in the program's own, `__typeof__` is a hard error on an `overloadable` function), it cannot see a macro over `(*p)`, and it would refuse a loader's shape, volk's and GLAD's function pointers called as functions, a correct program that builds and runs (`tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero`).
-
-    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a false message. Refusing the declaration or making the message true is the lane's question.
+**OPEN: 35**
 
 - [ ] **177 — a `match` whose arms fall inside a bracket left open has each arm told again after the bracket's own message** | `return match scores[name` over `.ok v  => v.to_str()` and `.err e => e.code`: `unclosed_bracket` at the `[`, then `line_end_before_continuation` at each arm, three messages for one missing `]`; `x = match (n` over `.ok v => 1` the same; `y = match n` below `x = [n, 1` gets `expected_end_of_line` at each arm's `=>` | the reach of a bracket left open (panel 183's R1 and R2) over a `match`'s arms · `selfhost/parse/line_end.hero:242` · **class: adjacent**
 
@@ -176,14 +88,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a place less exact than it could be in every clang note, sanitizer frame or debugger line past such a field; no value moves.
 
-- [ ] **186 — `ffi_return_type` says a function does not return the program's type and never names the type the header gives** | defect 172's applied program: *`cJSON_AddItemToObject` does not return `i32` — that is what `cj.h` says, and clang read it*, its note *correct the result type, or name the header that declares this*; neither `int64_t` nor `i64` appears | `selfhost/emit/ffi_declared.hero:60` · **class: adjacent**
-
-    **Origin:** the coordinator, 2026-10-02, building defect 172's applied program on `62d65e48` (2026-10-02, `scratchpad/apply-int/case/`), and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). The pointee check's message beside it names the header's type and offers it (`ffi_parameter_type`, *the header's `int64_t *` points at a different width*, fix *declare `p` as `@p: i64`*).
-
-    **2026-10-03, lane ffimsg**: repaired at `edfeb7d2` and `64b0d525`, gated by its own cases; the rest is owed at the round's gate. A refused round asks clang the type of each result and each constant (`selfhost/emit/ffi_asked.hero`), and `ffi_return_type` and, beside it, `ffi_constant_type` name it and offer the word that declares it, a guess; `fixedbugs-144-*` and `fixedbugs-145-a-result-spells-the-typedef` read anew.
-
-    **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be: it carries the header's name and not the type that would fix the program (design.md §4.17).
-
 - [ ] **187 — four parser diagnostics are still appended through a field place, against defect 146's rule and `cursor.hero`'s own comment** | `git grep -n 'c.diagnostics @ c.diagnostics.push' -- selfhost/parse/` prints `loop_habit.hero:62`, `line_end.hero:251`, `type.hero:257`, `type.hero:320`, while `selfhost/cursor.hero:272` says *Every parser module appends through this* | the four lines · `cursor.push_diagnostic` (`selfhost/cursor.hero:273`) · **class: improvement**
 
     **Origin:** lane arm's report, 2026-10-02; read by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/field-place-push/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`), which finds three more modules appending the same way, their cost unmeasured. No cost is measured for any: at `loop_habit.hero:62` the append is not what makes defect 184 slow.
@@ -207,27 +111,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** the coordinator, 2026-10-02, on the damage panel 187's completeness critic found (`docs/records/log/2026-10-02-2141-item-130-cut-in-8349d264-and-restored-what-cut-it-is-unknown-the-commit-did-not-read-its-diff.md`). It would have caught the cut in the item's line, not the one in its body.
 
     **Class: improvement**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): hardening of an instrument; nothing a program does moves.
-
-- [ ] **192 — the compiler built from its seed on Windows, by the seed's own documented command, gets three clang warnings: `getenv` deprecated by the C library's headers** | `clang -I runtime seed/heroes.c runtime/runtime.c -Wl,/STACK:67108864 -o heroes` (`seed/README.md`'s Windows line) on the Windows box: *'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead*, at `seed/heroes.c:50` and, through `#line`, `selfhost/cli/process.hero:64` and `:209`, then *3 warnings generated*; `heroes build` passes `-D_CRT_SECURE_NO_WARNINGS` to every unit it compiles (`selfhost/cli/flags.hero:96`) and `runtime/runtime.c:75` defines it for its own unit, so only a unit compiled outside `heroes build` gets the warnings | `runtime/heroes_runtime.h`, the first include of every emitted unit (`seed/heroes.c:2`) · `seed/README.md` · **class: blocking**
-
-    **Origin:** the coordinator, 2026-10-02, reading the Windows leg's log on `6bec7c8c` (`scratchpad/platforms/win-6bec7c8c.log`, 2026-10-02); the same three warnings stand in every Windows leg's log read that day (`b48d02b8`, `2bb45a96`, `8b98bcc7`, `e252fda4`), and `docs/ref/environment/windows/WINDOWS-MACHINE.md:493-497` records them since 2026-09-21 as warnings *whether they are new is unrun*, never filed.
-
-    **Why it is a defect.** The emitted C is C11 that clang type-checks clean (CLAUDE.md § 7), and this unit is the compiler itself built by its own first command; any `--emit-c` output compiled by hand on Windows gets the same advice. The runtime already says why the switch is the documented one and not a workaround (`runtime/runtime.c:65-74`).
-
-    **2026-10-03, lane warn, the two macros `heroes build` passes for
-    Windows are `runtime/heroes_runtime.h`'s own, defined on `_WIN32` before
-    its first system include, each under a guard; `_USE_MATH_DEFINES` beside
-    `_CRT_SECURE_NO_WARNINGS`, the same shape (`M_PI`, which
-    `tests/golden/run/ffi-constant.hero` binds)**: repaired at `dc23c4a8`,
-    gated by its own case, a compiler test preprocessing for
-    `x86_64-pc-windows-msvc`, on this Mac and on Linux arm64 under Debian
-    clang 22.1.8 and 18.1.8; the rest is owed at the round's gate, and the
-    Windows box before the push, where the seed's documented line is the
-    proof, unrun (the box offline on 2026-10-03). On this Mac a stub
-    `stdlib.h` deprecating `getenv` as the box's UCRT does warned under
-    `02e507bc`'s header and not under this one.
-
-    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
 
 - [ ] **193 — an arm whose pattern failed hides the mistakes in its body: on one line in both arms, and, joined below the failed line, under `--permissive` since panel 187's V1** | `k = match n` over `x | 2 => f(1 +)`: `expected_pattern` at the `x` and the `1 +` untold, in both arms, on the head's compiler and on `29425af6`; `x |` over `2 => f(1 +)`: the normal arm tells the `1 +` from the lines apart, and `check --permissive` told it, `expected_expression`, until `29425af6` and not since; the same over `1 | +`, `x ==`, `1 -> 2 |` and an arm one level deeper | `selfhost/grammar_expr.hero` (`arms_of`'s `.err` branch: the failed arm's line goes with `cursor.drop_rest_of_line`, its body with it) · panel 187's R4 · **class: adjacent**
 
@@ -309,43 +192,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be.
 
-- [ ] **206 — on Linux, a package whose `.pc` gives `-F <dir>` builds with clang's *argument unused during compilation* warning, the link very likely handed the compile's `-F`** | `docs/panel/186-briefs/probes/coordinator/fw/` built with `PKG_CONFIG_PATH` at its `pc/` in the Linux arm64 container (Debian clang 22.1.8): `clang: warning: argument unused during compilation: '-F.../fw/pc/../frameworks' [-Wunused-command-line-argument]`, then the program prints `7` at exit 0; this Mac prints no such line; on this Mac `clang --target=aarch64-linux-gnu -F/tmp/fwdir x.o -o x.bin` prints the same warning and the same flag with `-c` prints nothing | `selfhost/cli/libraries.hero` (the words a package gives the compile and the link) · `selfhost/cli/units.hero` (the link line) · defect 160's closed record · **class: blocking**
-
-    **Origin:** the coordinator's closings agent, 2026-10-03, reading defect 160's cases one by one on Linux arm64 between 00:36 and 00:54 by `date` (`scratchpad/closings/table.txt`, 2026-10-03), and its target probe on this Mac after 01:03 (`scratchpad/closings/fwprobe/`, 2026-10-03). The queue's question *a link step handed compile words, unmeasured on Linux* (lane h158, 2026-10-02) is this, measured. Which of the build's clang calls prints it on Linux is not read: that the link carries `-F` is an inference from the target probe.
-
-    **2026-10-03, lane warn, a link is handed only the words a link reads
-    (`libraries.link_words`, `link.link_line`): a package's `-L`, `-l`,
-    `-Wl,-rpath` and `-framework` pair, its `-F` only where the answer links a
-    framework, and no include directory. Which call printed it, read first
-    under a wrapper logging every clang call (Debian clang 22.1.8): the
-    program's final link and no other; of every compile word at a Linux link,
-    22.1.8 and 18.1.8 warn about `-F` alone**: repaired at `9b31cd64`, gated
-    by its own cases on this Mac and on Linux arm64, where the fixture prints
-    `7` with an empty stderr and its link carries no `-F`; the rest is owed
-    at the round's gate.
-
-    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
-
-- [ ] **207 — a correct program whose string holds `??` before `)`, `(`, `<`, `>`, `=`, `/`, `'`, `!` or `-` gets clang's *trigraph ignored* warning on the emitted C** | `print("what???)")`: `check` exit 0, `run` exit 0 and prints `what???)`, and clang prints `build/tu-<key>/tri.c:10:42: warning: trigraph ignored [-Wtrigraphs]`; the net's own tests' build prints it twice for the harness's own `print(???)` | the emitter's string literals (a `?` that would begin a trigraph is written `?\?` in C) · **class: blocking**
-
-    **Origin:** lane round1003b's gate, 2026-10-03, seeing it in the net's own tests' build and in the last gate's (`scratchpad/lane-round1003b/progress.md`, 2026-10-03); measured by the coordinator on the trunk at `e5893696` before 08:00 by `date` (`scratchpad/file-r5/tri.hero`, 2026-10-03).
-
-    **2026-10-03, lane warn, every text the emitter writes into C is spelled
-    for where C reads it (`selfhost/emit/c_text.hero`): a literal or a
-    `#line` name writes a `?` that would end a trigraph as `\?`, a header
-    name is split by a line splice, and the comment opening a unit neither
-    closes nor opens one; the shapes beside it with its cause included, the
-    four `#line` writers that escaped nothing (a directory `a\q` or `a"b`), a
-    line end in a path and a directory `a*` (both exit 2), a header named
-    `h??).h`**: repaired at `ed776fb2`, gated by its own cases on this Mac;
-    the rest is owed at the round's gate, and the platform legs before the
-    push. On Linux arm64 since (Debian clang 22.1.8, a copy of the tree with
-    206's repair beside it), the case prints its `.expected` with an empty
-    stderr and the compiler tests of the modules it touched read 31 and 0;
-    the two spellings were measured there under 18.1.8 too; unrun on Windows.
-
-    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
-
 - [ ] **208 — a dead `break` after a `return` inside `while true` is told twice, `unreachable_statement` and `missing_return`** | `while true` over `if m > 3`, `return m`, `break`, in a `function f(n: i64) -> i64`: `unreachable_statement` at the `break` and `missing_return` on `f`, both gone once the `break` is deleted | `selfhost/check/flow.hero` (panel 184's R4: a `while true` with a `break` of its own does not end a path, read by syntax) · **class: adjacent**
 
     **Origin:** lane flow4's report, 2026-10-03 (`scratchpad/lane-flow4/w/w16-dead-break-under-return.hero`, 2026-10-03); measured by the coordinator on the trunk at `e5893696` (`scratchpad/file-r5/`, 2026-10-03).
@@ -382,14 +228,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): coverage of one platform.
 
-- [ ] **214 — clang on Windows writes every path of a dependency listing with backslashes, and two readers compare it with forward slashes: defect 168's own test fails there, and no `skip` prefix matches** | `heroes test selfhost/main.hero` on the Windows box at `02e507bc`: *1083 tests, 1 failed*, `what a probe's headers resolve to is asked of clang, and a header that appears earlier in the search is another answer (defect 168)` at `process.holds(text: beside, needle: root + "/src/x.h")`; the box's clang, given `-I build/selftest-compiling-reads/src`, writes `build\selftest-compiling-reads\src\x.h`; and a translation unit's record there lists its own `build\tu-0b52ebf10bd34d86\library.c`, the file `rows_of`'s `skip: dir + "/"` exists to leave out | `selfhost/cli/compiling.hero` (the test), `selfhost/cli/deps.hero` (`under`, `rows_of`) and its five callers · **class: blocking**
-
-    **Origin:** the coordinator's Windows leg at `02e507bc`, 2026-10-03: the compiler's tests red there, where the thirteen legs before it read them all passed (the last, `6bec7c8c`, 1056 of 1056); the test named by a second run in a folder of its own (10:08 to 10:13 by `date`), the dependency listing and the record read on the box by hand.
-
-    **2026-10-03, the first half repaired at `b8ad7f9e` and `fcf09839`, lane win214, merged at `773db596`**: defect 168's test reads clang's rows with every separator a `/`, the turn written in the test as a list of pieces joined once, and holds each path to the digest of what it holds, in one row. Gated once on this Mac on the merged tree: the seed regenerated, the same bytes as `02e507bc`'s once its `#line` numbers are masked, the compiler built from it the same binary as `02e507bc`'s by `cmp`, the fixpoint by `cmp`; the compiler's own tests 1083 and the net's own 200, all passed; the full net, 26 suites, 4,901 passed and 0 failed. In the Linux arm64 container, under clang 22.1.8 and again under 18.1.8, the compilers built from the two seeds are the same binary and the compiler's own tests read 1083 of 1083; on the Windows box the assembly clang writes for the two seeds is the same and the compiler's own tests read 1083, all passed, defect 168's three among them. The second half, a `skip` prefix no Windows listing matches (`under` in `selfhost/cli/deps.hero`), is open.
-
-    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a red on a platform, and the CI's Windows leg would be red on the push. The second half, a `skip` that never matches on Windows, has the same cause and stays in the item; it writes no wrong value, the file it fails to leave out being keyed and hashing the same, and costs each warm build there the digest of every unit's C (unmeasured). The test's other assertion, that the answer does not hold `root + "/inc/x.h"`, passes on Windows whatever `reads` answers.
-
 - [ ] **215 — a text grown by `+` in a selfhost module is first seen by the whole `layout` at a gate: the write-time hook does not ask it, and `layout` narrowed to the file cannot** | lane win214's `b8ad7f9e` wrote `beside @ beside + ch` in a loop of `selfhost/cli/compiling.hero`'s test; `.claude/hooks/fmt_check.py` passed it (it asks parse, canonical form, the compiler's check and the line ceiling), and the lane's gate read `layout/concat` red at 11:06, four sites; `tests/harness/suite_layout.hero` asks `appends`, `concat` and `budget` only when `only == ""`, so a narrowed `layout` never asks them | `.claude/hooks/fmt_check.py`, `tests/harness/suite_layout.hero` (`GROWTH_ALLOWED`) · defect 209 · **class: improvement**
 
     **Origin:** the coordinator, 2026-10-03, at lane win214's gate: one run of 25 suites stopped at 20 to repair it, then run again whole.
@@ -401,14 +239,6 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** lane warn's first pass beside defect 207, 2026-10-03, reported to the coordinator with its reproducer; reproduced by the coordinator the same day.
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 and an internal error where the author can be told. No angled `#include` can spell a `>`, and panel 036's R2 keeps the angled form and never the quoted one, since a quoted include takes a decoy planted beside the unit (`docs/panel/036-the-ffi-ladder.md`); so the repair is a refusal at `check`, a diagnostic class and so a sitting's (CLAUDE.md § 4) before a lane's.
-
-- [ ] **217 — under `ulimit -s unlimited` on Linux, a program that starts a thread panics at its first spawn** | `examples/threads` as it stood at `02e507bc`, run in the Linux arm64 container with the stack limit unlimited: a panic at the first spawn, glibc reporting the main thread's stack as 93,823,035,207,680 bytes, from which `runtime/parts/spawn.c` asked a floor | `runtime/parts/spawn.c` · lane depth's commit `ffaf9f4d` · **class: blocking**
-
-    **Origin:** lane depth's first pass beside defect 169, 2026-10-03, reported to the coordinator (`<scratchpad>/lane-depth/linux2/`).
-
-    **2026-10-03, repaired at `ffaf9f4d` in lane depth, beside defect 169**: under an unlimited stack limit no floor is asked. Owed at the round's gate, and on the platforms before the push, `runtime/` being the C boundary.
-
-    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a crash of a correct program in a setting Linux allows.
 
 - [ ] **218 — the IR verifier's cost grows about as the cube of a function's size, so 7 of 25 nesting shapes at 2,000 deep do not build in 150 s on this Mac, 8 in the Linux container** | lane depth's 25 shapes (panel 184's thirteen and twelve beside them) at N = 2,000: `check` and `fmt` hold every one, `build` of seven does not finish in 150 s; the cost the lane traced to `released_on_return` in `selfhost/ir/phases.hero` and `dominators` in `selfhost/ir/values.hero` (`<scratchpad>/lane-depth/pass1-findings.md`) | those two functions · panel 184's R6 · **class: blocking**
 
