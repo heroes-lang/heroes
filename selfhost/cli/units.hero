@@ -149,7 +149,15 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # so the reader cuts at the first `:` on a fact it chose. The
     # listing rides this compile; no second clang invocation exists.
     line: [str] @ strings.with_all(list: ["clang"], more: words)
-    line @ strings.with_all(list: line, more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, c_file, "-o", staged])
+
+    # `-fno-crash-diagnostics` (defect 170): a clang that dies writes no copy of
+    # the unit and no script into the system's temporary folder (8,270,409
+    # bytes of preprocessed C for 3,000 nested variants, measured 2026-10-03),
+    # since the build says what died in its own words.
+    line @ strings.with_all(
+        list: line,
+        more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, "-fno-crash-diagnostics", c_file, "-o", staged]
+    )
     compiled = toolchain.run_clang(line: line, what: "compiling the generated C", err_path: err_path)
     captured = read_file(err_path)
     publish.discard(err_path)

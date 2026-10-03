@@ -67,7 +67,7 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
                 seeds @ seeds.push(id * 2 + 1)
         id @ id + 1
 
-    order: Ordered @ Ordered(done: {}, out: [])
+    order: Ordered @ Ordered(done: {}, out: [], depth: {}, deepest: 0)
 
     for seed in seeds
         order @ visit(order, c, names, decls, item: seed)
@@ -105,9 +105,82 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
     if owed_blank
         writer.blank(@w)
 
+    if order.deepest > IN_ORDER_FROM
+        in_order(@w, c, names, decls, out: order.out)
+
+# HOW DEEP A CHAIN OF STRUCTS CLANG IS LEFT TO CONVERT BY ITSELF (defect 170,
+# 2026-10-03). Clang turns a struct type into its own the first time a
+# function needs it, and recurses into every struct the type holds by value,
+# so a chain met from its top is converted by a recursion as deep as the
+# chain, and clang's own stack ends it: 3,000 variants, each holding the one
+# before, stopped `build` at exit 2 with *Illegal instruction: 4* (Apple clang
+# 21 on arm64 macOS; `-fsyntax-only` passes, `-emit-llvm` dies, and the same
+# clang under `ulimit -s 65520` compiles it in 2 s), and the CI's Apple clang
+# died at 1,000 (defect 155). Past this depth `in_order` below hands clang the
+# chain from its bottom, one level at a time, and no clang recurses deeper
+# than a type's own fields.
+#
+# The number is a premise about clang and is written as one: a chain of 32 of
+# this unit's structs met from its top, three C structs a level for a variant,
+# is converted within the stack of every clang this compiler runs on; the
+# least of those measured died at 1,000 variants (the CI's Apple clang). Its
+# witness is `tests/golden/run/fixedbugs-170-variants-32-deep-build.hero`,
+# which builds such a chain WITHOUT this help on every platform the net runs
+# on and goes red on the first that cannot. Below the number a program's C is
+# what it was, byte for byte.
+constant IN_ORDER_FROM: i64
+    32
+
+# Every struct this unit defines, touched in the order the typedefs above were
+# written, inside one function nothing calls: `p + 1` makes clang convert the
+# struct to step over it, and each one's fields are already converted when it
+# comes. `used` keeps clang from dropping a function no line calls before it
+# converts anything, and it is static, so each unit carries its own. A group's
+# record is the header's and is left to it. The function costs the binary its
+# few instructions and is never run.
+function in_order(@w: writer.Writer, c: state.Checked, names: ctype.Names, decls: [ast.Decl], out: [i64])
+    writer.at_generated(@w)
+    writer.line(@w, text: "__attribute__((used)) static void hero_tu_type_order(void *at) {")
+
+    for item in out
+        spelled = struct_named(c, names, decls, item: item)
+
+        if spelled.len() > 0
+            writer.line(@w, text: "    { " + spelled + " *p = at; (void)(p + 1); }")
+
+    writer.line(@w, text: "}")
+    writer.blank(@w)
+
+# The C struct an item's typedef defines, or "" where this unit defines none:
+# a function type's typedef is a pointer, and a group's record is the header's.
+function struct_named(c: state.Checked, names: ctype.Names, decls: [ast.Decl], item: i64) -> str
+    if item % 2 == 1
+        ty = item / 2
+
+        match table.get(c.types, ty)
+            .fallible                                                 => return ctype.option_of(names, ty: ty)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ""
+            .array | .fixed | .map | .named | .function_ty            => return ""
+            .case_ty | .failure | .generic | .error                   => return ""
+    decl = item / 2
+
+    match decls[decl].kind
+        .record_decl rec =>
+            if rec.header.is_err()
+                return ctype.of(names, decl: decl)
+            return ""
+        .variant_decl                                => return ctype.of(names, decl: decl)
+        .constant_decl | .function_decl | .test_decl => return ""
+
 record Ordered
     done: {i64: bool}
     out: [i64]
+    # How many of this unit's own structs each item holds by value, itself
+    # included, and the most of any (defect 170). A function type's typedef
+    # and a group's record count none: C keeps a pointer to the one, and the
+    # header lays out the other.
+    depth: {i64: i64}
+    deepest: i64
 
 # Where the walk below stands in one item: the item, what it needs, and
 # how many of those it has already gone into. A recursion keeps the same
@@ -153,6 +226,23 @@ function visit(order: Ordered, c: state.Checked, names: ctype.Names, decls: [ast
                 live @ live + 1
         else
             st.out @ st.out.push(top.item)
+
+            # Every need is written by now (post-order over a DAG, the
+            # checker refusing a by-value cycle), so its depth is known.
+            held: i64 @ 0
+
+            if struct_named(c, names, decls, item: top.item).len() > 0
+                for need in top.needs
+                    below = st.depth[need].default(0)
+
+                    if below > held
+                        held @ below
+
+                held @ held + 1
+            st.depth[top.item] @ held
+
+            if held > st.deepest
+                st.deepest @ held
             live @ live - 1
 
     return st
@@ -225,3 +315,38 @@ test "cross-kind containment lands each typedef after what it holds"
     assert !i64_opt.is_err()
     assert !box_at.is_err()
     assert i64_opt.must() < box_at.must()
+
+# The typedefs of `n` records, each holding the one before by value.
+function chain_text(n: i64) -> str
+    parts: [str] @ ["record R0\n    v: i64\n"]
+
+    for i in range(from: 1, to: n)
+        parts @ parts.push("record R" + i.to_str() + "\n    inner: R" + (i - 1).to_str() + "\n")
+
+    parts @ parts.push("function main()\n    xs: [R" + (n - 1).to_str() + "] = []\n    print(xs.len())\n")
+    text = parts.join("\n")
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names: ctype.Names @ ctype.new_names(s, parsed.decls)
+    names @ ctype.with_options(names, c: c, s: s, decls: parsed.decls)
+    names @ ctype.with_functions(names, c: c, s: s, decls: parsed.decls, p: low.program)
+    w: writer.Writer @ writer.new_writer("t")
+    definitions(@w, c, names, s, parsed.decls, want: synth.everything())
+    return writer.finish(w)
+
+test "past 32 structs held by value clang is handed the chain from its bottom, and at 32 it is not (defect 170)"
+    at_the_number = chain_text(n: 32)
+    assert ffi_lookup.char_index_of(text: at_the_number, needle: "hero_tu_type_order").is_err()
+    past = chain_text(n: 33)
+    order_at = ffi_lookup.char_index_of(text: past, needle: "hero_tu_type_order")
+    bottom = ffi_lookup.char_index_of(text: past, needle: "{ h_t_R0 *p = at; (void)(p + 1); }")
+    top = ffi_lookup.char_index_of(text: past, needle: "{ h_t_R32 *p = at; (void)(p + 1); }")
+    last_typedef = ffi_lookup.char_index_of(text: past, needle: "} h_t_R32;")
+    assert !order_at.is_err()
+    assert !bottom.is_err()
+    assert !top.is_err()
+    assert last_typedef.must() < order_at.must()
+    assert bottom.must() < top.must()
