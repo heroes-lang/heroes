@@ -104,10 +104,10 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
   <p>
     A string can carry values, and an <code>f</code> before the opening quote is what turns <code>{n}</code> into the text of <code>n</code>.
   </p>
-  <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
+  <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="20-21">
 <pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
     <span class="k">return</span> <span class="s">f"{</span>at<span class="s">}/{</span>of<span class="s">} {</span>star.name<span class="s">} at magnitude {</span>star.magnitude<span class="s">}"</span></code></pre>
-    <figcaption>examples/gallery/12-interpolation.hero, lines 17&ndash;18</figcaption>
+    <figcaption>examples/gallery/12-interpolation.hero, lines 20&ndash;21</figcaption>
   </figure>
   <p>
     Why the <code>f</code>: a brace already had a job inside plain strings, and over two hundred of the compiler&rsquo;s own strings carried one, so a string that reads holes announces it at its first character and every other string is unchanged. Why any expression: listing the admitted forms cost more specification tokens than admitting them all, and the count decided. What a hole may hold, what <code>{{</code> writes, and what the compiler says to a hole with no text are in the chapter. <a href="/docs/strings/">Strings, holes included&nbsp;&rarr;</a> <a href="/examples/gallery/12-interpolation/">The whole example&nbsp;&rarr;</a>
