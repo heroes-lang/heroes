@@ -66,6 +66,11 @@
  * runtime did not compile`. A file that leans on another file's includes works
  * until that file grows a configuration. */
 #include <unistd.h>
+/* `EINVAL`, for a size no page rounding can hold (panel 184 R5), and
+ * `getrlimit`, for a main thread whose stack has no limit; named here for the
+ * reason above: `os.c` and `run.c` include them, after this file. */
+#include <errno.h>
+#include <sys/resource.h>
 #endif
 
 /* THE BOUND IS ON THREADS ALIVE AT ONCE, NOT ON THREADS EVER STARTED, and that
@@ -144,6 +149,25 @@ static void hero_spawn_measure_home(void) {
     hero_spawn_floor = 0;
 #else
     hero_spawn_floor = hero_spawn_stack_of_self();
+
+    /* AN UNLIMITED STACK HAS NO SIZE TO MATCH (2026-10-03, lane depth, beside
+     * panel 184's R5). Under `ulimit -s unlimited` glibc answers the main
+     * thread's size as all the room down to the mapping below it,
+     * 93,823,035,207,680 bytes in the Linux arm64 container, and no thread can
+     * be given that: `examples/threads` panicked at its first spawn, *the
+     * operating system refused to start a thread*, with this file as it stood
+     * at `02e507bc`; and the compiler's own thread, which takes the larger of
+     * its 256 MiB and the floor, was asked for that much too, and granted it
+     * in a container whose `vm.overcommit_memory` is 1. The main thread then
+     * grows until memory ends, so there is no floor to keep: a thread asked
+     * for nothing gets what glibc gives a thread under an unlimited limit (2
+     * MiB there), and one asked for a size gets it. Measured the same day
+     * after the change: the example and the compiler both run under the
+     * unlimited limit. */
+    struct rlimit room;
+    if (getrlimit(RLIMIT_STACK, &room) == 0 && room.rlim_cur == RLIM_INFINITY) {
+        hero_spawn_floor = 0;
+    }
 #endif
 }
 
@@ -158,6 +182,10 @@ typedef struct {
     HeroThreadBody body;
     int64_t arg;
     int64_t result;
+    /* The stack this thread was asked for, the floor below or more where its
+     * starter named a size (`hero_thread_spawn_sized`, panel 184 R5); 0 asks
+     * for nothing and is what Windows records for an unsized thread. */
+    size_t want;
     /* 0 free · 1 running · 2 finished and not yet joined. A joined slot goes
      * back to 0, which is what makes the bound a concurrency bound. */
     int state;
@@ -214,16 +242,24 @@ static void hero_spawn_enter(HeroSpawnSlot *slot) {
      *
      * So the check is here, after the thread exists, and it asks the OS. One
      * page of slop, because Darwin returns 12,288 bytes MORE than asked
-     * (8,388,608 -> 8,400,896, measured) and a platform is free to round. */
+     * (8,388,608 -> 8,400,896, measured) and a platform is free to round.
+     *
+     * It reads what THIS thread asked for, the floor or a size its starter
+     * named (panel 184 R5), and the sentence says which, because a thread
+     * that asked for 256 MiB and was handed the default would otherwise be
+     * reported as asking for the stack the program runs on. */
 #if !defined(_WIN32)
-    if (hero_spawn_floor > 0) {
+    if (slot->want > 0) {
         size_t got = hero_spawn_stack_of_self();
         size_t slop = (size_t)sysconf(_SC_PAGESIZE);
 
-        if (got > 0 && got + slop < hero_spawn_floor) {
-            hero_panic("a thread was started with less stack than this runtime "
-                       "asked for — it asked for the stack the program itself "
-                       "runs on, and the operating system gave less");
+        if (got > 0 && got + slop < slot->want) {
+            char msg[256];
+            snprintf(msg, sizeof msg,
+                     "a thread was started with less stack than this runtime asked "
+                     "for — it asked for %zu bytes and the operating system gave %zu",
+                     slot->want, got);
+            hero_panic(msg);
         }
     }
 #endif
@@ -246,7 +282,12 @@ static void *hero_spawn_trampoline(void *p) {
 }
 #endif
 
-int64_t hero_thread_spawn(HeroThreadBody body, int64_t arg) {
+/* Both doors below start here. `bytes` 0 asks for the floor alone, today's
+ * thread; more asks for at least that much (panel 184 R5). A thread the
+ * operating system will not start is -1 with its own number in `*why`, and
+ * the caller decides what to say: the unsized door panics as it always has,
+ * the sized one hands the refusal back. */
+static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, int64_t *why) {
     if (body == NULL) hero_panic("a thread was started with no function to run");
     HERO_SPAWN_TAKE();
     int64_t at = -1;
@@ -267,41 +308,93 @@ int64_t hero_thread_spawn(HeroThreadBody body, int64_t arg) {
     hero_spawn_slots[at].arg = arg;
     hero_spawn_slots[at].result = 0;
     hero_spawn_slots[at].state = 1;
+    hero_spawn_slots[at].want = bytes > hero_spawn_floor ? bytes : hero_spawn_floor;
+    int refused = 0;
 #if defined(_WIN32)
+    /* A named size is a RESERVATION: without the flag `CreateThread` takes it
+     * as the commit and keeps the executable's reserve, the defect panel
+     * 115's historian found in libuv. Unsized, the executable's own reserve
+     * (`/STACK:67108864`, `selfhost/cli/flags.hero`) is every thread's, as
+     * the head of this file says. Unrun on Windows on the day it was written
+     * (2026-10-03): the box was offline. */
+    SIZE_T reserve = (SIZE_T)hero_spawn_slots[at].want;
     hero_spawn_slots[at].handle =
-        CreateThread(NULL, 0, hero_spawn_trampoline, &hero_spawn_slots[at], 0, NULL);
-    int made = hero_spawn_slots[at].handle != NULL;
+        CreateThread(NULL, reserve, hero_spawn_trampoline, &hero_spawn_slots[at],
+                     reserve > 0 ? STACK_SIZE_PARAM_IS_A_RESERVATION : 0, NULL);
+    if (hero_spawn_slots[at].handle == NULL) refused = (int)GetLastError();
 #else
-    /* The floor, asked for only when the platform's own default is BELOW it, so
+    /* The size, asked for only when the platform's own default is BELOW it, so
      * a machine that already gives a worker what `main` has is untouched and
-     * `attr` is never built there (glibc, measured: 8,388,608 both ways). */
+     * `attr` is never built there (glibc, measured: 8,388,608 both ways).
+     *
+     * A size `pthread_attr_setstacksize` refuses is a REFUSAL here, and it was
+     * not until panel 184: the attr kept its default, the thread started on
+     * it, and only the check in `hero_spawn_enter` caught the difference, on
+     * the new thread. Asked of the attr and refused before any thread exists,
+     * the caller hears it from the call that asked. */
     pthread_attr_t attr;
     pthread_attr_t *ask = NULL;
     int asked = 0;
+    size_t want = hero_spawn_slots[at].want;
 
-    if (hero_spawn_floor > 0 && pthread_attr_init(&attr) == 0) {
+    if (want > 0 && pthread_attr_init(&attr) == 0) {
         size_t theirs = 0;
         asked = 1;
 
-        if (pthread_attr_getstacksize(&attr, &theirs) == 0 && theirs < hero_spawn_floor) {
+        if (pthread_attr_getstacksize(&attr, &theirs) == 0 && theirs < want) {
             size_t page = (size_t)sysconf(_SC_PAGESIZE);
-            size_t want = (hero_spawn_floor + page - 1) / page * page;
 
-            if (pthread_attr_setstacksize(&attr, want) == 0) ask = &attr;
+            if (want > (size_t)-1 - page) {
+                refused = EINVAL;
+            } else {
+                int set = pthread_attr_setstacksize(&attr, (want + page - 1) / page * page);
+
+                if (set == 0) ask = &attr;
+                else refused = set;
+            }
         }
     }
-    int made = pthread_create(&hero_spawn_slots[at].handle, ask, hero_spawn_trampoline,
-                              &hero_spawn_slots[at]) == 0;
+
+    if (refused == 0) {
+        refused = pthread_create(&hero_spawn_slots[at].handle, ask, hero_spawn_trampoline,
+                                 &hero_spawn_slots[at]);
+    }
     if (asked) pthread_attr_destroy(&attr);
 #endif
 
-    if (!made) {
+    if (refused != 0) {
         hero_spawn_slots[at].state = 0;
         HERO_SPAWN_DROP();
-        hero_panic("the operating system refused to start a thread");
+        if (why != NULL) *why = refused;
+        return -1;
     }
     HERO_SPAWN_DROP();
     return at;
+}
+
+int64_t hero_thread_spawn(HeroThreadBody body, int64_t arg) {
+    int64_t why = 0;
+    int64_t at = hero_spawn_start(body, arg, 0, &why);
+
+    if (at < 0) hero_panic("the operating system refused to start a thread");
+    return at;
+}
+
+/* THE STACK THE CALLER CHOOSES (panel 184 R5, ratified 2026-10-01). The
+ * compiler runs every command on one of these, so how deep a source may nest
+ * is the compiler's own number on every machine and never the shell's `ulimit
+ * -s`: measured before it landed, the compiler could not check its own source
+ * at `ulimit -s 512` and a sum of 300 terms stopped `check` at 134.
+ *
+ * The thread is never smaller than the floor above, and the size is reserved
+ * address space rather than memory: a page is committed when it is first
+ * touched, which is what each platform documents for a thread's stack. A
+ * refusal is ANSWERED rather than panicked,
+ * because the caller is the one that can say what it needed the thread for:
+ * -1, `*why` the operating system's own number. */
+int64_t hero_thread_spawn_sized(HeroThreadBody body, int64_t arg, int64_t bytes, int64_t *why) {
+    if (bytes < 0) hero_panic("a thread was asked for a negative number of bytes of stack");
+    return hero_spawn_start(body, arg, (size_t)bytes, why);
 }
 
 /* Waiting is where the two undefined behaviours of C become named panics. The
