@@ -58,7 +58,7 @@ use parse/pairing
 function ending(c: cursor.Cursor, text: str) -> i64
     i: i64 @ c.pos
 
-    while !ends_a_line(c.tokens[i].kind)
+    while !token.ends_a_line(c.tokens[i].kind)
         if c.tokens[i].kind == .lbrace && ends_line(text, c.tokens[i].span) && !opens_a_value(c, at: i)
             return i
         i @ i + 1
@@ -187,7 +187,7 @@ function pass(@c: cursor.Cursor)
     while c.pos < close && !cursor.at(c, .eof)
         _ = cursor.bump(@c)
 
-    if c.pos == close && cursor.at(c, .rbrace) && (!laid || !ends_a_line(cursor.peek(c, 1)))
+    if c.pos == close && cursor.at(c, .rbrace) && (!laid || !token.ends_a_line(cursor.peek(c, 1)))
         _ = cursor.bump(@c)
 
         if !laid
@@ -201,9 +201,6 @@ function after_a_close(c: cursor.Cursor, text: str) -> bool
         return false
     at = c.tokens[c.pos - 1].span.start
     return word_place.only_margin(text, from: word_place.line_start(text, at: at), to: at)
-
-function ends_a_line(kind: token.TokenKind) -> bool
-    return kind == .terminator || kind == .indent || kind == .dedent || kind == .eof
 
 ## Tests
 

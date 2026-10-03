@@ -104,6 +104,18 @@ variant TokenKind
     eof
     error
 
+## The line ends of the stream the lexer lays out
+
+# Whether a token of `kind` ends a line: a terminator, an indent or a dedent.
+# One copy for the lexer's and the parser's modules, which held ten of this
+# and of `ends_a_line` until 2026-10-03 (lane b8-recovery).
+function is_line_end(kind: TokenKind) -> bool
+    return kind == .terminator || kind == .indent || kind == .dedent
+
+# The same, the stream's end counted with them.
+function ends_a_line(kind: TokenKind) -> bool
+    return is_line_end(kind) || kind == .eof
+
 ## The stable names
 
 # Stable lowercase name, used by `heroes lex --json` and the snapshots. These

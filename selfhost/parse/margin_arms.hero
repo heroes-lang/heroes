@@ -121,7 +121,7 @@ function read_line(c: cursor.Cursor, from: i64) -> ArmRead
     i: i64 @ from
     patterns: bool @ true
 
-    while c.tokens[i].kind != .eof && !(depth == 0 && is_line_end(c.tokens[i].kind))
+    while c.tokens[i].kind != .eof && !(depth == 0 && token.is_line_end(c.tokens[i].kind))
         k = c.tokens[i].kind
         patterns @ patterns && of_a_pattern(k)
 
@@ -169,7 +169,7 @@ function past_line_ends(c: cursor.Cursor, from: i64) -> i64
 function an_arms_value(c: cursor.Cursor, head: i64) -> bool
     i: i64 @ head - 1
 
-    while i >= 0 && !is_line_end(c.tokens[i].kind)
+    while i >= 0 && !token.is_line_end(c.tokens[i].kind)
         if c.tokens[i].kind == .fat_arrow
             return true
         i @ i - 1
@@ -198,9 +198,6 @@ function inside_a_bracket(c: cursor.Cursor, head: i64) -> bool
         i @ i - 1
 
     return false
-
-function is_line_end(kind: token.TokenKind) -> bool
-    return kind == .terminator || kind == .indent || kind == .dedent
 
 ## Past the block
 
@@ -255,7 +252,7 @@ function opens_arms(c: cursor.Cursor, text: str, indent: i64) -> bool
     while i >= 0 && (c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment)
         i @ i - 1
 
-    while i >= 0 && !is_line_end(c.tokens[i].kind)
+    while i >= 0 && !token.is_line_end(c.tokens[i].kind)
         if swap_reading.reads_as(on(c, at: i), text) == .kw_match
             return true
         i @ i - 1

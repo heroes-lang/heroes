@@ -89,7 +89,7 @@ function line_start(tokens: [token.Token], at: i64) -> i64
     depth: i64 @ 0
     i: i64 @ at - 1
 
-    while i >= 0 && !(depth == 0 && is_line_end(tokens[i].kind))
+    while i >= 0 && !(depth == 0 && token.is_line_end(tokens[i].kind))
         k = tokens[i].kind
 
         if k == .rparen || k == .rbracket || k == .rbrace
@@ -111,7 +111,7 @@ function line_end(tokens: [token.Token], from: i64) -> i64
     depth: i64 @ 0
     i: i64 @ from
 
-    while i < tokens.len() - 1 && !(depth == 0 && is_line_end(tokens[i].kind))
+    while i < tokens.len() - 1 && !(depth == 0 && token.is_line_end(tokens[i].kind))
         k = tokens[i].kind
 
         if k == .lparen || k == .lbracket || k == .lbrace
@@ -125,13 +125,10 @@ function line_end(tokens: [token.Token], from: i64) -> i64
 function word_after(tokens: [token.Token], at: i64) -> i64
     i: i64 @ at
 
-    while i < tokens.len() - 1 && (is_line_end(tokens[i].kind) || tokens[i].kind == .comment)
+    while i < tokens.len() - 1 && (token.is_line_end(tokens[i].kind) || tokens[i].kind == .comment)
         i @ i + 1
 
     return tokens[i].span.start
-
-function is_line_end(kind: token.TokenKind) -> bool
-    return kind == .terminator || kind == .indent || kind == .dedent
 
 # The index of the last of `ascending` that is at most `at`, or -1: a binary
 # search, which every question below is, so that a file of many breaks costs
