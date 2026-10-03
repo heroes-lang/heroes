@@ -1,0 +1,5 @@
+extern "<math.h>"
+    function sqrt(x: f64) -> f64
+
+function main()
+    print(sqrt(2.0))
