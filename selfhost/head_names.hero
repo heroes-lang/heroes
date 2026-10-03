@@ -45,6 +45,15 @@ function cannot_carry(spelled: str, value: str, span: token.Span, what: str) -> 
                 diag.new_diagnostic(code: "unwritable_name", message: "this package's name holds " + split + ", where `pkg-config` splits its argument into packages and versions: a group names one package, as `package \"raylib\"`", span: span)
             )
 
+        # Go's `SafeArg` refuses the same (panel 188's historian): the `--`
+        # `cli/libraries.hero` writes before the name is read as the end of
+        # options by pkgconf 3.0.7 and 1.8.1 and is unrun elsewhere, so this
+        # rests on no tool, and is no thesis rule.
+        if value[0] == '-'
+            return ok(
+                diag.new_diagnostic(code: "option_like_name", message: "this package's name begins with `-`, which is how an option to `pkg-config` begins, and this compiler does not rest on every `pkg-config` reading the `--` it writes before the name: name the package, as `package \"raylib\"`", span: span)
+            )
+
     if what == "header"
         return header_unwritable(spelled: spelled, value: value, span: span)
     return fail(code: "none", msg: "a name every tool carries whole")
@@ -424,6 +433,9 @@ test "a package's string names one package (panel 188)"
     assert said(spelled: "\"pc\"", what: "package") == ""
     assert said(spelled: "\"sub/seven.pc\"", what: "package") == "machine_locked_path"
     assert said(spelled: "\"/opt/x.pc\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"-x\"", what: "package") == "option_like_name"
+    assert said(spelled: "\"--atleast-pkgconfig-version=0\"", what: "package") == "option_like_name"
+    assert said(spelled: "\"-x\"", what: "link") == ""
 
 test "C's spelling carried in is dropped by a certain fix, and only where what is left passes"
     sure = judged(spelled: "\"<stdio.h>\"", span: token.Span(start: 0, end: 11), what: "header").must()
