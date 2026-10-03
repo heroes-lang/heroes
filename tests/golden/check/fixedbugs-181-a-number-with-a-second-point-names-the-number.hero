@@ -1,0 +1,18 @@
+# Fixed defect 181, 2026-10-03. Symptom: a decimal number with a second
+# point, a version or an address written as a number, `1.5.2`, was told as a
+# field access whose name is a number, *expected a field or function name
+# after `.`, found a number (`2`)*: true, and naming no number. Cause: the
+# lexer reads `1.5` and leaves the `.` to the parser's field reader, whose
+# words knew only a field. Repair: the message keeps its code and its words
+# and adds the number that already holds its point (`dot_words`). One message
+# each below; written apart, `1.5 .2` is no such number and keeps its words.
+
+function main()
+    x = 1.5.2  #~ expected_field_name
+    y = 10.0.0.1  #~ expected_field_name
+    z = 1_000.25.3  #~ expected_field_name
+    w = -1.5.2  #~ expected_field_name
+    v = 1.5.2.3  #~ expected_field_name
+    print(1.5.2)  #~ expected_field_name
+    u = 1.5 .2  #~ expected_field_name
+    print(x + y + z + w + v + u)
