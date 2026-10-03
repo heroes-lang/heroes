@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 34**
+**OPEN: 47**
 
 - [ ] **177 — a `match` whose arms fall inside a bracket left open has each arm told again after the bracket's own message** | `return match scores[name` over `.ok v  => v.to_str()` and `.err e => e.code`: `unclosed_bracket` at the `[`, then `line_end_before_continuation` at each arm, three messages for one missing `]`; `x = match (n` over `.ok v => 1` the same; `y = match n` below `x = [n, 1` gets `expected_end_of_line` at each arm's `=>` | the reach of a bracket left open (panel 183's R1 and R2) over a `match`'s arms · `selfhost/parse/line_end.hero:242` · **class: adjacent**
 
@@ -240,10 +240,90 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 and an internal error where the author can be told. No angled `#include` can spell a `>`, and panel 036's R2 keeps the angled form and never the quoted one, since a quoted include takes a decoy planted beside the unit (`docs/panel/036-the-ffi-ladder.md`); so the repair is a refusal at `check`, a diagnostic class and so a sitting's (CLAUDE.md § 4) before a lane's.
 
+    **Widened by panel 188**, 2026-10-03 (`docs/panel/188-a-group-heads-string-is-its-value-and-what-its-tool-cannot-carry-is-refused-on-its-line.md` R2, R12): the cause is the group head's string's, not the header's, a string its tool cannot carry as the one name it is, so the empty string, a NUL and a line end in a header, a `link` or a `package`, and `>` in a header, are 216's shapes. Measured on the trunk's compiler beside it: a NUL in a `link` or `package` string aborts the compiler (`build` 134, *an argument contains a NUL byte*), `link ""` hands the linker a bare `-l` that takes the output as an input (`build` 2), and a NUL in a header binds the part before it at exit 0 where that part names a file (`<scratchpad>/repro188/link-nul/`, `link-empty/`). Repaired by the sitting's stage E, which lands in batch 8's FFI lane; closes only after that batch's platform legs (a C-boundary defect).
+
 - [ ] **219 — clang's debug information dies on a type chain between 3,000 and 5,000 nested variants on this Mac, by 10,000 in the Linux container** | past panel 184's R6 floor of 2,000: since `6c95f44a` (defect 170) the build says so in the compiler's words at exit 2 and leaves no crash files; clang's own stack raised to 64 MB compiled 10,000 in the lane's measurement, about eight times further, not built | `selfhost/cli/clang_died.hero` (lane depth's, at `6c95f44a`, 2026-10-03), `selfhost/emit/typeorder.hero` · **class: improvement**
 
     **Origin:** lane depth beside defect 170, 2026-10-03, reported to the coordinator.
 
     **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): beyond the floor panel 184's R6 sets, and told truly at exit 2 since defect 170's repair; a reach nobody needs to be right today.
+
+- [ ] **220 — a call to a name nothing binds, close to a built-in, gets a `certain` rename to the built-in, and the program `--apply` writes is refused anew** | `function main()` over `print(sqrt(2.0))`: `check` exit 1, `unknown_name`, *nothing named `sqrt` is in scope, did you mean `sort`?*, `fix (certain): rename to sort`; `check --apply` writes `print(sort(2.0))`, which `check` refuses, `bad_operand`, *`sort` takes `[T]`, found `f64`* (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro220/`) | the `unknown_name` rename's certainty (`selfhost/resolve/`) · `.claude/rules/diagnostics-and-goldens.md` (*a `certain` fix repairs the defect the diagnostic names*) · **class: blocking**
+
+    **Origin:** panel 188's completeness critic, 2026-10-03, in its first pass, beside the blind seat's own program with its `extern` line dropped; reproduced by the coordinator the same day.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a `certain` fix that writes a program refused anew; and the name is C's `sqrt`, which a program binds from `math.h`, so the rename points away from the repair.
+
+- [ ] **221 — no reader of a group head's string decodes its escapes, so `extern "a\\b.h"` asks clang for `a\\b.h` and `build` says a header present is missing** | `extern "a\\b.h"` over `function seven() -> i32`, the file `a\b.h` beside the program: `check` 0, `build` 1, `ffi_missing_header`, *`a\\b.h` is not on this machine's include path, clang looked and did not find it*, while the file is there; the emitted unit holds `#include <a\\b.h>`, two backslashes; the same for `\"`, `\n`, `\t`, `\r`, and for `link "a\\b"` with `liba\b.a` there (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro188/esc-bs/`) | `selfhost/emit/externs.hero` (`unquoted`), `selfhost/parse/module_text.hero` (`unquote`) · spec § 2's five string escapes, § 13's `Extern` production · panel 188 R1 · **class: blocking**
+
+    **Origin:** panel 188's completeness critic, 2026-10-03, in its first pass over the briefs (the escape face of F1, read as clang's, was the compiler's); confirmed by `od -c` of the emitted units (the compiler-engineer) and for `link` (the ffi-pragmatist); reproduced by the coordinator the same day.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a false message; filed apart from 216 by the rule (a reader that does not decode, where 216's is a string its tool cannot carry), landed in the same lane, since the refusal reads the decoded value.
+
+- [ ] **222 — a `package` string beginning with `-` reaches `pkg-config` as an option: one is accepted with no package named, another called a package, a third told falsely as not installed** | `extern "ab.h" package "--atleast-pkgconfig-version=0"` over `function seven() -> i32`, `ab.h` a `static inline`: `check` 0, `build` 0, prints `7`, a package clause naming no package; `package "--version"`: *the package `--version` answered with `3.0.7`*; `package "-x"`: *the package `-x` is not installed on this machine*, where `pkg-config` said *unknown option -- x* (the trunk's compiler at `826ddc2f`, this Mac, 2026-10-03, `<scratchpad>/repro188/pkg-option/`, `pkg-opt--/`, `pkg-opt-x/`; the first also in the Linux arm64 image, the seats) | `selfhost/cli/libraries.hero` (the `pkg-config` argv; its comment at 302 to 304 says no `.hero` file can hand it an argument) · panel 188 R7 (b) · **class: blocking**
+
+    **Origin:** panel 188's ffi-pragmatist and compiler-engineer, 2026-10-03, on Q5; reproduced by the coordinator the same day.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a wrong program accepted and a false message; filed apart from 216 (the tool's parse of a whole string, not a string its tool cannot carry), landed in the same lane.
+
+- [ ] **223 — a `package` string reaches `pkg-config`'s list and version grammar, which § 13 does not name, and a refused version is told as a package not installed** | `extern "ab.h" package "zlib >= 99"`: `build` 1, *the package `zlib >= 99` is not installed on this machine*, while zlib 1.2.12 is installed (this Mac; 1.3.1 in the Linux arm64 image, the ffi-pragmatist); `package "zlib sqlite3"`: `build` 0 (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro188/pkg-version/`, `pkg-list/`) | `selfhost/cli/libraries.hero` · spec § 13 (*"A group may name a **package**"*) · panel 188 R7 (c) · **class: blocking**
+
+    **Origin:** panel 188's ffi-pragmatist and compiler-engineer, 2026-10-03, on Q5; the ruling that a package names one package is the sitting's (R7 (c)); reproduced by the coordinator the same day.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a false message; filed apart from 216 (`pkg-config`'s grammar, not a string its tool cannot carry), landed in the same lane.
+
+- [ ] **224 — the reader of the linker's *missing library* line cuts a library's name at a quote under ld64 and at whitespace under GNU ld, and `build` exits 2** | `extern "ab.h" link "a'b"`: `build` 2, *internal error: linking failed*, ld64's *library 'a'b' not found*, *clang refused the generated C* (this Mac); `link "a b"`: the same under GNU ld's *cannot find -la b* (Linux arm64, the seats) (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro188/link-squote/`) | `selfhost/emit/ffi_build.hero` (`missing_library`, `link_head`, `strip_colons`) · panel 188 R7 (a) · **class: blocking**
+
+    **Origin:** panel 188's compiler-engineer and ffi-pragmatist, 2026-10-03, on Q5; reproduced by the coordinator on this Mac the same day.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told; filed apart from 216 (the compiler's reader of the linker's text), landed with 221's repair, which widens it (a TAB in a `link` name once decoded).
+
+- [ ] **225 — `machine_locked` reads a header's first bytes, so a `..` climb to the root names a header by where this machine keeps it, and a `package` naming a `.pc` file is read from the working directory** | `extern "../../(24 times)/<the absolute path without its leading />"` over `function seven() -> i32`: `check` 0, `build` 0, prints `7`, while the same path written absolute is refused `machine_locked_path` (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro188/climb/`); `package "./seven.pc"`, `"seven.pc"`, `"seven.PC"`, `".pc"` build from the `.pc`'s directory and are *not installed* from another (the ffi-pragmatist and the critic, pkg-config 3.0.7 and pkgconf 1.8.1) | `selfhost/parse/group_head.hero` (`machine_locked`; the leaf of panel 188 R9 once landed) · panel 055 · panel 188 R6, which refuses the `.pc` half · **class: adjacent**
+
+    **Origin:** panel 188's ffi-pragmatist, 2026-10-03, on Q5, the `.pc` spellings widened by the critic's third pass; the climb reproduced by the coordinator the same day, the `.pc` path not.
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): real, beside the work, a thesis rule's reach rather than a wrong program; the `.pc` half lands with panel 188's R6, and for the climb the value alone cannot tell a climb to the root from a climb to a sibling directory.
+
+- [ ] **226 — `ffi_package` points at the group's first member, not at the `package` string it is about** | `extern "ab.h" package "zz9nothere"` over `function seven() -> i32`: `build` 1, *the package `zz9nothere` is not installed on this machine*, `at p.hero:2:5`, the member's line, where the string is on line 1 (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro188/pkg-span/`) | `selfhost/emit/ffi_build.hero` (where `ffi_package` takes its span) · **class: adjacent**
+
+    **Origin:** panel 188's spec-warden, 2026-10-03; reproduced by the coordinator the same day.
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be.
+
+- [ ] **227 — a source file holding a byte that is not UTF-8 is answered `cannot read` at exit 2, where the file was read and the author can be told which line holds the byte** | `function main()` over a comment `# caf` and the byte 0xE9, over `print(1)`: `check` exit 2, *error: cannot read `p.hero`*; the same with the byte inside a string literal (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro-utf8/`) | the reading of a source file into a `str` · `.claude/rules/cli-surface.md` (*exit 1 the input has diagnostics, exit 2 the tool could not run*) · **class: blocking**
+
+    **Origin:** panel 188's ffi-pragmatist, 2026-10-03, beside its sweep (its case `bad-utf8`); reproduced by the coordinator the same day.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told, and a false message (the file was read).
+
+- [ ] **228 — the emitter finds each instruction's line by walking its source line by character, so a long line costs its length squared** | lane irverify's profile: `writer.at_span` → `source.locate`/`line_col`, 65% of `concat-chain-2000`'s build after defect 218's repair (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/emit/writer.hero`, `selfhost/source.hero` · **class: improvement**
+
+    **Origin:** lane irverify, 2026-10-03, profiling the shapes of panel 184's R6 after defect 218's repair, reported to the coordinator; not yet run by the coordinator.
+
+    **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): every one of R6's 25 shapes builds at 2,000 on this Mac and in the Linux arm64 container after 218's repair, so this is a cost past the floor, not a program that fails.
+
+- [ ] **229 — the emitter's type gate walks a deep type in full at each use** | lane irverify's profile: `emit/gate.check_type` → `check_element`, about 60% of `index-chain-2000`'s build after defect 218's repair (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/emit/gate.hero` · **class: improvement**
+
+    **Origin:** lane irverify, 2026-10-03, the same profiles, reported to the coordinator; not yet run by the coordinator.
+
+    **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a cost past panel 184's R6 floor, which the shape meets.
+
+- [ ] **230 — the ownership pass asks of every counted load whether a write in its block lets it survive, a walk of the block each time** | lane irverify's profile: `ir/own.run` → `place_store.load_survives_write`, 33 to 35% of `one-return-many-800`, `many-params-800` and `record-literal-2000` (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/ir/own.hero`, `selfhost/ir/place_store.hero` · **class: improvement**
+
+    **Origin:** lane irverify, 2026-10-03, the same profiles, reported to the coordinator; not yet run by the coordinator.
+
+    **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a cost past panel 184's R6 floor, which the shapes meet.
+
+- [ ] **231 — every return sweeps every owned slot, so a function of many returns and many slots grows its IR and its C as their product** | lane irverify: `slots-returns-400` builds in 64.57 s after defect 218's repair, and at 800 clang does not finish in 300 s (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/ir/` (the sweep at a return) · panel 106's design · **class: adjacent**
+
+    **Origin:** lane irverify, 2026-10-03, beside defect 218, reported to the coordinator; not yet run by the coordinator.
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): real, beside the work; an 800-return function is no shape of panel 184's R6, so no floor it sets is broken.
+
+- [ ] **232 — the reader of clang's *file not found* line cuts a header's name at a quote and cannot read a code point clang prints as `<U+XXXX>`, so a missing header named with either stops `build` at exit 2** | `extern "a'b.h"` over `function seven() -> i32`, no header beside it: `check` 0, `build` 2, *internal error: compiling the generated C failed*, clang's *'a'b.h' file not found* not matched back to the group, where `extern "ab.h"` missing is `ffi_missing_header` at exit 1 (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro188/squote-missing/`); a private-use U+E000, an unassigned U+0378 or a noncharacter U+FFFE in a missing header's name the same, clang printing it `<U+E000>`, on both platforms (the compiler-engineer, stage E) | `selfhost/emit/ffi_build.hero` (`missing_header`, which takes the name up to the first quote and matches it whole) · **class: blocking**
+
+    **Origin:** panel 188's completeness critic, 2026-10-03, in its third pass over stage D (F1 ran `a'b.h` only with its header present), and the compiler-engineer building stage E for the escaped code points; the quote reproduced by the coordinator the same day.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told. Panel 188's R4 and R5 refuse `'`, U+2028 and U+2029 at `check`, so once they land a program `check` passes reaches this reader with a private-use, unassigned or noncharacter code point only; R4 is a thesis rule the author may turn, so the reader is repaired on its own, reading clang's line against each declared header as stage C did for the linker's.
 
 *******************************************************************************
