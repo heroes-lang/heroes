@@ -60,7 +60,7 @@ function binds(c: cursor.Cursor, from: i64) -> bool
     depth: i64 @ 0
     i: i64 @ from + 1
 
-    while i < c.tokens.len() && !ends_a_line(c.tokens[i].kind)
+    while i < c.tokens.len() && !token.ends_a_line(c.tokens[i].kind)
         k = c.tokens[i].kind
 
         if k == .lparen || k == .lbracket || k == .lbrace
@@ -72,9 +72,6 @@ function binds(c: cursor.Cursor, from: i64) -> bool
         i @ i + 1
 
     return false
-
-function ends_a_line(kind: token.TokenKind) -> bool
-    return kind == .terminator || kind == .indent || kind == .dedent || kind == .eof
 
 ## What a refused word declares
 

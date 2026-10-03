@@ -8,6 +8,7 @@
 # 300: the dispatcher, `decl.file`, reads the seven heads, and this module
 # is the one arm that reads none. Nothing here calls back into `decl`.
 
+use token
 use cursor
 use ast
 use grammar_expr
@@ -25,7 +26,7 @@ use parse/brace_habit
 # 2026-10-02 the junk's recovery took the block whole, every mistake in it
 # unsaid.
 function past_a_use(@c: cursor.Cursor, text: str)
-    if cursor.at(c, .eof) || cursor.at_fresh_line(c) || opening.is_line_end(cursor.current_kind(c))
+    if cursor.at(c, .eof) || cursor.at_fresh_line(c) || token.is_line_end(cursor.current_kind(c))
         return
     expected_here(@c, text)
     from = c.pos

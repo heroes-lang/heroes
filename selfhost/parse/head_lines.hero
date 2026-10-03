@@ -43,7 +43,7 @@ function joined_at(c: cursor.Cursor, text: str, from: i64) -> token.Span?
         here = c.tokens[i]
         next = c.tokens[i + 1]
 
-        if !is_line_end(here.kind) && !is_line_end(next.kind) && next.kind != .eof
+        if !token.is_line_end(here.kind) && !token.is_line_end(next.kind) && next.kind != .eof
             if text_lines.newlines_between(text, from: here.span.end, to: next.span.start) > 0
                 return ok(token.Span(start: before_the_break(c, from: from, at: i), end: next.span.end))
         i @ i + 1
@@ -66,7 +66,7 @@ function joined_outside_brackets(c: cursor.Cursor, text: str, from: i64) -> bool
         else if (k == .rparen || k == .rbracket || k == .rbrace) && depth > 0
             depth @ depth - 1
 
-        if depth == 0 && !is_line_end(k) && !is_line_end(next.kind) && next.kind != .eof
+        if depth == 0 && !token.is_line_end(k) && !token.is_line_end(next.kind) && next.kind != .eof
             if text_lines.newlines_between(text, from: c.tokens[i].span.end, to: next.span.start) > 0
                 return true
         i @ i + 1
@@ -80,9 +80,6 @@ function before_the_break(c: cursor.Cursor, from: i64, at: i64) -> i64
         i @ i - 1
 
     return c.tokens[i].span.start
-
-function is_line_end(kind: token.TokenKind) -> bool
-    return kind == .terminator || kind == .indent || kind == .dedent
 
 ## Tests
 

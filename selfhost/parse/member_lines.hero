@@ -273,14 +273,11 @@ function line_ends(@c: cursor.Cursor, text: str, member: str, rule: str, @habit:
     if k == .terminator || k == .indent || k == .dedent || k == .eof || cursor.at_fresh_line(c)
         return
 
-    if k == .comma && ends_a_line(cursor.peek(c, 1))
+    if k == .comma && token.ends_a_line(cursor.peek(c, 1))
         comma(@c, text: text, member: member, rule: rule, @habit)
         return
     told(@c, text: text, member: member, rule: rule)
     cursor.skip_line(@c)
-
-function ends_a_line(k: token.TokenKind) -> bool
-    return k == .terminator || k == .indent || k == .dedent || k == .eof
 
 # The `,` under the cursor ends `member`'s line: told where it is the
 # declaration's first, `habit` then its report's index, and its deletion one
